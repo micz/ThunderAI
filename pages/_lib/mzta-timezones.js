@@ -125,15 +125,29 @@ export function initTimezoneSelect(select) {
 
   populateTimezoneSelect(select);
 
+  let deleting = false;
   let ts = new TomSelect(select, {
     create: false,
     maxOptions: null,   // the list is longer than the default limit
     maxItems: 1,
     closeAfterSelect: true,
     sortField: null,    // keep the offset ordering, sorting by label would not
+    // Backspace/Delete clear the selection and fire `change` too, but there the
+    // control must stay open and focused so the user can type a new search right
+    // away. `onDelete` runs before the item is removed, so it can flag the
+    // deletion for the `change` handler below.
+    onDelete: function() { deleting = true; },
   });
   ts.on('change', function() {
     setTomSelectBorder(this);
+    if (deleting) {
+      deleting = false;
+      // Keep the dropdown open with a live caret: Tom Select only shows the
+      // search input while the control is focused.
+      this.open();
+      this.control_input.focus();
+      return;
+    }
     // Drop the focus right after the selection, so the search input is
     // hidden and the control goes back to its compact state immediately.
     this.blur();

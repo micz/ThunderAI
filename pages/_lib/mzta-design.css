@@ -627,6 +627,33 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     color: inherit;
 }
 #mzta_card .ts-dropdown .optgroup { border-top-color: var(--line); }
+/* Keep the caret on the same line as the selected value.
+   `.ts-control` is `display:flex; flex-wrap:wrap`. In a single select the chosen
+   value is a sibling `div.item` (not the input's own text), and the plugin-free
+   vendored CSS styles `.item` only under `plugin-*` selectors, so here it is an
+   unstyled block flex item. Its `min-width` therefore resolves to `auto` = its
+   min-content width, and a model id such as `claude-sonnet-4-5-20250929` is one
+   unbreakable token, so the item cannot shrink; item + input then exceed the
+   control and `flex-wrap` drops the input — and the caret — to a second row.
+   `min-width:0` is what lets it shrink; without it `max-width` is ignored, since
+   the automatic minimum wins over it in flex sizing. (The vendored 7rem minimum
+   on the input is not the cause: it is not !important and these rules outrank
+   it on specificity.) */
+#mzta_card .ts-wrapper.single.has-items .ts-control { flex-wrap: nowrap; }
+#mzta_card .ts-wrapper.single.has-items .ts-control > .item {
+    min-width: 0;               /* defeat the automatic min-content floor */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 0 1 auto;
+}
+/* The input keeps a small but non-zero width so the caret is always visible
+   sitting just after the value, and grows to take the remaining room (which is
+   also the space it needs once the user starts typing a search). */
+#mzta_card .ts-wrapper.single.has-items .ts-control > input {
+    min-width: 4px;
+    flex: 1 1 4px;
+}
 /* CORS warning rows keep a distinct amber note look */
 #connection_ui_table tr[id$="_cors_warning"] td,
 #connection_ui_adv_table tr[id$="_cors_warning"] td {

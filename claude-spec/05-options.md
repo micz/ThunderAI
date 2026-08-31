@@ -227,6 +227,30 @@ The timezone `<select>` shown on the Calendar Event (`pages/get-calendar-event/`
   the user clicks elsewhere; without `closeAfterSelect` the dropdown would linger open. Because the handler
   blurs, the initial `setValue()` that seeds the stored value is passed `true` (silent) — the border is set by
   the explicit `setTomSelectBorder()` call right after it.
+- **The `blur()` applies to a *selection* only.** `change` also fires when Backspace/Delete clear the current
+  value (`onKeyDown` → `deleteSelection()` → `removeItem()` → `change`), and there blurring is wrong: the user
+  wants to delete the value and immediately type a new search, not lose the caret and have to click the control
+  again. Both instances therefore pass an `onDelete` callback — Tom Select calls it from `shouldDelete()`
+  *before* the item is removed, so it runs ahead of `change` — which sets a `deleting` flag that the `change`
+  handler checks: when set, it clears the flag, calls `open()` and focuses `control_input` instead of blurring.
+  The explicit `open()` matters because `deleteSelection()` ends with `refreshOptions(false)`, which does not
+  force the dropdown open, so a Backspace on a focused-but-closed control would otherwise stay closed. Do not
+  swap the focus call for `ts.focus()`: that defers `onFocus()` through a `setTimeout` and sets `ignoreFocus`,
+  needless churn when the control never lost focus. Returning anything but `false` from `onDelete` lets the
+  deletion proceed.
+- **The caret must share the line with the selected value.** `.ts-control` is `display:flex; flex-wrap:wrap`,
+  and in a single select the chosen value is a sibling `div.item`, not the input's own text. The vendored
+  build is the **plugin-free** one, which styles `.item` only under `plugin-*` selectors — so here `.item` is
+  an unstyled block flex item. Its `min-width` therefore resolves to `auto`, i.e. its **min-content width**,
+  and a model id like `claude-sonnet-4-5-20250929` is a single unbreakable token: the item cannot shrink, item
+  plus input overflow the control, and `flex-wrap` drops the input — and the caret — onto a second row.
+  The fix is `min-width: 0` **on the item** (plus `flex-wrap: nowrap` and an ellipsis), applied in both
+  stylesheets that theme Tom Select: `pages/_lib/mzta-design.css` under `#mzta_card`, and
+  `pages/customprompts/mzta-custom-prompts.css` under `#formNew`/`.api_additional_info`.
+  Two traps worth remembering: `max-width` alone does nothing, because the automatic minimum wins over it in
+  flex sizing; and the input must keep a non-zero basis (`flex: 1 1 4px`) or the caret collapses to zero width
+  and becomes invisible. Note the vendored `min-width:7rem` on `.ts-control > input` is *not* the cause — it
+  is not `!important` and both overrides outrank it on specificity.
 - Tom Select theming lives in `pages/_lib/mzta-design.css`, scoped to `#mzta_card` so it covers every select on
   the design-system pages (it used to be scoped to `#connection_ui_table`/`#connection_ui_adv_table`, which left
   other Tom Selects unstyled). The vendored `tom-select.default.min.css` hardcodes light colors, so the control,

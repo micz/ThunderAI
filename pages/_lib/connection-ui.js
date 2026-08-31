@@ -1238,6 +1238,7 @@ export async function injectConnectionUI({
   ['chatgpt_model', 'google_gemini_model', 'ollama_model', 'openai_comp_model', 'anthropic_model'].forEach(id => {
     const el = document.getElementById(getPrefixedId(id));
     if (el && !el.tomselect) {
+      let deleting = false;
       let ts = new TomSelect(el, {
         create: false,
         maxOptions: null,
@@ -1246,10 +1247,23 @@ export async function injectConnectionUI({
         sortField: {
           field: "text",
           direction: "asc"
-        }
+        },
+        // Backspace/Delete remove the selected model and fire `change` too, but
+        // there the control must stay open and focused so the user can type a
+        // new search right away. `onDelete` runs before the item is removed, so
+        // it can flag the deletion for the `change` handler below.
+        onDelete: function() { deleting = true; }
       });
       ts.on('change', function() {
         setTomSelectBorder(this);
+        if (deleting) {
+          deleting = false;
+          // Keep the dropdown open with a live caret: Tom Select only shows the
+          // search input while the control is focused.
+          this.open();
+          this.control_input.focus();
+          return;
+        }
         // Drop the focus right after the selection, so the search input is
         // hidden and the control goes back to its compact state immediately.
         this.blur();

@@ -1551,3 +1551,27 @@ dialog.export::backdrop {
 
 #formNew .ts-dropdown .optgroup,
 .api_additional_info .ts-dropdown .optgroup { border-top-color: var(--border); }
+
+/* Keep the caret on the same line as the selected value — same fix as the
+   options page; see pages/_lib/mzta-design.css for the full explanation. The
+   short version: `.item` is an unstyled block flex item in the plugin-free
+   vendored build, so its automatic `min-width:auto` floor equals the width of
+   the (unbreakable) model id and it refuses to shrink, pushing the input and
+   its caret onto a second row. `min-width:0` removes that floor. */
+#formNew .ts-wrapper.single.has-items .ts-control,
+.api_additional_info .ts-wrapper.single.has-items .ts-control { flex-wrap: nowrap; }
+
+#formNew .ts-wrapper.single.has-items .ts-control > .item,
+.api_additional_info .ts-wrapper.single.has-items .ts-control > .item {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 0 1 auto;
+}
+
+#formNew .ts-wrapper.single.has-items .ts-control > input,
+.api_additional_info .ts-wrapper.single.has-items .ts-control > input {
+    min-width: 4px;
+    flex: 1 1 4px;
+}
