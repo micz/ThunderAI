@@ -401,9 +401,19 @@ export function htmlBodyToPlainText(htmlString) {
 
   removeMozMainHeader(doc.body);
 
-  // remove invisible elements https://stackoverflow.com/questions/39813081/queryselector-where-display-is-not-none
-   // return doc;
-  doc.querySelectorAll('[style*="display:none"]').forEach(e => e.remove());//.querySelector('html').children.not(':visible').remove()
+  // Remove invisible elements (newsletter preheaders, tracking markup) before the
+  // text is read. This was a [style*="display:none"] selector - a literal
+  // SUBSTRING match that missed the spaced `display: none` nearly all mail
+  // emits. The rule now lives in the shared layer, so the interactive extraction
+  // in js/mzta-compose-script.js strips exactly the same things; see
+  // mztaStripHidden in js/lib/mzta-html-lines.js for the full rationale and for
+  // what it deliberately does NOT catch (<style>-block and class rules).
+  //
+  // TEXT only: `doc` is a parse of our own, so msg_text.html - what
+  // {%mail_html_body%} receives, built separately by getMailBody() - keeps its
+  // hidden markup. Do not add this call to getMailBody(): the HTML placeholders
+  // must hand over the message's markup unedited on every path.
+  globalThis.mztaStripHidden(doc.body);
   doc.querySelectorAll('style').forEach(e => e.remove());//.querySelector('html').children.not(':visible').remove()
 
   // The line structure has to be put into the DOM before textContent reads it:

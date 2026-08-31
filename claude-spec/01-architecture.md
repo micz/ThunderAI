@@ -585,7 +585,7 @@ being compact. Every paragraph therefore came out welded to the next one
 (`...quotation below:DMS could be XXXXServer 2TB...`).
 
 The function now inserts real break text nodes into the parsed DOM **before** the `textContent`
-read, by calling `mztaInjectLineBreaks()` after the `display:none` / `<style>` removals. That helper
+read, by calling `mztaInjectLineBreaks()` after the hidden-element / `<style>` removals. That helper
 lives in **`js/lib/mzta-html-lines.js`** and applies three passes:
 
 1. `td, th` → append a **space** (cells separate with a space, not a newline). First, so the block
@@ -614,6 +614,78 @@ injected one) does not gain any. Do not relax the rule to "fix" paragraph spacin
 > `cleanupNewlines()`'s `[ \t]+` → ` ` and `\n{2,}` → `\n` rules run over the whole string.
 > Preserving it verbatim would need a sentinel/restore pass around that chain: new machinery and a
 > new collision failure mode, for an element that is rare in mail.
+
+#### Hidden elements — `mztaStripHidden()`, and why the attribute selector was wrong
+
+Both extractions remove elements hidden by an **inline style** or the **`hidden` attribute** before
+reading the text, through the one shared `mztaStripHidden(root)` in
+`js/lib/mzta-html-lines.js`. It mutates `root` in place (same contract as `mztaInjectLineBreaks`) and
+tests each `[style], [hidden]` element against
+
+```js
+/(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*hidden)\s*(?:;|!|$)/i
+```
+
+`htmlBodyToPlainText()` used to do this with `doc.querySelectorAll('[style*="display:none"]')`, and
+`[style*="…"]` is a **literal substring test** — wrong in *both* directions:
+
+- It matched only the unspaced spelling, so **`display: none`** — the form virtually every mail
+  client, newsletter builder and Word/Outlook export actually emits — sailed straight through, as did
+  any mixed case. Newsletter **preheaders** (the preview blurb written for the inbox list, not the
+  body) and tracking markup therefore landed in `{%mail_text_body%}`, costing tokens and misleading
+  the model about what the mail says.
+- Being unanchored it *also* removed elements whose style merely **ended** in that text, such as the
+  vendor longhand `mso-hide:all;-x-display:none`.
+
+Anchoring on `(?:^|;)` makes it a declaration match; `\s*(?:;|!|$)` tolerates `!important` and a
+trailing `;`. `visibility:hidden` and the `hidden` attribute ride along in the same pass for one
+extra alternation. It is deliberately **not** a CSS parse — inline styles are what mail uses here.
+
+> **Limitation, by design:** an element hidden only by a `<style>` block or an external/class rule is
+> **not** removed. The add-on never resolves CSS — the projection runs on a **detached** DOM with no
+> layout and no computed style (the same reason `innerText` is unusable here) — and `<style>` is
+> already stripped by both callers, so its rules are not even present to consult.
+
+**It is a separate, opt-in pass, NOT part of `mztaInjectLineBreaks()`.** That projection also serves
+the **insertion** side (`mztaHtmlToLines` → `stripHtmlKeepLines`, and `_replaceSelectedText()` in
+`mzta-background.js`), which writes the AI answer *out* to a compose window; dropping content there
+would be silent mangling.
+
+#### The text/HTML rule: stripped from the TEXT, never from the HTML
+
+**Hidden markup is removed from the text placeholders only. `{%mail_html_body%}` and
+`{%mail_html_body_or_selected%}` keep it, on BOTH paths.** This is the deliberate boundary, and it is
+what makes the strip's placement fiddly on the interactive side.
+
+Unlike `<style>`/`<script>` in `MZTA_INJECTED_SELECTORS` — noise in both worlds, so removed from the
+clone itself — a hidden element is **real markup** that an HTML consumer may legitimately want. An
+HTML placeholder's job is to hand over the message's markup; silently editing it is not this fix's
+business.
+
+| | text (`{%mail_text_body%}`) | html (`{%mail_html_body%}`) |
+|---|---|---|
+| Interactive | `getTextBodyHtml()` → **stripped** | `getFullHtml` → `getCleanBodyHtml().innerHTML` — **kept** |
+| Background | `htmlBodyToPlainText()` — **stripped** | `getMailBody().html` — **kept** |
+
+- **Interactive.** `getCleanBodyHtml()` is shared by three message cases, two of them text
+  (`getText`, `getTextOnly`) and one HTML (`getFullHtml`). The strip therefore lives in a thin
+  wrapper, **`getTextBodyHtml()` = `mztaStripHidden(getCleanBodyHtml())`**, called by the two text
+  cases only. Putting it inside `getCleanBodyHtml()` — the obvious-looking spot — silently strips
+  `{%mail_html_body%}` and the diff picker's original side as a side effect, because `getFullHtml`
+  reads that same clone.
+- **Background.** Nothing was needed: `getMailBody()` (`js/mzta-utils.js`) builds `msg_text.html`
+  itself, applying only `removeMozMainHeader()`, and `htmlBodyToPlainText()` parses that string into
+  a **separate** document before stripping. The HTML the placeholder receives is untouched by
+  construction. Do not "align" the two by adding a `mztaStripHidden()` call to `getMailBody()`'s
+  `else` branch — that would break this rule on the background path.
+
+Selections are untouched on every path: `getSelectedHtml` builds its own `div` from the Range rather
+than going through `getCleanBodyHtml()`, and text the user deliberately selected is not hidden to
+them.
+
+`getCleanBodyHtml()`'s orbit had **no** hidden-element handling at all before this, so the
+interactive text extraction kept every preheader the background one dropped — the same
+one-path-fixed-not-the-other split that already bit the line projection twice.
 
 #### Which path actually feeds `{%mail_text_body%}`
 
@@ -666,7 +738,8 @@ classic-script constraint:
   **projection** and the plain-text **normalizer** / **converters**:
   `mztaInjectLineBreaks(node)` / `mztaHtmlNodeToLines(node)` (the projection), `mztaHtmlToLines(str)`
   (string entry point), `mztaNormalizePlain(text, {keepParagraphs, keepColumns})`,
-  `mztaLinesToHtml(text, {mode})`, and the one heuristic `mztaHasLineStructure(html)`. The projection
+  `mztaLinesToHtml(text, {mode})`, `mztaStripHidden(node)` (the hidden-element rule — extraction
+  only, see below) and the one heuristic `mztaHasLineStructure(html)`. The projection
   is **two-tier**: a `<p>` boundary becomes a blank line (`\n\n`), every other block boundary and
   `<br>`/`<hr>` a single `\n`, table cells a space — and `mztaNormalizePlain` picks the outcome
   (default collapses `\n{2,}` for the body contract, `{keepParagraphs}` caps at `\n\n` for insertion,

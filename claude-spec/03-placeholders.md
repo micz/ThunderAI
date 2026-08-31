@@ -100,6 +100,31 @@ Both share **one** projection, `js/lib/mzta-html-lines.js`: `<br>`/`<hr>` → `\
 is useless on the detached clone `getCleanBodyHtml()` returns. They had the same bug twice precisely
 because each used to carry its own copy — do not re-fork it.
 
+**Both also run `mztaStripHidden()` first**, the one hidden-element rule in
+`js/lib/mzta-html-lines.js`: elements carrying an inline `display:none` / `visibility:hidden` (in any
+spacing or case, `!important` included) or the `hidden` attribute are removed before the text is
+read, so newsletter **preheaders** and tracking markup no longer reach `{%mail_text_body%}`. The
+background path did this with a `[style*="display:none"]` selector, a literal substring match that
+missed the spaced `display: none` nearly all mail emits; the interactive path did not do it at all.
+
+Three things it deliberately does **not** do:
+
+1. **It never touches the HTML placeholders.** `{%mail_html_body%}` and
+   `{%mail_html_body_or_selected%}` keep their hidden markup on **both** paths — a hidden element is
+   real markup an HTML consumer may want, unlike the `<style>`/`<script>` noise that is dropped in
+   both worlds. Interactively this is why the strip sits in a `getTextBodyHtml()` wrapper used by the
+   text cases only, and not inside `getCleanBodyHtml()` (which `getFullHtml` also reads); on the
+   background path `getMailBody()` builds `msg_text.html` separately and is untouched by
+   construction. Selections are unaffected everywhere.
+2. **It does not resolve CSS**, so an element hidden only by a `<style>` block or an external class
+   **survives** — there is no layout and no computed style on the detached DOM these run against, and
+   `<style>` is stripped before the text is read anyway.
+3. **It is not applied on the insertion side** (`stripHtmlKeepLines()`), which writes the answer
+   *out*: the strip is an opt-in call, not part of the shared projection.
+
+Full rationale in [01-architecture.md](01-architecture.md) → *Hidden elements* and *The text/HTML
+rule*.
+
 Both then rely on `normalizePlain()` (default — the old `cleanupNewlines`), whose `\n{2,}` → `\n`
 collapse keeps the output blank-line free and lets the projection be blunt without doubling anything:
 the `\n\n` a `<p>` produced, nested blocks, and empty Outlook spacer paragraphs

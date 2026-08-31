@@ -21,6 +21,9 @@
 // js/mzta-richtext.js (an ES module) re-exports everything here through
 // globalThis, and additionally hosts the sanitizer + tag taxonomy.
 //
+// It also carries the ONE hidden-element rule (mztaStripHidden), called by the
+// two EXTRACTION sites only - not by the insertion side.
+//
 // It carries the ONE HTML -> lines projection, shared by:
 //   interactive (menu/popup)  js/mzta-compose-script.js  -> getTextOnly
 //   automatic  (background)   js/mzta-utils.js           -> htmlBodyToPlainText()
@@ -93,6 +96,55 @@ const MZTA_LINE_CELL_SELECTOR = 'td, th';
 // all). Never used to decide the format of a whole message, which has an
 // authoritative source.
 const MZTA_LINE_STRUCTURE_RE = /<\s*(br|p|div|li|ul|ol|tr|table|h[1-6]|pre|blockquote)\b/i;
+
+// ── Hidden elements ──────────────────────────────────────────────────────────
+//
+// Matches the inline-style forms that mean "this element is not shown". Anchored
+// on (?:^|;) so it is a DECLARATION match, not a substring one, and closed with
+// \s*(?:;|!|$) so "display:none !important" and a trailing ";" both count.
+//
+// Why not the CSS attribute selector this replaces:
+//
+//   doc.querySelectorAll('[style*="display:none"]')
+//
+// [style*="..."] is a LITERAL SUBSTRING test. It matches only the unspaced
+// spelling, so `display: none` - the form virtually every mail client,
+// newsletter builder and Word/Outlook export actually emits - sailed straight
+// through, and so did any mixed case. Newsletter preheaders (the preview blurb
+// meant for the inbox list, not the body) and tracking markup therefore landed
+// in {%mail_text_body%}. It was also wrong in the other direction: being
+// unanchored it removed an element whose style merely ENDED in that text, e.g.
+// a vendor longhand like "mso-hide:all;-x-display:none".
+//
+// Deliberately NOT a CSS parse. Inline style attributes are what mail uses for
+// this; anything beyond them needs a real parser for no practical gain.
+const MZTA_HIDDEN_STYLE_RE =
+  /(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*hidden)\s*(?:;|!|$)/i;
+
+// Remove elements hidden by an inline style or the `hidden` attribute, IN PLACE.
+// Same contract as mztaInjectLineBreaks: `root` MUST be a node the caller owns.
+//
+// This is a SEPARATE, OPT-IN pass rather than part of mztaInjectLineBreaks,
+// because that projection also serves the INSERTION side (mztaHtmlToLines ->
+// stripHtmlKeepLines, and _replaceSelectedText in mzta-background.js), which
+// writes the AI answer OUT to a compose window. Dropping content on that path
+// would be silent mangling. Only the two EXTRACTION sites call this:
+// htmlBodyToPlainText() (background) and getCleanBodyHtml() (interactive).
+//
+// LIMITATION, by design: an element hidden only by a <style> block or an
+// external/class rule is NOT removed. We never resolve CSS - the projection runs
+// on a DETACHED DOM with no layout and no computed style, the same reason
+// innerText is unusable here - and <style> is already stripped by both callers,
+// so its rules are not even present to consult.
+function mztaStripHidden(root) {
+  for (const el of root.querySelectorAll('[style], [hidden]')) {
+    if (el.hasAttribute('hidden') ||
+        MZTA_HIDDEN_STYLE_RE.test(el.getAttribute('style') || '')) {
+      el.remove();
+    }
+  }
+  return root;
+}
 
 // Inject the line structure into `root`, IN PLACE, then let the caller read the
 // text out of it.

@@ -53,6 +53,19 @@ function getCleanBodyHtml() {
   return clone;
 }
 
+// The same clone, with hidden elements (newsletter preheaders, tracking markup)
+// also removed - for the TEXT extractions only.
+//
+// Deliberately NOT folded into getCleanBodyHtml(): getFullHtml reads that clone's
+// innerHTML for {%mail_html_body%} and the diff picker's original side, and the
+// HTML placeholders must keep the markup they were given. Hidden markup is
+// stripped from the TEXT, never from the HTML - on any path. Unlike <style>/
+// <script> in MZTA_INJECTED_SELECTORS (which are noise in both worlds), a hidden
+// element is real markup that an HTML consumer may legitimately want.
+function getTextBodyHtml() {
+  return mztaStripHidden(getCleanBodyHtml());
+}
+
 // <p> is Paragraph mode; <div> is Body Text mode. Only <p>-class elements earn a
 // blank line - a <div> is one line - matching how stripHtmlKeepLines() in
 // js/mzta-utils.js treats the same two tags.
@@ -369,7 +382,7 @@ switch (message.command) {
 
   case "getText": {
     let t = '';
-    const children = getCleanBodyHtml().childNodes;
+    const children = getTextBodyHtml().childNodes;
     for (const node of children) {
       if (node instanceof Element) {
         if (node.classList.contains('moz-signature')) {
@@ -389,7 +402,9 @@ switch (message.command) {
       // mztaHtmlNodeToLines() (js/lib/mzta-html-lines.js) is layout-independent
       // by construction and is the same projection htmlBodyToPlainText() uses on
       // the background path.
-      return Promise.resolve(mztaHtmlNodeToLines(getCleanBodyHtml()));
+      // getTextBodyHtml(), not getCleanBodyHtml(): this is the TEXT side, so
+      // hidden elements go. getFullHtml below keeps them.
+      return Promise.resolve(mztaHtmlNodeToLines(getTextBodyHtml()));
   }
 
   case "getFullHtml": {

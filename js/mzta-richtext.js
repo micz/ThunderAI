@@ -138,6 +138,7 @@ export function sanitizeBlockHtml(html) {
 // classic script and never calls these - is unaffected by their absence.
 export const htmlToLines = (html) => globalThis.mztaHtmlToLines(html);
 export const htmlNodeToLines = (node) => globalThis.mztaHtmlNodeToLines(node);
+export const stripHidden = (node) => globalThis.mztaStripHidden(node);
 export const linesToHtml = (text, opts) => globalThis.mztaLinesToHtml(text, opts);
 export const normalizePlain = (text, opts) => globalThis.mztaNormalizePlain(text, opts);
 export const hasLineStructure = (html) => globalThis.mztaHasLineStructure(html);
