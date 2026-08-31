@@ -99,6 +99,11 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
 - Module: `js/api/google_gemini.js`
 - Worker: `js/workers/model-worker-google_gemini.js`
 - Settings keys: `google_gemini_api_key`, `google_gemini_model`, `google_gemini_system_instruction`, `google_gemini_thinking_budget`, `google_gemini_temperature`
+- `thinking_budget` is coerced with `parseInt` and sent as the integer
+  `thinkingConfig.thinkingBudget`; an empty or unparsable value omits the budget and
+  leaves the choice to the model. See
+  [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui) for the
+  `includeThoughts` flag sent alongside it.
 
 ### Anthropic / Claude (`anthropic_api`)
 - Module: `js/api/anthropic.js`
@@ -141,18 +146,31 @@ See [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui) for 
 
 ## Thinking output in the webchat UI
 
-**Detection is automatic and never gated by a preference.** Every API worker forwards
-reasoning content as soon as the corresponding field is present in the stream, so a
-model that reasons on its own — without the connection's thinking option being
-enabled — still shows its thinking block. The per-connection prefs
-(`ollama_think`, `google_gemini_thinking_budget`,
-`anthropic_extended_thinking_budget`, `chatgpt_reasoning_summary`) only *request*
-reasoning from the API; they never decide whether it is displayed.
+**Display is never gated by a preference, but on some providers the request must ask
+for the reasoning in the first place.** Every API worker forwards reasoning content as
+soon as the corresponding field is present in the stream, so a model that reasons on
+its own — without the connection's thinking option being enabled — still shows its
+thinking block. The per-connection prefs (`ollama_think`,
+`google_gemini_thinking_budget`, `anthropic_extended_thinking_budget`,
+`chatgpt_reasoning_summary`) only *request* reasoning from the API; they never decide
+whether it is displayed.
 
-The OpenAI Responses API is the one case where the request pref is effectively
-mandatory: it returns no readable reasoning at all unless `chatgpt_reasoning_summary`
-is set, so with that pref empty the thinking block never appears no matter which
-model is selected.
+Two providers return no readable reasoning unless the request opts in, which makes the
+request side — not the display side — the thing to check when a thinking block never
+appears:
+
+- **OpenAI Responses**: returns nothing readable unless `chatgpt_reasoning_summary` is
+  set, so with that pref empty the thinking block never appears no matter which model
+  is selected.
+- **Google Gemini**: emits `thought: true` parts only when the request carries
+  `generationConfig.thinkingConfig.includeThoughts: true`. Without it the API still
+  reasons and still bills the tokens (visible as `usageMetadata.thoughtsTokenCount`)
+  while the stream carries answer parts only. `js/api/google_gemini.js` therefore sends
+  `includeThoughts` on every request except when `google_gemini_thinking_budget` is `0`,
+  which disables thinking outright — including when the pref is empty, since a
+  thinking-capable model reasoning on its model default must still show its block.
+  `includeThoughts` is independent of `thinkingBudget`: the budget governs how much the
+  model reasons, the flag whether that reasoning comes back.
 
 Reasoning reaches the UI over two transport paths, which can coexist for the same
 provider and are merged into one block:
@@ -167,7 +185,7 @@ tokens, so thinking that arrives before the first content token is not lost.
 | Anthropic | `content_block_delta` with `delta.type === 'thinking_delta'` → `delta.thinking` |
 | Ollama | `message.thinking` |
 | OpenAI Compatible | first present of `delta.reasoning_content` (DeepSeek, vLLM, SGLang), `delta.reasoning` (OpenRouter — string *or* object with `.text`), `delta.thinking` (some llama.cpp / LM Studio builds) |
-| Google Gemini | any `parts[]` entry with `thought === true`. **All** parts are iterated, not just `parts[0]`, because a thought part may come first and would otherwise be mixed into the answer |
+| Google Gemini | any `parts[]` entry with `thought === true`. **All** parts are iterated, not just `parts[0]`, because a thought part may come first and would otherwise be mixed into the answer. These parts only exist if the request sent `includeThoughts` — see above |
 | OpenAI Responses | `response.reasoning_summary_text.delta` and `response.reasoning_text.delta`; as a fallback, the concatenated `item.summary[].text` of a `response.output_item.done` whose `item.type === 'reasoning'`, for models that deliver the summary in one piece instead of streaming deltas. The fallback only fires while `thinkingAccumulator` is still empty, so a summary already received as deltas is never emitted twice. `item.encrypted_content` is always ignored — it is not readable |
 
 **2. Inline `<think>…</think>` tags in the content stream.** Used by models that
