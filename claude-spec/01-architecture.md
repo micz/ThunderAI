@@ -244,10 +244,21 @@ remains the cheap gate that avoids waking the whole pipeline when no automatic f
 **Lazy per-message body fetch.** In the `processEmails()` loop, `browser.messages.getFull()` and
 the body conversion are deferred to two per-iteration helpers, `ensureFullMessage()` and
 `ensureBodyText()`, each idempotent. Every feature awaits the one it needs only after all of its
-own skip checks have passed — add-tags and the spam filter await `ensureBodyText()` right before
-building the prompt / report, summarize and translate await `ensureFullMessage()`. A message
-discarded by the guards is therefore never fetched or converted at all, which matters now that
-the listener reports every folder. `ensureBodyText()` prefers the HTML body converted with
+own skip checks have passed. A message discarded by the guards is therefore never fetched or
+converted at all, which matters now that the listener reports every folder.
+
+**The two helpers are INDEPENDENT.** `ensureBodyText()` used to begin with `await
+ensureFullMessage()`, because the body was extracted from the MIME tree that call returned. It no
+longer does: the body now comes from `getMailInlineTextParts(message.id)`, which needs only the
+message id. Every feature therefore awaits *each* helper it actually uses — add-tags and the spam
+filter await **both** (`ensureFullMessage()` for `headers.subject` and the report metadata,
+`ensureBodyText()` for the prompt), summarize and translate await `ensureFullMessage()`. As it
+happens all four still need the full message for its headers, so this saves no `getFull()` today;
+what it buys is that a future body-only consumer would pay for no MIME fetch, and that neither
+helper silently drags the other in. Dropping the implicit call without adding the two explicit ones
+would have left `curr_fullMessage` null under `headers.subject` — the trap to watch for here.
+
+`ensureBodyText()` prefers the HTML body converted with
 `htmlBodyToPlainText()` and falls back to the whitespace-collapsed plain text part when the HTML
 body is empty. The `finally` block still nulls `curr_fullMessage` / `msg_text` / `body_text` after
 each message.
@@ -517,8 +528,8 @@ collapsing them to spaces leaves the entire body as one run-together line, which
 the model and the diff picker. `getMailBody()` in `js/mzta-menus.js` therefore checks the shape of
 what the content script returned (the shared `hasLineStructure()`): a value holding a block tag or a
 `<br>` is normalized as before, and a value holding neither is rebuilt from its **text** twin with
-`linesToHtml(..., { mode: 'br' })`. Same rule `getMailBody()` in `js/mzta-utils.js` already applies
-to a text/plain-only mail, whose html is synthesized with the same `linesToHtml`.
+`linesToHtml(..., { mode: 'br' })`. Same rule `getMailInlineTextParts()` in `js/mzta-utils.js`
+already applies to a text/plain-only mail, whose html is synthesized with the same `linesToHtml`.
 
 `normalizeHtmlSourceNewlines()` keeps its current behaviour deliberately — the decision belongs at
 the call site, where the source's shape is known, not inside a helper every HTML consumer shares.
@@ -665,7 +676,7 @@ business.
 | | text (`{%mail_text_body%}`) | html (`{%mail_html_body%}`) |
 |---|---|---|
 | Interactive | `getTextBodyHtml()` → **stripped** | `getFullHtml` → `getCleanBodyHtml().innerHTML` — **kept** |
-| Background | `htmlBodyToPlainText()` — **stripped** | `getMailBody().html` — **kept** |
+| Background | `htmlBodyToPlainText()` — **stripped** | `getMailInlineTextParts().html` — **kept** |
 
 - **Interactive.** `getCleanBodyHtml()` is shared by three message cases, two of them text
   (`getText`, `getTextOnly`) and one HTML (`getFullHtml`). The strip therefore lives in a thin
@@ -673,11 +684,11 @@ business.
   cases only. Putting it inside `getCleanBodyHtml()` — the obvious-looking spot — silently strips
   `{%mail_html_body%}` and the diff picker's original side as a side effect, because `getFullHtml`
   reads that same clone.
-- **Background.** Nothing was needed: `getMailBody()` (`js/mzta-utils.js`) builds `msg_text.html`
-  itself, applying only `removeMozMainHeader()`, and `htmlBodyToPlainText()` parses that string into
-  a **separate** document before stripping. The HTML the placeholder receives is untouched by
-  construction. Do not "align" the two by adding a `mztaStripHidden()` call to `getMailBody()`'s
-  `else` branch — that would break this rule on the background path.
+- **Background.** Nothing was needed: `getMailInlineTextParts()` (`js/mzta-utils.js`) builds
+  `msg_text.html` itself, applying only `removeMozMainHeader()`, and `htmlBodyToPlainText()` parses
+  that string into a **separate** document before stripping. The HTML the placeholder receives is
+  untouched by construction. Do not "align" the two by adding a `mztaStripHidden()` call to
+  `getMailInlineTextParts()`'s `else` branch — that would break this rule on the background path.
 
 Selections are untouched on every path: `getSelectedHtml` builds its own `div` from the Range rather
 than going through `getCleanBodyHtml()`, and text the user deliberately selected is not hidden to
@@ -686,6 +697,54 @@ them.
 `getCleanBodyHtml()`'s orbit had **no** hidden-element handling at all before this, so the
 interactive text extraction kept every preheader the background one dropped — the same
 one-path-fixed-not-the-other split that already bit the line projection twice.
+
+#### Where the body comes from — `listInlineTextParts()`, not a `getFull()` walk
+
+The `{text, html}` pair every background consumer starts from is built by
+**`getMailInlineTextParts(messageId)`** (`js/mzta-utils.js`), which asks
+`browser.messages.listInlineTextParts()` for the message's inline text parts: the ones that make up
+the readable content, and precisely the ones `listAttachments()` does **not** return. They arrive as
+a flat array with the content already decoded, so `text/plain` parts concatenate into `text` and
+`text/html` parts into `html` with no tree walk.
+
+It replaced `getMailBody(fullMessage[, messageId])`, which walked the MIME tree from
+`messages.getFull()` via a private `extractTextParts()`. That walk had **three** defects, all fixed
+by the source change rather than patched:
+
+1. **Attachments leaked into the body.** `extractTextParts()` collected *every* `text/*` part in the
+   tree with no content-disposition filter, so an attached `.txt` file and the parts of a forwarded
+   `message/rfc822` were concatenated into the body. The HTML conversion masked this in
+   `{%mail_text_body%}`; `{%mail_plain_text_part%}`, which is verbatim, put the attachment straight
+   into the prompt. **Excluding them is now a guarantee of the API, not a filter of ours** — do not
+   add a content-disposition check back.
+2. **The `messageId` was not passed on the automatic paths.** Only `js/mzta-menus.js` supplied it,
+   so the `getAttachmentFile()` recovery for parts with an empty `body` ran in the reader and never
+   in tagging, the spam filter, summarize or translate. The same message could resolve in one and
+   resolve empty in the other. There is now **one** body read, taking the id everywhere, so the
+   interactive and automatic paths cannot disagree.
+3. **`part.body` was not guaranteed.** It is documented as present only when `getFull()` is asked
+   for it via `decodeContent`; every `getFull()` call site here passes no options and relied on the
+   permissive default. `listInlineTextParts()` returns decoded content by contract.
+
+**Deleted with it:** `extractTextParts()`, `smartDecode()` (the utf-8 → windows-1252 fallback) and
+the sole `browser.messages.getAttachmentFile()` call in the repo — all three existed only to work
+around `getFull()`. `removeMozMainHeader()` stays: `htmlBodyToPlainText()` uses it too.
+
+**Unchanged, deliberately:** the `{text, html}` construction itself. The `html === ""` synthesis via
+`mztaLinesToHtml(text, { mode: 'br' })` and the `else` branch's `DOMParser` +
+`removeMozMainHeader()` + `doc.body.innerHTML` are carried over verbatim, so every placeholder value
+is byte-identical for ordinary mail. In particular `mztaStripHidden()` is still **absent** here — see
+*The text/HTML rule* above.
+
+**Encryption.** The API decrypts by default and omits the parts it cannot decrypt. No distinction is
+lost: the old walk never read `part.decryptionStatus` either (the only mention was a commented-out
+`console.log`), and an undecryptable part contributed nothing usable before.
+
+**Failure mode.** The call is wrapped in try/catch, logging through the file's `console.error`
+house style, and the `text`/`html` construction sits **outside** it — a failed call still yields a
+well-formed `{text: '', html: ''}`, so the callers' `body_text.length == 0` fallbacks behave exactly
+as they do for an empty message. TB 128+ is required and `manifest.json` pins
+`strict_min_version: 140.0`, so it is called unconditionally with no feature check.
 
 #### Which path actually feeds `{%mail_text_body%}`
 

@@ -337,7 +337,11 @@ The translate feature uses a single special prompt (`prompt_translate_this`) for
 - Cached per-message via `taTranslationStore` / `taStorage` (max 100 entries)
 - The prompt was originally a regular prompt (`defaultPrompts`) and was moved to `specialPrompts` with `is_special: "1"` and `type: "1"` (reading email only)
 
-**Prompt Building** — `taPromptUtils.buildTranslationPrompt(fullMessage)`:
+**Prompt Building** — `taPromptUtils.buildTranslationPrompt(fullMessage, messageId)`:
+- `messageId` feeds the body read (`getMailInlineTextParts()`); `fullMessage` supplies the subject
+  header. Callers must pass both — `_generateTranslationForMessage()` therefore carries the id
+  alongside `fullMessage` on **both** of its branches, and its `options.messageData` now requires
+  `message` as well as `fullMessage`.
 - Retrieves the `prompt_translate_this` special prompt text
 - Resolves placeholders via `placeholdersUtils.getPlaceholdersValues()` + `replacePlaceholders()`
 - Returns `{ promptText, promptInfo }`

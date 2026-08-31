@@ -403,8 +403,8 @@ segments to one `<p>` per paragraph — so `buildBlockPairs` pairs nothing and e
 changed. Two live producers hit exactly that shape:
 
 - Thunderbird's HTML compose **"Body Text"** mode separates lines with `<br>` inside one `<div>`.
-- `getMailBody()` in `js/mzta-utils.js` builds the html of a **text/plain-only mail** as
-  `text.replace(/\n/g, "<br>")`.
+- `getMailInlineTextParts()` in `js/mzta-utils.js` builds the html of a **text/plain-only mail**
+  from the plain part's `\n` via `mztaLinesToHtml(text, { mode: 'br' })`.
 
 **`<br>` is deliberately NOT a member of `BLOCK_TAGS`.** That set doubles as "tags `renderBlocks`
 emits as a wrapper" and is spread into `BLOCK_ALLOWED`; `<br>` is void, so it would come back out as

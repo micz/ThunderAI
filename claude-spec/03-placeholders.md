@@ -114,7 +114,7 @@ Three things it deliberately does **not** do:
    real markup an HTML consumer may want, unlike the `<style>`/`<script>` noise that is dropped in
    both worlds. Interactively this is why the strip sits in a `getTextBodyHtml()` wrapper used by the
    text cases only, and not inside `getCleanBodyHtml()` (which `getFullHtml` also reads); on the
-   background path `getMailBody()` builds `msg_text.html` separately and is untouched by
+   background path `getMailInlineTextParts()` builds `msg_text.html` separately and is untouched by
    construction. Selections are unaffected everywhere.
 2. **It does not resolve CSS**, so an element hidden only by a `<style>` block or an external class
    **survives** — there is no layout and no computed style on the detached DOM these run against, and
@@ -183,17 +183,23 @@ this placeholder exists to deliver. The non-breaking space is also left alone he
 `cleanupNewlines()`: this text never met an HTML parser, so a U+00A0 is a character the sender
 really put in the plain part, and in a padded column it is load-bearing.
 
-**Two sources, because there are two `getMailBody`s.** This is the trap:
+**Two sources, because two different things produce `msg_text`.** This is the trap:
 
-| Path | `getMailBody` | `.text` is |
+| Path | Producer | `.text` is |
 |---|---|---|
-| Automatic (spam filter, auto add-tags, summarize, translate) | `js/mzta-utils.js` | already the concatenated `text/plain` parts |
-| Interactive (reader, message list, popup, calendar event, task) | the **local** one in `js/mzta-menus.js` | the content-script DOM scrape, i.e. HTML→text |
+| Automatic (spam filter, auto add-tags, summarize, translate) | `getMailInlineTextParts()` (`js/mzta-utils.js`) | already the concatenated **inline** `text/plain` parts |
+| Interactive (reader, message list, popup, calendar event, task) | the local `getMailBody()` in `js/mzta-menus.js` | the content-script DOM scrape, i.e. HTML→text |
+
+The two names no longer collide — the utils function used to be called `getMailBody` as well and was
+imported here aliased as `getMailBodyFromParts` — but the distinction still matters: one reads the
+message's parts, the other scrapes the rendered DOM.
 
 So the automatic paths need nothing but the resolver arm, while `js/mzta-menus.js` has to fetch
-the parts itself. It does one `browser.messages.getFull()` **guarded on the token being present**
-(`hasPlaceholder(curr_prompt.text, 'mail_plain_text_part')`, the same idiom that path already uses
-for `mail_typed_text`) and puts the result in a distinct `msg_text.plain_part` field. Note
+the parts itself. It does **one** `browser.messages.listInlineTextParts()` call **guarded on the
+token being present** (`hasPlaceholder(curr_prompt.text, 'mail_plain_text_part')`, the same idiom
+that path already uses for `mail_typed_text`) and puts the result in a distinct
+`msg_text.plain_part` field. That used to be a `getFull()` plus a MIME-tree walk; it is now a single
+API call. Note
 `type: 1` does *not* by itself keep this placeholder off the scraper paths — "reading" includes
 the reader and the message list; it only excludes the compose window, where a received MIME part
 has no meaning.
@@ -220,8 +226,12 @@ general: newsletters often ship a stub ("view this message in your browser"), a 
 empty part, or a version out of sync with the HTML. That is precisely why this is an opt-in
 placeholder rather than a change to `{%mail_text_body%}`. Reach for it on Outlook-style business
 mail, ERP/automated notifications and token-sensitive setups — **not** on marketing mail. Also
-note `getMailBody()` **concatenates** every `text/plain` part it finds, so a multipart message can
-yield several bodies run together.
+note `getMailInlineTextParts()` **concatenates** every **inline** `text/plain` part it finds, so a
+multipart message can still yield several bodies run together. What it no longer picks up is
+attachments and forwarded `message/rfc822` parts: those are excluded by
+`listInlineTextParts()` itself, which returns only what `listAttachments()` does not. Before this,
+an attached `.txt` file landed verbatim in the value — see
+[01-architecture.md](01-architecture.md) → *Where the body comes from*.
 
 ### The address placeholders in the compose window
 
@@ -574,7 +584,7 @@ Three things bite when adding one:
   `buildTranslationPrompt()` passes no `body_text` at all. Check the paths your placeholder needs.
 - **`type: 1` means "reading", not "background".** The reader and the message list are reading
   contexts served by the content-script scraper in `js/mzta-menus.js`, which has no access to the
-  MIME parts. A placeholder that needs `messages.getFull()` data must fetch it there itself —
+  message's parts. A placeholder that needs part or header data must fetch it there itself —
   guarded on `hasPlaceholder()` so prompts that do not use it pay nothing. See
   *`mail_text_body` vs `mail_plain_text_part`*.
 

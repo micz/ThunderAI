@@ -19,7 +19,7 @@
 import { placeholdersUtils } from './mzta-placeholders.js';
 import {
     extractJsonObject,
-    getMailBody,
+    getMailInlineTextParts,
     htmlBodyToPlainText,
     cleanupNewlines
 } from './mzta-utils.js';
@@ -152,7 +152,7 @@ export const taPromptUtils = {
 
         const messages_list = [];
         for (let entry of messageDataArray) {
-            const bodyHtml = await getMailBody(entry.fullMessage);
+            const bodyHtml = await getMailInlineTextParts(entry.message.id);
             let bodyText = htmlBodyToPlainText(bodyHtml.html);
             if (bodyText.length === 0) {
                 bodyText = cleanupNewlines(bodyHtml.text || '');
@@ -174,7 +174,9 @@ export const taPromptUtils = {
         return { promptText, promptInfo: prompt };
     },
 
-    async buildTranslationPrompt(fullMessage) {
+    // messageId is needed for the body: getMailInlineTextParts() asks the API for
+    // the inline text parts directly. fullMessage stays for the subject header.
+    async buildTranslationPrompt(fullMessage, messageId) {
         const specialPrompts = await getSpecialPrompts();
         const prompt = specialPrompts.find(p => p.id === 'prompt_translate_this');
 
@@ -183,7 +185,7 @@ export const taPromptUtils = {
             promptText = browser.i18n.getMessage('prompt_translate_this_full_text');
         }
 
-        const bodyHtml = await getMailBody(fullMessage);
+        const bodyHtml = await getMailInlineTextParts(messageId);
         const mailSubject = fullMessage.headers?.subject?.[0] || '';
 
         const finalSubs = await placeholdersUtils.getPlaceholdersValues({

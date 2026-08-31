@@ -41,7 +41,7 @@ import {
     getActiveSpecialPromptsIDs,
     checkSparksPresence,
     getMessages,
-    getMailBody,
+    getMailInlineTextParts,
     extractJsonObject,
     sanitizeChatGPTModelData,
     sanitizeChatGPTWebCustomData,
@@ -1011,7 +1011,8 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
 }
 
 // tabId is optional — if null, runs silently (background pre-cache, no UI update)
-// options.messageData: { fullMessage } — pass pre-fetched data to avoid re-querying
+// options.messageData: { message, fullMessage } — pass pre-fetched data to avoid re-querying.
+//   `message` is required: its .id feeds the body read (getMailInlineTextParts).
 // options.messageId: numeric message id, when the caller has one — see _resolveMessage()
 // options.resolvedMessage: the message object the caller already holds (e.g. from
 //   getDisplayedMessage) — the cheapest route, used by the auto-display paths. See _resolveMessage()
@@ -1047,9 +1048,13 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
         taWorkingStatus.startWorking();
         if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
 
-        let fullMessage;
+        // messageId travels alongside fullMessage on BOTH branches: the body now
+        // comes from getMailInlineTextParts(messageId), so buildTranslationPrompt()
+        // needs the id, not just the parsed message.
+        let fullMessage, curr_messageId;
         if (options.messageData) {
             fullMessage = options.messageData.fullMessage;
+            curr_messageId = options.messageData.message?.id;
         } else {
             const message = await _resolveMessage(headerMessageId, options.messageId, tabId, options.resolvedMessage);
             if (!message) {
@@ -1058,6 +1063,7 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
                 taWorkingStatus.stopWorking();
                 return;
             }
+            curr_messageId = message.id;
             fullMessage = await browser.messages.getFull(message.id);
         }
 
@@ -1073,7 +1079,7 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
             taWorkingStatus.stopWorking();
             return;
         }
-        const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage);
+        const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, curr_messageId);
 
         const cmd = new mzta_specialCommand({
             prompt: promptText,
@@ -1183,7 +1189,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
                 return { success: false };
             }
             message_metadata = _buildReportMetadata(message, curr_fullMessage);
-            msg_text = await getMailBody(curr_fullMessage);
+            msg_text = await getMailInlineTextParts(message.id);
             body_text = htmlBodyToPlainText(msg_text.html);
             if (body_text.length == 0) {
                 body_text = cleanupNewlines(msg_text.text);
@@ -2102,12 +2108,18 @@ async function processEmails(args) {
                 }
             }
 
+            // The body no longer needs the full message: getMailInlineTextParts()
+            // takes the message id and asks the API for the inline text parts
+            // directly, so ensureBodyText() no longer implies ensureFullMessage().
+            // The two are now INDEPENDENT, and every feature awaits what it uses:
+            // as it happens all four still need the full message for headers
+            // (subject / report metadata), so nothing here saves a getFull() today
+            // - but a body-only consumer would now pay for no MIME fetch.
             async function ensureBodyText(){
-                await ensureFullMessage();
                 if (msg_text) {
                     return;
                 }
-                msg_text = await getMailBody(curr_fullMessage);
+                msg_text = await getMailInlineTextParts(message.id);
                 taLog.log("Starting from the HTML body if present and converting to plain text...");
                 body_text = htmlBodyToPlainText(msg_text.html);
                 if( body_text.length == 0 ){
@@ -2170,6 +2182,9 @@ async function processEmails(args) {
                     }
                 }
                 if (!skipAddTags) {
+                    // ensureFullMessage() explicitly: the body no longer implies it,
+                    // and the prompt below reads curr_fullMessage.headers.subject.
+                    await ensureFullMessage();
                     await ensureBodyText();
                     let specialFullPrompt_add_tags = '';
                     let tags_full_list = await getTagsList();
@@ -2240,6 +2255,10 @@ async function processEmails(args) {
                     }
                 }
                 if (!skipSpamFilter) {
+                    // ensureFullMessage() explicitly: the body no longer implies it,
+                    // but _buildReportMetadata() reads fullMessage.headers, so the
+                    // spam report needs the full message for its METADATA.
+                    await ensureFullMessage();
                     await ensureBodyText();
                     await _generateSpamReportForMessage(
                         message.headerMessageId,
@@ -2292,7 +2311,7 @@ async function processEmails(args) {
                     }
                     taLog.log("[ThunderAI] Generating translation for: " + message.headerMessageId);
                     await _generateTranslationForMessage(message.headerMessageId, translateTabId, {
-                        messageData: { fullMessage: curr_fullMessage }
+                        messageData: { message, fullMessage: curr_fullMessage }
                     });
                 }
             }

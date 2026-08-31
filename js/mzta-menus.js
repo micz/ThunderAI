@@ -37,10 +37,12 @@ import {
     getConnectionType,
     isApiUsableConnection,
     getContextMenuIcon,
-    // Aliased: the name getMailBody is already taken in this module by the local
-    // content-script extraction below, which is a different thing entirely - it
-    // scrapes the rendered DOM, this one reads the MIME parts.
-    getMailBody as getMailBodyFromParts,
+    // NOT the local getMailBody() defined below, which is a different thing
+    // entirely: that one scrapes the rendered DOM through the content script,
+    // this one reads the message's inline text parts from the API. The names no
+    // longer collide (this used to be imported as `getMailBodyFromParts`), but
+    // the distinction still matters - see the mail_plain_text_part fetch below.
+    getMailInlineTextParts,
  } from './mzta-utils.js'
 import {
     hasLineStructure,
@@ -289,14 +291,15 @@ export class mzta_Menus {
                     break;
             }
 
-            // {%mail_plain_text_part%} wants the ORIGINAL text/plain MIME part, which
-            // the local getMailBody() above cannot supply: it reads the rendered DOM
+            // {%mail_plain_text_part%} wants the ORIGINAL text/plain part, which the
+            // local getMailBody() above cannot supply: it reads the rendered DOM
             // through the content script, so its .text is the HTML converted to text,
-            // not a MIME part. Fetch the parts explicitly.
+            // not a mail part. Ask the API for the inline text parts explicitly -
+            // ONE call, no getFull() and no MIME-tree walk.
             //
             // Guarded on the token actually being present - the same idiom this path
             // already uses for mail_typed_text - so a prompt that does not use this
-            // placeholder pays for no extra getFull() and is byte-identical to before.
+            // placeholder pays for no extra API call and is byte-identical to before.
             //
             // plain_part is a distinct field, never msg_text.text: the clipboard branch
             // above overwrites .text, and the resolver must be able to tell "no plain
@@ -308,8 +311,7 @@ export class mzta_Menus {
                 msg_text.plain_part = '';
                 if (curr_message && curr_message.id && tabs[0].type !== 'messageCompose') {
                     try {
-                        const curr_fullMessage = await browser.messages.getFull(curr_message.id);
-                        msg_text.plain_part = (await getMailBodyFromParts(curr_fullMessage, curr_message.id)).text;
+                        msg_text.plain_part = (await getMailInlineTextParts(curr_message.id)).text;
                     } catch (e) {
                         this.logger.log("mail_plain_text_part: unable to read the original text/plain part: " + e);
                     }

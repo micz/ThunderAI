@@ -540,8 +540,8 @@ function makeBlock(el, tag, listType = null, sep = null) {
 //
 // A <br> that is a direct child of a block ENDS that block. In a mail body the
 // line structure is frequently carried by <br> alone - Thunderbird's "Body Text"
-// compose mode separates lines that way, and getMailBody() in js/mzta-utils.js
-// builds the html of a text/plain-only mail as text.replace(/\n/g, "<br>") - so
+// compose mode separates lines that way, and getMailInlineTextParts() in
+// js/mzta-utils.js builds the html of a text/plain-only mail from the \n - so
 // without this a whole body segments to ONE block while the markdown-it answer
 // segments to one <p> per paragraph, and the block pairing is meaningless. [#829]
 //

@@ -652,8 +652,9 @@ export const placeholdersUtils = {
                     //
                     // plain_part is the explicit field the interactive path in
                     // js/mzta-menus.js fills (its own msg_text.text is the content-script
-                    // scrape, not a MIME part); .text is the utils getMailBody() result on
-                    // the automatic paths, where it already IS the text/plain part.
+                    // scrape, not a mail part); .text is the getMailInlineTextParts()
+                    // result on the automatic paths, where it already IS the inline
+                    // text/plain part - attachments and forwarded parts excluded.
                     finalSubs['mail_plain_text_part'] = placeholdersUtils.failSafePlaceholders(normalizePlainTextPart(msg_text?.plain_part ?? msg_text?.text));
                     break;
                 case 'mail_typed_text':

@@ -220,55 +220,41 @@ export async function getMailSubject(tab){
   }
 }
 
-function extractTextParts(fullMessage) {
-  const textParts = []
-  function walkParts(parts) {
-    for (const part of parts) {
-      if (part.parts && part.parts.length > 0) {
-        walkParts(part.parts)
-      }
-      // console.log(">>>>>>>>>>>> extractTextParts: part.contentType: " + part.contentType + ", part.decryptionStatus: " + part.decryptionStatus + ", part.body: " + part.body);
-      if (part.contentType && part.contentType.startsWith('text/')) {
-        textParts.push(part)
-      }
-    }
-  }
-  if (fullMessage.parts && fullMessage.parts.length > 0) {
-    walkParts(fullMessage.parts)
-  }
-  return textParts
-}
-
-function smartDecode(buf) {
-  try {
-    return new TextDecoder('utf-8', { fatal: true }).decode(buf);
-  } catch (e) {
-    return new TextDecoder('windows-1252').decode(buf);
-  }
-}
-  
-export async function getMailBody(fullMessage, messageId) {
-  const textParts = extractTextParts(fullMessage);
+// The body comes from listInlineTextParts(), NOT from a walk of getFull()'s MIME
+// tree. The API returns exactly the inline text parts that make up the readable
+// content - the ones listAttachments() does NOT return - as a flat, already
+// decoded array. That is the whole fix: the old walk collected every text/* part
+// in the tree with no content-disposition filter, so an attached .txt file and
+// the parts of a forwarded message/rfc822 were concatenated into the body. The
+// HTML conversion used to mask that in {%mail_text_body%}; {%mail_plain_text_part%},
+// which is verbatim, showed the attachment unaltered in the prompt.
+//
+// It also removes the getFull() dependency entirely, so this needs no fullMessage,
+// no messageId threading for the getAttachmentFile() recovery, and no reliance on
+// part.body being populated (documented as present only when getFull() is asked
+// for it) - three things the old path got wrong on the automatic paths, where the
+// messageId was never passed. See claude-spec/01-architecture.md.
+//
+// Encryption: the API decrypts by default and omits the parts it cannot decrypt.
+// No distinction is lost - the old walk never read part.decryptionStatus either.
+export async function getMailInlineTextParts(messageId) {
   let text = "";
   let html = "";
-  // console.log(">>>>>>>>>>>>>> getMailBody: textParts: " + JSON.stringify(textParts));
-  // console.log(">>>>>>>>>>>>>> getMailBody: fullMessage: " + JSON.stringify(fullMessage));
-  for (const part of textParts) {
-    let body = part.body;
-    if ((body === undefined || body === "") && messageId && part.partName) {
-      const file = await browser.messages.getAttachmentFile(messageId, part.partName);
-      const buf = await file.arrayBuffer();
-      //const buf = new TextDecoder('utf-8').decode(buf);
-      body = smartDecode(buf);
+  try {
+    const parts = await browser.messages.listInlineTextParts(messageId);
+    for (const part of parts ?? []) {
+      if (part.contentType === "text/plain") {
+        text += part.content ?? "";
+      } else if (part.contentType === "text/html") {
+        html += part.content ?? "";
+      }
     }
-    if (part.contentType === "text/plain") {
-      // console.log(">>>>>>>>>>>>>> getMailBody: part.body (TEXT): " + body);
-      text += body ?? "";
-    } else if (part.contentType === "text/html") {
-      // console.log(">>>>>>>>>>>>>> getMailBody: part.body (HTML): " + (body ? body.substring(0, 80) : body));
-      html += body ?? "";
-    }
+  } catch (error) {
+    console.error('[ThunderAI] Error reading the inline text parts [messageId: ', messageId, ']:', error);
   }
+  // Both branches stay OUTSIDE the try/catch: a failed call still yields a
+  // well-formed {text: '', html: ''}, so the callers' body_text.length == 0
+  // fallbacks behave exactly as they do for an empty message.
   if(html === "") {
     // No text/html part: synthesize it from the text/plain part, whose breaks are
     // \n. The ONE text->html converter, shared with every other newline->br site.
@@ -410,9 +396,9 @@ export function htmlBodyToPlainText(htmlString) {
   // what it deliberately does NOT catch (<style>-block and class rules).
   //
   // TEXT only: `doc` is a parse of our own, so msg_text.html - what
-  // {%mail_html_body%} receives, built separately by getMailBody() - keeps its
-  // hidden markup. Do not add this call to getMailBody(): the HTML placeholders
-  // must hand over the message's markup unedited on every path.
+  // {%mail_html_body%} receives, built separately by getMailInlineTextParts() -
+  // keeps its hidden markup. Do not add this call to getMailInlineTextParts():
+  // the HTML placeholders must hand over the message's markup unedited on every path.
   globalThis.mztaStripHidden(doc.body);
   doc.querySelectorAll('style').forEach(e => e.remove());//.querySelector('html').children.not(':visible').remove()
 
