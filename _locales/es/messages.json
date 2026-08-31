@@ -567,7 +567,7 @@
         "message": "Corrija este correo electrónico"
     },
     "prompt_proofread_this_full_text": {
-        "message": "Corrija el siguiente correo electrónico y también corrija cualquier error ortográfico o gramatical. Responda solo con el texto corregido y sin comentarios extra ni otro texto.\n\n\"{%mail_typed_text%}\""
+        "message": "Corrija el siguiente correo electrónico y también corrija cualquier error ortográfico o gramatical. Responda solo con el texto corregido y sin comentarios extra ni otro texto.\n\n\"{%selected_html%}\""
     },
     "placeholder_tags_current_email": {
         "message": "Etiquetas de correo"

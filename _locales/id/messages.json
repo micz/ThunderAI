@@ -629,7 +629,7 @@
         "message": "Periksa email ini"
     },
     "prompt_proofread_this_full_text": {
-        "message": "Periksa email berikut dan perbaiki juga setiap kesalahan ejaan atau tata bahasa. Balas hanya dengan teks yang telah diperbaiki dan tanpa komentar tambahan atau teks lainnya.\n\n\"{%mail_typed_text%}\""
+        "message": "Periksa email berikut dan perbaiki juga setiap kesalahan ejaan atau tata bahasa. Balas hanya dengan teks yang telah diperbaiki dan tanpa komentar tambahan atau teks lainnya.\n\n\"{%selected_html%}\""
     },
     "placeholder_tags_current_email": {
         "message": "Tag email"

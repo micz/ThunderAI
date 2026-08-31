@@ -859,7 +859,7 @@
         "message": "Skoryguj ten email"
     },
     "prompt_proofread_this_full_text": {
-        "message": "Skoryguj poniższy email, oraz popraw wszelkie błędy ortograficzne lub gramatyczne. Niech twoja odpowiedź zawiera wyłącznie skorygowany tekst, bez żadnych komentarzy lub dodatkowego tekstu.\n\n\"{%mail_typed_text%}\""
+        "message": "Skoryguj poniższy email, oraz popraw wszelkie błędy ortograficzne lub gramatyczne. Niech twoja odpowiedź zawiera wyłącznie skorygowany tekst, bez żadnych komentarzy lub dodatkowego tekstu.\n\n\"{%selected_html%}\""
     },
     "placeholder_mail_quoted_text": {
         "message": "Zacytowany tekst w treści maila"

@@ -849,7 +849,7 @@
         "message": "Přijímám data"
     },
     "prompt_proofread_this_full_text": {
-        "message": "Zkontrolujte pravopis a gramatiku následující emailové zprávy a opravte případné chyby. Odpovězte pouze opraveným textem, bez jakýchkoli dalších komentářů nebo textu.\n\n\"{%mail_typed_text%}\""
+        "message": "Zkontrolujte pravopis a gramatiku následující emailové zprávy a opravte případné chyby. Odpovězte pouze opraveným textem, bez jakýchkoli dalších komentářů nebo textu.\n\n\"{%selected_html%}\""
     },
     "ask_chatgptweb_permission_1": {
         "message": "Pro používání integrace ChatGPT Web musíte udělit požadované oprávnění."

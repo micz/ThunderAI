@@ -946,7 +946,7 @@
     "description": ""
   },
   "prompt_proofread_this_full_text": {
-    "message": "Proofread the following email and also correct any spelling or grammar mistakes. Reply with only the corrected text and with no extra comments or other text.\n\n\"{%mail_typed_text%}\"",
+    "message": "Proofread the following email and also correct any spelling or grammar mistakes. Reply with only the corrected text and with no extra comments or other text.\n\n\"{%selected_html%}\"",
     "description": ""
   },
   "placeholder_tags_current_email": {

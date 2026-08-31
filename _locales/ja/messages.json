@@ -713,7 +713,7 @@
         "message": "このメールを校正"
     },
     "prompt_proofread_this_full_text": {
-        "message": "以下のメールを校正し、スペルや文法の誤りを修正してください。修正したテキストのみで、余分なコメントや他のテキストなしで返信してください。\n\n「{%mail_typed_text%}」"
+        "message": "以下のメールを校正し、スペルや文法の誤りを修正してください。修正したテキストのみで、余分なコメントや他のテキストなしで返信してください。\n\n「{%selected_html%}」"
     },
     "placeholder_tags_current_email": {
         "message": "メールタグ"

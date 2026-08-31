@@ -705,7 +705,7 @@
         "message": "Revisar este e-mail"
     },
     "prompt_proofread_this_full_text": {
-        "message": "Revise o seguinte e-mail e corrija também quaisquer erros de ortografia ou gramática. Responda com apenas o texto corrigido e sem comentários extras ou outro texto.\n\n\"{%mail_typed_text%}\""
+        "message": "Revise o seguinte e-mail e corrija também quaisquer erros de ortografia ou gramática. Responda com apenas o texto corrigido e sem comentários extras ou outro texto.\n\n\"{%selected_html%}\""
     },
     "placeholder_tags_current_email": {
         "message": "Tags do e-mail"

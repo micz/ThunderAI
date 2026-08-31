@@ -228,7 +228,7 @@ const defaultPrompts = [
         text: "prompt_proofread_this_full_text",
         type: "2",
         action: "2",
-        need_selected: "0",
+        need_selected: "1",
         need_signature: "0",
         need_custom_text: "0",
         define_response_lang: "1",

@@ -920,7 +920,7 @@
         "message": "校对这封邮件"
     },
     "prompt_proofread_this_full_text": {
-        "message": "请校对以下电子邮件，并纠正任何拼写或语法错误。仅回复更正后的文本，不要包含任何额外评论或其他文字。\n\n“{%mail_typed_text%}”"
+        "message": "请校对以下电子邮件，并纠正任何拼写或语法错误。仅回复更正后的文本，不要包含任何额外评论或其他文字。\n\n“{%selected_html%}”"
     },
     "reset": {
         "message": "重置"

@@ -626,7 +626,7 @@
         "message": "E-mail ellenőrzése (Korrektúra)"
     },
     "prompt_proofread_this_full_text": {
-        "message": "Olvasd át a következő e-mailt, és javítsd ki a helyesírási vagy nyelvtani hibákat. A válasz kizárólag a javított szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül.\n\n\"{%mail_typed_text%}\""
+        "message": "Olvasd át a következő e-mailt, és javítsd ki a helyesírási vagy nyelvtani hibákat. A válasz kizárólag a javított szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül.\n\n\"{%selected_html%}\""
     },
     "placeholder_tags_current_email": {
         "message": "Levél címkéi"
