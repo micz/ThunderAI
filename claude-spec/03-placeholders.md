@@ -286,6 +286,15 @@ dropdown, and is shared by **8 pages**: customprompts, customdataplaceholders, t
 addtags, spamfilter, get-task, get-calendar-event. Suggestions are built from
 `getPlaceholders(true)` mapped through `mapPlaceholderToSuggestion()`.
 
+**Matching.** Case-insensitive **substring** match on the placeholder **id**, not a prefix match on
+the whole token. Prefix matches are listed first, in `suggestions` order, followed by the substring
+matches in the same order (no scoring, no sorting); zero matches closes the list. The `{%` sigil is
+stripped from both the typed token and the command before comparing — it is present on both sides, so
+comparing it as text would only ever match at offset 0 and defeat the search (`{%body` does not occur
+inside `{%mail_text_body%}`, but `body` does). Each match carries the offset at which it was found,
+shifted back into command coordinates, so `render()` can slice the command directly; a bare `{%` still
+offers every type-eligible placeholder.
+
 **Type filtering.** A placeholder is offered only if its `type` equals the prompt's selected type, or
 its type is `0` ("always"). The type is read **lazily on every keystroke**, so changing the selector
 mid-edit takes effect immediately with no re-registration.
@@ -297,8 +306,10 @@ mid-edit takes effect immediately with no re-registration.
   (see `claude-spec/05-options.md`), and a fixed chain silently breaks type filtering, throwing on
   every keystroke inside an `input` handler.
 
-**Insertion.** Accepting a suggestion inserts through `document.execCommand('insertText')`, falling back
-to `setRangeText()` plus a synthetic `input` event. A direct `textarea.value = …` assignment must not be
+**Insertion.** Accepting a suggestion **replaces the whole typed token**: it selects
+`[caret - token.length, caret]` and inserts the full command through `document.execCommand('insertText')`,
+falling back to `setRangeText()` plus a synthetic `input` event. It cannot append just the missing suffix
+(as it did while matching was prefix-only) because a substring match has no appendable suffix. A direct `textarea.value = …` assignment must not be
 used: it discards the native undo stack and fires no `input` event, which leaves the edit-mode highlight
 mirror painting stale text while the caret advances over glyphs that never get repainted. For the same
 reason the list items handle **`mousedown` with `preventDefault()`**, not `click` — a click lets the
@@ -327,8 +338,11 @@ closing over a possibly-removed textarea. Dismissal tests the event against the 
 and list — the old check was `e.target.closest('.editor')`, a class only the two table pages use, so on
 the other six clicking inside the textarea dismissed the list.
 
-**Item presentation.** Each `<li>` shows the token in monospace with the already-typed prefix in `<b>`,
-plus a muted second line with the placeholder description. `mapPlaceholderToSuggestion()` was extended
+**Item presentation.** Each `<li>` shows the token in monospace with the **matched run** in `<b>` — at
+whatever offset it was found, not necessarily the leading prefix; the `{%` sigil always renders plain,
+outside the bold run, since it is not what the user is matching on. `render()`'s length argument counts
+the typed characters *after* `{%`, to agree with those offsets. Each item also carries a muted second
+line with the placeholder description. `mapPlaceholderToSuggestion()` was extended
 **additively** with `id` and `label`; `label` resolves `__MSG_key__` names via `browser.i18n.getMessage()`
 (built-in placeholders store raw tokens, and `mzta-i18n.js` only localizes the DOM). An item with no
 `label` renders the command alone, so any consumer building suggestion objects by hand still works.

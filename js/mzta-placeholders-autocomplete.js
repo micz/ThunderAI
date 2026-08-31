@@ -22,6 +22,9 @@ import { getEditorHighlight } from './mzta-editor-highlight.js';
 // the trigger test and the insertion agree on what is being replaced.
 const TRIGGER_RE = /{%[^\s]*$/;
 
+// Length of the '{%' sigil that opens every token and every command.
+const SIGIL = 2;
+
 const GAP = 4;          // px between the caret and the list
 const MIN_SPACE = 120;  // px of room below the caret before flipping above
 
@@ -127,26 +130,33 @@ export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
         autocompleteList.style.left = left + 'px';
     }
 
-    function render(matches, typedLength) {
+    // typedIdLength counts the typed characters *after* '{%', matching the
+    // offsets onInput() computes; the sigil is rendered plain, outside the bold
+    // run, because it is not what the user is matching on.
+    function render(matches, typedIdLength) {
         autocompleteList.replaceChildren();
         current = matches;
         activeIndex = -1;
 
-        matches.forEach((s, index) => {
+        matches.forEach(({ s, at }, index) => {
             const li = document.createElement('li');
             li.id = autocompleteList.id + '_opt' + index;
             li.setAttribute('role', 'option');
             li.setAttribute('aria-selected', 'false');
-            // The typed prefix is bold so it is obvious what is being matched.
+            // The matched run is bold so it is obvious what is being matched.
+            // It is not necessarily the head of the command: matching accepts a
+            // substring, so the run starts at the offset onInput() found.
             // Built through the DOM rather than an HTML string: suggestion
             // commands and labels are user data (custom placeholders), so no
             // escaping step can be forgotten here.
             const cmd = document.createElement('span');
             cmd.className = 'ac_cmd';
+            const end = at + typedIdLength;
             const typed = document.createElement('b');
-            typed.textContent = s.command.slice(0, typedLength);
+            typed.textContent = s.command.slice(at, end);
+            cmd.appendChild(document.createTextNode(s.command.slice(0, at)));
             cmd.appendChild(typed);
-            cmd.appendChild(document.createTextNode(s.command.slice(typedLength)));
+            cmd.appendChild(document.createTextNode(s.command.slice(end)));
             li.appendChild(cmd);
             if (s.label && s.label !== s.command) {
                 const desc = document.createElement('span');
@@ -200,7 +210,7 @@ export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
         if (current.length === 0) return false;
         const index = activeIndex === -1 ? 0 : activeIndex;
         if (index < 0 || index >= current.length) return false;
-        insertAutocomplete(current[index].command);
+        insertAutocomplete(current[index].s.command);
         close();
         return true;
     }
@@ -211,20 +221,24 @@ export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
         const match = textBefore.match(TRIGGER_RE);
         if (!match) return;
 
-        const completion = command.substring(match[0].length);
+        // Replace the whole typed token rather than appending a completion: a
+        // substring match has no appendable suffix, and selecting the token
+        // first lets the insertion below overwrite it in one step.
+        const start = cursorPosition - match[0].length;
         // Insert through the editing host rather than assigning .value: a direct
         // assignment wipes the native undo stack and fires no 'input' event,
         // which would leave the highlight mirror painting stale text while the
         // caret advances over glyphs that are never repainted.
         textarea.focus();
-        if (!document.execCommand('insertText', false, completion)) {
-            textarea.setRangeText(completion, cursorPosition, cursorPosition, 'end');
+        textarea.setSelectionRange(start, cursorPosition);
+        if (!document.execCommand('insertText', false, command)) {
+            textarea.setRangeText(command, start, cursorPosition, 'end');
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
         }
         // Dynamic placeholders complete to '{%id:%}': leave the caret before the
         // ':%}' so the value can be typed straight away.
         const back = command.endsWith(':%}') ? 2 : 0;
-        const newCursorPosition = cursorPosition + completion.length - back;
+        const newCursorPosition = start + command.length - back;
         textarea.setSelectionRange(newCursorPosition, newCursorPosition);
     }
 
@@ -247,13 +261,33 @@ export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
             const type_select = tr ? tr.querySelector('.type_output') : null;
             if (type_select) type = type_select.value;
         }
-        const matches = suggestions.filter(s => s.command.startsWith(lastWord)
-            && (String(s.type) === String(type) || String(s.type) === '0'));
+        // Case-insensitive substring match, with the prefix matches first so
+        // typing an id from its start behaves exactly as it always has. Each
+        // entry carries the match offset in the command, since the highlight is
+        // no longer necessarily at the head of it. Order inside each bucket is
+        // the incoming suggestions order, which getPlaceholders() chose.
+        //
+        // The '{%' sigil is stripped from both sides before comparing: it is
+        // part of lastWord and of every command, so searching for it as text
+        // would only ever match at offset 0 and defeat the substring search
+        // ('{%body' does not occur inside '{%mail_text_body%}', but 'body'
+        // does). Offsets are shifted back by SIGIL so render() can slice the
+        // command directly.
+        const needle = lastWord.slice(SIGIL).toLowerCase();
+        const prefixed = [];
+        const contained = [];
+        for (const s of suggestions) {
+            if (String(s.type) !== String(type) && String(s.type) !== '0') continue;
+            const at = s.command.slice(SIGIL).toLowerCase().indexOf(needle);
+            if (at < 0) continue;
+            (at === 0 ? prefixed : contained).push({ s, at: at + SIGIL });
+        }
+        const matches = prefixed.concat(contained);
         if (matches.length === 0) {
             if (isOpen()) close();
             return;
         }
-        render(matches, lastWord.length);
+        render(matches, needle.length);
     }
 
     function onKeydown(e) {
