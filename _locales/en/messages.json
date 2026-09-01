@@ -2577,6 +2577,10 @@
       "message": "Failed to generate summary",
       "description": ""
   },
+  "summarize_error_no_message_id": {
+      "message": "Could not read the message: the summary would have been generated from the subject only.",
+      "description": "Shown in the summary panel when the message id is missing, so the message body cannot be read"
+  },
   "summarize_click_to_generate": {
       "message": "Click here to generate a summary",
       "description": ""
@@ -2728,6 +2732,10 @@
   "translate_error": {
     "message": "Translation failed.",
     "description": ""
+  },
+  "translate_error_no_message_id": {
+    "message": "Could not read the message: the translation would have been generated from the subject only.",
+    "description": "Shown in the translation panel when the message id is missing, so the message body cannot be read"
   },
   "translate_no_language_configured": {
     "message": "Translation language is not configured. Please set a language in the Translation settings or set a default language in the General settings.",

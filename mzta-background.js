@@ -953,6 +953,18 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
         if (options.messageData) {
             message = options.messageData.message;
             fullMessage = options.messageData.fullMessage;
+            // buildSummaryPrompt() reads message.id to fetch the body, so a caller
+            // passing only { fullMessage } would summarize an EMPTY body - subject
+            // present, so the result looks plausible - and cache it as valid. Treated
+            // exactly like the !message case below: same error panel, same store.
+            if (!message?.id) {
+                taLog.error('[ThunderAI] Summary: options.messageData has no message.id - callers must pass { message, fullMessage }.');
+                const errorMsg = browser.i18n.getMessage('summarize_error_no_message_id');
+                await summaryStore.saveError(headerMessageId, errorMsg);
+                await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: errorMsg } });
+                taWorkingStatus.stopWorking();
+                return;
+            }
         } else {
             message = await _resolveMessage(headerMessageId, options.messageId, tabId, options.resolvedMessage);
             if (!message) {
@@ -1055,6 +1067,21 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
         if (options.messageData) {
             fullMessage = options.messageData.fullMessage;
             curr_messageId = options.messageData.message?.id;
+            // The ?. above is what keeps a caller passing only { fullMessage } from
+            // throwing - but an undefined id reaches getMailInlineTextParts() and comes
+            // back as an empty body, so the translation would be built from the subject
+            // alone and then CACHED as a good result. The optional chaining is there to
+            // avoid a crash, not to make a missing message acceptable: bail out exactly
+            // like the !message branch below, so the user sees the error panel instead of
+            // a translation of the subject line.
+            if (!curr_messageId) {
+                taLog.error('[ThunderAI] Translation: options.messageData has no message.id - callers must pass { message, fullMessage }.');
+                const errorMsg = browser.i18n.getMessage('translate_error_no_message_id');
+                await translationStore.saveError(headerMessageId, errorMsg);
+                await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { error: true, message: errorMsg } });
+                taWorkingStatus.stopWorking();
+                return;
+            }
         } else {
             const message = await _resolveMessage(headerMessageId, options.messageId, tabId, options.resolvedMessage);
             if (!message) {

@@ -152,6 +152,18 @@ export const taPromptUtils = {
 
         const messages_list = [];
         for (let entry of messageDataArray) {
+            // entry.message is REQUIRED: its .id is what reads the body now that
+            // getMailInlineTextParts() asks the API directly, instead of walking the
+            // fullMessage the caller used to supply. An entry carrying only
+            // { fullMessage } - the shape this loop silently accepted before - would
+            // sail past getMailInlineTextParts()'s own try/catch and summarize an EMPTY
+            // body, with the subject still there so the result reads as plausible.
+            // Say so instead of degrading in silence, and skip the entry rather than
+            // contribute a bodyless block to the prompt.
+            if (!entry?.message?.id) {
+                console.error('[ThunderAI] buildSummaryPrompt: skipping an entry with no message.id - the body cannot be read without it. Entry:', entry);
+                continue;
+            }
             const bodyHtml = await getMailInlineTextParts(entry.message.id);
             let bodyText = htmlBodyToPlainText(bodyHtml.html);
             if (bodyText.length === 0) {
@@ -183,6 +195,14 @@ export const taPromptUtils = {
         let promptText = prompt.text;
         if (promptText === 'prompt_translate_this_full_text') {
             promptText = browser.i18n.getMessage('prompt_translate_this_full_text');
+        }
+
+        // No messageId means no body: getMailInlineTextParts() would throw on an
+        // undefined id and swallow it in its own try/catch, returning {text:'',html:''}.
+        // The translation would then be built from the SUBJECT alone and cached as a
+        // valid result - the failure is invisible downstream, so it is named here.
+        if (!messageId) {
+            console.error('[ThunderAI] buildTranslationPrompt: called with no messageId - the message body will be empty. The caller must pass it alongside fullMessage.');
         }
 
         const bodyHtml = await getMailInlineTextParts(messageId);
