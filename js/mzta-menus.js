@@ -242,6 +242,24 @@ export class mzta_Menus {
             let selection_html = msg_text.selection_html;
             let only_typed_text = '';
             let only_quoted_text = '';
+            // Every field of msg_text arrived ALREADY normalized: getMailBody() above
+            // runs normalizePlain() on each one as it is built - the default flags for
+            // .text and .selection (the {%mail_text_body%} contract: CRLF->LF, both
+            // spellings of the non-breaking space -> ' ', \n{2,} -> \n), and
+            // { keepParagraphs } for the two compose extractions, whose blank lines are
+            // part of what the user typed. Same normalizer the automatic path in
+            // mzta-background.js uses, so the two paths do NOT diverge. The flag table
+            // lives at mztaNormalizePlain in js/lib/mzta-html-lines.js.
+            //
+            // The .replace()/.trim() below are therefore REDUNDANT, not a second pass:
+            // normalizePlain's default already ends with these exact two rules, both
+            // idempotent. They are kept because they are harmless, not because anything
+            // depends on them - do not "complete" them into a full normalizePlain() call
+            // here, which would only be a no-op dressed up as a fix.
+            //
+            // They also cannot break { keepParagraphs }: [ \t]+ does not match \n, so
+            // the blank lines inside only_typed_text/only_quoted_text survive. Only the
+            // .trim() touches them, and only at the very start and end of the string.
             only_typed_text = msg_text.only_typed_text.replace(/[ \t]+/g, ' ').trim();
             selection_text = msg_text.selection.replace(/[ \t]+/g, ' ').trim();
             if(selection_text === ''){
