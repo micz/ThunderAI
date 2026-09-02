@@ -195,13 +195,15 @@ async function handleShortcut(tab) {
     }    
 }
 
-function preparePopupMenu(tab) {
+export function preparePopupMenu(tab) {
+    const safeTab = (tab && typeof tab === 'object') ? tab : { id: null, type: "mail" };
+    const tabType = safeTab.type || "mail";
     let output = {};
-    output.lastShortcutTabId = tab.id;
-    output.lastShortcutTabType = tab.type;
-    output.lastShortcutPromptsData = menus.shortcutMenu;
+    output.lastShortcutTabId = safeTab.id ?? null;
+    output.lastShortcutTabType = tabType;
+    output.lastShortcutPromptsData = (typeof menus !== 'undefined' && menus?.shortcutMenu) ? menus.shortcutMenu : [];
     output.lastShortcutFiltering = 0;
-    switch (tab.type) {
+    switch (tabType) {
         case "mail":
         case "messageDisplay":
             output.lastShortcutFiltering = 1;
@@ -210,11 +212,14 @@ function preparePopupMenu(tab) {
             output.lastShortcutFiltering = 2;
             break;
         default:
+            output.lastShortcutFiltering = 0;
             break;
     }
     // Snapshot of the batch processing state, so the popup can offer a "Stop processing"
     // button when a batch (auto add-tags / spamfilter / summarize / translate) is running.
-    output.batchStatus = taBatchController.getStatus();
+    output.batchStatus = (typeof taBatchController !== 'undefined' && taBatchController?.getStatus)
+        ? taBatchController.getStatus()
+        : { working: false, processed: 0 };
     return output;
 }
 
@@ -752,12 +757,19 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
             case 'popup_menu_ready':
                 async function _popup_menu_ready() {
-                    let tabs = await browser.tabs.query({ active: true, currentWindow: true });
-                    if(tabs.length == 0){
+                    let tabs = [];
+                    try {
+                        tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                        if (!tabs || tabs.length === 0) {
+                            tabs = await browser.tabs.query({ active: true, lastFocusedWindow: true });
+                        }
+                    } catch (e) {
+                        taLog.error("Error querying tabs for popup_menu_ready: " + e);
+                    }
+                    if (!tabs || tabs.length === 0) {
                         return false;
                     }
                     return preparePopupMenu(tabs[0]);
-                    //return true;
                 }
                 return _popup_menu_ready();
                 break;
