@@ -94,7 +94,7 @@
     << All the API settings defined in the default options, with the same IDs. >>
 */
 
-import { integration_options_config } from "../../options/mzta-options-default.js";
+import { integration_options_config } from "../options/mzta-options-default.js";
 
 // The five boolean-ish prompt flags documented above. Canonical representation
 // is the string "0"/"1" -- that is what the definitions below declare, and what
