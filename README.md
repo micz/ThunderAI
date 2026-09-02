@@ -1,6 +1,6 @@
 # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI
 
-> Use ChatGPT, Google Gemini, Claude or Ollama to enhance your emails!
+*Use ChatGPT, Google Gemini, Claude or Ollama to enhance your emails!*
 
 [![Thunderbird Add-ons](https://img.shields.io/badge/Thunderbird%20Add--ons-install-blue?logo=thunderbird)](https://addons.thunderbird.net/thunderbird/addon/thunderai/)
 [![Thunderbird 140.0+](https://img.shields.io/badge/Thunderbird-140.0%2B-informational?logo=thunderbird)](https://www.thunderbird.net/)
@@ -16,9 +16,10 @@ You can also define, export and import your own **[custom prompts](https://micz.
 
 Install ThunderAI from the [Thunderbird Add-on site](https://addons.thunderbird.net/thunderbird/addon/thunderai/), or download the last release from the [release page](https://github.com/micz/ThunderAI/releases).
 
-**Requirements:** Thunderbird **140.0** or later.
+> [!NOTE]
+> **Requirements:** Thunderbird **140.0** or later.
 
-On first run a **Setup Wizard** guides you through choosing an AI provider, testing the connection and enabling the automatic features — no manual configuration needed. You can launch it again at any time from the welcome page, the toolbar popup or the settings page.
+On first run a **Setup Wizard** guides you through choosing an AI provider, testing the connection and enabling the automatic features, no manual configuration needed. You can launch it again at any time from the welcome page, the toolbar popup or the settings page.
 
 ## Features
 
