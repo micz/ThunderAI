@@ -198,9 +198,6 @@ export function searchPrompt(allPrompts, tabId, tabType, filtering){
        itemDiv.appendChild(itemLabel);
 
        itemDiv.setAttribute('data-id', item.id);
-       if(item.is_special == "1"){
-         itemDiv.className += ' special_prompt';
-       }
 
        // Add a mousedown event to select the item
        itemDiv.addEventListener('mousedown', function(e) { // Use mousedown instead of click

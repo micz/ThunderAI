@@ -82,10 +82,6 @@ body {
       background-color: #e9e9e9;
   }
 
-  .special_prompt{
-    background-color: #cfe9ff;
-  }
-  
   #mzta_batch_stop{
     width: 100%;
     box-sizing: border-box;
@@ -186,10 +182,6 @@ body {
     .mzta_autocomplete-item-active {
         background-color: #444444;
     }
-
-    .special_prompt{
-        background-color: #353542;
-      }
 
     #mzta_batch_stop{
         border-bottom: 1px solid #444444;

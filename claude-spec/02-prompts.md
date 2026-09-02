@@ -195,7 +195,7 @@ To give a new default prompt a shipped icon, drop the PNG in `images/context_men
 ### Popup Menu
 - Displays prompts filtered by `show_in` (`"popup"` or `"both"`) and by tab context (`type` property: reading view shows types `0`+`1`, compose view shows types `0`+`2`)
 - Ordering: always position-based using `position_display` (reading view) or `position_compose` (compose view). Alphabetical ordering has been removed
-- Special prompts retain their colored background (CSS class `special_prompt`) in the popup based on `is_special == "1"`
+- Special prompts get **no** distinct visual treatment here: `is_special` does not affect row styling, so they render exactly like default and custom prompts (the icon is what identifies a prompt visually). The "special" badge exists only on the Menu Order page (`badge_special`). Removing the former `special_prompt` background also fixed a cascade bug where it overrode `:hover` and `.mzta_autocomplete-item-active`, leaving special rows with no hover or keyboard-selection feedback
 - Icons: each row shows the prompt's icon, resolved by `getContextMenuIcon()` and passed through in `addShortcutMenu()` as `custom_icon`. Each prompt shows its `custom_icon` if set, otherwise its built-in icon (see Icon Resolution). Icons here are **display-only** — they are chosen on the Menu Order page. The 16px slot is always rendered (blank via `.mzta_item_icon_empty` when there is no icon) so labels stay aligned
 
 ### Context Menu
