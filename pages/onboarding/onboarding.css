@@ -219,6 +219,57 @@ h2 {
   transform: scale(1.05);
 }
 
+#wizard_banner {
+  /* Keep the whole box — border included — clear of the absolutely positioned
+     #onboarding_doc_panel, which is opaque and would otherwise cover the
+     banner's right edge. Shrinking the box (not just its padding) is what
+     keeps the border visible. */
+  width: auto;
+  align-self: stretch;
+  margin-inline-end: 230px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px 14px;
+  padding: 16px 20px;
+  margin-bottom: 1.5em;
+  background: light-dark(#e7f1ff, #16324f);
+  border: 1px solid light-dark(#0a84ff, #3a6ea5);
+  border-inline-start: 4px solid #0a84ff;
+  border-inline-end: 4px solid #0a84ff;
+  border-radius: 10px;
+  text-align: start;
+  font-size: 16px;
+  color: light-dark(#333, #f4f4f5);
+  z-index: 1;
+  position: relative;
+}
+#wizard_banner a {
+  color: light-dark(#0a84ff, #6cb4ff);
+  font-weight: bold;
+  text-decoration: none;
+  white-space: nowrap;
+}
+#wizard_banner a:hover {
+  text-decoration: underline;
+}
+
+/* No AI connection selected yet: same blue banner, just more prominent.
+   Deliberately not red — nothing is broken, the user simply has to choose. */
+#wizard_banner.wizard_banner_urgent {
+  font-weight: bold;
+  box-shadow: 0px 2px 12px 0px rgba(10, 132, 255, 0.25);
+}
+
+@media (max-width: 700px) {
+  #wizard_banner {
+    margin-inline-end: 0;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
 #onboarding_doc_panel {
   position: absolute;
   top: 20px;
