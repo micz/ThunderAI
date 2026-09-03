@@ -67,8 +67,8 @@
         <div class="mzta_section">
           <div id="mzta_conn_panel">
             <div id="mzta_conn_panel_header">
-              <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
               <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
+              <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
             </div>
             <table id="connection_ui_table">
               <tbody>
@@ -90,14 +90,28 @@
               <span id="mzta_conn_test_text" class="conn_test_text">__MSG_connTest_idle__</span>
               <a href="#" id="mzta_conn_test_link" class="conn_test_link">__MSG_connTest_link_test__</a>
             </div>
+            <!-- Provider setup note (accent bar tinted with the selected provider's colour) -->
+            <div id="miczDescription">
+              <p>
+                <span class="conntype_chatgpt_web info_specific">__MSG_prefsInfoDesc_1__</span>
+                <span class="conntype_chatgpt_api info_specific">__MSG_prefsInfoDesc_2__</span>
+                <span class="conntype_ollama_api info_specific">__MSG_prefsInfoDesc_3__</span>
+                <span class="conntype_openai_comp_api info_specific">__MSG_prefsInfoDesc_4__</span>
+                <span class="conntype_google_gemini_api info_specific">__MSG_prefsInfoDesc_7__</span>
+                <span class="conntype_anthropic_api info_specific">__MSG_prefsInfoDesc_8__</span>
+                <!-- Moved inline into the active provider's span by updateDescription(),
+                     which also sets the href and hides it when there is no guide. -->
+                <a id="mzta_info_guide" href="#" style="display:none;">__MSG_prefs_full_guide__ &rsaquo;</a>
+              </p>
+            </div>
           </div>
         </div>
 
         <div class="mzta_divider"></div>
 
-        <!-- BASICS SETTINGS -->
+        <!-- BASIC SETTINGS -->
         <div class="mzta_section">
-          <div class="mzta_eyebrow">__MSG_prefs_BasicsSettingsTitle__</div>
+          <div class="mzta_eyebrow">__MSG_prefs_BasicSettingsTitle__</div>
           <div style="display:flex;flex-direction:column;gap:14px;">
             <div class="mzta_field_row">
               <div class="mzta_field">
@@ -277,27 +291,57 @@
               <span class="mzta_help">__MSG_prefs_OptionText_special_command_timeout_Info__</span>
             </div>
 
-            <!-- Behaviour checkboxes -->
-            <label class="mzta_adv_check">
-              <input type="checkbox" id="dynamic_menu_force_enter" name="dynamic_menu_force_enter" class="option-input" />
-              <span>__MSG_prefs_OptionText_dynamic_menu_force_enter__ — __MSG_prefs_OptionText_dynamic_menu_force_enter_info__</span>
-            </label>
-            <label class="mzta_adv_check">
-              <input type="checkbox" id="placeholders_use_default_value" name="placeholders_use_default_value" class="option-input" />
-              <span>__MSG_prefs_OptionText_placeholders_use_default_value__ — __MSG_prefs_OptionText_placeholders_use_default_value_info__</span>
-            </label>
-            <label class="mzta_adv_check">
-              <input type="checkbox" id="hide_thinking" name="hide_thinking" class="option-input" />
-              <span>__MSG_prefs_OptionText_hide_thinking__ — __MSG_prefs_OptionText_hide_thinking_info__</span>
-            </label>
-            <label class="mzta_adv_check">
-              <input type="checkbox" id="composing_plain_text" name="composing_plain_text" class="option-input" />
-              <span>__MSG_prefs_OptionText_composing_plain_text__ — __MSG_prefs_OptionText_composing_plain_text_Info__</span>
-            </label>
-            <label class="mzta_adv_check">
-              <input type="checkbox" id="do_debug" name="do_debug" class="option-input" />
-              <span>__MSG_Debug__ — __MSG_prefs_OptionText_do_debug_info__</span>
-            </label>
+            <!-- Behaviour toggles -->
+            <div class="mzta_adv_row">
+              <div class="mzta_adv_info">
+                <div class="mzta_adv_name">__MSG_prefs_OptionText_dynamic_menu_force_enter__</div>
+                <div class="mzta_adv_desc">__MSG_prefs_OptionText_dynamic_menu_force_enter_info__</div>
+              </div>
+              <label class="mzta_switch">
+                <input type="checkbox" id="dynamic_menu_force_enter" name="dynamic_menu_force_enter" class="option-input" />
+                <span class="track"></span>
+              </label>
+            </div>
+            <div class="mzta_adv_row">
+              <div class="mzta_adv_info">
+                <div class="mzta_adv_name">__MSG_prefs_OptionText_placeholders_use_default_value__</div>
+                <div class="mzta_adv_desc">__MSG_prefs_OptionText_placeholders_use_default_value_info__</div>
+              </div>
+              <label class="mzta_switch">
+                <input type="checkbox" id="placeholders_use_default_value" name="placeholders_use_default_value" class="option-input" />
+                <span class="track"></span>
+              </label>
+            </div>
+            <div class="mzta_adv_row">
+              <div class="mzta_adv_info">
+                <div class="mzta_adv_name">__MSG_prefs_OptionText_hide_thinking__</div>
+                <div class="mzta_adv_desc">__MSG_prefs_OptionText_hide_thinking_info__</div>
+              </div>
+              <label class="mzta_switch">
+                <input type="checkbox" id="hide_thinking" name="hide_thinking" class="option-input" />
+                <span class="track"></span>
+              </label>
+            </div>
+            <div class="mzta_adv_row">
+              <div class="mzta_adv_info">
+                <div class="mzta_adv_name">__MSG_prefs_OptionText_diff_granularity__</div>
+                <div class="mzta_adv_desc">__MSG_prefs_OptionText_diff_granularity_info__</div>
+              </div>
+              <select id="diff_granularity" name="diff_granularity" class="option-input">
+                <option value="words">__MSG_prefs_OptionText_diff_granularity_words__</option>
+                <option value="sentences">__MSG_prefs_OptionText_diff_granularity_sentences__</option>
+              </select>
+            </div>
+            <div class="mzta_adv_row">
+              <div class="mzta_adv_info">
+                <div class="mzta_adv_name">__MSG_Debug__</div>
+                <div class="mzta_adv_desc">__MSG_prefs_OptionText_do_debug_info__</div>
+              </div>
+              <label class="mzta_switch">
+                <input type="checkbox" id="do_debug" name="do_debug" class="option-input" />
+                <span class="track"></span>
+              </label>
+            </div>
 
             <!-- Storage -->
             <div class="mzta_storage_row">
@@ -308,31 +352,33 @@
           </div>
         </div>
 
-        <!-- IMPORTANT INFORMATION -->
-        <div id="miczDescription">
-          <h1>__MSG_prefsInfoTitle__</h1>
-          <p>
-            <span class="conntype_chatgpt_web info_specific">__MSG_prefsInfoDesc_1__ <a id="miczStatusPage" href="https://micz.it/thunderbird-addon-thunderai/status/">__MSG_prefs_status_page__</a></span>
-            <span class="conntype_chatgpt_api info_specific">__MSG_prefsInfoDesc_2__</span>
-            <span class="conntype_ollama_api info_specific">__MSG_prefsInfoDesc_3__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]</span>
-            <span class="conntype_openai_comp_api info_specific">__MSG_prefsInfoDesc_4__</span>
-            <span class="conntype_google_gemini_api info_specific">__MSG_prefsInfoDesc_7__</span>
-            <span class="conntype_anthropic_api info_specific">__MSG_prefsInfoDesc_8__</span>
-            <span class="info_shared">__MSG_prefsInfoDesc_5__ __MSG_prefsInfoDesc_6__</span>
-          </p>
-        </div>
+        <!-- BOTTOM BLOCK: disclaimer + shortcut row · footer -->
+        <div id="mzta_bottom">
 
-        <!-- LLM disclaimer strip -->
-          <div id="mzta_disclaimer">
-            <svg class="mzta_disclaimer_icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-            <span>__MSG_prefs_disclaimer__ <a href="https://micz.it/thunderbird-addon-thunderai/privacy/">__MSG_prefs_privacy_more_info__</a></span>
+          <!-- Disclaimer on one line, keyboard shortcut centered below it -->
+          <div id="mzta_info_row">
+
+            <!-- LLM disclaimer line -->
+            <div id="mzta_disclaimer">
+              <svg class="mzta_disclaimer_icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              <span>__MSG_prefs_disclaimer_short__ <a href="https://micz.it/thunderbird-addon-thunderai/privacy/">__MSG_prefs_privacy_more_info__</a></span>
+            </div>
+
+            <!-- Keyboard shortcut strip — chips are refreshed from browser.commands by updateShortcutChips() -->
+            <div id="mzta_shortcut_strip">
+              <span class="mzta_shortcut_label">__MSG_prefs_shortcut_label__</span>
+              <span id="mzta_shortcut_keys"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>A</kbd></span>
+            </div>
+
           </div>
 
-        <!-- FOOTER -->
-        <div id="mzta_footer">
-          <div id="miczTranslate">__MSG_TranslateText__ <a href="https://micz.it/thunderbird-addon-thunderai/translate/">__MSG_TranslateLink__</a></div>
-          <div id="miczDonation">__MSG_prefsDonation_1__ <a href="http://micz.it/thunderbird-addon-thunderai/donate/">__MSG_prefsDonation_2__</a></div>
-          <div id="miczRelNotes"><a href="mzta-release-notes.html">__MSG_prefs_OptionText_release_notes__</a></div>
+          <!-- FOOTER — plain links, no introductory sentences -->
+          <div id="mzta_footer">
+            <a id="miczTranslate" href="https://micz.it/thunderbird-addon-thunderai/translate/">__MSG_prefs_footer_translate__</a>
+            <a id="miczDonation" href="https://micz.it/thunderbird-addon-thunderai/donate/">__MSG_prefs_footer_donate__</a>
+            <a id="miczRelNotes" href="mzta-release-notes.html">__MSG_prefs_OptionText_release_notes__</a>
+          </div>
+
         </div>
 
       </div>

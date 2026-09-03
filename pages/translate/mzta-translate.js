@@ -27,22 +27,29 @@ import {
 } from "../../js/mzta-prompts.js";
 import {
     getPlaceholders,
-    mapPlaceholderToSuggestion
-} from "../../js/mzta-placeholders.js";
+    mapPlaceholderToSuggestion, placeholdersUtils } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import { attachEditorHighlight, makeTokenStateResolver } from "../../js/mzta-editor-highlight.js";
 import {
   normalizeStringList,
   isAPIKeyValue,
-  setTomSelectBorder
+  setTomSelectBorder,
+  isApiUsableConnection
 } from "../../js/mzta-utils.js";
 import {
-  initializeSpecificIntegrationUI
+  initializeSpecificIntegrationUI,
+  isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
+import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 
 let autocompleteSuggestions = [];
+let activePlaceholders = [];
 let taLog = new taLogger("mzta-translate-page", true);
 
 document.addEventListener("DOMContentLoaded", async () => {
+
+    // Warn before leaving the page with unsaved textarea text.
+    initUnsavedGuard();
 
     let specialPrompts = await getSpecialPrompts();
     let translate_prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_translate_this');
@@ -50,6 +57,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (translate_prompt && translate_prompt.api_type && translate_prompt.api_type !== '') {
         let update_prefs = {};
         update_prefs['translate_connection_type'] = translate_prompt.api_type;
+        // getConnectionType() reads the prefixed connection type only when this flag is on,
+        // so writing the pair one half at a time leaves the value inert. It matters for the
+        // call sites that pass prompt = null (the menu gating in mzta-background.js and the
+        // feature row in mzta-options.js): they have no prompt to fall back on, so the pref
+        // pair is the only way they can see the per-feature connection.
+        // Only for a usable api_type: chatgpt_web has no <option> in the per-prompt select and
+        // isApiUsableConnection() rejects it, so the pair would read as "on" while the feature
+        // stayed hidden from the menus.
+        if (isApiUsableConnection(translate_prompt.api_type)) {
+            update_prefs['translate_use_specific_integration'] = true;
+        }
 
         let integration = translate_prompt.api_type.replace('_api', '');
         if (integration_options_config && integration_options_config[integration]) {
@@ -121,10 +139,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     translate_textarea.value = translate_prompt.text;
     translate_reset_btn.disabled = (translate_textarea.value === browser.i18n.getMessage("prompt_translate_this_full_text"));
 
-    autocompleteSuggestions = (await getPlaceholders(true))
+    // Full list, kept for token validation. Deliberately NOT filtered like the
+    // suggestions: {%additional_text%} is a real placeholder that this page simply
+    // does not offer, so the editor must not flag it as unknown.
+    activePlaceholders = await getPlaceholders(true);
+    autocompleteSuggestions = activePlaceholders
         .filter((p) => p.id !== "additional_text")
         .map(mapPlaceholderToSuggestion);
 
+    const translate_textarea_hl = attachEditorHighlight(translate_textarea);
+    // Flags unknown and unterminated tokens. Type 1 ("reading"),
+    // matching the type_value passed to textareaAutocomplete below.
+    if (translate_textarea_hl) translate_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(translate_textarea, autocompleteSuggestions, 1);
 
 });
@@ -173,7 +200,12 @@ function saveOptions(e) {
         break;
       case 'select-one':
         if (element.id === 'translate_auto') {
-          options[element.id] = parseInt(element.value, 10);
+          // An empty select (selectedIndex === -1) parses to NaN, which storage.sync
+          // serializes as null — and a stored null is *not* replaced by the default in
+          // storage.sync.get(), so the value stays outside the 0..3 range forever and
+          // every === comparison downstream silently fails. Fall back to the default.
+          let parsed = parseInt(element.value, 10);
+          options[element.id] = Number.isNaN(parsed) ? prefs_default.translate_auto : parsed;
         } else {
           options[element.id] = element.value;
         }
@@ -215,14 +247,16 @@ async function restoreOptions() {
             }
             const restoreValue = result[element.id] ?? default_select_value;
             let optionExists = Array.from(element.options).some(opt => opt.value === String(restoreValue));
+            // Never synthesize an option for a connection select: its catalogue is closed.
+            let canSynthesize = !isClosedCatalogueSelect(element.id);
             if (element.tomselect) {
-              if (!optionExists && restoreValue !== '') {
+              if (!optionExists && restoreValue !== '' && canSynthesize) {
                 element.tomselect.addOption({ value: String(restoreValue), text: String(restoreValue) });
               }
               element.tomselect.setValue(String(restoreValue), true);
               setTomSelectBorder(element.tomselect);
             } else {
-              if (!optionExists && restoreValue !== '') {
+              if (!optionExists && restoreValue !== '' && canSynthesize) {
                 let newOption = new Option(restoreValue, restoreValue);
                 element.add(newOption);
               }
@@ -247,7 +281,12 @@ async function restoreOptions() {
       if (translate_prompt.api_type && translate_prompt.api_type !== '') {
           getting['translate_connection_type'] = translate_prompt.api_type;
       } else {
-          getting['translate_connection_type'] = getting['connection_type'];
+          // Inherit the global connection only when this select can actually offer it:
+          // chatgpt_web has no <option> here (it has no API), so inheriting it would show
+          // a value the control cannot represent. Leave it blank instead.
+          getting['translate_connection_type'] = isApiUsableConnection(getting['connection_type'])
+              ? getting['connection_type']
+              : '';
       }
       for (const [integration, options] of Object.entries(integration_options_config)) {
           for (const key of Object.keys(options)) {

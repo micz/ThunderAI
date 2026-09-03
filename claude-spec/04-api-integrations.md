@@ -32,10 +32,16 @@ Controlled via `js/mzta-chatgpt.js`. Opens a browser window to `chatgpt.com`, in
 
 Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view support.
 
+**The ChatGPT Web setting rows carry unprefixed element ids and are injected only when `no_chatgpt_web` is falsy.** In `injectConnectionUI()` (`pages/_lib/connection-ui.js`) every provider field id is prefixed with `modelId_prefix`, *except* the ChatGPT Web rows (`chatgpt_web_model`, `chatgpt_web_project`, `chatgpt_web_custom_gpt`, `chatgpt_web_tempchat`, `chatgpt_web_load_wait_time`, `btnChatGPTWeb_Tab`): on the options page and in the setup wizard the element id **is** the pref key (`saveOptions` writes `options[element.id]`), so prefixing them there would break persistence. Because bare ids can exist only once per page, those rows are emitted only for the two global consumers, which pass no `no_chatgpt_web`. Every per-prompt and per-feature panel passes `no_chatgpt_web: true` — it never offers the `chatgpt_web` option anyway, and the custom prompts page injects once per add-form plus once per edited row, which previously produced N+1 duplicates of those ids (misbound listeners, and one `btnChatGPTWeb_Tab` click opening N+1 tabs). Consequently the three lookups on those ids are guarded (`if (!no_chatgpt_web)` / optional chaining) — an unguarded lookup would throw on null and abort the rest of the injection, breaking every feature page.
+
+Per-prompt ChatGPT Web overrides are a separate, unrelated mechanism: the custom prompts page renders its **own** in-page `chatgpt_web_*` fields (not injected), which are the ones actually persisted onto the prompt and consumed by `openChatGPT()`.
+
 ### OpenAI API (`chatgpt_api`)
 - Module: `js/api/openai_responses.js`
 - Worker: `js/workers/model-worker-openai_responses.js`
-- Settings keys: `chatgpt_api_key`, `chatgpt_model`, `chatgpt_developer_messages`, `chatgpt_temperature`, `chatgpt_store`
+- Settings keys: `chatgpt_api_key`, `chatgpt_model`, `chatgpt_developer_messages`, `chatgpt_temperature`, `chatgpt_store`, `chatgpt_reasoning_summary`, `chatgpt_reasoning_effort`, `chatgpt_extra_body`
+- **Extra body data**: see [Extra body data](#extra-body-data-chatgpt_extra_body--openai_comp_extra_body).
+- **Reasoning**: the request body adds `reasoning: { summary, effort }` with only the sub-properties that are set; when both prefs are empty the key is omitted entirely, because models without reasoning support reject it. `chatgpt_reasoning_summary` (`''` | `auto` | `detailed`) is what makes the API emit a readable summary — without it the reasoning item carries only the opaque `encrypted_content` and no thinking block can be shown. `chatgpt_reasoning_effort` (`''` | `minimal` | `low` | `medium` | `high`) tunes how much the model reasons. Note that older reasoning models (o1-pro, o3-mini) never expose a summary even when one is requested. See [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui).
 
 ### Ollama (`ollama_api`)
 - Module: `js/api/ollama.js`
@@ -46,30 +52,220 @@ Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view sup
 ### OpenAI-Compatible (`openai_comp_api`)
 - Module: `js/api/openai_comp.js`
 - Worker: `js/workers/model-worker-openai_comp.js`
-- Settings keys: `openai_comp_host`, `openai_comp_model`, `openai_comp_api_key`, `openai_comp_use_v1`, `openai_comp_chat_name`, `openai_comp_temperature`
-- Pre-configured providers: `js/api/openai_comp_configs.js` (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity — `custom` is the default/manual entry)
+- Settings keys: `openai_comp_host`, `openai_comp_model`, `openai_comp_api_key`, `openai_comp_use_v1`, `openai_comp_chat_name`, `openai_comp_temperature`, `openai_comp_extra_body`
+- Pre-configured providers: `js/api/openai_comp_configs.js` (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity — `custom` is the default/manual entry). The presets carry only `id`, `name`, `chat_name`, `host`, `use_v1` — there is deliberately no per-preset extra body data.
+- **Extra body data**: see [Extra body data](#extra-body-data-chatgpt_extra_body--openai_comp_extra_body).
+
+### Extra body data (`chatgpt_extra_body` / `openai_comp_extra_body`)
+
+An escape hatch for request parameters ThunderAI does not expose (disabling a server's thinking
+mode, `top_p`, provider-proprietary fields). The pref holds a **raw JSON string** entered by the
+user in the Advanced options of the connection panel; `parseExtraBody()` in
+`js/api/api-utils.js` turns it into an object at request time.
+
+- **Only these two providers.** Ollama, Gemini and Anthropic build differently-shaped bodies and
+  have no such field.
+- **Core parameters are protected.** The parsed object is spread **first** in the request body
+  literal (`openai_comp.js` `fetchResponse`, `openai_responses.js` `request_body`), so everything
+  ThunderAI manages — `model`, `messages`/`input`, `stream`, `temperature`, `max_tokens`,
+  `reasoning`, `instructions` — always wins. A wrong entry cannot change the model or break the
+  streaming. `instructions` in `openai_responses.js` is assigned after the literal, which keeps it
+  protected for the same reason.
+- **Invalid input is ignored, never fatal.** `parseExtraBody()` returns `{}` for a blank string,
+  malformed JSON, or a non-object (array / scalar / `null`), logging a `console.warn`. This is
+  required because the options UI validation is advisory only: `saveOptions` persists the value
+  regardless, so the API class must tolerate garbage.
+- `api-utils.js` must stay free of WebExtension and DOM dependencies — it is pulled into the Web
+  Workers through the API classes. This is why the helper does not live in `js/mzta-utils.js`.
+- UI: a `textarea.option-input.option-textarea.check-json` row marked `conn_adv` in
+  `pages/_lib/connection-ui.js`, followed by a `div.json_error` whose id is the field's id plus
+  `_error`.
+- **Inline error reporting.** `checkJsonField()` writes the reason into that div via
+  `textContent` (never `innerHTML` — Thunderbird review) and toggles its `hidden` attribute, plus
+  the red border. A red border alone cannot tell the user *what* is wrong, so for a parse failure
+  the raw `error.message` is appended to `prefs_extra_body_error_invalid`: it carries the position
+  of the offending character (e.g. a trailing comma in `{"top_p": 0.9,}` reports position 14). A
+  valid-JSON-but-not-an-object value gets `prefs_extra_body_error_not_object` instead. Styling:
+  `.json_error` in `pages/_lib/connection-ui.css`, colored by the `--jsonError` token (defined for
+  both themes in `pages/_lib/mzta-design.css`, red rather than amber `--warning` because the value
+  is unusable, not merely a caveat).
+- Two entry points: `warn_InvalidJson` on `input` (bound with the `.check-number` listeners), and
+  the exported `checkJsonFields()` sweep, which must run **after** the fields are populated —
+  called in `options/mzta-options.js` after `restoreOptions()` and inside
+  `initializeSpecificIntegrationUI()` after its restore callback, so a malformed value saved by an
+  earlier session is flagged on load instead of looking fine until touched.
 
 ### Google Gemini (`google_gemini_api`)
 - Module: `js/api/google_gemini.js`
 - Worker: `js/workers/model-worker-google_gemini.js`
 - Settings keys: `google_gemini_api_key`, `google_gemini_model`, `google_gemini_system_instruction`, `google_gemini_thinking_budget`, `google_gemini_temperature`
+- `thinking_budget` is coerced with `parseInt` and sent as the integer
+  `thinkingConfig.thinkingBudget`; an empty or unparsable value omits the budget and
+  leaves the choice to the model. See
+  [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui) for the
+  `includeThoughts` flag sent alongside it.
 
 ### Anthropic / Claude (`anthropic_api`)
 - Module: `js/api/anthropic.js`
 - Worker: `js/workers/model-worker-anthropic.js`
-- Settings keys: `anthropic_api_key`, `anthropic_model`, `anthropic_version`, `anthropic_max_tokens`, `anthropic_system_prompt`, `anthropic_temperature`, `anthropic_extended_thinking_budget`
-- **Extended thinking**: when `anthropic_extended_thinking_budget > 0`, the request body adds `thinking: { type: 'enabled', budget_tokens: N }` and **omits** `temperature` (the Claude API forbids setting temperature with extended thinking). Thinking output arrives in the SSE stream as `content_block_delta` events with `delta.type === 'thinking_delta'` and is forwarded to the webchat UI as `newThinkingToken` messages, captured into a `thinkingAccumulator` in the worker and passed on `tokensDone`.
+- Settings keys: `anthropic_api_key`, `anthropic_model`, `anthropic_version`, `anthropic_max_tokens`, `anthropic_system_prompt`, `anthropic_temperature`, `anthropic_extended_thinking_budget`, `anthropic_effort`
+- **Capability table** (`js/api/anthropic_model_capabilities.js`): which request parameters a Claude
+  model accepts depends on the model, and sending one it rejects is a hard 400 — not a silently
+  ignored field. `getAnthropicModelCapabilities(modelId)` matches by **model ID prefix** (so dated
+  variants such as `claude-sonnet-4-5-20250929` resolve to their family, longest prefix first) and
+  returns `{thinkingModes, supportsBudgetTokens, supportsSamplingParams, supportsEffort,
+  effortLevels, defaultThinking}`, plus `disabledThinkingMaxEffort` on the one model that needs it.
+  An unknown ID — users can type any model name — falls back to `ANTHROPIC_MODERN_CAPABILITIES`,
+  deliberately assuming the *modern* contract: a stale setting then degrades to a valid request,
+  whereas assuming the legacy contract would send `temperature`/`budget_tokens` and earn a 400.
+  **The table must be updated as new models ship.**
+- **Request body construction** is entirely driven by that table, and every field is opt-in:
+  - `temperature` is sent only when `supportsSamplingParams` and the user set a value. It is now
+    **independent of the thinking configuration** — the old rule that extended thinking suppressed
+    temperature no longer holds, because on newer models temperature is rejected outright regardless.
+  - `thinking: {type:'enabled', budget_tokens: N}` only when `supportsBudgetTokens` and N > 0.
+  - `thinking: {type:'disabled'}` only where it changes something — i.e. `defaultThinking === 'adaptive'`
+    (newer models think unless told not to, which silently eats `max_tokens` and truncates the reply).
+    On models that already default to no thinking the field stays omitted, so their request bodies are
+    byte-identical to what they were before the table existed.
+  - `output_config: {effort}` only when `supportsEffort` and the level is valid for that model.
+    Omitted when the level equals `ANTHROPIC_DEFAULT_EFFORT` (`high`), which is the API default —
+    kept behind that named constant so it is easy to change.
+  - Any other combination omits the field entirely. **A configuration that is impossible for the
+    selected model degrades to a valid request, never to a 400.** Stored prefs are never rewritten:
+    the user may switch back to an older model, so incompatibility is resolved at request-build time
+    (here) and at display time (the options page disables the field with a note).
+- **400 error hints**: `describeAnthropicError(detail, model, i18nStrings)` inspects a 400 body and,
+  when the message names `temperature` / `top_p` / `top_k` / `thinking.type` / `budget_tokens` /
+  `effort`, prepends a localized hint naming the incompatible option; otherwise the raw detail is
+  returned unchanged. It takes `i18nStrings` as a parameter because it runs inside a Web Worker,
+  where `browser.i18n` is unavailable — the same threading already used for
+  `anthropic_api_request_failed`.
+
+See [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui) for how the resulting stream is surfaced.
 
 ## Thinking output in the webchat UI
 
-Two provider categories emit reasoning/thinking content:
+**Display is never gated by a preference, but on some providers the request must ask
+for the reasoning in the first place.** Every API worker forwards reasoning content as
+soon as the corresponding field is present in the stream, so a model that reasons on
+its own — without the connection's thinking option being enabled — still shows its
+thinking block. The per-connection prefs (`ollama_think`,
+`google_gemini_thinking_budget`, `anthropic_extended_thinking_budget`,
+`chatgpt_reasoning_summary`) only *request* reasoning from the API; they never decide
+whether it is displayed.
 
-- **OpenAI Compatible**: thinking arrives inline in the normal token stream wrapped in `<think>…</think>` tags. `StreamingMessage.flush()` (in `api_webchat/streamingMessage.js`) strips these blocks from the rendered text; `renderThinkingBlock()` (in `api_webchat/thinkingBlock.js`) renders them as a `<details class="thinking-block">` prepended to the answer. If an unterminated `<think>` is detected mid-stream, the flush is deferred until the closing tag arrives.
-- **Ollama / Anthropic**: thinking is captured in the worker as a dedicated field (`message.thinking` for Ollama, `thinking_delta` events for Anthropic) and posted to the controller as `newThinkingToken`. `StreamingMessage` accumulates it and it is rendered into the same `<details>` block on final flush. Ollama's reasoning is enabled by the `ollama_think` pref, which sets `think: true` on the request.
+Two providers return no readable reasoning unless the request opts in, which makes the
+request side — not the display side — the thing to check when a thinking block never
+appears:
+
+- **OpenAI Responses**: returns nothing readable unless `chatgpt_reasoning_summary` is
+  set, so with that pref empty the thinking block never appears no matter which model
+  is selected.
+- **Google Gemini**: emits `thought: true` parts only when the request carries
+  `generationConfig.thinkingConfig.includeThoughts: true`. Without it the API still
+  reasons and still bills the tokens (visible as `usageMetadata.thoughtsTokenCount`)
+  while the stream carries answer parts only. `js/api/google_gemini.js` therefore sends
+  `includeThoughts` on every request except when `google_gemini_thinking_budget` is `0`,
+  which disables thinking outright — including when the pref is empty, since a
+  thinking-capable model reasoning on its model default must still show its block.
+  `includeThoughts` is independent of `thinkingBudget`: the budget governs how much the
+  model reasons, the flag whether that reasoning comes back.
+
+Reasoning reaches the UI over two transport paths, which can coexist for the same
+provider and are merged into one block:
+
+**1. Dedicated stream field → `newThinkingToken`.** The worker accumulates the
+content in a `thinkingAccumulator` (also sent on `tokensDone`) and posts each token
+to the controller. `StreamingMessage` accumulates them independently of content
+tokens, so thinking that arrives before the first content token is not lost.
+
+| Provider | Stream field / event |
+|----------|----------------------|
+| Anthropic | `content_block_delta` with `delta.type === 'thinking_delta'` → `delta.thinking` |
+| Ollama | `message.thinking` |
+| OpenAI Compatible | first present of `delta.reasoning_content` (DeepSeek, vLLM, SGLang), `delta.reasoning` (OpenRouter — string *or* object with `.text`), `delta.thinking` (some llama.cpp / LM Studio builds) |
+| Google Gemini | any `parts[]` entry with `thought === true`. **All** parts are iterated, not just `parts[0]`, because a thought part may come first and would otherwise be mixed into the answer. These parts only exist if the request sent `includeThoughts` — see above |
+| OpenAI Responses | `response.reasoning_summary_text.delta` and `response.reasoning_text.delta`; as a fallback, the concatenated `item.summary[].text` of a `response.output_item.done` whose `item.type === 'reasoning'`, for models that deliver the summary in one piece instead of streaming deltas. The fallback only fires while `thinkingAccumulator` is still empty, so a summary already received as deltas is never emitted twice. `item.encrypted_content` is always ignored — it is not readable |
+
+**2. Inline `<think>…</think>` tags in the content stream.** Used by models that
+have no dedicated field (Ollama without `ollama_think`, several OpenAI-compatible
+servers). `StreamingMessage.flush()` extracts and strips these via the shared
+`stripThinkTags()` helper in `js/mzta-utils.js`. If an unterminated `<think>` is
+detected mid-stream, the flush is deferred until the closing tag arrives (that guard
+lives in `streamingMessage.js`, not in the helper).
+
+The helper's third argument, `trimLeading` (default `false`), drops the whitespace a
+removed block leaves at the start of the text. It is only correct for callers passing
+the **whole** response. The streaming flush passes a single *segment*, so it must leave
+it off: the space opening a segment is interior to the answer once the segments are
+concatenated into `_htmlRawText`, and trimming it welds the last word of the previous
+segment to the first word of this one (`"il"` + `" body"` → `"ilbody"`). Because the
+flush fires on any token containing `\n`, the segment boundary — and therefore the
+damage — lands at positions that depend on the provider's chunking rather than on the
+answer's content, which is what makes such a bug read as intermittent.
+
+Both paths are combined into `combinedThinking` and rendered by
+`renderThinkingBlock()` (`api_webchat/thinkingBlock.js`) as a
+`<details class="thinking-block">` prepended to the answer. Nothing is rendered when
+there is no thinking content.
+
+### Live "Thinking…" indicator
+
+The `<details>` block only materializes at flush time, so a long reasoning phase
+would otherwise leave an empty turn on screen. On every `newThinkingToken`,
+`handleNewThinkingToken()` calls `_showThinkingIndicator()`, which appends a
+`<div class="thinking-live">` to the current bot turn body: the animated
+`images/mzta-thinking.svg` as an `<img>` in the slot the `<summary>` disclosure
+triangle will occupy, followed by `prefs_OptionText_thinking_summary` + a literal
+`...`. All the motion is inside the SVG, so the row itself carries no CSS
+animation (and needs no reduced-motion override). It is a **sibling** of the
+accumulating message, not a child, so the per-`\n` flush cycle cannot orphan or
+duplicate it; re-appending also moves it back to the end when thinking resumes
+after a rendered segment.
+
+The status pill's two in-flight states follow the same pattern, each with its own
+self-animating SVG loaded as an `<img>`: `showWaitingStatus()` uses
+`images/mzta-waiting-server.svg` (a dot emitting expanding rings) and
+`showStreamingStatus()` uses `images/mzta-loading.svg` (three bouncing dots).
+Because the motion lives in the SVG, the pill carries no CSS animation and the
+icon centres itself inside the fixed-size `#statusLoggerIcon` box. Both icons are
+rebuilt only on the transition *into* their state — the show methods can be called
+repeatedly (`showStreamingStatus()` runs on every token), and replacing the node
+each time would restart the SVG's animation and freeze it at frame 0. The static
+states (`done` → check, `error` → alert) use the inline builders in `svgIcons.js`,
+which stroke in `currentColor`. `_setStatusClass()` clears **all** state classes,
+including `status-waiting`, so no in-flight styling can leak onto the done or
+error pill.
+
+`_removeThinkingIndicator()` swaps it out in `flushAccumulatingMessage()`, right
+after the deferred-flush early return (which must keep the indicator alive) and
+before `renderThinkingBlock()`, so the placeholder and the real block are never on
+screen together. It is also called from `handleTokensDone()` (a response made only
+of thinking tokens never creates an accumulating message, so the flush is a no-op),
+`appendUserMessage()`, and `appendBotMessage()` (error path). `hide_thinking` does
+not affect the indicator — it only governs the final block's initial state.
+Inline-`<think>` models never post `newThinkingToken` and so get no indicator.
 
 See the [API WebChat](01-architecture.md#api-webchat-api_webchat) section for the module structure behind this.
 
-The global `hide_thinking` pref (default `true`) controls the **initial open/collapsed state** of the thinking block: `true` → collapsed, `false` → open. The user can always toggle by clicking. Thinking content is never discarded. Other providers (Google Gemini, OpenAI Responses, ChatGPT Web) are not affected by this UI logic.
+The global `hide_thinking` pref (default `true`) controls **only the initial
+open/collapsed state** of the block: `true` → collapsed, `false` → open. The user can
+always toggle by clicking, and thinking content is never discarded. ChatGPT Web uses
+no API worker and is unaffected.
+
+### Thinking in special commands
+
+Special commands (`mzta_specialCommand`) *parse* the response instead of displaying
+it, so reasoning must never reach the resolved value:
+
+- `newThinkingToken` messages are explicitly discarded and never appended to `full_message`.
+- Inline `<think>` blocks are stripped from `full_message` with
+  `stripThinkTags(text, true, true)` before the promise resolves. The second flag drops
+  a dangling unterminated `<think>` (a truncated reply) rather than handing raw
+  reasoning to the caller's parser. The third enables the leading-whitespace trim, which
+  is safe here because `full_message` is the whole response — unlike the per-segment
+  streaming caller above.
 
 ## Font zoom in the webchat UI
 
@@ -109,7 +305,7 @@ Features in `special_prompts_with_integration` (`add_tags`, `spamfilter`, `summa
 
 For the override to take effect at runtime, the caller **must load that prompt object and pass it as `config`** to `mzta_specialCommand` — and pass the same prompt to `getConnectionType(prefs, prompt, '<feature>')`. `initWorker()` only sets `use_specific_api = true` (and therefore reads the prefixed host/model/etc. from `config`) when `config.api_type` is non-empty; otherwise it falls back to the **global** provider prefs. Passing `config: {}` silently ignores the override even when the connection *type* matches.
 
-Helpers: `getSpamFilterPrompt()`, `getSummarizePrompt()`, `getTranslatePrompt()` in `js/mzta-prompts.js` (or `loadPrompt(id)`). The execution paths in `mzta-background.js` (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, add_tags) follow this pattern.
+Helpers: `getAddTagsPrompt()`, `getSpamFilterPrompt()`, `getSummarizePrompt()`, `getTranslatePrompt()` in `js/mzta-prompts.js` (or `loadPrompt(id)`). The execution paths in `mzta-background.js` (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, add_tags) follow this pattern. Special-prompt execution paths must read their prompt object from these helpers (which go through `getSpecialPrompts()`), never from `menus.allPrompts` — that array is filtered by `getActiveSpecialPromptsIDs()` and can omit a feature's prompt (e.g. when no global connection is set or the global connection is ChatGPT Web without a per-feature API override) even while the feature's auto-processing is enabled, which would yield `curr_prompt === undefined`.
 
 ## Web Worker Pattern
 
@@ -134,6 +330,30 @@ This keeps API calls off the main thread and avoids blocking the Thunderbird UI.
 - **Timeout:** `sendPrompt()` aborts the request if the worker never replies (no `tokensDone`/`error`). The duration comes from the `special_command_timeout` pref (default `120000` ms), with a hardcoded `SPECIAL_COMMAND_TIMEOUT_DEFAULT` fallback. The pref is configurable in the main options page (always shown — see `claude-spec/05-options.md`). On timeout the promise rejects with a clear error and the worker is terminated by the same `finally`.
 
 `processEmails()` wraps its whole body in `try/finally` so `taWorkingStatus.stopWorking()` always runs, and wraps each message in `try/catch`+`continue` so one failing message does not abort the batch.
+
+### Error contract between `js/api/*` and workers
+
+The provider classes in `js/api/` return **two different shapes** on failure, and workers must branch on `is_exception` before formatting the message:
+
+- **Network-level exception** (server unreachable, DNS failure, CORS rejection): the `catch` block in `fetchResponse()` does **not** return a `Response`. It returns a plain object `{ok: false, is_exception: true, error}` with **no `status` and no `statusText`**, and `error` already includes the provider name (e.g. `"Ollama API request failed: TypeError: NetworkError…"`).
+- **HTTP error** (404, 401, 500…): a real `Response` is returned, so `status`, `statusText` and the JSON body are all available.
+
+Reading `response.status` / `response.statusText` in the exception branch yields a literal `"undefined undefined"` in the user-visible error, and re-prefixing the i18n provider string there duplicates the provider name. All five workers therefore build a single `error_text` variable:
+
+```js
+if(response.is_exception === true){
+    error_message = response.error;
+    error_text = error_message;              // already prefixed; no status/statusText exist
+}else{
+    // …extract error_message / errorDetail from the JSON body…
+    error_text = i18nStrings["<provider>_api_request_failed"] + ": " + response.status + " " + response.statusText
+        + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
+}
+postMessage({ type: 'error', payload: error_text });
+throw new Error("[ThunderAI] <Provider> API request failed: " + error_text);
+```
+
+The `postMessage` payload and the `throw` reuse the same `error_text` so the UI panel and the console message cannot drift apart.
 
 ### Batch cancellation (user-triggered stop)
 
@@ -173,3 +393,4 @@ API calls require host permissions. These are declared as `optional_permissions`
 6. Add the new `connection_type` case to the dispatch logic in `mzta-background.js`
 7. Add required host permissions to `manifest.json` optional_permissions
 8. Add i18n strings to `_locales/en/messages.json`
+9. Branch on `is_exception` in the worker's error block — see [Error contract between `js/api/*` and workers](#error-contract-between-jsapi-and-workers) above

@@ -27,25 +27,32 @@ import {
 } from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
-  mapPlaceholderToSuggestion
-} from "../../js/mzta-placeholders.js";
+  mapPlaceholderToSuggestion, placeholdersUtils } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import { attachEditorHighlight, makeTokenStateResolver } from "../../js/mzta-editor-highlight.js";
 import { taSpamReport } from '../../js/mzta-spamreport.js';
 import {
   getAccountsList,
   isAPIKeyValue,
   normalizeStringList,
-  setTomSelectBorder
+  setTomSelectBorder,
+  isApiUsableConnection
 } from "../../js/mzta-utils.js";
 import {
-  initializeSpecificIntegrationUI
+  initializeSpecificIntegrationUI,
+  isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
+import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 
 let autocompleteSuggestions = [];
+let activePlaceholders = [];
 let taLog = null;
 let spamReport = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+    // Warn before leaving the page with unsaved textarea text.
+    initUnsavedGuard();
 
     let prefs = await browser.storage.sync.get({ do_debug: prefs_default.do_debug });
     taLog = new taLogger("mzta-spamfilter-page", prefs.do_debug);
@@ -57,7 +64,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (spamfilter_prompt && spamfilter_prompt.api_type && spamfilter_prompt.api_type !== '') {
         let update_prefs = {};
         update_prefs['spamfilter_connection_type'] = spamfilter_prompt.api_type;
-        
+        // getConnectionType() reads the prefixed connection type only when this flag is on,
+        // so writing the pair one half at a time leaves the value inert. It matters for the
+        // call sites that pass prompt = null (the menu gating in mzta-background.js and the
+        // feature row in mzta-options.js): they have no prompt to fall back on, so the pref
+        // pair is the only way they can see the per-feature connection.
+        // Only for a usable api_type: chatgpt_web has no <option> in the per-prompt select and
+        // isApiUsableConnection() rejects it, so the pair would read as "on" while the feature
+        // stayed hidden from the menus.
+        if (isApiUsableConnection(spamfilter_prompt.api_type)) {
+            update_prefs['spamfilter_use_specific_integration'] = true;
+        }
+
         let integration = spamfilter_prompt.api_type.replace('_api', '');
         if (integration_options_config && integration_options_config[integration]) {
              for (const key of Object.keys(integration_options_config[integration])) {
@@ -138,7 +156,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     spamfilter_textarea.value = spamfilter_prompt.text;
     spamfilter_reset_btn.disabled = (spamfilter_textarea.value === browser.i18n.getMessage('prompt_spamfilter_full_text'));
 
-    autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
+    // Full list, kept for token validation. Deliberately NOT filtered like the
+    // suggestions: {%additional_text%} is a real placeholder that this page simply
+    // does not offer, so the editor must not flag it as unknown.
+    activePlaceholders = await getPlaceholders(true);
+    autocompleteSuggestions = activePlaceholders.filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
+    const spamfilter_textarea_hl = attachEditorHighlight(spamfilter_textarea);
+    // Flags unknown and unterminated tokens. Type 1 ("reading"),
+    // matching the type_value passed to textareaAutocomplete below.
+    if (spamfilter_textarea_hl) spamfilter_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(spamfilter_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
     // Skip addresses list
@@ -295,11 +322,7 @@ async function loadSpamReport(){
     let report_data = await spamReport.getAllReportData();
     //console.log(">>>>>>>>>>>> loadSpamReport: " + JSON.stringify(report_data));
     //document.getElementById("report_data").textContent = JSON.stringify(report_data, null, 2);
-    if(report_data == undefined){
-      document.getElementById("report_data").innerText = browser.i18n.getMessage("spamfilter_no_reports");
-    }else{
-      populateTable(report_data);
-    }
+    populateTable(report_data);
 }
 
 
@@ -307,6 +330,19 @@ async function loadSpamReport(){
  function populateTable(data) {
   const tableBody = document.getElementById("report_data_body");
   tableBody.innerHTML = ""; // Clear table before inserting new data
+
+  // getAllReportData() resolves to an empty object when nothing has been
+  // screened yet, so the placeholder goes in a row: replacing the table's
+  // content would remove the header row and the tbody itself.
+  if(Object.keys(data).length === 0){
+    const emptyRow = document.createElement("tr");
+    const emptyCell = document.createElement("td");
+    emptyCell.colSpan = 8;
+    emptyCell.textContent = browser.i18n.getMessage("spamfilter_no_reports");
+    emptyRow.appendChild(emptyCell);
+    tableBody.appendChild(emptyRow);
+    return;
+  }
 
   Object.keys(data).forEach(email => {
       const report = data[email];
@@ -320,15 +356,15 @@ async function loadSpamReport(){
       row.appendChild(tdHeaderMessageId);
 
       const tdMessageDate = document.createElement("td");
-      tdMessageDate.textContent = new Date(report.message_date).toLocaleString();
+      tdMessageDate.textContent = report.message_date ? new Date(report.message_date).toLocaleString() : "";
       row.appendChild(tdMessageDate);
 
       const tdFrom = document.createElement("td");
-      tdFrom.textContent = Array.isArray(report.from) ? report.from.join(", ") : report.from;
+      tdFrom.textContent = Array.isArray(report.from) ? report.from.join(", ") : (report.from ?? "");
       row.appendChild(tdFrom);
 
       const tdSubject = document.createElement("td");
-      tdSubject.textContent = Array.isArray(report.subject) ? report.subject.join(", ") : report.subject;
+      tdSubject.textContent = Array.isArray(report.subject) ? report.subject.join(", ") : (report.subject ?? "");
       row.appendChild(tdSubject);
 
       const tdSpamValue = document.createElement("td");
@@ -410,22 +446,28 @@ async function restoreOptions() {
           let default_select_value = '';
           if(element.id == 'reply_type') default_select_value = 'reply_all';
           if(element.id == 'connection_type') default_select_value = 'chatgpt_web';
-          if(element.id == 'spamfilter_connection_type') default_select_value = 'chatgpt_api';
+          // No default for spamfilter_connection_type on purpose: an unset specific
+          // integration must show a blank select, not silently preselect a provider
+          // the user never picked (the other feature pages already behave this way).
           const restoreValue = result[element.id] || default_select_value;
           // Ensure option exists before restoring
           let optionExists = Array.from(element.options).some(opt => opt.value === restoreValue);
+          // Never synthesize an option for a connection select: its catalogue is closed.
+          let canSynthesize = !isClosedCatalogueSelect(element.id);
           if (element.tomselect) {
-            if (!optionExists && restoreValue !== '') {
+            if (!optionExists && restoreValue !== '' && canSynthesize) {
               element.tomselect.addOption({ value: restoreValue, text: restoreValue });
             }
             element.tomselect.setValue(restoreValue, true);
             setTomSelectBorder(element.tomselect);
           } else {
-            if (!optionExists && restoreValue !== '') {
+            if (!optionExists && restoreValue !== '' && canSynthesize) {
               let newOption = new Option(restoreValue, restoreValue);
               element.add(newOption);
             }
             element.value = restoreValue;
+            // Either an empty stored value, or one with no matching option (a stale
+            // connection type the select no longer offers): show a blank control.
             if (element.value === '') {
               element.selectedIndex = -1;
             }
@@ -446,7 +488,12 @@ async function restoreOptions() {
       if (spamfilter_prompt.api_type && spamfilter_prompt.api_type !== '') {
           getting['spamfilter_connection_type'] = spamfilter_prompt.api_type;
       } else {
-          getting['spamfilter_connection_type'] = getting['connection_type'];
+          // Inherit the global connection only when this select can actually offer it:
+          // chatgpt_web has no <option> here (it has no API), so inheriting it would show
+          // a value the control cannot represent. Leave it blank instead.
+          getting['spamfilter_connection_type'] = isApiUsableConnection(getting['connection_type'])
+              ? getting['connection_type']
+              : '';
       }
       for (const [integration, options] of Object.entries(integration_options_config)) {
           for (const key of Object.keys(options)) {

@@ -30,14 +30,17 @@ import {
 import {
     injectConnectionUI,
     showConnectionOptions,
-    updateWarnings
+    updateWarnings,
+    checkJsonFieldsByPrefix,
+    getConnectionTypeLabel
 } from "../../pages/_lib/connection-ui.js";
 import {
     getLocalStorageUsedSpace,
     sanitizeHtml,
     validateCustomData_ChatGPTWeb,
     openTab,
-    setTomSelectBorder
+    setTomSelectBorder,
+    revealPromptInMenuOrder
 } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
 import {
@@ -46,6 +49,19 @@ import {
     mapPlaceholderToSuggestion
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import {
+    attachEditorHighlight,
+    getEditorHighlight,
+    makeTokenStateResolver,
+    classifyPlaceholderType,
+    PLACEHOLDER_RE
+} from "../../js/mzta-editor-highlight.js";
+
+// Id prefix for the add-new-prompt form's injected connection fields. Every
+// injection on this page must carry a prefix: injectConnectionUI() runs once for
+// this form plus once per row put into edit mode, so unprefixed fields would
+// collide across forms (and used to silently share the add form's elements).
+const NEW_PROMPT_PREFIX = 'new_prompt_';
 
 let prefs = null;
 var promptsList = null;
@@ -56,6 +72,7 @@ var idnumMax = 0;
 var msgTimeout = null;
 let taLog = null;
 let autocompleteSuggestions = [];
+let activePlaceholders = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
 
@@ -92,6 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         let _checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
         _checkboxUseDiffViewerNew.checked = false;
         _checkboxUseDiffViewerNew.disabled = true;
+        updateUseDiffViewerHint();
         window.scrollTo({
             top: 0,
             behavior: 'smooth'
@@ -111,17 +129,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const textareas = document.querySelectorAll('.editor');
-    autocompleteSuggestions = (await getPlaceholders(true)).map(mapPlaceholderToSuggestion);
+    // Kept as the raw list too: the highlight backdrop validates tokens against
+    // it on every keystroke and needs the placeholder objects, not the mapped
+    // autocomplete suggestions.
+    activePlaceholders = await getPlaceholders(true);
+    autocompleteSuggestions = activePlaceholders.map(mapPlaceholderToSuggestion);
+
+    // The first decoratePromptText() already ran inside loadPromptsList() above,
+    // before this await resolved — with an empty activePlaceholders it could not
+    // tell a valid token from an invalid one, so it chipped them all as valid.
+    // Now that the list is in, re-run it so unknown placeholders turn orange.
+    // data-phDecorated holds the decorated HTML, so this pass is a no-op for
+    // every row whose markup does not actually change.
+    decoratePromptText();
 
     // console.log('>>>>>>>>>>> autocompleteSuggestions: ' + JSON.stringify(autocompleteSuggestions));
     
+    // One registration per textarea. This used to be a nested pair of loops,
+    // which attached every handler N+1 times for N textareas (and, through
+    // textareaAutocomplete, leaked one document-level listener each time).
     textareas.forEach(textarea => {
         textareaAutocomplete(textarea, autocompleteSuggestions);
-        textareas.forEach(textarea => {
-            textarea.addEventListener('input', async (e) => {
-                await checkPromptsConfigForPlaceholders(e.target);
-            });
-        textareaAutocomplete(textarea, autocompleteSuggestions);
+        // The mirror is attached here only for the add-form textarea (.input_new),
+        // which is permanently in edit mode. Row textareas start hidden in read
+        // mode and get theirs from showItemRowEditor(); attaching one now would
+        // paint a second copy of the prompt text behind every read-mode row.
+        // Note both live inside a <tr>, so closest('tr') cannot tell them apart.
+        if (textarea.classList.contains('input_new')) attachHighlightWithValidation(textarea);
+        textarea.addEventListener('input', async (e) => {
+            await checkPromptsConfigForPlaceholders(e.target);
         });
     });
 
@@ -142,6 +178,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await injectConnectionUI({
         afterTrId: 'api_ui_anchor',
         selectId: 'new_prompt_api_type',
+        modelId_prefix: NEW_PROMPT_PREFIX,
         no_chatgpt_web: true,
         taLog: taLog,
         customButtonLabel: browser.i18n.getMessage("Reset"),
@@ -154,7 +191,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     for (const [integration, options] of Object.entries(integration_options_config)) {
         for (const key of Object.keys(options)) {
             const propName = `${integration}_${key}`;
-            const inputEl = document.getElementById(propName);
+            const inputEl = document.getElementById(NEW_PROMPT_PREFIX + propName);
             if (inputEl && prefs[propName] !== undefined) {
                  if (inputEl.type === 'checkbox') {
                      inputEl.checked = (prefs[propName] === true || prefs[propName] === 'true');
@@ -164,6 +201,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     }
+    // Same reason as in populateConnectionUI: these assignments fire no input
+    // event, so a malformed extra_body inherited from the global prefs would
+    // sit unflagged in the add form.
+    checkJsonFieldsByPrefix(NEW_PROMPT_PREFIX);
 
     i18n.updateDocument();
 
@@ -175,14 +216,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     //         break;
     //     }
     // }
+    // Move this form's advanced rows behind its disclosure button.
+    const newFormConnScope = document.getElementById('api_ui_container');
+    relocateConnAdvRows(newFormConnScope);
+
     apiSelect.addEventListener('change', () => {
-        showConnectionOptions(apiSelect);
+        showConnectionOptions(apiSelect, NEW_PROMPT_PREFIX);
+        showAdvConnectionOptions(newFormConnScope, apiSelect.value);
     });
-    showConnectionOptions(apiSelect);
+    showConnectionOptions(apiSelect, NEW_PROMPT_PREFIX);
+    showAdvConnectionOptions(newFormConnScope, apiSelect.value);
+
+    // The per-prompt ChatGPT Web overrides only ever apply when the effective
+    // connection is ChatGPT Web: that means the global connection is chatgpt_web
+    // AND this prompt sets no api_type override (mirrors the row-level condition
+    // in toggleAdditionalPropertiesEditor). Re-evaluated on every api_type
+    // change, since the user can pick an override while the form is open.
+    updateChatGPTWebInfoVisibility();
+    apiSelect.addEventListener('change', updateChatGPTWebInfoVisibility);
 
     if(prefs.connection_type == 'chatgpt_web') {
-        // for the new item form
-        document.getElementById('chatgpt_web_additional_info_toggle').style.display = 'table-row';
         // for the edit list items form
         document.querySelectorAll('.chatgpt_web_additional_info_toggle').forEach(element => {
             element.addEventListener('click', handleChatGPTWebInfoToggleClick);
@@ -244,6 +297,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             checkboxUseDiffViewerNew.checked = false;
             checkboxUseDiffViewerNew.disabled = true;
         }
+        updateUseDiffViewerHint();
     });
 
     const btnAddNew = document.getElementById('btnAddNew');
@@ -252,6 +306,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(!checkFields()) {
             return;
         }
+        // Clear any active search first: the new row would almost never match it,
+        // and List.js would not render it — leaving the listener wiring below
+        // with no DOM node to attach to.
+        clearPromptsSearch();
         let newItemData = {
             id: String(txtIdNew.value.trim()).toLocaleLowerCase(),
             name: txtNameNew.value.trim(),
@@ -263,13 +321,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             need_custom_text: (checkboxNeedCustomTextNew.checked) ? 1 : 0,
             define_response_lang: (checkboxDefineResponseLangNew.checked) ? 1 : 0,
             use_diff_viewer: (checkboxUseDiffViewerNew.checked) ? 1 : 0,
-            enabled: 1,
             position_compose: positionMax_compose + 1,
             position_display: positionMax_display + 1,
             is_default: 0,
             idnum: idnumMax + 1,
             api_type: document.getElementById('new_prompt_api_type').value,
-            show_in: document.getElementById('selectShowInNew').value,
+            // Placement is no longer chosen at creation: new prompts always start in
+            // the popup (the primary surface: toolbar button + shortcut both open it,
+            // and it respects `type`). Use the Menu Order page to move it afterwards.
+            show_in: 'popup',
         };
 
         switch(prefs.connection_type) {
@@ -292,7 +352,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             //     break;
         }
 
-        const apiValues = getAPIValuesFromUI();
+        const apiValues = getAPIValuesFromUI(NEW_PROMPT_PREFIX);
         Object.assign(newItemData, apiValues);
 
         let newItem = promptsList.add(newItemData);
@@ -313,6 +373,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         okBtn.addEventListener('click', handleConfirmClick);
         let cancelBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnCancelItem`);
         cancelBtn.addEventListener('click', handleCancelClick);
+        let menuPositionBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnMenuPositionItem`);
+        if (menuPositionBtn) menuPositionBtn.addEventListener('click', handleMenuPositionClick);
         // Normalize the read-only connection/API info boxes for the new row, the
         // same way loadPromptsList does at page load (a freshly added prompt has
         // no connection specified, so these boxes must be hidden).
@@ -375,21 +437,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         return new Promise((resolve) => {
             const dialog = document.createElement('dialog');
             dialog.className = 'export';
-            // dialog.style.cssText = `
-            //     padding: 20px;
-            //     border: none;
-            //     border-radius: 8px;
-            //     background-color: var(--dialog-bg-color, #fff);
-            //     color: var(--dialog-text-color, #000);
-            //     max-width: 400px;
-            //     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            //     font-family: system-ui, -apple-system, sans-serif;
-            // `;
-            
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                 dialog.style.backgroundColor = '#2e2e2e';
-                 dialog.style.color = '#ffffff';
-            }
+            // Colors (incl. dark mode) come from the `dialog.export` rule in the
+            // stylesheet, which reads the shared design tokens.
 
             const text = document.createElement('p');
             text.textContent = message;
@@ -541,19 +590,27 @@ function handleEditClick(e) {
                 resetApiSettings(selectId, id);
             }
         }).then(() => {
+            const scopeEl = tr.querySelector('.api_additional_info');
+            relocateConnAdvRows(scopeEl);
             populateConnectionUI(tr, id, prefix, selectId);
             updateWarnings(prefix);
+            const sel = document.getElementById(selectId);
+            showAdvConnectionOptions(scopeEl, sel ? sel.value : '');
+            sel && sel.addEventListener('change', () => showAdvConnectionOptions(scopeEl, sel.value));
         });
     } else {
+        const scopeEl = tr.querySelector('.api_additional_info');
         populateConnectionUI(tr, id, prefix, selectId);
         updateWarnings(prefix);
+        const sel = document.getElementById(selectId);
+        showAdvConnectionOptions(scopeEl, sel ? sel.value : '');
     }
 
     // Show/Hide buttons
     //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
     e.target.style.display = 'none';    // Edit btn
-    tr.querySelector('.btnConfirmItem').style.display = 'inline';   // Save btn
-    tr.querySelector('.btnCancelItem').style.display = 'inline';   // Cancel btn
+    tr.querySelector('.btnConfirmItem').style.display = 'flex';   // Save btn
+    tr.querySelector('.btnCancelItem').style.display = 'flex';   // Cancel btn
 //        tr.querySelector('.btnEditItem').style.display = 'none';   // Edit btn
     tr.querySelector('.btnCopyItem').style.display = 'none';   // Copy btn
     tr.querySelector('.btnDeleteItem').style.display = 'none';   // Delete btn
@@ -562,9 +619,170 @@ function handleEditClick(e) {
     toggleAdditionalPropertiesShow(tr);
 }
 
+/* ---------------------------------------------------------------------------
+   Advanced connection fields (per form)
+
+   injectConnectionUI() marks its advanced rows with .conn_adv. The options page
+   moves them into a second table behind a disclosure button; this page does the
+   same, but **scoped to one form at a time**: several editors can be open at
+   once (handleEditClick never tears an injected block down), so the options
+   page's document-wide `querySelectorAll('#connection_ui_table tr.conn_adv')`
+   would vacuum up every other open row's advanced fields into whichever form
+   was touched last. Every query below therefore starts from `scopeEl`.
+   --------------------------------------------------------------------------- */
+
+// `scopeEl` is the element wrapping one form's connection UI: the <td> for the
+// add form (#api_ui_container) or the row's .api_additional_info container.
+function relocateConnAdvRows(scopeEl) {
+    if (!scopeEl) return;
+    const advBody = scopeEl.querySelector('.conn_adv_table tbody');
+    const btn = scopeEl.querySelector('.conn_adv_btn');
+    if (!advBody || !btn) return;
+
+    // Only the rows of *this* form, and not ones already relocated.
+    scopeEl.querySelectorAll('tr.conn_adv').forEach(tr => {
+        if (!advBody.contains(tr)) advBody.appendChild(tr);
+    });
+    btn.hidden = (advBody.children.length === 0);
+}
+
+// Collapse the advanced panel and reset the button state.
+function resetConnAdv(scopeEl) {
+    if (!scopeEl) return;
+    const btn = scopeEl.querySelector('.conn_adv_btn');
+    const panel = scopeEl.querySelector('.conn_adv_table');
+    if (!btn || !panel) return;
+    btn.setAttribute('aria-expanded', 'false');
+    panel.classList.add('hidden');
+}
+
+// Keep the relocated rows in sync with the selected provider: they left the main
+// table, so showConnectionOptions() (which walks up from the select) no longer
+// reaches them.
+function showAdvConnectionOptions(scopeEl, connType) {
+    if (!scopeEl) return;
+    const advTable = scopeEl.querySelector('.conn_adv_table');
+    if (!advTable) return;
+    advTable.querySelectorAll('tr[class*="conntype_"]').forEach(tr => {
+        tr.style.display = tr.classList.contains('conn_adv') && tr.classList.contains('conntype_' + connType) ? '' : 'none';
+    });
+    // Nothing to reveal for this provider ⇒ hide the button entirely.
+    const btn = scopeEl.querySelector('.conn_adv_btn');
+    if (btn) {
+        const anyVisible = [...advTable.querySelectorAll('tr[class*="conntype_"]')].some(tr => tr.style.display !== 'none');
+        btn.hidden = !anyVisible;
+        if (!anyVisible) resetConnAdv(scopeEl);
+    }
+}
+
+// One delegated listener for every disclosure button on the page, present and
+// future (List.js re-renders rows on search/sort, so per-button listeners would
+// be lost). Bound once at module scope.
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('.conn_adv_btn');
+    if (!btn) return;
+    e.preventDefault();
+    const scopeEl = btn.parentElement;
+    const panel = scopeEl && scopeEl.querySelector('.conn_adv_table');
+    if (!panel) return;
+    const open = panel.classList.toggle('hidden') === false;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+});
+
+// The read-only per-row connection display shows a *localized* provider name,
+// while the raw api_type stays in data-api-type. Every conditional in this file
+// reads the raw value through getRowApiType(): comparing the visible text against
+// '' / 'undefined' would break as soon as the text is translated.
+function setRowApiType(tr, apiType) {
+    const raw = (apiType === undefined || apiType === null) ? '' : String(apiType);
+    // Keep the hidden raw span (List.js's own field) in step, or the next read
+    // through getRowApiType() would return the pre-edit value.
+    const rawEl = tr.querySelector('.api_type');
+    if (rawEl) rawEl.innerText = raw;
+
+    const el = tr.querySelector('.api_type_show');
+    if (!el) return;
+    el.dataset.apiType = raw;
+    el.innerText = getConnectionTypeLabel(raw);
+}
+
+// Raw api_type for a list row, '' when the prompt inherits the global connection.
+// `.api_type` is the authoritative source: it is listed in List.js valueNames, so
+// List.js rewrites it on every render (which is also why the localized label must
+// live on a separate element — List.js would overwrite it with the raw value).
+// data-api-type is the fallback for rows updated in place by setRowApiType().
+function getRowApiType(tr) {
+    const rawEl = tr.querySelector('.api_type');
+    if (rawEl) {
+        const raw = rawEl.innerText.trim();
+        return (raw === 'undefined') ? '' : raw;
+    }
+    const el = tr.querySelector('.api_type_show');
+    if (!el) return '';
+    const raw = el.dataset.apiType;
+    return (raw === undefined || raw === 'undefined') ? '' : raw;
+}
+
+// Shows the add-form's [ChatGPT Web] disclosure only while those overrides can
+// actually take effect: global connection chatgpt_web and no per-prompt api_type.
+// When hiding it, the expanded row is collapsed and its label reset, so reopening
+// later does not start out mislabelled ("Hide" over a closed row).
+function updateChatGPTWebInfoVisibility() {
+    const toggle = document.getElementById('chatgpt_web_additional_info_toggle');
+    const row = document.getElementById('chatgpt_web_additional_info');
+    if (!toggle || !row) return;
+
+    const apiSelect = document.getElementById('new_prompt_api_type');
+    const applies = (prefs.connection_type === 'chatgpt_web') && !(apiSelect && apiSelect.value);
+
+    toggle.style.display = applies ? 'table-row' : 'none';
+    if (!applies) {
+        row.style.display = 'none';
+        const subspan = toggle.querySelector('td span');
+        if (subspan) {
+            subspan.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [ChatGPT Web]';
+        }
+    }
+}
+
+// Opens one of the add-form disclosures if it is currently closed, keeping its
+// label in sync. Not a plain toggle.click(): the API toggle's handler tests
+// `display === 'none'`, so on a panel whose display is still '' (never touched)
+// a click would take the *close* branch and leave it shut.
+function openAddFormDisclosure(toggleId, rowId, labelSuffix) {
+    const toggle = document.getElementById(toggleId);
+    const row = document.getElementById(rowId);
+    if (!toggle || !row) return;
+    if (row.style.display === 'table-row') return;   // already open
+
+    row.style.display = 'table-row';
+    const subspan = toggle.querySelector('span');
+    if (subspan) {
+        subspan.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' ' + labelSuffix;
+    }
+}
+
+// True when the copied prompt carries any per-prompt API override worth showing.
+// Mirrors the row-level rule in toggleAdditionalPropertiesEditor, which opens the
+// [API] panel whenever api_type is set.
+function hasApiOverrideValues(itemValues) {
+    if (itemValues.api_type) return true;
+    for (const [integration, options] of Object.entries(integration_options_config)) {
+        for (const key of Object.keys(options)) {
+            const val = itemValues[`${integration}_${key}`];
+            // Checkboxes round-trip as either boolean or string (see the
+            // `=== true || === 'true'` reads elsewhere), and an unchecked box is
+            // the default, not an override — so both falses are ignored.
+            if (val === undefined || val === '' || val === false || val === 'false') continue;
+            return true;
+        }
+    }
+    return false;
+}
+
 function resetApiSettings(selectId, id = null) {
-    let prefix = '';
-    if (id) prefix = `prompt_${id}_`;
+    // No id means the add-new form, whose fields carry NEW_PROMPT_PREFIX.
+    let prefix = id ? `prompt_${id}_` : NEW_PROMPT_PREFIX;
     const selectEl = document.getElementById(selectId);
     if (selectEl) {
         selectEl.value = '';
@@ -600,6 +818,9 @@ function resetApiSettings(selectId, id = null) {
         }
         item.values(newValues);
     }
+    // Clearing the fields does not fire input either, so a red border left from
+    // a malformed value would survive the reset on a now-empty (valid) field.
+    checkJsonFieldsByPrefix(prefix);
     setSomethingChanged();
 }
 
@@ -610,7 +831,7 @@ function populateConnectionUI(tr, id, prefix, selectId) {
     const selectEl = document.getElementById(selectId);
     if (selectEl) {
         selectEl.value = itemValues.api_type || '';
-        showConnectionOptions(selectEl);
+        showConnectionOptions(selectEl, prefix);
     }
 
     for (const [integration, options] of Object.entries(integration_options_config)) {
@@ -647,7 +868,88 @@ function populateConnectionUI(tr, id, prefix, selectId) {
             }
         }
     }
+    // Values are assigned with .value / .checked, which fire no input event, so
+    // the live .check-json validation never runs on restore: a previously saved
+    // malformed extra_body would show no red border or error until touched.
+    // Scoped to this form's prefix so it cannot repaint another open editor.
+    checkJsonFieldsByPrefix(prefix);
     i18n.updateDocument();
+}
+
+/*
+ *  Attaches the highlight mirror plus token validation to a prompt textarea.
+ *
+ *  Token validity depends on the prompt's selected type, so the type selector is
+ *  read lazily on every token and a 'change' listener repaints the mirror. There
+ *  was no listener on .type_output / #selectTypeNew before this: the autocomplete
+ *  reads the type per keystroke and never needed one, but the mirror caches its
+ *  render and would otherwise keep showing stale warnings after a type change.
+ */
+function attachHighlightWithValidation(textarea) {
+    // Idempotent, like attachEditorHighlight itself: showItemRowEditor() re-runs
+    // on every entry into edit mode.
+    const existing = getEditorHighlight(textarea);
+    const handle = existing || attachEditorHighlight(textarea);
+    if (!handle) return null;
+
+    // The add-form textarea has no row; its selector is #selectTypeNew.
+    const tr = textarea.closest('tr');
+    const typeSelect = textarea.classList.contains('input_new')
+        ? document.getElementById('selectTypeNew')
+        : (tr ? tr.querySelector('.type_output') : null);
+
+    // Installed on EVERY call, not just the first: `existing` is a handle from a
+    // previous entry into edit mode, and the resolver it carries closed over the
+    // typeSelect *found back then*. On the add-form that select does not exist
+    // until the form is built, and a row's .type_output is only reachable once
+    // the row template has been rendered -- so an early attach captured null and
+    // the resolver then skipped type filtering permanently, leaving a
+    // wrong-type token painted as a valid chip forever. setTokenStateResolver()
+    // also repaints, so re-installing is exactly what makes a type edited since
+    // last time take effect.
+    handle.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder,
+        activePlaceholders,
+        typeSelect ? () => typeSelect.value : null));
+
+    // Re-validate when the "add to menu" type is changed: validity depends on it,
+    // and the mirror caches its render, so without this a token stays painted
+    // with the tier it had under the previous type.
+    //
+    // The listener is registered once per select but must NOT close over
+    // `textarea`: on the add-form #selectTypeNew is a single shared element, and
+    // a row's .type_output outlives any one entry into edit mode, so a captured
+    // textarea can be the wrong one (or detached) by the time the event fires.
+    // It therefore resolves the currently-attached editor from the select itself
+    // and refreshes every mirror it can reach.
+    if (typeSelect && !typeSelect._mztaHighlightSync) {
+        typeSelect._mztaHighlightSync = true;
+        typeSelect.addEventListener('change', (e) => {
+            const sel = e.currentTarget;
+            const scope = sel.closest('tr') || document;
+            scope.querySelectorAll('textarea.editor').forEach(ta => {
+                const h = getEditorHighlight(ta);
+                if (h) h.refresh();
+            });
+        });
+    }
+    return handle;
+}
+
+/*
+ *  Writes a value into a textarea programmatically and repaints its highlight
+ *  mirror.
+ *
+ *  A direct `.value =` assignment fires no 'input' event, and the mirror only
+ *  repaints on 'input': the previous text and its chips would stay painted
+ *  behind the new content. Every programmatic write to a `.editor` textarea
+ *  must go through here. Safe on a textarea with no mirror attached.
+ */
+function setEditorValue(textarea, value) {
+    if (!textarea) return;
+    textarea.value = value;
+    const handle = getEditorHighlight(textarea);
+    if (handle) handle.refresh();
 }
 
 function showItemRowEditor(tr) {
@@ -656,16 +958,19 @@ function showItemRowEditor(tr) {
     tr.querySelector('.name_output').style.display = 'inline';
     tr.querySelector('.name_show').style.display = 'none';
     const text_output = tr.querySelector('.text_output');
-    text_output.style.display = 'inline';
+    // 'block', not 'inline': the highlight backdrop is absolutely positioned
+    // against this box, and an inline textarea would not align with it.
+    text_output.style.display = 'block';
     textareaAutocomplete(text_output, autocompleteSuggestions)
+    // Both calls are idempotent, so re-entering edit mode on the same row does
+    // not stack listeners or mirrors.
+    attachHighlightWithValidation(text_output);
     tr.querySelector('.text_show').style.display = 'none';
     toggleAdditionalPropertiesEditor(tr);
     tr.querySelector('.chatgpt_web_additional_info_show').style.display = 'none';
     tr.querySelector('.api_additional_info_show').style.display = 'none';
     tr.querySelector('.type_output').style.display = 'inline';
     tr.querySelector('.type_show').style.display = 'none';
-    tr.querySelector('.show_in_output').style.display = 'inline';
-    tr.querySelector('.show_in_show').style.display = 'none';
     const action_output = tr.querySelector('.action_output')
     action_output.style.display = 'inline';
     action_output.addEventListener('change', toggleDiffviewer);
@@ -682,7 +987,13 @@ function hideItemRowEditor(tr) {
     tr.querySelector('.id_show').style.display = 'inline';
     tr.querySelector('.name_output').style.display = 'none';
     tr.querySelector('.name_show').style.display = 'inline';
-    tr.querySelector('.text_output').style.display = 'none';
+    const text_output_hide = tr.querySelector('.text_output');
+    const highlight = getEditorHighlight(text_output_hide);
+    if (highlight) highlight.destroy();
+    // The autocomplete must go down with the mirror it reads the caret from,
+    // and its close() drops the row from the shared open-instances set.
+    if (text_output_hide._mztaAutocomplete) text_output_hide._mztaAutocomplete.destroy();
+    text_output_hide.style.display = 'none';
     tr.querySelector('.text_show').style.display = 'inline';
     tr.querySelector('.chatgpt_web_additional_info_toggle').style.display = 'none';
     tr.querySelector('.chatgpt_web_additional_info').style.display = 'none';
@@ -691,8 +1002,6 @@ function hideItemRowEditor(tr) {
     toggleAdditionalPropertiesShow(tr);
     tr.querySelector('.type_output').style.display = 'none';
     tr.querySelector('.type_show').style.display = 'inline';
-    tr.querySelector('.show_in_output').style.display = 'none';
-    tr.querySelector('.show_in_show').style.display = 'inline';
     const action_output = tr.querySelector('.action_output')
     action_output.style.display = 'none';
     action_output.addEventListener('change', toggleDiffviewer);
@@ -710,7 +1019,7 @@ function toggleAdditionalPropertiesShow(tr) {
     let chatGPTWebModel_show = tr.querySelector('.chatgpt_web_model_show');
     let chatGPTWebProject_show = tr.querySelector('.chatgpt_web_project_show');
     let chatGPTWebCustomGPT_show = tr.querySelector('.chatgpt_web_custom_gpt_show');
-    if(prefs.connection_type == 'chatgpt_web' && tr.querySelector('.api_type_show').innerText == '') {
+    if(prefs.connection_type == 'chatgpt_web' && getRowApiType(tr) === '') {
         if ((chatGPTWebModel_show.innerText !== '' && chatGPTWebModel_show.innerText !== 'undefined') || 
             (chatGPTWebProject_show.innerText !== '' && chatGPTWebProject_show.innerText !== 'undefined') || 
             (chatGPTWebCustomGPT_show.innerText !== '' && chatGPTWebCustomGPT_show.innerText !== 'undefined')) {
@@ -773,22 +1082,14 @@ function handleChatGPTWebInfoToggleClick(e) {
 function toggleApiPropertiesShow(tr) {
     let element = tr.querySelector('.api_additional_info_show');
     let api_type_show = tr.querySelector('.api_type_show');
+    const hasApiType = getRowApiType(tr) !== '';
 
-    if (api_type_show.innerText !== '' && api_type_show.innerText !== 'undefined') {
-        element.style.display = 'flex';
-    } else {
-        element.style.display = 'none';
-    }
-
-    if(api_type_show.innerText === '' || api_type_show.innerText === 'undefined') {
-        api_type_show.parentNode.style.display = 'none';
-    } else {
-        api_type_show.parentNode.style.display = 'inline';
-    }
+    element.style.display = hasApiType ? 'flex' : 'none';
+    api_type_show.parentNode.style.display = hasApiType ? 'inline' : 'none';
 }
 
 function toggleAdditionalPropertiesEditor(tr) {
-    if(prefs.connection_type == 'chatgpt_web' && tr.querySelector('.api_type_show').innerText == '') {
+    if(prefs.connection_type == 'chatgpt_web' && getRowApiType(tr) === '') {
         let info_toggle = tr.querySelector('.chatgpt_web_additional_info_toggle');
         info_toggle.style.display = 'block';
         let chatGPTWebModel_show = tr.querySelector('.chatgpt_web_model_show').innerText;
@@ -804,9 +1105,7 @@ function toggleAdditionalPropertiesEditor(tr) {
 
     let api_info_toggle = tr.querySelector('.api_additional_info_toggle');
     api_info_toggle.style.display = 'block';
-    let api_type_show = tr.querySelector('.api_type_show').innerText;
-
-    if (api_type_show !== '' && api_type_show !== 'undefined') {
+    if (getRowApiType(tr) !== '') {
         api_info_toggle.click();
     }
 }
@@ -849,15 +1148,14 @@ function handleCancelClick(e) {
     e.target.style.display = 'none';    // Cancel btn
     tr.querySelector('.btnConfirmItem').style.display = 'none';   // Save btn
 //        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
-    tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
-    tr.querySelector('.btnCopyItem').style.display = 'inline';   // Copy btn
-    tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+    tr.querySelector('.btnEditItem').style.display = '';   // Edit btn
+    tr.querySelector('.btnCopyItem').style.display = '';   // Copy btn
+    tr.querySelector('.btnDeleteItem').style.display = '';   // Delete btn
     tr.querySelector('.id_output').value = tr.querySelector('.id_show').innerText.toLocaleUpperCase();
     tr.querySelector('.name_output').value = tr.querySelector('.name_show').innerText;
     tr.querySelector('.text_output').value = sanitizeHtml(tr.querySelector('.text_show').innerHTML).replace(/<br\s*\/?>/gi, "\n");
     tr.querySelector('.type_output').value = tr.querySelector('.type').innerText;
     // tr.querySelector('.type_output').selectedOptions[0].text = tr.querySelector('.type_show').innerText;
-    tr.querySelector('.show_in_output').value = tr.querySelector('.show_in').innerText || 'popup';
     tr.querySelector('.action_output').value = tr.querySelector('.action').innerText;
     // tr.querySelector('.action_output').selectedOptions[0].text = tr.querySelector('.action_show').innerText;
     tr.querySelector('.chatgpt_web_model_output').value = tr.querySelector('.chatgpt_web_model_show').innerText;
@@ -884,14 +1182,12 @@ function handleConfirmClick(e) {
     newValues.name = tr.querySelector('.name_output').value.trim();
     newValues.text = tr.querySelector('.text_output').value;
     newValues.type = tr.querySelector('.type_output').value;
-    newValues.show_in = tr.querySelector('.show_in_output').value;
     newValues.action = tr.querySelector('.action_output').value;
     newValues.need_selected = tr.querySelector('.need_selected').checked ? 1 : 0;
     newValues.need_signature = tr.querySelector('.need_signature').checked ? 1 : 0;
     newValues.need_custom_text = tr.querySelector('.need_custom_text').checked ? 1 : 0;
     newValues.define_response_lang = tr.querySelector('.define_response_lang').checked ? 1 : 0;
     newValues.use_diff_viewer = tr.querySelector('.use_diff_viewer').checked ? 1 : 0;
-    newValues.enabled = tr.querySelector('.enabled').checked ? 1 : 0;
     newValues.chatgpt_web_model = tr.querySelector('.chatgpt_web_model_output').value.trim();
     newValues.chatgpt_web_project = tr.querySelector('.chatgpt_web_project_output').value.trim();
     newValues.chatgpt_web_custom_gpt = tr.querySelector('.chatgpt_web_custom_gpt_output').value.trim();
@@ -905,24 +1201,36 @@ function handleConfirmClick(e) {
 
 //        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Ok btn
     tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
-    tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
-    tr.querySelector('.btnCopyItem').style.display = 'inline';   // Copy btn
-    tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+    tr.querySelector('.btnEditItem').style.display = '';   // Edit btn
+    tr.querySelector('.btnCopyItem').style.display = '';   // Copy btn
+    tr.querySelector('.btnDeleteItem').style.display = '';   // Delete btn
     // Update item data
     tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
     tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
-    tr.querySelector('.show_in').innerText = tr.querySelector('.show_in_output').value;
-    tr.querySelector('.show_in_show').innerText = tr.querySelector('.show_in_output').selectedOptions[0].text;
     tr.querySelector('.action').innerText = tr.querySelector('.action_output').value;
     tr.querySelector('.action_show').innerText = tr.querySelector('.action_output').selectedOptions[0].text;
-    if (newValues.api_type !== '') {
-        tr.querySelector('.api_type_show').innerText = newValues.api_type;
-        toggleApiPropertiesShow(tr);
-    
-    }
+    // Unconditional: clearing the override (Reset → Confirm) is just as much an
+    // update as setting one. Guarding on a non-empty api_type left the row showing
+    // the previous provider, and — since the read-only block is hidden by
+    // toggleApiPropertiesShow, which was inside the guard — left it visible too.
+    // Both helpers handle '' (empty label, empty dataset, block hidden).
+    setRowApiType(tr, newValues.api_type);
+    toggleApiPropertiesShow(tr);
     // the checkboxes update is handled directly by themselves
     hideItemRowEditor(tr);
+    // List.js rewrote .text_show from the saved value, which strips the chips and
+    // does not fire 'updated' (it only re-rendered this one row), so re-decorate.
+    decoratePromptText();
     setSomethingChanged();
+}
+
+// Open the Menu Order page and highlight this prompt there. Placement is owned by
+// that page now; this is the deep-link from the editor.
+function handleMenuPositionClick(e) {
+    e.preventDefault();
+    const tr = e.target.closest('tr');
+    const promptId = tr.querySelector('.id_output').value.trim().toLowerCase();
+    revealPromptInMenuOrder(promptId);
 }
 
 // Handle checkbox changes and log new state
@@ -930,18 +1238,15 @@ async function handleCheckboxChange(e) {
     e.preventDefault();
     e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
 
-    if (e.target.classList.contains('enabled') || e.target.classList.contains('need_custom_text')) {
+    // List rows only: the #formNew checkbox shares this class but has no backing
+    // List.js item yet (its `tr` carries no data-idnum).
+    if (e.target.classList.contains('need_custom_text') && !e.target.closest('#formNew')) {
         let tr = e.target.closest('tr');
         if (tr) {
             let idnum = tr.getAttribute('data-idnum');
             let item = promptsList.get('idnum', idnum);
             if (item && item.length > 0) {
-                if (e.target.classList.contains('enabled')) {
-                    item[0]._values.enabled = e.target.checked ? 1 : 0;
-                }
-                if (e.target.classList.contains('need_custom_text')) {
-                    item[0]._values.need_custom_text = e.target.checked ? 1 : 0;
-                }
+                item[0]._values.need_custom_text = e.target.checked ? 1 : 0;
             }
         }
     }
@@ -986,9 +1291,12 @@ function handleCopyClick(e) {
     // Populate new form
     document.getElementById('txtIdNew').value = id + '_' + browser.i18n.getMessage("copy_text");
     document.getElementById('txtNameNew').value = name + ' (' + browser.i18n.getMessage("copy_text") + ')';
-    document.getElementById('txtTextNew').value = text;
+    // Type before text: token validity depends on it and setEditorValue repaints
+    // immediately, so writing the text first would paint one frame validated
+    // against the previous prompt's type. Note `selectTypeNew.value = …` fires no
+    // 'change', so the refresh listener on that select does not cover this.
     document.getElementById('selectTypeNew').value = type;
-    document.getElementById('selectShowInNew').value = tr.querySelector('.show_in_output').value || 'popup';
+    setEditorValue(document.getElementById('txtTextNew'), text);
     document.getElementById('selectActionNew').value = action;
     
     document.getElementById('checkboxNeedSelectedNew').checked = need_selected;
@@ -999,6 +1307,7 @@ function handleCopyClick(e) {
     let checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
     checkboxUseDiffViewerNew.checked = use_diff_viewer;
     checkboxUseDiffViewerNew.disabled = (action !== "2");
+    updateUseDiffViewerHint();
 
     document.getElementById('chatGPTWebModelNew').value = chatgpt_web_model;
     document.getElementById('chatGPTWebProjectNew').value = chatgpt_web_project;
@@ -1012,7 +1321,7 @@ function handleCopyClick(e) {
         for (const [integration, options] of Object.entries(integration_options_config)) {
             for (const key of Object.keys(options)) {
                 const propName = `${integration}_${key}`;
-                const inputEl = document.getElementById(propName);
+                const inputEl = document.getElementById(NEW_PROMPT_PREFIX + propName);
                 if (inputEl) {
                     let val = itemValues[propName];
                     if (val === undefined) val = '';
@@ -1030,6 +1339,27 @@ function handleCopyClick(e) {
                 }
             }
         }
+        // Copied values are assigned directly too: validate what we just wrote.
+        checkJsonFieldsByPrefix(NEW_PROMPT_PREFIX);
+
+        // Reveal what was copied: a collapsed panel would hide the fact that the
+        // new prompt already carries API overrides. Same intent as the row editor
+        // (toggleAdditionalPropertiesEditor), which auto-opens when data exists.
+        if (hasApiOverrideValues(itemValues)) {
+            openAddFormDisclosure('api_additional_info_toggle', 'api_additional_info', '[API]');
+        }
+    }
+
+    // The ChatGPT Web overrides live outside the api_type block (they apply when
+    // the global connection is ChatGPT Web and no api_type is set), so they are
+    // checked separately — and only if the disclosure is actually applicable.
+    if ((chatgpt_web_model !== '' && chatgpt_web_model !== undefined) ||
+        (chatgpt_web_project !== '' && chatgpt_web_project !== undefined) ||
+        (chatgpt_web_custom_gpt !== '' && chatgpt_web_custom_gpt !== undefined)) {
+        const cgwToggle = document.getElementById('chatgpt_web_additional_info_toggle');
+        if (cgwToggle && cgwToggle.style.display !== 'none') {
+            openAddFormDisclosure('chatgpt_web_additional_info_toggle', 'chatgpt_web_additional_info', '[ChatGPT Web]');
+        }
     }
 
     // Show form
@@ -1046,6 +1376,301 @@ function handleCopyClick(e) {
 
 //========= handling an item in a row - END
 
+// Wrap {%placeholder%} tokens in the visible prompt text with a styled chip.
+// Only touches the read-only .text_show spans (never the editable textarea),
+// and is idempotent (skips spans already decorated).
+// Uses PLACEHOLDER_RE, the same pattern the edit-mode backdrop uses, and
+// placeholdersUtils.findPlaceholder, the same predicate the edit-mode resolver
+// uses, so read mode and edit mode can never disagree — neither on what counts
+// as a token, nor on whether that token actually resolves.
+function decoratePromptText() {
+    // activePlaceholders is filled by an await that runs AFTER the first call to
+    // this function (loadPromptsList -> decoratePromptText is synchronous, and
+    // happens earlier in DOMContentLoaded). With an empty list findPlaceholder()
+    // resolves nothing, so classifying now would paint every token on the page
+    // as invalid; skip the validity pass until the list is in. The
+    // DOMContentLoaded handler re-runs this right after the await.
+    const canValidate = Array.isArray(activePlaceholders) && activePlaceholders.length > 0;
+    const missingTitle = canValidate
+        ? browser.i18n.getMessage('editor_placeholder_missing')
+        : '';
+
+
+    document.querySelectorAll('#all_prompts .text_show').forEach(span => {
+        // The guard is keyed to the *decorated result*, not to a plain '1' flag:
+        // saving a row makes List.js rewrite this span in place (chips and all)
+        // without firing 'updated', so a boolean flag would stay stale and the
+        // prompt would lose its highlighting until the next full re-render.
+        // It also self-invalidates when the validity pass changes the markup,
+        // which is what lets the post-await re-run actually repaint.
+        if (span.dataset.phDecorated === span.innerHTML) return;
+        // PLACEHOLDER_RE carries /g and therefore lastIndex state; reset before
+        // each use so a previous call cannot make this one start mid-string.
+        PLACEHOLDER_RE.lastIndex = 0;
+        if (!PLACEHOLDER_RE.test(span.innerHTML)) {
+            span.dataset.phDecorated = span.innerHTML;
+            return;
+        }
+
+        // The row's prompt type, read from the very element
+        // attachHighlightWithValidation() reads in edit mode, so the two modes
+        // filter by type identically.
+        const tr = span.closest('tr');
+        const typeSelect = tr ? tr.querySelector('.type_output') : null;
+        const typeSpan = tr ? tr.querySelector('.type') : null;
+        const rawType = typeSelect ? typeSelect.value
+            : (typeSpan ? typeSpan.innerText.trim() : null);
+        const type = (rawType === null || rawType === '') ? null : rawType;
+
+        // Rebuilt with DOM nodes rather than an innerHTML write: the token text
+        // comes from user-authored prompts, so it must never be re-parsed as
+        // markup. Existing <br> elements are the only structure this span can
+        // legitimately carry (List.js renders the stored text, which encodes
+        // newlines as <br>), so they are carried over as real elements and
+        // everything else is treated as plain text.
+        const frag = document.createDocumentFragment();
+        span.childNodes.forEach(node => {
+            if (node.nodeType !== Node.TEXT_NODE) {
+                frag.appendChild(node.cloneNode(true));
+                return;
+            }
+            const text = node.nodeValue;
+            PLACEHOLDER_RE.lastIndex = 0;
+            let pos = 0;
+            let m;
+            while ((m = PLACEHOLDER_RE.exec(text)) !== null) {
+                if (m.index > pos) {
+                    frag.appendChild(document.createTextNode(text.slice(pos, m.index)));
+                }
+                const chip = document.createElement('span');
+                chip.className = 'ph_chip';
+                // Same two tiers as edit mode: red when the id does not exist
+                // at all, amber when it exists but does not fit this row's type.
+                // The type half is delegated to classifyPlaceholderType(), the
+                // very helper the live resolver uses, so the two modes cannot
+                // disagree -- including on the type-'0' "works in only one
+                // context" warning. `type` may legitimately be null here, and
+                // the helper then returns null (no type filtering).
+                if (canValidate) {
+                    if (!placeholdersUtils.findPlaceholder(m[1], activePlaceholders, null)) {
+                        chip.classList.add('ph_chip_invalid_read', 'ph_chip_error_read');
+                        chip.title = missingTitle;
+                    } else {
+                        const state = classifyPlaceholderType(
+                            placeholdersUtils.findPlaceholder, activePlaceholders, m[1], type);
+                        if (state) {
+                            chip.classList.add('ph_chip_invalid_read');
+                            chip.title = state.title;
+                        }
+                    }
+                }
+                chip.textContent = m[0];
+                frag.appendChild(chip);
+                pos = m.index + m[0].length;
+            }
+            if (pos < text.length) {
+                frag.appendChild(document.createTextNode(text.slice(pos)));
+            }
+        });
+        span.replaceChildren(frag);
+        span.dataset.phDecorated = span.innerHTML;
+    });
+}
+
+// Keep the card footer prompt count in sync with the rendered list. When the
+// search filter is narrowing the list, report "shown of total" instead.
+function updatePromptsCount() {
+    const el = document.getElementById('prompts_count');
+    if (!el) return;
+    const total = promptsList ? promptsList.items.length : 0;
+    const shown = promptsList ? promptsList.matchingItems.length : total;
+    if (promptsList && promptsList.searched && shown !== total) {
+        el.textContent = browser.i18n.getMessage('customPrompts_promptsCount_filtered', [String(shown), String(total)]);
+    } else {
+        el.textContent = browser.i18n.getMessage('customPrompts_promptsCount', [String(total)]);
+    }
+}
+
+// Built-in prompts store their name as a "__MSG_key__" token, localized only
+// after render by i18n.updateDocument(). Resolve it so the search matches the
+// label the user actually sees. Same approach as resolveName() in mzta-prompts.js.
+function resolvePromptName(name) {
+    const n = name ?? '';
+    if (typeof n === 'string' && n.startsWith('__MSG_') && n.endsWith('__')) {
+        return browser.i18n.getMessage(n.substring(6, n.length - 2)) || n;
+    }
+    return String(n);
+}
+
+// The needle currently painted into the visible rows, so the highlight pass can
+// tell "nothing to repaint" from "clear the previous highlight".
+let currentSearchNeedle = '';
+
+// Wrap every occurrence of the search needle in the visible Name and ID cells
+// with <mark class="search_hit">.
+//
+// This must run after *every* List.js render, not just on input: item.values()
+// writes flow through templater.set(), which resets the `.name`/`.id` content
+// from the stored value and so silently drops the marks (the same hazard the
+// data-phDecorated guard exists for in decoratePromptText).
+//
+// Only `.name_show` / `.id_show` are touched. The `_output` inputs stay
+// untouched, and they are the single source of truth for every save/cancel/copy
+// path (handleConfirmClick, handleCancelClick, handleCopyClick all read
+// `.name_output` / `.id_output`), so no highlight markup can ever reach storage.
+function highlightSearchMatches() {
+    const needle = currentSearchNeedle;
+    document.querySelectorAll('#all_prompts .name_show, #all_prompts .id_show').forEach(span => {
+        // textContent, NOT innerText: these spans are set to display:none while
+        // their row is in edit mode, and innerText returns '' for a hidden
+        // element — which would blank the name/ID instead of re-marking it.
+        // Reading the text back also strips any <mark> from a previous pass, so
+        // re-highlighting is idempotent and marks can never nest.
+        const plain = span.textContent;
+        if (needle === '') {
+            // Nothing to highlight: restore the plain text only if this span was
+            // actually marked up, to avoid pointless DOM writes on every render.
+            if (span.querySelector('mark.search_hit')) {
+                span.textContent = plain;
+            }
+            return;
+        }
+
+        const lower = plain.toLowerCase();
+        let pos = 0;
+        let at = lower.indexOf(needle);
+        if (at === -1) {
+            if (span.querySelector('mark.search_hit')) {
+                span.textContent = plain;
+            }
+            return;
+        }
+        // Built from DOM nodes, never an innerHTML write: the needle and the
+        // surrounding name/ID text are user-supplied and must not be re-parsed
+        // as markup.
+        const frag = document.createDocumentFragment();
+        while (at !== -1) {
+            if (at > pos) frag.appendChild(document.createTextNode(plain.slice(pos, at)));
+            const mark = document.createElement('mark');
+            mark.className = 'search_hit';
+            mark.textContent = plain.slice(at, at + needle.length);
+            frag.appendChild(mark);
+            pos = at + needle.length;
+            at = lower.indexOf(needle, pos);
+        }
+        if (pos < plain.length) frag.appendChild(document.createTextNode(plain.slice(pos)));
+        span.replaceChildren(frag);
+    });
+}
+
+// Show/hide the toolbar badge announcing that the list is filtered.
+//
+// This is deliberately NOT routed through #msgDisplay: that span is owned
+// exclusively by setSomethingChanged() / setNothingChanged() / setMessage(),
+// which overwrite its text and toggle its display — an unsaved-changes warning
+// would silently wipe the filter notice, and setNothingChanged() would hide it.
+// The two states are independent and must be able to show at the same time.
+function updateFilterIndicator() {
+    const badge = document.getElementById('filter_badge');
+    const label = document.getElementById('filter_badge_text');
+    if (!badge || !label) return;
+
+    const filtering = !!(promptsList && promptsList.searched && currentSearchNeedle !== '');
+    if (!filtering) {
+        badge.classList.add('hiddendata');
+        label.textContent = '';
+        return;
+    }
+
+    const total = promptsList.items.length;
+    const shown = promptsList.matchingItems.length;
+    label.textContent = (shown === 0)
+        ? browser.i18n.getMessage('customPrompts_filter_noMatches')
+        : browser.i18n.getMessage('customPrompts_filter_active', [String(shown), String(total)]);
+    badge.classList.toggle('filter_badge_empty', shown === 0);
+    badge.classList.remove('hiddendata');
+}
+
+// Filter the list on prompt name and ID only (not the prompt body).
+// Called from loadPromptsList(), which runs again after an import — the listener
+// is therefore attached only once, while the handler reads the current
+// promptsList instance through the module-level variable.
+let promptsSearchBound = false;
+function setupPromptsSearch() {
+    const searchInput = document.getElementById('prompts_search');
+    if (!searchInput) return;
+
+    // An import replaces the List instance; the field must not keep showing a
+    // filter that is no longer applied to the freshly built list.
+    searchInput.value = '';
+    currentSearchNeedle = '';
+    updateFilterIndicator();
+
+    if (promptsSearchBound) return;
+    promptsSearchBound = true;
+
+    const btnClearFilter = document.getElementById('btnClearFilter');
+    if (btnClearFilter) {
+        btnClearFilter.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Same teardown as typing the field empty, including reverting any
+            // row left open in edit mode by the previously filtered view.
+            cancelOpenRowEditors();
+            clearPromptsSearch();
+            searchInput.focus();
+        });
+    }
+
+    // List.js lowercases and regex-escapes the search string before handing it
+    // to a custom search function, so compare against the raw input value.
+    const promptsSearch = () => {
+        const needle = searchInput.value.trim().toLowerCase();
+        promptsList.items.forEach(item => {
+            const values = item.values();
+            const name = resolvePromptName(values.name).toLowerCase();
+            const id = String(values.id ?? '').toLowerCase();
+            item.found = name.includes(needle) || id.includes(needle);
+        });
+    };
+
+    searchInput.addEventListener('input', () => {
+        if (!promptsList) return;
+        // A row left open in edit mode would keep unsaved edits in a hidden
+        // node, so revert any open editor before changing what is visible.
+        cancelOpenRowEditors();
+        const needle = searchInput.value.trim();
+        currentSearchNeedle = needle.toLowerCase();
+        // An empty string makes List.js reset the filter entirely.
+        promptsList.search(needle, ['name', 'id'], promptsSearch);
+        // search() triggers 'updated' only when the visible set changes; repaint
+        // unconditionally so narrowing the needle within the same result set
+        // (e.g. "re" -> "rep") still moves the marks.
+        highlightSearchMatches();
+        updateFilterIndicator();
+    });
+}
+
+// Drop any active search filter and empty the search field.
+function clearPromptsSearch() {
+    const searchInput = document.getElementById('prompts_search');
+    if (searchInput) searchInput.value = '';
+    currentSearchNeedle = '';
+    if (promptsList && promptsList.searched) promptsList.search('');
+    // Strip the marks even when search() was a no-op and fired no 'updated'.
+    highlightSearchMatches();
+    updateFilterIndicator();
+}
+
+// Revert every row currently open in edit mode, discarding its pending edits.
+// handleEditClick() reveals the Cancel button with display:flex, so that is the
+// marker for "this row has an open editor".
+function cancelOpenRowEditors() {
+    document.querySelectorAll('.btnCancelItem').forEach(btn => {
+        if (btn.style.display === 'flex') {
+            btn.click();
+        }
+    });
+}
 
 function loadPromptsList(values){
     // console.log('>>>>>>>> loadPromptsList values: ' + JSON.stringify(values));
@@ -1057,7 +1682,7 @@ function loadPromptsList(values){
     }
 
     let options = {
-        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', 'show_in', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'}, 'api_type', ...api_fields ],
+        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', 'show_in', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, 'api_type', ...api_fields ],
         item: function(values) {
             let type_output = '';
             switch(String(values.type)){
@@ -1084,25 +1709,14 @@ function loadPromptsList(values){
                     action_output = `__MSG_customPrompts_substitute_text__`;
                     break;
             }
-            let show_in_output = '';
-            switch(String(values.show_in || 'popup')){
-                case "popup":
-                    show_in_output = `__MSG_show_in_popup__`;
-                    break;
-                case "context":
-                    show_in_output = `__MSG_show_in_context__`;
-                    break;
-                case "both":
-                    show_in_output = `__MSG_show_in_both__`;
-                    break;
-            }
 
             let output = `<tr ` + ((values.is_default == 1) ? 'class="is_default"':'') + `>
                 <td class="w08"><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" /></td>
                 <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
                 <td class="w40">
                     <span class="text text_show"></span>
-                    <div class="autocomplete-container">
+                    <div class="autocomplete-container editor-wrap">
+                        <div class="editor-backdrop" aria-hidden="true"><div class="editor-highlights"></div></div>
                         <textarea class="hiddendata text_output editor">` + values.text.replace(/<br\s*\/?>/gi, "\n") + `</textarea>
                         <ul class="autocomplete-list hidden"></ul>
                     </div>
@@ -1132,9 +1746,16 @@ function loadPromptsList(values){
                                 <tr id="api_ui_anchor_` + values.id + `"><td style="display:none"></td></tr>
                             </tbody>
                         </table>
+                        <!-- Advanced connection fields: the .conn_adv rows injected
+                             above are moved into this table by relocateConnAdvRows()
+                             so expanding opens them below the button. -->
+                        <button type="button" class="conn_adv_btn" aria-expanded="false" hidden>__MSG_prefs_advanced_options__</button>
+                        <table class="conn_adv_table hidden" style="width:100%; text-align:left;">
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </td>
-                <td class="w08"><span class="field_title_s">__MSG_customPrompts_add_to_menu__:</span>
+                <td class="w08 menu_cell"><div class="menu_cell_inner"><span class="field_title_s">__MSG_customPrompts_add_to_menu__:</span>
                 <br>
                 <span class="type_show">` + type_output + `</span>
                 <select class="type_output hiddendata">
@@ -1143,17 +1764,11 @@ function loadPromptsList(values){
                 <option value="2"` + ((values.type == "2") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_composing__</option>
               </select>` +
               `<span class="type hiddendata"></span>
-              <br><br>
-              <span class="field_title_s">__MSG_show_in__:</span>
-                <br>
-                <span class="show_in_show">` + show_in_output + `</span>
-                <select class="show_in_output hiddendata input_mod">
-                <option value="popup"` + ((values.show_in == "popup" || !values.show_in) ? ' selected':'') + `>__MSG_show_in_popup__</option>
-                <option value="context"` + ((values.show_in == "context") ? ' selected':'') + `>__MSG_show_in_context__</option>
-                <option value="both"` + ((values.show_in == "both") ? ' selected':'') + `>__MSG_show_in_both__</option>
-                </select>` +
+              <br><br>` +
+              // Placement (show_in) is no longer editable here — the Menu Order page
+              // owns it (reachable via the "Menu position" button). The value is still
+              // tracked in this hidden span so it is preserved across edits/saves.
                 `<span class="show_in hiddendata"></span>
-              <br><br>
               <span class="field_title_s">__MSG_customPrompts_form_label_Action__:</span>
                 <br><span class="action_show">` + action_output + `</span>
                 <select class="action_output hiddendata">
@@ -1162,7 +1777,8 @@ function loadPromptsList(values){
                 <option value="2"` + ((values.action == "2") ? ' selected':'') + `>__MSG_customPrompts_substitute_text__</option>
                 </select>` +
                 `<span class="action hiddendata"></span>
-              </td>
+                <button class="btnMenuPositionItem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>__MSG_menu_position_btn_label__</span></button>
+              </div></td>
                 <td class="w17">
                     <label><span class="need_selected_span"><input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__</span></label>
                     <br>
@@ -1170,11 +1786,9 @@ function loadPromptsList(values){
                     <br>
                     <label><span class="need_custom_text_span"><input type="checkbox" class="need_custom_text` + ((values.is_default == 1) ? ' input_mod':'') + `"` + ((values.is_default == 0) ? ' disabled':'') + ` > __MSG_customPrompts_form_label_need_custom_text__</span></label>
                     <br>
-                    <label><input type="checkbox" class="define_response_lang" disabled> __MSG_customPrompts_form_label_define_response_lang__</label>
+                    <label><input type="checkbox" class="define_response_lang" disabled> __MSG_customprompts_form_label_define_response_lang__</label>
                     <br>
                     <label title="__MSG_customPrompts_form_label_use_diff_viewer_title__"><input type="checkbox" class="use_diff_viewer" disabled> __MSG_customPrompts_form_label_use_diff_viewer__</label>
-                    <br>
-                    <label><input type="checkbox" class="enabled input_mod"> __MSG_customPrompts_form_label_enabled__</label>
                     <span class="is_default hiddendata"></span>
                     <span class="position_compose hiddendata"></span>
                     <span class="position_display hiddendata"></span>
@@ -1184,17 +1798,15 @@ function loadPromptsList(values){
                         <div class="chatgpt_web_additional_info_row"><span class="field_title">__MSG_prefs_OptionText_chatgpt_web_custom_gpt__:</span><span class="chatgpt_web_custom_gpt chatgpt_web_custom_gpt_show">` + values.chatgpt_web_custom_gpt + `</span></div>
                     </div>
                     <div class="api_additional_info_show small_info">
-                        <div class="api_additional_info_row"><span class="field_title">__MSG_prefs_Connection_type__:</span><br/><span class="api_type api_type_show">` + values.api_type + `</span></div>
+                        <div class="api_additional_info_row"><span class="field_title">__MSG_prefs_Connection_type__:</span><br/><span class="api_type" hidden></span><span class="api_type_show" data-api-type="` + (values.api_type || '') + `">` + getConnectionTypeLabel(values.api_type) + `</span></div>
                     </div>
                 </td>
-                <td>
-                <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnEdit__</button>
-                <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnCancel__</button>
-                <br><br>
-                <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnOK__</button>
-                <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnDelete__</button>
-                <br><br>
-                <button class="btnCopyItem">__MSG_customPrompts_btnCopy__</button>
+                <td class="actions_cell">
+                <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>__MSG_customPrompts_btnEdit__</span></button>
+                <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>__MSG_customPrompts_btnCancel__</span></button>
+                <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>__MSG_customPrompts_btnOK__</span></button>
+                <button class="btnCopyItem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>__MSG_customPrompts_btnCopy__</span></button>
+                <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>__MSG_customPrompts_btnDelete__</span></button>
                </td>
             </tr>`;
             //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
@@ -1229,6 +1841,23 @@ function loadPromptsList(values){
 
     promptsList = new List('all_prompts', options, values);
 
+    // Decorate the visible prompt text: wrap {%placeholder%} tokens in a code
+    // chip, and keep the footer prompt count in sync. Runs after the initial
+    // render and on every List.js re-render (sort / filter / add / remove).
+    decoratePromptText();
+    updatePromptsCount();
+    promptsList.on('updated', () => {
+        decoratePromptText();
+        updatePromptsCount();
+        // List.js rewrites the .name/.id spans from the stored values on render,
+        // wiping the <mark> wrappers, so they must be repainted every time.
+        highlightSearchMatches();
+        // Deleting rows while filtered changes both counts, so refresh here too.
+        updateFilterIndicator();
+    });
+
+    setupPromptsSearch();
+
     checkSelectedBoxes();
     let btnEditItem_elements = document.querySelectorAll(".btnEditItem");
     btnEditItem_elements.forEach(element => {
@@ -1253,6 +1882,11 @@ function loadPromptsList(values){
     let btnConfirmItem_elements = document.querySelectorAll(".btnConfirmItem");
     btnConfirmItem_elements.forEach(element => {
         element.addEventListener('click', handleConfirmClick);
+    });
+
+    let btnMenuPositionItem_elements = document.querySelectorAll(".btnMenuPositionItem");
+    btnMenuPositionItem_elements.forEach(element => {
+        element.addEventListener('click', handleMenuPositionClick);
     });
 
     let checkbox_elements = document.querySelectorAll("input[type='checkbox']");
@@ -1302,23 +1936,53 @@ function checkFields() {
 }
 
 
+// The diff viewer flag only applies when the action is "substitute text", so
+// while it's disabled the form spells out the condition under the toggle. Once
+// it becomes available the hint is redundant and gets hidden again.
+function updateUseDiffViewerHint() {
+    const hint = document.getElementById('useDiffViewerNew_hint');
+    if (!hint) return;
+    const checkbox = document.getElementById('checkboxUseDiffViewerNew');
+    hint.classList.toggle('hidden', !checkbox.disabled);
+}
+
 function clearFields() {
     document.getElementById('txtIdNew').value = '';
     document.getElementById('txtNameNew').value = '';
-    document.getElementById('txtTextNew').value = '';
+    // Not a bare `.value = ''`: that fires no 'input' event, so the highlight
+    // mirror would keep painting the previous prompt's text and chips behind the
+    // now-empty textarea, and they would still be there the next time the add
+    // form is opened.
+    setEditorValue(document.getElementById('txtTextNew'), '');
     document.getElementById('chatGPTWebModelNew').value = '';
     document.getElementById('chatGPTWebProjectNew').value = '';
     document.getElementById('chatGPTWebCustomGPTNew').value = '';
     document.getElementById('selectTypeNew').value = '0';
-    document.getElementById('selectShowInNew').value = 'popup';
     document.getElementById('selectActionNew').value = '0';
-    document.getElementById('checkboxNeedSelectedNew').value = '0';
-    document.getElementById('checkboxNeedSignatureNew').value = '0';
-    document.getElementById('checkboxNeedCustomTextNew').value = '0';
+    document.getElementById('checkboxNeedSelectedNew').checked = false;
+    document.getElementById('checkboxNeedSignatureNew').checked = false;
+    document.getElementById('checkboxNeedCustomTextNew').checked = false;
+    document.getElementById('checkboxDefineResponseLangNew').checked = false;
+    document.getElementById('checkboxUseDiffViewerNew').checked = false;
+    // The action is reset to '0' above, so the diff viewer flag goes back to
+    // being not applicable (same state as on page load).
+    document.getElementById('checkboxUseDiffViewerNew').disabled = true;
+    updateUseDiffViewerHint();
+    // Drop any leftover validation rings from the previous edit.
+    document.getElementById('checkboxNeedSelectedNew').classList.remove('invalid_flag');
+    document.getElementById('checkboxNeedCustomTextNew').classList.remove('invalid_flag');
     document.getElementById('formNew').style.display = 'none';
 }
 
-function getAPIValuesFromUI(prefix = '') {
+// `prefix` is mandatory: every injected connection field on this page is prefixed
+// (NEW_PROMPT_PREFIX for the add form, `prompt_<id>_` per row). An empty prefix
+// matches nothing, so `if (inputEl)` would skip every field and silently return
+// {} instead of failing — the exact way a missed prefix stays invisible here.
+function getAPIValuesFromUI(prefix) {
+    if (!prefix) {
+        console.error('[ThunderAI | getAPIValuesFromUI] called without a prefix; no API values would be read.');
+        return {};
+    }
     let values = {};
     for (const [integration, options] of Object.entries(integration_options_config)) {
         for (const key of Object.keys(options)) {
@@ -1363,25 +2027,27 @@ function setNothingChanged(){
 
 function checkSelectedBoxes(checkboxes = null) {
     if(checkboxes == null){
+        // Restores the list rows' checkboxes from their `checked_val` attribute.
+        // Scoped to the prompts list on purpose: the #formNew inputs share these
+        // classes (they use the same toggle-switch styling) but carry no
+        // `checked_val`, and the else-branch below would then force them all on.
         checkboxes = [
-            ...document.querySelectorAll('.need_selected[type="checkbox"]'),
-            ...document.querySelectorAll('.need_signature[type="checkbox"]'),
-            ...document.querySelectorAll('.need_custom_text[type="checkbox"]'),
-            ...document.querySelectorAll('.define_response_lang[type="checkbox"]'),
-            ...document.querySelectorAll('.use_diff_viewer[type="checkbox"]'),
-            ...document.querySelectorAll('.enabled[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .need_selected[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .need_signature[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .need_custom_text[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .define_response_lang[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .use_diff_viewer[type="checkbox"]'),
         ];
     }
 
     // Iterate through the checkboxes
     checkboxes.forEach(checkbox => {
-        // Check if the 'checked' attribute is "0"
-        if (checkbox.getAttribute('checked_val') == "0") {
-            // Uncheck the checkbox
-            checkbox.checked = false;
-        } else {
-            checkbox.checked = true;
-        }
+        // On only for an explicit "1". This used to ask the inverse question
+        // ("is it 0?"), which sent every unexpected value -- "", a missing
+        // attribute, null -- down the else branch and rendered it as ON, while
+        // every consumer compares against "1" and read the same value as OFF.
+        const value = checkbox.getAttribute('checked_val');
+        checkbox.checked = (value === "1");
     });
 }
 
@@ -1453,25 +2119,13 @@ async function checkPromptsConfigForPlaceholders(textarea){
     // check additional_text and selected_text placeholders presence and the corrispondent checkboxes
     let tr_ancestor = textarea.closest('tr');
     let need_custom_text_element = tr_ancestor.querySelector('.need_custom_text') || tr_ancestor.querySelector('.need_custom_text_new');
-    if(/{%\s*additional_text(?::.*?)?\s*%}/.test(String(curr_text))){
-        if(!need_custom_text_element.checked){
-            need_custom_text_element.closest('.need_custom_text_span').style.border = '2px solid red';
-        }else{
-            need_custom_text_element.closest('.need_custom_text_span').style.border = '';
-        }
-      }else{
-        need_custom_text_element.closest('.need_custom_text_span').style.border = '';
-      }
+    // The ring is drawn on the checkbox itself (see .invalid_flag in the CSS), so it
+    // hugs the toggle switch instead of boxing the whole label row.
+    let need_custom_text_missing = /{%\s*additional_text(?::.*?)?\s*%}/.test(String(curr_text)) && !need_custom_text_element.checked;
+    need_custom_text_element.classList.toggle('invalid_flag', need_custom_text_missing);
 
       let tr_ancestor2 = textarea.closest('tr');
       let selected_text_element = tr_ancestor2.querySelector('.need_selected') || tr_ancestor2.querySelector('.need_selected_new');
-      if((String(curr_text).indexOf('{%selected_text%}') != -1)||(String(curr_text).indexOf('{%selected_html%}') != -1)){
-        if(!selected_text_element.checked){
-            selected_text_element.closest('.need_selected_span').style.border = '2px solid red';
-        }else{
-            selected_text_element.closest('.need_selected_span').style.border = '';
-        }
-      }else{
-        selected_text_element.closest('.need_selected_span').style.border = '';
-      }
+      let selected_text_used = (String(curr_text).indexOf('{%selected_text%}') != -1)||(String(curr_text).indexOf('{%selected_html%}') != -1);
+      selected_text_element.classList.toggle('invalid_flag', selected_text_used && !selected_text_element.checked);
 }

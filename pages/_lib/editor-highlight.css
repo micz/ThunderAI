@@ -1,0 +1,174 @@
+/*
+ *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
+
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/* ===========================================================================
+   Live {%placeholder%} highlighting — structure, shared by every page that
+   uses js/mzta-editor-highlight.js.
+
+   The technique: an inert mirror element paints the glyphs and the token chips,
+   a transparent <textarea> sits on top of it painting only the border, caret
+   and selection, and the wrapper below both paints the field surface. The
+   textarea stays the source of truth (native undo/redo, IME, spellcheck).
+
+   ALIGNMENT IS LOAD-BEARING. The textarea and its mirror must agree on every
+   metric that affects glyph position, which is why they share one selector
+   list. Never set a font, padding, border-width or wrapping property on only
+   one of the two.
+
+   The three metrics that legitimately differ between pages, plus the colours,
+   are custom properties. A page opting in MUST define these on .editor-wrap
+   (or any ancestor):
+
+     --ed-padding      textarea/mirror padding, e.g. 7px 10px
+     --ed-font         font-family
+     --ed-line-height  line-height
+     --ed-surface      field background
+     --ed-surface-focus  field background while focused (defaults to --ed-surface)
+     --ed-border       textarea border colour
+     --ed-chip-bg / --ed-chip-fg          valid token chip
+     --ed-warn-bg / --ed-warn-fg / --ed-warn-border   amber chip: the placeholder
+                       exists, but this prompt's type cannot use it
+     --ed-err-bg / --ed-err-fg / --ed-err-border      red chip: unknown id, or an
+                       unterminated token — nothing can make it resolve
+
+   Fallbacks below are deliberately inert (transparent / inherit) so a page that
+   forgets one degrades to "no highlight" rather than to a misaligned mirror.
+   =========================================================================== */
+
+.editor-wrap { position: relative; }
+
+/* The field surface is painted here, not on the textarea (which has to stay
+   transparent so the mirror shows through) and not on the backdrop (which is
+   inset inside the textarea's border box, so it cannot paint the 1px border
+   ring or the rounded corners). */
+.editor-wrap {
+    background: var(--ed-surface, transparent);
+    border-radius: 8px;
+}
+
+.editor-wrap:focus-within {
+    background: var(--ed-surface-focus, var(--ed-surface, transparent));
+}
+
+/* Metrics shared by the textarea and its mirror. */
+.editor-wrap .editor,
+.editor-wrap .editor-highlights {
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    padding: var(--ed-padding, 0);
+    border: 1px solid transparent;   /* same border box; colour differs below */
+    border-radius: 8px;
+    font-family: var(--ed-font, inherit);
+    font-size: 13px;
+    line-height: var(--ed-line-height, normal);
+    letter-spacing: normal;
+    tab-size: 4;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: normal;
+}
+
+.editor-wrap .editor {
+    position: relative;
+    z-index: 1;
+    background: transparent;
+    color: transparent;
+    caret-color: var(--text);
+    border-color: var(--ed-border, transparent);
+    resize: vertical;
+}
+
+/* Some pages repaint the field background on focus; that would hide the mirror,
+   so the highlight lives on the wrapper (:focus-within, above) instead. */
+.editor-wrap .editor:focus { background: transparent; }
+
+.editor-wrap .editor::selection {
+    background: var(--ed-chip-bg, transparent);
+    color: var(--text);
+}
+
+/* Inert mirror. Transparent by design: it paints glyphs and chips, never a
+   surface. */
+.editor-backdrop {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    border-radius: 8px;
+    background: transparent;
+    z-index: 0;
+}
+
+.editor-wrap .editor-highlights {
+    min-height: 100%;
+    color: var(--text);
+    border-color: transparent;
+}
+
+/* Edit-mode chip. MUST be metric-neutral: no font-family, font-size or padding
+   that changes the advance width of the text, or the mirror stops matching the
+   textarea. Horizontal breathing room is faked with equal negative margin. */
+.editor-wrap .ph_chip_live {
+    background: var(--ed-chip-bg, transparent);
+    color: var(--ed-chip-fg, inherit);
+    border-radius: 4px;
+    padding: 0 .2em;
+    margin: 0 -.2em;
+}
+
+/* Invalid token, shared geometry. Amber is the default, so a chip carrying only
+   .ph_chip_invalid — no severity tier — renders exactly as it did before.
+   .ph_chip_warn ("exists, wrong prompt type") therefore needs no rule of its
+   own; it is added by chip() only to make the tier readable in the DOM. */
+.editor-wrap .ph_chip_invalid {
+    background: var(--ed-warn-bg, transparent);
+    color: var(--ed-warn-fg, inherit);
+    box-shadow: inset 0 -1px 0 0 var(--ed-warn-border, transparent);
+}
+
+/* Red: the token can never resolve — an unknown id, or an unterminated '{%'.
+   Colours ONLY. A padding, margin or font declaration here would change the
+   chip's advance width and drift the mirror away from the textarea. */
+.editor-wrap .ph_chip_invalid.ph_chip_error {
+    background: var(--ed-err-bg, transparent);
+    color: var(--ed-err-fg, inherit);
+    box-shadow: inset 0 -1px 0 0 var(--ed-err-border, transparent);
+}
+
+/* Zero-width caret marker used to anchor the autocomplete list. */
+.caret-anchor {
+    display: inline-block;
+    width: 0;
+    height: 1em;
+    vertical-align: baseline;
+    overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+   Visibility.
+
+   On pages whose textarea is permanently in edit mode the mirror is simply
+   always on. On the two table pages a row toggles between a read-only span and
+   the editor, and leaving edit mode sets display:none on the *textarea* only —
+   its siblings stay visible. attachEditorHighlight() therefore adds
+   .editor-active to the wrapper and destroy() removes it, and those pages gate
+   both the backdrop and the textarea's block display on it (see
+   mzta-custom-prompts.css). display:block must NOT be declared here: at two
+   classes it would beat the row template's .hiddendata { display: none }.
+   --------------------------------------------------------------------------- */

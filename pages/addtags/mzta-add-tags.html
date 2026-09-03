@@ -5,6 +5,8 @@
     <title>ThunderAI - __MSG_AddTags_PageTitle__</title>
     <link rel="stylesheet" href="../_lib/mzta-design.css" />
     <link rel="stylesheet" href="mzta-add-tags.css" />
+    <link rel="stylesheet" href="../_lib/autocomplete.css" />
+    <link rel="stylesheet" href="../_lib/editor-highlight.css" />
     <link rel="stylesheet" href="../_lib/connection-ui.css" />
     <link rel="icon" href="../../images/icon-16px.png" />
 </head>
@@ -25,8 +27,6 @@
 
             <!-- SETTINGS -->
             <div class="mzta_section">
-                <div class="mzta_eyebrow">__MSG_AddTags_prompt_prefs_title__</div>
-
                 <!-- specific integration toggle -->
                 <div class="feature_row">
                     <div class="feature_info">
@@ -134,6 +134,18 @@
                     </label>
                 </div>
 
+                <!-- auto: include sent (sub-row, toggled by JS) -->
+                <div class="feature_row add_tags_auto_sub" id="add_tags_auto_include_sent_tr">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_add_tags_auto_include_sent__</div>
+                        <div class="feature_desc">__MSG_prefs_OptionText_add_tags_auto_include_sent_Info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="add_tags_auto_include_sent" name="add_tags_auto_include_sent" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+
                 <!-- auto: use list (sub-row, toggled by JS) -->
                 <div class="mzta_field add_tags_auto_sub" id="add_tags_auto_uselist_tr">
                     <div class="feature_row" style="border-top:none;padding-top:0;">
@@ -164,7 +176,7 @@
 
             <!-- PROMPT -->
             <div class="mzta_section" id="addtags_prompt_container">
-                <div class="mzta_eyebrow">__MSG_AddTags_prompt_text_title__<span id="addtags_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                <div class="mzta_prompt_title">__MSG_AddTags_prompt_text_title__<span id="addtags_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
                 <p class="mzta_help">
                     __MSG_prefs_OptionText_btnManagePrompts_infoline__
                     <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_more_info_string__</a>
@@ -172,11 +184,12 @@
                     <br><b>__MSG_prefs_OptionText_AdvancedPromptResponse_infoline2__</b>
                 </p>
                 <div class="mzta_field">
-                    <div class="autocomplete-container">
-                        <textarea id="addtags_prompt_text" rows="15"></textarea>
+                    <div class="autocomplete-container editor-wrap">
+                        <div class="editor-backdrop" aria-hidden="true"><div class="editor-highlights"></div></div>
+                        <textarea id="addtags_prompt_text" rows="15" class="editor"></textarea>
                         <ul class="autocomplete-list hidden"></ul>
                     </div>
-                    <div id="addtags_info_additional_statements"></div>
+                    <div id="addtags_info_additional_statements" class="feature_desc"></div>
                     <div class="btn_div">
                         <button id="btn_reset_prompt" class="btn_secondary" disabled>__MSG_reset_default__</button>
                         <button id="btn_save_prompt" class="btn_primary" disabled>__MSG_save__</button>
@@ -186,7 +199,7 @@
 
             <!-- EXCLUSIONS LIST -->
             <div class="mzta_section" id="addtags_excl_list_container">
-                <div class="mzta_eyebrow">__MSG_AddTags_excl_list_title__<span id="excl_list_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                <div class="mzta_prompt_title">__MSG_AddTags_excl_list_title__<span id="excl_list_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
                 <p class="mzta_help">
                     __MSG_AddTags_excl_list_infoline__
                     <br>__MSG_AddTags_excl_list_infoline2__
@@ -201,7 +214,7 @@
 
             <!-- ACCOUNT SELECTOR -->
             <div class="mzta_section" id="account_selector_container">
-                <div class="mzta_eyebrow">__MSG_AccountSelector_AutoTags__</div>
+                <div class="mzta_prompt_title">__MSG_AccountSelector_AutoTags__</div>
                 <p class="mzta_help" id="account_selector_info">__MSG_AccountSelector_AutoTags_infoline__</p>
                 <div id="account_selector_checkboxes"></div>
                 <div class="btn_div" style="justify-content:flex-start;">

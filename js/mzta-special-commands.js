@@ -22,6 +22,7 @@
     integration_options_config
  } from "../options/mzta-options-default.js";
  import { taLogger } from './mzta-logger.js';
+ import { stripThinkTags } from './mzta-utils.js';
 
  // Fallback timeout (ms) for a special command if the special_command_timeout
  // preference is unavailable. Kept generous to accommodate slow local models.
@@ -60,6 +61,7 @@
     worker = null;
     llm = "";
     full_message = "";
+    thinking_message = "";
     logger = null;
     do_debug = false;
     config = {};
@@ -187,11 +189,26 @@
                     case 'newToken':
                         this.full_message += payload.token;
                         break;
-                    case 'tokensDone':
-                        clearTimer();
-                        this.logger.log("tokensDone: " + this.full_message);
-                        resolve(this.full_message); // Resolve the promise with the full message
+                    case 'newThinkingToken':
+                        // A special command's response is parsed, not displayed, so the
+                        // model's reasoning must never reach full_message. Kept apart here
+                        // for the providers that stream it in a dedicated field: it is only
+                        // written to the debug log, never handed to the caller.
+                        this.thinking_message += payload.token;
                         break;
+                    case 'tokensDone': {
+                        clearTimer();
+                        // Models that emit their reasoning inline instead (<think> blocks in
+                        // the content stream) need it stripped for the same reason. An
+                        // unterminated block means a truncated reply: drop the leftover too,
+                        // rather than handing raw reasoning to the caller's parser.
+                        // The whole response is passed here, so the leading whitespace a
+                        // removed block leaves behind is safe to trim (third argument).
+                        const cleaned = stripThinkTags(this.full_message, true, true).text;
+                        this.logger.log("tokensDone: " + cleaned);
+                        resolve(cleaned); // Resolve the promise with the full message
+                        break;
+                    }
                     case 'error':
                         clearTimer();
                         console.error('[ThunderAI] Error from API worker:', payload);

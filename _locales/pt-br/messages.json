@@ -1,6 +1,6 @@
 {
     "extensionDescription": {
-        "message": "Use o ChatGPT, Goolge Gemini, Claude ou o Ollama para aprimorar seus e-mails!",
+        "message": "Use o ChatGPT, Google Gemini, Claude ou o Ollama para aprimorar seus e-mails!",
         "description": "Description of the extension."
     },
     "menu_title": {
@@ -15,6 +15,9 @@
     "prompt_reply_advanced": {
         "message": "Responda a este tópico"
     },
+    "prompt_reply_custom_command": {
+        "message": "Responder com comando..."
+    },
     "prompt_rewrite_polite": {
         "message": "Reescreva de forma educada"
     },
@@ -25,7 +28,7 @@
         "message": "Classificar"
     },
     "prompt_translate_this": {
-        "message": "Traduza isso"
+        "message": "Traduzir"
     },
     "prompt_this": {
         "message": "Prompt isso"
@@ -38,6 +41,9 @@
     },
     "more_info_string": {
         "message": "Mais informações"
+    },
+    "prompt_string": {
+        "message": "Prompt"
     },
     "customPrompts_managePrompts_info_default": {
         "message": "Os prompts padrão não são editáveis. Você pode desativá-los, copiar o texto do prompt e colá-lo em um novo para criar uma versão modificada."
@@ -96,6 +102,12 @@
     "customPrompts_form_label_enabled": {
         "message": "Ativado"
     },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Ativar o visualizador de comparação de texto"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "Disponível quando a ação está definida como \"Substituir texto\"."
+    },
     "customPrompts_form_required_fields": {
         "message": "Campos obrigatórios"
     },
@@ -109,7 +121,7 @@
         "message": "OK"
     },
     "customPrompts_btnDelete": {
-        "message": "Deletar"
+        "message": "Excluir"
     },
     "customPrompts_btnDelete_confirmText": {
         "message": "Você tem certeza de que deseja excluir este item?"
@@ -161,6 +173,9 @@
     },
     "chatgpt_win_close": {
         "message": "Fechar"
+    },
+    "webchat_save_as_summary": {
+        "message": "Salvar como resumo"
     },
     "chatgpt_textarea_not_found_error": {
         "message": "Parece que a página do ChatGPT está demorando muito para carregar. Se terminar de carregar, clique no botão à direita. Se o problema persistir, por favor, verifique o status do serviço."
@@ -222,8 +237,37 @@
     "prefs_OptionText_reply_type": {
         "message": "Tipo de resposta"
     },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "Este é o tipo de resposta padrão que será usado ao responder a um e-mail. Você pode escolher o outro posteriormente na janela de resposta."
+    },
     "prefs_OptionText_btnManagePrompts": {
         "message": "Gerenciar seus prompts"
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "Gerenciar seus espaços reservados de dados"
+    },
+    "prefs_storage_title": {
+        "message": "Armazenamento"
+    },
+    "prefs_storage_info": {
+        "message": "O armazenamento é usado para salvar informações sobre a pontuação de spam, resumos e traduções de cada mensagem."
+    },
+    "prefs_storage_size": {
+        "message": "Tamanho do armazenamento"
+    },
+    "prefs_storage_clear_button": {
+        "message": "Limpar armazenamento"
+    },
+    "prefs_storage_clear_confirm": {
+        "message": "Tem certeza de que deseja limpar todos os dados armazenados (resumos, relatórios de spam, traduções)? Esta ação não pode ser desfeita."
+    },
+    "prefs_storage_clear_done": {
+        "message": "$COUNT$ registros removidos.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
     },
     "prefsInfoTitle": {
         "message": "Informações importantes"
@@ -246,6 +290,27 @@
     "prefsInfoDesc_6": {
         "message": "Você pode alterar o atalho clicando no ícone de engrenagem no canto superior direito desta página e escolhendo \"Gerenciar Atalho da Extensão\"."
     },
+    "prefsInfoDesc_7": {
+        "message": "Para usar a API do Google Gemini, você precisa de uma chave de API do Google Gemini e deve escolher um modelo."
+    },
+    "prefsInfoDesc_8": {
+        "message": "Para usar a API do Claude, você precisa de uma chave de API do Anthropic Claude e deve escolher um modelo."
+    },
+    "prefs_full_guide": {
+        "message": "Guia completo"
+    },
+    "prefs_shortcut_label": {
+        "message": "Abrir o menu do ThunderAI com"
+    },
+    "prefs_disclaimer_short": {
+        "message": "Modelos de LLM podem gerar informações incorretas, e seus dados podem ser usados pelo provedor para treinar novos modelos."
+    },
+    "prefs_footer_translate": {
+        "message": "Traduzir o complemento"
+    },
+    "prefs_footer_donate": {
+        "message": "Fazer uma doação"
+    },
     "prefsDonation_1": {
         "message": "Você gosta deste complemento?"
     },
@@ -266,6 +331,45 @@
     },
     "customPrompts_Import": {
         "message": "Importar novos prompts"
+    },
+    "customPrompts_promptsCount": {
+        "message": "$COUNT$ prompts",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "customPrompts_promptsCount_filtered": {
+        "message": "$SHOWN$ de $TOTAL$ prompts",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_search_placeholder": {
+        "message": "Pesquisar por nome ou ID"
+    },
+    "customPrompts_filter_active": {
+        "message": "Filtrado: $SHOWN$ de $TOTAL$",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_filter_noMatches": {
+        "message": "Nenhum prompt correspondente"
+    },
+    "customPrompts_filter_clear": {
+        "message": "Limpar filtro"
     },
     "importPrompts_confirmText": {
         "message": "Você está prestes a importar novos prompts."
@@ -303,9 +407,6 @@
     "ChatGPT_Models": {
         "message": "Modelos do ChatGPT"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "Atualizar lista de modelos do ChatGPT"
-    },
     "ChatGPT_Models_Error_fetching": {
         "message": "Erro ao tentar buscar os modelos do ChatGPT"
     },
@@ -342,8 +443,8 @@
     "Ollama_Models": {
         "message": "Modelos do Ollama"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Atualizar lista de modelos do Ollama"
+    "Models_Fetch": {
+        "message": "Atualizar lista"
     },
     "Ollama_Models_Error_fetching": {
         "message": "Erro ao tentar buscar os modelos do Ollama"
@@ -374,9 +475,6 @@
     },
     "OpenAIComp_Models": {
         "message": "Modelos da API Compatível com OpenAI"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "Atualizar a lista de Modelos da API Compatível com OpenAI"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Erro ao tentar buscar os modelos da API Compatível com OpenAI"
@@ -423,6 +521,9 @@
     "OpenChatGPTTab_Info": {
         "message": "Em caso de problemas de login na janela do ThunderAI, abra o ChatGPT em uma nova aba usando o botão à direita, faça o login, depois feche a aba e continue usando o ThunderAI."
     },
+    "OpenChatGPTTab_Info2": {
+        "message": "Abrir o ChatGPT Web a partir daqui aplicará as configurações definidas para o modelo, o projeto e o Custom GPT."
+    },
     "placeholder_mail_text_body": {
         "message": "Corpo do e-mail"
     },
@@ -432,8 +533,23 @@
     "placeholder_mail_subject": {
         "message": "Assunto do e-mail"
     },
+    "placeholder_folder_name": {
+        "message": "Nome da pasta"
+    },
+    "placeholder_folder_path": {
+        "message": "Caminho da pasta"
+    },
+    "placeholder_mail_headers": {
+        "message": "Cabeçalhos do e-mail"
+    },
+    "placeholder_mail_full_headers": {
+        "message": "Todos os cabeçalhos do e-mail"
+    },
     "placeholder_selected_text": {
         "message": "Texto selecionado"
+    },
+    "placeholder_selected_html": {
+        "message": "HTML selecionado"
     },
     "placeholder_additional_text": {
         "message": "Texto adicional"
@@ -450,17 +566,44 @@
     "placeholder_author": {
         "message": "Autor"
     },
+    "placeholder_account_email_address": {
+        "message": "Endereço de e-mail da conta"
+    },
+    "placeholder_mail_text_body_or_selected": {
+        "message": "Corpo do e-mail ou texto selecionado"
+    },
+    "placeholder_mail_html_body_or_selected": {
+        "message": "Corpo do e-mail ou HTML selecionado"
+    },
+    "placeholder_mail_plain_text_part": {
+        "message": "Parte em texto simples original do e-mail, sem qualquer conversão da parte HTML (ideal para e-mails comerciais e automatizados; pode estar vazia ou ser um resumo em newsletters)"
+    },
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "Marcadores de posição: usar valor padrão"
     },
     "prefs_OptionText_placeholders_use_default_value_info": {
         "message": "Se marcado, os marcadores de posição serão preenchidos com os valores padrão quando nenhum valor for fornecido. Caso contrário, os marcadores de posição serão mantidos no lugar."
     },
+    "prefs_OptionText_hide_thinking": {
+        "message": "Recolher bloco de pensamento por padrão"
+    },
+    "prefs_OptionText_hide_thinking_info": {
+        "message": "Controla o estado inicial do bloco de pensamento exibido acima da resposta. Se marcado, o bloco é recolhido por padrão e pode ser aberto com um clique. Se desmarcado, o bloco é aberto por padrão e pode ser recolhido com um clique. O conteúdo do pensamento é sempre preservado."
+    },
+    "prefs_OptionText_thinking_summary": {
+        "message": "Pensamento"
+    },
     "prefs_OptionText_max_prompt_length": {
         "message": "Comprimento máximo do prompt"
     },
     "prefs_OptionText_max_prompt_length_Info": {
         "message": "Este é o número máximo de caracteres que podem ser usados em um prompt. Caso contrário, uma mensagem de erro será exibida. O valor não é editável para a Interface Web do ChatGPT. Defina como zero para desativar a verificação."
+    },
+    "prefs_OptionText_special_command_timeout": {
+        "message": "Tempo limite de comando especial (ms)"
+    },
+    "prefs_OptionText_special_command_timeout_Info": {
+        "message": "Tempo em milissegundos antes que uma solicitação de IA travada (adicionar tags automaticamente, filtro de spam, resumir, traduzir) seja abortada. Aumente-o se você usar modelos locais lentos. Isso se aplica apenas a conexões baseadas em API, não à Interface Web do ChatGPT."
     },
     "prefs_OptionText_chatgpt_web_model": {
         "message": "Modelo Web do ChatGPT"
@@ -469,10 +612,16 @@
         "message": "Este é o modelo que será aplicado para a Interface Web do ChatGPT. Se nenhum for especificado ou um incorreto for fornecido, o modelo padrão será definido pelo ChatGPT na página web. Essa configuração não funcionará com uma conta gratuita do ChatGPT."
     },
     "prefs_OptionText_chatgpt_web_tempchat": {
-        "message": "Chat temporário Web do ChatGPT"
+        "message": "Chat temporário do ChatGPT Web"
     },
     "prefs_OptionText_chatgpt_web_tempchat_info": {
         "message": "Se marcado, o chat temporário será utilizado na Interface Web do ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time": {
+        "message": "Tempo de espera para carregamento da página"
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time_info": {
+        "message": "Tempo em milissegundos para aguardar o carregamento da página do ChatGPT antes de carregar o conteúdo adicional. O padrão é 1000ms. Se um Custom GPT ou Projeto for definido, mais 1000ms serão adicionados a este valor."
     },
     "chatgpt_btn_model": {
         "message": "Usar o modelo atual"
@@ -483,11 +632,26 @@
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Você pode usar espaços reservados para dados adicionais."
     },
+    "prefs_extra_body_error_invalid": {
+        "message": "JSON inválido:"
+    },
+    "prefs_extra_body_error_not_object": {
+        "message": "O valor deve ser um objeto JSON, entre chaves."
+    },
+    "prefs_OptionText_openai_comp_extra_body": {
+        "message": "Dados extras do corpo"
+    },
+    "prefs_OptionText_openai_comp_extra_body_info": {
+        "message": "Parâmetros adicionais a serem enviados em cada chamada da API, como um objeto JSON. Útil para opções que este serviço suporta, mas que o ThunderAI não expõe, como desativar o modo de raciocínio: {\"chat_template_kwargs\": {\"thinking\": false}} ou {\"top_p\": 0.9}. Os parâmetros gerenciados pelo ThunderAI (model, messages, streaming, temperature) não podem ser substituídos aqui. Um valor inválido é ignorado."
+    },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Manter a compatibilidade com \"v1\""
     },
     "prefs_OptionText_openai_comp_use_v1_info": {
         "message": "Se marcado, o segmento \"v1\" no caminho das chamadas de API será mantido, como em \"http://localhost:1234/v1/chat/completions\"."
+    },
+    "prefs_OptionText_openai_comp_info_remote": {
+        "message": "Aqui você também pode inserir um endereço de servidor remoto."
     },
     "prefs_OptionText_owl_warning": {
         "message": "Parece que pelo menos uma das suas contas está usando o complemento Coruja para Exchange. Existe um problema conhecido entre Thunderbird e Coruja, que está sendo resolvido no momento. Por enquanto, você pode usar o ThunderAI ao redigir e-mails, mas não ao lê-los."
@@ -507,11 +671,14 @@
     "prompt_reply_advanced_full_text": {
         "message": "Responda ao seguinte e-mail \"{%selected_text%}\", considerando que este é o thread completo de e-mails \"{%mail_html_body%}\". Responda apenas com o texto necessário e sem comentários adicionais ou outros textos."
     },
+    "prompt_reply_custom_command_full_text": {
+        "message": "Responda ao seguinte e-mail \"{%mail_text_body%}\". {%additional_text%}. Responda com apenas o texto necessário e sem comentários extras ou outro texto."
+    },
     "prompt_rewrite_full_text": {
-        "message": "Reescreva o texto a seguir de forma mais educada. Responda apenas com o texto reescrito e sem comentários adicionais ou outros textos."
+        "message": "Reescreva o texto a seguir de forma mais educada. Responda apenas com o texto reescrito e sem comentários adicionais ou outros textos. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Reescreva o texto a seguir de forma mais formal. Responda apenas com o texto reescrito e sem comentários adicionais ou outros textos."
+        "message": "Reescreva o texto a seguir de forma mais formal. Responda apenas com o texto reescrito e sem comentários adicionais ou outros textos. {%selected_html%}"
     },
     "prompt_classify_full_text": {
         "message": "Classifique o texto a seguir em termos de Educação, Calor, Formalidade, Assertividade e Ofensividade, atribuindo uma porcentagem para cada categoria. Responda apenas com as categorias e as pontuações, sem comentários adicionais ou outros textos."
@@ -529,10 +696,16 @@
         "message": "Se marcado, um item será incluído no menu para aplicar tags aos e-mails."
     },
     "prompt_add_tags": {
-        "message": "Adicione tags a este e-mail"
+        "message": "Adicionar tags"
     },
     "prompt_add_tags_full_text": {
         "message": "Analise o seguinte texto de e-mail e gere um array JSON de tags que resumam seu conteúdo. Use temas, tópicos principais e descritores relevantes como tags. Certifique-se de que as tags sejam concisas e pertinentes ao conteúdo do e-mail.\nTexto do e-mail: {%mail_text_body%}\nConsidere os seguintes detalhes como contexto:\n- Remetente: {%author%}\n- Destinatários: {%recipients%}\n- Lista CC: {%cc_list%}\n- Assunto do e-mail: {%mail_subject%}\nBaseie-se no texto do e-mail e no contexto para gerar as tags, ignorando informações desnecessárias ou detalhes triviais.\nGere uma resposta somente no formato JSON. A saída deve ser apenas um array JSON de tags, sem nenhum comentário ou texto adicional. Aqui está um exemplo do formato JSON a ser usado:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
+    },
+    "prompt_proofread_this": {
+        "message": "Revisar este e-mail"
+    },
+    "prompt_proofread_this_full_text": {
+        "message": "Revise o seguinte e-mail e corrija também quaisquer erros de ortografia ou gramática. Responda com apenas o texto corrigido e sem comentários extras ou outro texto.\n\n\"{%selected_html%}\""
     },
     "placeholder_tags_current_email": {
         "message": "Tags do e-mail"
@@ -541,7 +714,7 @@
         "message": "Tags existentes"
     },
     "prefs_OptionText_add_tags_maxnum": {
-        "message": "Número máximo de tags"
+        "message": "O número máximo de tags"
     },
     "prefs_OptionText_add_tags_maxnum_Info": {
         "message": "O número máximo de tags proposto pela IA. Defina como 0 se você não quiser limitar o número de tags."
@@ -582,6 +755,9 @@
     "reset_default": {
         "message": "Redefinir para o padrão"
     },
+    "reset": {
+        "message": "Redefinir"
+    },
     "addtags_excl_list_infoline2": {
         "message": "Adicione uma palavra por linha ou separada por vírgula."
     },
@@ -609,14 +785,23 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "Se marcado, o rótulo das tags será definido em letras minúsculas, com apenas a primeira letra em maiúscula."
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "Opções de adição de tags"
-    },
     "prefs_SurveyLinkText": {
-        "message": "Compartilhe seu feedback e ajude-nos a melhorar o ThunderAI!"
+        "message": "Gostando do ThunderAI?"
     },
     "prefs_SurveyLinkText2": {
-        "message": "Clique aqui, leva apenas um minuto!"
+        "message": "Compartilhe seu feedback"
+    },
+    "prefs_doc_title": {
+        "message": "Documentação"
+    },
+    "prefs_doc_setup_guide": {
+        "message": "Guias de configuração"
+    },
+    "prefs_doc_custom_prompt_tutorial": {
+        "message": "Tutorial de Prompt Personalizado"
+    },
+    "prefs_doc_open_welcome": {
+        "message": "Abrir a página de boas-vindas"
     },
     "prefs_OpenAIComp_ForceModel": {
         "message": "Insira manualmente o modelo"
@@ -641,9 +826,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Modelos da API Google Gemini"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Atualizar a lista de modelos Google Gemini"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Erro ao tentar buscar os modelos Google Gemini"
@@ -675,17 +857,80 @@
     "placeholder_mail_typed_text": {
         "message": "Texto digitado antes do corpo do e-mail citado"
     },
+    "placeholder_mail_quoted_text": {
+        "message": "Texto citado no corpo do e-mail"
+    },
     "prompt_get_calendar_event": {
         "message": "Adicionar um novo evento ao calendário"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extraia todos os detalhes relevantes necessários para gerar um evento de calendário a partir do texto a seguir. As informações extraídas devem incluir:\n- Título do evento\n- Data e hora de início (incluindo fuso horário, se especificado)\n- Data e hora de término (incluindo fuso horário, se especificado)\n- Dia inteiro (se mencionado)\n- Participantes\nCertifique-se de que os dados estejam formatados de maneira clara e consistente para que possam ser usados diretamente para criar um evento de calendário.\nSe houver referências de tempo relativas, considere que a data e a hora do e-mail são \"{%mail_datetime%}\". Calcule a data e a hora de início com base nessa referência. Se a data e a hora de início calculadas forem anteriores a \"{%current_datetime%}\", recalcule a data e a hora de início usando \"{%current_datetime%}\" como base.\nSe a duração não for especificada, defina-a como uma hora.\nEstes são os participantes: {%author%}, {%recipients%}, {%cc_list%}. Se estiver presente, exclua meu endereço: {%account_email_address%}.\nSe o evento for de dia inteiro, o campo endDate deve ser o dia seguinte ao startDate com o horário definido como \"T000000\".\nSe você não conseguir obter uma ou mais informações necessárias, responda com uma string vazia.\nGere uma resposta apenas no formato JSON. Não inclua texto ou explicações adicionais; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumo do evento do calendário aqui\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nAqui está o texto: \"{%mail_text_body_or_selected%}\""
+        "message": "Extraia todos os detalhes relevantes necessários para gerar um evento de calendário a partir do texto a seguir. As informações extraídas devem incluir:\n- Título do evento\n- Descrição do evento (um resumo conciso do contexto do e-mail, tópicos principais/agenda, itens de ação e quaisquer links de chamada de vídeo ou detalhes de acesso)\n- Data e hora de início (incluindo fuso horário, se especificado)\n- Data e hora de término (incluindo fuso horário, se especificado)\n- Dia inteiro (se mencionado)\n- Local (se mencionado, edifício específico, sala ou online com link)\n- Participantes\nCertifique-se de que os dados estejam formatados de maneira clara e consistente para que possam ser usados diretamente para criar um evento de calendário.\nSe houver referências de tempo relativas, considere que a data e a hora do e-mail são \"{%mail_datetime%}\". Calcule a data e a hora de início com base nessa referência. Se a data e a hora de início calculadas forem anteriores a \"{%current_datetime%}\", recalcule a data e a hora de início usando \"{%current_datetime%}\" como base.\nSe a duração não for especificada, defina-a como uma hora.\nEstes são os participantes: {%author%}, {%recipients%}, {%cc_list%}. Se estiver presente, exclua meu endereço: {%account_email_address%}.\nSe o evento for de dia inteiro, o campo endDate deve ser o dia seguinte ao startDate com o horário definido como \"T000000\".\nSe você não conseguir obter uma ou mais informações necessárias, responda com uma string vazia.\nGere uma resposta apenas no formato JSON. Não inclua texto ou explicações adicionais; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumo do evento do calendário aqui\",\n\"description\": \"Descrição detalhada do evento, incluindo agenda, itens de ação e notas relevantes do e-mail.\",\n\"forceAllDay\": false,\n\"location\": \"Local ou URL aqui\",\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nAqui está o texto: \"{%mail_text_body_or_selected%}\""
+    },
+    "prompt_get_calendar_event_from_clipboard": {
+        "message": "Adicionar evento de calendário da área de transferência"
+    },
+    "clipboard_read_error": {
+        "message": "Não foi possível ler a área de transferência. Verifique as permissões."
+    },
+    "clipboard_empty_error": {
+        "message": "A área de transferência está vazia. Copie algum texto primeiro."
+    },
+    "clipboard_permission_denied": {
+        "message": "A permissão da área de transferência foi negada. Ative o recurso novamente nas configurações para conceder a permissão."
+    },
+    "clipboard_permission_error": {
+        "message": "Erro ao solicitar a permissão da área de transferência. Tente novamente."
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard": {
+        "message": "Obter evento de calendário da área de transferência"
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
+        "message": "Mostra um item de menu adicional para criar eventos de calendário a partir do conteúdo de texto da área de transferência."
+    },
+    "prompt_summarize": {
+        "message": "Resumir"
+    },
+    "prompt_summarize_full_text": {
+        "message": "Forneça um resumo conciso da(s) seguinte(s) mensagem(ns) de e-mail. O resumo deve ter no máximo 3 a 5 frases e capturar os pontos principais. Escreva em parágrafos simples sem marcadores, listas ou formatação markdown:\n\n"
+    },
+    "prompt_summarize_email_template": {
+        "message": "Modelo de resumo de e-mail"
+    },
+    "prompt_summarize_email_template_full_text": {
+        "message": "De: {%author%}\nPara: {%recipients%}\nCC: {%cc_list%}\nAssunto: {%mail_subject%}\nData: {%mail_datetime%}\nAnexos:\n{%mail_attachments_info%}\n\nCorpo:\n{%mail_text_body%}"
+    },
+    "prompt_summarize_email_separator": {
+        "message": "Separador de e-mails"
+    },
+    "prompt_summarize_email_separator_full_text": {
+        "message": "\n\n---------- PRÓXIMO E-MAIL ----------\n\n"
+    },
+    "prompt_get_task": {
+        "message": "Adicionar uma nova tarefa"
+    },
+    "prompt_get_task_full_text": {
+        "message": "Extraia todos os detalhes relevantes necessários para gerar uma tarefa do seguinte texto. As informações extraídas devem incluir:\n- Data e hora inicial (incluindo fuso horário, se especificado)\n- Data e hora de vencimento (incluindo fuso horário, se especificado)\n- Resumo da tarefa\n- Descrição da tarefa (um resumo conciso do contexto do e-mail, dos tópicos principais e dos itens de ação)\n- Local (se mencionado, edifício específico, sala ou online com link)\nGaranta que os dados estejam formatados de forma clara e consistente para que possam ser usados diretamente na criação de uma tarefa.\nSe houver referências de tempo relativas, considere que a data e a hora do e-mail são \"{%mail_datetime%}\". Calcule a data e a hora de início com base nesta referência. Se a data e a hora de início calculadas forem anteriores a \"{%current_datetime%}\", recalcule a data e a hora de início usando \"{%current_datetime%}\" como base.\nSe você não conseguir obter uma ou mais das informações necessárias, responda com uma string vazia.\nGere uma resposta apenas no formato JSON. Não inclua nenhum texto ou explicação adicional; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumo da tarefa aqui\",\n\"description\": \"Descrição detalhada da tarefa, incluindo itens de ação e notas relevantes do e-mail.\",\n\"location\": \"Local ou URL aqui\"\n}\nSe não houver informações sobre as datas, remova-as.\nAqui está o texto:\"{%selected_text%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Adicionar um novo evento ao calendário a partir do texto selecionado"
     },
     "prefs_OptionText_get_calendar_event_Info": {
         "message": "Se marcado, um item será incluído no menu para obter informações de um evento de calendário a partir do texto selecionado."
+    },
+    "prefs_OptionText_get_task": {
+        "message": "Adicionar uma nova tarefa a partir do texto selecionado"
+    },
+    "prefs_OptionText_get_task_Info": {
+        "message": "Se marcado, um item será incluído no menu para obter informações de tarefa a partir do texto selecionado."
+    },
+    "Select_your_timezone": {
+        "message": "Selecione seu fuso horário"
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": "Forçar o fuso horário especificado"
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": "Se marcado, o fuso horário especificado será imposto para os eventos de calendário e as tarefas."
     },
     "prefs_OptionText_btnManageCalendarEventInfo": {
         "message": "Gerenciar configurações de eventos do calendário"
@@ -702,8 +947,32 @@
     "prefs_OptionText_AdvancedPromptResponse_infoline2": {
         "message": "Você pode alterar o prompt como desejar, mas a resposta recebida da IA deve estar no formato JSON conforme especificado no prompt padrão!"
     },
+    "prefs_OptionText_Summarize_infoline2": {
+        "message": "Você pode alterar o prompt como desejar, o primeiro campo é o prompt principal, o segundo campo é o modelo para um único e-mail. A lista de e-mails será anexada ao prompt principal. Os e-mails serão separados pelo separador especificado no terceiro campo."
+    },
+    "prefs_OptionText_Summarize_main_prompt": {
+        "message": "O prompt principal que descreve a tarefa a ser executada em todos os e-mails selecionados:"
+    },
+    "prefs_OptionText_Summarize_email_template": {
+        "message": "O modelo para um único e-mail:"
+    },
+    "prefs_OptionText_Summarize_email_separator": {
+        "message": "O separador entre os e-mails:"
+    },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
-        "message": "Para usar o recurso de eventos de calendário, instale o addon ThunderAI Sparks."
+        "message": "Para usar o recurso de eventos de calendário e tarefas, instale o addon ThunderAI Sparks."
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
+        "message": "Para usar os recursos de evento de calendário e tarefa, instale uma versão atualizada do complemento ThunderAI Sparks."
+    },
+    "GetTask_PageTitle": {
+        "message": "Gerenciar configurações de tarefas"
+    },
+    "GetTask_info_default": {
+        "message": "Nesta página você pode modificar o prompt padrão usado para obter uma tarefa a partir do texto selecionado."
+    },
+    "prefs_OptionText_btnManageTaskInfo": {
+        "message": "Gerenciar configurações de tarefas"
     },
     "prefs_OptionText_download_now": {
         "message": "Baixe o ThunderAI Sparks agora!"
@@ -720,103 +989,1484 @@
     "calendar_opening_dialog_error": {
         "message": "Erro ao abrir a caixa de diálogo do evento de calendário"
     },
-    "spamfilter_threshold_zero": {
-        "message": "O limite de spam está em zero! Você marcará todos os e-mails como spam!"
+    "task_getting_data_error": {
+        "message": "Erro ao obter dados da tarefa"
     },
-    "spamfilter_no_reports": {
-        "message": "Nenhuma mensagem foi analisada para spam ainda. Aqui você encontrará uma lista dos últimos 100 relatórios de spam apenas para a sessão atual."
+    "task_opening_dialog_error": {
+        "message": "Erro ao abrir a janela da tarefa"
     },
-    "prompt_spamfilter": {
-        "message": "Detectar e-mails de spam"
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "Opções do filtro de spam"
-    },
-    "SpamFilter_info_default": {
-        "message": "Nesta página, você pode modificar o prompt padrão usado para detectar e-mails de spam."
-    },
-    "prefs_OptionText_add_tags_auto_force_existing_Info": {
-        "message": "Se marcado, a IA adicionará apenas tags existentes aos e-mails recém-recebidos e não criará novas tags."
-    },
-    "Subject": {
-        "message": "Assunto"
-    },
-    "Explanation": {
-        "message": "Explicação"
-    },
-    "Spam_Value": {
-        "message": "Valor de spam"
-    },
-    "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Forçar tags existentes ao usar a marcação automática ou o menu de contexto"
+    "no_valid_data_received": {
+        "message": "Nenhum dado válido recebido da IA."
     },
     "prefs_OptionText_add_tags_auto": {
         "message": "Adicionar tags automaticamente"
     },
-    "prefs_OptionText_add_tags_auto_only_inbox": {
-        "message": "Adicionar tags apenas aos e-mails da caixa de entrada"
-    },
-    "prefs_OptionText_spamfilter_threshold": {
-        "message": "Limite de spam"
-    },
-    "Moved_to_Spam": {
-        "message": "Movido para spam"
-    },
-    "no_string": {
-        "message": "Não"
-    },
-    "prefs_OptionText_btnManageSpamFilterInfo": {
-        "message": "Gerenciar configurações do filtro de spam"
-    },
-    "spamfilter_threshold_too_low": {
-        "message": "O limite de spam está muito baixo! Você provavelmente marcará muitos e-mails como spam!"
-    },
-    "prefs_OptionText_spamfilter_Info": {
-        "message": "Se marcado, o ThunderAI moverá automaticamente e-mails de spam para a pasta de spam."
-    },
-    "yes_string": {
-        "message": "Sim"
-    },
-    "SpamReport_Title": {
-        "message": "Relatórios do filtro de spam"
-    },
-    "prefs_OptionText_openai_comp_info_remote": {
-        "message": "Aqui você também pode inserir um endereço de servidor remoto."
-    },
     "prefs_OptionText_add_tags_auto_Info": {
         "message": "Se marcado, a IA adicionará automaticamente tags aos e-mails recém-recebidos."
     },
-    "Date": {
-        "message": "Data"
+    "prefs_OptionText_add_tags_auto_Info2": {
+        "message": "Escolha para qual conta ativar este recurso na parte inferior desta página."
     },
-    "SpamFilter_prompt_text_title": {
-        "message": "Texto atual do prompt"
+    "prefs_OptionText_add_tags_auto_force_existing": {
+        "message": "Forçar tags existentes"
     },
-    "prefs_OptionText_spamfilter": {
-        "message": "Filtro de spam automático"
+    "prefs_OptionText_add_tags_auto_force_existing_Info": {
+        "message": "Se marcado, a IA adicionará apenas tags existentes e não criará novas tags."
     },
-    "prompt_spamfilter_full_text": {
-        "message": "Analise o seguinte e-mail e determine se é spam ou não. Considere fatores como palavras-chave suspeitas, linguagem promocional excessiva, linhas de assunto enganosas, solicitações de informações pessoais e endereços de remetentes incomuns.\nForneça um valor de 0 (não é spam) a 100 (spam) e uma explicação de no máximo 10 palavras.\nEm caso de ausência de dados da mensagem, defina o valor como 0 (não é spam) e informe o motivo.\nGere uma resposta apenas no formato JSON. Não inclua nenhum texto ou explicação adicional; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"explanation\": \"Breve explicação do seu raciocínio\",\n\"spamValue\": <inteiro de 0 a 100>\n}\nAqui estão as informações do e-mail:\nRemetente: \"{%author%}\"\nAssunto: \"{%mail_subject%}\"\nCorpo HTML: \"{%mail_html_body%}\""
+    "prefs_OptionText_add_tags_auto_uselist": {
+        "message": "Usar apenas estas tags"
     },
-    "prefs_OptionText_spamfilter_threshold_Info": {
-        "message": "Se o valor retornado pela IA estiver acima deste limite, o e-mail será movido para a pasta de spam."
+    "prefs_OptionText_add_tags_auto_uselist_Info": {
+        "message": "Se marcado, a IA adicionará apenas tags da lista abaixo."
+    },
+    "prefs_OptionText_add_tags_auto_uselist_list_Info": {
+        "message": "A lista deve conter pelo menos uma tag. Adicione uma tag por linha ou separada por vírgula."
+    },
+    "prompt_add_tags_use_list": {
+        "message": "Use apenas as tags nesta lista separada por vírgulas"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox": {
+        "message": "Adicionar tags apenas aos e-mails da caixa de entrada"
     },
     "prefs_OptionText_add_tags_auto_only_inbox_Info": {
         "message": "Se marcado, a IA adicionará tags apenas aos e-mails recebidos na pasta da caixa de entrada."
     },
-    "placeholder_thunderai_def_lang": {
-        "message": "Idioma padrão conforme definido nas opções do ThunderAI."
+    "prefs_OptionText_add_tags_auto_include_sent": {
+        "message": "Adicionar tags também aos e-mails enviados"
+    },
+    "prefs_OptionText_add_tags_auto_include_sent_Info": {
+        "message": "O processamento automático nunca é executado nas pastas de rascunhos, modelos, caixa de saída, spam e lixeira, e também ignora a pasta de enviados. Se marcado, a IA também adicionará tags aos e-mails que você enviar."
+    },
+    "prefs_OptionText_add_tags_use_specific_integration_Info": {
+        "message": "Se marcado, o Modelo e a API especificados abaixo serão usados para adicionar tags aos e-mails, independentemente do escolhido na página de opções do ThunderAI."
+    },
+    "prefs_OptionText_get_calendar_event_use_specific_integration_Info": {
+        "message": "Se marcado, o Modelo e a API especificados abaixo serão usados para criar eventos de calendário, independentemente do escolhido na página de opções do ThunderAI."
     },
     "placeholder_thunderai_def_sign": {
         "message": "Assinatura padrão conforme definido nas opções do ThunderAI."
     },
+    "placeholder_thunderai_def_lang": {
+        "message": "Idioma padrão conforme definido nas opções do ThunderAI."
+    },
+    "placeholder_thunderai_translate_lang": {
+        "message": "O idioma a ser usado nas traduções de e-mail."
+    },
+    "placeholder_thunderai_translate_exclude_lang": {
+        "message": "Os códigos de idioma para não traduzir quando encontrados."
+    },
+    "placeholder_mail_attachments_info": {
+        "message": "Informações sobre os anexos no e-mail"
+    },
+    "placeholder_empty": {
+        "message": "Este espaço reservado não adiciona nenhum texto, mas impede que o corpo do e-mail seja anexado automaticamente ao final do prompt."
+    },
+    "prefs_OptionText_spamfilter": {
+        "message": "Filtro de spam automático"
+    },
+    "prefs_OptionText_spamfilter_Info": {
+        "message": "Se marcado, o ThunderAI moverá automaticamente e-mails de spam para a pasta de spam."
+    },
+    "prefs_OptionText_btnManageSpamFilterInfo": {
+        "message": "Gerenciar configurações do filtro de spam"
+    },
+    "prefs_OptionText_summarize": {
+        "message": "Resumir e-mail"
+    },
+    "prefs_OptionText_summarize_use_specific_integration_Info": {
+        "message": "Se marcado, o Modelo e a API especificados abaixo serão usados para resumir e-mail(s), independentemente do escolhido na página de opções do ThunderAI."
+    },
+    "prefs_OptionText_summarize_Info": {
+        "message": "Se marcado, adiciona uma opção ao menu de contexto para resumir e-mail(s)."
+    },
+    "prefs_OptionText_btnManageSummarizeInfo": {
+        "message": "Gerenciar configurações de resumo"
+    },
+    "SpamFilter_PageTitle": {
+        "message": "Gerenciar configurações do filtro de spam"
+    },
+    "SpamFilter_info_default": {
+        "message": "Nesta página, você pode modificar o prompt padrão usado para detectar e-mails de spam."
+    },
+    "SpamFilter_prompt_text_title": {
+        "message": "Texto atual do prompt"
+    },
+    "prompt_spamfilter": {
+        "message": "Procurar por spam"
+    },
+    "prompt_spamfilter_full_text": {
+        "message": "Analise o seguinte e-mail e determine se é spam ou não. Considere fatores como palavras-chave suspeitas, linguagem promocional excessiva, linhas de assunto enganosas, solicitações de informações pessoais e endereços de remetentes incomuns.\nForneça um valor de 0 (não é spam) a 100 (spam) e uma explicação de no máximo 10 palavras.\nEm caso de ausência de dados da mensagem, defina o valor como 0 (não é spam) e informe o motivo.\nGere uma resposta apenas no formato JSON. Não inclua nenhum texto ou explicação adicional; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"explanation\": \"Breve explicação do seu raciocínio\",\n\"spamValue\": <inteiro de 0 a 100>\n}\nAqui estão as informações do e-mail:\nRemetente: \"{%author%}\"\nAssunto: \"{%mail_subject%}\"\nCorpo HTML: \"{%mail_html_body%}\""
+    },
+    "Summarize_PageTitle": {
+        "message": "Gerenciar configurações de resumo"
+    },
+    "Summarize_info_default": {
+        "message": "Nesta página você pode modificar o prompt padrão usado para resumir e-mails."
+    },
+    "Summarize_prompt_text_title": {
+        "message": "Texto do prompt atual"
+    },
+    "prefs_OptionText_use_specific_integration": {
+        "message": "Usar Modelo e API específicos"
+    },
+    "prefs_OptionText_spamfilter_use_specific_integration_Info": {
+        "message": "Se marcado, o Modelo e a API especificados abaixo serão usados para o filtro de spam, independentemente do escolhido na página de opções do ThunderAI."
+    },
+    "prefs_OptionText_spamfilter_threshold": {
+        "message": "Limite de spam"
+    },
+    "prefs_OptionText_spamfilter_threshold_Info": {
+        "message": "Se o valor retornado pela IA estiver acima deste limite, o e-mail será movido para a pasta de spam."
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel": {
+        "message": "Mostrar painel de relatório de spam"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel_Info": {
+        "message": "Se marcado, um painel com o relatório de spam será mostrado no topo da mensagem."
+    },
+    "prefs_OptionText_spamfilter_only_inbox": {
+        "message": "Executar apenas na caixa de entrada"
+    },
+    "prefs_OptionText_spamfilter_only_inbox_Info": {
+        "message": "Quando ativado, o filtro de spam automático verifica apenas as mensagens recebidas na pasta da caixa de entrada e ignora os e-mails entregues em outras pastas."
+    },
+    "spamfilter_threshold_too_low": {
+        "message": "O limite de spam está muito baixo! Você provavelmente marcará muitos e-mails como spam!"
+    },
+    "spamfilter_threshold_zero": {
+        "message": "O limite de spam está em zero! Você marcará todos os e-mails como spam!"
+    },
+    "spamfilter_no_reports": {
+        "message": "Nenhuma mensagem foi analisada para spam ainda. Aqui você encontrará uma lista dos últimos 100 relatórios de spam."
+    },
+    "SpamFilter_skip_addresses_title": {
+        "message": "Lista de exclusão de endereços de e-mail"
+    },
+    "SpamFilter_skip_addresses_infoline": {
+        "message": "E-mails desses endereços não serão enviados à IA para filtragem de spam."
+    },
+    "SpamFilter_skip_addresses_infoline2": {
+        "message": "Adicione um endereço de e-mail por linha ou separado por vírgula."
+    },
+    "spamfilter_skip_addresses_explanation": {
+        "message": "O remetente está na lista de exclusão de antispam de endereços de e-mail."
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook": {
+        "message": "Ignorar endereços dos catálogos de endereços"
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook_Info": {
+        "message": "Se marcado, os e-mails de remetentes presentes em seus catálogos de endereços não serão enviados à IA para filtragem de spam."
+    },
+    "spamfilter_skip_addressbook_explanation": {
+        "message": "O remetente é um contato no catálogo de endereços."
+    },
+    "spamfilter_prompt_missing_explanation": {
+        "message": "O prompt especial do Filtro de Spam está faltando. Se você modificou os prompts especiais, tente restaurar o prompt padrão do Filtro de Spam."
+    },
+    "addressbook_permission_denied": {
+        "message": "A permissão do catálogo de endereços foi negada. Ative o recurso novamente para conceder a permissão."
+    },
+    "addressbook_permission_error": {
+        "message": "Erro ao solicitar a permissão do catálogo de endereços. Tente novamente."
+    },
+    "SpamReport_Title": {
+        "message": "Relatórios do filtro de spam"
+    },
+    "Date": {
+        "message": "Data"
+    },
     "From": {
         "message": "De"
+    },
+    "Subject": {
+        "message": "Assunto"
+    },
+    "Spam_Value": {
+        "message": "Valor de spam"
+    },
+    "Spam": {
+        "message": "Spam"
+    },
+    "Valid": {
+        "message": "Válido"
+    },
+    "Moved_to_Spam": {
+        "message": "Movido para spam"
+    },
+    "Explanation": {
+        "message": "Explicação"
     },
     "Report_Date": {
         "message": "Data do relatório"
     },
-    "SpamFilter_PageTitle": {
-        "message": "Gerenciar configurações do filtro de spam"
+    "yes_string": {
+        "message": "Sim"
+    },
+    "no_string": {
+        "message": "Não"
+    },
+    "noActiveCalendar": {
+        "message": "Nenhum calendário editável encontrado!"
+    },
+    "btn_show_differences": {
+        "message": "Mostrar diferenças"
+    },
+    "chatgpt_win_diff_title": {
+        "message": "Diferenças entre o texto original e o modificado"
+    },
+    "apiwebchat_you": {
+        "message": "Você"
+    },
+    "apiwebchat_info": {
+        "message": "Informações"
+    },
+    "apiwebchat_error": {
+        "message": "Erro"
+    },
+    "apiwebchat_use_this_answer": {
+        "message": "Usar esta resposta"
+    },
+    "apiwebchat_stopping": {
+        "message": "Parando"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "Recebendo dados"
+    },
+    "apiwebchat_done": {
+        "message": "Pronto!"
+    },
+    "hyprland_warning": {
+        "message": "Se você está tendo problemas para abrir a janela de chat da IA, tente definir os valores de altura e largura como 0. Esse problema pode ocorrer no Linux em certos ambientes, por exemplo, ao usar o Hyprland."
+    },
+    "remember_CORS": {
+        "message": "Lembre-se de que você precisa definir as configurações de CORS no servidor!"
+    },
+    "maybe_CORS_openai_comp": {
+        "message": "Usar a API Compatível com OpenAI pode exigir a definição das configurações de CORS no servidor."
+    },
+    "CORS_alternative_1": {
+        "message": "Problemas ao configurar o CORS?"
+    },
+    "CORS_alternative_2_new": {
+        "message": "Pressione o botão abaixo para conceder a permissão ao host atual e evitar qualquer problema de CORS."
+    },
+    "CORS_give_host_perm": {
+        "message": "Conceder permissão ao host atual"
+    },
+    "CORS_localhost_warn": {
+        "message": "Se você está usando localhost ou 127.0.0.1 porque o servidor de IA está hospedado no seu PC, a permissão <all_urls> é necessária."
+    },
+    "Replace_No_Selected_Text": {
+        "message": "Nenhum texto selecionado, gostaria de inserir a resposta da IA no início do e-mail?"
+    },
+    "prefs_ollama_num_ctx": {
+        "message": "Número de tokens de contexto"
+    },
+    "prefs_ollama_num_ctx_Info": {
+        "message": "O número de tokens de contexto a ser usado para a API do Ollama. Defina como 0 se não quiser passá-lo como parâmetro ao servidor."
+    },
+    "ask_chatgptweb_permission_1": {
+        "message": "Para usar a integração do ChatGPT Web, você precisa conceder a permissão necessária."
+    },
+    "ask_anthropic_api_permission_1": {
+        "message": "Para usar a integração da API do Claude, você precisa conceder a permissão necessária."
+    },
+    "ask_openai_api_permission_1": {
+        "message": "Para usar a integração da API do OpenAI, você precisa conceder a permissão necessária."
+    },
+    "ask_integration_permission_2_popup": {
+        "message": "Clique aqui para abrir uma nova aba e seguir as instruções."
+    },
+    "ask_integration_permission_2": {
+        "message": "Clique aqui para prosseguir."
+    },
+    "ask_integration_permission_ok": {
+        "message": "Permissão concedida. Você pode clicar aqui para fechar esta aba e retornar à janela principal."
+    },
+    "AccountSelector_AutoTags": {
+        "message": "Escolha as contas onde a etiquetagem automática está ativada"
+    },
+    "AccountSelector_AutoTags_infoline": {
+        "message": "Cada alteração é salva imediatamente."
+    },
+    "AccountSelector_Spamfilter": {
+        "message": "Escolha as contas onde o filtro de spam automático está ativado"
+    },
+    "prefs_OptionText_chatgpt_web_project": {
+        "message": "Projeto do ChatGPT Web"
+    },
+    "prefs_OptionText_chatgpt_web_project_info": {
+        "message": "Este é o Projeto que será imposto para a Interface Web do ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt": {
+        "message": "Custom GPT do ChatGPT Web"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt_info": {
+        "message": "Este é o Custom GPT que será imposto para a Interface Web do ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info": {
+        "message": "Isso deve estar no seguinte formato:"
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info2": {
+        "message": "Você pode encontrar o valor correto no campo de URL do navegador ao abrir a página relacionada do ChatGPT."
+    },
+    "customPrompts_Properties": {
+        "message": "Propriedades"
+    },
+    "customPrompts_show_additional_info": {
+        "message": "Mostrar propriedades adicionais"
+    },
+    "customPrompts_hide_additional_info": {
+        "message": "Ocultar propriedades adicionais"
+    },
+    "customPrompts_show_additional_info_show": {
+        "message": "Propriedades adicionais"
+    },
+    "prefs_OptionText_CustomGPT_Warn": {
+        "message": "Se um Projeto for especificado nas opções ou em um prompt, ele substituirá a configuração do Custom GPT."
+    },
+    "prefs_OptionText_Project_No_temporary_chat_warn": {
+        "message": "Se um Projeto for especificado nas opções ou em um prompt, o chat temporário não será usado."
+    },
+    "prefs_Anthropic_API_Key": {
+        "message": "Chave de API do Claude"
+    },
+    "prefs_Connection_type_Anthropic_API": {
+        "message": "API do Claude"
+    },
+    "Anthropic_Models": {
+        "message": "Modelos do Claude"
+    },
+    "Anthropic_Models_Error_fetching": {
+        "message": "Erro ao tentar buscar os modelos do Claude"
+    },
+    "Anthropic_Version": {
+        "message": "Versão da API do Claude"
+    },
+    "Anthropic_Version_Info": {
+        "message": "OBRIGATÓRIO. Não altere este valor a menos que saiba o que está fazendo. Mais informações em:"
+    },
+    "prefs_OptionText_anthropic_max_tokens": {
+        "message": "Máximo de tokens"
+    },
+    "prefs_OptionText_anthropic_max_tokens_Info": {
+        "message": "O número máximo de tokens a serem gerados na conclusão. A contagem de tokens do seu prompt somada ao max_tokens não pode exceder o comprimento de contexto do modelo."
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget": {
+        "message": "Orçamento de pensamento estendido (tokens)"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
+        "message": "Máximo de tokens que o modelo pode gastar com pensamento estendido. Defina como 0 para desativar o pensamento estendido. Deve ser menor que Max Tokens. Os modelos Claude mais recentes não aceitam um limite manual e usam a configuração Esforço em seu lugar: quando um deles está selecionado, este campo é desativado e seu valor não é enviado."
+    },
+    "anthropic_empty_apikey": {
+        "message": "Você não adicionou uma chave de API para a API do Claude. Insira uma na página de opções."
+    },
+    "anthropic_empty_model": {
+        "message": "Você não escolheu um modelo para a API do Claude. Escolha um na página de opções."
+    },
+    "anthropic_empty_version": {
+        "message": "Você não adicionou uma string de versão para a API do Claude. Insira uma na página de opções."
+    },
+    "anthropic_api_request_failed": {
+        "message": "Falha na solicitação à API do Claude"
+    },
+    "_api_connecting": {
+        "message": "Tentando conectar a $api_string$ usando a seguinte configuração...",
+        "placeholders": {
+            "api_string": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_model": {
+        "message": "Modelo"
+    },
+    "_api_connecting_host": {
+        "message": "Host"
+    },
+    "_api_connecting_version": {
+        "message": "Versão"
+    },
+    "prefs_OpenAIComp_AvailableServices": {
+        "message": "Serviços disponíveis"
+    },
+    "prefs_OpenAIComp_AvailableServices_Info": {
+        "message": "Escolha um dos serviços disponíveis para a API Compatível com OpenAI ou insira um manualmente."
+    },
+    "Custom": {
+        "message": "Personalizado"
+    },
+    "OpenAIComp_Configs_ConfirmApply": {
+        "message": "Tem certeza de que deseja aplicar a configuração \"$config_name$\"?",
+        "placeholders": {
+            "config_name": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_selection_info": {
+        "message": "Se você selecionar algum texto, apenas essa parte será considerada."
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": "Usar armazenamento"
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": "Se marcado, seus chats serão armazenados pela OpenAI."
+    },
+    "prefs_chatgpt_api_temperature_Info": {
+        "message": "Qual temperatura de amostragem usar, entre 0 e 2. Valores mais altos como 0,8 tornarão a saída mais aleatória, enquanto valores mais baixos como 0,2 a tornarão mais focada e determinística."
+    },
+    "prefs_ollama_temperature_Info": {
+        "message": "A temperatura do modelo. Aumentar a temperatura fará o modelo responder de forma mais criativa. O valor padrão é 0,8. Recomenda-se usar valores entre 0 e 1."
+    },
+    "prefs_ollama_think": {
+        "message": "Ativar pensamento"
+    },
+    "prefs_ollama_think_Info": {
+        "message": "Se marcado, o Modelo pensará antes de responder. Esta opção funciona apenas com modelos que suportam o recurso \"think\"."
+    },
+    "prefs_ollama_format_json": {
+        "message": "Forçar saída JSON"
+    },
+    "prefs_ollama_format_json_Info": {
+        "message": "Se marcado, o Ollama será forçado a retornar uma resposta JSON válida. Esta opção funciona apenas com modelos que suportam saída estruturada."
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": "Clique para alterar o tipo de resposta"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": "Correspondência exata de exclusões"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": "Se marcado, as palavras na lista de exclusão corresponderão exatamente às tags. Caso contrário, também corresponderão se incluídas dentro da tag."
+    },
+    "customDataPH_manageDataPH": {
+        "message": "Gerenciar espaços reservados de dados"
+    },
+    "customDataPH_placeholdersCount": {
+        "message": "$COUNT$ espaços reservados de dados",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": "Você também pode usar os espaços reservados de dados padrão com autocompletar, assim como ao escrever prompts personalizados."
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": "Nesta página, é possível definir espaços reservados de dados personalizados para serem usados em seus prompts personalizados."
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": "Espaços reservados existentes com o mesmo ID serão sobrescritos. Espaços reservados com novos IDs serão adicionados."
+    },
+    "customDataPH_ExportAll": {
+        "message": "Exportar todos os espaços reservados de dados personalizados"
+    },
+    "customDataPH_Import": {
+        "message": "Importar novos espaços reservados de dados"
+    },
+    "customDataPH_form_label_Text": {
+        "message": "Texto do espaço reservado de dados"
+    },
+    "customDataPH_saving_custom": {
+        "message": "Salvando espaços reservados de dados personalizados..."
+    },
+    "customDataPH_saved": {
+        "message": "Espaços reservados de dados personalizados salvos!"
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": "Adicionar o espaço reservado de dados"
+    },
+    "importCustomDataPH_confirmText": {
+        "message": "Você está prestes a importar novos espaços reservados de dados personalizados."
+    },
+    "importCustomDataPH_start_import": {
+        "message": "Iniciando a importação de espaços reservados de dados personalizados..."
+    },
+    "importCustomDataPH_import_completed": {
+        "message": "Importação de espaços reservados de dados personalizados concluída! Você precisa clicar no botão \"Salvar todos\" para salvar suas alterações."
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": "O arquivo que você está tentando importar não é um arquivo válido de espaços reservados de dados personalizados."
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": "O arquivo que você está tentando importar não contém nenhum espaço reservado de dados personalizado válido."
+    },
+    "customDataPH_add_to_menu": {
+        "message": "Utilizável em prompts adicionados ao menu"
+    },
+    "prefs_OptionText_chatgpt_web_br_replace_info": {
+        "message": "Observe que quaisquer tags <br> na resposta da IA serão substituídas por quebras de linha."
+    },
+    "prefs_OpenAIComp_ClearModelsList": {
+        "message": "Limpar lista de modelos"
+    },
+    "OpenAIComp_ClearModelsList_Confirm": {
+        "message": "Tem certeza de que deseja limpar a lista de modelos? Esta ação não pode ser desfeita."
+    },
+    "prefs_api_temperature": {
+        "message": "Temperatura"
+    },
+    "prefs_openai_comp_temperature_Info": {
+        "message": "Qual temperatura de amostragem usar, entre 0 e 2. Valores mais altos como 0,8 tornarão a saída mais aleatória, enquanto valores mais baixos como 0,2 a tornarão mais focada e determinística."
+    },
+    "chatgpt_click_force_completion": {
+        "message": "Parece que não é possível detectar se o ChatGPT terminou. Clique aqui para forçar a conclusão do trabalho."
+    },
+    "warn_API_needed": {
+        "message": "Para usar este recurso, você precisa de uma integração de API em vez da Integração do ChatGPT Web. Você pode definir uma API específica na página de configurações do recurso marcando primeiro a caixa de seleção acima e depois clicando no botão à esquerda."
+    },
+    "prefs_specific_api_indicator": {
+        "message": "Usando $1",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_google_gemini_thinking_budget": {
+        "message": "Orçamento de pensamento"
+    },
+    "prefs_google_gemini_thinking_budget_Info": {
+        "message": "Defina o número de tokens a serem usados para o pensamento. Deixe este campo em branco se o modelo selecionado não suportar pensamento ou se você quiser usar o método padrão. Digite 0 para desativar o pensamento ou -1 para ativar o pensamento dinâmico."
+    },
+    "prefs_google_gemini_temperature_Info": {
+        "message": "Este parâmetro deve ser um número entre 0,0 e 2,0. Ele controla a aleatoriedade da saída. O valor padrão varia dependendo do modelo. Deixe em branco para evitar definir o parâmetro na chamada da API."
+    },
+    "SelectAll": {
+        "message": "Selecionar tudo"
+    },
+    "DeselectAll": {
+        "message": "Desmarcar tudo"
+    },
+    "Anthropic_System_Prompt": {
+        "message": "Prompt do sistema"
+    },
+    "Anthropic_System_Prompt_Info": {
+        "message": "Você pode melhorar o desempenho do Claude usando um Prompt do Sistema para dar a ele um papel. Essa técnica, conhecida como prompt de papel, é a maneira mais poderosa de usar prompts do sistema com o Claude. O papel certo pode transformar o Claude de um assistente geral em seu especialista virtual de domínio."
+    },
+    "prefs_anthropic_temperature_Info": {
+        "message": "Quantidade de aleatoriedade injetada na resposta. Varia de 0,0 a 1,0; se o campo for deixado vazio, o valor padrão 1,0 é usado. Os modelos Claude mais recentes não aceitam essa configuração e usam a configuração Esforço em seu lugar: quando um deles está selecionado, este campo é desativado e seu valor não é enviado."
+    },
+    "Optional_Permission_Denied_Model_Fetching": {
+        "message": "Você negou a permissão opcional necessária para buscar modelos para esta integração."
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Ativar resumização automática por IA para visualizações de mensagens"
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "Se marcado, o ThunderAI gerará e exibirá automaticamente resumos de IA acima das mensagens de e-mail quando elas forem abertas. Observe que isso significa que todas as mensagens que você visualizar serão enviadas imediatamente ao serviço de IA configurado."
+    },
+    "auto_summary_title": {
+        "message": "Resumo do ThunderAI"
+    },
+    "auto_summary_generating": {
+        "message": "Gerando resumo da IA..."
+    },
+    "auto_summary_failed": {
+        "message": "Falha ao gerar o resumo da IA. Confirme suas configurações e tente novamente."
+    },
+    "customPrompts_export_include_api_settings": {
+        "message": "Deseja incluir as configurações de API na exportação? Esteja ciente de que a chave de API também será salva no arquivo!"
+    },
+    "prefs_OptionText_calendar_no_selection": {
+        "message": "Não solicitar seleção de texto"
+    },
+    "prefs_OptionText_calendar_no_selection_Info": {
+        "message": "Se marcado, não é necessário selecionar nenhum texto. O corpo completo da mensagem será usado para obter o evento de calendário."
+    },
+    "prefs_OptionText_calendar_no_selection_missing_placeholder": {
+        "message": "O prompt deve conter o espaço reservado {%mail_text_body_or_selected%} ou {%mail_html_body_or_selected%} para ativar esta opção. Adicione um desses espaços reservados ao prompt ou redefina-o para o padrão."
+    },
+    "customPrompts_btnCopy": {
+        "message": "Copiar"
+    },
+    "copy_text": {
+        "message": "copiar"
+    },
+    "spam_check_in_progress": {
+        "message": "Verificação de spam em andamento..."
+    },
+    "prefs_OptionText_summarize_auto": {
+        "message": "Resumir mensagens automaticamente"
+    },
+    "prefs_OptionText_summarize_auto_Info": {
+        "message": "Escolha se deseja gerar resumos automaticamente ao visualizar mensagens. Requer uma conexão baseada em API (não ChatGPT Web)."
+    },
+    "prefs_OptionText_summarize_display_mode": {
+        "message": "Exibir resumo em"
+    },
+    "prefs_OptionText_summarize_display_mode_Info": {
+        "message": "Escolha onde o resultado do resumo é exibido. O modo embutido mostra um banner de resumo diretamente no painel da mensagem. O modo janela de chat abre a janela de chat da IA."
+    },
+    "prefs_OptionText_summarize_max_display_length": {
+        "message": "Comprimento máximo de exibição"
+    },
+    "prefs_OptionText_summarize_max_display_length_Info": {
+        "message": "Número máximo de caracteres a serem exibidos no resumo embutido. Defina como 0 para sem limite."
+    },
+    "prefs_OptionText_summarize_max_messages": {
+        "message": "Máximo de mensagens"
+    },
+    "prefs_OptionText_summarize_max_messages_Info": {
+        "message": "Número máximo de mensagens que podem ser resumidas de uma vez no modo janela de chat. Acima desse limite, a operação é bloqueada com um aviso. Defina como 0 para sem limite."
+    },
+    "prefs_OptionText_summarize_strip_formatting": {
+        "message": "Remover formatação"
+    },
+    "prefs_OptionText_summarize_strip_formatting_Info": {
+        "message": "Remove a formatação HTML e Markdown do resumo gerado pela IA, mostrando apenas texto simples."
+    },
+    "Summarize_auto_senders_title": {
+        "message": "Lista de remetentes para resumo automático"
+    },
+    "Summarize_auto_senders_infoline": {
+        "message": "Os e-mails vindos destes remetentes são resumidos automaticamente, sem nenhum clique. O resumo é gerado quando o e-mail é recebido, ou quando você o abre, caso não tenha sido capturado no recebimento."
+    },
+    "Summarize_auto_senders_infoline2": {
+        "message": "Adicione um endereço de e-mail por linha, ou separados por vírgula. Use \"@dominio.com\" para corresponder a todos os remetentes de um domínio inteiro."
+    },
+    "Summarize_auto_senders_api_warning": {
+        "message": "Atenção: estes resumos são gerados automaticamente, portanto cada e-mail destes remetentes consome tokens da API e pode aumentar o custo da sua assinatura de IA. Mantenha a lista o mais curta possível."
+    },
+    "Summarize_auto_senders_notice": {
+        "message": "O resumo automático está desativado, mas o resumo continua sendo gerado automaticamente para os remetentes da lista abaixo."
+    },
+    "Summarize_auto_senders_disabled_note": {
+        "message": "Não disponível quando o resumo automático está configurado para gerar o resumo no recebimento do e-mail: nesse modo, todo e-mail recebido já é resumido."
+    },
+    "prefs_OptionText_summarize_auto_senders": {
+        "message": "Resumir estes remetentes automaticamente"
+    },
+    "prefs_OptionText_summarize_auto_senders_Info": {
+        "message": "Se ativado, os e-mails vindos dos remetentes listados abaixo são resumidos automaticamente, mesmo quando o resumo automático estiver desativado acima."
+    },
+    "prefs_OptionText_summarize_auto_senders_list_Info": {
+        "message": "Endereços de remetentes a serem resumidos automaticamente:"
+    },
+    "summarize_see_more": {
+        "message": "Ver mais"
+    },
+    "summarize_see_less": {
+        "message": "Ver menos"
+    },
+    "summarize_title": {
+        "message": "Visão geral do ThunderAI"
+    },
+    "summarize_too_many_messages": {
+        "message": "Você selecionou $SELECTED$ mensagens, mas no máximo $MAX$ podem ser resumidas de cada vez. Selecione menos mensagens.",
+        "placeholders": {
+            "selected": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            }
+        }
+    },
+    "get_ai_summary": {
+        "message": "Resumo da IA"
+    },
+    "batch_stop_processing": {
+        "message": "Parar processamento"
+    },
+    "batch_stopping": {
+        "message": "Parando..."
+    },
+    "batch_stop_tooltip": {
+        "message": "Parar os trabalhos de processamento de e-mail em execução (adicionar tags automaticamente, filtro de spam, resumir, traduzir)"
+    },
+    "batch_progress_x": {
+        "message": "$COUNT$ mensagens processadas",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stopped_notice": {
+        "message": "Processamento de e-mails interrompido. $COUNT$ mensagens foram processadas.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stop_source": {
+        "message": "Interrupção em lote"
+    },
+    "summarize_collapse": {
+        "message": "Recolher resumo"
+    },
+    "summarize_generating": {
+        "message": "Gerando resumo..."
+    },
+    "summarize_error": {
+        "message": "Falha ao gerar o resumo"
+    },
+    "summarize_click_to_generate": {
+        "message": "Clique aqui para gerar um resumo"
+    },
+    "summarize_chatgpt_web_not_supported": {
+        "message": "O resumo automático requer uma conexão baseada em API. Configure uma conexão de API nas configurações do ThunderAI."
+    },
+    "summarize_refresh": {
+        "message": "Atualizar resumo"
+    },
+    "spamfilter_refresh": {
+        "message": "Atualizar relatório de spam"
+    },
+    "spamfilter_delete": {
+        "message": "Excluir relatório de spam"
+    },
+    "summarize_delete": {
+        "message": "Excluir resumo"
+    },
+    "generic_error_dismiss": {
+        "message": "Dispensar"
+    },
+    "prefs_OptionText_translate": {
+        "message": "Traduzir e-mail"
+    },
+    "prefs_OptionText_translate_use_specific_integration_Info": {
+        "message": "Se marcado, o Modelo e a API especificados abaixo serão usados para traduzir e-mail(s), independentemente do escolhido na página de opções do ThunderAI."
+    },
+    "prefs_OptionText_translate_Info": {
+        "message": "Se marcado, adiciona um botão de tradução no corpo da mensagem."
+    },
+    "prefs_OptionText_btnManageTranslateInfo": {
+        "message": "Gerenciar configurações de tradução"
+    },
+    "Translate_PageTitle": {
+        "message": "Gerenciar configurações de tradução"
+    },
+    "Translate_info_default": {
+        "message": "Nesta página você pode modificar o prompt padrão usado para traduzir e-mails."
+    },
+    "Translate_prompt_text_title": {
+        "message": "Texto do prompt atual"
+    },
+    "prefs_OptionText_translate_auto": {
+        "message": "Traduzir mensagens automaticamente"
+    },
+    "prefs_OptionText_action_auto_disabled": {
+        "message": "Desativado"
+    },
+    "prefs_OptionText_action_auto_manual": {
+        "message": "Apenas botão manual"
+    },
+    "prefs_OptionText_action_auto_automatic": {
+        "message": "Quando o e-mail é aberto"
+    },
+    "prefs_OptionText_translate_auto_Info": {
+        "message": "Escolha quando traduzir mensagens: desativado, apenas ao clicar no botão ou automaticamente ao abrir uma mensagem."
+    },
+    "prefs_OptionText_display_mode_inline": {
+        "message": "Painel da mensagem (embutido)"
+    },
+    "prefs_OptionText_display_mode_webchat": {
+        "message": "Janela de chat"
+    },
+    "prefs_OptionText_translate_max_display_length": {
+        "message": "Comprimento máximo da tradução exibida"
+    },
+    "prefs_OptionText_translate_max_display_length_Info": {
+        "message": "Número máximo de caracteres mostrados na tradução embutida. 0 = sem limite. Quando definido, textos mais longos são truncados com um botão \"Ver mais\"."
+    },
+    "translate_see_more": {
+        "message": "Ver mais"
+    },
+    "translate_see_less": {
+        "message": "Ver menos"
+    },
+    "prefs_OptionText_translate_lang": {
+        "message": "Idioma de destino da tradução"
+    },
+    "prefs_OptionText_translate_lang_Info": {
+        "message": "Idioma para o qual traduzir os e-mails. Se vazio, usa a configuração de idioma padrão."
+    },
+    "prefs_OptionText_translate_exclude_lang": {
+        "message": "Excluir idiomas"
+    },
+    "prefs_OptionText_translate_exclude_lang_Info": {
+        "message": "Lista separada por vírgulas de códigos de idioma (ex.: en, fr, it) a serem ignorados na tradução automática. Se o e-mail estiver em um desses idiomas, não será traduzido automaticamente ou o botão manual não será mostrado."
+    },
+    "prefs_OptionText_Translate_main_prompt": {
+        "message": "O prompt que descreve a tarefa de tradução:"
+    },
+    "translate_generating": {
+        "message": "Traduzindo..."
+    },
+    "translate_click_to_generate": {
+        "message": "Clique aqui para traduzir este e-mail"
+    },
+    "get_ai_translation": {
+        "message": "Tradução da IA"
+    },
+    "translate_chatgpt_web_not_supported": {
+        "message": "A tradução automática requer uma conexão baseada em API. Configure uma conexão de API nas configurações do ThunderAI."
+    },
+    "translate_refresh": {
+        "message": "Atualizar tradução"
+    },
+    "translate_delete": {
+        "message": "Excluir tradução"
+    },
+    "translate_banner_title": {
+        "message": "Tradução da IA"
+    },
+    "translate_error": {
+        "message": "Falha na tradução."
+    },
+    "translate_no_language_configured": {
+        "message": "O idioma de tradução não está configurado. Defina um idioma nas configurações de Tradução ou defina um idioma padrão nas configurações Gerais."
+    },
+    "translate_skipped": {
+        "message": "Tradução ignorada: idioma excluído ou idêntico ao de destino."
+    },
+    "antispam_by": {
+        "message": "Antispam por"
+    },
+    "spam_badge_tooltip": {
+        "message": "Pontuação de spam — Clique para ver a explicação"
+    },
+    "summary_by": {
+        "message": "Resumo por"
+    },
+    "translate_by": {
+        "message": "Tradução por"
+    },
+    "prefs_THStats_1": {
+        "message": "Quer estatísticas bonitas sobre seus e-mails?"
+    },
+    "prefs_THStats_2": {
+        "message": "Experimente o ThunderStats!"
+    },
+    "prefs_OptionText_chatgpt_win_pos_text": {
+        "message": "Posição da janela de chat da IA"
+    },
+    "prefs_OptionText_chatgpt_win_top": {
+        "message": "Superior"
+    },
+    "prefs_OptionText_chatgpt_win_left": {
+        "message": "Esquerda"
+    },
+    "prefs_chatgpt_win_save_position": {
+        "message": "Salvar automaticamente a posição da janela ao usar o botão fechar."
+    },
+    "prefs_chatgpt_win_position_info": {
+        "message": "Deixe em branco para usar a posição padrão."
+    },
+    "prefs_OptionText_action_auto_batch": {
+        "message": "Quando o e-mail é recebido"
+    },
+    "placeholder_string": {
+        "message": "Espaço reservado"
+    },
+    "menu_order_title": {
+        "message": "Ordem do menu"
+    },
+    "menu_order_popup_list_title": {
+        "message": "Menu popup"
+    },
+    "menu_order_context_list_title": {
+        "message": "Menu de contexto"
+    },
+    "menu_order_saved": {
+        "message": "Ordem do menu salva!"
+    },
+    "menu_order_tab_reading": {
+        "message": "Leitura"
+    },
+    "menu_order_tab_composing": {
+        "message": "Composição"
+    },
+    "menu_order_badge_default": {
+        "message": "Padrão"
+    },
+    "menu_order_badge_special": {
+        "message": "Especial"
+    },
+    "menu_order_badge_custom": {
+        "message": "Personalizado"
+    },
+    "menu_order_type_reading": {
+        "message": "Leitura"
+    },
+    "menu_order_type_composing": {
+        "message": "Composição"
+    },
+    "menu_order_type_always": {
+        "message": "Sempre"
+    },
+    "menu_order_btn_label": {
+        "message": "Gerenciar configurações de ordem do menu"
+    },
+    "menu_position_btn_label": {
+        "message": "Posição do menu"
+    },
+    "menu_order_info": {
+        "message": "Arraste e solte os itens para reordená-los, ou arraste-os entre as seções Visível e Oculto para mostrá-los ou ocultá-los em cada menu. Um prompt oculto em todos os menus é desativado até que você o torne visível novamente."
+    },
+    "menu_order_active_items": {
+        "message": "Itens visíveis"
+    },
+    "menu_order_hidden_items": {
+        "message": "Itens ocultos"
+    },
+    "menu_order_icon_label": {
+        "message": "Escolher um ícone"
+    },
+    "menu_order_icon_none": {
+        "message": "(nenhum)"
+    },
+    "menu_order_legend_type": {
+        "message": "Quando exibido:"
+    },
+    "menu_order_legend_type_always": {
+        "message": "Exibido tanto ao ler quanto ao compor"
+    },
+    "menu_order_legend_type_reading": {
+        "message": "Exibido apenas ao ler uma mensagem"
+    },
+    "menu_order_legend_type_composing": {
+        "message": "Exibido apenas ao compor uma mensagem"
+    },
+    "menu_order_legend_source": {
+        "message": "Tipo de prompt:"
+    },
+    "menu_order_legend_source_default": {
+        "message": "Prompt integrado incluído com o ThunderAI"
+    },
+    "menu_order_legend_source_special": {
+        "message": "Prompt vinculado a um recurso (ex.: tags, calendário)"
+    },
+    "menu_order_legend_source_custom": {
+        "message": "Prompt que você criou"
+    },
+    "prefs_settings_subtitle": {
+        "message": "Configurações"
+    },
+    "prefs_disclaimer": {
+        "message": "Modelos de LLM podem gerar informações incorretas, e seus dados podem ser usados pelo provedor para treinar novos modelos. Use por sua conta e risco."
+    },
+    "prefs_ConnectionSettingsTitle": {
+        "message": "Configurações de conexão"
+    },
+    "prefs_BasicSettingsTitle": {
+        "message": "Configurações básicas"
+    },
+    "prefs_FeaturesTitle": {
+        "message": "Recursos"
+    },
+    "prefs_FeaturesSubtitle": {
+        "message": "Ative o que você precisa. Ajuste cada um em sua própria tela de configurações."
+    },
+    "prefs_FeaturesNoConnection": {
+        "message": "Selecione uma conexão de IA acima para ativar esses recursos."
+    },
+    "prefs_advanced_options": {
+        "message": "Opções avançadas"
+    },
+    "prefs_privacy_more_info": {
+        "message": "Clique aqui para mais informações sobre privacidade"
+    },
+    "connTest_idle": {
+        "message": "Conexão ainda não testada"
+    },
+    "connTest_testing": {
+        "message": "Testando conexão…"
+    },
+    "connTest_ok": {
+        "message": "Conectado — $API$ acessível",
+        "placeholders": {
+            "api": {
+                "content": "$1",
+                "example": "Anthropic Claude"
+            }
+        }
+    },
+    "connTest_error": {
+        "message": "Erro — $DETAIL$",
+        "placeholders": {
+            "detail": {
+                "content": "$1",
+                "example": "401 — chave de API inválida"
+            }
+        }
+    },
+    "connTest_error_auth": {
+        "message": "Falha de autenticação — verifique sua chave de API"
+    },
+    "connTest_error_network": {
+        "message": "Erro de rede — endpoint inacessível"
+    },
+    "connTest_error_timeout": {
+        "message": "Tempo esgotado — sem resposta do endpoint"
+    },
+    "connTest_link_test": {
+        "message": "Testar agora"
+    },
+    "connTest_link_retest": {
+        "message": "Testar novamente"
+    },
+    "connTest_link_retry": {
+        "message": "Tentar novamente"
+    },
+    "wizard_title": {
+        "message": "Assistente de configuração"
+    },
+    "wizard_step_provider_title": {
+        "message": "Escolha sua IA"
+    },
+    "wizard_step_provider_sub": {
+        "message": "Cada serviço tem sua própria cor — você a verá mantida no restante da configuração."
+    },
+    "wizard_step_connect_sub": {
+        "message": "Insira as credenciais abaixo e escolha um modelo, depois teste a conexão."
+    },
+    "wizard_step_connect_sub_web": {
+        "message": "Quase nada para configurar aqui."
+    },
+    "wizard_step_tools_title": {
+        "message": "Escolha suas ferramentas"
+    },
+    "wizard_step_tools_sub": {
+        "message": "Você pode alterar qualquer uma delas posteriormente nas Configurações."
+    },
+    "wizard_done_title": {
+        "message": "Tudo pronto"
+    },
+    "wizard_done_body": {
+        "message": "O ThunderAI está pronto. Clique com o botão direito em uma mensagem ou abra a janela de composição para experimentá-lo. Ajuste qualquer coisa posteriormente nas Configurações."
+    },
+    "wizard_run_again": {
+        "message": "Executar novamente"
+    },
+    "wizard_connect_heading": {
+        "message": "Conectar $PROVIDER$",
+        "placeholders": {
+            "provider": {
+                "content": "$1",
+                "example": "Claude API"
+            }
+        }
+    },
+    "wizard_back": {
+        "message": "Voltar"
+    },
+    "wizard_continue": {
+        "message": "Continuar"
+    },
+    "wizard_finish": {
+        "message": "Concluir configuração"
+    },
+    "wizard_provider_tag_chatgpt_web": {
+        "message": "Sem chave de API — faça login no primeiro uso"
+    },
+    "wizard_provider_tag_chatgpt_api": {
+        "message": "Precisa de chave de API + modelo"
+    },
+    "wizard_provider_tag_google_gemini_api": {
+        "message": "Precisa de chave de API + modelo"
+    },
+    "wizard_provider_tag_anthropic_api": {
+        "message": "Precisa de chave de API, modelo e versão"
+    },
+    "wizard_provider_tag_ollama_api": {
+        "message": "Endereço de servidor local + modelo"
+    },
+    "wizard_provider_tag_openai_comp_api": {
+        "message": "Endereço de servidor + modelo"
+    },
+    "onboarding_wizard_banner_text": {
+        "message": "Novo no ThunderAI? Deixe o assistente de configuração guiá-lo na conexão com sua IA."
+    },
+    "onboarding_wizard_banner_link": {
+        "message": "Iniciar o assistente de configuração"
+    },
+    "prefs_doc_setup_wizard_launch": {
+        "message": "Assistente de configuração"
+    },
+    "popup_setup_wizard_text": {
+        "message": "O ThunderAI ainda não está conectado a uma IA."
+    },
+    "popup_setup_wizard_link": {
+        "message": "Executar o assistente de configuração"
+    },
+    "prefs_Connection_type_none": {
+        "message": "— Selecione uma conexão de IA —"
+    },
+    "options_no_connection_text": {
+        "message": "Nenhuma conexão de IA selecionada ainda. O ThunderAI precisa de uma para funcionar."
+    },
+    "options_no_connection_link": {
+        "message": "Executar o assistente de configuração"
+    },
+    "msg_no_connection_selected": {
+        "message": "Nenhuma conexão de IA selecionada. Abra as opções do ThunderAI e execute o assistente de configuração para escolher uma."
+    },
+    "onboarding_tab_title": {
+        "message": "Bem-vindo ao ThunderAI!"
+    },
+    "onboarding_welcome_2": {
+        "message": "Este complemento foi projetado para aprimorar o gerenciamento de seus e-mails com o poder da IA."
+    },
+    "onboarding_welcome_3": {
+        "message": "Com o ThunderAI, você pode organizar sua caixa de entrada, gerar respostas inteligentes, resumir e-mails, adicionar tags automaticamente e filtrar spam, e muito mais, tudo com a ajuda da inteligência artificial."
+    },
+    "onboarding_welcome_4": {
+        "message": "Nesta página, você encontrará uma visão geral dos recursos principais disponíveis para ajudá-lo a aproveitar ao máximo o ThunderAI."
+    },
+    "onboarding_welcome_5": {
+        "message": "Prepare-se para experimentar uma maneira mais inteligente e eficiente de lidar com seus e-mails!"
+    },
+    "onboarding_welcome_6": {
+        "message": "Vamos ver como fazer o melhor uso deste complemento!"
+    },
+    "onboarding_using_prompts_title": {
+        "message": "Usando prompts"
+    },
+    "onboarding_using_prompts_alt": {
+        "message": "Botão do menu de prompts"
+    },
+    "onboarding_using_prompts_1": {
+        "message": "Em cada mensagem, há um botão que permitirá abrir o menu de prompts."
+    },
+    "onboarding_using_prompts_2": {
+        "message": "Aqui você pode escolher o prompt de diferentes maneiras:"
+    },
+    "onboarding_using_prompts_li1_b": {
+        "message": "Caixa de pesquisa"
+    },
+    "onboarding_using_prompts_li1": {
+        "message": "Use isto para pesquisar por parte do prompt."
+    },
+    "onboarding_using_prompts_li2_b": {
+        "message": "Seta para baixo/cima"
+    },
+    "onboarding_using_prompts_li2": {
+        "message": "Navegue pelos prompts."
+    },
+    "onboarding_using_prompts_li3_b": {
+        "message": "Pressione um número"
+    },
+    "onboarding_using_prompts_li3": {
+        "message": "Pressione um número no teclado para escolher o prompt correspondente."
+    },
+    "onboarding_using_prompts_li4_b": {
+        "message": "Enter"
+    },
+    "onboarding_using_prompts_li4": {
+        "message": "Quando você tiver escolhido o prompt desejado, pressione Enter para executá-lo."
+    },
+    "onboarding_using_prompts_3": {
+        "message": "Na página de opções do ThunderAI você pode encontrar algumas opções relacionadas a este menu."
+    },
+    "onboarding_using_prompts_4": {
+        "message": "Os dois primeiros prompts são especiais e estão disponíveis apenas ao usar uma integração de API. Eles funcionam diretamente sem abrir a página de chat da IA."
+    },
+    "onboarding_custom_prompts_title": {
+        "message": "Definindo seus prompts personalizados"
+    },
+    "onboarding_custom_prompts_alt": {
+        "message": "Gerenciando prompts personalizados"
+    },
+    "onboarding_custom_prompts_p1_1": {
+        "message": "Na página de opções você pode abrir a página de Prompts Personalizados."
+    },
+    "onboarding_custom_prompts_p1_3": {
+        "message": "A partir daí você pode adicionar seus prompts e também desativar os padrão."
+    },
+    "onboarding_custom_prompts_p1_4": {
+        "message": "Você pode encontrar mais informações aqui."
+    },
+    "onboarding_custom_prompts_p2_1": {
+        "message": "Ao definir seus próprios prompts, você também pode usar"
+    },
+    "onboarding_custom_prompts_bold_dp": {
+        "message": "espaços reservados de dados"
+    },
+    "onboarding_custom_prompts_p2_2": {
+        "message": ", que serão substituídos pelas informações correspondentes ao usar o prompt."
+    },
+    "onboarding_custom_prompts_p3": {
+        "message": "Por exemplo, você pode usar o espaço reservado $PH_SUBJECT$ para se referir ao assunto do e-mail ou $PH_TAGS$ para se referir às tags do e-mail atual.",
+        "placeholders": {
+            "ph_subject": {
+                "content": "{%mail_subject%}"
+            },
+            "ph_tags": {
+                "content": "{%tags_current_email%}"
+            }
+        }
+    },
+    "onboarding_automatic_features_title": {
+        "message": "Recursos automáticos"
+    },
+    "onboarding_automatic_features_alt": {
+        "message": "Filtro de spam automático"
+    },
+    "onboarding_automatic_features_1": {
+        "message": "Também há dois recursos automáticos disponíveis ao usar uma integração de API, que podem ser ativados na página de opções:"
+    },
+    "onboarding_automatic_features_li1_b": {
+        "message": "Filtro de spam automático"
+    },
+    "onboarding_automatic_features_li1": {
+        "message": "move automaticamente o e-mail para a pasta de spam se for detectado como spam."
+    },
+    "onboarding_automatic_features_li2_b": {
+        "message": "Etiquetagem automática"
+    },
+    "onboarding_automatic_features_li2": {
+        "message": "atribui tags automaticamente ao e-mail."
+    },
+    "onboarding_automatic_features_2": {
+        "message": "Para cada um desses recursos, há uma página de opções para especificar as configurações e o prompt personalizado a ser usado."
+    },
+    "onboarding_footer_1": {
+        "message": "Se você tiver alguma dúvida ou sugestão, abra um issue na página do GitHub."
+    },
+    "onboarding_footer_3": {
+        "message": "Você está gostando do ThunderAI?"
+    },
+    "prefs_OptionText_diff_granularity_words": {
+        "message": "Palavras"
+    },
+    "prefs_OptionText_diff_granularity_sentences": {
+        "message": "Frases"
+    },
+    "apiwebchat_picker_title": {
+        "message": "Checar as alterações"
+    },
+    "apiwebchat_picker_toolbar": {
+        "message": "Alterar ações do seletor"
+    },
+    "apiwebchat_picker_counter": {
+        "message": "$ACCEPTED$ de $TOTAL$ alterações foram aceitas",
+        "placeholders": {
+            "accepted": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_counter_all": {
+        "message": "Todas as $TOTAL$ alterações foram aceitas",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_step_short": {
+        "message": "$CURRENT$ / $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_long": {
+        "message": "Alteração $CURRENT$ de $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_total": {
+        "message": "$TOTAL$ alterações",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_progress": {
+        "message": "Alterações aceitas"
+    },
+    "apiwebchat_picker_more_actions": {
+        "message": "Mais ações"
+    },
+    "apiwebchat_picker_edit": {
+        "message": "Editar manualmente"
+    },
+    "apiwebchat_picker_review": {
+        "message": "Voltar para alterações"
+    },
+    "apiwebchat_picker_editor": {
+        "message": "Texto alterado"
+    },
+    "apiwebchat_picker_edit_hint": {
+        "message": "Você está editando o texto manualmente. Se você o alterar, ao voltar às alterações, o que você escreveu será comparado novamente com o texto original e todas as escolhas serão redefinidas."
+    },
+    "apiwebchat_picker_granularity": {
+        "message": "Comparar com"
+    },
+    "apiwebchat_picker_granularity_words": {
+        "message": "Palavras"
+    },
+    "apiwebchat_picker_granularity_sentences": {
+        "message": "Frases"
+    },
+    "apiwebchat_picker_accept_all": {
+        "message": "Aceitar tudo"
+    },
+    "apiwebchat_picker_reject_all": {
+        "message": "Rejeitar tudo"
+    },
+    "apiwebchat_picker_prev": {
+        "message": "Alteração anterior"
+    },
+    "apiwebchat_picker_next": {
+        "message": "Próxima alteração"
+    },
+    "apiwebchat_picker_no_changes": {
+        "message": "A resposta é idêntica à original: não há nada para revisar."
+    },
+    "apiwebchat_picker_diff_failed": {
+        "message": "Os dois textos não puderam sem comparados. A resposta está sem alteração."
+    },
+    "apiwebchat_picker_side_old_active": {
+        "message": "Texto original mantido: $TEXT$",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_old_inactive": {
+        "message": "Texto original descartado: $TEXT$. Ativar para manter esse texto.",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_active": {
+        "message": "Texto sugerido: $TEXT$",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_inactive": {
+        "message": "Texto sugerido descartado: $TEXT$. Ativar para manter o texto.",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_empty_active": {
+        "message": "Sem nenhum texto aqui: essa parte foi mantida fora. Ativar a outra versão para manter esse texto."
+    },
+    "apiwebchat_picker_side_empty_inactive": {
+        "message": "Nenhum texto aqui. Ativar para ignorar essa parte."
+    },
+    "apiwebchat_copy": {
+        "message": "Copiar"
+    },
+    "apiwebchat_copied": {
+        "message": "Copiado"
+    },
+    "apiwebchat_copy_failed": {
+        "message": "Cópia falhou"
+    },
+    "apiwebchat_status_error": {
+        "message": "Erro"
+    },
+    "apiwebchat_show_options": {
+        "message": "Mostrar opções"
+    },
+    "apiwebchat_turn_tools": {
+        "message": "Responder ações"
+    },
+    "apiwebchat_scroll_to_latest": {
+        "message": "Rolar para o último"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary": {
+        "message": "Resumo do raciocínio"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_Info": {
+        "message": "Solicite à API um resumo do raciocínio do modelo, exibido no chat como um bloco expansível. Apenas modelos de raciocínio recentes oferecem suporte a isso, como o gpt-5, o3 e o4-mini; modelos mais antigos, como o o1-pro e o o3-mini, realizam o raciocínio internamente, mas não disponibilizam um resumo, fazendo com que o bloco permaneça oculto. Mantenha a opção desativada para modelos sem suporte a raciocínio."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort": {
+        "message": "Esforço de raciocínio"
+    },
+    "prefs_OptionText_chatgpt_extra_body": {
+        "message": "Dados extras do corpo"
+    },
+    "prefs_OptionText_chatgpt_extra_body_info": {
+        "message": "Parâmetros adicionais a serem enviados em cada chamada da API, como um objeto JSON, por exemplo {\"top_p\": 0.9}. Útil para opções que a API da OpenAI suporta, mas que o ThunderAI não expõe. Os parâmetros gerenciados pelo ThunderAI (model, input, streaming, temperature, reasoning, instructions) não podem ser substituídos aqui. Um valor inválido é ignorado."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_Info": {
+        "message": "Quanto esforço o modelo dedica ao raciocínio antes de responder. Valores mais baixos resultam em respostas mais rápidas e econômicas; valores mais altos geram respostas mais detalhadas. Mantenha a configuração padrão da API para deixar a decisão a cargo da OpenAI. Esse parâmetro é ignorado por modelos que não oferecem suporte a raciocínio."
+    },
+    "prefs_OptionText_chatgpt_reasoning_disabled": {
+        "message": "Desabilitado"
+    },
+    "prefs_OptionText_chatgpt_reasoning_api_default": {
+        "message": "API padrão"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_auto": {
+        "message": "Auto"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
+        "message": "Detalhado"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
+        "message": "Mínimo"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_low": {
+        "message": "Baixo"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
+        "message": "Médio"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_high": {
+        "message": "Alto"
+    },
+    "menu_order_reset_all": {
+        "message": "Resetar tudo"
+    },
+    "menu_order_reset_all_tooltip": {
+        "message": "Restaura a ordem a visibilidade e os ícones padrão de todos os itens de menu. Pressione \"Salvar tudo\" para aplicar."
+    },
+    "menu_order_tab_dot_tooltip": {
+        "message": "O prompt selecionado também aparece nesta lista"
+    },
+    "menu_order_icon_default": {
+        "message": "Ícone padrão"
+    },
+    "editor_placeholder_missing": {
+        "message": "Este placeholder não existe"
+    },
+    "editor_placeholder_partial_type": {
+        "message": "Este placeholder funciona apenas em parte dos contextos em que este prompt é executado: permanece vazio no outro"
+    },
+    "editor_placeholder_wrong_type": {
+        "message": "Este placeholder não está disponível para este tipo de prompt"
+    },
+    "editor_placeholder_unterminated": {
+        "message": "Placeholder incorreto: faltando o fechamento %}"
+    },
+    "prefs_OptionText_diff_granularity": {
+        "message": "Comparar alterações por"
+    },
+    "prefs_OptionText_diff_granularity_info": {
+        "message": "Como a ferramenta de seleção de alterações compara o texto original com a resposta. A opção \"Palavras\" é adequada para corrigir ortografia e gramática; a opção \"Frases\" facilita a leitura quando a resposta reescreve frases inteiras. Observe que, em um texto composto por uma única frase, a opção \"Frases\" exibe o texto todo como uma única alteração. Você também pode alternar entre as duas opções ao revisar as alterações."
     }
 }

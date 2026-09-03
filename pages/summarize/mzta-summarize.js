@@ -27,23 +27,31 @@ import {
 } from "../../js/mzta-prompts.js";
 import {
     getPlaceholders,
-    mapPlaceholderToSuggestion
-} from "../../js/mzta-placeholders.js";
+    mapPlaceholderToSuggestion, placeholdersUtils } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import { attachEditorHighlight, makeTokenStateResolver } from "../../js/mzta-editor-highlight.js";
 import {
   normalizeStringList,
   isAPIKeyValue,
-  setTomSelectBorder
+  setTomSelectBorder,
+  hasAddressListEntries,
+  isApiUsableConnection
 } from "../../js/mzta-utils.js";
 import {
-  initializeSpecificIntegrationUI
+  initializeSpecificIntegrationUI,
+  isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
+import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 
 let autocompleteSuggestions = [];
+let activePlaceholders = [];
 let taLog = new taLogger("mzta-summarize-page", true);
 
 document.addEventListener("DOMContentLoaded", async () => {
-  
+
+    // Warn before leaving the page with unsaved textarea text.
+    initUnsavedGuard();
+
     let specialPrompts = await getSpecialPrompts();
     let summarize_prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize');
     let summarize_email_template = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_template');
@@ -52,6 +60,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (summarize_prompt && summarize_prompt.api_type && summarize_prompt.api_type !== '') {
         let update_prefs = {};
         update_prefs['summarize_connection_type'] = summarize_prompt.api_type;
+        // getConnectionType() reads the prefixed connection type only when this flag is on,
+        // so writing the pair one half at a time leaves the value inert. It matters for the
+        // call sites that pass prompt = null (the menu gating in mzta-background.js and the
+        // feature row in mzta-options.js): they have no prompt to fall back on, so the pref
+        // pair is the only way they can see the per-feature connection.
+        // Only for a usable api_type: chatgpt_web has no <option> in the per-prompt select and
+        // isApiUsableConnection() rejects it, so the pair would read as "on" while the feature
+        // stayed hidden from the menus.
+        if (isApiUsableConnection(summarize_prompt.api_type)) {
+            update_prefs['summarize_use_specific_integration'] = true;
+        }
 
         let integration = summarize_prompt.api_type.replace('_api', '');
         if (integration_options_config && integration_options_config[integration]) {
@@ -94,6 +113,46 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     updateConnPanelTint();
     let prefs_summarize = await browser.storage.sync.get({ summarize_enabled_accounts: [], connection_type: 'chatgpt_web' });
+
+    // Auto-summarize senders list
+    // The toggle is a plain .option-input (saved by saveOptions), the list is saved explicitly.
+    let auto_senders_toggle = document.getElementById('summarize_auto_senders');
+    let auto_senders_textarea = document.getElementById('summarize_auto_senders_list');
+    let auto_senders_save_btn = document.getElementById('btn_save_auto_senders');
+
+    let auto_senders_value = await summarize_getAutoSendersList();
+    let auto_senders_string = auto_senders_value.join('\n');
+
+    auto_senders_textarea.value = auto_senders_string;
+
+    auto_senders_textarea.addEventListener('input', (event) => {
+        auto_senders_save_btn.disabled = (event.target.value === auto_senders_string);
+        if(auto_senders_save_btn.disabled){
+            document.getElementById('auto_senders_unsaved').classList.add('hidden');
+        } else {
+            document.getElementById('auto_senders_unsaved').classList.remove('hidden');
+        }
+    });
+
+    auto_senders_save_btn.addEventListener('click', () => {
+        let auto_senders_array_new = normalizeStringList(auto_senders_textarea.value, 2);
+        summarize_setAutoSendersList(auto_senders_array_new);
+        auto_senders_save_btn.disabled = true;
+        auto_senders_string = auto_senders_array_new.join('\n');
+        auto_senders_textarea.value = auto_senders_string;
+        document.getElementById('auto_senders_unsaved').classList.add('hidden');
+        updateAutoSendersNotice();
+    });
+
+    // The list and its Save button are only usable when the feature is switched on.
+    auto_senders_toggle.addEventListener('change', () => {
+        updateAutoSendersState();
+        updateAutoSendersNotice();
+    });
+    updateAutoSendersState();
+    // updateDisplayModeConstraint() only fires on the summarize_auto select, so the notice is
+    // refreshed on its own here (and on the toggle change and after a save).
+    updateAutoSendersNotice();
 
     let summarize_textarea = document.getElementById("summarize_prompt_text");
     let summarize_save_btn = document.getElementById("btn_save_prompt");
@@ -185,12 +244,31 @@ document.addEventListener("DOMContentLoaded", async () => {
     summarize_email_separator_textarea.value = summarize_email_separator.text;
     summarize_email_separator_reset_btn.disabled = (summarize_email_separator_textarea.value === browser.i18n.getMessage("prompt_summarize_email_separator_full_text"));
 
-    autocompleteSuggestions = (await getPlaceholders(true))
+    // Full list, kept for token validation. Deliberately NOT filtered like the
+    // suggestions: {%additional_text%} is a real placeholder that this page simply
+    // does not offer, so the editor must not flag it as unknown.
+    activePlaceholders = await getPlaceholders(true);
+    autocompleteSuggestions = activePlaceholders
         .filter((p) => p.id !== "additional_text")
         .map(mapPlaceholderToSuggestion);
 
+    const summarize_textarea_hl = attachEditorHighlight(summarize_textarea);
+    // Flags unknown and unterminated tokens. Type 1 ("reading"),
+    // matching the type_value passed to textareaAutocomplete below.
+    if (summarize_textarea_hl) summarize_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(summarize_textarea, autocompleteSuggestions, 1);
+    const summarize_textarea_email_template_hl = attachEditorHighlight(summarize_textarea_email_template);
+    // Flags unknown and unterminated tokens. Type 1 ("reading"),
+    // matching the type_value passed to textareaAutocomplete below.
+    if (summarize_textarea_email_template_hl) summarize_textarea_email_template_hl.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(summarize_textarea_email_template, autocompleteSuggestions, 1);
+    const summarize_email_separator_textarea_hl = attachEditorHighlight(summarize_email_separator_textarea);
+    // Flags unknown and unterminated tokens. Type 1 ("reading"),
+    // matching the type_value passed to textareaAutocomplete below.
+    if (summarize_email_separator_textarea_hl) summarize_email_separator_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(summarize_email_separator_textarea, autocompleteSuggestions, 1);
     
 });
@@ -237,6 +315,54 @@ function updateDisplayModeConstraint() {
   } else {
     display_mode_el.disabled = false;
   }
+  updateAutoSendersState();
+  updateAutoSendersNotice();
+}
+
+// Enables or disables the auto-summarize senders card.
+// With summarize_auto === 3 every incoming message is summarized anyway, so the whole card is
+// switched off and an explanatory note is shown. Otherwise only the list and its Save button
+// follow the toggle.
+function updateAutoSendersState(){
+  const toggle_el = document.getElementById('summarize_auto_senders');
+  const list_el = document.getElementById('summarize_auto_senders_list');
+  const save_btn = document.getElementById('btn_save_auto_senders');
+  const note_el = document.getElementById('summarize_auto_senders_disabled_note');
+  if(!toggle_el || !list_el || !save_btn) return;
+
+  const summarize_auto_el = document.getElementById('summarize_auto');
+  const allSummarized = (String(summarize_auto_el.value) === '3');
+
+  toggle_el.disabled = allSummarized;
+  list_el.disabled = allSummarized || !toggle_el.checked;
+  // Never re-enable Save here: it is owned by the dirty-state check on the textarea.
+  if(list_el.disabled){
+    save_btn.disabled = true;
+  }
+  if(note_el){
+    note_el.classList.toggle('hidden', !allSummarized);
+  }
+}
+
+// The notice below the summarize_auto select warns that, even though auto-summarize is
+// disabled in general, the senders in the list are still summarized automatically.
+async function updateAutoSendersNotice(){
+  const notice_el = document.getElementById('summarize_auto_senders_notice');
+  if(!notice_el) return;
+  const summarize_auto_el = document.getElementById('summarize_auto');
+  const toggle_el = document.getElementById('summarize_auto_senders');
+  const list = await summarize_getAutoSendersList();
+  const show = ((String(summarize_auto_el.value) === '0') || (String(summarize_auto_el.value) === '1')) && toggle_el.checked && hasAddressListEntries(list);
+  notice_el.classList.toggle('hidden', !show);
+}
+
+async function summarize_getAutoSendersList() {
+  let prefs = await browser.storage.sync.get({summarize_auto_senders_list: prefs_default.summarize_auto_senders_list});
+  return prefs.summarize_auto_senders_list;
+}
+
+function summarize_setAutoSendersList(summarize_auto_senders_list) {
+  browser.storage.sync.set({summarize_auto_senders_list: summarize_auto_senders_list});
 }
 
 function resetSummarizeMaxMessages(){
@@ -263,7 +389,12 @@ function saveOptions(e) {
         break;
       case 'select-one':
         if (element.id === 'summarize_auto') {
-          options[element.id] = parseInt(element.value, 10);
+          // An empty select (selectedIndex === -1) parses to NaN, which storage.sync
+          // serializes as null — and a stored null is *not* replaced by the default in
+          // storage.sync.get(), so the value stays outside the 0..3 range forever and
+          // every === comparison downstream silently fails. Fall back to the default.
+          let parsed = parseInt(element.value, 10);
+          options[element.id] = Number.isNaN(parsed) ? prefs_default.summarize_auto : parsed;
         } else {
           options[element.id] = element.value;
         }
@@ -313,14 +444,16 @@ async function restoreOptions() {
             const restoreValue = result[element.id] ?? default_select_value;
             // Check if option exists
             let optionExists = Array.from(element.options).some(opt => opt.value === String(restoreValue));
+            // Never synthesize an option for a connection select: its catalogue is closed.
+            let canSynthesize = !isClosedCatalogueSelect(element.id);
             if (element.tomselect) {
-              if (!optionExists && restoreValue !== '') {
+              if (!optionExists && restoreValue !== '' && canSynthesize) {
                 element.tomselect.addOption({ value: String(restoreValue), text: String(restoreValue) });
               }
               element.tomselect.setValue(String(restoreValue), true);
               setTomSelectBorder(element.tomselect);
             } else {
-              if (!optionExists && restoreValue !== '') {
+              if (!optionExists && restoreValue !== '' && canSynthesize) {
                 let newOption = new Option(restoreValue, restoreValue);
                 element.add(newOption);
               }
@@ -345,7 +478,12 @@ async function restoreOptions() {
       if (addtags_prompt.api_type && addtags_prompt.api_type !== '') {
           getting['summarize_connection_type'] = addtags_prompt.api_type;
       } else {
-          getting['summarize_connection_type'] = getting['connection_type'];
+          // Inherit the global connection only when this select can actually offer it:
+          // chatgpt_web has no <option> here (it has no API), so inheriting it would show
+          // a value the control cannot represent. Leave it blank instead.
+          getting['summarize_connection_type'] = isApiUsableConnection(getting['connection_type'])
+              ? getting['connection_type']
+              : '';
       }
       for (const [integration, options] of Object.entries(integration_options_config)) {
           for (const key of Object.keys(options)) {

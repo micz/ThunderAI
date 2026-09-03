@@ -245,9 +245,6 @@
     "placeholder_thunderai_def_sign": {
         "message": "ThunderAI 选项中定义的默认签名。"
     },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "垃圾邮件过滤选项"
-    },
     "prefs_OptionText_spamfilter_threshold": {
         "message": "垃圾阈值"
     },
@@ -455,9 +452,6 @@
     "placeholder_additional_text": {
         "message": "附加文本"
     },
-    "Ollama_Models_Fetch": {
-        "message": "更新 Ollama 模型列表"
-    },
     "currently_used_prompt": {
         "message": "当前使用的提示词名称"
     },
@@ -486,7 +480,7 @@
         "message": "AI 建议的最大标签数量。如果不想限制标签数量，请设置为 0。"
     },
     "prompt_rewrite_full_text": {
-        "message": "重写以下文字以使其更加礼貌。仅使用重写的文字进行回复，不要添加额外的评论或其他文字。"
+        "message": "重写以下文字以使其更加礼貌。仅使用重写的文字进行回复，不要添加额外的评论或其他文字。 {%selected_html%}"
     },
     "customprompts_form_label_define_response_lang": {
         "message": "在提示词中定义响应语言"
@@ -508,9 +502,6 @@
     },
     "prefs_Connection_type_ChatGPT_Web": {
         "message": "ChatGPT Web 界面"
-    },
-    "ChatGPT_Models_Fetch": {
-        "message": "更新 ChatGPT 模型列表"
     },
     "SearchPrompt": {
         "message": "搜索提示词"
@@ -559,9 +550,6 @@
     },
     "prefs_OpenAIComp_API_Key": {
         "message": "OpenAI 兼容 API 密钥"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "更新 OpenAI 兼容 API 模型列表"
     },
     "prefs_OptionText_chatgpt_win_dims_info": {
         "message": "如果不想指定窗口大小，请设置为 0。"
@@ -618,7 +606,7 @@
         "message": "为电子邮件添加标签"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "重写以下文字，使其更加正式。回复时只使用重写的文字，不要添加任何额外的评论或其他文字。"
+        "message": "重写以下文字，使其更加正式。回复时只使用重写的文字，不要添加任何额外的评论或其他文字。 {%selected_html%}"
     },
     "prompt_this_full_text": {
         "message": "仅使用所需的文本进行回复，不需要额外的评论或其他文本。"
@@ -716,14 +704,8 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "如果选中，标签标签将设置为小写字母，但只有首字母大写。"
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "添加标签选项"
-    },
     "prefs_OptionText_add_tags_force_lang": {
         "message": "强制语言"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "更新 Google Gemini 模型列表"
     },
     "ChatGPT_Developer_Messages_Info": {
         "message": "当您设置开发者消息时，您为模型提供了额外的上下文，以帮助其理解任务、提供更个性化的响应，并遵循将在提示中发送的具体准则。"
@@ -747,7 +729,7 @@
         "message": "管理垃圾邮件过滤器设置"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "从以下文本中提取生成日历事件所需的所有相关细节。提取的信息应包括：\n- 事件标题\n- 开始日期和时间（如果指定时区，则包括时区）\n- 结束日期和时间（如果指定时区，则包括时区）\n- 全天事件（如果提及）\n- 参与者 \n确保数据格式清晰且一致，以便可以直接用于创建日历事件。\n如果存在相对时间的引用，请注意邮件的日期和时间为“{%mail_datetime%}”。基于此参考计算开始日期和时间。如果计算出的开始日期和时间早于“{%current_datetime%}”，则使用“{%current_datetime%}”作为基准重新计算开始日期和时间。\n如果未指定持续时间，请将其设置为一小时。\n以下是参与者：{%author%}, {%recipients%}, {%cc_list%}。如有，请排除我的地址：{%account_email_address%}。\n如果该活动为全天活动，endDate 必须为 startDate 的后一天，且时间设置为 \"T000000\"。\n如果无法获取一个或多个所需信息，请以空字符串响应。\n仅以 JSON 格式生成响应。不要包含任何额外的文本或说明，仅提供 JSON。以下是使用的格式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"日历事件摘要\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\n以下是文本：“{%mail_text_body_or_selected%}”"
+        "message": "从以下文本中提取生成日历事件所需的所有相关细节。提取的信息应包括：\n- 事件标题\n- 事件描述（对邮件背景、关键主题/议程、行动事项以及任何视频通话链接或访问详情的简要总结）\n- 开始日期和时间（如果指定时区，则包括时区）\n- 结束日期和时间（如果指定时区，则包括时区）\n- 全天事件（如果提及）\n- 地点（如果提及，具体建筑、房间或在线链接）\n- 参与者 \n确保数据格式清晰且一致，以便可以直接用于创建日历事件。\n如果存在相对时间的引用，请注意邮件的日期和时间为“{%mail_datetime%}”。基于此参考计算开始日期和时间。如果计算出的开始日期和时间早于“{%current_datetime%}”，则使用“{%current_datetime%}”作为基准重新计算开始日期和时间。\n如果未指定持续时间，请将其设置为一小时。\n以下是参与者：{%author%}, {%recipients%}, {%cc_list%}。如有，请排除我的地址：{%account_email_address%}。\n如果该活动为全天活动，endDate 必须为 startDate 的后一天，且时间设置为 \"T000000\"。\n如果无法获取一个或多个所需信息，请以空字符串响应。\n仅以 JSON 格式生成响应。不要包含任何额外的文本或说明，仅提供 JSON。以下是使用的格式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"日历事件摘要\",\n\"description\": \"详细的事件描述，包括议程、行动事项和邮件中的相关注释。\",\n\"forceAllDay\": false,\n\"location\": \"地点或URL在此\",\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\n以下是文本：“{%mail_text_body_or_selected%}”"
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "从所选文本添加新日历事件"
@@ -820,9 +802,6 @@
     },
     "customPrompts_form_label_use_diff_viewer": {
         "message": "启用文本差异查看器"
-    },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "日历事件选项"
     },
     "Select_your_timezone": {
         "message": "选择您的时区"
@@ -941,7 +920,7 @@
         "message": "校对这封邮件"
     },
     "prompt_proofread_this_full_text": {
-        "message": "请校对以下电子邮件，并纠正任何拼写或语法错误。仅回复更正后的文本，不要包含任何额外评论或其他文字。\n\n“{%mail_typed_text%}”"
+        "message": "请校对以下电子邮件，并纠正任何拼写或语法错误。仅回复更正后的文本，不要包含任何额外评论或其他文字。\n\n“{%selected_html%}”"
     },
     "reset": {
         "message": "重置"
@@ -985,9 +964,6 @@
     "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
         "message": "显示一个额外的菜单项，用于根据剪贴板文本内容创建日历事件。"
     },
-    "Summarize_prompt_prefs_title": {
-        "message": "摘要选项"
-    },
     "prompt_summarize": {
         "message": "总结这封或这些邮件"
     },
@@ -1010,16 +986,13 @@
         "message": "添加新任务"
     },
     "prompt_get_task_full_text": {
-        "message": "从以下文本中提取生成任务所需的所有相关详细信息。提取的信息应包括：\n- 截止日期和时间（如果指定，包括时区）\n- 任务摘要\n- 开始日期和时间（如果指定，包括时区）\n- 确保数据格式清晰且一致，以便直接用于创建任务。\n如果存在相对时间引用，请认为电子邮件的日期和时间为“{%mail_datetime%}”。根据此参考计算开始日期和时间。如果计算出的开始日期和时间早于“{%current_datetime%}”，请使用“{%current_datetime%}”作为基准重新计算开始日期和时间。\n如果您无法获取一项或多项所需信息，请回复空字符串。\n仅以 JSON 格式生成响应。不要包含任何额外的文本或说明；仅提供 JSON。以下是要使用的格式：\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"在此处填写任务摘要\"\n}\n如果没有关于日期的信息，请将其删除。\n以下是文本：“{%selected_text%}”"
+        "message": "从以下文本中提取生成任务所需的所有相关详细信息。提取的信息应包括：\n- 开始日期和时间（如果指定，包括时区）\n- 截止日期和时间（如果指定，包括时区）\n- 任务摘要\n- 任务描述（对邮件背景、关键主题和行动事项的简要总结）\n- 地点（如果提及，具体建筑、房间或在线链接）\n- 确保数据格式清晰且一致，以便直接用于创建任务。\n如果存在相对时间引用，请认为电子邮件的日期和时间为“{%mail_datetime%}”。根据此参考计算开始日期和时间。如果计算出的开始日期和时间早于“{%current_datetime%}”，请使用“{%current_datetime%}”作为基准重新计算开始日期和时间。\n如果您无法获取一项或多项所需信息，请回复空字符串。\n仅以 JSON 格式生成响应。不要包含任何额外的文本或说明；仅提供 JSON。以下是要使用的格式：\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"在此处填写任务摘要\",\n\"description\": \"详细的任务描述，包括行动事项和邮件中的相关注释。\",\n\"location\": \"地点或URL在此\"\n}\n如果没有关于日期的信息，请将其删除。\n以下是文本：“{%selected_text%}”"
     },
     "prefs_OptionText_get_task": {
         "message": "从选定文本添加新任务"
     },
     "prefs_OptionText_get_task_Info": {
         "message": "如果选中，则会在菜单中添加一个项目，以便从选定的文本获取任务信息。"
-    },
-    "get_task_prompt_prefs_title": {
-        "message": "任务选项"
     },
     "prefs_OptionText_Summarize_infoline2": {
         "message": "您可以根据需要更改提示词，第一个字段是主提示词，第二个字段是单封邮件的模板。邮件列表将附加到主提示词中。邮件将由第三个字段中指定的间隔符分隔。"
@@ -1101,11 +1074,5 @@
     },
     "CORS_localhost_warn": {
         "message": "如果您使用 localhost 或 127.0.0.1，因为 AI 服务器托管在您的 PC 上，则需要 <all_urls> 权限。"
-    },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "以纯文本编写"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "如果您以纯文本格式编写电子邮件，请选中此选项。"
     }
 }

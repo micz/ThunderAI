@@ -39,6 +39,40 @@ textarea.option-textarea{
     height: 10em;
 }
 
+/* Inline reason for a malformed .check-json value, filled by checkJsonField().
+   Hidden via the [hidden] attribute when the value is valid, so no space is
+   taken in the common case. The parser message can be long: it must wrap. */
+.json_error{
+    margin-top: 4px;
+    line-height: 1.4;
+    color: var(--jsonError, #b3261e);
+    overflow-wrap: break-word;
+}
+
+/* Inline note shown when the selected Claude model does not accept an option
+   (temperature, extended thinking budget, effort). The field itself stays
+   visible and populated but disabled, so the stored value is never hidden from
+   the user — see updateAnthropicModelCapabilityUI() in connection-ui.js.
+
+   It sits directly under the input and ABOVE the generic help text, because
+   when it is showing, that help text describes a setting the model ignores:
+   the note is what the user needs to read first. Blue rather than the red
+   --jsonError: nothing is malformed, the value just does not apply here. */
+.anthropic_caps_note{
+    display: block;
+    margin: 2px 0 0 0;
+    line-height: 1.35;
+    font-style: italic;
+    color: var(--capsNote, #14448c);
+    overflow-wrap: break-word;
+}
+
+/* No blank line between the note and the help text below it: the help text
+   follows a <br>, so the note must not add trailing space of its own. */
+.anthropic_caps_note + br{
+    line-height: 0;
+}
+
 label{
     width: -moz-available;
 }

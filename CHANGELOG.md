@@ -2,9 +2,39 @@
 
 
 
-<h2>Version 4.2.0 - ??/??/2026</h2>
+<h2>Version 5.0.0 - ??/??/2026</h2>
       <ul>
-        <li>Redesigned the settings page to reduce visual complexity, moving advanced options to a dedicated section to improve the onboarding experience for new users [<a href="https://github.com/micz/ThunderAI/issues/739">#739</a>].</li>
+        <li>Redesigned the settings page, moving advanced options to a dedicated section to improve the onboarding experience [<a href="https://github.com/micz/ThunderAI/issues/739">#739</a>].</li>
+        <li>Added a guided Setup Wizard to choose the AI provider, test the connection and enable the AI features. It can be launched from the welcome page, from the toolbar popup and from the settings page [<a href="https://github.com/micz/ThunderAI/issues/830">#830</a>].</li>
+        <li>A prompt's placement is now managed entirely from the Menu Order page, reachable from the new "Menu position" button in the prompt editor. New prompts start visible in the popup menu [<a href="https://github.com/micz/ThunderAI/issues/824">#824</a>].</li>
+        <li>Improved the Custom Prompts page UI: {%placeholder%} tokens are now highlighted while editing in every prompt text box of the add-on, invalid placeholders are reported with a warning tooltip, and the autocomplete list opens at the text cursor showing a description of each placeholder. The autocomplete also proposes the placeholders that contain what is being typed anywhere in their name, not just at the beginning, ignoring the upper or lower case: typing <i>{%body</i> now suggests <i>{%mail_text_body%}</i> too [<a href="https://github.com/micz/ThunderAI/issues/833">#833</a>].</li>
+        <li>Restyled the Data Placeholders page to match the new Custom Prompts page design [<a href="https://github.com/micz/ThunderAI/issues/838">#838</a>].</li>
+        <li>Added the <i>{%mail_plain_text_part%}</i> placeholder to get the original plain text part of the mail, exactly as the sender wrote it, with no HTML conversion. Blank lines and column alignment are preserved, so it is well suited to business mail, invoices and automated notifications, and it usually costs fewer tokens than <i>{%mail_text_body%}</i>. It is empty when the mail has no plain text part, and some newsletters only ship a placeholder stub there, so it is offered as a separate placeholder instead of changing the existing one [<a href="https://github.com/micz/ThunderAI/issues/869">#869</a>, <a href="https://github.com/micz/ThunderAI/issues/779">#779</a>].</li>
+        <li>It's now possibile to add the location and the description in a calendar event and in a task, be sure to update the prompt in the ThunderAI settings, thanks to <a href="https://github.com/touste">touste</a> [<a href="https://github.com/micz/ThunderAI/issues/870">#870</a>, <a href="https://github.com/micz/ThunderAI/issues/872">#872</a>].</li>
+        <li><i>[All APIs]</i> Redesigned the AI chat window: new header bar with the API and model in use, conversation turns, a floating status pill, a full light/dark theme following Thunderbird, and a per-answer actions toolbar with a new "Copy" button, so any answer of the conversation can be used or copied [<a href="https://github.com/micz/ThunderAI/issues/842">#842</a>].</li>
+        <li><i>[All APIs]</i> The "Show differences" view of the proofreading and rewriting prompts is now interactive: original and suggested text side by side, click to keep one, "Accept all"/"Reject all", an "Edit manually" mode, keyboard navigation and a word/sentence comparison toggle with a new default option [<a href="https://github.com/micz/ThunderAI/issues/829">#829</a>].</li>
+        <li><i>[All APIs]</i> Fix: literal &lt;br&gt; tags are no longer shown in the chat window nor inserted in the mail.</li>
+        <li><i>[All APIs]</i> Fix: the line breaks of the answer are now preserved when it is inserted in the mail with "Use this answer".</li>
+        <li><i>[All APIs]</i> Fix: no more extra empty lines between the AI answer and the signature or the quoted text when the answer is inserted in the mail [<a href="https://github.com/micz/ThunderAI/issues/849">#849</a>].</li>
+        <li><i>[All APIs]</i> The thinking block is now always shown when the model returns reasoning content, even if the thinking option of the connection is not enabled.</li>
+        <li><i>[All APIs]</i> Fix: the reasoning content is no longer included in the result of the special prompts (add tags, spam filter, calendar event, task).</li>
+        <li><i>[Google Gemini API][OpenAI Comp API]</i> Improved the detection of the thinking content in the response stream.</li>
+        <li><i>[OpenAI API]</i> The thinking block is correctly handled and reported on the webchat. The reasoning summary parameter must be set [<a href="https://github.com/micz/ThunderAI/issues/773">#773</a>, <a href="https://github.com/micz/ThunderAI/issues/774">#774</a>].</li>
+        <li>Fix: the timezone selector of the calendar event and task settings pages now lists all the timezones known to Thunderbird, including those with a fractional offset, and has a search box [<a href="https://github.com/micz/ThunderAI/issues/843">#843</a>].</li>
+        <li><i>[All APIs]</i> Added an option to automatically summarize the emails coming from a list of sender addresses or domains, even when the auto-summarize option is disabled [<a href="https://github.com/micz/ThunderAI/issues/820">#820</a>].</li>
+        <li><i>[All APIs]</i> The automatic processing of received emails (autotagging, spam filter, summarize and translate) now also skips the messages in the drafts, templates, outbox and sent folders, so a draft is no longer summarized or translated while it is being written. A new option in the Add Tags settings allows the autotagging of the sent emails.</li>
+        <li><i>[All APIs]</i> Fix: the autotagging of the received emails is no longer performed on the messages placed outside the inbox by a server side filter, when the related option is enabled [<a href="https://github.com/micz/ThunderAI/issues/863">#863</a>].</li>
+        <li><i>[All APIs]</i> Improvement: better performance in all automatic features and faster API webchat responses [<a href="https://github.com/micz/ThunderAI/issues/862">#862</a>].</li>
+        <li><i>[OpenAI API][OpenAI Comp API]</i> Added a new "Extra body data" advanced connection option, to send additional parameters with every API call as a JSON object, like disabling the thinking mode of a model. A malformed value is reported below the field, with the position of the error, and is ignored when calling the API. The parameters already managed by ThunderAI can't be overridden [<a href="https://github.com/micz/ThunderAI/issues/854">#854</a>].</li>
+        <li><i>[Claude API]</i> Added the "Effort" connection option, also available per prompt, and the request parameters are now adapted to the selected model: the newer Claude models reject the Temperature and the Extended thinking budget values, so those fields are disabled with an explanatory note and their values are no longer sent, while the older models keep working as before. The stored values are preserved when switching model [<a href="https://github.com/micz/ThunderAI/issues/875">#875</a>].</li>
+        <li>The rewrite prompts are now using the HTML selected text preserving the HTML formatting if present.</li>
+        <li>The default "Proofread this email" prompt now works on the text selected in the compose window, using the <i>{%selected_html%}</i> placeholder instead of <i>{%mail_typed_text%}</i>, so the HTML formatting is preserved and it is possible to proofread just a part of the mail. If you have customized this prompt, update it manually to get the new behaviour.</li>
+        <li>In the toolbar popup the special prompts no longer have a colored background, and every row now correctly shows the mouse and keyboard highlight.</li>
+        <li>In the custom prompts page it is now possible to search for a prompt filtering the list.</li>
+        <li>Fix: the <i>{%recipients%}</i> and <i>{%cc_list%}</i> placeholders now also work in the compose window, using the addresses typed in the To and Cc fields.</li>
+        <li>Implemented a new HTML engine to get and set the email content in Thunderbird.</li>
+        <li>Many minor improvements.</li>
+        <li>Various minor bugs fixed.</li>
         <li>...</li>
       </ul>
 <h2>Version 4.1.1 - 19/07/2026</h2>
@@ -29,7 +59,7 @@
         <li>Antispam information are now permanently saved for each message [<a href="https://github.com/micz/ThunderAI/issues/675">#675</a>].</li>
         <li><i>[All APIs]</i> A summary has been added above the mail content [<a href="https://github.com/micz/ThunderAI/issues/580">#580</a>].</li>
         <li><i>[All APIs]</i> Added inline auto translation for emails [<a href="https://github.com/micz/ThunderAI/issues/247">#247</a>].</li>
-        <li>Custom menus configuration added. Now it's possibile to define which prompts show in the ThunderAI menu, which ones in the context menu and in which order [<a href="https://github.com/micz/ThunderAI/issues/49">#49</a>, <a href="https://github.com/micz/ThunderAI/issues/184">#184</a>, <a href="https://github.com/micz/ThunderAI/issues/680">#680</a>].</li>
+        <li>Custom menus configuration added. Now it's possible to define which prompts show in the ThunderAI menu, which ones in the context menu and in which order [<a href="https://github.com/micz/ThunderAI/issues/49">#49</a>, <a href="https://github.com/micz/ThunderAI/issues/184">#184</a>, <a href="https://github.com/micz/ThunderAI/issues/680">#680</a>].</li>
         <li>Now the popup menu closes immediatly and the working indicator is in the button icon [<a href="https://github.com/micz/ThunderAI/issues/247">#677</a>].</li>
         <li><i>[All APIs]</i> Error messages added also for background operations when the API has not been configured correctly [<a href="https://github.com/micz/ThunderAI/issues/766">#766</a>].</li>
         <li><i>[Ollama API]</i> Added <i>format: json</i> option [<a href="https://github.com/micz/ThunderAI/issues/703">#703</a>].</li>
@@ -37,7 +67,7 @@
         <li>In the options page now is visible if a special prompt is using a specific API integration [<a href="https://github.com/micz/ThunderAI/issues/676">#676</a>].</li>
         <li>Added an antispam skip list to ensure messages from designated addresses are not forwarded to the AI [<a href="https://github.com/micz/ThunderAI/issues/743">#743</a>].</li>
         <li>Fix: Correctly setting the end date for a new calendar event [<a href="https://github.com/micz/ThunderAI/issues/750">#750</a>].</li>
-        <li>Now it's possibile to use different date and time formats in the AI output when creating a calendar event [<a href="https://github.com/micz/ThunderAI/issues/737">#737</a>].</li>
+        <li>Now it's possible to use different date and time formats in the AI output when creating a calendar event [<a href="https://github.com/micz/ThunderAI/issues/737">#737</a>].</li>
         <li>Added the <i>{%mail_full_headers%}</i> placeholder to retrieve all the email headers at once [<a href="https://github.com/micz/ThunderAI/issues/713">#713</a>].</li>
         <li><i>[All APIs]</i> In the API webchat the status messages have different colors [<a href="https://github.com/micz/ThunderAI/issues/3">#3</a>].</li>
         <li>Account exclusion lists for add tags and antispam are enforced only for automatic analysis of incoming emails and not for the context menu action that is always executed [<a href="https://github.com/micz/ThunderAI/issues/749">#749</a>].</li>
@@ -48,7 +78,7 @@
       </ul>
 <h2>Version 4.0.6 - 01/04/2026</h2>
       <ul>
-        <li>Fix: Now it's possibile to create a tag also with accented characters in the label [<a href="https://github.com/micz/ThunderAI/issues/738">#738</a>].</li>
+        <li>Fix: Now it's possible to create a tag also with accented characters in the label [<a href="https://github.com/micz/ThunderAI/issues/738">#738</a>].</li>
       </ul>
 <h2>Version 4.0.5 - 27/03/2026</h2>
       <ul>
@@ -79,7 +109,7 @@
 <h2>Version 4.0.0 - 24/02/2026</h2>
       <ul>
         <li>ThunderAI is now compatible only with Thunderbird 140 and later [<a href="https://github.com/micz/ThunderAI/issues/616">#616</a>].</li>
-        <li><i>[All APIs]</i> It's now possibile to define a specific API integration for calendar and task recognition [<a href="https://github.com/micz/ThunderAI/issues/498">#498</a>].</li>
+        <li><i>[All APIs]</i> It's now possible to define a specific API integration for calendar and task recognition [<a href="https://github.com/micz/ThunderAI/issues/498">#498</a>].</li>
         <li>Added a new model selector with a search functionality to dynamically filter the list [<a href="https://github.com/micz/ThunderAI/issues/603">#603</a>].</li>
         <li><i>[All APIs]</i> Added a special prompt to summarize one or more emails, using a context menu command [<a href="https://github.com/micz/ThunderAI/issues/615">#615</a>]. Thanks to <a href="https://github.com/gdkrmr">Guido Kraemer</a> for his great work on this feature.</li>
         <li><i>[All APIs]</i> "Analyze for spam" and "Add tags" context menu items are always shown when the corresponding feature is enabled [<a href="https://github.com/micz/ThunderAI/issues/609">#609</a>].</li>
@@ -93,8 +123,8 @@
         <li><i>[All APIs]</i> Added a new menu item to create a calendar event from the text saved in the clipboard [<a href="https://github.com/micz/ThunderAI/issues/362">#362</a>].</li>
         <li>Added a button to copy a prompt in the Custom Prompts page [<a href="https://github.com/micz/ThunderAI/issues/598">#598</a>].</li>
         <li><i>[All APIs]</i> Showing the spam filter info at the top of the message. The data is saved only for the session in which the message has been checked for spam [<a href="https://github.com/micz/ThunderAI/issues/506">#506</a>, <a href="https://github.com/micz/ThunderAI/issues/658">#658</a>].</li>
-        <li>Fix: Now it's possibile to use multiple <i>additional_text</i> placeholders in a single prompt, also using custom placeholders [<a href="https://github.com/micz/ThunderAI/issues/554">#554</a>].</li>
-        <li>When using the <i>additional_text</i> placeholder is now possibile to specify an ID that will be shown in the form asking for the text [<a href="https://github.com/micz/ThunderAI/issues/525">#525</a>].</li>
+        <li>Fix: Now it's possible to use multiple <i>additional_text</i> placeholders in a single prompt, also using custom placeholders [<a href="https://github.com/micz/ThunderAI/issues/554">#554</a>].</li>
+        <li>When using the <i>additional_text</i> placeholder is now possible to specify an ID that will be shown in the form asking for the text [<a href="https://github.com/micz/ThunderAI/issues/525">#525</a>].</li>
         <li><i>[ChatGPT Web]</i> Added an option to define a custom time to wait for the page load. Sometimes, on slow PCs, the ChatGPT page loads slowly and ThunderAI inject its content too early. With this option you can adjust the waiting time [<a href="https://github.com/micz/ThunderAI/issues/634">#634</a>].</li>
       </ul>
 <h2>Version 3.8.5 - 22/02/2026</h2>
@@ -174,9 +204,9 @@
       </ul>
 <h2>Version 3.7.0 - 18/09/2025</h2>
       <ul>
-        <li><i>[All APIs]</i> It's now possibile to define a list of tags to be used when autotagging received emails [<a href="https://github.com/micz/ThunderAI/issues/436">#436</a>]. The tags are are now shown in the information header in the AI API chat [<a href="https://github.com/micz/ThunderAI/issues/289">#289</a>].</li>
+        <li><i>[All APIs]</i> It's now possible to define a list of tags to be used when autotagging received emails [<a href="https://github.com/micz/ThunderAI/issues/436">#436</a>]. The tags are are now shown in the information header in the AI API chat [<a href="https://github.com/micz/ThunderAI/issues/289">#289</a>].</li>
         <li><i>[All APIs]</i> The prompt id and name are now shown in the information header in the AI API chat [<a href="https://github.com/micz/ThunderAI/issues/436">#436</a>].</li>
-        <li><i>[All APIs]</i> It's now possibile to define a specific API integration for spamfilter and auto tagging [<a href="https://github.com/micz/ThunderAI/issues/438">#438</a>].</li>
+        <li><i>[All APIs]</i> It's now possible to define a specific API integration for spamfilter and auto tagging [<a href="https://github.com/micz/ThunderAI/issues/438">#438</a>].</li>
         <li>Added the <i>{%mail_attachments_info%}</i> placeholder to retrieve the name, type and file size of the mail attachments [<a href="https://github.com/micz/ThunderAI/issues/446">#446</a>].</li>
         <li><i>[Google Gemini API]</i> Support for the thinkingBudget parameter has been added [<a href="https://github.com/micz/ThunderAI/issues/494">#494</a>].</li>
         <li><i>[OpenAI Comp API]</i> Added DeepSeek configuration [<a href="https://github.com/micz/ThunderAI/issues/486">#486</a>].</li>
@@ -199,9 +229,9 @@
       </ul>
 <h2>Version 3.6.0 - 30/07/2025</h2>
       <ul>
-        <li>Now it's possibile to define custom data placeholders to be used in custom prompts [<a href="https://github.com/micz/ThunderAI/issues/156">#156</a>].</li>
+        <li>Now it's possible to define custom data placeholders to be used in custom prompts [<a href="https://github.com/micz/ThunderAI/issues/156">#156</a>].</li>
         <li>Improved the handling of HTML and line breaks between the email text and the AI Chat.</li>
-        <li>When replying, it's now possibile to choose a different reply type (between "all" or "sender only") directly in the AI chat window [<a href="https://github.com/micz/ThunderAI/issues/372">#372</a>].</li>
+        <li>When replying, it's now possible to choose a different reply type (between "all" or "sender only") directly in the AI chat window [<a href="https://github.com/micz/ThunderAI/issues/372">#372</a>].</li>
         <li>Added a new default prompt for replying to emails, which asks for a custom command each time it's used [<a href="https://github.com/micz/ThunderAI/issues/444">#444</a>].</li>
         <li><i>[All APIs]</i> Added an option to choose to exclude a tag only with an exact match in the excluded words list [<a href="https://github.com/micz/ThunderAI/issues/395">#395</a>].</li>
         <li><i>[OpenAI API]</i> Added an option to enable the OpenAI storage for API requests [<a href="https://github.com/micz/ThunderAI/issues/406">#406</a>].</li>
@@ -246,7 +276,7 @@
         <li>Added Anthropic API support [<a href="https://github.com/micz/ThunderAI/issues/349">#349</a>].</li>
         <li>Added the <i>{%selected_html%}</i> placeholder to retrieve the HTML portion of the selected text [<a href="https://github.com/micz/ThunderAI/issues/368">#368</a>].</li>
         <li><i>[OpenAI Comp API]</i> Added a shortcut to select configurations for known AI services. Currently, <i>Grok AI</i> and <i>Mistral AI</i> are available [<a href="https://github.com/micz/ThunderAI/issues/378">#378</a>]. <a href="https://github.com/micz/ThunderAI/issues/new?template=feature_request.md">Open an issue</a> to request additional services.</li>
-        <li><i>[All APIs]</i> In the API WebChat is now possibile to select a part of the answer and use only that [<a href="https://github.com/micz/ThunderAI/issues/356">#356</a>].</li>
+        <li><i>[All APIs]</i> In the API WebChat is now possible to select a part of the answer and use only that [<a href="https://github.com/micz/ThunderAI/issues/356">#356</a>].</li>
         <li><i>[All APIs]</i> Setting the "Max prompt length" to zero on the options page will disable the length check when sending a prompt to the AI. [<a href="https://github.com/micz/ThunderAI/issues/380">#380</a>].</li>
         <li><i>[All APIs]</i> Added a button to the options page to reset the 'Max prompt length' value to its default.</li>
         <li><i>[All APIs]</i> Adding tags automatically or with the context menu will now use also tags not created by ThunderAI [<a href="https://github.com/micz/ThunderAI/issues/390">#390</a>].</li>
@@ -281,7 +311,7 @@
       <ul>
         <li>Using a prompt from the compose window with a "Do reply" action is changed in "Substitute Text", asking also to insert text if none is selected [<a href="https://github.com/micz/ThunderAI/issues/353">#353</a>].</li>
         <li>Added an option when composing in plain text to remove the extra empty lines [<a href="https://github.com/micz/ThunderAI/issues/350">#350</a>].</li>
-        <li><i>[Ollama API]</i> It's now possibile to define the default context length (the <i>num_ctx</i> parameter) in the options page [<a href="https://github.com/micz/ThunderAI/issues/351">#351</a>].</li>
+        <li><i>[Ollama API]</i> It's now possible to define the default context length (the <i>num_ctx</i> parameter) in the options page [<a href="https://github.com/micz/ThunderAI/issues/351">#351</a>].</li>
         <li><i>[ChatGPT Web]</i> Updated the list of available models in the option page.</li>
         <li><i>[ChatGPT Web]</i> Opening the ChatGPT webpage from the options now enforce the selected model, if any.</li>
         <li><i>[All APIs]</i> Fix: Really correctly getting the message body even in multilevel subpart messages when processing incoming messages for tags or spam [<a href="https://github.com/micz/ThunderAI/issues/335">#335</a>].</li>
@@ -315,8 +345,8 @@
         <li>Added the <i>{%account_email_address%}</i> placeholder to get the current account mail address [<a href="https://github.com/micz/ThunderAI/issues/272">#272</a>].</li>
         <li><i>[ChatGPT Web][All APIs]</i> Added a diff viewer to compare the old and new text. This feature could be activated at prompt level, and it's useful for "rewrite" prompts [<a href="https://github.com/micz/ThunderAI/issues/109">#109</a>].</li>
         <li><i>[All APIs]</i> Added a context menu to automatically add tags and run the spam filter on selected messages. [<a href="https://github.com/micz/ThunderAI/issues/262">#262</a>].</li>
-        <li><i>[All APIs]</i> It's now possibile to define a timezone in the calendar event settings page [<a href="https://github.com/micz/ThunderAI/issues/250">#250</a>].</li>
-        <li><i>[All APIs]</i> It's now possibile to add the attendees in the calendar event, be sure to update the prompt in the settings [<a href="https://github.com/micz/ThunderAI/issues/258">#258</a>].</li>
+        <li><i>[All APIs]</i> It's now possible to define a timezone in the calendar event settings page [<a href="https://github.com/micz/ThunderAI/issues/250">#250</a>].</li>
+        <li><i>[All APIs]</i> It's now possible to add the attendees in the calendar event, be sure to update the prompt in the settings [<a href="https://github.com/micz/ThunderAI/issues/258">#258</a>].</li>
         <li>The button icon now shows a loading indicator when ThunderAI is performing an operation [<a href="https://github.com/micz/ThunderAI/issues/295">#295</a>].</li>
         <li>Improved the handling of null or undefined placeholders [<a href="https://github.com/micz/ThunderAI/issues/288">#288</a>].</li>
         <li>Czech (cs) translation added, thanks to <a href="https://hosted.weblate.org/user/jaroush/">Jaroslav Staněk</a> and <a href="https://hosted.weblate.org/user/Fjuro/">Fjuro</a>.</li>

@@ -46,6 +46,9 @@ export class GoogleGemini {
       # Thinking off: "thinking_budget": 0
       # Turn on dynamic thinking: "thinking_budget": -1
       # Keep model default thinking: "thinking_budget": ""
+      Note that this budget only governs how much the model reasons. Whether the
+      reasoning is returned to us is a separate flag, includeThoughts, set in
+      fetchResponse().
     */
   }
 
@@ -104,11 +107,28 @@ export class GoogleGemini {
         };
       }
 
-      if(this.thinking_budget !== '') {
-        google_gemini_body.generationConfig.thinkingConfig = {
-            thinking_budget: this.thinking_budget,
-        };
+      // thinkingBudget and includeThoughts are independent: the first decides how
+      // much the model reasons, the second whether that reasoning is returned at
+      // all. Without includeThoughts the API bills the thinking tokens
+      // (usageMetadata.thoughtsTokenCount) but emits no part flagged
+      // thought: true, so the webchat has nothing to show. Requested unless the
+      // budget explicitly turns thinking off, which includes the '' case: a
+      // thinking-capable model reasoning on its model default must still show its
+      // thinking block.
+      const thinkingBudget = parseInt(this.thinking_budget);
+      const hasBudget = this.thinking_budget !== '' && !Number.isNaN(thinkingBudget);
+
+      const thinkingConfig = {};
+      // Omitted on a model default so the model keeps choosing, and on an
+      // unparsable preference so a bad value is never forwarded as-is.
+      if(hasBudget) {
+        thinkingConfig.thinkingBudget = thinkingBudget;
       }
+      // A budget of 0 disables thinking, so there would be no thoughts to ask for.
+      if(!hasBudget || thinkingBudget !== 0) {
+        thinkingConfig.includeThoughts = true;
+      }
+      google_gemini_body.generationConfig.thinkingConfig = thinkingConfig;
 
       const tempFloat = parseFloat(this.temperature);
 

@@ -31,7 +31,19 @@ let taLog = null;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
+let thinkingAccumulator = '';
 let previous_response_id = null;
+
+// Reasoning stream events: reasoning_summary_text.delta carries the summary the
+// Responses API exposes for the o-series / gpt-5 models, while some models emit
+// reasoning_text.delta instead. Either is forwarded as soon as it appears, with no
+// preference gating the detection.
+// A third source is handled below: models that do not stream those deltas still
+// deliver the summary inside the reasoning item of response.output_item.done. Note
+// that the summary is only ever populated when the request asks for it through the
+// chatgpt_reasoning_summary preference; without it the item carries just the opaque
+// encrypted_content, which cannot be displayed.
+const REASONING_DELTA_EVENTS = ['response.reasoning_summary_text.delta', 'response.reasoning_text.delta'];
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
@@ -66,8 +78,12 @@ self.onmessage = async function(event) {
         if (!response.ok) {
             let error_message = '';
             let errorDetail = '';
+            let error_text = '';
             if(response.is_exception === true){
                 error_message = response.error;
+                // Network-level failure: no status/statusText exist on the returned object,
+                // and error_message already carries the provider name.
+                error_text = error_message;
             }else{
                 try{
                     const errorJSON = await response.json();
@@ -77,9 +93,10 @@ self.onmessage = async function(event) {
                     error_message = response.statusText;
                 }
                 taLog.log("error_message: " + JSON.stringify(error_message));
+                error_text = i18nStrings["chatgpt_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
             }
-            postMessage({ type: 'error', payload: i18nStrings["chatgpt_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail });
-            throw new Error("[ThunderAI] OpenAI ChatGPT API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
+            postMessage({ type: 'error', payload: error_text });
+            throw new Error("[ThunderAI] OpenAI ChatGPT API request failed: " + error_text);
         }
 
         const reader = response.body.getReader();
@@ -91,24 +108,30 @@ self.onmessage = async function(event) {
             if (stopStreaming) {
                 stopStreaming = false;
                 reader.cancel();
+                taLog.log("AI full reasoning [STOPPED]: " + thinkingAccumulator);
                 taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                 assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone' });
+                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                thinkingAccumulator = '';
                 break;
             }
             const { done, value } = await reader.read();
             if (done) {
+                taLog.log("AI full reasoning: " + thinkingAccumulator);
                 taLog.log("AI full response: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                 assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone' });
+                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                thinkingAccumulator = '';
                 break;
             }
             // lots of low-level OpenAI response parsing stuff
             const chunk = decoder.decode(value);
             buffer += chunk;
-            taLog.log("buffer " + buffer);
+            // No per-chunk dump of `buffer`: taLog.log() only gates the console call,
+            // so the whole unconsumed buffer would be re-concatenated on every SSE
+            // chunk even with debug off. The per-line log below covers it, guarded.
             const lines = buffer.split("\n");
             buffer = lines.pop();
             let parsedLines = [];
@@ -120,7 +143,10 @@ self.onmessage = async function(event) {
                     .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
                     .map((line) => {
                          try {
-                            taLog.log("line: " + JSON.stringify(line));
+                            // Guarded at the call site: taLog.log() gates only the console
+                            // call, so an unguarded JSON.stringify() would run per SSE line
+                            // even with debug off.
+                            if (taLog.do_debug) taLog.log("line: " + JSON.stringify(line));
                             return JSON.parse(line);
                         } catch (e) {
                             taLog.warn("JSON parse warning, skipped line: " + line + " - " + e.message);
@@ -138,6 +164,20 @@ self.onmessage = async function(event) {
                 } else if (parsedLine.type === 'response.output_text.delta' && parsedLine.delta) {
                     assistantResponseAccumulator += parsedLine.delta;
                     postMessage({ type: 'newToken', payload: { token: parsedLine.delta } });
+                } else if (REASONING_DELTA_EVENTS.includes(parsedLine.type) && typeof parsedLine.delta === 'string' && parsedLine.delta !== '') {
+                    thinkingAccumulator += parsedLine.delta;
+                    postMessage({ type: 'newThinkingToken', payload: { token: parsedLine.delta } });
+                } else if (parsedLine.type === 'response.output_item.done' && parsedLine.item && parsedLine.item.type === 'reasoning' && thinkingAccumulator === '') {
+                    // Fallback for models that never stream the reasoning deltas: the whole
+                    // summary shows up at once here. Skipped when the accumulator already
+                    // holds streamed text, so the reasoning is never emitted twice.
+                    const summary_text = Array.isArray(parsedLine.item.summary)
+                        ? parsedLine.item.summary.map((part) => (part && typeof part.text === 'string') ? part.text : '').join('')
+                        : '';
+                    if (summary_text !== '') {
+                        thinkingAccumulator += summary_text;
+                        postMessage({ type: 'newThinkingToken', payload: { token: summary_text } });
+                    }
                 // } else if (parsedLine.type === 'response.completed' && parsedLine.response && parsedLine.response.id) {
                 //     previous_response_id = parsedLine.response.id;
                 } else if (parsedLine.type === 'response.failed' && parsedLine.response && parsedLine.response.error) {
@@ -147,6 +187,7 @@ self.onmessage = async function(event) {
                     postMessage({ type: 'error', payload: i18nStrings["chatgpt_api_request_failed"] + ": " + errorMessage });
                     reader.cancel();
                     assistantResponseAccumulator = '';
+                    thinkingAccumulator = '';
                     streamError = true;
                     break;
                 }

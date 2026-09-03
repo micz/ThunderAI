@@ -19,7 +19,8 @@
 import { prefs_default } from '../options/mzta-options-default.js';
 import {
     getMailHeader,
-    sanitizeMailHeaders
+    sanitizeMailHeaders,
+    joinAddressList
  } from './mzta-utils.js';
 
 /*  ================= PLACEHOLDERS PROPERTIES ========================================
@@ -52,7 +53,11 @@ import {
 
 */
 
-import { transformTagsLabels, getCurrentIdentity } from './mzta-utils.js';
+import {
+    transformTagsLabels,
+    getCurrentIdentity,
+    normalizePlainTextPart
+} from './mzta-utils.js';
 
 const defaultPlaceholders = [
     {
@@ -315,6 +320,17 @@ const defaultPlaceholders = [
         is_default: "1",
         is_dynamic: "0",
         enabled: 1,
+    },
+    {
+        // The ORIGINAL text/plain MIME part, with no HTML conversion. Reading only
+        // (type 1): a received MIME part has no meaning in a compose window.
+        id: 'mail_plain_text_part',
+        name: "__MSG_placeholder_mail_plain_text_part__",
+        default_value: "",
+        type: 1,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
     }
 ];
 
@@ -387,12 +403,28 @@ export async function prepareCustomDataPHsForImport(placeholders){
     return output;
 }
 
+// Resolves a placeholder `name` for display. Built-in placeholders store a raw
+// "__MSG_key__" token (they are localized at render time by mzta-i18n.js, which
+// only walks the DOM); custom ones store a plain string. Falls back to the raw
+// value if the key is missing, so an unlocalized name is still readable.
+function resolvePlaceholderName(name) {
+    if (!name) return '';
+    const msg = String(name).match(/^__MSG_(.+)__$/);
+    if (!msg) return name;
+    return browser.i18n.getMessage(msg[1]) || name;
+}
+
 export function mapPlaceholderToSuggestion(p) {
     // console.log(">>>>>>>>>> mapPlaceholderToSuggestion p" + JSON.stringify(p));
+    // `id` and `label` are additive: existing consumers read only command/type/
+    // is_dynamic, and the autocomplete falls back to the command when there is
+    // no label (customdataplaceholders builds its suggestions inline).
     return {
         command: '{%' + p.id + (p.is_dynamic == 1 ? ':' : '') + '%}',
         type: p.type,
         is_dynamic: p.is_dynamic,
+        id: p.id,
+        label: resolvePlaceholderName(p.name),
     };
 }
 
@@ -414,6 +446,53 @@ export const placeholdersUtils = {
         return placeholder_id;
     },
 
+    /*
+     *  Resolves the inner text of a {%...%} token against a placeholder list.
+     *
+     *  Sync, and takes an already-fetched list, because the prompt editor's
+     *  highlight backdrop calls it on every keystroke and cannot await.
+     *  Shared with extractPlaceholders() below so the editor and the runtime can
+     *  never disagree on which tokens are valid.
+     *
+     *  inner      the text between {% and %}, e.g. "mail_headers:x-spam"
+     *  activePHs  placeholder list, as returned by getPlaceholders(true)
+     *  type       optional prompt type ('0'/'1'/'2'). When given, a placeholder
+     *             only matches if its own type is that type or '0' ("always").
+     *             A placeholder with no type at all counts as '0' -- see the
+     *             comment on foundType below.
+     *             Omitted by extractPlaceholders(), whose behaviour is therefore
+     *             unchanged (it ignores type entirely).
+     *
+     *             A prompt of type '0' accepts placeholders of ANY type: it runs
+     *             in both the reading and the composing context, so a type-1 or
+     *             type-2 placeholder in it does resolve at runtime. The
+     *             autocomplete's own filter is stricter and offers only type-0
+     *             ones there (a known quirk, left as is) -- but replicating that
+     *             strictness here would flag perfectly valid text as an error.
+     */
+    findPlaceholder(inner, activePHs, type = null) {
+        if (!inner || !Array.isArray(activePHs)) return null;
+        const id = String(inner).trim();
+        const found = activePHs.find(ph => ph.id === id
+            || (ph.is_dynamic == 1 && id.startsWith(ph.id + ':')));
+        if (!found) return null;
+        // A placeholder with no type of its own is treated as type '0' ("always"),
+        // not as a mismatch: a value that carries no context requirement is usable
+        // in every context. Every built-in declares a type, and the Data
+        // Placeholders page always stores the one the user picked, so this guards
+        // the paths that bypass that form -- a JSON import whose entries omit the
+        // field, or hand-edited storage. Rejecting those everywhere but in a
+        // type-'0' prompt would be arbitrary, since nothing about them is
+        // reading- or composing-specific.
+        const foundType = (found.type === null || found.type === undefined
+            || String(found.type).trim() === '') ? '0' : String(found.type);
+        if (type !== null && String(type) !== '0'
+            && !(foundType === String(type) || foundType === '0')) {
+            return null;
+        }
+        return found;
+    },
+
     async extractPlaceholders(text) {
         // Regular expression to match patterns like {%...%}
         const regex = /{%\s*(.*?)\s*%}/g;
@@ -421,11 +500,11 @@ export const placeholdersUtils = {
         let match;
 
         let activePHs = await getPlaceholders(true);
-      
+
         // Use exec to find all matches
         while ((match = regex.exec(text)) !== null) {
             // console.log(">>>>>>>>>> extractPlaceholders match: " + JSON.stringify(match));
-          const foundPH = activePHs.find(ph => ph.id === match[1].trim() || (ph.is_dynamic == 1 && match[1].startsWith(ph.id + ':')));
+          const foundPH = this.findPlaceholder(match[1], activePHs);
             if (foundPH) {
                 if (foundPH.is_dynamic == 1 && match[1].includes(':')) {
                     const [id, custom_value] = match[1].split(':', 2);
@@ -489,7 +568,11 @@ export const placeholdersUtils = {
         // If a specific placeholder is provided, we search for it
         if (placeholder !== "") {
           // Dynamically build the regex for the specific placeholder
-          regex = new RegExp(`{%\s*${placeholder}(:.*?)?\s*%}`);
+          // \\s, not \s: this is a template string, so a single backslash would be
+          // eaten and the pattern would read {%s*<id> — matching {%id%} only by
+          // accident (zero "s") and missing the spaced form {% id %} entirely,
+          // which replacePlaceholders() does accept.
+          regex = new RegExp(`{%\\s*${placeholder}(:.*?)?\\s*%}`);
         } else {
           // Otherwise, we search for any placeholder in the format {% ... %}
           regex = /{%\s*(.*?)\s*%}/;
@@ -505,7 +588,8 @@ export const placeholdersUtils = {
         // If a specific placeholder is provided, we search for it
         if (placeholder !== "") {
           // Dynamically build the regex for the specific placeholder
-          regex = new RegExp(`{%\s*${placeholder}\s*%}`);
+          // \\s, not \s — same template-string escaping as in hasPlaceholder() above.
+          regex = new RegExp(`{%\\s*${placeholder}\\s*%}`);
         } else {
           // Otherwise, we search for any placeholder in the format {%thunderai_custom_ ... %}
           regex = /{%\s*thunderai_custom_(.*?)\s*%}/;
@@ -559,6 +643,20 @@ export const placeholdersUtils = {
                 case 'mail_html_body':
                     finalSubs['mail_html_body'] = placeholdersUtils.failSafePlaceholders(msg_text?.html);
                     break;
+                case 'mail_plain_text_part':
+                    // The original text/plain part, NOT the HTML conversion that feeds
+                    // body_text. There is deliberately NO fallback to body_text: a user
+                    // picking this placeholder is asking for the original part
+                    // specifically, and silently substituting the reconstruction would
+                    // hide the reason the output looks different.
+                    //
+                    // plain_part is the explicit field the interactive path in
+                    // js/mzta-menus.js fills (its own msg_text.text is the content-script
+                    // scrape, not a mail part); .text is the getMailInlineTextParts()
+                    // result on the automatic paths, where it already IS the inline
+                    // text/plain part - attachments and forwarded parts excluded.
+                    finalSubs['mail_plain_text_part'] = placeholdersUtils.failSafePlaceholders(normalizePlainTextPart(msg_text?.plain_part ?? msg_text?.text));
+                    break;
                 case 'mail_typed_text':
                     finalSubs['mail_typed_text'] = placeholdersUtils.failSafePlaceholders(only_typed_text);
                     break;
@@ -596,10 +694,12 @@ export const placeholdersUtils = {
                     finalSubs['author'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(curr_message.author));
                     break;
                 case 'recipients':
-                    finalSubs['recipients'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(curr_message.recipients?.join(", ")));
+                    // 'recipients' when reading a mail (MessageHeader), 'to' when composing (ComposeDetails)
+                    finalSubs['recipients'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(joinAddressList(curr_message.recipients ?? curr_message.to)));
                     break;
                 case 'cc_list':
-                    finalSubs['cc_list'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(curr_message.ccList?.join(", ")));
+                    // 'ccList' when reading a mail (MessageHeader), 'cc' when composing (ComposeDetails)
+                    finalSubs['cc_list'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(joinAddressList(curr_message.ccList ?? curr_message.cc)));
                     break;
                 case 'junk_score':
                     finalSubs['junk_score'] = placeholdersUtils.failSafePlaceholders(curr_message.junkScore);

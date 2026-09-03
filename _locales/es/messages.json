@@ -314,9 +314,6 @@
     "ChatGPT_Models": {
         "message": "Modelos de ChatGPT"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "Actualizar lista de modelos de ChatGPT"
-    },
     "ChatGPT_Models_Error_fetching": {
         "message": "Error al intentar obtener los modelos de ChatGPT"
     },
@@ -356,9 +353,6 @@
     "Ollama_Models": {
         "message": "Modelos de Ollama"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Actualizar lista de modelos de Ollama"
-    },
     "Ollama_Models_Error_fetching": {
         "message": "Error al intentar obtener los modelos de Ollama"
     },
@@ -388,9 +382,6 @@
     },
     "OpenAIComp_Models": {
         "message": "Modelos de API compatibles con OpenAI"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "Actualizar lista de modelos de API compatibles con OpenAI"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Error al intentar obtener los modelos de API compatibles con OpenAI"
@@ -546,10 +537,10 @@
         "message": "Responder al siguiente correo electrónico \"{%mail_text_body%}\". {%additional_text%}. Responder solo con el texto necesario y sin comentarios extra ni otro texto."
     },
     "prompt_rewrite_full_text": {
-        "message": "Reescribe el siguiente texto para que sea más cortés. Responde solo con el texto reescrito y sin comentarios adicionales ni otro texto."
+        "message": "Reescribe el siguiente texto para que sea más cortés. Responde solo con el texto reescrito y sin comentarios adicionales ni otro texto. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Reescribe el siguiente texto para que sea más formal. Responde solo con el texto reescrito y sin comentarios adicionales ni otro texto."
+        "message": "Reescribe el siguiente texto para que sea más formal. Responde solo con el texto reescrito y sin comentarios adicionales ni otro texto. {%selected_html%}"
     },
     "prompt_classify_full_text": {
         "message": "Clasifique el siguiente texto en términos de Cortesía, Calidez, Formalidad, Asertividad, Ofensividad dando un porcentaje para cada categoría. Responda solo con la categoría y la puntuación sin comentarios extra ni otro texto."
@@ -576,7 +567,7 @@
         "message": "Corrija este correo electrónico"
     },
     "prompt_proofread_this_full_text": {
-        "message": "Corrija el siguiente correo electrónico y también corrija cualquier error ortográfico o gramatical. Responda solo con el texto corregido y sin comentarios extra ni otro texto.\n\n\"{%mail_typed_text%}\""
+        "message": "Corrija el siguiente correo electrónico y también corrija cualquier error ortográfico o gramatical. Responda solo con el texto corregido y sin comentarios extra ni otro texto.\n\n\"{%selected_html%}\""
     },
     "placeholder_tags_current_email": {
         "message": "Etiquetas de correo"
@@ -653,9 +644,6 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "Si está marcado, la etiqueta de etiquetas se establecerá en minúsculas con solo la primera letra en mayúscula."
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "Opciones de agregar etiquetas"
-    },
     "prefs_SurveyLinkText": {
         "message": "Comparte tus comentarios y ayuda a mejorar ThunderAI!"
     },
@@ -685,9 +673,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Modelos de API de Google Gemini"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Actualizar la lista de modelos de Google Gemini"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Error al intentar obtener los modelos de Google Gemini"
@@ -726,13 +711,13 @@
         "message": "Agregar un nuevo evento de calendario"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extrae todos los detalles relevantes necesarios para generar un evento de calendario a partir del siguiente texto. La información extraída debe incluir:\n- Título del evento\n- Fecha y hora de inicio (incluyendo zona horaria, si se especifica)\n- Fecha y hora de fin (incluyendo zona horaria, si se especifica)\n- Día completo (si se menciona)\n- Asistentes\nAsegúrate de que los datos estén formateados de manera clara y consistente para que puedan usarse directamente en la creación de un evento de calendario.\nSi hay referencias de tiempo relativas, considera que la fecha y hora del correo son \"{%mail_datetime%}\". Calcula la fecha y hora de inicio basándote en esta referencia. Si la fecha y hora de inicio calculadas son anteriores a \"{%current_datetime%}\", recalcula la fecha y hora de inicio usando \"{%current_datetime%}\" como base.\nSi la duración no se especifica, establécela en una hora.\nEstos son los asistentes: {%author%}, {%recipients%}, {%cc_list%}. Si están presentes, excluye mi dirección: {%account_email_address%}.\nSi el evento es de día completo, endDate debe ser un día después de startDate con la hora establecida en \"T000000\".\nSi no puedes obtener uno o más de los datos requeridos, responde con una cadena vacía.\nGenera una respuesta solo en formato JSON. No incluyas texto adicional ni explicaciones; proporciona únicamente el JSON. El formato a usar es:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumen del evento de calendario aquí\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nEste es el texto:\"{%mail_text_body_or_selected%}\""
+        "message": "Extrae todos los detalles relevantes necesarios para generar un evento de calendario a partir del siguiente texto. La información extraída debe incluir:\n- Título del evento\n- Descripción del evento (un resumen conciso del contexto del correo, los temas clave/orden del día, los elementos de acción y cualquier enlace de videollamada o detalles de acceso)\n- Fecha y hora de inicio (incluyendo zona horaria, si se especifica)\n- Fecha y hora de fin (incluyendo zona horaria, si se especifica)\n- Día completo (si se menciona)\n- Ubicación (si se menciona, edificio específico, sala o en línea con enlace)\n- Asistentes\nAsegúrate de que los datos estén formateados de manera clara y consistente para que puedan usarse directamente en la creación de un evento de calendario.\nSi hay referencias de tiempo relativas, considera que la fecha y hora del correo son \"{%mail_datetime%}\". Calcula la fecha y hora de inicio basándote en esta referencia. Si la fecha y hora de inicio calculadas son anteriores a \"{%current_datetime%}\", recalcula la fecha y hora de inicio usando \"{%current_datetime%}\" como base.\nSi la duración no se especifica, establécela en una hora.\nEstos son los asistentes: {%author%}, {%recipients%}, {%cc_list%}. Si están presentes, excluye mi dirección: {%account_email_address%}.\nSi el evento es de día completo, endDate debe ser un día después de startDate con la hora establecida en \"T000000\".\nSi no puedes obtener uno o más de los datos requeridos, responde con una cadena vacía.\nGenera una respuesta solo en formato JSON. No incluyas texto adicional ni explicaciones; proporciona únicamente el JSON. El formato a usar es:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumen del evento de calendario aquí\",\n\"description\": \"Descripción detallada del evento, incluyendo la agenda, los elementos de acción y las notas relevantes del correo.\",\n\"forceAllDay\": false,\n\"location\": \"Ubicación o URL aquí\",\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nEste es el texto:\"{%mail_text_body_or_selected%}\""
     },
     "prompt_get_task": {
         "message": "Agregar una nueva tarea"
     },
     "prompt_get_task_full_text": {
-        "message": "Extrae todos los detalles relevantes necesarios para generar una tarea a partir del siguiente texto. La información extraída debe incluir:\n- Fecha y hora de vencimiento (incluyendo zona horaria, si se especifica)\n- Resumen de la tarea\n- Fecha y hora inicial (incluyendo zona horaria, si se especifica)\nAsegúrate de que los datos estén formateados de manera clara y coherente para que puedan usarse directamente al crear una tarea.\nSi hay referencias de tiempo relativas, considera que la fecha y hora del correo son \"{%mail_datetime%}\". Calcula la fecha y hora de inicio basándote en esta referencia. Si la fecha y hora de inicio calculadas son anteriores a \"{%current_datetime%}\", recalcula la fecha y hora de inicio usando \"{%current_datetime%}\" como base.\nSi no puedes obtener una o más de la información requerida, responde con una cadena vacía.\nGenera una respuesta únicamente en formato JSON. No incluyas texto adicional ni explicaciones; proporciona solo el JSON. El formato a usar es:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumen de la tarea aquí\"\n}\nSi no hay información sobre las fechas, elimínalas.\nAquí está el texto:\"{%selected_text%}\""
+        "message": "Extrae todos los detalles relevantes necesarios para generar una tarea a partir del siguiente texto. La información extraída debe incluir:\n- Fecha y hora inicial (incluyendo zona horaria, si se especifica)\n- Fecha y hora de vencimiento (incluyendo zona horaria, si se especifica)\n- Resumen de la tarea\n- Descripción de la tarea (un resumen conciso del contexto del correo, los temas clave y los elementos de acción)\n- Ubicación (si se menciona, edificio específico, sala o en línea con enlace)\nAsegúrate de que los datos estén formateados de manera clara y coherente para que puedan usarse directamente al crear una tarea.\nSi hay referencias de tiempo relativas, considera que la fecha y hora del correo son \"{%mail_datetime%}\". Calcula la fecha y hora de inicio basándote en esta referencia. Si la fecha y hora de inicio calculadas son anteriores a \"{%current_datetime%}\", recalcula la fecha y hora de inicio usando \"{%current_datetime%}\" como base.\nSi no puedes obtener una o más de la información requerida, responde con una cadena vacía.\nGenera una respuesta únicamente en formato JSON. No incluyas texto adicional ni explicaciones; proporciona solo el JSON. El formato a usar es:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumen de la tarea aquí\",\n\"description\": \"Descripción detallada de la tarea, incluyendo los elementos de acción y las notas relevantes del correo.\",\n\"location\": \"Ubicación o URL aquí\"\n}\nSi no hay información sobre las fechas, elimínalas.\nAquí está el texto:\"{%selected_text%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Agregar un nuevo evento de calendario a partir del texto seleccionado"
@@ -740,17 +725,11 @@
     "prefs_OptionText_get_calendar_event_Info": {
         "message": "Si está marcado, se incluirá un elemento en el menú para obtener información del evento de calendario a partir del texto seleccionado."
     },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "Opciones de eventos de calendario"
-    },
     "prefs_OptionText_get_task": {
         "message": "Agregar una nueva tarea a partir del texto seleccionado"
     },
     "prefs_OptionText_get_task_Info": {
         "message": "Si está marcado, se incluirá un elemento en el menú para obtener información de la tarea a partir del texto seleccionado."
-    },
-    "get_task_prompt_prefs_title": {
-        "message": "Opciones de tareas"
     },
     "Select_your_timezone": {
         "message": "Seleccione su zona horaria"
@@ -863,7 +842,7 @@
     "placeholder_mail_attachments_info": {
         "message": "Información sobre los archivos adjuntos en el correo electrónico"
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "Este marcador de posición no añade texto, pero evita que el cuerpo del correo se añada automáticamente al final del prompt."
     },
     "prefs_OptionText_spamfilter": {
@@ -889,9 +868,6 @@
     },
     "prompt_spamfilter_full_text": {
         "message": "Analiza el siguiente correo electrónico y determina si es spam o no. Considera factores como palabras clave sospechosas, lenguaje promocional excesivo, líneas de asunto engañosas, solicitudes de información personal y direcciones de remitente inusuales.\nProporciona un valor de 0 (no es spam) a 100 (spam) y una explicación de no más de 10 palabras.\nEn caso de que falten datos del mensaje, establece el valor en 0 (no es spam) y da la razón.\nGenera una respuesta únicamente en formato JSON. No incluyas texto adicional ni explicación; proporciona solo el JSON. El formato a usar es:\n{\n\"explanation\": \"Breve explicación de tu razonamiento\",\n\"spamValue\": <entero de 0 a 100>\n}\nAquí está la información del correo:\nRemitente: \"{%author%}\"\nAsunto: \"{%mail_subject%}\"\nCuerpo HTML: \"{%mail_html_body%}\""
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "Opciones del filtro de spam"
     },
     "prefs_OptionText_use_specific_integration": {
         "message": "Usar modelo y API específicos"
@@ -983,12 +959,6 @@
     "CORS_alternative_1": {
         "message": "¿Problemas al configurar CORS?"
     },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "Redactando en texto plano"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "Marca esta opción si estás redactando los correos electrónicos en formato de texto plano."
-    },
     "Replace_No_Selected_Text": {
         "message": "¿Ningún texto seleccionado, deseas insertar la respuesta de la IA al inicio del correo electrónico?"
     },
@@ -1069,9 +1039,6 @@
     },
     "Anthropic_Models": {
         "message": "Modelos Claude"
-    },
-    "Anthropic_Models_Fetch": {
-        "message": "Actualizar lista de modelos de Claude"
     },
     "Anthropic_Models_Error_fetching": {
         "message": "Error al intentar obtener los modelos de Claude"
@@ -1252,7 +1219,7 @@
         "message": "Has denegado el permiso opcional necesario para obtener los modelos de esta integración."
     },
     "prefs_anthropic_temperature_Info": {
-        "message": "Cantidad de aleatoriedad inyectada en la respuesta. Por defecto es 1.0. Varía de 0.0 a 1.0. Usa una temperatura más cercana a 0.0 para tareas analíticas / de opción múltiple, y más cercana a 1.0 para tareas creativas y generativas. Ten en cuenta que incluso con una temperatura de 0.0, los resultados no serán completamente determinísticos."
+        "message": "Cantidad de aleatoriedad inyectada en la respuesta. Varía de 0.0 a 1.0; si dejas el campo vacío, se usa el valor predeterminado 1.0. Los modelos de Claude más recientes no aceptan este ajuste en absoluto y usan en su lugar el ajuste Esfuerzo: cuando uno de ellos está seleccionado, este campo se deshabilita y su valor no se envía."
     },
     "Anthropic_System_Prompt_Info": {
         "message": "Puedes mejorar el rendimiento de Claude usando un Prompt del Sistema para asignarle un rol. Esta técnica, conocida como prompting de rol, es la forma más poderosa de usar prompts del sistema con Claude. El rol adecuado puede convertir a Claude de un asistente general en tu experto virtual en el dominio."
@@ -1339,9 +1306,6 @@
     },
     "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
         "message": "Mostrar un elemento de menú adicional para crear eventos de calendario a partir del contenido de texto del portapapeles."
-    },
-    "Summarize_prompt_prefs_title": {
-        "message": "Opciones de resumen"
     },
     "prompt_summarize": {
         "message": "Resumir"
@@ -1591,9 +1555,6 @@
     "Translate_prompt_text_title": {
         "message": "Texto del prompt actual"
     },
-    "Translate_prompt_prefs_title": {
-        "message": "Opciones de traducción"
-    },
     "prefs_OptionText_translate_auto": {
         "message": "Traducir automáticamente mensajes"
     },
@@ -1711,18 +1672,6 @@
     "prefs_OptionText_translate_max_display_length": {
         "message": "Longitud máxima de la traducción mostrada"
     },
-    "show_in": {
-        "message": "Mostrar en"
-    },
-    "show_in_popup": {
-        "message": "Solo ventana emergente"
-    },
-    "show_in_context": {
-        "message": "Solo menú contextual"
-    },
-    "show_in_both": {
-        "message": "Ambos"
-    },
     "prefs_OptionText_hide_thinking": {
         "message": "Colapsar bloque de pensamiento por defecto"
     },
@@ -1736,7 +1685,7 @@
         "message": "Presupuesto de pensamiento extendido (tokens)"
     },
     "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
-        "message": "Máximo de tokens que el modelo puede gastar en pensamiento extendido. Configúralo en 0 para deshabilitar el pensamiento extendido. Cuando está habilitado, el valor de la temperatura es ignorado por la API de Claude."
+        "message": "Máximo de tokens que el modelo puede gastar en pensamiento extendido. Configúralo en 0 para deshabilitar el pensamiento extendido. Debe ser menor que Máximo de tokens. Los modelos de Claude más recientes no aceptan un límite manual y usan en su lugar el ajuste Esfuerzo: cuando uno de ellos está seleccionado, este campo se deshabilita y su valor no se envía."
     },
     "generic_error_dismiss": {
         "message": "Descartar"
@@ -1794,5 +1743,139 @@
     },
     "menu_order_icon_none": {
         "message": "(ninguno)"
+    },
+    "onboarding_wizard_banner_text": {
+        "message": "¿Nuevo en ThunderAI? Deja que el asistente de configuración te guíe para conectar tu IA."
+    },
+    "onboarding_wizard_banner_link": {
+        "message": "Iniciar el asistente de configuración"
+    },
+    "onboarding_tab_title": {
+        "message": "¡Bienvenido a ThunderAI!"
+    },
+    "onboarding_welcome_2": {
+        "message": "Este complemento está diseñado para mejorar la gestión de tu correo con el poder de la IA."
+    },
+    "onboarding_welcome_3": {
+        "message": "Con ThunderAI, puedes organizar tu bandeja de entrada, generar respuestas inteligentes, resumir correos, añadir etiquetas automáticamente y filtrar el spam, y mucho más, todo con la ayuda de la inteligencia artificial."
+    },
+    "onboarding_welcome_4": {
+        "message": "En esta página encontrarás una descripción de las funciones principales disponibles para sacar el máximo provecho a ThunderAI."
+    },
+    "onboarding_welcome_5": {
+        "message": "¡Prepárate para experimentar una forma más inteligente y eficiente de gestionar tus correos!"
+    },
+    "onboarding_welcome_6": {
+        "message": "¡Veamos cómo sacar el máximo provecho a este complemento!"
+    },
+    "onboarding_using_prompts_title": {
+        "message": "Uso de prompts"
+    },
+    "onboarding_using_prompts_alt": {
+        "message": "Botón del menú de prompts"
+    },
+    "onboarding_using_prompts_1": {
+        "message": "En cada mensaje hay un botón que te permite abrir el menú de prompts."
+    },
+    "onboarding_using_prompts_2": {
+        "message": "Aquí puedes elegir el prompt de varias maneras:"
+    },
+    "onboarding_using_prompts_li1_b": {
+        "message": "Cuadro de búsqueda"
+    },
+    "onboarding_using_prompts_li1": {
+        "message": "Úsalo para buscar parte del prompt."
+    },
+    "onboarding_using_prompts_li2_b": {
+        "message": "Flecha abajo/arriba"
+    },
+    "onboarding_using_prompts_li2": {
+        "message": "Desplázate por los prompts."
+    },
+    "onboarding_using_prompts_li3_b": {
+        "message": "Pulsa un número"
+    },
+    "onboarding_using_prompts_li3": {
+        "message": "Pulsa un número en el teclado para elegir el prompt correspondiente."
+    },
+    "onboarding_using_prompts_li4_b": {
+        "message": "Intro"
+    },
+    "onboarding_using_prompts_li4": {
+        "message": "Cuando hayas elegido el prompt que deseas, pulsa Intro para ejecutarlo."
+    },
+    "onboarding_using_prompts_3": {
+        "message": "En la página de opciones de ThunderAI puedes encontrar algunas opciones relacionadas con este menú."
+    },
+    "onboarding_using_prompts_4": {
+        "message": "Los dos primeros prompts son especiales y solo están disponibles cuando se usa una integración de API. Funcionan directamente sin abrir la página web de AI Chat."
+    },
+    "onboarding_custom_prompts_title": {
+        "message": "Definir tus prompts personalizados"
+    },
+    "onboarding_custom_prompts_alt": {
+        "message": "Gestión de prompts personalizados"
+    },
+    "onboarding_custom_prompts_p1_1": {
+        "message": "Desde la página de opciones puedes abrir la página de prompts personalizados."
+    },
+    "onboarding_custom_prompts_p1_3": {
+        "message": "Desde allí puedes añadir tus propios prompts y también desactivar los predeterminados."
+    },
+    "onboarding_custom_prompts_p1_4": {
+        "message": "Puedes encontrar más información aquí."
+    },
+    "onboarding_custom_prompts_p2_1": {
+        "message": "Al definir tus propios prompts también puedes usar"
+    },
+    "onboarding_custom_prompts_bold_dp": {
+        "message": "marcadores de datos"
+    },
+    "onboarding_custom_prompts_p2_2": {
+        "message": ", que se sustituirán por la información correspondiente al usar el prompt."
+    },
+    "onboarding_custom_prompts_p3": {
+        "message": "Por ejemplo, puedes usar el marcador $PH_SUBJECT$ para referirte al asunto del correo o $PH_TAGS$ para referirte a las etiquetas del correo actual.",
+        "placeholders": {
+            "ph_subject": {
+                "content": "{%mail_subject%}"
+            },
+            "ph_tags": {
+                "content": "{%tags_current_email%}"
+            }
+        }
+    },
+    "onboarding_automatic_features_title": {
+        "message": "Funciones automáticas"
+    },
+    "onboarding_automatic_features_alt": {
+        "message": "Filtro de spam automático"
+    },
+    "onboarding_automatic_features_1": {
+        "message": "También hay dos funciones automáticas disponibles cuando se usa una integración de API, que se pueden activar desde la página de opciones:"
+    },
+    "onboarding_automatic_features_li1_b": {
+        "message": "Filtro de spam automático"
+    },
+    "onboarding_automatic_features_li1": {
+        "message": "mueve automáticamente el correo a la carpeta de spam si se detecta como spam."
+    },
+    "onboarding_automatic_features_li2_b": {
+        "message": "Etiquetado automático"
+    },
+    "onboarding_automatic_features_li2": {
+        "message": "asigna automáticamente etiquetas al correo."
+    },
+    "onboarding_automatic_features_2": {
+        "message": "Para cada una de estas funciones, hay una página de opciones para especificar los ajustes y el prompt personalizado que se utilizará."
+    },
+    "onboarding_footer_1": {
+        "message": "Si tienes preguntas o sugerencias, abre una issue en la página de GitHub."
+    },
+    "onboarding_footer_3": {
+        "message": "¿Te gusta ThunderAI?"
+    },
+    "prefs_footer_donate": {
+        "message": "Hacer una donación"
     }
 }

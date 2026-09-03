@@ -23,6 +23,15 @@
 const MZTA_INJECTED_SELECTORS = [
   '#mzta-container',
   '.mzta_dialog',
+  // <style>/<script> hold no readable text, but their SOURCE is text: the clone
+  // below is detached, and on a detached node textContent-based extraction reads
+  // stylesheet rules out as if they were body copy. A Word/Outlook mail carries a
+  // long @font-face / .MsoNormal block right at the top of <body>, which is exactly
+  // what was landing in {%mail_text_body%}. Removing them here also keeps them out
+  // of getFullHtml's innerHTML, so the CSS no longer rides along in {%mail_html_body%}
+  // and the diff picker's original side either.
+  'style',
+  'script',
 ];
 
 function getCleanBodyHtml() {
@@ -42,6 +51,51 @@ function getCleanBodyHtml() {
     table.remove();
   }
   return clone;
+}
+
+// The same clone, with hidden elements (newsletter preheaders, tracking markup)
+// also removed - for the TEXT extractions only.
+//
+// Deliberately NOT folded into getCleanBodyHtml(): getFullHtml reads that clone's
+// innerHTML for {%mail_html_body%} and the diff picker's original side, and the
+// HTML placeholders must keep the markup they were given. Hidden markup is
+// stripped from the TEXT, never from the HTML - on any path. Unlike <style>/
+// <script> in MZTA_INJECTED_SELECTORS (which are noise in both worlds), a hidden
+// element is real markup that an HTML consumer may legitimately want.
+function getTextBodyHtml() {
+  return mztaStripHidden(getCleanBodyHtml());
+}
+
+// <p> is Paragraph mode; <div> is Body Text mode. Only <p>-class elements earn a
+// blank line - a <div> is one line - matching how stripHtmlKeepLines() in
+// js/mzta-utils.js treats the same two tags.
+const MZTA_BLOCK_LEVEL_RE = /^(P|BLOCKQUOTE|UL|OL|TABLE|H[1-6]|PRE)$/;
+
+// One top-level node of the compose body, projected to text with its line
+// structure intact.
+//
+// textContent alone is what flattened the body: it drops <br> entirely, so an
+// HTML compose window's lines ran together [#829]. Cloning and replacing each
+// <br> with a "\n" text node is the projection api_webchat/diffPicker.js
+// (blockTextOfHtml) applies to a block's HTML - reimplemented here on the live
+// node rather than imported, because this file is registered as a CLASSIC
+// content script by composeScripts.register and has no module context.
+//
+// PLAIN TEXT compose: the line breaks ARE the \n already inside the text nodes
+// [#855]. There are no <br> to replace, so this returns textContent unchanged
+// and nothing doubles up. One path serves both window kinds.
+function nodeTextKeepLines(node) {
+  if (node.nodeType !== Node.ELEMENT_NODE) {
+    return node.textContent || '';
+  }
+  const clone = node.cloneNode(true);
+  for (const br of clone.querySelectorAll('br')) {
+    br.replaceWith(document.createTextNode('\n'));
+  }
+  // Thunderbird's HTML editor ends most lines with a trailing bogus <br>. That
+  // break is the same one the join in the callers adds - keeping both doubles
+  // every line.
+  return (clone.textContent || '').replace(/\n+$/, '');
 }
 
 // ── Theme colors ────────────────────────────────────────────────────
@@ -302,16 +356,33 @@ switch (message.command) {
     }
     const r = sel.getRangeAt(0);
     r.deleteContents();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(message.text, 'text/html');
-    r.insertNode(doc.body);
-    browser.runtime.sendMessage({command: "compose_reloadBody", tabId: message.tabId});
+    if (message.isPlainText) {
+      // In a plain text compose window the line breaks ARE the \n characters,
+      // and the editor renders the body as preformatted text. Going through
+      // DOMParser here would treat those \n as collapsible HTML whitespace and
+      // render each one as a single space - which is exactly how the whole
+      // message ended up as one run-together line. [#855]
+      r.insertNode(document.createTextNode(message.text));
+    } else {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(message.text, 'text/html');
+      // Insert the parsed NODES, not the <body> element that wraps them: a <body>
+      // nested inside the compose body is invalid markup, and the compose_reloadBody
+      // round-trip below hands it to Thunderbird's serializer, which flattens the
+      // misplaced blocks - destroying the <p> paragraphs the picker emits.
+      const fragment = document.createDocumentFragment();
+      // Iterate over a copy: appending to the fragment removes each node from the
+      // live childNodes NodeList being walked.
+      Array.from(doc.body.childNodes).forEach(node => fragment.appendChild(node));
+      r.insertNode(fragment);
+    }
+    browser.runtime.sendMessage({command: "compose_reloadBody", tabId: message.tabId, isPlainText: message.isPlainText === true});
     return Promise.resolve(true);
   }
 
   case "getText": {
     let t = '';
-    const children = getCleanBodyHtml().childNodes;
+    const children = getTextBodyHtml().childNodes;
     for (const node of children) {
       if (node instanceof Element) {
         if (node.classList.contains('moz-signature')) {
@@ -324,7 +395,16 @@ switch (message.command) {
   }
 
   case "getTextOnly": {
-      return Promise.resolve(getCleanBodyHtml().innerText);
+      // NOT getCleanBodyHtml().innerText, which is what this was: innerText is
+      // defined in terms of LAYOUT and getCleanBodyHtml() returns a DETACHED
+      // clone, so the engine fell back to textContent behaviour - no break for a
+      // block element, none for <br>. A read mail arrived as one welded line.
+      // mztaHtmlNodeToLines() (js/lib/mzta-html-lines.js) is layout-independent
+      // by construction and is the same projection htmlBodyToPlainText() uses on
+      // the background path.
+      // getTextBodyHtml(), not getCleanBodyHtml(): this is the TEXT side, so
+      // hidden elements go. getFullHtml below keeps them.
+      return Promise.resolve(mztaHtmlNodeToLines(getTextBodyHtml()));
   }
 
   case "getFullHtml": {
@@ -348,7 +428,13 @@ switch (message.command) {
           break;
         }
       }
-      t += node.textContent + " ";
+      // Top-level nodes are lines, joined with "\n" - the old " " join is what
+      // made a multi-line compose body arrive as a single line. A block element
+      // is a paragraph boundary and gets a blank line.
+      if (t !== '') {
+        t += MZTA_BLOCK_LEVEL_RE.test(node.nodeName) ? "\n\n" : "\n";
+      }
+      t += nodeTextKeepLines(node);
 
       // Track the first and last nodes for range
       if (!firstNode) {
@@ -393,8 +479,12 @@ switch (message.command) {
         }
       }
   
-      t += node.textContent + " ";
-  
+      // Same line-preserving join as getOnlyTypedText above.
+      if (t !== '') {
+        t += MZTA_BLOCK_LEVEL_RE.test(node.nodeName) ? "\n\n" : "\n";
+      }
+      t += nodeTextKeepLines(node);
+
       if (!firstNode) {
         firstNode = node;
       }

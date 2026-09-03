@@ -300,12 +300,7 @@
         "message": "Claude 模型"
     },
     "_api_connecting_model": {
-        "message": "模型",
-        "placeholders": {
-            "model": {
-                "content": "$1"
-            }
-        }
+        "message": "模型"
     },
     "prefs_OpenAIComp_AvailableServices": {
         "message": "可用服務"
@@ -350,12 +345,7 @@
         "message": "主旨"
     },
     "_api_connecting_version": {
-        "message": "版本",
-        "placeholders": {
-            "api_version": {
-                "content": "$1"
-            }
-        }
+        "message": "版本"
     },
     "customPrompts_btnEdit": {
         "message": "編輯"
@@ -436,12 +426,7 @@
         "message": "選取的文字"
     },
     "_api_connecting_host": {
-        "message": "主機",
-        "placeholders": {
-            "api_host": {
-                "content": "$1"
-            }
-        }
+        "message": "主機"
     },
     "thunderai_error_title": {
         "message": "ThunderAI 錯誤"
@@ -454,9 +439,6 @@
     },
     "prefs_OptionText_spamfilter_threshold": {
         "message": "垃圾訊息閾值"
-    },
-    "get_task_prompt_prefs_title": {
-        "message": "任務選項"
     },
     "btn_show_differences": {
         "message": "顯示差異"
@@ -494,9 +476,6 @@
     "importPrompts_invalidPrompts": {
         "message": "您嘗試匯入的文件不包含任何有效提示。"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "更新 ChatGPT 模型清單"
-    },
     "ChatGPT_Models_Error_fetching": {
         "message": "嘗試取得 ChatGPT 模型時出錯"
     },
@@ -508,9 +487,6 @@
     },
     "chatgpt_empty_model": {
         "message": "您尚未選擇 ChatGPT API 的模型。請在選項頁面中選擇一個。"
-    },
-    "Ollama_Models_Fetch": {
-        "message": "更新 Ollama 模型清單"
     },
     "Ollama_Models_Error_fetching": {
         "message": "嘗試取得 Ollama 模型時出錯"
@@ -529,9 +505,6 @@
     },
     "OpenAIComp_api_request_failed": {
         "message": "OpenAI 相容 API 請求失敗"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "更新 OpenAI 相容 API 模型列表"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "嘗試取得 OpenAI 相容 API 模型時出錯"
@@ -570,7 +543,7 @@
         "message": "如果勾選，將會新增一個選項到選單，以便對郵件進行標籤管理。"
     },
     "prompt_proofread_this_full_text": {
-        "message": "校對以下電子郵件，並更正所有拼字或文法錯誤。僅回覆更正後的文本，不要提供任何額外的註解或其他文字。\n\n「{%mail_typed_text%}」"
+        "message": "校對以下電子郵件，並更正所有拼字或文法錯誤。僅回覆更正後的文本，不要提供任何額外的註解或其他文字。\n\n「{%selected_html%}」"
     },
     "prompt_proofread_this": {
         "message": "校對這封郵件"
@@ -611,9 +584,6 @@
     "prompt_spamfilter": {
         "message": "偵測垃圾郵件"
     },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "垃圾郵件過濾器選項"
-    },
     "SpamReport_Title": {
         "message": "垃圾郵件過濾報告"
     },
@@ -622,9 +592,6 @@
     },
     "prefs_OptionText_chatgpt_web_project_info": {
         "message": "這是將針對 ChatGPT 網頁介面強制執行的專案。"
-    },
-    "Anthropic_Models_Fetch": {
-        "message": "更新 Claude 模型列表"
     },
     "prefs_Anthropic_API_Key": {
         "message": "Claude API 金鑰"
@@ -659,7 +626,7 @@
         "message": "請將以下電子郵件翻譯成 **{%thunderai_translate_lang%}**。\n\n**規則：**\n- 同時翻譯主題（Subject）與正文（Body）。\n- 以 JSON 物件格式回傳結果，包含三個欄位：\"subject\"、\"body\" 以及 \"status\"。\n- 如果完成翻譯，status 等於 1。\n- 如果郵件是以 \"{%thunderai_translate_exclude_lang%}\" 其中之一的語言或 {%thunderai_translate_lang%} 語言編寫，請將 body 和 subject 設為空字串，並將 status 設為 -1。\n- 請勿在 JSON 之外添加任何說明、備註或文字。\n\n郵件主題：{%mail_subject%}\n\n郵件正文：{%mail_html_body%}\n\n請僅以 JSON 格式生成回應。輸出應僅包含一個 JSON 物件。以下是要使用的 JSON 格式範例：\n{\n\"subject\": \"subject translation\",\n\"body\": \"body translation\",\n\"status\": \"status result\"\n}"
     },
     "prompt_rewrite_full_text": {
-        "message": "請重寫以下文字，使其更有禮貌。僅回覆重寫的文字，不要提供任何額外的註解或其他文字。"
+        "message": "請重寫以下文字，使其更有禮貌。僅回覆重寫的文字，不要提供任何額外的註解或其他文字。 {%selected_html%}"
     },
     "prefs_OptionText_add_tags": {
         "message": "新增郵件標籤"
@@ -690,9 +657,6 @@
     },
     "AddTags_excl_list_infoline": {
         "message": "這是一份禁止在郵件中新增的標籤清單。"
-    },
-    "AddTags_prompt_prefs_title": {
-        "message": "新增標籤選項"
     },
     "addtags_dialog_title": {
         "message": "為電子郵件新增標籤"
@@ -783,9 +747,6 @@
     },
     "remember_CORS": {
         "message": "記住，您需要在伺服器上設定 CORS 設定！"
-    },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "使用純文字撰寫"
     },
     "ask_integration_permission_2_popup": {
         "message": "點擊此處開啟新分頁並按照說明進行操作。"
@@ -897,9 +858,6 @@
     "prefs_OpenAIComp_ForceModel": {
         "message": "手動輸入模型"
     },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "日曆事件選項"
-    },
     "prefs_OptionText_btnManageTaskInfo": {
         "message": "管理任務設定"
     },
@@ -929,9 +887,6 @@
     },
     "customPrompts_start_import": {
         "message": "正在匯入自訂提示…"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "更新 Google Gemini 模型列表"
     },
     "chatgpt_win_diff_title": {
         "message": "原文與修改後的文字之間的差異"
@@ -1005,9 +960,6 @@
     "prefsInfoDesc_5": {
         "message": "請記住，您可以使用鍵盤快速鍵 CTRL+ALT+A 開啟 ThunderAI 選單。"
     },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "如果您以純文字格式撰寫電子郵件，請勾選此選項。"
-    },
     "maybe_CORS_openai_comp": {
         "message": "使用 OpenAI 相容 API 可能需要在伺服器上設定 CORS 設定。"
     },
@@ -1038,7 +990,7 @@
     "prefs_OptionText_max_prompt_length_Info": {
         "message": "這是提示中可以使用的最大字元數。否則，將顯示錯誤訊息。此值在 ChatGPT 網頁介面中不可編輯。將其設為零可停用檢查。"
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "此佔位符不會加入任何文本，但它可以防止電子郵件本文自動附加在提示的末尾。"
     },
     "prefs_OptionText_placeholders_use_default_value_info": {
@@ -1051,13 +1003,13 @@
         "message": "您尚未選擇 ChatGPT API 的模型。請在選項頁面中選擇一個。"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "從以下文字中提取所有需要生成日曆事件的相關資訊。 提取的資訊應包含：\n- 事件名稱\n- 起始日期和時間（包含時區，如果指定）\n- 結束日期和時間（包含時間區，如果指定）\n- 整天事件（如果提及\n- 參與者\n確保數據以清晰一致的方式格式化，以便直接用於創建日曆事件。\n如果有相對時間參考，請考慮電子郵件的日期和時間是 「{%mail_datetime%}」。 計算基於此參考的起日期和時間。 如果計算出的起日期和時間早於「{%current_datetime%}」，則使用「{%current_datetime%}」作為基準重新計算起日期和時間。\n如果持續時間沒有指定，則設定為一小時。\n參與者：{%author%}, {%recipients%}, {%cc_list%}。如果存在，請排除我的地址：{%account_email_address%}。\n如果該活動為全天活動，endDate 必須為 startDate 的後一天，且時間設置為 \"T000000\"。\n如果無法獲得其中一個或多個所需的資訊，請回覆一個空字串。\n請以 JSON 格式回覆，不要包含任何額外的文字或說明，提供僅 JSON。 以下是將要使用的格式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"日曆事件摘要在此\",\n\"forceAllDay\": false,\n\"attendees\": [\"attendee1@example.com \",\"attendee2@example.com \",\"attendee3@example.com \"]\n}\n這裡是文字：「{%mail_text_body_or_selected%}」"
+        "message": "從以下文字中提取所有需要生成日曆事件的相關資訊。 提取的資訊應包含：\n- 事件名稱\n- 事件描述（對郵件背景、關鍵主題/議程、行動事項以及任何視訊通話連結或存取詳情的簡要總結）\n- 起始日期和時間（包含時區，如果指定）\n- 結束日期和時間（包含時間區，如果指定）\n- 整天事件（如果提及\n- 位置（如果提及，具體建築、房間或線上連結）\n- 參與者\n確保數據以清晰一致的方式格式化，以便直接用於創建日曆事件。\n如果有相對時間參考，請考慮電子郵件的日期和時間是 「{%mail_datetime%}」。 計算基於此參考的起日期和時間。 如果計算出的起日期和時間早於「{%current_datetime%}」，則使用「{%current_datetime%}」作為基準重新計算起日期和時間。\n如果持續時間沒有指定，則設定為一小時。\n參與者：{%author%}, {%recipients%}, {%cc_list%}。如果存在，請排除我的地址：{%account_email_address%}。\n如果該活動為全天活動，endDate 必須為 startDate 的後一天，且時間設置為 \"T000000\"。\n如果無法獲得其中一個或多個所需的資訊，請回覆一個空字串。\n請以 JSON 格式回覆，不要包含任何額外的文字或說明，提供僅 JSON。 以下是將要使用的格式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"日曆事件摘要在此\",\n\"description\": \"詳細的事件描述，包括議程、行動事項和郵件中的相關備註。\",\n\"forceAllDay\": false,\n\"location\": \"位置或URL在此\",\n\"attendees\": [\"attendee1@example.com \",\"attendee2@example.com \",\"attendee3@example.com \"]\n}\n這裡是文字：「{%mail_text_body_or_selected%}」"
     },
     "TranslateText": {
         "message": "您願意幫忙翻譯這個附加元件嗎？"
     },
     "prompt_get_task_full_text": {
-        "message": "從以下文字中提取所有需要生成任務的相關資訊。 提取的資訊應包含：\n- 截止日期和時間（包括時區，如果指定）\n- 任務總結\n- 初始日期和時間（包括時區，如果指定）\n確保數據以清晰一致的方式格式化，以便直接用於建立任務。\n如果有相對時間參考，請考慮電子郵件的日期和時間是 「{%mail_datetime%}」。 計算基於此參考的起日期和時間。如果計算出的起日期和時間早於「{%current_datetime%}」，則使用 「{%current_datetime%}」作為基準重新計算起日期和時間。\n如果無法獲得其中一個或多個所需的資訊，請回覆一個空字串。\n請以 JSON 格式回覆，不包含任何額外的文字或說明，提供僅 JSON。 以下是將要使用的格式：\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"任務總結在此\"\n}\n如果沒有日期資訊，請刪除這些資訊。\n以下是文字：「{%selected_text%}」"
+        "message": "從以下文字中提取所有需要生成任務的相關資訊。 提取的資訊應包含：\n- 初始日期和時間（包括時區，如果指定）\n- 截止日期和時間（包括時區，如果指定）\n- 任務總結\n- 任務描述（對郵件背景、關鍵主題和行動事項的簡要總結）\n- 位置（如果提及，具體建築、房間或線上連結）\n確保數據以清晰一致的方式格式化，以便直接用於建立任務。\n如果有相對時間參考，請考慮電子郵件的日期和時間是 「{%mail_datetime%}」。 計算基於此參考的起日期和時間。如果計算出的起日期和時間早於「{%current_datetime%}」，則使用 「{%current_datetime%}」作為基準重新計算起日期和時間。\n如果無法獲得其中一個或多個所需的資訊，請回覆一個空字串。\n請以 JSON 格式回覆，不包含任何額外的文字或說明，提供僅 JSON。 以下是將要使用的格式：\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"任務總結在此\",\n\"description\": \"詳細的任務描述，包括行動事項和郵件中的相關備註。\",\n\"location\": \"位置或URL在此\"\n}\n如果沒有日期資訊，請刪除這些資訊。\n以下是文字：「{%selected_text%}」"
     },
     "sign_msg_as": {
         "message": "簽署訊息為"
@@ -1096,7 +1048,7 @@
         "message": "如果勾選，使用鍵盤快速鍵 CTRL+ALT+A 將自動傳送選單中所選的提示。否則，提示名稱將顯示給用戶，需要再次按下 Enter 鍵才能傳送。"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "請將以下文字重寫得更正式一些。僅回覆重寫的文字，不要提供任何額外的註解或其他文字。"
+        "message": "請將以下文字重寫得更正式一些。僅回覆重寫的文字，不要提供任何額外的註解或其他文字。 {%selected_html%}"
     },
     "GoogleGemini_SystemInstruction_Info": {
         "message": "當您設定系統指示時，您會為模型提供額外情境來理解任務，提供更客製化的回應，並遵守將要發送的提示的特定指南。"

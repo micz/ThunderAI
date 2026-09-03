@@ -176,9 +176,6 @@
     "customPrompts_form_label_Text": {
         "message": "Texto do Prompt"
     },
-    "show_in_both": {
-        "message": "Ambos"
-    },
     "chatgpt_textarea_not_found_error": {
         "message": "Parece que a página do ChatGPT está a demorar muito para carregar. Se terminar de carregar, clique no botão à direita. Se o problema persistir, por favor, verifique o estado do serviço."
     },
@@ -320,9 +317,6 @@
     "ChatGPT_Models": {
         "message": "Modelos do ChatGPT"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "Atualizar lista de modelos do ChatGPT"
-    },
     "ChatGPT_Models_Error_fetching": {
         "message": "Erro ao tentar buscar os modelos do ChatGPT"
     },
@@ -359,9 +353,6 @@
     "Ollama_Models": {
         "message": "Modelos do Ollama"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Atualizar lista de modelos do Ollama"
-    },
     "Ollama_Models_Error_fetching": {
         "message": "Erro ao tentar buscar os modelos do Ollama"
     },
@@ -391,9 +382,6 @@
     },
     "OpenAIComp_Models": {
         "message": "Modelos da API Compatível com OpenAI"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "Atualizar a lista de Modelos da API Compatível com OpenAI"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Erro ao tentar buscar os modelos da API Compatível com OpenAI"
@@ -525,10 +513,10 @@
         "message": "Responda ao seguinte e-mail \"{%selected_text%}\", a considerar que este é o thread completo de e-mails \"{%mail_html_body%}\". Responda apenas com o texto necessário e sem comentários adicionais ou outros textos."
     },
     "prompt_rewrite_full_text": {
-        "message": "Reescreva o texto a seguir de forma mais educada. Responda apenas com o texto reescrito e sem comentários adicionais ou outros textos."
+        "message": "Reescreva o texto a seguir de forma mais educada. Responda apenas com o texto reescrito e sem comentários adicionais ou outros textos. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Reescreva o texto a seguir de forma mais formal. Responda apenas com o texto reescrito e sem comentários adicionais ou outros textos."
+        "message": "Reescreva o texto a seguir de forma mais formal. Responda apenas com o texto reescrito e sem comentários adicionais ou outros textos. {%selected_html%}"
     },
     "prompt_classify_full_text": {
         "message": "Classifique o texto a seguir em termos de Educação, Calor, Formalidade, Assertividade e Ofensividade, a atribuir uma percentagem para cada categoria. Responda apenas com as categorias e as pontuações, sem comentários adicionais ou outros textos."
@@ -623,9 +611,6 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "Se marcado, o rótulo das tags será definido em letras minúsculas, com apenas a primeira letra em maiúscula."
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "Opções de adição de tags"
-    },
     "prefs_SurveyLinkText2": {
         "message": "Clique aqui, leva apenas um minuto!"
     },
@@ -652,9 +637,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Modelos da API Google Gemini"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Atualizar a lista de modelos Google Gemini"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Erro ao tentar buscar os modelos Google Gemini"
@@ -690,7 +672,7 @@
         "message": "Adicionar um novo evento ao calendário"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extraia todos os pormenores relevantes necessários para gerar um evento de calendário a partir do texto a seguir. As informações extraídas devem incluir:\n- Título do evento\n- Data e hora de início (incluindo o fuso horário, se especificado)\n- Data e hora de término (incluindo o fuso horário, se especificado)\n- Dia inteiro (se mencionado)\n- Participantes\nCertifique-se de que os dados estejam formatados de maneira clara e consistente para que possam ser usados diretamente para criar um evento de calendário.\nSe houver referências de tempo relativas, considere que a data e a hora do e-mail são \"{%mail_datetime%}\". Calcule a data e a hora de início com base nessa referência. Se a data e a hora de início calculadas forem anteriores a \"{%current_datetime%}\", recalcule a data e a hora de início usando \"{%current_datetime%}\" como base.\nSe a duração não for especificada, defina-a como uma hora.\nEstes são os participantes: {%author%}, {%recipients%}, {%cc_list%}. Se estiver presente, exclua o meu endereço: {%account_email_address%}.\nSe o evento for de dia inteiro, o campo endDate deve ser o dia seguinte ao startDate com o horário definido como \"T000000\".\nSe você não conseguir obter uma ou mais informações necessárias, responda com uma string vazia.\nGere uma resposta apenas no formato JSON. Não inclua texto ou explicações adicionais; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumo do evento do calendário aqui\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nAqui está o texto: \"{%mail_text_body_or_selected%}\""
+        "message": "Extraia todos os pormenores relevantes necessários para gerar um evento de calendário a partir do texto a seguir. As informações extraídas devem incluir:\n- Título do evento\n- Data e hora de início (incluindo o fuso horário, se especificado)\n- Data e hora de término (incluindo o fuso horário, se especificado)\n- Dia inteiro (se mencionado)\n- Local (se mencionado, edifício específico, sala ou online com link)\n- Participantes\nCertifique-se de que os dados estejam formatados de maneira clara e consistente para que possam ser usados diretamente para criar um evento de calendário.\nSe houver referências de tempo relativas, considere que a data e a hora do e-mail são \"{%mail_datetime%}\". Calcule a data e a hora de início com base nessa referência. Se a data e a hora de início calculadas forem anteriores a \"{%current_datetime%}\", recalcule a data e a hora de início usando \"{%current_datetime%}\" como base.\nSe a duração não for especificada, defina-a como uma hora.\nEstes são os participantes: {%author%}, {%recipients%}, {%cc_list%}. Se estiver presente, exclua o meu endereço: {%account_email_address%}.\nSe o evento for de dia inteiro, o campo endDate deve ser o dia seguinte ao startDate com o horário definido como \"T000000\".\nSe você não conseguir obter uma ou mais informações necessárias, responda com uma string vazia.\nGere uma resposta apenas no formato JSON. Não inclua texto ou explicações adicionais; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumo do evento do calendário aqui\",\n\"forceAllDay\": false,\n\"location\": \"Local ou URL aqui\",\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nAqui está o texto: \"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Adicionar um novo evento ao calendário a partir do texto selecionado"
@@ -760,9 +742,6 @@
     },
     "prompt_spamfilter_full_text": {
         "message": "Analise o seguinte e-mail e determine se é spam ou não. Considere fatores como palavras-chave suspeitas, linguagem promocional excessiva, linhas de assunto enganosas, solicitações de informações pessoais e endereços de remetentes incomuns.\nForneça um valor de 0 (não é spam) a 100 (spam) e uma explicação de no máximo 10 palavras.\nNo caso de ausência de dados da mensagem, defina o valor como 0 (não é spam) e informe o motivo.\nGere uma resposta apenas no formato JSON. Não inclua nenhum texto ou explicação adicional; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"explanation\": \"Breve explicação do seu raciocínio\",\n\"spamValue\": <inteiro de 0 a 100>\n}\nAqui estão as informações do e-mail:\nRemetente: \"{%author%}\"\nAssunto: \"{%mail_subject%}\"\nCorpo HTML: \"{%mail_html_body%}\""
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "Opções do filtro de spam"
     },
     "prefs_OptionText_spamfilter_threshold": {
         "message": "Limite de spam"

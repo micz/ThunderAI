@@ -32,13 +32,24 @@ import {
     getTagsList,
     extractJsonObject,
     normalizeDateTimeString,
-    convertNewlinesToBr,
-    cleanupNewlines,
+    normalizeHtmlSourceNewlines,
     checkIfTagLabelExists,
     getConnectionType,
-    hasNoConnectionSelected,
+    isApiUsableConnection,
     getContextMenuIcon,
+    // NOT the local getMailBody() defined below, which is a different thing
+    // entirely: that one scrapes the rendered DOM through the content script,
+    // this one reads the message's inline text parts from the API. The names no
+    // longer collide (this used to be imported as `getMailBodyFromParts`), but
+    // the distinction still matters - see the mail_plain_text_part fetch below.
+    getMailInlineTextParts,
  } from './mzta-utils.js'
+import {
+    hasLineStructure,
+    htmlToLines,
+    linesToHtml,
+    normalizePlain,
+} from './mzta-richtext.js';
 import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
@@ -53,6 +64,18 @@ export class mzta_Menus {
     menu_context_display = null;
     menu_listeners = {};
     logger = null;
+
+    // Menu rebuilds must not interleave: loadContextMenus() calls browser.menus.removeAll()
+    // before recreating every item, so a second rebuild starting mid-flight would wipe the
+    // items the first one just created, or fail on duplicate ids. The debounce in
+    // mzta-background.js only covers the storage.onChanged path — the internal and external
+    // reload_menus messages are not synchronized against it, and options pages routinely
+    // both write storage and send the message.
+    // Rebuilds are coalesced rather than queued: rebuilding is idempotent and only the final
+    // state is observable, so N overlapping triggers collapse into the running rebuild plus
+    // a single trailing rerun, instead of N teardown/rebuild cycles each flickering the menus.
+    _rebuildInFlight = null;
+    _rebuildPending = null;
 
     rootMenu = [
     //{ id: 'ItemC', act: (info, tab) => { console.log('ItemC', info, tab, info.menuItemId); alert('ItemC') } },
@@ -75,7 +98,9 @@ export class mzta_Menus {
     async initialize(also_special = []) {    // also_special is an array of active special prompts ids
         this.allPrompts = [];
         this.rootMenu = [];
-        this.shortcutMenu = [];
+        // shortcutMenu is deliberately not cleared here: loadShortcutMenu() replaces it
+        // wholesale at the end of the rebuild, so synchronous readers keep seeing the
+        // previous complete menu instead of an empty one for the whole rebuild.
         this.menu_listeners = {};
         this.allPrompts = await getPrompts(true,also_special);
         this.allPrompts.forEach((prompt) => {
@@ -84,11 +109,10 @@ export class mzta_Menus {
     }
 
     async reload(also_special = []) {
-        // await browser.menus.removeAll().catch(error => {
-        //         console.error("[ThunderAI] ERROR removing the menus: ", error);
-        //     });
-        this.removeClickListener();
-        this.loadMenus(also_special);
+        // removeClickListener() lives inside _loadMenusUnguarded() instead of here, so that
+        // it runs under the rebuild guard and cannot deregister the listener belonging to a
+        // rebuild already in flight.
+        await this.loadMenus(also_special);
     }
 
     addAction = (curr_prompt) => {
@@ -96,15 +120,87 @@ export class mzta_Menus {
         let curr_menu_entry = {id: curr_prompt.id, is_default: curr_prompt.is_default, name: curr_prompt.name};
         let curr_message = null;
     
+        // The HTML twin of a source, decided by shape with the ONE shared heuristic
+        // (hasLineStructure, js/mzta-richtext.js): an HTML fragment keeps its tags
+        // (source newlines collapsed - the tags carry the breaks), a structure-less
+        // one is rebuilt from the text whose \n survived. Same rule getMailBody() in
+        // js/mzta-utils.js applies to a text/plain-only mail.
+        //
+        // Detected by shape because the compose format is not known here:
+        // getComposeDetails would be a second async round trip per menu action, and
+        // in a PLAIN TEXT compose window there are no tags - the line breaks ARE the
+        // \n, so collapsing them as HTML would weld the body into one line. [#829]
+        const htmlOrFromText = (html, text) =>
+            hasLineStructure(html) ? normalizeHtmlSourceNewlines(html) : linesToHtml(normalizePlain(text ?? ''), { mode: 'br' });
+
+        // The selection twins, derived from ONE normalization so selected_text and
+        // selected_html AGREE - the diff picker's original side depends on the pair
+        // matching (see claude-spec/07-diff-picker.md). Computing them from two
+        // independent inputs (selection.toString() vs cloneContents().innerHTML) let
+        // them drift.
+        //
+        //   fragment has structure -> trust its tags: keep the markup, and read the
+        //                             TEXT twin back OUT of the same fragment.
+        //   no structure (plain)   -> the \n ARE the breaks: text from them, html
+        //                             rebuilt from that text.
+        //
+        // A range cutting mid-<b> yields an unbalanced fragment; the DOMParser inside
+        // htmlToLines (and later inside the picker) auto-closes it, so no half-open
+        // tag leaks into either twin.
+        const selectionTwin = (rawHtml, rawText) => {
+            if (hasLineStructure(rawHtml)) {
+                return { text: normalizePlain(htmlToLines(rawHtml)), html: normalizeHtmlSourceNewlines(rawHtml) };
+            }
+            const text = normalizePlain(rawText ?? '');
+            return { text, html: linesToHtml(text, { mode: 'br' }) };
+        };
+
         const getMailBody = async (tabs, do_autoselect = false) => {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-            return {tabId: tabs[0].id, 
-                selection: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" })),
-                selection_html: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" })),
-                text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" })),
-                html: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" })),
-                only_typed_text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect })),
-                only_quoted_text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" }))
+            const raw_selection = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" });
+            const raw_selection_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" });
+            const raw_text = await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" });
+            const raw_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" });
+            // Raw values as they arrive from the content script, before the twins
+            // rewrite them. JSON.stringify() so newlines/escapes stay visible. [#829]
+            this.logger.log("getMailBody raw_text: " + JSON.stringify(raw_text));
+            this.logger.log("getMailBody raw_html: " + JSON.stringify(raw_html));
+            this.logger.log("getMailBody raw_selection: " + JSON.stringify(raw_selection));
+            this.logger.log("getMailBody raw_selection_html: " + JSON.stringify(raw_selection_html));
+
+            // Hoisted out of the object literal below, because the ORDER of the
+            // next two calls is load-bearing.
+            const raw_only_typed_text = await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect });
+            // getOnlyTypedText with do_autoselect has just put a range around the
+            // typed region: read its markup while that range is in force. The
+            // getSelectedHtml above ran BEFORE it, when rangeCount was still 0, so
+            // it returned '' - which left selection_html empty while selection_text
+            // was substituted with the typed text, handing the diff picker a
+            // mismatched text/html pair. Must stay ahead of getOnlyQuotedText,
+            // which has an autoselect branch of its own. [#829]
+            const raw_only_typed_html = do_autoselect
+                ? await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" })
+                : '';
+            this.logger.log("getMailBody raw_only_typed_html: " + JSON.stringify(raw_only_typed_html));
+            // Paragraph-preserving: these carry the mail the user typed, and the
+            // blank line between greeting and body is part of it. Computed once:
+            // only_typed_html falls back to this same value, and the two are twins. [#829]
+            const only_typed_text = normalizePlain(raw_only_typed_text, { keepParagraphs: true });
+
+            const sel = selectionTwin(raw_selection_html, raw_selection);
+
+            return {tabId: tabs[0].id,
+                selection: sel.text,
+                selection_html: sel.html,
+                text: normalizePlain(raw_text),
+                html: htmlOrFromText(raw_html, raw_text),
+                only_typed_text: only_typed_text,
+                // The html twin of only_typed_text, for the diff picker's original
+                // side. htmlOrFromText() so a plain text compose window - whose
+                // cloned range carries no markup - still gets its line breaks from
+                // the \n, exactly as the other twins do.
+                only_typed_html: htmlOrFromText(raw_only_typed_html, only_typed_text),
+                only_quoted_text: normalizePlain(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" }), { keepParagraphs: true })
             };
         };
     
@@ -146,11 +242,37 @@ export class mzta_Menus {
             let selection_html = msg_text.selection_html;
             let only_typed_text = '';
             let only_quoted_text = '';
+            // Every field of msg_text arrived ALREADY normalized: getMailBody() above
+            // runs normalizePlain() on each one as it is built - the default flags for
+            // .text and .selection (the {%mail_text_body%} contract: CRLF->LF, both
+            // spellings of the non-breaking space -> ' ', \n{2,} -> \n), and
+            // { keepParagraphs } for the two compose extractions, whose blank lines are
+            // part of what the user typed. Same normalizer the automatic path in
+            // mzta-background.js uses, so the two paths do NOT diverge. The flag table
+            // lives at mztaNormalizePlain in js/lib/mzta-html-lines.js.
+            //
+            // The .replace()/.trim() below are therefore REDUNDANT, not a second pass:
+            // normalizePlain's default already ends with these exact two rules, both
+            // idempotent. They are kept because they are harmless, not because anything
+            // depends on them - do not "complete" them into a full normalizePlain() call
+            // here, which would only be a no-op dressed up as a fix.
+            //
+            // They also cannot break { keepParagraphs }: [ \t]+ does not match \n, so
+            // the blank lines inside only_typed_text/only_quoted_text survive. Only the
+            // .trim() touches them, and only at the very start and end of the string.
             only_typed_text = msg_text.only_typed_text.replace(/[ \t]+/g, ' ').trim();
             selection_text = msg_text.selection.replace(/[ \t]+/g, ' ').trim();
             if(selection_text === ''){
                 if(placeholdersUtils.hasPlaceholder(curr_prompt.text, "mail_typed_text")){
                     selection_text = only_typed_text;
+                    // Keep the twin paired with the text field. _buildDiffButton
+                    // resolves the picker's original side on selection_text and
+                    // then takes the html twin of whichever side won, so
+                    // substituting the text alone leaves it diffing the answer
+                    // against a text-rebuilt original - one <p> per hard-wrapped
+                    // line, which pairs with nothing and reads as "everything
+                    // changed". [#829]
+                    selection_html = msg_text.only_typed_html;
                 }
             }
             only_quoted_text = msg_text.only_quoted_text.replace(/[ \t]+/g, ' ').trim();
@@ -158,6 +280,11 @@ export class mzta_Menus {
             curr_prompt.selection_html = selection_html;
             body_text = msg_text.text.replace(/[ \t]+/g, ' ').trim();
             curr_prompt.body_text = body_text;
+            // The diff picker's original side. It keeps the mail's own
+            // formatting so that REJECTING a change restores the markup too,
+            // not just the words. Costs the HTML body in the prompt_info
+            // payload, which is why only the picker path reads it.
+            curr_prompt.body_html = msg_text.html;
             //open chatgpt window
             //console.log("Click menu item...");
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt);
@@ -177,8 +304,37 @@ export class mzta_Menus {
                     break;
                 case 'messageCompose':
                     curr_messages = await browser.compose.getComposeDetails(tabs[0].id);
+                    this.logger.log("Compose isPlainText: " + curr_messages.isPlainText);
                     curr_message = curr_messages;
                     break;
+            }
+
+            // {%mail_plain_text_part%} wants the ORIGINAL text/plain part, which the
+            // local getMailBody() above cannot supply: it reads the rendered DOM
+            // through the content script, so its .text is the HTML converted to text,
+            // not a mail part. Ask the API for the inline text parts explicitly -
+            // ONE call, no getFull() and no MIME-tree walk.
+            //
+            // Guarded on the token actually being present - the same idiom this path
+            // already uses for mail_typed_text - so a prompt that does not use this
+            // placeholder pays for no extra API call and is byte-identical to before.
+            //
+            // plain_part is a distinct field, never msg_text.text: the clipboard branch
+            // above overwrites .text, and the resolver must be able to tell "no plain
+            // part" apart from the scrape rather than silently falling back to it.
+            if (placeholdersUtils.hasPlaceholder(curr_prompt.text, 'mail_plain_text_part')) {
+                // '' rather than leaving it unset: the resolver's ?? would otherwise fall
+                // through to msg_text.text, i.e. the HTML conversion this placeholder
+                // exists to avoid. Compose tabs land here too and must resolve empty.
+                msg_text.plain_part = '';
+                if (curr_message && curr_message.id && tabs[0].type !== 'messageCompose') {
+                    try {
+                        msg_text.plain_part = (await getMailInlineTextParts(curr_message.id)).text;
+                    } catch (e) {
+                        this.logger.log("mail_plain_text_part: unable to read the original text/plain part: " + e);
+                    }
+                }
+                this.logger.log("mail_plain_text_part: " + JSON.stringify(msg_text.plain_part));
             }
 
             fullPrompt = await taPromptUtils.preparePrompt({
@@ -233,9 +389,10 @@ export class mzta_Menus {
                             add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
                             default_chatgpt_lang: prefs_default.default_chatgpt_lang,
                             do_debug: prefs_default.do_debug,
+                            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
                         });
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'add_tags');
-                        if(hasNoConnectionSelected(def_conntype)||(def_conntype === 'chatgpt_web')){
+                        if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + def_conntype);
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
@@ -294,7 +451,7 @@ export class mzta_Menus {
                             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
                         });
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_calendar_event');
-                        if(hasNoConnectionSelected(def_conntype)||(def_conntype === 'chatgpt_web')){
+                        if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | GetCalendarEvent] Invalid connection type: " + def_conntype);
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
@@ -303,9 +460,10 @@ export class mzta_Menus {
                         *  {
                         *   "startDate": "20250104T183000Z",
                         *   "endDate": "20250104T193000Z",
-                        *   "summary": "ThunderAI Sparks",
+                        *   "description": "Detailed event description including agenda, action items, and relevant notes from the email.",
                         *   "forceAllDay": false,
-                        *   "attendees": [attendee1@example.com,attendee2@example.com,attendee3@example.com]"
+                        *   "location": "YourLocation",
+                        *   "attendees": [attendee1@example.com,attendee2@example.com,attendee3@example.com]
                         *  } 
                         */
                         fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt);
@@ -382,7 +540,7 @@ export class mzta_Menus {
                             calendar_timezone: prefs_default.calendar_timezone,
                             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])});
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_task');
-                        if(hasNoConnectionSelected(def_conntype)||(def_conntype === 'chatgpt_web')){
+                        if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | GetTask] Invalid connection type: " + def_conntype);
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
@@ -391,7 +549,9 @@ export class mzta_Menus {
                         *  {
                         *   "InitialDate": "YYYYMMDDTHHMMSS",
                         *   "dueDate": "YYYYMMDDTHHMMSS",
-                        *   "summary": "Task summary here"
+                        *   "summary": "Task summary here",
+                        *   "description": "Detailed task description including action items, and relevant notes from the email.",
+                        *   "location": "YourLocation"
                         *  } 
                         */
                         this.logger.log("fullPrompt: " + fullPrompt);
@@ -489,13 +649,17 @@ export class mzta_Menus {
     };
 
     loadShortcutMenu() {
-        this.shortcutMenu = [];
+        // Built into a local array and swapped in at the end: preparePopupMenu() in the
+        // background reads shortcutMenu synchronously, so mutating it in place would let a
+        // shortcut pressed mid-rebuild render a half-built (or empty) popup.
+        const newShortcutMenu = [];
         this.allPrompts.forEach((prompt) => {
-            this.addShortcutMenu(prompt);
+            this.addShortcutMenu(prompt, newShortcutMenu);
         });
+        this.shortcutMenu = newShortcutMenu;
     }
 
-    addShortcutMenu(prompt) {
+    addShortcutMenu(prompt, target = this.shortcutMenu) {
         let curr_menu_entry = {
             id: prompt.id,
             label: i18nConditionalGet(prompt.name),
@@ -505,8 +669,9 @@ export class mzta_Menus {
             position_display: prompt.position_display,
             position_compose: prompt.position_compose,
             position_context: prompt.position_context,
+            custom_icon: getContextMenuIcon(prompt),   // '' when the prompt has no icon
         };
-        this.shortcutMenu.push(curr_menu_entry);
+        target.push(curr_menu_entry);
     }
 
     async loadContextMenus() {
@@ -561,13 +726,39 @@ export class mzta_Menus {
         this.logger.log("Context menus loaded: " + contextPrompts.length + " items");
     }
 
-    async loadMenus(also_special = []) {
+    async _loadMenusUnguarded(also_special = []) {
+        this.removeClickListener();
         await this.initialize(also_special);
         await this.addMenu(this.rootMenu);
         this.addClickListener();
         this.loadShortcutMenu();
         await this.loadContextMenus();
         this.logger.log("Menus loaded");
+    }
+
+    async loadMenus(also_special = []) {
+        // A rebuild is already running: record the newest arguments as the trailing rerun
+        // and wait for it. Every caller arriving during the same window shares that one rerun.
+        if (this._rebuildInFlight) {
+            this._rebuildPending = also_special;
+            return this._rebuildInFlight;
+        }
+        this._rebuildInFlight = (async () => {
+            try {
+                let args = also_special;
+                do {
+                    this._rebuildPending = null;
+                    await this._loadMenusUnguarded(args);
+                    // Re-read after the await: anything that arrived while we were rebuilding
+                    // used prompt data that is now stale, so one more pass is needed to converge.
+                    args = this._rebuildPending;
+                } while (this._rebuildPending !== null);
+            } finally {
+                this._rebuildInFlight = null;
+                this._rebuildPending = null;
+            }
+        })();
+        return this._rebuildInFlight;
     }
 
     listener(info, tab) {

@@ -57,13 +57,17 @@ export class taSpamReport {
         }
     }
 
-    async saveError(data_id, error_message) {
+    async saveError(data_id, error_message, metadata = {}) {
         this.taLog.log("[saveError] data_id: " + data_id + ", error_message: " + error_message);
+        // Merge any available message metadata so the spam log entry does not show
+        // blank fields when the message became unreadable during analysis.
         let data = {
             spamValue: -999,
             explanation: error_message,
             report_date: new Date(),
-            headerMessageId: data_id
+            headerMessageId: data_id,
+            moved: false,
+            ...metadata
         };
         await this.saveReportData(data, data_id);
         return data;

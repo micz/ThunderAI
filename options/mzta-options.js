@@ -36,9 +36,12 @@ import {
 import { taStorage } from '../js/mzta-storage.js';
 import {
   injectConnectionUI,
+  updateAnthropicModelCapabilityUI,
   varConnectionUI,
   showConnectionOptions,
-  updateWarnings
+  updateWarnings,
+  hasEmptyValueOption,
+  checkJsonFields
 } from '../pages/_lib/connection-ui.js';
 import {
   isTestableConnection,
@@ -109,13 +112,16 @@ async function restoreOptions() {
         case 'select-one':
           let default_select_value = '';
           if(element.id == 'reply_type') default_select_value = 'reply_all';
+          // Without a default this select would restore to '', which matches no
+          // option, and the control would render blank.
+          if(element.id == 'diff_granularity') default_select_value = prefs_default.diff_granularity;
           // No fallback for connection_type: an empty value means "no connection
           // selected yet" and must stay empty, so the placeholder option shows.
           element.value = result[element.id] || default_select_value;
-          // connection_type has a dedicated disabled placeholder option for the
-          // empty value, so let the assignment above select it; every other select
-          // has no empty option and must show a blank control instead.
-          if (element.value === '' && element.id != 'connection_type') {
+          // connection_type and the ChatGPT reasoning selects have a dedicated option
+          // for the empty value, so let the assignment above select it; every other
+          // select has no empty option and must show a blank control instead.
+          if (element.value === '' && !hasEmptyValueOption(element.id)) {
             element.selectedIndex = -1;
           }
           if (element.tomselect) {
@@ -219,15 +225,22 @@ function setFeatureManageVisibility(btn, visible){
 // be misleading when no provider has been chosen at all.
 function getFeatureConnState(prefs_opt, prefix){
   let conntype_select = document.getElementById("connection_type");
+  // The live select value must win: it is the not-yet-persisted choice this call is
+  // reacting to, while prefs_opt is the storage snapshot. Keep it last in the spread.
   const tempPrefs = {
-      connection_type: conntype_select.value,
-      ...prefs_opt
+      ...prefs_opt,
+      connection_type: conntype_select.value
   };
   let effective = getConnectionType(tempPrefs, null, prefix);
   let no_connection = hasNoConnectionSelected(effective);
   return {
     no_connection: no_connection,
-    disabled: no_connection || (effective === "chatgpt_web"),
+    // ChatGPT Web is deliberately NOT disabling: the per-feature API is configured from
+    // the feature's own settings page, which is only reachable once the feature is on, so
+    // forcing it off here would make that page unreachable and the setup impossible. The
+    // amber "API needed" badge already states the requirement, and the real gate lives
+    // downstream (menus and body buttons both judge the *effective* connection).
+    disabled: no_connection,
     show_api_warning: (effective === "chatgpt_web")
   };
 }
@@ -240,6 +253,10 @@ function disable_ApiFeature(prefs_opt, prefix, manageBtnId){
   let state = getFeatureConnState(prefs_opt, prefix);
 
   let checked_original = checkbox.checked;
+  // Only the "nothing selected at all" state clears the flag. With ChatGPT Web the user
+  // is on their way to configuring a per-feature API, and that page is behind this very
+  // toggle — clearing it here used to strand them: the feature switched itself back off
+  // between enabling it and finishing the setup.
   checkbox.checked = state.disabled ? false : checkbox.checked;
   // With no connection selected the toggle is greyed out: there is nothing to
   // enable the feature against yet.
@@ -270,18 +287,21 @@ function disable_Translate(prefs_opt){
   disable_ApiFeature(prefs_opt, 'translate', 'btnManageTranslateInfo');
 }
 
-async function disable_GetCalendarEvent(){
+async function disable_GetCalendarEvent(prefs_opt){
   let get_calendar_event = document.getElementById('get_calendar_event');
   let get_task = document.getElementById('get_task');
   let no_sparks_tr = document.getElementById('no_sparks');
   let no_sparks_text = document.getElementById('no_sparks_text');
   let wrong_sparks_text = document.getElementById('wrong_sparks_text');
   let is_spark_present = await checkSparksPresence();
-  let conntype_select = document.getElementById("connection_type");
-  // These features need an API: unavailable with ChatGPT Web and with no connection selected.
-  let conn_unusable = (conntype_select.value === "chatgpt_web") || hasNoConnectionSelected(conntype_select.value);
-  get_calendar_event.disabled = conn_unusable || !(is_spark_present == 1);
-  get_task.disabled = conn_unusable || !(is_spark_present == 1);
+  // These features need an API: unavailable with ChatGPT Web and with no connection
+  // selected. Judged per feature, like the other API-driven rows, so a specific
+  // integration keeps them available whatever the global connection is.
+  let cal_unusable = getFeatureConnState(prefs_opt, 'get_calendar_event').disabled;
+  let task_unusable = getFeatureConnState(prefs_opt, 'get_task').disabled;
+  // Sparks presence is an orthogonal requirement: both features live in that add-on.
+  get_calendar_event.disabled = cal_unusable || !(is_spark_present == 1);
+  get_task.disabled = task_unusable || !(is_spark_present == 1);
   let get_calendar_event_tr_elements = document.querySelectorAll('.get_calendar_event_tr');
   get_calendar_event_tr_elements.forEach(get_calendar_event_tr => {
     get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : '';
@@ -290,12 +310,23 @@ async function disable_GetCalendarEvent(){
   get_task_tr_elements.forEach(get_task_tr => {
     get_task_tr.style.display = get_task.disabled ? 'none' : '';
   });
-  no_sparks_tr.style.display = ((is_spark_present == 1) || conn_unusable) ? 'none' : '';
+  // The "Sparks missing" notice is only worth showing when at least one of the two
+  // features could actually run: if both are unusable on their connection anyway,
+  // the missing add-on is not what stands in the way.
+  no_sparks_tr.style.display = ((is_spark_present == 1) || (cal_unusable && task_unusable)) ? 'none' : '';
   no_sparks_text.style.display = (is_spark_present == -1) ? 'inline' : 'none';
   wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
 }
 
 const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
+
+// Documentation page behind the "Full guide" link of the provider setup callout.
+// Sparse on purpose: only these providers have a dedicated page, so the link is
+// hidden for the others rather than pointing somewhere generic.
+const CONN_GUIDE_PATH = {
+  chatgpt_web: 'thunderbird-addon-thunderai/status/',
+  ollama_api:  'thunderbird-addon-thunderai/ollama-cors-information/',
+};
 
 function updateDescription(){
   let conntype_select = document.getElementById("connection_type");
@@ -306,9 +337,49 @@ function updateDescription(){
       el.style.display = (conntype === t) ? "" : "none";
     });
   }
-  // Tint the Important Information accent bar to the selected provider.
+  // Tint the provider setup callout (border/background/pill) to the selected provider.
   for(let t of CONN_TYPES){
     desc.classList.toggle("tint_" + t, conntype === t);
+  }
+  // Point the "Full guide" link at the selected provider's page, or hide it.
+  // It is moved inside the active provider's span so it flows inline with that
+  // text (and stays within the tinted accent bar) instead of sitting below it.
+  let guide_link = document.getElementById("mzta_info_guide");
+  if(guide_link){
+    let guide_path = CONN_GUIDE_PATH[conntype];
+    if(guide_path){
+      let active_span = desc.querySelector(".conntype_" + conntype + ".info_specific");
+      if(active_span && guide_link.parentElement !== active_span){
+        active_span.appendChild(guide_link);
+      }
+      guide_link.href = getMiczItUrl(guide_path);
+      guide_link.style.display = "";
+    }else{
+      guide_link.style.display = "none";
+    }
+  }
+}
+
+// Show the real shortcut assigned to the ThunderAI menu command, so the chips
+// stay correct if the user rebinds it. The static Ctrl/Alt/A chips in the HTML
+// are kept as a fallback if the command is unavailable or has been cleared.
+async function updateShortcutChips(){
+  let keys_container = document.getElementById("mzta_shortcut_keys");
+  if(!keys_container) return;
+  try{
+    let commands = await browser.commands.getAll();
+    let command = commands.find(c => c.name === '_thunderai__do_action');
+    if(!command || !command.shortcut) return;
+    let keys = command.shortcut.split('+').map(k => k.trim()).filter(k => k !== '');
+    if(keys.length === 0) return;
+    keys_container.textContent = '';
+    for(let key of keys){
+      let kbd = document.createElement('kbd');
+      kbd.textContent = key;
+      keys_container.appendChild(kbd);
+    }
+  }catch(error){
+    console.error("[ThunderAI] Unable to read the menu keyboard shortcut: " + error);
   }
 }
 
@@ -607,20 +678,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", () => disable_SpamFilter(prefs_opt));
   conntype_select.addEventListener("change", () => disable_Summarize(prefs_opt));
   conntype_select.addEventListener("change", () => disable_Translate(prefs_opt));
-  conntype_select.addEventListener("change", disable_GetCalendarEvent);
+  conntype_select.addEventListener("change", () => disable_GetCalendarEvent(prefs_opt));
   conntype_select.addEventListener("change", updateDescription);
   conntype_select.addEventListener("change", updateConnPanelTint);
 
   showConnectionOptions(conntype_select);
   showAdvConnectionOptions();
+  updateAnthropicModelCapabilityUI();
+  checkJsonFields();
   updateDescription();
   updateConnPanelTint();
+  updateShortcutChips();
   disable_MaxPromptLength();
   disable_AddTags(prefs_opt);
   disable_SpamFilter(prefs_opt);
   disable_Summarize(prefs_opt);
   disable_Translate(prefs_opt);
-  disable_GetCalendarEvent();
+  disable_GetCalendarEvent(prefs_opt);
   updateSpecificApiIndicators(prefs_opt);
 
   browser.storage.onChanged.addListener(async (changes, area) => {
@@ -633,6 +707,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
       });
       updateSpecificApiIndicators(prefs_opt);
+      // The feature rows are computed from prefs_opt too: configuring a per-feature
+      // integration in another tab changes that feature's effective connection, so the
+      // row (and its "API needed" badge) must be recomputed here as well. Without this
+      // they kept showing the state from the snapshot taken at page load.
+      disable_AddTags(prefs_opt);
+      disable_SpamFilter(prefs_opt);
+      disable_Summarize(prefs_opt);
+      disable_Translate(prefs_opt);
+      await disable_GetCalendarEvent(prefs_opt);
     }
   });
 

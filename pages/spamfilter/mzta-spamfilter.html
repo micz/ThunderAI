@@ -5,6 +5,8 @@
     <title>ThunderAI - __MSG_SpamFilter_PageTitle__</title>
     <link rel="stylesheet" href="../_lib/mzta-design.css" />
     <link rel="stylesheet" href="mzta-spamfilter.css" />
+    <link rel="stylesheet" href="../_lib/autocomplete.css" />
+    <link rel="stylesheet" href="../_lib/editor-highlight.css" />
     <link rel="stylesheet" href="../_lib/connection-ui.css" />
     <link rel="icon" href="../../images/icon-16px.png" />
 </head>
@@ -25,8 +27,6 @@
 
             <!-- SETTINGS -->
             <div class="mzta_section">
-                <div class="mzta_eyebrow">__MSG_SpamFilter_prompt_prefs_title__</div>
-
                 <!-- specific integration toggle -->
                 <div class="feature_row">
                     <div class="feature_info">
@@ -89,15 +89,16 @@
 
             <!-- PROMPT -->
             <div class="mzta_section" id="spamfilter_container">
-                <div class="mzta_eyebrow">__MSG_SpamFilter_prompt_text_title__<span id="spamfilter_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                <div class="mzta_prompt_title">__MSG_SpamFilter_prompt_text_title__<span id="spamfilter_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
                 <p class="mzta_help">
                     __MSG_prefs_OptionText_btnManagePrompts_infoline__
                     <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_more_info_string__</a>
                     <br><b>__MSG_prefs_OptionText_AdvancedPromptResponse_infoline2__</b>
                 </p>
                 <div class="mzta_field">
-                    <div class="autocomplete-container">
-                        <textarea id="spamfilter_prompt_text" rows="15"></textarea>
+                    <div class="autocomplete-container editor-wrap">
+                        <div class="editor-backdrop" aria-hidden="true"><div class="editor-highlights"></div></div>
+                        <textarea id="spamfilter_prompt_text" rows="15" class="editor"></textarea>
                         <ul class="autocomplete-list hidden"></ul>
                     </div>
                     <div id="spamfilter_info_additional_statements"></div>
@@ -110,7 +111,7 @@
 
             <!-- ACCOUNT SELECTOR -->
             <div class="mzta_section" id="account_selector_container">
-                <div class="mzta_eyebrow">__MSG_AccountSelector_Spamfilter__</div>
+                <div class="mzta_prompt_title">__MSG_AccountSelector_Spamfilter__</div>
                 <p class="mzta_help" id="account_selector_info">__MSG_AccountSelector_AutoTags_infoline__</p>
                 <div id="account_selector_checkboxes"></div>
                 <div class="btn_div" style="justify-content:flex-start;">
@@ -121,7 +122,7 @@
 
             <!-- SKIP ADDRESSES -->
             <div class="mzta_section" id="spamfilter_skip_addresses_container">
-                <div class="mzta_eyebrow">__MSG_SpamFilter_skip_addresses_title__<span id="skip_addresses_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                <div class="mzta_prompt_title">__MSG_SpamFilter_skip_addresses_title__<span id="skip_addresses_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
                 <p class="mzta_help">
                     __MSG_SpamFilter_skip_addresses_infoline__
                     <br>__MSG_SpamFilter_skip_addresses_infoline2__
@@ -146,7 +147,7 @@
 
             <!-- REPORTS -->
             <div class="mzta_section" id="spamfitler_reports_container">
-                <div class="mzta_eyebrow">__MSG_SpamReport_Title__</div>
+                <div class="mzta_prompt_title">__MSG_SpamReport_Title__</div>
                 <div class="report_scroll">
                     <table id="report_data">
                         <thead>

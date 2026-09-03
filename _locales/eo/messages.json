@@ -146,9 +146,6 @@
     "Ollama_Models": {
         "message": "Modeloj de Ollama"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Ĝisdatigi liston de modeloj Ollama"
-    },
     "prefs_OptionText_reply_all": {
         "message": "Respondi al ĉiuj"
     },

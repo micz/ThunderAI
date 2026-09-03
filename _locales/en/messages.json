@@ -140,7 +140,7 @@
     "description": ""
   },
   "customPrompts_form_label_use_diff_viewer_title": {
-    "message": "The text comparison viewer can be selected when the action is set to \"Substitute text\".",
+    "message": "Available when the \"Action\" is \"Substitute text\".",
     "description": ""
   },
   "customPrompts_form_required_fields": {
@@ -197,22 +197,6 @@
   },
   "customPrompts_add_to_menu_composing": {
     "message": "Composing an email",
-    "description": ""
-  },
-  "show_in": {
-    "message": "Show in",
-    "description": ""
-  },
-  "show_in_popup": {
-    "message": "Popup only",
-    "description": ""
-  },
-  "show_in_context": {
-    "message": "Context menu only",
-    "description": ""
-  },
-  "show_in_both": {
-    "message": "Both",
     "description": ""
   },
   "customPrompts_close_button": {
@@ -408,6 +392,26 @@
     "message": "To use the Claude API, you need an Anthropic Claude API Key and must choose a model.",
     "description": ""
   },
+  "prefs_full_guide": {
+    "message": "Full guide",
+    "description": "Link in the provider setup callout, opening the documentation page for the selected provider."
+  },
+  "prefs_shortcut_label": {
+    "message": "Open the ThunderAI menu with",
+    "description": "Label preceding the keyboard shortcut keys, at the bottom of the options page."
+  },
+  "prefs_disclaimer_short": {
+    "message": "LLM models can generate incorrect information, and your data may be used by the provider to train new models.",
+    "description": "Shown at the bottom of the options page body, followed by a link to the privacy information."
+  },
+  "prefs_footer_translate": {
+    "message": "Translate the addon",
+    "description": "Footer link at the bottom of the options page, opening the translation info page."
+  },
+  "prefs_footer_donate": {
+    "message": "Make a donation",
+    "description": "Footer link at the bottom of the options page, opening the donation page."
+  },
   "prefsDonation_1": {
     "message": "Do you like this addon?",
     "description": ""
@@ -435,6 +439,51 @@
   "customPrompts_Import": {
     "message": "Import new prompts",
     "description": ""
+  },
+  "customPrompts_promptsCount": {
+    "message": "$COUNT$ prompts",
+    "description": "Footer count of prompts shown in the list",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "customPrompts_promptsCount_filtered": {
+    "message": "$SHOWN$ of $TOTAL$ prompts",
+    "description": "Footer count when the prompts list is filtered by the search field",
+    "placeholders": {
+      "shown": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "customPrompts_search_placeholder": {
+    "message": "Search by name or ID",
+    "description": "Placeholder for the search field that filters the prompts list by name or ID"
+  },
+  "customPrompts_filter_active": {
+    "message": "Filtered: $SHOWN$ of $TOTAL$",
+    "description": "Toolbar badge shown while the prompts list is filtered by the search field",
+    "placeholders": {
+      "shown": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "customPrompts_filter_noMatches": {
+    "message": "No matching prompts",
+    "description": "Toolbar badge shown when the search filter matches no prompts at all"
+  },
+  "customPrompts_filter_clear": {
+    "message": "Clear filter",
+    "description": "Button in the toolbar badge that clears the search filter and shows all prompts"
   },
   "importPrompts_confirmText": {
     "message": "You are about to import new prompts.",
@@ -708,6 +757,10 @@
     "message": "Mail body or selected HTML",
     "description": ""
   },
+  "placeholder_mail_plain_text_part": {
+    "message": "Original plain text part of the mail, without any conversion from the HTML part (best for business and automated mail; may be empty or a stub on newsletters)",
+    "description": ""
+  },
   "prefs_OptionText_placeholders_use_default_value": {
     "message": "Placeholders: use default value",
     "description": ""
@@ -715,6 +768,22 @@
   "prefs_OptionText_placeholders_use_default_value_info": {
     "message": "If checked, the placeholders will be filled with the default values when no value is provided. Otherwise, the placeholders will be kept in place.",
     "description": ""
+  },
+  "prefs_OptionText_diff_granularity": {
+    "message": "Compare changes by",
+    "description": "Options page: default comparison unit of the proofreading change picker"
+  },
+  "prefs_OptionText_diff_granularity_info": {
+    "message": "How the change picker compares the original text with the answer. \"Words\" suits fixing spelling and grammar; \"Sentences\" is easier to read when the answer rewrites whole sentences. Note that on a text made of a single sentence, \"Sentences\" shows the whole text as one change. You can also switch between the two while reviewing the changes.",
+    "description": ""
+  },
+  "prefs_OptionText_diff_granularity_words": {
+    "message": "Words",
+    "description": "Comparison unit: word by word"
+  },
+  "prefs_OptionText_diff_granularity_sentences": {
+    "message": "Sentences",
+    "description": "Comparison unit: sentence by sentence"
   },
   "prefs_OptionText_hide_thinking": {
     "message": "Collapse thinking block by default",
@@ -780,6 +849,22 @@
     "message": "You can use additional data placeholders.",
     "description": ""
   },
+  "prefs_extra_body_error_invalid": {
+    "message": "Invalid JSON:",
+    "description": "Followed by the parser error message, which states what was expected and at which position."
+  },
+  "prefs_extra_body_error_not_object": {
+    "message": "The value must be a JSON object, enclosed in curly braces.",
+    "description": ""
+  },
+  "prefs_OptionText_openai_comp_extra_body" : {
+    "message": "Extra body data",
+    "description": ""
+  },
+  "prefs_OptionText_openai_comp_extra_body_info": {
+    "message": "Additional parameters to send with every API call, as a JSON object. Useful for options this service supports but ThunderAI doesn't expose, like disabling the thinking mode: {\"chat_template_kwargs\": {\"thinking\": false}} or {\"top_p\": 0.9}. The parameters managed by ThunderAI (model, messages, streaming, temperature) can't be overridden here. An invalid value is ignored.",
+    "description": ""
+  },
   "prefs_OptionText_openai_comp_use_v1" : {
     "message": "Keep the \"v1\" compatibility",
     "description": ""
@@ -821,11 +906,11 @@
     "description": ""
   },
   "prompt_rewrite_full_text": {
-    "message": "Rewrite the following text to be more polite. Reply with only the re-written text and with no extra comments or other text.",
+    "message": "Rewrite the following text to be more polite. Reply with only the re-written text and with no extra comments or other text. {%selected_html%}",
     "description": ""
   },
   "prompt_rewrite_formal_full_text": {
-    "message": "Rewrite the following text to be more formal. Reply with only the re-written text and with no extra comments or other text.",
+    "message": "Rewrite the following text to be more formal. Reply with only the re-written text and with no extra comments or other text. {%selected_html%}",
     "description": ""
   },
   "prompt_classify_full_text": {
@@ -861,7 +946,7 @@
     "description": ""
   },
   "prompt_proofread_this_full_text": {
-    "message": "Proofread the following email and also correct any spelling or grammar mistakes. Reply with only the corrected text and with no extra comments or other text.\n\n\"{%mail_typed_text%}\"",
+    "message": "Proofread the following email and also correct any spelling or grammar mistakes. Reply with only the corrected text and with no extra comments or other text.\n\n\"{%selected_html%}\"",
     "description": ""
   },
   "placeholder_tags_current_email": {
@@ -966,10 +1051,6 @@
   },
   "prefs_OptionText_add_tags_first_uppercase_Info": {
     "message": "If checked, the tags label will be set to lowercase letters with only the first letter uppercase.",
-    "description": ""
-  },
-  "AddTags_prompt_prefs_title": {
-    "message": "Add Tags Options",
     "description": ""
   },
   "prefs_SurveyLinkText": {
@@ -1077,7 +1158,7 @@
     "description": ""
   },
   "prompt_get_calendar_event_full_text": {
-    "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf the event is a full day event, endDate must be one day after startDate with time set to \"T000000\".\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%mail_text_body_or_selected%}\"",
+    "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Event Description (a concise summary of the email context, key topics/agenda, action items, and any video call links or access details)\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Location (if mentioned, specific building, room, or online with link)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf the event is a full day event, endDate must be one day after startDate with time set to \"T000000\".\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"description\": \"Detailed event description including agenda, action items and relevant notes from the email.\",\n\"forceAllDay\": false,\n\"location\": \"Location or URL here\",\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%mail_text_body_or_selected%}\"",
     "description": ""
   },
   "prompt_get_calendar_event_from_clipboard": {
@@ -1106,10 +1187,6 @@
   },
   "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
     "message": "Show an additional menu item to create calendar events from clipboard text content.",
-    "description": ""
-  },
-  "Summarize_prompt_prefs_title": {
-    "message": "Summarization Options",
     "description": ""
   },
   "prompt_summarize": {
@@ -1141,7 +1218,7 @@
     "description": ""
   },
   "prompt_get_task_full_text": {
-    "message": "Extract all relevant details required to generate a task from the following text. The extracted information should include:\n- Due Date and Time (including timezone, if specified)\n- Task summary\n- Initial Date and Time (including timezone, if specified)\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a task.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Task summary here\"\n}\nIf there are no information about the dates, remove them.\nHere's the text:\"{%selected_text%}\"",
+    "message": "Extract all relevant details required to generate a task from the following text. The extracted information should include:\n- Initial Date and Time (including timezone, if specified)\n- Due Date and Time (including timezone, if specified)\n- Task summary\n- Task Description (a concise summary of the email context, key topics and action items)\n- Location (if mentioned, specific building, room, or online with link)\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a task.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Task summary here\",\n\"description\": \"Detailed task description including action items and relevant notes from the email.\",\n\"location\": \"Location or URL here\"\n}\nIf there are no information about the dates, remove them.\nHere's the text:\"{%selected_text%}\"",
     "description": ""
   },
   "prefs_OptionText_get_calendar_event": {
@@ -1152,20 +1229,12 @@
     "message": "If checked, an item will be included in the menu to get calendar event information from selected text.",
     "description": ""
   },
-  "get_calendar_event_prompt_prefs_title": {
-    "message": "Calendar Events Options",
-    "description": ""
-  },
   "prefs_OptionText_get_task": {
     "message": "Add a new task from selected text",
     "description": ""
   },
   "prefs_OptionText_get_task_Info": {
     "message": "If checked, an item will be included in the menu to get task information from selected text.",
-    "description": ""
-  },
-  "get_task_prompt_prefs_title": {
-    "message": "Tasks Options",
     "description": ""
   },
   "Select_your_timezone": {
@@ -1312,6 +1381,14 @@
     "message": "If checked, the AI will only add tags to emails received in the inbox folder.",
     "description": ""
   },
+  "prefs_OptionText_add_tags_auto_include_sent": {
+    "message": "Also add tags to sent emails",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_auto_include_sent_Info": {
+    "message": "The automatic processing never runs on the drafts, templates, outbox, junk and trash folders, and it skips the sent folder too. If checked, the AI will also add tags to the emails you send.",
+    "description": ""
+  },
   "prefs_OptionText_add_tags_use_specific_integration_Info": {
     "message": "If checked, the Model and API specified below will be used for adding tags to emails, regardless the one choosen in the ThunderAI options page.",
     "description": ""
@@ -1340,7 +1417,7 @@
     "message": "Information about the attachments in the email",
     "description": ""
   },
-  "empty": {
+  "placeholder_empty": {
     "message": "This placeholder doesn't add any text, but it prevents the email body from being automatically appended at the end of the prompt.",
     "description": ""
   },
@@ -1391,10 +1468,6 @@
   "prompt_spamfilter_full_text" : {
     "message" : "Analyze the following email and determine if it is spam or not. Consider factors such as suspicious keywords, excessive promotional language, misleading subject lines, requests for personal information, and unusual sender addresses.\nProvide a value from 0 (not spam) to 100 (spam) and an explanation of no more than 10 words.\nIn case of missing message data, set the value to 0 (not spam), and give the reason.\nGenerate a response in JSON format only. Do not include any additional text or explanation; provide only the JSON. Here is the format to be used:\n{\n\"explanation\": \"Brief explanation of your reasoning\",\n\"spamValue\": <integer from 0 to 100>\n}\nHere there are the mail information:\nSender: \"{%author%}\"\nSubject: \"{%mail_subject%}\"\nHtml body: \"{%mail_html_body%}\"",
     "description" : ""
-  },
-  "SpamFilter_prompt_prefs_title": {
-    "message": "Spam Filter Options",
-    "description": ""
   },
   "Summarize_PageTitle": {
     "message": "Manage Summarize Settings",
@@ -1480,6 +1553,10 @@
     "message": "The sender is a contact in the address book.",
     "description": ""
   },
+  "spamfilter_prompt_missing_explanation": {
+    "message": "The Spam Filter special prompt is missing. If you modified the special prompts, try restoring the default Spam Filter prompt.",
+    "description": ""
+  },
   "addressbook_permission_denied": {
     "message": "Address book permission was denied. Please enable the feature again to grant permission.",
     "description": ""
@@ -1548,6 +1625,172 @@
     "message": "Differences between the original and the modified text",
     "description": ""
   },
+  "apiwebchat_picker_title": {
+    "message": "Review the changes",
+    "description": "Title of the transcript turn holding the interactive change picker"
+  },
+  "apiwebchat_picker_toolbar": {
+    "message": "Change picker actions",
+    "description": "Accessible label of the change picker toolbar"
+  },
+  "apiwebchat_picker_counter": {
+    "message": "$ACCEPTED$ of $TOTAL$ changes accepted",
+    "description": "Change picker counter",
+    "placeholders": {
+      "accepted": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "apiwebchat_picker_counter_all": {
+    "message": "All $TOTAL$ changes accepted",
+    "description": "Change picker status shown when every change is accepted",
+    "placeholders": {
+      "total": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_picker_step_short": {
+    "message": "$CURRENT$ / $TOTAL$",
+    "description": "Change picker stepper label, compact form used on wide layouts",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "apiwebchat_picker_step_long": {
+    "message": "Change $CURRENT$ of $TOTAL$",
+    "description": "Change picker stepper label, full form used on narrow layouts",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "apiwebchat_picker_step_total": {
+    "message": "$TOTAL$ changes",
+    "description": "Change picker stepper label before the user has navigated to a specific change, narrow layout",
+    "placeholders": {
+      "total": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_picker_progress": {
+    "message": "Accepted changes",
+    "description": "Accessible label of the change picker's progress bar"
+  },
+  "apiwebchat_picker_more_actions": {
+    "message": "More actions",
+    "description": "Accessible label of the change picker's overflow menu button"
+  },
+  "apiwebchat_picker_edit": {
+    "message": "Edit manually",
+    "description": "Change picker button that switches from reviewing changes to freely editing the text"
+  },
+  "apiwebchat_picker_review": {
+    "message": "Back to changes",
+    "description": "Change picker button that leaves manual editing and compares the edited text against the original again"
+  },
+  "apiwebchat_picker_editor": {
+    "message": "Edited text",
+    "description": "Accessible label of the change picker's manual editing text box"
+  },
+  "apiwebchat_picker_edit_hint": {
+    "message": "You are editing the text by hand. If you change it, going back to the changes will compare what you wrote with the original text again and every choice will be reset.",
+    "description": "Note shown by the change picker while in manual editing mode"
+  },
+  "apiwebchat_picker_granularity": {
+    "message": "Compare by",
+    "description": "Accessible label of the change picker's word/sentence granularity toggle"
+  },
+  "apiwebchat_picker_granularity_words": {
+    "message": "Words",
+    "description": "Change picker granularity option: compare the texts word by word"
+  },
+  "apiwebchat_picker_granularity_sentences": {
+    "message": "Sentences",
+    "description": "Change picker granularity option: compare the texts sentence by sentence"
+  },
+  "apiwebchat_picker_accept_all": {
+    "message": "Accept all",
+    "description": ""
+  },
+  "apiwebchat_picker_reject_all": {
+    "message": "Reject all",
+    "description": ""
+  },
+  "apiwebchat_picker_prev": {
+    "message": "Previous change",
+    "description": ""
+  },
+  "apiwebchat_picker_next": {
+    "message": "Next change",
+    "description": ""
+  },
+  "apiwebchat_picker_no_changes": {
+    "message": "The answer is identical to the original text: there is nothing to review.",
+    "description": "Shown by the change picker when the diff found no differences"
+  },
+  "apiwebchat_picker_diff_failed": {
+    "message": "The two texts could not be compared. The answer is shown unchanged.",
+    "description": "Shown by the change picker when the diff could not be computed"
+  },
+  "apiwebchat_picker_side_old_active": {
+    "message": "Original text, kept: $TEXT$",
+    "description": "Accessible label of the original version of a change, when it is the one in use",
+    "placeholders": {
+      "text": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_picker_side_old_inactive": {
+    "message": "Original text, discarded: $TEXT$. Activate to keep it instead.",
+    "description": "Accessible label of the original version of a change, when it is not the one in use",
+    "placeholders": {
+      "text": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_picker_side_new_active": {
+    "message": "Suggested text, kept: $TEXT$",
+    "description": "Accessible label of the suggested version of a change, when it is the one in use",
+    "placeholders": {
+      "text": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_picker_side_new_inactive": {
+    "message": "Suggested text, discarded: $TEXT$. Activate to keep it instead.",
+    "description": "Accessible label of the suggested version of a change, when it is not the one in use",
+    "placeholders": {
+      "text": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_picker_side_empty_active": {
+    "message": "No text here: this part is left out. Activate the other version to keep its text.",
+    "description": "Accessible label of the empty side of a change (an insertion with no original, or a deletion with no replacement), when it is the one in use"
+  },
+  "apiwebchat_picker_side_empty_inactive": {
+    "message": "No text here. Activate to leave this part out.",
+    "description": "Accessible label of the empty side of a change, when it is not the one in use"
+  },
   "apiwebchat_you": {
     "message": "You",
     "description": ""
@@ -1576,6 +1819,34 @@
     "message": "Done!",
     "description": ""
   },
+  "apiwebchat_copy": {
+    "message": "Copy",
+    "description": "Button in the AI chat window that copies the answer to the clipboard"
+  },
+  "apiwebchat_copied": {
+    "message": "Copied",
+    "description": "Confirmation shown briefly after the answer has been copied to the clipboard"
+  },
+  "apiwebchat_copy_failed": {
+    "message": "Copy failed",
+    "description": "Shown when the answer could not be copied to the clipboard"
+  },
+  "apiwebchat_status_error": {
+    "message": "Error",
+    "description": "Status indicator in the AI chat window when the request failed"
+  },
+  "apiwebchat_show_options": {
+    "message": "Show options",
+    "description": "Accessible label for the arrow that opens the options menu of the main action button"
+  },
+  "apiwebchat_turn_tools": {
+    "message": "Answer actions",
+    "description": "Accessible label for the small toolbar shown on each answer in the AI chat window"
+  },
+  "apiwebchat_scroll_to_latest": {
+    "message": "Scroll to latest",
+    "description": "Accessible label for the floating button in the AI chat window that jumps back to the newest content and resumes auto-scrolling"
+  },
   "hyprland_warning": {
     "message": "If you're having trouble opening the AI chat window, try setting the height and width values to 0. This issue can occur on linux in certain environments, for example, when using Hyprland.",
     "description": ""
@@ -1602,14 +1873,6 @@
   },
   "CORS_localhost_warn": {
     "message": "If you are using localhost or 127.0.0.1 because the AI server is hosted on your PC, the <all_urls> permission is required.",
-    "description": ""
-  },
-  "prefs_OptionText_composing_plain_text": {
-    "message": "Composing in plain text",
-    "description": ""
-  },
-  "prefs_OptionText_composing_plain_text_Info": {
-    "message": "Check this option if you're composing the emails in plain text format.",
     "description": ""
   },
   "Replace_No_Selected_Text": {
@@ -1745,7 +2008,7 @@
     "description": ""
   },
   "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
-    "message": "Maximum tokens the model may spend on extended thinking. Set to 0 to disable extended thinking. When enabled, the temperature value is ignored by the Claude API.",
+    "message": "Maximum tokens the model may spend on extended thinking. Set to 0 to disable extended thinking. Must be lower than Max Tokens. Newer Claude models do not accept a manual budget and use the Effort setting instead: when one of them is selected this field is disabled and its value is not sent.",
     "description": ""
   },
   "anthropic_empty_apikey": {
@@ -1762,6 +2025,66 @@
   },
   "anthropic_api_request_failed": {
     "message": "Claude API request failed",
+    "description": ""
+  },
+  "anthropic_err_hint_temperature": {
+    "message": "The selected Claude model ($MODEL$) does not accept the Temperature setting. Clear the Temperature field, or use the Effort setting instead.",
+    "description": ""
+  },
+  "anthropic_err_hint_budget_tokens": {
+    "message": "The selected Claude model ($MODEL$) does not accept a manual extended thinking budget. Set the Extended thinking budget to 0 and use the Effort setting instead.",
+    "description": ""
+  },
+  "anthropic_err_hint_thinking_type": {
+    "message": "The selected Claude model ($MODEL$) does not accept this thinking configuration. Check the Extended thinking budget and Effort settings.",
+    "description": ""
+  },
+  "anthropic_err_hint_effort": {
+    "message": "The selected Claude model ($MODEL$) does not accept this Effort level. Choose a different level in the options page.",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_effort": {
+    "message": "Effort",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_effort_Info": {
+    "message": "How much reasoning effort the model should spend on a request. Higher levels give better answers on complex tasks but cost more tokens and take longer. Leave it on the default to let the Claude API decide. Older Claude models do not support this setting.",
+    "description": ""
+  },
+  "anthropic_effort_default": {
+    "message": "Default (decided by the API)",
+    "description": "Empty option of the Claude effort selector, meaning no effort value is sent."
+  },
+  "Anthropic_Effort_Level_low": {
+    "message": "Low",
+    "description": ""
+  },
+  "Anthropic_Effort_Level_medium": {
+    "message": "Medium",
+    "description": ""
+  },
+  "Anthropic_Effort_Level_high": {
+    "message": "High",
+    "description": ""
+  },
+  "Anthropic_Effort_Level_xhigh": {
+    "message": "Extra high",
+    "description": ""
+  },
+  "Anthropic_Effort_Level_max": {
+    "message": "Maximum",
+    "description": ""
+  },
+  "anthropic_note_temperature_unsupported": {
+    "message": "The selected model does not accept a Temperature value and ignores this field. Use the Effort setting instead. The value is kept in case you switch back to an older model.",
+    "description": ""
+  },
+  "anthropic_note_budget_tokens_unsupported": {
+    "message": "The selected model does not accept a manual extended thinking budget and ignores this field. Use the Effort setting instead. The value is kept in case you switch back to an older model.",
+    "description": ""
+  },
+  "anthropic_note_effort_unsupported": {
+    "message": "The selected model does not support the Effort setting. Use the Extended thinking budget instead.",
     "description": ""
   },
   "_api_connecting": {
@@ -1822,6 +2145,62 @@
     "message": "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.",
     "description": ""
   },
+  "prefs_OptionText_chatgpt_reasoning_summary": {
+    "message": "Reasoning summary",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_reasoning_summary_Info": {
+    "message": "Ask the API for a summary of the model's reasoning, shown in the chat as a collapsible block. Only recent reasoning models support it, such as gpt-5, o3 and o4-mini: older ones like o1-pro and o3-mini reason internally but never expose a summary, so the block stays hidden. Leave disabled for models without reasoning support.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_reasoning_effort": {
+    "message": "Reasoning effort",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_extra_body": {
+    "message": "Extra body data",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_extra_body_info": {
+    "message": "Additional parameters to send with every API call, as a JSON object, like {\"top_p\": 0.9}. Useful for options the OpenAI API supports but ThunderAI doesn't expose. The parameters managed by ThunderAI (model, input, streaming, temperature, reasoning, instructions) can't be overridden here. An invalid value is ignored.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_reasoning_effort_Info": {
+    "message": "How much effort the model spends on reasoning before answering. Lower values give faster and cheaper replies, higher values give more thorough ones. Leave on the API default to let OpenAI decide. Ignored by models without reasoning support.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_reasoning_disabled": {
+    "message": "Disabled",
+    "description": "Option for the reasoning summary dropdown, meaning no summary is requested."
+  },
+  "prefs_OptionText_chatgpt_reasoning_api_default": {
+    "message": "API default",
+    "description": "Option for the reasoning effort dropdown, meaning the value is not sent and the API default applies."
+  },
+  "prefs_OptionText_chatgpt_reasoning_summary_auto": {
+    "message": "Auto",
+    "description": "Option for the reasoning summary dropdown: the API picks the summary detail level."
+  },
+  "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
+    "message": "Detailed",
+    "description": "Option for the reasoning summary dropdown: request a more detailed summary."
+  },
+  "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
+    "message": "Minimal",
+    "description": "Option for the reasoning effort dropdown: the lowest amount of reasoning."
+  },
+  "prefs_OptionText_chatgpt_reasoning_effort_low": {
+    "message": "Low",
+    "description": "Option for the reasoning effort dropdown."
+  },
+  "prefs_OptionText_chatgpt_reasoning_effort_medium": {
+    "message": "Medium",
+    "description": "Option for the reasoning effort dropdown."
+  },
+  "prefs_OptionText_chatgpt_reasoning_effort_high": {
+    "message": "High",
+    "description": "Option for the reasoning effort dropdown: the highest amount of reasoning."
+  },
   "prefs_ollama_temperature_Info": {
     "message": "The temperature of the model. Increasing the temperature will make the model answer more creatively. The default value is 0.8. It is recommended to use values between 0 and 1.",
     "description": ""
@@ -1857,6 +2236,15 @@
   "customDataPH_manageDataPH": {
     "message": "Manage Data Placeholders",
     "description": ""
+  },
+  "customDataPH_placeholdersCount": {
+    "message": "$COUNT$ data placeholders",
+    "description": "Footer count of data placeholders shown in the list",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "customDataPH_manageDataPH_info_default_3": {
     "message": "You can also use the default data placeholders with autocomplete, just like when writing custom prompts.",
@@ -1984,7 +2372,7 @@
     "description": ""
   },
   "prefs_anthropic_temperature_Info": {
-    "message": "Amount of randomness injected into the response. Defaults to 1.0. Ranges from 0.0 to 1.0. Use temperature closer to 0.0 for analytical / multiple choice, and closer to 1.0 for creative and generative tasks. Note that even with temperature of 0.0, the results will not be fully deterministic.",
+    "message": "Amount of randomness injected into the response. Ranges from 0.0 to 1.0, and defaults to 1.0 when left empty. Newer Claude models do not accept this setting at all and use the Effort setting instead: when one of them is selected this field is disabled and its value is not sent.",
     "description": ""
   },
   "Optional_Permission_Denied_Model_Fetching": {
@@ -2079,6 +2467,42 @@
       "message": "Remove HTML and Markdown formatting from the AI-generated summary, showing plain text only.",
       "description": ""
   },
+  "Summarize_auto_senders_title": {
+      "message": "Automatic summary sender list",
+      "description": ""
+  },
+  "Summarize_auto_senders_infoline": {
+      "message": "Emails coming from these senders are summarized automatically, without any click. The summary is generated when the email is received, or when you open it if it was not caught on reception.",
+      "description": ""
+  },
+  "Summarize_auto_senders_infoline2": {
+      "message": "Add one email address per line, or separated by a comma. Use \"@domain.com\" to match every sender of a whole domain.",
+      "description": ""
+  },
+  "Summarize_auto_senders_api_warning": {
+      "message": "Warning: these summaries are generated automatically, so every email from these senders consumes API tokens and may increase the cost of your AI subscription. Keep the list as short as possible.",
+      "description": ""
+  },
+  "Summarize_auto_senders_notice": {
+      "message": "Auto-summarize is disabled, but the summary is still generated automatically for the senders in the list below.",
+      "description": ""
+  },
+  "Summarize_auto_senders_disabled_note": {
+      "message": "Not available when auto-summarize is set to generate the summary on email receive: in that mode every incoming email is already summarized.",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_auto_senders": {
+      "message": "Summarize these senders automatically",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_auto_senders_Info": {
+      "message": "If enabled, emails coming from the senders listed below are summarized automatically, even when auto-summarize is disabled above.",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_auto_senders_list_Info": {
+      "message": "Sender addresses to summarize automatically:",
+      "description": ""
+  },
   "summarize_see_more": {
       "message": "See more",
       "description": ""
@@ -2153,6 +2577,10 @@
       "message": "Failed to generate summary",
       "description": ""
   },
+  "summarize_error_no_message_id": {
+      "message": "Could not read the message: the summary would have been generated from the subject only.",
+      "description": "Shown in the summary panel when the message id is missing, so the message body cannot be read"
+  },
   "summarize_click_to_generate": {
       "message": "Click here to generate a summary",
       "description": ""
@@ -2207,10 +2635,6 @@
   },
   "Translate_prompt_text_title": {
     "message": "Current prompt text",
-    "description": ""
-  },
-  "Translate_prompt_prefs_title": {
-    "message": "Translation Options",
     "description": ""
   },
   "prefs_OptionText_translate_auto": {
@@ -2309,6 +2733,10 @@
     "message": "Translation failed.",
     "description": ""
   },
+  "translate_error_no_message_id": {
+    "message": "Could not read the message: the translation would have been generated from the subject only.",
+    "description": "Shown in the translation panel when the message id is missing, so the message body cannot be read"
+  },
   "translate_no_language_configured": {
     "message": "Translation language is not configured. Please set a language in the Translation settings or set a default language in the General settings.",
     "description": ""
@@ -2385,6 +2813,14 @@
     "message": "Menu order saved!",
     "description": "Message shown after saving menu order"
   },
+  "menu_order_reset_all": {
+    "message": "Reset all",
+    "description": "Menu order page: button restoring default order, visibility and icons for all menu items"
+  },
+  "menu_order_reset_all_tooltip": {
+    "message": "Restores the default order, visibility and icons for all menu items. Press Save all to apply.",
+    "description": "Menu order page: tooltip for the button restoring default order, visibility and icons for all menu items"
+  },
   "menu_order_tab_reading": {
     "message": "Reading",
     "description": "Sub-tab label for reading view ordering"
@@ -2392,6 +2828,10 @@
   "menu_order_tab_composing": {
     "message": "Composing",
     "description": "Sub-tab label for composing view ordering"
+  },
+  "menu_order_tab_dot_tooltip": {
+    "message": "The selected prompt also appears in this list",
+    "description": "Tooltip for the dot shown on a sub-tab when the highlighted prompt is present there too"
   },
   "menu_order_badge_default": {
     "message": "Default",
@@ -2421,8 +2861,12 @@
     "message": "Manage menu order settings",
     "description": "Button label to open the menu order page from options"
   },
+  "menu_position_btn_label": {
+    "message": "Menu position",
+    "description": "Button in the Custom Prompts editor that opens the Menu Order page and highlights this prompt"
+  },
   "menu_order_info": {
-    "message": "Drag and drop items to reorder them. Use the toggle to show or hide items in each menu.",
+    "message": "Drag and drop items to reorder them, or drag them between the Visible and Hidden sections to show or hide them in each menu. A prompt hidden in every menu is disabled until you make it visible again.",
     "description": "Info text for the menu order page"
   },
   "menu_order_active_items": {
@@ -2441,6 +2885,42 @@
     "message": "(none)",
     "description": "Dropdown option meaning no custom icon is selected for the context menu item"
   },
+  "menu_order_icon_default": {
+    "message": "Default icon",
+    "description": "Icon picker option that clears the custom icon and restores the prompt's built-in default icon"
+  },
+  "menu_order_legend_type": {
+    "message": "When shown:",
+    "description": "Heading for the type badge group in the menu order page legend"
+  },
+  "menu_order_legend_type_always": {
+    "message": "Shown both when reading and composing",
+    "description": "Legend description for the 'Always' type badge"
+  },
+  "menu_order_legend_type_reading": {
+    "message": "Shown only when reading a message",
+    "description": "Legend description for the 'Reading' type badge"
+  },
+  "menu_order_legend_type_composing": {
+    "message": "Shown only when composing a message",
+    "description": "Legend description for the 'Composing' type badge"
+  },
+  "menu_order_legend_source": {
+    "message": "Prompt type:",
+    "description": "Heading for the source badge group in the menu order page legend"
+  },
+  "menu_order_legend_source_default": {
+    "message": "Built-in prompt included with ThunderAI",
+    "description": "Legend description for the 'Default' source badge"
+  },
+  "menu_order_legend_source_special": {
+    "message": "Feature-backed prompt (e.g. tagging, calendar)",
+    "description": "Legend description for the 'Special' source badge"
+  },
+  "menu_order_legend_source_custom": {
+    "message": "Prompt you created",
+    "description": "Legend description for the 'Custom' source badge"
+  },
   "prefs_settings_subtitle": {
     "message": "Settings",
     "description": "Subtitle shown under the ThunderAI name in the options page header"
@@ -2453,8 +2933,8 @@
     "message": "Connection Settings",
     "description": "Section eyebrow for the connection settings panel on the options page"
   },
-  "prefs_BasicsSettingsTitle": {
-    "message": "Basics Settings",
+  "prefs_BasicSettingsTitle": {
+    "message": "Basic Settings",
     "description": "Section eyebrow for the basic settings on the options page"
   },
   "prefs_FeaturesTitle": {
@@ -2472,14 +2952,6 @@
   "prefs_advanced_options": {
     "message": "Advanced options",
     "description": "Label of the app-level advanced options disclosure on the options page"
-  },
-  "prefs_conn_show_advanced": {
-    "message": "Show advanced options",
-    "description": "Label of the per-connection advanced options disclosure button when collapsed"
-  },
-  "prefs_conn_hide_advanced": {
-    "message": "Hide advanced options",
-    "description": "Label of the per-connection advanced options disclosure button when expanded"
   },
   "prefs_privacy_more_info":{
     "message": "Click here for more info about privacy"
@@ -2657,5 +3129,185 @@
   "msg_no_connection_selected": {
     "message": "No AI connection selected. Open the ThunderAI options and run the setup wizard to choose one.",
     "description": "Alert shown when a prompt is run but no AI connection has been selected"
+  },
+  "onboarding_tab_title": {
+    "message": "Welcome to ThunderAI!",
+    "description": "Onboarding page: browser tab title and first line of the welcome paragraph"
+  },
+  "onboarding_welcome_2": {
+    "message": "This add-on is designed to enhance your email management with the power of AI.",
+    "description": "Onboarding page: second line of the welcome paragraph"
+  },
+  "onboarding_welcome_3": {
+    "message": "With ThunderAI, you can streamline your inbox, generate smart replies, summarize emails, automatically add tags and filter spam, and much more, all with the help of artificial intelligence.",
+    "description": "Onboarding page: third line of the welcome paragraph"
+  },
+  "onboarding_welcome_4": {
+    "message": "On this page, you'll find an overview of the key features available to help you make the most of ThunderAI.",
+    "description": "Onboarding page: fourth line of the welcome paragraph"
+  },
+  "onboarding_welcome_5": {
+    "message": "Get ready to experience a smarter, more efficient way to handle your emails!",
+    "description": "Onboarding page: fifth line of the welcome paragraph"
+  },
+  "onboarding_welcome_6": {
+    "message": "Let's see how to make best use of this add-on!",
+    "description": "Onboarding page: last line of the welcome paragraph"
+  },
+  "onboarding_using_prompts_title": {
+    "message": "Using Prompts",
+    "description": "Onboarding page: heading of the 'Using Prompts' section"
+  },
+  "onboarding_using_prompts_alt": {
+    "message": "Prompts menu button",
+    "description": "Onboarding page: alt text for the prompts menu button image"
+  },
+  "onboarding_using_prompts_1": {
+    "message": "On each message, there is a button that will allow you to open the prompts menu.",
+    "description": "Onboarding page: intro line of the 'Using Prompts' section"
+  },
+  "onboarding_using_prompts_2": {
+    "message": "Here you can choose the prompt in different ways:",
+    "description": "Onboarding page: line introducing the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li1_b": {
+    "message": "Search box",
+    "description": "Onboarding page: bold label of the first item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li1": {
+    "message": "Use this to search for part of the prompt.",
+    "description": "Onboarding page: description of the first item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li2_b": {
+    "message": "Down/Up Arrow",
+    "description": "Onboarding page: bold label of the second item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li2": {
+    "message": "Move through the prompts.",
+    "description": "Onboarding page: description of the second item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li3_b": {
+    "message": "Press a number",
+    "description": "Onboarding page: bold label of the third item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li3": {
+    "message": "Press a number on the keyboard to choose the corresponding prompt.",
+    "description": "Onboarding page: description of the third item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li4_b": {
+    "message": "Enter",
+    "description": "Onboarding page: bold label of the fourth item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li4": {
+    "message": "When you've picked the prompt you'd like, press enter to execute it.",
+    "description": "Onboarding page: description of the fourth item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_3": {
+    "message": "In the ThunderAI options page you could find some option regarding this menu.",
+    "description": "Onboarding page: closing note about the prompts menu options"
+  },
+  "onboarding_using_prompts_4": {
+    "message": "The first two prompts are special ones, that are available only when using an API integration. They work directly without opening the AI Chat webpage.",
+    "description": "Onboarding page: note about the first two special prompts working with API integrations"
+  },
+  "onboarding_custom_prompts_title": {
+    "message": "Defining your Custom Prompts",
+    "description": "Onboarding page: heading of the 'Defining your Custom Prompts' section"
+  },
+  "onboarding_custom_prompts_alt": {
+    "message": "Managing Custom Prompts",
+    "description": "Onboarding page: alt text for the custom prompts management image"
+  },
+  "onboarding_custom_prompts_p1_1": {
+    "message": "From the options page you can open the Custom Prompts page.",
+    "description": "Onboarding page: first line of the custom prompts section"
+  },
+  "onboarding_custom_prompts_p1_3": {
+    "message": "From there you can add your prompts, and also disable the default ones.",
+    "description": "Onboarding page: line about adding and disabling prompts"
+  },
+  "onboarding_custom_prompts_p1_4": {
+    "message": "You can find more info here.",
+    "description": "Onboarding page: clickable 'more info' sentence in the custom prompts section (the whole sentence is a link)"
+  },
+  "onboarding_custom_prompts_p2_1": {
+    "message": "While defining your own prompts you can also use",
+    "description": "Onboarding page: text before the 'data placeholders' bold label"
+  },
+  "onboarding_custom_prompts_bold_dp": {
+    "message": "data placeholders",
+    "description": "Onboarding page: bold 'data placeholders' label"
+  },
+  "onboarding_custom_prompts_p2_2": {
+    "message": ", that will be substituted with the corresponding information when using the prompt.",
+    "description": "Onboarding page: text after the 'data placeholders' bold label"
+  },
+  "onboarding_custom_prompts_p3": {
+    "message": "For example, you can use the placeholder $PH_SUBJECT$ to refer to the subject of the email or $PH_TAGS$ to refer to the tags of the current email.",
+    "description": "Onboarding page: example sentence in the custom prompts section. $PH_SUBJECT$ and $PH_TAGS$ are placeholder codes ({%mail_subject%} and {%tags_current_email%}).",
+    "placeholders": {
+      "ph_subject": {
+        "content": "{%mail_subject%}"
+      },
+      "ph_tags": {
+        "content": "{%tags_current_email%}"
+      }
+    }
+  },
+  "onboarding_automatic_features_title": {
+    "message": "Automatic features",
+    "description": "Onboarding page: heading of the 'Automatic features' section"
+  },
+  "onboarding_automatic_features_alt": {
+    "message": "Auto spam filter",
+    "description": "Onboarding page: alt text for the automatic spam filter image"
+  },
+  "onboarding_automatic_features_1": {
+    "message": "There are also two automatic features available when using an API integration, which can be activated from the options page:",
+    "description": "Onboarding page: intro line of the 'Automatic features' section"
+  },
+  "onboarding_automatic_features_li1_b": {
+    "message": "Auto Spam Filter",
+    "description": "Onboarding page: bold label of the first item in the automatic features list"
+  },
+  "onboarding_automatic_features_li1": {
+    "message": "automatically moves the email to the spam folder if it is detected as spam.",
+    "description": "Onboarding page: description of the Auto Spam Filter feature"
+  },
+  "onboarding_automatic_features_li2_b": {
+    "message": "Auto Tagging",
+    "description": "Onboarding page: bold label of the second item in the automatic features list"
+  },
+  "onboarding_automatic_features_li2": {
+    "message": "automatically assigns tags to the email.",
+    "description": "Onboarding page: description of the Auto Tagging feature"
+  },
+  "onboarding_automatic_features_2": {
+    "message": "For each of these features, there is an options page to specify the settings and the custom prompt to be used.",
+    "description": "Onboarding page: closing note about the options pages for automatic features"
+  },
+  "onboarding_footer_1": {
+    "message": "If you have any questions or suggestions, please open an issue on the GitHub page.",
+    "description": "Onboarding page: clickable footer sentence linking to the GitHub issues page (the whole sentence is a link)"
+  },
+  "onboarding_footer_3": {
+    "message": "Do you enjoy ThunderAI?",
+    "description": "Onboarding page: footer question before the donation button"
+  },
+  "editor_placeholder_missing": {
+    "message": "This placeholder does not exist",
+    "description": "Tooltip on a highlighted placeholder token in the prompt editor when the placeholder id does not exist at all"
+  },
+  "editor_placeholder_partial_type": {
+    "message": "This placeholder works only in part of the contexts this prompt runs in: it stays empty in the other one",
+    "description": "Tooltip on a highlighted placeholder token in the prompt editor when the prompt type is 'always' (runs both while reading and while composing) but the placeholder is reading-only or composing-only, so it resolves in only one of the two contexts"
+  },
+  "editor_placeholder_wrong_type": {
+    "message": "This placeholder is not available for this prompt type",
+    "description": "Tooltip on a highlighted placeholder token in the prompt editor when the placeholder exists but its type is not compatible with the prompt's selected type"
+  },
+  "editor_placeholder_unterminated": {
+    "message": "Unterminated placeholder: missing the closing %}",
+    "description": "Tooltip on a highlighted placeholder token in the prompt editor when the token opens with {% but never closes with %}"
   }
 }

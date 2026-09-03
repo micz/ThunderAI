@@ -24,7 +24,10 @@ export const integration_options_config = {
         model: '',
         developer_messages: '',
         temperature: '',
-        store: false
+        store: false,
+        reasoning_summary: '',
+        reasoning_effort: '',
+        extra_body: ''
     },
     ollama: {
         host: '',
@@ -40,7 +43,8 @@ export const integration_options_config = {
         api_key: '',
         use_v1: true,
         chat_name: 'OpenAI Comp',
-        temperature: ''
+        temperature: '',
+        extra_body: ''
     },
     google_gemini: {
         api_key: '',
@@ -56,7 +60,8 @@ export const integration_options_config = {
         max_tokens: 4096,
         system_prompt: '',
         temperature: '',
-        extended_thinking_budget: 0
+        extended_thinking_budget: 0,
+        effort: ''
     }
 };
 
@@ -107,7 +112,6 @@ export const prefs_default = {
     default_chatgpt_lang: '',
     default_sign_name: '',
     reply_type: 'reply_all',
-    composing_plain_text: false,
     // Empty means "no AI connection selected yet": a new user is guided to the setup wizard
     // instead of having a provider forced on them.
     // Values: 'chatgpt_web', 'chatgpt_api', 'ollama_api', 'openai_comp_api', 'google_gemini_api', 'anthropic_api'
@@ -122,6 +126,9 @@ export const prefs_default = {
     placeholders_use_default_value: false,
     hide_thinking: true,
     api_webchat_font_scale: 1.0,   // font zoom factor for the API webchat (1.0 = 100%)
+    // Default comparison unit of the proofreading change picker: 'words' or
+    // 'sentences'. A prompt can override it; '' on a prompt means "inherit this".
+    diff_granularity: 'words',
     max_prompt_length: 30000,   // max string length for prompt
     add_tags: false,
     add_tags_maxnum: 3,
@@ -132,6 +139,7 @@ export const prefs_default = {
     add_tags_auto: false,
     add_tags_auto_force_existing: false,
     add_tags_auto_only_inbox: true,
+    add_tags_auto_include_sent: false,  // Auto tagging normally skips the sent folder, this re-enables it
     add_tags_auto_uselist: false,
     add_tags_auto_uselist_list: '',
     add_tags_enabled_accounts: [],
@@ -154,6 +162,8 @@ export const prefs_default = {
     summarize_max_messages: 20,          // max number of messages summarized at once (webchat mode); above this the user is warned and the operation is blocked
     summarize_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
     summarize_strip_formatting: false,   // strip HTML/markdown formatting from AI summary
+    summarize_auto_senders: false,       // auto-summarize emails coming from the addresses in the list below
+    summarize_auto_senders_list: [],     // sender addresses or domain patterns ("@domain.com", "*@domain.com")
     translate: true,
     translate_auto: 0,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
     translate_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline

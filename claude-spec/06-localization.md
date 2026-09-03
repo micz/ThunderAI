@@ -71,6 +71,8 @@ Example:
 
 ## Supported Languages
 
+**Two different lists, and they are not meant to agree.** `_locales/` is every language Weblate has opened a translation for; `LANG.md` at the repo root is the subset complete enough to be packaged into a release, maintained by hand. A locale present in `_locales/` but absent from `LANG.md` is deliberately excluded, not an oversight — do not reconcile them.
+
 The authoritative list is the set of directories under `_locales/` (source of truth — do not duplicate it here as a static count, it changes as Weblate adds languages). As of writing:
 
 | Code | Language |

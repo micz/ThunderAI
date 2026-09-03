@@ -94,7 +94,18 @@
     << All the API settings defined in the default options, with the same IDs. >>
 */
 
-import { integration_options_config } from "../../options/mzta-options-default.js";
+import { integration_options_config } from "../options/mzta-options-default.js";
+
+// The five boolean-ish prompt flags documented above. Canonical representation
+// is the string "0"/"1" -- that is what the definitions below declare, and what
+// normalizePromptFlags() collapses every stored value back to.
+export const promptBooleanFlags = [
+    'need_selected',
+    'need_signature',
+    'need_custom_text',
+    'define_response_lang',
+    'use_diff_viewer',
+];
 
 const defaultPrompts = [
     {
@@ -217,7 +228,7 @@ const defaultPrompts = [
         text: "prompt_proofread_this_full_text",
         type: "2",
         action: "2",
-        need_selected: "0",
+        need_selected: "1",
         need_signature: "0",
         need_custom_text: "0",
         define_response_lang: "1",
@@ -403,7 +414,7 @@ const specialPrompts = [
 ];
 
 
-export async function getPrompts(onlyEnabled = false, includeSpecial = [], allSpecial = false){ // includeSpecial is an array of active special prompts ids
+export async function getPrompts(onlyReachable = false, includeSpecial = [], allSpecial = false){ // includeSpecial is an array of active special prompts ids
     const _defaultPrompts = await getDefaultPrompts_withProps();
     // console.log('>>>>>>>>>>>> getPrompts _defaultPrompts: ' + JSON.stringify(_defaultPrompts));
     const customPrompts = await getCustomPrompts();
@@ -426,8 +437,10 @@ export async function getPrompts(onlyEnabled = false, includeSpecial = [], allSp
         //     return isIncluded || isNotSpecial;
         //   });
     }
-    if(onlyEnabled){
-        output = output.filter(obj => obj.enabled != 0);
+    if(onlyReachable){
+        // Reachability is fully determined by show_in: a prompt with show_in === 'none'
+        // is in no menu and cannot be invoked by anything (the shortcut just opens the popup).
+        output = output.filter(obj => String(obj.show_in) !== 'none');
     }else{  // order only if we are not filtering, the filtering is for the menus and we are ordering there after i18n
         output.sort((a, b) => a.id.localeCompare(b.id));
     }
@@ -469,7 +482,7 @@ export function preparePromptsForExport(prompts, include_api_settings = false){
         }
 
         if(prompt.is_default == 1){
-            let allowedKeys = ['id', 'enabled', 'position_compose', 'position_display', 'position_context', 'need_custom_text', 'show_in', 'custom_icon'];
+            let allowedKeys = ['id', 'position_compose', 'position_display', 'position_context', 'need_custom_text', 'show_in', 'custom_icon'];
             if(include_api_settings){
                 allowedKeys.push('api_type');
                 for (const [integration, options] of Object.entries(integration_options_config)) {
@@ -504,9 +517,59 @@ export async function preparePromptsForImport(prompts){
             output.push(prompt);
         }
     });
+    // Backward-compat: old backups may still carry the removed `enabled` flag.
+    // Map enabled == 0 to show_in === 'none' and drop the field.
+    output.forEach(normalizeEnabledToShowIn);
+    // A backup file carries whatever representation the version that wrote it
+    // used (numbers, strings, or a missing key), and the merge above copies it
+    // verbatim -- so collapse the flags to the canonical "0"/"1" here too.
+    output.forEach((prompt) => normalizePromptFlags(prompt));
     output.sort((a, b) => a.id.localeCompare(b.id));
     // console.log(">>>>>>>>>>> preparePromptsForImport final output: " + JSON.stringify(output));
     return output;
+}
+
+// Backward-compat helper: the prompt `enabled` flag has been removed in favour of
+// show_in being the single source of truth. Map a legacy enabled == 0 to
+// show_in = 'none' (the "off" state), then drop the field entirely.
+export function normalizeEnabledToShowIn(prompt) {
+    if (prompt.enabled === 0 || prompt.enabled === "0") {
+        prompt.show_in = 'none';
+    }
+    delete prompt.enabled;
+}
+
+// True only for the values that legitimately mean "on". Everything else --
+// including the out-of-domain "" that setDefaultPromptsProperties used to write
+// -- means "off". Kept deliberately strict: a corrupted value must never turn a
+// behaviour on.
+export function isPromptFlagOn(value) {
+    return value === 1 || value === "1" || value === true;
+}
+
+// Normalizing helper, same shape as normalizeEnabledToShowIn above: mutating,
+// idempotent, one prompt at a time. The customprompts UI writes these flags as
+// numbers while the built-ins are strings, and a missing value used to degrade
+// to "" -- three representations for one field. This collapses them to "0"/"1"
+// and guarantees every key is present, so consumers can compare against "1"
+// without caring where the prompt came from.
+//
+// `fallbacks` supplies the value to use when the stored one is out of domain
+// (neither 0/1 nor "0"/"1"). Default prompts pass their built-in value here so a
+// corrupted override falls back to what the prompt ships with, rather than to a
+// blanket "0" which would silently disable prompts built with the flag on.
+export function normalizePromptFlags(prompt, fallbacks = {}) {
+    promptBooleanFlags.forEach((flag) => {
+        const value = prompt[flag];
+        if (value === 0 || value === "0") {
+            prompt[flag] = "0";
+        } else if (isPromptFlagOn(value)) {
+            prompt[flag] = "1";
+        } else {
+            // Out of domain ("", undefined, "undefined", null, ...).
+            prompt[flag] = isPromptFlagOn(fallbacks[flag]) ? "1" : "0";
+        }
+    });
 }
 
 async function getDefaultPrompts_withProps() {
@@ -523,7 +586,7 @@ async function getDefaultPrompts_withProps() {
             prompt.position_display = pos;
             prompt.position_compose = pos;
             prompt.position_context = pos;
-            prompt.enabled = 1;
+            normalizePromptFlags(prompt);
             pos++;
         })
         // console.log('>>>>>>>>>>>> getDefaultPrompts_withProps [no prop saved] defaultPrompts_prop: ' + JSON.stringify(defaultPrompts_prop));
@@ -531,11 +594,18 @@ async function getDefaultPrompts_withProps() {
         let pos = 1000;
         defaultPrompts_prop.forEach((prompt) => {
             prompt.text = browser.i18n.getMessage(prompt.text);
+            // Captured before the stored properties overwrite them: they are the
+            // fallback for an override that is out of domain (see below).
+            const builtInFlags = { ...prompt };
             if(prefs._default_prompts_properties?.[prompt.id]){
                 prompt.position_compose = prefs._default_prompts_properties[prompt.id].position_compose;
                 prompt.position_display = prefs._default_prompts_properties[prompt.id].position_display;
                 prompt.position_context = prefs._default_prompts_properties[prompt.id]?.position_context || prompt.position_display;
-                prompt.enabled = prefs._default_prompts_properties[prompt.id].enabled;
+                // need_custom_text is the only one of the five flags persisted for
+                // default prompts, so it is the only one that can come back out of
+                // domain (older versions wrote "" for a missing value). Assign it
+                // raw here; normalizePromptFlags() below turns a bad value back
+                // into the built-in rather than silently forcing it off.
                 prompt.need_custom_text = prefs._default_prompts_properties[prompt.id].need_custom_text;
                 prompt.chatgpt_web_model = prefs._default_prompts_properties[prompt.id].chatgpt_web_model;
                 prompt.chatgpt_web_project = prefs._default_prompts_properties[prompt.id].chatgpt_web_project;
@@ -547,9 +617,9 @@ async function getDefaultPrompts_withProps() {
                 prompt.position_display = pos;
                 prompt.position_compose = pos;
                 prompt.position_context = pos;
-                prompt.enabled = 1;
                 pos++;
             }
+            normalizePromptFlags(prompt, builtInFlags);
         })
         // console.log('>>>>>>>>>>>> getDefaultPrompts_withProps [prop saved] defaultPrompts_prop: ' + JSON.stringify(defaultPrompts_prop));
     }
@@ -564,9 +634,11 @@ async function getCustomPrompts() {
         return [];
     } else {
         prefs._custom_prompt.forEach(prompt => {
-            if (prompt.use_diff_viewer === undefined) {
-                prompt.use_diff_viewer = "0";
-            }
+            // The customprompts UI writes these as numbers; collapse them (and any
+            // missing value, which used to leave use_diff_viewer undefined) to the
+            // canonical "0"/"1". Custom prompts have no built-in to fall back to,
+            // so an out-of-domain value means off.
+            normalizePromptFlags(prompt);
             if(prompt.chatgpt_web_model === undefined){
                 prompt.chatgpt_web_model = "";
             }
@@ -597,8 +669,10 @@ export async function setDefaultPromptsProperties(prompts) {
             position_compose: (prompt.position_compose === undefined || prompt.position_compose === "undefined") ? "" : prompt.position_compose,
             position_display: (prompt.position_display === undefined || prompt.position_display === "undefined") ? "" : prompt.position_display,
             position_context: (prompt.position_context === undefined || prompt.position_context === "undefined") ? "" : prompt.position_context,
-            enabled: (prompt.enabled === undefined || prompt.enabled === "undefined") ? "" : prompt.enabled,
-            need_custom_text: (prompt.need_custom_text === undefined || prompt.need_custom_text === "undefined") ? "" : prompt.need_custom_text,
+            // Never persist an out-of-domain value: "" used to be written for a
+            // missing flag, and it reads as "on" in the editor but "off"
+            // everywhere else. Store the canonical "0"/"1" instead.
+            need_custom_text: isPromptFlagOn(prompt.need_custom_text) ? "1" : "0",
             chatgpt_web_model: (prompt.chatgpt_web_model === undefined || prompt.chatgpt_web_model === "undefined") ? "" : prompt.chatgpt_web_model,
             chatgpt_web_project: (prompt.chatgpt_web_project === undefined || prompt.chatgpt_web_project === "undefined") ? "" : prompt.chatgpt_web_project,
             chatgpt_web_custom_gpt: (prompt.chatgpt_web_custom_gpt === undefined || prompt.chatgpt_web_custom_gpt === "undefined") ? "" : prompt.chatgpt_web_custom_gpt,
@@ -623,6 +697,10 @@ export async function getSpecialPrompts(){
         def_specPrompts.forEach((prompt) => {
             // console.log(">>>>>>>>>>>>> getSpecialPrompts prompt: " + JSON.stringify(prompt));
             prompt.text = browser.i18n.getMessage(prompt.text);
+            // Icons are selectable for special prompts too; empty means "use the
+            // hard-coded built-in icon" (see getBuiltInPromptIcon()).
+            prompt.custom_icon = "";
+            normalizePromptFlags(prompt);
         })
         return def_specPrompts;
     } else {
@@ -640,6 +718,17 @@ export async function getSpecialPrompts(){
             if (prompt.show_in === undefined) {
                 prompt.show_in = "both";
             }
+            // Migrate: special prompts saved before icons were selectable have no
+            // custom_icon; empty means "use the hard-coded built-in icon".
+            if (prompt.custom_icon === undefined || prompt.custom_icon === "undefined") {
+                prompt.custom_icon = "";
+            }
+            // This getter is exported and called directly by buildSummaryPrompt()/
+            // buildTranslationPrompt() and by the feature pages, bypassing
+            // getPrompts() -- so it has to normalize the flags itself. Fall back to
+            // the shipped definition when a saved value is out of domain.
+            const builtIn = specialPrompts.find((sp) => sp.id === prompt.id);
+            normalizePromptFlags(prompt, builtIn || {});
         });
 
         // console.log(">>>>>>>>>>>>> getSpecialPrompts updatedPrompts: " + JSON.stringify(updatedPrompts));
@@ -658,6 +747,16 @@ export async function setSpecialPrompts(prompts) {
 
 export function getHiddenSpecialPromptIds() {
     return specialPrompts.filter(p => p.show_in === "none").map(p => p.id);
+}
+
+// Factory show_in for a prompt id: the value declared in the built-in
+// defaultPrompts/specialPrompts arrays. Custom prompts have no declaration,
+// so they fall back to the same default used by getCustomPrompts() ("popup").
+// Used by the menu order page to reset visibility to its out-of-the-box state.
+export function getFactoryShowIn(promptId) {
+    const prompt = specialPrompts.find(sp => sp.id === promptId)
+                || defaultPrompts.find(dp => dp.id === promptId);
+    return prompt?.show_in || "popup";
 }
 
 // Migration: if dynamic_menu_order_alphabet was true (or unset), assign initial positions
@@ -706,8 +805,52 @@ export async function migrateMenuOrderAlphabetic() {
     await browser.storage.sync.set({ dynamic_menu_order_alphabet: false });
 }
 
+// One-time migration: the prompt `enabled` flag has been removed. show_in is now
+// the single source of truth for reachability. For every stored prompt across the
+// three stores: if it was disabled (enabled == 0) collapse it to show_in = 'none'
+// (its previous show_in is intentionally discarded — "off" becomes "none"), then
+// drop the enabled property. Guarded by a one-shot sync flag so it runs once;
+// also idempotent by construction (after it runs no `enabled` keys remain).
+export async function migrateEnabledToShowIn() {
+    const flag = await browser.storage.sync.get({ _migrated_enabled_to_showin: false });
+    if (flag._migrated_enabled_to_showin) {
+        return;
+    }
+
+    // Default prompt properties: object keyed by prompt id.
+    const dpp = await browser.storage.local.get({ _default_prompts_properties: null });
+    if (dpp._default_prompts_properties !== null) {
+        const props = dpp._default_prompts_properties;
+        Object.keys(props).forEach((id) => {
+            normalizeEnabledToShowIn(props[id]);
+        });
+        await browser.storage.local.set({ _default_prompts_properties: props });
+    }
+
+    // Custom prompts: array of full prompt objects.
+    const cp = await browser.storage.local.get({ _custom_prompt: null });
+    if (cp._custom_prompt !== null) {
+        cp._custom_prompt.forEach(normalizeEnabledToShowIn);
+        await setCustomPrompts(cp._custom_prompt);
+    }
+
+    // Special prompts: array of full prompt objects. Only strips enabled; the
+    // special "feature active" mechanism is untouched.
+    const sp = await browser.storage.local.get({ _special_prompts: null });
+    if (sp._special_prompts !== null) {
+        sp._special_prompts.forEach(normalizeEnabledToShowIn);
+        await setSpecialPrompts(sp._special_prompts);
+    }
+
+    await browser.storage.sync.set({ _migrated_enabled_to_showin: true });
+}
+
 export async function getSpamFilterPrompt(){
     return (await getSpecialPrompts()).find(prompt => prompt.id == 'prompt_spamfilter');
+}
+
+export async function getAddTagsPrompt(){
+    return (await getSpecialPrompts()).find(prompt => prompt.id == 'prompt_add_tags');
 }
 
 export async function getSummarizePrompt(){

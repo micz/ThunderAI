@@ -1,351 +1,545 @@
-@media (prefers-color-scheme: light) {
-    table th {
-        background-color: #ffffff;
-    }
+/*
+ * Manage Data Placeholders — visual redesign (design "1b", shared with the
+ * Manage Custom Prompts page). Purely presentational: colors are driven by CSS
+ * custom properties (design tokens) with a light-theme default and a dark
+ * override via @media (prefers-color-scheme: dark). No manual theme toggle —
+ * the page follows the OS/Thunderbird theme like the rest of the extension.
+ */
 
-    #command_palette{
-        background-color: #ffffff; 
-    }
+/* ============================ Design tokens ============================ */
+:root {
+    /* Light theme (default) */
+    --bg:#eef0f4;  --panel:#ffffff;  --panel2:#f6f7f9;
+    --border:#e4e6ea;  --border2:#d3d6dc;
+    --text:#1a1c22;  --muted:#6a6d78;  --muted2:#9195a0;
+    --chip-bg:#f1f2f5;  --rowhover:#f7f9fc;
+    --accent:#0a6cff;  --accent-ink:#ffffff;  --accent-hover:#2a80ff;
+    --code:#1d4ed8;  --code-bg:#e7efff;
+    --edit-bg:#e7f0ff;  --edit-text:#155bd4;  --edit-border:#bcd6ff;  --edit-hover:#d8e8ff;
+    --del-text:#c4413f;  --del-border:#f0cccc;  --del-hover-bg:#fdecec;  --del-hover-text:#d13438;
+    --ok-text:#1a7f37;  --ok-bg:#e6f4ea;  --ok-border:#bfe3c9;
+    /* Warning: a placeholder token that exists but is not available for the
+       prompt's type — distinct from --del-*, which means "delete", and from
+       --ok-*, which means success. */
+    --warn-text:#8a5300;  --warn-bg:#fdf1dc;  --warn-border:#e0a44a;
+    /* Error: a placeholder token that does not exist at all, or an unterminated
+       one. Red because no change of prompt type can make it resolve. Its own
+       triple rather than --del-*, which means the "delete" action, and opaque
+       like --warn-*: a low-alpha wash is invisible at chip size. */
+    --err-text:#a52826;  --err-bg:#fbe3e3;  --err-border:#d98b8a;
+    --icon-hover-bg:#eceef2;  --save-bg:#eceef2;  --save-text:#a0a4ae;  --box:#ffffff;
 
-    table.prompts_list tr:nth-child(even) {
-        background-color: #e9e9e9;
-    }
+    --font-ui: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-mono: ui-monospace, 'Cascadia Code', monospace;
+    --btn-tr: background .12s, border-color .12s, color .12s, box-shadow .12s;
+}
 
-    table.prompts_list tr:nth-child(odd) {
-        background-color: #f3f3f3;
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg:#141317;  --panel:#1d1c22;  --panel2:#242229;
+        --border:#34333c;  --border2:#3d3c45;
+        --text:#f2f2f7;  --muted:#9a9aa4;  --muted2:#7d7d87;
+        --chip-bg:#26252c;  --rowhover:#211f26;
+        --accent:#45a1ff;  --accent-ink:#08111f;  --accent-hover:#5fb0ff;
+        --code:#8fb6ff;  --code-bg:#1a2740;
+        --edit-bg:#17304d;  --edit-text:#8fc0ff;  --edit-border:#2a4c78;  --edit-hover:#1d3d63;
+        --del-text:#d78d8d;  --del-border:#4a2a2c;  --del-hover-bg:#3a1f22;  --del-hover-text:#ff6b6b;
+        --ok-text:#7cd992;  --ok-bg:#16281c;  --ok-border:#234d2e;
+        --warn-text:#f0c07a;  --warn-bg:#3a2c14;  --warn-border:#7a5a22;
+        --err-text:#f0a3a1;  --err-bg:#3d1b1b;  --err-border:#7d3a38;
+        --icon-hover-bg:#33323b;  --save-bg:#2b2a33;  --save-text:#6f6f79;  --box:#2b2a33;
     }
+}
+
+/* ============================ Page shell ============================ */
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+}
+
+a:link, a:visited { color: var(--accent); }
+a:hover, a:active { color: var(--accent-hover); }
+
+/* Centered content column (wrapper added in the HTML). */
+.page_wrap {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 40px 40px 80px;
+    position: relative;
+}
+
+/* ---- Header ---- */
+.page_eyebrow {
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted2);
+    font-weight: 600;
+}
+
+.page_title {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    margin: 6px 0 4px;
+}
+
+.page_wrap > div > p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 780px;
+}
+
+/* Import / Export stack (top-right). */
+#import_export {
+    position: absolute;
+    right: 40px;
+    top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: right;
+}
+
+#btnExportAll { margin-bottom: 0; }
+
+/* ============================ Buttons ============================ */
+button {
+    transition: var(--btn-tr);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--panel2);
+    border: 1px solid var(--border2);
+    padding: 9px 14px;
+    border-radius: 9px;
+}
+
+button:hover:not(:disabled) { border-color: var(--accent); }
+
+button:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+/* Accent (Add New / commit). */
+#btnNew, #btnAddNew {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border: none;
+}
+#btnNew:hover:not(:disabled), #btnAddNew:hover:not(:disabled) {
+    background: var(--accent-hover);
+    border: none;
+}
+
+/* Save All — quiet until there are changes. */
+#btnSaveAll {
+    background: var(--save-bg);
+    color: var(--save-text);
+    border: 1px solid var(--border2);
+}
+#btnSaveAll:not(:disabled) {
+    color: var(--text);
+}
+
+/* Per-row action buttons — full-width, stacked, icon + label.
+   The <td> stays a table-cell (fixed table layout); buttons stack as
+   full-width blocks separated by margin. */
+.actions_cell {
+    vertical-align: top;
+}
+.actions_cell button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin: 0 0 8px 0;
+}
+.actions_cell button:last-child {
+    margin-bottom: 0;
+}
+/* A button toggled off via .hiddendata must stay hidden — this selector
+   (0,1,1) matches the specificity of `.actions_cell button` above, and
+   coming later it wins, so display:flex does not resurface hidden buttons. */
+.actions_cell button.hiddendata {
+    display: none;
+}
+.actions_cell button svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+/* Children never become the click target, so handlers relying on e.target
+   being the <button> (e.target.parentNode.parentNode === tr) keep working
+   no matter where inside the button the user clicks. */
+.actions_cell button > * {
+    pointer-events: none;
+}
+
+/* Edit / OK — edit (tinted) style. */
+.btnEditItem, .btnConfirmItem {
+    background: var(--edit-bg);
+    color: var(--edit-text);
+    border: 1px solid var(--edit-border);
+}
+.btnEditItem:hover:not(:disabled),
+.btnConfirmItem:hover:not(:disabled) {
+    background: var(--edit-hover);
+    border-color: var(--edit-border);
+}
+
+/* Per-row Delete — danger (outline) style. */
+.btnDeleteItem {
+    background: transparent;
+    color: var(--del-text);
+    border: 1px solid var(--del-border);
+}
+.btnDeleteItem:hover:not(:disabled) {
+    background: var(--del-hover-bg);
+    color: var(--del-hover-text);
+    border-color: var(--del-border);
+}
+
+/* Per-row Cancel — neutral outline style. */
+.btnCancelItem {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border2);
+}
+.btnCancelItem:hover:not(:disabled) {
+    background: var(--icon-hover-bg);
+    border-color: var(--border2);
+}
+
+/* ============================ Toolbar (command palette) ============================ */
+#command_palette {
+    position: sticky;
+    top: 0;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+}
+
+#command_palette #btnSaveAll { float: none; }
+#command_palette #btnNew { float: none; }
+
+#msgDisplay {
+    flex: 1;
+    padding-left: 16px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* ============================ Card + table ============================ */
+/* NOTE: no `overflow:hidden` here — the toolbar and thead are position:sticky,
+ * and an overflow clip on an ancestor would silently disable stickiness. The
+ * rounded-card look is preserved by rounding the toolbar's top corners and the
+ * footer's bottom corners instead. */
+#all_custom_dataplaceholders {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+#command_palette {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+#list_footer {
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
 }
 
 table {
     border-collapse: collapse;
     border-spacing: 0;
-    border: 1px solid #ccc;
+    width: 100%;
+}
+
+table.prompts_list {
+    table-layout: fixed;
 }
 
 thead {
     position: sticky;
-    top: 26px;
-    z-index: 90;
-}
-
-#command_palette{
-    position: sticky;
-    top: 0;
-    padding-top: 1px;
-    height: 26px;
-    width: 100%;
-    z-index: 90;
-}
-
-#btnNew{
-    float: right;
-}
-
-#btnSaveAll{
-    float: left;
-}
-
-#msgDisplay{
-    padding-left: 40px;
-}
-
-table tr {
-    border-bottom: 1px solid #ccc;
+    top: 54px; /* below the sticky command palette */
+    z-index: 80;
 }
 
 table.prompts_list th {
-    padding: 8px;
+    background: var(--panel2);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .03em;
     text-align: left;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
 }
 
-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
+table.prompts_list td {
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    text-align: left;
+    vertical-align: top;
+    font-size: 13px;
+    color: var(--text);
 }
 
-table td.w08{
-    width: 8vw;
+tbody.list tr { vertical-align: top; }
+
+table.prompts_list tbody tr:hover td {
+    background: var(--rowhover);
 }
 
-table td.w17{
-    width: 17vw;
+/* Fixed column widths (ID, Name, Text, Menu, Properties, Actions). */
+table td.w08 { width: 8vw; }
+table td.w17 { width: 17vw; }
+table td.w19 { width: 19vw; }
+table td.w25 { width: 25vw; }
+table td.w40 { width: 40vw; }
+
+table.prompts_list td.properties { white-space: nowrap; }
+
+/* ID cell — monospace, muted. The `thunderai_custom_` prefix shown before the
+   editable part of the ID matches the same treatment. */
+.id_show,
+table.prompts_list td.w08 > i,
+#formNew i {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-style: normal;
+    color: var(--muted2);
 }
 
-table td.w19{
-    width: 19vw;
+/* Name cell — emphasized. */
+.name_show { font-weight: 600; }
+
+.text_show, .name_show, .id_show, .type_show { font-size: 13px; }
+
+/* Placeholder text is monospace in read mode *and* in edit mode, at one shared
+   font-size/line-height (see the .editor metrics block further down). That is
+   what lets the edit-mode backdrop mirror align with the textarea, and what
+   makes the two modes look like the same text.
+   pre-wrap because the text reaches this span with newlines in either form:
+   stored values use <br>, but a row saved from the editor writes the raw \n. */
+.text_show {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
 }
 
-table td.w25{
-    width: 25vw;
+/* Placeholder token chip inside the placeholder text (wrapped in JS).
+   Read mode has no caret to align to, so this one can afford real padding. */
+.ph_chip {
+    color: var(--code);
+    background: var(--code-bg);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
 }
 
-table td.w40{
-    width: 40vw;
-}
-
-table.prompts_list td.properties{
-    white-space: nowrap;
-}
-
+/* ---- Sort headers ---- */
 table .sort {
     background-image: url(../../images/listjs-arrow-sort-inactive.png);
     background-repeat: no-repeat;
     background-position: right center;
-    padding-right: 14px;
-    cursor: pointer;
-    cursor: hand;
-}
-
-table .sort.asc {
-    background-image: url(../../images/listjs-arrow-sort-active-down.png);
-}
-
-table .sort.desc {
-    background-image: url(../../images/listjs-arrow-sort-active-up.png);
-}
-
-tbody.list tr{
-    vertical-align: top;
-}
-
-.hiddendata{
-    display: none;
-}
-
-#formNew{
-    display: none;
-    width: 100%;
-    padding-bottom: 7px;
-}
-
-.text_output{
-    width: 98%;
-    height: 9em;
-}
-
-.go_right_float{
-    float: right;
-}
-
-.go_right{
-    width: 100%;
-    text-align: right;
-}
-
-.width_all{
-    width: 100%;
-}
-
-.small_label{
-    font-size: small;
-    font-style: italic;
-}
-
-.field_title{
-    font-weight: bold;
-}
-
-.field_title_s{
-    font-weight: bold;
-    font-size: small;
-}
-
-.field_title_us{
-    font-weight: bold;
-    font-size: smaller;
-}
-
-label, .id_show, .text_show, .name_show, .type_show, .action_show{
-    font-size: small;
-}
-
-#txtIdNew, .id_output{
-    text-transform: lowercase;
-}
-
-#import_export{
-    position: absolute;
-    right:10px;
-    top:10px;
-    text-align: right;
-}
-
-#btnExportAll{
-    margin-bottom: 3px;
-}
-
-.storage_space{
-    font-size: 0.8em;
-    font-weight: normal;
-    font-style: italic;
-    color: rgb(41, 41, 41);
-    text-align: right;
-    margin-right: 1px;
-}
-
-.page_title{
-    margin-bottom: 0px;
-}
-
-.autocomplete-container {
-    position: relative;
-}
-
-.autocomplete-list {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: white;
-    border: 1px solid #ccc;
-    z-index: 1000;
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 0;
-    margin: 0;
-    list-style: none;
-    font-size: small;
-}
-
-.autocomplete-list li {
-    padding: 8px;
+    padding-right: 28px;
     cursor: pointer;
 }
+table .sort.asc { background-image: url(../../images/listjs-arrow-sort-active-down.png); }
+table .sort.desc { background-image: url(../../images/listjs-arrow-sort-active-up.png); }
 
-.autocomplete-list li:hover {
-    background-color: #f0f0f0;
-}
-
-.autocomplete-list li.active {
-    background-color: #ddd;
-}
-
-.hidden {
-    display: none;
-}
-
-.need_custom_text_span, .need_selected_span{
-    padding-right: 2px;
-}
-
-#chatgpt_web_additional_info_toggle td{
-    padding:0px 5px;
-    font-style: italic;
-}
-
-#chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show{
-    background-color: rgb(255, 209, 183);
-    display:none;
-}
-
-#chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_toggle{
-    cursor: pointer;
-}
-
-#chatgpt_web_additional_info_toggle:hover, .chatgpt_web_additional_info_toggle:hover{
-    background-color: rgb(255, 189, 153);
-    text-decoration: underline;
-}
-
-#chatgpt_web_additional_info_toggle td{
-    text-align: center;
-}
-
-#chatgpt_web_additional_info td{
-    vertical-align: top;
-}
-
-.chatgpt_web_additional_info_toggle{
-    width: -moz-available;
-    text-align: center;
-    margin-top: 10px;
-}
-
-.chatgpt_web_additional_info_show{
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-    padding: 3px;
-    margin-top: 5px;
-}
-
-.chatgpt_web_additional_info_row{
+/* ---- Card footer (data placeholder count) ---- */
+#list_footer {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 13px;
 }
 
-.chatgpt_web_additional_info_row span{
-    margin-right: 0.4em;
-}
-
-input.input_additional[type="text"]{
-    width: -moz-available;
-}
-
-.small_info{
-    font-size:smaller;
-}
-
-.conntype_chatgpt_web_option{
+/* ============================ Property switch ============================ */
+/* The `enabled` checkbox renders as the same toggle switch used for the prompt
+   properties on the Manage Custom Prompts page (appearance:none track + ::after
+   knob). Unlike that page, this checkbox is never disabled: it stays clickable
+   straight from the row (no Edit/OK round-trip), so there is no read-only
+   status-icon variant here — only the interactive switch. */
+table.prompts_list td label:has(.enabled) {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--muted);
     cursor: pointer;
+    font-size: 13px;
 }
 
-label:has(input[type="checkbox"]) {
+/* A label whose property is active (on) reads as active text. */
+table.prompts_list td label:has(.enabled:checked) { color: var(--text); }
+
+table.prompts_list td .enabled {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    position: relative;
+    flex: none;
+    width: 30px;
+    height: 18px;
+    margin: 0;
+    border-radius: 20px;
+    background: var(--border2);
+    transition: background .15s;
     cursor: pointer;
+    vertical-align: middle;
 }
 
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: #1C1B22;
-        color: rgb(251, 251, 254);
-    }
-    
-    a:link { color: #409EFF; }   
-    a:visited { color: #409EFF; }  
-    a:hover { color: #66B1FF; }   
-    a:active { color: #66B1FF; }
-
-    table {
-        background-color: #1C1B22;
-        border: 1px solid #ccc;
-    }
-
-    table.prompts_list th {
-        background-color: #4c4e58;
-        border: 1px solid rgb(251, 251, 254);
-        color: rgb(194, 194, 194);
-    }
-
-    #command_palette{
-        background-color: inherit; 
-    }
-
-    table.prompts_list tr:nth-child(even) {
-        background-color: #2E2F36;
-    }
-
-    .storage_space{
-        color: rgb(182, 182, 182);
-    }
-
-    .autocomplete-list {
-        background-color: #2E2F36;
-        border: 1px solid #2E2F36;
-    }
-    
-    .autocomplete-list li:hover {
-        background-color: #4c4e58;
-    }
-    
-    .autocomplete-list li.active {
-        background-color: #4c4e58;
-    }
-
-    #chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show{
-        background-color: rgb(39, 11, 0);
-        color: rgb(182, 182, 182);
-    }
-
-    #chatgpt_web_additional_info_toggle:hover, .chatgpt_web_additional_info_toggle:hover{
-        background-color: rgb(88, 25, 0);
-    }
+/* The switch knob. */
+table.prompts_list td .enabled::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,.4);
+    transition: left .15s;
 }
+
+table.prompts_list td input:checked.enabled { background: var(--accent); }
+table.prompts_list td input:checked.enabled::after { left: 14px; }
+
+/* Default rows can't be toggled — keep the switch look but read as inert. */
+table.prompts_list td .enabled:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+/* ============================ New placeholder form ============================ */
+#formNew {
+    display: none;
+    width: 100%;
+    padding: 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+#formNew table { border: none; }
+#formNew td { border: none; padding: 8px; vertical-align: top; }
+
+.width_all { width: 100%; }
+
+.text_output { width: 98%; height: 9em; }
+
+.input_new,
+#formNew input[type="text"],
+#formNew textarea,
+#formNew select,
+.text_output,
+.id_output, .name_output, .type_output {
+    background: var(--panel2);
+    color: var(--text);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-family: inherit;
+    font-size: 13px;
+}
+
+#formNew input[type="text"]:focus,
+#formNew textarea:focus,
+#formNew select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.go_right_float { float: right; color: var(--muted); font-size: 13px; }
+.go_right { width: 100%; text-align: right; }
+
+.small_label { font-size: small; font-style: italic; color: var(--muted); }
+.field_title { font-weight: bold; }
+.field_title_us { font-weight: bold; font-size: smaller; }
+.field_title_s {
+    font-weight: bold;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.hiddendata { display: none; }
+.hidden { display: none; }
+
+#txtIdNew, .id_output { text-transform: lowercase; }
+
+label:has(input[type="checkbox"]) { cursor: pointer; }
+label:has(input[type="checkbox"]:disabled) { cursor: default; }
+
+/* ============================ Storage space ============================ */
+.storage_space {
+    font-size: 0.8em;
+    font-style: italic;
+    color: var(--muted);
+    text-align: right;
+    margin: 8px 1px 0 0;
+}
+
+/* =================== Placeholder text editor (highlighting) ===================
+
+   Structure lives in pages/_lib/editor-highlight.css, shared with the Custom
+   Prompts page and the six single-textarea settings pages. Only this page's
+   metrics and colours are set here, as the custom properties that file reads.
+   Keep --ed-font/--ed-line-height in step with .text_show above, so read mode
+   and edit mode render the text identically.
+   --------------------------------------------------------------------------- */
+
+.editor-wrap {
+    --ed-padding: 7px 10px;
+    --ed-font: var(--font-mono);
+    --ed-line-height: 1.55;
+    --ed-surface: var(--panel);
+    --ed-border: var(--border2);
+    --ed-chip-bg: var(--code-bg);
+    --ed-chip-fg: var(--code);
+    --ed-warn-bg: var(--warn-bg);
+    --ed-warn-fg: var(--warn-text);
+    --ed-warn-border: var(--warn-border);
+    --ed-err-bg: var(--err-bg);
+    --ed-err-fg: var(--err-text);
+    --ed-err-border: var(--err-border);
+}
+
+/* Visibility gating, as on the Custom Prompts page: a row toggles between a
+   read-only span and the editor, and leaving edit mode sets display:none on the
+   textarea only -- its siblings stay visible, so an always-on backdrop would
+   keep painting a second copy of the text under .text_show.
+
+   display:block must NOT move to `.editor-wrap .editor`: at two classes it would
+   beat the row template's `.hiddendata { display: none }`. */
+.editor-wrap .editor-backdrop { display: none; }
+.editor-wrap.editor-active .editor-backdrop { display: block; }
+.editor-wrap.editor-active .editor { display: block; }
+
+

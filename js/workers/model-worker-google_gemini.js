@@ -31,6 +31,7 @@ let taLog = null;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
+let thinkingAccumulator = '';
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
@@ -55,8 +56,12 @@ self.onmessage = async function(event) {
         if (!response.ok) {
             let error_message = '';
             let errorDetail = '';
+            let error_text = '';
             if(response.is_exception === true){
                 error_message = response.error;
+                // Network-level failure: no status/statusText exist on the returned object,
+                // and error_message already carries the provider name.
+                error_text = error_message;
             }else{
                 try{
                     const errorJSON = await response.json();
@@ -66,9 +71,10 @@ self.onmessage = async function(event) {
                     error_message = response.statusText;
                 }
                 taLog.log("error_message: " + JSON.stringify(error_message));
+                error_text = i18nStrings["google_gemini_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
             }
-            postMessage({ type: 'error', payload: i18nStrings["google_gemini_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail });
-            throw new Error("[ThunderAI] Google Gemini API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
+            postMessage({ type: 'error', payload: error_text });
+            throw new Error("[ThunderAI] Google Gemini API request failed: " + error_text);
         }
 
         const reader = response.body.getReader();
@@ -79,24 +85,30 @@ self.onmessage = async function(event) {
             if (stopStreaming) {
                 stopStreaming = false;
                 reader.cancel();
+                taLog.log("AI full reasoning [STOPPED]: " + thinkingAccumulator);
                 taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
                 assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone' });
+                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                thinkingAccumulator = '';
                 break;
             }
             const { done, value } = await reader.read();
             if (done) {
+                taLog.log("AI full reasoning: " + thinkingAccumulator);
                 taLog.log("AI full response: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
                 assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone' });
+                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                thinkingAccumulator = '';
                 break;
             }
             // lots of low-level Google Gemini response parsing stuff
             const chunk = decoder.decode(value);
             buffer += chunk;
-            taLog.log("buffer " + buffer);
+            // No per-chunk dump of `buffer`: taLog.log() only gates the console call,
+            // so the whole unconsumed buffer would be re-concatenated on every SSE
+            // chunk even with debug off. The per-line log below covers it, guarded.
             const lines = buffer.split("\n");
             buffer = lines.pop();
             let parsedLines = [];
@@ -107,7 +119,10 @@ self.onmessage = async function(event) {
                     // .map((line) => JSON.parse(line)); // Parse the JSON string
                     .map((line) => {
                          try {
-                            taLog.log("line: " + JSON.stringify(line));
+                            // Guarded at the call site: taLog.log() gates only the console
+                            // call, so an unguarded JSON.stringify() would run per SSE line
+                            // even with debug off.
+                            if (taLog.do_debug) taLog.log("line: " + JSON.stringify(line));
                             return JSON.parse(line);
                         } catch (e) {
                             taLog.warn("JSON parse warning, skipped line: " + line + " - " + e.message);
@@ -139,11 +154,24 @@ self.onmessage = async function(event) {
                     continue;
                 }
 
-                const { text } = parts[0];
-                // Update the UI with the new content
-                if (text) {
-                    assistantResponseAccumulator += text;
-                    postMessage({ type: 'newToken', payload: { token: text } });
+                // Every part must be examined, not just parts[0]: when the model
+                // reasons, the reasoning arrives as additional parts flagged with
+                // thought: true, and a thought part can come first. Detection relies
+                // only on that flag, so a model that reasons without
+                // google_gemini_thinking_budget being set is handled too.
+                for (const part of parts) {
+                    if (!part || typeof part.text !== 'string' || part.text === '') {
+                        continue;
+                    }
+                    // Update the UI with the new thinking content
+                    if (part.thought === true) {
+                        thinkingAccumulator += part.text;
+                        postMessage({ type: 'newThinkingToken', payload: { token: part.text } });
+                        continue;
+                    }
+                    // Update the UI with the new content
+                    assistantResponseAccumulator += part.text;
+                    postMessage({ type: 'newToken', payload: { token: part.text } });
                 }
             }
         }

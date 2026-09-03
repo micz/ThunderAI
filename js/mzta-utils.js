@@ -23,7 +23,7 @@ import {
 
 import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js'
 
-const sparks_min = '1.2.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
+const sparks_min = '3.0.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
 const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
 
 export const getMenuContextCompose = () => 'compose_action_menu';
@@ -57,23 +57,48 @@ export const specialPromptToContextMenuID = {
   'prompt_translate_this': contextMenuID_Translate,
 };
 
+// Built-in icons for the default prompts that are not special prompts.
+// These are shipped with the add-on (not in the user-selectable custom icons folder),
+// and act as a fallback: an icon explicitly chosen on the Menu Order page wins.
+// Special prompts get their built-in icon from contextMenuIconsPath instead.
+export const defaultPromptIconsPath = {
+  'prompt_proofread_this': 'moz-extension:images/context_menu/proofread.png',
+  'prompt_classify': 'moz-extension:images/context_menu/classify.png',
+  'prompt_this': 'moz-extension:images/context_menu/prompt_this.png',
+  'prompt_rewrite_formal': 'moz-extension:images/context_menu/rewrite_formal.png',
+  'prompt_rewrite_polite': 'moz-extension:images/context_menu/rewrite_polite.png',
+  'prompt_reply_advanced': 'moz-extension:images/context_menu/prompt_reply_advanced.png',
+  'prompt_reply': 'moz-extension:images/context_menu/prompt_reply.png',
+  'prompt_reply_custom_command': 'moz-extension:images/context_menu/prompt_reply_custom_command.png',
+};
+
 // const defaultContextMenuIcon = 'moz-extension:images/icon-32px.png';
 const defaultContextMenuIcon = '';
+
+// The icon a prompt ships with, ignoring any user choice: the hard-coded icon for
+// special prompts, otherwise the built-in default-prompt icon. '' when there is none.
+// Used both by the resolver below and by the Menu Order icon picker, so that the
+// "restore default" cell always previews exactly what clearing custom_icon yields.
+export function getBuiltInPromptIcon(promptId) {
+  const contextMenuId = specialPromptToContextMenuID[promptId];
+  if (contextMenuId && contextMenuIconsPath[contextMenuId]) {
+    return contextMenuIconsPath[contextMenuId];
+  }
+  return defaultPromptIconsPath[promptId] || '';
+}
 
 export function getContextMenuIcon(prompt) {
   // Back-compat: accept a plain id string too
   const promptId = (typeof prompt === 'string') ? prompt : prompt?.id;
-  const isSpecial = (typeof prompt === 'object' && prompt !== null) ? String(prompt.is_special) === '1' : true;
 
-  if (isSpecial) {
-    const contextMenuId = specialPromptToContextMenuID[promptId];
-    if (contextMenuId && contextMenuIconsPath[contextMenuId]) {
-      return contextMenuIconsPath[contextMenuId];
-    }
-  }
-
+  // A user-chosen icon always wins, for special and non-special prompts alike.
   if (typeof prompt === 'object' && prompt !== null && prompt.custom_icon) {
     return 'moz-extension:' + customMenuIconsPath + prompt.custom_icon;
+  }
+
+  const builtIn = getBuiltInPromptIcon(promptId);
+  if (builtIn) {
+    return builtIn;
   }
 
   return defaultContextMenuIcon;
@@ -163,7 +188,12 @@ export async function getCurrentIdentity(msgHeader, getFull = false) {
 }
 
 
-function extractEmail(text) {
+// Extracts the first email address found in a string, '' if there is none.
+// Accepts a raw header value like 'Name <addr@domain.com>'.
+// The case is preserved: getIdentityForMessage() compares the result with the
+// identity addresses as they were configured, so callers that need a
+// case-insensitive match have to lowercase it themselves.
+export function extractEmail(text) {
   if((text=='')||(text==undefined)) return '';
   const emailRegex = /[\w.-]+@[\w.-]+\.\w+/;
   const match = text.match(emailRegex);
@@ -190,57 +220,45 @@ export async function getMailSubject(tab){
   }
 }
 
-function extractTextParts(fullMessage) {
-  const textParts = []
-  function walkParts(parts) {
-    for (const part of parts) {
-      if (part.parts && part.parts.length > 0) {
-        walkParts(part.parts)
-      }
-      // console.log(">>>>>>>>>>>> extractTextParts: part.contentType: " + part.contentType + ", part.decryptionStatus: " + part.decryptionStatus + ", part.body: " + part.body);
-      if (part.contentType && part.contentType.startsWith('text/')) {
-        textParts.push(part)
-      }
-    }
-  }
-  if (fullMessage.parts && fullMessage.parts.length > 0) {
-    walkParts(fullMessage.parts)
-  }
-  return textParts
-}
-
-function smartDecode(buf) {
-  try {
-    return new TextDecoder('utf-8', { fatal: true }).decode(buf);
-  } catch (e) {
-    return new TextDecoder('windows-1252').decode(buf);
-  }
-}
-  
-export async function getMailBody(fullMessage, messageId) {
-  const textParts = extractTextParts(fullMessage);
+// The body comes from listInlineTextParts(), NOT from a walk of getFull()'s MIME
+// tree. The API returns exactly the inline text parts that make up the readable
+// content - the ones listAttachments() does NOT return - as a flat, already
+// decoded array. That is the whole fix: the old walk collected every text/* part
+// in the tree with no content-disposition filter, so an attached .txt file and
+// the parts of a forwarded message/rfc822 were concatenated into the body. The
+// HTML conversion used to mask that in {%mail_text_body%}; {%mail_plain_text_part%},
+// which is verbatim, showed the attachment unaltered in the prompt.
+//
+// It also removes the getFull() dependency entirely, so this needs no fullMessage,
+// no messageId threading for the getAttachmentFile() recovery, and no reliance on
+// part.body being populated (documented as present only when getFull() is asked
+// for it) - three things the old path got wrong on the automatic paths, where the
+// messageId was never passed. See claude-spec/01-architecture.md.
+//
+// Encryption: the API decrypts by default and omits the parts it cannot decrypt.
+// No distinction is lost - the old walk never read part.decryptionStatus either.
+export async function getMailInlineTextParts(messageId) {
   let text = "";
   let html = "";
-  // console.log(">>>>>>>>>>>>>> getMailBody: textParts: " + JSON.stringify(textParts));
-  // console.log(">>>>>>>>>>>>>> getMailBody: fullMessage: " + JSON.stringify(fullMessage));
-  for (const part of textParts) {
-    let body = part.body;
-    if ((body === undefined || body === "") && messageId && part.partName) {
-      const file = await browser.messages.getAttachmentFile(messageId, part.partName);
-      const buf = await file.arrayBuffer();
-      //const buf = new TextDecoder('utf-8').decode(buf);
-      body = smartDecode(buf);
+  try {
+    const parts = await browser.messages.listInlineTextParts(messageId);
+    for (const part of parts ?? []) {
+      if (part.contentType === "text/plain") {
+        text += part.content ?? "";
+      } else if (part.contentType === "text/html") {
+        html += part.content ?? "";
+      }
     }
-    if (part.contentType === "text/plain") {
-      // console.log(">>>>>>>>>>>>>> getMailBody: part.body (TEXT): " + body);
-      text += body ?? "";
-    } else if (part.contentType === "text/html") {
-      // console.log(">>>>>>>>>>>>>> getMailBody: part.body (HTML): " + (body ? body.substring(0, 80) : body));
-      html += body ?? "";
-    }
+  } catch (error) {
+    console.error('[ThunderAI] Error reading the inline text parts [messageId: ', messageId, ']:', error);
   }
+  // Both branches stay OUTSIDE the try/catch: a failed call still yields a
+  // well-formed {text: '', html: ''}, so the callers' body_text.length == 0
+  // fallbacks behave exactly as they do for an empty message.
   if(html === "") {
-    html = text.replace(/\n/g, "<br>");
+    // No text/html part: synthesize it from the text/plain part, whose breaks are
+    // \n. The ONE text->html converter, shared with every other newline->br site.
+    html = globalThis.mztaLinesToHtml(text, { mode: 'br' });
   } else {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
@@ -250,23 +268,55 @@ export async function getMailBody(fullMessage, messageId) {
   return {text, html};
 }
 
-export async function reloadBody(tabId){
-  let composeDetails = await messenger.compose.getComposeDetails(tabId);
-  let originalHtmlBody = composeDetails.body + " ";
-  await messenger.compose.setComposeDetails(tabId, {body: originalHtmlBody});
+// Is this compose window composing in plain text?
+//
+// The compose format is a property of the single window, which Thunderbird
+// reports authoritatively — it is deliberately NOT a global preference, because
+// the same user can have one identity set to plain text and another to HTML.
+//
+// The try/catch is not gratuitous defensiveness: getComposeDetails rejects on a
+// tab that is not (or no longer) a compose tab, and the tabId reaching here
+// arrives by message from the webchat window, so it can be stale.
+export async function isPlainTextCompose(tabId){
+  try {
+    let composeDetails = await messenger.compose.getComposeDetails(tabId);
+    return composeDetails.isPlainText === true;
+  } catch (e) {
+    // HTML is the historical assumption.
+    return false;
+  }
 }
 
+// On a plain text compose window the body lives in `plainTextBody`, not `body`.
+// Writing `body` there makes Thunderbird convert the HTML down to text, which
+// collapses every bare \n as HTML whitespace and loses the line structure —
+// so each of the helpers below has to pick the field that matches the window.
 export async function getOriginalBody(tabId){
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
+  if(composeDetails.isPlainText){
+    return composeDetails.plainTextBody;
+  }
   return composeDetails.body;
 }
 
-export async function setBody(tabId, fullHtmlBody){
-  await messenger.compose.setComposeDetails(tabId, {body: fullHtmlBody});
+export async function setBody(tabId, fullBody, isPlainText = false){
+  if(isPlainText){
+    await messenger.compose.setComposeDetails(tabId, {plainTextBody: fullBody});
+    return;
+  }
+  await messenger.compose.setComposeDetails(tabId, {body: fullBody});
 }
 
 export async function replaceBody(tabId, replyHtml) {
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
+  if(composeDetails.isPlainText){
+    // Plain text: no DOM to splice into, so the reply is prepended to the
+    // existing text (quote and signature included) with a blank line between.
+    let originalTextBody = composeDetails.plainTextBody ?? "";
+    let fullTextBody = stripHtmlKeepLines(replyHtml) + (originalTextBody.trim() === "" ? "" : "\n\n" + originalTextBody);
+    await messenger.compose.setComposeDetails(tabId, {plainTextBody: fullTextBody});
+    return;
+  }
   let originalHtmlBody = composeDetails.body;
   //console.log('originalHtmlBody: ' + originalHtmlBody);
   let fullBody = insertHtml(replyHtml, originalHtmlBody);
@@ -305,14 +355,29 @@ export function sanitizeMailHeaders(input){
   return input.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+// HTML → plain text for the "compose in plain text" preference.
+//
+// The line structure is carried by the TAGS, not by the source newlines: the
+// markdown renderer emits "<br>\n" and "</p>\n<p>", so a newline in the source
+// is almost always just pretty-printing next to a tag that already means a
+// break. Counting both would double every line — a single <br> would come out
+// as a blank line and be indistinguishable from a paragraph break.
+// HTML -> plain text for INSERTION into a plain-text compose window. The line
+// structure is carried by the tags, and a paragraph (<p>) becomes a blank line
+// while every other block boundary and <br> becomes a single \n - exactly the
+// shape the diff picker's <p>/<li> output and the markdown renderer's
+// "<p>...<br>...</p>" both need.
+//
+// This used to be a hand-rolled regex tuned for that output. It now goes through
+// the ONE DOM projection (mztaHtmlToLines) + the ONE normalizer
+// (mztaNormalizePlain, keepParagraphs) shared with extraction, so the insertion
+// and extraction sides can no longer drift. Reached through globalThis because
+// the projection lives in the classic js/lib/mzta-html-lines.js.
 export function stripHtmlKeepLines(htmlString) {
-  // Replaces <p> tags with a newline at the beginning
-  // and removes all other HTML tags
-  return convertBrToNewlines(htmlString)
-    .replace(/<p>/gi, '')                  // removes <p> tags
-    .replace(/<\/p>/gi, '\n')              // replaces </p> tags with newline
-    .replace(/<[^>]*>/g, '')               // removes any other HTML tags
-    .trim();                               // removes leading/trailing whitespace
+  return globalThis.mztaNormalizePlain(
+    globalThis.mztaHtmlToLines(htmlString),
+    { keepParagraphs: true }
+  );
 }
 export function htmlBodyToPlainText(htmlString) {
 	// Create a new DOMParser instance
@@ -322,21 +387,51 @@ export function htmlBodyToPlainText(htmlString) {
 
   removeMozMainHeader(doc.body);
 
-  // remove invisible elements https://stackoverflow.com/questions/39813081/queryselector-where-display-is-not-none
-   // return doc;
-  doc.querySelectorAll('[style*="display:none"]').forEach(e => e.remove());//.querySelector('html').children.not(':visible').remove()
+  // Remove invisible elements (newsletter preheaders, tracking markup) before the
+  // text is read. This was a [style*="display:none"] selector - a literal
+  // SUBSTRING match that missed the spaced `display: none` nearly all mail
+  // emits. The rule now lives in the shared layer, so the interactive extraction
+  // in js/mzta-compose-script.js strips exactly the same things; see
+  // mztaStripHidden in js/lib/mzta-html-lines.js for the full rationale and for
+  // what it deliberately does NOT catch (<style>-block and class rules).
+  //
+  // TEXT only: `doc` is a parse of our own, so msg_text.html - what
+  // {%mail_html_body%} receives, built separately by getMailInlineTextParts() -
+  // keeps its hidden markup. Do not add this call to getMailInlineTextParts():
+  // the HTML placeholders must hand over the message's markup unedited on every path.
+  globalThis.mztaStripHidden(doc.body);
   doc.querySelectorAll('style').forEach(e => e.remove());//.querySelector('html').children.not(':visible').remove()
-  
+
+  // The line structure has to be put into the DOM before textContent reads it:
+  // textContent emits NO break for a block-level element, so <p>, <div>, <br>,
+  // <tr> and <li> boundaries vanish and only the SOURCE whitespace between tags
+  // was ever keeping the lines apart. Outlook/Word mail has none - its markup is
+  // compact - so every paragraph came out welded to the next one:
+  //   "...quotation below:DMS could be XXXXServer 2TB..."
+  //
+  // The projection itself lives in js/lib/mzta-html-lines.js, shared with the
+  // INTERACTIVE extraction in js/mzta-compose-script.js (getTextOnly), which had
+  // the very same bug. One rule, one place - they drifted apart precisely because
+  // each carried its own copy. Reached through globalThis because that file must
+  // stay a classic script: the content script that also uses it cannot import.
+  // mzta-background.html loads it before this module, next to markdown-it.
+  //
+  // In place, not on a clone: `doc` is ours, parsed two lines up.
+  globalThis.mztaInjectLineBreaks(doc.body);
+
   // Extract text content
   const textContent = doc.body.textContent || "";
-	// Trim whitespace
-	return textContent
-  .replace(/\r\n/g, '\n')
-  .replace(/[ \t]+\n/g, '\n')
-  .replace(/\n{2,}/g, '\n')
-  .replace(/[ \t]+/g, ' ')
-  .replace(/&nbsp;/gi,"")
-  .trim();
+	// Every mail body - HTML branch or plain-text fallback - is tidied by the same
+	// normalizer (mztaNormalizePlain default = the old cleanupNewlines), so the
+	// {%mail_text_body%} contract "one \n per block, never a blank line" holds: the
+	// \n\n a <p> produced folds away under the \n{2,} -> \n collapse.
+	//
+	// Known gap: <pre> keeps its line breaks but not its internal indentation or
+	// blank lines - the [ \t]+ and \n{2,} rules run over the whole string.
+	// Preserving it verbatim would need a sentinel/restore pass around that chain,
+	// new machinery and a new collision failure mode for an element that is rare in
+	// mail.
+	return globalThis.mztaNormalizePlain(textContent);
 }
 
 export function removeMozMainHeader(root) {
@@ -351,38 +446,98 @@ export function removeMozMainHeader(root) {
   }
 }
 
+// The plain-text normalizer now lives ONCE, in the classic js/lib/mzta-html-lines.js
+// (mztaNormalizePlain), shared by extraction, insertion and the compose scrape so
+// they can no longer drift. These three keep their names as thin shims over it:
+//
+//   cleanupNewlines             default      \n{2,} -> \n  (body contract: one \n
+//                                            per block, never a blank line)
+//   cleanupNewlinesKeepParagraphs {keepParagraphs} \n{3,} -> \n\n  (a single blank
+//                                            line survives: compose extractions
+//                                            {%mail_typed_text%}/{%mail_quoted_text%})
+//   normalizePlainTextPart      {keepColumns} VERBATIM  ({%mail_plain_text_part%}:
+//                                            column alignment and U+00A0 preserved)
+//
+// The non-breaking-space and ordering rationale is documented at mztaNormalizePlain.
 export function cleanupNewlines(text) {
-  return text
-  .replace(/\r\n/g, '\n')
-  .replace(/[ \t]+\n/g, '\n')
-  .replace(/\n{2,}/g, '\n')
-  .replace(/[ \t]+/g, ' ')
-  .replace(/&nbsp;/gi,' ')
-  .trim();
+  return globalThis.mztaNormalizePlain(text);
 }
 
+export function cleanupNewlinesKeepParagraphs(text) {
+  return globalThis.mztaNormalizePlain(text, { keepParagraphs: true });
+}
+
+export function normalizePlainTextPart(text) {
+  return globalThis.mztaNormalizePlain(text, { keepColumns: true });
+}
+
+// Extract and strip inline <think>...</think> blocks from a model response.
+// Some models emit their reasoning inline in the content stream instead of in a
+// dedicated API field (Ollama without ollama_think, several OpenAI-compatible
+// servers), so the reasoning must be separated from the answer regardless of any
+// connection preference.
+//
+// Returns { text, thinking }:
+//   text:     the response with every <think> block removed
+//   thinking: the extracted reasoning, multiple blocks joined by a newline ('' if none)
+//
+// `truncateUnterminated` handles a response that ends with an unclosed <think>
+// (a truncated reply): when true, everything from the dangling <think> onward is
+// dropped, so callers that parse the response never receive raw reasoning.
+// Streaming callers leave it false and instead defer the flush until the closing
+// tag arrives.
+//
+// `trimLeading` drops the whitespace a removed <think> block leaves at the start.
+// Only correct for callers passing the WHOLE response: a per-segment caller must
+// leave it false, or the space opening a segment - interior to the text once the
+// segments are glued together - is destroyed, welding two words into one.
+export function stripThinkTags(text, truncateUnterminated = false, trimLeading = false) {
+  if (!text) {
+    return { text: '', thinking: '' };
+  }
+
+  let thinking = '';
+  const thinkRegex = /<think>([\s\S]*?)<\/think>/gi;
+  let match;
+  while ((match = thinkRegex.exec(text)) !== null) {
+    thinking += (thinking ? '\n' : '') + match[1];
+  }
+  let out = text.replace(thinkRegex, '');
+
+  // A <think> left open after the complete blocks were removed means the reply
+  // was cut off mid-reasoning.
+  if (truncateUnterminated) {
+    const dangling = out.search(/<think>/i);
+    if (dangling !== -1) {
+      thinking += (thinking ? '\n' : '') + out.slice(dangling).replace(/<think>/i, '');
+      out = out.slice(0, dangling);
+    }
+  }
+
+  return { text: trimLeading ? out.replace(/^\s+/, '') : out, thinking: thinking };
+}
+
+// Only for PLAIN text. Applying this to already-formed HTML injects spurious <br>
+// at every source newline (indentation, line breaks between tags) — use
+// normalizeHtmlSourceNewlines() for HTML instead.
 export function convertNewlinesToBr(text) {
-  return text.replace(/\r\n/g, '\n').replace(/\n/g, '<br>');
+  return globalThis.mztaLinesToHtml(text, { mode: 'br' });
 }
 
-function convertBrToNewlines(html) {
-  return html.replace(/<br\s*\/?>/gi, '\n');
+// Collapses the source newlines of an HTML string without turning them into markup.
+// In HTML the source newlines are not line breaks: the line structure is carried by
+// the tags (<div>, <p>, and any <br> already present in the body), so collapsing them
+// to a space preserves the semantics and keeps spurious <br> out of the AI prompt.
+export function normalizeHtmlSourceNewlines(html) {
+  if (!html) return '';
+  return html
+    .replace(/\r\n/g, '\n')
+    .replace(/\n/g, ' ')
+    .replace(/[ \t]{2,}/g, ' ');
 }
 
 export function convertNewlinesToParagraphs(input) {
-  return input
-    .split('\n')
-    .map(line => `<p>${escapeHtml(line)}</p>`)
-    .join('');
-}
-
-function escapeHtml(text) {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  return globalThis.mztaLinesToHtml(input, { mode: 'p' });
 }
 
 
@@ -416,6 +571,28 @@ export function openTab(url){
       browser.tabs.create({url: browser.runtime.getURL(url)});
     }
   })
+}
+
+// Open (or focus) the Menu Order page and ask it to highlight a specific prompt.
+// openTab dedups by exact URL and only focuses an already-open tab (it does not
+// re-run the page load), so we coordinate a refresh + highlight explicitly:
+//  - tab already open: focus it and send a message telling it to reload then highlight.
+//  - tab not open: stash the target in session storage and create the tab; the page
+//    reads and clears the stash after its initial load.
+// The bare URL is used for browser.tabs.create so openTab's dedup keeps working elsewhere.
+export async function revealPromptInMenuOrder(promptId) {
+  const path = '/pages/menu_order/mzta-menu-order.html';
+  const fullUrl = browser.runtime.getURL(path);
+  const tabs = await browser.tabs.query({ url: fullUrl });
+  if (tabs.length > 0) {
+    await browser.tabs.update(tabs[0].id, { active: true });
+    // Page is already loaded; ask it to refresh + highlight (it must reload first).
+    await browser.runtime.sendMessage({ command: 'menu_order_highlight', promptId });
+  } else {
+    // Stash the target so the page can pick it up after its initial load.
+    await browser.storage.session.set({ menu_order_highlight_target: promptId });
+    await browser.tabs.create({ url: fullUrl });
+  }
 }
 
 export function i18nConditionalGet(str) {
@@ -568,14 +745,22 @@ function sanitizeString(input) {
   return sanitized.toLowerCase().slice(0, 29);
 }
 
-/* returnType:
+/* Normalizes a user-typed list: splits on newlines and commas, trims, lowercases,
+   removes the duplicates and the empty entries, then sorts.
+   Empty entries are dropped because they carry no meaning and would otherwise survive
+   in the saved value: an emptied textarea used to be stored as [''] and a trailing
+   newline left a stray '' behind, which read as a configured list and, with returnType 1,
+   was rendered back as a leading blank line in the textarea.
+   returnType:
   0: string comma separated (default)
   1: string \n separated
   2: array
 */
 export function normalizeStringList(list, returnType = 0) {
-  let _array_new = list.split(/[\n,]+/);
-  _array_new = Array.from(new Set(_array_new.map(item => item.trim().toLowerCase()))).sort();
+  let _array_new = String(list ?? '').split(/[\n,]+/);
+  _array_new = Array.from(new Set(_array_new.map(item => item.trim().toLowerCase())))
+                    .filter(item => item !== '')
+                    .sort();
   switch(returnType) {
     case 0:
       return _array_new.join(', ');
@@ -586,6 +771,75 @@ export function normalizeStringList(list, returnType = 0) {
     default:
       return _array_new.join(', ');
   }
+}
+
+// True when the folder holding the message is flagged with any of the given specialUse values
+// ('inbox', 'junk', 'trash', 'sent', 'drafts', 'templates', 'archives').
+// Safe on a message with no folder (e.g. an attached or detached message), which yields false.
+export function messageFolderHasSpecialUse(message, specialUseList) {
+  const specialUse = message?.folder?.specialUse || [];
+  return specialUseList.some(item => specialUse.includes(item));
+}
+
+// Folders the automatic processing (auto add_tags, auto spam filter, auto summarize/translate)
+// must never run on:
+//  - junk/trash: already discarded by the user or by the server, spending API tokens on them
+//    is pointless;
+//  - drafts/templates/outbox/sent: written by the user, not received, so processing them
+//    automatically burns tokens on text the user is still composing (a draft opened while it is
+//    being written would otherwise be summarized or translated on the spot).
+// 'archives' is deliberately absent: an archived message is still a received one.
+// Manual actions (context menu, buttons) are never filtered by this list.
+export const AUTO_SKIP_SPECIAL_USE = ['junk', 'trash', 'drafts', 'templates', 'outbox', 'sent'];
+
+// allowSent re-enables the sent folder only, for the add_tags_auto_include_sent option.
+export function isMessageInAutoSkippedFolder(message, allowSent = false) {
+  const skipList = allowSent
+    ? AUTO_SKIP_SPECIAL_USE.filter(specialUse => specialUse !== 'sent')
+    : AUTO_SKIP_SPECIAL_USE;
+  return messageFolderHasSpecialUse(message, skipList);
+}
+
+// True when an address list holds at least one usable entry.
+// normalizeStringList() now drops the empty entries at save time, but the lists saved by the
+// previous versions can still hold a stray '' (an emptied textarea was stored as ['']), which a
+// plain list.length check would read as a configured list. This is also what makes the check
+// safe against a value that is not an array at all.
+export function hasAddressListEntries(list) {
+  if (!Array.isArray(list)) return false;
+  return list.some(item => (typeof item === 'string') && (item.trim() !== ''));
+}
+
+// Joins an address list into a comma separated string.
+// In a compose window the ComposeDetails 'to'/'cc' entries can be either plain address strings
+// ("Name <a@b.com>") or address book references shaped {id, type} (contacts and mailing lists).
+// Those references are dropped instead of being resolved: resolving them would require the
+// optional 'addressBooks' permission, which the add-on does not request.
+// A non array value is returned untouched, so an absent field flows through to
+// failSafePlaceholders() unchanged.
+// Thanks to https://github.com/TakiRyo for this method, that is derived from https://github.com/TakiRyo/ThunderAI/commit/0a24bbb92244d9c0ecbd50f298fb0d643c1ce4e9
+export function joinAddressList(list){
+  if(!Array.isArray(list)) return list;
+  return list.filter(entry => typeof entry === 'string').join(", ");
+}
+
+/* Matches the sender of an email against a list of addresses and domain patterns.
+   The author header is the raw "Name <addr@domain>" string, parsed with extractEmail().
+   Supported entries: "user@domain.com" (exact), "@domain.com" and "*@domain.com" (whole domain).
+   Returns false on an empty list or an unparseable author. */
+export function matchAddressList(author, list) {
+  if (!author || !hasAddressListEntries(list)) return false;
+  const senderEmail = extractEmail(String(author)).toLowerCase();
+  if (senderEmail === '') return false;
+  const senderDomain = senderEmail.slice(senderEmail.indexOf('@') + 1);
+  return list.some(item => {
+    if (typeof item !== 'string') return false;
+    let entry = item.trim().toLowerCase();
+    if (entry === '') return false;
+    if (entry.startsWith('*@')) entry = entry.slice(1);
+    if (entry.startsWith('@')) return senderDomain === entry.slice(1);
+    return senderEmail === entry;
+  });
 }
 
 export function prepareOriginURL(url) {
@@ -612,8 +866,12 @@ export async function transformTagsLabels(labels, tags_list) {
   return output;
 }
 
+// A select marked `data-empty-ok` accepts the empty value as a valid choice
+// (e.g. the timezone: empty means "no timezone enforced"), so it must not be
+// flagged in red.
 export function setTomSelectBorder(el){
-  if (el.getValue() === "") {
+  const emptyIsValid = el.input?.dataset?.emptyOk !== undefined;
+  if (el.getValue() === "" && !emptyIsValid) {
       el.control.style.border = '2px solid red';
   } else {
       el.control.style.border = '1px solid #d0d0d0';
@@ -650,50 +908,46 @@ export function getAPIsInitMessageString(args = {}) {
   return output;
 }
 
+// Special prompts are gated on the *effective* connection of each feature, not on the
+// global one: a feature pointing at its own API integration stays usable even when the
+// global connection is ChatGPT Web or still unset. `effective_conn` carries one already
+// resolved connection type per feature prefix (see getConnectionType(prefs, null, prefix)),
+// so this function makes the same judgement the options page makes for its feature rows.
 export function getActiveSpecialPromptsIDs(args = {}) {
   const {
     addtags = false,
-    addtags_api = false,
     get_calendar_event = false,
     get_calendar_event_from_clipboard = false,
     get_task = false,
     spamfilter = false,
     summarize = false,
     translate = false,
-    is_chatgpt_web = false,
-    no_connection = false
+    effective_conn = {}
   } = args;
   let output = [];
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs args: " + JSON.stringify(args));
-  // No AI connection chosen yet: no special prompt can work, so advertise none.
-  if (no_connection) {
-    return output;
-  }
-  if (is_chatgpt_web) {
-    if (addtags_api && addtags) {
-      output.push('prompt_add_tags');
-    }
-    return output;
-  }
-  if (addtags) {
+  const usable = (prefix) => isApiUsableConnection(effective_conn[prefix]);
+  if (addtags && usable('add_tags')) {
     output.push('prompt_add_tags');
   }
-  if (get_calendar_event) {
+  // Both calendar prompts share the get_calendar_event feature and prefix: the clipboard
+  // variant is never advertised on its own.
+  if (get_calendar_event && usable('get_calendar_event')) {
     output.push('prompt_get_calendar_event');
     if (get_calendar_event_from_clipboard) {
       output.push('prompt_get_calendar_event_from_clipboard');
     }
   }
-  if (get_task) {
+  if (get_task && usable('get_task')) {
     output.push('prompt_get_task');
   }
-  if (spamfilter) {
+  if (spamfilter && usable('spamfilter')) {
     output.push('prompt_spamfilter');
   }
-  if (summarize) {
+  if (summarize && usable('summarize')) {
     output.push('prompt_summarize');
   }
-  if (translate) {
+  if (translate && usable('translate')) {
     output.push('prompt_translate_this');
   }
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs output: " + JSON.stringify(output));
@@ -709,6 +963,15 @@ export function hasNoConnectionSelected(connection_type){
 
 export function hasSpecificIntegration(use, conntype){
   return use && (conntype != null) && (conntype !== '');
+}
+
+// Special features need a real API: neither ChatGPT Web (no API at all) nor an unset
+// connection can drive them. Single source of truth shared by the options rows, the
+// menu gating and the execution guards, so the three can never disagree.
+// Always feed it an *effective* connection type (getConnectionType with a prefix),
+// never the global one, or per-feature integrations get ignored.
+export function isApiUsableConnection(connection_type){
+  return !hasNoConnectionSelected(connection_type) && (connection_type !== 'chatgpt_web');
 }
 
 export function extractJsonObject(inputString) {
@@ -828,6 +1091,31 @@ export async function requestSitePermission(url) {
 
 // The following methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
 
+// Thunderbird's signature block ships its own leading <br>
+// (<div class="moz-signature"><br>...), while the cite-prefix block starts
+// directly with text (<div class="moz-cite-prefix">Am ... schrieb:<br></div>).
+// That asymmetry is the whole reason the spacer in insertHtml is conditional:
+// adding a <br> before a block that already begins with one yields a double
+// blank line. Whitespace-only text nodes are skipped, since the compose body
+// is pretty-printed. [#849]
+const startsWithBreak = function (element) {
+  if (!element || element.nodeType !== Node.ELEMENT_NODE) {
+    return false;
+  }
+  let node = element.firstChild;
+  while (node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      if (node.textContent.trim() === "") {
+        node = node.nextSibling;
+        continue;
+      }
+      return false;
+    }
+    return node.nodeType === Node.ELEMENT_NODE && node.tagName.toLowerCase() === "br";
+  }
+  return false;
+}
+
 const insertHtml = function (replyHtml, fullBody_string) {
   const parser = new DOMParser();
   let fullBody = parser.parseFromString(fullBody_string, "text/html");
@@ -860,12 +1148,21 @@ const insertHtml = function (replyHtml, fullBody_string) {
     }
   }
 
-  let final_p = document.createElement("p");
-  let br1 = document.createElement("br");
-  let br2 = document.createElement("br");
-  final_p.appendChild(br1);
-  final_p.appendChild(br2);
-  fullBody.body.insertBefore(final_p, fullBody.body.firstChild);
+  // Context-aware spacer at body level: exactly one blank line between the inserted
+  // answer and whatever follows it, but only when that block does not already begin
+  // with a <br> of its own (see startsWithBreak above). A <p><br><br></p> was used
+  // here unconditionally, but its paragraph margins stacked with the answer's block
+  // markup, producing a large gap, especially in body-text compose mode
+  // (mail.compose.default_to_paragraph=false). [#849]
+  // When there is neither a quote nor a signature (firstElement is null, e.g. a brand
+  // new compose) the answer lands before whatever the body already starts with, and
+  // that node drives the same decision. If the body is empty there is no following
+  // node at all: no spacer is added, since a trailing <br> after the answer would be a
+  // stray blank line rather than a separation.
+  const followingBlock = firstElement || fullBody.body.firstChild;
+  if (followingBlock && !startsWithBreak(followingBlock)) {
+    fullBody.body.insertBefore(document.createElement("br"), fullBody.body.firstChild);
+  }
   //fullBody.body.insertBefore(reply, fullBody.body.firstChild);
   let fragment = document.createDocumentFragment();
   Array.from(reply.body.childNodes).forEach(node => {

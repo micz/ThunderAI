@@ -5,6 +5,8 @@
     <title>ThunderAI - __MSG_GetTask_PageTitle__</title>
     <link rel="stylesheet" href="../_lib/mzta-design.css" />
     <link rel="stylesheet" href="mzta-get-task.css" />
+    <link rel="stylesheet" href="../_lib/autocomplete.css" />
+    <link rel="stylesheet" href="../_lib/editor-highlight.css" />
     <link rel="stylesheet" href="../_lib/connection-ui.css" />
     <link rel="icon" href="../../images/icon-16px.png" />
 </head>
@@ -25,8 +27,6 @@
 
             <!-- SETTINGS -->
             <div class="mzta_section">
-                <div class="mzta_eyebrow">__MSG_get_task_prompt_prefs_title__</div>
-
                 <!-- specific integration toggle -->
                 <div class="feature_row">
                     <div class="feature_info">
@@ -63,55 +63,27 @@
                     </label>
                 </div>
 
-                <!-- timezone select -->
+                <!-- timezone select (options generated at runtime by _lib/mzta-timezones.js) -->
                 <div class="mzta_field">
                     <span class="opt_title">__MSG_Select_your_timezone__:</span>
-                    <select id="calendar_timezone" name="calendar_timezone" class="option-input">
+                    <select id="calendar_timezone" name="calendar_timezone" class="option-input" data-empty-ok>
                         <option value=""></option>
-                        <option value="Pacific/Midway">(UTC-11:00) Atol Midway</option>
-                        <option value="Pacific/Honolulu">(UTC-10:00) Honolulu</option>
-                        <option value="America/Anchorage">(UTC-09:00) Anchorage</option>
-                        <option value="America/Los_Angeles">(UTC-08:00) Los Angeles</option>
-                        <option value="America/Denver">(UTC-07:00) Denver</option>
-                        <option value="America/Mexico_City">(UTC-06:00) Ciudad de Mexico</option>
-                        <option value="America/New_York">(UTC-05:00) Nueva York</option>
-                        <option value="America/Caracas">(UTC-04:00) Caracas</option>
-                        <option value="America/Sao_Paulo">(UTC-03:00) Sao Paulo</option>
-                        <option value="Atlantic/South_Georgia">(UTC-02:00) South Georgia</option>
-                        <option value="Atlantic/Azores">(UTC-01:00) Azores</option>
-                        <option value="Europe/London">(UTC+00:00) London</option>
-                        <option value="Europe/Rome">(UTC+01:00) Roma</option>
-                        <option value="Africa/Johannesburg">(UTC+02:00) Johannesburg</option>
-                        <option value="Europe/Moscow">(UTC+03:00) Moscow</option>
-                        <option value="Asia/Dubai">(UTC+04:00) Dubai</option>
-                        <option value="Asia/Karachi">(UTC+05:00) Karachi</option>
-                        <option value="Asia/Dhaka">(UTC+06:00) Dhaka</option>
-                        <option value="Asia/Yangon">(UTC+06:30) Yangon</option>
-                        <option value="Asia/Bangkok">(UTC+07:00) Bangkok</option>
-                        <option value="Asia/Shanghai">(UTC+08:00) Shanghai</option>
-                        <option value="Asia/Tokyo">(UTC+09:00) Tokyo</option>
-                        <option value="Australia/Adelaide">(UTC+09:30) Adelaide</option>
-                        <option value="Australia/Sydney">(UTC+10:00) Sydney</option>
-                        <option value="Pacific/Noumea">(UTC+11:00) Noumea</option>
-                        <option value="Pacific/Fiji">(UTC+12:00) Suva</option>
-                        <option value="Pacific/Chatham">(UTC+12:45) Chatham Islands</option>
-                        <option value="Pacific/Tongatapu">(UTC+13:00) Nuku'alofa</option>
-                        <option value="Pacific/Kiritimati">(UTC+14:00) Kiritimati</option>
                     </select>
                 </div>
             </div>
 
             <!-- PROMPT -->
             <div class="mzta_section" id="get_task_container">
-                <div class="mzta_eyebrow">__MSG_GetCalendarEvent_prompt_text_title__<span id="get_task_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                <div class="mzta_prompt_title">__MSG_GetCalendarEvent_prompt_text_title__<span id="get_task_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
                 <p class="mzta_help">
                     __MSG_prefs_OptionText_btnManagePrompts_infoline__
                     <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_more_info_string__</a>
                     <br><b>__MSG_prefs_OptionText_AdvancedPromptResponse_infoline2__</b>
                 </p>
                 <div class="mzta_field">
-                    <div class="autocomplete-container">
-                        <textarea id="get_task_prompt_text" rows="15"></textarea>
+                    <div class="autocomplete-container editor-wrap">
+                        <div class="editor-backdrop" aria-hidden="true"><div class="editor-highlights"></div></div>
+                        <textarea id="get_task_prompt_text" rows="15" class="editor"></textarea>
                         <ul class="autocomplete-list hidden"></ul>
                     </div>
                     <div id="get_task_info_additional_statements"></div>

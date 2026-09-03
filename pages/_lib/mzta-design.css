@@ -37,6 +37,45 @@
     --success: #1f8a5b;
     --warning: #c9760a;
 
+    /* Inline validation error (malformed JSON in a connection field). Red, not
+       the amber --warning: this is a value the API cannot use, not a caveat. */
+    --jsonError: #b3261e;
+
+    /* Inline note saying the selected Claude model ignores an option (see
+       .anthropic_caps_note). Dark blue, not --jsonError red: nothing is wrong
+       with the stored value, it simply does not apply to this model. */
+    --capsNote: #14448c;
+
+    /* Code-like text: {%placeholder%} chips in the prompt editors. Same values as
+       the --code/--code-bg tokens on the two Custom Prompts / Data Placeholders
+       pages, so a placeholder chip looks the same everywhere in the add-on. */
+    --code: #1d4ed8;
+    --codeBg: #e7efff;
+
+    /* {%placeholder%} chip that exists but is not available for the prompt's
+       type. Opaque, unlike the --warn* disclaimer washes above: a token-sized
+       chip needs real contrast. Same values as the two Custom Prompts / Data
+       Placeholders pages. */
+    --warnChipText: #8a5300;
+    --warnChipBg: #fdf1dc;
+    --warnChipBorder: #e0a44a;
+
+    /* {%placeholder%} chip that does not exist at all, or an unterminated token.
+       Red because no prompt type can make it resolve, where --warnChip* means
+       "real placeholder, wrong context". Opaque for the same reason, and its own
+       triple rather than --jsonError, which is a bare text colour with no
+       background/border pair. Same values as the two table pages' --err-*. */
+    --errChipText: #a52826;
+    --errChipBg: #fbe3e3;
+    --errChipBorder: #d98b8a;
+
+    /* Monospace stack for placeholder tokens and other code-like text. Same
+       name and value as the local token on the two Custom Prompts / Data
+       Placeholders pages, so pages/_lib/autocomplete.css can rely on one name
+       across both design-token systems. Theme-independent, hence not repeated
+       in the dark block below. */
+    --font-mono: ui-monospace, 'Cascadia Code', monospace;
+
     /* ThunderStats (green) tint */
     --statsAccent: #1f8a464f;
     --statsBg: rgba(31, 138, 70, .04);
@@ -59,6 +98,30 @@
         --fieldLine: rgba(255, 255, 255, .15);
         --accent: #2c5e9b;
         --accentLight: #4c9dff21;
+
+        /* Code-like text (see the light block). Opaque, not an alpha wash: a
+           token-sized chip needs real contrast against --field. */
+        --code: #8fb6ff;
+        --codeBg: #1a2740;
+
+        /* Inline validation error (see the light block). Lightened: the light
+           value is too dark to read against --field/--panel here. */
+        --jsonError: #f2837c;
+
+        /* Model-capability note (see the light block). Light blue: the Claude
+           connection rows have a dark bordeaux background here, against which
+           the light-theme dark blue would be unreadable. */
+        --capsNote: #93c0f5;
+
+        /* Wrong-type placeholder chip (see the light block). */
+        --warnChipText: #f0c07a;
+        --warnChipBg: #3a2c14;
+        --warnChipBorder: #7a5a22;
+
+        /* Missing placeholder chip (see the light block). */
+        --errChipText: #f0a3a1;
+        --errChipBg: #3d1b1b;
+        --errChipBorder: #7d3a38;
 
         /* ThunderStats (green) tint */
         --statsAccent: #54c07a75;
@@ -116,10 +179,8 @@ input, select, button, textarea { font-family: inherit; }
     padding: 20px 22px;
 }
 .mzta_eyebrow {
-    font-size: 11px;
+    font-size: 15px;
     font-weight: 800;
-    letter-spacing: .1em;
-    text-transform: uppercase;
     color: var(--dim);
 }
 
@@ -219,15 +280,12 @@ input, select, button, textarea { font-family: inherit; }
     stroke: var(--statsAccent);
 }
 
-/* LLM disclaimer strip */
+/* LLM disclaimer line — a quiet inline note, no box; on the options page it
+   shares a row with the keyboard-shortcut strip (see #mzta_info_row). */
 #mzta_disclaimer {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
-    padding: 11px 13px;
-    border-radius: 10px;
-    border: 1px solid var(--warnBorder);
-    background: var(--warnBg);
+    gap: 8px;
     font-size: 11.5px;
     color: var(--dim);
     line-height: 1.5;
@@ -256,7 +314,8 @@ input, select, button, textarea { font-family: inherit; }
 #mzta_body label:not(#connection_ui_table label):not(.mzta_switch):not(.mzta_adv_check) { width: auto; }
 
 /* Section eyebrow inside body */
-.mzta_section > .mzta_eyebrow { margin-bottom: 13px; }
+.mzta_section > .mzta_eyebrow,
+.mzta_section > .mzta_prompt_title { margin-bottom: 13px; }
 .mzta_section_sub { font-size: 12px; color: var(--dim); margin-bottom: 6px; line-height: 1.45; }
 
 /* Divider */
@@ -264,6 +323,8 @@ input, select, button, textarea { font-family: inherit; }
 
 /* Generic labels / fields */
 .opt_title { font-size: 12px; font-weight: 700; color: var(--text); }
+/* Section title for the prompt-text blocks — sized like .opt_title. */
+.mzta_prompt_title { font-size: 12px; font-weight: 700; color: var(--text); }
 .mzta_field { display: flex; flex-direction: column; gap: 6px; }
 .mzta_field_row { display: flex; gap: 14px; }
 .mzta_field_row > .mzta_field { flex: 1; }
@@ -290,6 +351,46 @@ input, select, button, textarea { font-family: inherit; }
 #mzta_card select,
 #mzta_card textarea { width: 100%; }
 #mzta_card textarea { min-height: 70px; resize: vertical; }
+
+/* Placeholder-highlighting editor metrics for the pages using this design
+   system. Structure comes from pages/_lib/editor-highlight.css; these are the
+   values it reads, and they MUST match the #mzta_card textarea rules above
+   (padding, font, line-height) or the mirror drifts away from the text.
+   --ed-surface-focus mirrors the focus rule further down, which repaints the
+   field background — the mirror needs that highlight on the wrapper instead. */
+#mzta_card .editor-wrap {
+    --ed-padding: 9px 11px;
+    /* Monospace, matching the Custom Prompts editor: it is what makes a
+       {%placeholder%} chip read as a token rather than as tinted prose. Must be
+       applied to the textarea too (see the rule further down) — setting it on the
+       chip alone would change its advance width and break mirror alignment. */
+    --ed-font: var(--font-mono);
+    /* Matches #mzta_card textarea's default line-height; the feature-page
+       override further down bumps both together. */
+    --ed-line-height: normal;
+    --ed-surface: var(--field);
+    --ed-surface-focus: var(--panel);
+    --ed-border: var(--fieldLine);
+    /* NOT --accentLight: that token is a 6%-alpha wash (#0a68ff0f) meant for
+       large hover surfaces, and a token-sized chip painted with it is invisible
+       (1.09 contrast against --field). --code/--codeBg are dedicated tokens with
+       per-theme values, since mixing --accent into --field cannot reach a legible
+       tint in dark mode -- the dark --accent is already dim. */
+    --ed-chip-bg: var(--codeBg);
+    --ed-chip-fg: var(--code);
+    /* NOT --warnBg/--warnBorder: like --accentLight those are low-alpha washes
+       (7% / 28%) for large disclaimer panels, and invisible on a token-sized
+       chip. --warnChip* are opaque, with the same values the two Custom Prompts /
+       Data Placeholders pages use. */
+    --ed-warn-bg: var(--warnChipBg);
+    --ed-warn-fg: var(--warnChipText);
+    --ed-warn-border: var(--warnChipBorder);
+    /* Red tier: the id does not exist, or the token is unterminated. Same
+       opaque-not-a-wash caution as --warnChip* above. */
+    --ed-err-bg: var(--errChipBg);
+    --ed-err-fg: var(--errChipText);
+    --ed-err-border: var(--errChipBorder);
+}
 input.win_prop { width: 100px; }
 span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: var(--dim); }
 
@@ -478,16 +579,80 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     padding: 5px 9px !important;
     border-radius: 7px !important;
 }
-/* TomSelect model dropdowns fill the panel width and match the field look */
-#connection_ui_table .ts-wrapper,
-#connection_ui_adv_table .ts-wrapper { width: 100%; }
-#connection_ui_table .ts-control,
-#connection_ui_adv_table .ts-control {
+/* TomSelect controls match the field look and follow the light/dark theme.
+   The vendored tom-select CSS hardcodes light colors (#fff backgrounds, #303030
+   text) on the control, on the inner <input> that shows the selected item, and
+   on the dropdown, so each of those has to be pointed at the theme tokens. */
+#mzta_card .ts-wrapper { width: 100%; }
+#mzta_card .ts-control,
+#mzta_card .ts-wrapper.single .ts-control,
+#mzta_card .ts-wrapper.single.input-active .ts-control {
     background: var(--field);
+    background-image: none;     /* the vendored CSS paints a light gradient */
+    box-shadow: none;
     border: 1px solid var(--fieldLine);
     border-radius: 8px;
     min-height: 38px;
     color: var(--text);
+}
+/* The selected item is rendered in the inner input: without this it keeps the
+   vendored dark-on-light color and disappears against a dark field. */
+#mzta_card .ts-control > input,
+#mzta_card .ts-control > input::placeholder,
+#mzta_card .ts-control .item {
+    color: var(--text);
+}
+#mzta_card .ts-control > input::placeholder { color: var(--dim); }
+#mzta_card .ts-wrapper.single .ts-control:after { border-top-color: var(--dim); }
+#mzta_card .ts-wrapper.single.dropdown-active .ts-control:after { border-bottom-color: var(--dim); }
+#mzta_card .ts-dropdown,
+#mzta_card .ts-dropdown.single {
+    background: var(--panel);
+    border: 1px solid var(--fieldLine);
+    color: var(--text);
+}
+#mzta_card .ts-dropdown .option,
+#mzta_card .ts-dropdown .optgroup-header,
+#mzta_card .ts-dropdown .no-results {
+    background: transparent;
+    color: var(--text);
+}
+#mzta_card .ts-dropdown .active,
+#mzta_card .ts-dropdown .active.create {
+    background: var(--accentLight);
+    color: var(--text);
+}
+#mzta_card .ts-dropdown [data-selectable] .highlight {
+    background: color-mix(in srgb, var(--accent) 35%, transparent);
+    color: inherit;
+}
+#mzta_card .ts-dropdown .optgroup { border-top-color: var(--line); }
+/* Keep the caret on the same line as the selected value.
+   `.ts-control` is `display:flex; flex-wrap:wrap`. In a single select the chosen
+   value is a sibling `div.item` (not the input's own text), and the plugin-free
+   vendored CSS styles `.item` only under `plugin-*` selectors, so here it is an
+   unstyled block flex item. Its `min-width` therefore resolves to `auto` = its
+   min-content width, and a model id such as `claude-sonnet-4-5-20250929` is one
+   unbreakable token, so the item cannot shrink; item + input then exceed the
+   control and `flex-wrap` drops the input — and the caret — to a second row.
+   `min-width:0` is what lets it shrink; without it `max-width` is ignored, since
+   the automatic minimum wins over it in flex sizing. (The vendored 7rem minimum
+   on the input is not the cause: it is not !important and these rules outrank
+   it on specificity.) */
+#mzta_card .ts-wrapper.single.has-items .ts-control { flex-wrap: nowrap; }
+#mzta_card .ts-wrapper.single.has-items .ts-control > .item {
+    min-width: 0;               /* defeat the automatic min-content floor */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 0 1 auto;
+}
+/* The input keeps a small but non-zero width so the caret is always visible
+   sitting just after the value, and grows to take the remaining room (which is
+   also the space it needs once the user starts typing a search). */
+#mzta_card .ts-wrapper.single.has-items .ts-control > input {
+    min-width: 4px;
+    flex: 1 1 4px;
 }
 /* CORS warning rows keep a distinct amber note look */
 #connection_ui_table tr[id$="_cors_warning"] td,
@@ -577,6 +742,31 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     width: 12px;
     height: 12px;
     animation: mztaspin .8s linear infinite;
+}
+
+/* --- Provider setup note ------------------------------------------------ */
+/* Last element inside #mzta_conn_panel, below the connection-test strip. It has
+   no heading of its own — the panel header already titles the whole block. Only
+   the body text carries the per-provider colour, as a left accent bar. */
+#miczDescription { margin-top: 14px; }
+#miczDescription p { margin: 0; }
+/* display:block is required here — updateDescription() reveals the active
+   provider's text with style.display = "", falling back to this value. */
+#miczDescription .info_specific {
+    display: block;
+    border-left: 3px solid var(--tint-accent, var(--accent));
+    padding-left: 11px;
+    font-size: 12.5px;
+    color: var(--text);
+    line-height: 1.55;
+    transition: border-color .2s;
+}
+/* Sits inline at the end of the active provider's sentence (moved there by
+   updateDescription()), so it flows with the text rather than breaking below. */
+#mzta_info_guide {
+    margin-left: 5px;
+    font-weight: 700;
+    white-space: nowrap;
 }
 
 /* ===========================================================================
@@ -703,6 +893,18 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     line-height: 1.35;
 }
 .mzta_adv_check input[type="checkbox"] { margin-top: 1px; accent-color: var(--accent); }
+/* Behaviour toggle rows: same metrics as .feature_row, but no border/padding since
+   #mzta_adv_panel already supplies the 15px gap between its flex children. */
+.mzta_adv_row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.mzta_adv_info { flex: 1 1 auto; min-width: 0; }
+.mzta_adv_name { font-size: 13px; font-weight: 600; color: var(--text); }
+.mzta_adv_desc { font-size: 11.5px; color: var(--dim); margin-top: 2px; line-height: 1.4; }
 .mzta_storage_row {
     display: flex;
     align-items: center;
@@ -715,25 +917,69 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 }
 
 /* ===========================================================================
-   IMPORTANT INFORMATION
+   BOTTOM BLOCK
+   Disclaimer + keyboard-shortcut stack · footer.
+   The wrapper takes the #mzta_body > * rhythm; the parts below space
+   themselves with their own margin-top.
    =========================================================================== */
-#miczDescription { font-size: 12px; color: var(--text); line-height: 1.55; }
-#miczDescription h1 { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
-#miczDescription p { margin: 0; }
-#miczDescription .info_specific { border-left: 3px solid var(--tint-accent, var(--accent)); padding-left: 11px; display: block; }
-#miczDescription .info_shared { color: var(--dim); display: block; margin-top: 9px; }
 
-/* ===========================================================================
-   FOOTER
-   =========================================================================== */
-#mzta_footer {
-    border-top: 1px solid var(--line);
-    padding-top: 16px;
+/* --- Disclaimer + shortcut stack ---------------------------------------- */
+/* Two centered rows stacked vertically: the disclaimer on a single line, then
+   the shortcut strip below it, each only as wide as its own content. */
+#mzta_info_row {
+    margin-top: 14px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 12px;
+}
+/* Sized to its own content so it reads as one line (icon + sentence + privacy
+   link) whenever the card is wide enough; it still wraps instead of overflowing
+   on narrow windows, hence align-items rather than a hard nowrap. */
+#mzta_info_row > #mzta_disclaimer {
+    align-items: center;
+    margin-top: 0;
+    width: fit-content;
+    max-width: 100%;
     text-align: center;
-    gap: 8px;
+}
+
+/* --- Keyboard-shortcut strip -------------------------------------------- */
+/* Shrink-to-fit and centred by the stack above — never full width. */
+#mzta_shortcut_strip {
+    align-self: center;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 13px;
+    background: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 10px;
+}
+.mzta_shortcut_label { font-size: 12.5px; color: var(--dim); }
+#mzta_shortcut_keys { display: flex; gap: 4px; }
+#mzta_shortcut_keys kbd {
+    font: inherit;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--fieldLine);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    padding: 3px 6px;
+}
+
+/* --- Footer — plain centered links -------------------------------------- */
+#mzta_footer {
+    border-top: 1px solid var(--line);
+    margin-top: 20px;
+    padding-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 26px;
     font-size: 12px;
     color: var(--dim);
     line-height: 1.5;
@@ -789,7 +1035,7 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 /* ===========================================================================
    PER-PROVIDER TINT TOKENS (both themes)
    Derived from ThunderAI's conntype_* base colours; drives the connection
-   panel, provider pill, Important-Information accent bar.
+   panel, provider pill, provider setup note accent bar.
    lift(v) = round(v + (255-v)*0.55) for the dark-mode accent.
    =========================================================================== */
 /* Light */
@@ -800,7 +1046,7 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 #mzta_conn_panel.tint_ollama_api        { --tint-bg: rgba(31,122,46,.08);  --tint-border: rgba(31,122,46,.40);  --tint-pill: rgba(31,122,46,.14);  --tint-accent: rgb(31,122,46); }
 #mzta_conn_panel.tint_openai_comp_api   { --tint-bg: rgba(122,43,191,.08); --tint-border: rgba(122,43,191,.40); --tint-pill: rgba(122,43,191,.14); --tint-accent: rgb(122,43,191); }
 
-/* Important-Information accent bar follows the same tint (set on #miczDescription) */
+/* Provider setup note — only the accent bar is tinted (set on #miczDescription) */
 #miczDescription.tint_chatgpt_web       { --tint-accent: rgb(180,83,14); }
 #miczDescription.tint_chatgpt_api       { --tint-accent: rgb(10,83,214); }
 #miczDescription.tint_google_gemini_api { --tint-accent: rgb(150,120,12); }
@@ -944,9 +1190,20 @@ body.mzta_feature_page .mzta_section > .mzta_eyebrow {
     font-weight: 700;
     margin-bottom: 16px;
 }
+/* Prompt-text section title: same accent-bar treatment as the section
+   eyebrow, but sized like .opt_title (15px/600) instead of 12px/700. */
+body.mzta_feature_page .mzta_section > .mzta_prompt_title {
+    display: block;
+    border-left: 3px solid var(--accent);
+    padding-left: 9px;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
 /* Intro help text under a section header (e.g. the prompts section):
    pull it up under the eyebrow, then space it before the first field. */
-body.mzta_feature_page .mzta_section > .mzta_eyebrow + .mzta_help {
+body.mzta_feature_page .mzta_section > .mzta_eyebrow + .mzta_help,
+body.mzta_feature_page .mzta_section > .mzta_prompt_title + .mzta_help {
     margin: -8px 0 16px;
     font-size: 13.5px;
     line-height: 1.5;
@@ -964,9 +1221,15 @@ body.mzta_feature_page .mzta_section > .feature_row {
     padding-top: 18px;
     margin-top: 18px;
 }
-/* First interactive row after the header/intro block: no divider. */
+/* First interactive row after the header/intro block: no divider. The
+   :first-child pair covers headerless sections (the settings card on the
+   feature pages has no eyebrow), where the row itself opens the card. */
+body.mzta_feature_page .mzta_section > .mzta_field:first-child,
+body.mzta_feature_page .mzta_section > .feature_row:first-child,
 body.mzta_feature_page .mzta_section > .mzta_eyebrow + .mzta_field,
 body.mzta_feature_page .mzta_section > .mzta_eyebrow + .feature_row,
+body.mzta_feature_page .mzta_section > .mzta_prompt_title + .mzta_field,
+body.mzta_feature_page .mzta_section > .mzta_prompt_title + .feature_row,
 body.mzta_feature_page .mzta_section > .mzta_help + .mzta_field,
 body.mzta_feature_page .mzta_section > .mzta_help + .feature_row {
     border-top: none;
@@ -980,6 +1243,7 @@ body.mzta_feature_page .mzta_section > #mzta_conn_panel {
 
 /* --- Typography (scoped up-sizing) ------------------------------------- */
 body.mzta_feature_page .opt_title { font-size: 15px; font-weight: 600; }
+body.mzta_feature_page .opt_title_small { font-size: 13.5px; font-weight: normal; }
 body.mzta_feature_page .mzta_help,
 body.mzta_feature_page .feature_desc {
     font-size: 13.5px;
@@ -988,11 +1252,65 @@ body.mzta_feature_page .feature_desc {
 }
 body.mzta_feature_page .feature_name { font-size: 15px; font-weight: 600; }
 
+/* Injected connection rows: match the feature-page text scale.
+   connection-ui.js emits most description text as a bare text node inside
+   <label> (after a <br>), not wrapped in .small_info/<i>, so the .mzta_help
+   rule above never reaches it and it falls back to the browser default
+   (~16px) — visibly larger than the descriptions outside the panel. Setting
+   size/colour on the cell lets those un-wrapped nodes inherit the same scale,
+   and the .opt_title/.small_info rules below restore the feature-page label
+   and description sizes that the 1-1-0 panel rules (see the
+   #connection_ui_table block above) would otherwise shrink.
+   The CORS-warning rows are excluded: their amber note styling is only 1-1-1,
+   so the selector below would otherwise override its `color: var(--warning)`
+   with the muted description colour. */
+body.mzta_feature_page #connection_ui_table tr:not([id$="_cors_warning"]) td,
+body.mzta_feature_page #connection_ui_adv_table tr:not([id$="_cors_warning"]) td {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--dim);
+    text-wrap: pretty;
+}
+body.mzta_feature_page #connection_ui_table .opt_title,
+body.mzta_feature_page #connection_ui_adv_table .opt_title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+}
+body.mzta_feature_page #connection_ui_table .small_info,
+body.mzta_feature_page #connection_ui_table i,
+body.mzta_feature_page #connection_ui_adv_table .small_info,
+body.mzta_feature_page #connection_ui_adv_table i {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--dim);
+}
+
 /* --- Selects / text fields --------------------------------------------- */
 body.mzta_feature_page #mzta_card select {
     min-height: 40px;
 }
+/* Kept in step with --ed-line-height below: the highlight mirror must use the
+   same line-height as the textarea it sits behind, or the two drift apart. */
 body.mzta_feature_page #mzta_card textarea { line-height: 1.6; }
+body.mzta_feature_page #mzta_card .editor-wrap { --ed-line-height: 1.6; }
+
+/* The highlight mirror needs its textarea transparent so the painted mirror
+   behind it shows through. editor-highlight.css says so on `.editor-wrap .editor`
+   (0,0,2,0), but `#mzta_card textarea` above is (0,1,0,1) and an id beats any
+   number of classes — so without this repetition, scoped to #mzta_card, the
+   textarea stays opaque with black text and hides the mirror completely.
+   Keep in sync with the same declarations in editor-highlight.css. */
+#mzta_card .editor-wrap .editor {
+    background: transparent;
+    color: transparent;
+    caret-color: var(--text);
+    border-color: var(--ed-border);
+    /* Must equal --ed-font above: the mirror reads that token, the textarea reads
+       this declaration, and if the two fonts differ the highlight drifts off the
+       text. Beats `input, select, button, textarea { font-family: inherit }`. */
+    font-family: var(--ed-font);
+}
 
 /* --- Number fields: label/desc left, compact control right ------------- */
 body.mzta_feature_page .mzta_field_num {
@@ -1031,3 +1349,8 @@ body.mzta_feature_page #mzta_card textarea:focus {
     outline: none;
     transition: border-color .13s ease, box-shadow .13s ease, background .13s ease;
 }
+
+/* ...except a highlight-mirror textarea, which must stay transparent or it hides
+   the mirror. The focus tint moves to the wrapper (:focus-within) instead. This
+   has to sit AFTER the rule above: same specificity, so source order decides. */
+body.mzta_feature_page #mzta_card .editor-wrap .editor:focus { background: transparent; }

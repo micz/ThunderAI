@@ -20,74 +20,155 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { buildSendIcon, buildStopIcon } from './svgIcons.js';
+import { buildSendIcon, buildStopIcon, buildCheckIcon, buildAlertIcon } from './svgIcons.js';
+import { SHARED_BASE_CSS } from './sharedStyles.js';
 
 const messageInputTemplate = document.createElement('template');
 
 const messagesInputStyle  = document.createElement('style');
-messagesInputStyle.textContent = `
+messagesInputStyle.textContent = SHARED_BASE_CSS + `
     :host {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        height: 24px;
-        margin: var(--margin);
-        margin-bottom: 20px;
+        /* flex-end, not center: the textarea grows upwards, so the send/stop
+           buttons must stay pinned to the bottom line rather than drifting to
+           the middle of a three-line field. */
+        align-items: flex-end;
+        gap: 10px;
+        padding: 12px 16px 16px;
+        border-top: 1px solid var(--border);
     }
+    /* Heights are derived from line-height + vertical padding + borders:
+       one line = 1.125rem + 2*11px + 2*1px = 42px, matching #sendButton.
+       Three lines is the maximum, hence max-height = 42px + 2*1.125rem = 78px;
+       beyond that the field scrolls. Recompute both if any of those change. */
     #messageInputField {
         flex-grow: 1;
-        padding: 10px;
-        font-size: 1rem;
-        border: 1px solid lightgrey;
-        border-radius: 10px;
-        margin-right: var(--padding);
+        box-sizing: border-box;
+        padding: 11px 14px;
+        font: inherit;
+        font-size: .875rem;
+        line-height: 1.125rem;
+        min-height: 42px;
+        max-height: 78px;
+        overflow-y: auto;
+        resize: none;
+        white-space: pre-wrap;
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        background: var(--surface);
+        color: var(--ink);
         outline: none;
+        transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    #messageInputField::placeholder {
+        color: var(--ink-3);
     }
     #messageInputField:focus {
-        border-color: darkgrey;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
     }
-    #sendButton {
-        width: 44px;
-        height: 36px;
-        cursor: pointer;
-        border-radius: 10px;
-        border: 1px outset buttonface;
-    }
-    #stopButton {
-        width: 44px;
-        height: 36px;
-        cursor: pointer;
-        border-radius: 10px;
-    }
-    #statusLogger{
-        font-size: 0.8rem;
-        position: absolute;
-        bottom: 1.5em;
-        right: 5em;
-        border: 1px solid lightgrey;
-        border-radius: 5px;
-        padding: 5px;
-        background: #F2F2F2;
+    #sendButton, #stopButton {
         display: flex;
         align-items: center;
-        gap: 3px;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        flex-shrink: 0;
+        cursor: pointer;
+        border: none;
+        border-radius: var(--r-lg);
+        background: var(--accent);
+        color: #fff;
+        transition: background .12s ease;
     }
-    #statusLoggerImg{
-        display: none;
-        vertical-align: middle;
+    #sendButton:hover:not(:disabled), #stopButton:hover:not(:disabled) {
+        background: var(--accent-dark);
     }
-    #statusLoggerText{
+    #sendButton:disabled, #stopButton:disabled {
+        opacity: .45;
+        cursor: default;
+    }
+
+    /* Floating status pill: straddles the input field's top border instead of
+       taking a row of its own. Anchored to the host, which is position:relative,
+       so the containing block is the host's padding box. Anchored from the
+       bottom rather than the top because the textarea grows upwards: its top
+       border stays at padding-bottom + one-line height above the host's bottom
+       edge only while the field is one line tall, so we pin the pill to that
+       baseline and let the translateY centre it on the border line whatever the
+       pill's height. Keep in sync with :host padding-bottom and the field's
+       min-height. */
+    #statusLogger{
+        position: absolute;
+        bottom: calc(16px + 42px - 1px);
+        transform: translateY(50%);
+        right: 80px;
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: .75rem;
         font-weight: 600;
+        padding: 5px 11px;
+        border-radius: var(--r-pill);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--ink-2);
+        box-shadow: 0 6px 16px -8px var(--shadow);
+        white-space: nowrap;
+    }
+    /* Fixed-size centring box for the pill's leading icon. The states use
+       several icon sizes (alert 13, check 15, waiting/loading 16), so the wrapper
+       is sized to the largest and centres whatever it holds — that way swapping
+       states never shifts the pill's height or the text beside it. */
+    #statusLoggerIcon{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        width: 16px;
+        height: 16px;
+    }
+    /* Each icon keeps its own intrinsic width/height attributes; block display
+       drops the inline-baseline descender gap, and flex:none stops the flex
+       layout from stretching a small icon (the 7px dot) to the wrapper's size. */
+    #statusLoggerIcon svg{
+        display: block;
+        flex: none;
+    }
+    /* Waiting keeps the neutral grey look, but states its border explicitly so
+       it reads as a framed pill rather than floating text. The in-flight motion
+       comes from mzta-waiting-server.svg's own SMIL animation (expanding rings),
+       so no CSS animation is needed here. */
+    #statusLogger.status-waiting{
+        border-color: color-mix(in srgb, var(--ink-3) 55%, var(--border));
+        background: var(--surface-2);
+        color: var(--ink-2);
     }
     #statusLogger.status-working{
-        border-color: #2196F3;
-        background: #E3F2FD;
-        color: #1565C0;
+        border-color: var(--info-border);
+        background: var(--info-bg);
+        color: var(--info-ink);
+    }
+    /* The two self-animating SVGs loaded as images: mzta-waiting-server.svg
+       (waiting) and mzta-loading.svg (streaming). Block display keeps them off
+       the text baseline so the flex wrapper can centre them. */
+    #statusLoggerIcon img{
+        display: block;
+        flex: none;
+        width: 16px;
+        height: 16px;
     }
     #statusLogger.status-done{
-        border-color: #4CAF50;
-        background: #E8F5E9;
-        color: #2E7D32;
+        border-color: color-mix(in srgb, var(--ok-ink) 40%, var(--bg));
+        background: var(--ok-bg);
+        color: var(--ok-ink);
+    }
+    #statusLogger.status-error{
+        border-color: var(--err-border);
+        background: var(--err-bg);
+        color: var(--err-ink);
     }
     @keyframes statusFadeOut {
         from { opacity: 1; }
@@ -112,21 +193,32 @@ messagesInputStyle.textContent = `
         display:none;
         transform:translate(-50%,-50%);
         text-align:center;
-        background:#333;
-        color:white;
-        border:3px solid white;
+        background:var(--surface);
+        color:var(--ink);
+        border:1px solid var(--border);
+        box-shadow: 0 18px 44px -20px var(--shadow);
         box-sizing: border-box;
+        z-index: 10;
     }
     #mzta-custom_loading{
         height:50px;display:none;
     }
     #mzta-custom_textarea{
-        color:black;
+        color:var(--ink);
+        background:var(--surface-2);
+        border:1px solid var(--border);
+        border-radius:var(--r-sm);
         padding:5px;
+        font:inherit;
         font-size:0.9375rem;
         width:100%;
         box-sizing: border-box;
         resize: vertical;
+    }
+    #mzta-custom_textarea:focus{
+        outline:none;
+        border-color:var(--accent);
+        box-shadow:0 0 0 3px var(--accent-soft);
     }
     #mzta-custom_info{
         text-align:center;
@@ -142,37 +234,36 @@ messagesInputStyle.textContent = `
         bottom: 5px;
         right: 10px;
         font-size: 0.75rem;
-        color: #ccc;
+        color: var(--ink-3);
     }
     #mzta-custom_btn{
         margin-top:7px;
+        padding: 8px 14px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: var(--r-md);
+        font: inherit;
+        font-size: .8125rem;
+        font-weight: 650;
+        cursor: pointer;
+        transition: background .12s ease;
     }
-    @media (prefers-color-scheme: dark) {
-        #messageInputField {
-            background-color: #303030;
-            color: #ffffff;
-        }
-        #statusLogger{
-            background: #212121;
-            color: #ffffff;
-        }
-        #statusLogger.status-working{
-            border-color: #64B5F6;
-            background: #1A3A5C;
-            color: #90CAF9;
-        }
-        #statusLogger.status-done{
-            border-color: #81C784;
-            background: #1B3D1E;
-            color: #A5D6A7;
-        }
+    #mzta-custom_btn:hover:not(:disabled){
+        background: var(--accent-dark);
+    }
+    #mzta-custom_btn:disabled, #mzta-custom_btn.disabled{
+        opacity: .45;
+        cursor: default;
     }
 `;
 messageInputTemplate.content.appendChild(messagesInputStyle);
 
-const inputField = document.createElement('input');
-inputField.type = 'text';
+// A textarea, not an input: the field grows from one to three lines as the text
+// wraps (see the #messageInputField rule and _autoResize below), then scrolls.
+const inputField = document.createElement('textarea');
 inputField.id = 'messageInputField';
+inputField.rows = 1;
 inputField.placeholder = '';
 inputField.autocomplete = 'off';
 messageInputTemplate.content.appendChild(inputField);
@@ -191,10 +282,14 @@ messageInputTemplate.content.appendChild(stopButton);
 const statusLogger = document.createElement('div');
 statusLogger.id = 'statusLogger';
 statusLogger.style.display = 'none';
-const statusLoggerImg = document.createElement('img');
-statusLoggerImg.id = 'statusLoggerImg';
-statusLoggerImg.src = browser.runtime.getURL('/images/mzta-loading.svg');
-statusLogger.appendChild(statusLoggerImg);
+statusLogger.setAttribute('role', 'status');
+statusLogger.setAttribute('aria-live', 'polite');
+// The icon is rebuilt per state (waiting / streaming / check / alert) rather
+// than being a single static node: the inline SVGs (check, alert) inherit
+// currentColor from the pill, while the animated states load their own asset.
+const statusLoggerIcon = document.createElement('span');
+statusLoggerIcon.id = 'statusLoggerIcon';
+statusLogger.appendChild(statusLoggerIcon);
 const statusLoggerText = document.createElement('span');
 statusLoggerText.id = 'statusLoggerText';
 statusLogger.appendChild(statusLoggerText);
@@ -241,10 +336,11 @@ class MessageInput extends HTMLElement {
         this._sendButton = shadowRoot.querySelector('#sendButton');
         this._stopButton = shadowRoot.querySelector('#stopButton');
         this._statusLogger = shadowRoot.querySelector('#statusLogger');
-        this._statusLoggerImg = shadowRoot.querySelector('#statusLoggerImg');
+        this._statusLoggerIcon = shadowRoot.querySelector('#statusLoggerIcon');
         this._statusLoggerText = shadowRoot.querySelector('#statusLoggerText');
 
         this._messageInputField.addEventListener('keydown', this._handleKeyDown.bind(this));
+        this._messageInputField.addEventListener('input', this._autoResize.bind(this));
         this._sendButton.addEventListener('click', this._handleClick.bind(this));
         this._stopButton.addEventListener('click', this._handleStopClick.bind(this));
 
@@ -284,11 +380,13 @@ class MessageInput extends HTMLElement {
     handleMessageSent() {
         // console.log("[ThunderAI] handleMessageSent");
         this._messageInputField.value = '';
+        this._autoResize();
     }
 
     enableInput(showDone = true) {
         // console.log("[ThunderAI] enableInput");
         this._messageInputField.value = '';
+        this._autoResize();
         this._messageInputField.removeAttribute('disabled');
         this._sendButton.removeAttribute('disabled');
         this._sendButton.style.display = 'block';
@@ -313,19 +411,70 @@ class MessageInput extends HTMLElement {
             this._doneTimeout = null;
         }
         this._setStatusClass('status-' + state);
-        this._statusLogger.style.display = 'flex';
+        this._statusLogger.style.display = 'inline-flex';
     }
 
     hideStatusMessage() {
         this._statusLogger.style.display = 'none';
-        this._statusLoggerImg.style.display = 'none';
+        this._setStatusIcon(null);
         this._setStatusClass(null);
     }
 
     _setStatusClass(className) {
-        this._statusLogger.classList.remove('status-working', 'status-done', 'status-fadeout');
+        this._statusLogger.classList.remove('status-waiting', 'status-working', 'status-done', 'status-error', 'status-fadeout');
         if (className) {
             this._statusLogger.classList.add(className);
+        }
+    }
+
+    // Swap the pill's leading icon. Passing null clears it.
+    _setStatusIcon(buildIcon) {
+        this._statusLoggerIcon.textContent = '';
+        if (buildIcon) {
+            this._statusLoggerIcon.appendChild(buildIcon());
+        }
+    }
+
+    // Streaming indicator: the shared mzta-loading.svg (three bouncing dots).
+    // The SVG animates itself via SMIL, so it needs no CSS animation and centres
+    // itself in whatever box it is given. Same asset as the "thinking" spinner
+    // in messagesArea.js.
+    _buildLoadingImage() {
+        const img = document.createElement('img');
+        img.src = '../images/mzta-loading.svg';
+        img.alt = '';
+        return img;
+    }
+
+    // Waiting indicator: mzta-waiting-server.svg (a dot emitting expanding
+    // rings). Self-animating via SMIL, like the streaming spinner.
+    _buildWaitingImage() {
+        const img = document.createElement('img');
+        img.src = '../images/mzta-waiting-server.svg';
+        img.alt = '';
+        return img;
+    }
+
+    // Request sent, nothing back from the server yet.
+    showWaitingStatus() {
+        this.setStatusMessage(browser.i18n.getMessage('WaitingServerResponse') + '...');
+        // Same guard as showStreamingStatus(): rebuilding the node restarts the
+        // SVG's own animation, so leave it alone if we are already waiting.
+        if (!this._statusLogger.classList.contains('status-waiting')) {
+            this._setStatusIcon(() => this._buildWaitingImage());
+            this.showStatusMessage('waiting');
+        }
+    }
+
+    // Tokens are arriving.
+    showStreamingStatus() {
+        this.setStatusMessage(browser.i18n.getMessage('apiwebchat_receiving_data') + '...');
+        // Only rebuild the spinner when we are not already streaming: this runs
+        // on every single token, and replacing the node each time would restart
+        // the SVG's own animation and leave the dots frozen at frame 0.
+        if (!this._statusLogger.classList.contains('status-working')) {
+            this._setStatusIcon(() => this._buildLoadingImage());
+            this.showStatusMessage('working');
         }
     }
 
@@ -333,10 +482,10 @@ class MessageInput extends HTMLElement {
         if (this._doneTimeout) {
             clearTimeout(this._doneTimeout);
         }
-        this._statusLoggerImg.style.display = 'none';
         this.setStatusMessage(browser.i18n.getMessage('apiwebchat_done'));
+        this._setStatusIcon(buildCheckIcon);
         this._setStatusClass('status-done');
-        this._statusLogger.style.display = 'flex';
+        this._statusLogger.style.display = 'inline-flex';
 
         this._doneTimeout = setTimeout(() => {
             this._statusLogger.classList.add('status-fadeout');
@@ -344,11 +493,37 @@ class MessageInput extends HTMLElement {
                 this.hideStatusMessage();
                 this.setStatusMessage('');
             }, 500);
-        }, 1500);
+        }, 3500);
+    }
+
+    // Unlike "done", the error pill has no timeout: it stays until the next
+    // request replaces it, so a failure is never silently swallowed.
+    showErrorStatus(message = null) {
+        if (this._doneTimeout) {
+            clearTimeout(this._doneTimeout);
+            this._doneTimeout = null;
+        }
+        this.setStatusMessage(message || browser.i18n.getMessage('apiwebchat_status_error'));
+        this._setStatusIcon(buildAlertIcon);
+        this._setStatusClass('status-error');
+        this._statusLogger.style.display = 'inline-flex';
+    }
+
+    // Grow the field to fit its content, letting the CSS max-height cap it at
+    // three lines: clear the inline height first so shrinking works too, then
+    // measure. Must run after every programmatic .value change, not just on
+    // input, or the field stays tall after a long message is sent.
+    _autoResize() {
+        this._messageInputField.style.height = 'auto';
+        this._messageInputField.style.height = this._messageInputField.scrollHeight + 'px';
     }
 
     _handleKeyDown(event) {
-        if (event.key === 'Enter') {
+        // Plain Enter is the long-standing way to send and stays as it is; the
+        // preventDefault stops the textarea inserting a newline on the way out.
+        // Shift+Enter falls through and adds a line break instead.
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
             this._handleNewChatMessage();
         }
     }
@@ -376,17 +551,17 @@ class MessageInput extends HTMLElement {
         this._messageInputField.setAttribute('disabled', 'disabled');
         let messageContent = this._messageInputField.value;
         this._messageInputField.value = '';
+        this._autoResize();
         if (this.messagesAreaComponent) {
             this.messagesAreaComponent.appendUserMessage(messageContent);
         }
-        this.setStatusMessage(browser.i18n.getMessage('WaitingServerResponse') + '...');
-        this._statusLoggerImg.style.display = 'inline';
-        this.showStatusMessage();
+        this.showWaitingStatus();
         this.worker.postMessage({ type: 'chatMessage', message: messageContent });
     }
 
     _setMessageInputValue(msg) {
         this._messageInputField.value = msg;
+        this._autoResize();
     }
 
     _showCustomTextField(custom_text_array){

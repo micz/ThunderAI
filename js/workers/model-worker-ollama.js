@@ -57,8 +57,12 @@ self.onmessage = async function(event) {
             if (!response.ok) {
                 let error_message = '';
                 let errorDetail = '';
+                let error_text = '';
                 if(response.is_exception === true){
                     error_message = response.error;
+                    // Network-level failure: no status/statusText exist on the returned object,
+                    // and error_message already carries the provider name.
+                    error_text = error_message;
                 }else{
                     try{
                         const errorJSON = await response.json();
@@ -68,9 +72,10 @@ self.onmessage = async function(event) {
                         error_message = response.statusText;
                     }
                     taLog.log("error_message: " + JSON.stringify(error_message));
+                    error_text = i18nStrings["ollama_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
                 }
-                postMessage({ type: 'error', payload: i18nStrings["ollama_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail });
-                throw new Error("[ThunderAI] Ollama API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
+                postMessage({ type: 'error', payload: error_text });
+                throw new Error("[ThunderAI] Ollama API request failed: " + error_text);
             }
 
             const reader = response.body.getReader();
@@ -82,6 +87,7 @@ self.onmessage = async function(event) {
                     if (stopStreaming) {
                         stopStreaming = false;
                         reader.cancel();
+                        taLog.log("AI full reasoning [STOPPED]: " + thinkingAccumulator);
                         taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
                         conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                         assistantResponseAccumulator = '';
@@ -92,6 +98,7 @@ self.onmessage = async function(event) {
                     }
                     const { done, value } = await reader.read();
                     if (done) {
+                        taLog.log("AI full reasoning: " + thinkingAccumulator);
                         taLog.log("AI full response: " + assistantResponseAccumulator);
                         conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                         assistantResponseAccumulator = '';
@@ -102,7 +109,9 @@ self.onmessage = async function(event) {
                     // lots of low-level Ollama response parsing stuff
                     const chunk = decoder.decode(value);
                     buffer += chunk;
-                    taLog.log("buffer: " + buffer);
+                    // No per-chunk dump of `buffer`: taLog.log() only gates the console
+                    // call, so the whole unconsumed buffer would be re-concatenated on
+                    // every chunk even with debug off. The per-line log below covers it.
                     const lines = buffer.split("\n");
                     buffer = lines.pop();
                     let parsedLines = [];
@@ -113,7 +122,10 @@ self.onmessage = async function(event) {
                             // .map((line) => JSON.parse(line)); // Parse the JSON string
                             .map((line) => {
                                 try {
-                                    taLog.log("line: " + JSON.stringify(line));
+                                    // Guarded at the call site: taLog.log() gates only the
+                                    // console call, so an unguarded JSON.stringify() would run
+                                    // per line even with debug off.
+                                    if (taLog.do_debug) taLog.log("line: " + JSON.stringify(line));
                                     return JSON.parse(line);
                                 } catch (e) {
                                     taLog.warn("JSON parse warning, skipped line: " + line + " - " + e.message);

@@ -1,393 +1,1577 @@
-@media (prefers-color-scheme: light) {
-    table th {
-        background-color: #ffffff;
-    }
+/*
+ * Manage Custom Prompts — visual redesign (design "1b").
+ * Purely presentational: colors are driven by CSS custom properties (design
+ * tokens) with a light-theme default and a dark override via
+ * @media (prefers-color-scheme: dark). No manual theme toggle — the page
+ * follows the OS/Thunderbird theme like the rest of the extension.
+ */
 
-    #command_palette{
-        background-color: #ffffff; 
-    }
+/* ============================ Design tokens ============================ */
+:root {
+    /* Light theme (default) */
+    --bg:#eef0f4;  --panel:#ffffff;  --panel2:#f6f7f9;
+    --border:#e4e6ea;  --border2:#d3d6dc;
+    --text:#1a1c22;  --muted:#6a6d78;  --muted2:#9195a0;
+    --chip-bg:#f1f2f5;  --rowhover:#f7f9fc;
+    --accent:#0a6cff;  --accent-ink:#ffffff;  --accent-hover:#2a80ff;
+    --code:#1d4ed8;  --code-bg:#e7efff;
+    --edit-bg:#e7f0ff;  --edit-text:#155bd4;  --edit-border:#bcd6ff;  --edit-hover:#d8e8ff;
+    --del-text:#c4413f;  --del-border:#f0cccc;  --del-hover-bg:#fdecec;  --del-hover-text:#d13438;
+    --ok-text:#1a7f37;  --ok-bg:#e6f4ea;  --ok-border:#bfe3c9;
+    /* Warning: a placeholder token that exists but is not available for the
+       prompt's type — distinct from --del-*, which means "delete", and from
+       --ok-*, which means success. */
+    --warn-text:#8a5300;  --warn-bg:#fdf1dc;  --warn-border:#e0a44a;
+    /* Error: a placeholder token that does not exist at all, or an unterminated
+       one. Red because no change of prompt type can make it resolve. Its own
+       triple rather than --del-*, which means the "delete" action, and opaque
+       like --warn-*: a low-alpha wash is invisible at chip size. */
+    --err-text:#a52826;  --err-bg:#fbe3e3;  --err-border:#d98b8a;
+    /* Search hit highlight — deliberately its own pair rather than reusing
+       --warn-* ("invalid token") or --code-* ("placeholder chip"), so a match
+       cannot be misread as either. */
+    --hit-bg:#fff3a3;  --hit-text:#3a2f00;
+    --icon-hover-bg:#eceef2;  --save-bg:#eceef2;  --save-text:#a0a4ae;  --box:#ffffff;
+    /* Per-panel identity: ChatGPT Web (warm) vs API (cool). */
+    --cgw-bg:#ffe6d5;  --cgw-hover:#ffd6bd;  --api-bg:#e0efff;  --api-hover:#c9e2ff;
 
-    table.prompts_list tr:nth-child(even) {
-        background-color: #e9e9e9;
-    }
+    --font-ui: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-mono: ui-monospace, 'Cascadia Code', monospace;
+    --btn-tr: background .12s, border-color .12s, color .12s, box-shadow .12s;
+}
 
-    table.prompts_list tr:nth-child(odd) {
-        background-color: #f3f3f3;
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg:#141317;  --panel:#1d1c22;  --panel2:#242229;
+        --border:#34333c;  --border2:#3d3c45;
+        --text:#f2f2f7;  --muted:#9a9aa4;  --muted2:#7d7d87;
+        --chip-bg:#26252c;  --rowhover:#211f26;
+        --accent:#45a1ff;  --accent-ink:#08111f;  --accent-hover:#5fb0ff;
+        --code:#8fb6ff;  --code-bg:#1a2740;
+        --edit-bg:#17304d;  --edit-text:#8fc0ff;  --edit-border:#2a4c78;  --edit-hover:#1d3d63;
+        --del-text:#d78d8d;  --del-border:#4a2a2c;  --del-hover-bg:#3a1f22;  --del-hover-text:#ff6b6b;
+        --ok-text:#7cd992;  --ok-bg:#16281c;  --ok-border:#234d2e;
+        --warn-text:#f0c07a;  --warn-bg:#3a2c14;  --warn-border:#7a5a22;
+        --err-text:#f0a3a1;  --err-bg:#3d1b1b;  --err-border:#7d3a38;
+        --hit-bg:#6b5a00;  --hit-text:#fff8d0;
+        --icon-hover-bg:#33323b;  --save-bg:#2b2a33;  --save-text:#6f6f79;  --box:#2b2a33;
+        --cgw-bg:#270b00;  --cgw-hover:#581900;  --api-bg:#0f2437;  --api-hover:#1b456d;
     }
+}
+
+/* ============================ Page shell ============================ */
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+}
+
+a:link, a:visited { color: var(--accent); }
+a:hover, a:active { color: var(--accent-hover); }
+
+/* Centered content column (wrapper added in the HTML). */
+.page_wrap {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 40px 40px 80px;
+    position: relative;
+}
+
+/* ---- Header ---- */
+.page_eyebrow {
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted2);
+    font-weight: 600;
+}
+
+.page_title {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    margin: 6px 0 4px;
+}
+
+.page_wrap > div > p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 780px;
+}
+
+#btnManageCustomDataPH {
+    margin-top: 6px;
+}
+
+/* Import / Export stack (top-right). */
+#import_export {
+    position: absolute;
+    right: 40px;
+    top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: right;
+}
+
+#btnExportAll { margin-bottom: 0; }
+
+/* ============================ Buttons ============================ */
+button {
+    transition: var(--btn-tr);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--panel2);
+    border: 1px solid var(--border2);
+    padding: 9px 14px;
+    border-radius: 9px;
+}
+
+button:hover:not(:disabled) { border-color: var(--accent); }
+
+button:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+/* Accent (Add New / commit). */
+#btnNew, #btnAddNew {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border: none;
+}
+#btnNew:hover:not(:disabled), #btnAddNew:hover:not(:disabled) {
+    background: var(--accent-hover);
+    border: none;
+}
+
+/* Save All — quiet until there are changes. */
+#btnSaveAll {
+    background: var(--save-bg);
+    color: var(--save-text);
+    border: 1px solid var(--border2);
+}
+#btnSaveAll:not(:disabled) {
+    color: var(--text);
+}
+
+/* Per-row action buttons — full-width, stacked, icon + label.
+   The <td> stays a table-cell (fixed table layout); buttons stack as
+   full-width blocks separated by margin. */
+.actions_cell {
+    vertical-align: top;
+}
+.actions_cell button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin: 0 0 8px 0;
+}
+.actions_cell button:last-child {
+    margin-bottom: 0;
+}
+/* A button toggled off via .hiddendata must stay hidden — this selector
+   (0,1,1) matches the specificity of `.actions_cell button` above, and
+   coming later it wins, so display:flex does not resurface hidden buttons. */
+.actions_cell button.hiddendata {
+    display: none;
+}
+.actions_cell button svg,
+.btnMenuPositionItem svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+/* Children never become the click target, so handlers relying on e.target
+   being the <button> (e.target.parentNode.parentNode === tr) keep working
+   no matter where inside the button the user clicks. */
+.actions_cell button > *,
+.btnMenuPositionItem > * {
+    pointer-events: none;
+}
+
+/* Edit / OK — edit (tinted) style, same as Menu position. */
+.btnEditItem, .btnConfirmItem {
+    background: var(--edit-bg);
+    color: var(--edit-text);
+    border: 1px solid var(--edit-border);
+}
+.btnEditItem:hover:not(:disabled),
+.btnConfirmItem:hover:not(:disabled) {
+    background: var(--edit-hover);
+    border-color: var(--edit-border);
+}
+
+/* Menu position — edit (tinted) style, pinned to the bottom of its cell.
+   The <td> stays a real table-cell (so table-layout:fixed keeps the column
+   width and the cell auto-stretches to the row height). To pin the button to
+   the bottom we position it absolutely against the cell: the <td> is the
+   positioning context, the inner content reserves space for the button with
+   bottom padding, and the button is anchored to the cell's bottom edge. This
+   avoids the height-percentage-resolution quirks that keep a flex/height:100%
+   inner column from stretching inside a table cell in Gecko. */
+.menu_cell {
+    vertical-align: top;
+    position: relative;
+    padding-bottom: 56px; /* reserve room for the absolutely-positioned button */
+}
+.menu_cell_inner {
+    display: block;
+}
+.menu_cell_inner .btnMenuPositionItem {
+    position: absolute;
+    left: 16px;   /* match the cell's horizontal padding */
+    right: 16px;
+    bottom: 14px; /* match the cell's vertical padding */
+    width: auto;
+}
+.btnMenuPositionItem {
+    background: var(--edit-bg);
+    color: var(--edit-text);
+    border: 1px solid var(--edit-border);
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+}
+.btnMenuPositionItem:hover:not(:disabled) {
+    background: var(--edit-hover);
+    border-color: var(--edit-border);
+}
+
+/* Per-row Delete — danger (outline) style. */
+.btnDeleteItem {
+    background: transparent;
+    color: var(--del-text);
+    border: 1px solid var(--del-border);
+}
+.btnDeleteItem:hover:not(:disabled) {
+    background: var(--del-hover-bg);
+    color: var(--del-hover-text);
+    border-color: var(--del-border);
+}
+
+/* Per-row Copy / Cancel — neutral outline style. */
+.btnCopyItem, .btnCancelItem {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border2);
+}
+.btnCopyItem:hover:not(:disabled),
+.btnCancelItem:hover:not(:disabled) {
+    background: var(--icon-hover-bg);
+    border-color: var(--border2);
+}
+
+/* ============================ Toolbar (command palette) ============================ */
+#command_palette {
+    position: sticky;
+    top: 0;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+}
+
+#command_palette #btnSaveAll { float: none; }
+#command_palette #btnNew { float: none; }
+
+/* The search field takes the flexible space in the toolbar; #msgDisplay now
+ * sizes to its content so the status text and the input do not fight for room.
+ * Keep the field shorter than the toolbar buttons so the palette height stays
+ * at 54px — the `thead` sticky offset below depends on it. */
+#search_wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding-left: 16px;
+}
+
+/* "List is filtered" badge. Uses the --edit-* tokens (informational blue),
+   rather than the warning or delete palettes: a filter is a state, not a
+   problem. It sits next to the search field rather than in #msgDisplay, which is
+   owned by the unsaved-changes/save messaging — see updateFilterIndicator(). */
+#filter_badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    padding: 3px 4px 3px 8px;
+    border: 1px solid var(--edit-border);
+    border-radius: 999px;
+    background: var(--edit-bg);
+    color: var(--edit-text);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* `hiddendata` is display:none, but #filter_badge sets display:inline-flex.
+   Both are single-class selectors, so source order alone would decide — make
+   the hidden state explicit and unambiguous instead. */
+#filter_badge.hiddendata {
+    display: none;
+}
+
+#filter_badge > svg {
+    width: 13px;
+    height: 13px;
+    flex: 0 0 auto;
+}
+
+/* No matches at all: shift to the warning palette, since an empty list is a
+   dead end the user needs to notice. */
+#filter_badge.filter_badge_empty {
+    border-color: var(--warn-border);
+    background: var(--warn-bg);
+    color: var(--warn-text);
+}
+
+#btnClearFilter {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    padding: 2px 8px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: var(--btn-tr);
+}
+
+#btnClearFilter > svg {
+    width: 11px;
+    height: 11px;
+    flex: 0 0 auto;
+}
+
+#btnClearFilter:hover {
+    background: var(--edit-hover);
+}
+
+#filter_badge.filter_badge_empty #btnClearFilter:hover {
+    /* --warn-* has no hover token; a translucent wash works on either palette. */
+    background: rgba(128, 128, 128, .22);
+}
+
+#btnClearFilter:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+#prompts_search {
+    width: 100%;
+    max-width: 320px;
+    /* Let the field yield space before the filter badge does: the badge is
+       flex:0 0 auto, so without this the input would refuse to shrink and push
+       the badge out of the toolbar on narrow windows. */
+    min-width: 120px;
+    flex: 0 1 320px;
+    box-sizing: border-box;
+    padding: 6px 10px;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    background: var(--panel2);
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+}
+
+#prompts_search::placeholder {
+    color: var(--muted);
+}
+
+#prompts_search:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+#msgDisplay {
+    flex: 0 1 auto;
+    padding-left: 16px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* ============================ Card + table ============================ */
+/* NOTE: no `overflow:hidden` here — the toolbar and thead are position:sticky,
+ * and an overflow clip on an ancestor would silently disable stickiness. The
+ * rounded-card look is preserved by rounding the toolbar's top corners and the
+ * footer's bottom corners instead. */
+#all_prompts {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+#command_palette {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+#list_footer {
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
 }
 
 table {
     border-collapse: collapse;
     border-spacing: 0;
-    border: 1px solid #ccc;
+    width: 100%;
+}
+
+table.prompts_list {
+    table-layout: fixed;
 }
 
 thead {
     position: sticky;
-    top: 26px;
-    z-index: 90;
-}
-
-#command_palette{
-    position: sticky;
-    top: 0;
-    padding-top: 1px;
-    height: 26px;
-    width: 100%;
-    z-index: 90;
-}
-
-#btnNew{
-    float: right;
-}
-
-#btnSaveAll{
-    float: left;
-}
-
-#msgDisplay{
-    padding-left: 40px;
-}
-
-table tr {
-    border-bottom: 1px solid #ccc;
+    top: 54px; /* below the sticky command palette */
+    z-index: 80;
 }
 
 table.prompts_list th {
-    padding: 8px;
+    background: var(--panel2);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .03em;
     text-align: left;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
 }
 
-table td {
-    border: 1px solid #ddd;
-    padding: 5px;
+table.prompts_list td {
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    text-align: left;
+    vertical-align: top;
+    font-size: 13px;
+    color: var(--text);
 }
 
-table td.w08{
-    width: 8vw;
+tbody.list tr { vertical-align: top; }
+
+table.prompts_list tbody tr:hover td {
+    background: var(--rowhover);
 }
 
-table td.w17{
-    width: 17vw;
+/* Column widths for the new-prompt form (auto table layout, so these are hints). */
+table td.w08 { width: 8%; }
+table td.w17 { width: 17%; }
+table td.w19 { width: 19%; }
+table td.w25 { width: 25%; }
+table td.w40 { width: 40%; }
+
+/* Column widths for the prompts list.
+   These MUST live on the <th>: under table-layout:fixed the browser reads column
+   widths from the first row only, which is the header row — widths declared on
+   the <td> of body rows are ignored outright.
+
+   The ratios are the original pre-restyle ones (8/8/40/8/17 + remainder), now as
+   percentages: the table sits inside .page_wrap (max-width 1440px) so vw units
+   would be measured against the viewport, not the actual container. */
+table.prompts_list th:nth-child(1) { width: 11%; } /* ID */
+table.prompts_list th:nth-child(2) { width: 11%; } /* Name */
+table.prompts_list th:nth-child(3) { width: 36%; } /* Prompt Text */
+table.prompts_list th:nth-child(4) { width: 15%; } /* Menu / Action */
+table.prompts_list th:nth-child(5) { width: 17%; } /* Properties */
+table.prompts_list th:nth-child(6) { width: 10%; } /* Actions */
+
+table.prompts_list td.properties { white-space: nowrap; }
+
+/* ID cell — monospace, muted. */
+.id_show {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted2);
+    word-wrap: anywhere;
 }
 
-table td.w19{
-    width: 19vw;
+/* Name cell — emphasized. */
+.name_show { font-weight: 600; word-wrap: anywhere; }
+
+.text_show, .name_show, .id_show, .type_show, .action_show { font-size: 13px; }
+
+/* Prompt text is monospace in read mode *and* in edit mode, at one shared
+   font-size/line-height (see the .editor metrics block further down). That is
+   what lets the edit-mode backdrop mirror align with the textarea, and what
+   makes the two modes look like the same text. */
+.text_show {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.55;
+    /* Prompt text reaches this span with newlines in either form: stored prompts
+       use <br>, but a row saved from the editor writes the textarea value with
+       raw \n (see handleConfirmClick). HTML collapses those, so line breaks
+       vanished from the list until the next page load. pre-wrap renders them,
+       and leaves <br> untouched - the two cannot double up. Matches the
+       editor's own wrapping, so read and edit mode break lines identically. */
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
 }
 
-table td.w25{
-    width: 25vw;
+/* Placeholder token chip inside the read-only prompt text (wrapped in JS).
+   Read mode has no caret to align to, so this one can afford real padding. */
+.ph_chip {
+    color: var(--code);
+    background: var(--code-bg);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
 }
 
-table td.w40{
-    width: 40vw;
+/* Invalid token in the read-only prompt text, in the same two tiers as edit
+   mode: this rule is the amber one — the id exists, but the row's prompt type
+   cannot use it — and .ph_chip_error_read below is the red one. Both use the
+   very --warn-* / --err-* tokens that .editor-wrap maps into --ed-warn-* /
+   --ed-err-*, so the two modes agree on colour as well as on validity. Read mode
+   has no mirror to stay metric-neutral for, so these can afford a real border
+   where the live chips are limited to an inset box-shadow.
+   Two classes, so it beats the .ph_chip rule above regardless of source order. */
+.ph_chip.ph_chip_invalid_read {
+    color: var(--warn-text);
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    padding: 0 5px;   /* offsets the 1px border: same box as a valid chip */
+    cursor: help;
 }
 
-table.prompts_list td.properties{
-    white-space: nowrap;
+/* Red tier of the read-mode chip: the id does not exist at all. Three classes,
+   so it beats the two-class amber rule above regardless of source order. */
+.ph_chip.ph_chip_invalid_read.ph_chip_error_read {
+    color: var(--err-text);
+    background: var(--err-bg);
+    border-color: var(--err-border);
 }
 
+/* Matched substring inside the Name / ID cells while the search field is in use.
+   The browser default for <mark> is a hardcoded yellow with near-black text,
+   which is unreadable in the dark theme — both colors are therefore set from
+   design tokens. Metric-neutral (no padding/border) so highlighting cannot
+   reflow the two narrow w08 columns. */
+mark.search_hit {
+    background: var(--hit-bg);
+    color: var(--hit-text);
+    border-radius: 2px;
+    padding: 0;
+    font-weight: 600;
+}
+
+/* ---- Sort headers ---- */
 table .sort {
     background-image: url(../../images/listjs-arrow-sort-inactive.png);
     background-repeat: no-repeat;
     background-position: right center;
-    padding-right: 14px;
-    cursor: pointer;
-    cursor: hand;
-}
-
-table .sort.asc {
-    background-image: url(../../images/listjs-arrow-sort-active-down.png);
-}
-
-table .sort.desc {
-    background-image: url(../../images/listjs-arrow-sort-active-up.png);
-}
-
-tbody.list tr{
-    vertical-align: top;
-}
-
-.hiddendata{
-    display: none;
-}
-
-#formNew{
-    display: none;
-    width: 100%;
-    padding-bottom: 7px;
-}
-
-.text_output{
-    width: 98%;
-    height: 9em;
-}
-
-.go_right_float{
-    float: right;
-}
-
-.go_right{
-    width: 100%;
-    text-align: right;
-}
-
-.width_all{
-    width: 100%;
-}
-
-.small_label{
-    font-size: small;
-    font-style: italic;
-}
-
-.field_title{
-    font-weight: bold;
-}
-
-.field_title_s{
-    font-weight: bold;
-    font-size: small;
-}
-
-.field_title_us{
-    font-weight: bold;
-    font-size: smaller;
-}
-
-label, .id_show, .text_show, .name_show, .type_show, .action_show{
-    font-size: small;
-}
-
-#txtIdNew, .id_output{
-    text-transform: lowercase;
-}
-
-#import_export{
-    position: absolute;
-    right:10px;
-    top:10px;
-    text-align: right;
-}
-
-#btnExportAll{
-    margin-bottom: 3px;
-}
-
-.storage_space{
-    font-size: 0.8em;
-    font-weight: normal;
-    font-style: italic;
-    color: rgb(41, 41, 41);
-    text-align: right;
-    margin-right: 1px;
-}
-
-.page_title{
-    margin-bottom: 0px;
-}
-
-.autocomplete-container {
-    position: relative;
-}
-
-.autocomplete-list {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: white;
-    border: 1px solid #ccc;
-    z-index: 1000;
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 0;
-    margin: 0;
-    list-style: none;
-    font-size: small;
-}
-
-.autocomplete-list li {
-    padding: 8px;
+    padding-right: 28px;
     cursor: pointer;
 }
+table .sort.asc { background-image: url(../../images/listjs-arrow-sort-active-down.png); }
+table .sort.desc { background-image: url(../../images/listjs-arrow-sort-active-up.png); }
 
-.autocomplete-list li:hover {
-    background-color: #f0f0f0;
-}
-
-.autocomplete-list li.active {
-    background-color: #ddd;
-}
-
-.hidden {
-    display: none;
-}
-
-.need_custom_text_span, .need_selected_span{
-    padding-right: 2px;
-}
-
-#chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show{
-    background-color: rgb(255, 209, 183);
-    display:none;
-}
-
-#chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_toggle{
-    cursor: pointer;
-}
-
-#chatgpt_web_additional_info_toggle:hover, .chatgpt_web_additional_info_toggle:hover{
-    background-color: rgb(255, 189, 153);
-    text-decoration: underline;
-}
-
-#chatgpt_web_additional_info_toggle td{
-    text-align: center;
-}
-
-#chatgpt_web_additional_info td{
-    vertical-align: top;
-}
-
-.chatgpt_web_additional_info_toggle{
-    width: -moz-available;
-    text-align: center;
-    padding:5px;
-}
-
-.chatgpt_web_additional_info_show{
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-    padding: 3px;
-    margin-top: 5px;
-}
-
-.chatgpt_web_additional_info_row{
+/* ---- Card footer (prompt count) ---- */
+#list_footer {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 13px;
 }
 
-.chatgpt_web_additional_info_row span{
-    margin-right: 0.4em;
-}
+/* ============================ Property switches ============================ */
+/* The Properties cell renders each prompt flag from the same underlying
+   <input type="checkbox">, but in two visually distinct modes keyed off the
+   checkbox's `disabled` attribute (the read-only/edit flag toggled by
+   showItemRowEditor/hideItemRowEditor):
+     - EDIT (enabled)   -> interactive toggle switch (30x18, --accent on / --border2 off)
+     - READ-ONLY (disabled) -> static check/dash status icon (not clickable-looking)
+   A default prompt's `need_custom_text` stays enabled even in a read-only row, so
+   it correctly keeps the switch look — no special casing needed.
 
-input.input_additional[type="text"]{
-    width: -moz-available;
-}
+   The same switch look is shared by the add-prompt form (#formNew), whose five
+   inputs carry these same classes. The read-only status-icon rules below stay
+   scoped to `table.prompts_list td` on purpose: in the form, `disabled` means
+   "not applicable yet" (use_diff_viewer while the action isn't "substitute
+   text"), so a disabled flag must stay a dimmed switch, not become a status
+   icon. */
 
-.small_info{
-    font-size:smaller;
-}
-
-.conntype_chatgpt_web_option{
+table.prompts_list td label:has(.need_selected),
+table.prompts_list td label:has(.need_signature),
+table.prompts_list td label:has(.need_custom_text),
+table.prompts_list td label:has(.define_response_lang),
+table.prompts_list td label:has(.use_diff_viewer),
+#formNew label:has(.need_selected),
+#formNew label:has(.need_signature),
+#formNew label:has(.need_custom_text),
+#formNew label:has(.define_response_lang),
+#formNew label:has(.use_diff_viewer) {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--muted);
+    margin-bottom: 8px;
     cursor: pointer;
+    font-size: 13px;
 }
 
-.api_additional_info{
+/* In the form, `need_selected` and `need_custom_text` wrap their checkbox + text
+   in an inner <span> (…_span, kept for the padding and as a validation hook), so
+   the flex layout has to live on that span too — otherwise the label's flex sees
+   a single span child and the switch/text never align. */
+#formNew .need_selected_span,
+#formNew .need_custom_text_span {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+/* A label whose property is active (on) reads as active text; this holds in both
+   modes (active = --text, inactive = --muted). In #formNew the selectors name the
+   five property classes explicitly: a bare `label:has(input:checked)` would also
+   catch the API-options checkboxes that connection-ui.js injects into the form. */
+table.prompts_list td label:has(input:checked),
+#formNew label:has(input:checked.need_selected),
+#formNew label:has(input:checked.need_signature),
+#formNew label:has(input:checked.need_custom_text),
+#formNew label:has(input:checked.define_response_lang),
+#formNew label:has(input:checked.use_diff_viewer) { color: var(--text); }
+
+/* Form-only: a not-applicable flag is a dimmed, non-interactive switch. */
+#formNew label:has(input:disabled.need_selected),
+#formNew label:has(input:disabled.need_signature),
+#formNew label:has(input:disabled.need_custom_text),
+#formNew label:has(input:disabled.define_response_lang),
+#formNew label:has(input:disabled.use_diff_viewer) {
+    cursor: default;
+    opacity: .55;
+}
+
+/* Explains, under the toggle, the condition that makes `use_diff_viewer`
+   available; hidden by updateUseDiffViewerHint() once the toggle is editable.
+   The `.hidden` override has to be ID-scoped too: a bare `.hidden` (0,1,0)
+   loses to this ID rule (1,0,0) no matter the source order, so display:block
+   would keep the hint visible. */
+#useDiffViewerNew_hint {
+    display: block;
+    margin: -4px 0 8px 0;
+    font-size: 0.7rem;
+}
+
+#useDiffViewerNew_hint.hidden { display: none; }
+
+#formNew input:disabled.need_selected,
+#formNew input:disabled.need_signature,
+#formNew input:disabled.need_custom_text,
+#formNew input:disabled.define_response_lang,
+#formNew input:disabled.use_diff_viewer {
+    cursor: default;
+}
+
+/* Read-only rows: wider icon-to-label gap and more vertical rhythm between rows.
+   The label text may wrap onto multiple lines; the status icon stays pinned to
+   the first line (top-aligned) instead of centering against the whole text block. */
+/* `need_selected` and `need_custom_text` wrap their checkbox + text in an inner
+   <span> (…_span), so the flex layout must live on that span rather than the
+   label; the other three have the input as a direct label child. Target both
+   shapes. */
+table.prompts_list td label:has(input:disabled),
+table.prompts_list td label:has(input:disabled) .need_selected_span,
+table.prompts_list td label:has(input:disabled) .need_custom_text_span {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: default;
+    /* Match the first text line's height to the 20px icon so the two line up on
+       the first line; wrapped lines keep the same rhythm. */
+    line-height: 20px;
+}
+
+table.prompts_list td label:has(input:disabled) {
+    margin-bottom: 11px;
+}
+
+/* ---- Base switch track (applies to all states; the read-only :disabled rules
+   below override the relevant properties to draw the icon box instead). ---- */
+table.prompts_list td .need_selected,
+table.prompts_list td .need_signature,
+table.prompts_list td .need_custom_text,
+table.prompts_list td .define_response_lang,
+table.prompts_list td .use_diff_viewer,
+#formNew .need_selected,
+#formNew .need_signature,
+#formNew .need_custom_text,
+#formNew .define_response_lang,
+#formNew .use_diff_viewer {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    position: relative;
+    flex: none;
+    width: 30px;
+    height: 18px;
+    margin: 0;
+    border-radius: 20px;
+    background: var(--border2);
+    transition: background .15s;
     cursor: pointer;
-    text-align: center;
-    background-color: #409df3;
+    vertical-align: middle;
 }
 
-.api_additional_info_toggle{
+/* The switch knob. */
+table.prompts_list td .need_selected::after,
+table.prompts_list td .need_signature::after,
+table.prompts_list td .need_custom_text::after,
+table.prompts_list td .define_response_lang::after,
+table.prompts_list td .use_diff_viewer::after,
+#formNew .need_selected::after,
+#formNew .need_signature::after,
+#formNew .need_custom_text::after,
+#formNew .define_response_lang::after,
+#formNew .use_diff_viewer::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,.4);
+    transition: left .15s;
+}
+
+table.prompts_list td input:checked.need_selected,
+table.prompts_list td input:checked.need_signature,
+table.prompts_list td input:checked.need_custom_text,
+table.prompts_list td input:checked.define_response_lang,
+table.prompts_list td input:checked.use_diff_viewer,
+#formNew input:checked.need_selected,
+#formNew input:checked.need_signature,
+#formNew input:checked.need_custom_text,
+#formNew input:checked.define_response_lang,
+#formNew input:checked.use_diff_viewer {
+    background: var(--accent);
+}
+
+table.prompts_list td input:checked.need_selected::after,
+table.prompts_list td input:checked.need_signature::after,
+table.prompts_list td input:checked.need_custom_text::after,
+table.prompts_list td input:checked.define_response_lang::after,
+table.prompts_list td input:checked.use_diff_viewer::after,
+#formNew input:checked.need_selected::after,
+#formNew input:checked.need_signature::after,
+#formNew input:checked.need_custom_text::after,
+#formNew input:checked.define_response_lang::after,
+#formNew input:checked.use_diff_viewer::after {
+    left: 14px;
+}
+
+/* Keyboard focus ring: `appearance:none` removes the native checkbox outline, so
+   restore a visible focus indicator for both the list and the form. */
+table.prompts_list td input:focus-visible.need_selected,
+table.prompts_list td input:focus-visible.need_signature,
+table.prompts_list td input:focus-visible.need_custom_text,
+table.prompts_list td input:focus-visible.define_response_lang,
+table.prompts_list td input:focus-visible.use_diff_viewer,
+#formNew input:focus-visible.need_selected,
+#formNew input:focus-visible.need_signature,
+#formNew input:focus-visible.need_custom_text,
+#formNew input:focus-visible.define_response_lang,
+#formNew input:focus-visible.use_diff_viewer {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Validation: a flag that must be on because the prompt text uses the matching
+   placeholder ({%additional_text%} / {%selected_text%}) but isn't. Applied to the
+   input itself by checkPromptsConfigForPlaceholders(), so the ring hugs the
+   switch instead of boxing the whole label row. */
+table.prompts_list td input.invalid_flag,
+#formNew input.invalid_flag {
+    outline: 2px solid var(--del-text);
+    outline-offset: 2px;
+}
+
+/* ---- Read-only (disabled) status icon box. Repaints the switch track as a
+   20x20 rounded box whose glyph is drawn via a mask so it inherits `color`.
+   These rules come after the switch rules, so they win for disabled inputs. ---- */
+table.prompts_list td input:disabled.need_selected,
+table.prompts_list td input:disabled.need_signature,
+table.prompts_list td input:disabled.need_custom_text,
+table.prompts_list td input:disabled.define_response_lang,
+table.prompts_list td input:disabled.use_diff_viewer {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: none;
+    cursor: default;
+    opacity: 1;
+    /* inactive default: transparent box, muted outline + glyph */
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted2);
+}
+
+/* Draw the glyph via the ::after pseudo, colored by `currentColor` through the
+   mask so it tracks the box's `color` token (no hardcoded colors). */
+table.prompts_list td input:disabled.need_selected::after,
+table.prompts_list td input:disabled.need_signature::after,
+table.prompts_list td input:disabled.need_custom_text::after,
+table.prompts_list td input:disabled.define_response_lang::after,
+table.prompts_list td input:disabled.use_diff_viewer::after {
+    position: static;
+    top: auto;
+    left: auto;
+    width: 13px;
+    height: 13px;
+    border-radius: 0;
+    background: currentColor;
+    box-shadow: none;
+    transition: none;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: 13px 13px;
+    mask-size: 13px 13px;
+    /* dash (Feather/Lucide "minus", stroke-width:3) */
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E");
+}
+
+/* active (on): success-tinted box + check glyph */
+table.prompts_list td input:disabled:checked.need_selected,
+table.prompts_list td input:disabled:checked.need_signature,
+table.prompts_list td input:disabled:checked.need_custom_text,
+table.prompts_list td input:disabled:checked.define_response_lang,
+table.prompts_list td input:disabled:checked.use_diff_viewer {
+    background: var(--ok-bg);
+    border: 1px solid var(--ok-border);
+    color: var(--ok-text);
+}
+
+table.prompts_list td input:disabled:checked.need_selected::after,
+table.prompts_list td input:disabled:checked.need_signature::after,
+table.prompts_list td input:disabled:checked.need_custom_text::after,
+table.prompts_list td input:disabled:checked.define_response_lang::after,
+table.prompts_list td input:disabled:checked.use_diff_viewer::after {
+    /* check (Feather/Lucide "check", stroke-width:3) */
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+}
+
+.field_title_s {
+    font-weight: bold;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* ============================ New prompt form ============================ */
+#formNew {
+    display: none;
+    width: 100%;
+    padding: 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+#formNew table { border: none; }
+#formNew td { border: none; padding: 8px; vertical-align: top; }
+
+.width_all { width: 100%; }
+
+.text_output { width: 98%; height: 9em; }
+
+/* Ordinary form fields. The highlighted prompt textarea is excluded via
+   :not(.editor): it MUST stay transparent so the backdrop mirror shows through,
+   and it MUST keep --ed-font, not `inherit`, or its glyphs stop matching the
+   mirror's. `#formNew textarea` (1,0,1) and `.text_output` outrank / tie the
+   shared `.editor-wrap .editor` rule (0,2,0) in pages/_lib/editor-highlight.css,
+   so without this the add-form textarea painted an opaque surface with visible
+   text right on top of its own mirror — the highlight was rendered, just
+   completely covered. List rows were unaffected, which is why the chips showed
+   in row-edit mode but never in the add form. */
+.input_new:not(.editor),
+#formNew input[type="text"],
+#formNew textarea:not(.editor),
+#formNew select,
+.text_output:not(.editor),
+.id_output, .name_output, .type_output, .action_output {
+    background: var(--panel2);
+    color: var(--text);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-family: inherit;
+    font-size: 13px;
+}
+
+/* Same exclusion as above: the editor textarea gets its focus treatment from
+   .editor-wrap:focus-within, which repaints the wrapper (below the mirror)
+   rather than the textarea (above it). */
+#formNew input[type="text"]:focus,
+#formNew textarea:not(.editor):focus,
+#formNew select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* The editor textarea still needs its focus border, which the rule above no
+   longer supplies. Painted on the textarea itself (it owns the border ring),
+   at (1,1,1) so it beats the shared --ed-border default. */
+#formNew .editor-wrap .editor:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.go_right_float { float: right; color: var(--muted); font-size: 13px; }
+.go_right { width: 100%; text-align: right; }
+
+.small_label { font-size: small; font-style: italic; color: var(--muted); }
+.field_title { font-weight: bold; }
+.field_title_us { font-weight: bold; font-size: smaller; }
+
+.hiddendata { display: none; }
+.hidden { display: none; }
+
+#txtIdNew, .id_output { text-transform: lowercase; }
+
+/* Edit mode in the list: these inputs have no declared width, so they fall back to
+   their intrinsic size (~20 characters) and overflow the narrow ID/Name/Menu
+   columns. Constrain them to the cell — box-sizing:border-box (set globally above)
+   keeps padding and border inside the 100%. */
+table.prompts_list .id_output,
+table.prompts_list .name_output,
+table.prompts_list .type_output,
+table.prompts_list .action_output {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+/* Inner wrappers around the two placeholder-linked flags. The validation ring is
+   drawn on the input (.invalid_flag) rather than on these spans, but they are kept
+   as the structural grouping of checkbox + text. */
+.need_custom_text_span, .need_selected_span { padding-right: 2px; }
+
+/* ============================ Storage space ============================ */
+.storage_space {
+    font-size: 0.8em;
+    font-style: italic;
+    color: var(--muted);
+    text-align: right;
+    margin: 8px 1px 0 0;
+}
+
+/* ======================= Prompt editor (highlighting) =======================
+
+   Structure lives in pages/_lib/editor-highlight.css, which is shared with the
+   Data Placeholders page and the six single-textarea settings pages. Only this
+   page's metrics and colours are set here, as the custom properties that file
+   reads. Keep --ed-font/--ed-line-height in step with .text_show above, so read
+   mode and edit mode render the prompt identically.
+   ------------------------------------------------------------------------- */
+
+.editor-wrap {
+    --ed-padding: 7px 10px;
+    --ed-font: var(--font-mono);
+    --ed-line-height: 1.55;
+    --ed-surface: var(--panel);
+    --ed-border: var(--border2);
+    --ed-chip-bg: var(--code-bg);
+    --ed-chip-fg: var(--code);
+    --ed-warn-bg: var(--warn-bg);
+    --ed-warn-fg: var(--warn-text);
+    --ed-warn-border: var(--warn-border);
+    --ed-err-bg: var(--err-bg);
+    --ed-err-fg: var(--err-text);
+    --ed-err-border: var(--err-border);
+}
+
+/* Visibility gating, specific to the two table pages: a row toggles between a
+   read-only span and the editor, and leaving edit mode sets display:none on the
+   textarea only -- its siblings stay visible, so an always-on backdrop would
+   keep painting a second copy of the prompt text under .text_show.
+   attachEditorHighlight() adds .editor-active, destroy() removes it.
+
+   display:block must NOT move to `.editor-wrap .editor`: at two classes it
+   would beat the row template's `.hiddendata { display: none }` and leave every
+   row's textarea visible at page load. */
+.editor-wrap .editor-backdrop { display: none; }
+.editor-wrap.editor-active .editor-backdrop { display: block; }
+.editor-wrap.editor-active .editor { display: block; }
+
+/* ============================ Autocomplete ============================ */
+
+
+/* ============================ ChatGPT Web / API panels ============================ */
+.chatgpt_web_additional_info,
+.chatgpt_web_additional_info_toggle,
+.chatgpt_web_additional_info_show {
+    display: none;
+    border-radius: 8px;
+}
+
+.chatgpt_web_additional_info,
+.chatgpt_web_additional_info_show {
+    background: var(--cgw-bg);
+    color: var(--text);
+    padding: 8px;
+    margin-top: 8px;
+}
+
+.chatgpt_web_additional_info_toggle {
+    cursor: pointer;
+    color: var(--accent);
     text-align: center;
     padding: 5px;
-    background-color: #409df3;
-    cursor: pointer;
-    display: none;
+    margin-top: 8px;
+}
+.chatgpt_web_additional_info_toggle:hover {
+    text-decoration: underline;
 }
 
-.api_additional_info_show{
+/* New-prompt form panel: same warm background as its toggle. On a <tr> the
+   border-radius/padding are inert, so they go on the cells (outer corners only,
+   since the panel is split across two <td>s). */
+#chatgpt_web_additional_info td {
+    vertical-align: top;
+    background: var(--cgw-bg);
+    padding: 8px;
+}
+#chatgpt_web_additional_info td:first-child {
+    border-radius: 8px 0 0 8px;
+}
+#chatgpt_web_additional_info td:last-child {
+    border-radius: 0 8px 8px 0;
+}
+
+/* New-prompt form toggle: styled like the [API] toggle button (ID-targeted so it
+   doesn't pick up the class-based click handlers used by the edit-list rows). */
+#chatgpt_web_additional_info_toggle {
+    background: var(--cgw-bg);
+    color: var(--text);
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    padding: 5px;
+    margin-top: 8px;
+}
+#chatgpt_web_additional_info_toggle:hover {
+    text-decoration: underline;
+}
+
+.chatgpt_web_additional_info_show {
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.chatgpt_web_additional_info_row { display: flex; }
+.chatgpt_web_additional_info_row span { margin-right: 0.4em; }
+
+input.input_additional[type="text"] {
+    width: -moz-available;
+    background: var(--panel2);
+    color: var(--text);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 5px 8px;
+}
+
+.small_info { font-size: smaller; }
+
+.conntype_chatgpt_web_option { cursor: pointer; }
+
+.api_additional_info,
+.api_additional_info_toggle,
+.api_additional_info_show {
+    background: var(--api-bg);
+    color: var(--text);
+    border-radius: 8px;
+}
+
+/* Expanded API panel (list rows). It is NOT clickable — only the toggle above it
+   is — and its content must read left-aligned, not centered. */
+.api_additional_info {
+    text-align: left;
+    padding: 8px;
+    margin-top: 8px;
+}
+
+/* New-prompt form: the toggle row is styled by ID only (the panel below carries the
+   .api_additional_info class). It must NOT take that class, or the list-row panel
+   rules below (`tr {display:block}` / `td {display:block; width:auto}`) would strip
+   its cell out of the table layout and shrink it to its text width. */
+#api_additional_info_toggle {
+    background: var(--api-bg);
+    color: var(--text);
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    padding: 5px;
+    margin-top: 0;
+}
+
+#api_additional_info_toggle:hover {
+    text-decoration: underline;
+}
+
+/* New-prompt form panel: same cool background as its toggle. The panel row keeps
+   its ID (not the .api_additional_info class), so it needs its own background. */
+#api_additional_info > td {
+    background: var(--api-bg);
+    border-radius: 8px;
+    padding: 8px;
+}
+
+/* The inner connection-UI table must not paint over the panel background. */
+#api_additional_info table,
+#api_additional_info table td {
+    background: transparent;
+}
+
+/* ---- Connection UI inside the per-row API panel ----
+   injectConnectionUI() emits a 2-column <tr> (label | controls). In the narrow
+   Prompt Text column that layout wraps badly, so we stack it: label on its own
+   line, select + Reset full-width underneath. Scoped to .api_additional_info so
+   the Options page keeps the standard two-column form. */
+.api_additional_info table {
+    width: 100%;
+    table-layout: fixed; /* don't let long option labels widen the panel */
+}
+
+.api_additional_info tr { display: block; }
+
+/* Specificity note: `table.prompts_list td` (0,1,2) sets padding/border on every
+   cell in the list, so these overrides need at least that weight — hence the
+   doubled class rather than a bare `.api_additional_info td`. The width:auto
+   likewise has to beat the td.w08/w17/w40 column rules that would otherwise
+   apply to these injected cells. */
+.api_additional_info.api_additional_info td {
+    display: block;
+    width: auto;
+    padding: 0;
+    border: none;
+}
+
+.api_additional_info.api_additional_info td:first-child {
+    margin-bottom: 4px;
+}
+
+.api_additional_info label { width: 100%; }
+
+.api_additional_info .opt_title {
+    white-space: nowrap;
+}
+
+/* select + Reset share the row; the select takes the slack. min-width:0 is
+   required or the select refuses to shrink below its intrinsic width (driven by
+   its longest <option>) and pushes the Reset button out of the panel. */
+.api_additional_info select.option-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* The injected inputs use width:-moz-available, which ignores the flex context
+   and overflows the panel. Cap them to the container instead. */
+.api_additional_info input.option-input[type="text"],
+.api_additional_info input.option-input[type="password"],
+.api_additional_info input.option-input[type="number"],
+.api_additional_info textarea.option-textarea {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.api_additional_info tr[class*="conntype_"] {
+    border-radius: 6px;
+    padding: 6px 8px;
+    margin-bottom: 6px;
+}
+
+.api_additional_info_toggle {
+    text-align: center;
+    padding: 5px;
+    cursor: pointer;
+    color: var(--accent);
+    display: none;
+    margin-top: 8px;
+}
+
+.api_additional_info_show {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     height: 100%;
-    padding: 3px;
-    margin-top: 5px;
-    background-color: rgb(64, 157, 243);
+    padding: 8px;
+    margin-top: 8px;
 }
 
-#api_additional_info_toggle:hover, .api_additional_info_toggle:hover{
-    background-color: rgb(64, 137, 213);
+.api_additional_info_toggle:hover {
     text-decoration: underline;
 }
 
-label:has(input[type="checkbox"]) {
+/* ---- Advanced connection fields disclosure (per form) ----
+   The .conn_adv rows injected by connection-ui.js are relocated into
+   .conn_adv_table by relocateConnAdvRows(), so the panel opens *below* this
+   button and the button itself stays put. `hidden` is set from JS when the
+   selected provider exposes no advanced field; the attribute alone would be
+   overridden by the display below, hence the [hidden] guard. */
+.conn_adv_btn {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 5px;
+    border: none;
+    border-radius: 8px;
+    background: var(--api-hover);
+    color: var(--text);
+    font: inherit;
+    text-align: center;
     cursor: pointer;
 }
 
-dialog.export{
-    padding: 20px;
-    border: none;
-    border-radius: 8px;
-    background-color: var(--dialog-bg-color, #fff);
-    color: var(--dialog-text-color, #000);
-    max-width: 400px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    font-family: system-ui, -apple-system, sans-serif;
+.conn_adv_btn[hidden] { display: none; }
+
+.conn_adv_btn:hover { text-decoration: underline; }
+
+.conn_adv_btn::after {
+    content: ' \25BE';   /* ▾ collapsed */
 }
 
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: #1C1B22;
-        color: rgb(251, 251, 254);
-    }
-    
-    a:link { color: #409EFF; }   
-    a:visited { color: #409EFF; }  
-    a:hover { color: #66B1FF; }   
-    a:active { color: #66B1FF; }
+.conn_adv_btn[aria-expanded="true"]::after {
+    content: ' \25B4';   /* ▴ expanded */
+}
 
-    table {
-        background-color: #1C1B22;
-        border: 1px solid #ccc;
-    }
+/* Same stacked treatment as the main injected table above. */
+.conn_adv_table {
+    width: 100%;
+    table-layout: fixed;
+    margin-top: 6px;
+}
 
-    table.prompts_list th {
-        background-color: #4c4e58;
-        border: 1px solid rgb(251, 251, 254);
-        color: rgb(194, 194, 194);
-    }
+label:has(input[type="checkbox"]) { cursor: pointer; }
 
-    #command_palette{
-        background-color: inherit; 
-    }
+/* ============================ Export dialog ============================ */
+dialog.export {
+    padding: 20px;
+    border: none;
+    border-radius: 12px;
+    background: var(--box);
+    color: var(--text);
+    max-width: 400px;
+    box-shadow: 0 12px 28px rgba(0,0,0,.35);
+    font-family: var(--font-ui);
+}
 
-    table.prompts_list tr:nth-child(even) {
-        background-color: #2E2F36;
-    }
+dialog.export::backdrop {
+    background: rgba(0,0,0,.4);
+}
 
-    .storage_space{
-        color: rgb(182, 182, 182);
-    }
+/* ===================================================================
+   Injected connection UI — visual parity with the rest of the page
 
-    .autocomplete-list {
-        background-color: #2E2F36;
-        border: 1px solid #2E2F36;
-    }
-    
-    .autocomplete-list li:hover {
-        background-color: #4c4e58;
-    }
-    
-    .autocomplete-list li.active {
-        background-color: #4c4e58;
-    }
+   connection-ui.js emits plain controls that inherit whatever the host page
+   provides. The options page dresses them through #mzta_card (mzta-design.css);
+   this page has no such wrapper, so the injected fields kept the browser/vendor
+   defaults and looked foreign next to the page's own inputs. The rules below
+   cover the two hosts — #formNew (add form) and .api_additional_info (list rows)
+   — reusing this page's tokens. Nothing here touches a shared stylesheet.
+   =================================================================== */
 
-    #chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show{
-        background-color: rgb(39, 11, 0);
-    }
+/* ---- Checkboxes as toggle switches ----
+   Same CSS-only switch already used for the prompt property checkboxes above
+   (no markup change: the injected inputs are plain <input type="checkbox">).
+   Listed by id-suffix because the injected ids are prefixed per form
+   (new_prompt_… / prompt_<id>_…), so an attribute selector is the only stable
+   hook. `.option-input` keeps the match tight to injected fields. */
+#formNew input.option-input[type="checkbox"],
+.api_additional_info input.option-input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    position: relative;
+    flex: none;
+    width: 30px;
+    height: 18px;
+    margin: 0;   /* spacing comes from the flex `gap`; see the order rule below */
+    border-radius: 20px;
+    background: var(--border2);
+    transition: background .15s;
+    cursor: pointer;
+    vertical-align: middle;
+}
 
-    #chatgpt_web_additional_info_toggle:hover, .chatgpt_web_additional_info_toggle:hover{
-        background-color: rgb(88, 25, 0);
-    }
+#formNew input.option-input[type="checkbox"]::after,
+.api_additional_info input.option-input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,.4);
+    transition: left .15s;
+}
 
-    .api_additional_info, .api_additional_info_toggle, .api_additional_info_show{
-        background-color: #0f2437;
-    }
+#formNew input.option-input[type="checkbox"]:checked,
+.api_additional_info input.option-input[type="checkbox"]:checked {
+    background: var(--accent);
+}
 
-    #api_additional_info_toggle:hover, .api_additional_info_toggle:hover{
-        background-color: #1b456d
-    }
+#formNew input.option-input[type="checkbox"]:checked::after,
+.api_additional_info input.option-input[type="checkbox"]:checked::after {
+    left: 14px;
+}
+
+/* Toggle / text layout — text left, switch right, as on the options page.
+   There the markup is `<div class="feature_info">…</div><label class="mzta_switch">`
+   inside a flex `.feature_row`: description first, switch pushed to the right.
+   The injected markup here is the opposite order (`<input>` then the text), and
+   connection-ui.js is shared with the options page and the 6 feature pages, so
+   it must not be rewritten just for this page. `order` flips the two visually
+   without touching the DOM — the checkbox keeps its position in the tab order
+   and stays the label's first child for the `:has()` selectors above.
+
+   The injected text is NOT uniformly wrapped: two of the four checkboxes are
+   `<input>&nbsp;<span>text</span>`, the other two are `<input>` followed by a
+   bare text node. Flexbox wraps each contiguous text run in an anonymous flex
+   item, and pure-white-space runs are dropped — but U+00A0 is not collapsible
+   white space, so on those two the &nbsp; survives as its own item. Ordering by
+   the switch alone handles both shapes: every text item keeps the default
+   order:0 and stays left, the switch is moved to the end, and the stray &nbsp;
+   item simply trails the text instead of separating it from the switch. */
+#formNew label:has(> input.option-input[type="checkbox"]),
+.api_additional_info label:has(> input.option-input[type="checkbox"]) {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 20px;
+    width: auto;
+}
+
+/* Switch last and hard against the right edge; the text takes the slack. */
+#formNew label:has(> input.option-input[type="checkbox"]) > input.option-input[type="checkbox"],
+.api_additional_info label:has(> input.option-input[type="checkbox"]) > input.option-input[type="checkbox"] {
+    order: 1;
+    margin-left: auto;
+}
+
+/* appearance:none drops the native focus ring — restore one. */
+#formNew input.option-input[type="checkbox"]:focus-visible,
+.api_additional_info input.option-input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ---- Text-like injected fields ----
+   #formNew already styles input[type=text]/select/textarea, but not password or
+   number, which the connection UI uses for API keys and numeric settings. */
+/* Descriptive text inside the injected panel.
+   In a list row the panel inherits `font-size: 13px` from `table.prompts_list
+   td`, which is why the field descriptions there read at the right size. The add
+   form has no font-size of its own, so the same injected markup inherited the
+   16px default and every description rendered noticeably larger. Setting it on
+   the panel cell (not on #formNew) keeps the rest of the form untouched. */
+#api_additional_info,
+#api_ui_container {
+    font-size: 13px;
+}
+
+/* All injected fields, in BOTH hosts. The add form already had a rule for
+   input[type=text]/select/textarea (padding 7px 10px), but not for password or
+   number, so an API-key field sat at a different height than the host next to
+   it. Listing every injected type here — and scoping on .option-input, which
+   only injected fields carry — puts the whole panel on the options-page metrics
+   without disturbing the form's own id/name/text inputs. */
+#formNew input.option-input[type="text"],
+#formNew input.option-input[type="password"],
+#formNew input.option-input[type="number"],
+#formNew select.option-input,
+#formNew textarea.option-textarea,
+.api_additional_info input.option-input[type="text"],
+.api_additional_info input.option-input[type="password"],
+.api_additional_info input.option-input[type="number"],
+.api_additional_info select.option-input,
+.api_additional_info textarea.option-textarea {
+    background: var(--panel2);
+    color: var(--text);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    /* Same metrics as the options page (#mzta_card input/select/textarea in
+       mzta-design.css): 13px text, 9px 11px padding. */
+    padding: 9px 11px;
+    font-family: inherit;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+#formNew input.option-input:focus,
+#formNew select.option-input:focus,
+#formNew textarea.option-textarea:focus,
+.api_additional_info input.option-input:focus,
+.api_additional_info select.option-input:focus,
+.api_additional_info textarea.option-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* ---- TomSelect (model dropdowns) ----
+   The vendored tom-select.default.min.css paints a light gradient with dark
+   text, which is unreadable in dark mode and mismatched in light. Same
+   treatment the options page applies via #mzta_card, retargeted to this page's
+   two hosts and tokens. */
+#formNew .ts-wrapper,
+.api_additional_info .ts-wrapper { width: 100%; }
+
+#formNew .ts-control,
+#formNew .ts-wrapper.single .ts-control,
+#formNew .ts-wrapper.single.input-active .ts-control,
+.api_additional_info .ts-control,
+.api_additional_info .ts-wrapper.single .ts-control,
+.api_additional_info .ts-wrapper.single.input-active .ts-control {
+    background: var(--panel2);
+    background-image: none;   /* the vendored CSS paints a light gradient */
+    box-shadow: none;
+    /* !important on the border only: setTomSelectBorder() (js/mzta-utils.js)
+       writes an *inline* `1px solid #d0d0d0` on every change, which would
+       otherwise win and leave a light-grey ring on the dark field. The red
+       validation border it also sets inline is preserved by the rule below. */
+    border: 1px solid var(--border2) !important;
+    border-radius: 8px;
+    min-height: 38px;
+    color: var(--text);
+    /* 14.4px, not 13px: on the options page .ts-control gets that size from the
+       shared connection-ui.css, so matching it keeps the two pages identical. */
+    font-size: 14.4px;
+}
+
+/* Keep the "no model selected" warning visible: setTomSelectBorder() marks it
+   with an inline *2px* red border, which the !important above would flatten.
+   Matched on the width rather than the colour: the engine normalises the
+   inline value (`red` becomes `rgb(255, 0, 0)` in Firefox), so a colour
+   substring match would silently stop working. Only the two widths the helper
+   writes exist, so "2px" unambiguously means the invalid state. */
+#formNew .ts-control[style*="2px"],
+.api_additional_info .ts-control[style*="2px"] {
+    border: 2px solid var(--err-border) !important;
+}
+
+/* The selected item lives in the inner input: without this it keeps the
+   vendored dark-on-light colour and vanishes against a dark field. */
+#formNew .ts-control > input,
+#formNew .ts-control .item,
+.api_additional_info .ts-control > input,
+.api_additional_info .ts-control .item {
+    color: var(--text);
+}
+
+#formNew .ts-control > input::placeholder,
+.api_additional_info .ts-control > input::placeholder { color: var(--muted); }
+
+/* Caret */
+#formNew .ts-wrapper.single .ts-control:after,
+.api_additional_info .ts-wrapper.single .ts-control:after { border-top-color: var(--muted); }
+#formNew .ts-wrapper.single.dropdown-active .ts-control:after,
+.api_additional_info .ts-wrapper.single.dropdown-active .ts-control:after { border-bottom-color: var(--muted); }
+
+#formNew .ts-wrapper.focus .ts-control,
+.api_additional_info .ts-wrapper.focus .ts-control { border-color: var(--accent); }
+
+#formNew .ts-dropdown,
+#formNew .ts-dropdown.single,
+.api_additional_info .ts-dropdown,
+.api_additional_info .ts-dropdown.single {
+    background: var(--panel);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14.4px;
+}
+
+#formNew .ts-dropdown .option,
+#formNew .ts-dropdown .optgroup-header,
+#formNew .ts-dropdown .no-results,
+.api_additional_info .ts-dropdown .option,
+.api_additional_info .ts-dropdown .optgroup-header,
+.api_additional_info .ts-dropdown .no-results {
+    background: transparent;
+    color: var(--text);
+}
+
+#formNew .ts-dropdown .active,
+#formNew .ts-dropdown .active.create,
+.api_additional_info .ts-dropdown .active,
+.api_additional_info .ts-dropdown .active.create {
+    background: var(--rowhover);
+    color: var(--text);
+}
+
+#formNew .ts-dropdown [data-selectable] .highlight,
+.api_additional_info .ts-dropdown [data-selectable] .highlight {
+    background: var(--hit-bg);
+    color: var(--hit-text);
+}
+
+#formNew .ts-dropdown .optgroup,
+.api_additional_info .ts-dropdown .optgroup { border-top-color: var(--border); }
+
+/* Keep the caret on the same line as the selected value — same fix as the
+   options page; see pages/_lib/mzta-design.css for the full explanation. The
+   short version: `.item` is an unstyled block flex item in the plugin-free
+   vendored build, so its automatic `min-width:auto` floor equals the width of
+   the (unbreakable) model id and it refuses to shrink, pushing the input and
+   its caret onto a second row. `min-width:0` removes that floor. */
+#formNew .ts-wrapper.single.has-items .ts-control,
+.api_additional_info .ts-wrapper.single.has-items .ts-control { flex-wrap: nowrap; }
+
+#formNew .ts-wrapper.single.has-items .ts-control > .item,
+.api_additional_info .ts-wrapper.single.has-items .ts-control > .item {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 0 1 auto;
+}
+
+#formNew .ts-wrapper.single.has-items .ts-control > input,
+.api_additional_info .ts-wrapper.single.has-items .ts-control > input {
+    min-width: 4px;
+    flex: 1 1 4px;
 }

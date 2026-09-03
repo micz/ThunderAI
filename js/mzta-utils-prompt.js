@@ -19,8 +19,9 @@
 import { placeholdersUtils } from './mzta-placeholders.js';
 import {
     extractJsonObject,
-    getMailBody,
-    htmlBodyToPlainText
+    getMailInlineTextParts,
+    htmlBodyToPlainText,
+    cleanupNewlines
 } from './mzta-utils.js';
 import { getSpecialPrompts } from './mzta-prompts.js';
 import { prefs_default } from '../options/mzta-options-default.js';
@@ -118,7 +119,7 @@ export const taPromptUtils = {
 
     async getDefaultLang(curr_prompt){
         let chatgpt_lang = '';
-        if(String(curr_prompt.define_response_lang) == "1"){
+        if(String(curr_prompt?.define_response_lang) == "1"){
             let prefs = await browser.storage.sync.get({ default_chatgpt_lang: prefs_default.default_chatgpt_lang });
             chatgpt_lang = prefs.default_chatgpt_lang;
             if(chatgpt_lang === ''){
@@ -151,10 +152,22 @@ export const taPromptUtils = {
 
         const messages_list = [];
         for (let entry of messageDataArray) {
-            const bodyHtml = await getMailBody(entry.fullMessage);
+            // entry.message is REQUIRED: its .id is what reads the body now that
+            // getMailInlineTextParts() asks the API directly, instead of walking the
+            // fullMessage the caller used to supply. An entry carrying only
+            // { fullMessage } - the shape this loop silently accepted before - would
+            // sail past getMailInlineTextParts()'s own try/catch and summarize an EMPTY
+            // body, with the subject still there so the result reads as plausible.
+            // Say so instead of degrading in silence, and skip the entry rather than
+            // contribute a bodyless block to the prompt.
+            if (!entry?.message?.id) {
+                console.error('[ThunderAI] buildSummaryPrompt: skipping an entry with no message.id - the body cannot be read without it. Entry:', entry);
+                continue;
+            }
+            const bodyHtml = await getMailInlineTextParts(entry.message.id);
             let bodyText = htmlBodyToPlainText(bodyHtml.html);
             if (bodyText.length === 0) {
-                bodyText = bodyHtml.text || '';
+                bodyText = cleanupNewlines(bodyHtml.text || '');
             }
 
             messages_list.push(await taPromptUtils.preparePrompt({
@@ -173,7 +186,9 @@ export const taPromptUtils = {
         return { promptText, promptInfo: prompt };
     },
 
-    async buildTranslationPrompt(fullMessage) {
+    // messageId is needed for the body: getMailInlineTextParts() asks the API for
+    // the inline text parts directly. fullMessage stays for the subject header.
+    async buildTranslationPrompt(fullMessage, messageId) {
         const specialPrompts = await getSpecialPrompts();
         const prompt = specialPrompts.find(p => p.id === 'prompt_translate_this');
 
@@ -182,7 +197,15 @@ export const taPromptUtils = {
             promptText = browser.i18n.getMessage('prompt_translate_this_full_text');
         }
 
-        const bodyHtml = await getMailBody(fullMessage);
+        // No messageId means no body: getMailInlineTextParts() would throw on an
+        // undefined id and swallow it in its own try/catch, returning {text:'',html:''}.
+        // The translation would then be built from the SUBJECT alone and cached as a
+        // valid result - the failure is invisible downstream, so it is named here.
+        if (!messageId) {
+            console.error('[ThunderAI] buildTranslationPrompt: called with no messageId - the message body will be empty. The caller must pass it alongside fullMessage.');
+        }
+
+        const bodyHtml = await getMailInlineTextParts(messageId);
         const mailSubject = fullMessage.headers?.subject?.[0] || '';
 
         const finalSubs = await placeholdersUtils.getPlaceholdersValues({

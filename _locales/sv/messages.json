@@ -237,7 +237,7 @@
         "message": "Aktivera visaren för textjämförelse"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "Textjämförelsevisaren kan väljas när åtgärden är inställd på \"Ersätt text\"."
+        "message": "Tillgänglig när \"Åtgärd\" är \"Ersätt text\"."
     },
     "customPrompts_btnAddNewCommit": {
         "message": "Lägg till prompten"
@@ -398,9 +398,6 @@
     "ChatGPT_Models": {
         "message": "ChatGPT-modeller"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "Uppdatera listan över ChatGPT-modeller"
-    },
     "ChatGPT_Models_Error_fetching": {
         "message": "Fel vid försök att hämta ChatGPT-modeller"
     },
@@ -437,9 +434,6 @@
     "Ollama_Models": {
         "message": "Ollama-modeller"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Uppdatera listan över Ollama-modeller"
-    },
     "Ollama_Models_Error_fetching": {
         "message": "Fel vid försök att hämta Ollama-modeller"
     },
@@ -469,9 +463,6 @@
     },
     "OpenAIComp_Models": {
         "message": "OpenAI-kompatibla API-modeller"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "Uppdatera listan över OpenAI-kompatibla API-modeller"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Fel vid försök att hämta OpenAI-kompatibla API-modeller"
@@ -621,10 +612,10 @@
         "message": "Svara på följande e-postmeddelande \"{%mail_text_body%}\". {%additional_text%}. Svara endast med den text som behövs och utan extra kommentarer eller annan text."
     },
     "prompt_rewrite_full_text": {
-        "message": "Skriv om följande text för att vara mer artig. Svara endast med den omskrivna texten och utan extra kommentarer eller annan text."
+        "message": "Skriv om följande text för att vara mer artig. Svara endast med den omskrivna texten och utan extra kommentarer eller annan text. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Skriv om följande text för att göra den mer formell. Svara endast med den omskrivna texten och utan extra kommentarer eller annan text."
+        "message": "Skriv om följande text för att göra den mer formell. Svara endast med den omskrivna texten och utan extra kommentarer eller annan text. {%selected_html%}"
     },
     "prompt_translate_this_full_text": {
         "message": "Översätt e-postmeddelandet nedan till {%thunderai_translate_lang%}.\n\nRegler:\n- Översätt både ämnet och brödtexten.\n- Returnera resultatet som ett JSON-objekt med tre fält: \"subject\", \"body\" och \"status\".\n- Om översättningen har gjorts är statusen lika med 1.\n- Om e-postmeddelandet är skrivet på ett av dessa språk \"{%thunderai_translate_exclude_lang%}\" eller på språket {%thunderai_translate_lang%}, returnera en tom sträng för brödtexten och ämnet och sätt statusen till -1.\n- Lägg inte till förklaringar, anteckningar eller någon text utanför JSON.\n\nE-postämne: {%mail_subject%}\n\nE-postbrödtext: {%mail_html_body%}\n\nGenerera ett svar endast i JSON-format. Utdata ska endast vara ett JSON-objekt. Här är ett exempel på JSON-formatet som ska användas:\n{\n\"subject\": \"ämnesöversättning\",\n\"body\": \"översättning av brödtext\",\n\"status\": \"statusresultat\"\n}"
@@ -645,7 +636,7 @@
         "message": "Korrekturläs detta e-postmeddelande"
     },
     "prompt_proofread_this_full_text": {
-        "message": "Korrekturläs följande e-postmeddelande och korrigera eventuella stavfel eller grammatikfel. Svara endast med den korrigerade texten och utan extra kommentarer eller annan text.\n\n\"{%mail_typed_text%}\""
+        "message": "Korrekturläs följande e-postmeddelande och korrigera eventuella stavfel eller grammatikfel. Svara endast med den korrigerade texten och utan extra kommentarer eller annan text.\n\n\"{%selected_html%}\""
     },
     "AddTags_info_default": {
         "message": "På den här sidan kan du ändra standardprompten som används för att lägga till taggar i e-postmeddelanden och hantera undantagslistan."
@@ -654,10 +645,10 @@
         "message": "Aktuell prompttext"
     },
     "prefs_SurveyLinkText": {
-        "message": "Dela din feedback och hjälp till att förbättra ThunderAI!"
+        "message": "Gillar du ThunderAI?"
     },
     "prefs_SurveyLinkText2": {
-        "message": "Klicka här, det tar bara en minut!"
+        "message": "Dela din feedback"
     },
     "prefs_OpenAIComp_ForceModel": {
         "message": "Infoga modell manuellt"
@@ -682,9 +673,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Google Gemini API-modeller"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Uppdatera listan över Google Gemini-modeller"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Fel vid försök att hämta Google Gemini-modeller"
@@ -742,9 +730,6 @@
     },
     "prompt_spamfilter": {
         "message": "Analysera för skräppost"
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "Alternativ för skräppostfilter"
     },
     "prefs_OptionText_use_specific_integration": {
         "message": "Använd specifik modell och API"
@@ -850,9 +835,6 @@
     },
     "Anthropic_Models": {
         "message": "Claude-modeller"
-    },
-    "Anthropic_Models_Fetch": {
-        "message": "Uppdatera listan med Claude-modeller"
     },
     "Anthropic_Models_Error_fetching": {
         "message": "Fel vid försök att hämta Claude-modeller"
@@ -1056,7 +1038,7 @@
     "placeholder_thunderai_def_sign": {
         "message": "Standardsignatur som definierad i ThunderAI-alternativ."
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "Den här platshållaren lägger inte till någon text, men den förhindrar att e-postmeddelandets brödtext läggs till automatiskt i slutet av prompten."
     },
     "prefs_OptionText_spamfilter_threshold": {
@@ -1137,23 +1119,11 @@
     "prefs_OptionText_get_calendar_event_Info": {
         "message": "Om markerat kommer ett alternativ att inkluderas i menyn för att hämta information om kalenderhändelser från markerad text."
     },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "Alternativ för kalenderhändelser"
-    },
     "prefs_OptionText_get_task": {
         "message": "Lägg till en ny uppgift från markerad text"
     },
     "prefs_OptionText_get_task_Info": {
         "message": "Om markerat kommer ett alternativ att inkluderas i menyn för att hämta uppgiftsinformation från markerad text."
-    },
-    "get_task_prompt_prefs_title": {
-        "message": "Uppgiftsalternativ"
-    },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "Skriva i oformaterad text"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "Markera det här alternativet om du skriver e-postmeddelandena i oformaterad text."
     },
     "Replace_No_Selected_Text": {
         "message": "Ingen text vald, vill du infoga AI:ns svar i början av e-postmeddelandet?"
@@ -1237,16 +1207,13 @@
         "message": "Denna parameter måste vara ett tal mellan 0,0 och 2,0. Den styr utdatas slumpmässighet. Standardvärdet varierar beroende på modell. Lämna det tomt för att undvika att parametern anges i API-anropet."
     },
     "prefs_anthropic_temperature_Info": {
-        "message": "Mängd slumpmässighet som injiceras i svaret. Standardvärdet är 1,0. Varierar från 0,0 till 1,0. Använd en temperatur närmare 0,0 för analytiska/flervalsfrågor och närmare 1,0 för kreativa och generativa uppgifter. Observera att även med en temperatur på 0,0 kommer resultaten inte att vara helt deterministiska."
+        "message": "Mängd slumpmässighet som injiceras i svaret. Varierar från 0,0 till 1,0; om fältet lämnas tomt används standardvärdet 1,0. Nyare Claude-modeller accepterar inte den här inställningen alls och använder inställningen Ansträngning i stället: när en sådan modell är vald inaktiveras fältet och dess värde skickas inte."
     },
     "prompt_add_tags_full_text": {
         "message": "Analysera följande e-posttext och generera en JSON-matris med taggar som sammanfattar innehållet. Använd teman, nyckelämnen och relevanta beskrivningar som taggar. Se till att taggarna är koncisa och relevanta för e-postmeddelandets innehåll.\nE-posttext: {%mail_text_body%}\nTänk på följande detaljer för kontext:\n- Avsändare: {%author%}\n- Mottagare: {%recipients%}\n- CC-lista: {%cc_list%}\n- E-postämne: {%mail_subject%}\nBasera dina taggar på e-postmeddelandets text och kontext och ignorera onödig information eller triviala detaljer.\nGenerera ett svar endast i JSON-format. Utdata ska endast vara en JSON-matris med taggar utan ytterligare kommentarer eller text. Här är ett exempel på JSON-formatet som ska användas:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
     },
     "addtags_info_additional_statements": {
         "message": "Detta uttryck kommer att läggas till i slutet av prompten:"
-    },
-    "AddTags_prompt_prefs_title": {
-        "message": "Lägga till taggar alternativ"
     },
     "placeholder_mail_typed_text": {
         "message": "Skriven text före citatbrevets brödtext"
@@ -1255,16 +1222,13 @@
         "message": "Citerad text i meddelandets brödtext"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extrahera all relevant information som krävs för att generera en kalenderhändelse från följande text. Den extraherade informationen bör innehålla:\n- Händelsetitel\n- Startdatum och tid (inklusive tidszon, om angiven)\n- Slutdatum och tid (inklusive tidszon, om angiven)\n- Heldag (om angiven)\n- Deltagare\nSe till att informationen är tydligt och konsekvent formaterad så att den kan användas direkt för att skapa en kalenderhändelse.\nOm det finns relativa tidsreferenser, tänk på att datum och tid för e-postmeddelandet är \"{%mail_datetime%}\". Beräkna startdatum och tid baserat på denna referens. Om det beräknade startdatumet och tiden är tidigare än \"{%current_datetime%}\", beräkna om startdatumet och tiden med \"{%current_datetime%}\" som bas.\nOm varaktigheten inte anges, sätt den till en timme.\nDessa är deltagarna: {%author%}, {%recipients%}, {%cc_list%}. Om det finns, exkludera min adress: {%account_email_address%}.\nOm händelsen är en heldagshändelse måste endDate vara en dag efter startDate med tiden inställd på \"T000000\".\nOm du inte kan få en eller flera av de obligatoriska uppgifterna, vänligen svara med en tom sträng.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaringar; ange endast JSON. Här är formatet som ska användas:\n{\n\"startDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"endDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"summary\": \"Sammanfattning av kalenderhändelse här\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHär är texten: \"{%mail_text_body_or_selected%}\""
+        "message": "Extrahera all relevant information som krävs för att generera en kalenderhändelse från följande text. Den extraherade informationen bör innehålla:\n- Händelsetitel\n- Händelsebeskrivning (en kort sammanfattning av e-postens sammanhang, nyckelämnen/dagordning, aktionspunkter och eventuella videokonferenslänkar eller åtkomstuppgifter)\n- Startdatum och tid (inklusive tidszon, om angiven)\n- Slutdatum och tid (inklusive tidszon, om angiven)\n- Heldag (om angiven)\n- Plats (om angiven, specifik byggnad, rum eller online med länk)\n- Deltagare\nSe till att informationen är tydligt och konsekvent formaterad så att den kan användas direkt för att skapa en kalenderhändelse.\nOm det finns relativa tidsreferenser, tänk på att datum och tid för e-postmeddelandet är \"{%mail_datetime%}\". Beräkna startdatum och tid baserat på denna referens. Om det beräknade startdatumet och tiden är tidigare än \"{%current_datetime%}\", beräkna om startdatumet och tiden med \"{%current_datetime%}\" som bas.\nOm varaktigheten inte anges, sätt den till en timme.\nDessa är deltagarna: {%author%}, {%recipients%}, {%cc_list%}. Om det finns, exkludera min adress: {%account_email_address%}.\nOm händelsen är en heldagshändelse måste endDate vara en dag efter startDate med tiden inställd på \"T000000\".\nOm du inte kan få en eller flera av de obligatoriska uppgifterna, vänligen svara med en tom sträng.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaringar; ange endast JSON. Här är formatet som ska användas:\n{\n\"startDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"endDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"summary\": \"Sammanfattning av kalenderhändelse här\",\n\"description\": \"Detaljerad händelsebeskrivning inklusive dagordning, aktionspunkter och relevanta anteckningar från e-postmeddelandet.\",\n\"forceAllDay\": false,\n\"location\": \"Plats eller URL här\",\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHär är texten: \"{%mail_text_body_or_selected%}\""
     },
     "prompt_get_task_full_text": {
-        "message": "Extrahera alla relevanta detaljer som krävs för att generera en uppgift från följande text. Den extraherade informationen bör innehålla:\n- Förfallodatum och tid (inklusive tidszon, om angiven)\n- Uppgiftssammanfattning\n- Initialt datum och tid (inklusive tidszon, om angiven)\nSe till att informationen är tydligt och konsekvent formaterad så att den kan användas direkt för att skapa en uppgift.\nOm det finns relativa tidsreferenser, tänk på att datum och tid för e-postmeddelandet är \"{%mail_datetime%}\". Beräkna startdatum och tid baserat på denna referens. Om det beräknade startdatumet och tiden är tidigare än \"{%current_datetime%}\", beräkna om startdatumet och tiden med \"{%current_datetime%}\" som bas.\nOm du inte kan få en eller flera av de obligatoriska uppgifterna, vänligen svara med en tom sträng.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaringar; ange endast JSON. Här är formatet som ska användas:\n{\n\"InitialDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"dueDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"summary\": \"Uppgiftssammanfattning här\"\n}\nOm det inte finns någon information om datumen, ta bort dem.\nHär är texten: \"{%selected_text%}\""
+        "message": "Extrahera alla relevanta detaljer som krävs för att generera en uppgift från följande text. Den extraherade informationen bör innehålla:\n- Initialt datum och tid (inklusive tidszon, om angiven)\n- Förfallodatum och tid (inklusive tidszon, om angiven)\n- Uppgiftssammanfattning\n- Uppgiftsbeskrivning (en kort sammanfattning av e-postens sammanhang, nyckelämnen och aktionspunkter)\n- Plats (om angiven, specifik byggnad, rum eller online med länk)\nSe till att informationen är tydligt och konsekvent formaterad så att den kan användas direkt för att skapa en uppgift.\nOm det finns relativa tidsreferenser, tänk på att datum och tid för e-postmeddelandet är \"{%mail_datetime%}\". Beräkna startdatum och tid baserat på denna referens. Om det beräknade startdatumet och tiden är tidigare än \"{%current_datetime%}\", beräkna om startdatumet och tiden med \"{%current_datetime%}\" som bas.\nOm du inte kan få en eller flera av de obligatoriska uppgifterna, vänligen svara med en tom sträng.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaringar; ange endast JSON. Här är formatet som ska användas:\n{\n\"InitialDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"dueDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"summary\": \"Uppgiftssammanfattning här\",\n\"description\": \"Detaljerad uppgiftsbeskrivning inklusive aktionspunkter och relevanta anteckningar från e-postmeddelandet.\",\n\"location\": \"Plats eller URL här\"\n}\nOm det inte finns någon information om datumen, ta bort dem.\nHär är texten: \"{%selected_text%}\""
     },
     "prompt_spamfilter_full_text": {
         "message": "Analysera följande e-postmeddelande och avgör om det är skräppost eller inte. Tänk på faktorer som misstänkta sökord, överdrivet reklamspråk, vilseledande ämnesrader, förfrågningar om personlig information och ovanliga avsändaradresser.\nAnge ett värde från 0 (inte skräppost) till 100 (skräppost) och en förklaring på högst 10 ord.\nOm meddelandedata saknas, sätt värdet till 0 (inte skräppost) och ange orsaken.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaring; ange endast JSON. Här är formatet som ska användas:\n{\n\"explanation\": \"Kort förklaring av ditt resonemang\",\n\"spamValue\": <heltal från 0 till 100>\n}\nHär är e-postinformationen:\nAvsändare: \"{%author%}\"\nÄmne: \"{%mail_subject%}\"\nHtml-text: \"{%mail_html_body%}\""
-    },
-    "Summarize_prompt_prefs_title": {
-        "message": "Sammanfattningsalternativ"
     },
     "prompt_summarize": {
         "message": "Sammanfatta"
@@ -1396,7 +1360,7 @@
         "message": "Vill du ha snygg statistik om dina e-postmeddelanden?"
     },
     "prefs_THStats_2": {
-        "message": "Klicka här! Testa ThunderStats!"
+        "message": "Testa ThunderStats!"
     },
     "antispam_by": {
         "message": "Antispam av"
@@ -1562,9 +1526,6 @@
     "Translate_prompt_text_title": {
         "message": "Aktuell prompttext"
     },
-    "Translate_prompt_prefs_title": {
-        "message": "Översättningsalternativ"
-    },
     "prefs_OptionText_translate_auto": {
         "message": "Översätt meddelanden automatiskt"
     },
@@ -1711,18 +1672,6 @@
     "spamfilter_skip_addresses_explanation": {
         "message": "Avsändaren finns i listan över e-postadresser som inte ska skickas med skräppost."
     },
-    "show_in": {
-        "message": "Visa i"
-    },
-    "show_in_popup": {
-        "message": "Popup endast"
-    },
-    "show_in_context": {
-        "message": "Kontextmeny endast"
-    },
-    "show_in_both": {
-        "message": "Båda"
-    },
     "menu_order_title": {
         "message": "Menyordning"
     },
@@ -1763,7 +1712,7 @@
         "message": "Hantera menyordningsinställningar"
     },
     "menu_order_info": {
-        "message": "Dra och släpp objekt för att ändra ordningen på dem. Använd växlingsknappen för att visa eller dölja objekt i varje meny."
+        "message": "Dra och släpp objekt för att ändra ordningen på dem, eller dra dem mellan avsnitten Synliga och Dolda för att visa eller dölja dem i varje meny. En prompt som är dold i varje meny är inaktiverad tills du gör den synlig igen."
     },
     "menu_order_active_items": {
         "message": "Synliga objekt"
@@ -1790,7 +1739,7 @@
         "message": "Utökad tankebudget (tokens)"
     },
     "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
-        "message": "Maximalt antal tokens som modellen kan spendera på utökat tänkande. Ställ in på 0 för att inaktivera utökat tänkande. När det är aktiverat ignoreras temperaturvärdet av Claude API."
+        "message": "Maximalt antal tokens som modellen kan spendera på utökat tänkande. Ställ in på 0 för att inaktivera utökat tänkande. Värdet måste vara lägre än Max Tokens. Nyare Claude-modeller accepterar inte en manuell budget och använder inställningen Ansträngning i stället: när en sådan modell är vald inaktiveras fältet och dess värde skickas inte."
     },
     "generic_error_dismiss": {
         "message": "Avfärda"
@@ -1851,5 +1800,510 @@
     },
     "batch_stop_source": {
         "message": "Batchstopp"
+    },
+    "onboarding_wizard_banner_text": {
+        "message": "Ny på ThunderAI? Låt inställningsguiden visa dig hur du ansluter din AI."
+    },
+    "onboarding_wizard_banner_link": {
+        "message": "Starta inställningsguiden"
+    },
+    "onboarding_tab_title": {
+        "message": "Välkommen till ThunderAI!"
+    },
+    "onboarding_welcome_2": {
+        "message": "Detta tillägg är designat för att förbättra din e-posthantering med kraften hos AI."
+    },
+    "onboarding_welcome_3": {
+        "message": "Med ThunderAI kan du organisera din inkorg, skapa smarta svar, sammanfatta e-postmeddelanden, automatiskt lägga till taggar och filtrera skräppost, och mycket mer, allt med hjälp av artificiell intelligens."
+    },
+    "onboarding_welcome_4": {
+        "message": "På den här sidan hittar du en översikt över de viktigaste funktionerna som finns tillgängliga för att hjälpa dig få ut det mesta av ThunderAI."
+    },
+    "onboarding_welcome_5": {
+        "message": "Gör dig redo att uppleva ett smartare och mer effektivt sätt att hantera dina e-postmeddelanden!"
+    },
+    "onboarding_welcome_6": {
+        "message": "Låt oss se hur du får ut det mesta av detta tillägg!"
+    },
+    "onboarding_using_prompts_title": {
+        "message": "Använda promptar"
+    },
+    "onboarding_using_prompts_alt": {
+        "message": "Knapp för promptmeny"
+    },
+    "onboarding_using_prompts_1": {
+        "message": "På varje meddelande finns en knapp som låter dig öppna promptmenyn."
+    },
+    "onboarding_using_prompts_2": {
+        "message": "Här kan du välja prompten på olika sätt:"
+    },
+    "onboarding_using_prompts_li1_b": {
+        "message": "Sökruta"
+    },
+    "onboarding_using_prompts_li1": {
+        "message": "Använd den för att söka efter en del av prompten."
+    },
+    "onboarding_using_prompts_li2_b": {
+        "message": "Pil ned/upp"
+    },
+    "onboarding_using_prompts_li2": {
+        "message": "Navigera bland promptarna."
+    },
+    "onboarding_using_prompts_li3_b": {
+        "message": "Tryck på en siffra"
+    },
+    "onboarding_using_prompts_li3": {
+        "message": "Tryck på en siffra på tangentbordet för att välja motsvarande prompt."
+    },
+    "onboarding_using_prompts_li4_b": {
+        "message": "Retur"
+    },
+    "onboarding_using_prompts_li4": {
+        "message": "När du har valt den prompt du vill ha, tryck på Retur för att köra den."
+    },
+    "onboarding_using_prompts_3": {
+        "message": "På ThunderAI:s inställningssida kan du hitta några alternativ gällande denna meny."
+    },
+    "onboarding_using_prompts_4": {
+        "message": "De två första promptarna är speciella och är endast tillgängliga när du använder en API-integration. De fungerar direkt utan att öppna AI-chattens webbsida."
+    },
+    "onboarding_custom_prompts_title": {
+        "message": "Definiera dina egna promptar"
+    },
+    "onboarding_custom_prompts_alt": {
+        "message": "Hantera egna promptar"
+    },
+    "onboarding_custom_prompts_p1_1": {
+        "message": "Från inställningssidan kan du öppna sidan för egna promptar."
+    },
+    "onboarding_custom_prompts_p1_3": {
+        "message": "Därifrån kan du lägga till dina egna promptar och även inaktivera standardpromptarna."
+    },
+    "onboarding_custom_prompts_p1_4": {
+        "message": "Du hittar mer information här."
+    },
+    "onboarding_custom_prompts_p2_1": {
+        "message": "När du definierar dina egna promptar kan du också använda"
+    },
+    "onboarding_custom_prompts_bold_dp": {
+        "message": "dataplatshållare"
+    },
+    "onboarding_custom_prompts_p2_2": {
+        "message": ", som kommer att ersättas med motsvarande information när prompten används."
+    },
+    "onboarding_custom_prompts_p3": {
+        "message": "Du kan till exempel använda platshållaren $PH_SUBJECT$ för att referera till e-postmeddelandets ämne eller $PH_TAGS$ för att referera till det aktuella e-postmeddelandets taggar.",
+        "placeholders": {
+            "ph_subject": {
+                "content": "{%mail_subject%}"
+            },
+            "ph_tags": {
+                "content": "{%tags_current_email%}"
+            }
+        }
+    },
+    "onboarding_automatic_features_title": {
+        "message": "Automatiska funktioner"
+    },
+    "onboarding_automatic_features_alt": {
+        "message": "Automatiskt skräppostfilter"
+    },
+    "onboarding_automatic_features_1": {
+        "message": "Det finns också två automatiska funktioner tillgängliga när du använder en API-integration, som kan aktiveras från inställningssidan:"
+    },
+    "onboarding_automatic_features_li1_b": {
+        "message": "Automatiskt skräppostfilter"
+    },
+    "onboarding_automatic_features_li1": {
+        "message": "flyttar automatiskt e-postmeddelandet till skräppostmappen om det identifieras som skräppost."
+    },
+    "onboarding_automatic_features_li2_b": {
+        "message": "Automatisk taggning"
+    },
+    "onboarding_automatic_features_li2": {
+        "message": "tilldelar automatiskt taggar till e-postmeddelandet."
+    },
+    "onboarding_automatic_features_2": {
+        "message": "För var och en av dessa funktioner finns en inställningssida för att ange inställningarna och den egna prompt som ska användas."
+    },
+    "onboarding_footer_1": {
+        "message": "Om du har några frågor eller förslag, vänligen öppna ett issue på GitHub-sidan."
+    },
+    "onboarding_footer_3": {
+        "message": "Gillar du ThunderAI?"
+    },
+    "prefs_footer_donate": {
+        "message": "Donera"
+    },
+    "apiwebchat_copy": {
+        "message": "Kopiera"
+    },
+    "prefs_OptionText_diff_granularity_words": {
+        "message": "Ord"
+    },
+    "prefs_OptionText_diff_granularity_sentences": {
+        "message": "Meningar"
+    },
+    "prefs_extra_body_error_invalid": {
+        "message": "Ogiltig JSON:"
+    },
+    "prefs_extra_body_error_not_object": {
+        "message": "Värdet måste vara ett JSON-objekt, omgivet av klammerparenteser."
+    },
+    "menu_order_reset_all": {
+        "message": "Återställ alla"
+    },
+    "menu_order_reset_all_tooltip": {
+        "message": "Återställer standardordningen, synligheten och ikonerna för alla menyalternativ. Tryck på Spara alla för att tillämpa."
+    },
+    "menu_order_tab_dot_tooltip": {
+        "message": "Den valda prompten visas även i den här listan"
+    },
+    "menu_position_btn_label": {
+        "message": "Menyposition"
+    },
+    "prefs_full_guide": {
+        "message": "Fullständig guide"
+    },
+    "prefs_shortcut_label": {
+        "message": "Öppna ThunderAI-menyn med"
+    },
+    "prefs_disclaimer_short": {
+        "message": "LLM-modeller kan generera felaktig information, och dina data kan användas av leverantören för att träna nya modeller."
+    },
+    "prefs_footer_translate": {
+        "message": "Översätt tillägget"
+    },
+    "customPrompts_promptsCount": {
+        "message": "$COUNT$ promptar",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "customPrompts_promptsCount_filtered": {
+        "message": "$SHOWN$ av $TOTAL$ promptar",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_search_placeholder": {
+        "message": "Sök efter namn eller ID"
+    },
+    "customPrompts_filter_active": {
+        "message": "Filtrerad: $SHOWN$ av $TOTAL$",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_filter_noMatches": {
+        "message": "Inga matchande promptar"
+    },
+    "customPrompts_filter_clear": {
+        "message": "Rensa filter"
+    },
+    "Models_Fetch": {
+        "message": "Uppdatera lista"
+    },
+    "placeholder_mail_plain_text_part": {
+        "message": "Ursprunglig vanlig textdel av e-postmeddelandet, utan någon konvertering från HTML-delen (bäst för företags- och automatiserad e-post; kan vara tom eller en stubbe i nyhetsbrev)"
+    },
+    "prefs_OptionText_diff_granularity": {
+        "message": "Jämför ändringar efter"
+    },
+    "prefs_OptionText_diff_granularity_info": {
+        "message": "Hur ändringsväljaren jämför originaltexten med svaret. \"Ord\" passar för att korrigera stavning och grammatik; \"Meningar\" är lättare att läsa när svaret skriver om hela meningar. Observera att i en text som består av en enda mening visar \"Meningar\" hela texten som en ändring. Du kan också växla mellan de två medan du granskar ändringarna."
+    },
+    "prefs_OptionText_openai_comp_extra_body": {
+        "message": "Extra innehållsdata"
+    },
+    "prefs_OptionText_openai_comp_extra_body_info": {
+        "message": "Ytterligare parametrar att skicka med varje API-anrop, som ett JSON-objekt. Användbart för alternativ som den här tjänsten stöder men som ThunderAI inte exponerar, som att inaktivera tänkandeläget: {\"chat_template_kwargs\": {\"thinking\": false}} eller {\"top_p\": 0.9}. Parametrarna som hanteras av ThunderAI (modell, meddelanden, strömning, temperatur) kan inte åsidosättas här. Ett ogiltigt värde ignoreras."
+    },
+    "prefs_OptionText_add_tags_auto_include_sent": {
+        "message": "Lägg även till taggar i skickade e-postmeddelanden"
+    },
+    "prefs_OptionText_add_tags_auto_include_sent_Info": {
+        "message": "Den automatiska bearbetningen körs aldrig på mapparna Utkast, Mallar, Utkorgen, Skräppost och Papperskorgen, och den hoppar även över mappen Skickat. Om markerad kommer AI:n också att lägga till taggar i de e-postmeddelanden du skickar."
+    },
+    "spamfilter_prompt_missing_explanation": {
+        "message": "Den speciella prompten för skräppostfiltret saknas. Om du har ändrat de speciella promptarna kan du försöka återställa standardprompten för skräppostfiltret."
+    },
+    "apiwebchat_picker_title": {
+        "message": "Granska ändringarna"
+    },
+    "apiwebchat_picker_toolbar": {
+        "message": "Ändra väljaråtgärder"
+    },
+    "apiwebchat_picker_counter": {
+        "message": "$ACCEPTED$ av $TOTAL$ ändringar accepterade",
+        "placeholders": {
+            "accepted": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_counter_all": {
+        "message": "Alla $TOTAL$ ändringar på accepterade",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_step_short": {
+        "message": "$CURRENT$ / $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_long": {
+        "message": "Ändra $CURRENT$ av $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_total": {
+        "message": "$TOTAL$ ändringar",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_progress": {
+        "message": "Accepterade ändringar"
+    },
+    "apiwebchat_picker_more_actions": {
+        "message": "Fler åtgärder"
+    },
+    "apiwebchat_picker_edit": {
+        "message": "Redigera manuellt"
+    },
+    "apiwebchat_picker_review": {
+        "message": "Tillbaka till ändringar"
+    },
+    "apiwebchat_picker_editor": {
+        "message": "Redigerad text"
+    },
+    "apiwebchat_picker_edit_hint": {
+        "message": "Du redigerar texten för hand. Om du ändrar den, kommer du att jämföra det du skrev med originaltexten igen om du går tillbaka till ändringarna och alla val återställs."
+    },
+    "apiwebchat_picker_granularity": {
+        "message": "Jämför med"
+    },
+    "apiwebchat_picker_granularity_words": {
+        "message": "Ord"
+    },
+    "apiwebchat_picker_granularity_sentences": {
+        "message": "Meningar"
+    },
+    "apiwebchat_picker_accept_all": {
+        "message": "Acceptera alla"
+    },
+    "apiwebchat_picker_reject_all": {
+        "message": "Avvisa alla"
+    },
+    "apiwebchat_picker_prev": {
+        "message": "Föregående ändring"
+    },
+    "apiwebchat_picker_next": {
+        "message": "Nästa ändring"
+    },
+    "apiwebchat_picker_no_changes": {
+        "message": "Svaret är identiskt med originaltexten: det finns inget att granska."
+    },
+    "apiwebchat_picker_diff_failed": {
+        "message": "De två texterna kunde inte jämföras. Svaret visas oförändrat."
+    },
+    "apiwebchat_picker_side_old_active": {
+        "message": "Originaltext, behöll: $TEXT$",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_old_inactive": {
+        "message": "Ursprunglig text, kasserad: $TEXT$. Aktivera för att behålla den istället.",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_active": {
+        "message": "Föreslagen text, behöll: $TEXT$",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_inactive": {
+        "message": "Föreslagen text, kasserad: $TEXT$. Aktivera för att behålla den istället.",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_empty_active": {
+        "message": "Ingen text här: den här delen är utelämnad. Aktivera den andra versionen för att behålla texten."
+    },
+    "apiwebchat_picker_side_empty_inactive": {
+        "message": "Ingen text här. Aktivera för att utelämna den här delen."
+    },
+    "apiwebchat_copied": {
+        "message": "Kopierad"
+    },
+    "apiwebchat_copy_failed": {
+        "message": "Kopieringen misslyckades"
+    },
+    "apiwebchat_status_error": {
+        "message": "Fel"
+    },
+    "apiwebchat_show_options": {
+        "message": "Visa alternativ"
+    },
+    "apiwebchat_turn_tools": {
+        "message": "Svarsåtgärder"
+    },
+    "apiwebchat_scroll_to_latest": {
+        "message": "Scrolla till senaste"
+    },
+    "anthropic_err_hint_temperature": {
+        "message": "Den valda Claude-modellen ($MODEL$) accepterar inte temperaturinställningen. Avmarkera fältet Temperatur eller använd inställningen Ansträngning istället."
+    },
+    "anthropic_err_hint_budget_tokens": {
+        "message": "Den valda Claude-modellen ($MODEL$) accepterar inte en manuell utökad tankebudget. Sätt den utökade tankebudgeten till 0 och använd inställningen Ansträngning istället."
+    },
+    "anthropic_err_hint_thinking_type": {
+        "message": "Den valda Claude-modellen ($MODEL$) accepterar inte denna tankekonfiguration. Kontrollera inställningarna för utökad tankebudget och ansträngning."
+    },
+    "anthropic_err_hint_effort": {
+        "message": "Den valda Claude-modellen ($MODEL$) accepterar inte denna ansträngningsnivå. Välj en annan nivå på alternativsidan."
+    },
+    "prefs_OptionText_anthropic_effort": {
+        "message": "Ansträngning"
+    },
+    "prefs_OptionText_anthropic_effort_Info": {
+        "message": "Hur mycket resonemangsarbete modellen ska lägga ner på en begäran. Högre nivåer ger bättre svar på komplexa uppgifter men kostar fler tokens och tar längre tid. Låt den vara på standardinställningen för att låta Claude API bestämma. Äldre Claude-modeller stöder inte den här inställningen."
+    },
+    "anthropic_effort_default": {
+        "message": "Standard (bestäms av API:et)"
+    },
+    "Anthropic_Effort_Level_low": {
+        "message": "Låg"
+    },
+    "Anthropic_Effort_Level_medium": {
+        "message": "Medium"
+    },
+    "Anthropic_Effort_Level_high": {
+        "message": "Hög"
+    },
+    "Anthropic_Effort_Level_xhigh": {
+        "message": "Extra hög"
+    },
+    "Anthropic_Effort_Level_max": {
+        "message": "Max"
+    },
+    "anthropic_note_temperature_unsupported": {
+        "message": "Den valda modellen accepterar inte ett temperaturvärde och ignorerar det här fältet. Använd inställningen Ansträngning istället. Värdet sparas ifall du byter tillbaka till en äldre modell."
+    },
+    "anthropic_note_budget_tokens_unsupported": {
+        "message": "Den valda modellen accepterar inte en manuell utökad tankebudget och ignorerar detta fält. Använd inställningen Ansträngning istället. Värdet behålls ifall du byter tillbaka till en äldre modell."
+    },
+    "anthropic_note_effort_unsupported": {
+        "message": "Den valda modellen stöder inte inställningen Ansträngning. Använd istället den utökade tankebudgeten."
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary": {
+        "message": "Sammanfattning av resonemang"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_Info": {
+        "message": "Be API:et om en sammanfattning av modellens resonemang, visat i chatten som ett hopfällbart block. Endast nyare resonemangsmodeller stöder det, såsom gpt-5, o3 och o4-mini: äldre modeller som o1-pro och o3-mini resonerar internt men visar aldrig en sammanfattning, så blocket förblir dolt. Lämna inaktiverat för modeller utan resonemangsstöd."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort": {
+        "message": "Resonemangsansträngning"
+    },
+    "prefs_OptionText_chatgpt_extra_body": {
+        "message": "Extra innehållsdata"
+    },
+    "prefs_OptionText_chatgpt_extra_body_info": {
+        "message": "Ytterligare parametrar att skicka med varje API-anrop, som ett JSON-objekt, som {\"top_p\": 0.9}. Användbart för alternativ som OpenAI API stöder men ThunderAI inte exponerar. Parametrarna som hanteras av ThunderAI (modell, indata, strömning, temperatur, resonemang, instruktioner) kan inte åsidosättas här. Ett ogiltigt värde ignoreras."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_Info": {
+        "message": "Hur mycket ansträngning modellen lägger ner på att resonera innan svaret ges. Lägre värden ger snabbare och billigare svar, högre värden ger mer utförliga. Låt API:et vara standard för att låta OpenAI bestämma. Ignoreras av modeller utan resonemangsstöd."
+    },
+    "prefs_OptionText_chatgpt_reasoning_disabled": {
+        "message": "Inaktiverad"
+    },
+    "prefs_OptionText_chatgpt_reasoning_api_default": {
+        "message": "API standard"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_auto": {
+        "message": "Automatisk"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
+        "message": "Detaljerad"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
+        "message": "Minimal"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_low": {
+        "message": "Låg"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
+        "message": "Medium"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_high": {
+        "message": "Hög"
+    },
+    "customDataPH_placeholdersCount": {
+        "message": "$COUNT$ dataplatshållare",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "Summarize_auto_senders_title": {
+        "message": "Automatisk sammanfattning avsändarlista"
+    },
+    "Summarize_auto_senders_infoline": {
+        "message": "E-postmeddelanden från dessa avsändare sammanfattas automatiskt, utan att du behöver klicka. Sammanfattningen genereras när e-postmeddelandet tas emot, eller när du öppnar det om det inte upptäcktes vid mottagandet."
+    },
+    "Summarize_auto_senders_infoline2": {
+        "message": "Lägg till en e-postadress per rad, eller separerad med ett kommatecken. Använd \"@domain.com\" för att matcha alla avsändare för en hel domän."
+    },
+    "Summarize_auto_senders_api_warning": {
+        "message": "Varning: dessa sammanfattningar genereras automatiskt, så varje e-postmeddelande från dessa avsändare förbrukar API-tokens och kan öka kostnaden för din AI-prenumeration. Håll listan så kort som möjligt."
+    },
+    "menu_order_icon_default": {
+        "message": "Standardikon"
     }
 }

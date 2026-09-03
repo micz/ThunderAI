@@ -311,9 +311,6 @@
     "Ollama_Models": {
         "message": "Modely Ollama"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Aktualizovat seznam modelů Ollama"
-    },
     "Ollama_Models_Error_fetching": {
         "message": "Chyba při pokusu o načtení modelů Ollama"
     },
@@ -343,9 +340,6 @@
     },
     "OpenAIComp_Models": {
         "message": "Modely kompatibilní s OpenAI API"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "Aktualizovat seznam modelů kompatibilních s OpenAI API"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Chyba při pokusu o načtení modelů kompatibilních s OpenAI API"
@@ -494,9 +488,6 @@
     "spamfilter_no_reports": {
         "message": "Zatím nebyly žádné zprávy zkontrolovány na spam. Zde naleznete seznam posledních 100 hlášení spamu."
     },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "\"Možnosti filtru spamu\""
-    },
     "spamfilter_threshold_too_low": {
         "message": "Práh spamu je příliš nízký! Pravděpodobně označíte příliš mnoho e-mailů jako spam!"
     },
@@ -511,9 +502,6 @@
     },
     "currently_used_prompt": {
         "message": "Aktuálně používaný název přikazu"
-    },
-    "ChatGPT_Models_Fetch": {
-        "message": "Aktualizovat seznam modelů ChatGPT"
     },
     "ChatGPT_Models_Error_fetching": {
         "message": "Chyba při pokusu o načtení modelů ChatGPT"
@@ -535,9 +523,6 @@
     },
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "Pokud je zaškrtnuto, štítek bude nastaven na malá písmena s pouze prvním písmenem velkým."
-    },
-    "AddTags_prompt_prefs_title": {
-        "message": "Možnosti přidávání štítků"
     },
     "prefs_SurveyLinkText": {
         "message": "Podělte se o svůj názor a pomozte vylepšit ThunderAI!"
@@ -568,9 +553,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Modely Google Gemini API"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Aktualizovat seznam modelů Google Gemini"
     },
     "google_gemini_empty_apikey": {
         "message": "Nezadali jste API klíč pro Google Gemini API. Vložte jej na stránce možností."
@@ -723,10 +705,10 @@
         "message": "Odpovězte na následující e-mail \"{%selected_text%}\", s ohledem na to, že se jedná o celé vlákno e-mailů \"{%mail_html_body%}\". Odpovězte pouze potřebným textem a bez dalších komentářů nebo jiného textu."
     },
     "prompt_rewrite_full_text": {
-        "message": "Přepište následující text, aby byl zdvořilejší. Odpovězte pouze přepsaným textem a bez dalších komentářů nebo jiného textu."
+        "message": "Přepište následující text, aby byl zdvořilejší. Odpovězte pouze přepsaným textem a bez dalších komentářů nebo jiného textu. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Přepište následující text, aby byl formálnější. Odpovězte pouze přepsaným textem a bez dalších komentářů nebo jiného textu."
+        "message": "Přepište následující text, aby byl formálnější. Odpovězte pouze přepsaným textem a bez dalších komentářů nebo jiného textu. {%selected_html%}"
     },
     "prompt_classify_full_text": {
         "message": "Klasifikujte následující text z hlediska zdvořilosti, vřelosti, formálnosti, asertivity, urážlivosti a uveďte procento pro každou kategorii. Odpovězte pouze kategorií a skóre bez dalších komentářů nebo jiného textu."
@@ -777,7 +759,7 @@
         "message": "Spravovat nastavení štítků"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Z následujícího textu extrahuj všechny relevantní podrobnosti potřebné k vygenerování události kalendáře. Extrahované informace by měly zahrnovat:\n- Název události\n- Datum a čas zahájení (včetně časového pásma, pokud je uvedeno)\n- Datum a čas ukončení (včetně časového pásma, pokud je uvedeno)\n- Celý den (pokud je zmíněn)\n- Účastníci\nZajisti, aby byla data formátována jasně a konzistentně, aby je bylo možné přímo použít k vytvoření události kalendáře.\nPokud existují relativní časové odkazy, vezmi v úvahu, že datum a čas e-mailu jsou \"{%mail_datetime%}\". Vypočítej datum a čas zahájení na základě tohoto odkazu. Pokud jsou vypočítané datum a čas zahájení dřívější než \"{%current_datetime%}\", přepočti datum a čas zahájení pomocí \"{%current_datetime%}\" jako základu.\nPokud není zadána doba trvání, nastav ji na jednu hodinu.\nToto jsou účastníci: {%author%}, {%recipients%}, {%cc_list%}. Pokud je přítomna, nezahrnuj mou adresu: {%account_email_address%}.\nPokud se jedná o celodenní událost, musí být endDate jeden den po startDate s časem nastaveným na \"T000000\".\nPokud nejsi schopen získat jednu nebo více požadovaných informací, odpověz prázdným řetězcem.\nVygeneruj odpověď pouze ve formátu JSON. Nezahrnuj žádný další text ani vysvětlení; poskytni pouze JSON. Zde je formát, který se má použít:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Zde je souhrn události kalendáře\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nZde je text:\"{%mail_text_body_or_selected%}\""
+        "message": "Z následujícího textu extrahuj všechny relevantní podrobnosti potřebné k vygenerování události kalendáře. Extrahované informace by měly zahrnovat:\n- Název události\n- Popis události (stručné shrnutí kontextu e-mailu, klíčových témat/agendy, akčních kroků a případných odkazů na videokonference nebo přístupových údajů)\n- Datum a čas zahájení (včetně časového pásma, pokud je uvedeno)\n- Datum a čas ukončení (včetně časového pásma, pokud je uvedeno)\n- Celý den (pokud je zmíněn)\n- Místo (pokud je zmíněn, konkrétní budova, místnost nebo online s odkazem)\n- Účastníci\nZajisti, aby byla data formátována jasně a konzistentně, aby je bylo možné přímo použít k vytvoření události kalendáře.\nPokud existují relativní časové odkazy, vezmi v úvahu, že datum a čas e-mailu jsou \"{%mail_datetime%}\". Vypočítej datum a čas zahájení na základě tohoto odkazu. Pokud jsou vypočítané datum a čas zahájení dřívější než \"{%current_datetime%}\", přepočti datum a čas zahájení pomocí \"{%current_datetime%}\" jako základu.\nPokud není zadána doba trvání, nastav ji na jednu hodinu.\nToto jsou účastníci: {%author%}, {%recipients%}, {%cc_list%}. Pokud je přítomna, nezahrnuj mou adresu: {%account_email_address%}.\nPokud se jedná o celodenní událost, musí být endDate jeden den po startDate s časem nastaveným na \"T000000\".\nPokud nejsi schopen získat jednu nebo více požadovaných informací, odpověz prázdným řetězcem.\nVygeneruj odpověď pouze ve formátu JSON. Nezahrnuj žádný další text ani vysvětlení; poskytni pouze JSON. Zde je formát, který se má použít:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Zde je souhrn události kalendáře\",\n\"description\": \"Podrobný popis události včetně agendy, akčních kroků a relevantních poznámek z e-mailu.\",\n\"forceAllDay\": false,\n\"location\": \"Místo nebo URL zde\",\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nZde je text:\"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Přidat novou událost do kalendáře z vybraného textu"
@@ -827,9 +809,6 @@
     "prompt_spamfilter_full_text": {
         "message": "Analyzuj následující e-mail a urči, zda se jedná o spam či nikoli. Zvaž faktory, jako jsou podezřelá klíčová slova, nadměrné propagační výrazy, zavádějící řádky předmětu, žádosti o osobní informace a neobvyklé adresy odesílatele.\nZadej hodnotu od 0 (není spam) do 100 (spam) a vysvětlení o maximálně 10 slovech. \nV případě chybějících údajů zprávy nastavte hodnotu na 0 (není spam) a uveďte důvod.\nVygeneruj odpověď pouze ve formátu JSON. Neuváděj žádný další text nebo vysvětlení; uveď pouze JSON. Zde je formát, který se má použít:\n{\n\"explanation\": \"Stručné vysvětlení vašeho zdůvodnění\",\n\"spamValue\": <celé číslo od 0 do 100>\n}\nZde jsou informace o e-mailu:\nOdesílatel: \"{%author%}\"\nPředmět: \"{%mail_subject%}\"\nText HTML: \"{%mail_html_body%}\""
     },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "Možnosti události kalendáře"
-    },
     "prefs_OptionText_calendar_enforce_timezone": {
         "message": "Vynutit zvolené časové pásmo"
     },
@@ -870,7 +849,7 @@
         "message": "Přijímám data"
     },
     "prompt_proofread_this_full_text": {
-        "message": "Zkontrolujte pravopis a gramatiku následující emailové zprávy a opravte případné chyby. Odpovězte pouze opraveným textem, bez jakýchkoli dalších komentářů nebo textu.\n\n\"{%mail_typed_text%}\""
+        "message": "Zkontrolujte pravopis a gramatiku následující emailové zprávy a opravte případné chyby. Odpovězte pouze opraveným textem, bez jakýchkoli dalších komentářů nebo textu.\n\n\"{%selected_html%}\""
     },
     "ask_chatgptweb_permission_1": {
         "message": "Pro používání integrace ChatGPT Web musíte udělit požadované oprávnění."
@@ -915,12 +894,7 @@
         "message": "POVINNÉ. Neměňte tuto hodnotu, pokud nevíte, co děláte. Více informací zde:"
     },
     "_api_connecting_version": {
-        "message": "Verze",
-        "placeholders": {
-            "api_version": {
-                "content": "$1"
-            }
-        }
+        "message": "Verze"
     },
     "Custom": {
         "message": "Vlastní"
@@ -931,9 +905,6 @@
     "OpenChatGPTTab_Info2": {
         "message": "Otevření ChatGPT Web odtud použije všechny nakonfigurované nastavení pro model, projekt a Custom GPT."
     },
-    "get_task_prompt_prefs_title": {
-        "message": "Možnosti úloh"
-    },
     "GetTask_PageTitle": {
         "message": "Spravovat nastavení úloh"
     },
@@ -943,7 +914,7 @@
     "prefs_OptionText_add_tags_auto_Info2": {
         "message": "Vyberte účet, pro který chcete aktivovat tuto funkci, dole na této stránce."
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "Tento zástupný symbol nepřidává žádný text, ale zabraňuje automatickému přidání těla emailu na konec výzvy."
     },
     "ask_anthropic_api_permission_1": {
@@ -985,9 +956,6 @@
     "Anthropic_Models": {
         "message": "Modely Claude"
     },
-    "Anthropic_Models_Fetch": {
-        "message": "Aktualizovat seznam modelů Claude"
-    },
     "Anthropic_Models_Error_fetching": {
         "message": "Chyba při pokusu o načtení modelů Claude"
     },
@@ -1026,38 +994,22 @@
         }
     },
     "_api_connecting_model": {
-        "message": "Model",
-        "placeholders": {
-            "model": {
-                "content": "$1"
-            }
-        }
+        "message": "Model"
     },
     "apiwebchat_selection_info": {
         "message": "Pokud vyberete nějaký text, bude zohledněna pouze tato část."
     },
     "_api_connecting_host": {
-        "message": "Host",
-        "placeholders": {
-            "api_host": {
-                "content": "$1"
-            }
-        }
+        "message": "Host"
     },
     "prompt_get_task_full_text": {
-        "message": "Extrahujte všechny relevantní podrobnosti potřebné k vygenerování úlohy z následujícího textu.Extrahované informace by měly zahrnovat:\n- Datum a čas dokončení (včetně časového pásma, pokud je uvedeno)\n- Shrnutí úlohy\n- Počáteční datum a čas (včetně časového pásma, pokud je uvedeno)\nZajistěte, aby byla data formátována jasně a konzistentně, aby je bylo možné přímo použít k vytváření úloh.\nPokud existují relativní časové odkazy, vezměte v úvahu, že datum a čas emailu jsou \"{%mail_datetime%}\". Vypočítejte počáteční datum a čas na základě této reference. Pokud je vypočítané počáteční datum a čas dřívější než \"{%current_datetime%}\", přepočtěte počáteční datum a čas pomocí \"{%current_datetime%}\" jako základ.\nPokud se vám nepodaří získat jednu nebo více požadovaných informací, odpovězte prázdným řetězcem.\nVygenerujte odpověď pouze ve formátu JSON. Nezahrnujte žádný další text ani vysvětlení; poskytněte pouze JSON. Zde je formát, který má být použit:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Shrnutí úlohy zde\"\n}\nPokud nejsou k dispozici žádné informace o datech, odstraňte je.\nZde je text:\"{%selected_text%}\""
+        "message": "Extrahujte všechny relevantní podrobnosti potřebné k vygenerování úlohy z následujícího textu.Extrahované informace by měly zahrnovat:\n- Počáteční datum a čas (včetně časového pásma, pokud je uvedeno)\n- Datum a čas dokončení (včetně časového pásma, pokud je uvedeno)\n- Shrnutí úlohy\n- Popis úlohy (stručné shrnutí kontextu e-mailu, klíčových témat a akčních kroků)\n- Místo (pokud je zmíněn, konkrétní budova, místnost nebo online s odkazem)\nZajistěte, aby byla data formátována jasně a konzistentně, aby je bylo možné přímo použít k vytváření úloh.\nPokud existují relativní časové odkazy, vezměte v úvahu, že datum a čas emailu jsou \"{%mail_datetime%}\". Vypočítejte počáteční datum a čas na základě této reference. Pokud je vypočítané počáteční datum a čas dřívější než \"{%current_datetime%}\", přepočtěte počáteční datum a čas pomocí \"{%current_datetime%}\" jako základ.\nPokud se vám nepodaří získat jednu nebo více požadovaných informací, odpovězte prázdným řetězcem.\nVygenerujte odpověď pouze ve formátu JSON. Nezahrnujte žádný další text ani vysvětlení; poskytněte pouze JSON. Zde je formát, který má být použit:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Shrnutí úlohy zde\",\n\"description\": \"Podrobný popis úlohy včetně akčních kroků a relevantních poznámek z e-mailu.\",\n\"location\": \"Místo nebo URL zde\"\n}\nPokud nejsou k dispozici žádné informace o datech, odstraňte je.\nZde je text:\"{%selected_text%}\""
     },
     "prefs_OptionText_get_task_Info": {
         "message": "Pokud je zaškrtnuto, bude do nabídky přidána položka pro získání informací o úloze z vybraného textu."
     },
     "task_getting_data_error": {
         "message": "Chyba při získávání dat úlohy"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "Zaškrtněte tuto možnost, pokud skládáte emaily ve formátu prostého textu."
-    },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "Psaní v prostém textu"
     },
     "prefs_ollama_num_ctx": {
         "message": "Počet kontextových tokenů"
@@ -1112,18 +1064,6 @@
     },
     "prompt_string": {
         "message": "Prompt (příkaz)"
-    },
-    "show_in": {
-        "message": "Zobrazit v"
-    },
-    "show_in_popup": {
-        "message": "Pouze ve vyskakovacím okně"
-    },
-    "show_in_context": {
-        "message": "Pouze v kontextové nabídce"
-    },
-    "show_in_both": {
-        "message": "Obojí"
     },
     "webchat_save_as_summary": {
         "message": "Uložit jako shrnutí"
@@ -1211,9 +1151,6 @@
     },
     "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
         "message": "Zobrazit další položku menu pro vytváření událostí kalendáře z obsahu schránky."
-    },
-    "Summarize_prompt_prefs_title": {
-        "message": "Možnosti shrnutí"
     },
     "prompt_summarize": {
         "message": "Shrnout"
@@ -1473,7 +1410,7 @@
         "message": "Výkon modelu Claude můžete vylepšit použitím systémového promptu k přidělení role. Tato technika, známá jako „role prompting“, je nejúčinnějším způsobem použití systémových promptů u modelu Claude. Správná role může změnit Clauda z obecného asistenta na vašeho virtuálního odborníka v dané oblasti."
     },
     "prefs_anthropic_temperature_Info": {
-        "message": "Míra náhodnosti vkládaná do odpovědi. Výchozí hodnota je 1,0. Rozsah od 0,0 do 1,0. Teplotu blízkou 0,0 použijte pro analytické úkoly nebo výběr z více možností, teplotu blízkou 1,0 pro kreativní a generativní úkoly. Upozorňujeme, že i při teplotě 0,0 nebudou výsledky plně deterministické."
+        "message": "Míra náhodnosti vkládaná do odpovědi. Rozsah od 0,0 do 1,0; pokud pole ponecháte prázdné, použije se výchozí hodnota 1,0. Novější modely Claude toto nastavení vůbec nepřijímají a místo něj používají nastavení Úsilí: pokud je vybrán některý z nich, je toto pole zakázáno a jeho hodnota se neodesílá."
     },
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Odmítli jste volitelné oprávnění potřebné pro načtení modelů pro tuto integraci."
@@ -1597,9 +1534,6 @@
     },
     "Translate_prompt_text_title": {
         "message": "Aktuální text promptu"
-    },
-    "Translate_prompt_prefs_title": {
-        "message": "Možnosti překladu"
     },
     "prefs_OptionText_translate_auto": {
         "message": "Automaticky překládat zprávy"
@@ -1791,5 +1725,139 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Vezměte prosím na vědomí, že veškeré značky <br> v odpovědi AI budou nahrazeny zalomením řádku."
+    },
+    "onboarding_wizard_banner_text": {
+        "message": "S ThunderAI začínáte? Nechte se průvodcem nastavením provést připojením vaší AI."
+    },
+    "onboarding_wizard_banner_link": {
+        "message": "Spustit průvodce nastavením"
+    },
+    "onboarding_tab_title": {
+        "message": "Vítejte v ThunderAI!"
+    },
+    "onboarding_welcome_2": {
+        "message": "Tento doplněk je navržen tak, aby vylepšil správu vašich e-mailů pomocí síly AI."
+    },
+    "onboarding_welcome_3": {
+        "message": "S ThunderAI můžete zorganizovat doručenou poštu, vytvářet chytré odpovědi, shrnovat e-maily, automaticky přidávat štítky a filtrovat spam a mnoho dalšího, a to vše s pomocí umělé inteligence."
+    },
+    "onboarding_welcome_4": {
+        "message": "Na této stránce najdete přehled klíčových funkcí, které vám pomohou ThunderAI maximálně využít."
+    },
+    "onboarding_welcome_5": {
+        "message": "Připravte se na chytřejší a efektivnější způsob práce s e-maily!"
+    },
+    "onboarding_welcome_6": {
+        "message": "Podívejme se, jak tento doplněk co nejlépe využít!"
+    },
+    "onboarding_using_prompts_title": {
+        "message": "Používání promptů"
+    },
+    "onboarding_using_prompts_alt": {
+        "message": "Tlačítko nabídky promptů"
+    },
+    "onboarding_using_prompts_1": {
+        "message": "U každé zprávy je tlačítko, které vám umožní otevřít nabídku promptů."
+    },
+    "onboarding_using_prompts_2": {
+        "message": "Zde si můžete vybrat prompt různými způsoby:"
+    },
+    "onboarding_using_prompts_li1_b": {
+        "message": "Vyhledávací pole"
+    },
+    "onboarding_using_prompts_li1": {
+        "message": "Použijte jej k vyhledání části promptu."
+    },
+    "onboarding_using_prompts_li2_b": {
+        "message": "Šipka dolů/nahoru"
+    },
+    "onboarding_using_prompts_li2": {
+        "message": "Pohyb mezi prompty."
+    },
+    "onboarding_using_prompts_li3_b": {
+        "message": "Stiskněte číslo"
+    },
+    "onboarding_using_prompts_li3": {
+        "message": "Stiskněte na klávesnici číslo pro výběr odpovídajícího promptu."
+    },
+    "onboarding_using_prompts_li4_b": {
+        "message": "Enter"
+    },
+    "onboarding_using_prompts_li4": {
+        "message": "Jakmile si vyberete požadovaný prompt, stiskněte Enter pro jeho spuštění."
+    },
+    "onboarding_using_prompts_3": {
+        "message": "Na stránce možností ThunderAI najdete některé volby týkající se této nabídky."
+    },
+    "onboarding_using_prompts_4": {
+        "message": "První dva prompty jsou speciální a jsou dostupné pouze při použití integrace API. Fungují přímo, aniž by otevíraly webovou stránku AI Chat."
+    },
+    "onboarding_custom_prompts_title": {
+        "message": "Definování vašich vlastních promptů"
+    },
+    "onboarding_custom_prompts_alt": {
+        "message": "Správa vlastních promptů"
+    },
+    "onboarding_custom_prompts_p1_1": {
+        "message": "Ze stránky možností můžete otevřít stránku vlastních promptů."
+    },
+    "onboarding_custom_prompts_p1_3": {
+        "message": "Odtamtud můžete přidávat své prompty a také zakázat výchozí."
+    },
+    "onboarding_custom_prompts_p1_4": {
+        "message": "Více informací najdete zde."
+    },
+    "onboarding_custom_prompts_p2_1": {
+        "message": "Při definování vlastních promptů můžete také použít"
+    },
+    "onboarding_custom_prompts_bold_dp": {
+        "message": "zástupné symboly dat"
+    },
+    "onboarding_custom_prompts_p2_2": {
+        "message": ", které budou při použití promptu nahrazeny odpovídajícími informacemi."
+    },
+    "onboarding_custom_prompts_p3": {
+        "message": "Můžete například použít zástupný symbol $PH_SUBJECT$ pro odkaz na předmět e-mailu nebo $PH_TAGS$ pro odkaz na štítky aktuálního e-mailu.",
+        "placeholders": {
+            "ph_subject": {
+                "content": "{%mail_subject%}"
+            },
+            "ph_tags": {
+                "content": "{%tags_current_email%}"
+            }
+        }
+    },
+    "onboarding_automatic_features_title": {
+        "message": "Automatické funkce"
+    },
+    "onboarding_automatic_features_alt": {
+        "message": "Automatický filtr spamu"
+    },
+    "onboarding_automatic_features_1": {
+        "message": "Při použití integrace API jsou k dispozici také dvě automatické funkce, které lze aktivovat ze stránky možností:"
+    },
+    "onboarding_automatic_features_li1_b": {
+        "message": "Automatický filtr spamu"
+    },
+    "onboarding_automatic_features_li1": {
+        "message": "automaticky přesune e-mail do složky se spamem, pokud je rozpoznán jako spam."
+    },
+    "onboarding_automatic_features_li2_b": {
+        "message": "Automatické štítkování"
+    },
+    "onboarding_automatic_features_li2": {
+        "message": "automaticky přiřadí e-mailu štítky."
+    },
+    "onboarding_automatic_features_2": {
+        "message": "Pro každou z těchto funkcí existuje stránka možností, kde můžete určit nastavení a vlastní prompt, který se má použít."
+    },
+    "onboarding_footer_1": {
+        "message": "Máte-li dotazy nebo návrhy, otevřete prosím issue na stránce GitHub."
+    },
+    "onboarding_footer_3": {
+        "message": "Líbí se vám ThunderAI?"
+    },
+    "prefs_footer_donate": {
+        "message": "Darovat"
     }
 }

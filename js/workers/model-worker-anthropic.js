@@ -20,7 +20,10 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { Anthropic } from '../api/anthropic.js';
+import {
+    Anthropic,
+    describeAnthropicError
+} from '../api/anthropic.js';
 import { taLogger } from '../mzta-logger.js';
 
 let anthropic = null;
@@ -57,20 +60,31 @@ self.onmessage = async function(event) {
         if (!response.ok) {
             let error_message = '';
             let errorDetail = '';
+            let error_text = '';
             if(response.is_exception === true){
                 error_message = response.error;
+                // Network-level failure: no status/statusText exist on the returned object,
+                // and error_message already carries the provider name.
+                error_text = error_message;
             }else{
                 try{
                     const errorJSON = await response.json();
                     errorDetail = JSON.stringify(errorJSON);
                     error_message = errorJSON.error.message;
+                    if(response.status === 400){
+                        // A 400 naming a request parameter usually means the
+                        // selected model rejects an option the user configured;
+                        // say which one instead of only echoing the raw detail.
+                        error_message = describeAnthropicError(error_message, anthropic ? anthropic.model : '', i18nStrings);
+                    }
                 }catch(e){
                     error_message = response.statusText;
                 }
                 taLog.log("error_message: " + JSON.stringify(error_message));
+                error_text = i18nStrings["anthropic_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
             }
-            postMessage({ type: 'error', payload: i18nStrings["anthropic_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail });
-            throw new Error("[ThunderAI] Claude API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
+            postMessage({ type: 'error', payload: error_text });
+            throw new Error("[ThunderAI] Claude API request failed: " + error_text);
         }
 
         const reader = response.body.getReader();
@@ -81,6 +95,7 @@ self.onmessage = async function(event) {
             if (stopStreaming) {
                 stopStreaming = false;
                 reader.cancel();
+                taLog.log("AI full reasoning [STOPPED]: " + thinkingAccumulator);
                 taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                 assistantResponseAccumulator = '';
@@ -90,6 +105,7 @@ self.onmessage = async function(event) {
             }
             const { done, value } = await reader.read();
             if (done) {
+                taLog.log("AI full reasoning: " + thinkingAccumulator);
                 taLog.log("AI full response: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                 assistantResponseAccumulator = '';
@@ -100,7 +116,9 @@ self.onmessage = async function(event) {
             // lots of low-level Claude response parsing stuff
             const chunk = decoder.decode(value);
             buffer += chunk;
-            taLog.log("buffer " + buffer);
+            // No per-chunk dump of `buffer`: taLog.log() only gates the console call,
+            // so the whole unconsumed buffer would be re-concatenated on every SSE
+            // chunk even with debug off.
             const lines = buffer.split("\n");
             buffer = lines.pop();
             
@@ -111,6 +129,14 @@ self.onmessage = async function(event) {
                 if (cleanLine === '' || cleanLine.startsWith('event: ping')) {
                     continue;
                 }
+
+                // Guarded at the call site: taLog.log() gates only the console call,
+                // so an unguarded concatenation would run per SSE line even with debug
+                // off. Placed after the ping filter so keep-alives stay out of the log,
+                // and logs cleanLine rather than JSON.stringify() as the other workers
+                // do: this stream is raw SSE ('event: ...' / 'data: {...}'), already a
+                // string, so stringifying would only re-quote it.
+                if (taLog.do_debug) taLog.log("line: " + cleanLine);
 
                 // Remove "data: " and parse the JSON
                 if (cleanLine.startsWith('data: ')) {
@@ -147,6 +173,7 @@ self.onmessage = async function(event) {
                             break;
 
                         case 'message_stop':
+                            taLog.log("AI full reasoning: " + thinkingAccumulator);
                             taLog.log("AI full response: " + assistantResponseAccumulator);
                             conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                             assistantResponseAccumulator = '';
