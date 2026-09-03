@@ -25,7 +25,7 @@ export class OpenAIComp {
 
   host = '';
   model = '';
-  apiKey = '';
+  #apiKey = '';
   use_v1 = true;
   stream = false;
   temperature = '';
@@ -43,7 +43,7 @@ export class OpenAIComp {
     this.host = (host || '').trim().replace(/\/+$/, "");
     this.model = model;
     this.stream = stream;
-    this.apiKey = apiKey;
+    this.#apiKey = apiKey;
     this.use_v1 = use_v1;
     this.temperature = temperature;
     this.extra_body = extra_body;
@@ -54,7 +54,7 @@ export class OpenAIComp {
     const curr_headers = {
       "Content-Type": "application/json",
     };
-    if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
+    if(this.#apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.#apiKey;
     
     if(this.host.includes('openrouter.ai')) {
       curr_headers['HTTP-Referer'] = 'https://micz.it/thunderbird-addon-thunderai/';
@@ -90,7 +90,7 @@ export class OpenAIComp {
       const curr_headers = {
         "Content-Type": "application/json",
       };
-      if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
+      if(this.#apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.#apiKey;
 
       try {
         const response = await fetch(this.host + (this.use_v1 ? "/v1" : "") + "/chat/completions", {
