@@ -56,7 +56,8 @@ import {
 import {
     transformTagsLabels,
     getCurrentIdentity,
-    normalizePlainTextPart
+    normalizePlainTextPart,
+    tokenizeHtmlImages
 } from './mzta-utils.js';
 
 const defaultPlaceholders = [
@@ -619,19 +620,47 @@ export const placeholdersUtils = {
 
     async getPlaceholdersValues(args) {
         const {
+            curr_prompt = {},
             prompt_text = "",
             curr_message = {},
             mail_subject = "",
             body_text = "",
             msg_text = {},
             only_typed_text = "",
+            only_typed_html = "",
             only_quoted_text = "",
             selection_text = "",
             selection_html = "",
             tags_full_list = ["", []]
         } = args || {};
+
+        let activeImageMap = {};
+        const shouldCleanImages = curr_prompt?.clean_embedded_images !== "0";
+
+        let activeMsgHtml = msg_text?.html || "";
+        let activeSelectionHtml = selection_html || "";
+        let activeOnlyTypedHtml = only_typed_html || msg_text?.only_typed_html || "";
+
         let currPHs = await placeholdersUtils.extractPlaceholders(prompt_text);
         // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
+
+        const htmlPlaceholders = ['mail_html_body', 'selected_html', 'mail_typed_html', 'mail_html_body_or_selected'];
+        const hasHtmlPlaceholders = Array.isArray(currPHs) && currPHs.some(ph => htmlPlaceholders.includes(ph?.id || ph));
+
+        if (shouldCleanImages && hasHtmlPlaceholders) {
+            if (activeMsgHtml) {
+                const res = tokenizeHtmlImages(activeMsgHtml, activeImageMap);
+                activeMsgHtml = res.cleanHtml;
+            }
+            if (activeSelectionHtml) {
+                const res = tokenizeHtmlImages(activeSelectionHtml, activeImageMap);
+                activeSelectionHtml = res.cleanHtml;
+            }
+            if (activeOnlyTypedHtml) {
+                const res = tokenizeHtmlImages(activeOnlyTypedHtml, activeImageMap);
+                activeOnlyTypedHtml = res.cleanHtml;
+            }
+        }
         // console.log(">>>>>>>>>> curr_message: " + JSON.stringify(curr_message));
         let finalSubs = {};
         for(let currPH of currPHs){
@@ -641,7 +670,7 @@ export const placeholdersUtils = {
                     finalSubs['mail_text_body'] = placeholdersUtils.failSafePlaceholders(body_text);
                     break;
                 case 'mail_html_body':
-                    finalSubs['mail_html_body'] = placeholdersUtils.failSafePlaceholders(msg_text?.html);
+                    finalSubs['mail_html_body'] = placeholdersUtils.failSafePlaceholders(activeMsgHtml);
                     break;
                 case 'mail_plain_text_part':
                     // The original text/plain part, NOT the HTML conversion that feeds
@@ -659,6 +688,9 @@ export const placeholdersUtils = {
                     break;
                 case 'mail_typed_text':
                     finalSubs['mail_typed_text'] = placeholdersUtils.failSafePlaceholders(only_typed_text);
+                    break;
+                case 'mail_typed_html':
+                    finalSubs['mail_typed_html'] = placeholdersUtils.failSafePlaceholders(activeOnlyTypedHtml);
                     break;
                 case 'mail_quoted_text':
                     finalSubs['mail_quoted_text'] = placeholdersUtils.failSafePlaceholders(only_quoted_text);
@@ -682,13 +714,13 @@ export const placeholdersUtils = {
                     finalSubs['selected_text'] = placeholdersUtils.failSafePlaceholders(selection_text);
                     break;
                 case 'selected_html':
-                    finalSubs['selected_html'] = placeholdersUtils.failSafePlaceholders(selection_html);
+                    finalSubs['selected_html'] = placeholdersUtils.failSafePlaceholders(activeSelectionHtml);
                     break;
                 case 'mail_text_body_or_selected':
                     finalSubs['mail_text_body_or_selected'] = placeholdersUtils.failSafePlaceholders(selection_text || body_text);
                     break;
                 case 'mail_html_body_or_selected':
-                    finalSubs['mail_html_body_or_selected'] = placeholdersUtils.failSafePlaceholders(selection_html || msg_text?.html);
+                    finalSubs['mail_html_body_or_selected'] = placeholdersUtils.failSafePlaceholders(activeSelectionHtml || activeMsgHtml);
                     break;
                 case 'author':
                     finalSubs['author'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(curr_message.author));
@@ -755,6 +787,7 @@ export const placeholdersUtils = {
             }
         }
         // console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
+        finalSubs._imageMap = activeImageMap;
         return finalSubs;
     },
 

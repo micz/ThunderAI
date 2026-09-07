@@ -3309,5 +3309,41 @@
   "editor_placeholder_unterminated": {
     "message": "Unterminated placeholder: missing the closing %}",
     "description": "Tooltip on a highlighted placeholder token in the prompt editor when the token opens with {% but never closes with %}"
+  },
+  "customPrompts_form_label_output_as_html": {
+    "message": "Interpret response as HTML",
+    "description": ""
+  },
+  "customPrompts_form_label_need_selected_title": {
+    "message": "Requires text to be selected in the email message before executing this prompt.",
+    "description": ""
+  },
+  "customPrompts_form_label_need_signature_title": {
+    "message": "Automatically appends your configured email signature to the generated response.",
+    "description": ""
+  },
+  "customPrompts_form_label_need_custom_text_title": {
+    "message": "Prompts for additional custom instructions or input at runtime before sending the prompt.",
+    "description": ""
+  },
+  "customprompts_form_label_define_response_lang_title": {
+    "message": "Appends an instruction to respond in the language configured in ThunderAI settings.",
+    "description": ""
+  },
+  "customPrompts_form_label_clean_embedded_images": {
+    "message": "Clean embedded images",
+    "description": ""
+  },
+  "customPrompts_form_label_clean_embedded_images_title": {
+    "message": "Replaces embedded base64 image data in HTML with lightweight tokens to prevent prompt overflows.",
+    "description": ""
+  },
+  "customPrompts_form_label_output_as_html_title": {
+    "message": "Directly re-imports the AI response as formatted HTML into the email composer instead of standard Markdown.",
+    "description": ""
+  },
+  "customPrompts_hint_output_as_html": {
+    "message": "HTML placeholder detected. Enabling \"Interpret response as HTML\" is recommended.",
+    "description": ""
   }
 }
