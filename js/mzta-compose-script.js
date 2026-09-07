@@ -461,6 +461,55 @@ switch (message.command) {
     return Promise.resolve(t);
   }
 
+  case "getOnlyTypedHtml": {
+    const children = window.document.body.childNodes;
+    const selection = window.getSelection();
+
+    let firstNode = null;
+    let lastNode = null;
+    const container = document.createElement('div');
+
+    for (const node of children) {
+      if (node instanceof Element) {
+        if (node.classList.contains('moz-cite-prefix') || node.classList.contains('moz-forward-container')) {
+          break;
+        }
+        if (MZTA_INJECTED_SELECTORS.some(sel => node.matches && node.matches(sel))) {
+          continue;
+        }
+      }
+      container.appendChild(node.cloneNode(true));
+
+      if (!firstNode) {
+        firstNode = node;
+      }
+      if ((node.textContent && node.textContent.trim() !== '') || (node instanceof Element && node.tagName !== 'BR')) {
+        lastNode = node;
+      }
+    }
+
+    // Strip any nested injected elements inside container
+    for (const selector of MZTA_INJECTED_SELECTORS) {
+      for (const el of container.querySelectorAll(selector)) {
+        el.remove();
+      }
+    }
+
+    if (!lastNode) {
+      lastNode = firstNode;
+    }
+
+    if (message.do_autoselect && firstNode && lastNode) {
+      const range = document.createRange();
+      range.setStartBefore(firstNode);
+      range.setEndAfter(lastNode);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    return Promise.resolve(container.innerHTML);
+  }
+
   case "getOnlyQuotedText": {
     let t = '';
     const children = window.document.body.childNodes;

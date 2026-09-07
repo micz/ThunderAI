@@ -171,16 +171,7 @@ export class mzta_Menus {
             // Hoisted out of the object literal below, because the ORDER of the
             // next two calls is load-bearing.
             const raw_only_typed_text = await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect });
-            // getOnlyTypedText with do_autoselect has just put a range around the
-            // typed region: read its markup while that range is in force. The
-            // getSelectedHtml above ran BEFORE it, when rangeCount was still 0, so
-            // it returned '' - which left selection_html empty while selection_text
-            // was substituted with the typed text, handing the diff picker a
-            // mismatched text/html pair. Must stay ahead of getOnlyQuotedText,
-            // which has an autoselect branch of its own. [#829]
-            const raw_only_typed_html = do_autoselect
-                ? await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" })
-                : '';
+            const raw_only_typed_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedHtml", do_autoselect: do_autoselect });
             this.logger.log("getMailBody raw_only_typed_html: " + JSON.stringify(raw_only_typed_html));
             // Paragraph-preserving: these carry the mail the user typed, and the
             // blank line between greeting and body is part of it. Computed once:
@@ -207,7 +198,7 @@ export class mzta_Menus {
         curr_menu_entry.act = async () => {
             taWorkingStatus.startWorking();
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-            const msg_text = await getMailBody(tabs, placeholdersUtils.hasPlaceholder(curr_prompt.text,'mail_typed_text'));
+            const msg_text = await getMailBody(tabs, placeholdersUtils.hasPlaceholder(curr_prompt.text,'mail_typed_text') || placeholdersUtils.hasPlaceholder(curr_prompt.text,'mail_typed_html'));
 
             if (curr_prompt.id === 'prompt_get_calendar_event_from_clipboard') {
                 try {
@@ -241,6 +232,7 @@ export class mzta_Menus {
             let selection_text = '';
             let selection_html = msg_text.selection_html;
             let only_typed_text = '';
+            let only_typed_html = '';
             let only_quoted_text = '';
             // Every field of msg_text arrived ALREADY normalized: getMailBody() above
             // runs normalizePlain() on each one as it is built - the default flags for
@@ -261,9 +253,10 @@ export class mzta_Menus {
             // the blank lines inside only_typed_text/only_quoted_text survive. Only the
             // .trim() touches them, and only at the very start and end of the string.
             only_typed_text = msg_text.only_typed_text.replace(/[ \t]+/g, ' ').trim();
+            only_typed_html = msg_text.only_typed_html || '';
             selection_text = msg_text.selection.replace(/[ \t]+/g, ' ').trim();
             if(selection_text === ''){
-                if(placeholdersUtils.hasPlaceholder(curr_prompt.text, "mail_typed_text")){
+                if(placeholdersUtils.hasPlaceholder(curr_prompt.text, "mail_typed_text") || placeholdersUtils.hasPlaceholder(curr_prompt.text, "mail_typed_html")){
                     selection_text = only_typed_text;
                     // Keep the twin paired with the text field. _buildDiffButton
                     // resolves the picker's original side on selection_text and
@@ -347,6 +340,7 @@ export class mzta_Menus {
                 subject_text: await getMailSubject(tabs[0]),
                 msg_text: msg_text,
                 only_typed_text: only_typed_text,
+                only_typed_html: only_typed_html,
                 only_quoted_text: only_quoted_text,
                 tags_full_list: tags_full_list
             });

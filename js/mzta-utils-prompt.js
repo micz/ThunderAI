@@ -48,6 +48,7 @@ export const taPromptUtils = {
             subject_text = '',
             msg_text = {},
             only_typed_text = '',
+            only_typed_html = '',
             only_quoted_text = '',
             tags_full_list = ["", []]
         } = args || {};
@@ -79,6 +80,7 @@ export const taPromptUtils = {
                 body_text: body_text,
                 msg_text: msg_text,
                 only_typed_text: only_typed_text,
+                only_typed_html: only_typed_html,
                 only_quoted_text: only_quoted_text,
                 selection_text: selection_text,
                 selection_html: selection_html,
