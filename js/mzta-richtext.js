@@ -85,6 +85,100 @@ export const SAFE_HREF = /^(https?:|mailto:)/i;
 // widening must reach the sanitizer without reaching the segmenter's BLOCK_TAGS.
 export const BLOCK_ALLOWED = new Set([...INLINE_ALLOWED, ...BLOCK_TAGS, 'ul', 'ol', ...TABLE_TAGS, 'hr']);
 
+// Whitelist of safe inline CSS style properties. Positioning (position,
+// z-index, opacity, display, float, etc.) is strictly omitted to prevent
+// phishing overlays, clickjacking, and hidden text attacks.
+export const SAFE_STYLE_PROPERTIES = new Set([
+    // Colors & typography
+    'color',
+    'background-color',
+    'font-size',
+    'font-family',
+    'font-weight',
+    'font-style',
+    'font-variant',
+    'line-height',
+    'text-align',
+    'text-decoration',
+    'text-transform',
+    'text-indent',
+    'letter-spacing',
+    'word-spacing',
+    'white-space',
+    // Spacing
+    'margin',
+    'margin-top',
+    'margin-bottom',
+    'margin-left',
+    'margin-right',
+    'padding',
+    'padding-top',
+    'padding-bottom',
+    'padding-left',
+    'padding-right',
+    // Borders
+    'border',
+    'border-top',
+    'border-bottom',
+    'border-left',
+    'border-right',
+    'border-color',
+    'border-style',
+    'border-width',
+    'border-radius',
+    'border-top-color',
+    'border-top-style',
+    'border-top-width',
+    'border-bottom-color',
+    'border-bottom-style',
+    'border-bottom-width',
+    'border-left-color',
+    'border-left-style',
+    'border-left-width',
+    'border-right-color',
+    'border-right-style',
+    'border-right-width',
+    'border-collapse',
+    'border-spacing',
+    // Dimensions & alignment
+    'width',
+    'max-width',
+    'min-width',
+    'height',
+    'max-height',
+    'min-height',
+    'vertical-align',
+]);
+
+// Dangerous CSS constructs: dynamic execution vectors (expression, javascript,
+// behavior, -moz-binding), remote resource loading via url(...) (prevents tracking
+// pixels and data exfiltration), and delimiters (<, >, {, }, \, `).
+export const DANGEROUS_STYLE_RE = /(?:expression|javascript|behavior|-moz-binding|url\s*\(|[<>{}\\`])/i;
+
+// Sanitize an inline CSS style attribute string against SAFE_STYLE_PROPERTIES
+// and DANGEROUS_STYLE_RE. Comments are stripped, quotes are stripped to prevent
+// attribute breakout. Valid declarations are sorted alphabetically and serialized
+// uniformly to ensure deterministic HTML string equality (a.html === b.html)
+// required by diffPicker.
+export function sanitizeStyle(styleValue) {
+    if (!styleValue || typeof styleValue !== 'string') return '';
+    const decls = styleValue.replace(/\/\*[\s\S]*?\*\//g, '').split(';');
+    const clean = [];
+    for (const decl of decls) {
+        const colonIdx = decl.indexOf(':');
+        if (colonIdx === -1) continue;
+        const prop = decl.slice(0, colonIdx).trim().toLowerCase();
+        let val = decl.slice(colonIdx + 1).replace(/['"`]/g, '').trim();
+        if (!prop || !val) continue;
+        if (SAFE_STYLE_PROPERTIES.has(prop) && !DANGEROUS_STYLE_RE.test(val)) {
+            clean.push([prop, val]);
+        }
+    }
+    if (!clean.length) return '';
+    clean.sort((a, b) => a[0].localeCompare(b[0]));
+    return clean.map(([p, v]) => `${p}: ${v};`).join(' ');
+}
+
 // ── The ONE sanitizer ────────────────────────────────────────────────────────
 //
 // Every model-origin HTML crosses this before entering the mail (or the webchat
@@ -107,8 +201,17 @@ function sanitizeAgainst(html, allowed) {
         }
         for (const attr of Array.from(el.attributes)) {
             const name = attr.name.toLowerCase();
-            const keep = (tag === 'a' && name === 'href' && SAFE_HREF.test(attr.value.trim()));
-            if (!keep) { el.removeAttribute(attr.name); }
+            if (tag === 'a' && name === 'href' && SAFE_HREF.test(attr.value.trim())) {
+                continue;
+            }
+            if (name === 'style') {
+                const cleanStyle = sanitizeStyle(attr.value);
+                if (cleanStyle) {
+                    el.setAttribute('style', cleanStyle);
+                    continue;
+                }
+            }
+            el.removeAttribute(attr.name);
         }
     }
     return doc.body.innerHTML;

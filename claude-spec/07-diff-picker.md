@@ -356,8 +356,20 @@ allowlist is now what stands between the two:
 
 - Kept: `b, strong, i, em, u, s, strike, code, a, br, span, sub, sup`. Everything else is
   **unwrapped** — its children survive, the element does not.
-- Every attribute is dropped except `href` on `<a>`, and only when it matches `^(https?:|mailto:)`.
-  `javascript:` and `data:` do not survive.
+- Every attribute is dropped except `href` on `<a>` (only when matching `^(https?:|mailto:)`;
+  `javascript:` and `data:` do not survive) and safe inline `style` attributes on allowed tags.
+- Safe inline styles are preserved and deterministically normalized via `sanitizeStyle()`:
+  - Whitelist of safe properties (`SAFE_STYLE_PROPERTIES`): typography, colors, borders, spacing,
+    dimensions, vertical alignment. Positioning (`position`, `z-index`, `opacity`, `display`, etc.)
+    is strictly omitted to prevent phishing overlays, clickjacking, and hidden text.
+  - Ban dangerous constructs (`DANGEROUS_STYLE_RE`): `expression`, `javascript`, `behavior`,
+    `-moz-binding`, all `url(...)` (preventing tracking pixels and remote leakage), and delimiters
+    (`<>{}\`).
+  - Quotes are stripped from property values to prevent attribute breakout.
+  - Declarations are sorted alphabetically (`clean.sort((a, b) => a[0].localeCompare(b[0]))`) and
+    joined with a uniform `prop: val; ` format. This deterministic normalization ensures that
+    equivalent styling emits byte-identical HTML across blocks, satisfying the `a.html === b.html`
+    equality required by `diffPicker` segmentation and pairing.
 - Re-serialization goes out through `innerHTML`, which encodes entities correctly for free.
   Hand-rolled escaping on HTML input would escape the very tags being preserved.
 
@@ -911,7 +923,7 @@ the picker (`prompt_proofread_this`, `prompt_rewrite_formal`, `prompt_rewrite_po
 
 | File | Role |
 |------|------|
-| `js/mzta-richtext.js` | The ONE sanitizer + tag taxonomy: `sanitize`/`sanitizeInlineHtml`/`sanitizeBlockHtml`, `BLOCK_TAGS`/`INLINE_ALLOWED`/`BLOCK_ALLOWED`/`SAFE_HREF`; plus `globalThis` re-exports of the classic projection (`htmlToLines`/`linesToHtml`/`normalizePlain`/`hasLineStructure`). Imported by the picker and the renderer |
+| `js/mzta-richtext.js` | The ONE sanitizer + tag taxonomy: `sanitize`/`sanitizeInlineHtml`/`sanitizeBlockHtml`, `BLOCK_TAGS`/`INLINE_ALLOWED`/`BLOCK_ALLOWED`/`SAFE_HREF`, `SAFE_STYLE_PROPERTIES`/`DANGEROUS_STYLE_RE`/`sanitizeStyle`; plus `globalThis` re-exports of the classic projection (`htmlToLines`/`linesToHtml`/`normalizePlain`/`hasLineStructure`). Imported by the picker and the renderer |
 | `api_webchat/diffPicker.js` | Block segmentation, hunk model, compose functions, `<diff-picker>` element. Imports the sanitizer + `BLOCK_TAGS` from `mzta-richtext.js`; keeps `blockTextOfHtml`/`sliceHtmlByText`/`segmentBlocks` (the offset machinery) |
 | `api_webchat/streamingMessage.js` | The ONE render path: `renderResponse(raw) = sanitize(markdownit({html:true,breaks:true}).render(raw))`. No markdown-vs-HTML router |
 | `api_webchat/messagesArea.js` | `_buildDiffButton` (resolves both sides' HTML), `hasBlockStructure` (the original-side canonicalization guard), `appendDiffPicker`, the `_mztaPicker` indirection, `_onPickerResize` |

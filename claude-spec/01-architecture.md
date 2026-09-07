@@ -455,7 +455,11 @@ branches, `BLOCK_TAG`/`LEAD_IN*` machinery) is **gone**.
   other (drop the `\n`), each losing half of it.
 - **`html: true` disables markdown-it's escaping**, so its output is now UNTRUSTED model HTML on its
   way into outgoing mail. It MUST cross `sanitize(..., { allowBlocks: true })` — the ONE allowlist
-  walk in `js/mzta-richtext.js`, the same one the diff picker uses. No second copy.
+  walk in `js/mzta-richtext.js`, the same one the diff picker uses. No second copy. Safe inline styles
+  (`style`) are preserved on allowed tags and deterministically normalized via `sanitizeStyle()`
+  (strict property whitelist `SAFE_STYLE_PROPERTIES`, dynamic vectors and `url(...)` banned via
+  `DANGEROUS_STYLE_RE`, quotes stripped, declarations sorted alphabetically), while `href` on `<a>`
+  is restricted to safe protocols (`SAFE_HREF`). All other attributes are stripped.
 - **Code fences still show markup as text**: markdown-it escapes HTML inside code blocks regardless
   of `html: true`, so "how do I center a `<div>`?" is unaffected.
 - **`BLOCK_ALLOWED` is a superset of everything markdown-it emits** — it was widened with the table
@@ -804,11 +808,12 @@ classic-script constraint:
   (default collapses `\n{2,}` for the body contract, `{keepParagraphs}` caps at `\n\n` for insertion,
   `{keepColumns}` is verbatim for `{%mail_plain_text_part%}`).
 - **`js/mzta-richtext.js`** — an **ES module** hosting the ONE **sanitizer** + **tag taxonomy** (see
-  the render section above and [07-diff-picker.md](07-diff-picker.md)), plus **`globalThis`
-  re-exports** of the projection above (`htmlToLines`/`linesToHtml`/`normalizePlain`/
-  `hasLineStructure`) so module-world callers get a clean `import`. The re-exports resolve the global
-  at CALL time, so the module loads fine even where the classic script is absent as long as they are
-  not called there.
+  the render section above and [07-diff-picker.md](07-diff-picker.md)), including safe inline style
+  filtering and deterministic normalization (`SAFE_STYLE_PROPERTIES`, `DANGEROUS_STYLE_RE`,
+  `sanitizeStyle`), plus **`globalThis` re-exports** of the projection above (`htmlToLines`/`linesToHtml`/
+  `normalizePlain`/`hasLineStructure`) so module-world callers get a clean `import`. The re-exports
+  resolve the global at CALL time, so the module loads fine even where the classic script is absent as
+  long as they are not called there.
 
 The classic file is a classic script — not an ES module — because `js/mzta-compose-script.js` is
 loaded by `composeScripts.register` / `messageDisplayScripts.register` / `tabs.executeScript`, none
