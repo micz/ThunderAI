@@ -1494,12 +1494,10 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             _use_prompt_info_custom_gpt = (prompt_info.chatgpt_web_custom_gpt != '' && prompt_info.chatgpt_web_project == '');
 
             if(!_use_prompt_info_custom_gpt && ((prompt_info.chatgpt_web_project != '') || (prefs.chatgpt_web_project != ''))){
-                _base_url += _web_project;
                 _webproject_set = true;
                 _wait_time += 1000;
             }
             if(!_webproject_set && ((prompt_info.chatgpt_web_custom_gpt != '') || (prefs.chatgpt_web_custom_gpt != ''))){
-                _base_url += _custom_gpt;
                 _custom_gpt_set = true;
             }
 
@@ -1549,7 +1547,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     let mailMessageId = -1;
                     if(mailMessage) mailMessageId = mailMessage.id;
                     promptText = convertNewlinesToParagraphs(promptText);
-                    browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId, prompt_info: prompt_info});
+                    browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId, prompt_info: prompt_info, target_path: _webproject_set ? _web_project : (_custom_gpt_set ? _custom_gpt : '') });
                     taLog.log('[ChatGPT Web] Connection succeded!');
                     taLog.log("[ThunderAI] ChatGPT Web script injected successfully");
                     browser.runtime.onMessage.removeListener(listener);

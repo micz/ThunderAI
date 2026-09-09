@@ -243,6 +243,10 @@
     "message": "Retry",
     "description": ""
   },
+  "chatgpt_custom_target_fallback_warning": {
+    "message": "Warning: Could not load the configured Project or Custom GPT. The message was sent to the general ChatGPT conversation.",
+    "description": ""
+  },
   "chatgpt_sendbutton_not_found_error": {
     "message": "Click the send button to submit the prompt.",
     "description": ""

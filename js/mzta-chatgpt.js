@@ -34,8 +34,84 @@ let _customTextArray = [];
 let _currentCustomTextIndex = 0;
 let lastSelectedHtml = "";
 
-async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button not found, -2 textarea not found
-    let textArea = document.getElementById('prompt-textarea')
+async function waitForElement(selector, timeout = 12000, interval = 200, validator = null) {
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeout) {
+        const el = document.querySelector(selector);
+        if (el && (!validator || validator(el))) {
+            return el;
+        }
+        await new Promise(resolve => setTimeout(resolve, interval));
+    }
+    return null;
+}
+
+function showFallbackWarning() {
+    let warn = document.getElementById('mzta-fallback-warn');
+    if (warn) {
+        warn.style.display = 'block';
+    }
+}
+
+async function chatgpt_sendMsg(msg, method = '', targetPath = '') {       // return -1 send button not found, -2 textarea not found
+    targetPath = targetPath ? targetPath.trim().replace(/\\/+$/, '') : '';
+    if (targetPath && !targetPath.startsWith('/')) {
+        targetPath = '/' + targetPath;
+    }
+    const targetId = targetPath ? (targetPath.match(/g-[a-zA-Z0-9-]+/)?.[0] || targetPath.replace(/\\/project$/, '').replace(/^\\/g\\//, '')) : '';
+
+    let textArea = null;
+
+    if (targetId && !window.location.pathname.includes(targetId)) {
+        let initialTextArea = document.querySelector('#prompt-textarea');
+        doLog("Attempting SPA client navigation to target: " + targetPath);
+        let link = document.querySelector('a[href*="' + targetId + '"]');
+
+        if (link) {
+            doLog("Found DOM link for target (" + targetId + "), clicking link");
+            link.click();
+        } else {
+            doLog("DOM link not found for " + targetId + ", using History API pushState fallback");
+            window.history.pushState(null, '', targetPath);
+            window.dispatchEvent(new PopStateEvent('popstate'));
+        }
+
+        // Wait for route transition and #prompt-textarea in target view
+        const targetTimeout = link ? 12000 : 4000;
+        const targetWaitStart = Date.now();
+
+        while (Date.now() - targetWaitStart < targetTimeout) {
+            const current = document.querySelector('#prompt-textarea');
+            if (current && window.location.pathname.includes(targetId)) {
+                if (!initialTextArea || current !== initialTextArea || !initialTextArea.isConnected || (link && (Date.now() - targetWaitStart > 1500))) {
+                    textArea = current;
+                    break;
+                }
+            }
+            await new Promise(resolve => setTimeout(resolve, 150));
+        }
+
+        if (!textArea) {
+            doLog("Custom target (" + targetPath + ") failed to load or timed out. Falling back to home page conversation...");
+            if (window.location.pathname !== '/') {
+                const homeLink = document.querySelector('a[href="/"]');
+                if (homeLink) {
+                    homeLink.click();
+                } else {
+                    window.history.pushState(null, '', '/');
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                }
+            }
+            textArea = await waitForElement('#prompt-textarea', 4000) || document.querySelector('#prompt-textarea');
+            if (textArea) {
+                showFallbackWarning();
+            }
+        }
+    } else {
+        // No custom target requested or already on target path
+        textArea = await waitForElement('#prompt-textarea', 12000);
+    }
+
     //check if the textarea has been found
     if(!textArea) {
         console.error("[ThunderAI] Textarea not found!");
@@ -124,6 +200,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     style.textContent += ".btn_disabled:hover {background-color:#6a829b !important;color:white !important;}";
     style.textContent += "#mzta-loading{height:50px;display:inline-block;}";
     style.textContent += "#mzta-model_warn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-height:100%px;min-width:30%;max-width:50%;padding:3px;border-radius:5px;text-align:center;background-color:#FFBABA;border:1px solid;font-size:13px;color:#D8000C;display:none;}#mzta-model_warn a{color:blue;text-decoration: underline;}";
+    style.textContent += "#mzta-fallback-warn{position:absolute;bottom:105px;left:50%;transform:translateX(-50%);background-color:#b91c1c;color:#ffffff;font-weight:bold;padding:6px 14px;border-radius:6px;font-size:13px;display:none;z-index:1001;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:90%;text-align:center;}";
     style.textContent += "#mzta-btn_model {background-color: #007bff;border: none;color: white;padding: 2px 4px;text-align: center;text-decoration: none;display: none;font-size: 13px;margin-left: 4px;transition-duration: 0.4s;cursor: pointer;border-radius: 2px;}";
     style.textContent += "#mzta-status-page{position:fixed;bottom:0;left:0;padding-left:5px;font-size:13px;font-style:italic;text-decoration:underline;color:#919191;}";
     style.textContent += "#mzta-force-completion{cursor:pointer;position:fixed;bottom:0;right:0;padding-right:5px;font-size:13px;font-style:italic;text-decoration:underline;color:#919191;}";
@@ -157,6 +234,12 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     var fixedDiv = document.createElement('div');
     fixedDiv.classList.add('mzta-header-fixed');
     fixedDiv.textContent = '';
+
+    // Fallback warning banner
+    var fallbackWarnDiv = document.createElement('div');
+    fallbackWarnDiv.id = 'mzta-fallback-warn';
+    fallbackWarnDiv.textContent = browser.i18n.getMessage("chatgpt_custom_target_fallback_warning");
+    fixedDiv.appendChild(fallbackWarnDiv);
 
     // Model warning div
     var modelWarnDiv = document.createElement('div');
@@ -644,7 +727,7 @@ async function doProceed(message, customText = ''){
         }
     }
 
-    let send_result = await chatgpt_sendMsg(final_prompt,'click');
+    let send_result = await chatgpt_sendMsg(final_prompt, 'click', message?.target_path || '');
     //console.log(">>>>>>>>>>> send_result: " + send_result);
     switch(send_result){
         case -1:        // send button not found
@@ -685,10 +768,16 @@ async function doProceed(message, customText = ''){
 }
 
 function doRetry(){
-    document.getElementById('mzta-model_warn').style.display = 'none';
-    document.getElementById('mzta-btn_retry').remove();
-    document.getElementById('mzta-loading').style.display = 'inline-block';
-    document.getElementById('mzta-curr_msg').textContent = browser.i18n.getMessage("chatgpt_win_working");
+    let modelWarn = document.getElementById('mzta-model_warn');
+    if (modelWarn) modelWarn.style.display = 'none';
+    let btnRetry = document.getElementById('mzta-btn_retry');
+    if (btnRetry) btnRetry.remove();
+    let fallbackWarn = document.getElementById('mzta-fallback-warn');
+    if (fallbackWarn) fallbackWarn.style.display = 'none';
+    let loading = document.getElementById('mzta-loading');
+    if (loading) loading.style.display = 'inline-block';
+    let currMsg = document.getElementById('mzta-curr_msg');
+    if (currMsg) currMsg.textContent = browser.i18n.getMessage("chatgpt_win_working");
     doProceed(current_message);
 }
 
