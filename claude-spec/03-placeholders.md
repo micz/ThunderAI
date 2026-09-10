@@ -32,6 +32,7 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`).
 | `mail_text_body` | Full plain text of the email | 0 | |
 | `mail_html_body` | Full HTML of the email | 0 | |
 | `mail_typed_text` | Text typed so far in compose window (line structure preserved, see below) | 2 | |
+| `mail_typed_html` | HTML formatted text typed so far in compose window (type 2) | 2 | |
 | `mail_quoted_text` | Quoted text in the compose window (line structure preserved, see below) | 2 | |
 | `mail_subject` | Email subject line | 0 | |
 | `mail_folder_name` | Name of the folder containing the email | 1 | |
@@ -59,6 +60,21 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`).
 | `mail_text_body_or_selected` | Plain text body, or selected text if any | 0 | |
 | `mail_html_body_or_selected` | HTML body, or selected HTML if any | 0 | |
 | `mail_plain_text_part` | The original `text/plain` MIME part, verbatim (no HTML conversion) | 1 | |
+
+### Compose Placeholders (`mail_typed_text`, `mail_typed_html`, `mail_quoted_text`)
+
+`mail_typed_text`, `mail_typed_html`, and `mail_quoted_text` are extracted by walking the compose
+window's DOM (`getOnlyTypedText` / `getOnlyTypedHtml` / `getOnlyQuotedText` in
+`js/mzta-compose-script.js`, consumed at `js/mzta-menus.js` → `getMailBody()`).
+
+- `mail_typed_html` extracts the typed HTML nodes before reaching reply/forward/blockquote boundary
+  markers (`.moz-cite-prefix`, `.moz-forward-container`, `BLOCKQUOTE`), stripping injected UI elements
+  (`#mzta-container`, `.mzta_dialog`, `<style>`, `<script>`), un-nesting ProseMirror wrappers if present,
+  and supporting autoselect when `do_autoselect` is true.
+  *Tip:* Recommended LLM system instruction for HTML placeholders: *"Return directly in HTML code using semantic tags without inline CSS when provided with HTML email text"*. As Thunderbird strips all inline attributes for security, semantic tags (such as `<h1>`-`<h6>`, `<strong>`, `<em>`, `<ul>`, `<li>`, `<table>`) ensure rich formatting without requiring inline styles.
+- `mail_typed_text` and `mail_quoted_text` carry the mail's real line structure: **one `\n` between lines,
+  one blank line (`\n\n`) between paragraphs**, identically in a plain text compose window, in HTML "Body Text"
+  mode and in HTML "Paragraph" mode.
 
 ### Newline contract of the compose placeholders
 

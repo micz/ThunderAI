@@ -1149,6 +1149,10 @@
     "message": "Typed text before the quoted mail body",
     "description": ""
   },
+  "placeholder_mail_typed_html": {
+    "message": "Typed HTML formatted text before the quoted mail body. Recommended system instruction: 'Return directly in HTML code using semantic tags without inline CSS when provided with HTML email text'",
+    "description": ""
+  },
   "placeholder_mail_quoted_text": {
     "message": "Quoted text in the mail body",
     "description": ""
