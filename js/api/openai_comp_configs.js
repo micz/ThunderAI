@@ -67,4 +67,11 @@ export const openAICompConfigs = [
         host: 'https://api.perplexity.ai',
         use_v1: false,
     },
+    {
+        id: 'pi',
+        name: 'pi (local agent bridge)',
+        chat_name: 'pi',
+        host: 'http://127.0.0.1:8787',
+        use_v1: true,
+    },
 ];
