@@ -627,11 +627,15 @@ table.prompts_list td label:has(.need_signature),
 table.prompts_list td label:has(.need_custom_text),
 table.prompts_list td label:has(.define_response_lang),
 table.prompts_list td label:has(.use_diff_viewer),
+table.prompts_list td label:has(.clean_embedded_images),
+table.prompts_list td label:has(.output_as_html),
 #formNew label:has(.need_selected),
 #formNew label:has(.need_signature),
 #formNew label:has(.need_custom_text),
 #formNew label:has(.define_response_lang),
-#formNew label:has(.use_diff_viewer) {
+#formNew label:has(.use_diff_viewer),
+#formNew label:has(.clean_embedded_images),
+#formNew label:has(.output_as_html) {
     display: flex;
     align-items: center;
     gap: 9px;
@@ -654,21 +658,25 @@ table.prompts_list td label:has(.use_diff_viewer),
 
 /* A label whose property is active (on) reads as active text; this holds in both
    modes (active = --text, inactive = --muted). In #formNew the selectors name the
-   five property classes explicitly: a bare `label:has(input:checked)` would also
+   property classes explicitly: a bare `label:has(input:checked)` would also
    catch the API-options checkboxes that connection-ui.js injects into the form. */
 table.prompts_list td label:has(input:checked),
 #formNew label:has(input:checked.need_selected),
 #formNew label:has(input:checked.need_signature),
 #formNew label:has(input:checked.need_custom_text),
 #formNew label:has(input:checked.define_response_lang),
-#formNew label:has(input:checked.use_diff_viewer) { color: var(--text); }
+#formNew label:has(input:checked.use_diff_viewer),
+#formNew label:has(input:checked.clean_embedded_images),
+#formNew label:has(input:checked.output_as_html) { color: var(--text); }
 
 /* Form-only: a not-applicable flag is a dimmed, non-interactive switch. */
 #formNew label:has(input:disabled.need_selected),
 #formNew label:has(input:disabled.need_signature),
 #formNew label:has(input:disabled.need_custom_text),
 #formNew label:has(input:disabled.define_response_lang),
-#formNew label:has(input:disabled.use_diff_viewer) {
+#formNew label:has(input:disabled.use_diff_viewer),
+#formNew label:has(input:disabled.clean_embedded_images),
+#formNew label:has(input:disabled.output_as_html) {
     cursor: default;
     opacity: .55;
 }
@@ -686,11 +694,22 @@ table.prompts_list td label:has(input:checked),
 
 #useDiffViewerNew_hint.hidden { display: none; }
 
+#outputAsHtmlNew_hint {
+    display: block;
+    margin: -4px 0 8px 0;
+    font-size: 0.7rem;
+    color: var(--del-text);
+}
+
+#outputAsHtmlNew_hint.hidden { display: none; }
+
 #formNew input:disabled.need_selected,
 #formNew input:disabled.need_signature,
 #formNew input:disabled.need_custom_text,
 #formNew input:disabled.define_response_lang,
-#formNew input:disabled.use_diff_viewer {
+#formNew input:disabled.use_diff_viewer,
+#formNew input:disabled.clean_embedded_images,
+#formNew input:disabled.output_as_html {
     cursor: default;
 }
 
@@ -699,7 +718,7 @@ table.prompts_list td label:has(input:checked),
    the first line (top-aligned) instead of centering against the whole text block. */
 /* `need_selected` and `need_custom_text` wrap their checkbox + text in an inner
    <span> (…_span), so the flex layout must live on that span rather than the
-   label; the other three have the input as a direct label child. Target both
+   label; the other flags have the input as a direct label child. Target both
    shapes. */
 table.prompts_list td label:has(input:disabled),
 table.prompts_list td label:has(input:disabled) .need_selected_span,
@@ -724,11 +743,15 @@ table.prompts_list td .need_signature,
 table.prompts_list td .need_custom_text,
 table.prompts_list td .define_response_lang,
 table.prompts_list td .use_diff_viewer,
+table.prompts_list td .clean_embedded_images,
+table.prompts_list td .output_as_html,
 #formNew .need_selected,
 #formNew .need_signature,
 #formNew .need_custom_text,
 #formNew .define_response_lang,
-#formNew .use_diff_viewer {
+#formNew .use_diff_viewer,
+#formNew .clean_embedded_images,
+#formNew .output_as_html {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -750,11 +773,15 @@ table.prompts_list td .need_signature::after,
 table.prompts_list td .need_custom_text::after,
 table.prompts_list td .define_response_lang::after,
 table.prompts_list td .use_diff_viewer::after,
+table.prompts_list td .clean_embedded_images::after,
+table.prompts_list td .output_as_html::after,
 #formNew .need_selected::after,
 #formNew .need_signature::after,
 #formNew .need_custom_text::after,
 #formNew .define_response_lang::after,
-#formNew .use_diff_viewer::after {
+#formNew .use_diff_viewer::after,
+#formNew .clean_embedded_images::after,
+#formNew .output_as_html::after {
     content: '';
     position: absolute;
     top: 2px;
@@ -772,11 +799,15 @@ table.prompts_list td input:checked.need_signature,
 table.prompts_list td input:checked.need_custom_text,
 table.prompts_list td input:checked.define_response_lang,
 table.prompts_list td input:checked.use_diff_viewer,
+table.prompts_list td input:checked.clean_embedded_images,
+table.prompts_list td input:checked.output_as_html,
 #formNew input:checked.need_selected,
 #formNew input:checked.need_signature,
 #formNew input:checked.need_custom_text,
 #formNew input:checked.define_response_lang,
-#formNew input:checked.use_diff_viewer {
+#formNew input:checked.use_diff_viewer,
+#formNew input:checked.clean_embedded_images,
+#formNew input:checked.output_as_html {
     background: var(--accent);
 }
 
@@ -785,11 +816,15 @@ table.prompts_list td input:checked.need_signature::after,
 table.prompts_list td input:checked.need_custom_text::after,
 table.prompts_list td input:checked.define_response_lang::after,
 table.prompts_list td input:checked.use_diff_viewer::after,
+table.prompts_list td input:checked.clean_embedded_images::after,
+table.prompts_list td input:checked.output_as_html::after,
 #formNew input:checked.need_selected::after,
 #formNew input:checked.need_signature::after,
 #formNew input:checked.need_custom_text::after,
 #formNew input:checked.define_response_lang::after,
-#formNew input:checked.use_diff_viewer::after {
+#formNew input:checked.use_diff_viewer::after,
+#formNew input:checked.clean_embedded_images::after,
+#formNew input:checked.output_as_html::after {
     left: 14px;
 }
 
@@ -800,11 +835,15 @@ table.prompts_list td input:focus-visible.need_signature,
 table.prompts_list td input:focus-visible.need_custom_text,
 table.prompts_list td input:focus-visible.define_response_lang,
 table.prompts_list td input:focus-visible.use_diff_viewer,
+table.prompts_list td input:focus-visible.clean_embedded_images,
+table.prompts_list td input:focus-visible.output_as_html,
 #formNew input:focus-visible.need_selected,
 #formNew input:focus-visible.need_signature,
 #formNew input:focus-visible.need_custom_text,
 #formNew input:focus-visible.define_response_lang,
-#formNew input:focus-visible.use_diff_viewer {
+#formNew input:focus-visible.use_diff_viewer,
+#formNew input:focus-visible.clean_embedded_images,
+#formNew input:focus-visible.output_as_html {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
 }
@@ -826,7 +865,9 @@ table.prompts_list td input:disabled.need_selected,
 table.prompts_list td input:disabled.need_signature,
 table.prompts_list td input:disabled.need_custom_text,
 table.prompts_list td input:disabled.define_response_lang,
-table.prompts_list td input:disabled.use_diff_viewer {
+table.prompts_list td input:disabled.use_diff_viewer,
+table.prompts_list td input:disabled.clean_embedded_images,
+table.prompts_list td input:disabled.output_as_html {
     width: 20px;
     height: 20px;
     border-radius: 6px;
@@ -848,7 +889,9 @@ table.prompts_list td input:disabled.need_selected::after,
 table.prompts_list td input:disabled.need_signature::after,
 table.prompts_list td input:disabled.need_custom_text::after,
 table.prompts_list td input:disabled.define_response_lang::after,
-table.prompts_list td input:disabled.use_diff_viewer::after {
+table.prompts_list td input:disabled.use_diff_viewer::after,
+table.prompts_list td input:disabled.clean_embedded_images::after,
+table.prompts_list td input:disabled.output_as_html::after {
     position: static;
     top: auto;
     left: auto;
@@ -874,7 +917,9 @@ table.prompts_list td input:disabled:checked.need_selected,
 table.prompts_list td input:disabled:checked.need_signature,
 table.prompts_list td input:disabled:checked.need_custom_text,
 table.prompts_list td input:disabled:checked.define_response_lang,
-table.prompts_list td input:disabled:checked.use_diff_viewer {
+table.prompts_list td input:disabled:checked.use_diff_viewer,
+table.prompts_list td input:disabled:checked.clean_embedded_images,
+table.prompts_list td input:disabled:checked.output_as_html {
     background: var(--ok-bg);
     border: 1px solid var(--ok-border);
     color: var(--ok-text);
@@ -884,7 +929,9 @@ table.prompts_list td input:disabled:checked.need_selected::after,
 table.prompts_list td input:disabled:checked.need_signature::after,
 table.prompts_list td input:disabled:checked.need_custom_text::after,
 table.prompts_list td input:disabled:checked.define_response_lang::after,
-table.prompts_list td input:disabled:checked.use_diff_viewer::after {
+table.prompts_list td input:disabled:checked.use_diff_viewer::after,
+table.prompts_list td input:disabled:checked.clean_embedded_images::after,
+table.prompts_list td input:disabled:checked.output_as_html::after {
     /* check (Feather/Lucide "check", stroke-width:3) */
     -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
     mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
