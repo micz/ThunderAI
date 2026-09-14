@@ -313,7 +313,10 @@ async function disable_GetCalendarEvent(prefs_opt){
   // The "Sparks missing" notice is only worth showing when at least one of the two
   // features could actually run: if both are unusable on their connection anyway,
   // the missing add-on is not what stands in the way.
-  no_sparks_tr.style.display = ((is_spark_present == 1) || (cal_unusable && task_unusable)) ? 'none' : '';
+  // #no_sparks is deliberately not a .get_calendar_event_tr: its visibility follows the
+  // Sparks add-on, not the calendar-event toggle. Explicit 'block' because the CSS keeps
+  // it hidden by default (no flash before this runs), so '' would leave it hidden.
+  no_sparks_tr.style.display = ((is_spark_present == 1) || (cal_unusable && task_unusable)) ? 'none' : 'block';
   no_sparks_text.style.display = (is_spark_present == -1) ? 'inline' : 'none';
   wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
 }

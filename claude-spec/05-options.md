@@ -787,6 +787,16 @@ stays an orthogonal, additional requirement. The "Sparks missing" notice (`#no_s
 when **both** features are unusable on their own connection — with a per-feature judgement, keying
 it on a single global flag would hide a genuinely missing add-on.
 
+`#no_sparks` is hidden by default through `#no_sparks { display: none }` in `options/mzta-options.css`
+(so it cannot flash before the script runs), so revealing it needs the **explicit** `'block'` — the
+same rule as the addtags sub-rows above: `style.display = ''` only removes the inline declaration and
+falls back to that very hide-rule, leaving the notice permanently invisible. This is what broke it in
+v5.0.0: the v4.1.1 line assigned `'table-row'`, and the `<table>`→`<div>` markup change turned it
+into `''`. The notice also deliberately **does not** carry the `get_calendar_event_tr` class, even
+though it sits with those rows: the `querySelectorAll('.get_calendar_event_tr')` loop just above
+would otherwise write a `display` to it from the calendar-event toggle state, which is not the rule
+this notice follows.
+
 ### Mandatory Specific Integration (feature settings pages)
 
 When the global connection cannot drive a feature (ChatGPT Web, or nothing selected),
