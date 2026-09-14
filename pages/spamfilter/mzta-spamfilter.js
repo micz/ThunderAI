@@ -40,7 +40,8 @@ import {
 } from "../../js/mzta-utils.js";
 import {
   initializeSpecificIntegrationUI,
-  isClosedCatalogueSelect
+  isClosedCatalogueSelect,
+  getConnectionTypeLabel
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 
@@ -117,12 +118,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('spamfilter_prompt_unsaved').classList.add('hidden');
         } else {
             document.getElementById('spamfilter_prompt_unsaved').classList.remove('hidden');
-        }
-    });
-
-    spamfilter_use_specific_integration.addEventListener('change', (event) => {
-        if (!event.target.checked) {
-          browser.storage.sync.set({ spamfilter_connection_type: '' });
         }
     });
 
@@ -301,8 +296,9 @@ function updateConnPanelTint() {
   }
   let pillName = document.getElementById("mzta_conn_pill_name");
   if (pillName) {
-    const option = conntype_select.querySelector(`option[value="${conntype}"]`);
-    pillName.textContent = option ? option.textContent : conntype;
+    // Resolved from the shared catalogue, not by scraping the select: populateConnectionTypeOptions()
+    // rebuilds the <option> list with replaceChildren(), so a DOM lookup can transiently miss.
+    pillName.textContent = getConnectionTypeLabel(conntype);
   }
 }
 

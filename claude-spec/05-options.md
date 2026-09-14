@@ -105,6 +105,59 @@ The 6 special prompts (`add_tags`, `spamfilter`, `summarize`, `get_calendar_even
 
 These are generated programmatically at the bottom of `mzta-options-default.js` using `special_prompts_with_integration` array.
 
+**The "Using \<provider\>" pill.** Each feature row in the options page carries an empty
+`<span class="specific_api_indicator" id="{prefix}_specific_api_indicator">`, filled by
+`updateSpecificApiIndicators()` (`options/mzta-options.js`) at init and from the
+`storage.onChanged` handler. Two rules:
+
+- The provider name comes from `getConnectionTypeLabel()` **exported by
+  `pages/_lib/connection-ui.js`**, which resolves it through the shared
+  `CONNECTION_TYPE_OPTIONS` catalogue. Do not re-derive the label by reading the global
+  `#connection_type` select's `<option>` text: that select carries the disabled
+  `value=""` placeholder (`prefs_Connection_type_none`, "— Select an AI connection —"), so an
+  empty type resolves to that placeholder and the pill reads `Using — Select an AI connection —`.
+  It is also wiped by `populateConnectionTypeOptions()`'s `replaceChildren()` on every
+  repopulation.
+- The pill is shown only when `use_specific_integration` is on **and**
+  `!hasNoConnectionSelected(connection_type)`. The flag alone is not sufficient, because
+  flag `true` + empty type is a **legitimate in-progress state**, not a corrupt one: when the
+  global connection is `chatgpt_web` or empty the integration is mandatory, so
+  `initializeSpecificIntegrationUI()` forces the checkbox on while
+  `_persistMandatoryIntegration()` withholds the stored flag until a usable type is picked
+  (`pages/_lib/connection-ui.js`). Unchecking the box also clears `{prefix}_connection_type`
+  while leaving the flag (see below). In both cases `getConnectionType()` falls back to the
+  global connection, so there is no per-feature provider to announce.
+
+**Clearing on uncheck is centralized.** `initializeSpecificIntegrationUI()`'s checkbox handler
+calls `clearPromptAPI(promptId)` — which empties the prompt's `api_type` and its per-integration
+options — and, in the same branch, writes `{prefix}_connection_type: ''`. Both halves must go
+together: `api_type` is what actually runs, while the pref is what the `prompt = null` call sites
+read (the menu gating in `mzta-background.js`, the feature row in `mzta-options.js`). Leaving the
+pref behind would strand a value that no longer matches the prompt and that nothing restores —
+each page's seeding block only runs for a *non-empty* `api_type`, so the provider is not recovered
+on re-check either. This lived as four copy-pasted per-page handlers (`addtags`,
+`get_calendar_event`, `get_task`, `spamfilter`) while `summarize` and `translate` had none; do not
+reintroduce a per-page copy.
+
+**Turning the box on persists the shown connection.** Each page's `restoreOptions()` pre-fills
+`{prefix}_connection_type` in the DOM with the global connection when that one is API-usable
+(`isApiUsableConnection(getting['connection_type'])`, else `''` — `chatgpt_web` has no `<option>`
+in a per-prompt select). That is a *display* default only: a user who accepts it without opening
+the menu fires no `change`, so nothing would reach storage. `_persistSelectedConnection()` writes
+it — from the checkbox handler's on-branch and from the initial-state apply (which also covers the
+mandatory case, where the box is forced on at load) — skipping empty values and no-op writes.
+Without it the panel shows a provider while the pref stays empty, and the options page's pill,
+which reads the pref, stays hidden on a feature that looks configured.
+
+**The same label rule applies to the per-feature panel pill** (`#mzta_conn_pill_name`, set by
+each page's local `updateConnPanelTint()`): all six feature pages import
+`getConnectionTypeLabel()` rather than reading the select's `<option>` text. Their selects are
+per-prompt (`no_chatgpt_web: true`) and so carry no `value=""` placeholder, but the
+`replaceChildren()` hazard applies to them just as much. The options page's own
+`updateConnPanelTint()` is the one exception that still needs an explicit empty-state string:
+its panel is always visible, so it prints `prefs_Connection_type_none` instead of the helper's
+`''`, which would leave a bare dot.
+
 ### UI & Feature Preferences
 
 | Key | Default | Description |

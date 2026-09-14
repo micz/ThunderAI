@@ -41,7 +41,8 @@ import {
   showConnectionOptions,
   updateWarnings,
   hasEmptyValueOption,
-  checkJsonFields
+  checkJsonFields,
+  getConnectionTypeLabel
 } from '../pages/_lib/connection-ui.js';
 import {
   isTestableConnection,
@@ -142,15 +143,6 @@ async function restoreOptions() {
   setCurrentChoice(getting);
 }
 
-function getConnectionTypeLabel(value) {
-  const select = document.getElementById('connection_type');
-  if (select) {
-    const option = select.querySelector(`option[value="${value}"]`);
-    if (option) return option.textContent;
-  }
-  return value;
-}
-
 // Per-provider base tint colours (same palette used in mzta-options.css and
 // documented in the design). Used to colour the per-feature "specific API"
 // indicator pill. A direct map is used (rather than reading a row's computed
@@ -183,8 +175,14 @@ function updateSpecificApiIndicators(prefs_opt) {
     const indicator = document.getElementById(`${prefix}_specific_api_indicator`);
     if (!indicator) continue;
     const useSpecific = getDynamicSettingValue(prefs_opt, prefix, 'use_specific_integration');
-    if (useSpecific) {
-      const connType = getDynamicSettingValue(prefs_opt, prefix, 'connection_type');
+    const connType = getDynamicSettingValue(prefs_opt, prefix, 'connection_type');
+    // The flag alone is not enough: "on" with an empty type is a legitimate in-progress
+    // state, not a corrupt one. A mandatory integration forces the checkbox on while
+    // _persistMandatoryIntegration() withholds the flag until a usable type is picked, and
+    // unchecking the box clears the type without clearing the flag. Either way
+    // getConnectionType() falls back to the global connection, so there is no per-feature
+    // provider to announce and the pill stays hidden.
+    if (useSpecific && !hasNoConnectionSelected(connType)) {
       const apiName = getConnectionTypeLabel(connType);
       const bgColor = getConnectionTypeColor(connType);
       indicator.textContent = browser.i18n.getMessage('prefs_specific_api_indicator', [apiName]);
@@ -400,7 +398,12 @@ function updateConnPanelTint(){
   }
   let pillName = document.getElementById("mzta_conn_pill_name");
   if(pillName){
-    pillName.textContent = getConnectionTypeLabel(conntype);
+    // getConnectionTypeLabel() returns '' for the empty type, which would leave the pill as a
+    // bare dot; here the panel is always visible, so name the empty state explicitly with the
+    // same string the select's placeholder option uses.
+    pillName.textContent = hasNoConnectionSelected(conntype)
+      ? browser.i18n.getMessage('prefs_Connection_type_none')
+      : getConnectionTypeLabel(conntype);
   }
 }
 

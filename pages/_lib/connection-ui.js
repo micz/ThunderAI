@@ -1393,6 +1393,16 @@ export async function initializeSpecificIntegrationUI({
       });
   }
 
+  // Persist the connection type currently shown by the select, so the stored pref matches
+  // what the user sees. Only for a usable value: an empty one means "nothing chosen yet".
+  const _persistSelectedConnection = async () => {
+      if (hasNoConnectionSelected(conntype_el.value)) return;
+      const stored = await browser.storage.sync.get({ [conntype_select_id]: '' });
+      if (stored[conntype_select_id] === conntype_el.value) return;
+      await browser.storage.sync.set({ [conntype_select_id]: conntype_el.value });
+      taLog.log(`Stored the connection shown by the ${prefix} select: ${conntype_el.value}`);
+  };
+
   // Persist `use_specific_integration` only once the pair is actually meaningful,
   // i.e. once a usable connection type has been chosen.
   const _persistMandatoryIntegration = async () => {
@@ -1408,9 +1418,22 @@ export async function initializeSpecificIntegrationUI({
   use_specific_integration_el.addEventListener('change', async (event) => {
       _updateVisibility(event.target.checked);
       if (!event.target.checked) {
+          // Clear both halves of the state together. clearPromptAPI() empties the prompt's
+          // api_type, which is what actually runs; leaving {prefix}_connection_type behind
+          // would strand a pref that no longer matches the prompt and that nothing restores
+          // (the page's seeding block only runs for a non-empty api_type), while still being
+          // read by the prompt = null call sites — the menu gating in mzta-background.js and
+          // the feature row in mzta-options.js.
           await clearPromptAPI(promptId);
+          await browser.storage.sync.set({ [conntype_select_id]: '' });
       } else {
           await _updatePrompt();
+          // Persist the value the select is already showing. restoreOptions() pre-fills it
+          // with the global connection (when that one is API-usable), but that is only a DOM
+          // default: accepting it fires no 'change', so without this the pref would stay empty
+          // while the panel claims a provider — and the options page's "Using <provider>" pill,
+          // which reads the pref, would stay hidden on a feature that looks configured.
+          await _persistSelectedConnection();
       }
   });
 
@@ -1438,6 +1461,10 @@ export async function initializeSpecificIntegrationUI({
   _updateVisibility(use_specific_integration_el.checked);
   if (use_specific_integration_el.checked) {
       await _updatePrompt();
+      // Same reason as in the checkbox handler, for the flag that was already on when the
+      // page opened (including the mandatory case, where it is forced on here): the select
+      // may be showing an inherited value that was never written to the pref.
+      await _persistSelectedConnection();
   }
   // Covers the case where a usable connection type was already stored from a previous
   // visit while the flag itself never got persisted.
