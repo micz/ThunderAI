@@ -4,6 +4,7 @@
 <h2>Version 5.0.1 - ??/??/2026</h2>
       <ul>
         <li>The spam report is now wider and easier to read: a scroll box with a fixed header row, truncated values shown in full as a tooltip, resizable rows and a button to expand the report to the whole tab [<a href="https://github.com/micz/ThunderAI/issues/895">#895</a>].</li>
+        <li>The "Install Sparks" banner correctly appears on the options page if Sparks is missing or an incompatible version is installed [<a href="https://github.com/micz/ThunderAI/issues/896">#896</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 5.0.0 - 08/09/2026</h2>
