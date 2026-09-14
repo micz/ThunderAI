@@ -68,6 +68,100 @@
     border-radius: 8px;
 }
 
+/* Report title row: heading left, expand button right. */
+.report_hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+/* The title carries the card spacing on its own; inside the flex row it must
+   not add a bottom margin, or the button rides above the heading baseline. */
+.report_hdr > .mzta_prompt_title {
+    margin-bottom: 0;
+}
+
+/* Icon-only button. No label, so no new string to translate: the arrows say
+   expand / restore, and aria-pressed carries the state for screen readers. */
+.btn_icon {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    cursor: pointer;
+    /* --text, not --dim: at this size a muted glyph reads as disabled. */
+    color: var(--text);
+    background: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 8px;
+}
+.btn_icon svg {
+    display: block;
+    pointer-events: none;   /* clicks always land on the button itself */
+}
+.btn_icon:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+/* Only one of the two glyphs shows at a time, chosen by the pressed state. */
+.btn_icon .ico_collapse { display: none; }
+.btn_icon[aria-pressed="true"] .ico_expand { display: none; }
+.btn_icon[aria-pressed="true"] .ico_collapse { display: block; }
+
+/* ---------------------------------------------------------------------------
+   FULL-TAB MODE
+   Toggling the button pins the report card over the whole tab. `position:
+   fixed` is what makes it independent of the 760px column and of the card
+   padding, so the table gets the entire viewport without the wide-section
+   maths applying to it. The body keeps its scroll position underneath and is
+   locked so the page behind cannot scroll while the overlay is up.
+   The section is laid out as a column flexbox so the scroll box can take all
+   the leftover height: a percentage height would resolve against the card and
+   leave the table short. */
+body.report_fullscreen {
+    overflow: hidden;
+}
+/* The selector must repeat body.mzta_feature_page: the shell rule in
+   mzta-design.css is `body.mzta_feature_page .mzta_section` (0-2-1), which
+   outranks a bare `.mzta_section.report_fullscreen_on` (0-2-0) and would keep
+   its 24px padding and, worse, the wide-section margins. */
+body.mzta_feature_page .mzta_section.report_fullscreen_on {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    border: none;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    /* Zeroing the margins is the load-bearing line. .mzta_section_wide sets
+       negative left/right margins to break out of the 760px column; on a
+       fixed box they are not neutralised by `width: auto` but keep widening
+       it, so the section ends up ~400px wider than the viewport and the edge
+       columns fall off screen. */
+    margin: 0;
+    width: auto;
+    max-width: none;
+    /* Tighter than the card’s 24px: every pixel of padding is a pixel the
+       table cannot use, and this mode exists to give it width. */
+    padding: 12px 16px 16px;
+    overflow: hidden;
+}
+/* The title row must not scroll away or be squeezed: it holds the only way
+   back out of this mode. flex: 0 0 auto keeps it at its natural height while
+   the scroll box below takes everything left. */
+body.mzta_feature_page .mzta_section.report_fullscreen_on .report_hdr {
+    flex: 0 0 auto;
+    margin-bottom: 10px;
+}
+body.mzta_feature_page .mzta_section.report_fullscreen_on .report_scroll {
+    flex: 1 1 auto;
+    max-height: none;
+    margin-bottom: 0;
+}
+
 /* table-layout: fixed is what makes the column widths below authoritative:
    under the default auto layout a single long message id or explanation
    stretches its own column and starves From and Subject.
@@ -123,6 +217,36 @@ table#report_data thead th:nth-child(5) { width:  80px; }   /* Spam value  */
 table#report_data thead th:nth-child(6) { width: 110px; }   /* Moved       */
 table#report_data thead th:nth-child(7) { width: 300px; }   /* Explanation */
 table#report_data thead th:nth-child(8) { width: 130px; }   /* Report date */
+
+/* In full-tab mode the pixel column widths give way to percentages, so the
+   table fills the viewport instead of keeping the 1380px it needs inside the
+   card and staying scrolled sideways with the first and last columns cut off.
+   `table-layout: fixed` must stay: it is what makes these widths binding.
+   Under `auto` the browser sizes columns on their content, so the opaque
+   message ids would swallow the whole row and the ellipsis would stop working.
+
+   The two date columns are the catch. Everywhere else they are
+   `white-space: nowrap`, and a full timestamp needs ~150px — a floor that no
+   percentage can undercut: ask for less and the column takes the space anyway,
+   pushing the table past 100% and restoring the horizontal scrollbar this mode
+   exists to remove. Letting them wrap onto two lines removes the floor
+   entirely, so all eight columns scale with the window and the percentages
+   below (summing to 100%) are actually honoured. */
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data {
+    min-width: 0;
+}
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data tbody td:nth-child(2),
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data tbody td:nth-child(8) {
+    white-space: normal;
+}
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(1) { width: 12%; }
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(2) { width: 11%; }
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(3) { width: 15%; }
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(4) { width: 17%; }
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(5) { width:  7%; }
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(6) { width:  9%; }
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(7) { width: 18%; }
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(8) { width: 11%; }
 
 /* Message id: one truncated line. The value is opaque and rarely read in
    full, and the cell's title attribute carries it (set in populateTable). */

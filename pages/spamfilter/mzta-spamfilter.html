@@ -147,7 +147,27 @@
 
             <!-- REPORTS -->
             <div class="mzta_section mzta_section_wide" id="spamfilter_reports_container">
-                <div class="mzta_prompt_title">__MSG_SpamReport_Title__</div>
+                <div class="report_hdr">
+                    <div class="mzta_prompt_title">__MSG_SpamReport_Title__</div>
+                    <!-- Icon-only on purpose: a label would be a new string to
+                         translate in every locale. The arrows carry the meaning,
+                         and the two icons are swapped by CSS on [aria-pressed]. -->
+                    <button type="button" id="report_fullscreen_btn" class="btn_icon" aria-pressed="false">
+                        <svg class="ico_expand" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                            <!-- Arrows pushing out to opposite corners: the
+                                 usual "make this bigger" sign. -->
+                            <path d="M14 3h7v7M21 3l-8 8M10 21H3v-7M3 21l8-8"
+                                  fill="none" stroke="currentColor" stroke-width="2.2"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg class="ico_collapse" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                            <!-- Same arrows pulled back in: restore. -->
+                            <path d="M21 3l-8 8m0 0h7m-7 0V4M3 21l8-8m0 0H4m7 0v7"
+                                  fill="none" stroke="currentColor" stroke-width="2.2"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
                 <div class="report_scroll">
                     <table id="report_data">
                         <thead>

@@ -278,6 +278,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Delegated on the tbody, which is static markup, so it survives every
     // populateTable() rebuild and only needs registering once.
     attachRowResizer();
+    attachReportFullscreen();
 });
 
 const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
@@ -605,4 +606,42 @@ function attachRowResizer() {
 
   tableBody.addEventListener("pointerup", endDrag);
   tableBody.addEventListener("pointercancel", endDrag);
+}
+
+/**
+ * Full-tab toggle for the spam report.
+ *
+ * Pins the report card over the whole tab so the table can use the entire
+ * width and height, and puts it back on a second click. The button carries no
+ * label on purpose: a caption would be a new string in all 25 locales, so the
+ * state lives in aria-pressed (which also drives the icon swap in CSS).
+ *
+ * Escape closes it too, which is the expected way out of anything that covers
+ * the screen.
+ */
+function attachReportFullscreen() {
+  const btn = document.getElementById("report_fullscreen_btn");
+  const section = document.getElementById("spamfilter_reports_container");
+  if (!btn || !section) return;
+
+  const setState = (on) => {
+    section.classList.toggle("report_fullscreen_on", on);
+    document.body.classList.toggle("report_fullscreen", on);
+    btn.setAttribute("aria-pressed", String(on));
+    if (!on) {
+      // Bring the report back into view: leaving full-tab mode restores the
+      // page scroll, which may no longer be anywhere near the report.
+      section.scrollIntoView({ block: "nearest" });
+    }
+  };
+
+  btn.addEventListener("click", () => {
+    setState(btn.getAttribute("aria-pressed") !== "true");
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && btn.getAttribute("aria-pressed") === "true") {
+      setState(false);
+    }
+  });
 }
