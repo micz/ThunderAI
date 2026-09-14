@@ -465,6 +465,20 @@ are **not injected at all**, because they pass `no_chatgpt_web: true` (see
 [04-api-integrations.md](04-api-integrations.md), ChatGPT Web section, for why those
 rows must keep unprefixed ids and therefore exist only once per page).
 
+**Toggle inside the shared template.** The `chatgpt_web_tempchat` row renders its
+checkbox as the design-system `.mzta_switch` toggle (the only checkbox in the shared
+template; every other injected checkbox is still a plain one). The switch label is
+wrapped in a flex `<div>` shared with the info text, not left inline: the
+connection-table restyle sets `label { display: block }` on every label inside
+`#connection_ui_table` / `#connection_ui_adv_table`, and that selector (1 id + 1 type)
+outranks `.mzta_switch`'s own `display: inline-flex` (1 class). Inside the flex wrapper
+the label is a flex item — `block` is what a flex item gets anyway — and
+`.mzta_switch`'s `width: auto !important` keeps it at the 38px track width, so only
+the switch is clickable. Without the wrapper the block label would stretch across the
+whole cell and toggle from a click anywhere in the row. Both pages that ever show the
+row (options + setup wizard) link `mzta-design.css`, so the toggle styles are always
+present.
+
 **Prefix propagation invariant.** `showConnectionOptions(conntype_select, modelId_prefix)`
 ends by calling `updateCORSWarnings(modelId_prefix)`, and `modelId_prefix` defaults to
 `''`. Every call site on a prefixed page must therefore pass the prefix explicitly —

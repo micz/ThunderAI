@@ -188,12 +188,15 @@ export async function injectConnectionUI({
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_tempchat__</span>
     </label></td>
     <td>
-      <label>
-        <input type="checkbox" id="chatgpt_web_tempchat" name="chatgpt_web_tempchat" class="option-input" />
-        &nbsp;<span>__MSG_prefs_OptionText_chatgpt_web_tempchat_info__
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <label class="mzta_switch">
+          <input type="checkbox" id="chatgpt_web_tempchat" name="chatgpt_web_tempchat" class="option-input" />
+          <span class="track"></span>
+        </label>
+        <span>__MSG_prefs_OptionText_chatgpt_web_tempchat_info__
           <br>__MSG_prefs_OptionText_Project_No_temporary_chat_warn__
         </span>
-      </label>
+      </div>
     </td>
   </tr>
   <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
