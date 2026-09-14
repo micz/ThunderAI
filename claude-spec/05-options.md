@@ -776,14 +776,24 @@ i18n keys for the wizard are `wizard_*` in `_locales/en/messages.json`; entry-po
 
 ### Feature Rows — Disabled vs. API-Needed
 
-The four API-driven feature rows on the main options page (Add Tags, Spam Filter, Summarize,
-Translate) are unusable in **two distinct** situations, which must be presented differently:
+The six API-driven feature rows on the main options page (Add Tags, Spam Filter, Summarize,
+Translate, Get Calendar Event, Get Task) are unusable in **two distinct** situations, which must be
+presented differently:
 
 | Effective connection | Toggle | `warn_API_needed` hint |
 |---|---|---|
 | `chatgpt_web` | **untouched, clickable** | **shown** |
 | *nothing selected* (`''`) | unchecked **and `disabled`** (greyed) | **hidden** |
 | any API | untouched | hidden |
+
+Get Calendar Event and Get Task obey the same table, but carry an **orthogonal** second requirement:
+both features live in the ThunderAI Sparks add-on. `disable_GetCalendarEvent()` therefore hides their
+rows outright (`.get_calendar_event_tr` / `.get_task_tr` → `display:none`) when Sparks is missing or
+the wrong version, *or* when no connection is selected — the only case where the shared table hides a
+row rather than greying it. With ChatGPT Web the rows stay visible and show the hint exactly like the
+other four. These two rows long lacked the `warn_API_needed` span entirely, so the hint could never
+appear for them; the span now exists (`get_calendar_event_warn_API_needed`, `get_task_warn_API_needed`)
+and `disable_GetCalendarEvent()` reads `show_api_warning` from both states.
 
 **ChatGPT Web must not clear the flag.** The row used to force the toggle off (and persist that
 `false`) whenever the effective connection was `chatgpt_web`, while simultaneously showing a hint
@@ -819,7 +829,12 @@ treatment.
 pointing at its own API stays enabled even when the global connection is empty).
 `disable_ApiFeature(prefs_opt, prefix, manageBtnId)` consumes it and does all the row work; the four
 `disable_AddTags` / `disable_SpamFilter` / `disable_Summarize` / `disable_Translate` functions are now
-one-line wrappers over it (they previously held four copies of the same body). The greyed-out look
+one-line wrappers over it (they previously held four copies of the same body). `disable_GetCalendarEvent()`
+stays a separate path because of the Sparks gate and the two-rows-in-one-function shape, but shares the
+hint logic: `setApiWarnVisibility(prefix, show)` is the **single** place that flips a
+`{prefix}_warn_API_needed` span, used by both, so the six rows cannot drift apart again. It sets an
+explicit `inline-block` because `.warn_API_needed` is `display:none` in the stylesheet (which avoids a
+flash before the JS runs), so `''` would leave the span hidden. The greyed-out look
 needs no new CSS — `.mzta_switch input[type="checkbox"]:disabled + .track` already sets
 `opacity: .5`. The per-feature `click` handlers (which request Thunderbird permissions) need no guard
 either: a disabled checkbox fires no `click`.

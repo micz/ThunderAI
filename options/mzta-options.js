@@ -243,6 +243,15 @@ function getFeatureConnState(prefs_opt, prefix){
   };
 }
 
+// The amber "you need an API integration" hint next to a feature row. Explicit
+// 'inline-block' because .warn_API_needed is display:none in the stylesheet (no flash
+// before this runs), so '' would leave the span hidden.
+// Single place that flips it, so the six API-driven rows can't drift apart again.
+function setApiWarnVisibility(prefix, show){
+  let warn = document.getElementById(prefix + '_warn_API_needed');
+  if(warn) warn.style.display = show ? 'inline-block' : 'none';
+}
+
 // Shared handling for the four API-driven feature rows (add_tags, spamfilter,
 // summarize, translate): they differ only by element ids.
 function disable_ApiFeature(prefs_opt, prefix, manageBtnId){
@@ -261,8 +270,7 @@ function disable_ApiFeature(prefs_opt, prefix, manageBtnId){
   checkbox.disabled = state.no_connection;
 
   setFeatureManageVisibility(document.getElementById(manageBtnId), checkbox.checked);
-  let warn = document.getElementById(prefix + '_warn_API_needed');
-  if(warn) warn.style.display = state.show_api_warning ? 'inline-block' : 'none';
+  setApiWarnVisibility(prefix, state.show_api_warning);
 
   if(checked_original != checkbox.checked){
     browser.storage.sync.set({[prefix]: checkbox.checked});
@@ -292,11 +300,18 @@ async function disable_GetCalendarEvent(prefs_opt){
   let no_sparks_text = document.getElementById('no_sparks_text');
   let wrong_sparks_text = document.getElementById('wrong_sparks_text');
   let is_spark_present = await checkSparksPresence();
-  // These features need an API: unavailable with ChatGPT Web and with no connection
-  // selected. Judged per feature, like the other API-driven rows, so a specific
-  // integration keeps them available whatever the global connection is.
-  let cal_unusable = getFeatureConnState(prefs_opt, 'get_calendar_event').disabled;
-  let task_unusable = getFeatureConnState(prefs_opt, 'get_task').disabled;
+  // These features need an API, so they follow the same rule as the other API-driven
+  // rows: only "no connection selected" takes them away, while ChatGPT Web leaves them
+  // usable and merely shows the warn_API_needed hint (the per-feature API is configured
+  // from the feature's own settings page, which is reachable only once it is enabled).
+  // Judged per feature, so a specific integration keeps them available whatever the
+  // global connection is.
+  let cal_state = getFeatureConnState(prefs_opt, 'get_calendar_event');
+  let task_state = getFeatureConnState(prefs_opt, 'get_task');
+  let cal_unusable = cal_state.disabled;
+  let task_unusable = task_state.disabled;
+  setApiWarnVisibility('get_calendar_event', cal_state.show_api_warning);
+  setApiWarnVisibility('get_task', task_state.show_api_warning);
   // Sparks presence is an orthogonal requirement: both features live in that add-on.
   get_calendar_event.disabled = cal_unusable || !(is_spark_present == 1);
   get_task.disabled = task_unusable || !(is_spark_present == 1);
