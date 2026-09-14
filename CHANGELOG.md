@@ -3,7 +3,7 @@
 
 <h2>Version 5.0.1 - ??/??/2026</h2>
       <ul>
-        <li>...</li>
+        <li>The spam report is now shown in a wider section of the Spam Filter page, inside a scrollable box with a fixed header row and its own horizontal scrollbar, always reachable without scrolling to the end of the page. The Message-ID and the explanation columns are truncated, with the full value shown as a tooltip, so the width is given to the sender and the subject [<a href="https://github.com/micz/ThunderAI/issues/895">#895</a>].</li>
       </ul>
 <h2>Version 5.0.0 - 08/09/2026</h2>
       <ul>

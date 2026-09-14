@@ -350,9 +350,13 @@ async function loadSpamReport(){
       // Create a new row
       const row = document.createElement("tr");
 
-      // Create and append each cell as a DOM element
+      // Create and append each cell as a DOM element.
+      // The cells that CSS truncates (message id, from, subject, explanation)
+      // also carry the full value in their title attribute, so nothing is
+      // lost: it is echoed user data, never a translatable string.
       const tdHeaderMessageId = document.createElement("td");
       tdHeaderMessageId.textContent = report.headerMessageId;
+      tdHeaderMessageId.title = report.headerMessageId ?? "";
       row.appendChild(tdHeaderMessageId);
 
       const tdMessageDate = document.createElement("td");
@@ -361,10 +365,12 @@ async function loadSpamReport(){
 
       const tdFrom = document.createElement("td");
       tdFrom.textContent = Array.isArray(report.from) ? report.from.join(", ") : (report.from ?? "");
+      tdFrom.title = tdFrom.textContent;
       row.appendChild(tdFrom);
 
       const tdSubject = document.createElement("td");
       tdSubject.textContent = Array.isArray(report.subject) ? report.subject.join(", ") : (report.subject ?? "");
+      tdSubject.title = tdSubject.textContent;
       row.appendChild(tdSubject);
 
       const tdSpamValue = document.createElement("td");
@@ -375,8 +381,15 @@ async function loadSpamReport(){
       tdMoved.textContent = (report.moved ? browser.i18n.getMessage("yes_string") : browser.i18n.getMessage("no_string")) + ` (${report.SpamThreshold})`;
       row.appendChild(tdMoved);
 
+      // The explanation goes in an inner block so it can scroll on its own
+      // (see .expl_box): overflow on the td itself would be ignored, because
+      // a table-cell takes its height from the row.
       const tdExplanation = document.createElement("td");
-      tdExplanation.textContent = report.explanation;
+      const explBox = document.createElement("div");
+      explBox.className = "expl_box";
+      explBox.textContent = report.explanation ?? "";
+      tdExplanation.title = report.explanation ?? "";
+      tdExplanation.appendChild(explBox);
       row.appendChild(tdExplanation);
 
       const tdReportDate = document.createElement("td");
