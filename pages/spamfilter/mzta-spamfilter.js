@@ -275,6 +275,9 @@ document.addEventListener('DOMContentLoaded', async () => {
      });
 
     loadSpamReport();
+    // Delegated on the tbody, which is static markup, so it survives every
+    // populateTable() rebuild and only needs registering once.
+    attachRowResizer();
 });
 
 const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
@@ -388,8 +391,15 @@ async function loadSpamReport(){
       const explBox = document.createElement("div");
       explBox.className = "expl_box";
       explBox.textContent = report.explanation ?? "";
-      tdExplanation.title = report.explanation ?? "";
+      // Title on the text box, not on the cell: on the cell it would also
+      // cover the resize strip and pop up a tooltip mid-drag.
+      explBox.title = report.explanation ?? "";
       tdExplanation.appendChild(explBox);
+      // Grab strip on the bottom border of the cell: dragging it grows just
+      // this row (see attachRowResizer).
+      const resizer = document.createElement("div");
+      resizer.className = "row_resizer";
+      tdExplanation.appendChild(resizer);
       row.appendChild(tdExplanation);
 
       const tdReportDate = document.createElement("td");
@@ -530,4 +540,69 @@ async function spamfilter_getSkipAddresses() {
 
 function spamfilter_setSkipAddresses(spamfilter_skip_addresses) {
     browser.storage.sync.set({spamfilter_skip_addresses: spamfilter_skip_addresses});
+}
+
+/**
+ * Makes every explanation cell vertically resizable by dragging the thin
+ * strip on its bottom border.
+ *
+ * The handler is attached once, on the table body, rather than per row:
+ * populateTable() rebuilds every row on each refresh, and per-row listeners
+ * would be re-registered each time (and leak the old nodes).
+ *
+ * The drag sets an inline max-height on the row’s own .expl_box. It cannot
+ * set a height on the <tr>, because a table row derives its height from its
+ * tallest cell and ignores the value. Heights are deliberately not persisted:
+ * they last for the life of the page, so no new preference is needed.
+ */
+function attachRowResizer() {
+  const tableBody = document.getElementById("report_data_body");
+  if (!tableBody) return;
+
+  const MIN_HEIGHT = 28;   // roughly one line, so a row cannot be collapsed away
+  let box = null;          // .expl_box being resized
+  let handle = null;
+  let startY = 0;
+  let startHeight = 0;
+
+  tableBody.addEventListener("pointerdown", (event) => {
+    const target = event.target;
+    if (!target.classList.contains("row_resizer")) return;
+
+    box = target.parentElement.querySelector(".expl_box");
+    if (!box) return;
+
+    handle = target;
+    startY = event.clientY;
+    startHeight = box.getBoundingClientRect().height;
+
+    // Capture keeps the events coming even when the pointer outruns the 7px
+    // strip, which it always does on a fast drag.
+    handle.setPointerCapture(event.pointerId);
+    handle.classList.add("dragging");
+    document.body.classList.add("mzta_row_resizing");
+    event.preventDefault();
+  });
+
+  tableBody.addEventListener("pointermove", (event) => {
+    if (!box) return;
+    const height = Math.max(MIN_HEIGHT, startHeight + (event.clientY - startY));
+    box.style.maxHeight = height + "px";
+  });
+
+  const endDrag = (event) => {
+    if (!box) return;
+    if (handle) {
+      if (event && handle.hasPointerCapture?.(event.pointerId)) {
+        handle.releasePointerCapture(event.pointerId);
+      }
+      handle.classList.remove("dragging");
+    }
+    document.body.classList.remove("mzta_row_resizing");
+    box = null;
+    handle = null;
+  };
+
+  tableBody.addEventListener("pointerup", endDrag);
+  tableBody.addEventListener("pointercancel", endDrag);
 }

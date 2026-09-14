@@ -149,13 +149,47 @@ table#report_data tbody td:nth-child(8) {
 table#report_data tbody td:nth-child(7) {
     padding: 0;
 }
+table#report_data tbody td:nth-child(7) {
+    /* Anchors the resize handle to the bottom edge of the cell. */
+    position: relative;
+}
 table#report_data tbody td:nth-child(7) .expl_box {
     display: block;
-    max-height: 5.4em;   /* about four lines at this line-height */
+    max-height: 5.4em;   /* about four lines at this line-height; the drag
+                            handle below overrides this per row, inline */
     overflow-y: auto;
     padding: 8px;
     line-height: 1.35;
     overscroll-behavior: contain;   /* do not chain to the outer scroll box */
+}
+
+/* Per-row resize handle, sitting on the bottom border of the explanation
+   cell. Dragging it sets an inline max-height on that row’s .expl_box, so
+   one long explanation can be opened up without touching the other rows.
+   The height cannot be set on the <tr> itself: a table row takes its height
+   from its tallest cell, so the growth has to happen on the scrolling box.
+   The handle is a padding-free 7px strip that stays inside the cell, so it
+   never overlaps the text and does not change the row height when idle. */
+table#report_data tbody td:nth-child(7) .row_resizer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 7px;
+    cursor: ns-resize;
+    /* Invisible until pointed at: the table already has enough lines. */
+    background: transparent;
+}
+table#report_data tbody td:nth-child(7) .row_resizer:hover,
+table#report_data tbody td:nth-child(7) .row_resizer.dragging {
+    background: var(--accent);
+    opacity: .55;
+}
+/* While dragging, kill text selection and keep the resize cursor everywhere,
+   otherwise the pointer flickers as it leaves the 7px strip. */
+body.mzta_row_resizing {
+    user-select: none;
+    cursor: ns-resize !important;
 }
 
 /* The "no reports yet" placeholder spans all eight columns: it must not
