@@ -824,6 +824,11 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 .mzta_switch input[type="checkbox"]:checked + .track { background: var(--accent); }
 .mzta_switch input[type="checkbox"]:checked + .track::after { transform: translateX(16px); }
 .mzta_switch input[type="checkbox"]:disabled + .track { opacity: .5; cursor: default; }
+/* "Locked on" toggle: forced checked and click-swallowed, but NOT `disabled` — a
+   disabled checkbox is skipped by each page's saveOptions() sweep, so the pref
+   would never be persisted (see connection-ui.js). Lighter than the :disabled
+   treatment above, since the toggle is active rather than inert. */
+.mzta_switch input[type="checkbox"][data-mandatory="true"] + .track { opacity: .75; cursor: not-allowed; }
 
 /* Note under the Features subtitle: explains why every feature toggle is greyed
    out while no AI connection is selected. Blue/accent (informational, matching
@@ -851,6 +856,32 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     padding: 0.35em 0.5em;
     border-radius: 0.8em;
 }
+
+/* Feature-page markers for a toggle that is forced on by the global connection.
+   Both are shown by JS (.shown) only in that case; same amber "you must act"
+   treatment as .warn_API_needed. */
+.feature_locked_badge {
+    display: none;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--warning);
+    border: 1px solid var(--warning);
+    padding: 0.2em 0.5em;
+    border-radius: 0.8em;
+    white-space: nowrap;
+}
+.feature_locked_badge.shown { display: inline-block; }
+.feature_locked_note {
+    display: none;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--warning);
+    margin-top: 5px;
+    line-height: 1.4;
+}
+.feature_locked_note.shown { display: block; }
 
 /* ===========================================================================
    ADVANCED OPTIONS (app-level disclosure)

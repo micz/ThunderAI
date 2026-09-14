@@ -870,11 +870,23 @@ this notice follows.
 When the global connection cannot drive a feature (ChatGPT Web, or nothing selected),
 `initializeSpecificIntegrationUI()` (`pages/_lib/connection-ui.js`) forces
 `use_specific_integration` on, because a specific integration is the only way that feature can run.
-Three rules make that forcing actually stick:
+Four rules make that forcing actually stick:
 
 - **The checkbox stays `enabled`, made read-only via `preventDefault()` on `click`** (plus a
   `data-mandatory` marker). A `disabled` checkbox is skipped by each page's `saveOptions()` sweep
   over `.option-input` and fires no `change`, so the forced value never reached storage.
+- **The lock is made visible**, otherwise the toggle reads as an ordinary switch that silently
+  ignores clicks — the user sees no reason why it will not turn off. Three markers, all driven from
+  the same `if (mandatory_integration)` branch: the `[data-mandatory="true"]` attribute gives the
+  track `cursor: not-allowed` and a light dim (`pages/_lib/mzta-design.css`, deliberately lighter
+  than the `:disabled` rule above it, which stays reserved for the genuinely inert case); a
+  `🔒 Required` badge (`.feature_locked_badge`) is revealed next to the row title; and
+  `.feature_locked_note` is filled with the reason and shown under the description. The badge and
+  the note are inert markup present on all six feature pages, with fixed ids
+  (`specific_integration_locked_badge` / `_note`, unprefixed — one per page) so the shared
+  `connection-ui.js` can find them. The note text is chosen at runtime, and only there, because it
+  distinguishes the two cases: `specific_integration_mandatory_chatgpt_web` vs
+  `specific_integration_mandatory_no_connection`. The same text is also set as the `title`.
 - **The flag is persisted only once a usable connection type is chosen**, by
   `_persistMandatoryIntegration()` (on the select's `change`, and once on load to repair earlier
   visits). Writing it earlier would be worse than not writing it: `hasSpecificIntegration()` requires

@@ -1391,6 +1391,23 @@ export async function initializeSpecificIntegrationUI({
       use_specific_integration_el.addEventListener('click', (event) => {
           if (use_specific_integration_el.dataset.mandatory === 'true') event.preventDefault();
       });
+
+      // Make the locked state visible: without this the toggle looks like any
+      // other switch while silently ignoring clicks. The badge and the note are
+      // inert markup on every feature page; the note text is picked here because
+      // it depends on which of the two unusable global connections we are in.
+      const _lockedMsgKey = (globalPrefs.connection_type === 'chatgpt_web')
+          ? 'specific_integration_mandatory_chatgpt_web'
+          : 'specific_integration_mandatory_no_connection';
+      const _lockedText = browser.i18n.getMessage(_lockedMsgKey);
+      use_specific_integration_el.title = _lockedText;
+      const _lockedBadge = document.getElementById('specific_integration_locked_badge');
+      if (_lockedBadge) _lockedBadge.classList.add('shown');
+      const _lockedNote = document.getElementById('specific_integration_locked_note');
+      if (_lockedNote) {
+          _lockedNote.textContent = _lockedText;
+          _lockedNote.classList.add('shown');
+      }
   }
 
   // Persist the connection type currently shown by the select, so the stored pref matches
