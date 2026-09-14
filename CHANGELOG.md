@@ -1,7 +1,10 @@
  # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI Release Notes
 
 
-
+<h2>Version 5.0.1 - ??/??/2026</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 5.0.0 - 08/09/2026</h2>
       <ul>
         <li>Redesigned the settings page, moving advanced options to a dedicated section to improve the onboarding experience [<a href="https://github.com/micz/ThunderAI/issues/739">#739</a>].</li>
