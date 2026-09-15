@@ -1517,6 +1517,15 @@
     "warn_API_needed": {
         "message": "Para usar este recurso, você precisa de uma integração de API em vez da Integração do ChatGPT Web. Você pode definir uma API específica na página de configurações do recurso marcando primeiro a caixa de seleção acima e depois clicando no botão à esquerda."
     },
+    "specific_integration_mandatory_badge": {
+        "message": "Obrigatório"
+    },
+    "specific_integration_mandatory_chatgpt_web": {
+        "message": "Esta opção é obrigatória e não pode ser desativada: a Integração do ChatGPT Web selecionada como conexão global não pode executar este recurso. Escolha uma API específica abaixo."
+    },
+    "specific_integration_mandatory_no_connection": {
+        "message": "Esta opção é obrigatória e não pode ser desativada: nenhuma conexão de IA global foi selecionada ainda. Escolha uma API específica abaixo ou configure uma conexão global nas configurações do ThunderAI."
+    },
     "prefs_specific_api_indicator": {
         "message": "Usando $1",
         "placeholders": {
