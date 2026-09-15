@@ -1783,6 +1783,15 @@
     "warn_API_needed": {
         "message": "Aby korzystać z tej funkcji, potrzebujesz integracji API zamiast integracji ChatGPT Web. Konkretne API możesz zdefiniować na stronie ustawień funkcji, zaznaczając najpierw pole wyboru powyżej, a następnie klikając przycisk po lewej."
     },
+    "specific_integration_mandatory_badge": {
+        "message": "Wymagane"
+    },
+    "specific_integration_mandatory_chatgpt_web": {
+        "message": "Ta opcja jest wymagana i nie można jej wyłączyć: integracja ChatGPT Web wybrana jako połączenie globalne nie może obsłużyć tej funkcji. Wybierz konkretne API poniżej."
+    },
+    "specific_integration_mandatory_no_connection": {
+        "message": "Ta opcja jest wymagana i nie można jej wyłączyć: nie wybrano jeszcze żadnego globalnego połączenia AI. Wybierz konkretne API poniżej lub skonfiguruj połączenie globalne w ustawieniach ThunderAI."
+    },
     "prefs_specific_api_indicator": {
         "message": "Używa $1",
         "description": "Indicator near settings button when a special prompt uses a specific API.",
