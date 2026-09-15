@@ -1447,6 +1447,15 @@
     "prefs_ollama_format_json_Info": {
         "message": "Si coché, Ollama sera forcé de renvoyer une réponse JSON valide. Cette option ne fonctionne qu'avec les modèles prenant en charge la sortie structurée."
     },
+    "specific_integration_mandatory_badge": {
+        "message": "Obligatoire"
+    },
+    "specific_integration_mandatory_chatgpt_web": {
+        "message": "Cette option est obligatoire et ne peut pas être désactivée : l’intégration Web de ChatGPT sélectionnée comme connexion globale ne peut pas exécuter cette fonctionnalité. Choisissez une API spécifique ci-dessous."
+    },
+    "specific_integration_mandatory_no_connection": {
+        "message": "Cette option est obligatoire et ne peut pas être désactivée : aucune connexion IA globale n’a encore été sélectionnée. Choisissez une API spécifique ci-dessous, ou configurez une connexion globale dans les paramètres de ThunderAI."
+    },
     "prefs_specific_api_indicator": {
         "message": "Utilisation de $1",
         "placeholders": {
