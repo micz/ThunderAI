@@ -879,15 +879,11 @@ export async function injectConnectionUI({
   });
 
   let prefs = await browser.storage.sync.get({
-    chatgpt_web_model: '',
-    chatgpt_model: '',
-    ollama_model: '',
-    openai_comp_model: '',
-    google_gemini_model: '',
-    anthropic_model: '',
-    anthropic_version: '',
-    chatgpt_win_height: 0,
-    chatgpt_win_width: 0
+    chatgpt_model: prefs_default.chatgpt_model,
+    ollama_model: prefs_default.ollama_model,
+    openai_comp_model: prefs_default.openai_comp_model,
+    google_gemini_model: prefs_default.google_gemini_model,
+    anthropic_model: prefs_default.anthropic_model
   });
   
   // OpenAI API ChatGPT model fetching

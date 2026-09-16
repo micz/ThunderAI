@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
       });
-    let prefs_add_tags = await browser.storage.sync.get({ add_tags_enabled_accounts: [], connection_type: 'chatgpt_web' });
+    let prefs_add_tags = await browser.storage.sync.get({ add_tags_enabled_accounts: prefs_default.add_tags_enabled_accounts });
 
     let addtags_textarea = document.getElementById('addtags_prompt_text');
     let addtags_save_btn = document.getElementById('btn_save_prompt');

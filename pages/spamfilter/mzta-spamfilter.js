@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', async () => {
          accountsContainer.appendChild(document.createElement('br'));
      });
  
-     let prefs_spamfilter = await browser.storage.sync.get({ spamfilter_enabled_accounts: [] });
+     let prefs_spamfilter = await browser.storage.sync.get({ spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts });
      let spamfilter_enabled_accounts = prefs_spamfilter.spamfilter_enabled_accounts;
      taLog.log("spamfilter_enabled_accounts: " + JSON.stringify(spamfilter_enabled_accounts));
      document.querySelectorAll('.accountCheckbox').forEach(checkbox => {
@@ -531,7 +531,7 @@ async function restoreOptions() {
 }
 
 async function spamfilter_getSkipAddresses() {
-    let prefs = await browser.storage.sync.get({spamfilter_skip_addresses: []});
+    let prefs = await browser.storage.sync.get({spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses});
     return prefs.spamfilter_skip_addresses;
 }
 

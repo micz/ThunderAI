@@ -113,7 +113,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         summarize_use_specific_el.addEventListener('change', updateConnPanelTint);
     }
     updateConnPanelTint();
-    let prefs_summarize = await browser.storage.sync.get({ summarize_enabled_accounts: [], connection_type: 'chatgpt_web' });
 
     // Auto-summarize senders list
     // The toggle is a plain .option-input (saved by saveOptions), the list is saved explicitly.
