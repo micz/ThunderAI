@@ -291,6 +291,15 @@ async function _reconcileFeatureFlags(prefs) {
     let to_disable = {};
     for (const prefix of special_prompts_with_integration) {
         if (!prefs[prefix]) continue;
+        // A flag the enterprise policy enforces is the administrator's decision, not a
+        // stale value to heal. Skipping it here is not merely cosmetic: this repair works
+        // by WRITING false to storage.local, and the write guard in js/mzta-prefs.js would
+        // refuse it anyway — so without this the only effect would be a warning logged on
+        // every startup and on every preference change, forever. If the policy enables a
+        // feature whose connection cannot drive it, the feature stays on and does nothing:
+        // that is a misconfiguration for the administrator to fix, and silently overriding
+        // it would hide the mistake rather than surface it.
+        if (mztaManaged.isManagedLocked(prefix)) continue;
         // A feature that has opted into its own integration is left alone even when that
         // integration is not usable yet. Its connection does not depend on the global one,
         // so an unusable value there means "still being configured", not "cannot run" —
@@ -1956,7 +1965,15 @@ function setupStorageChangeListener() {
         // prefs_init goes stale while the menus never rebuild on a settings change.
         if (areaName !== 'local') return;
 
-        const changed_keys = Object.keys(changes);
+        // A key the enterprise policy enforces cannot have meaningfully changed: whatever
+        // landed in storage.local for it is shadowed on every read by the policy value, so
+        // reacting would rebuild the menus and re-read prefs_init to arrive at exactly the
+        // values already in use. Filtered rather than ignored downstream so a burst that
+        // touches only locked keys costs nothing at all.
+        // Note there is nothing to listen for on the managed area itself: Thunderbird
+        // fires no change events for it, which is why a policy edit needs a restart.
+        const changed_keys = Object.keys(changes).filter(key => !mztaManaged.isManagedLocked(key));
+        if (changed_keys.length === 0) return;
         _prefsInitStale = _prefsInitStale || changed_keys.some(key => key in PREFS_INIT_KEYS);
         _menusStale = _menusStale || changed_keys.some(key => MENU_RELEVANT_KEYS.includes(key));
         if (!_prefsInitStale && !_menusStale) return;

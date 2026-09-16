@@ -2431,6 +2431,38 @@
     "message": "Copy",
     "description": ""
   },
+  "managed_banner": {
+    "message": "Some settings are managed by your organization and cannot be changed.",
+    "description": "Banner shown when an enterprise policy is active but sets no organization name"
+  },
+  "managed_banner_org": {
+    "message": "Some settings are managed by $ORG$ and cannot be changed.",
+    "description": "Banner shown when an enterprise policy is active, naming the organization",
+    "placeholders": {
+      "org": {
+        "content": "$1",
+        "example": "ACME Corp"
+      }
+    }
+  },
+  "managed_marker": {
+    "message": "Managed",
+    "description": "Marker next to a setting enforced by the enterprise policy"
+  },
+  "managed_marker_org": {
+    "message": "Managed by $ORG$",
+    "description": "Marker next to a setting enforced by the enterprise policy, naming the organization",
+    "placeholders": {
+      "org": {
+        "content": "$1",
+        "example": "ACME Corp"
+      }
+    }
+  },
+  "managed_marker_tooltip": {
+    "message": "This setting is set by your organization's configuration policy and cannot be changed here.",
+    "description": "Tooltip on the managed marker"
+  },
   "customPrompts_org_badge": {
     "message": "Organization",
     "description": "Badge on a prompt supplied by the enterprise policy, when no organization name is configured"

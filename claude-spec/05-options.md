@@ -76,7 +76,12 @@ string**: a new user is not given a provider they never chose. Instead the three
   `special_prompts_with_integration` and writes `false` for any flag that is `true` while its
   effective connection is **absent** (`hasNoConnectionSelected()`). Note this is deliberately
   narrower than `isApiUsableConnection()`: `chatgpt_web` is left alone, for the reason given under
-  "Feature Rows — Disabled vs. API-Needed". It runs at startup and at the head of
+  "Feature Rows — Disabled vs. API-Needed". A flag the enterprise policy enforces is skipped entirely: the repair works by writing
+  `false` to `storage.local`, which the write guard would refuse anyway, so without the
+  skip the only effect would be a warning logged on every startup. If a policy enables a
+  feature whose connection cannot drive it, the feature stays on and does nothing — a
+  misconfiguration for the administrator to fix, not something to override silently.
+  It runs at startup and at the head of
   the debounced `storage.onChanged` handler, so it covers the writers that have no feature UI of
   their own — the setup wizard (which writes `connection_type` through the generic `saveOptions()`
   and never touches the flags) and a prefs import. (A sync from another profile used to be a third writer; it no longer exists, since preferences moved to `storage.local`.) `disable_ApiFeature()`

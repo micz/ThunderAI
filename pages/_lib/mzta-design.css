@@ -1054,6 +1054,51 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 }
 #no_connection_banner a:hover { text-decoration: underline; }
 
+/* Enterprise managed configuration active. Same geometry as #no_connection_banner above,
+   but neutral rather than blue: it states a fact about who controls these settings, it is
+   neither a call to action nor a problem. The lock glyph carries the meaning at a glance.
+   Shown by showManagedBanner() in pages/_lib/managed-ui.js. */
+#managed_config_banner {
+    display: none;              /* shown by JS only when a policy is active */
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin: 20px 22px 0;
+    padding: 14px 18px;
+    border: 1px solid var(--line);
+    border-inline-start: 4px solid var(--dim);
+    border-radius: 10px;
+    background-color: var(--field);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+#managed_config_banner.shown { display: flex; }
+#managed_config_banner::before {
+    content: "F512";          /* padlock */
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* Marker appended next to every control a policy enforces, so a disabled field reads as
+   "your organization set this" instead of as a bug. */
+.managed_marker {
+    display: inline-block;
+    margin-inline-start: 8px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--field);
+    border: 1px solid var(--line);
+    color: var(--dim);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.6;
+    white-space: nowrap;
+    vertical-align: middle;
+    cursor: help;
+}
+
 .warning {
     color: white;
     font-style: italic;

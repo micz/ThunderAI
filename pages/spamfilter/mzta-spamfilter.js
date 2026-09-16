@@ -45,6 +45,7 @@ import {
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
+import { applyManagedUI } from '../_lib/managed-ui.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -98,6 +99,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     i18n.updateDocument();
+
+    // Disable and mark every control the enterprise policy enforces. Runs after the
+    // connection panel has been injected above, so its provider rows are covered too.
+    await applyManagedUI(document, taLog.do_debug);
 
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);

@@ -49,6 +49,11 @@ import {
   runConnectionTest
 } from '../js/mzta-connection-test.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
+import {
+  applyManagedUI,
+  showManagedBanner,
+  isLockedKey
+} from '../pages/_lib/managed-ui.js';
 
 let taLog = new taLogger("mzta-options",true);
 
@@ -581,6 +586,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('link_doc_guides').href = getMiczItUrl('thunderbird-addon-thunderai/guides/');
   document.getElementById('link_doc_tutorial').href = getMiczItUrl('thunderbird-addon-thunderai/tutorial/');
 
+  // After i18n and restoreOptions(): the inputs must already hold their resolved values
+  // (js/mzta-prefs.js has folded in the policy) before they are disabled and marked.
+  // This is presentation only - the write guard in js/mzta-prefs.js is what actually
+  // prevents a locked preference being written.
+  // true, like this page's own taLogger above: these two only ever log a failure to
+  // reach the background page, which is worth seeing whenever it happens.
+  await showManagedBanner('managed_config_banner', true);
+  await applyManagedUI(document, true);
+
   document.querySelectorAll(".option-input").forEach(element => {
     element.addEventListener("change", saveOptions);
   });
@@ -726,8 +740,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   browser.storage.onChanged.addListener(async (changes, area) => {
     // Preferences live in storage.local — see js/mzta-prefs.js.
     if (area !== 'local') return;
+    // A policy-enforced key cannot have meaningfully changed: whatever was written to
+    // storage.local for it is shadowed on every read by the policy value, so reacting
+    // would recompute the indicators to land on the values already displayed.
     const hasRelevantChange = Object.keys(changes).some(key =>
-      key.endsWith('_use_specific_integration') || key.endsWith('_connection_type')
+      !isLockedKey(key) &&
+      (key.endsWith('_use_specific_integration') || key.endsWith('_connection_type'))
     );
     if (hasRelevantChange) {
       prefs_opt = await mztaPrefs.getPrefs(

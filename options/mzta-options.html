@@ -9,6 +9,12 @@
   <body>
     <div id="mzta_card">
 
+      <!-- Enterprise managed configuration active. Filled in and revealed by
+           showManagedBanner() in pages/_lib/managed-ui.js; the text is built there because
+           it may name the organization. Above the no-connection banner: when a policy
+           supplies the connection, that one does not appear at all. -->
+      <div id="managed_config_banner"><span class="managed_banner_text"></span></div>
+
       <!-- No AI connection selected yet: invite to the setup wizard (informational, not a warning).
            Sits above the documentation block so it is the first thing a new user sees. -->
       <div id="no_connection_banner">
