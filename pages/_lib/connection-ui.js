@@ -18,7 +18,6 @@
 
 import './tom-select.base.js';
 import {
-  prefs_default,
   integration_options_config
 } from '../../options/mzta-options-default.js';
 import { OpenAI } from '../../js/api/openai_responses.js';
@@ -44,6 +43,7 @@ import {
   savePrompt,
   clearPromptAPI
 } from '../../js/mzta-prompts.js';
+import { mztaPrefs } from '../../js/mzta-prefs.js';
 
 export const varConnectionUI = {
   permission_all_urls: false,
@@ -829,11 +829,11 @@ export async function injectConnectionUI({
   // Null when the ChatGPT Web rows were not injected (see chatgpt_web_rows).
   const btnChatGPTWeb_Tab = document.getElementById('btnChatGPTWeb_Tab');
   btnChatGPTWeb_Tab?.addEventListener('click', async () => {
-    let prefs_mod = await browser.storage.sync.get({
-      chatgpt_web_model: prefs_default.chatgpt_web_model,
-      chatgpt_web_project: prefs_default.chatgpt_web_project,
-      chatgpt_web_custom_gpt: prefs_default.chatgpt_web_custom_gpt
-    });
+    let prefs_mod = await mztaPrefs.getPrefs([
+      'chatgpt_web_model',
+      'chatgpt_web_project',
+      'chatgpt_web_custom_gpt'
+    ]);
     
     let base_url = 'https://chatgpt.com';
     let model_opt = '';
@@ -878,13 +878,13 @@ export async function injectConnectionUI({
     }
   });
 
-  let prefs = await browser.storage.sync.get({
-    chatgpt_model: prefs_default.chatgpt_model,
-    ollama_model: prefs_default.ollama_model,
-    openai_comp_model: prefs_default.openai_comp_model,
-    google_gemini_model: prefs_default.google_gemini_model,
-    anthropic_model: prefs_default.anthropic_model
-  });
+  let prefs = await mztaPrefs.getPrefs([
+    'chatgpt_model',
+    'ollama_model',
+    'openai_comp_model',
+    'google_gemini_model',
+    'anthropic_model'
+  ]);
   
   // OpenAI API ChatGPT model fetching
   let select_chatgpt_model = getModelEl('chatgpt_model', modelId_prefix);
@@ -1372,7 +1372,7 @@ export async function initializeSpecificIntegrationUI({
   // with the first usable connection the user picks — otherwise the feature would
   // read as enabled while still having nothing to run against, and would silently
   // disappear from the menus on the next reload.
-  let globalPrefs = await browser.storage.sync.get({ connection_type: prefs_default.connection_type });
+  let globalPrefs = await mztaPrefs.getPrefs(['connection_type']);
   const mandatory_integration = (globalPrefs.connection_type === 'chatgpt_web')
       || hasNoConnectionSelected(globalPrefs.connection_type);
   if (mandatory_integration) {
@@ -1410,9 +1410,14 @@ export async function initializeSpecificIntegrationUI({
   // what the user sees. Only for a usable value: an empty one means "nothing chosen yet".
   const _persistSelectedConnection = async () => {
       if (hasNoConnectionSelected(conntype_el.value)) return;
+      // Deliberately NOT routed through mztaPrefs (issue #163): the default here must
+      // stay '' and not prefs_default[conntype_select_id], which is 'chatgpt_api'. This is a
+      // no-op guard comparing the stored value against what the select shows; with the
+      // prefs_default value, a first-time write of exactly 'chatgpt_api' would compare equal
+      // to the substituted default and be skipped, leaving the pref unwritten.
       const stored = await browser.storage.sync.get({ [conntype_select_id]: '' });
       if (stored[conntype_select_id] === conntype_el.value) return;
-      await browser.storage.sync.set({ [conntype_select_id]: conntype_el.value });
+      await mztaPrefs.setPref(conntype_select_id, conntype_el.value);
       taLog.log(`Stored the connection shown by the ${prefix} select: ${conntype_el.value}`);
   };
 
@@ -1421,9 +1426,9 @@ export async function initializeSpecificIntegrationUI({
   const _persistMandatoryIntegration = async () => {
       if (!mandatory_integration) return;
       if (hasNoConnectionSelected(conntype_el.value)) return;
-      const stored = await browser.storage.sync.get({ [use_specific_integration_id]: false });
+      const stored = await mztaPrefs.getPrefs([use_specific_integration_id]);
       if (stored[use_specific_integration_id]) return;
-      await browser.storage.sync.set({ [use_specific_integration_id]: true });
+      await mztaPrefs.setPref(use_specific_integration_id, true);
       taLog.log(`Specific integration is mandatory for ${prefix}: enabled it alongside ${conntype_el.value}`);
   };
 
@@ -1438,7 +1443,7 @@ export async function initializeSpecificIntegrationUI({
           // read by the prompt = null call sites — the menu gating in mzta-background.js and
           // the feature row in mzta-options.js.
           await clearPromptAPI(promptId);
-          await browser.storage.sync.set({ [conntype_select_id]: '' });
+          await mztaPrefs.setPref(conntype_select_id, '');
       } else {
           await _updatePrompt();
           // Persist the value the select is already showing. restoreOptions() pre-fills it

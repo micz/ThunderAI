@@ -20,7 +20,6 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { prefs_default } from '../options/mzta-options-default.js';
 import './splitButton.js';   // registers the <split-button> custom element
 import './diffPicker.js';    // registers the <diff-picker> custom element
 import { textToBlockHtml } from './diffPicker.js';
@@ -31,6 +30,7 @@ import {
     buildSparkleIcon, buildCopyIcon, buildCheckIcon, buildDiffIcon,
     buildSaveIcon, buildUseAnswerIcon, buildScrollToBottomIcon,
 } from './svgIcons.js';
+import { mztaPrefs } from '../js/mzta-prefs.js';
 const messagesAreaTemplate = document.createElement('template');
 
 const messagesAreaStyle = document.createElement('style');
@@ -1136,7 +1136,7 @@ class MessagesArea extends HTMLElement {
 
         const fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
         //console.log(">>>>>>>>>>>> fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-        let reply_type_pref = await browser.storage.sync.get({ reply_type: prefs_default.reply_type });
+        let reply_type_pref = await mztaPrefs.getPrefs(['reply_type']);
 
         // Remember what the compact toolbar will need. It is only built when
         // this answer stops being the newest one (see _degradeFullActionBar):
@@ -1396,7 +1396,7 @@ class MessagesArea extends HTMLElement {
     // Anything unrecognised falls back to 'words' rather than reaching
     // buildHunks, where an unknown key would silently pick the default fn.
     async _resolveDiffGranularity() {
-        const prefs = await browser.storage.sync.get({ diff_granularity: prefs_default.diff_granularity });
+        const prefs = await mztaPrefs.getPrefs(['diff_granularity']);
         return (prefs.diff_granularity === 'sentences') ? 'sentences' : 'words';
     }
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Extension preferences are stored in `browser.storage.sync` (not `.local`) — defaults and the full list of valid keys are defined in `options/mzta-options-default.js`. A handful of large-payload keys (`_custom_prompt`, `_default_prompts_properties`, `_special_prompts`, `_custom_placeholder`, `add_tags_exclusions`) live in `browser.storage.local` instead, since `storage.sync` has a narrow quota — see [01-architecture.md](01-architecture.md#storage) for the sync→local migration.
+Extension preferences are stored in `browser.storage.sync` (not `.local`) — defaults and the full list of valid keys are defined in `options/mzta-options-default.js`. Every preference **read** goes through the accessor module `js/mzta-prefs.js` (see [Preference access](#preference-access-jsmzta-prefsjs) below); direct `browser.storage.sync.get()` calls are no longer the norm. A handful of large-payload keys (`_custom_prompt`, `_default_prompts_properties`, `_special_prompts`, `_custom_placeholder`, `add_tags_exclusions`) live in `browser.storage.local` instead, since `storage.sync` has a narrow quota — see [01-architecture.md](01-architecture.md#storage) for the sync→local migration.
 
 ## Key Exports from `mzta-options-default.js`
 
@@ -177,7 +177,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `chatgpt_web_custom_gpt` | `''` | Custom GPT URL |
 | `chatgpt_web_load_wait_time` | `1000` | Wait time (ms) for ChatGPT page |
 | `dynamic_menu_force_enter` | `false` | Force Enter to submit in popup |
-| `dynamic_menu_order_alphabet` | `true` | Internal migration flag only; no UI. **Not declared in `prefs_default`** — unlike every other preference, its default (`true`) is hardcoded in the `browser.storage.sync.get()` call in `js/mzta-prompts.js`, not in `options/mzta-options-default.js`. Set to `false` by `migrateMenuOrderAlphabetic()` on first boot after upgrade to bootstrap position-based ordering. See `claude-spec/02-prompts.md` for details. |
+| `dynamic_menu_order_alphabet` | `true` | Internal migration flag only; no UI. **Not declared in `prefs_default`** — unlike every other preference, its default (`true`) is hardcoded in the `browser.storage.sync.get()` call in `js/mzta-prompts.js`, not in `options/mzta-options-default.js`. Set to `false` by `migrateMenuOrderAlphabetic()` on first boot after upgrade to bootstrap position-based ordering. It is therefore also one of the two deliberate **bypasses** of `js/mzta-prefs.js` — see [Preference access](#preference-access-jsmzta-prefsjs). See `claude-spec/02-prompts.md` for details. |
 | `placeholders_use_default_value` | `false` | Use placeholder defaults when empty |
 | `hide_thinking` | `true` | Controls the initial state of the thinking `<details>` block prepended above the answer: `true` = collapsed by default, `false` = open by default. The user can always toggle with a click; thinking content is never discarded. |
 | `diff_granularity` | `'words'` | Comparison unit the proofreading change picker **opens with**: `'words'` or `'sentences'`. The picker's own toolbar toggle changes it for the current review; there is no per-prompt override — see [07-diff-picker.md](07-diff-picker.md). Rendered as a `<select>` in the advanced section; needs an explicit entry in `restoreOptions()`'s `select-one` branch, since a select restoring to `''` would render blank. |
@@ -1160,12 +1160,66 @@ handler, so the guard is armed even if later async setup fails.
 2. Add UI control to `options/mzta-options.html`
 3. Add load/save logic to `options/mzta-options.js`
 4. Add i18n label to `_locales/en/messages.json`
-5. Read the pref in the relevant module via `browser.storage.local.get()`
+5. Read the pref in the relevant module through `mztaPrefs` (see below) — **not** with a
+   direct `browser.storage.sync.get()`
 
-## Reading Preferences at Runtime
+## Preference access (`js/mzta-prefs.js`)
+
+Every preference **read** goes through the single accessor module `js/mzta-prefs.js`, which
+exports the `mztaPrefs` singleton. It is adapted from
+[Thunderbird Addon Options Manager](https://github.com/micz/Thunderbird-Addon-Options-Manager)
+(same author) and keeps that project's MPL-2.0 header; only the accessors were taken. It was
+introduced by [#163](https://github.com/micz/ThunderAI/issues/163) as a pure refactor, and is
+the prerequisite for anything that needs to intercept a preference read.
 
 ```javascript
-const prefs = await browser.storage.local.get(prefs_default);
-// prefs now contains all keys with defaults for any unset values
-const myPref = prefs.my_new_pref;
+import { mztaPrefs } from '../js/mzta-prefs.js';
+
+const value = await mztaPrefs.getPref('my_pref');            // one value
+const prefs = await mztaPrefs.getPrefs(['a', 'b']);          // {a: ..., b: ...}
+const all   = await mztaPrefs.getAllPrefs();                 // every declared pref
+await mztaPrefs.setPref('my_pref', value);                   // single-key write
 ```
+
+**Defaults come from `prefs_default` and from nowhere else.** A call site never passes its own
+default; that is the point of the choke point. An id with no `prefs_default` entry logs a
+warning through `taLogger` and is read with `undefined` as its default, so the mistake is
+visible instead of silent.
+
+**`storage.sync.get()` semantics are preserved exactly.** A default is substituted only for a
+key that is **missing** from storage. A stored `null` — which is what an emptied number input
+serializes to (`NaN` → `null`) — comes through as `null`, untouched. Several call sites depend
+on this and guard with `Number.isInteger()` / `Number.isFinite()` (the `summarize_auto`,
+`translate_auto`, `max_prompt_length` and `special_command_timeout` reads). The accessor adds
+**no** null coercion, and must not start doing so.
+
+**Logging** uses `taLogger`, never `console` directly, and masks any `*_api_key` value — the
+same rule `isAPIKeyValue()` applies in the options page. The `do_debug` flag is read once,
+lazily, and refreshed from `storage.onChanged`; it cannot be fetched through `getPref()`
+without recursing on every read.
+
+### What deliberately does *not* go through the accessor
+
+- **Multi-key writes** stay direct `browser.storage.sync.set()` calls: the per-feature
+  integration seeding (`set(update_prefs)`) on the six feature pages,
+  `_reconcileFeatureFlags()`'s `set(to_disable)`, and the
+  `{chatgpt_win_top, chatgpt_win_left}` pair. `setPref()` is single-key by design.
+- **The options page keeps its own `saveOptions()` / `restoreOptions()`.** Only their
+  `get`/`set` calls were migrated. The upstream project's versions were *not* ported: ThunderAI's
+  handle password inputs, API key masking, TomSelect, `hasEmptyValueOption()` and the
+  `connection_type` empty state, so replacing them would be a regression.
+- **The two one-shot migration flags** in `js/mzta-prompts.js`
+  (`dynamic_menu_order_alphabet`, `_migrated_enabled_to_showin`) are not preferences: no UI, no
+  `prefs_default` entry. Declaring them would make them surface in `getAllPrefs()` and in every
+  page's `restoreOptions()`.
+- **`js/mzta-compose-script.js`** is registered as a *classic* content script, so it has no
+  module context and cannot import. Its defaults are hardcoded and must be kept in step with
+  `prefs_default` by hand.
+- **One read in `pages/_lib/connection-ui.js`** (`_persistSelectedConnection`) keeps a
+  hardcoded `''` default, which differs from `prefs_default`'s `'chatgpt_api'` for
+  `{prefix}_connection_type`. It is a no-op guard comparing the stored value against what the
+  select shows; with the `prefs_default` value a first-time write of exactly `chatgpt_api`
+  would compare equal to the substituted default and be skipped, leaving the pref unwritten.
+- **`storage.local` / `storage.session`** record stores (`taStorage`, `taSummaryStore`,
+  `taTranslationStore`, `taSpamReport`, the custom prompt/placeholder payloads) are not
+  preferences and are out of scope.

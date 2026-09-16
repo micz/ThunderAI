@@ -43,6 +43,7 @@ import {
   getConnectionTypeLabel
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
+import { mztaPrefs } from '../../js/mzta-prefs.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -310,7 +311,7 @@ function updateDisplayModeConstraint() {
   if (autoVal === '2' || autoVal === '3') {
     display_mode_el.value = 'inline';
     display_mode_el.disabled = true;
-    browser.storage.sync.set({ summarize_display_mode: 'inline' });
+    mztaPrefs.setPref('summarize_display_mode', 'inline');
   } else if (autoVal === '0') {
     display_mode_el.disabled = true;
   } else {
@@ -358,18 +359,18 @@ async function updateAutoSendersNotice(){
 }
 
 async function summarize_getAutoSendersList() {
-  let prefs = await browser.storage.sync.get({summarize_auto_senders_list: prefs_default.summarize_auto_senders_list});
+  let prefs = await mztaPrefs.getPrefs(['summarize_auto_senders_list']);
   return prefs.summarize_auto_senders_list;
 }
 
 function summarize_setAutoSendersList(summarize_auto_senders_list) {
-  browser.storage.sync.set({summarize_auto_senders_list: summarize_auto_senders_list});
+  mztaPrefs.setPref('summarize_auto_senders_list', summarize_auto_senders_list);
 }
 
 function resetSummarizeMaxMessages(){
   let summarize_max_messages = document.getElementById('summarize_max_messages');
   summarize_max_messages.value = prefs_default.summarize_max_messages;
-  browser.storage.sync.set({summarize_max_messages: prefs_default.summarize_max_messages});
+  mztaPrefs.setPref('summarize_max_messages', prefs_default.summarize_max_messages);
 }
 
 function saveOptions(e) {
@@ -407,7 +408,11 @@ function saveOptions(e) {
         console.error("[ThunderAI] Unhandled input type:", element.type);
     }
 
-  browser.storage.sync.set(options);
+  // Guard the default: branch above, which leaves `options` empty — the previous
+  // set(options) wrote nothing in that case, so nothing must be written here either.
+  if (Object.prototype.hasOwnProperty.call(options, element.id)) {
+    mztaPrefs.setPref(element.id, options[element.id]);
+  }
 }
 
 async function restoreOptions() {
@@ -470,7 +475,7 @@ async function restoreOptions() {
     });
   }
 
-  let getting = await browser.storage.sync.get(prefs_default);
+  let getting = await mztaPrefs.getAllPrefs();
 
   let specialPrompts = await getSpecialPrompts();
   let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_summarize');

@@ -17,16 +17,13 @@
  */
 
 import { taLogger } from '../../js/mzta-logger.js';
-import { prefs_default } from '../../options/mzta-options-default.js';
 import { getMiczItUrl, hasNoConnectionSelected } from '../../js/mzta-utils.js';
+import { mztaPrefs } from '../../js/mzta-prefs.js';
 
 let taLog = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    let prefs = await browser.storage.sync.get({
-        do_debug: prefs_default.do_debug,
-        connection_type: prefs_default.connection_type,
-    });
+    let prefs = await mztaPrefs.getPrefs(['do_debug', 'connection_type']);
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
 

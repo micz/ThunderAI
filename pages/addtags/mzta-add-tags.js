@@ -44,6 +44,7 @@ import {
   getConnectionTypeLabel
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
+import { mztaPrefs } from '../../js/mzta-prefs.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -96,7 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
       });
-    let prefs_add_tags = await browser.storage.sync.get({ add_tags_enabled_accounts: prefs_default.add_tags_enabled_accounts });
+    let prefs_add_tags = await mztaPrefs.getPrefs(['add_tags_enabled_accounts']);
 
     let addtags_textarea = document.getElementById('addtags_prompt_text');
     let addtags_save_btn = document.getElementById('btn_save_prompt');
@@ -251,10 +252,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
       if (selectedAccounts.length === document.querySelectorAll('.accountCheckbox').length) {
-        browser.storage.sync.set({ add_tags_enabled_accounts: [] });
+        mztaPrefs.setPref('add_tags_enabled_accounts', []);
         taLog.log("All accounts selected, saving add_tags_enabled_accounts = [].");
       } else {
-        browser.storage.sync.set({ add_tags_enabled_accounts: selectedAccounts });
+        mztaPrefs.setPref('add_tags_enabled_accounts', selectedAccounts);
         taLog.log("Saving add_tags_enabled_accounts = " + JSON.stringify(selectedAccounts) + ".");
       }
       });
@@ -273,13 +274,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 async function updateAdditionalPromptStatements(){
-    let prefs_ = await browser.storage.sync.get({
-      add_tags_maxnum: prefs_default.add_tags_maxnum,
-      add_tags_force_lang: prefs_default.add_tags_force_lang,
-      default_chatgpt_lang: prefs_default.default_chatgpt_lang,
-      add_tags_auto_uselist: prefs_default.add_tags_auto_uselist,
-      add_tags_auto_uselist_list: prefs_default.add_tags_auto_uselist_list,
-    });
+    let prefs_ = await mztaPrefs.getPrefs([
+      'add_tags_maxnum',
+      'add_tags_force_lang',
+      'default_chatgpt_lang',
+      'add_tags_auto_uselist',
+      'add_tags_auto_uselist_list'
+    ]);
     let el_tag_limit = document.getElementById('addtags_info_additional_statements');
     if((prefs_.add_tags_maxnum > 0)||(prefs_.add_tags_force_lang && prefs_.default_chatgpt_lang !== '')||(prefs_.add_tags_auto_uselist && prefs_.add_tags_auto_uselist_list.trim() !== '')){
         el_tag_limit.textContent = browser.i18n.getMessage("addtags_info_additional_statements") + " \""
@@ -361,7 +362,11 @@ function saveOptions(e) {
         console.error("[ThunderAI] Unhandled input type:", element.type);
     }
 
-  browser.storage.sync.set(options);
+  // Guard the default: branch above, which leaves `options` empty — the previous
+  // set(options) wrote nothing in that case, so nothing must be written here either.
+  if (Object.prototype.hasOwnProperty.call(options, element.id)) {
+    mztaPrefs.setPref(element.id, options[element.id]);
+  }
 }
 
 async function restoreOptions() {
@@ -420,7 +425,7 @@ async function restoreOptions() {
     });
   }
 
-  let getting = await browser.storage.sync.get(prefs_default);
+  let getting = await mztaPrefs.getAllPrefs();
 
   let specialPrompts = await getSpecialPrompts();
   let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');

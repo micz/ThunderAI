@@ -42,6 +42,7 @@ import {
 } from "../_lib/connection-ui.js";
 import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
+import { mztaPrefs } from '../../js/mzta-prefs.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -149,7 +150,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 if (granted) {
                     // Permission granted, enable the feature
-                    await browser.storage.sync.set({ get_calendar_event_from_clipboard: true });
+                    await mztaPrefs.setPref('get_calendar_event_from_clipboard', true);
                     browser.runtime.sendMessage({command: "reload_menus"});
                 } else {
                     // Permission denied, uncheck the checkbox
@@ -163,7 +164,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } else {
             // Disabling the feature
-            await browser.storage.sync.set({ get_calendar_event_from_clipboard: false });
+            await mztaPrefs.setPref('get_calendar_event_from_clipboard', false);
             browser.runtime.sendMessage({command: "reload_menus"});
         }
     });
@@ -257,7 +258,11 @@ function saveOptions(e) {
         console.error("[ThunderAI] Unhandled input type:", element.type);
     }
 
-  browser.storage.sync.set(options);
+  // Guard the default: branch above, which leaves `options` empty — the previous
+  // set(options) wrote nothing in that case, so nothing must be written here either.
+  if (Object.prototype.hasOwnProperty.call(options, element.id)) {
+    mztaPrefs.setPref(element.id, options[element.id]);
+  }
 }
 
 async function restoreOptions() {
@@ -314,7 +319,7 @@ async function restoreOptions() {
     });
   }
 
-  let getting = await browser.storage.sync.get(prefs_default);
+  let getting = await mztaPrefs.getAllPrefs();
 
   let specialPrompts = await getSpecialPrompts();
   let get_calendar_event_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event');

@@ -24,12 +24,12 @@ import {
     cleanupNewlines
 } from './mzta-utils.js';
 import { getSpecialPrompts } from './mzta-prompts.js';
-import { prefs_default } from '../options/mzta-options-default.js';
+import { mztaPrefs } from './mzta-prefs.js';
 
 export const taPromptUtils = {
 
     async getDefaultSignature(){
-        let prefs = await browser.storage.sync.get({ default_sign_name: prefs_default.default_sign_name });
+        let prefs = await mztaPrefs.getPrefs(['default_sign_name']);
         if(prefs.default_sign_name===''){
             return '';
         }else{
@@ -84,7 +84,7 @@ export const taPromptUtils = {
                 selection_html: selection_html,
                 tags_full_list: tags_full_list
             });
-            let prefs_ph = await browser.storage.sync.get({ placeholders_use_default_value: prefs_default.placeholders_use_default_value });
+            let prefs_ph = await mztaPrefs.getPrefs(['placeholders_use_default_value']);
             fullPrompt = (placeholdersUtils.replacePlaceholders({
                 text: curr_prompt.text,
                 replacements: finalSubs,
@@ -120,7 +120,7 @@ export const taPromptUtils = {
     async getDefaultLang(curr_prompt){
         let chatgpt_lang = '';
         if(String(curr_prompt?.define_response_lang) == "1"){
-            let prefs = await browser.storage.sync.get({ default_chatgpt_lang: prefs_default.default_chatgpt_lang });
+            let prefs = await mztaPrefs.getPrefs(['default_chatgpt_lang']);
             chatgpt_lang = prefs.default_chatgpt_lang;
             if(chatgpt_lang === ''){
                 chatgpt_lang = browser.i18n.getMessage("reply_same_lang");

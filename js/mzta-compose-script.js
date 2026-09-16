@@ -815,6 +815,9 @@ switch (message.command) {
         no_submit = true;
       }
 
+      // Cannot use js/mzta-prefs.js (issue #163): this file is registered as a CLASSIC
+      // content script (see the note above), so it has no module context and cannot import.
+      // The defaults are therefore hardcoded here and must be kept in step with prefs_default.
       let prefs_tags = await browser.storage.sync.get({add_tags_hide_exclusions: false, add_tags_exclusions_exact_match: false});
       let add_tags_exclusions_list = await addTags_getExclusionList();
 

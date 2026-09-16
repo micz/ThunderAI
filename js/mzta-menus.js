@@ -20,7 +20,6 @@
 
 import { getPrompts } from './mzta-prompts.js';
 import {
-    prefs_default,
     getDynamicSettingsDefaults
 } from '../options/mzta-options-default.js';
 import {
@@ -55,6 +54,7 @@ import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
 import { mzta_specialCommand } from './mzta-special-commands.js';
 import { taWorkingStatus } from './mzta-working-status.js';
+import { mztaPrefs } from './mzta-prefs.js';
  
 export class mzta_Menus {
 
@@ -360,7 +360,7 @@ export class mzta_Menus {
             
             switch(curr_prompt.id){
                 case 'prompt_translate_this':
-                    let prefs2 = await browser.storage.sync.get({default_chatgpt_lang: prefs_default.default_chatgpt_lang, translate_lang: ''});
+                    let prefs2 = await mztaPrefs.getPrefs(['default_chatgpt_lang', 'translate_lang']);
                     let chatgpt_lang2 = prefs2.translate_lang || prefs2.default_chatgpt_lang;
                     if(chatgpt_lang2 === ''){
                         chatgpt_lang2 = getLanguageDisplayName(browser.i18n.getUILanguage());
@@ -382,15 +382,15 @@ export class mzta_Menus {
                     case 'prompt_add_tags': {   // Add tags to the email
                         let tags_current_email = [];
                         let tags_current_email_final = [];
-                        let prefs_at = await browser.storage.sync.get({
-                            add_tags_maxnum: prefs_default.add_tags_maxnum,
-                            connection_type: prefs_default.connection_type,
-                            add_tags_force_lang: prefs_default.add_tags_force_lang,
-                            add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
-                            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
-                            do_debug: prefs_default.do_debug,
-                            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
-                        });
+                        let prefs_at = await mztaPrefs.getPrefs([
+                            'add_tags_maxnum',
+                            'connection_type',
+                            'add_tags_force_lang',
+                            'add_tags_auto_force_existing',
+                            'default_chatgpt_lang',
+                            'do_debug',
+                            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+                        ]);
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'add_tags');
                         if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + def_conntype);
@@ -444,12 +444,12 @@ export class mzta_Menus {
                     case 'prompt_get_calendar_event':                   // Get a calendar event info
                     case 'prompt_get_calendar_event_from_clipboard': {  // here from clipboard
                         let calendar_event_data = '';
-                        let prefs_at = await browser.storage.sync.get({
-                            connection_type: prefs_default.connection_type,
-                            calendar_enforce_timezone: prefs_default.calendar_enforce_timezone,
-                            calendar_timezone: prefs_default.calendar_timezone,
-                            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
-                        });
+                        let prefs_at = await mztaPrefs.getPrefs([
+                            'connection_type',
+                            'calendar_enforce_timezone',
+                            'calendar_timezone',
+                            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+                        ]);
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_calendar_event');
                         if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | GetCalendarEvent] Invalid connection type: " + def_conntype);
@@ -534,11 +534,11 @@ export class mzta_Menus {
                     }
                     case 'prompt_get_task': {  // Get a task info
                         let task_data = '';
-                        let prefs_at = await browser.storage.sync.get({
-                            connection_type: prefs_default.connection_type,
-                            calendar_enforce_timezone: prefs_default.calendar_enforce_timezone,
-                            calendar_timezone: prefs_default.calendar_timezone,
-                            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])});
+                        let prefs_at = await mztaPrefs.getPrefs([
+                            'connection_type',
+                            'calendar_enforce_timezone',
+                            'calendar_timezone',
+                            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))]);
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_task');
                         if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | GetTask] Invalid connection type: " + def_conntype);

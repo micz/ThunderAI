@@ -16,24 +16,24 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from "../options/mzta-options-default.js";
 import { taLogger } from "../js/mzta-logger.js";
 import { hasNoConnectionSelected } from "../js/mzta-utils.js";
+import { mztaPrefs } from '../js/mzta-prefs.js';
 
 let menuSendImmediately = false;
 let taLog = console;
 let tabType;
 document.addEventListener('DOMContentLoaded', async () => {
-    let prefs = await browser.storage.sync.get({
-      do_debug: prefs_default.do_debug,
-      dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
-      connection_type: prefs_default.connection_type,
-      chatgpt_api_key: prefs_default.chatgpt_api_key,
-      google_gemini_api_key: prefs_default.google_gemini_api_key,
-      anthropic_api_key: prefs_default.anthropic_api_key,
-      ollama_host: prefs_default.ollama_host,
-      openai_comp_host: prefs_default.openai_comp_host
-    });
+    let prefs = await mztaPrefs.getPrefs([
+      'do_debug',
+      'dynamic_menu_force_enter',
+      'connection_type',
+      'chatgpt_api_key',
+      'google_gemini_api_key',
+      'anthropic_api_key',
+      'ollama_host',
+      'openai_comp_host'
+    ]);
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
 

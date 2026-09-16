@@ -16,7 +16,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from "../../options/mzta-options-default.js";
 import {
     getLocalStorageUsedSpace,
     openTab
@@ -33,6 +32,7 @@ import {
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { attachEditorHighlight, getEditorHighlight, makeTokenStateResolver, PLACEHOLDER_RE } from "../../js/mzta-editor-highlight.js";
+import { mztaPrefs } from '../../js/mzta-prefs.js';
 
 let prefs = null;
 var customDataPHsList = null;
@@ -45,7 +45,7 @@ let activePlaceholders = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-    prefs = await browser.storage.sync.get({ do_debug: prefs_default.do_debug });
+    prefs = await mztaPrefs.getPrefs(['do_debug']);
     taLog = new taLogger("mzta-custom-dataplaceholders", prefs.do_debug);
     
     setStorageSpace();
