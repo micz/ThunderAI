@@ -2431,6 +2431,18 @@
     "message": "Copy",
     "description": ""
   },
+  "customPrompts_org_badge": {
+    "message": "Organization",
+    "description": "Badge on a prompt supplied by the enterprise policy, when no organization name is configured"
+  },
+  "customPrompts_org_shadowing_note": {
+    "message": "One of your prompts uses this same ID and is disabled while this organization prompt is active.",
+    "description": "Shown under an organization prompt that is hiding a custom prompt with the same ID"
+  },
+  "customPrompts_shadowed_note": {
+    "message": "Disabled: an organization prompt uses this same ID. Your prompt is kept and will work again if the organization prompt is removed.",
+    "description": "Shown under a custom prompt hidden by an organization prompt with the same ID"
+  },
   "copy_text": {
     "message": "copy",
     "description": ""
@@ -2856,6 +2868,10 @@
   "menu_order_badge_custom": {
     "message": "Custom",
     "description": "Badge label for custom prompts"
+  },
+  "menu_order_badge_org": {
+    "message": "Organization",
+    "description": "Badge on a prompt supplied by the enterprise policy, in the menu order page"
   },
   "menu_order_type_reading": {
     "message": "Reading",

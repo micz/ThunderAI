@@ -2,10 +2,51 @@
 
 ## Overview
 
-Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI instruction and how it behaves. There are two kinds:
+Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI instruction and how it behaves. There are four kinds:
 
 - **Built-in prompts** — defined in `js/mzta-prompts.js`
 - **Custom prompts** — created by the user and stored in `browser.storage.local`
+- **Special prompts** — feature-driven (tagging, spam filter, summarize, translate, calendar, tasks), stored under `_special_prompts`
+- **Organization prompts** — supplied by an enterprise policy, see below
+
+### Organization prompts (the fourth set)
+
+Delivered by the enterprise managed configuration through `_org_prompts` (see
+[08-managed-configuration.md](08-managed-configuration.md)). They differ from the other
+three sets in one fundamental way: **they are never stored.** The policy is the only source
+of truth, read once at Thunderbird startup, so a prompt added, changed or removed in the
+policy is reflected at the next start and nothing of the user's is ever touched.
+
+- **Read-only**, but with **Copy** enabled: a user can always derive an ordinary, fully
+  editable personal prompt from one. Marked `is_org: "1"`, `is_default: "0"`,
+  `is_special: "0"`.
+- **Ids are composed, not taken verbatim**: `org_<_org_id>_<id>`. `_org_id` is restricted to
+  `[a-z0-9-]+` (no underscore, or `org_acme_foo_bar` would be ambiguous). This makes a
+  collision with a built-in, or between two organizations, structurally impossible.
+- **A colliding custom prompt is shadowed, not rejected.** If the user owns a prompt with
+  an org prompt's id, the org prompt wins everywhere a prompt can be invoked. Otherwise a
+  user could disable an organization prompt just by creating one with its id, and neither
+  they nor the administrator would see why it vanished. The user's prompt is **not**
+  deleted: it stays in `_custom_prompt`, is still saved, and returns the moment the policy
+  stops supplying that id. `isShadowedByOrgPrompt()` implements this.
+- **Local display preferences belong to the user.** Menu position and visibility ride in
+  `_default_prompts_properties`, exactly as for a built-in, so org prompts participate in
+  `pages/menu_order/` like any other prompt. This does not break read-only: that store
+  holds only the nine display keys, never the prompt text.
+
+**Two getters, deliberately:**
+
+| | Shadowed custom prompts | Used by |
+|---|---|---|
+| `getPrompts()` | hidden | popup, menus, menu order, everything else |
+| `getPromptsForManagement()` | listed, flagged `_shadowed_by_org` | `pages/customprompts/` only |
+
+`pages/customprompts/` must list them or a prompt of the user's would appear to have
+vanished; it shows them disabled with an explanation. **Both** pages that persist prompts
+rewrite a whole store from what they list (`setCustomPrompts()` replaces `_custom_prompt`
+entirely), so their filters must exclude `is_org` from the custom-prompt save and include
+it in the default-properties save. Getting this wrong either copies org prompts into the
+user's storage or deletes the user's shadowed prompt for real.
 
 ## Prompt Properties
 

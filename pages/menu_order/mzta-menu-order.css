@@ -257,6 +257,13 @@
     color: #2e7d32;
 }
 
+/* Prompt supplied by the enterprise policy. Purple: distinct from the built-in grey,
+   the special blue and the custom green, none of which it belongs to. */
+.badge_org {
+    background: #ede7f6;
+    color: #5e35b1;
+}
+
 .badge_type {
     background: #fff3e0;
     color: #e65100;
@@ -453,6 +460,11 @@
     .badge_custom {
         background: #1b3a1e;
         color: #81c784;
+    }
+
+    .badge_org {
+        background: #2c2142;
+        color: #b39ddb;
     }
 
     .badge_type {

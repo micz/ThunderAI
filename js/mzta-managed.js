@@ -57,7 +57,22 @@ import { taLogger } from './mzta-logger.js';
 // No key in prefs_default starts with an underscore, so the two namespaces cannot collide.
 const POLICY_SCHEMA_VERSION = '_schema_version';
 const POLICY_ORG_NAME = '_org_name';
+const POLICY_ORG_ID = '_org_id';
 const POLICY_ORG_PROMPTS = '_org_prompts';
+
+// Every organization prompt id is composed as ORG_ID_PREFIX + <_org_id> + '_' + <id>, so
+// two organizations can never generate the same id and no shipped prompt id (they all
+// start with "prompt_") can ever collide with one.
+//
+// Module-private on purpose: nothing outside recognises an org prompt by its id. The
+// is_org flag is what the rest of the add-on keys off, so the naming scheme stays an
+// implementation detail of this file and can change without touching anything else.
+const ORG_ID_PREFIX = 'org_';
+
+// _org_id must not contain an underscore, or the composed id would be ambiguous:
+// "org_acme_foo_bar" could be org "acme" + prompt "foo_bar" or org "acme_foo" + prompt
+// "bar", and two different organizations could collide again through that ambiguity.
+const ORG_ID_PATTERN = /^[a-z0-9-]+$/;
 
 // Sibling key that downgrades an enforced value to a mere initial value: "<key>:locked".
 const LOCK_SUFFIX = ':locked';
@@ -106,6 +121,7 @@ export const mztaManaged = {
     _values: {},            // {key: value} for every accepted policy preference
     _locked: new Set(),     // the subset of the above that is enforced
     _orgName: '',
+    _orgId: '',
     _orgPrompts: [],
     _schemaVersion: 0,
     _allowlist: null,
@@ -198,6 +214,10 @@ export const mztaManaged = {
                     case POLICY_ORG_NAME:
                         this._orgName = (typeof value === 'string') ? value.trim() : '';
                         break;
+                    case POLICY_ORG_ID:
+                        this._orgId = (typeof value === 'string')
+                            ? value.trim().toLowerCase() : '';
+                        break;
                     case POLICY_ORG_PROMPTS:
                         // Validated in pass 3, once the rest of the policy is known.
                         break;
@@ -251,9 +271,10 @@ export const mztaManaged = {
             }
         }
 
-        // Pass 3: organization prompts.
+        // Pass 3: organization prompts. They need _org_id, which pass 1 has now read.
         if (POLICY_ORG_PROMPTS in policy) {
-            this._orgPrompts = await validateOrgPrompts(policy[POLICY_ORG_PROMPTS], this.logger);
+            this._orgPrompts = validateOrgPrompts(
+                policy[POLICY_ORG_PROMPTS], this._orgId, this.logger);
         }
 
         this._active = (Object.keys(this._values).length > 0) ||
@@ -272,6 +293,18 @@ export const mztaManaged = {
         }
     },
 
+    /**
+     * True once loadManaged() has run to completion in THIS context.
+     *
+     * Distinguishes "the policy was read and there is none" from "the policy was never
+     * read here", which is what every context other than the background page sees. A
+     * caller that gets false must ask the background over runtime.sendMessage instead of
+     * concluding that no policy exists.
+     */
+    hasLoaded() {
+        return this._loaded;
+    },
+
     /** True when a valid policy supplied at least one preference or prompt. */
     isManagedActive() {
         return this._active;
@@ -280,6 +313,11 @@ export const mztaManaged = {
     /** The organization name from _org_name, or '' when not set. */
     getOrgName() {
         return this._orgName;
+    },
+
+    /** The organization id from _org_id, or '' when not set or invalid. */
+    getOrgId() {
+        return this._orgId;
     },
 
     /** The enforced keys, as a plain array (safe to send over runtime.sendMessage). */
@@ -315,31 +353,47 @@ export const mztaManaged = {
  * it, and the rest are still delivered. An administrator fixing a typo should not lose
  * the whole set.
  *
+ * IDS ARE COMPOSED HERE, NOT TAKEN VERBATIM. The administrator writes a short id and this
+ * function prefixes it with ORG_ID_PREFIX + <_org_id> + '_'. Two consequences:
+ *
+ *  - Two organizations, and an organization and a built-in, can never produce the same
+ *    id: every composed id starts with "org_" and no shipped id does. That whole class of
+ *    collision stops existing rather than being detected and reported.
+ *  - An id that collides with one of the USER's custom prompts is NOT rejected. The user
+ *    could otherwise disable an organization prompt just by creating a prompt with its
+ *    id, and neither they nor the administrator would see why it vanished. Instead the
+ *    org prompt wins and the custom one is shadowed - see isShadowedByOrgPrompt() in
+ *    js/mzta-prompts.js. Nothing of the user's is deleted: removing the policy brings
+ *    their prompt straight back.
+ *
  * Field normalisation is NOT done here - it is applied by normalizePromptFields() in
  * js/mzta-prompts.js, the same function getCustomPrompts() uses, so an org prompt and a
  * custom prompt end up with identical shapes.
  */
-async function validateOrgPrompts(raw, logger) {
+function validateOrgPrompts(raw, orgId, logger) {
     if (!Array.isArray(raw)) {
         logger.warn('Policy: "' + POLICY_ORG_PROMPTS + '" must be an array, ignored.');
         return [];
     }
+    if (raw.length === 0) return [];
 
-    // Ids that an org prompt may not take. Imported lazily to keep this module free of a
-    // static dependency on the prompt subsystem, which imports rather more than this one
-    // needs at startup.
-    let reservedIds = new Set();
-    try {
-        const { getReservedPromptIds } = await import('./mzta-prompts.js');
-        reservedIds = await getReservedPromptIds();
-    } catch (e) {
-        logger.error('Policy: could not read the existing prompt ids, ' +
-            'organization prompts skipped: ' + e);
+    // Without a valid _org_id there is no namespace to put the prompts in, and falling
+    // back to a bare "org_" prefix would let two organizations collide - exactly what the
+    // prefix exists to prevent. Refuse the whole set rather than create ambiguous ids.
+    if (!orgId) {
+        logger.warn('Policy: "' + POLICY_ORG_PROMPTS + '" needs "' + POLICY_ORG_ID +
+            '" to be set, organization prompts skipped.');
+        return [];
+    }
+    if (!ORG_ID_PATTERN.test(orgId)) {
+        logger.warn('Policy: "' + POLICY_ORG_ID + '" must contain only lowercase letters, ' +
+            'digits and hyphens (got "' + orgId + '"), organization prompts skipped.');
         return [];
     }
 
     const out = [];
     const seen = new Set();
+    const prefix = ORG_ID_PREFIX + orgId + '_';
 
     raw.forEach((prompt, index) => {
         const where = '"' + POLICY_ORG_PROMPTS + '"[' + index + ']';
@@ -355,39 +409,40 @@ async function validateOrgPrompts(raw, logger) {
             logger.warn('Policy: ' + where + ' has no valid "id", skipped.');
             return;
         }
-        const id = prompt.id.trim().toLowerCase();
+        const rawId = prompt.id.trim().toLowerCase();
 
-        if (/\s/.test(id)) {
-            logger.warn('Policy: ' + where + ' id "' + id + '" contains whitespace, skipped.');
+        if (/\s/.test(rawId)) {
+            logger.warn('Policy: ' + where + ' id "' + rawId +
+                '" contains whitespace, skipped.');
             return;
         }
         if (!isNonEmptyString(prompt.name)) {
-            logger.warn('Policy: organization prompt "' + id + '" has no valid "name", skipped.');
+            logger.warn('Policy: organization prompt "' + rawId +
+                '" has no valid "name", skipped.');
             return;
         }
         if (!isNonEmptyString(prompt.text)) {
-            logger.warn('Policy: organization prompt "' + id + '" has no valid "text", skipped.');
-            return;
-        }
-        if (seen.has(id)) {
-            logger.warn('Policy: organization prompt id "' + id +
-                '" appears more than once, later occurrence skipped.');
-            return;
-        }
-        if (reservedIds.has(id)) {
-            logger.warn('Policy: organization prompt id "' + id + '" collides with a ' +
-                'built-in or existing custom prompt. Ids must be unique and stable; ' +
-                'choose a distinct id (an organization prefix is recommended). Skipped.');
+            logger.warn('Policy: organization prompt "' + rawId +
+                '" has no valid "text", skipped.');
             return;
         }
         if (prompt.api_type !== undefined && prompt.api_type !== '' &&
             !valid_connection_types.includes(prompt.api_type)) {
-            logger.warn('Policy: organization prompt "' + id + '" has an invalid ' +
+            logger.warn('Policy: organization prompt "' + rawId + '" has an invalid ' +
                 '"api_type" (' + prompt.api_type + '), skipped. Valid values: ' +
                 valid_connection_types.join(', ') + '.');
             return;
         }
 
+        // An id the administrator already wrote with the prefix is accepted as-is, so a
+        // policy copied from the documentation (which shows full ids) still works.
+        const id = rawId.startsWith(prefix) ? rawId : prefix + rawId;
+
+        if (seen.has(id)) {
+            logger.warn('Policy: organization prompt id "' + id +
+                '" appears more than once, later occurrence skipped.');
+            return;
+        }
         seen.add(id);
         // A copy, so nothing downstream can mutate what the policy said.
         out.push({

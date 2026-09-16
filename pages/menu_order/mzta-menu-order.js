@@ -342,6 +342,12 @@ function renderListItems(listEl, items, menuType, isActive) {
         if (String(prompt.is_special) === '1') {
             sourceBadge.classList.add('badge_special');
             sourceBadge.textContent = browser.i18n.getMessage('menu_order_badge_special');
+        } else if (String(prompt.is_org) === '1') {
+            // Supplied by the enterprise policy. Its content is read-only, but its menu
+            // position and visibility are the user's own and are reordered here like any
+            // other prompt - they ride in _default_prompts_properties, as for a built-in.
+            sourceBadge.classList.add('badge_org');
+            sourceBadge.textContent = browser.i18n.getMessage('menu_order_badge_org');
         } else if (String(prompt.is_default) === '1') {
             sourceBadge.classList.add('badge_default');
             sourceBadge.textContent = browser.i18n.getMessage('menu_order_badge_default');
@@ -694,8 +700,16 @@ async function saveAll() {
     const msgDisplay = document.getElementById('msgDisplay');
     btnSaveAll.disabled = true;
 
-    const defaultPromptsToSave = allPrompts.filter(p => String(p.is_default) === '1' && String(p.is_special) !== '1');
-    const customPromptsToSave = allPrompts.filter(p => String(p.is_default) === '0' && String(p.is_special) !== '1');
+    // Organization prompts are policy-supplied and must never be written to storage:
+    // setCustomPrompts() replaces the whole _custom_prompt array with what it is given, so
+    // an org prompt left in this filter would be copied into the user's own prompts and
+    // stop being declarative. Their menu position and visibility DO belong to the user
+    // though, and ride along in _default_prompts_properties exactly like a built-in's -
+    // which is why they go into defaultPromptsToSave and not into customPromptsToSave.
+    const defaultPromptsToSave = allPrompts.filter(p =>
+        (String(p.is_default) === '1' || String(p.is_org) === '1') && String(p.is_special) !== '1');
+    const customPromptsToSave = allPrompts.filter(p =>
+        String(p.is_default) === '0' && String(p.is_special) !== '1' && String(p.is_org) !== '1');
     const specialPromptsToSave = allPrompts.filter(p => String(p.is_special) === '1').concat(allExcludedSpecialPrompts);
 
     await setDefaultPromptsProperties(defaultPromptsToSave);

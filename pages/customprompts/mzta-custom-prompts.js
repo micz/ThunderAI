@@ -21,6 +21,7 @@ import {
 } from "../../options/mzta-options-default.js";
 import {
     getPrompts,
+    getPromptsForManagement,
     setDefaultPromptsProperties,
     setCustomPrompts,
     preparePromptsForExport,
@@ -64,6 +65,12 @@ import { mztaPrefs } from '../../js/mzta-prefs.js';
 const NEW_PROMPT_PREFIX = 'new_prompt_';
 
 let prefs = null;
+
+// Managed-configuration context for the row template. The organization name labels the
+// org prompt group; shadowed_org_ids holds the ids where an org prompt is currently
+// hiding a custom prompt of the user's, so the org row can say so.
+let org_name_label = '';
+let shadowed_org_ids = new Set();
 var promptsList = null;
 var somethingChanged = false;
 var positionMax_compose = 0;
@@ -81,7 +88,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     setStorageSpace();
     
-    let values = await getPrompts();
+    // getPromptsForManagement(), not getPrompts(): this page must also list a custom
+    // prompt that an organization prompt is currently shadowing. It is shown disabled with
+    // an explanation, and - crucially - it is still saved, because saveAll() rewrites the
+    // whole _custom_prompt store from what is listed here.
+    let values = await getPromptsForManagement();
+
+    // One round trip for the managed state: this page never reads browser.storage.managed
+    // itself, which is known to fail on options pages in Thunderbird.
+    try {
+        const managed = await browser.runtime.sendMessage({ command: 'get_managed_state' });
+        if (managed && managed.active) org_name_label = managed.orgName || '';
+    } catch (e) {
+        // Background not ready: fall back to the generic label.
+    }
+    shadowed_org_ids = new Set(
+        values.filter(p => p._shadowed_by_org === true)
+              .map(p => String(p.id).toLowerCase()));
 
     //console.log('>>>>>>>>>>>>>>>> values: ' + JSON.stringify(values));
 
@@ -1709,8 +1732,26 @@ function loadPromptsList(values){
                     break;
             }
 
-            let output = `<tr ` + ((values.is_default == 1) ? 'class="is_default"':'') + `>
-                <td class="w08"><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" /></td>
+            // An organization prompt is read-only like a built-in (the policy owns its
+            // content), and a custom prompt shadowed by one is inert until the policy
+            // stops supplying that id. Both reuse the existing is_default treatment:
+            // Edit/Cancel/Confirm/Delete disabled, Copy left enabled so the user can
+            // always make an editable personal copy.
+            const is_org_row = (values.is_org == 1);
+            const is_shadowed_row = (values._shadowed_by_org === true);
+            const read_only_row = (values.is_default == 1) || is_org_row || is_shadowed_row;
+            const row_classes = []
+                .concat(values.is_default == 1 ? ['is_default'] : [])
+                .concat(is_org_row ? ['is_org'] : [])
+                .concat(is_shadowed_row ? ['is_shadowed'] : []);
+
+            let output = `<tr ` + (row_classes.length ? 'class="' + row_classes.join(' ') + '"' : '') + `>
+                <td class="w08"><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" />`
+                + (is_org_row ? `<div class="org_badge">` + (org_name_label ? org_name_label : `__MSG_customPrompts_org_badge__`) + `</div>` : ``)
+                + (is_org_row && shadowed_org_ids.has(String(values.id).toLowerCase())
+                    ? `<div class="org_note">__MSG_customPrompts_org_shadowing_note__</div>` : ``)
+                + (is_shadowed_row ? `<div class="shadowed_note">__MSG_customPrompts_shadowed_note__</div>` : ``)
+                + `</td>
                 <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
                 <td class="w40">
                     <span class="text text_show"></span>
@@ -1801,11 +1842,11 @@ function loadPromptsList(values){
                     </div>
                 </td>
                 <td class="actions_cell">
-                <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>__MSG_customPrompts_btnEdit__</span></button>
-                <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>__MSG_customPrompts_btnCancel__</span></button>
-                <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>__MSG_customPrompts_btnOK__</span></button>
+                <button class="btnEditItem"` + (read_only_row ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>__MSG_customPrompts_btnEdit__</span></button>
+                <button class="btnCancelItem hiddendata"` + (read_only_row ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>__MSG_customPrompts_btnCancel__</span></button>
+                <button class="btnConfirmItem hiddendata"` + (read_only_row ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>__MSG_customPrompts_btnOK__</span></button>
                 <button class="btnCopyItem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>__MSG_customPrompts_btnCopy__</span></button>
-                <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>__MSG_customPrompts_btnDelete__</span></button>
+                <button class="btnDeleteItem"` + (read_only_row ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>__MSG_customPrompts_btnDelete__</span></button>
                </td>
             </tr>`;
             //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
@@ -2066,9 +2107,17 @@ async function saveAll() {
         // });
         //console.log('>>>>>>>>>>>>> saveAll: ' + JSON.stringify(newPrompts));
         setMessage(browser.i18n.getMessage('customPrompts_filtering_prompts'));
-        let newDefaultPrompts = newPrompts.filter(item => item.is_default == 1);
+        // Organization prompts come from the enterprise policy and must never be written
+        // to storage: setCustomPrompts() replaces the whole _custom_prompt array with what
+        // it is given, so one left in newCustomPrompts would be copied into the user's own
+        // prompts and stop being declarative. Their menu position and visibility are the
+        // user's though, and are persisted through _default_prompts_properties like a
+        // built-in's - hence is_org goes with the default prompts, not the custom ones.
+        let newDefaultPrompts = newPrompts.filter(item => item.is_default == 1 || item.is_org == 1);
         //console.log('>>>>>>>>>>>>> newDefaultPrompts: ' + JSON.stringify(newDefaultPrompts));
-        let newCustomPrompts = newPrompts.filter(item => item.is_default == 0);
+        // A custom prompt shadowed by an org prompt is still listed on this page, and must
+        // still be saved: dropping it here would delete the user's prompt for real.
+        let newCustomPrompts = newPrompts.filter(item => item.is_default == 0 && item.is_org != 1);
         setMessage(browser.i18n.getMessage('customPrompts_saving_default_prompts'));
         await setDefaultPromptsProperties(newDefaultPrompts);
         setMessage(browser.i18n.getMessage('customPrompts_saving_custom_prompts'));

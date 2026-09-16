@@ -780,6 +780,23 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'get_active_special_ids':
                 return _getActiveSpecialIds();
                 break;
+            // The managed-configuration bridge. browser.storage.managed is read in this
+            // page and nowhere else - the call is known to fail on options pages in
+            // Thunderbird - so every other context asks for the state through these two.
+            case 'get_managed_state':
+                // Deliberately does NOT include the managed VALUES: the options page only
+                // needs to know which controls to disable and what to put in the banner.
+                // Keeping the values here means a policy-supplied API key never travels
+                // over the message channel at all.
+                return Promise.resolve({
+                    active: mztaManaged.isManagedActive(),
+                    orgName: mztaManaged.getOrgName(),
+                    lockedKeys: mztaManaged.getLockedKeys(),
+                });
+                break;
+            case 'get_org_prompts':
+                return Promise.resolve(mztaManaged.getOrgPrompts());
+                break;
             case 'shortcut_do_prompt':
                 taLog.log("Executing shortcut, promptId: " + message.promptId);
                 if (message.promptId !== 'prompt_add_tags' && specialContextMenuActions[message.promptId]) {    //TODO Add an option here if you want the user to decide to use the autotagging also in the popup menu

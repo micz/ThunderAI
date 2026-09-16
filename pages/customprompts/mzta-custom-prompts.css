@@ -1575,3 +1575,48 @@ dialog.export::backdrop {
     min-width: 4px;
     flex: 1 1 4px;
 }
+
+/* ===== Organization prompts (enterprise policy) and shadowed custom prompts =====
+
+   An organization prompt is supplied by the enterprise policy and is read-only here: the
+   policy is its only source of truth, so it is not editable or deletable, but Copy stays
+   enabled so the user can always derive an editable personal prompt from it.
+
+   A "shadowed" row is a custom prompt of the USER's whose id an organization prompt has
+   taken. It is inert everywhere else in the add-on, and is listed here only so it does not
+   appear to have vanished. It is deliberately still saved - see saveAll(). */
+
+tr.is_org { background: var(--accentLight); }
+
+.org_badge {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--accent);
+    color: #ffffff;
+    font-size: .75em;
+    font-weight: 600;
+    line-height: 1.5;
+    /* An organization name can be long; keep it from stretching the ID column. */
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.org_note,
+.shadowed_note {
+    margin-top: 4px;
+    font-size: .78em;
+    line-height: 1.35;
+    color: var(--dim);
+}
+
+/* The user's own prompt is the one being disabled, so this note is a caveat about their
+   data rather than neutral information: amber, unlike .org_note above. */
+.shadowed_note { color: var(--warning); }
+
+/* Dim the shadowed row's content, but NOT the note explaining why it is dim. */
+tr.is_shadowed > td { opacity: .55; }
+tr.is_shadowed > td .shadowed_note { opacity: 1; }

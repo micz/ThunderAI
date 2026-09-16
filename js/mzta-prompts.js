@@ -414,13 +414,66 @@ const specialPrompts = [
 ];
 
 
+// The organization prompts supplied by an enterprise policy: the fourth prompt set,
+// alongside defaultPrompts, _custom_prompt and _special_prompts.
+//
+// They are never stored. The policy is the only source of truth, read once at startup in
+// the background page, so a prompt added, changed or removed in the policy is reflected at
+// the next Thunderbird start and nothing of the user's is ever touched.
+//
+// This module runs in BOTH the background page and the settings pages, and only the
+// background may read browser.storage.managed. So: in the background the managed module is
+// imported directly, and everywhere else the prompts are fetched over runtime.sendMessage.
+// The result is cached because getPrompts() is called repeatedly while building menus.
+let _orgPromptsCache = null;
+
+async function getOrgPrompts() {
+    if (_orgPromptsCache !== null) return _orgPromptsCache;
+    let prompts = [];
+    try {
+        // Importing mzta-managed.js is harmless in any context - it only READS the policy
+        // when loadManaged() is called, which happens in the background page alone. So the
+        // question is not "where am I" but "has the policy been loaded here", which
+        // hasLoaded() answers without any fragile context sniffing.
+        const { mztaManaged } = await import('./mzta-managed.js');
+        if (mztaManaged.hasLoaded()) {
+            prompts = mztaManaged.getOrgPrompts();
+        } else {
+            prompts = await browser.runtime.sendMessage({ command: 'get_org_prompts' }) || [];
+        }
+    } catch (e) {
+        // A settings page opened while the background is still starting, or any other
+        // transient failure: behave as if there were no policy rather than break the page.
+        prompts = [];
+    }
+    // Deep-cloned and normalised on the way out, so a caller that mutates a prompt (as the
+    // menu code does when it localises names) cannot corrupt the policy-supplied originals.
+    _orgPromptsCache = JSON.parse(JSON.stringify(prompts))
+        .map(prompt => normalizePromptFields(prompt));
+    return _orgPromptsCache;
+}
+
+/** The set of organization prompt ids, lowercased. Used to detect shadowed custom prompts. */
+export async function getOrgPromptIds() {
+    return new Set((await getOrgPrompts()).map(p => String(p.id).toLowerCase()));
+}
+
 export async function getPrompts(onlyReachable = false, includeSpecial = [], allSpecial = false){ // includeSpecial is an array of active special prompts ids
     const _defaultPrompts = await getDefaultPrompts_withProps();
     // console.log('>>>>>>>>>>>> getPrompts _defaultPrompts: ' + JSON.stringify(_defaultPrompts));
     const customPrompts = await getCustomPrompts();
     // console.log('>>>>>>>>>>>> getPrompts customPrompts: ' + JSON.stringify(customPrompts));
     const specialPrompts = await getSpecialPrompts();
-    let output = specialPrompts.concat(_defaultPrompts).concat(customPrompts);
+    const orgPrompts = await getOrgPrompts();
+    // A custom prompt whose id an organization prompt has taken is dropped here, not
+    // deleted: the org prompt wins wherever a prompt can be invoked, while the user's own
+    // prompt stays in storage and reappears if the policy stops supplying that id. The
+    // custom prompts page calls getPromptsForManagement() instead, which keeps it visible.
+    const orgPromptIds = new Set(orgPrompts.map(p => String(p.id).toLowerCase()));
+    const visibleCustomPrompts = customPrompts.filter(
+        p => !isShadowedByOrgPrompt(p, orgPromptIds));
+    let output = specialPrompts.concat(_defaultPrompts)
+        .concat(orgPrompts).concat(visibleCustomPrompts);
     if((includeSpecial.length == 0) && !allSpecial){
         output = output.filter(obj => obj.is_special != 1); // we do not want special prompts
     }else{
@@ -448,6 +501,34 @@ export async function getPrompts(onlyReachable = false, includeSpecial = [], all
         output[i-1].idnum = i;
     }
     // console.log('>>>>>>>>>>>> getPrompts output: ' + JSON.stringify(output));
+    return output;
+}
+
+/**
+ * getPrompts() for the custom prompts management page.
+ *
+ * Identical to getPrompts(), except that a custom prompt shadowed by an organization
+ * prompt is KEPT, flagged with _shadowed_by_org. That page is where the user administers
+ * their own prompts, so a prompt of theirs must never just disappear from it: it is shown
+ * disabled, with an explanation, and - this is the part that matters - it is still saved.
+ * The page rewrites the whole _custom_prompt store from what it lists, so dropping the row
+ * here would delete the user's prompt for real on the next Save All.
+ *
+ * Every other surface (popup, menus, menu order) uses getPrompts() and does not see it.
+ */
+export async function getPromptsForManagement(){
+    const _defaultPrompts = await getDefaultPrompts_withProps();
+    const customPrompts = await getCustomPrompts();
+    const orgPrompts = await getOrgPrompts();
+    const orgPromptIds = new Set(orgPrompts.map(p => String(p.id).toLowerCase()));
+    customPrompts.forEach(p => {
+        p._shadowed_by_org = isShadowedByOrgPrompt(p, orgPromptIds);
+    });
+    let output = _defaultPrompts.concat(orgPrompts).concat(customPrompts);
+    output.sort((a, b) => a.id.localeCompare(b.id));
+    for(let i=1; i<=output.length; i++){
+        output[i-1].idnum = i;
+    }
     return output;
 }
 
@@ -666,18 +747,22 @@ export function normalizePromptFields(prompt) {
 }
 
 /**
- * Every prompt id that is already taken: the shipped defaults, the special prompts, and
- * the user's own custom prompts.
+ * True when a custom prompt is shadowed by an organization prompt with the same id.
  *
- * Used to reject an organization prompt whose id would collide. Ids are compared
- * lowercased, because that is how the customprompts UI stores them.
+ * The user cannot be allowed to disable an organization prompt by creating one with its
+ * id: the org prompt would silently vanish, and neither the user nor the administrator
+ * would see why. So the organization prompt wins everywhere a prompt can be invoked.
+ *
+ * The user's prompt is NOT deleted. It stays in _custom_prompt untouched, it is still
+ * saved by the custom prompts page, and it comes back by itself the moment the policy
+ * stops supplying that id. Only pages/customprompts/ shows it while it is shadowed, so
+ * the user can see it exists and why it is inactive; every other surface hides it.
  */
-export async function getReservedPromptIds() {
-    const ids = new Set();
-    defaultPrompts.forEach(p => ids.add(String(p.id).toLowerCase()));
-    specialPrompts.forEach(p => ids.add(String(p.id).toLowerCase()));
-    (await getCustomPrompts()).forEach(p => ids.add(String(p.id).toLowerCase()));
-    return ids;
+export function isShadowedByOrgPrompt(prompt, orgPromptIds) {
+    if (!orgPromptIds || orgPromptIds.size === 0) return false;
+    if (String(prompt.is_org) === '1') return false;
+    if (String(prompt.is_default) === '1' || String(prompt.is_special) === '1') return false;
+    return orgPromptIds.has(String(prompt.id).toLowerCase());
 }
 
 async function getCustomPrompts() {
