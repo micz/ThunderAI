@@ -17,14 +17,30 @@
  *  more capable (password inputs, API key masking, TomSelect, hasEmptyValueOption(),
  *  the connection_type empty state).
  *
- *  This is the single choke point for every preference READ in the add-on. Two
- *  deliberate exceptions bypass it, both in js/mzta-prompts.js: the one-shot migration
- *  flags `dynamic_menu_order_alphabet` and `_migrated_enabled_to_showin`, which are not
- *  preferences (no UI, no prefs_default entry) and are documented at their call sites.
+ *  This is the single choke point for every preference READ in the add-on, and therefore
+ *  also the one place that decides WHICH storage area preferences live in (see PREFS_AREA
+ *  below). A handful of call sites read storage directly and are documented at their own
+ *  lines: the two one-shot migration flags in js/mzta-prompts.js, the classic content
+ *  script js/mzta-compose-script.js, and one guarded read in pages/_lib/connection-ui.js.
+ *  All of them must use the same area as PREFS_AREA.
  */
 
 import { prefs_default } from '../options/mzta-options-default.js';
 import { taLogger } from './mzta-logger.js';
+
+// Preferences live in storage.local, NOT storage.sync. They were moved there because
+// storage.sync has a narrow quota — the same reason the large prompt payloads were moved
+// for https://github.com/micz/ThunderAI/issues/129. The consequence is deliberate:
+// preferences no longer follow the user across profiles or devices.
+//
+// The one-time copy from sync lives in js/mzta-prefs-migration.js and runs at the top of
+// mzta-background.js. The sync copy is intentionally left in place, so a downgrade to an
+// older version still finds the user's settings.
+//
+// Switching areas is a single edit here precisely because every preference read goes
+// through this module (issue #163). Anything reading storage directly must be kept in step.
+const PREFS_AREA = browser.storage.local;
+const PREFS_AREA_NAME = 'local';
 
 export const mztaPrefs = {
 
@@ -39,7 +55,7 @@ export const mztaPrefs = {
         if (this._debugReady) return;
         this._debugReady = true;
         try {
-            const prefs = await browser.storage.sync.get({ do_debug: prefs_default.do_debug });
+            const prefs = await PREFS_AREA.get({ do_debug: prefs_default.do_debug });
             this.logger.changeDebug(prefs.do_debug === true);
         } catch (e) {
             // A failed debug-flag read must never break an actual preference read.
@@ -58,7 +74,7 @@ export const mztaPrefs = {
         this.logger.warn(msg);
     },
 
-    // Build the {id: default} object handed to storage.sync.get(). An id with no entry in
+    // Build the {id: default} object handed to PREFS_AREA.get(). An id with no entry in
     // prefs_default gets `undefined` as its default, so the mistake surfaces instead of
     // silently reading as absent.
     _defaultsFor(pref_ids, caller) {
@@ -80,7 +96,7 @@ export const mztaPrefs = {
      */
     async getPref(pref_id) {
         await this._initLogger();
-        const prefs = await browser.storage.sync.get(this._defaultsFor([pref_id], 'getPref'));
+        const prefs = await PREFS_AREA.get(this._defaultsFor([pref_id], 'getPref'));
         this.logger.log("getPref: " + pref_id + " = " +
             this._logValue(pref_id, JSON.stringify(prefs[pref_id])));
         return prefs[pref_id];
@@ -89,9 +105,9 @@ export const mztaPrefs = {
     /**
      * Read several preferences at once.
      * Returns a plain {id: value} object with exactly the requested ids, identical in shape
-     * to what browser.storage.sync.get() returns, so no call site needs any other change.
+     * to what browser.storage.get() returns, so no call site needs any other change.
      *
-     * storage.sync.get() semantics are preserved EXACTLY: a default is substituted only for
+     * storage.get() semantics are preserved EXACTLY: a default is substituted only for
      * a key that is MISSING from storage. A stored null - which is what an emptied number
      * input serializes to (NaN -> null) - comes through as null, untouched. Several call
      * sites depend on that and guard with Number.isInteger()/Number.isFinite(); see the
@@ -100,7 +116,7 @@ export const mztaPrefs = {
      */
     async getPrefs(pref_ids) {
         await this._initLogger();
-        const prefs = await browser.storage.sync.get(this._defaultsFor(pref_ids, 'getPrefs'));
+        const prefs = await PREFS_AREA.get(this._defaultsFor(pref_ids, 'getPrefs'));
         const result = {};
         const log_parts = [];
         pref_ids.forEach(pref_id => {
@@ -118,23 +134,23 @@ export const mztaPrefs = {
     async getAllPrefs() {
         await this._initLogger();
         this.logger.log("getAllPrefs");
-        return await browser.storage.sync.get(prefs_default);
+        return await PREFS_AREA.get(prefs_default);
     },
 
     /**
-     * Write a single preference. Multi-key writes stay as direct storage.sync.set() calls.
+     * Write a single preference. Multi-key writes stay as direct storage.set() calls.
      */
     async setPref(pref_id, value) {
         await this._initLogger();
         this.logger.log('Saving option: ' + pref_id + ' = ' +
             this._logValue(pref_id, JSON.stringify(value)));
-        return await browser.storage.sync.set({ [pref_id]: value });
+        return await PREFS_AREA.set({ [pref_id]: value });
     },
 };
 
 // Keep the module logger in step with the do_debug preference.
 browser.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'sync' && changes.do_debug) {
+    if (areaName === PREFS_AREA_NAME && changes.do_debug) {
         mztaPrefs.logger.changeDebug(changes.do_debug.newValue === true);
         mztaPrefs._debugReady = true;
     }

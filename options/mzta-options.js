@@ -724,7 +724,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateSpecificApiIndicators(prefs_opt);
 
   browser.storage.onChanged.addListener(async (changes, area) => {
-    if (area !== 'sync') return;
+    // Preferences live in storage.local — see js/mzta-prefs.js.
+    if (area !== 'local') return;
     const hasRelevantChange = Object.keys(changes).some(key =>
       key.endsWith('_use_specific_integration') || key.endsWith('_connection_type')
     );

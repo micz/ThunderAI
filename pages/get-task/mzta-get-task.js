@@ -80,7 +80,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                  }
              }
         }
-        await browser.storage.sync.set(update_prefs);
+        // Multi-key write: stays a direct set(), but on the preferences area
+        // (storage.local) — see PREFS_AREA in js/mzta-prefs.js.
+        await browser.storage.local.set(update_prefs);
     }
 
     // Must run before restoreOptions(), which is called by initializeSpecificIntegrationUI()

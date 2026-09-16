@@ -83,7 +83,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
         }
-        await browser.storage.sync.set(update_prefs);
+        // Multi-key write: stays a direct set(), but on the preferences area
+        // (storage.local) — see PREFS_AREA in js/mzta-prefs.js.
+        await browser.storage.local.set(update_prefs);
     }
 
     await initializeSpecificIntegrationUI({
@@ -391,9 +393,9 @@ function saveOptions(e) {
         break;
       case 'select-one':
         if (element.id === 'summarize_auto') {
-          // An empty select (selectedIndex === -1) parses to NaN, which storage.sync
+          // An empty select (selectedIndex === -1) parses to NaN, which storage
           // serializes as null — and a stored null is *not* replaced by the default in
-          // storage.sync.get(), so the value stays outside the 0..3 range forever and
+          // storage.get(), so the value stays outside the 0..3 range forever and
           // every === comparison downstream silently fails. Fall back to the default.
           let parsed = parseInt(element.value, 10);
           options[element.id] = Number.isNaN(parsed) ? prefs_default.summarize_auto : parsed;

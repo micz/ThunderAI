@@ -1415,7 +1415,9 @@ export async function initializeSpecificIntegrationUI({
       // no-op guard comparing the stored value against what the select shows; with the
       // prefs_default value, a first-time write of exactly 'chatgpt_api' would compare equal
       // to the substituted default and be skipped, leaving the pref unwritten.
-      const stored = await browser.storage.sync.get({ [conntype_select_id]: '' });
+      // The AREA, however, must match PREFS_AREA in js/mzta-prefs.js — only the default is
+      // special here, and the paired setPref() below writes to the preferences area.
+      const stored = await browser.storage.local.get({ [conntype_select_id]: '' });
       if (stored[conntype_select_id] === conntype_el.value) return;
       await mztaPrefs.setPref(conntype_select_id, conntype_el.value);
       taLog.log(`Stored the connection shown by the ${prefix} select: ${conntype_el.value}`);

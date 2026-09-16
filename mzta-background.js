@@ -80,6 +80,7 @@ import {
     checkExcludedTag
 } from './js/mzta-addtags-exclusion-list.js';
 import { mztaPrefs } from './js/mzta-prefs.js';
+import { migratePrefsToLocal, isSyncDrained } from './js/mzta-prefs-migration.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -92,9 +93,23 @@ browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     }
 });
 
-await migrateCustomPromptsStorage();
-await migrateDefaultPromptsPropStorage();
-await migrateEnabledToShowIn();
+// Must run FIRST, before anything reads a preference. It also carries the one-shot
+// migration flags into storage.local — migrateEnabledToShowIn() below reads one of them,
+// and migrateMenuOrderAlphabetic() (called further down) reads the other, which would
+// otherwise find its "not yet run" default and overwrite the user's custom menu ordering.
+// Hence _prefs_migration_ok: if the copy failed, those flags are not in storage.local yet
+// and the two migrations guarded by them must be skipped rather than re-run destructively.
+const _prefs_migration_ok = await migratePrefsToLocal();
+
+// Once storage.sync is drained these two have nothing left to find, and each would otherwise
+// pay a storage.sync.get() at every startup forever. The other two migrations below are NOT
+// skipped this way: they work on storage.local data and own their own flags, so they must be
+// allowed to decide for themselves.
+if (!await isSyncDrained()) {
+    await migrateCustomPromptsStorage();
+    await migrateDefaultPromptsPropStorage();
+}
+if (_prefs_migration_ok) await migrateEnabledToShowIn();
 
 var original_html = '';
 var modified_html = '';
@@ -290,7 +305,9 @@ async function _reconcileFeatureFlags(prefs) {
     if (Object.keys(to_disable).length > 0) {
         // console.log and not taLog: this also runs at startup, before taLog is built.
         console.log("[ThunderAI] Disabling features with an unusable connection: " + Object.keys(to_disable).join(', '));
-        await browser.storage.sync.set(to_disable);
+        // Multi-key write, so it stays a direct set() rather than going through
+        // mztaPrefs.setPref() — but it must target the preferences area (storage.local).
+        await browser.storage.local.set(to_disable);
     }
     return prefs;
 }
@@ -416,7 +433,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                                 return;
                             }
                         }
-                        // storage.sync.get() only substitutes the default for *missing* keys, so a
+                        // storage.get() only substitutes the default for *missing* keys, so a
                         // null previously written by an empty select (NaN, serialized as null)
                         // would survive and match none of the === comparisons below.
                         let summarize_auto = Number.isInteger(prefs.summarize_auto) ? prefs.summarize_auto : prefs_default.summarize_auto;
@@ -564,7 +581,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             return;
                         }
 
-                        // storage.sync.get() only substitutes the default for *missing* keys, so a
+                        // storage.get() only substitutes the default for *missing* keys, so a
                         // null previously written by an empty select (NaN, serialized as null)
                         // would survive and match none of the === comparisons below.
                         let translate_auto = Number.isInteger(prefs.translate_auto) ? prefs.translate_auto : prefs_default.translate_auto;
@@ -640,7 +657,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         if(prefs_close.chatgpt_win_save_position){
                             try {
                                 let winInfo = await browser.windows.get(window_id);
-                                await browser.storage.sync.set({chatgpt_win_top: winInfo.top, chatgpt_win_left: winInfo.left});
+                                // Multi-key write: stays a direct set(), on the preferences area.
+                                await browser.storage.local.set({chatgpt_win_top: winInfo.top, chatgpt_win_left: winInfo.left});
                                 taLog.log("Window position saved: top=" + winInfo.top + ", left=" + winInfo.left);
                             } catch(e) {
                                 taLog.error("Error saving window position: " + e);
@@ -1891,7 +1909,7 @@ async function reload_pref_init(){
 }
 
 
-// Coalesce bursts of storage changes: a multi-key storage.sync.set fires a single
+// Coalesce bursts of storage changes: a multi-key storage.local.set fires a single
 // onChanged carrying several keys, and the options pages write one key per change
 // event, so several events can land within a few milliseconds. menus.reload() tears
 // down and rebuilds every menu, so overlapping rebuilds could interleave; a single
@@ -1907,8 +1925,10 @@ let _menusStale = false;
 // Register the listener for storage changes
 function setupStorageChangeListener() {
     browser.storage.onChanged.addListener((changes, areaName) => {
-        // Check if the change happened in the 'sync' storage area
-        if (areaName !== 'sync') return;
+        // Preferences live in storage.local (see js/mzta-prefs.js), so this gate must name
+        // that area: left on 'sync' the listener simply stops firing, with no error, and
+        // prefs_init goes stale while the menus never rebuild on a settings change.
+        if (areaName !== 'local') return;
 
         const changed_keys = Object.keys(changes);
         _prefsInitStale = _prefsInitStale || changed_keys.some(key => key in PREFS_INIT_KEYS);
@@ -1928,7 +1948,7 @@ function setupStorageChangeListener() {
                 // Heal first: reload_pref_init() derives _process_incoming from these
                 // flags and the menus are rebuilt from them, so both must see the
                 // reconciled values rather than a stale true.
-                // _reconcileFeatureFlags() writes back into storage.sync, re-firing this
+                // _reconcileFeatureFlags() writes back into storage.local, re-firing this
                 // very listener. That is bounded, not a loop: it only ever flips flags
                 // true -> false, so the follow-up pass finds nothing to disable and writes
                 // nothing. The extra pass is useful anyway — it is what refreshes
@@ -1967,7 +1987,9 @@ function setupPermissionsRemovedListener() {
 setupPermissionsRemovedListener();
 
 // Menus handling
-await migrateMenuOrderAlphabetic();
+// Guarded: see _prefs_migration_ok above. Running this with the flag missing would
+// renumber every prompt and discard the user's custom menu ordering.
+if (_prefs_migration_ok) await migrateMenuOrderAlphabetic();
 const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
 await menus.loadMenus(await _computeActiveSpecialIds());
 

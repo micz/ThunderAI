@@ -2,7 +2,9 @@
 
 ## Overview
 
-Extension preferences are stored in `browser.storage.sync` (not `.local`) — defaults and the full list of valid keys are defined in `options/mzta-options-default.js`. Every preference **read** goes through the accessor module `js/mzta-prefs.js` (see [Preference access](#preference-access-jsmzta-prefsjs) below); direct `browser.storage.sync.get()` calls are no longer the norm. A handful of large-payload keys (`_custom_prompt`, `_default_prompts_properties`, `_special_prompts`, `_custom_placeholder`, `add_tags_exclusions`) live in `browser.storage.local` instead, since `storage.sync` has a narrow quota — see [01-architecture.md](01-architecture.md#storage) for the sync→local migration.
+Extension preferences are stored in **`browser.storage.local`** — defaults and the full list of valid keys are defined in `options/mzta-options-default.js`. Every preference **read** goes through the accessor module `js/mzta-prefs.js` (see [Preference access](#preference-access-jsmzta-prefsjs) below); direct storage calls are no longer the norm. The large-payload keys (`_custom_prompt`, `_default_prompts_properties`, `_special_prompts`, `_custom_placeholder`, `add_tags_exclusions`) live in the same area.
+
+**Preferences used to live in `browser.storage.sync`** and were moved for the same reason the prompt payloads were moved in [#129](https://github.com/micz/ThunderAI/issues/129): `storage.sync` has a narrow quota. The consequence is deliberate and is the one behavioural change of that move — **preferences no longer follow the user across profiles or devices.** The one-time copy is `migratePrefsToLocal()` (`js/mzta-prefs-migration.js`), which runs first at the top of `mzta-background.js`; it never overwrites a key already present in local and **deliberately leaves the `sync` copy in place**, so a downgrade to an older version still finds the user's settings. Once `storage.sync` holds nothing any migration still needs, it writes the marker **`_prefs_migrated_from_sync`** into `storage.local`; every later startup returns on that single read instead of enumerating both storage areas, and `isSyncDrained()` lets `mzta-background.js` skip the two #129 migrations, which would otherwise each pay a `storage.sync.get()` forever. The marker means *"sync is drained"*, not merely *"the preferences were copied"*: it is withheld while a #129 payload is still in sync (a pre-#129 profile), so those migrations are never skipped before they have run, and the marker is set on the following startup. It is deliberately **not** used to skip `migrateEnabledToShowIn()` or `migrateMenuOrderAlphabetic()`, which act on `storage.local` data and own their own flags. The marker is not a preference (no UI, no `prefs_default` entry, leading underscore), so it never surfaces in `getAllPrefs()` or `restoreOptions()`. On the run that copies, it is written **inside the same `set()`** as the preferences, so the whole migration lands atomically — a partial write would otherwise leave the one-shot flags behind and let `migrateMenuOrderAlphabetic()` destroy the user's custom menu ordering. See [01-architecture.md](01-architecture.md#storage).
 
 ## Key Exports from `mzta-options-default.js`
 
@@ -77,7 +79,7 @@ string**: a new user is not given a provider they never chose. Instead the three
   "Feature Rows — Disabled vs. API-Needed". It runs at startup and at the head of
   the debounced `storage.onChanged` handler, so it covers the writers that have no feature UI of
   their own — the setup wizard (which writes `connection_type` through the generic `saveOptions()`
-  and never touches the flags), a prefs import, a sync from another profile. `disable_ApiFeature()`
+  and never touches the flags) and a prefs import. (A sync from another profile used to be a third writer; it no longer exists, since preferences moved to `storage.local`.) `disable_ApiFeature()`
   in the options page remains, but is now only the immediate-feedback path: it runs solely while
   that page is open, which is why a background pass is needed at all. The reconciliation is
   **one-directional** (`true → false` only) — restoring a flag when a usable connection returns
@@ -177,7 +179,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `chatgpt_web_custom_gpt` | `''` | Custom GPT URL |
 | `chatgpt_web_load_wait_time` | `1000` | Wait time (ms) for ChatGPT page |
 | `dynamic_menu_force_enter` | `false` | Force Enter to submit in popup |
-| `dynamic_menu_order_alphabet` | `true` | Internal migration flag only; no UI. **Not declared in `prefs_default`** — unlike every other preference, its default (`true`) is hardcoded in the `browser.storage.sync.get()` call in `js/mzta-prompts.js`, not in `options/mzta-options-default.js`. Set to `false` by `migrateMenuOrderAlphabetic()` on first boot after upgrade to bootstrap position-based ordering. It is therefore also one of the two deliberate **bypasses** of `js/mzta-prefs.js` — see [Preference access](#preference-access-jsmzta-prefsjs). See `claude-spec/02-prompts.md` for details. |
+| `dynamic_menu_order_alphabet` | `true` | Internal migration flag only; no UI. **Not declared in `prefs_default`** — unlike every other preference, its default (`true`) is hardcoded in the `browser.storage.local.get()` call in `js/mzta-prompts.js`, not in `options/mzta-options-default.js`. **Because that default means "not yet run", the flag has to be carried across by `migratePrefsToLocal()`** — reading it from an area the migration did not populate would re-run `migrateMenuOrderAlphabetic()` and overwrite the user's custom menu ordering. Set to `false` by `migrateMenuOrderAlphabetic()` on first boot after upgrade to bootstrap position-based ordering. It is therefore also one of the two deliberate **bypasses** of `js/mzta-prefs.js` — see [Preference access](#preference-access-jsmzta-prefsjs). See `claude-spec/02-prompts.md` for details. |
 | `placeholders_use_default_value` | `false` | Use placeholder defaults when empty |
 | `hide_thinking` | `true` | Controls the initial state of the thinking `<details>` block prepended above the answer: `true` = collapsed by default, `false` = open by default. The user can always toggle with a click; thinking content is never discarded. |
 | `diff_granularity` | `'words'` | Comparison unit the proofreading change picker **opens with**: `'words'` or `'sentences'`. The picker's own toolbar toggle changes it for the current review; there is no per-prompt override — see [07-diff-picker.md](07-diff-picker.md). Rendered as a `<select>` in the advanced section; needs an explicit entry in `restoreOptions()`'s `select-one` branch, since a select restoring to `''` would render blank. |
@@ -927,7 +929,7 @@ Three details keep that agreement holding in the background:
   `_process_incoming`, the menus and the options rows all derive from the same healed values rather
   than a stale `true`. Both it and `_computeActiveSpecialIds()` read through
   `_readFeatureConnPrefs()`, so the key set cannot drift between them. The reconciliation writes to
-  `storage.sync` from inside a `storage.onChanged` listener, which is bounded rather than a loop:
+  `storage.local` from inside a `storage.onChanged` listener, which is bounded rather than a loop:
   flags only ever go `true → false`, so the follow-up pass finds nothing to disable — and that pass
   is wanted anyway, being the one that refreshes `prefs_init`.
 - **Reconciliation judges the connection only.** Sparks presence is deliberately excluded: it is
@@ -971,8 +973,8 @@ script, so a message already open does not pick up a settings change until it is
 
 **`summarize_auto` / `translate_auto` must never be stored as `null`.** Their `saveOptions()` cases
 run `parseInt(element.value, 10)`, and an empty select (`selectedIndex === -1`, which
-`restoreOptions()` can produce) parses to `NaN` — `storage.sync` serializes that as `null`. A stored
-`null` is **not** replaced by the default in `storage.sync.get({key: default})`, since that only
+`restoreOptions()` can produce) parses to `NaN` — storage serializes that as `null`. A stored
+`null` is **not** replaced by the default in `storage.get({key: default})`, since that only
 substitutes *missing* keys, so the value stays permanently outside the documented `0..3` range and
 every `=== 0` / `=== 2` comparison in `initSummary` / `initTranslation` silently falls through. Both
 ends are now guarded: the pages fall back to `prefs_default` on `NaN`, and the two handlers coerce
@@ -1002,7 +1004,7 @@ whenever `config.api_type` is non-empty — and `config` **is the prompt object*
 sites pass it (`js/mzta-menus.js` for add_tags / calendar / task, `mzta-background.js` for
 summarize / translate / spamfilter / auto-add-tags). From then on each key prefers
 ``config[`${integration}_${key}`]``, i.e. `prompt.anthropic_model`, `prompt.anthropic_api_key`, …; the
-values read from `storage.sync` are the **global** ones (`anthropic_model`), used only as fallback.
+values read from storage are the **global** ones (`anthropic_model`), used only as fallback.
 The `<prefix>_<integration>_<key>` prefs are never read on any execution path.
 
 They are UI state, and they are re-derived from the prompt on every page load: `restoreOptions()`
@@ -1161,7 +1163,7 @@ handler, so the guard is armed even if later async setup fails.
 3. Add load/save logic to `options/mzta-options.js`
 4. Add i18n label to `_locales/en/messages.json`
 5. Read the pref in the relevant module through `mztaPrefs` (see below) — **not** with a
-   direct `browser.storage.sync.get()`
+   direct `browser.storage.local.get()`
 
 ## Preference access (`js/mzta-prefs.js`)
 
@@ -1171,6 +1173,12 @@ exports the `mztaPrefs` singleton. It is adapted from
 (same author) and keeps that project's MPL-2.0 header; only the accessors were taken. It was
 introduced by [#163](https://github.com/micz/ThunderAI/issues/163) as a pure refactor, and is
 the prerequisite for anything that needs to intercept a preference read.
+
+**It is also the one place that decides which storage area preferences live in.** The module
+opens with `const PREFS_AREA = browser.storage.local;` and every accessor goes through it, so
+moving areas is a single edit here — which is exactly how the sync→local move was done. The
+call sites that read storage directly (listed at the end of this section) must be kept in step
+by hand, and each carries a comment saying so.
 
 ```javascript
 import { mztaPrefs } from '../js/mzta-prefs.js';
@@ -1186,7 +1194,7 @@ default; that is the point of the choke point. An id with no `prefs_default` ent
 warning through `taLogger` and is read with `undefined` as its default, so the mistake is
 visible instead of silent.
 
-**`storage.sync.get()` semantics are preserved exactly.** A default is substituted only for a
+**`storage.get()` semantics are preserved exactly.** A default is substituted only for a
 key that is **missing** from storage. A stored `null` — which is what an emptied number input
 serializes to (`NaN` → `null`) — comes through as `null`, untouched. Several call sites depend
 on this and guard with `Number.isInteger()` / `Number.isFinite()` (the `summarize_auto`,
@@ -1200,7 +1208,7 @@ without recursing on every read.
 
 ### What deliberately does *not* go through the accessor
 
-- **Multi-key writes** stay direct `browser.storage.sync.set()` calls: the per-feature
+- **Multi-key writes** stay direct `browser.storage.local.set()` calls: the per-feature
   integration seeding (`set(update_prefs)`) on the six feature pages,
   `_reconcileFeatureFlags()`'s `set(to_disable)`, and the
   `{chatgpt_win_top, chatgpt_win_left}` pair. `setPref()` is single-key by design.
@@ -1211,15 +1219,27 @@ without recursing on every read.
 - **The two one-shot migration flags** in `js/mzta-prompts.js`
   (`dynamic_menu_order_alphabet`, `_migrated_enabled_to_showin`) are not preferences: no UI, no
   `prefs_default` entry. Declaring them would make them surface in `getAllPrefs()` and in every
-  page's `restoreOptions()`.
+  page's `restoreOptions()`. Both still have to sit in the **same area** as `PREFS_AREA`, and
+  `migratePrefsToLocal()` carries them across — see the `dynamic_menu_order_alphabet` row above
+  for what breaks otherwise.
 - **`js/mzta-compose-script.js`** is registered as a *classic* content script, so it has no
   module context and cannot import. Its defaults are hardcoded and must be kept in step with
-  `prefs_default` by hand.
+  `prefs_default` **and its area with `PREFS_AREA`** by hand — it reads two real preferences
+  (`add_tags_hide_exclusions`, `add_tags_exclusions_exact_match`), so a wrong area silently
+  yields the hardcoded defaults for every user.
 - **One read in `pages/_lib/connection-ui.js`** (`_persistSelectedConnection`) keeps a
   hardcoded `''` default, which differs from `prefs_default`'s `'chatgpt_api'` for
   `{prefix}_connection_type`. It is a no-op guard comparing the stored value against what the
   select shows; with the `prefs_default` value a first-time write of exactly `chatgpt_api`
   would compare equal to the substituted default and be skipped, leaving the pref unwritten.
-- **`storage.local` / `storage.session`** record stores (`taStorage`, `taSummaryStore`,
+  Only the *default* is special: the area follows `PREFS_AREA` like everything else.
+- **The `storage.local` / `storage.session` record stores** (`taStorage`, `taSummaryStore`,
   `taTranslationStore`, `taSpamReport`, the custom prompt/placeholder payloads) are not
-  preferences and are out of scope.
+  preferences and are out of scope. They now share an area with the preferences, which is safe
+  by construction: every key they own is prefixed (`msg:`, or a leading `_`), no `prefs_default`
+  key uses either prefix, and each of the five `storage.local.get(null)` enumerations in
+  `js/mzta-storage.js` filters on `msg:` before touching a record — including
+  `clearAllRecords()`, which would otherwise delete every preference.
+- **The two #129 legacy reads** in `js/mzta-utils.js` (`migrateCustomPromptsStorage()`,
+  `migrateDefaultPromptsPropStorage()`) keep pointing at `storage.sync` on purpose: their job is
+  to drain old data *out* of it.

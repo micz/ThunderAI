@@ -767,7 +767,12 @@ export async function migrateMenuOrderAlphabetic() {
     // migration flag, not a preference. It has no UI and no prefs_default entry on purpose
     // (see claude-spec/05-options.md) — declaring it would make it surface in getAllPrefs()
     // and in every page's restoreOptions().
-    const prefs = await browser.storage.sync.get({ dynamic_menu_order_alphabet: true });
+    //
+    // The area must match PREFS_AREA in js/mzta-prefs.js. The flag defaults to "not yet
+    // run", so reading it from an area the migration did not populate would re-run this
+    // migration and OVERWRITE the user's custom menu ordering (see the position_* writes
+    // below). migratePrefsToLocal() carries the flag across for exactly this reason.
+    const prefs = await browser.storage.local.get({ dynamic_menu_order_alphabet: true });
     if (!prefs.dynamic_menu_order_alphabet) {
         return;
     }
@@ -806,7 +811,7 @@ export async function migrateMenuOrderAlphabetic() {
     await setCustomPrompts(customPromptsToSave);
     await setSpecialPrompts(visibleSpecialsToSave.concat(hiddenSpecialsToPreserve));
 
-    await browser.storage.sync.set({ dynamic_menu_order_alphabet: false });
+    await browser.storage.local.set({ dynamic_menu_order_alphabet: false });
 }
 
 // One-time migration: the prompt `enabled` flag has been removed. show_in is now
@@ -817,8 +822,9 @@ export async function migrateMenuOrderAlphabetic() {
 // also idempotent by construction (after it runs no `enabled` keys remain).
 export async function migrateEnabledToShowIn() {
     // Deliberately NOT routed through js/mzta-prefs.js (issue #163): one-shot migration
-    // flag, not a preference — same reasoning as dynamic_menu_order_alphabet above.
-    const flag = await browser.storage.sync.get({ _migrated_enabled_to_showin: false });
+    // flag, not a preference — same reasoning as dynamic_menu_order_alphabet above, and
+    // the same requirement to sit in the same area as PREFS_AREA in js/mzta-prefs.js.
+    const flag = await browser.storage.local.get({ _migrated_enabled_to_showin: false });
     if (flag._migrated_enabled_to_showin) {
         return;
     }
@@ -848,7 +854,7 @@ export async function migrateEnabledToShowIn() {
         await setSpecialPrompts(sp._special_prompts);
     }
 
-    await browser.storage.sync.set({ _migrated_enabled_to_showin: true });
+    await browser.storage.local.set({ _migrated_enabled_to_showin: true });
 }
 
 export async function getSpamFilterPrompt(){

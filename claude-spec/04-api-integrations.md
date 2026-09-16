@@ -273,7 +273,7 @@ The API webchat window supports keyboard font zoom, handled in `api_webchat/cont
 
 - **Ctrl/Cmd + `+`** (or `=`) increases, **Ctrl/Cmd + `-`** decreases, **Ctrl/Cmd + `0`** resets to 100%.
 - Zoom is applied by setting `document.documentElement.style.fontSize` as a percentage. Because text in the Shadow DOM components (`<messages-area>`, `<message-input>`) is sized in `rem`/`em`, it scales against the root `<html>` font-size across the Shadow DOM boundary. A few chrome elements that previously used absolute `px` font-sizes were converted to `rem` so they scale too.
-- The level is clamped to **0.5–2.5** (step 0.1) and persisted in `browser.storage.sync` under the global `api_webchat_font_scale` pref (default `1.0`, in `options/mzta-options-default.js`). On window open the saved value is read and re-applied, so the zoom survives closing the window and is shared across all webchat windows and providers.
+- The level is clamped to **0.5–2.5** (step 0.1) and persisted in `browser.storage.local` under the global `api_webchat_font_scale` pref (default `1.0`, in `options/mzta-options-default.js`). On window open the saved value is read and re-applied, so the zoom survives closing the window and is shared across all webchat windows and providers.
 - The `keydown` listener is registered on `document`; key events from inside the components bubble up (composed), so no per-component handler is needed.
 
 ## Configuration Validation
