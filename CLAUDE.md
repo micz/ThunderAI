@@ -18,7 +18,7 @@ ThunderAI is a **Thunderbird WebExtension (Manifest V2)** that integrates multip
 6. **No test suite:** There is no automated test framework. Testing is done manually in Thunderbird.
 7. **Settings defaults:** All new preferences must be added to `options/mzta-options-default.js` in `prefs_default`.
 8. **Keep spec files up to date:** When making code changes that affect a subsystem described in claude-spec/, update the relevant spec file to reflect the new behavior. Read the spec before modifying, update it after.
-9. **Never commit on your own initiative.** Do not run `git commit` (or `git push`, or create branches) unless explicitly asked to in that same request. Finishing a task is *not* permission to commit it: stage or leave the work modified, report what is ready, and let the maintainer decide when to commit and how to word the message. Approval to implement a plan is not approval to commit it.
+9. **Never commit or add on your own initiative.** Do not run `git commit` (or `git push`, or `git add`, or create branches) unless explicitly asked to in that same request. Finishing a task is *not* permission to commit it: leave the work modified, report what is ready, and let the maintainer decide when to commit and how to word the message. Approval to implement a plan is not approval to commit it.
 
 ## Directory Map
 
