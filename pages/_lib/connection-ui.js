@@ -18,7 +18,8 @@
 
 import './tom-select.base.js';
 import {
-  integration_options_config
+  integration_options_config,
+  valid_connection_types
 } from '../../options/mzta-options-default.js';
 import { OpenAI } from '../../js/api/openai_responses.js';
 import { Ollama } from '../../js/api/ollama.js';
@@ -76,14 +77,28 @@ export function isClosedCatalogueSelect(elementId = '') {
 // The connection-type catalogue: single source of truth for both the <option>
 // list built by populateConnectionTypeOptions() and the label lookup below, so a
 // provider can never appear in one and not the other.
-const CONNECTION_TYPE_OPTIONS = [
-  { value: 'chatgpt_web',        msgKey: 'prefs_Connection_type_ChatGPT_Web' },
-  { value: 'chatgpt_api',        msgKey: 'prefs_Connection_type_ChatGPT_API' },
-  { value: 'google_gemini_api',  msgKey: 'prefs_Connection_type_Google_Gemini_API' },
-  { value: 'anthropic_api',      msgKey: 'prefs_Connection_type_Anthropic_API' },
-  { value: 'ollama_api',         msgKey: 'prefs_Connection_type_Ollama_API' },
-  { value: 'openai_comp_api',    msgKey: 'prefs_Connection_type_OpenAI_Comp_API' }
-];
+//
+// The values come from valid_connection_types in options/mzta-options-default.js, which
+// is also what the background page validates an enterprise policy against. Only the
+// i18n keys live here, so adding a provider there without a label fails loudly at
+// startup rather than silently rendering an unlabelled option.
+const CONNECTION_TYPE_MSG_KEYS = {
+  chatgpt_web:       'prefs_Connection_type_ChatGPT_Web',
+  chatgpt_api:       'prefs_Connection_type_ChatGPT_API',
+  google_gemini_api: 'prefs_Connection_type_Google_Gemini_API',
+  anthropic_api:     'prefs_Connection_type_Anthropic_API',
+  ollama_api:        'prefs_Connection_type_Ollama_API',
+  openai_comp_api:   'prefs_Connection_type_OpenAI_Comp_API'
+};
+
+const CONNECTION_TYPE_OPTIONS = valid_connection_types.map(value => {
+  const msgKey = CONNECTION_TYPE_MSG_KEYS[value];
+  if (!msgKey) {
+    console.error('[ThunderAI] No label for connection type "' + value +
+      '": add it to CONNECTION_TYPE_MSG_KEYS in pages/_lib/connection-ui.js.');
+  }
+  return { value, msgKey };
+});
 
 // Localized provider name for a connection type. Returns '' for an empty value
 // ("inherit the global connection"), and the raw value for anything unknown, so a

@@ -628,36 +628,64 @@ async function getDefaultPrompts_withProps() {
 }
 
 
+/**
+ * Give a prompt its canonical field shape, in place, and return it.
+ *
+ * Used for every prompt that does not come from the shipped defaults: the user's custom
+ * prompts, and the organization prompts supplied by an enterprise policy. Both arrive
+ * with fields that may be missing entirely (an older stored prompt, or a policy that
+ * omits everything optional), so the two must normalise identically or the same prompt
+ * would behave differently depending on where it came from.
+ *
+ * The boolean flags are collapsed to the canonical "0"/"1" by normalizePromptFlags():
+ * the customprompts UI writes them as numbers, and a missing value used to leave
+ * use_diff_viewer undefined. These prompts have no built-in to fall back to, so an
+ * out-of-domain value means off.
+ */
+export function normalizePromptFields(prompt) {
+    normalizePromptFlags(prompt);
+    if(prompt.chatgpt_web_model === undefined){
+        prompt.chatgpt_web_model = "";
+    }
+    if(prompt.chatgpt_web_project === undefined){
+        prompt.chatgpt_web_project = "";
+    }
+    if(prompt.chatgpt_web_custom_gpt === undefined){
+        prompt.chatgpt_web_custom_gpt = "";
+    }
+    if(prompt.api_type === undefined){
+        prompt.api_type = "";
+    }
+    if(prompt.show_in === undefined){
+        prompt.show_in = "popup";
+    }
+    if(prompt.custom_icon === undefined){
+        prompt.custom_icon = "";
+    }
+    return prompt;
+}
+
+/**
+ * Every prompt id that is already taken: the shipped defaults, the special prompts, and
+ * the user's own custom prompts.
+ *
+ * Used to reject an organization prompt whose id would collide. Ids are compared
+ * lowercased, because that is how the customprompts UI stores them.
+ */
+export async function getReservedPromptIds() {
+    const ids = new Set();
+    defaultPrompts.forEach(p => ids.add(String(p.id).toLowerCase()));
+    specialPrompts.forEach(p => ids.add(String(p.id).toLowerCase()));
+    (await getCustomPrompts()).forEach(p => ids.add(String(p.id).toLowerCase()));
+    return ids;
+}
+
 async function getCustomPrompts() {
     let prefs = await browser.storage.local.get({_custom_prompt: null});
     if(prefs._custom_prompt === null){
         return [];
     } else {
-        prefs._custom_prompt.forEach(prompt => {
-            // The customprompts UI writes these as numbers; collapse them (and any
-            // missing value, which used to leave use_diff_viewer undefined) to the
-            // canonical "0"/"1". Custom prompts have no built-in to fall back to,
-            // so an out-of-domain value means off.
-            normalizePromptFlags(prompt);
-            if(prompt.chatgpt_web_model === undefined){
-                prompt.chatgpt_web_model = "";
-            }
-            if(prompt.chatgpt_web_project === undefined){
-                prompt.chatgpt_web_project = "";
-            }
-            if(prompt.chatgpt_web_custom_gpt === undefined){
-                prompt.chatgpt_web_custom_gpt = "";
-            }
-            if(prompt.api_type === undefined){
-                prompt.api_type = "";
-            }
-            if(prompt.show_in === undefined){
-                prompt.show_in = "popup";
-            }
-            if(prompt.custom_icon === undefined){
-                prompt.custom_icon = "";
-            }
-        });
+        prefs._custom_prompt.forEach(prompt => normalizePromptFields(prompt));
         return prefs._custom_prompt;
     }
 }

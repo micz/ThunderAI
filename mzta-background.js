@@ -81,6 +81,7 @@ import {
 } from './js/mzta-addtags-exclusion-list.js';
 import { mztaPrefs } from './js/mzta-prefs.js';
 import { migratePrefsToLocal, isSyncDrained } from './js/mzta-prefs-migration.js';
+import { mztaManaged } from './js/mzta-managed.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -156,6 +157,17 @@ const MENU_RELEVANT_KEYS = [
 ];
 
 let prefs_init = {};
+
+// The enterprise policy must be in place before the FIRST preference read, because
+// js/mzta-prefs.js resolves every read against it. This is the only place it is loaded:
+// browser.storage.managed is read in the background page and nowhere else, and every
+// other context asks for the state over runtime.sendMessage ("get_managed_state").
+//
+// It runs after the migration block above, which is documented as having to come first,
+// and before _reconcileFeatureFlags() below, which is the first thing to read a
+// preference. With no policy installed this resolves silently and changes nothing.
+await mztaManaged.loadManaged();
+
 // Repair any feature flag left enabled on an unusable connection before anything derives
 // from it: this is where a wizard run or a prefs import from a previous session gets
 // healed, since no options page needs to be opened for it to happen.
@@ -305,9 +317,7 @@ async function _reconcileFeatureFlags(prefs) {
     if (Object.keys(to_disable).length > 0) {
         // console.log and not taLog: this also runs at startup, before taLog is built.
         console.log("[ThunderAI] Disabling features with an unusable connection: " + Object.keys(to_disable).join(', '));
-        // Multi-key write, so it stays a direct set() rather than going through
-        // mztaPrefs.setPref() — but it must target the preferences area (storage.local).
-        await browser.storage.local.set(to_disable);
+        await mztaPrefs.setPrefs(to_disable);
     }
     return prefs;
 }
@@ -657,8 +667,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         if(prefs_close.chatgpt_win_save_position){
                             try {
                                 let winInfo = await browser.windows.get(window_id);
-                                // Multi-key write: stays a direct set(), on the preferences area.
-                                await browser.storage.local.set({chatgpt_win_top: winInfo.top, chatgpt_win_left: winInfo.left});
+                                await mztaPrefs.setPrefs({chatgpt_win_top: winInfo.top, chatgpt_win_left: winInfo.left});
                                 taLog.log("Window position saved: top=" + winInfo.top + ", left=" + winInfo.left);
                             } catch(e) {
                                 taLog.error("Error saving window position: " + e);

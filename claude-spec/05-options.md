@@ -1167,8 +1167,8 @@ handler, so the guard is armed even if later async setup fails.
 
 ## Preference access (`js/mzta-prefs.js`)
 
-Every preference **read** goes through the single accessor module `js/mzta-prefs.js`, which
-exports the `mztaPrefs` singleton. It is adapted from
+Every preference **read and write** goes through the single accessor module
+`js/mzta-prefs.js`, which exports the `mztaPrefs` singleton. It is adapted from
 [Thunderbird Addon Options Manager](https://github.com/micz/Thunderbird-Addon-Options-Manager)
 (same author) and keeps that project's MPL-2.0 header; only the accessors were taken. It was
 introduced by [#163](https://github.com/micz/ThunderAI/issues/163) as a pure refactor, and is
@@ -1187,6 +1187,7 @@ const value = await mztaPrefs.getPref('my_pref');            // one value
 const prefs = await mztaPrefs.getPrefs(['a', 'b']);          // {a: ..., b: ...}
 const all   = await mztaPrefs.getAllPrefs();                 // every declared pref
 await mztaPrefs.setPref('my_pref', value);                   // single-key write
+await mztaPrefs.setPrefs({a: 1, b: 2});                      // multi-key write
 ```
 
 **Defaults come from `prefs_default` and from nowhere else.** A call site never passes its own
@@ -1206,12 +1207,45 @@ same rule `isAPIKeyValue()` applies in the options page. The `do_debug` flag is 
 lazily, and refreshed from `storage.onChanged`; it cannot be fetched through `getPref()`
 without recursing on every read.
 
+### The managed layer sits in front of the accessor
+
+An enterprise policy (`js/mzta-managed.js`, see
+[08-managed-configuration.md](08-managed-configuration.md)) resolves through this module,
+which is why the whole mechanism touches no call site. Every read resolves as:
+
+```
+locked policy value  >  user value in storage.local  >  unlocked policy value  >  prefs_default
+```
+
+implemented in two private helpers:
+
+- **`_defaultsFor()`** hands an *unlocked* policy value to `storage.get()` as that key's
+  default. That is exactly the "initial value the user may change" semantics: a stored
+  user value still wins, and the policy value is only what they see until they change it.
+- **`_applyLocked()`** runs *after* the read and overwrites every locked key. A default
+  cannot beat a stored value, and an enforced value must — including one written before
+  the policy was installed.
+
+**The write guard is the point of the whole design.** `setPref()` and `setPrefs()` skip a
+locked key, logging a warning. If an enforced value ever reached `storage.local` it would
+outlive the policy, so removing the policy would leave the user silently stuck with what
+it used to impose. `setPrefs()` skips per key rather than rejecting the whole object: its
+callers seed an entire provider block at once, and one locked key must not block the rest.
+
+With no policy installed every one of these checks is false and the behaviour is
+byte-for-byte what it was before — `storage.managed.get()` rejects, which is the normal
+case for nearly every user and is swallowed silently.
+
 ### What deliberately does *not* go through the accessor
 
-- **Multi-key writes** stay direct `browser.storage.local.set()` calls: the per-feature
+- **Multi-key writes go through `setPrefs(obj)`**, not a direct
+  `browser.storage.local.set()`. `setPref()` is single-key by design, and before
+  `setPrefs()` existed that forced eight writers to bypass the module: the per-feature
   integration seeding (`set(update_prefs)`) on the six feature pages,
   `_reconcileFeatureFlags()`'s `set(to_disable)`, and the
-  `{chatgpt_win_top, chatgpt_win_left}` pair. `setPref()` is single-key by design.
+  `{chatgpt_win_top, chatgpt_win_left}` pair. All of them now use `setPrefs()`, so the
+  module is the choke point for **writes** as well as reads — which is what lets a single
+  write guard cover every preference write.
 - **The options page keeps its own `saveOptions()` / `restoreOptions()`.** Only their
   `get`/`set` calls were migrated. The upstream project's versions were *not* ported: ThunderAI's
   handle password inputs, API key masking, TomSelect, `hasEmptyValueOption()` and the

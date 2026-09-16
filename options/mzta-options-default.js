@@ -18,6 +18,22 @@
 
 export const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize', 'get_calendar_event', 'get_task', 'translate'];
 
+// Every valid value of connection_type / {prefix}_connection_type / prompt.api_type.
+// Lives here rather than in pages/_lib/connection-ui.js because the background page also
+// needs it (enterprise policy validation) and cannot import that module: it pulls in
+// TomSelect and every API client. connection-ui.js builds its <option> catalogue from
+// this list, so the two can never drift.
+// An empty string is NOT in this list: it is the separate "not selected yet" / "inherit
+// the global connection" state.
+export const valid_connection_types = [
+    'chatgpt_web',
+    'chatgpt_api',
+    'google_gemini_api',
+    'anthropic_api',
+    'ollama_api',
+    'openai_comp_api'
+];
+
 export const integration_options_config = {
     chatgpt: {
         api_key: '',

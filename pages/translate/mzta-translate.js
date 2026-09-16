@@ -80,9 +80,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
         }
-        // Multi-key write: stays a direct set(), but on the preferences area
-        // (storage.local) — see PREFS_AREA in js/mzta-prefs.js.
-        await browser.storage.local.set(update_prefs);
+        await mztaPrefs.setPrefs(update_prefs);
     }
 
     await initializeSpecificIntegrationUI({
