@@ -105,6 +105,59 @@ The 6 special prompts (`add_tags`, `spamfilter`, `summarize`, `get_calendar_even
 
 These are generated programmatically at the bottom of `mzta-options-default.js` using `special_prompts_with_integration` array.
 
+**The "Using \<provider\>" pill.** Each feature row in the options page carries an empty
+`<span class="specific_api_indicator" id="{prefix}_specific_api_indicator">`, filled by
+`updateSpecificApiIndicators()` (`options/mzta-options.js`) at init and from the
+`storage.onChanged` handler. Two rules:
+
+- The provider name comes from `getConnectionTypeLabel()` **exported by
+  `pages/_lib/connection-ui.js`**, which resolves it through the shared
+  `CONNECTION_TYPE_OPTIONS` catalogue. Do not re-derive the label by reading the global
+  `#connection_type` select's `<option>` text: that select carries the disabled
+  `value=""` placeholder (`prefs_Connection_type_none`, "— Select an AI connection —"), so an
+  empty type resolves to that placeholder and the pill reads `Using — Select an AI connection —`.
+  It is also wiped by `populateConnectionTypeOptions()`'s `replaceChildren()` on every
+  repopulation.
+- The pill is shown only when `use_specific_integration` is on **and**
+  `!hasNoConnectionSelected(connection_type)`. The flag alone is not sufficient, because
+  flag `true` + empty type is a **legitimate in-progress state**, not a corrupt one: when the
+  global connection is `chatgpt_web` or empty the integration is mandatory, so
+  `initializeSpecificIntegrationUI()` forces the checkbox on while
+  `_persistMandatoryIntegration()` withholds the stored flag until a usable type is picked
+  (`pages/_lib/connection-ui.js`). Unchecking the box also clears `{prefix}_connection_type`
+  while leaving the flag (see below). In both cases `getConnectionType()` falls back to the
+  global connection, so there is no per-feature provider to announce.
+
+**Clearing on uncheck is centralized.** `initializeSpecificIntegrationUI()`'s checkbox handler
+calls `clearPromptAPI(promptId)` — which empties the prompt's `api_type` and its per-integration
+options — and, in the same branch, writes `{prefix}_connection_type: ''`. Both halves must go
+together: `api_type` is what actually runs, while the pref is what the `prompt = null` call sites
+read (the menu gating in `mzta-background.js`, the feature row in `mzta-options.js`). Leaving the
+pref behind would strand a value that no longer matches the prompt and that nothing restores —
+each page's seeding block only runs for a *non-empty* `api_type`, so the provider is not recovered
+on re-check either. This lived as four copy-pasted per-page handlers (`addtags`,
+`get_calendar_event`, `get_task`, `spamfilter`) while `summarize` and `translate` had none; do not
+reintroduce a per-page copy.
+
+**Turning the box on persists the shown connection.** Each page's `restoreOptions()` pre-fills
+`{prefix}_connection_type` in the DOM with the global connection when that one is API-usable
+(`isApiUsableConnection(getting['connection_type'])`, else `''` — `chatgpt_web` has no `<option>`
+in a per-prompt select). That is a *display* default only: a user who accepts it without opening
+the menu fires no `change`, so nothing would reach storage. `_persistSelectedConnection()` writes
+it — from the checkbox handler's on-branch and from the initial-state apply (which also covers the
+mandatory case, where the box is forced on at load) — skipping empty values and no-op writes.
+Without it the panel shows a provider while the pref stays empty, and the options page's pill,
+which reads the pref, stays hidden on a feature that looks configured.
+
+**The same label rule applies to the per-feature panel pill** (`#mzta_conn_pill_name`, set by
+each page's local `updateConnPanelTint()`): all six feature pages import
+`getConnectionTypeLabel()` rather than reading the select's `<option>` text. Their selects are
+per-prompt (`no_chatgpt_web: true`) and so carry no `value=""` placeholder, but the
+`replaceChildren()` hazard applies to them just as much. The options page's own
+`updateConnPanelTint()` is the one exception that still needs an explicit empty-state string:
+its panel is always visible, so it prints `prefs_Connection_type_none` instead of the helper's
+`''`, which would leave a bare dot.
+
 ### UI & Feature Preferences
 
 | Key | Default | Description |
@@ -378,6 +431,8 @@ Revealing them must use an **explicit** display value, never `style.display = ''
 
 The shell provides: a light `--desk` page background; a centered, `max-width: 760px` column (`#mzta_card` with `margin: 0 auto` + 24px side padding — below the cap it is naturally full-width-minus-padding, no media query needed); each `.mzta_section` rendered as a white rounded **card** (`--panel`, 12px radius, 24px padding, subtle shadow, 24px vertical gap); section headers (`.mzta_section > .mzta_eyebrow`) get a **3px vertical `--accent` bar**; stacked settings inside a card are separated by thin `--line` **row dividers** (the first row after the header/intro has none — and, since the settings card is headerless, a `.mzta_field:first-child` / `.feature_row:first-child` pair covers the case where the row itself opens the card, so no stray divider appears above it); up-sized **typography** (`.opt_title` 15px/600, `.opt_title_small` 13.5px/normal, help/`.feature_desc` 13.5px with `text-wrap: pretty`) — **including the injected connection rows**, so descriptions inside `#mzta_conn_panel` no longer render larger than the ones outside it (see "Connection Panel Typography on Feature Pages" below); a **`.mzta_prompt_title`** class used for **every section-card heading** on the feature pages — same accent-bar treatment as `.mzta_eyebrow` but sized like `.opt_title` (15px/600 instead of 12px/700), since a heading smaller than the labels beneath it read as less important; it is a standalone class (not combined with `.mzta_eyebrow`) and is included in the `+ .mzta_help` / `+ .mzta_field` / `+ .feature_row` sibling selectors so the intro pull-up and first-row no-divider rules still apply. `.mzta_eyebrow` itself is now used on these pages only for the connection-panel sub-header; a header block with a 25px page title, one-line subtitle, and a small app-icon tile (`.mzta_page_icon` / `.mzta_page_title` / `.mzta_page_subtitle`); **compact number fields** via `.mzta_field_num` (label/description left, ~96px centered input — or reset+input group — right); and **focus rings** (`--accent` border + a 3px `color-mix` accent glow, white background) on inputs/selects/textareas — the only focus styling in the design system, deliberately scoped so the options page is unaffected. All rules reuse existing tokens, so dark mode is inherited. It adds no save bar: pages persist on `change` and keep their per-editor Save/Reset buttons. A new feature page adopts the look by adding the class, giving the header the `.mzta_page_*` markup, and putting its settings in `.mzta_section` cards (number fields in `.mzta_field_num`).
 
+**Wide sections (`.mzta_section_wide`).** The 760px column suits forms but not genuinely wide content, so a single card can opt out of it by carrying `.mzta_section_wide` alongside `.mzta_section`; every other card on the page keeps the column. The rule (end of the shell block, scoped to `body.mzta_feature_page`) widens the card with **symmetric negative side margins** computed from three local custom properties — `--mzta_wide_cap` (760px, restated because a custom property cannot read another rule's used values), `--mzta_wide_pad` (24px) and `--mzta_wide_max` (1600px) — as `max(0px, min((100vw - 2*pad - cap)/2, (max - cap)/2))`. The `max(0px, …)` floor is what makes it degrade: on a window narrower than the column the bleed resolves to zero and the card renders exactly like every other one, so no media query is needed and the page never gains a horizontal scrollbar. It deliberately avoids the usual `margin-left: 50%` + `transform: translateX(-50%)` idiom, because a transform establishes a containing block for positioned descendants and would trap the autocomplete dropdown that `#mzta_card`'s `overflow: visible` exists to let escape. **Only the spam report card (`#spamfilter_reports_container`) opts in** — its eight-column table was unreadable at ~664px of card content width [<a href="https://github.com/micz/ThunderAI/issues/895">#895</a>]. Adding the class to another card is the whole opt-in; nothing else changes.
+
 #### Connection Panel Typography on Feature Pages
 
 The injected connection rows used to render at three different text sizes, none of which matched the
@@ -462,6 +517,20 @@ Note that the ChatGPT Web `conn_adv` rows are not merely inert on those pages �
 are **not injected at all**, because they pass `no_chatgpt_web: true` (see
 [04-api-integrations.md](04-api-integrations.md), ChatGPT Web section, for why those
 rows must keep unprefixed ids and therefore exist only once per page).
+
+**Toggle inside the shared template.** The `chatgpt_web_tempchat` row renders its
+checkbox as the design-system `.mzta_switch` toggle (the only checkbox in the shared
+template; every other injected checkbox is still a plain one). The switch label is
+wrapped in a flex `<div>` shared with the info text, not left inline: the
+connection-table restyle sets `label { display: block }` on every label inside
+`#connection_ui_table` / `#connection_ui_adv_table`, and that selector (1 id + 1 type)
+outranks `.mzta_switch`'s own `display: inline-flex` (1 class). Inside the flex wrapper
+the label is a flex item — `block` is what a flex item gets anyway — and
+`.mzta_switch`'s `width: auto !important` keeps it at the 38px track width, so only
+the switch is clickable. Without the wrapper the block label would stretch across the
+whole cell and toggle from a click anywhere in the row. Both pages that ever show the
+row (options + setup wizard) link `mzta-design.css`, so the toggle styles are always
+present.
 
 **Prefix propagation invariant.** `showConnectionOptions(conntype_select, modelId_prefix)`
 ends by calling `updateCORSWarnings(modelId_prefix)`, and `modelId_prefix` defaults to
@@ -707,14 +776,24 @@ i18n keys for the wizard are `wizard_*` in `_locales/en/messages.json`; entry-po
 
 ### Feature Rows — Disabled vs. API-Needed
 
-The four API-driven feature rows on the main options page (Add Tags, Spam Filter, Summarize,
-Translate) are unusable in **two distinct** situations, which must be presented differently:
+The six API-driven feature rows on the main options page (Add Tags, Spam Filter, Summarize,
+Translate, Get Calendar Event, Get Task) are unusable in **two distinct** situations, which must be
+presented differently:
 
 | Effective connection | Toggle | `warn_API_needed` hint |
 |---|---|---|
 | `chatgpt_web` | **untouched, clickable** | **shown** |
 | *nothing selected* (`''`) | unchecked **and `disabled`** (greyed) | **hidden** |
 | any API | untouched | hidden |
+
+Get Calendar Event and Get Task obey the same table, but carry an **orthogonal** second requirement:
+both features live in the ThunderAI Sparks add-on. `disable_GetCalendarEvent()` therefore hides their
+rows outright (`.get_calendar_event_tr` / `.get_task_tr` → `display:none`) when Sparks is missing or
+the wrong version, *or* when no connection is selected — the only case where the shared table hides a
+row rather than greying it. With ChatGPT Web the rows stay visible and show the hint exactly like the
+other four. These two rows long lacked the `warn_API_needed` span entirely, so the hint could never
+appear for them; the span now exists (`get_calendar_event_warn_API_needed`, `get_task_warn_API_needed`)
+and `disable_GetCalendarEvent()` reads `show_api_warning` from both states.
 
 **ChatGPT Web must not clear the flag.** The row used to force the toggle off (and persist that
 `false`) whenever the effective connection was `chatgpt_web`, while simultaneously showing a hint
@@ -750,7 +829,12 @@ treatment.
 pointing at its own API stays enabled even when the global connection is empty).
 `disable_ApiFeature(prefs_opt, prefix, manageBtnId)` consumes it and does all the row work; the four
 `disable_AddTags` / `disable_SpamFilter` / `disable_Summarize` / `disable_Translate` functions are now
-one-line wrappers over it (they previously held four copies of the same body). The greyed-out look
+one-line wrappers over it (they previously held four copies of the same body). `disable_GetCalendarEvent()`
+stays a separate path because of the Sparks gate and the two-rows-in-one-function shape, but shares the
+hint logic: `setApiWarnVisibility(prefix, show)` is the **single** place that flips a
+`{prefix}_warn_API_needed` span, used by both, so the six rows cannot drift apart again. It sets an
+explicit `inline-block` because `.warn_API_needed` is `display:none` in the stylesheet (which avoids a
+flash before the JS runs), so `''` would leave the span hidden. The greyed-out look
 needs no new CSS — `.mzta_switch input[type="checkbox"]:disabled + .track` already sets
 `opacity: .5`. The per-feature `click` handlers (which request Thunderbird permissions) need no guard
 either: a disabled checkbox fires no `click`.
@@ -771,16 +855,38 @@ stays an orthogonal, additional requirement. The "Sparks missing" notice (`#no_s
 when **both** features are unusable on their own connection — with a per-feature judgement, keying
 it on a single global flag would hide a genuinely missing add-on.
 
+`#no_sparks` is hidden by default through `#no_sparks { display: none }` in `options/mzta-options.css`
+(so it cannot flash before the script runs), so revealing it needs the **explicit** `'block'` — the
+same rule as the addtags sub-rows above: `style.display = ''` only removes the inline declaration and
+falls back to that very hide-rule, leaving the notice permanently invisible. This is what broke it in
+v5.0.0: the v4.1.1 line assigned `'table-row'`, and the `<table>`→`<div>` markup change turned it
+into `''`. The notice also deliberately **does not** carry the `get_calendar_event_tr` class, even
+though it sits with those rows: the `querySelectorAll('.get_calendar_event_tr')` loop just above
+would otherwise write a `display` to it from the calendar-event toggle state, which is not the rule
+this notice follows.
+
 ### Mandatory Specific Integration (feature settings pages)
 
 When the global connection cannot drive a feature (ChatGPT Web, or nothing selected),
 `initializeSpecificIntegrationUI()` (`pages/_lib/connection-ui.js`) forces
 `use_specific_integration` on, because a specific integration is the only way that feature can run.
-Three rules make that forcing actually stick:
+Four rules make that forcing actually stick:
 
 - **The checkbox stays `enabled`, made read-only via `preventDefault()` on `click`** (plus a
   `data-mandatory` marker). A `disabled` checkbox is skipped by each page's `saveOptions()` sweep
   over `.option-input` and fires no `change`, so the forced value never reached storage.
+- **The lock is made visible**, otherwise the toggle reads as an ordinary switch that silently
+  ignores clicks — the user sees no reason why it will not turn off. Three markers, all driven from
+  the same `if (mandatory_integration)` branch: the `[data-mandatory="true"]` attribute gives the
+  track `cursor: not-allowed` and a light dim (`pages/_lib/mzta-design.css`, deliberately lighter
+  than the `:disabled` rule above it, which stays reserved for the genuinely inert case); a
+  `🔒 Required` badge (`.feature_locked_badge`) is revealed next to the row title; and
+  `.feature_locked_note` is filled with the reason and shown under the description. The badge and
+  the note are inert markup present on all six feature pages, with fixed ids
+  (`specific_integration_locked_badge` / `_note`, unprefixed — one per page) so the shared
+  `connection-ui.js` can find them. The note text is chosen at runtime, and only there, because it
+  distinguishes the two cases: `specific_integration_mandatory_chatgpt_web` vs
+  `specific_integration_mandatory_no_connection`. The same text is also set as the `title`.
 - **The flag is persisted only once a usable connection type is chosen**, by
   `_persistMandatoryIntegration()` (on the select's `change`, and once on load to repair earlier
   visits). Writing it earlier would be worse than not writing it: `hasSpecificIntegration()` requires

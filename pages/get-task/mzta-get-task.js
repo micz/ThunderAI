@@ -37,7 +37,8 @@ import {
 } from "../../js/mzta-utils.js";
 import {
   initializeSpecificIntegrationUI,
-  isClosedCatalogueSelect
+  isClosedCatalogueSelect,
+  getConnectionTypeLabel
 } from "../_lib/connection-ui.js";
 import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
@@ -112,12 +113,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    get_task_use_specific_integration.addEventListener('change', (event) => {
-        if (!event.target.checked) {
-          browser.storage.sync.set({ get_task_connection_type: '' });
-        }
-    });
-
     // Colour the connection panel to match the selected provider, and hide the
     // whole panel when "use specific integration" is off (no empty bordered box).
     let get_task_conntype_el = document.getElementById('get_task_connection_type');
@@ -186,8 +181,9 @@ function updateConnPanelTint() {
   }
   let pillName = document.getElementById("mzta_conn_pill_name");
   if (pillName) {
-    const option = conntype_select.querySelector(`option[value="${conntype}"]`);
-    pillName.textContent = option ? option.textContent : conntype;
+    // Resolved from the shared catalogue, not by scraping the select: populateConnectionTypeOptions()
+    // rebuilds the <option> list with replaceChildren(), so a DOM lookup can transiently miss.
+    pillName.textContent = getConnectionTypeLabel(conntype);
   }
 }
 

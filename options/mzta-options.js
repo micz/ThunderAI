@@ -41,7 +41,8 @@ import {
   showConnectionOptions,
   updateWarnings,
   hasEmptyValueOption,
-  checkJsonFields
+  checkJsonFields,
+  getConnectionTypeLabel
 } from '../pages/_lib/connection-ui.js';
 import {
   isTestableConnection,
@@ -142,15 +143,6 @@ async function restoreOptions() {
   setCurrentChoice(getting);
 }
 
-function getConnectionTypeLabel(value) {
-  const select = document.getElementById('connection_type');
-  if (select) {
-    const option = select.querySelector(`option[value="${value}"]`);
-    if (option) return option.textContent;
-  }
-  return value;
-}
-
 // Per-provider base tint colours (same palette used in mzta-options.css and
 // documented in the design). Used to colour the per-feature "specific API"
 // indicator pill. A direct map is used (rather than reading a row's computed
@@ -183,8 +175,14 @@ function updateSpecificApiIndicators(prefs_opt) {
     const indicator = document.getElementById(`${prefix}_specific_api_indicator`);
     if (!indicator) continue;
     const useSpecific = getDynamicSettingValue(prefs_opt, prefix, 'use_specific_integration');
-    if (useSpecific) {
-      const connType = getDynamicSettingValue(prefs_opt, prefix, 'connection_type');
+    const connType = getDynamicSettingValue(prefs_opt, prefix, 'connection_type');
+    // The flag alone is not enough: "on" with an empty type is a legitimate in-progress
+    // state, not a corrupt one. A mandatory integration forces the checkbox on while
+    // _persistMandatoryIntegration() withholds the flag until a usable type is picked, and
+    // unchecking the box clears the type without clearing the flag. Either way
+    // getConnectionType() falls back to the global connection, so there is no per-feature
+    // provider to announce and the pill stays hidden.
+    if (useSpecific && !hasNoConnectionSelected(connType)) {
       const apiName = getConnectionTypeLabel(connType);
       const bgColor = getConnectionTypeColor(connType);
       indicator.textContent = browser.i18n.getMessage('prefs_specific_api_indicator', [apiName]);
@@ -245,6 +243,15 @@ function getFeatureConnState(prefs_opt, prefix){
   };
 }
 
+// The amber "you need an API integration" hint next to a feature row. Explicit
+// 'inline-block' because .warn_API_needed is display:none in the stylesheet (no flash
+// before this runs), so '' would leave the span hidden.
+// Single place that flips it, so the six API-driven rows can't drift apart again.
+function setApiWarnVisibility(prefix, show){
+  let warn = document.getElementById(prefix + '_warn_API_needed');
+  if(warn) warn.style.display = show ? 'inline-block' : 'none';
+}
+
 // Shared handling for the four API-driven feature rows (add_tags, spamfilter,
 // summarize, translate): they differ only by element ids.
 function disable_ApiFeature(prefs_opt, prefix, manageBtnId){
@@ -263,8 +270,7 @@ function disable_ApiFeature(prefs_opt, prefix, manageBtnId){
   checkbox.disabled = state.no_connection;
 
   setFeatureManageVisibility(document.getElementById(manageBtnId), checkbox.checked);
-  let warn = document.getElementById(prefix + '_warn_API_needed');
-  if(warn) warn.style.display = state.show_api_warning ? 'inline-block' : 'none';
+  setApiWarnVisibility(prefix, state.show_api_warning);
 
   if(checked_original != checkbox.checked){
     browser.storage.sync.set({[prefix]: checkbox.checked});
@@ -294,11 +300,18 @@ async function disable_GetCalendarEvent(prefs_opt){
   let no_sparks_text = document.getElementById('no_sparks_text');
   let wrong_sparks_text = document.getElementById('wrong_sparks_text');
   let is_spark_present = await checkSparksPresence();
-  // These features need an API: unavailable with ChatGPT Web and with no connection
-  // selected. Judged per feature, like the other API-driven rows, so a specific
-  // integration keeps them available whatever the global connection is.
-  let cal_unusable = getFeatureConnState(prefs_opt, 'get_calendar_event').disabled;
-  let task_unusable = getFeatureConnState(prefs_opt, 'get_task').disabled;
+  // These features need an API, so they follow the same rule as the other API-driven
+  // rows: only "no connection selected" takes them away, while ChatGPT Web leaves them
+  // usable and merely shows the warn_API_needed hint (the per-feature API is configured
+  // from the feature's own settings page, which is reachable only once it is enabled).
+  // Judged per feature, so a specific integration keeps them available whatever the
+  // global connection is.
+  let cal_state = getFeatureConnState(prefs_opt, 'get_calendar_event');
+  let task_state = getFeatureConnState(prefs_opt, 'get_task');
+  let cal_unusable = cal_state.disabled;
+  let task_unusable = task_state.disabled;
+  setApiWarnVisibility('get_calendar_event', cal_state.show_api_warning);
+  setApiWarnVisibility('get_task', task_state.show_api_warning);
   // Sparks presence is an orthogonal requirement: both features live in that add-on.
   get_calendar_event.disabled = cal_unusable || !(is_spark_present == 1);
   get_task.disabled = task_unusable || !(is_spark_present == 1);
@@ -313,7 +326,10 @@ async function disable_GetCalendarEvent(prefs_opt){
   // The "Sparks missing" notice is only worth showing when at least one of the two
   // features could actually run: if both are unusable on their connection anyway,
   // the missing add-on is not what stands in the way.
-  no_sparks_tr.style.display = ((is_spark_present == 1) || (cal_unusable && task_unusable)) ? 'none' : '';
+  // #no_sparks is deliberately not a .get_calendar_event_tr: its visibility follows the
+  // Sparks add-on, not the calendar-event toggle. Explicit 'block' because the CSS keeps
+  // it hidden by default (no flash before this runs), so '' would leave it hidden.
+  no_sparks_tr.style.display = ((is_spark_present == 1) || (cal_unusable && task_unusable)) ? 'none' : 'block';
   no_sparks_text.style.display = (is_spark_present == -1) ? 'inline' : 'none';
   wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
 }
@@ -397,7 +413,12 @@ function updateConnPanelTint(){
   }
   let pillName = document.getElementById("mzta_conn_pill_name");
   if(pillName){
-    pillName.textContent = getConnectionTypeLabel(conntype);
+    // getConnectionTypeLabel() returns '' for the empty type, which would leave the pill as a
+    // bare dot; here the panel is always visible, so name the empty state explicitly with the
+    // same string the select's placeholder option uses.
+    pillName.textContent = hasNoConnectionSelected(conntype)
+      ? browser.i18n.getMessage('prefs_Connection_type_none')
+      : getConnectionTypeLabel(conntype);
   }
 }
 

@@ -824,6 +824,11 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 .mzta_switch input[type="checkbox"]:checked + .track { background: var(--accent); }
 .mzta_switch input[type="checkbox"]:checked + .track::after { transform: translateX(16px); }
 .mzta_switch input[type="checkbox"]:disabled + .track { opacity: .5; cursor: default; }
+/* "Locked on" toggle: forced checked and click-swallowed, but NOT `disabled` — a
+   disabled checkbox is skipped by each page's saveOptions() sweep, so the pref
+   would never be persisted (see connection-ui.js). Lighter than the :disabled
+   treatment above, since the toggle is active rather than inert. */
+.mzta_switch input[type="checkbox"][data-mandatory="true"] + .track { opacity: .75; cursor: not-allowed; }
 
 /* Note under the Features subtitle: explains why every feature toggle is greyed
    out while no AI connection is selected. Blue/accent (informational, matching
@@ -851,6 +856,32 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     padding: 0.35em 0.5em;
     border-radius: 0.8em;
 }
+
+/* Feature-page markers for a toggle that is forced on by the global connection.
+   Both are shown by JS (.shown) only in that case; same amber "you must act"
+   treatment as .warn_API_needed. */
+.feature_locked_badge {
+    display: none;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--warning);
+    border: 1px solid var(--warning);
+    padding: 0.2em 0.5em;
+    border-radius: 0.8em;
+    white-space: nowrap;
+}
+.feature_locked_badge.shown { display: inline-block; }
+.feature_locked_note {
+    display: none;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--warning);
+    margin-top: 5px;
+    line-height: 1.4;
+}
+.feature_locked_note.shown { display: block; }
 
 /* ===========================================================================
    ADVANCED OPTIONS (app-level disclosure)
@@ -1184,6 +1215,48 @@ body.mzta_feature_page .mzta_section {
     padding: 24px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
     box-sizing: border-box;
+}
+
+/* --- Wide sections (opt-in) --------------------------------------------- */
+/* A section carrying .mzta_section_wide breaks out of the column cap and
+   centers itself on the viewport, for content that is genuinely wide — the
+   spam report table, for instance. Every other section keeps the column, so
+   a page opts in one section at a time and the rest is left untouched.
+   The break-out uses symmetric negative margins rather than the usual
+   `margin-left: 50%; transform: translateX(-50%)` pair: a transform would
+   establish a containing block for positioned descendants, which would trap
+   the autocomplete dropdown that #mzta_card's `overflow: visible` exists to
+   let escape. Negative margins just widen the box where it already sits.
+   The bleed is floored at 0, so on a window narrower than the column it
+   resolves to zero and the section renders exactly like every other card —
+   no media query needed, and the page never gains a horizontal scrollbar.
+   Reserving the scrollbar gutter on the page is what makes `100vw` honest
+   here: these pages scroll vertically, and without a stable gutter `100vw`
+   counts the scrollbar width that the layout viewport does not actually
+   have, so the bleed would overhang by half the scrollbar on each side and
+   create the very horizontal scrollbar this is meant to avoid. */
+html:has(> body.mzta_feature_page) {
+    scrollbar-gutter: stable;
+}
+body.mzta_feature_page .mzta_section_wide {
+    /* Column cap and page padding restated from #mzta_card above: a custom
+       property cannot read another rule's used values. */
+    --mzta_wide_cap: 760px;
+    --mzta_wide_pad: 24px;
+    --mzta_wide_max: 1600px;
+    /* How far the section may grow past each side of the column: never past
+       the page padding, never past half the extra width allowed. */
+    --mzta_wide_bleed: max(0px, min(
+        (100vw - 2 * var(--mzta_wide_pad) - var(--mzta_wide_cap)) / 2,
+        (var(--mzta_wide_max) - var(--mzta_wide_cap)) / 2
+    ));
+    /* `.mzta_section` sets `width: 100%`, which pins the used width to the
+       parent and makes negative margins merely shift the box instead of
+       widening it. The width must therefore be restated to include both
+       bleeds, not just cancelled with `auto`. */
+    width: calc(100% + 2 * var(--mzta_wide_bleed));
+    margin-left: calc(-1 * var(--mzta_wide_bleed));
+    margin-right: calc(-1 * var(--mzta_wide_bleed));
 }
 
 /* Section header: uppercase muted eyebrow + 3px vertical accent bar */

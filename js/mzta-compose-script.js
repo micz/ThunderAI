@@ -1165,7 +1165,9 @@ switch (message.command) {
         badgeText.style.overflow = 'hidden';
         badgeText.style.textOverflow = 'unset';
         topRow.style.alignItems = 'flex-start';
-        spamMenu.style.display = '';
+        // Explicit 'inline-flex': createThreeDotsMenu() declares it inline, and the
+        // 'none' set above overwrote it, so '' would leave a plain block here.
+        spamMenu.style.display = 'inline-flex';
         chevron.style.display = 'none';
         brandingRow.style.maxHeight = '2em';
         brandingRow.style.opacity = '1';
@@ -1184,7 +1186,7 @@ switch (message.command) {
         } else {
             chevron.style.display = 'none';
             branding.style.display = '';
-            spamMenu.style.display = '';
+            spamMenu.style.display = 'inline-flex';
         }
     };
 

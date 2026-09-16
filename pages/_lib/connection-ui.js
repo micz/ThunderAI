@@ -188,12 +188,15 @@ export async function injectConnectionUI({
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_tempchat__</span>
     </label></td>
     <td>
-      <label>
-        <input type="checkbox" id="chatgpt_web_tempchat" name="chatgpt_web_tempchat" class="option-input" />
-        &nbsp;<span>__MSG_prefs_OptionText_chatgpt_web_tempchat_info__
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <label class="mzta_switch">
+          <input type="checkbox" id="chatgpt_web_tempchat" name="chatgpt_web_tempchat" class="option-input" />
+          <span class="track"></span>
+        </label>
+        <span>__MSG_prefs_OptionText_chatgpt_web_tempchat_info__
           <br>__MSG_prefs_OptionText_Project_No_temporary_chat_warn__
         </span>
-      </label>
+      </div>
     </td>
   </tr>
   <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
@@ -1388,7 +1391,34 @@ export async function initializeSpecificIntegrationUI({
       use_specific_integration_el.addEventListener('click', (event) => {
           if (use_specific_integration_el.dataset.mandatory === 'true') event.preventDefault();
       });
+
+      // Make the locked state visible: without this the toggle looks like any
+      // other switch while silently ignoring clicks. The badge and the note are
+      // inert markup on every feature page; the note text is picked here because
+      // it depends on which of the two unusable global connections we are in.
+      const _lockedMsgKey = (globalPrefs.connection_type === 'chatgpt_web')
+          ? 'specific_integration_mandatory_chatgpt_web'
+          : 'specific_integration_mandatory_no_connection';
+      const _lockedText = browser.i18n.getMessage(_lockedMsgKey);
+      use_specific_integration_el.title = _lockedText;
+      const _lockedBadge = document.getElementById('specific_integration_locked_badge');
+      if (_lockedBadge) _lockedBadge.classList.add('shown');
+      const _lockedNote = document.getElementById('specific_integration_locked_note');
+      if (_lockedNote) {
+          _lockedNote.textContent = _lockedText;
+          _lockedNote.classList.add('shown');
+      }
   }
+
+  // Persist the connection type currently shown by the select, so the stored pref matches
+  // what the user sees. Only for a usable value: an empty one means "nothing chosen yet".
+  const _persistSelectedConnection = async () => {
+      if (hasNoConnectionSelected(conntype_el.value)) return;
+      const stored = await browser.storage.sync.get({ [conntype_select_id]: '' });
+      if (stored[conntype_select_id] === conntype_el.value) return;
+      await browser.storage.sync.set({ [conntype_select_id]: conntype_el.value });
+      taLog.log(`Stored the connection shown by the ${prefix} select: ${conntype_el.value}`);
+  };
 
   // Persist `use_specific_integration` only once the pair is actually meaningful,
   // i.e. once a usable connection type has been chosen.
@@ -1405,9 +1435,22 @@ export async function initializeSpecificIntegrationUI({
   use_specific_integration_el.addEventListener('change', async (event) => {
       _updateVisibility(event.target.checked);
       if (!event.target.checked) {
+          // Clear both halves of the state together. clearPromptAPI() empties the prompt's
+          // api_type, which is what actually runs; leaving {prefix}_connection_type behind
+          // would strand a pref that no longer matches the prompt and that nothing restores
+          // (the page's seeding block only runs for a non-empty api_type), while still being
+          // read by the prompt = null call sites — the menu gating in mzta-background.js and
+          // the feature row in mzta-options.js.
           await clearPromptAPI(promptId);
+          await browser.storage.sync.set({ [conntype_select_id]: '' });
       } else {
           await _updatePrompt();
+          // Persist the value the select is already showing. restoreOptions() pre-fills it
+          // with the global connection (when that one is API-usable), but that is only a DOM
+          // default: accepting it fires no 'change', so without this the pref would stay empty
+          // while the panel claims a provider — and the options page's "Using <provider>" pill,
+          // which reads the pref, would stay hidden on a feature that looks configured.
+          await _persistSelectedConnection();
       }
   });
 
@@ -1435,6 +1478,10 @@ export async function initializeSpecificIntegrationUI({
   _updateVisibility(use_specific_integration_el.checked);
   if (use_specific_integration_el.checked) {
       await _updatePrompt();
+      // Same reason as in the checkbox handler, for the flag that was already on when the
+      // page opened (including the mandatory case, where it is forced on here): the select
+      // may be showing an inherited value that was never written to the pref.
+      await _persistSelectedConnection();
   }
   // Covers the case where a usable connection type was already stored from a previous
   // visit while the flag itself never got persisted.

@@ -52,27 +52,279 @@
     margin: 10px 0;
 }
 
-/* Spam report table — horizontally scrollable inside its card */
+/* Spam report table — self-contained scroll box.
+   The box caps its own height, so the horizontal scrollbar is painted at the
+   bottom of the box instead of below the last row: with many reports the user
+   no longer has to scroll to the end of the whole page to reach it. Vertical
+   scrolling is trapped in the box too, which is what lets the header row stay
+   pinned. The report section opts into .mzta_section_wide (see
+   ../_lib/mzta-design.css) so these eight columns get more than the 760px
+   column the settings forms use. */
 .report_scroll {
-    overflow-x: auto;
+    max-height: 60vh;
+    overflow: auto;
     margin-top: 4px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
 }
+
+/* Report title row: heading left, expand button right. */
+.report_hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+/* The title carries the card spacing on its own; inside the flex row it must
+   not add a bottom margin, or the button rides above the heading baseline. */
+.report_hdr > .mzta_prompt_title {
+    margin-bottom: 0;
+}
+
+/* Icon-only button. No label, so no new string to translate: the arrows say
+   expand / restore, and aria-pressed carries the state for screen readers. */
+.btn_icon {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    cursor: pointer;
+    /* --text, not --dim: at this size a muted glyph reads as disabled. */
+    color: var(--text);
+    background: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 8px;
+}
+.btn_icon svg {
+    display: block;
+    pointer-events: none;   /* clicks always land on the button itself */
+}
+.btn_icon:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+/* Only one of the two glyphs shows at a time, chosen by the pressed state. */
+.btn_icon .ico_collapse { display: none; }
+.btn_icon[aria-pressed="true"] .ico_expand { display: none; }
+.btn_icon[aria-pressed="true"] .ico_collapse { display: block; }
+
+/* ---------------------------------------------------------------------------
+   FULL-TAB MODE
+   Toggling the button pins the report card over the whole tab. `position:
+   fixed` is what makes it independent of the 760px column and of the card
+   padding, so the table gets the entire viewport without the wide-section
+   maths applying to it. The body keeps its scroll position underneath and is
+   locked so the page behind cannot scroll while the overlay is up.
+   The section is laid out as a column flexbox so the scroll box can take all
+   the leftover height: a percentage height would resolve against the card and
+   leave the table short. */
+body.report_fullscreen {
+    overflow: hidden;
+}
+/* The selector must repeat body.mzta_feature_page: the shell rule in
+   mzta-design.css is `body.mzta_feature_page .mzta_section` (0-2-1), which
+   outranks a bare `.mzta_section.report_fullscreen_on` (0-2-0) and would keep
+   its 24px padding and, worse, the wide-section margins. */
+body.mzta_feature_page .mzta_section.report_fullscreen_on {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    border: none;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    /* Zeroing the margins is the load-bearing line. .mzta_section_wide sets
+       negative left/right margins to break out of the 760px column; on a
+       fixed box they are not neutralised by `width: auto` but keep widening
+       it, so the section ends up ~400px wider than the viewport and the edge
+       columns fall off screen. */
+    margin: 0;
+    width: auto;
+    max-width: none;
+    /* Tighter than the card’s 24px: every pixel of padding is a pixel the
+       table cannot use, and this mode exists to give it width. */
+    padding: 12px 16px 16px;
+    overflow: hidden;
+}
+/* The title row must not scroll away or be squeezed: it holds the only way
+   back out of this mode. flex: 0 0 auto keeps it at its natural height while
+   the scroll box below takes everything left. */
+body.mzta_feature_page .mzta_section.report_fullscreen_on .report_hdr {
+    flex: 0 0 auto;
+    margin-bottom: 10px;
+}
+body.mzta_feature_page .mzta_section.report_fullscreen_on .report_scroll {
+    flex: 1 1 auto;
+    max-height: none;
+    margin-bottom: 0;
+}
+
+/* table-layout: fixed is what makes the column widths below authoritative:
+   under the default auto layout a single long message id or explanation
+   stretches its own column and starves From and Subject.
+   border-collapse must be `separate` here — collapsed borders belong to the
+   table, not the cells, so they do not travel with a sticky header and would
+   be left behind as the rows scroll under it. Hence the per-cell borders. */
 table#report_data {
     width: 100%;
-    border-collapse: collapse;
+    min-width: 1100px;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: 12.5px;
 }
 table#report_data th,
 table#report_data td {
-    border: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
     padding: 8px;
     text-align: left;
+    vertical-align: top;
     color: var(--text);
+    overflow-wrap: anywhere;   /* long unbroken tokens wrap, never overflow */
 }
-table#report_data th {
+table#report_data th:last-child,
+table#report_data td:last-child {
+    border-right: none;
+}
+table#report_data tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Sticky header, pinned to the top of .report_scroll while the rows scroll.
+   It needs an opaque background or the rows would show through it. */
+table#report_data thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
     background-color: var(--field);
     font-weight: 700;
     white-space: nowrap;
+}
+
+/* Column widths. Under table-layout: fixed the header row alone decides them.
+   They total more than the card on most windows, which is deliberate: the box
+   scrolls horizontally, and the slack goes to From and Subject rather than to
+   the opaque message id. */
+table#report_data thead th:nth-child(1) { width: 150px; }   /* Message_ID  */
+table#report_data thead th:nth-child(2) { width: 130px; }   /* Date        */
+table#report_data thead th:nth-child(3) { width: 220px; }   /* From        */
+table#report_data thead th:nth-child(4) { width: 260px; }   /* Subject     */
+table#report_data thead th:nth-child(5) { width:  80px; }   /* Spam value  */
+table#report_data thead th:nth-child(6) { width: 110px; }   /* Moved       */
+table#report_data thead th:nth-child(7) { width: 300px; }   /* Explanation */
+table#report_data thead th:nth-child(8) { width: 130px; }   /* Report date */
+
+/* In full-tab mode the pixel column widths give way to percentages, so the
+   table fills the viewport instead of keeping the 1380px it needs inside the
+   card and staying scrolled sideways with the first and last columns cut off.
+   `table-layout: fixed` must stay: it is what makes these widths binding.
+   Under `auto` the browser sizes columns on their content, so the opaque
+   message ids would swallow the whole row and the ellipsis would stop working.
+
+   The two date columns are the catch. Everywhere else they are
+   `white-space: nowrap`, and a full timestamp needs ~150px — a floor that no
+   percentage can undercut: ask for less and the column takes the space anyway,
+   pushing the table past 100% and restoring the horizontal scrollbar this mode
+   exists to remove. Letting them wrap onto two lines removes the floor
+   entirely, so all eight columns scale with the window and the percentages
+   below (summing to 100%) are actually honoured. */
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data {
+    min-width: 0;
+}
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data tbody td:nth-child(2),
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data tbody td:nth-child(8) {
+    white-space: normal;
+}
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(1) { width: 12%; }
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(2) { width: 11%; }
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(3) { width: 15%; }
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(4) { width: 17%; }
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(5) { width:  7%; }
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(6) { width:  9%; }
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(7) { width: 18%; }
+body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(8) { width: 11%; }
+
+/* Message id: one truncated line. The value is opaque and rarely read in
+   full, and the cell's title attribute carries it (set in populateTable). */
+table#report_data tbody td:nth-child(1) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--dim);
+    font-family: var(--font-mono);
+}
+
+/* Both dates on a single line, so they never wrap mid-value. */
+table#report_data tbody td:nth-child(2),
+table#report_data tbody td:nth-child(8) {
+    white-space: nowrap;
+}
+
+/* Explanation: the text is never cut off — the cell caps its height and
+   scrolls on its own, so a long error message stays fully readable without
+   stretching the row to match it. The scroll must happen on an inner block:
+   a td is a table-cell, whose height is driven by the row, so overflow set
+   on the cell itself is ignored. .expl_box is added in populateTable().
+   The full text also stays in the title attribute as a quick tooltip. */
+table#report_data tbody td:nth-child(7) {
+    padding: 0;
+}
+table#report_data tbody td:nth-child(7) {
+    /* Anchors the resize handle to the bottom edge of the cell. */
+    position: relative;
+}
+table#report_data tbody td:nth-child(7) .expl_box {
+    display: block;
+    max-height: 5.4em;   /* about four lines at this line-height; the drag
+                            handle below overrides this per row, inline */
+    overflow-y: auto;
+    padding: 8px;
+    line-height: 1.35;
+    overscroll-behavior: contain;   /* do not chain to the outer scroll box */
+}
+
+/* Per-row resize handle, sitting on the bottom border of the explanation
+   cell. Dragging it sets an inline max-height on that row’s .expl_box, so
+   one long explanation can be opened up without touching the other rows.
+   The height cannot be set on the <tr> itself: a table row takes its height
+   from its tallest cell, so the growth has to happen on the scrolling box.
+   The handle is a padding-free 7px strip that stays inside the cell, so it
+   never overlaps the text and does not change the row height when idle. */
+table#report_data tbody td:nth-child(7) .row_resizer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 7px;
+    cursor: ns-resize;
+    /* Invisible until pointed at: the table already has enough lines. */
+    background: transparent;
+}
+table#report_data tbody td:nth-child(7) .row_resizer:hover,
+table#report_data tbody td:nth-child(7) .row_resizer.dragging {
+    background: var(--accent);
+    opacity: .55;
+}
+/* While dragging, kill text selection and keep the resize cursor everywhere,
+   otherwise the pointer flickers as it leaves the 7px strip. */
+body.mzta_row_resizing {
+    user-select: none;
+    cursor: ns-resize !important;
+}
+
+/* The "no reports yet" placeholder spans all eight columns: it must not
+   inherit the first column's truncation or monospace face. */
+table#report_data tbody td[colspan] {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    text-align: center;
+    color: var(--dim);
+    font-family: inherit;
 }
 
 /* Placeholder autocomplete dropdown (token-based) */

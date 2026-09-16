@@ -1714,6 +1714,15 @@
     "warn_API_needed": {
         "message": "この機能を使用するには、ChatGPT Web連携ではなくAPI連携が必要です。上のチェックボックスをチェックしてから左のボタンをクリックすると、機能設定ページで特定のAPIを定義できます。"
     },
+    "specific_integration_mandatory_badge": {
+        "message": "必須"
+    },
+    "specific_integration_mandatory_chatgpt_web": {
+        "message": "このオプションは必須であり、無効にできません: グローバル接続として選択されているChatGPT Web連携では、この機能を実行できません。下で特定のAPIを選択してください。"
+    },
+    "specific_integration_mandatory_no_connection": {
+        "message": "このオプションは必須であり、無効にできません: グローバルAI接続がまだ選択されていません。下で特定のAPIを選択するか、ThunderAIの設定でグローバル接続を構成してください。"
+    },
     "prefs_specific_api_indicator": {
         "message": "$1を使用中",
         "placeholders": {

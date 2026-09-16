@@ -1509,6 +1509,15 @@
     "prefs_ollama_format_json_Info": {
         "message": "Wenn aktiviert, wird Ollama gezwungen, eine gültige JSON-Antwort zurückzugeben (nur für unterstützte Modelle)."
     },
+    "specific_integration_mandatory_badge": {
+        "message": "Erforderlich"
+    },
+    "specific_integration_mandatory_chatgpt_web": {
+        "message": "Diese Option ist erforderlich und kann nicht deaktiviert werden: Die als globale Verbindung ausgewählte ChatGPT-Webintegration kann diese Funktion nicht ausführen. Wählen Sie unten eine spezifische API aus."
+    },
+    "specific_integration_mandatory_no_connection": {
+        "message": "Diese Option ist erforderlich und kann nicht deaktiviert werden: Es wurde noch keine globale KI-Verbindung ausgewählt. Wählen Sie unten eine spezifische API aus oder konfigurieren Sie eine globale Verbindung in den ThunderAI-Einstellungen."
+    },
     "prefs_specific_api_indicator": {
         "message": "Verwendet $1",
         "placeholders": {
