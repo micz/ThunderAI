@@ -39,8 +39,7 @@
  *
  *  2. The policy is read ONCE, at startup. Thunderbird fires no change events for the
  *     managed storage area, so there is nothing to listen for and no live reload: an
- *     administrator's change takes effect at the next Thunderbird start. This is
- *     documented for administrators in docs/enterprise-configuration.md.
+ *     administrator's change takes effect at the next Thunderbird start.
  *
  *  With no policy installed - which is the case for nearly every user - storage.managed
  *  REJECTS. That is the normal path, not an error, so it is swallowed silently and the
