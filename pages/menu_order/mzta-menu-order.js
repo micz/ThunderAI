@@ -103,8 +103,8 @@ async function loadAndRender() {
     // getPromptsForMenuOrder(), not getPrompts(): saveAll() below rewrites _custom_prompt
     // (and _special_prompts) wholesale from this list, so it must contain every prompt the
     // user owns - including the ones an org prompt shadows and the ones a policy has made
-    // inert. Those arrive flagged (_shadowed_by_org / _inert_by_policy) and are rendered
-    // as inactive rather than hidden.
+    // inert. Those arrive flagged (_shadowed_by_org / _inert_by_policy /
+    // _default_inert_by_policy) and are rendered as inactive rather than hidden.
     allPrompts = await getPromptsForMenuOrder();
 
     // Exclude special prompts that are defined with show_in: "none" (internal prompts, not user-toggleable)
@@ -310,11 +310,14 @@ function renderListItems(listEl, items, menuType, isActive) {
         li.dataset.menu = menuType;
         li.dataset.active = isActive ? '1' : '0';
 
-        // A prompt that cannot be invoked at all: either an org prompt has taken its id,
-        // or a policy has made the user's own prompts inert. It is listed - it must be, so
-        // saveAll() writes it back instead of deleting it - but ordering it would be
-        // meaningless, so it is shown dimmed, with a reason, and cannot be dragged.
-        const is_inactive = (prompt._shadowed_by_org === true) || (prompt._inert_by_policy === true);
+        // A prompt that cannot be invoked at all: an org prompt has taken its id, or a
+        // policy has made the user's own prompts inert, or a policy has taken the built-in
+        // prompts out of the menus. It is listed - it must be, so saveAll() writes it back
+        // instead of deleting it - but ordering it would be meaningless, so it is shown
+        // dimmed, with a reason, and cannot be dragged.
+        const is_inactive = (prompt._shadowed_by_org === true)
+            || (prompt._inert_by_policy === true)
+            || (prompt._default_inert_by_policy === true);
         li.draggable = !is_inactive;
         if (is_inactive) li.classList.add('item_inactive');
 
@@ -374,7 +377,7 @@ function renderListItems(listEl, items, menuType, isActive) {
             const inactiveBadge = document.createElement('span');
             inactiveBadge.classList.add('badge', 'badge_inactive');
             inactiveBadge.textContent = browser.i18n.getMessage(
-                prompt._inert_by_policy === true
+                (prompt._inert_by_policy === true || prompt._default_inert_by_policy === true)
                     ? 'menu_order_badge_policy_inactive'
                     : 'menu_order_badge_shadowed');
             li.appendChild(inactiveBadge);

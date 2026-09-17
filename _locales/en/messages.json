@@ -2475,9 +2475,17 @@
     "message": "Read-only and not available in the menus: your organization's configuration policy disables prompt management. Your prompt is not deleted.",
     "description": "Note on a custom prompt row made read-only by the prompt management policy"
   },
+  "managed_restriction_default_prompts": {
+    "message": "The built-in prompts are disabled by your organization's configuration policy. They are still listed here, but they are not available in the menus.",
+    "description": "Note shown on the custom prompts page when the policy disables the built-in prompts"
+  },
+  "customPrompts_policy_default_inert_note": {
+    "message": "Not available in the menus: your organization's configuration policy disables the built-in prompts.",
+    "description": "Note on a built-in prompt row taken out of the menus by the policy"
+  },
   "menu_order_badge_policy_inactive": {
     "message": "Disabled by policy",
-    "description": "Badge on a prompt that the prompt management policy has made unavailable"
+    "description": "Badge on a prompt that an enterprise policy has made unavailable"
   },
   "menu_order_badge_shadowed": {
     "message": "Disabled: duplicate ID",

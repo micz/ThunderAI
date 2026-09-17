@@ -134,11 +134,12 @@ Keys starting with `_` are structures and metadata, never preferences. **No key 
 | `_org_id` | `[a-z0-9-]+`, the prompt-id namespace |
 | `_org_prompts` | the fourth prompt set |
 | `_disable_prompt_management` | restriction: no prompt creation, copy, import or export; existing custom prompts read-only and inactive |
+| `_disable_default_prompts` | restriction: the built-in prompts are not available in the menus |
 | `_disable_setup_wizard` | restriction: the setup wizard cannot be opened |
 
 ### Restrictions
 
-The last two are **restrictions**: policy-only switches that take something away rather
+The last three are **restrictions**: policy-only switches that take something away rather
 than set a value. They are structural keys, not entries in `prefs_default`, because there
 is no user-facing setting behind them — nothing to show in the options page, nothing to
 store in `storage.local`, and therefore nothing for the lock convention to act on. A
@@ -152,8 +153,8 @@ lock a fleet out of its own prompts.
 A policy that only restricts — no preference, no prompt — still counts as **active**: the
 banner and the disabled controls have to be explained.
 
-They travel to pages in the `get_managed_state` payload as `disablePromptManagement` and
-`disableSetupWizard`. They cannot ride in `lockedKeys`, which holds preference keys.
+They travel to pages in the `get_managed_state` payload as `disablePromptManagement`,
+`disableDefaultPrompts` and `disableSetupWizard`. They cannot ride in `lockedKeys`, which holds preference keys.
 
 #### `_disable_prompt_management`
 
@@ -190,8 +191,9 @@ List.js row template is synchronous and cannot await.
 ##### The three prompt views, and why the filter is not global
 
 `js/mzta-prompts.js` builds the merged prompt set once in `buildPromptSet()`, which
-**marks** the two reasons a prompt can be inactive instead of dropping them:
-`_shadowed_by_org` and `_inert_by_policy`. Three views sit on top of it:
+**marks** the three reasons a prompt can be inactive instead of dropping them:
+`_shadowed_by_org`, `_inert_by_policy` and `_default_inert_by_policy`. Three views sit on
+top of it:
 
 | View | Drops inactive? | Special prompts | Used by |
 |---|---|---|---|
@@ -206,7 +208,7 @@ therefore have made the menu order page erase every custom prompt the moment a u
 reordered anything under the policy. Any future caller that writes back to storage must
 use a non-dropping view for the same reason.
 
-`_shadowed_by_org` and `_inert_by_policy` describe the *current* policy state, never the
+All three flags describe the *current* policy state, never the
 prompt, so they must not be persisted: a stored `_inert_by_policy` would outlive the policy
 that set it. They are stripped in `setCustomPrompts()` and `setSpecialPrompts()` — the two
 gates into storage — and in `preparePromptsForExport()`, so a backup restored elsewhere
@@ -220,6 +222,45 @@ applied — the policy is re-read at the next start anyway.
 Custom *data placeholders* are deliberately **not** covered. They are text fragments, not
 prompts, and carry no provider credentials — a separate restriction can be added if an
 organization ever asks for one.
+
+#### `_disable_default_prompts`
+
+The organization takes the **built-in** prompts out of the menus. They stop being available
+anywhere they could be invoked — popup, reading, composing and context menus, `loadPrompt()`
+by id — while staying listed, read-only and explained, on both prompt pages.
+
+It is meant for an organization that ships its own prompt set through `_org_prompts` and
+wants only that set to be reachable. It is fully independent of `_disable_prompt_management`:
+the two cover **disjoint** sets of prompts — the built-in ones here, the user's own ones
+there — and can be on together, each with its own explanation.
+
+What it does **not** touch:
+
+- **special prompts** (Add Tags, Summarize, Translate, Spam Filter, Calendar Event, Task).
+  They back features of their own, which stay switched on. They carry `is_default: "1"` as
+  well, because their display properties are stored the same way, so `isBuiltInDefaultPrompt()`
+  tests `is_default === '1' && is_special !== '1'` — a plain `is_default` check would
+  silently disable those features too.
+- the user's own prompts, and the organization's.
+
+##### Where it is enforced
+
+| Site | Treatment |
+|---|---|
+| menus, popup, `loadPrompt()` | filtered out by `getPrompts()` |
+| `pages/customprompts/` rows | already read-only as built-ins; marked `is_inert`, with `customPrompts_policy_default_inert_note` per row and `#managed_restriction_defaults_note` once for the page — without them a row that has silently vanished from every menu reads as a bug |
+| `pages/menu_order/` rows | dimmed, undraggable, badged `menu_order_badge_policy_inactive` (shared with the restriction above: "Disabled by policy" is exactly right for both) |
+
+The built-in prompts are **kept in the merged set**, never filtered out of it, for the same
+data-safety reason as above: `pages/menu_order/` rewrites `_default_prompts_properties` from
+the list it was handed, so dropping them would erase the user's menu positions and custom
+icons on the next Save. `_default_inert_by_policy` rides in `TRANSIENT_PROMPT_FLAGS`, so it
+cannot be persisted. (`setDefaultPromptsProperties()` needs no change — it writes an
+explicit whitelist of fields, so no transient flag can leak through it.)
+
+Fails **open**, like the restriction above: `areDefaultPromptsDisabled()` in
+`js/mzta-prompts.js` returns `false` on any error, because a restriction misread as *on*
+would empty the menus of an unmanaged installation.
 
 #### `_disable_setup_wizard`
 

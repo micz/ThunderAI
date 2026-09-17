@@ -497,12 +497,48 @@ function isUserOwnedPrompt(prompt) {
         && String(prompt.is_org) !== '1';
 }
 
+// Whether the policy takes the built-in prompts out of the menus. Same dual-context shape
+// and the same cache as isPromptManagementDisabled() above, and it fails OPEN for the same
+// reason: a restriction misread as ON would empty the menus of an unmanaged installation.
+let _defaultPromptsDisabledCache = null;
+
+async function areDefaultPromptsDisabled() {
+    if (_defaultPromptsDisabledCache !== null) return _defaultPromptsDisabledCache;
+    let disabled = false;
+    try {
+        const { mztaManaged } = await import('./mzta-managed.js');
+        if (mztaManaged.hasLoaded()) {
+            disabled = mztaManaged.areDefaultPromptsDisabled();
+        } else {
+            const state = await browser.runtime.sendMessage({ command: 'get_managed_state' });
+            disabled = (state && state.disableDefaultPrompts === true);
+        }
+    } catch (e) {
+        disabled = false;
+    }
+    _defaultPromptsDisabledCache = disabled;
+    return _defaultPromptsDisabledCache;
+}
+
 /**
- * The merge behind all three views below: the four prompt sets in one array, with the two
- * reasons a prompt can be inactive MARKED on it rather than filtered out.
+ * A built-in prompt: one of the eight defined in this file, and NOT a special one.
+ *
+ * The is_special test is what makes this different from a plain is_default check: the
+ * special prompts carry is_default "1" as well, because their display properties are stored
+ * the same way, but they back features of their own and _disable_default_prompts leaves
+ * them alone.
+ */
+function isBuiltInDefaultPrompt(prompt) {
+    return String(prompt.is_default) === '1' && String(prompt.is_special) !== '1';
+}
+
+/**
+ * The merge behind all three views below: the four prompt sets in one array, with the
+ * three reasons a prompt can be inactive MARKED on it rather than filtered out.
  *
  *   _shadowed_by_org  - an organization prompt has taken this custom prompt's id
  *   _inert_by_policy  - _disable_prompt_management is on and this is the user's own prompt
+ *   _default_inert_by_policy - _disable_default_prompts is on and this is a built-in prompt
  *
  * Marking instead of dropping is deliberate, and it is a data-safety rule, not a style
  * choice: the pages that administer prompts rewrite the whole _custom_prompt store from
@@ -516,6 +552,7 @@ async function buildPromptSet({ includeSpecial = false } = {}) {
     const orgPrompts = await getOrgPrompts();
     const orgPromptIds = new Set(orgPrompts.map(p => String(p.id).toLowerCase()));
     const mgmtDisabled = await isPromptManagementDisabled();
+    const defaultsDisabled = await areDefaultPromptsDisabled();
 
     const specials = includeSpecial ? await getSpecialPrompts() : [];
     const output = specials.concat(_defaultPrompts).concat(orgPrompts).concat(customPrompts);
@@ -523,6 +560,7 @@ async function buildPromptSet({ includeSpecial = false } = {}) {
     output.forEach(p => {
         p._shadowed_by_org = isShadowedByOrgPrompt(p, orgPromptIds);
         p._inert_by_policy = mgmtDisabled && isUserOwnedPrompt(p);
+        p._default_inert_by_policy = defaultsDisabled && isBuiltInDefaultPrompt(p);
     });
     return output;
 }
@@ -535,10 +573,11 @@ export async function getPrompts(onlyReachable = false, includeSpecial = [], all
     // deleted: the org prompt wins wherever a prompt can be invoked, while the user's own
     // prompt stays in storage and reappears if the policy stops supplying that id. A
     // prompt made inert by _disable_prompt_management is dropped for the same reason and
-    // in the same way. The administration pages call getPromptsForManagement() or
-    // getPromptsForMenuOrder() instead, which keep both visible.
+    // in the same way, as is a built-in one made inert by _disable_default_prompts. The
+    // administration pages call getPromptsForManagement() or getPromptsForMenuOrder()
+    // instead, which keep all of them visible.
     let output = (await buildPromptSet({ includeSpecial: true }))
-        .filter(p => !p._shadowed_by_org && !p._inert_by_policy);
+        .filter(p => !p._shadowed_by_org && !p._inert_by_policy && !p._default_inert_by_policy);
     if((includeSpecial.length == 0) && !allSpecial){
         output = output.filter(obj => obj.is_special != 1); // we do not want special prompts
     }else{
@@ -661,7 +700,8 @@ export function preparePromptsForExport(prompts, include_api_settings = false){
 
         // Never export the transient policy/shadowing flags: a backup is restored on
         // another profile, or on this one after the policy is gone, and a stored
-        // _inert_by_policy would disable a prompt for a policy that no longer applies.
+        // flag such as _inert_by_policy would disable a prompt for a policy that no
+        // longer applies.
         // (is_default rows are already covered by the allowedKeys filter above.)
         TRANSIENT_PROMPT_FLAGS.forEach(flag => delete prompt[flag]);
     });
@@ -891,7 +931,8 @@ export async function setDefaultPromptsProperties(prompts) {
  * Stripped here, at the two gates into storage, rather than in each caller - the pages
  * that save hand their whole in-memory prompt objects straight through.
  */
-const TRANSIENT_PROMPT_FLAGS = ['_shadowed_by_org', '_inert_by_policy'];
+const TRANSIENT_PROMPT_FLAGS = ['_shadowed_by_org', '_inert_by_policy',
+                                '_default_inert_by_policy'];
 
 function stripTransientFlags(prompts) {
     return prompts.map(prompt => {

@@ -61,6 +61,7 @@ export async function getManagedState(do_debug = false) {
     _state.orgName = _state.orgName || '';
     _state.lockedKeys = Array.isArray(_state.lockedKeys) ? _state.lockedKeys : [];
     _state.disablePromptManagement = _state.disablePromptManagement === true;
+    _state.disableDefaultPrompts = _state.disableDefaultPrompts === true;
     _state.disableSetupWizard = _state.disableSetupWizard === true;
     return _state;
 }
@@ -74,6 +75,16 @@ export async function getManagedState(do_debug = false) {
  */
 export function isPromptManagementDisabled() {
     return !!_state && _state.disablePromptManagement === true;
+}
+
+/**
+ * True when the policy takes the built-in prompts out of the menus. Synchronous, see above.
+ *
+ * Independent of isPromptManagementDisabled(): the two restrictions cover disjoint sets of
+ * prompts - the built-in ones here, the user's own ones there - and can be on together.
+ */
+export function areDefaultPromptsDisabled() {
+    return !!_state && _state.disableDefaultPrompts === true;
 }
 
 /** True when the policy forbids opening the setup wizard. Synchronous, see above. */

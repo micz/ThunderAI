@@ -804,6 +804,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     // Restrictions: policy-only switches with no preference behind them,
                     // so they cannot travel through lockedKeys.
                     disablePromptManagement: mztaManaged.isPromptManagementDisabled(),
+                    disableDefaultPrompts: mztaManaged.areDefaultPromptsDisabled(),
                     disableSetupWizard: mztaManaged.isSetupWizardDisabled(),
                 });
                 break;

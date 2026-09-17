@@ -65,6 +65,7 @@ const POLICY_ORG_PROMPTS = '_org_prompts';
 // store in storage.local, and therefore nothing for the ":locked" convention to act on.
 // A restriction is simply on (true) or absent; any other value is warned about and ignored.
 const POLICY_DISABLE_PROMPT_MANAGEMENT = '_disable_prompt_management';
+const POLICY_DISABLE_DEFAULT_PROMPTS = '_disable_default_prompts';
 const POLICY_DISABLE_SETUP_WIZARD = '_disable_setup_wizard';
 
 // Every organization prompt id is composed as ORG_ID_PREFIX + <_org_id> + '_' + <id>, so
@@ -132,6 +133,7 @@ export const mztaManaged = {
     _orgPrompts: [],
     _schemaVersion: 0,
     _disablePromptManagement: false,
+    _disableDefaultPrompts: false,
     _disableSetupWizard: false,
     _allowlist: null,
     // The Promise returned by _doLoad(), NOT a function: _doLoad() is async, so calling
@@ -234,6 +236,10 @@ export const mztaManaged = {
                         this._disablePromptManagement = readRestriction(
                             raw_key, value, this.logger);
                         break;
+                    case POLICY_DISABLE_DEFAULT_PROMPTS:
+                        this._disableDefaultPrompts = readRestriction(
+                            raw_key, value, this.logger);
+                        break;
                     case POLICY_DISABLE_SETUP_WIZARD:
                         this._disableSetupWizard = readRestriction(
                             raw_key, value, this.logger);
@@ -299,6 +305,7 @@ export const mztaManaged = {
         this._active = (Object.keys(this._values).length > 0) ||
                        (this._orgPrompts.length > 0) ||
                        this._disablePromptManagement ||
+                       this._disableDefaultPrompts ||
                        this._disableSetupWizard;
         this._loaded = true;
 
@@ -313,6 +320,7 @@ export const mztaManaged = {
             this.logger.log('Managed preferences: {' + summary.join(', ') + '}');
             const restrictions = [];
             if (this._disablePromptManagement) restrictions.push(POLICY_DISABLE_PROMPT_MANAGEMENT);
+            if (this._disableDefaultPrompts) restrictions.push(POLICY_DISABLE_DEFAULT_PROMPTS);
             if (this._disableSetupWizard) restrictions.push(POLICY_DISABLE_SETUP_WIZARD);
             if (restrictions.length > 0) {
                 this.logger.log('Managed restrictions: ' + restrictions.join(', '));
@@ -381,6 +389,18 @@ export const mztaManaged = {
      */
     isPromptManagementDisabled() {
         return this._disablePromptManagement;
+    },
+
+    /**
+     * True when the policy takes the built-in prompts out of the menus.
+     *
+     * Only the built-in ones: the special prompts back features of their own (Add Tags,
+     * Summarize, Translate...), and the user's and the organization's prompts are not
+     * built-in at all. It is meant for an organization that supplies its own prompts via
+     * _org_prompts and wants only those to be reachable.
+     */
+    areDefaultPromptsDisabled() {
+        return this._disableDefaultPrompts;
     },
 
     /** True when the policy forbids opening the setup wizard. */

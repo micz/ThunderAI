@@ -59,6 +59,7 @@ import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
     getManagedState,
     isPromptManagementDisabled,
+    areDefaultPromptsDisabled,
     disableForManagedRestriction,
     setDisabledRespectingManaged
 } from "../_lib/managed-ui.js";
@@ -79,6 +80,7 @@ let shadowed_org_ids = new Set();
 // Captured once from the managed state, because the row template is synchronous and
 // cannot await the accessor. Set before loadPromptsList() renders the first row.
 let prompt_mgmt_disabled = false;
+let default_prompts_disabled = false;
 var promptsList = null;
 var somethingChanged = false;
 var positionMax_compose = 0;
@@ -109,6 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (managed.active) org_name_label = managed.orgName || '';
     // Captured before loadPromptsList() below: the row template reads it synchronously.
     prompt_mgmt_disabled = isPromptManagementDisabled();
+    default_prompts_disabled = areDefaultPromptsDisabled();
     shadowed_org_ids = new Set(
         values.filter(p => p._shadowed_by_org === true)
               .map(p => String(p.id).toLowerCase()));
@@ -153,6 +156,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         disableForManagedRestriction(btnNew);
         document.getElementById('import_export').style.display = 'none';
         document.getElementById('managed_restriction_note').classList.add('shown');
+    }
+
+    // An independent policy may take the built-in prompts out of the menus. They stay
+    // listed here - they were already read-only - but a row that has silently vanished
+    // from every menu needs saying so, per row and once for the page.
+    if (default_prompts_disabled) {
+        document.getElementById('managed_restriction_defaults_note').classList.add('shown');
     }
     
     // for the new prompt form
@@ -1778,7 +1788,12 @@ function loadPromptsList(values){
             // from read_only_row so the two reasons stay distinguishable - this one is the
             // policy's doing and is explained by its own note.
             const is_inert_row = (values._inert_by_policy === true);
-            const row_locked = read_only_row || is_inert_row;
+
+            // _disable_default_prompts does the same to the built-in prompts. They are
+            // already read-only here, so this changes no button: it exists to EXPLAIN the
+            // row, which has otherwise silently disappeared from every menu.
+            const is_default_inert_row = (values._default_inert_by_policy === true);
+            const row_locked = read_only_row || is_inert_row || is_default_inert_row;
 
             // Copy is disabled for everyone while the policy is on, on built-in and org
             // rows too: it always produces a NEW prompt, which is precisely what the
@@ -1790,7 +1805,7 @@ function loadPromptsList(values){
                 .concat(values.is_default == 1 ? ['is_default'] : [])
                 .concat(is_org_row ? ['is_org'] : [])
                 .concat(is_shadowed_row ? ['is_shadowed'] : [])
-                .concat(is_inert_row ? ['is_inert'] : []);
+                .concat(is_inert_row || is_default_inert_row ? ['is_inert'] : []);
 
             let output = `<tr ` + (row_classes.length ? 'class="' + row_classes.join(' ') + '"' : '') + `>
                 <td class="w08"><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" />`
@@ -1799,6 +1814,7 @@ function loadPromptsList(values){
                     ? `<div class="org_note">__MSG_customPrompts_org_shadowing_note__</div>` : ``)
                 + (is_shadowed_row ? `<div class="shadowed_note">__MSG_customPrompts_shadowed_note__</div>` : ``)
                 + (is_inert_row ? `<div class="inert_note">__MSG_customPrompts_policy_inert_note__</div>` : ``)
+                + (is_default_inert_row ? `<div class="inert_note">__MSG_customPrompts_policy_default_inert_note__</div>` : ``)
                 + `</td>
                 <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
                 <td class="w40">
