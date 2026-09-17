@@ -269,6 +269,34 @@
     color: #e65100;
 }
 
+/* A prompt that cannot be invoked: an organization prompt has taken its id, or the
+   _disable_prompt_management policy has made the user's own prompts inert. Amber, because
+   it is a caveat about the user's own data. */
+.badge_inactive {
+    background: #fff8e1;
+    color: #b26a00;
+}
+
+/* The row stays listed - it must be, so Save writes it back rather than deleting it - but
+   it cannot be dragged, so it must not look draggable or orderable. The badge explaining
+   why is kept at full opacity. */
+.sortable_item.item_inactive {
+    opacity: .55;
+}
+
+.sortable_item.item_inactive:hover {
+    background: #fff;
+}
+
+.sortable_item.item_inactive .drag_handle {
+    cursor: default;
+    visibility: hidden;
+}
+
+.sortable_item.item_inactive .badge_inactive {
+    opacity: 1;
+}
+
 .item_icon_preview {
     width: 18px;
     height: 18px;
@@ -470,6 +498,17 @@
     .badge_type {
         background: #3d2800;
         color: #ffb74d;
+    }
+
+    .badge_inactive {
+        background: #3d3000;
+        color: #ffcc66;
+    }
+
+    /* Match the dark-mode row background (.sortable_item above), so the hover
+       suppression does not repaint an inactive row with the light-mode white. */
+    .sortable_item.item_inactive:hover {
+        background: #333;
     }
 
     .item_icon_preview_editable {

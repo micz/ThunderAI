@@ -20,7 +20,6 @@ import {
     integration_options_config
 } from "../../options/mzta-options-default.js";
 import {
-    getPrompts,
     getPromptsForManagement,
     setDefaultPromptsProperties,
     setCustomPrompts,
@@ -77,6 +76,9 @@ let prefs = null;
 // hiding a custom prompt of the user's, so the org row can say so.
 let org_name_label = '';
 let shadowed_org_ids = new Set();
+// Captured once from the managed state, because the row template is synchronous and
+// cannot await the accessor. Set before loadPromptsList() renders the first row.
+let prompt_mgmt_disabled = false;
 var promptsList = null;
 var somethingChanged = false;
 var positionMax_compose = 0;
@@ -105,6 +107,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Thunderbird. Awaited here so the synchronous restriction accessors below can be used.
     const managed = await getManagedState(prefs.do_debug);
     if (managed.active) org_name_label = managed.orgName || '';
+    // Captured before loadPromptsList() below: the row template reads it synchronously.
+    prompt_mgmt_disabled = isPromptManagementDisabled();
     shadowed_org_ids = new Set(
         values.filter(p => p._shadowed_by_org === true)
               .map(p => String(p.id).toLowerCase()));
@@ -142,10 +146,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     btnNew.addEventListener('click', handleNewClick);
 
-    // A policy may forbid creating, importing and exporting prompts. The existing prompts
-    // stay fully editable: the restriction is about what enters and leaves this profile,
-    // not about the prompts already in it.
-    if (isPromptManagementDisabled()) {
+    // A policy may forbid prompt management. Creation, import and export are blocked here;
+    // the user's existing prompts are additionally rendered read-only by the row template
+    // (row_locked) and are filtered out of every menu by getPrompts().
+    if (prompt_mgmt_disabled) {
         disableForManagedRestriction(btnNew);
         document.getElementById('import_export').style.display = 'none';
         document.getElementById('managed_restriction_note').classList.add('shown');
@@ -449,11 +453,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     async function exportPrompts() {
+        // The button is hidden under the policy, but the action is guarded too: the
+        // control being out of sight is not the same as the action being unavailable.
+        if (prompt_mgmt_disabled) return;
         const manifest = browser.runtime.getManifest();
         const addonVersion = manifest.version;
         const include_api_settings = await showYesNoDialog(browser.i18n.getMessage("customPrompts_export_include_api_settings"));
         if (include_api_settings === null) return;
-        const outputPrompts = preparePromptsForExport(await getPrompts(), include_api_settings);
+        // getPromptsForManagement(): an export is a backup of everything the user has,
+        // so it must not silently omit a shadowed or policy-inert prompt of theirs.
+        const outputPrompts = preparePromptsForExport(await getPromptsForManagement(), include_api_settings);
         let outputObj = {id: 'thunderai-prompts', addon_version: addonVersion, prompts: outputPrompts};
         const blob = new Blob([JSON.stringify(outputObj, null, 2)], {
             type: "application/json",
@@ -537,6 +546,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     function importPrompts() {
+        // Guarded as well as hidden - see exportPrompts() above.
+        if (prompt_mgmt_disabled) return;
         if(confirm(browser.i18n.getMessage("importPrompts_confirmText") + '\n' + browser.i18n.getMessage("customPrompts_managePrompts_info_default_2") + '\n' + browser.i18n.getMessage("customPrompts_managePrompts_info_default_3"))) {
             //ask the user to choose a JSON file, and then read it, check if the serialized JSON is valid as generated from exportPrompts(), and if so, add it to the list
             const input = document.createElement('input');
@@ -605,6 +616,10 @@ document.getElementById('btnManageCustomDataPH').addEventListener('click', () =>
 function handleEditClick(e) {
     e.preventDefault();
     const tr = e.target.parentNode.parentNode;
+    // Guarded as well as disabled: a row the policy made read-only must not open its
+    // editor even if the click reaches here. Checked on the row, not globally, so
+    // built-in and org rows keep their own (data-driven) read-only treatment.
+    if (tr.classList.contains('is_inert')) return;
     const id = tr.querySelector('.id_output').value.toLowerCase();
     
     // Inject Connection UI if needed
@@ -1166,6 +1181,9 @@ function toggleDiffviewer(e) {
 // Confirm and log deletion action
 function handleDeleteClick(e) {
     e.preventDefault();
+    // Before the confirm dialog: a policy-locked row must not even be offered for
+    // deletion. Same row-scoped check as handleEditClick().
+    if (e.target.parentNode.parentNode.classList.contains('is_inert')) return;
     const checkConfirm = window.confirm(browser.i18n.getMessage("customPrompts_btnDelete_confirmText"));
     if (!checkConfirm) {
         return;
@@ -1301,8 +1319,11 @@ function handleInputChange(e) {
 
 function handleCopyClick(e) {
     e.preventDefault();
+    // Copy fills and reveals the "new prompt" form, so it is a creation path and the
+    // policy has to stop it here as well as disable the button.
+    if (prompt_mgmt_disabled) return;
     const tr = e.target.parentNode.parentNode;
-    
+
     let id = tr.querySelector('.id_output').value;
     let name = tr.querySelector('.name_output').value;
     let text = tr.querySelector('.text_output').value;
@@ -1398,7 +1419,7 @@ function handleCopyClick(e) {
 
     // Show form
     document.getElementById('formNew').style.display = 'block';
-    document.getElementById('btnNew').disabled = true;
+    setDisabledRespectingManaged(document.getElementById('btnNew'), true);
 
     // Scroll to top
     window.scrollTo({
@@ -1747,15 +1768,29 @@ function loadPromptsList(values){
             // An organization prompt is read-only like a built-in (the policy owns its
             // content), and a custom prompt shadowed by one is inert until the policy
             // stops supplying that id. Both reuse the existing is_default treatment:
-            // Edit/Cancel/Confirm/Delete disabled, Copy left enabled so the user can
-            // always make an editable personal copy.
+            // Edit/Cancel/Confirm/Delete disabled.
             const is_org_row = (values.is_org == 1);
             const is_shadowed_row = (values._shadowed_by_org === true);
             const read_only_row = (values.is_default == 1) || is_org_row || is_shadowed_row;
+
+            // _disable_prompt_management adds a second, independent reason to lock a row:
+            // the user's own prompts become read-only, not just uncreatable. Kept apart
+            // from read_only_row so the two reasons stay distinguishable - this one is the
+            // policy's doing and is explained by its own note.
+            const is_inert_row = (values._inert_by_policy === true);
+            const row_locked = read_only_row || is_inert_row;
+
+            // Copy is disabled for everyone while the policy is on, on built-in and org
+            // rows too: it always produces a NEW prompt, which is precisely what the
+            // restriction forbids. Otherwise it stays enabled even on read-only rows, so
+            // the user can always make an editable personal copy.
+            const copy_disabled = prompt_mgmt_disabled;
+
             const row_classes = []
                 .concat(values.is_default == 1 ? ['is_default'] : [])
                 .concat(is_org_row ? ['is_org'] : [])
-                .concat(is_shadowed_row ? ['is_shadowed'] : []);
+                .concat(is_shadowed_row ? ['is_shadowed'] : [])
+                .concat(is_inert_row ? ['is_inert'] : []);
 
             let output = `<tr ` + (row_classes.length ? 'class="' + row_classes.join(' ') + '"' : '') + `>
                 <td class="w08"><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" />`
@@ -1763,6 +1798,7 @@ function loadPromptsList(values){
                 + (is_org_row && shadowed_org_ids.has(String(values.id).toLowerCase())
                     ? `<div class="org_note">__MSG_customPrompts_org_shadowing_note__</div>` : ``)
                 + (is_shadowed_row ? `<div class="shadowed_note">__MSG_customPrompts_shadowed_note__</div>` : ``)
+                + (is_inert_row ? `<div class="inert_note">__MSG_customPrompts_policy_inert_note__</div>` : ``)
                 + `</td>
                 <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
                 <td class="w40">
@@ -1854,11 +1890,11 @@ function loadPromptsList(values){
                     </div>
                 </td>
                 <td class="actions_cell">
-                <button class="btnEditItem"` + (read_only_row ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>__MSG_customPrompts_btnEdit__</span></button>
-                <button class="btnCancelItem hiddendata"` + (read_only_row ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>__MSG_customPrompts_btnCancel__</span></button>
-                <button class="btnConfirmItem hiddendata"` + (read_only_row ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>__MSG_customPrompts_btnOK__</span></button>
-                <button class="btnCopyItem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>__MSG_customPrompts_btnCopy__</span></button>
-                <button class="btnDeleteItem"` + (read_only_row ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>__MSG_customPrompts_btnDelete__</span></button>
+                <button class="btnEditItem"` + (row_locked ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>__MSG_customPrompts_btnEdit__</span></button>
+                <button class="btnCancelItem hiddendata"` + (row_locked ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>__MSG_customPrompts_btnCancel__</span></button>
+                <button class="btnConfirmItem hiddendata"` + (row_locked ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>__MSG_customPrompts_btnOK__</span></button>
+                <button class="btnCopyItem"` + (copy_disabled ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>__MSG_customPrompts_btnCopy__</span></button>
+                <button class="btnDeleteItem"` + (row_locked ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>__MSG_customPrompts_btnDelete__</span></button>
                </td>
             </tr>`;
             //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));

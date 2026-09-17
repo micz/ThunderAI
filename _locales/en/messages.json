@@ -2468,8 +2468,20 @@
     "description": "Tooltip on a button or link disabled by an enterprise policy restriction"
   },
   "managed_restriction_prompts": {
-    "message": "Creating, importing and exporting prompts is disabled by your organization's configuration policy. You can still edit and delete your existing prompts.",
+    "message": "Prompt management is disabled by your organization's configuration policy. Prompts cannot be created, copied, imported or exported, and your own existing prompts are read-only and are not available in the menus.",
     "description": "Note shown on the custom prompts page when the policy disables prompt management"
+  },
+  "customPrompts_policy_inert_note": {
+    "message": "Read-only and not available in the menus: your organization's configuration policy disables prompt management. Your prompt is not deleted.",
+    "description": "Note on a custom prompt row made read-only by the prompt management policy"
+  },
+  "menu_order_badge_policy_inactive": {
+    "message": "Disabled by policy",
+    "description": "Badge on a prompt that the prompt management policy has made unavailable"
+  },
+  "menu_order_badge_shadowed": {
+    "message": "Disabled: duplicate ID",
+    "description": "Badge on a custom prompt hidden by an organization prompt with the same ID"
   },
   "managed_restriction_wizard": {
     "message": "The setup wizard is disabled by your organization's configuration policy. Your AI connection is configured centrally.",

@@ -1643,17 +1643,26 @@ tr.is_org { background: var(--accentLight); }
 }
 
 .org_note,
-.shadowed_note {
+.shadowed_note,
+.inert_note {
     margin-top: 4px;
     font-size: .78em;
     line-height: 1.35;
     color: var(--dim);
 }
 
-/* The user's own prompt is the one being disabled, so this note is a caveat about their
-   data rather than neutral information: amber, unlike .org_note above. */
-.shadowed_note { color: var(--warning); }
+/* The user's own prompt is the one being disabled, so these notes are a caveat about
+   their data rather than neutral information: amber, unlike .org_note above. */
+.shadowed_note,
+.inert_note { color: var(--warning); }
 
-/* Dim the shadowed row's content, but NOT the note explaining why it is dim. */
-tr.is_shadowed > td { opacity: .55; }
-tr.is_shadowed > td .shadowed_note { opacity: 1; }
+/* Dim the inactive row's content, but NOT the note explaining why it is dim.
+
+   An "inert" row is one the _disable_prompt_management policy has made read-only: unlike
+   a shadowed row it is not inactive because of an id collision, but because the
+   organization has taken prompt management away. It is listed, and still saved, for the
+   same reason - it must not look as though the policy deleted the user's prompts. */
+tr.is_shadowed > td,
+tr.is_inert > td { opacity: .55; }
+tr.is_shadowed > td .shadowed_note,
+tr.is_inert > td .inert_note { opacity: 1; }

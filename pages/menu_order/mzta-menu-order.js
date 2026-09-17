@@ -17,7 +17,7 @@
  */
 
 import {
-    getPrompts,
+    getPromptsForMenuOrder,
     setDefaultPromptsProperties,
     setCustomPrompts,
     setSpecialPrompts,
@@ -100,7 +100,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadAndRender() {
-    allPrompts = await getPrompts(false, [], true);
+    // getPromptsForMenuOrder(), not getPrompts(): saveAll() below rewrites _custom_prompt
+    // (and _special_prompts) wholesale from this list, so it must contain every prompt the
+    // user owns - including the ones an org prompt shadows and the ones a policy has made
+    // inert. Those arrive flagged (_shadowed_by_org / _inert_by_policy) and are rendered
+    // as inactive rather than hidden.
+    allPrompts = await getPromptsForMenuOrder();
 
     // Exclude special prompts that are defined with show_in: "none" (internal prompts, not user-toggleable)
     // and special prompts whose feature is not active (e.g. add_tags disabled, sparks not present)
@@ -304,7 +309,14 @@ function renderListItems(listEl, items, menuType, isActive) {
         li.dataset.id = prompt.id;
         li.dataset.menu = menuType;
         li.dataset.active = isActive ? '1' : '0';
-        li.draggable = true;
+
+        // A prompt that cannot be invoked at all: either an org prompt has taken its id,
+        // or a policy has made the user's own prompts inert. It is listed - it must be, so
+        // saveAll() writes it back instead of deleting it - but ordering it would be
+        // meaningless, so it is shown dimmed, with a reason, and cannot be dragged.
+        const is_inactive = (prompt._shadowed_by_org === true) || (prompt._inert_by_policy === true);
+        li.draggable = !is_inactive;
+        if (is_inactive) li.classList.add('item_inactive');
 
         // Drag handle
         const handle = document.createElement('span');
@@ -356,6 +368,17 @@ function renderListItems(listEl, items, menuType, isActive) {
             sourceBadge.textContent = browser.i18n.getMessage('menu_order_badge_custom');
         }
         li.appendChild(sourceBadge);
+
+        // Why the row is greyed out. Without it a dimmed, undraggable row reads as a bug.
+        if (is_inactive) {
+            const inactiveBadge = document.createElement('span');
+            inactiveBadge.classList.add('badge', 'badge_inactive');
+            inactiveBadge.textContent = browser.i18n.getMessage(
+                prompt._inert_by_policy === true
+                    ? 'menu_order_badge_policy_inactive'
+                    : 'menu_order_badge_shadowed');
+            li.appendChild(inactiveBadge);
+        }
 
         listEl.appendChild(li);
     });

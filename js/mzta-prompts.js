@@ -458,22 +458,87 @@ export async function getOrgPromptIds() {
     return new Set((await getOrgPrompts()).map(p => String(p.id).toLowerCase()));
 }
 
-export async function getPrompts(onlyReachable = false, includeSpecial = [], allSpecial = false){ // includeSpecial is an array of active special prompts ids
+// Whether the policy forbids prompt management. Same dual-context shape as getOrgPrompts()
+// above - in the background the managed module is read directly, everywhere else the state
+// comes over runtime.sendMessage - and cached for the same reason: getPrompts() is called
+// repeatedly while building menus.
+//
+// It fails OPEN (false) on any error, matching pages/_lib/managed-ui.js. A restriction
+// misread as ON would make the user's own prompts vanish from every menu and turn
+// read-only in the management page, which is far worse than a restriction briefly not
+// applied: the policy is re-read at the next start anyway.
+let _promptMgmtDisabledCache = null;
+
+async function isPromptManagementDisabled() {
+    if (_promptMgmtDisabledCache !== null) return _promptMgmtDisabledCache;
+    let disabled = false;
+    try {
+        const { mztaManaged } = await import('./mzta-managed.js');
+        if (mztaManaged.hasLoaded()) {
+            disabled = mztaManaged.isPromptManagementDisabled();
+        } else {
+            const state = await browser.runtime.sendMessage({ command: 'get_managed_state' });
+            disabled = (state && state.disablePromptManagement === true);
+        }
+    } catch (e) {
+        disabled = false;
+    }
+    _promptMgmtDisabledCache = disabled;
+    return _promptMgmtDisabledCache;
+}
+
+/**
+ * A prompt the user owns: not built-in, not special, not supplied by the policy.
+ * These are the ones _disable_prompt_management makes inert.
+ */
+function isUserOwnedPrompt(prompt) {
+    return String(prompt.is_default) !== '1'
+        && String(prompt.is_special) !== '1'
+        && String(prompt.is_org) !== '1';
+}
+
+/**
+ * The merge behind all three views below: the four prompt sets in one array, with the two
+ * reasons a prompt can be inactive MARKED on it rather than filtered out.
+ *
+ *   _shadowed_by_org  - an organization prompt has taken this custom prompt's id
+ *   _inert_by_policy  - _disable_prompt_management is on and this is the user's own prompt
+ *
+ * Marking instead of dropping is deliberate, and it is a data-safety rule, not a style
+ * choice: the pages that administer prompts rewrite the whole _custom_prompt store from
+ * the list they were given (pages/menu_order/ saveAll(), pages/customprompts/ saveAll()),
+ * so a prompt missing from their list is a prompt DELETED on the next Save. Only the
+ * invocation view (getPrompts) drops anything.
+ */
+async function buildPromptSet({ includeSpecial = false } = {}) {
     const _defaultPrompts = await getDefaultPrompts_withProps();
-    // console.log('>>>>>>>>>>>> getPrompts _defaultPrompts: ' + JSON.stringify(_defaultPrompts));
     const customPrompts = await getCustomPrompts();
-    // console.log('>>>>>>>>>>>> getPrompts customPrompts: ' + JSON.stringify(customPrompts));
-    const specialPrompts = await getSpecialPrompts();
     const orgPrompts = await getOrgPrompts();
+    const orgPromptIds = new Set(orgPrompts.map(p => String(p.id).toLowerCase()));
+    const mgmtDisabled = await isPromptManagementDisabled();
+
+    const specials = includeSpecial ? await getSpecialPrompts() : [];
+    const output = specials.concat(_defaultPrompts).concat(orgPrompts).concat(customPrompts);
+
+    output.forEach(p => {
+        p._shadowed_by_org = isShadowedByOrgPrompt(p, orgPromptIds);
+        p._inert_by_policy = mgmtDisabled && isUserOwnedPrompt(p);
+    });
+    return output;
+}
+
+export async function getPrompts(onlyReachable = false, includeSpecial = [], allSpecial = false){ // includeSpecial is an array of active special prompts ids
+    // The invocation view: everywhere a prompt can actually be run - the compose, display
+    // and context menus, the popup, and loadPrompt() by id.
+    //
     // A custom prompt whose id an organization prompt has taken is dropped here, not
     // deleted: the org prompt wins wherever a prompt can be invoked, while the user's own
-    // prompt stays in storage and reappears if the policy stops supplying that id. The
-    // custom prompts page calls getPromptsForManagement() instead, which keeps it visible.
-    const orgPromptIds = new Set(orgPrompts.map(p => String(p.id).toLowerCase()));
-    const visibleCustomPrompts = customPrompts.filter(
-        p => !isShadowedByOrgPrompt(p, orgPromptIds));
-    let output = specialPrompts.concat(_defaultPrompts)
-        .concat(orgPrompts).concat(visibleCustomPrompts);
+    // prompt stays in storage and reappears if the policy stops supplying that id. A
+    // prompt made inert by _disable_prompt_management is dropped for the same reason and
+    // in the same way. The administration pages call getPromptsForManagement() or
+    // getPromptsForMenuOrder() instead, which keep both visible.
+    let output = (await buildPromptSet({ includeSpecial: true }))
+        .filter(p => !p._shadowed_by_org && !p._inert_by_policy);
     if((includeSpecial.length == 0) && !allSpecial){
         output = output.filter(obj => obj.is_special != 1); // we do not want special prompts
     }else{
@@ -507,24 +572,37 @@ export async function getPrompts(onlyReachable = false, includeSpecial = [], all
 /**
  * getPrompts() for the custom prompts management page.
  *
- * Identical to getPrompts(), except that a custom prompt shadowed by an organization
- * prompt is KEPT, flagged with _shadowed_by_org. That page is where the user administers
- * their own prompts, so a prompt of theirs must never just disappear from it: it is shown
- * disabled, with an explanation, and - this is the part that matters - it is still saved.
- * The page rewrites the whole _custom_prompt store from what it lists, so dropping the row
- * here would delete the user's prompt for real on the next Save All.
+ * Identical to getPrompts(), except that an inactive prompt is KEPT and flagged, rather
+ * than dropped: _shadowed_by_org for a custom prompt whose id an organization prompt has
+ * taken, _inert_by_policy for one made read-only by _disable_prompt_management. That page
+ * is where the user administers their own prompts, so a prompt of theirs must never just
+ * disappear from it: it is shown disabled, with an explanation, and - this is the part
+ * that matters - it is still saved. The page rewrites the whole _custom_prompt store from
+ * what it lists, so dropping the row here would delete the user's prompt for real on the
+ * next Save All.
  *
- * Every other surface (popup, menus, menu order) uses getPrompts() and does not see it.
+ * Special prompts are not listed on that page, so they are left out entirely. The menu
+ * order page needs them and uses getPromptsForMenuOrder() below.
  */
 export async function getPromptsForManagement(){
-    const _defaultPrompts = await getDefaultPrompts_withProps();
-    const customPrompts = await getCustomPrompts();
-    const orgPrompts = await getOrgPrompts();
-    const orgPromptIds = new Set(orgPrompts.map(p => String(p.id).toLowerCase()));
-    customPrompts.forEach(p => {
-        p._shadowed_by_org = isShadowedByOrgPrompt(p, orgPromptIds);
-    });
-    let output = _defaultPrompts.concat(orgPrompts).concat(customPrompts);
+    let output = await buildPromptSet({ includeSpecial: false });
+    output.sort((a, b) => a.id.localeCompare(b.id));
+    for(let i=1; i<=output.length; i++){
+        output[i-1].idnum = i;
+    }
+    return output;
+}
+
+/**
+ * getPrompts() for the menu order page.
+ *
+ * Like getPromptsForManagement() it keeps the inactive prompts and flags them, for exactly
+ * the same reason - that page also rewrites _custom_prompt wholesale from the list it was
+ * given - but it INCLUDES special prompts, which it both lists and writes back to
+ * _special_prompts. Handing it getPromptsForManagement() would wipe that store on Save.
+ */
+export async function getPromptsForMenuOrder(){
+    let output = await buildPromptSet({ includeSpecial: true });
     output.sort((a, b) => a.id.localeCompare(b.id));
     for(let i=1; i<=output.length; i++){
         output[i-1].idnum = i;
@@ -580,14 +658,21 @@ export function preparePromptsForExport(prompts, include_api_settings = false){
         }else{
             delete prompt['idnum'];
         }
-        
+
+        // Never export the transient policy/shadowing flags: a backup is restored on
+        // another profile, or on this one after the policy is gone, and a stored
+        // _inert_by_policy would disable a prompt for a policy that no longer applies.
+        // (is_default rows are already covered by the allowedKeys filter above.)
+        TRANSIENT_PROMPT_FLAGS.forEach(flag => delete prompt[flag]);
     });
     return output;
 }
 
 export async function preparePromptsForImport(prompts){
     // console.log(">>>>>>>>>>> preparePromptsForImport prompts: " + JSON.stringify(prompts));
-    const output = await getPrompts();
+    // The merged result is written back over the user's prompts by the import, so it must
+    // start from the complete set: a prompt missing here is a prompt dropped on import.
+    const output = await getPromptsForManagement();
     // console.log(">>>>>>>>>>> preparePromptsForImport output: " + JSON.stringify(output));
     prompts.forEach(prompt => {
         if(output.some(p => p.id == prompt.id)){
@@ -798,9 +883,27 @@ export async function setDefaultPromptsProperties(prompts) {
     await browser.storage.local.set({_default_prompts_properties: default_prompts_properties});
 }
 
+/**
+ * The transient flags buildPromptSet() attaches. They describe the CURRENT policy state,
+ * never the prompt itself, so they must not reach storage: a stored _inert_by_policy would
+ * outlive the policy that set it and keep a prompt disabled after it was lifted.
+ *
+ * Stripped here, at the two gates into storage, rather than in each caller - the pages
+ * that save hand their whole in-memory prompt objects straight through.
+ */
+const TRANSIENT_PROMPT_FLAGS = ['_shadowed_by_org', '_inert_by_policy'];
+
+function stripTransientFlags(prompts) {
+    return prompts.map(prompt => {
+        const copy = Object.assign({}, prompt);
+        TRANSIENT_PROMPT_FLAGS.forEach(flag => delete copy[flag]);
+        return copy;
+    });
+}
+
 export async function setCustomPrompts(prompts) {
     // console.log(">>>>>>>>>>>> setCustomPrompts prompts: " + JSON.stringify(prompts));
-    await browser.storage.local.set({_custom_prompt: prompts});
+    await browser.storage.local.set({_custom_prompt: stripTransientFlags(prompts)});
 }
 
 export async function getSpecialPrompts(){
@@ -855,7 +958,7 @@ export async function getSpecialPrompts(){
 
 export async function setSpecialPrompts(prompts) {
     // console.log(">>>>>>>>>>>> setSpecialPrompts prompts: " + JSON.stringify(prompts));
-    await browser.storage.local.set({_special_prompts: prompts});
+    await browser.storage.local.set({_special_prompts: stripTransientFlags(prompts)});
 }
 
 export function getHiddenSpecialPromptIds() {
@@ -890,7 +993,11 @@ export async function migrateMenuOrderAlphabetic() {
         return;
     }
 
-    const allPrompts = await getPrompts(false, [], true);
+    // getPromptsForMenuOrder(), not getPrompts(): this migration rewrites _custom_prompt
+    // wholesale below, so it must see every prompt the user owns - including the ones an
+    // org prompt shadows or a policy has made inert. With the filtering view they would be
+    // missing from `ordered` and setCustomPrompts() would delete them for real.
+    const allPrompts = await getPromptsForMenuOrder();
     const hiddenSpecialIds = getHiddenSpecialPromptIds();
     const visiblePrompts = allPrompts.filter(p => !hiddenSpecialIds.includes(p.id));
 

@@ -34,15 +34,26 @@ policy is reflected at the next start and nothing of the user's is ever touched.
   `pages/menu_order/` like any other prompt. This does not break read-only: that store
   holds only the nine display keys, never the prompt text.
 
-**Two getters, deliberately:**
+**Three getters, deliberately.** All three are thin views over `buildPromptSet()`, which
+merges the four sets once and **marks** the two reasons a prompt can be inactive —
+`_shadowed_by_org` (an org prompt took its id) and `_inert_by_policy`
+(`_disable_prompt_management` is on and this is the user's own prompt) — rather than
+dropping them. Only the invocation view drops anything:
 
-| | Shadowed custom prompts | Used by |
-|---|---|---|
-| `getPrompts()` | hidden | popup, menus, menu order, everything else |
-| `getPromptsForManagement()` | listed, flagged `_shadowed_by_org` | `pages/customprompts/` only |
+| | Inactive prompts | Special prompts | Used by |
+|---|---|---|---|
+| `getPrompts()` | hidden | per arguments | popup, menus, `loadPrompt()` |
+| `getPromptsForManagement()` | listed, flagged | no | `pages/customprompts/`, import, export |
+| `getPromptsForMenuOrder()` | listed, flagged | yes | `pages/menu_order/`, `migrateMenuOrderAlphabetic()` |
 
-`pages/customprompts/` must list them or a prompt of the user's would appear to have
-vanished; it shows them disabled with an explanation. **Both** pages that persist prompts
+The administration pages must list an inactive prompt or a prompt of the user's would
+appear to have vanished; they show it disabled, dimmed, with an explanation. `pages/menu_order/`
+needs its own view purely because it also lists and rewrites the **special** prompts, which
+`getPromptsForManagement()` omits.
+
+The two flags describe the current policy state, not the prompt, so they are stripped in
+`setCustomPrompts()`, `setSpecialPrompts()` and `preparePromptsForExport()` — a stored or
+exported `_inert_by_policy` would outlive the policy that set it. **Both** pages that persist prompts
 rewrite a whole store from what they list (`setCustomPrompts()` replaces `_custom_prompt`
 entirely), so their filters must exclude `is_org` from the custom-prompt save and include
 it in the default-properties save. Getting this wrong either copies org prompts into the

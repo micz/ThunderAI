@@ -133,7 +133,7 @@ Keys starting with `_` are structures and metadata, never preferences. **No key 
 | `_org_name` | display name, for the banner and markers |
 | `_org_id` | `[a-z0-9-]+`, the prompt-id namespace |
 | `_org_prompts` | the fourth prompt set |
-| `_disable_prompt_management` | restriction: no prompt creation, import or export |
+| `_disable_prompt_management` | restriction: no prompt creation, copy, import or export; existing custom prompts read-only and inactive |
 | `_disable_setup_wizard` | restriction: the setup wizard cannot be opened |
 
 ### Restrictions
@@ -157,20 +157,65 @@ They travel to pages in the `get_managed_state` payload as `disablePromptManagem
 
 #### `_disable_prompt_management`
 
-Covers the three controls on [`pages/customprompts/`](../pages/customprompts/): `btnNew`,
-`btnImport`, `btnExportAll`. Export is included on purpose — an exported file carries the
-prompt bodies, and with *include API settings* it can carry provider credentials too, so an
-organization that locks prompt management does not want that file produced either.
+The organization takes prompt management away entirely: nothing can be created, copied,
+imported or exported, and the user's **existing** prompts become read-only and stop being
+available anywhere they could be invoked. Built-in and organization prompts are untouched —
+they remain fully usable, which is the point: the user keeps working, with the prompt set
+the organization decided on.
 
-Existing prompts stay fully editable and deletable. The restriction is about what enters
-and leaves the profile, not about what is already in it.
+Export is included on purpose — an exported file carries the prompt bodies, and with
+*include API settings* it can carry provider credentials too, so an organization that locks
+prompt management does not want that file produced either.
 
-`btnNew` is disabled in place; the `#import_export` pair is **hidden** rather than greyed,
-because a greyed Export/Import pair invites clicking. `#managed_restriction_note` is
-revealed in their place so the missing buttons read as policy, not as a bug.
+**The user's prompts are never deleted.** They stay in `_custom_prompt`, are still listed
+(read-only, with an explanation) on both prompt pages, are still saved, and come back
+exactly as they were the moment the policy is lifted.
 
-This is also why that page now uses `pages/_lib/managed-ui.js` instead of its own raw
-`sendMessage`: it needs the restriction accessors, and the state belongs in one cache.
+##### Where it is enforced
+
+| Site | Treatment |
+|---|---|
+| `pages/customprompts/` `btnNew` | disabled in place |
+| `pages/customprompts/` `#import_export` | **hidden** rather than greyed — a greyed Export/Import pair invites clicking. `#managed_restriction_note` is revealed in its place, so the missing buttons read as policy, not as a bug |
+| `pages/customprompts/` row buttons | Edit/Cancel/Confirm/Delete disabled on the user's own rows (`row_locked`); **Copy disabled on every row**, built-in and org included, because Copy always produces a new prompt |
+| `pages/menu_order/` rows | dimmed, undraggable, badged `menu_order_badge_policy_inactive` |
+| menus, popup, `loadPrompt()` | filtered out by `getPrompts()` |
+| `exportPrompts()`, `importPrompts()`, `handleCopyClick()`, `handleEditClick()`, `handleDeleteClick()` | early-return guards — the control being disabled or out of sight is not the same as the action being unavailable |
+
+This is also why that page uses `pages/_lib/managed-ui.js` instead of its own raw
+`sendMessage`: it needs the restriction accessors, and the state belongs in one cache. The
+page captures it once into `prompt_mgmt_disabled` before the first row renders, because the
+List.js row template is synchronous and cannot await.
+
+##### The three prompt views, and why the filter is not global
+
+`js/mzta-prompts.js` builds the merged prompt set once in `buildPromptSet()`, which
+**marks** the two reasons a prompt can be inactive instead of dropping them:
+`_shadowed_by_org` and `_inert_by_policy`. Three views sit on top of it:
+
+| View | Drops inactive? | Special prompts | Used by |
+|---|---|---|---|
+| `getPrompts()` | yes | per arguments | menus, popup, `loadPrompt()` |
+| `getPromptsForManagement()` | no | no | `pages/customprompts/`, import, export |
+| `getPromptsForMenuOrder()` | no | yes | `pages/menu_order/`, `migrateMenuOrderAlphabetic()` |
+
+The split is a **data-safety rule, not a style choice**. Both prompt pages rewrite the
+whole `_custom_prompt` store from the list they were handed, so a prompt missing from that
+list is a prompt *deleted* on the next Save. Filtering inside `getPrompts()` alone would
+therefore have made the menu order page erase every custom prompt the moment a user
+reordered anything under the policy. Any future caller that writes back to storage must
+use a non-dropping view for the same reason.
+
+`_shadowed_by_org` and `_inert_by_policy` describe the *current* policy state, never the
+prompt, so they must not be persisted: a stored `_inert_by_policy` would outlive the policy
+that set it. They are stripped in `setCustomPrompts()` and `setSpecialPrompts()` — the two
+gates into storage — and in `preparePromptsForExport()`, so a backup restored elsewhere
+carries no stale policy state.
+
+The restriction fails **open**: `isPromptManagementDisabled()` in `js/mzta-prompts.js`
+returns `false` on any error, matching `managed-ui.js`. A restriction misread as *on* would
+make the user's own prompts vanish from every menu, which is far worse than one briefly not
+applied — the policy is re-read at the next start anyway.
 
 Custom *data placeholders* are deliberately **not** covered. They are text fragments, not
 prompts, and carry no provider credentials — a separate restriction can be added if an
@@ -374,6 +419,10 @@ Different from adding a preference, and more work — there is no allowlist to f
    accessor in `managed-ui.js`.
 4. An explicit guard at every site it covers — including any that can be reached by direct
    URL — plus a visible explanation at each, or the missing control reads as a bug.
+5. If it hides or disables **user data** rather than a control: mark the data, never filter
+   it out of a list that some page writes back to storage, and make sure the mark cannot be
+   persisted. See `_disable_prompt_management` above — a restriction that filters the wrong
+   list does not restrict the user's prompts, it deletes them.
 
 Prefer a locked preference whenever one would do. Reach for a restriction only when there
 is genuinely no user-facing setting to lock.
