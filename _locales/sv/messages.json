@@ -2518,5 +2518,14 @@
     },
     "editor_placeholder_unterminated": {
         "message": "Oavslutad platshållare: den avslutande %} saknas"
+    },
+    "specific_integration_mandatory_badge": {
+        "message": "Krävs"
+    },
+    "specific_integration_mandatory_chatgpt_web": {
+        "message": "Detta alternativ är obligatoriskt och kan inte stängas av: den ChatGPT-webbintegration som valts som global anslutning har inte stöd för denna funktion. Välj ett specifikt API nedan."
+    },
+    "specific_integration_mandatory_no_connection": {
+        "message": "Detta alternativ är obligatoriskt och kan inte stängas av: ingen global AI-anslutning har valts ännu. Välj ett specifikt API nedan eller konfigurera en global anslutning i ThunderAI-inställningarna."
     }
 }
