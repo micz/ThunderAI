@@ -32,6 +32,14 @@
              knows up front why some fields are greyed out. Hidden unless a policy is active. -->
         <div id="managed_config_banner"><span class="managed_banner_text"></span></div>
 
+        <!-- The policy forbids the wizard, and the page was reached by its direct URL.
+             Shown by JS in place of everything below, which is hidden in the same step. -->
+        <div id="wiz_blocked" class="wiz_blocked hidden">
+            <div class="wiz_blocked_icon">&#128274;</div>
+            <h2 class="wiz_step_title">__MSG_managed_restriction_wizard_title__</h2>
+            <p class="wiz_step_sub">__MSG_managed_restriction_wizard__</p>
+        </div>
+
         <!-- STEP INDICATOR (dots + connectors injected at runtime) -->
         <div id="wiz_steps"></div>
 

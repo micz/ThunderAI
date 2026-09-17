@@ -57,6 +57,12 @@ import {
     PLACEHOLDER_RE
 } from "../../js/mzta-editor-highlight.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
+import {
+    getManagedState,
+    isPromptManagementDisabled,
+    disableForManagedRestriction,
+    setDisabledRespectingManaged
+} from "../_lib/managed-ui.js";
 
 // Id prefix for the add-new-prompt form's injected connection fields. Every
 // injection on this page must carry a prefix: injectConnectionUI() runs once for
@@ -94,14 +100,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // whole _custom_prompt store from what is listed here.
     let values = await getPromptsForManagement();
 
-    // One round trip for the managed state: this page never reads browser.storage.managed
-    // itself, which is known to fail on options pages in Thunderbird.
-    try {
-        const managed = await browser.runtime.sendMessage({ command: 'get_managed_state' });
-        if (managed && managed.active) org_name_label = managed.orgName || '';
-    } catch (e) {
-        // Background not ready: fall back to the generic label.
-    }
+    // One round trip for the managed state, through the shared helper: this page never
+    // reads browser.storage.managed itself, which is known to fail on options pages in
+    // Thunderbird. Awaited here so the synchronous restriction accessors below can be used.
+    const managed = await getManagedState(prefs.do_debug);
+    if (managed.active) org_name_label = managed.orgName || '';
     shadowed_org_ids = new Set(
         values.filter(p => p._shadowed_by_org === true)
               .map(p => String(p.id).toLowerCase()));
@@ -138,6 +141,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
     btnNew.addEventListener('click', handleNewClick);
+
+    // A policy may forbid creating, importing and exporting prompts. The existing prompts
+    // stay fully editable: the restriction is about what enters and leaves this profile,
+    // not about the prompts already in it.
+    if (isPromptManagementDisabled()) {
+        disableForManagedRestriction(btnNew);
+        document.getElementById('import_export').style.display = 'none';
+        document.getElementById('managed_restriction_note').classList.add('shown');
+    }
     
     // for the new prompt form
     let btnNew_elements = document.querySelectorAll(".input_new");
@@ -419,7 +431,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         // console.log('>>>>>>>>>>>>> deleteBtn: ' + JSON.stringify(deleteBtn));
         // console.log('>>>>>>>>>>>>> newItem: ' + JSON.stringify(newItem));
-        document.getElementById('btnNew').disabled = false;
+        setDisabledRespectingManaged(document.getElementById('btnNew'), false);
         clearFields();
         setSomethingChanged();
         i18n.updateDocument();

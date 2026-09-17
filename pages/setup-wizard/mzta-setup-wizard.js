@@ -32,7 +32,9 @@ import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
   applyManagedUI,
   showManagedBanner,
-  isLockedKey
+  isLockedKey,
+  getManagedState,
+  isSetupWizardDisabled
 } from '../_lib/managed-ui.js';
 
 let taLog = console;
@@ -379,6 +381,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   taLog = new taLogger('mzta-setup-wizard', prefs.do_debug);
   // Empty when nothing has been chosen yet: no provider card is preselected.
   state.provider = prefs.connection_type;
+
+  // The policy may forbid the wizard. Every link to it is disabled, so reaching this point
+  // means the page was opened by its direct URL. Check before anything is built: the
+  // wizard writes connection preferences as the user steps through it, and the write guard
+  // in js/mzta-prefs.js only covers the keys the policy actually locks.
+  await getManagedState(prefs.do_debug);
+  if (isSetupWizardDisabled()) {
+    await showManagedBanner('managed_config_banner', true);
+    document.getElementById('wiz_blocked').classList.remove('hidden');
+    document.querySelector('.wiz_step_body').classList.add('hidden');
+    document.getElementById('wiz_steps').classList.add('hidden');
+    document.getElementById('wiz_nav').classList.add('hidden');
+    i18n.updateDocument();
+    return;
+  }
 
   await injectConnectionUI({
     afterTrId: 'connection_ui_anchor',

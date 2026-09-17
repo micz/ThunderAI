@@ -24,6 +24,9 @@
         <button id="btnExportAll">__MSG_customPrompts_ExportAll__</button>
         <button id="btnImport">__MSG_customPrompts_Import__</button>
     </div>
+    <!-- Shown by JS only when the policy disables prompt creation, import and export.
+         Without it the missing buttons would read as a bug rather than as a policy. -->
+    <div id="managed_restriction_note" class="managed_restriction_note">__MSG_managed_restriction_prompts__</div>
     <div id="formNew">
       <table class="width_all">
         <tr>

@@ -801,6 +801,10 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     active: mztaManaged.isManagedActive(),
                     orgName: mztaManaged.getOrgName(),
                     lockedKeys: mztaManaged.getLockedKeys(),
+                    // Restrictions: policy-only switches with no preference behind them,
+                    // so they cannot travel through lockedKeys.
+                    disablePromptManagement: mztaManaged.isPromptManagementDisabled(),
+                    disableSetupWizard: mztaManaged.isSetupWizardDisabled(),
                 });
                 break;
             case 'get_org_prompts':

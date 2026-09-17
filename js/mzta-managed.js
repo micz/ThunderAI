@@ -59,6 +59,14 @@ const POLICY_ORG_NAME = '_org_name';
 const POLICY_ORG_ID = '_org_id';
 const POLICY_ORG_PROMPTS = '_org_prompts';
 
+// Restrictions: policy-only switches that take something away from the user rather than
+// set a preference. They are structural keys, not entries in prefs_default, because there
+// is no user-facing setting behind them - nothing to show in the options page, nothing to
+// store in storage.local, and therefore nothing for the ":locked" convention to act on.
+// A restriction is simply on (true) or absent; any other value is warned about and ignored.
+const POLICY_DISABLE_PROMPT_MANAGEMENT = '_disable_prompt_management';
+const POLICY_DISABLE_SETUP_WIZARD = '_disable_setup_wizard';
+
 // Every organization prompt id is composed as ORG_ID_PREFIX + <_org_id> + '_' + <id>, so
 // two organizations can never generate the same id and no shipped prompt id (they all
 // start with "prompt_") can ever collide with one.
@@ -123,6 +131,8 @@ export const mztaManaged = {
     _orgId: '',
     _orgPrompts: [],
     _schemaVersion: 0,
+    _disablePromptManagement: false,
+    _disableSetupWizard: false,
     _allowlist: null,
     // The Promise returned by _doLoad(), NOT a function: _doLoad() is async, so calling
     // it starts the work and yields the Promise, which is stored here and awaited as-is.
@@ -220,6 +230,14 @@ export const mztaManaged = {
                     case POLICY_ORG_PROMPTS:
                         // Validated in pass 3, once the rest of the policy is known.
                         break;
+                    case POLICY_DISABLE_PROMPT_MANAGEMENT:
+                        this._disablePromptManagement = readRestriction(
+                            raw_key, value, this.logger);
+                        break;
+                    case POLICY_DISABLE_SETUP_WIZARD:
+                        this._disableSetupWizard = readRestriction(
+                            raw_key, value, this.logger);
+                        break;
                     default:
                         this.logger.warn('Policy: unknown structural key "' + raw_key + '", ignored.');
                 }
@@ -276,8 +294,12 @@ export const mztaManaged = {
                 policy[POLICY_ORG_PROMPTS], this._orgId, this.logger);
         }
 
+        // A policy that only restricts - no preference, no prompt - is still a policy: the
+        // banner and the disabled buttons must be explained, so it counts as active.
         this._active = (Object.keys(this._values).length > 0) ||
-                       (this._orgPrompts.length > 0);
+                       (this._orgPrompts.length > 0) ||
+                       this._disablePromptManagement ||
+                       this._disableSetupWizard;
         this._loaded = true;
 
         if (this._active) {
@@ -289,6 +311,12 @@ export const mztaManaged = {
                 ', ' + Object.keys(this._values).length + ' preference(s), ' +
                 this._orgPrompts.length + ' organization prompt(s).');
             this.logger.log('Managed preferences: {' + summary.join(', ') + '}');
+            const restrictions = [];
+            if (this._disablePromptManagement) restrictions.push(POLICY_DISABLE_PROMPT_MANAGEMENT);
+            if (this._disableSetupWizard) restrictions.push(POLICY_DISABLE_SETUP_WIZARD);
+            if (restrictions.length > 0) {
+                this.logger.log('Managed restrictions: ' + restrictions.join(', '));
+            }
         }
     },
 
@@ -343,7 +371,39 @@ export const mztaManaged = {
     getOrgPrompts() {
         return this._orgPrompts;
     },
+
+    /**
+     * True when the policy forbids creating, importing or exporting prompts.
+     *
+     * Export is included on purpose: an exported file carries the prompt bodies, and with
+     * "include API settings" it can carry provider credentials too, so an organization
+     * that locks prompt management does not want that file produced either.
+     */
+    isPromptManagementDisabled() {
+        return this._disablePromptManagement;
+    },
+
+    /** True when the policy forbids opening the setup wizard. */
+    isSetupWizardDisabled() {
+        return this._disableSetupWizard;
+    },
 };
+
+/**
+ * Read a restriction key.
+ *
+ * Only a literal true turns a restriction on. false is accepted and means "off", which is
+ * also what an absent key means - it is allowed so that an administrator can write the key
+ * out explicitly. Anything else is a malformed policy and is reported, never coerced: a
+ * restriction silently misread as "on" would lock a fleet out of its own prompts.
+ */
+function readRestriction(key, value, logger) {
+    if (typeof value !== 'boolean') {
+        logger.warn('Policy: "' + key + '" must be true or false, ignored.');
+        return false;
+    }
+    return value;
+}
 
 /**
  * Validate the _org_prompts array.

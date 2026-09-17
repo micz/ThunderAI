@@ -53,7 +53,9 @@ import {
   applyManagedUI,
   showManagedBanner,
   isLockedKey,
-  setDisabledRespectingManaged
+  setDisabledRespectingManaged,
+  isSetupWizardDisabled,
+  disableForManagedRestriction
 } from '../pages/_lib/managed-ui.js';
 
 let taLog = new taLogger("mzta-options",true);
@@ -441,6 +443,9 @@ function updateConnPanelTint(){
 }
 
 async function openSetupWizard(){
+  // Belt and braces: the links are disabled below, but a restriction must not depend on a
+  // control staying disabled - the wizard page refuses to render as well.
+  if(isSetupWizardDisabled()) return;
   await browser.tabs.create({ url: "../pages/setup-wizard/mzta-setup-wizard.html" });
 }
 
@@ -830,6 +835,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   document.getElementById('btn_setup_wizard').addEventListener('click', openSetupWizard);
+
+  // A policy may forbid the setup wizard: the connection is configured centrally, so the
+  // guided setup would only offer to overwrite what the policy already enforces.
+  if(isSetupWizardDisabled()){
+      disableForManagedRestriction(document.getElementById('btn_setup_wizard'));
+      disableForManagedRestriction(document.getElementById('btn_options_setup_wizard'));
+  }
 
   // "No connection selected" banner: shown until a provider is chosen.
   updateNoConnectionBanner();

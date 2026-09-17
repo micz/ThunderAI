@@ -1130,6 +1130,42 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     margin-inline-end: 4px;
 }
 
+/* A link a restriction took away. An <a> has no `disabled` the browser honours, so the
+   inert look is done here; managed-ui.js also strips the href so it cannot be followed. */
+a.managed_disabled {
+    color: var(--dim);
+    text-decoration: none;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Note shown in place of a control set a policy removed entirely (prompt import/export).
+   Quieter than the managed banner: the banner already names the organization at the top of
+   the page, this only explains one missing control. */
+.managed_restriction_note {
+    display: none;
+    /* Padlock and text are two separate flex items, so NOT flex-wrap: wrap - same
+       reasoning as #managed_config_banner above. The text wraps internally instead. */
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin: 10px 0;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--field);
+    color: var(--dim);
+    font-size: 13px;
+    line-height: 1.5;
+}
+.managed_restriction_note.shown { display: flex; }
+.managed_restriction_note::before {
+    content: "\1F512";      /* padlock */
+    font-size: 15px;
+    flex: none;
+    line-height: 1.5;
+}
+
 .warning {
     color: white;
     font-style: italic;

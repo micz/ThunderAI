@@ -60,7 +60,25 @@ export async function getManagedState(do_debug = false) {
     _state.active = _state.active === true;
     _state.orgName = _state.orgName || '';
     _state.lockedKeys = Array.isArray(_state.lockedKeys) ? _state.lockedKeys : [];
+    _state.disablePromptManagement = _state.disablePromptManagement === true;
+    _state.disableSetupWizard = _state.disableSetupWizard === true;
     return _state;
+}
+
+/**
+ * True when the policy forbids creating, importing or exporting prompts.
+ *
+ * Synchronous, like isLockedKey(): getManagedState() must have run first. A caller that
+ * has not awaited it gets false, which is the safe default for a page that could not reach
+ * the background page at all.
+ */
+export function isPromptManagementDisabled() {
+    return !!_state && _state.disablePromptManagement === true;
+}
+
+/** True when the policy forbids opening the setup wizard. Synchronous, see above. */
+export function isSetupWizardDisabled() {
+    return !!_state && _state.disableSetupWizard === true;
 }
 
 /** The enforced preference keys on this page. Empty array when no policy is active. */
@@ -134,6 +152,33 @@ function markManaged(element, state) {
     } else {
         target.appendChild(marker);
     }
+}
+
+/**
+ * Disable a control that a restriction takes away, and say who took it away.
+ *
+ * Restrictions have no preference behind them, so applyManagedUI() cannot reach these
+ * controls: its whole mapping is "element id IS the preference key". They are also plain
+ * buttons and links rather than .option-input fields. This is the explicit counterpart,
+ * called at the few sites a restriction covers.
+ *
+ * Marks the element the same way applyManagedUI() does, so setDisabledRespectingManaged()
+ * keeps it disabled if page logic later reassigns `disabled` for its own reasons.
+ */
+export function disableForManagedRestriction(element, do_debug = false) {
+    if (!element) return;
+    if (element.dataset.mztaManaged === '1') return;
+    element.dataset.mztaManaged = '1';
+    element.disabled = true;
+    // An <a> has no `disabled` property that the browser honours: give it the same inert
+    // treatment the markup gets, so a restricted link cannot be followed or tabbed into.
+    if (element.tagName === 'A') {
+        element.setAttribute('aria-disabled', 'true');
+        element.classList.add('managed_disabled');
+        element.removeAttribute('href');
+    }
+    element.title = browser.i18n.getMessage('managed_restriction_tooltip');
+    lockControl(element);
 }
 
 /**

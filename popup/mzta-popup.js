@@ -19,6 +19,7 @@
 import { taLogger } from "../js/mzta-logger.js";
 import { hasNoConnectionSelected } from "../js/mzta-utils.js";
 import { mztaPrefs } from '../js/mzta-prefs.js';
+import { getManagedState, isSetupWizardDisabled } from '../pages/_lib/managed-ui.js';
 
 let menuSendImmediately = false;
 let taLog = console;
@@ -43,11 +44,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(!isConnectionConfigured(prefs)){
         document.getElementById("mzta_search_banner").style.display = "none";
         document.getElementById("setup_wizard_prompt").style.display = "block";
-        document.getElementById("btn_popup_setup_wizard").addEventListener("click", async (e) => {
-            e.preventDefault();
-            await browser.tabs.create({ url: "../pages/setup-wizard/mzta-setup-wizard.html" });
-            window.close();
-        });
+        // A policy may forbid the wizard. Then the invitation is a dead end: drop the link
+        // and say who has to configure the connection instead, so the user is not left
+        // clicking something that will never open.
+        await getManagedState(prefs.do_debug);
+        if(isSetupWizardDisabled()){
+            const link = document.getElementById("btn_popup_setup_wizard");
+            link.textContent = browser.i18n.getMessage('managed_restriction_wizard');
+            link.removeAttribute('href');
+            link.classList.add('managed_disabled');
+        }else{
+            document.getElementById("btn_popup_setup_wizard").addEventListener("click", async (e) => {
+                e.preventDefault();
+                await browser.tabs.create({ url: "../pages/setup-wizard/mzta-setup-wizard.html" });
+                window.close();
+            });
+        }
         return;
     }
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});

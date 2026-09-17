@@ -2463,6 +2463,22 @@
     "message": "This setting is set by your organization's configuration policy and cannot be changed here.",
     "description": "Tooltip on the managed marker"
   },
+  "managed_restriction_tooltip": {
+    "message": "This action is disabled by your organization's configuration policy.",
+    "description": "Tooltip on a button or link disabled by an enterprise policy restriction"
+  },
+  "managed_restriction_prompts": {
+    "message": "Creating, importing and exporting prompts is disabled by your organization's configuration policy. You can still edit and delete your existing prompts.",
+    "description": "Note shown on the custom prompts page when the policy disables prompt management"
+  },
+  "managed_restriction_wizard": {
+    "message": "The setup wizard is disabled by your organization's configuration policy. Your AI connection is configured centrally.",
+    "description": "Shown in place of the setup wizard, and instead of the wizard link in the popup, when the policy disables it"
+  },
+  "managed_restriction_wizard_title": {
+    "message": "Setup wizard unavailable",
+    "description": "Title shown in place of the setup wizard when the policy disables it"
+  },
   "customPrompts_org_badge": {
     "message": "Organization",
     "description": "Badge on a prompt supplied by the enterprise policy, when no organization name is configured"

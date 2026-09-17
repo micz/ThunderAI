@@ -133,6 +133,71 @@ Keys starting with `_` are structures and metadata, never preferences. **No key 
 | `_org_name` | display name, for the banner and markers |
 | `_org_id` | `[a-z0-9-]+`, the prompt-id namespace |
 | `_org_prompts` | the fourth prompt set |
+| `_disable_prompt_management` | restriction: no prompt creation, import or export |
+| `_disable_setup_wizard` | restriction: the setup wizard cannot be opened |
+
+### Restrictions
+
+The last two are **restrictions**: policy-only switches that take something away rather
+than set a value. They are structural keys, not entries in `prefs_default`, because there
+is no user-facing setting behind them — nothing to show in the options page, nothing to
+store in `storage.local`, and therefore nothing for the lock convention to act on. A
+restriction is simply on (`true`) or absent.
+
+`readRestriction()` accepts only a boolean. `false` is allowed, and means the same as
+absent, so an administrator can write the key out explicitly. Anything else is warned about
+and treated as off — never coerced, because a restriction silently misread as *on* would
+lock a fleet out of its own prompts.
+
+A policy that only restricts — no preference, no prompt — still counts as **active**: the
+banner and the disabled controls have to be explained.
+
+They travel to pages in the `get_managed_state` payload as `disablePromptManagement` and
+`disableSetupWizard`. They cannot ride in `lockedKeys`, which holds preference keys.
+
+#### `_disable_prompt_management`
+
+Covers the three controls on [`pages/customprompts/`](../pages/customprompts/): `btnNew`,
+`btnImport`, `btnExportAll`. Export is included on purpose — an exported file carries the
+prompt bodies, and with *include API settings* it can carry provider credentials too, so an
+organization that locks prompt management does not want that file produced either.
+
+Existing prompts stay fully editable and deletable. The restriction is about what enters
+and leaves the profile, not about what is already in it.
+
+`btnNew` is disabled in place; the `#import_export` pair is **hidden** rather than greyed,
+because a greyed Export/Import pair invites clicking. `#managed_restriction_note` is
+revealed in their place so the missing buttons read as policy, not as a bug.
+
+This is also why that page now uses `pages/_lib/managed-ui.js` instead of its own raw
+`sendMessage`: it needs the restriction accessors, and the state belongs in one cache.
+
+Custom *data placeholders* are deliberately **not** covered. They are text fragments, not
+prompts, and carry no provider credentials — a separate restriction can be added if an
+organization ever asks for one.
+
+#### `_disable_setup_wizard`
+
+The wizard writes connection preferences as the user steps through it, and the write guard
+only covers the keys the policy actually locks. So this is enforced at **four** entry
+points plus the page itself:
+
+| Site | Treatment |
+|---|---|
+| `options/` `btn_setup_wizard`, `btn_options_setup_wizard` | disabled in place |
+| `pages/onboarding/` `wizard_banner` | hidden — it exists only to lead there |
+| `popup/` `setup_wizard_prompt` | link replaced by the explanation text |
+| `pages/setup-wizard/` itself | renders `#wiz_blocked` instead of the wizard |
+
+The page check is not redundant. Every link to it is disabled, so reaching the wizard means
+it was opened by its direct URL; the check runs before anything is built or injected.
+
+The popup case is the odd one: that panel replaces the prompt list when no connection is
+configured, so it cannot simply be hidden. The link text becomes the explanation, so the
+user learns the connection is configured centrally rather than clicking a dead end.
+
+`openSetupWizard()` in the options page also returns early — a restriction must not depend
+on a control staying disabled.
 
 ## Organization prompts
 
@@ -193,7 +258,7 @@ six feature settings pages and the setup wizard. One `sendMessage` round trip pe
 
 ```javascript
 browser.runtime.sendMessage({ command: 'get_managed_state' })
-// -> { active, orgName, lockedKeys }
+// -> { active, orgName, lockedKeys, disablePromptManagement, disableSetupWizard }
 ```
 
 **No page ever calls `browser.storage.managed` itself**, and `runtime.getBackgroundPage()`
@@ -212,6 +277,20 @@ controls whose id merely ends with the key (`translate` would match `auto_transl
 
 `applyManagedUI()` must run **after** the connection panel has injected its provider rows,
 and after `restoreOptions()` has populated the inputs.
+
+`applyManagedUI()` covers locked *preferences* only. A restriction has no preference behind
+it, and its controls are plain buttons and links rather than `.option-input` fields, so
+there is an explicit counterpart: `disableForManagedRestriction()`, called at the few sites
+a restriction covers. It marks the element with the same `data-mzta-managed` attribute, so
+`setDisabledRespectingManaged()` keeps it disabled if page logic later reassigns
+`disabled`, and applies the same `lockControl()` inertness. For an `<a>` — which has no
+`disabled` property the browser honours — it also strips the `href` and adds
+`.managed_disabled`.
+
+`isPromptManagementDisabled()` and `isSetupWizardDisabled()` are synchronous, like
+`isLockedKey()`: `getManagedState()` must have been awaited first. A caller that has not
+gets `false`, which is the safe default for a page that could not reach the background at
+all — the same fallback the rest of this module takes.
 
 ### The setup wizard
 
@@ -283,3 +362,18 @@ why.
 Either way the administrator key reference on micz.it is now out of date — it is generated
 from `prefs_default` by hand, so a new or newly excluded preference has to be reflected
 there too.
+
+## Adding a restriction
+
+Different from adding a preference, and more work — there is no allowlist to fall into.
+
+1. A new `_`-prefixed constant and a `case` in pass 1 of `_doLoad()`, reading through
+   `readRestriction()`.
+2. Backing state, an accessor, and a line in the `_active` expression.
+3. A field in the `get_managed_state` payload, and its normalisation plus a synchronous
+   accessor in `managed-ui.js`.
+4. An explicit guard at every site it covers — including any that can be reached by direct
+   URL — plus a visible explanation at each, or the missing control reads as a bug.
+
+Prefer a locked preference whenever one would do. Reach for a restriction only when there
+is genuinely no user-facing setting to lock.

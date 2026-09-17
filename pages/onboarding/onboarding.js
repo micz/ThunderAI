@@ -19,6 +19,11 @@
 import { taLogger } from '../../js/mzta-logger.js';
 import { getMiczItUrl, hasNoConnectionSelected } from '../../js/mzta-utils.js';
 import { mztaPrefs } from '../../js/mzta-prefs.js';
+import {
+    getManagedState,
+    isSetupWizardDisabled,
+    disableForManagedRestriction
+} from '../_lib/managed-ui.js';
 
 let taLog = null;
 
@@ -32,12 +37,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('btn_launch_wizard').addEventListener('click', async (e) => {
         e.preventDefault();
+        if(isSetupWizardDisabled()) return;
         await browser.tabs.create({ url: '/pages/setup-wizard/mzta-setup-wizard.html' });
     });
 
+    // A policy may forbid the wizard: hide the whole banner rather than disable the link,
+    // since the banner exists only to lead there and has nothing else to say.
+    await getManagedState(prefs.do_debug);
+    if(isSetupWizardDisabled()){
+        disableForManagedRestriction(document.getElementById('btn_launch_wizard'));
+        document.getElementById('wizard_banner').style.display = 'none';
+    }
+
     // No AI connection chosen yet: give the (blue) wizard banner more prominence.
     // No permission banner can apply in this state, since none of the checks below match.
-    if(hasNoConnectionSelected(prefs.connection_type)){
+    if(hasNoConnectionSelected(prefs.connection_type) && !isSetupWizardDisabled()){
         document.getElementById('wizard_banner').classList.add('wizard_banner_urgent');
     }
 

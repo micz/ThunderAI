@@ -288,3 +288,15 @@ body {
     #wiz_step_done.tint_ollama_api        { --tint-accent: rgb(154,196,161); }
     #wiz_step_done.tint_openai_comp_api   { --tint-accent: rgb(195,163,226); }
 }
+
+/* Shown in place of the whole wizard when the policy forbids it and the page was reached
+   by its direct URL. Centered like a step body, since it replaces one. */
+.wiz_blocked {
+    text-align: center;
+    padding: 32px 24px 40px 24px;
+}
+.wiz_blocked_icon {
+    font-size: 40px;
+    line-height: 1;
+    margin-bottom: 14px;
+}
