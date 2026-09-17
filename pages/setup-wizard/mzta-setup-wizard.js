@@ -28,6 +28,7 @@ import {
   isTestableConnection,
   runConnectionTest
 } from '../../js/mzta-connection-test.js';
+import { mztaPrefs } from '../../js/mzta-prefs.js';
 
 let taLog = console;
 
@@ -94,7 +95,11 @@ function saveOptions(e) {
       console.error('[ThunderAI] Unhandled input type:', element.type);
       return;
   }
-  browser.storage.sync.set(options);
+  // Guard the default: branch above, which leaves `options` empty — the previous
+  // set(options) wrote nothing in that case, so nothing must be written here either.
+  if (Object.prototype.hasOwnProperty.call(options, element.id)) {
+    mztaPrefs.setPref(element.id, options[element.id]);
+  }
 }
 
 async function restoreOptions() {
@@ -132,7 +137,7 @@ async function restoreOptions() {
       }
     });
   }
-  let getting = await browser.storage.sync.get(prefs_default);
+  let getting = await mztaPrefs.getAllPrefs();
   setCurrentChoice(getting);
 }
 
@@ -350,10 +355,7 @@ function goBack() {
 // ---- Boot ----------------------------------------------------------------
 
 document.addEventListener('DOMContentLoaded', async () => {
-  let prefs = await browser.storage.sync.get({
-    do_debug: prefs_default.do_debug,
-    connection_type: prefs_default.connection_type,
-  });
+  let prefs = await mztaPrefs.getPrefs(['do_debug', 'connection_type']);
   taLog = new taLogger('mzta-setup-wizard', prefs.do_debug);
   // Empty when nothing has been chosen yet: no provider card is preselected.
   state.provider = prefs.connection_type;

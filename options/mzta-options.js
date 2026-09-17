@@ -48,6 +48,7 @@ import {
   isTestableConnection,
   runConnectionTest
 } from '../js/mzta-connection-test.js';
+import { mztaPrefs } from '../js/mzta-prefs.js';
 
 let taLog = new taLogger("mzta-options",true);
 
@@ -85,7 +86,11 @@ function saveOptions(e) {
           console.error("[ThunderAI] Unhandled input type:", element.type);
     }
 
-  browser.storage.sync.set(options);
+  // Guard the default: branch above, which leaves `options` empty — the previous
+  // set(options) wrote nothing in that case, so nothing must be written here either.
+  if (Object.prototype.hasOwnProperty.call(options, element.id)) {
+    mztaPrefs.setPref(element.id, options[element.id]);
+  }
 }
 
 async function restoreOptions() {
@@ -139,7 +144,7 @@ async function restoreOptions() {
     });
   }
 
-  let getting = await browser.storage.sync.get(prefs_default);
+  let getting = await mztaPrefs.getAllPrefs();
   setCurrentChoice(getting);
 }
 
@@ -273,7 +278,7 @@ function disable_ApiFeature(prefs_opt, prefix, manageBtnId){
   setApiWarnVisibility(prefix, state.show_api_warning);
 
   if(checked_original != checkbox.checked){
-    browser.storage.sync.set({[prefix]: checkbox.checked});
+    mztaPrefs.setPref(prefix, checkbox.checked);
   }
 }
 
@@ -525,13 +530,13 @@ function setConnTestState(state, message){
 function resetMaxPromptLength(){
   let maxPromptLength = document.getElementById('max_prompt_length');
   maxPromptLength.value = prefs_default.max_prompt_length;
-  browser.storage.sync.set({max_prompt_length: prefs_default.max_prompt_length});
+  mztaPrefs.setPref('max_prompt_length', prefs_default.max_prompt_length);
 }
 
 function resetSpecialCommandTimeout(){
   let specialCommandTimeout = document.getElementById('special_command_timeout');
   specialCommandTimeout.value = prefs_default.special_command_timeout;
-  browser.storage.sync.set({special_command_timeout: prefs_default.special_command_timeout});
+  mztaPrefs.setPref('special_command_timeout', prefs_default.special_command_timeout);
 }
 
 async function updateCacheSize() {
@@ -590,7 +595,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!granted) {
           event.target.checked = false;
           setFeatureManageVisibility(addtags_info_btn, false);
-          browser.storage.sync.set({add_tags: false});
+          mztaPrefs.setPref('add_tags', false);
         }
       }
     }
@@ -608,7 +613,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!granted) {
           event.target.checked = false;
           setFeatureManageVisibility(spamfilter_info_btn, false);
-          browser.storage.sync.set({spamfilter: false});
+          mztaPrefs.setPref('spamfilter', false);
         }
       }
     }
@@ -689,9 +694,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  let prefs_opt = await browser.storage.sync.get({
-    ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
-  });
+  let prefs_opt = await mztaPrefs.getPrefs(
+    Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+  );
 
   let conntype_select = document.getElementById("connection_type");
   conntype_select.addEventListener("change", disable_MaxPromptLength);
@@ -719,14 +724,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateSpecificApiIndicators(prefs_opt);
 
   browser.storage.onChanged.addListener(async (changes, area) => {
-    if (area !== 'sync') return;
+    // Preferences live in storage.local — see js/mzta-prefs.js.
+    if (area !== 'local') return;
     const hasRelevantChange = Object.keys(changes).some(key =>
       key.endsWith('_use_specific_integration') || key.endsWith('_connection_type')
     );
     if (hasRelevantChange) {
-      prefs_opt = await browser.storage.sync.get({
-        ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
-      });
+      prefs_opt = await mztaPrefs.getPrefs(
+        Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+      );
       updateSpecificApiIndicators(prefs_opt);
       // The feature rows are computed from prefs_opt too: configuring a per-feature
       // integration in another tab changes that feature's effective connection, so the

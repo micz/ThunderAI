@@ -150,3 +150,4 @@ _The language status represents the percentage of translated strings in the late
 - <a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGPT web frontend
 - <a href="https://github.com/boxabirds">Julian Harris</a> for his project <a href="https://github.com/boxabirds/chatgpt-frontend-nobuild">chatgpt-frontend-nobuild</a>, that has been used as a starting point for the API Web Interface
 - <a href="https://hosted.weblate.org/widgets/thunderai/">Hosted Weblate</a> for managing the localization
+- <a href="https://github.com/micz/Thunderbird-Addon-Options-Manager">Thunderbird Addon Options Manager</a> as the basis for the preference handling

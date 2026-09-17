@@ -42,6 +42,7 @@ import {
   getConnectionTypeLabel
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
+import { mztaPrefs } from '../../js/mzta-prefs.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -79,7 +80,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
         }
-        await browser.storage.sync.set(update_prefs);
+        // Multi-key write: stays a direct set(), but on the preferences area
+        // (storage.local) — see PREFS_AREA in js/mzta-prefs.js.
+        await browser.storage.local.set(update_prefs);
     }
 
     await initializeSpecificIntegrationUI({
@@ -202,9 +205,9 @@ function saveOptions(e) {
         break;
       case 'select-one':
         if (element.id === 'translate_auto') {
-          // An empty select (selectedIndex === -1) parses to NaN, which storage.sync
+          // An empty select (selectedIndex === -1) parses to NaN, which storage
           // serializes as null — and a stored null is *not* replaced by the default in
-          // storage.sync.get(), so the value stays outside the 0..3 range forever and
+          // storage.get(), so the value stays outside the 0..3 range forever and
           // every === comparison downstream silently fails. Fall back to the default.
           let parsed = parseInt(element.value, 10);
           options[element.id] = Number.isNaN(parsed) ? prefs_default.translate_auto : parsed;
@@ -219,7 +222,11 @@ function saveOptions(e) {
         console.error("[ThunderAI] Unhandled input type:", element.type);
     }
 
-  browser.storage.sync.set(options);
+  // Guard the default: branch above, which leaves `options` empty — the previous
+  // set(options) wrote nothing in that case, so nothing must be written here either.
+  if (Object.prototype.hasOwnProperty.call(options, element.id)) {
+    mztaPrefs.setPref(element.id, options[element.id]);
+  }
 }
 
 async function restoreOptions() {
@@ -274,7 +281,7 @@ async function restoreOptions() {
     });
   }
 
-  let getting = await browser.storage.sync.get(prefs_default);
+  let getting = await mztaPrefs.getAllPrefs();
 
   let specialPrompts = await getSpecialPrompts();
   let translate_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_translate_this');

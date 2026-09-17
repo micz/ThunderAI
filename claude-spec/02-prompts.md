@@ -287,7 +287,7 @@ It is idempotent: the flag short-circuits reruns, and after it runs no `enabled`
 
 Each prompt requires **two** conditions: its feature flag is on, **and** its feature's connection can drive an API. The second is judged per feature, never globally: the function takes an `effective_conn` map — one already-resolved connection type per prefix in `special_prompts_with_integration` — and tests it with `isApiUsableConnection()`. `_computeActiveSpecialIds()` in `mzta-background.js` is the only caller; it builds the map with `getConnectionType(prefs, null, prefix)`, so a feature with `use_specific_integration` stays available even when the global connection is ChatGPT Web or unset. Getting this wrong hides working features from the menus while the options page still shows them enabled.
 
-The `storage.sync.get` feeding it **must** include `getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])`. Without those keys `getConnectionType()` reads `use_specific_integration` as `undefined` and silently falls back to the global connection — the failure is invisible at the call site, which still looks correct.
+The preference read feeding it **must** include `getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])`. Without those keys `getConnectionType()` reads `use_specific_integration` as `undefined` and silently falls back to the global connection — the failure is invisible at the call site, which still looks correct.
 
 Notable dependency:
 

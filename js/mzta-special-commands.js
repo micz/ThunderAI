@@ -21,6 +21,7 @@
     prefs_default,
     integration_options_config
  } from "../options/mzta-options-default.js";
+import { mztaPrefs } from './mzta-prefs.js';
  import { taLogger } from './mzta-logger.js';
  import { stripThinkTags } from './mzta-utils.js';
 
@@ -124,10 +125,10 @@
             prefsToGet[prefKey] = prefs_default[prefKey];
         }
 
-        const prefs_api = await browser.storage.sync.get(prefsToGet);
+        const prefs_api = await mztaPrefs.getPrefs(Object.keys(prefsToGet));
 
         // Load the configurable timeout used to abort a hung worker in sendPrompt().
-        const prefs_timeout = await browser.storage.sync.get({ special_command_timeout: prefs_default.special_command_timeout });
+        const prefs_timeout = await mztaPrefs.getPrefs(['special_command_timeout']);
         if (Number.isFinite(prefs_timeout.special_command_timeout) && prefs_timeout.special_command_timeout > 0) {
             this.timeout_ms = prefs_timeout.special_command_timeout;
         }

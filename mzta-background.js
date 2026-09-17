@@ -79,6 +79,8 @@ import {
     addTags_getExclusionList,
     checkExcludedTag
 } from './js/mzta-addtags-exclusion-list.js';
+import { mztaPrefs } from './js/mzta-prefs.js';
+import { migratePrefsToLocal, isSyncDrained } from './js/mzta-prefs-migration.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -91,9 +93,23 @@ browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     }
 });
 
-await migrateCustomPromptsStorage();
-await migrateDefaultPromptsPropStorage();
-await migrateEnabledToShowIn();
+// Must run FIRST, before anything reads a preference. It also carries the one-shot
+// migration flags into storage.local — migrateEnabledToShowIn() below reads one of them,
+// and migrateMenuOrderAlphabetic() (called further down) reads the other, which would
+// otherwise find its "not yet run" default and overwrite the user's custom menu ordering.
+// Hence _prefs_migration_ok: if the copy failed, those flags are not in storage.local yet
+// and the two migrations guarded by them must be skipped rather than re-run destructively.
+const _prefs_migration_ok = await migratePrefsToLocal();
+
+// Once storage.sync is drained these two have nothing left to find, and each would otherwise
+// pay a storage.sync.get() at every startup forever. The other two migrations below are NOT
+// skipped this way: they work on storage.local data and own their own flags, so they must be
+// allowed to decide for themselves.
+if (!await isSyncDrained()) {
+    await migrateCustomPromptsStorage();
+    await migrateDefaultPromptsPropStorage();
+}
+if (_prefs_migration_ok) await migrateEnabledToShowIn();
 
 var original_html = '';
 var modified_html = '';
@@ -231,20 +247,20 @@ export function preparePopupMenu(tab) {
 // flags lag behind the rest by one or more storage change events, hiding a command
 // until restart.
 async function _readFeatureConnPrefs() {
-    return await browser.storage.sync.get({
-        add_tags: prefs_default.add_tags,
-        get_calendar_event: prefs_default.get_calendar_event,
-        get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard,
-        get_task: prefs_default.get_task,
-        connection_type: prefs_default.connection_type,
-        spamfilter: prefs_default.spamfilter,
-        summarize: prefs_default.summarize,
-        translate: prefs_default.translate,
+    return await mztaPrefs.getPrefs([
+        'add_tags',
+        'get_calendar_event',
+        'get_calendar_event_from_clipboard',
+        'get_task',
+        'connection_type',
+        'spamfilter',
+        'summarize',
+        'translate',
         // Needed by getConnectionType() to resolve the per-feature override: without these
         // keys use_specific_integration reads as undefined and every feature silently falls
         // back to the global connection.
-        ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
-    });
+        ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+    ]);
 }
 
 // Self-healing for the feature flags. A flag can survive in storage pointing at a
@@ -289,7 +305,9 @@ async function _reconcileFeatureFlags(prefs) {
     if (Object.keys(to_disable).length > 0) {
         // console.log and not taLog: this also runs at startup, before taLog is built.
         console.log("[ThunderAI] Disabling features with an unusable connection: " + Object.keys(to_disable).join(', '));
-        await browser.storage.sync.set(to_disable);
+        // Multi-key write, so it stays a direct set() rather than going through
+        // mztaPrefs.setPref() — but it must target the preferences area (storage.local).
+        await browser.storage.local.set(to_disable);
     }
     return prefs;
 }
@@ -367,7 +385,17 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     try {
                         let tabId = sender.tab.id;
 
-                        let prefs = await browser.storage.sync.get({ summarize: prefs_default.summarize, summarize_auto: prefs_default.summarize_auto, summarize_display_mode: prefs_default.summarize_display_mode, summarize_max_display_length: prefs_default.summarize_max_display_length, summarize_strip_formatting: prefs_default.summarize_strip_formatting, summarize_auto_senders: prefs_default.summarize_auto_senders, summarize_auto_senders_list: prefs_default.summarize_auto_senders_list, connection_type: prefs_default.connection_type, ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']) });
+                        let prefs = await mztaPrefs.getPrefs([
+                            'summarize',
+                            'summarize_auto',
+                            'summarize_display_mode',
+                            'summarize_max_display_length',
+                            'summarize_strip_formatting',
+                            'summarize_auto_senders',
+                            'summarize_auto_senders_list',
+                            'connection_type',
+                            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+                        ]);
 
                         if (!prefs.summarize) return;
 
@@ -405,7 +433,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                                 return;
                             }
                         }
-                        // storage.sync.get() only substitutes the default for *missing* keys, so a
+                        // storage.get() only substitutes the default for *missing* keys, so a
                         // null previously written by an empty select (NaN, serialized as null)
                         // would survive and match none of the === comparisons below.
                         let summarize_auto = Number.isInteger(prefs.summarize_auto) ? prefs.summarize_auto : prefs_default.summarize_auto;
@@ -477,7 +505,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'refreshSummary':
                 async function _refreshSummary(message) {
                     let tabId = sender.tab.id;
-                    let prefs_refresh = await browser.storage.sync.get({ summarize_display_mode: prefs_default.summarize_display_mode });
+                    let prefs_refresh = await mztaPrefs.getPrefs(['summarize_display_mode']);
                     if (prefs_refresh.summarize_display_mode === 'webchat') {
                         await summaryStore.removeSummary(message.headerMessageId);
                         // Resolves via the tabId route (c) — see triggerSummaryWebchat.
@@ -507,10 +535,10 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             headerMessageId: msg.headerMessageId
                         };
                         await summaryStore.saveSummary(summaryData, msg.headerMessageId);
-                        let prefs_summary = await browser.storage.sync.get({
-                            summarize_max_display_length: prefs_default.summarize_max_display_length,
-                            summarize_strip_formatting: prefs_default.summarize_strip_formatting
-                        });
+                        let prefs_summary = await mztaPrefs.getPrefs([
+                            'summarize_max_display_length',
+                            'summarize_strip_formatting'
+                        ]);
                         await _sendIfCurrent(msg.tabId, msg.headerMessageId, {
                             command: "showSummary",
                             data: { ...summaryData, maxDisplayLength: prefs_summary.summarize_max_display_length, stripFormatting: prefs_summary.summarize_strip_formatting }
@@ -528,7 +556,13 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _initTranslation() {
                     try {
                         let tabId = sender.tab.id;
-                        let prefs = await browser.storage.sync.get({ translate: prefs_default.translate, translate_auto: prefs_default.translate_auto, translate_max_display_length: prefs_default.translate_max_display_length, connection_type: prefs_default.connection_type, ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']) });
+                        let prefs = await mztaPrefs.getPrefs([
+                            'translate',
+                            'translate_auto',
+                            'translate_max_display_length',
+                            'connection_type',
+                            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+                        ]);
 
                         if (!prefs.translate) return;
 
@@ -547,7 +581,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             return;
                         }
 
-                        // storage.sync.get() only substitutes the default for *missing* keys, so a
+                        // storage.get() only substitutes the default for *missing* keys, so a
                         // null previously written by an empty select (NaN, serialized as null)
                         // would survive and match none of the === comparisons below.
                         let translate_auto = Number.isInteger(prefs.translate_auto) ? prefs.translate_auto : prefs_default.translate_auto;
@@ -589,10 +623,10 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     let tabId = sender.tab.id;
                     // Fire the inline loading indicator immediately, before any await
                     browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
-                    let prefs_tl = await browser.storage.sync.get({
-                        translate_lang: prefs_default.translate_lang,
-                        default_chatgpt_lang: prefs_default.default_chatgpt_lang
-                    });
+                    let prefs_tl = await mztaPrefs.getPrefs([
+                        'translate_lang',
+                        'default_chatgpt_lang'
+                    ]);
                     const lang_tl = prefs_tl.translate_lang || prefs_tl.default_chatgpt_lang || '';
                     if (!lang_tl) {
                         let tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -619,11 +653,12 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
             case 'chatgpt_close':
                     async function _closeChatGptWindow(window_id) {
-                        let prefs_close = await browser.storage.sync.get({chatgpt_win_save_position: prefs_default.chatgpt_win_save_position});
+                        let prefs_close = await mztaPrefs.getPrefs(['chatgpt_win_save_position']);
                         if(prefs_close.chatgpt_win_save_position){
                             try {
                                 let winInfo = await browser.windows.get(window_id);
-                                await browser.storage.sync.set({chatgpt_win_top: winInfo.top, chatgpt_win_left: winInfo.left});
+                                // Multi-key write: stays a direct set(), on the preferences area.
+                                await browser.storage.local.set({chatgpt_win_top: winInfo.top, chatgpt_win_left: winInfo.left});
                                 taLog.log("Window position saved: top=" + winInfo.top + ", left=" + winInfo.left);
                             } catch(e) {
                                 taLog.error("Error saving window position: " + e);
@@ -657,7 +692,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     let paragraphsHtmlString = message.text;
                     //console.log(">>>>>>>>>>>> paragraphsHtmlString: " + paragraphsHtmlString);
                     taLog.log("paragraphsHtmlString: " + paragraphsHtmlString);
-                    let prefs_reply = await browser.storage.sync.get({reply_type: prefs_default.reply_type});
+                    let prefs_reply = await mztaPrefs.getPrefs(['reply_type']);
                     // No plain-text conversion here: the reply window does not exist
                     // yet, so its format is not knowable. replaceBody() reads it from
                     // the created tab and converts there.
@@ -775,7 +810,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
             case 'assign_tags':
                 async function _do_assign_tags(message) {
-                    let prefs_assign_tags = await browser.storage.sync.get({add_tags_exclusions_exact_match: prefs_default.add_tags_exclusions_exact_match});
+                    let prefs_assign_tags = await mztaPrefs.getPrefs(['add_tags_exclusions_exact_match']);
                     return _assign_tags(message,true, prefs_assign_tags.add_tags_exclusions_exact_match);
                 }
                 return _do_assign_tags(message);
@@ -918,10 +953,10 @@ async function _resolveMessage(headerMessageId, messageId = null, tabId = null, 
 // message the user never asked to summarize.
 async function _summarizeConnectionMissing() {
     try {
-        let prefs = await browser.storage.sync.get({
-            connection_type: prefs_default.connection_type,
-            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
-        });
+        let prefs = await mztaPrefs.getPrefs([
+            'connection_type',
+            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+        ]);
         const summarize_prompt = await getSummarizePrompt();
         return !isApiUsableConnection(getConnectionType(prefs, summarize_prompt, 'summarize'));
     } catch (e) {
@@ -937,14 +972,14 @@ async function _summarizeConnectionMissing() {
 //   getDisplayedMessage) — the cheapest route, used by the auto-display paths. See _resolveMessage()
 async function _generateSummaryForMessage(headerMessageId, tabId = null, options = {}) {
     try {
-        let prefs = await browser.storage.sync.get({
-            connection_type: prefs_default.connection_type,
-            do_debug: prefs_default.do_debug,
-            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
-            summarize_max_display_length: prefs_default.summarize_max_display_length,
-            summarize_strip_formatting: prefs_default.summarize_strip_formatting,
-            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
-        });
+        let prefs = await mztaPrefs.getPrefs([
+            'connection_type',
+            'do_debug',
+            'default_chatgpt_lang',
+            'summarize_max_display_length',
+            'summarize_strip_formatting',
+            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+        ]);
 
         let cachedSummary = await summaryStore.loadSummary(headerMessageId);
         if (cachedSummary && !cachedSummary.error) {
@@ -1042,14 +1077,14 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
 //   getDisplayedMessage) — the cheapest route, used by the auto-display paths. See _resolveMessage()
 async function _generateTranslationForMessage(headerMessageId, tabId = null, options = {}) {
     try {
-        let prefs = await browser.storage.sync.get({
-            connection_type: prefs_default.connection_type,
-            do_debug: prefs_default.do_debug,
-            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
-            translate_lang: prefs_default.translate_lang,
-            translate_max_display_length: prefs_default.translate_max_display_length,
-            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
-        });
+        let prefs = await mztaPrefs.getPrefs([
+            'connection_type',
+            'do_debug',
+            'default_chatgpt_lang',
+            'translate_lang',
+            'translate_max_display_length',
+            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+        ]);
 
         let cachedTranslation = await translationStore.loadTranslation(headerMessageId);
         if (cachedTranslation && !cachedTranslation.error) {
@@ -1188,13 +1223,13 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
     // metadata was captured before the failure.
     let message_metadata = null;
     try {
-        let prefs = options.prefs || await browser.storage.sync.get({
-            connection_type: prefs_default.connection_type,
-            do_debug: prefs_default.do_debug,
-            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
-            spamfilter_threshold: prefs_default.spamfilter_threshold,
-            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']),
-        });
+        let prefs = options.prefs || await mztaPrefs.getPrefs([
+            'connection_type',
+            'do_debug',
+            'default_chatgpt_lang',
+            'spamfilter_threshold',
+            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+        ]);
 
         await spamReport.removeReportData(headerMessageId);
         await spamReport.setProcessing(headerMessageId);
@@ -1242,7 +1277,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         // hasAddressListEntries() is used instead of a plain length check because a list saved
         // by a previous version can still hold a stray '' (an emptied textarea was stored as
         // ['']), which would read as a configured list.
-        let skip_addresses = options.skip_addresses || (await browser.storage.sync.get({spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses})).spamfilter_skip_addresses;
+        let skip_addresses = options.skip_addresses || (await mztaPrefs.getPrefs(['spamfilter_skip_addresses'])).spamfilter_skip_addresses;
         if (hasAddressListEntries(skip_addresses)) {
             if (senderEmail && skip_addresses.includes(senderEmail)) {
                 taLog.log("Sender " + senderEmail + " is in the skip addresses list, skipping spam filter.");
@@ -1265,7 +1300,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         // Check if sender is in any address book
         let skip_addressbook = options.skip_addressbook !== undefined
             ? options.skip_addressbook
-            : (await browser.storage.sync.get({spamfilter_skip_addressbook: prefs_default.spamfilter_skip_addressbook})).spamfilter_skip_addressbook;
+            : (await mztaPrefs.getPrefs(['spamfilter_skip_addressbook'])).spamfilter_skip_addressbook;
         if (skip_addressbook && senderEmail) {
             try {
                 let hasPermission = await browser.permissions.contains({ permissions: ["addressBooks"] });
@@ -1409,7 +1444,7 @@ async function _openSummaryWebchat(headerMessageId, tabId, messageId = null) {
         const curr_message_full = await browser.messages.getFull(curr_message.id);
 
         const summarize_prompt = await getSummarizePrompt();
-        const connectionType = getConnectionType(await browser.storage.sync.get(prefs_default), summarize_prompt, 'summarize');
+        const connectionType = getConnectionType(await mztaPrefs.getAllPrefs(), summarize_prompt, 'summarize');
         // Not just chatgpt_web: an empty connection is equally unusable.
         if (!isApiUsableConnection(connectionType)) {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
@@ -1438,7 +1473,7 @@ browser.runtime.onMessageExternal.addListener((message, sender, sendResponse) =>
 });
 
 async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_custom_text = 0, prompt_info = {}) {
-    let prefs = await browser.storage.sync.get(prefs_default);
+    let prefs = await mztaPrefs.getAllPrefs();
     taLog.changeDebug(prefs.do_debug);
     prefs = checkScreenDimensions(prefs);
     //console.log(">>>>>>>>>>>>>>>> prefs: " + JSON.stringify(prefs));
@@ -1523,7 +1558,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     if((originalText == null) || (originalText == "")) {
                         originalText = prompt_info.body_text;
                     }
-                    let reply_type_pref = await browser.storage.sync.get({ reply_type: prefs_default.reply_type });
+                    let reply_type_pref = await mztaPrefs.getPrefs(['reply_type']);
                     //console.log(">>>>>>>>>> prompt_info: " + JSON.stringify(prompt_info));
                     let pre_script = `let mztaWinId = `+ createdTab.windowId +`;
                     let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
@@ -1864,7 +1899,7 @@ function doGetSparkFeature(spark_feature_active) {
 }
 
 async function reload_pref_init(){
-    prefs_init = await browser.storage.sync.get(PREFS_INIT_KEYS);
+    prefs_init = await mztaPrefs.getPrefs(Object.keys(PREFS_INIT_KEYS));
     // add_tags must be checked together with add_tags_auto, exactly as newEmailListener
     // does: otherwise every incoming mail wakes the whole pipeline for a no-op. Since the
     // reconciliation turns add_tags off without touching add_tags_auto, that combination
@@ -1874,7 +1909,7 @@ async function reload_pref_init(){
 }
 
 
-// Coalesce bursts of storage changes: a multi-key storage.sync.set fires a single
+// Coalesce bursts of storage changes: a multi-key storage.local.set fires a single
 // onChanged carrying several keys, and the options pages write one key per change
 // event, so several events can land within a few milliseconds. menus.reload() tears
 // down and rebuilds every menu, so overlapping rebuilds could interleave; a single
@@ -1890,8 +1925,10 @@ let _menusStale = false;
 // Register the listener for storage changes
 function setupStorageChangeListener() {
     browser.storage.onChanged.addListener((changes, areaName) => {
-        // Check if the change happened in the 'sync' storage area
-        if (areaName !== 'sync') return;
+        // Preferences live in storage.local (see js/mzta-prefs.js), so this gate must name
+        // that area: left on 'sync' the listener simply stops firing, with no error, and
+        // prefs_init goes stale while the menus never rebuild on a settings change.
+        if (areaName !== 'local') return;
 
         const changed_keys = Object.keys(changes);
         _prefsInitStale = _prefsInitStale || changed_keys.some(key => key in PREFS_INIT_KEYS);
@@ -1911,7 +1948,7 @@ function setupStorageChangeListener() {
                 // Heal first: reload_pref_init() derives _process_incoming from these
                 // flags and the menus are rebuilt from them, so both must see the
                 // reconciled values rather than a stale true.
-                // _reconcileFeatureFlags() writes back into storage.sync, re-firing this
+                // _reconcileFeatureFlags() writes back into storage.local, re-firing this
                 // very listener. That is bounded, not a loop: it only ever flips flags
                 // true -> false, so the follow-up pass finds nothing to disable and writes
                 // nothing. The extra pass is useful anyway — it is what refreshes
@@ -1936,12 +1973,12 @@ function setupPermissionsRemovedListener() {
         // Process 'tags' permissions removal
         if (["messagesTags", "messagesUpdate"].some(permission => permissions.permissions.includes(permission))) {
             // console.log(">>>>>>>>>>> Permissions onRemoved: tags");
-            browser.storage.sync.set({add_tags: false});
+            mztaPrefs.setPref('add_tags', false);
         }
         // Process 'spamfilter' permissions removal
         if (["messagesMove", "messagesUpdate"].some(permission => permissions.permissions.includes(permission))) {
             // console.log(">>>>>>>>>>> Permissions onRemoved: spamfilter");
-            browser.storage.sync.set({spamfilter: false});
+            mztaPrefs.setPref('spamfilter', false);
         }
     });
 }
@@ -1950,7 +1987,9 @@ function setupPermissionsRemovedListener() {
 setupPermissionsRemovedListener();
 
 // Menus handling
-await migrateMenuOrderAlphabetic();
+// Guarded: see _prefs_migration_ok above. Running this with the flag missing would
+// renumber every prompt and discard the user's custom menu ordering.
+if (_prefs_migration_ok) await migrateMenuOrderAlphabetic();
 const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
 await menus.loadMenus(await _computeActiveSpecialIds());
 
@@ -2097,25 +2136,25 @@ async function processEmails(args) {
     // The separate summarize block below handles the context menu flow.
 
     if (addTagsAuto || spamFilter || summarizeOnReceive || summarizeSendersActive || translateOnReceive || translate) {
-        let prefs_aats = await browser.storage.sync.get({
-            add_tags_maxnum: prefs_default.add_tags_maxnum,
-            connection_type: prefs_default.connection_type,
-            add_tags_force_lang: prefs_default.add_tags_force_lang,
-            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
-            add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
-            add_tags_enabled_accounts: prefs_default.add_tags_enabled_accounts,
-            add_tags_exclusions_exact_match: prefs_default.add_tags_exclusions_exact_match,
-            add_tags_auto_include_sent: prefs_default.add_tags_auto_include_sent,
-            add_tags_auto_only_inbox: prefs_default.add_tags_auto_only_inbox,
-            add_tags_auto_uselist: prefs_default.add_tags_auto_uselist,
-            add_tags_auto_uselist_list: prefs_default.add_tags_auto_uselist_list,
-            spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts,
-            spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses,
-            spamfilter_skip_addressbook: prefs_default.spamfilter_skip_addressbook,
-            spamfilter_only_inbox: prefs_default.spamfilter_only_inbox,
-            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']),
-            do_debug: prefs_default.do_debug,
-        });
+        let prefs_aats = await mztaPrefs.getPrefs([
+            'add_tags_maxnum',
+            'connection_type',
+            'add_tags_force_lang',
+            'default_chatgpt_lang',
+            'add_tags_auto_force_existing',
+            'add_tags_enabled_accounts',
+            'add_tags_exclusions_exact_match',
+            'add_tags_auto_include_sent',
+            'add_tags_auto_only_inbox',
+            'add_tags_auto_uselist',
+            'add_tags_auto_uselist_list',
+            'spamfilter_enabled_accounts',
+            'spamfilter_skip_addresses',
+            'spamfilter_skip_addressbook',
+            'spamfilter_only_inbox',
+            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])),
+            'do_debug'
+        ]);
         //  console.log(">>>>>>>>>>>>>>>> prefs_aats: " + JSON.stringify(prefs_aats));
         let spamfilter_skip_addresses = prefs_aats.spamfilter_skip_addresses;
         let spamfilter_skip_addressbook = prefs_aats.spamfilter_skip_addressbook;
@@ -2379,10 +2418,10 @@ async function processEmails(args) {
     }
 
     if (summarize && !taBatchController.isCancelled()) {
-        let summarize_prefs = await browser.storage.sync.get({
-            summarize_display_mode: prefs_default.summarize_display_mode,
-            summarize_max_messages: prefs_default.summarize_max_messages,
-        });
+        let summarize_prefs = await mztaPrefs.getPrefs([
+            'summarize_display_mode',
+            'summarize_max_messages'
+        ]);
 
         // Collect messages into array to check count
         const messageArray = [];

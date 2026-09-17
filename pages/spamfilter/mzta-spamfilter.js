@@ -44,6 +44,7 @@ import {
   getConnectionTypeLabel
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
+import { mztaPrefs } from '../../js/mzta-prefs.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -55,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Warn before leaving the page with unsaved textarea text.
     initUnsavedGuard();
 
-    let prefs = await browser.storage.sync.get({ do_debug: prefs_default.do_debug });
+    let prefs = await mztaPrefs.getPrefs(['do_debug']);
     taLog = new taLogger("mzta-spamfilter-page", prefs.do_debug);
     spamReport = new taSpamReport(prefs.do_debug);
 
@@ -86,7 +87,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                  }
              }
         }
-        await browser.storage.sync.set(update_prefs);
+        // Multi-key write: stays a direct set(), but on the preferences area
+        // (storage.local) — see PREFS_AREA in js/mzta-prefs.js.
+        await browser.storage.local.set(update_prefs);
     }
 
     await initializeSpecificIntegrationUI({
@@ -192,7 +195,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Address book skip option
     let skip_addressbook_checkbox = document.getElementById('spamfilter_skip_addressbook');
-    let prefs_skip_ab = await browser.storage.sync.get({ spamfilter_skip_addressbook: prefs_default.spamfilter_skip_addressbook });
+    let prefs_skip_ab = await mztaPrefs.getPrefs(['spamfilter_skip_addressbook']);
     skip_addressbook_checkbox.checked = prefs_skip_ab.spamfilter_skip_addressbook;
 
     skip_addressbook_checkbox.addEventListener('change', async (event) => {
@@ -200,7 +203,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const granted = await browser.permissions.request({ permissions: ["addressBooks"] });
                 if (granted) {
-                    await browser.storage.sync.set({ spamfilter_skip_addressbook: true });
+                    await mztaPrefs.setPref('spamfilter_skip_addressbook', true);
                 } else {
                     event.target.checked = false;
                     alert(browser.i18n.getMessage("addressbook_permission_denied"));
@@ -211,7 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 alert(browser.i18n.getMessage("addressbook_permission_error"));
             }
         } else {
-            await browser.storage.sync.set({ spamfilter_skip_addressbook: false });
+            await mztaPrefs.setPref('spamfilter_skip_addressbook', false);
         }
     });
 
@@ -230,7 +233,7 @@ document.addEventListener('DOMContentLoaded', async () => {
          accountsContainer.appendChild(document.createElement('br'));
      });
  
-     let prefs_spamfilter = await browser.storage.sync.get({ spamfilter_enabled_accounts: [] });
+     let prefs_spamfilter = await mztaPrefs.getPrefs(['spamfilter_enabled_accounts']);
      let spamfilter_enabled_accounts = prefs_spamfilter.spamfilter_enabled_accounts;
      taLog.log("spamfilter_enabled_accounts: " + JSON.stringify(spamfilter_enabled_accounts));
      document.querySelectorAll('.accountCheckbox').forEach(checkbox => {
@@ -250,10 +253,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           return;
        }
        if (selectedAccounts.length === document.querySelectorAll('.accountCheckbox').length) {
-         browser.storage.sync.set({ spamfilter_enabled_accounts: [] });
+         mztaPrefs.setPref('spamfilter_enabled_accounts', []);
          taLog.log("All accounts selected, saving spamfilter_enabled_accounts = [].");
        } else {
-         browser.storage.sync.set({ spamfilter_enabled_accounts: selectedAccounts });
+         mztaPrefs.setPref('spamfilter_enabled_accounts', selectedAccounts);
          taLog.log("Saving spamfilter_enabled_accounts = " + JSON.stringify(selectedAccounts) + ".");
        }
        });
@@ -436,7 +439,11 @@ function saveOptions(e) {
         console.error("[ThunderAI] Unhandled input type:", element.type);
     }
 
-  browser.storage.sync.set(options);
+  // Guard the default: branch above, which leaves `options` empty — the previous
+  // set(options) wrote nothing in that case, so nothing must be written here either.
+  if (Object.prototype.hasOwnProperty.call(options, element.id)) {
+    mztaPrefs.setPref(element.id, options[element.id]);
+  }
 }
 
 async function restoreOptions() {
@@ -499,7 +506,7 @@ async function restoreOptions() {
     });
   }
 
-  let getting = await browser.storage.sync.get(prefs_default);
+  let getting = await mztaPrefs.getAllPrefs();
 
   let specialPrompts = await getSpecialPrompts();
   let spamfilter_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter');
@@ -531,12 +538,12 @@ async function restoreOptions() {
 }
 
 async function spamfilter_getSkipAddresses() {
-    let prefs = await browser.storage.sync.get({spamfilter_skip_addresses: []});
+    let prefs = await mztaPrefs.getPrefs(['spamfilter_skip_addresses']);
     return prefs.spamfilter_skip_addresses;
 }
 
 function spamfilter_setSkipAddresses(spamfilter_skip_addresses) {
-    browser.storage.sync.set({spamfilter_skip_addresses: spamfilter_skip_addresses});
+    mztaPrefs.setPref('spamfilter_skip_addresses', spamfilter_skip_addresses);
 }
 
 /**

@@ -25,6 +25,7 @@ import { placeholdersUtils } from '../js/mzta-placeholders.js';
 import { getAPIsInitMessageString, convertNewlinesToBr } from '../js/mzta-utils.js';
 import { loadPrompt } from '../js/mzta-prompts.js';
 import { buildChatBubbleIcon } from './svgIcons.js';
+import { mztaPrefs } from '../js/mzta-prefs.js';
 
 // Get the LLM to be used
 const urlParams = new URLSearchParams(window.location.search);
@@ -53,12 +54,12 @@ function setZoom(scale) {
     scale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(scale * 10) / 10));
     currentZoom = scale;
     applyZoom(scale);
-    browser.storage.sync.set({ api_webchat_font_scale: scale });
+    mztaPrefs.setPref('api_webchat_font_scale', scale);
 }
 
 // Load the saved zoom level and apply it as soon as possible.
 (async () => {
-    const { api_webchat_font_scale } = await browser.storage.sync.get({ api_webchat_font_scale: prefs_default.api_webchat_font_scale });
+    const { api_webchat_font_scale } = await mztaPrefs.getPrefs(['api_webchat_font_scale']);
     currentZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, api_webchat_font_scale));
     applyZoom(currentZoom);
 })();
@@ -124,7 +125,7 @@ if (worker) {
             prefsToGet.openai_comp_chat_name = prefs_default.openai_comp_chat_name;
         }
 
-        let prefs_api = await browser.storage.sync.get(prefsToGet);
+        let prefs_api = await mztaPrefs.getPrefs(Object.keys(prefsToGet));
 
         if (prompt_id) {
             try {

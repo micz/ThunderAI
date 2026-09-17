@@ -17,7 +17,6 @@
  */
 
 import {
-    prefs_default,
     integration_options_config
 } from "../../options/mzta-options-default.js";
 import {
@@ -56,6 +55,7 @@ import {
     classifyPlaceholderType,
     PLACEHOLDER_RE
 } from "../../js/mzta-editor-highlight.js";
+import { mztaPrefs } from '../../js/mzta-prefs.js';
 
 // Id prefix for the add-new-prompt form's injected connection fields. Every
 // injection on this page must carry a prefix: injectConnectionUI() runs once for
@@ -76,8 +76,7 @@ let activePlaceholders = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-    let storedPrefs = await browser.storage.sync.get(null);
-    prefs = { ...prefs_default, ...storedPrefs };
+    prefs = await mztaPrefs.getAllPrefs();
     taLog = new taLogger("mzta-custom-prompts", prefs.do_debug);
     
     setStorageSpace();
