@@ -824,6 +824,9 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 .mzta_switch input[type="checkbox"]:checked + .track { background: var(--accent); }
 .mzta_switch input[type="checkbox"]:checked + .track::after { transform: translateX(16px); }
 .mzta_switch input[type="checkbox"]:disabled + .track { opacity: .5; cursor: default; }
+/* A managed toggle is inert on purpose: no pointer affordance on the whole switch, so the
+   label reads as locked rather than as a control that ignores clicks. */
+.mzta_switch input[type="checkbox"][data-mzta-managed="1"] + .track { cursor: not-allowed; }
 /* "Locked on" toggle: forced checked and click-swallowed, but NOT `disabled` — a
    disabled checkbox is skipped by each page's saveOptions() sweep, so the pref
    would never be persisted (see connection-ui.js). Lighter than the :disabled
@@ -1097,6 +1100,16 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     white-space: nowrap;
     vertical-align: middle;
     cursor: help;
+}
+
+/* In a feature row the marker is a direct flex child inserted before .mzta_switch, so it
+   needs the same top offset as the switch to line up with the toggle instead of hanging
+   from the row's flex-start baseline. */
+.feature_row > .managed_marker {
+    flex: none;
+    align-self: flex-start;
+    margin-top: 4px;
+    margin-inline-end: 4px;
 }
 
 .warning {

@@ -213,6 +213,32 @@ controls whose id merely ends with the key (`translate` would match `auto_transl
 `applyManagedUI()` must run **after** the connection panel has injected its provider rows,
 and after `restoreOptions()` has populated the inputs.
 
+### Marker placement and inertness
+
+A feature toggle is an `<input type="checkbox">` visually hidden **inside**
+`<label class="mzta_switch">`. Two consequences the implementation has to handle:
+
+- **Placement.** `markManaged()` anchors on `closest('td') || closest('label') ||
+  parentElement`. On the options page the feature rows are flex `div`s, not tables, so the
+  label branch wins and appending would drop the badge *inside* the switch — left of the
+  track and inside its click target. When the control is inside a `.mzta_switch`, the
+  marker is therefore inserted **before that label**, as a sibling in `.feature_row`, so
+  the row reads `… [Managed by Org] (toggle)`.
+- **Inertness.** `disabled` on the input is not sufficient on its own. `disable_ApiFeature()`
+  and friends reassign `.disabled` unconditionally, and they run again from the
+  `storage.onChanged` listener — i.e. *after* `applyManagedUI()`. Two defences:
+  - `setDisabledRespectingManaged(element, disabled)` — the exported setter those call
+    sites use instead of assigning `.disabled` directly. It ORs in
+    `dataset.mztaManaged === '1'`, so a policy-locked control can never be re-enabled by
+    page logic. Call sites that previously read back `.disabled` to decide **row
+    visibility** were changed to test their own condition instead: a lock must grey a row
+    out, never hide it.
+  - `lockControl()` — a capturing `click`/`keydown` swallower on the `.mzta_switch` label,
+    so even a re-enabled input cannot be flipped by clicking the track or the row label.
+
+Both are presentation only; the authoritative block remains the write guard in
+`js/mzta-prefs.js`.
+
 ## Adding a policy-settable preference
 
 Nothing to do. Declare it in `prefs_default` as usual

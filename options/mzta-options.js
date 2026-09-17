@@ -52,7 +52,8 @@ import { mztaPrefs } from '../js/mzta-prefs.js';
 import {
   applyManagedUI,
   showManagedBanner,
-  isLockedKey
+  isLockedKey,
+  setDisabledRespectingManaged
 } from '../pages/_lib/managed-ui.js';
 
 let taLog = new taLogger("mzta-options",true);
@@ -212,9 +213,12 @@ function disable_MaxPromptLength(){
   let maxPromptLength = document.getElementById('max_prompt_length');
   let conntype_select = document.getElementById("connection_type");
   // API-only setting: irrelevant for ChatGPT Web and until a connection is chosen.
-  maxPromptLength.disabled = (conntype_select.value === "chatgpt_web") || hasNoConnectionSelected(conntype_select.value);
+  const irrelevant = (conntype_select.value === "chatgpt_web") || hasNoConnectionSelected(conntype_select.value);
+  setDisabledRespectingManaged(maxPromptLength, irrelevant);
   let maxPromptLength_tr = document.getElementById('max_prompt_length_tr');
-  maxPromptLength_tr.style.display = (maxPromptLength.disabled) ? 'none' : '';
+  // Follow relevance, not the input's disabled flag: a policy lock also disables the
+  // field, and that must grey it out rather than hide the row it explains.
+  maxPromptLength_tr.style.display = irrelevant ? 'none' : '';
 }
 
 // Show the "Manage settings" link for a feature only when its flag is enabled;
@@ -276,8 +280,8 @@ function disable_ApiFeature(prefs_opt, prefix, manageBtnId){
   // between enabling it and finishing the setup.
   checkbox.checked = state.disabled ? false : checkbox.checked;
   // With no connection selected the toggle is greyed out: there is nothing to
-  // enable the feature against yet.
-  checkbox.disabled = state.no_connection;
+  // enable the feature against yet. A policy-locked toggle stays disabled regardless.
+  setDisabledRespectingManaged(checkbox, state.no_connection);
 
   setFeatureManageVisibility(document.getElementById(manageBtnId), checkbox.checked);
   setApiWarnVisibility(prefix, state.show_api_warning);
@@ -323,15 +327,19 @@ async function disable_GetCalendarEvent(prefs_opt){
   setApiWarnVisibility('get_calendar_event', cal_state.show_api_warning);
   setApiWarnVisibility('get_task', task_state.show_api_warning);
   // Sparks presence is an orthogonal requirement: both features live in that add-on.
-  get_calendar_event.disabled = cal_unusable || !(is_spark_present == 1);
-  get_task.disabled = task_unusable || !(is_spark_present == 1);
+  const cal_hidden = cal_unusable || !(is_spark_present == 1);
+  const task_hidden = task_unusable || !(is_spark_present == 1);
+  setDisabledRespectingManaged(get_calendar_event, cal_hidden);
+  setDisabledRespectingManaged(get_task, task_hidden);
+  // Row visibility follows usability, not the input's disabled flag: a policy lock also
+  // disables the control, and that must grey the row out rather than remove it.
   let get_calendar_event_tr_elements = document.querySelectorAll('.get_calendar_event_tr');
   get_calendar_event_tr_elements.forEach(get_calendar_event_tr => {
-    get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : '';
+    get_calendar_event_tr.style.display = cal_hidden ? 'none' : '';
   });
   let get_task_tr_elements = document.querySelectorAll('.get_task_tr');
   get_task_tr_elements.forEach(get_task_tr => {
-    get_task_tr.style.display = get_task.disabled ? 'none' : '';
+    get_task_tr.style.display = task_hidden ? 'none' : '';
   });
   // The "Sparks missing" notice is only worth showing when at least one of the two
   // features could actually run: if both are unusable on their connection anyway,

@@ -97,6 +97,7 @@ export async function applyManagedUI(root = document, do_debug = false) {
         if (element.dataset.mztaManaged === '1') return;
         element.dataset.mztaManaged = '1';
         element.disabled = true;
+        lockControl(element);
         markManaged(element, state);
     });
 
@@ -112,7 +113,14 @@ function markManaged(element, state) {
     // all lay their settings out as table rows; fall back to the control's own parent.
     const anchor = element.closest('td') || element.closest('label') || element.parentElement;
     if (!anchor) return;
-    if (anchor.querySelector('.managed_marker')) return;
+
+    // A feature toggle is an <input> hidden inside <label class="mzta_switch">. Appending
+    // the marker there would put it inside the switch, i.e. to the LEFT of the visible
+    // track and inside the label's click target. Place it before the label instead, so the
+    // row reads "... [Managed by Org] (toggle)" and the badge is not clickable.
+    const switchLabel = element.closest('.mzta_switch');
+    const target = switchLabel && switchLabel.parentElement ? switchLabel.parentElement : anchor;
+    if (target.querySelector('.managed_marker')) return;
 
     const marker = document.createElement('span');
     marker.className = 'managed_marker';
@@ -120,7 +128,50 @@ function markManaged(element, state) {
         ? browser.i18n.getMessage('managed_marker_org', [state.orgName])
         : browser.i18n.getMessage('managed_marker');
     marker.title = browser.i18n.getMessage('managed_marker_tooltip');
-    anchor.appendChild(marker);
+
+    if (switchLabel && target === switchLabel.parentElement) {
+        target.insertBefore(marker, switchLabel);
+    } else {
+        target.appendChild(marker);
+    }
+}
+
+/**
+ * Set `disabled` on a control without ever un-disabling one a policy locked.
+ *
+ * Page logic greys controls out for its own reasons (no connection selected, Sparks not
+ * installed) and reassigns `disabled` unconditionally on every refresh. Routing those
+ * assignments through here keeps a managed control disabled no matter what the page
+ * decides, instead of the last writer winning.
+ */
+export function setDisabledRespectingManaged(element, disabled) {
+    if (!element) return;
+    element.disabled = disabled || element.dataset.mztaManaged === '1';
+}
+
+/**
+ * Keep a managed toggle inert even if something else re-enables the input.
+ *
+ * `disabled` alone is not enough here: disable_ApiFeature() on the options page reassigns
+ * `checkbox.disabled` unconditionally from the storage.onChanged listener, which runs after
+ * applyManagedUI(). Without this the switch would flip visually (the write guard in
+ * mzta-prefs.js still refuses to persist it) and look like the policy was bypassed.
+ */
+function lockControl(element) {
+    if (element.dataset.mztaManagedLock === '1') return;
+    element.dataset.mztaManagedLock = '1';
+
+    const swallow = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+    };
+    // The visible target is the wrapping label/track, not the visually hidden input, so the
+    // listener has to sit on the label to catch the label-forwarded activation.
+    const clickTarget = element.closest('.mzta_switch') || element;
+    clickTarget.addEventListener('click', swallow, true);
+    clickTarget.addEventListener('keydown', (event) => {
+        if (event.key === ' ' || event.key === 'Enter') swallow(event);
+    }, true);
 }
 
 /**
