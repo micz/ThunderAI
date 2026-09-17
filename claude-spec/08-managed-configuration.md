@@ -188,8 +188,8 @@ the single most surprising property of the mechanism.
 
 ## UI
 
-[`pages/_lib/managed-ui.js`](../pages/_lib/managed-ui.js), shared by the options page and
-the six feature settings pages. One `sendMessage` round trip per page:
+[`pages/_lib/managed-ui.js`](../pages/_lib/managed-ui.js), shared by the options page, the
+six feature settings pages and the setup wizard. One `sendMessage` round trip per page:
 
 ```javascript
 browser.runtime.sendMessage({ command: 'get_managed_state' })
@@ -212,6 +212,37 @@ controls whose id merely ends with the key (`translate` would match `auto_transl
 
 `applyManagedUI()` must run **after** the connection panel has injected its provider rows,
 and after `restoreOptions()` has populated the inputs.
+
+### The setup wizard
+
+[`pages/setup-wizard/`](../pages/setup-wizard/) writes the same connection preferences as
+the options page, through the same `mztaPrefs.setPref()` path, so the write guard has
+always covered it. What it lacked was the presentation layer: every field was fully
+editable, and a user could walk the whole wizard entering an API key the guard then
+silently refused to persist — the policy held, but the UI said otherwise.
+
+It now calls `showManagedBanner()` and `applyManagedUI()` in the same position as the
+options page: after `injectConnectionUI()` and `restoreOptions()`, before the `change`
+listeners are attached. The connection rows are covered for free by the
+id-IS-the-preference-key invariant, and `showConnectionOptions()` only toggles `display`
+on rows that already exist, so nothing is injected after the marking pass.
+
+**The provider cards are the one wizard-specific case.** They are `<button>` elements, not
+`.option-input` controls, so `applyManagedUI()` cannot reach them and a locked
+`connection_type` would otherwise still be switchable by clicking a card — which dispatches
+a `change` on the hidden select and drives the entire wizard onto a provider the policy
+does not allow. Two guards, mirroring the toggle treatment above:
+
+- `selectProvider()` returns early when `connection_type` is locked and the requested id
+  differs from the current one. The `id !== state.provider` condition is what still lets
+  the boot call through, so the enforced provider is selected and tinted normally.
+- `buildProviderCards()` disables every card and adds `.wiz_provider_card_managed`. All
+  cards are greyed out, including the enforced one — the policy chose it and it cannot be
+  changed here either — but the selected card keeps full opacity so the administrator's
+  choice stays readable.
+
+Cards are built *after* `applyManagedUI()`, which is what populates the state
+`isLockedKey()` reads synchronously.
 
 ### Marker placement and inertness
 

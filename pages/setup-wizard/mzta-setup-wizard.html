@@ -28,6 +28,10 @@
 <body>
     <div id="mzta_card">
 
+        <!-- Centrally managed by an enterprise policy: shown on every step, so the user
+             knows up front why some fields are greyed out. Hidden unless a policy is active. -->
+        <div id="managed_config_banner"><span class="managed_banner_text"></span></div>
+
         <!-- STEP INDICATOR (dots + connectors injected at runtime) -->
         <div id="wiz_steps"></div>
 

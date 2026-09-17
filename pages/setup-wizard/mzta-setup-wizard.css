@@ -153,6 +153,19 @@ body {
     background: var(--tint-accent, var(--accent));
 }
 
+/* Provider cards under a locked connection_type. The cards are <button>s, not
+   .option-input controls, so applyManagedUI() never touches them - the disabled state
+   is set in mzta-setup-wizard.js. Every card is greyed out, including the enforced one:
+   the policy chose it and it cannot be changed here either. The selected card keeps its
+   full opacity so the choice the administrator made stays readable. */
+#mzta_card .wiz_provider_card_managed {
+    cursor: not-allowed;
+    opacity: .5;
+}
+#mzta_card .wiz_provider_card_managed.wiz_selected {
+    opacity: 1;
+}
+
 /* Per-provider tint tokens for the provider cards (both themes). Mirrors the
    token values in connection-ui.css so the card colour matches the connection
    panel colour for the same provider.

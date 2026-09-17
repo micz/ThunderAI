@@ -1057,15 +1057,23 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 }
 #no_connection_banner a:hover { text-decoration: underline; }
 
-/* Enterprise managed configuration active. Same geometry as #no_connection_banner above,
-   but neutral rather than blue: it states a fact about who controls these settings, it is
-   neither a call to action nor a problem. The lock glyph carries the meaning at a glance.
+/* Enterprise managed configuration active. Near-identical geometry to
+   #no_connection_banner above, but neutral rather than blue: it states a fact about who
+   controls these settings, it is neither a call to action nor a problem. The lock glyph
+   carries the meaning at a glance.
+   The one deliberate divergence is the wrapping - see the note on flex-wrap below. That
+   banner's two flex items are text and a LINK, which should drop to its own line when
+   cramped; this one's are a glyph and text, which must not come apart.
    Shown by showManagedBanner() in pages/_lib/managed-ui.js. */
 #managed_config_banner {
     display: none;              /* shown by JS only when a policy is active */
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px 16px;
+    align-items: flex-start;
+    /* NOT flex-wrap: wrap. The padlock and the text are two separate flex items, so
+       wrapping drops the lock onto a line of its own as soon as the text does not fit
+       beside it - which is what happens in the narrow setup-wizard card. The text is a
+       single item that wraps internally instead. */
+    flex-wrap: nowrap;
+    gap: 10px;
     margin: 20px 22px 0;
     padding: 14px 18px;
     border: 1px solid var(--line);
@@ -1081,7 +1089,17 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 #managed_config_banner::before {
     content: "🔒";          /* padlock */
     font-size: 16px;
-    line-height: 1;
+    /* Never shrink the glyph and never let it wrap away from the text: it is the icon
+       for the message, not a word in it. The line-height matches the text's so it sits
+       on the first line's baseline rather than above it. */
+    flex: none;
+    line-height: 1.5;
+}
+/* The message itself takes the remaining width and wraps inside its own box, keeping
+   every line aligned under the first one instead of running back under the padlock. */
+#managed_config_banner .managed_banner_text {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 /* Marker appended next to every control a policy enforces, so a disabled field reads as
