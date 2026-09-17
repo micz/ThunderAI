@@ -1079,7 +1079,7 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 }
 #managed_config_banner.shown { display: flex; }
 #managed_config_banner::before {
-    content: "F512";          /* padlock */
+    content: "🔒";          /* padlock */
     font-size: 16px;
     line-height: 1;
 }
