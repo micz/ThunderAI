@@ -21,7 +21,8 @@ import {
   getDynamicSettingValue
 } from '../options/mzta-options-default.js';
 
-import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js'
+import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js';
+import { sanitizeBlockHtml } from './mzta-richtext.js';
 
 const sparks_min = '3.0.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
 const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
@@ -1264,3 +1265,118 @@ export async function* getMessages(list) {
     }
   }
 }
+
+/**
+ * Tokenizes HTML images (both <img> elements and CSS background-image declarations) into lightweight placeholders.
+ *
+ * @param {string} html 
+ * @param {Object<string, string>} [imageMap={}] 
+ * @returns {{ cleanHtml: string, imageMap: Object<string, string> }}
+ */
+export function tokenizeHtmlImages(html, imageMap = {}) {
+  if (!html || typeof html !== 'string') {
+    return { cleanHtml: html || '', imageMap };
+  }
+
+  const htmlLower = html.toLowerCase();
+  if (!htmlLower.includes('data:image/') && !htmlLower.includes('<img') && !htmlLower.includes('background')) {
+    return { cleanHtml: html, imageMap };
+  }
+
+  let counter = Object.keys(imageMap).length + 1;
+
+  // ponytail: single-pass CSS url tokenization + img tokenization
+  let cleanHtml = html.replace(/url\s*\(\s*(&quot;|&apos;|&#34;|&#39;|["']?)(data:image\/[^"')&]+)(\1|&quot;|&apos;|&#34;|&#39;|["']?)\s*\)/gi, (m, q1, uri, q2) => {
+    const token = `[[THUNDERAI_IMG_${counter++}]]`;
+    imageMap[token] = uri;
+    return `url(${q1 || ''}${token}${q2 || q1 || ''})`;
+  });
+
+  cleanHtml = cleanHtml.replace(/<img\b[^>]*\/?>/gi, (fullMatch) => {
+    const token = `[[THUNDERAI_IMG_${counter++}]]`;
+    imageMap[token] = fullMatch;
+    return token;
+  });
+
+  return { cleanHtml, imageMap };
+}
+
+/**
+ * Restores tokens [[THUNDERAI_IMG_N]] back into original <img> tags or CSS background-image declarations.
+ *
+ * @param {string} text 
+ * @param {Object<string, string>} [imageMap={}] 
+ * @returns {string}
+ */
+export function restoreHtmlImages(text, imageMap = {}) {
+  if (!text || typeof text !== 'string' || !imageMap || Object.keys(imageMap).length === 0) {
+    return text;
+  }
+
+  let restored = text;
+
+  // Process tokens in reverse numerical order to prevent prefix collisions (e.g. IMG_10 vs IMG_1)
+  const tokens = Object.keys(imageMap).sort((a, b) => {
+    const numA = parseInt(a.replace(/\D/g, ''), 10) || 0;
+    const numB = parseInt(b.replace(/\D/g, ''), 10) || 0;
+    return numB - numA;
+  });
+
+  for (const token of tokens) {
+    const originalValue = imageMap[token];
+    if (!originalValue) continue;
+
+    // If originalValue is an <img> tag (<img ...)
+    if (originalValue.startsWith('<img') || originalValue.startsWith('<IMG')) {
+      const wrappedImgRegex = new RegExp(`<img\\s+[^>]*src\\s*=\\s*(&quot;|&apos;|&#34;|&#39;|["']?)?\\s*${escapeRegex(token)}\\s*\\1?[^>]*\\s*\\/?>`, 'gi');
+      if (wrappedImgRegex.test(restored)) {
+        restored = restored.replace(wrappedImgRegex, originalValue);
+      }
+      const wrappedMdImgRegex = new RegExp(`!\\[[^\\]]*\\]\\(\\s*${escapeRegex(token)}\\s*\\)`, 'gi');
+      if (wrappedMdImgRegex.test(restored)) {
+        restored = restored.replace(wrappedMdImgRegex, originalValue);
+      }
+    }
+    if (restored.includes(token)) {
+      restored = restored.split(token).join(originalValue);
+    }
+  }
+
+  return restored;
+}
+
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Intelligently unwraps and sanitizes HTML model responses.
+ * Unwraps markdown code fences (```html ... ```, ``` ... ```), ChatGPT <pre><code> containers,
+ * decodes HTML entity escapes (&lt;p&gt; -> <p>), and passes markup through sanitizeBlockHtml.
+ *
+ * @param {string} htmlText
+ * @returns {string} Clean, safe HTML markup
+ */
+export function normalizeModelHtmlResponse(htmlText) {
+  if (typeof htmlText !== 'string') return '';
+  let text = htmlText.trim();
+  if (!text) return '';
+
+  // ponytail: unwrap fences and pre/code containers cleanly
+  text = text.replace(/^(`{3,}|~{3,})(?:[a-zA-Z0-9_-]+)?\s*\r?\n?([\s\S]*?)\r?\n?\s*\1$/, '$2').trim();
+  text = text.replace(/^<pre[^>]*>\s*(?:<code[^>]*>)?([\s\S]*?)(?:<\/code>)?\s*<\/pre>$/i, '$1').trim();
+  text = text.replace(/^(`{3,}|~{3,})(?:[a-zA-Z0-9_-]+)?\s*\r?\n?([\s\S]*?)\r?\n?\s*\1$/, '$2').trim();
+
+  // Decodes HTML entity escapes if escaped tags are present
+  if (/(?:&lt;|&#60;|&#x3c;)\/?[a-z!]/i.test(text) || /&amp;(?:lt|#60|#x3c);/i.test(text)) {
+    text = text
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;|&#60;|&#x3c;/gi, '<')
+      .replace(/&gt;|&#62;|&#x3e;/gi, '>')
+      .replace(/&quot;|&#34;/gi, '"')
+      .replace(/&apos;|&#39;/gi, "'");
+  }
+
+  return typeof sanitizeBlockHtml === 'function' ? sanitizeBlockHtml(text) : text;
+}
+

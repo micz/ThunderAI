@@ -23,13 +23,14 @@ Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI
 | `need_custom_text` | string | `"0"` = no custom input, `"1"` = show custom text input field |
 | `define_response_lang` | string | `"0"` = no language hint, `"1"` = append response language instruction |
 | `use_diff_viewer` | string | `"0"` = normal output, `"1"` = offer a diff of the answer against the original text. On the API paths this is the interactive change picker — see [07-diff-picker.md](07-diff-picker.md); on ChatGPT Web it is a separate read-only diff. Only selectable when `action` is `"2"` |
+| `clean_embedded_images` | string | `"0"` = keep images intact in prompt payload, `"1"` = replace embedded image `<img>` tags and CSS `background-image` data URIs with tokens (`[[THUNDERAI_IMG_N]]`) before sending to AI, restoring them in the output |
 
 > **Note:** These numeric-looking properties are stored as **strings** (`"0"`/`"1"`/`"2"`) in the prompt objects in `js/mzta-prompts.js`, not as JS numbers. The prompt body lives in the `text` property (there is no `prompt` property).
 
-#### The five boolean flags are normalized on read
+#### The boolean flags are normalized on read
 
-`need_selected`, `need_signature`, `need_custom_text`, `define_response_lang` and
-`use_diff_viewer` are collectively `promptBooleanFlags` in `js/mzta-prompts.js`. Their
+`need_selected`, `need_signature`, `need_custom_text`, `define_response_lang`,
+`use_diff_viewer` and `clean_embedded_images` are collectively `promptBooleanFlags` in `js/mzta-prompts.js`. Their
 **canonical representation is the string `"0"`/`"1"`**, and that is guaranteed at read time —
 consumers may compare against `"1"` without caring which store the prompt came from.
 

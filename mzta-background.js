@@ -50,6 +50,8 @@ import {
     htmlBodyToPlainText,
     cleanupNewlines,
     convertNewlinesToParagraphs,
+    restoreHtmlImages,
+    normalizeModelHtmlResponse,
     getConnectionType,
     hasNoConnectionSelected,
     matchAddressList,
@@ -641,6 +643,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     //console.log('chatgpt_replaceSelectedText: [' + tabId +'] ' + text)
                     taLog.log("chatgpt_replaceSelectedText text: " + text);
                     original_html = await getOriginalBody(tabId);
+                    text = normalizeModelHtmlResponse(text);
+                    text = restoreHtmlImages(text, taPromptUtils.lastImageMap);
                     // The compose format is read from the window itself, not from a
                     // preference: it is a per-message property, so a global setting
                     // could never be right for a user who writes in both formats.
@@ -654,9 +658,10 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 return _replaceSelectedText(message.tabId, message.text);
             case 'chatgpt_replyMessage':
                 async function _replyMessage(message) {
-                    let paragraphsHtmlString = message.text;
+                    let paragraphsHtmlString = normalizeModelHtmlResponse(message.text);
                     //console.log(">>>>>>>>>>>> paragraphsHtmlString: " + paragraphsHtmlString);
                     taLog.log("paragraphsHtmlString: " + paragraphsHtmlString);
+                    paragraphsHtmlString = restoreHtmlImages(paragraphsHtmlString, taPromptUtils.lastImageMap);
                     let prefs_reply = await browser.storage.sync.get({reply_type: prefs_default.reply_type});
                     // No plain-text conversion here: the reply window does not exist
                     // yet, so its format is not knowable. replaceBody() reads it from

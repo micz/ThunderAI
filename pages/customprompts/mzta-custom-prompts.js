@@ -283,6 +283,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     var checkboxNeedCustomTextNew = document.getElementById('checkboxNeedCustomTextNew');
     var checkboxDefineResponseLangNew = document.getElementById('checkboxDefineResponseLangNew');
     var checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
+    var checkboxCleanEmbeddedImagesNew = document.getElementById('checkboxCleanEmbeddedImagesNew');
+    var checkboxOutputAsHtmlNew = document.getElementById('checkboxOutputAsHtmlNew');
     // ChatGTP Web Integration
     var chatgptWebModelNew = document.getElementById('chatGPTWebModelNew');
     var chatgptWebProjectNew = document.getElementById('chatGPTWebProjectNew');
@@ -321,6 +323,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             need_custom_text: (checkboxNeedCustomTextNew.checked) ? 1 : 0,
             define_response_lang: (checkboxDefineResponseLangNew.checked) ? 1 : 0,
             use_diff_viewer: (checkboxUseDiffViewerNew.checked) ? 1 : 0,
+            clean_embedded_images: (checkboxCleanEmbeddedImagesNew && checkboxCleanEmbeddedImagesNew.checked) ? 1 : 0,
+            output_as_html: (checkboxOutputAsHtmlNew && checkboxOutputAsHtmlNew.checked) ? 1 : 0,
             position_compose: positionMax_compose + 1,
             position_display: positionMax_display + 1,
             is_default: 0,
@@ -980,6 +984,9 @@ function showItemRowEditor(tr) {
     tr.querySelector('input.need_custom_text').disabled = false;
     tr.querySelector('input.define_response_lang').disabled = false;
     tr.querySelector('input.use_diff_viewer').disabled = false;
+    tr.querySelector('input.clean_embedded_images').disabled = false;
+    let outputAsHtmlInput = tr.querySelector('input.output_as_html');
+    if (outputAsHtmlInput) outputAsHtmlInput.disabled = false;
 }
 
 function hideItemRowEditor(tr) {
@@ -1011,6 +1018,9 @@ function hideItemRowEditor(tr) {
     tr.querySelector('input.need_custom_text').disabled = true;
     tr.querySelector('input.define_response_lang').disabled = true;
     tr.querySelector('input.use_diff_viewer').disabled = true;
+    tr.querySelector('input.clean_embedded_images').disabled = true;
+    let outputAsHtmlInputHide = tr.querySelector('input.output_as_html');
+    if (outputAsHtmlInputHide) outputAsHtmlInputHide.disabled = true;
 }
 
 function toggleAdditionalPropertiesShow(tr) {
@@ -1188,6 +1198,8 @@ function handleConfirmClick(e) {
     newValues.need_custom_text = tr.querySelector('.need_custom_text').checked ? 1 : 0;
     newValues.define_response_lang = tr.querySelector('.define_response_lang').checked ? 1 : 0;
     newValues.use_diff_viewer = tr.querySelector('.use_diff_viewer').checked ? 1 : 0;
+    newValues.clean_embedded_images = tr.querySelector('.clean_embedded_images').checked ? 1 : 0;
+    newValues.output_as_html = tr.querySelector('.output_as_html')?.checked ? 1 : 0;
     newValues.chatgpt_web_model = tr.querySelector('.chatgpt_web_model_output').value.trim();
     newValues.chatgpt_web_project = tr.querySelector('.chatgpt_web_project_output').value.trim();
     newValues.chatgpt_web_custom_gpt = tr.querySelector('.chatgpt_web_custom_gpt_output').value.trim();
@@ -1251,10 +1263,27 @@ async function handleCheckboxChange(e) {
         }
     }
 
+    if (e.target.classList.contains('output_as_html') && !e.target.closest('#formNew')) {
+        let tr = e.target.closest('tr');
+        if (tr) {
+            let idnum = tr.getAttribute('data-idnum');
+            let item = promptsList.get('idnum', idnum);
+            if (item && item.length > 0) {
+                item[0]._values.output_as_html = e.target.checked ? 1 : 0;
+            }
+        }
+    }
+
     //console.log('>>>>>>>> checked_val: ' + e.target.getAttribute('checked_val'));
-    if (e.target.classList.contains('need_selected') || e.target.classList.contains('need_custom_text') || e.target.classList.contains('need_selected_new') || e.target.classList.contains('need_custom_text_new')) {
-        let textarea = e.target.closest('tr').querySelector('.text_output');
-        await checkPromptsConfigForPlaceholders(textarea);
+    if (e.target.classList.contains('need_selected') || e.target.classList.contains('need_custom_text') || e.target.classList.contains('output_as_html') || e.target.classList.contains('need_selected_new') || e.target.classList.contains('need_custom_text_new') || e.target.classList.contains('output_as_html_new')) {
+        let tr = e.target.closest('tr');
+        let textarea = tr ? (tr.querySelector('.text_output') || tr.querySelector('#txtTextNew')) : null;
+        if (!textarea && e.target.closest('#formNew')) {
+            textarea = document.getElementById('txtTextNew');
+        }
+        if (textarea) {
+            await checkPromptsConfigForPlaceholders(textarea);
+        }
     }
     
 }
@@ -1280,6 +1309,8 @@ function handleCopyClick(e) {
     let need_custom_text = tr.querySelector('.need_custom_text').checked;
     let define_response_lang = tr.querySelector('.define_response_lang').checked;
     let use_diff_viewer = tr.querySelector('.use_diff_viewer').checked;
+    let clean_embedded_images = tr.querySelector('.clean_embedded_images').checked;
+    let output_as_html = tr.querySelector('.output_as_html')?.checked ?? false;
     
     let chatgpt_web_model = tr.querySelector('.chatgpt_web_model_output').value;
     let chatgpt_web_project = tr.querySelector('.chatgpt_web_project_output').value;
@@ -1303,6 +1334,11 @@ function handleCopyClick(e) {
     document.getElementById('checkboxNeedSignatureNew').checked = need_signature;
     document.getElementById('checkboxNeedCustomTextNew').checked = need_custom_text;
     document.getElementById('checkboxDefineResponseLangNew').checked = define_response_lang;
+    document.getElementById('checkboxCleanEmbeddedImagesNew').checked = clean_embedded_images;
+    let checkboxOutputAsHtmlNew = document.getElementById('checkboxOutputAsHtmlNew');
+    if (checkboxOutputAsHtmlNew) {
+        checkboxOutputAsHtmlNew.checked = output_as_html;
+    }
     
     let checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
     checkboxUseDiffViewerNew.checked = use_diff_viewer;
@@ -1682,7 +1718,7 @@ function loadPromptsList(values){
     }
 
     let options = {
-        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', 'show_in', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, 'api_type', ...api_fields ],
+        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', 'show_in', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, { name: 'clean_embedded_images', attr: 'checked_val'}, { name: 'output_as_html', attr: 'checked_val'}, 'api_type', ...api_fields ],
         item: function(values) {
             let type_output = '';
             switch(String(values.type)){
@@ -1780,15 +1816,19 @@ function loadPromptsList(values){
                 <button class="btnMenuPositionItem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>__MSG_menu_position_btn_label__</span></button>
               </div></td>
                 <td class="w17">
-                    <label><span class="need_selected_span"><input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__</span></label>
+                    <label title="__MSG_customPrompts_form_label_need_selected_title__"><span class="need_selected_span"><input type="checkbox" class="need_selected" disabled title="__MSG_customPrompts_form_label_need_selected_title__"> __MSG_customPrompts_form_label_need_selected__</span></label>
                     <br>
-                    <label><input type="checkbox" class="need_signature" disabled> __MSG_customPrompts_form_label_need_signature__</label>
+                    <label title="__MSG_customPrompts_form_label_need_signature_title__"><input type="checkbox" class="need_signature" disabled title="__MSG_customPrompts_form_label_need_signature_title__"> __MSG_customPrompts_form_label_need_signature__</label>
                     <br>
-                    <label><span class="need_custom_text_span"><input type="checkbox" class="need_custom_text` + ((values.is_default == 1) ? ' input_mod':'') + `"` + ((values.is_default == 0) ? ' disabled':'') + ` > __MSG_customPrompts_form_label_need_custom_text__</span></label>
+                    <label title="__MSG_customPrompts_form_label_need_custom_text_title__"><span class="need_custom_text_span"><input type="checkbox" class="need_custom_text` + ((values.is_default == 1) ? ' input_mod':'') + `"` + ((values.is_default == 0) ? ' disabled':'') + ` title="__MSG_customPrompts_form_label_need_custom_text_title__"> __MSG_customPrompts_form_label_need_custom_text__</span></label>
                     <br>
-                    <label><input type="checkbox" class="define_response_lang" disabled> __MSG_customprompts_form_label_define_response_lang__</label>
+                    <label title="__MSG_customprompts_form_label_define_response_lang_title__"><input type="checkbox" class="define_response_lang" disabled title="__MSG_customprompts_form_label_define_response_lang_title__"> __MSG_customprompts_form_label_define_response_lang__</label>
                     <br>
-                    <label title="__MSG_customPrompts_form_label_use_diff_viewer_title__"><input type="checkbox" class="use_diff_viewer" disabled> __MSG_customPrompts_form_label_use_diff_viewer__</label>
+                    <label title="__MSG_customPrompts_form_label_use_diff_viewer_title__"><input type="checkbox" class="use_diff_viewer" disabled title="__MSG_customPrompts_form_label_use_diff_viewer_title__"> __MSG_customPrompts_form_label_use_diff_viewer__</label>
+                    <br>
+                    <label title="__MSG_customPrompts_form_label_clean_embedded_images_title__"><input type="checkbox" class="clean_embedded_images" disabled title="__MSG_customPrompts_form_label_clean_embedded_images_title__"> __MSG_customPrompts_form_label_clean_embedded_images__</label>
+                    <br>
+                    <label title="__MSG_customPrompts_form_label_output_as_html_title__"><input type="checkbox" class="output_as_html" disabled title="__MSG_customPrompts_form_label_output_as_html_title__"> __MSG_customPrompts_form_label_output_as_html__</label>
                     <span class="is_default hiddendata"></span>
                     <span class="position_compose hiddendata"></span>
                     <span class="position_display hiddendata"></span>
@@ -1964,10 +2004,21 @@ function clearFields() {
     document.getElementById('checkboxNeedCustomTextNew').checked = false;
     document.getElementById('checkboxDefineResponseLangNew').checked = false;
     document.getElementById('checkboxUseDiffViewerNew').checked = false;
+    let checkboxCleanEmbeddedImagesNew = document.getElementById('checkboxCleanEmbeddedImagesNew');
+    if (checkboxCleanEmbeddedImagesNew) checkboxCleanEmbeddedImagesNew.checked = true;
+    let checkboxOutputAsHtmlNew = document.getElementById('checkboxOutputAsHtmlNew');
+    if (checkboxOutputAsHtmlNew) {
+        checkboxOutputAsHtmlNew.checked = false;
+        checkboxOutputAsHtmlNew.classList.remove('invalid_flag');
+    }
     // The action is reset to '0' above, so the diff viewer flag goes back to
     // being not applicable (same state as on page load).
     document.getElementById('checkboxUseDiffViewerNew').disabled = true;
     updateUseDiffViewerHint();
+    let outputAsHtmlNew_hint = document.getElementById('outputAsHtmlNew_hint');
+    if (outputAsHtmlNew_hint) {
+        outputAsHtmlNew_hint.classList.add('hidden');
+    }
     // Drop any leftover validation rings from the previous edit.
     document.getElementById('checkboxNeedSelectedNew').classList.remove('invalid_flag');
     document.getElementById('checkboxNeedCustomTextNew').classList.remove('invalid_flag');
@@ -2037,6 +2088,8 @@ function checkSelectedBoxes(checkboxes = null) {
             ...document.querySelectorAll('table.prompts_list .need_custom_text[type="checkbox"]'),
             ...document.querySelectorAll('table.prompts_list .define_response_lang[type="checkbox"]'),
             ...document.querySelectorAll('table.prompts_list .use_diff_viewer[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .clean_embedded_images[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .output_as_html[type="checkbox"]'),
         ];
     }
 
@@ -2112,20 +2165,46 @@ window.addEventListener('beforeunload', function (event) {
 });
 
 async function checkPromptsConfigForPlaceholders(textarea){
+    if (!textarea) return;
     let curr_text = textarea.value;
     // First substitute the custom data placeholders
     curr_text = await placeholdersUtils.replaceCustomPlaceholders(curr_text);
     // console.log('>>>>>>>>>> curr_text after custom placeholders: ' + curr_text);
-    // check additional_text and selected_text placeholders presence and the corrispondent checkboxes
+    // check additional_text, selected_text, and HTML placeholders presence and the corresponding checkboxes
     let tr_ancestor = textarea.closest('tr');
-    let need_custom_text_element = tr_ancestor.querySelector('.need_custom_text') || tr_ancestor.querySelector('.need_custom_text_new');
-    // The ring is drawn on the checkbox itself (see .invalid_flag in the CSS), so it
-    // hugs the toggle switch instead of boxing the whole label row.
-    let need_custom_text_missing = /{%\s*additional_text(?::.*?)?\s*%}/.test(String(curr_text)) && !need_custom_text_element.checked;
-    need_custom_text_element.classList.toggle('invalid_flag', need_custom_text_missing);
+    if (!tr_ancestor) return;
 
-      let tr_ancestor2 = textarea.closest('tr');
-      let selected_text_element = tr_ancestor2.querySelector('.need_selected') || tr_ancestor2.querySelector('.need_selected_new');
-      let selected_text_used = (String(curr_text).indexOf('{%selected_text%}') != -1)||(String(curr_text).indexOf('{%selected_html%}') != -1);
-      selected_text_element.classList.toggle('invalid_flag', selected_text_used && !selected_text_element.checked);
+    let need_custom_text_element = tr_ancestor.querySelector('.need_custom_text') || tr_ancestor.querySelector('.need_custom_text_new');
+    if (need_custom_text_element) {
+        // The ring is drawn on the checkbox itself (see .invalid_flag in the CSS), so it
+        // hugs the toggle switch instead of boxing the whole label row.
+        let need_custom_text_missing = /{%\s*additional_text(?::.*?)?\s*%}/.test(String(curr_text)) && !need_custom_text_element.checked;
+        need_custom_text_element.classList.toggle('invalid_flag', need_custom_text_missing);
+    }
+
+    let selected_text_element = tr_ancestor.querySelector('.need_selected') || tr_ancestor.querySelector('.need_selected_new');
+    if (selected_text_element) {
+        let selected_text_used = (String(curr_text).indexOf('{%selected_text%}') != -1)||(String(curr_text).indexOf('{%selected_html%}') != -1);
+        selected_text_element.classList.toggle('invalid_flag', selected_text_used && !selected_text_element.checked);
+    }
+
+    // ponytail: unified selector replaces 5-branch query chain
+    let output_as_html_element = tr_ancestor.querySelector('.output_as_html, .output_as_html_new, #checkboxOutputAsHtmlNew') || document.getElementById('checkboxOutputAsHtmlNew');
+    if (output_as_html_element) {
+        let html_placeholders_regex = /{%\s*(?:mail_typed_html|mail_html_body|selected_html|mail_html_body_or_selected)(?::.*?)?\s*%}/;
+        let html_placeholder_present = html_placeholders_regex.test(String(curr_text));
+        let output_as_html_missing = html_placeholder_present && !output_as_html_element.checked;
+        output_as_html_element.classList.toggle('invalid_flag', output_as_html_missing);
+
+        let hint_element = tr_ancestor.querySelector('.output_as_html_hint, #outputAsHtmlNew_hint') || document.getElementById('outputAsHtmlNew_hint');
+        if (hint_element) {
+            hint_element.classList.toggle('hidden', !output_as_html_missing);
+        }
+
+        if (output_as_html_missing) {
+            output_as_html_element.setAttribute('title', browser.i18n.getMessage('customPrompts_hint_output_as_html') || 'Recommended: Enable "Output as HTML" when using HTML placeholders');
+        } else {
+            output_as_html_element.setAttribute('title', browser.i18n.getMessage('customPrompts_form_label_output_as_html_title') || '');
+        }
+    }
 }
