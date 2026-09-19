@@ -85,6 +85,14 @@ export class Ollama {
     fetchResponse = async (messages) => {
       try {
         const tempFloat = parseFloat(this.temperature);
+
+        // Both num_ctx and temperature live under the same "options" key: they must be
+        // merged into a single object, otherwise one silently overwrites the other.
+        const options_obj = {
+            ...(this.num_ctx > 0 ? { num_ctx: parseInt(this.num_ctx) } : {}),
+            ...(this.temperature != '' && !Number.isNaN(tempFloat) ? { temperature: tempFloat } : {}),
+        };
+
         //console.log(">>>>>>>>>>  messages: " +JSON.stringify(messages));
         const response = await fetch(this.host + "/api/chat", {
             method: "POST",
@@ -97,8 +105,7 @@ export class Ollama {
                 stream: this.stream,
                 think: this.think,
                 ...(this.format_json ? { format: "json" } : {}),
-                ...(this.num_ctx > 0 ? { options: { num_ctx: parseInt(this.num_ctx) } } : {}),
-                ...(this.temperature != '' && !Number.isNaN(tempFloat) ? { options: { temperature: tempFloat } } : {}),
+                ...(Object.keys(options_obj).length > 0 ? { options: options_obj } : {}),
             }),
         });
         return response;
