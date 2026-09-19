@@ -3,6 +3,7 @@
 
 <h2>Version 5.1.0 - ??/??/2026</h2>
       <ul>
+        <li>Fix: the ThunderAI actions no longer fail silently when the message pane is not visible, like when it is hidden with F8, when no email is displayed or when more emails are selected. The summarize command from the context menu now opens the AI chat window in that case, the add tags command no longer assigns the tags without showing the confirmation dialog, and the other actions stop cleanly instead of leaving the working indicator spinning [<a href="https://github.com/micz/ThunderAI/issues/901">#901</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 5.0.1 - 16/09/2026</h2>
