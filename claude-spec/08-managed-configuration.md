@@ -420,6 +420,12 @@ A feature toggle is an `<input type="checkbox">` visually hidden **inside**
   track and inside its click target. When the control is inside a `.mzta_switch`, the
   marker is therefore inserted **before that label**, as a sibling in `.feature_row`, so
   the row reads `… [Managed by Org] (toggle)`.
+- **Padlock.** The badge carries a padlock glyph via `.managed_marker::before` in
+  `pages/_lib/mzta-design.css`, the same one `#managed_config_banner` and
+  `.managed_restriction_note` use, so every managed surface reads alike. It is CSS, not
+  text, so it stays out of the localised string and out of the accessible name. The badge
+  is an `inline-flex` row with `flex-wrap: nowrap`: the glyph is the icon *for* the
+  label, not a word in it, and must never come apart from it.
 - **Inertness.** `disabled` on the input is not sufficient on its own. `disable_ApiFeature()`
   and friends reassign `.disabled` unconditionally, and they run again from the
   `storage.onChanged` listener — i.e. *after* `applyManagedUI()`. Two defences:

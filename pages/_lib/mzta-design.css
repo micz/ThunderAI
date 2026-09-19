@@ -1105,7 +1105,12 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 /* Marker appended next to every control a policy enforces, so a disabled field reads as
    "your organization set this" instead of as a bug. */
 .managed_marker {
-    display: inline-block;
+    display: inline-flex;
+    align-items: baseline;
+    /* Padlock and text are two separate flex items, so NOT flex-wrap: wrap - same
+       reasoning as #managed_config_banner above. The badge is nowrap anyway. */
+    flex-wrap: nowrap;
+    gap: 4px;
     margin-inline-start: 8px;
     padding: 1px 6px;
     border-radius: 4px;
@@ -1118,6 +1123,15 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     white-space: nowrap;
     vertical-align: middle;
     cursor: help;
+}
+/* Same padlock the banner and the restriction note use, so every managed surface reads
+   the same way: the glyph says "locked", the text says by whom. It is the icon for the
+   badge, not a word in it, so it never shrinks and never wraps away from the label. */
+.managed_marker::before {
+    content: "\1F512";      /* padlock */
+    flex: none;
+    font-size: 10px;
+    line-height: 1.6;
 }
 
 /* In a feature row the marker is a direct flex child inserted before .mzta_switch, so it
