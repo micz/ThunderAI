@@ -1144,6 +1144,20 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     margin-inline-end: 4px;
 }
 
+/* A .mzta_field is a flex COLUMN, so a marker appended as its last child becomes a flex item
+   and `align-items: stretch` blows the chip out to the full field width - and
+   margin-inline-start, a horizontal offset, buys it no vertical separation from the help text
+   above. Shrink it back to its content and give it the row's own breathing room. Same fix as
+   .feature_row > .managed_marker above, for the column layout instead of the row one. */
+.mzta_field > .managed_marker,
+.mzta_field_num_text > .managed_marker {
+    flex: none;
+    align-self: flex-start;
+    margin-inline-start: 0;
+    margin-block: 2px;
+    padding: 3px 8px;
+}
+
 /* A link a restriction took away. An <a> has no `disabled` the browser honours, so the
    inert look is done here; managed-ui.js also strips the href so it cannot be followed. */
 a.managed_disabled {

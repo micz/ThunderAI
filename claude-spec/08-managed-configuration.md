@@ -420,6 +420,19 @@ A feature toggle is an `<input type="checkbox">` visually hidden **inside**
   track and inside its click target. When the control is inside a `.mzta_switch`, the
   marker is therefore inserted **before that label**, as a sibling in `.feature_row`, so
   the row reads `… [Managed by Org] (toggle)`.
+- **Two layout contexts.** Wherever it lands, the marker ends up a *flex item*, and the base
+  `.managed_marker` rule — an `inline-flex` chip sized by its content — is not enough on its
+  own, because a flex parent's `align-items: stretch` overrides that sizing. Each context
+  needs its own override in `pages/_lib/mzta-design.css`:
+  - a flex **row** (`.feature_row`, marker inserted before `.mzta_switch`) — the chip must
+    not stretch to the row height and needs the switch's top offset to line up with it;
+  - a flex **column** (`.mzta_field`, marker appended as the last child, under the control's
+    `.mzta_help` text) — without an override the chip stretches to the *full field width*,
+    and `margin-inline-start`, being horizontal, gives it no separation from the help text
+    above.
+
+  Both overrides are `flex: none; align-self: flex-start` plus context-appropriate margins.
+  A new field layout that hosts the marker needs the same treatment.
 - **Padlock.** The badge carries a padlock glyph via `.managed_marker::before` in
   `pages/_lib/mzta-design.css`, the same one `#managed_config_banner` and
   `.managed_restriction_note` use, so every managed surface reads alike. It is CSS, not
