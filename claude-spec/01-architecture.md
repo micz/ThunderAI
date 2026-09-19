@@ -52,8 +52,8 @@ the summary is displayed. The `summarize_auto` preference controls when it is tr
   - `'inline'` → button click triggers inline generation
   - `'webchat'` → button click opens the AI chat window via `_openSummaryWebchat()`
 - Context menu summarize also respects `summarize_display_mode`:
-  - `'inline'` with a single message → generates inline via `_generateSummaryForMessage()`
-  - `'webchat'` or multiple messages → opens the AI chat window via `openChatGPT()`
+  - `'inline'` with a single message and a reachable message pane → generates inline via `_generateSummaryForMessage()`
+  - `'webchat'`, multiple messages, or an unreachable message pane (the indicator send doubles as the probe — see [Unreachable message pane](#unreachable-message-pane-sendtabmessagesafe-901)) → opens the AI chat window via `openChatGPT()`
 
 ```
 User opens/selects a message in Thunderbird
@@ -346,7 +346,50 @@ on cache hit. This generalizes the same displayed-message check already used by
 The transient *loading* indicators (`showSummaryGenerating`, `showTranslationGenerating`,
 `showSpamCheckInProgress`) are intentionally **not** guarded — they are not keyed to a
 specific result, are idempotent in the content script, and are quickly replaced; guarding
-them would add latency without preventing wrong-content display.
+them would add latency without preventing wrong-content display. That is the *staleness*
+question; their *delivery* is a separate concern — see the next section.
+
+### Unreachable message pane (`sendTabMessageSafe`, [#901](https://github.com/micz/ThunderAI/issues/901))
+
+In a 3-pane `mail` tab with the message pane hidden (F8), nothing displayed, or a
+multi-message view, the tab has **no reachable message browser**. Thunderbird's own
+`tabs.sendMessage()` routing then crashes: `ExtensionParent.sys.mjs` calls
+`getAttribute()` on a tab info object that has none, the promise rejects with
+`TypeError: (intermediate value).getAttribute is not a function`, and at every
+un-awaited call site that surfaces as an uncaught rejection which kills the whole
+action with nothing shown to the user. `browser.messageDisplay.getDisplayedMessage()`
+still reports the selected message in that state, so it **cannot** be used to detect
+the problem — the send itself is the only reliable probe.
+
+**`sendTabMessageSafe(tabId, message)`** (`js/mzta-utils.js`) wraps the send and
+resolves `true` on delivery, `false` on any failure (unreachable pane, closed tab, no
+listener) — the same quiet drop the `.catch(() => {})` idiom already gives
+`showGenericError()` / `showGenericInfo()`. Every fire-and-forget tab send goes
+through it: the loading indicators, `_sendIfCurrent()` (whose displayed-message check
+cannot tell a hidden pane from a shown one), `updateSpamPanel()`, the `sendAlert`s of
+`mzta-background.js` and of `act()` in `js/mzta-menus.js`, and the `getTags` hand-off.
+A dropped result is not lost: summaries/translations/spam reports are written to their
+stores independently of the send and render on the next visit.
+
+Two deliberate behaviours on top of the plain drop:
+
+- **The context-menu summarize flow uses the indicator send as a probe.** In `'inline'`
+  mode with a single message, `processEmails()` awaits the `showSummaryGenerating`
+  send; when the pane cannot receive it, it falls back to the webchat flow — the same
+  fallback already used for inline mode with multiple messages — so the action still
+  produces something visible instead of dying.
+- **`act()` bails out cleanly when the body cannot be scraped.** `getMailBody()` talks
+  to the content script; when the first send rejects, the action logs, calls
+  `taWorkingStatus.stopWorking()` and returns `{ok:'0'}` — previously the rejection
+  escaped `act()` and left the working spinner stuck. The add-tags hand-off is special:
+  the `getTags` dialog is the **user's confirmation step**, so when the pane is
+  unreachable it bails **without assigning** — tags are never applied silently.
+
+**Not guarded, deliberately:** sends to `sender.tab` (the content script that just
+messaged us is alive by construction, so its tab has a browser), awaited sends whose
+rejection the caller observes (e.g. `chatgpt_replaceSelectedText`), and the chat tabs
+the background itself created. `showGenericError()` / `showGenericInfo()` keep their
+own `.catch(() => {})`, which is the same quiet drop.
 
 ### Batch cancellation (`taBatchController`)
 
@@ -1135,7 +1178,7 @@ line and `.sel_info` becomes visible), it lands after an `await browser.storage.
 | `js/mzta-menus.js` | Context menu creation and management |
 | `js/mzta-prompts.js` | Prompt definitions (built-in) and custom prompt loading |
 | `js/mzta-placeholders.js` | Placeholder definitions and resolution logic |
-| `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.). Shared message-inspection helpers used by the auto-processing features: `extractEmail()` (the single copy of the address regex — **case-preserving**, since `getIdentityForMessage()` compares against the configured identities), `matchAddressList()` / `hasAddressListEntries()`, `messageFolderHasSpecialUse()` / `isMessageInAutoSkippedFolder()` (+ the `AUTO_SKIP_SPECIAL_USE` list) |
+| `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.). Shared message-inspection helpers used by the auto-processing features: `extractEmail()` (the single copy of the address regex — **case-preserving**, since `getIdentityForMessage()` compares against the configured identities), `matchAddressList()` / `hasAddressListEntries()`, `messageFolderHasSpecialUse()` / `isMessageInAutoSkippedFolder()` (+ the `AUTO_SKIP_SPECIAL_USE` list); `sendTabMessageSafe()` (tabs.sendMessage guarded against tabs with no reachable message browser — see [Unreachable message pane](#unreachable-message-pane-sendtabmessagesafe-901)) |
 | `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection, `buildSummaryPrompt()` for unified summary prompt assembly, `buildTranslationPrompt()` for translation prompt assembly) |
 | `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders unified toolbar (spam badge, summary/translation trigger buttons) and content panels (generic error, spam explanation, summary, translation) in message display via `#mzta-container` |
 | `js/mzta-chatgpt.js` | ChatGPT Web integration (opens browser window, reads DOM) |

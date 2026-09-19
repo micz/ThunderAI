@@ -200,6 +200,21 @@ export function extractEmail(text) {
   return match ? match[0] : '';
 }
 
+// tabs.sendMessage() guarded against Thunderbird's crash on tabs with no reachable
+// message browser [#901]. In a 3-pane "mail" tab with the message pane hidden (F8),
+// nothing displayed, or a multi-message view, Thunderbird's ExtensionParent routes
+// the send through a tab object that has no getAttribute() and the promise rejects
+// with "TypeError: (intermediate value).getAttribute is not a function" - every
+// un-awaited call site then dies as an uncaught rejection, killing the whole action
+// with nothing shown to the user. Sending through this helper turns any failure
+// (unreachable pane, closed tab, no listener) into a plain false: the same quiet
+// drop the .catch(() => {}) idiom already gives showGenericError()/showGenericInfo().
+// Resolves true when the message was delivered, so a caller can also use it as a
+// probe - see the summarize context-menu flow in mzta-background.js.
+export function sendTabMessageSafe(tabId, message) {
+  return browser.tabs.sendMessage(tabId, message).then(() => true, () => false);
+}
+
 export async function getMailSubject(tab){
   // console.log(">>>>>>>>>> getMailSubject tab: " + JSON.stringify(tab));
   if(!["mail", "messageCompose","messageDisplay"].includes(tab.type)){
