@@ -28,7 +28,6 @@
         "menus",
         "messagesModify",
         "tabs",
-        "activeTab",
         "accountsRead",
         "downloads",
         "messagesTagsList"
