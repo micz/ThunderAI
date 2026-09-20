@@ -317,7 +317,12 @@ export function searchPrompt(allPrompts, tabId, tabType, filtering){
 
 async function sendPrompt(prompt_id, tabId){
  taLog.log("sendPrompt: " + prompt_id);
- browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id});
+ // Fire-and-forget: the background handler for "shortcut_do_prompt" returns a
+ // promise that stays pending for the whole prompt action, but we close the
+ // popup right away. Closing tears down the message conduit, so the sender-side
+ // promise rejects ("Actor 'Conduits' destroyed before query 'RuntimeMessage'
+ // was resolved"). Swallow it, as done elsewhere for fire-and-forget messages.
+ browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id}).catch(() => {});
  window.close();
 }
 
