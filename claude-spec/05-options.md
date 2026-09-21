@@ -23,17 +23,17 @@ Stored flat in `prefs_default` with `{provider}_{key}` naming:
 
 ```
 chatgpt_api_key, chatgpt_model, chatgpt_developer_messages, chatgpt_temperature, chatgpt_store, chatgpt_extra_body
-ollama_host, ollama_model, ollama_num_ctx, ollama_temperature, ollama_think, ollama_format_json
+ollama_host, ollama_api_key, ollama_model, ollama_num_ctx, ollama_temperature, ollama_think, ollama_format_json, ollama_keep_alive, ollama_system_prompt, ollama_extra_options
 openai_comp_host, openai_comp_model, openai_comp_api_key, openai_comp_use_v1, openai_comp_chat_name, openai_comp_temperature, openai_comp_extra_body
 google_gemini_api_key, google_gemini_model, google_gemini_system_instruction, google_gemini_thinking_budget, google_gemini_temperature
 anthropic_api_key, anthropic_model, anthropic_version, anthropic_max_tokens, anthropic_system_prompt, anthropic_temperature, anthropic_extended_thinking_budget, anthropic_effort
 ```
 
-**`*_extra_body` holds raw JSON.** These two prefs are the only ones storing a JSON string in a
+**`*_extra_body` and `ollama_extra_options` hold raw JSON.** These three prefs are the only ones storing a JSON string in a
 free-text field. The UI validates advisorily (`warn_InvalidJson` → red border) but `saveOptions`
 persists the value regardless, so the consumer must tolerate malformed input: `parseExtraBody()`
 (`js/api/api-utils.js`) falls back to `{}`. See
-[Extra body data](04-api-integrations.md#extra-body-data-chatgpt_extra_body--openai_comp_extra_body).
+[Extra body data](04-api-integrations.md#extra-body-data).
 
 Plus the global connection selector:
 ```

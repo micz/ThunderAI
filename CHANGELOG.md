@@ -6,6 +6,11 @@
         <li>Fix: the ThunderAI actions no longer fail silently when the message pane is not visible, like when it is hidden with F8, when no email is displayed or when more emails are selected. The summarize command from the context menu now opens the AI chat window in that case, the add tags command no longer assigns the tags without showing the confirmation dialog, and the other actions stop cleanly instead of leaving the working indicator spinning [<a href="https://github.com/micz/ThunderAI/issues/901">#901</a>].</li>
         <li><i>[Ollama API]</i> Fix: the context size is now correctly sent to the server when both the context size and the temperature options are set. Previously the context size was silently ignored in that case, and the model ran with its default context size.</li>
         <li>The settings are now saved in the local storage of Thunderbird. The existing settings are migrated automatically at the first start, and the synchronized copy is left in place, so nothing is lost if an older version is reinstalled [<a href="https://github.com/micz/ThunderAI/issues/884">#884</a>].</li>
+        <li><i>[Ollama API]</i> The "Enable thinking" option is now a reasoning level: off, on, or low/medium/high/max for the models that accept a level. An existing setting is converted automatically.</li>
+        <li><i>[Ollama API]</i> Added a <i>System Prompt</i> option, sent as a system message at the start of every conversation to give the model a role or standing instructions.</li>
+        <li><i>[Ollama API]</i> Added a <i>Keep model loaded</i> option (keep_alive), to control how long Ollama keeps the model in memory after a request. Raising it avoids reloading the model for every message when auto-tagging, the spam filter or auto-summarize run on incoming mail.</li>
+        <li><i>[Ollama API]</i> Added an <i>Extra options</i> field to send additional parameters ThunderAI does not expose, like top_p, top_k, seed, num_predict or stop, as a JSON object. The parameters managed by ThunderAI cannot be overridden and an invalid value is ignored.</li>
+        <li><i>[Ollama API]</i> Added an optional <i>API Key</i>, for the hosted API at ollama.com and for self-hosted servers behind a proxy that requires authentication.</li>
         <li>...</li>
       </ul>
 <h2>Version 5.0.1 - 16/09/2026</h2>

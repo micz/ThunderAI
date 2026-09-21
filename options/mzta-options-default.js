@@ -31,11 +31,19 @@ export const integration_options_config = {
     },
     ollama: {
         host: '',
+        api_key: '',
         model: '',
         num_ctx: 0,
         temperature: '',
-        think: false,
-        format_json: false
+        // A level, not a flag: '' (off), 'true' (plain boolean true, for models that
+        // take no level), or 'low'|'medium'|'high'|'max'. Declared as a string on
+        // purpose — the boolean branch in mzta-special-commands.js would otherwise
+        // coerce a per-prompt level back to true/false.
+        think: '',
+        format_json: false,
+        keep_alive: '',
+        system_prompt: '',
+        extra_options: ''
     },
     openai_comp: {
         host: '',

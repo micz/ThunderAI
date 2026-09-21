@@ -2210,7 +2210,72 @@
     "description": ""
   },
   "prefs_ollama_think_Info": {
-    "message": "If checked, the Model will think before answering. This option works only with models that support the 'think' feature.",
+    "message": "Make the model reason before answering. Some models accept a reasoning level; others only support on/off, in which case use 'On'. This option works only with models that support the 'think' feature.",
+    "description": ""
+  },
+  "prefs_ollama_think_off": {
+    "message": "Off",
+    "description": ""
+  },
+  "prefs_ollama_think_on": {
+    "message": "On",
+    "description": ""
+  },
+  "prefs_ollama_think_low": {
+    "message": "Low",
+    "description": ""
+  },
+  "prefs_ollama_think_medium": {
+    "message": "Medium",
+    "description": ""
+  },
+  "prefs_ollama_think_high": {
+    "message": "High",
+    "description": ""
+  },
+  "prefs_ollama_think_max": {
+    "message": "Max",
+    "description": ""
+  },
+  "ollama_note_thinking_unsupported": {
+    "message": "The selected model doesn't report support for thinking, so this setting is ignored.",
+    "description": ""
+  },
+  "ollama_num_ctx_max_info": {
+    "message": "This model supports up to $MAX$ context tokens.",
+    "description": "",
+    "placeholders": { "max": { "content": "$1" } }
+  },
+  "prefs_Ollama_API_Key": {
+    "message": "Ollama API Key",
+    "description": ""
+  },
+  "prefs_Ollama_API_Key_Info": {
+    "message": "Only needed for the hosted API at ollama.com, or for a self-hosted server behind a proxy that requires authentication. Leave empty for a standard local Ollama installation.",
+    "description": ""
+  },
+  "prefs_ollama_keep_alive": {
+    "message": "Keep model loaded",
+    "description": ""
+  },
+  "prefs_ollama_keep_alive_Info": {
+    "message": "How long Ollama keeps the model in memory after a request: a duration like 5m or 30m, -1 to keep it loaded indefinitely, or 0 to unload it immediately. Leave empty to use the server default (5 minutes). Raising it is useful when auto-tagging, the spam filter or auto-summarize run on incoming mail, because the model would otherwise be reloaded for every message.",
+    "description": ""
+  },
+  "Ollama_System_Prompt": {
+    "message": "System Prompt",
+    "description": ""
+  },
+  "Ollama_System_Prompt_Info": {
+    "message": "Sent as a system message at the start of every conversation, to give the model a role or standing instructions.",
+    "description": ""
+  },
+  "prefs_OptionText_ollama_extra_options": {
+    "message": "Extra options",
+    "description": ""
+  },
+  "prefs_OptionText_ollama_extra_options_info": {
+    "message": "Additional parameters to send inside the Ollama 'options' object, as a JSON object. Useful for options ThunderAI doesn't expose, like {\"top_p\": 0.9, \"seed\": 42} or {\"num_predict\": 512}. The parameters managed by ThunderAI (number of context tokens, temperature) can't be overridden here. An invalid value is ignored.",
     "description": ""
   },
   "prefs_ollama_format_json": {

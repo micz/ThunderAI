@@ -81,7 +81,7 @@ import {
     checkExcludedTag
 } from './js/mzta-addtags-exclusion-list.js';
 import { mztaPrefs } from './js/mzta-prefs.js';
-import { migratePrefsToLocal, isSyncDrained } from './js/mzta-prefs-migration.js';
+import { migratePrefsToLocal, isSyncDrained, migrateOllamaThinkLevel } from './js/mzta-prefs-migration.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -111,6 +111,11 @@ if (!await isSyncDrained()) {
     await migrateDefaultPromptsPropStorage();
 }
 if (_prefs_migration_ok) await migrateEnabledToShowIn();
+// Converts the global ollama_think from the old boolean checkbox to the level format.
+// Guarded by _prefs_migration_ok for the same reason as the line above: its own one-shot
+// flag lives in storage.local, and reading it before the copy succeeded would find the
+// "not yet run" default and rewrite a value that is not there yet.
+if (_prefs_migration_ok) await migrateOllamaThinkLevel();
 
 var original_html = '';
 var modified_html = '';

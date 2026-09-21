@@ -52,10 +52,11 @@ export const varConnectionUI = {
 }
 
 // Selects that ship their own option for the empty value, either a disabled
-// placeholder (connection_type) or a meaningful "use the API default" entry (the
-// ChatGPT reasoning ones). When restoring an empty value these must keep that option
-// selected, unlike every other select which has to show a blank control instead.
-const selects_with_empty_option_suffixes = ['chatgpt_reasoning_summary', 'chatgpt_reasoning_effort'];
+// placeholder (connection_type) or a meaningful entry: "use the API default" for
+// the ChatGPT reasoning ones, "off" for ollama_think. When restoring an empty value
+// these must keep that option selected, unlike every other select which has to show
+// a blank control instead.
+const selects_with_empty_option_suffixes = ['chatgpt_reasoning_summary', 'chatgpt_reasoning_effort', 'ollama_think'];
 
 export function hasEmptyValueOption(elementId = '') {
   if (elementId === 'connection_type') return true;
@@ -429,6 +430,21 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
+  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
+    <td><label>
+      <span class="opt_title">__MSG_prefs_Ollama_API_Key__</span>
+      <br><i class="small_info">__MSG_Optional__</i>
+    </label></td>
+    <td>
+      <div class="api_key-container">
+        <label>
+          <input type="password" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_api_key" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_api_key" class="option-input"/>
+        </label>
+        <span class="toggle-icon" id="${modelId_prefix ? `${modelId_prefix}` : ''}toggle_ollama_api_key"><img src="/images/pwd-show.png" id="${modelId_prefix ? `${modelId_prefix}` : ''}pwd-icon_ollama_api_key"></span>
+      </div>
+      <label><br>__MSG_prefs_Ollama_API_Key_Info__</label>
+    </td>
+  </tr>
   <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_api_cors_warning">
     <td colspan="2" style="text-align:center;">
       __MSG_remember_CORS__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]
@@ -473,8 +489,16 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" class="option-input"/>
-        __MSG_prefs_ollama_think_Info__
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" class="option-input">
+          <option value="">__MSG_prefs_ollama_think_off__</option>
+          <option value="true">__MSG_prefs_ollama_think_on__</option>
+          <option value="low">__MSG_prefs_ollama_think_low__</option>
+          <option value="medium">__MSG_prefs_ollama_think_medium__</option>
+          <option value="high">__MSG_prefs_ollama_think_high__</option>
+          <option value="max">__MSG_prefs_ollama_think_max__</option>
+        </select>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think_unsupported" class="caps_note" style="display:none">__MSG_ollama_note_thinking_unsupported__</span>
+        <br>__MSG_prefs_ollama_think_Info__
       </label>
     </td>
   </tr>
@@ -496,7 +520,42 @@ export async function injectConnectionUI({
     <td>
       <label>
         <input type="number" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_num_ctx" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_num_ctx" class="option-input"/>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_num_ctx_max" class="caps_note" style="display:none"></span>
         <br>__MSG_prefs_ollama_num_ctx_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td><label>
+      <span class="opt_title">__MSG_prefs_ollama_keep_alive__ <i>[keep_alive]</i></span>
+    </label></td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_keep_alive" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_keep_alive" class="option-input"/>
+        <br>__MSG_prefs_ollama_keep_alive_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td><label>
+      <span class="opt_title">__MSG_Ollama_System_Prompt__</span>
+    </label></td>
+    <td>
+      <label>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_system_prompt" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_system_prompt" class="option-input option-textarea"></textarea>
+        <br>__MSG_Ollama_System_Prompt_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td><label>
+      <span class="opt_title">__MSG_prefs_OptionText_ollama_extra_options__ <i>[options]</i></span>
+    </label></td>
+    <td>
+      <label>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_extra_options" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_extra_options" class="option-input option-textarea check-json"></textarea>
+        <div class="json_error" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_extra_options_error" hidden></div>
+        <br>__MSG_prefs_OptionText_ollama_extra_options_info__
       </label>
     </td>
   </tr>
@@ -815,6 +874,17 @@ export async function injectConnectionUI({
       icon_img_openai_comp_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
   });
 
+  const passwordField_ollama_api_key = document.getElementById(getPrefixedId('ollama_api_key'));
+  const toggleIcon_ollama_api_key = document.getElementById(getPrefixedId('toggle_ollama_api_key'));
+  const icon_img_ollama_api_key = document.getElementById(getPrefixedId('pwd-icon_ollama_api_key'));
+
+  toggleIcon_ollama_api_key.addEventListener('click', () => {
+      const type = passwordField_ollama_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordField_ollama_api_key.setAttribute('type', type);
+
+      icon_img_ollama_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
+  });
+
   const passwordField_anthropic_api_key = document.getElementById(getPrefixedId('anthropic_api_key'));
   const toggleIcon_anthropic_api_key = document.getElementById(getPrefixedId('toggle_anthropic_api_key'));
   const icon_img_anthropic_api_key = document.getElementById(getPrefixedId('pwd-icon_anthropic_api_key'));
@@ -996,6 +1066,7 @@ export async function injectConnectionUI({
     document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'inline';
     let ollama = new Ollama({
       host: document.getElementById(getPrefixedId("ollama_host")).value,
+      api_key: document.getElementById(getPrefixedId("ollama_api_key")).value,
     });
     try {
       let data = await ollama.fetchModels();

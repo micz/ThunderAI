@@ -40,35 +40,74 @@ Per-prompt ChatGPT Web overrides are a separate, unrelated mechanism: the custom
 - Module: `js/api/openai_responses.js`
 - Worker: `js/workers/model-worker-openai_responses.js`
 - Settings keys: `chatgpt_api_key`, `chatgpt_model`, `chatgpt_developer_messages`, `chatgpt_temperature`, `chatgpt_store`, `chatgpt_reasoning_summary`, `chatgpt_reasoning_effort`, `chatgpt_extra_body`
-- **Extra body data**: see [Extra body data](#extra-body-data-chatgpt_extra_body--openai_comp_extra_body).
+- **Extra body data**: see [Extra body data](#extra-body-data).
 - **Reasoning**: the request body adds `reasoning: { summary, effort }` with only the sub-properties that are set; when both prefs are empty the key is omitted entirely, because models without reasoning support reject it. `chatgpt_reasoning_summary` (`''` | `auto` | `detailed`) is what makes the API emit a readable summary — without it the reasoning item carries only the opaque `encrypted_content` and no thinking block can be shown. `chatgpt_reasoning_effort` (`''` | `minimal` | `low` | `medium` | `high`) tunes how much the model reasons. Note that older reasoning models (o1-pro, o3-mini) never expose a summary even when one is requested. See [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui).
 
 ### Ollama (`ollama_api`)
 - Module: `js/api/ollama.js`
 - Worker: `js/workers/model-worker-ollama.js`
-- Settings keys: `ollama_host`, `ollama_model`, `ollama_num_ctx`, `ollama_temperature`, `ollama_think`, `ollama_format_json`
+- Settings keys: `ollama_host`, `ollama_api_key`, `ollama_model`, `ollama_num_ctx`, `ollama_temperature`,
+  `ollama_think`, `ollama_format_json`, `ollama_keep_alive`, `ollama_system_prompt`, `ollama_extra_options`
 - Requires CORS to be configured on the Ollama server
+- **`ollama_think` is a level, not a flag**: `''` (off), `'true'` (plain boolean `true`, for models
+  that accept no level), or `low`/`medium`/`high`/`max`. The field is **omitted entirely** when the
+  pref is empty — it used to be sent as `false` on every request. `'true'` maps to the JSON boolean
+  `true`; the levels are sent as strings.
+  It was a boolean checkbox before, so `normalizeThink()` in `js/api/ollama.js` coerces a legacy
+  `true`/`false` at construction time. That is **required, not belt-and-braces**: the config default
+  in `integration_options_config` is a string now, so the `typeof options_config[key] === 'boolean'`
+  branch in `js/mzta-special-commands.js` no longer coerces this key, and a per-prompt override can
+  still hold a real boolean. `migrateOllamaThinkLevel()` (`js/mzta-prefs-migration.js`, one-shot flag
+  `_migrated_ollama_think_level`, called from `mzta-background.js`) rewrites only the **global** pref,
+  because that is the one loaded into a `<select>`, where a stored boolean would select no option and
+  render the control blank. Prompt objects are deliberately not walked.
+- **`ollama_keep_alive`** is sent as a top-level `keep_alive` string (`"5m"`, `"30m"`, `-1` to keep
+  the model loaded indefinitely, `0` to unload immediately), omitted when empty. It matters because
+  auto-tagging, the spam filter and auto-summarize run on incoming mail, and the server's 5-minute
+  default unloads the model between messages.
+- **`ollama_system_prompt`** is prepended by the **worker**, not by the API class: in the `init`
+  branch of `js/workers/model-worker-ollama.js`, **once**, not per `chatMessage`. `conversationHistory`
+  is module-level state that survives every turn, so prepending per message would stack one system
+  message per turn. The history is still empty at `init`, so `push()` *is* the prepend. The `Ollama`
+  class still declares the field so the generic `ollama_` config sweep does not drop it.
+- **`ollama_api_key`** is optional and sent as `Authorization: Bearer <key>` on every endpoint via
+  `_headers()`, covering the hosted API at `ollama.com` and self-hosted servers behind an
+  authenticating reverse proxy. The id ends in `_api_key`, so `isAPIKeyValue()` redacts it in the
+  options-page restore log for free. **The worker must never log `config` or any header map built
+  from it.**
+- **Extra options**: see [Extra body data](#extra-body-data).
 
 ### OpenAI-Compatible (`openai_comp_api`)
 - Module: `js/api/openai_comp.js`
 - Worker: `js/workers/model-worker-openai_comp.js`
 - Settings keys: `openai_comp_host`, `openai_comp_model`, `openai_comp_api_key`, `openai_comp_use_v1`, `openai_comp_chat_name`, `openai_comp_temperature`, `openai_comp_extra_body`
 - Pre-configured providers: `js/api/openai_comp_configs.js` (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity — `custom` is the default/manual entry). The presets carry only `id`, `name`, `chat_name`, `host`, `use_v1` — there is deliberately no per-preset extra body data.
-- **Extra body data**: see [Extra body data](#extra-body-data-chatgpt_extra_body--openai_comp_extra_body).
+- **Extra body data**: see [Extra body data](#extra-body-data).
 
-### Extra body data (`chatgpt_extra_body` / `openai_comp_extra_body`)
+### Extra body data
 
 An escape hatch for request parameters ThunderAI does not expose (disabling a server's thinking
 mode, `top_p`, provider-proprietary fields). The pref holds a **raw JSON string** entered by the
 user in the Advanced options of the connection panel; `parseExtraBody()` in
 `js/api/api-utils.js` turns it into an object at request time.
 
-- **Only these two providers.** Ollama, Gemini and Anthropic build differently-shaped bodies and
-  have no such field.
-- **Core parameters are protected.** The parsed object is spread **first** in the request body
-  literal (`openai_comp.js` `fetchResponse`, `openai_responses.js` `request_body`), so everything
-  ThunderAI manages — `model`, `messages`/`input`, `stream`, `temperature`, `max_tokens`,
-  `reasoning`, `instructions` — always wins. A wrong entry cannot change the model or break the
+- **Three providers, and one of them differs in *where* the data goes.** Gemini and Anthropic build
+  differently-shaped bodies and have no such field.
+
+  | Pref | Spread into |
+  |------|-------------|
+  | `chatgpt_extra_body` | top level of the request body |
+  | `openai_comp_extra_body` | top level of the request body |
+  | `ollama_extra_options` | **the `options` object**, not the top level |
+
+  Ollama is the exception on purpose: `top_p`, `top_k`, `min_p`, `seed`, `num_predict`,
+  `repeat_penalty`, `stop` and `num_keep` all live under `options` in the Ollama API, so spreading
+  them at the top level would put them where the server does not read them.
+- **Core parameters are protected.** The parsed object is spread **first** in the body literal
+  (`openai_comp.js` `fetchResponse`, `openai_responses.js` `request_body`) — or, for Ollama, first
+  inside the `options_obj` literal in `ollama.js` `fetchResponse` — so everything ThunderAI manages
+  always wins: `model`, `messages`/`input`, `stream`, `temperature`, `max_tokens`, `reasoning`,
+  `instructions`, and `num_ctx` on Ollama. A wrong entry cannot change the model or break the
   streaming. `instructions` in `openai_responses.js` is assigned after the literal, which keeps it
   protected for the same reason.
 - **Invalid input is ignored, never fatal.** `parseExtraBody()` returns `{}` for a blank string,
@@ -150,10 +189,10 @@ See [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui) for 
 for the reasoning in the first place.** Every API worker forwards reasoning content as
 soon as the corresponding field is present in the stream, so a model that reasons on
 its own — without the connection's thinking option being enabled — still shows its
-thinking block. The per-connection prefs (`ollama_think`,
-`google_gemini_thinking_budget`, `anthropic_extended_thinking_budget`,
-`chatgpt_reasoning_summary`) only *request* reasoning from the API; they never decide
-whether it is displayed.
+thinking block. The per-connection prefs (`ollama_think`, `google_gemini_thinking_budget`,
+`anthropic_extended_thinking_budget`, `chatgpt_reasoning_summary`) only *request*
+reasoning from the API; they never decide whether it is displayed. Note `ollama_think`
+is a reasoning **level**, not a flag — see the Ollama section above.
 
 Two providers return no readable reasoning unless the request opts in, which makes the
 request side — not the display side — the thing to check when a thinking block never
@@ -189,7 +228,7 @@ tokens, so thinking that arrives before the first content token is not lost.
 | OpenAI Responses | `response.reasoning_summary_text.delta` and `response.reasoning_text.delta`; as a fallback, the concatenated `item.summary[].text` of a `response.output_item.done` whose `item.type === 'reasoning'`, for models that deliver the summary in one piece instead of streaming deltas. The fallback only fires while `thinkingAccumulator` is still empty, so a summary already received as deltas is never emitted twice. `item.encrypted_content` is always ignored — it is not readable |
 
 **2. Inline `<think>…</think>` tags in the content stream.** Used by models that
-have no dedicated field (Ollama without `ollama_think`, several OpenAI-compatible
+have no dedicated field (Ollama with `ollama_think` off, several OpenAI-compatible
 servers). `StreamingMessage.flush()` extracts and strips these via the shared
 `stripThinkTags()` helper in `js/mzta-utils.js`. If an unterminated `<think>` is
 detected mid-stream, the flush is deferred until the closing tag arrives (that guard

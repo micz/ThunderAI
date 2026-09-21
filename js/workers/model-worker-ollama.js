@@ -43,7 +43,17 @@ self.onmessage = async function(event) {
                     config[newKey] = event.data[key];
                 }
             }
+            // NEVER log `config` (or any header map built from it): it carries
+            // ollama_api_key. Log individual non-secret fields if a debug trace is
+            // ever needed here.
             ollama = new Ollama(config);
+            // Prepended once, here, and never in the chatMessage branch:
+            // conversationHistory is module-level state that survives every turn,
+            // so prepending per message would stack one system message per turn.
+            // The history is still empty at this point, so push() *is* the prepend.
+            if (config.system_prompt && config.system_prompt.trim() !== '') {
+                conversationHistory.push({ role: 'system', content: config.system_prompt });
+            }
             do_debug = event.data.do_debug;
             i18nStrings = event.data.i18nStrings;
             taLog = new taLogger('model-worker-ollama', do_debug);

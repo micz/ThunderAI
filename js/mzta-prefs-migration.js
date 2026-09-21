@@ -174,3 +174,45 @@ export async function isSyncDrained() {
         return false;   // on doubt, let the migrations run their own checks
     }
 }
+
+// Same nature as MIGRATION_FLAG above: a one-shot marker, not a preference. No UI,
+// no prefs_default entry, leading underscore, and it must live in the same area as
+// PREFS_AREA in js/mzta-prefs.js.
+const OLLAMA_THINK_FLAG = '_migrated_ollama_think_level';
+
+/**
+ * Convert the global `ollama_think` preference from the old boolean checkbox to the
+ * level format: `true` -> 'true', `false` -> ''.
+ *
+ * Only the GLOBAL pref is rewritten. The per-prompt and per-feature copies are
+ * deliberately left alone: normalizeThink() in js/api/ollama.js coerces a legacy
+ * boolean at construction time, which covers every one of those call sites without
+ * walking (and risking) the three prompt stores. The global key is special only
+ * because it is the one the options page loads into a <select>, where a stored
+ * boolean would select no option and render the control blank.
+ *
+ * Idempotent by construction: after it runs the value is a string, and the two
+ * branches below only ever match a real boolean.
+ */
+export async function migrateOllamaThinkLevel() {
+    try {
+        const flag = await browser.storage.local.get({ [OLLAMA_THINK_FLAG]: false });
+        if (flag[OLLAMA_THINK_FLAG] === true) {
+            return;
+        }
+
+        // No default substituted: an unset pref must stay unset, so that a later
+        // change to the default in options/mzta-options-default.js still reaches
+        // this user. Only an explicitly stored boolean is rewritten.
+        const stored = await browser.storage.local.get('ollama_think');
+        if (typeof stored.ollama_think === 'boolean') {
+            await browser.storage.local.set({ ollama_think: stored.ollama_think ? 'true' : '' });
+        }
+
+        await browser.storage.local.set({ [OLLAMA_THINK_FLAG]: true });
+    } catch (e) {
+        // Never fatal: the constructor normalization means a failed migration costs
+        // a blank-looking select, not a broken request.
+        console.error("[ThunderAI] migrateOllamaThinkLevel error: " + e);
+    }
+}

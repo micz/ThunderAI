@@ -220,9 +220,14 @@ if (worker) {
                 { key: 'thinking_budget', labelKey: 'prefs_google_gemini_thinking_budget', type: 'string' }
             ],
             ollama: [
-                { key: 'think', labelKey: 'prefs_ollama_think', type: 'boolean' },
+                // A level now ('' | 'true' | low | medium | high | max), not a flag:
+                // 'string' both shows the chosen level and hides the row when off.
+                { key: 'think', labelKey: 'prefs_ollama_think', type: 'string' },
+                { key: 'system_prompt', labelKey: 'Ollama_System_Prompt', type: 'string' },
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
-                { key: 'num_ctx', labelKey: 'prefs_ollama_num_ctx', type: 'number_gt_zero' }
+                { key: 'num_ctx', labelKey: 'prefs_ollama_num_ctx', type: 'number_gt_zero' },
+                { key: 'keep_alive', labelKey: 'prefs_ollama_keep_alive', type: 'string' },
+                { key: 'extra_options', labelKey: 'prefs_OptionText_ollama_extra_options', type: 'string' }
             ],
             openai_comp: [
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },

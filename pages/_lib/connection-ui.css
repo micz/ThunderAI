@@ -49,15 +49,22 @@ textarea.option-textarea{
     overflow-wrap: break-word;
 }
 
-/* Inline note shown when the selected Claude model does not accept an option
-   (temperature, extended thinking budget, effort). The field itself stays
-   visible and populated but disabled, so the stored value is never hidden from
-   the user — see updateAnthropicModelCapabilityUI() in connection-ui.js.
+/* Inline note shown when the selected model does not accept an option, or to
+   report a model-reported limit. On Claude that is temperature / extended
+   thinking budget / effort (updateAnthropicModelCapabilityUI()); on Ollama the
+   think level and the real maximum num_ctx (updateOllamaModelCapabilityUI()).
+   The field itself stays visible and populated but disabled, so the stored
+   value is never hidden from the user.
 
    It sits directly under the input and ABOVE the generic help text, because
    when it is showing, that help text describes a setting the model ignores:
    the note is what the user needs to read first. Blue rather than the red
-   --jsonError: nothing is malformed, the value just does not apply here. */
+   --jsonError: nothing is malformed, the value just does not apply here.
+
+   .anthropic_caps_note is the original provider-specific name, kept so the
+   Claude rows keep their styling; .caps_note is the neutral one used by every
+   provider added since. */
+.caps_note,
 .anthropic_caps_note{
     display: block;
     margin: 2px 0 0 0;
@@ -69,6 +76,7 @@ textarea.option-textarea{
 
 /* No blank line between the note and the help text below it: the help text
    follows a <br>, so the note must not add trailing space of its own. */
+.caps_note + br,
 .anthropic_caps_note + br{
     line-height: 0;
 }
