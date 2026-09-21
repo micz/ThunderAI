@@ -7,6 +7,8 @@
         <li><i>[Ollama API]</i> The Ollama options have been expanded and now adapt to the selected model: the thinking option became a reasoning level, and a System Prompt, a Keep model loaded (keep_alive) option, an Extra options field for additional parameters and an optional API Key have been added [<a href="https://github.com/micz/ThunderAI/issues/502">#502</a>].</li>
         <li><i>[Ollama API]</i> Fix: the context size is now correctly sent to the server when both the context size and the temperature options are set. Previously the context size was silently ignored in that case, and the model ran with its default context size.</li>
         <li><i>[Claude API]</i> Fix: the <i>Effort</i> option was shown as an empty drop-down in the Setup Wizard, and in the custom prompts page until the model was changed.</li>
+        <li><i>[Claude API]</i> Added the <i>Top P</i>, <i>Top K</i> and <i>Stop sequences</i> advanced connection options, also available per prompt. Top P and Top K are not accepted by the newer Claude models, so they are disabled with an explanatory note when one of them is selected, exactly like the Temperature, while the stop sequences work with every model and are entered one per line [<a href="https://github.com/micz/ThunderAI/issues/499">#499</a>].</li>
+        <li><i>[Claude API]</i> Fix: an <i>Extended thinking budget</i> lower than 1024 tokens, or not lower than the <i>Max Tokens</i> value, made every request fail with an error. Those values are now reported in the settings and are no longer sent, and the <i>System Prompt</i> is no longer sent when it is empty.</li>
         <li>Minor bugs fixed.</li>
         <li>...</li>
       </ul>
