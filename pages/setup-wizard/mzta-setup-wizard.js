@@ -26,6 +26,7 @@ import {
   injectConnectionUI,
   varConnectionUI,
   showConnectionOptions,
+  updateAnthropicModelCapabilityUI,
   updateOllamaModelCapabilityUI
 } from '../_lib/connection-ui.js';
 import {
@@ -379,8 +380,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await restoreOptions();
 
-  // The saved model is in the select now, so the per-model option availability can
-  // finally be computed (before the restore it would probe an empty model).
+  // The saved model is in the selects now, so the per-model option availability can
+  // finally be computed (before the restore they would read an empty model).
+  // The Claude one is not optional here: anthropic_effort ships as an EMPTY <select>
+  // and this call is what fills it, so without it the wizard shows a blank control
+  // until the model is touched.
+  updateAnthropicModelCapabilityUI();
   updateOllamaModelCapabilityUI();
 
   varConnectionUI.permission_all_urls = await messenger.permissions.contains({ origins: ['<all_urls>'] });

@@ -246,6 +246,18 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
     selected model degrades to a valid request, never to a 400.** Stored prefs are never rewritten:
     the user may switch back to an older model, so incompatibility is resolved at request-build time
     (here) and at display time (the options page disables the field with a note).
+- **`anthropic_effort` ships as an EMPTY `<select>`.** The template emits no `<option>`s:
+  `updateAnthropicModelCapabilityUI()` is what fills it, from the model's `effortLevels`. A page
+  that injects the connection UI and never calls it therefore shows a **blank** effort control
+  until the user touches the model select (which fires the `change` listener registered in
+  `injectConnectionUI()`). Every host page must call it **after its restore**, when the saved
+  model is finally in the select — the injection deliberately does not, because at that point the
+  select is still empty and the capabilities would be computed from an empty model ID.
+  Call sites: `options/mzta-options.js`, `pages/setup-wizard/mzta-setup-wizard.js`,
+  `initializeSpecificIntegrationUI()` (the six per-feature panels) and
+  `pages/customprompts/mzta-custom-prompts.js` (add form + each edited row).
+  The same rule applies to `updateOllamaModelCapabilityUI()`, whose think select is likewise
+  built at runtime.
 - **400 error hints**: `describeAnthropicError(detail, model, i18nStrings)` inspects a 400 body and,
   when the message names `temperature` / `top_p` / `top_k` / `thinking.type` / `budget_tokens` /
   `effort`, prepends a localized hint naming the incompatible option; otherwise the raw detail is
