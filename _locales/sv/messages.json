@@ -2217,19 +2217,22 @@
     "anthropic_effort_default": {
         "message": "Standard (bestäms av API:et)"
     },
-    "Anthropic_Effort_Level_low": {
+    "prefs_level_minimal": {
+        "message": "Minimal"
+    },
+    "prefs_level_low": {
         "message": "Låg"
     },
-    "Anthropic_Effort_Level_medium": {
+    "prefs_level_medium": {
         "message": "Medium"
     },
-    "Anthropic_Effort_Level_high": {
+    "prefs_level_high": {
         "message": "Hög"
     },
-    "Anthropic_Effort_Level_xhigh": {
+    "prefs_level_xhigh": {
         "message": "Extra hög"
     },
-    "Anthropic_Effort_Level_max": {
+    "prefs_level_max": {
         "message": "Max"
     },
     "anthropic_note_temperature_unsupported": {
@@ -2270,18 +2273,6 @@
     },
     "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
         "message": "Detaljerad"
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
-        "message": "Minimal"
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_low": {
-        "message": "Låg"
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
-        "message": "Medium"
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_high": {
-        "message": "Hög"
     },
     "customDataPH_placeholdersCount": {
         "message": "$COUNT$ dataplatshållare",

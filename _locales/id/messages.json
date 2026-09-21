@@ -2156,18 +2156,30 @@
     "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
         "message": "Terperinci"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
-        "message": "Minimal"
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_low": {
-        "message": "Rendah"
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
-        "message": "Sedang"
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_high": {
-        "message": "Tinggi"
-    },
+  "prefs_level_minimal": {
+    "message": "Minimal",
+    "description": ""
+  },
+  "prefs_level_low": {
+    "message": "Rendah",
+    "description": ""
+  },
+  "prefs_level_medium": {
+    "message": "Sedang",
+    "description": ""
+  },
+  "prefs_level_high": {
+    "message": "Tinggi",
+    "description": ""
+  },
+  "prefs_level_xhigh": {
+    "message": "Sangat tinggi",
+    "description": ""
+  },
+  "prefs_level_max": {
+    "message": "Maksimal",
+    "description": ""
+  },
     "customDataPH_placeholdersCount": {
         "message": "$COUNT$ placeholder data",
         "placeholders": {
@@ -2476,21 +2488,6 @@
     },
     "anthropic_effort_default": {
         "message": "Default (ditentukan oleh API)"
-    },
-    "Anthropic_Effort_Level_low": {
-        "message": "Rendah"
-    },
-    "Anthropic_Effort_Level_medium": {
-        "message": "Sedang"
-    },
-    "Anthropic_Effort_Level_high": {
-        "message": "Tinggi"
-    },
-    "Anthropic_Effort_Level_xhigh": {
-        "message": "Sangat tinggi"
-    },
-    "Anthropic_Effort_Level_max": {
-        "message": "Maksimal"
     },
     "anthropic_note_temperature_unsupported": {
         "message": "Model yang dipilih tidak menerima nilai Temperature dan mengabaikan bidang ini. Gunakan pengaturan Upaya sebagai gantinya. Nilai ini tetap disimpan jika Anda beralih kembali ke model lama."

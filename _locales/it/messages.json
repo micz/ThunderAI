@@ -1444,7 +1444,7 @@
         "message": "Richiede all'API un riassunto del ragionamento del modello, mostrato nella chat come blocco richiudibile. Lo supportano solo i modelli di ragionamento recenti, come gpt-5, o3 e o4-mini: quelli più vecchi come o1-pro e o3-mini ragionano internamente ma non espongono mai un riassunto, quindi il blocco resta nascosto. Lascia disattivato per i modelli senza supporto al ragionamento."
     },
     "prefs_OptionText_chatgpt_reasoning_effort": {
-        "message": "Intensità del ragionamento"
+        "message": "Livello di ragionamento"
     },
     "prefs_OptionText_chatgpt_extra_body": {
         "message": "Dati aggiuntivi"
@@ -1467,17 +1467,29 @@
     "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
         "message": "Dettagliato"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
-        "message": "Minima"
+    "prefs_level_minimal": {
+        "message": "Minimo",
+        "description": ""
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_low": {
-        "message": "Bassa"
+    "prefs_level_low": {
+        "message": "Basso",
+        "description": ""
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
-        "message": "Media"
+    "prefs_level_medium": {
+        "message": "Medio",
+        "description": ""
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_high": {
-        "message": "Alta"
+    "prefs_level_high": {
+        "message": "Alto",
+        "description": ""
+    },
+    "prefs_level_xhigh": {
+        "message": "Molto alto",
+        "description": ""
+    },
+    "prefs_level_max": {
+        "message": "Massimo",
+        "description": ""
     },
     "prefs_ollama_temperature_Info": {
         "message": "La temperatura del modello. Aumentare la temperatura farà sì che il modello risponda in modo più creativo. Il valore predefinito è 0,8. Si consiglia di utilizzare valori compresi tra 0 e 1."
@@ -2498,21 +2510,6 @@
     },
     "anthropic_effort_default": {
         "message": "Predefinito (deciso dall'API)"
-    },
-    "Anthropic_Effort_Level_low": {
-        "message": "Basso"
-    },
-    "Anthropic_Effort_Level_medium": {
-        "message": "Medio"
-    },
-    "Anthropic_Effort_Level_high": {
-        "message": "Alto"
-    },
-    "Anthropic_Effort_Level_xhigh": {
-        "message": "Molto alto"
-    },
-    "Anthropic_Effort_Level_max": {
-        "message": "Massimo"
     },
     "anthropic_note_temperature_unsupported": {
         "message": "Il modello selezionato non accetta un valore di Temperatura e ignora questo campo. Usa invece l'impostazione Effort. Il valore viene conservato nel caso in cui tornassi a un modello più vecchio."

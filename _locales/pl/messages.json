@@ -1665,21 +1665,29 @@
         "message": "Szczegółowo",
         "description": "Option for the reasoning summary dropdown: request a more detailed summary."
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
+    "prefs_level_minimal": {
         "message": "Minimalny",
-        "description": "Option for the reasoning effort dropdown: the lowest amount of reasoning."
+        "description": ""
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_low": {
+    "prefs_level_low": {
         "message": "Niski",
-        "description": "Option for the reasoning effort dropdown."
+        "description": ""
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
+    "prefs_level_medium": {
         "message": "Średni",
-        "description": "Option for the reasoning effort dropdown."
+        "description": ""
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_high": {
+    "prefs_level_high": {
         "message": "Wysoki",
-        "description": "Option for the reasoning effort dropdown: the highest amount of reasoning."
+        "description": ""
+    },
+    "prefs_level_xhigh": {
+        "message": "Bardzo wysoki",
+        "description": ""
+    },
+    "prefs_level_max": {
+        "message": "Maksymalny",
+        "description": ""
     },
     "prefs_ollama_temperature_Info": {
         "message": "Temperatura modelu. Zwiększenie temperatury sprawia, że model odpowiada bardziej kreatywnie. Wartość domyślna to 0,8. Zaleca się używanie wartości od 0 do 1."
@@ -2688,21 +2696,6 @@
     },
     "anthropic_effort_default": {
         "message": "Domyślnie (decyduje API)"
-    },
-    "Anthropic_Effort_Level_low": {
-        "message": "Niski"
-    },
-    "Anthropic_Effort_Level_medium": {
-        "message": "Średni"
-    },
-    "Anthropic_Effort_Level_high": {
-        "message": "Wysoki"
-    },
-    "Anthropic_Effort_Level_xhigh": {
-        "message": "Bardzo wysoki"
-    },
-    "Anthropic_Effort_Level_max": {
-        "message": "Maksymalny"
     },
     "anthropic_note_temperature_unsupported": {
         "message": "Wybrany model nie przyjmuje wartości Temperatury i ignoruje to pole. Użyj zamiast niego ustawienia Wysiłek. Wartość jest zachowywana na wypadek powrotu do starszego modelu."

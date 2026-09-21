@@ -2290,22 +2290,30 @@
         "message": "Detailliert",
         "description": "Option for the reasoning summary dropdown: request a more detailed summary."
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
-        "message": "Minimal",
-        "description": "Option for the reasoning effort dropdown: the lowest amount of reasoning."
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_low": {
-        "message": "Niedrig",
-        "description": "Option for the reasoning effort dropdown."
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
-        "message": "Mittel",
-        "description": "Option for the reasoning effort dropdown."
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_high": {
-        "message": "Hoch",
-        "description": "Option for the reasoning effort dropdown: the highest amount of reasoning."
-    },
+  "prefs_level_minimal": {
+    "message": "Minimal",
+    "description": ""
+  },
+  "prefs_level_low": {
+    "message": "Niedrig",
+    "description": ""
+  },
+  "prefs_level_medium": {
+    "message": "Mittel",
+    "description": ""
+  },
+  "prefs_level_high": {
+    "message": "Hoch",
+    "description": ""
+  },
+  "prefs_level_xhigh": {
+    "message": "Sehr hoch",
+    "description": ""
+  },
+  "prefs_level_max": {
+    "message": "Maximum",
+    "description": ""
+  },
     "customDataPH_placeholdersCount": {
         "message": "$COUNT$ Daten-Platzhalter",
         "description": "Footer count of data placeholders shown in the list",
@@ -2612,21 +2620,6 @@
     },
     "anthropic_effort_default": {
         "message": "Standard (von der API festgelegt)"
-    },
-    "Anthropic_Effort_Level_low": {
-        "message": "Niedrig"
-    },
-    "Anthropic_Effort_Level_medium": {
-        "message": "Mittel"
-    },
-    "Anthropic_Effort_Level_high": {
-        "message": "Hoch"
-    },
-    "Anthropic_Effort_Level_xhigh": {
-        "message": "Sehr hoch"
-    },
-    "Anthropic_Effort_Level_max": {
-        "message": "Maximum"
     },
     "anthropic_note_temperature_unsupported": {
         "message": "Das ausgewählte Modell akzeptiert keinen Temperatur-Wert und ignoriert dieses Feld. Verwenden Sie stattdessen die Einstellung Effort. Der Wert wird beibehalten, falls Sie zu einem älteren Modell zurückwechseln."

@@ -1601,17 +1601,23 @@
     "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
         "message": "詳細"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
+    "prefs_level_minimal": {
         "message": "最小"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_low": {
+    "prefs_level_low": {
         "message": "低"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
+    "prefs_level_medium": {
         "message": "中"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_high": {
+    "prefs_level_high": {
         "message": "高"
+    },
+    "prefs_level_xhigh": {
+        "message": "非常に高"
+    },
+    "prefs_level_max": {
+        "message": "最大"
     },
     "prefs_ollama_temperature_Info": {
         "message": "モデルの温度。温度を上げると、モデルはより創造的に回答します。デフォルト値は0.8です。0から1の間の値を使用することをお勧めします。"
@@ -2497,21 +2503,6 @@
     },
     "anthropic_effort_default": {
         "message": "デフォルト（APIが判断）"
-    },
-    "Anthropic_Effort_Level_low": {
-        "message": "低"
-    },
-    "Anthropic_Effort_Level_medium": {
-        "message": "中"
-    },
-    "Anthropic_Effort_Level_high": {
-        "message": "高"
-    },
-    "Anthropic_Effort_Level_xhigh": {
-        "message": "非常に高"
-    },
-    "Anthropic_Effort_Level_max": {
-        "message": "最大"
     },
     "anthropic_note_temperature_unsupported": {
         "message": "選択したモデルは温度の値を受け付けず、このフィールドを無視します。代わりにEffort（労力）設定を使用してください。古いモデルに戻す場合に備えて、値は保持されます。"

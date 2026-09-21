@@ -2055,25 +2055,37 @@
     "message": "Default (decided by the API)",
     "description": "Empty option of the Claude effort selector, meaning no effort value is sent."
   },
-  "Anthropic_Effort_Level_low": {
+  "prefs_level_off": {
+    "message": "Off",
+    "description": "Shared reasoning/thinking level label: reasoning explicitly turned off."
+  },
+  "prefs_level_on": {
+    "message": "On",
+    "description": "Shared reasoning/thinking level label: reasoning explicitly turned on."
+  },
+  "prefs_level_minimal": {
+    "message": "Minimal",
+    "description": "Shared reasoning/thinking level label: the lowest amount of reasoning."
+  },
+  "prefs_level_low": {
     "message": "Low",
-    "description": ""
+    "description": "Shared reasoning/thinking level label."
   },
-  "Anthropic_Effort_Level_medium": {
+  "prefs_level_medium": {
     "message": "Medium",
-    "description": ""
+    "description": "Shared reasoning/thinking level label."
   },
-  "Anthropic_Effort_Level_high": {
+  "prefs_level_high": {
     "message": "High",
-    "description": ""
+    "description": "Shared reasoning/thinking level label."
   },
-  "Anthropic_Effort_Level_xhigh": {
+  "prefs_level_xhigh": {
     "message": "Extra high",
-    "description": ""
+    "description": "Shared reasoning/thinking level label: above high."
   },
-  "Anthropic_Effort_Level_max": {
-    "message": "Maximum",
-    "description": ""
+  "prefs_level_max": {
+    "message": "Max",
+    "description": "Shared reasoning/thinking level label: the highest amount of reasoning."
   },
   "anthropic_note_temperature_unsupported": {
     "message": "The selected model does not accept a Temperature value and ignores this field. Use the Effort setting instead. The value is kept in case you switch back to an older model.",
@@ -2185,22 +2197,6 @@
     "message": "Detailed",
     "description": "Option for the reasoning summary dropdown: request a more detailed summary."
   },
-  "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
-    "message": "Minimal",
-    "description": "Option for the reasoning effort dropdown: the lowest amount of reasoning."
-  },
-  "prefs_OptionText_chatgpt_reasoning_effort_low": {
-    "message": "Low",
-    "description": "Option for the reasoning effort dropdown."
-  },
-  "prefs_OptionText_chatgpt_reasoning_effort_medium": {
-    "message": "Medium",
-    "description": "Option for the reasoning effort dropdown."
-  },
-  "prefs_OptionText_chatgpt_reasoning_effort_high": {
-    "message": "High",
-    "description": "Option for the reasoning effort dropdown: the highest amount of reasoning."
-  },
   "prefs_ollama_temperature_Info": {
     "message": "The temperature of the model. Increasing the temperature will make the model answer more creatively. The default value is 0.8. It is recommended to use values between 0 and 1.",
     "description": ""
@@ -2216,30 +2212,6 @@
   "prefs_ollama_think_default": {
     "message": "Model default",
     "description": "Ollama thinking option: send no 'think' field and let the model do whatever it does by default"
-  },
-  "prefs_ollama_think_off": {
-    "message": "Off",
-    "description": ""
-  },
-  "prefs_ollama_think_on": {
-    "message": "On",
-    "description": ""
-  },
-  "prefs_ollama_think_low": {
-    "message": "Low",
-    "description": ""
-  },
-  "prefs_ollama_think_medium": {
-    "message": "Medium",
-    "description": ""
-  },
-  "prefs_ollama_think_high": {
-    "message": "High",
-    "description": ""
-  },
-  "prefs_ollama_think_max": {
-    "message": "Max",
-    "description": ""
   },
   "ollama_note_thinking_unsupported": {
     "message": "The selected model doesn't report support for thinking, so this setting is ignored.",

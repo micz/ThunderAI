@@ -2436,17 +2436,29 @@
     "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
         "message": "Detalhado"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
-        "message": "Mínimo"
+    "prefs_level_minimal": {
+        "message": "Mínimo",
+        "description": ""
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_low": {
-        "message": "Baixo"
+    "prefs_level_low": {
+        "message": "Baixo",
+        "description": ""
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
-        "message": "Médio"
+    "prefs_level_medium": {
+        "message": "Médio",
+        "description": ""
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_high": {
-        "message": "Alto"
+    "prefs_level_high": {
+        "message": "Alto",
+        "description": ""
+    },
+    "prefs_level_xhigh": {
+        "message": "Muito alto",
+        "description": ""
+    },
+    "prefs_level_max": {
+        "message": "Máximo",
+        "description": ""
     },
     "menu_order_reset_all": {
         "message": "Resetar tudo"
@@ -2498,21 +2510,6 @@
     },
     "anthropic_effort_default": {
         "message": "Padrão (decidido pela API)"
-    },
-    "Anthropic_Effort_Level_low": {
-        "message": "Baixo"
-    },
-    "Anthropic_Effort_Level_medium": {
-        "message": "Médio"
-    },
-    "Anthropic_Effort_Level_high": {
-        "message": "Alto"
-    },
-    "Anthropic_Effort_Level_xhigh": {
-        "message": "Muito alto"
-    },
-    "Anthropic_Effort_Level_max": {
-        "message": "Máximo"
     },
     "anthropic_note_temperature_unsupported": {
         "message": "O modelo selecionado não aceita um valor de Temperatura e ignora este campo. Use a configuração Esforço em seu lugar. O valor é mantido caso você volte para um modelo mais antigo."

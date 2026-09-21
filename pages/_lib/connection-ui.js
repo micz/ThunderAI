@@ -320,10 +320,10 @@ export async function injectConnectionUI({
       <label>
         <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_effort" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_effort" class="option-input">
           <option value="">__MSG_prefs_OptionText_chatgpt_reasoning_api_default__</option>
-          <option value="minimal">__MSG_prefs_OptionText_chatgpt_reasoning_effort_minimal__</option>
-          <option value="low">__MSG_prefs_OptionText_chatgpt_reasoning_effort_low__</option>
-          <option value="medium">__MSG_prefs_OptionText_chatgpt_reasoning_effort_medium__</option>
-          <option value="high">__MSG_prefs_OptionText_chatgpt_reasoning_effort_high__</option>
+          <option value="minimal">__MSG_prefs_level_minimal__</option>
+          <option value="low">__MSG_prefs_level_low__</option>
+          <option value="medium">__MSG_prefs_level_medium__</option>
+          <option value="high">__MSG_prefs_level_high__</option>
         </select>
         <br>__MSG_prefs_OptionText_chatgpt_reasoning_effort_Info__
       </label>
@@ -1955,7 +1955,8 @@ export function updateAnthropicModelCapabilityUI(modelId_prefix = '') {
   levels.forEach((level) => {
     const option = document.createElement('option');
     option.value = level;
-    option.text = browser.i18n.getMessage('Anthropic_Effort_Level_' + level);
+    // Fall back to the raw level if the shared prefs_level_* family gains no entry for it.
+    option.text = browser.i18n.getMessage('prefs_level_' + level) || level;
     effortSelect.appendChild(option);
   });
 
@@ -2113,12 +2114,12 @@ function buildOllamaThinkOptions(thinkField, modelInfo) {
 
   const options = [
     { value: '', labelKey: 'prefs_ollama_think_default' },
-    { value: 'false', labelKey: 'prefs_ollama_think_off' },
-    { value: 'true', labelKey: 'prefs_ollama_think_on' }
+    { value: 'false', labelKey: 'prefs_level_off' },
+    { value: 'true', labelKey: 'prefs_level_on' }
   ];
   levels.forEach(level => options.push({
     value: level,
-    labelKey: 'prefs_ollama_think_' + level,
+    labelKey: 'prefs_level_' + level,
     fallbackLabel: level
   }));
 

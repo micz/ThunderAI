@@ -2263,22 +2263,30 @@
         "message": "Détaillé",
         "description": "Option du menu déroulant du résumé du raisonnement : demander un résumé plus détaillé."
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
-        "message": "Minimal",
-        "description": "Option du menu déroulant de l'intensité du raisonnement : la plus faible quantité de raisonnement."
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_low": {
-        "message": "Faible",
-        "description": "Option du menu déroulant de l'intensité du raisonnement."
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
-        "message": "Moyen",
-        "description": "Option du menu déroulant de l'intensité du raisonnement."
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_high": {
-        "message": "Élevé",
-        "description": "Option du menu déroulant de l'intensité du raisonnement : la plus forte quantité de raisonnement."
-    },
+  "prefs_level_minimal": {
+    "message": "Minimal",
+    "description": ""
+  },
+  "prefs_level_low": {
+    "message": "Faible",
+    "description": ""
+  },
+  "prefs_level_medium": {
+    "message": "Moyen",
+    "description": ""
+  },
+  "prefs_level_high": {
+    "message": "Élevé",
+    "description": ""
+  },
+  "prefs_level_xhigh": {
+    "message": "Très élevé",
+    "description": ""
+  },
+  "prefs_level_max": {
+    "message": "Maximum",
+    "description": ""
+  },
     "customDataPH_placeholdersCount": {
         "message": "$COUNT$ espaces réservés de données",
         "description": "Nombre d'espaces réservés de données affichés dans la liste, en pied de page",
@@ -2612,21 +2620,6 @@
     },
     "anthropic_effort_default": {
         "message": "Par défaut (décidé par l'API)"
-    },
-    "Anthropic_Effort_Level_low": {
-        "message": "Faible"
-    },
-    "Anthropic_Effort_Level_medium": {
-        "message": "Moyen"
-    },
-    "Anthropic_Effort_Level_high": {
-        "message": "Élevé"
-    },
-    "Anthropic_Effort_Level_xhigh": {
-        "message": "Très élevé"
-    },
-    "Anthropic_Effort_Level_max": {
-        "message": "Maximum"
     },
     "anthropic_note_temperature_unsupported": {
         "message": "Le modèle sélectionné n'accepte pas de valeur de Température et ignore ce champ. Utilisez plutôt le paramètre Effort. La valeur est conservée au cas où vous reviendriez à un modèle plus ancien."
