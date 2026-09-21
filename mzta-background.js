@@ -1318,13 +1318,15 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
             return { success: false };
         }
         let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
+        let tags_full_list = await getTagsList();
         let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt({
             curr_prompt: curr_prompt_spamfilter,
             curr_message: message,
             chatgpt_lang: chatgpt_lang,
             body_text: body_text,
             subject_text: curr_fullMessage.headers.subject,
-            msg_text: msg_text
+            msg_text: msg_text,
+            tags_full_list: tags_full_list
         });
         taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
 

@@ -856,11 +856,27 @@ function generateHexColorForTag() {
   return hexColor;
 }
 
+// Fails soft on both arguments: this resolves a USER-CHOSEN placeholder
+// ({%tags_current_email%}), so a gap in the data must not take down the whole
+// request. Two real cases reach here - a prompt with no curr_message, whose
+// .tags is undefined, and a call site that omits tags_full_list and gets
+// preparePrompt()'s empty ["", []] default.
 export async function transformTagsLabels(labels, tags_list) {
   // console.log(">>>>>>>>> transformTagsLabels labels: " + labels);
   // console.log(">>>>>>>>> transformTagsLabels tags_list: " + tags_list);
+  if(!Array.isArray(labels)) {
+      console.warn("[ThunderAI] transformTagsLabels: no tags to transform, expected an array but got: " + JSON.stringify(labels));
+      return [];
+  }
   let output = [];
   for(let label of labels) {
+      // Fall back to the raw internal key rather than dropping the tag: a key is
+      // still legible in a prompt, while a silent omission hides the tag entirely.
+      if(!tags_list || !tags_list[label]) {
+          console.warn("[ThunderAI] transformTagsLabels: unresolved tag key '" + label + "', using the raw key as fallback.");
+          output.push(label);
+          continue;
+      }
       output.push(tags_list[label].tag);
   }
   return output;

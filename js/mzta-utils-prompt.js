@@ -21,7 +21,8 @@ import {
     extractJsonObject,
     getMailInlineTextParts,
     htmlBodyToPlainText,
-    cleanupNewlines
+    cleanupNewlines,
+    getTagsList
 } from './mzta-utils.js';
 import { getSpecialPrompts } from './mzta-prompts.js';
 import { prefs_default } from '../options/mzta-options-default.js';
@@ -140,6 +141,9 @@ export const taPromptUtils = {
         const prompt_email_separator = specialPrompts.find(p => p.id === 'prompt_summarize_email_separator');
 
         const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
+        // Fetched ONCE here, not per message: the tag list is global to Thunderbird and
+        // every mail in the loop resolves {%tags_current_email%} against the same one.
+        const tags_full_list = await getTagsList();
 
         const prompt_string = await taPromptUtils.preparePrompt({
             curr_prompt: prompt,
@@ -177,6 +181,7 @@ export const taPromptUtils = {
                 body_text: bodyText,
                 subject_text: entry.fullMessage.headers.subject,
                 msg_text: bodyHtml,
+                tags_full_list: tags_full_list,
             }));
         }
 
