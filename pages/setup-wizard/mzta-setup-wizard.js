@@ -27,7 +27,8 @@ import {
   varConnectionUI,
   showConnectionOptions,
   updateAnthropicModelCapabilityUI,
-  updateOllamaModelCapabilityUI
+  updateOllamaModelCapabilityUI,
+  updateOpenAIModelCapabilityUI
 } from '../_lib/connection-ui.js';
 import {
   isTestableConnection,
@@ -387,6 +388,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // until the model is touched.
   updateAnthropicModelCapabilityUI();
   updateOllamaModelCapabilityUI();
+  updateOpenAIModelCapabilityUI();
 
   varConnectionUI.permission_all_urls = await messenger.permissions.contains({ origins: ['<all_urls>'] });
 

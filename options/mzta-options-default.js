@@ -27,7 +27,20 @@ export const integration_options_config = {
         store: false,
         reasoning_summary: '',
         reasoning_effort: '',
-        extra_body: ''
+        extra_body: '',
+        max_output_tokens: 0,
+        verbosity: '',
+        text_format: '',
+        text_format_schema_name: '',
+        text_format_schema: '',
+        // Kept as a string, not a number: an empty pref must stay distinguishable
+        // from a legitimate 0, which is a valid value.
+        top_p: '',
+        truncation: '',
+        prompt_cache_key: '',
+        service_tier: '',
+        safety_identifier: '',
+        include_encrypted_reasoning: false
     },
     ollama: {
         host: '',

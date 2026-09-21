@@ -72,7 +72,7 @@ self.onmessage = async function(event) {
             taLog.log("no previous_response_id");
         }
 
-        const response = await openai.fetchResponse(messagesToSend, 0, previous_response_id);
+        const response = await openai.fetchResponse(messagesToSend, previous_response_id);
         postMessage({ type: 'messageSent' });
 
         if (!response.ok) {

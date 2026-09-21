@@ -32,6 +32,7 @@ import {
     updateWarnings,
     updateAnthropicModelCapabilityUI,
     updateOllamaModelCapabilityUI,
+    updateOpenAIModelCapabilityUI,
     checkJsonFieldsByPrefix,
     getConnectionTypeLabel
 } from "../../pages/_lib/connection-ui.js";
@@ -212,6 +213,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // they do not cover.
     updateAnthropicModelCapabilityUI(NEW_PROMPT_PREFIX);
     updateOllamaModelCapabilityUI(NEW_PROMPT_PREFIX);
+    updateOpenAIModelCapabilityUI(NEW_PROMPT_PREFIX);
 
     i18n.updateDocument();
 
@@ -603,6 +605,7 @@ function handleEditClick(e) {
             updateWarnings(prefix);
             updateAnthropicModelCapabilityUI(prefix);
             updateOllamaModelCapabilityUI(prefix);
+            updateOpenAIModelCapabilityUI(prefix);
             const sel = document.getElementById(selectId);
             showAdvConnectionOptions(scopeEl, sel ? sel.value : '');
             sel && sel.addEventListener('change', () => showAdvConnectionOptions(scopeEl, sel.value));
@@ -613,6 +616,7 @@ function handleEditClick(e) {
         updateWarnings(prefix);
         updateAnthropicModelCapabilityUI(prefix);
         updateOllamaModelCapabilityUI(prefix);
+        updateOpenAIModelCapabilityUI(prefix);
         const sel = document.getElementById(selectId);
         showAdvConnectionOptions(scopeEl, sel ? sel.value : '');
     }

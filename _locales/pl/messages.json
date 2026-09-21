@@ -1653,7 +1653,7 @@
         "message": "Wyłączone",
         "description": "Option for the reasoning summary dropdown, meaning no summary is requested."
     },
-    "prefs_OptionText_chatgpt_reasoning_api_default": {
+    "prefs_reasoning_api_default ": {
         "message": "Wartość domyślna API",
         "description": "Option for the reasoning effort dropdown, meaning the value is not sent and the API default applies."
     },

@@ -212,6 +212,17 @@ if (worker) {
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
                 { key: 'reasoning_summary', labelKey: 'prefs_OptionText_chatgpt_reasoning_summary', type: 'string' },
                 { key: 'reasoning_effort', labelKey: 'prefs_OptionText_chatgpt_reasoning_effort', type: 'string' },
+                { key: 'max_output_tokens', labelKey: 'prefs_OptionText_chatgpt_max_output_tokens', type: 'number_gt_zero' },
+                { key: 'top_p', labelKey: 'prefs_OptionText_chatgpt_top_p', type: 'string' },
+                { key: 'verbosity', labelKey: 'prefs_OptionText_chatgpt_verbosity', type: 'string' },
+                { key: 'text_format', labelKey: 'prefs_OptionText_chatgpt_text_format', type: 'string' },
+                { key: 'text_format_schema_name', labelKey: 'prefs_OptionText_chatgpt_text_format_schema_name', type: 'string' },
+                { key: 'text_format_schema', labelKey: 'prefs_OptionText_chatgpt_text_format_schema', type: 'string' },
+                { key: 'truncation', labelKey: 'prefs_OptionText_chatgpt_truncation', type: 'string' },
+                { key: 'prompt_cache_key', labelKey: 'prefs_OptionText_chatgpt_prompt_cache_key', type: 'string' },
+                { key: 'service_tier', labelKey: 'prefs_OptionText_chatgpt_service_tier', type: 'string' },
+                { key: 'safety_identifier', labelKey: 'prefs_OptionText_chatgpt_safety_identifier', type: 'string' },
+                { key: 'include_encrypted_reasoning', labelKey: 'prefs_OptionText_chatgpt_include_encrypted_reasoning', type: 'boolean' },
                 { key: 'extra_body', labelKey: 'prefs_OptionText_chatgpt_extra_body', type: 'string' }
             ],
             google_gemini: [

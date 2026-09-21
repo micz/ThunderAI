@@ -30,6 +30,7 @@ import {
   getAnthropicModelCapabilities,
   ANTHROPIC_EFFORT_LEVELS
 } from '../../js/api/anthropic_model_capabilities.js';
+import { getOpenAIModelCapabilities } from '../../js/api/openai_model_capabilities.js';
 import {
   validateCustomData_ChatGPTWeb,
   sanitizeChatGPTModelData,
@@ -57,7 +58,8 @@ export const varConnectionUI = {
 // the ChatGPT reasoning ones, "off" for ollama_think. When restoring an empty value
 // these must keep that option selected, unlike every other select which has to show
 // a blank control instead.
-const selects_with_empty_option_suffixes = ['chatgpt_reasoning_summary', 'chatgpt_reasoning_effort', 'ollama_think'];
+const selects_with_empty_option_suffixes = ['chatgpt_reasoning_summary', 'chatgpt_reasoning_effort', 'ollama_think',
+  'chatgpt_verbosity', 'chatgpt_text_format', 'chatgpt_truncation', 'chatgpt_service_tier'];
 
 // The reasoning levels offered when the server does not report which ones the selected
 // model accepts. Declared up here, not next to buildOllamaThinkOptions(): that function
@@ -277,6 +279,7 @@ export async function injectConnectionUI({
     <td>
       <label>
         <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" class="option-input check-number" />
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature_unsupported" class="anthropic_caps_note" style="display:none">__MSG_chatgpt_note_sampling_unsupported__</span>
         <br>__MSG_prefs_chatgpt_api_temperature_Info__
       </label>
     </td>
@@ -307,6 +310,7 @@ export async function injectConnectionUI({
           <option value="auto">__MSG_prefs_OptionText_chatgpt_reasoning_summary_auto__</option>
           <option value="detailed">__MSG_prefs_OptionText_chatgpt_reasoning_summary_detailed__</option>
         </select>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_summary_unsupported" class="anthropic_caps_note" style="display:none">__MSG_chatgpt_note_reasoning_unsupported__</span>
         <br>__MSG_prefs_OptionText_chatgpt_reasoning_summary_Info__ <a href="https://platform.openai.com/docs/guides/reasoning">__MSG_more_info_string__</a>
       </label>
     </td>
@@ -320,12 +324,16 @@ export async function injectConnectionUI({
     <td>
       <label>
         <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_effort" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_effort" class="option-input">
-          <option value="">__MSG_prefs_OptionText_chatgpt_reasoning_api_default__</option>
+          <option value="">__MSG_prefs_reasoning_api_default __</option>
+          <option value="none">__MSG_prefs_level_none__</option>
           <option value="minimal">__MSG_prefs_level_minimal__</option>
           <option value="low">__MSG_prefs_level_low__</option>
           <option value="medium">__MSG_prefs_level_medium__</option>
           <option value="high">__MSG_prefs_level_high__</option>
+          <option value="xhigh">__MSG_prefs_level_xhigh__</option>
+          <option value="max">__MSG_prefs_level_max__</option>
         </select>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_effort_unsupported" class="anthropic_caps_note" style="display:none">__MSG_chatgpt_note_reasoning_unsupported__</span>
         <br>__MSG_prefs_OptionText_chatgpt_reasoning_effort_Info__
       </label>
     </td>
@@ -354,6 +362,171 @@ export async function injectConnectionUI({
         <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_extra_body" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_extra_body" class="option-input option-textarea check-json"></textarea>
         <div class="json_error" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_extra_body_error" hidden></div>
         <br>__MSG_prefs_OptionText_chatgpt_extra_body_info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_max_output_tokens__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="number" min="16" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_max_output_tokens" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_max_output_tokens" class="option-input" />
+        <br>__MSG_prefs_OptionText_chatgpt_max_output_tokens_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_top_p__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_top_p" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_top_p" class="option-input check-number" />
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_top_p_unsupported" class="anthropic_caps_note" style="display:none">__MSG_chatgpt_note_sampling_unsupported__</span>
+        <br>__MSG_prefs_OptionText_chatgpt_top_p_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_verbosity__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_verbosity" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_verbosity" class="option-input">
+          <option value="">__MSG_prefs_reasoning_api_default __</option>
+          <option value="low">__MSG_prefs_level_low__</option>
+          <option value="medium">__MSG_prefs_level_medium__</option>
+          <option value="high">__MSG_prefs_level_high__</option>
+        </select>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_verbosity_unsupported" class="anthropic_caps_note" style="display:none">__MSG_chatgpt_note_verbosity_unsupported__</span>
+        <br>__MSG_prefs_OptionText_chatgpt_verbosity_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_text_format__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_text_format" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_text_format" class="option-input">
+          <option value="">__MSG_prefs_reasoning_api_default __</option>
+          <option value="json_object">__MSG_prefs_OptionText_chatgpt_text_format_json_object__</option>
+          <option value="json_schema">__MSG_prefs_OptionText_chatgpt_text_format_json_schema__</option>
+        </select>
+        <br>__MSG_prefs_OptionText_chatgpt_text_format_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_text_format_schema_name__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_text_format_schema_name" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_text_format_schema_name" class="option-input" />
+        <br>__MSG_prefs_OptionText_chatgpt_text_format_schema_name_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_text_format_schema__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_text_format_schema" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_text_format_schema" class="option-input option-textarea check-json"></textarea>
+        <div class="json_error" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_text_format_schema_error" hidden></div>
+        <br>__MSG_prefs_OptionText_chatgpt_text_format_schema_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_truncation__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_truncation" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_truncation" class="option-input">
+          <option value="">__MSG_prefs_reasoning_api_default __</option>
+          <option value="auto">__MSG_prefs_OptionText_chatgpt_truncation_auto__</option>
+          <option value="disabled">__MSG_prefs_OptionText_chatgpt_truncation_disabled__</option>
+        </select>
+        <br>__MSG_prefs_OptionText_chatgpt_truncation_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_service_tier__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_service_tier" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_service_tier" class="option-input">
+          <option value="">__MSG_prefs_reasoning_api_default __</option>
+          <option value="auto">__MSG_prefs_OptionText_chatgpt_service_tier_auto__</option>
+          <option value="default">__MSG_prefs_OptionText_chatgpt_service_tier_default__</option>
+          <option value="flex">__MSG_prefs_OptionText_chatgpt_service_tier_flex__</option>
+          <option value="priority">__MSG_prefs_OptionText_chatgpt_service_tier_priority__</option>
+        </select>
+        <br>__MSG_prefs_OptionText_chatgpt_service_tier_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_prompt_cache_key__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_prompt_cache_key" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_prompt_cache_key" class="option-input" />
+        <br>__MSG_prefs_OptionText_chatgpt_prompt_cache_key_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_safety_identifier__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_safety_identifier" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_safety_identifier" class="option-input" />
+        <br>__MSG_prefs_OptionText_chatgpt_safety_identifier_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_include_encrypted_reasoning__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_include_encrypted_reasoning" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_include_encrypted_reasoning" class="option-input" />
+        &nbsp;<span>__MSG_prefs_OptionText_chatgpt_include_encrypted_reasoning_Info__</span>
       </label>
     </td>
   </tr>
@@ -1009,6 +1182,10 @@ export async function injectConnectionUI({
   select_chatgpt_model.appendChild(chatgpt_option);
   select_chatgpt_model.value = prefs.chatgpt_model;
   select_chatgpt_model.addEventListener("change", () => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
+  select_chatgpt_model.addEventListener("change", () => updateOpenAIModelCapabilityUI(modelId_prefix));
+  // Not called here: at injection time the select is still empty, so the
+  // capabilities would be computed from an empty model ID. The host pages call
+  // updateOpenAIModelCapabilityUI() themselves after their restore.
 
   document.getElementById(getPrefixedId('btnUpdateChatGPTModels')).addEventListener('click', async () => {
     document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'inline';
@@ -1047,6 +1224,7 @@ export async function injectConnectionUI({
       });
       syncTomSelect(select_chatgpt_model);
       autoSelectSingleModel(select_chatgpt_model);
+      updateOpenAIModelCapabilityUI(modelId_prefix);
       document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
     });
     
@@ -1357,6 +1535,13 @@ export async function injectConnectionUI({
     input.addEventListener('input', () => checkAnthropicThinkingBudget(modelId_prefix));
    });
 
+   // The schema name and schema fields only apply to the json_schema format, so
+   // they follow the format select. Scoped to the injected rows for the same
+   // reason as the sweeps above.
+   queryInjected('#' + CSS.escape(getPrefixedId('chatgpt_text_format'))).forEach(select => {
+    select.addEventListener('change', () => updateOpenAITextFormatUI(modelId_prefix));
+   });
+
   warn_ChatGPT_APIKeyEmpty(modelId_prefix);
   warn_Ollama_HostEmpty(modelId_prefix);
   warn_OpenAIComp_HostEmpty(modelId_prefix);
@@ -1458,6 +1643,7 @@ export async function initializeSpecificIntegrationUI({
   // option availability can finally be computed.
   updateAnthropicModelCapabilityUI(model_prefix);
   updateOllamaModelCapabilityUI(model_prefix);
+  updateOpenAIModelCapabilityUI(model_prefix);
 
   // 3. Setup Logic
   const use_specific_integration_el = document.getElementById(use_specific_integration_id);
@@ -2015,6 +2201,60 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
     }
     btnGiveAllUrlsPermission_openai_comp_api.disabled = false;
   }
+}
+
+// The OpenAI reasoning models (gpt-5, o1/o3/o4) reject temperature and top_p, and
+// the chat models in turn have no reasoning stage and no verbosity control. Rather
+// than dropping the stored values -- the user may switch back to another model --
+// the fields stay visible and populated and are disabled with a note saying the
+// selected model ignores them. The request builder in js/api/openai_responses.js
+// enforces the same table, so a stale value is never actually sent.
+//
+// Unlike the Claude effort select, the reasoning effort options here are static:
+// the levels do not vary per model, only whether reasoning is supported at all.
+// So there is no runtime rebuild, and no blank-select hazard on a page that
+// forgets to call this.
+export function updateOpenAIModelCapabilityUI(modelId_prefix = '') {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const modelOpenAI = getModelEl('chatgpt_model', modelId_prefix);
+  if(!modelOpenAI) return;
+  const caps = getOpenAIModelCapabilities(modelOpenAI.value);
+
+  const applyState = (fieldId, supported) => {
+    const field = document.getElementById(getPrefixedId(fieldId));
+    const note = document.getElementById(getPrefixedId(fieldId + '_unsupported'));
+    if(field) field.disabled = !supported;
+    if(note) note.style.display = supported ? 'none' : '';
+  };
+
+  // top_p rides on the same capability flag as temperature and reuses its note:
+  // the reasoning models reject both for the same reason.
+  applyState('chatgpt_temperature', caps.supportsSamplingParams);
+  applyState('chatgpt_top_p', caps.supportsSamplingParams);
+  applyState('chatgpt_reasoning_summary', caps.supportsReasoning);
+  applyState('chatgpt_reasoning_effort', caps.supportsReasoning);
+  applyState('chatgpt_verbosity', caps.supportsVerbosity);
+
+  // Piggy-backed on the capability refresh rather than exported separately: every
+  // host page already calls this after its restore, which is exactly when the
+  // schema fields saved by an earlier session must be re-synced with the format.
+  updateOpenAITextFormatUI(modelId_prefix);
+}
+
+// The schema name and the schema itself are only read when the output format is
+// json_schema, so they are disabled otherwise: without this the two fields look
+// like they apply to "JSON object" too, which silently ignores them. This is a
+// coupling between two fields, not a model capability, so it has no
+// `_unsupported` note -- the format select right above says why.
+export function updateOpenAITextFormatUI(modelId_prefix = '') {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const formatEl = document.getElementById(getPrefixedId('chatgpt_text_format'));
+  if(!formatEl) return;
+  const needs_schema = formatEl.value === 'json_schema';
+  ['chatgpt_text_format_schema_name', 'chatgpt_text_format_schema'].forEach((fieldId) => {
+    const field = document.getElementById(getPrefixedId(fieldId));
+    if(field) field.disabled = !needs_schema;
+  });
 }
 
 // Newer Claude models reject options that older ones require (temperature and a

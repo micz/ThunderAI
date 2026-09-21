@@ -2251,7 +2251,7 @@
         "message": "Désactivé",
         "description": "Option du menu déroulant du résumé du raisonnement, signifie qu'aucun résumé n'est demandé."
     },
-    "prefs_OptionText_chatgpt_reasoning_api_default": {
+    "prefs_reasoning_api_default ": {
         "message": "Valeur par défaut de l'API",
         "description": "Option du menu déroulant de l'intensité du raisonnement, signifie que la valeur n'est pas envoyée et que la valeur par défaut de l'API s'applique."
     },

@@ -38,6 +38,7 @@ import {
   injectConnectionUI,
   updateAnthropicModelCapabilityUI,
   updateOllamaModelCapabilityUI,
+  updateOpenAIModelCapabilityUI,
   varConnectionUI,
   showConnectionOptions,
   updateWarnings,
@@ -713,6 +714,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   showAdvConnectionOptions();
   updateAnthropicModelCapabilityUI();
   updateOllamaModelCapabilityUI();
+  updateOpenAIModelCapabilityUI();
   checkJsonFields();
   updateDescription();
   updateConnPanelTint();

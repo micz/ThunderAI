@@ -39,9 +39,73 @@ Per-prompt ChatGPT Web overrides are a separate, unrelated mechanism: the custom
 ### OpenAI API (`chatgpt_api`)
 - Module: `js/api/openai_responses.js`
 - Worker: `js/workers/model-worker-openai_responses.js`
-- Settings keys: `chatgpt_api_key`, `chatgpt_model`, `chatgpt_developer_messages`, `chatgpt_temperature`, `chatgpt_store`, `chatgpt_reasoning_summary`, `chatgpt_reasoning_effort`, `chatgpt_extra_body`
+- Settings keys: `chatgpt_api_key`, `chatgpt_model`, `chatgpt_developer_messages`, `chatgpt_temperature`, `chatgpt_store`, `chatgpt_reasoning_summary`, `chatgpt_reasoning_effort`, `chatgpt_extra_body`, `chatgpt_max_output_tokens`, `chatgpt_verbosity`, `chatgpt_text_format`, `chatgpt_text_format_schema_name`, `chatgpt_text_format_schema`, `chatgpt_top_p`, `chatgpt_truncation`, `chatgpt_prompt_cache_key`, `chatgpt_service_tier`, `chatgpt_safety_identifier`, `chatgpt_include_encrypted_reasoning`
 - **Extra body data**: see [Extra body data](#extra-body-data).
-- **Reasoning**: the request body adds `reasoning: { summary, effort }` with only the sub-properties that are set; when both prefs are empty the key is omitted entirely, because models without reasoning support reject it. `chatgpt_reasoning_summary` (`''` | `auto` | `detailed`) is what makes the API emit a readable summary — without it the reasoning item carries only the opaque `encrypted_content` and no thinking block can be shown. `chatgpt_reasoning_effort` (`''` | `minimal` | `low` | `medium` | `high`) tunes how much the model reasons. Note that older reasoning models (o1-pro, o3-mini) never expose a summary even when one is requested. See [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui).
+- **Capability table** (`js/api/openai_model_capabilities.js`): which parameters a model accepts
+  depends on the model, and sending one it rejects is a hard 400.
+  `getOpenAIModelCapabilities(modelId)` matches by **model ID prefix** (so dated and sized
+  variants such as `o3-2025-04-16` and `gpt-5-mini` resolve to their family, longest prefix
+  first) and returns `{supportsSamplingParams, supportsReasoning, supportsVerbosity}`.
+  The reasoning models (`gpt-5`, `o1`, `o3`, `o4`) reject `temperature` and `top_p`; the chat
+  models (`gpt-4`, `chatgpt-4o`, `gpt-3.5`) have no reasoning stage and reject `reasoning` and
+  `text.verbosity`; `text.verbosity` is understood only by the `gpt-5` family. An unknown ID —
+  users can type any model name — falls back to `OPENAI_PERMISSIVE_CAPABILITIES`, which allows
+  **everything**: a field left enabled at worst produces an API error naming the parameter,
+  while a field wrongly disabled hides a setting the user needs and gives no clue why.
+  **The table must be updated as new models ship.**
+  Unlike Ollama there is no way to probe this at runtime: `GET /v1/models` returns only
+  `{id, object, created, owned_by}` and there is no per-model metadata endpoint, which is why a
+  local table is the only option.
+- **Reasoning**: the request body adds `reasoning: { summary, effort }` with only the sub-properties that are set; when both prefs are empty, or the model has no reasoning support, the key is omitted entirely. `chatgpt_reasoning_summary` (`''` | `auto` | `detailed`) is what makes the API emit a readable summary — without it the reasoning item carries only the opaque `encrypted_content` and no thinking block can be shown. `chatgpt_reasoning_effort` (`''` | `none` | `minimal` | `low` | `medium` | `high` | `xhigh` | `max`) tunes how much the model reasons. Note that older reasoning models (o1-pro, o3-mini) never expose a summary even when one is requested. See [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui).
+- **The `text` object** is built the same defensive way as `reasoning`: `verbosity` and
+  `format` are collected into one object and the key is emitted **only when that object is
+  non-empty**, so a model that rejects `text` keeps exactly the request body it had before
+  these options existed.
+  - `chatgpt_verbosity` (`''` | `low` | `medium` | `high`) is gated on `supportsVerbosity`.
+  - `chatgpt_text_format` (`''` | `json_object` | `json_schema`) selects `text.format.type`.
+    `json_schema` additionally **requires both** `chatgpt_text_format_schema_name` and a
+    `chatgpt_text_format_schema` that parses to a non-null, non-array object. When either is
+    missing the format is dropped **entirely** rather than sent half-built, which would be a
+    400. `parseExtraBody()` is deliberately **not** reused to parse the schema: it falls back
+    to `{}`, and `{}` is itself a valid JSON Schema, so a malformed textarea would silently
+    send an empty schema instead of dropping the format.
+- **Sampling**: `chatgpt_temperature` and `chatgpt_top_p` are both gated on
+  `supportsSamplingParams` and use the `!= '' && !Number.isNaN(parseFloat(…))` double guard.
+  `chatgpt_top_p` is stored as a **string**, so an empty value stays distinguishable from a
+  legitimate `0`.
+- **`chatgpt_max_output_tokens`** is sent only when it parses to `>= OPENAI_MIN_MAX_OUTPUT_TOKENS`
+  (16, exported from `js/api/openai_responses.js`), the API minimum; `0`, empty or a smaller
+  number means "not configured" and the field is omitted. It is a **class property**, like every
+  other option — before 5.1.0 it was a `fetchResponse()` argument that the worker always passed
+  as `0`, so it was never actually sent. The argument is gone; the signature is now
+  `fetchResponse(messages, previous_response_id)`.
+- **`chatgpt_truncation`, `chatgpt_prompt_cache_key`, `chatgpt_service_tier` and
+  `chatgpt_safety_identifier`** are plain pass-through values, sent whenever non-empty and not
+  capability-gated. `safety_identifier` replaces the deprecated `user` parameter.
+- **`chatgpt_include_encrypted_reasoning`** adds `include: ['reasoning.encrypted_content']`
+  **only when the checkbox is on** — an empty `include` array is not a valid request. It is
+  only meaningful when `chatgpt_store` is off.
+- **Capability-gated keys are stripped from the extra body too.** The parsed `extra_body` object
+  has `temperature`/`top_p` removed when the model rejects sampling, `reasoning` removed when it
+  has no reasoning stage, and `text` removed when it carries a `verbosity` the model does not
+  support. Without this a stale `extra_body` entry would re-introduce exactly the parameter the
+  table exists to keep out of the request, turning a disabled field back into a 400. Keys the
+  model *does* accept are still honoured — that is the point of the escape hatch — and the
+  managed fields still win, because the object is spread first in the body literal.
+- **Options page gating**: `updateOpenAIModelCapabilityUI()` (`pages/_lib/connection-ui.js`)
+  mirrors the table in the UI, disabling `chatgpt_temperature` / `chatgpt_top_p` /
+  `chatgpt_reasoning_summary` / `chatgpt_reasoning_effort` / `chatgpt_verbosity` with an
+  `_unsupported` note next to each. Stored values are **never rewritten** — the user may switch
+  back to another model — so incompatibility is resolved at request-build time and at display
+  time, exactly like the Claude panel. Unlike `anthropic_effort`, the reasoning effort `<select>`
+  ships its options **statically**: the levels do not vary per model, only whether reasoning is
+  supported at all, so there is no runtime rebuild and no blank-select hazard.
+  It also calls `updateOpenAITextFormatUI()`, which disables the schema name and schema fields
+  unless the format is `json_schema` — a coupling between two fields, not a model capability, so
+  those two carry no `_unsupported` note.
+  Host pages must call it **after their restore**, like the Claude one: `options/mzta-options.js`,
+  `pages/setup-wizard/mzta-setup-wizard.js`, `initializeSpecificIntegrationUI()` (the six
+  per-feature panels) and `pages/customprompts/mzta-custom-prompts.js` (add form + each edited row).
 
 ### Ollama (`ollama_api`)
 - Module: `js/api/ollama.js`
@@ -182,6 +246,12 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
   `instructions`, and `num_ctx` on Ollama. A wrong entry cannot change the model or break the
   streaming. `instructions` in `openai_responses.js` is assigned after the literal, which keeps it
   protected for the same reason.
+  Note that "protected" means *overridden when ThunderAI sends its own value*. A parameter the
+  user leaves empty is not sent by ThunderAI at all, so an `extra_body` entry for it does reach
+  the API — which is exactly what the escape hatch is for. The one exception is
+  `openai_responses.js`, which additionally **deletes** the capability-gated keys from the parsed
+  object (see the OpenAI API section): there the model would reject the parameter outright, so
+  letting it through would defeat the gating.
 - **Invalid input is ignored, never fatal.** `parseExtraBody()` returns `{}` for a blank string,
   malformed JSON, or a non-object (array / scalar / `null`), logging a `console.warn`. This is
   required because the options UI validation is advisory only: `saveOptions` persists the value

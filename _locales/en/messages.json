@@ -2101,6 +2101,10 @@
     "message": "Off",
     "description": "Shared reasoning/thinking level label: reasoning explicitly turned off."
   },
+  "prefs_level_none": {
+    "message": "None",
+    "description": "Shared reasoning/thinking level label: no reasoning, requested explicitly rather than by leaving the setting empty."
+  },
   "prefs_level_on": {
     "message": "On",
     "description": "Shared reasoning/thinking level label: reasoning explicitly turned on."
@@ -2227,9 +2231,9 @@
     "message": "Disabled",
     "description": "Option for the reasoning summary dropdown, meaning no summary is requested."
   },
-  "prefs_OptionText_chatgpt_reasoning_api_default": {
+  "prefs_reasoning_api_default ": {
     "message": "API default",
-    "description": "Option for the reasoning effort dropdown, meaning the value is not sent and the API default applies."
+    "description": "Shared empty option for the OpenAI dropdowns (reasoning effort, verbosity, text format, truncation, service tier), meaning the value is not sent and the API default applies."
   },
   "prefs_OptionText_chatgpt_reasoning_summary_auto": {
     "message": "Auto",
@@ -2238,6 +2242,138 @@
   "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
     "message": "Detailed",
     "description": "Option for the reasoning summary dropdown: request a more detailed summary."
+  },
+  "prefs_OptionText_chatgpt_max_output_tokens": {
+    "message": "Max output tokens",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_max_output_tokens_Info": {
+    "message": "An upper bound on the number of tokens the model can generate for a response, including the reasoning tokens on reasoning models. The minimum accepted value is 16. Leave it empty or at 0 to let the API decide.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_verbosity": {
+    "message": "Verbosity",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_verbosity_Info": {
+    "message": "How long and detailed the answer should be, without changing the prompt. Only the gpt-5 family supports it: with any other model this field is disabled and its value is not sent.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_text_format": {
+    "message": "Output format",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_text_format_Info": {
+    "message": "Force the model to answer with valid JSON. \"JSON object\" only guarantees that the answer is valid JSON, so the prompt must still describe the structure you want, while \"JSON schema\" also makes the answer follow the schema below. Note that this changes the answer shown in the chat window into raw JSON.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_text_format_json_object": {
+    "message": "JSON object",
+    "description": "Option for the OpenAI output format dropdown: any valid JSON object."
+  },
+  "prefs_OptionText_chatgpt_text_format_json_schema": {
+    "message": "JSON schema",
+    "description": "Option for the OpenAI output format dropdown: JSON following the schema given below."
+  },
+  "prefs_OptionText_chatgpt_text_format_schema_name": {
+    "message": "JSON schema name",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_text_format_schema_name_Info": {
+    "message": "A name for the schema below, which the API requires. Use letters, numbers, underscores and dashes only. The output format is not sent at all when this is empty.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_text_format_schema": {
+    "message": "JSON schema",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_text_format_schema_Info": {
+    "message": "The JSON Schema the answer must follow, as a JSON object. Only used when the output format above is set to \"JSON schema\". An invalid value is ignored, and the output format is not sent.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_top_p": {
+    "message": "Top P",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_top_p_Info": {
+    "message": "Nucleus sampling: the model considers only the tokens whose cumulative probability reaches this value. Ranges from 0.0 to 1.0. Leave empty to use the model default. OpenAI recommends adjusting either Temperature or Top P, but not both. Reasoning models do not accept this setting: when one of them is selected this field is disabled and its value is not sent.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_truncation": {
+    "message": "Truncation",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_truncation_Info": {
+    "message": "What to do when a conversation grows past the model's context window. \"Auto\" drops messages from the middle of the conversation to make it fit, while \"Disabled\" makes the request fail with an error instead.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_truncation_auto": {
+    "message": "Auto",
+    "description": "Option for the OpenAI truncation dropdown: drop messages from the middle of the conversation to fit the context window."
+  },
+  "prefs_OptionText_chatgpt_truncation_disabled": {
+    "message": "Disabled",
+    "description": "Option for the OpenAI truncation dropdown: fail with an error instead of truncating."
+  },
+  "prefs_OptionText_chatgpt_prompt_cache_key": {
+    "message": "Prompt cache key",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_prompt_cache_key_Info": {
+    "message": "Requests sharing the same key can reuse OpenAI's prompt cache, which lowers the cost and the latency of repeated prompts. Any string you choose works: use the same one across the requests that begin with the same text.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_service_tier": {
+    "message": "Service tier",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_service_tier_Info": {
+    "message": "Which processing tier to use for the request. \"Flex\" and \"Priority\" are only available on some plans and models, and the API falls back to the default tier when the chosen one cannot be used.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_service_tier_auto": {
+    "message": "Auto",
+    "description": "Option for the OpenAI service tier dropdown: let the API choose the tier."
+  },
+  "prefs_OptionText_chatgpt_service_tier_default": {
+    "message": "Default",
+    "description": "Option for the OpenAI service tier dropdown: the standard tier."
+  },
+  "prefs_OptionText_chatgpt_service_tier_flex": {
+    "message": "Flex",
+    "description": "Option for the OpenAI service tier dropdown: cheaper and slower processing."
+  },
+  "prefs_OptionText_chatgpt_service_tier_priority": {
+    "message": "Priority",
+    "description": "Option for the OpenAI service tier dropdown: faster and more expensive processing."
+  },
+  "prefs_OptionText_chatgpt_safety_identifier": {
+    "message": "Safety identifier",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_safety_identifier_Info": {
+    "message": "A stable identifier for the end user, which helps OpenAI detect abuse coming from a single user. Do not use an email address or any other personal data: hash it, or use any other string that stays the same across your requests. This replaces the deprecated \"user\" parameter.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_include_encrypted_reasoning": {
+    "message": "Include encrypted reasoning",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_include_encrypted_reasoning_Info": {
+    "message": "Ask the API to return the model's reasoning in encrypted form, so it can be reused across requests without being stored by OpenAI. Only meaningful when \"Use storage\" above is off, and only on reasoning models.",
+    "description": ""
+  },
+  "chatgpt_note_sampling_unsupported": {
+    "message": "The selected model does not accept this setting and ignores this field. Use the Reasoning effort setting instead. The value is kept in case you switch back to another model.",
+    "description": "Shown next to the OpenAI Temperature and Top P fields when a reasoning model is selected."
+  },
+  "chatgpt_note_reasoning_unsupported": {
+    "message": "The selected model has no reasoning support, so this setting is not sent. The value is kept in case you switch back to a reasoning model.",
+    "description": "Shown next to the OpenAI Reasoning summary and Reasoning effort fields when a non-reasoning model is selected."
+  },
+  "chatgpt_note_verbosity_unsupported": {
+    "message": "The selected model does not support the Verbosity setting, so it is not sent. The value is kept in case you switch back to a model that supports it.",
+    "description": "Shown next to the OpenAI Verbosity field when a model without verbosity support is selected."
   },
   "prefs_ollama_temperature_Info": {
     "message": "The temperature of the model. Increasing the temperature will make the model answer more creatively. The default value is 0.8. It is recommended to use values between 0 and 1.",
