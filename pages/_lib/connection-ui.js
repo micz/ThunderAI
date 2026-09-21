@@ -17,14 +17,15 @@
  */
 
 import './tom-select.base.js';
-import {
-  integration_options_config
-} from '../../options/mzta-options-default.js';
+import { integration_options_config } from '../../options/mzta-options-default.js';
 import { OpenAI } from '../../js/api/openai_responses.js';
 import { Ollama } from '../../js/api/ollama.js';
 import { OpenAIComp } from '../../js/api/openai_comp.js'
 import { GoogleGemini } from '../../js/api/google_gemini.js';
-import { Anthropic } from '../../js/api/anthropic.js';
+import {
+  Anthropic,
+  ANTHROPIC_MIN_THINKING_BUDGET
+} from '../../js/api/anthropic.js';
 import {
   getAnthropicModelCapabilities,
   ANTHROPIC_EFFORT_LEVELS
@@ -720,6 +721,47 @@ export async function injectConnectionUI({
   <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
+        <span class="opt_title">__MSG_prefs_OptionText_anthropic_top_p__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_top_p" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_top_p" class="option-input check-number" />
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_top_p_unsupported" class="anthropic_caps_note" style="display:none">__MSG_anthropic_note_temperature_unsupported__</span>
+        __MSG_prefs_OptionText_anthropic_top_p_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_anthropic_top_k__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_top_k" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_top_k" class="option-input check-number" />
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_top_k_unsupported" class="anthropic_caps_note" style="display:none">__MSG_anthropic_note_temperature_unsupported__</span>
+        __MSG_prefs_OptionText_anthropic_top_k_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_anthropic_stop_sequences__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_stop_sequences" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_stop_sequences" class="option-input option-textarea"></textarea>
+        <br>__MSG_prefs_OptionText_anthropic_stop_sequences_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
         <span class="opt_title">__MSG_Anthropic_System_Prompt__</span>
       </label>
     </td>
@@ -745,6 +787,7 @@ export async function injectConnectionUI({
       <label>
         <input type="number" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_extended_thinking_budget" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_extended_thinking_budget" class="option-input" />
         <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_extended_thinking_budget_unsupported" class="anthropic_caps_note" style="display:none">__MSG_anthropic_note_budget_tokens_unsupported__</span>
+        <div class="json_error" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_extended_thinking_budget_error" hidden></div>
         __MSG_prefs_OptionText_anthropic_extended_thinking_budget_Info__
       </label>
     </td>
@@ -1304,7 +1347,16 @@ export async function injectConnectionUI({
    queryInjected('.check-json').forEach(input => {
     input.addEventListener('input', warn_InvalidJson);
    });
-  
+
+   // Also bound on anthropic_max_tokens: it is the ceiling the budget is checked
+   // against, so lowering it can invalidate a budget that was fine a moment ago.
+   // Scoped to the injected rows like the two sweeps above -- this page may host
+   // several connection forms at once.
+   queryInjected('#' + CSS.escape(getPrefixedId('anthropic_extended_thinking_budget'))
+     + ', #' + CSS.escape(getPrefixedId('anthropic_max_tokens'))).forEach(input => {
+    input.addEventListener('input', () => checkAnthropicThinkingBudget(modelId_prefix));
+   });
+
   warn_ChatGPT_APIKeyEmpty(modelId_prefix);
   warn_Ollama_HostEmpty(modelId_prefix);
   warn_OpenAIComp_HostEmpty(modelId_prefix);
@@ -1817,6 +1869,56 @@ export function checkJsonFieldsByPrefix(prefix = ''){
   });
 }
 
+// Advisory validation of the Claude extended thinking budget, mirroring the rule
+// the request builder enforces in js/api/anthropic.js: the API wants a budget of
+// at least ANTHROPIC_MIN_THINKING_BUDGET and strictly below max_tokens, and
+// rejects anything else with a 400.
+//
+// Reported inline rather than with a bare red border, because there are two
+// distinct constraints and the border alone cannot say which one failed -- and
+// the ceiling is whatever the max_tokens field currently holds, which is not
+// visible from the budget field. Writes with textContent, never innerHTML.
+//
+// The reason box is a separate element from the `_unsupported` capability note:
+// both conditions can hold at once (a modern model that ignores the budget, with
+// an out-of-range value stored), so sharing one node would have this function and
+// updateAnthropicModelCapabilityUI() overwrite each other.
+//
+// Advisory only: saveOptions persists the value regardless, exactly like the
+// check-number and check-json fields, which is why the request builder has to
+// tolerate an unusable value at send time.
+function checkAnthropicThinkingBudget(modelId_prefix = ''){
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const field = document.getElementById(getPrefixedId('anthropic_extended_thinking_budget'));
+  if(!field) return;
+  const errorBox = document.getElementById(getPrefixedId('anthropic_extended_thinking_budget_error'));
+  const maxTokensField = document.getElementById(getPrefixedId('anthropic_max_tokens'));
+
+  const budget = parseInt(field.value);
+  const maxTokens = maxTokensField ? parseInt(maxTokensField.value) : NaN;
+  let errorText = '';
+
+  // Nothing to warn about when the selected model ignores the budget outright:
+  // the `_unsupported` note already explains that, and a range warning on top of
+  // it would describe a constraint that cannot apply. applyState() runs before
+  // this, so `disabled` already reflects the current model.
+  // Empty, unparsable or 0 all mean "no extended thinking", which is always valid.
+  if(!field.disabled && !Number.isNaN(budget) && budget > 0) {
+    if(budget < ANTHROPIC_MIN_THINKING_BUDGET) {
+      errorText = browser.i18n.getMessage('anthropic_warn_thinking_budget_min', String(ANTHROPIC_MIN_THINKING_BUDGET));
+    } else if(!Number.isNaN(maxTokens) && budget >= maxTokens) {
+      errorText = browser.i18n.getMessage('anthropic_warn_thinking_budget_max', String(maxTokens));
+    }
+  }
+
+  field.style.border = errorText === '' ? '' : '2px solid red';
+
+  if(errorBox) {
+    errorBox.textContent = errorText;
+    errorBox.hidden = (errorText === '');
+  }
+}
+
 function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {
   const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
   let apiKeyInput = document.getElementById(getPrefixedId('chatgpt_api_key'));
@@ -1935,8 +2037,18 @@ export function updateAnthropicModelCapabilityUI(modelId_prefix = '') {
   };
 
   applyState('anthropic_temperature', caps.supportsSamplingParams);
+  // top_p and top_k ride on the same capability flag as temperature, and reuse
+  // its note: the explanation ("this model uses Effort instead") is identical.
+  applyState('anthropic_top_p', caps.supportsSamplingParams);
+  applyState('anthropic_top_k', caps.supportsSamplingParams);
   applyState('anthropic_extended_thinking_budget', caps.supportsBudgetTokens);
   applyState('anthropic_effort', caps.supportsEffort);
+
+  // Piggy-backed on the capability refresh rather than exported separately: every
+  // host page already calls this after its restore, which is exactly when a budget
+  // saved by an earlier session must be re-checked (it would otherwise look fine
+  // until the field is touched).
+  checkAnthropicThinkingBudget(modelId_prefix);
 
   const effortSelect = document.getElementById(getPrefixedId('anthropic_effort'));
   if(!effortSelect) return;

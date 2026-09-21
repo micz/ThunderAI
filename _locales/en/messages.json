@@ -2003,6 +2003,48 @@
     "message": "The maximum number of tokens to generate in the completion. The token count of your prompt plus max_tokens cannot exceed the model's context length.",
     "description": ""
   },
+  "prefs_OptionText_anthropic_top_p": {
+    "message": "Top P",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_top_p_Info": {
+    "message": "Nucleus sampling: the model considers only the tokens whose cumulative probability reaches this value. Ranges from 0.0 to 1.0. Leave empty to use the model default. Anthropic recommends adjusting either Temperature or Top P, but not both. Newer Claude models do not accept this setting at all and use the Effort setting instead: when one of them is selected this field is disabled and its value is not sent.",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_top_k": {
+    "message": "Top K",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_top_k_Info": {
+    "message": "Only sample from the top K options for each subsequent token, removing long tail low probability responses. Leave empty to use the model default. Newer Claude models do not accept this setting at all and use the Effort setting instead: when one of them is selected this field is disabled and its value is not sent.",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_stop_sequences": {
+    "message": "Stop sequences",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_stop_sequences_Info": {
+    "message": "Custom text sequences that will cause the model to stop generating. Enter one sequence per line; empty lines are ignored. Leave empty to disable. This setting is accepted by all Claude models.",
+    "description": ""
+  },
+  "anthropic_warn_thinking_budget_min": {
+    "message": "The extended thinking budget must be at least $MIN$ tokens. The current value will not be sent and extended thinking will not be requested.",
+    "description": "Inline advisory warning shown under the Claude extended thinking budget field when the value is below the API minimum. The value is still saved.",
+    "placeholders": {
+      "min": {
+        "content": "$1"
+      }
+    }
+  },
+  "anthropic_warn_thinking_budget_max": {
+    "message": "The extended thinking budget must be lower than Max Tokens ($MAX$). The current value will not be sent and extended thinking will not be requested.",
+    "description": "Inline advisory warning shown under the Claude extended thinking budget field when the value is not lower than the Max Tokens field. The value is still saved.",
+    "placeholders": {
+      "max": {
+        "content": "$1"
+      }
+    }
+  },
   "prefs_OptionText_anthropic_extended_thinking_budget": {
     "message": "Extended thinking budget (tokens)",
     "description": ""

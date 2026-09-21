@@ -219,7 +219,7 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
 ### Anthropic / Claude (`anthropic_api`)
 - Module: `js/api/anthropic.js`
 - Worker: `js/workers/model-worker-anthropic.js`
-- Settings keys: `anthropic_api_key`, `anthropic_model`, `anthropic_version`, `anthropic_max_tokens`, `anthropic_system_prompt`, `anthropic_temperature`, `anthropic_extended_thinking_budget`, `anthropic_effort`
+- Settings keys: `anthropic_api_key`, `anthropic_model`, `anthropic_version`, `anthropic_max_tokens`, `anthropic_system_prompt`, `anthropic_temperature`, `anthropic_top_p`, `anthropic_top_k`, `anthropic_stop_sequences`, `anthropic_extended_thinking_budget`, `anthropic_effort`
 - **Capability table** (`js/api/anthropic_model_capabilities.js`): which request parameters a Claude
   model accepts depends on the model, and sending one it rejects is a hard 400 — not a silently
   ignored field. `getAnthropicModelCapabilities(modelId)` matches by **model ID prefix** (so dated
@@ -234,7 +234,31 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
   - `temperature` is sent only when `supportsSamplingParams` and the user set a value. It is now
     **independent of the thinking configuration** — the old rule that extended thinking suppressed
     temperature no longer holds, because on newer models temperature is rejected outright regardless.
-  - `thinking: {type:'enabled', budget_tokens: N}` only when `supportsBudgetTokens` and N > 0.
+  - `top_p` and `top_k` follow exactly the same rule as `temperature`: gated on
+    `supportsSamplingParams`, parsed with `parseFloat` / `parseInt`, skipped when the pref is `''`
+    or unparsable. They are **sent independently of each other and of `temperature`** — there is
+    deliberately no mutual-exclusion logic. The API accepts the combination and only advises
+    against it, so silently dropping one of two values the user explicitly set would be the more
+    surprising behaviour. Both prefs are stored as **strings**, so an empty value stays
+    distinguishable from a legitimate `0` (which is valid for both and *is* sent).
+  - `stop_sequences` is **not capability-gated** — every Claude model accepts it. The pref holds one
+    sequence per line; the builder splits on newlines (CRLF-safe), trims each entry and drops the
+    empty ones, and adds the field only when the resulting array is non-empty. Blank lines are
+    dropped at request-build time, never at save time, so the user's formatting of the textarea is
+    left alone.
+  - `system` is **omitted entirely when the system prompt is blank**, rather than sent as an empty
+    string: an empty system block carries no instruction and is rejected outright by some model
+    versions.
+  - `thinking: {type:'enabled', budget_tokens: N}` only when `supportsBudgetTokens` **and**
+    `ANTHROPIC_MIN_THINKING_BUDGET <= N < max_tokens`. The API constrains the budget on both sides
+    and violating either is a hard 400 — easy to hit by hand, since the default `max_tokens` is
+    4096. A budget that fails a constraint is treated as "no extended thinking" and **falls through
+    to the disabled/omitted logic below** (it does not short-circuit it, which is what keeps an
+    adaptive-thinking model from silently spending `max_tokens` on reasoning), and a `console.warn`
+    names the constraint that failed. The stored pref is **never** rewritten — the user may raise
+    `max_tokens` later and expect their budget back. `ANTHROPIC_MIN_THINKING_BUDGET` (1024) is
+    exported from `js/api/anthropic.js` and read by the options page too, so the request-side rule
+    and the inline warning cannot drift apart.
   - `thinking: {type:'disabled'}` only where it changes something — i.e. `defaultThinking === 'adaptive'`
     (newer models think unless told not to, which silently eats `max_tokens` and truncates the reply).
     On models that already default to no thinking the field stays omitted, so their request bodies are
@@ -258,6 +282,25 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
   `pages/customprompts/mzta-custom-prompts.js` (add form + each edited row).
   The same rule applies to `updateOllamaModelCapabilityUI()`, whose think select is likewise
   built at runtime.
+- **Inline budget validation in the options page.** `checkAnthropicThinkingBudget()`
+  (`pages/_lib/connection-ui.js`) mirrors the request-side rule on
+  `anthropic_extended_thinking_budget`, writing the reason into a
+  `div.json_error` whose id is the field's id plus `_error` (`textContent`, never `innerHTML`) and
+  setting the red border — the same mechanism as `checkJsonField()`. A bare border is not enough
+  here because there are two distinct constraints and the ceiling lives in *another* field, so the
+  listener is bound on `anthropic_max_tokens` as well: lowering it can invalidate a budget that was
+  fine a moment ago. The reason box is a **separate element** from the `_unsupported` capability
+  note — both conditions can hold at once, so sharing one node would have this function and
+  `updateAnthropicModelCapabilityUI()` overwrite each other. It is called from
+  `updateAnthropicModelCapabilityUI()` rather than exported separately, since every host page
+  already calls that after its restore, which is exactly when a value saved by an earlier session
+  must be re-checked. **Advisory only**: `saveOptions` persists the value regardless, which is why
+  the request builder has to tolerate an unusable one.
+- **`top_p` / `top_k` in the options page** reuse the existing
+  `anthropic_note_temperature_unsupported` string for their capability notes — the explanation
+  ("this model uses Effort instead") is identical — via
+  `applyState('anthropic_top_p', caps.supportsSamplingParams)` and the same for `top_k`.
+  `anthropic_stop_sequences` is a plain textarea with no capability note, because it is never gated.
 - **400 error hints**: `describeAnthropicError(detail, model, i18nStrings)` inspects a 400 body and,
   when the message names `temperature` / `top_p` / `top_k` / `thinking.type` / `budget_tokens` /
   `effort`, prepends a localized hint naming the incompatible option; otherwise the raw detail is

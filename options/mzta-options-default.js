@@ -68,6 +68,13 @@ export const integration_options_config = {
         max_tokens: 4096,
         system_prompt: '',
         temperature: '',
+        // Kept as strings, not numbers: an empty pref must stay distinguishable
+        // from a legitimate 0, which is a valid value for both.
+        top_p: '',
+        top_k: '',
+        // One stop sequence per line. Empty lines are dropped at request-build
+        // time, never at save time.
+        stop_sequences: '',
         extended_thinking_budget: 0,
         effort: ''
     }

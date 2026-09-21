@@ -24,6 +24,12 @@ import {
   ANTHROPIC_DEFAULT_EFFORT
 } from './anthropic_model_capabilities.js';
 
+// Smallest extended thinking budget the Messages API accepts. Anything lower is
+// rejected with a 400, so the request builder drops the budget below it and the
+// options page warns about it -- both read this constant, so the two rules cannot
+// drift apart.
+export const ANTHROPIC_MIN_THINKING_BUDGET = 1024;
+
 
 export class Anthropic {
 
@@ -32,6 +38,9 @@ export class Anthropic {
   model = '';
   system_prompt = '';
   temperature = '';
+  top_p = '';
+  top_k = '';
+  stop_sequences = '';
   max_tokens = 4096;
   extended_thinking_budget = 0;
   effort = '';
@@ -43,6 +52,9 @@ export class Anthropic {
     model = '',
     system_prompt = '',
     temperature = '',
+    top_p = '',
+    top_k = '',
+    stop_sequences = '',
     max_tokens = 4096,
     extended_thinking_budget = 0,
     effort = '',
@@ -53,6 +65,9 @@ export class Anthropic {
     this.model = model;
     this.system_prompt = system_prompt;
     this.temperature = temperature;
+    this.top_p = top_p;
+    this.top_k = top_k;
+    this.stop_sequences = stop_sequences;
     this.max_tokens = max_tokens > 0 ? max_tokens : 4096;
     this.extended_thinking_budget = extended_thinking_budget;
     this.effort = effort;
@@ -101,13 +116,22 @@ export class Anthropic {
 
     try {
 
+      const maxTokens = parseInt(this.max_tokens);
+
       let claude_body = {
               model: this.model,
-              max_tokens: parseInt(this.max_tokens),
-              system: this.system_prompt,
+              max_tokens: maxTokens,
               messages: messages,
               stream: this.stream,
             };
+
+      // An unset system prompt must omit the field, not send an empty string:
+      // an empty system block carries no instruction and is rejected outright by
+      // some model versions.
+      const systemPrompt = String(this.system_prompt ?? '').trim();
+      if(systemPrompt !== '') {
+        claude_body.system = systemPrompt;
+      }
 
       // Which parameters this model actually accepts. Sending one it rejects is
       // a hard 400, so every field below is gated on the capability table.
@@ -123,6 +147,32 @@ export class Anthropic {
         claude_body.temperature = tempFloat;
       }
 
+      // top_p and top_k follow exactly the same rule, and are sent independently
+      // of each other and of temperature. The API accepts the combination -- it
+      // only advises against it -- so there is deliberately no mutual exclusion
+      // here: silently dropping one of two values the user explicitly set would
+      // be the more surprising behaviour.
+      const topPFloat = parseFloat(this.top_p);
+      if(caps.supportsSamplingParams && this.top_p != '' && !Number.isNaN(topPFloat)) {
+        claude_body.top_p = topPFloat;
+      }
+
+      const topKInt = parseInt(this.top_k);
+      if(caps.supportsSamplingParams && this.top_k != '' && !Number.isNaN(topKInt)) {
+        claude_body.top_k = topKInt;
+      }
+
+      // Not capability-gated: every model accepts stop_sequences. Stored as one
+      // sequence per line; blank lines are dropped here rather than at save time,
+      // so the user's formatting of the textarea is left alone.
+      const stopSequences = String(this.stop_sequences ?? '')
+        .split(/\r?\n/)
+        .map(seq => seq.trim())
+        .filter(seq => seq !== '');
+      if(stopSequences.length > 0) {
+        claude_body.stop_sequences = stopSequences;
+      }
+
       // Effort is omitted when it equals the API default, so an untouched
       // configuration keeps producing exactly the request body it produced before.
       const effort = (this.effort || '').trim();
@@ -131,8 +181,27 @@ export class Anthropic {
         claude_body.output_config = { effort: effort };
       }
 
+      // The API constrains the budget on both sides: it must be at least
+      // ANTHROPIC_MIN_THINKING_BUDGET and strictly below max_tokens. Violating
+      // either is a hard 400, and with the default max_tokens of 4096 both are
+      // easy to hit by hand. A budget that fails a constraint is treated as "no
+      // extended thinking" and falls through to the disabled/omitted logic below,
+      // so the request stays valid. The stored pref is never rewritten -- the user
+      // may raise max_tokens later and expect their budget back.
       const thinkingBudget = parseInt(this.extended_thinking_budget);
-      const wantsThinking = !Number.isNaN(thinkingBudget) && thinkingBudget > 0;
+      let wantsThinking = !Number.isNaN(thinkingBudget) && thinkingBudget > 0;
+
+      if(wantsThinking && thinkingBudget < ANTHROPIC_MIN_THINKING_BUDGET) {
+        console.warn("[ThunderAI] Anthropic: extended thinking budget " + thinkingBudget
+          + " is below the API minimum of " + ANTHROPIC_MIN_THINKING_BUDGET
+          + " tokens; extended thinking will not be requested.");
+        wantsThinking = false;
+      } else if(wantsThinking && !Number.isNaN(maxTokens) && thinkingBudget >= maxTokens) {
+        console.warn("[ThunderAI] Anthropic: extended thinking budget " + thinkingBudget
+          + " must be lower than max_tokens (" + maxTokens
+          + "); extended thinking will not be requested.");
+        wantsThinking = false;
+      }
 
       if(wantsThinking && caps.supportsBudgetTokens && caps.thinkingModes.includes('enabled')) {
         claude_body.thinking = { type: 'enabled', budget_tokens: thinkingBudget };

@@ -237,6 +237,9 @@ if (worker) {
                 { key: 'system_prompt', labelKey: 'Anthropic_System_Prompt', type: 'string' },
                 { key: 'max_tokens', labelKey: 'prefs_OptionText_anthropic_max_tokens', type: 'number_gt_zero' },
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
+                { key: 'top_p', labelKey: 'prefs_OptionText_anthropic_top_p', type: 'string' },
+                { key: 'top_k', labelKey: 'prefs_OptionText_anthropic_top_k', type: 'string' },
+                { key: 'stop_sequences', labelKey: 'prefs_OptionText_anthropic_stop_sequences', type: 'string' },
                 { key: 'extended_thinking_budget', labelKey: 'prefs_OptionText_anthropic_extended_thinking_budget', type: 'number_gt_zero' }
             ]
         };
