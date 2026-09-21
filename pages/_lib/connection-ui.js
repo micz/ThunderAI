@@ -291,10 +291,13 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <label>
-        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_store" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_store" class="option-input" />
-        &nbsp;<span>__MSG_ChatGPT_chatgpt_api_store_info__</span>
-      </label>
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <label class="mzta_switch">
+          <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_store" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_store" class="option-input" />
+          <span class="track"></span>
+        </label>
+        <span>__MSG_ChatGPT_chatgpt_api_store_info__</span>
+      </div>
     </td>
   </tr>
   <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
