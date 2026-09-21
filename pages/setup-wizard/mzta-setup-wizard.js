@@ -18,11 +18,15 @@
 
 import { prefs_default } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
-import { setTomSelectBorder, hasNoConnectionSelected } from '../../js/mzta-utils.js';
+import {
+  setTomSelectBorder,
+  hasNoConnectionSelected
+} from '../../js/mzta-utils.js';
 import {
   injectConnectionUI,
   varConnectionUI,
-  showConnectionOptions
+  showConnectionOptions,
+  updateOllamaModelCapabilityUI
 } from '../_lib/connection-ui.js';
 import {
   isTestableConnection,
@@ -375,6 +379,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await restoreOptions();
 
+  // The saved model is in the select now, so the per-model option availability can
+  // finally be computed (before the restore it would probe an empty model).
+  updateOllamaModelCapabilityUI();
+
   varConnectionUI.permission_all_urls = await messenger.permissions.contains({ origins: ['<all_urls>'] });
 
   i18n.updateDocument();
@@ -413,6 +421,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       setConnTestState('ok', result.apiName);
     } else {
       setConnTestState('error', result.message);
+    }
+    // Same as the options page: a successful test may be what granted the host
+    // permission, so re-probe the model capabilities now that /api/show is reachable.
+    if (state.provider === 'ollama_api' && result.status === 'ok') {
+      updateOllamaModelCapabilityUI();
     }
   });
 

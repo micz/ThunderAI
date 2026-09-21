@@ -2210,8 +2210,12 @@
     "description": ""
   },
   "prefs_ollama_think_Info": {
-    "message": "Make the model reason before answering. Some models accept a reasoning level; others only support on/off, in which case use 'On'. This option works only with models that support the 'think' feature.",
+    "message": "Make the model reason before answering. \"Model default\" sends nothing and lets the model decide, which on some models means it reasons anyway: choose \"Off\" to turn the reasoning off explicitly. The available reasoning levels depend on the selected model, and are listed after a model is chosen.",
     "description": ""
+  },
+  "prefs_ollama_think_default": {
+    "message": "Model default",
+    "description": "Ollama thinking option: send no 'think' field and let the model do whatever it does by default"
   },
   "prefs_ollama_think_off": {
     "message": "Off",
@@ -2243,8 +2247,8 @@
   },
   "ollama_num_ctx_max_info": {
     "message": "This model supports up to $MAX$ context tokens.",
-    "description": "",
-    "placeholders": { "max": { "content": "$1" } }
+    "description": "Hint next to the Ollama context size field, after a connection test; $MAX$ is the maximum the model reports",
+    "placeholders": { "max": { "content": "$1", "example": "131072" } }
   },
   "prefs_Ollama_API_Key": {
     "message": "Ollama API Key",

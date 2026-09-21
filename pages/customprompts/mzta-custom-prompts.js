@@ -30,6 +30,8 @@ import {
     injectConnectionUI,
     showConnectionOptions,
     updateWarnings,
+    updateAnthropicModelCapabilityUI,
+    updateOllamaModelCapabilityUI,
     checkJsonFieldsByPrefix,
     getConnectionTypeLabel
 } from "../../pages/_lib/connection-ui.js";
@@ -204,6 +206,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // event, so a malformed extra_body inherited from the global prefs would
     // sit unflagged in the add form.
     checkJsonFieldsByPrefix(NEW_PROMPT_PREFIX);
+
+    // Same reason again: the inherited model is in the selects now, so the per-model
+    // option availability can finally be computed. Both are no-ops for the providers
+    // they do not cover.
+    updateAnthropicModelCapabilityUI(NEW_PROMPT_PREFIX);
+    updateOllamaModelCapabilityUI(NEW_PROMPT_PREFIX);
 
     i18n.updateDocument();
 
@@ -593,6 +601,8 @@ function handleEditClick(e) {
             relocateConnAdvRows(scopeEl);
             populateConnectionUI(tr, id, prefix, selectId);
             updateWarnings(prefix);
+            updateAnthropicModelCapabilityUI(prefix);
+            updateOllamaModelCapabilityUI(prefix);
             const sel = document.getElementById(selectId);
             showAdvConnectionOptions(scopeEl, sel ? sel.value : '');
             sel && sel.addEventListener('change', () => showAdvConnectionOptions(scopeEl, sel.value));
@@ -601,6 +611,8 @@ function handleEditClick(e) {
         const scopeEl = tr.querySelector('.api_additional_info');
         populateConnectionUI(tr, id, prefix, selectId);
         updateWarnings(prefix);
+        updateAnthropicModelCapabilityUI(prefix);
+        updateOllamaModelCapabilityUI(prefix);
         const sel = document.getElementById(selectId);
         showAdvConnectionOptions(scopeEl, sel ? sel.value : '');
     }

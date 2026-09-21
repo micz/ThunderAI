@@ -58,6 +58,12 @@ export const varConnectionUI = {
 // a blank control instead.
 const selects_with_empty_option_suffixes = ['chatgpt_reasoning_summary', 'chatgpt_reasoning_effort', 'ollama_think'];
 
+// The reasoning levels offered when the server does not report which ones the selected
+// model accepts. Declared up here, not next to buildOllamaThinkOptions(): that function
+// is hoisted and is called from injectConnectionUI() to seed the select, so a `const`
+// sitting further down the file would still be in its temporal dead zone and throw.
+const OLLAMA_THINK_LEVELS = ['low', 'medium', 'high', 'max'];
+
 export function hasEmptyValueOption(elementId = '') {
   if (elementId === 'connection_type') return true;
   // The per-prompt pages prefix every field id with e.g. "summarize_", so match on the suffix.
@@ -489,14 +495,7 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" class="option-input">
-          <option value="">__MSG_prefs_ollama_think_off__</option>
-          <option value="true">__MSG_prefs_ollama_think_on__</option>
-          <option value="low">__MSG_prefs_ollama_think_low__</option>
-          <option value="medium">__MSG_prefs_ollama_think_medium__</option>
-          <option value="high">__MSG_prefs_ollama_think_high__</option>
-          <option value="max">__MSG_prefs_ollama_think_max__</option>
-        </select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" class="option-input"></select>
         <span id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think_unsupported" class="caps_note" style="display:none">__MSG_ollama_note_thinking_unsupported__</span>
         <br>__MSG_prefs_ollama_think_Info__
       </label>
@@ -1060,7 +1059,23 @@ export async function injectConnectionUI({
   ollama_option.text = prefs.ollama_model;
   select_ollama_model.appendChild(ollama_option);
   select_ollama_model.value = prefs.ollama_model;
+  // Seed the think select with the full catalogue now, while the panel is being
+  // injected: the row ships empty from the template, and every page restores its
+  // saved values (restoreOptions()) BEFORE the first capability probe can narrow the
+  // list down. Without an <option> to attach to, that restore would silently drop the
+  // stored level. The probe later rebuilds the list from what the model reports,
+  // preserving whatever is selected.
+  buildOllamaThinkOptions(document.getElementById(getPrefixedId('ollama_think')), null);
+
   select_ollama_model.addEventListener("change", () => warn_Ollama_HostEmpty(modelId_prefix));
+  select_ollama_model.addEventListener("change", () => updateOllamaModelCapabilityUI(modelId_prefix));
+  // The host and the key change which server answers /api/show, so the capabilities
+  // have to be re-read when either is edited, not just on a model change.
+  document.getElementById(getPrefixedId("ollama_host")).addEventListener("change", () => updateOllamaModelCapabilityUI(modelId_prefix));
+  document.getElementById(getPrefixedId("ollama_api_key")).addEventListener("change", () => updateOllamaModelCapabilityUI(modelId_prefix));
+  // No initial call here: like the Claude one, this runs before restoreOptions() has
+  // written the saved model into the select, so it would probe an empty model. The
+  // pages call updateOllamaModelCapabilityUI() themselves after the restore.
 
   document.getElementById(getPrefixedId('btnUpdateOllamaModels')).addEventListener('click', async () => {
     document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'inline';
@@ -1106,6 +1121,7 @@ export async function injectConnectionUI({
       });
       syncTomSelect(select_ollama_model);
       autoSelectSingleModel(select_ollama_model);
+      updateOllamaModelCapabilityUI(modelId_prefix);
       document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
     } catch (error) {
       document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
@@ -1386,6 +1402,7 @@ export async function initializeSpecificIntegrationUI({
   // Same reason: the saved Claude model is in the select now, so the per-model
   // option availability can finally be computed.
   updateAnthropicModelCapabilityUI(model_prefix);
+  updateOllamaModelCapabilityUI(model_prefix);
 
   // 3. Setup Logic
   const use_specific_integration_el = document.getElementById(use_specific_integration_id);
@@ -1946,6 +1963,190 @@ export function updateAnthropicModelCapabilityUI(modelId_prefix = '') {
     effortSelect.appendChild(staleOption);
   }
   effortSelect.value = current;
+}
+
+// Adapt the Ollama panel to what the server reports about the selected model, from
+// the `model_info` payload of POST /api/show (see fetchModelInfo() in js/api/ollama.js).
+//
+// Runs on every model `change`, like updateAnthropicModelCapabilityUI() -- but that one
+// reads a local table while this one needs a network round trip, so two guards keep the
+// traffic down: results are memoised per host+key+model in `_ollamaCapsCache` (a
+// re-selection never re-fetches), and an in-flight request for a superseded selection
+// has its result discarded via the `_ollamaCapsSeq` generation counter, so a slow reply
+// can never overwrite the panel for a model the user has already moved away from.
+//
+// Degrades to "enable everything": when the probe fails (server unreachable, /api/show
+// unsupported, model not pulled, host empty) the notes are cleared and every control is
+// left enabled, so a failed probe never blocks the user. Stored values are never
+// rewritten, exactly like the Claude panel: the user may switch to another model.
+export async function updateOllamaModelCapabilityUI(modelId_prefix = '') {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+
+  const hostEl = document.getElementById(getPrefixedId('ollama_host'));
+  const keyEl = document.getElementById(getPrefixedId('ollama_api_key'));
+  const modelEl = getModelEl('ollama_model', modelId_prefix);
+  if (!hostEl || !modelEl) return;
+
+  const host = (hostEl.value || '').trim();
+  const apiKey = keyEl ? (keyEl.value || '').trim() : '';
+  const model = (modelEl.value || '').trim();
+
+  // Nothing to ask about yet: reset rather than leave a previous model's limits up.
+  if (host === '' || model === '') {
+    _applyOllamaCaps(null, modelId_prefix);
+    return;
+  }
+
+  const cacheKey = `${host}|${apiKey}|${model}`;
+  if (Object.prototype.hasOwnProperty.call(_ollamaCapsCache, cacheKey)) {
+    _applyOllamaCaps(_ollamaCapsCache[cacheKey], modelId_prefix);
+    return;
+  }
+
+  // Only this call's result may touch the panel: any later selection bumps the counter
+  // and invalidates whatever is still in flight here.
+  const seq = ++_ollamaCapsSeq;
+
+  // No permission request here: this runs on a plain selection change, and prompting for
+  // host permissions on every click would be hostile. Without the permission the fetch
+  // simply fails and the panel degrades to "everything enabled" -- the user grants it via
+  // the CORS button or the connection test, and the next change picks the capabilities up.
+  let modelInfo = null;
+  try {
+    const ollama = new Ollama({ host: host, api_key: apiKey });
+    const info = await ollama.fetchModelInfo(model);
+    if (info && info.ok) modelInfo = info.response;
+  } catch (error) {
+    modelInfo = null;
+  }
+
+  _ollamaCapsCache[cacheKey] = modelInfo;
+  if (seq !== _ollamaCapsSeq) return;   // superseded while awaiting
+  _applyOllamaCaps(modelInfo, modelId_prefix);
+}
+
+// Memoised /api/show results, keyed by host+key+model. A null value is cached too: a
+// server that cannot describe a model should not be re-asked on every re-selection.
+const _ollamaCapsCache = {};
+
+// Bumped by each probe so a slow reply for a stale selection can be discarded.
+let _ollamaCapsSeq = 0;
+
+// Paint the panel from a /api/show payload, or reset it when given null.
+function _applyOllamaCaps(modelInfo, modelId_prefix = '') {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+
+  const thinkField = document.getElementById(getPrefixedId('ollama_think'));
+  const thinkNote = document.getElementById(getPrefixedId('ollama_think_unsupported'));
+  const ctxNote = document.getElementById(getPrefixedId('ollama_num_ctx_max'));
+
+  // Nothing usable: restore the neutral state rather than reporting a limit we no
+  // longer know to hold.
+  if (!modelInfo) {
+    if (thinkField) thinkField.disabled = false;
+    if (thinkNote) thinkNote.style.display = 'none';
+    if (ctxNote) {
+      ctxNote.textContent = '';
+      ctxNote.style.display = 'none';
+    }
+    // Still (re)build the select: it ships empty from the template, so without this
+    // a panel that never reached a server would have no options at all.
+    buildOllamaThinkOptions(thinkField, null);
+    return;
+  }
+
+  // Absent `capabilities` means "this server does not report them", not "the model
+  // cannot think" -- older Ollama builds omit the field entirely. Only an explicit
+  // list that lacks "thinking" disables the control.
+  const caps = Array.isArray(modelInfo.capabilities) ? modelInfo.capabilities : null;
+  const supportsThinking = (caps === null) || caps.includes('thinking');
+  if (thinkField) thinkField.disabled = !supportsThinking;
+  if (thinkNote) thinkNote.style.display = supportsThinking ? 'none' : '';
+
+  buildOllamaThinkOptions(thinkField, modelInfo);
+
+  // The context length key is architecture-prefixed ("llama.context_length",
+  // "qwen3.context_length", ...), so it is found by suffix rather than hardcoded.
+  if (ctxNote) {
+    const maxCtx = getOllamaContextLength(modelInfo);
+    if (maxCtx > 0) {
+      ctxNote.textContent = browser.i18n.getMessage('ollama_num_ctx_max_info', [String(maxCtx)]);
+      ctxNote.style.display = '';
+    } else {
+      ctxNote.textContent = '';
+      ctxNote.style.display = 'none';
+    }
+  }
+}
+
+// Fill the think select with the levels the selected model actually accepts.
+//
+// /api/show reports them in a top-level `thinking` object, e.g.
+//   {"values": [false, true], "default": true}          -- on/off only
+//   {"values": [false, "low", "high"], "default": "low"} -- levels
+// so the accepted *shape* is read from `values`: booleans mean this model has no
+// levels, strings are the levels it names. `default` is what the model does when the
+// request omits `think` entirely, which is what the "model default" entry maps to.
+//
+// A missing or unusable `thinking` object means "this server does not report it" --
+// several models carry `thinking` in `capabilities` while leaving this null -- so the
+// full catalogue is offered rather than assuming a restriction. Sending a level to a
+// model that only knows on/off is not an error anyway: Ollama treats it as "on".
+//
+// Like the Claude effort select, a stored value that this model does not offer is kept
+// as a trailing option so it survives a round trip through another model.
+function buildOllamaThinkOptions(thinkField, modelInfo) {
+  if (!thinkField) return;
+
+  const current = thinkField.value;
+
+  const reported = (modelInfo && modelInfo.thinking && typeof modelInfo.thinking === 'object')
+    ? modelInfo.thinking : null;
+  const values = (reported && Array.isArray(reported.values)) ? reported.values : null;
+
+  // Only the string entries are levels; `false`/`true` describe the on/off pair that
+  // every thinking model has and that the Off/On entries below already cover.
+  const levels = values ? values.filter(v => typeof v === 'string') : OLLAMA_THINK_LEVELS;
+
+  const options = [
+    { value: '', labelKey: 'prefs_ollama_think_default' },
+    { value: 'false', labelKey: 'prefs_ollama_think_off' },
+    { value: 'true', labelKey: 'prefs_ollama_think_on' }
+  ];
+  levels.forEach(level => options.push({
+    value: level,
+    labelKey: 'prefs_ollama_think_' + level,
+    fallbackLabel: level
+  }));
+
+  thinkField.textContent = '';
+  options.forEach(opt => {
+    const option = document.createElement('option');
+    option.value = opt.value;
+    option.text = browser.i18n.getMessage(opt.labelKey) || opt.fallbackLabel || opt.value;
+    thinkField.appendChild(option);
+  });
+
+  // Keep a stored value this model does not offer, rather than silently changing the
+  // user's setting just because they looked at another model.
+  if (current !== '' && !options.some(o => o.value === current)) {
+    const stale = document.createElement('option');
+    stale.value = current;
+    stale.text = current;
+    thinkField.appendChild(stale);
+  }
+  thinkField.value = current;
+}
+
+
+// The model's maximum context length, or 0 when the payload does not report one.
+function getOllamaContextLength(modelInfo) {
+  const info = modelInfo && modelInfo.model_info;
+  if (!info || typeof info !== 'object') return 0;
+  const key = Object.keys(info).find(k => k.endsWith('.context_length'));
+  if (!key) return 0;
+  const value = parseInt(info[key]);
+  return Number.isNaN(value) ? 0 : value;
 }
 
 function warn_Anthropic_APIKeyEmpty(modelId_prefix) {

@@ -49,18 +49,52 @@ Per-prompt ChatGPT Web overrides are a separate, unrelated mechanism: the custom
 - Settings keys: `ollama_host`, `ollama_api_key`, `ollama_model`, `ollama_num_ctx`, `ollama_temperature`,
   `ollama_think`, `ollama_format_json`, `ollama_keep_alive`, `ollama_system_prompt`, `ollama_extra_options`
 - Requires CORS to be configured on the Ollama server
-- **`ollama_think` is a level, not a flag**: `''` (off), `'true'` (plain boolean `true`, for models
-  that accept no level), or `low`/`medium`/`high`/`max`. The field is **omitted entirely** when the
-  pref is empty — it used to be sent as `false` on every request. `'true'` maps to the JSON boolean
-  `true`; the levels are sent as strings.
-  It was a boolean checkbox before, so `normalizeThink()` in `js/api/ollama.js` coerces a legacy
-  `true`/`false` at construction time. That is **required, not belt-and-braces**: the config default
-  in `integration_options_config` is a string now, so the `typeof options_config[key] === 'boolean'`
-  branch in `js/mzta-special-commands.js` no longer coerces this key, and a per-prompt override can
-  still hold a real boolean. `migrateOllamaThinkLevel()` (`js/mzta-prefs-migration.js`, one-shot flag
-  `_migrated_ollama_think_level`, called from `mzta-background.js`) rewrites only the **global** pref,
-  because that is the one loaded into a `<select>`, where a stored boolean would select no option and
-  render the control blank. Prompt objects are deliberately not walked.
+- **`ollama_think` is a level, not a flag**, with **three distinct states** — and the difference
+  between the first two is behavioural, not cosmetic:
+
+  | Stored value | Sent | Meaning |
+  |---|---|---|
+  | `''` | *field omitted* | whatever the model does by default |
+  | `'false'` | `think: false` | explicitly off |
+  | `'true'` | `think: true` | explicitly on, no level |
+  | `low`/`medium`/`high`/`max` | `think: "<level>"` | a reasoning level |
+
+  **Omitting the field is not the same as turning thinking off.** A model whose `/api/show`
+  reports `"thinking": {"default": true}` reasons when `think` is absent, so "off" has to be an
+  explicit `false`. Verified against a live server: with the field omitted the reply carries a
+  771-character `message.thinking`; with `think: false` it carries none.
+  `parseThinkValue()` in `js/api/ollama.js` maps the two string keywords back to real JSON
+  booleans and passes a level through unchanged.
+
+  It was a boolean checkbox before, so `normalizeThink()` coerces a legacy `true`/`false` at
+  construction time — to `'true'` and **`'false'`**, never to `''`: unticking the box meant "do
+  not think", which only an explicit `false` still delivers. That coercion is **required, not
+  belt-and-braces**: the config default in `integration_options_config` is a string now, so the
+  `typeof options_config[key] === 'boolean'` branch in `js/mzta-special-commands.js` no longer
+  coerces this key, and a per-prompt override can still hold a real boolean.
+  `migrateOllamaThinkLevel()` (`js/mzta-prefs-migration.js`, one-shot flag
+  `_migrated_ollama_think_level`, called from `mzta-background.js`) applies the same mapping to
+  the **global** pref only, because that is the one loaded into a `<select>`, where a stored
+  boolean would select no option and render the control blank. Prompt objects are deliberately
+  not walked.
+- **The think select is built at runtime**, not in the injected template, by
+  `buildOllamaThinkOptions()` (`pages/_lib/connection-ui.js`), from the **top-level `thinking`
+  object** of `/api/show`:
+
+  ```
+  {"values": [false, true], "default": true}             -> on/off only, no levels
+  {"values": [false, "low", "high"], "default": "low"}   -> these levels
+  null / absent                                          -> not reported
+  ```
+
+  Only the **string** entries of `values` are levels; `false`/`true` describe the on/off pair the
+  fixed entries already cover. A missing or unusable `thinking` object means *"this server does
+  not report it"*, **not** *"no levels"* — several models carry `thinking` in `capabilities` while
+  leaving this `null` — so the full catalogue (`OLLAMA_THINK_LEVELS`) is offered instead of
+  assuming a restriction. Sending a level to a model that only knows on/off is not an error
+  anyway: Ollama treats it as "on", verified against a live server.
+  As with the Claude effort select, a stored value this model does not offer is kept as a trailing
+  option, so it survives a round trip through another model.
 - **`ollama_keep_alive`** is sent as a top-level `keep_alive` string (`"5m"`, `"30m"`, `-1` to keep
   the model loaded indefinitely, `0` to unload immediately), omitted when empty. It matters because
   auto-tagging, the spam filter and auto-summarize run on incoming mail, and the server's 5-minute
@@ -76,6 +110,44 @@ Per-prompt ChatGPT Web overrides are a separate, unrelated mechanism: the custom
   options-page restore log for free. **The worker must never log `config` or any header map built
   from it.**
 - **Extra options**: see [Extra body data](#extra-body-data).
+- **Model capability detection.** `fetchModelInfo(model)` (POST `/api/show`) returns the server's
+  description of one model: `capabilities` (e.g. `["completion","vision","thinking","tools"]`) and
+  a context length under an **architecture-prefixed** key in `model_info`
+  (`llama.context_length`, `qwen3.context_length`, ...) - so it is read by matching the
+  `.context_length` suffix, never by hardcoding an architecture.
+  `updateOllamaModelCapabilityUI(modelInfo, prefix)` (`pages/_lib/connection-ui.js`) applies it:
+  it disables the think control with a note when the model does not report `thinking`, and shows
+  the real maximum next to `num_ctx`.
+  - **An absent `capabilities` array means "this server does not report them", not "the model
+    cannot think"** - older Ollama builds omit the field. Only an explicit list *lacking*
+    `thinking` disables the control.
+  - **It degrades to "enable everything".** Called with `null` (unreachable server, `/api/show`
+    unsupported, model not pulled) it clears the notes and leaves every control enabled. A failed
+    probe must never block the user.
+  - **Stored values are never rewritten**, exactly like the Claude panel: the user may switch model.
+  - **The request side is not gated.** `think` is still sent as stored: Ollama ignores it on a
+    non-thinking model, and gating it would mean threading capability data into the Web Worker,
+    which knows nothing about `/api/show`.
+  - **Trigger: every model `change`**, exactly like `updateAnthropicModelCapabilityUI()` - plus the
+    `ollama_host` and `ollama_api_key` `change` events, since those decide *which server* answers.
+    It also runs after a successful "Fetch models", after each page's restore, and after a
+    successful connection test (which may be the moment the host permission was granted).
+    Unlike the Claude one it **fetches its own data**: it reads host/key/model off the form and
+    calls `fetchModelInfo()` itself, so callers pass only the `modelId_prefix` and every panel that
+    injects the connection UI is covered - options, setup wizard, the six per-feature panels and
+    the custom-prompts add form and per-row editors.
+  - **Two guards keep a per-`change` network call cheap**, because unlike the Claude table this one
+    is a round trip:
+    - `_ollamaCapsCache` memoises per `host|api_key|model`, so re-selecting a model already seen
+      costs nothing. A `null` result is cached too - a server that cannot describe a model must not
+      be re-asked on every re-selection.
+    - `_ollamaCapsSeq`, a generation counter, discards the reply of a probe whose selection has
+      since been superseded, so a slow answer can never repaint the panel for a model the user has
+      already moved away from.
+  - **No permission request.** It runs on a plain selection change, where prompting for host
+    permissions would be hostile. Without the permission the fetch simply fails and the panel
+    degrades to "everything enabled"; the user grants it via the CORS button or the connection
+    test, and the next change picks the capabilities up - which is why a successful test re-probes.
 
 ### OpenAI-Compatible (`openai_comp_api`)
 - Module: `js/api/openai_comp.js`

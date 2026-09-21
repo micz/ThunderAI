@@ -71,6 +71,91 @@ export class Ollama {
       return headers;
     }
 
+    /**
+     * GET /api/version -- the connectivity probe used by the connection test.
+     *
+     * Deliberately not /api/tags: that endpoint answers with an empty list both
+     * when the server is reachable but has no models pulled and, after a CORS
+     * rejection, not at all -- conflating "no models" with "unreachable".
+     * /api/version answers regardless of what is installed, so a success here
+     * means exactly "the server is reachable and speaking Ollama".
+     *
+     * Same result contract as fetchModels(): {ok, response} or {ok:false, error}
+     * plus is_exception on a network-level failure.
+     */
+    fetchVersion = async () => {
+      try{
+        const response = await fetch(this.host + "/api/version", {
+            method: "GET",
+            headers: this._headers(),
+        });
+
+        if (!response.ok) {
+            const errorDetail = await response.text();
+            console.error("[ThunderAI] Ollama API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
+            let output = {};
+            output.ok = false;
+            output.error = errorDetail;
+            return output;
+        }
+
+        let output = {};
+        output.ok = true;
+        output.response = await response.json();
+        return output;
+      }catch (error) {
+        console.error("[ThunderAI] Ollama API request failed: " + error);
+        let output = {};
+        output.is_exception = true;
+        output.ok = false;
+        output.error = "Ollama API request failed: " + error;
+        return output;
+      }
+    }
+
+    /**
+     * POST /api/show -- what the server knows about one model.
+     *
+     * The interesting parts of the response are `capabilities` (e.g.
+     * ["completion","vision","thinking","tools"]) and the context length, which
+     * lives in model_info under an architecture-prefixed key such as
+     * "llama.context_length" or "qwen3.context_length".
+     *
+     * Same result contract as fetchModels().
+     *
+     * @param {string} model the model ID to describe
+     */
+    fetchModelInfo = async (model) => {
+      try{
+        const response = await fetch(this.host + "/api/show", {
+            method: "POST",
+            headers: this._headers(),
+            body: JSON.stringify({ model: model }),
+        });
+
+        if (!response.ok) {
+            const errorDetail = await response.text();
+            console.error("[ThunderAI] Ollama API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
+            let output = {};
+            output.ok = false;
+            output.error = errorDetail;
+            return output;
+        }
+
+        let output = {};
+        output.ok = true;
+        output.response = await response.json();
+        return output;
+      }catch (error) {
+        console.error("[ThunderAI] Ollama API request failed: " + error);
+        let output = {};
+        output.is_exception = true;
+        output.ok = false;
+        output.error = "Ollama API request failed: " + error;
+        return output;
+      }
+    }
+
     fetchModels = async () => {
       try{
         const response = await fetch(this.host + "/api/tags", {
@@ -133,10 +218,17 @@ export class Ollama {
                 model: this.model,
                 messages: messages,
                 stream: this.stream,
-                // Omitted entirely when off: a model that takes no thinking level
-                // rejects an explicit null, and `false` is not the same as absent
-                // for servers that read the field's presence.
-                ...(this.think !== '' ? { think: this.think === 'true' ? true : this.think } : {}),
+                // Three distinct states, and the difference between the last two is
+                // not cosmetic: on a model whose /api/show reports
+                // "thinking": {"default": true} the model reasons when `think` is
+                // ABSENT, so "off" has to be sent as an explicit `false` to actually
+                // suppress it. '' therefore means "use the model default" and is the
+                // only value that omits the field.
+                //   ''      -> omitted      (whatever the model does by default)
+                //   'false' -> think: false (explicitly off)
+                //   'true'  -> think: true  (explicitly on, no level)
+                //   level   -> think: "<level>"
+                ...(this.think !== '' ? { think: parseThinkValue(this.think) } : {}),
                 ...(this.format_json ? { format: "json" } : {}),
                 ...(this.keep_alive !== '' ? { keep_alive: this.keep_alive } : {}),
                 ...(Object.keys(options_obj).length > 0 ? { options: options_obj } : {}),
@@ -156,20 +248,38 @@ export class Ollama {
 }
 
 /**
- * Coerce a stored `think` value to the level format.
+ * Coerce a stored `think` value to the current string format.
  *
  * `ollama_think` used to be a boolean checkbox: `true` meant "think", `false`
- * meant "don't". The pref is now a level ('' | 'true' | 'low' | 'medium' |
- * 'high' | 'max'), and a one-shot migration rewrites the global pref -- but a
- * legacy boolean can still arrive here from a per-prompt override, because the
- * config default is a string now and mzta-special-commands.js therefore no
- * longer coerces that key. Normalizing at construction covers every caller.
+ * meant "don't". The pref is now a string ('' | 'false' | 'true' | a level), and
+ * a one-shot migration rewrites the global pref -- but a legacy boolean can still
+ * arrive here from a per-prompt override, because the config default is a string
+ * now and mzta-special-commands.js therefore no longer coerces that key.
+ * Normalizing at construction covers every caller.
+ *
+ * A legacy `false` maps to 'false' (explicitly off), NOT to '' (model default):
+ * the user had unticked the box, which meant "do not think", and on a model that
+ * reasons by default only an explicit `false` still delivers that.
  *
  * @param {*} think the stored value, possibly a legacy boolean
- * @returns {string} '' when thinking is off, otherwise the level
+ * @returns {string} '' to use the model default, otherwise the chosen value
  */
 function normalizeThink(think) {
   if (think === true) return 'true';
-  if (think === false || think === null || think === undefined) return '';
+  if (think === false) return 'false';
+  if (think === null || think === undefined) return '';
   return String(think);
+}
+
+/**
+ * The JSON value to send for a non-empty `think` preference: a real boolean for
+ * the on/off entries, the bare string for a reasoning level.
+ *
+ * @param {string} think a non-empty normalized preference value
+ * @returns {boolean|string}
+ */
+function parseThinkValue(think) {
+  if (think === 'true') return true;
+  if (think === 'false') return false;
+  return think;
 }

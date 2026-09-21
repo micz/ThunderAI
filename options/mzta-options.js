@@ -37,6 +37,7 @@ import { taStorage } from '../js/mzta-storage.js';
 import {
   injectConnectionUI,
   updateAnthropicModelCapabilityUI,
+  updateOllamaModelCapabilityUI,
   varConnectionUI,
   showConnectionOptions,
   updateWarnings,
@@ -711,6 +712,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   showConnectionOptions(conntype_select);
   showAdvConnectionOptions();
   updateAnthropicModelCapabilityUI();
+  updateOllamaModelCapabilityUI();
   checkJsonFields();
   updateDescription();
   updateConnPanelTint();
@@ -796,6 +798,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       setConnTestState('ok', result.apiName);
     }else{
       setConnTestState('error', result.message);
+    }
+    // A successful test may have been the moment the host permission was granted,
+    // so re-probe the model capabilities now that /api/show can actually be reached.
+    if(connType === 'ollama_api' && result.status === 'ok'){
+      updateOllamaModelCapabilityUI();
     }
   });
 

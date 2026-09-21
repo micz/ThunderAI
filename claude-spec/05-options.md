@@ -628,14 +628,29 @@ connection…", link hidden), `ok` (green dot, "Connected — <API> reachable", 
 **Reset to idle** happens on `connection_type` change and on any `input`/`change` inside
 `#connection_ui_table` (editing key/host/model/version invalidates a prior result).
 
-**Test logic** lives in `js/mzta-connection-test.js` (shared helper). It **reuses each
-provider class' existing `fetchModels()`** (the same call the "Fetch models" buttons use)
+**Test logic** lives in `js/mzta-connection-test.js` (shared helper). It **reuses the
+provider classes' existing methods** (the same calls the "Fetch models" buttons use)
 — no URL/header/auth logic is duplicated. `getTestableConnection(connType)` returns a
-registry entry (`makeClient` reading current form fields, `nameKey`, `requestPermission`);
-`runConnectionTest(connType)` requests the needed host permission (mirroring the
-fetch-models / CORS buttons), calls `fetchModels()` with a ~10s `Abort` -style timeout
-(`Promise.race`), and maps the `{ok, error, is_exception}` result to auth / network /
-timeout messages. It reads current (possibly unsaved) form values and **saves nothing**.
+registry entry (`makeClient` reading current form fields, `nameKey`, `requestPermission`,
+plus the two optional fields below); `runConnectionTest(connType)` requests the needed host
+permission (mirroring the fetch-models / CORS buttons), calls the probe with a ~10s
+`Abort`-style timeout (`Promise.race`), and maps the `{ok, error, is_exception}` result to
+auth / network / timeout messages. It reads current (possibly unsaved) form values and
+**saves nothing**.
+
+One optional registry field keeps a provider quirk out of the shared runner:
+
+- **`testMethod`** names the probe, defaulting to `'fetchModels'`. Every such method shares
+  the same `{ok, error, is_exception}` contract. **Ollama sets it to `'fetchVersion'`**
+  (`GET /api/version`) because `/api/tags` conflates *"server unreachable / CORS not
+  configured"* with *"reachable but no models pulled"* — it answers with an empty list in
+  the second case and not at all in the first. `/api/version` answers whatever is installed,
+  so a success means exactly "reachable and speaking Ollama". `fetchModels()` still uses
+  `/api/tags`: it is what populates the model dropdown.
+
+A successful Ollama test also re-runs `updateOllamaModelCapabilityUI()`, because granting the
+host permission through the test is often what makes `/api/show` reachable in the first place
+— see [04-api-integrations.md](04-api-integrations.md#ollama-ollama_api).
 
 ### Setup Wizard (`pages/setup-wizard/`)
 
