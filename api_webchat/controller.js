@@ -212,8 +212,8 @@ if (worker) {
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
                 { key: 'reasoning_summary', labelKey: 'prefs_OptionText_chatgpt_reasoning_summary', type: 'string' },
                 { key: 'reasoning_effort', labelKey: 'prefs_OptionText_chatgpt_reasoning_effort', type: 'string' },
-                { key: 'max_output_tokens', labelKey: 'prefs_OptionText_chatgpt_max_output_tokens', type: 'number_gt_zero' },
-                { key: 'top_p', labelKey: 'prefs_OptionText_chatgpt_top_p', type: 'string' },
+                { key: 'max_output_tokens', labelKey: 'prefs_api_max_output_tokens', type: 'number_gt_zero' },
+                { key: 'top_p', labelKey: 'prefs_api_top_p', type: 'string' },
                 { key: 'verbosity', labelKey: 'prefs_OptionText_chatgpt_verbosity', type: 'string' },
                 { key: 'text_format', labelKey: 'prefs_OptionText_chatgpt_text_format', type: 'string' },
                 { key: 'text_format_schema_name', labelKey: 'prefs_OptionText_chatgpt_text_format_schema_name', type: 'string' },
@@ -223,12 +223,16 @@ if (worker) {
                 { key: 'service_tier', labelKey: 'prefs_OptionText_chatgpt_service_tier', type: 'string' },
                 { key: 'safety_identifier', labelKey: 'prefs_OptionText_chatgpt_safety_identifier', type: 'string' },
                 { key: 'include_encrypted_reasoning', labelKey: 'prefs_OptionText_chatgpt_include_encrypted_reasoning', type: 'boolean' },
-                { key: 'extra_body', labelKey: 'prefs_OptionText_chatgpt_extra_body', type: 'string' }
+                { key: 'extra_body', labelKey: 'prefs_api_extra_body', type: 'string' }
             ],
             google_gemini: [
                 { key: 'system_instruction', labelKey: 'GoogleGemini_SystemInstruction', type: 'string' },
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
-                { key: 'thinking_budget', labelKey: 'prefs_google_gemini_thinking_budget', type: 'string' }
+                { key: 'thinking_budget', labelKey: 'prefs_google_gemini_thinking_budget', type: 'string' },
+                { key: 'max_output_tokens', labelKey: 'prefs_api_max_output_tokens', type: 'number_gt_zero' },
+                { key: 'top_p', labelKey: 'prefs_api_top_p', type: 'string' },
+                { key: 'top_k', labelKey: 'prefs_api_top_k', type: 'string' },
+                { key: 'extra_body', labelKey: 'prefs_api_extra_body', type: 'string' }
             ],
             ollama: [
                 // A level now ('' | 'true' | low | medium | high | max), not a flag:
@@ -242,14 +246,14 @@ if (worker) {
             ],
             openai_comp: [
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
-                { key: 'extra_body', labelKey: 'prefs_OptionText_openai_comp_extra_body', type: 'string' }
+                { key: 'extra_body', labelKey: 'prefs_api_extra_body', type: 'string' }
             ],
             anthropic: [
                 { key: 'system_prompt', labelKey: 'Anthropic_System_Prompt', type: 'string' },
                 { key: 'max_tokens', labelKey: 'prefs_OptionText_anthropic_max_tokens', type: 'number_gt_zero' },
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
-                { key: 'top_p', labelKey: 'prefs_OptionText_anthropic_top_p', type: 'string' },
-                { key: 'top_k', labelKey: 'prefs_OptionText_anthropic_top_k', type: 'string' },
+                { key: 'top_p', labelKey: 'prefs_api_top_p', type: 'string' },
+                { key: 'top_k', labelKey: 'prefs_api_top_k', type: 'string' },
                 { key: 'stop_sequences', labelKey: 'prefs_OptionText_anthropic_stop_sequences', type: 'string' },
                 { key: 'extended_thinking_budget', labelKey: 'prefs_OptionText_anthropic_extended_thinking_budget', type: 'number_gt_zero' }
             ]

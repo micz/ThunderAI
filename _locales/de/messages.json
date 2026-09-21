@@ -1,4 +1,7 @@
 {
+    "prefs_api_extra_body": {
+        "message": "Zusätzliche Body-Daten"
+    },
     "extensionDescription": {
         "message": "Verwenden Sie ChatGPT, Google Gemini, Claude oder Ollama, um Ihre E-Mails zu verbessern!",
         "description": "Description of the extension."
@@ -482,9 +485,6 @@
     },
     "prefs_extra_body_error_not_object": {
         "message": "Der Wert muss ein JSON-Objekt sein, eingeschlossen in geschweifte Klammern."
-    },
-    "prefs_OptionText_openai_comp_extra_body": {
-        "message": "Zusätzliche Body-Daten"
     },
     "prefs_OptionText_openai_comp_extra_body_info": {
         "message": "Zusätzliche Parameter, die bei jedem API-Aufruf mitgesendet werden, als JSON-Objekt. Nützlich für Optionen, die dieser Dienst unterstützt, ThunderAI aber nicht anbietet, zum Beispiel das Deaktivieren des Denkmodus: {\"chat_template_kwargs\": {\"thinking\": false}} oder {\"top_p\": 0.9}. Die von ThunderAI verwalteten Parameter (model, messages, streaming, temperature) können hier nicht überschrieben werden. Ein ungültiger Wert wird ignoriert."
@@ -2264,9 +2264,6 @@
     },
     "prefs_OptionText_chatgpt_reasoning_effort": {
         "message": "Reasoning-Aufwand"
-    },
-    "prefs_OptionText_chatgpt_extra_body": {
-        "message": "Zusätzliche Body-Daten"
     },
     "prefs_OptionText_chatgpt_extra_body_info": {
         "message": "Zusätzliche Parameter, die bei jedem API-Aufruf als JSON-Objekt gesendet werden, wie z. B. {\"top_p\": 0.9}. Nützlich für Optionen, die von der OpenAI-API unterstützt, aber von ThunderAI nicht direkt bereitgestellt werden. Die von ThunderAI verwalteten Parameter (Model, Input, Streaming, Temperature, Reasoning, Instructions) können hier nicht überschrieben werden. Ein ungültiger Wert wird ignoriert."

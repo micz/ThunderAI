@@ -17,6 +17,7 @@
  */
 
 
+import { parseExtraBody } from './api-utils.js';
 
 export class GoogleGemini {
 
@@ -26,6 +27,12 @@ export class GoogleGemini {
   stream = false;
   thinking_budget = ''; // Model default
   temperature = ''; // no temperature defined
+  max_output_tokens = 0; // 0 means unset: let the model decide
+  // Kept as strings, not numbers: an empty pref must stay distinguishable from a
+  // legitimate 0, which is a valid value for both.
+  top_p = '';
+  top_k = '';
+  extra_body = '';
 
   constructor({
     apiKey = '',
@@ -34,6 +41,10 @@ export class GoogleGemini {
     stream = false,
     thinking_budget = '',
     temperature = '',
+    max_output_tokens = 0,
+    top_p = '',
+    top_k = '',
+    extra_body = '',
   } = {}) {
     this.apiKey = apiKey;
     this.model = model;
@@ -41,6 +52,10 @@ export class GoogleGemini {
     this.stream = stream;
     this.thinking_budget = String(thinking_budget ?? '').trim();
     this.temperature = String(temperature ?? '').trim();
+    this.max_output_tokens = max_output_tokens;
+    this.top_p = String(top_p ?? '').trim();
+    this.top_k = String(top_k ?? '').trim();
+    this.extra_body = extra_body;
     /* Info from: https://ai.google.dev/gemini-api/docs/thinking?#set-budget
       # Turn on thinking with a specific token limit: "thinking_budget": 1024
       # Thinking off: "thinking_budget": 0
@@ -92,9 +107,23 @@ export class GoogleGemini {
   fetchResponse = async (messages) => {
     try {
 
+      // Two-level merge: the parameters ThunderAI manages live inside the nested
+      // generationConfig object, so a single root-level spread would let a user's
+      // generationConfig silently wipe out thinkingConfig and temperature (or the
+      // reverse). The extra body is therefore spread at the root AND, separately,
+      // inside generationConfig, with the managed keys applied last at both levels
+      // so they always win. A user can add root keys such as safetySettings or
+      // tools, but can never override contents or system_instruction.
+      const parsedExtraBody = parseExtraBody(this.extra_body);
+      const extraGenerationConfig = (parsedExtraBody.generationConfig !== null
+        && typeof parsedExtraBody.generationConfig === 'object'
+        && !Array.isArray(parsedExtraBody.generationConfig))
+          ? parsedExtraBody.generationConfig : {};
+
       let google_gemini_body = {
+        ...parsedExtraBody,
         contents: messages,
-        generationConfig: {},
+        generationConfig: { ...extraGenerationConfig },
       };
 
       // console.log("[ThunderAI] Google Gemini API system_instruction: " + JSON.stringify(this.system_instruction));
@@ -111,10 +140,14 @@ export class GoogleGemini {
       // much the model reasons, the second whether that reasoning is returned at
       // all. Without includeThoughts the API bills the thinking tokens
       // (usageMetadata.thoughtsTokenCount) but emits no part flagged
-      // thought: true, so the webchat has nothing to show. Requested unless the
-      // budget explicitly turns thinking off, which includes the '' case: a
-      // thinking-capable model reasoning on its model default must still show its
-      // thinking block.
+      // thought: true, so the webchat has nothing to show.
+      // The whole thinkingConfig is omitted unless the user expressed a
+      // preference: models with no thinking support (the Gemini 2.0 family)
+      // reject the key outright with an HTTP 400, so an empty budget must leave
+      // the request untouched and let the model decide. The trade-off is that a
+      // thinking-capable model reasoning on its own default is no longer asked
+      // for includeThoughts, so its thinking block is not shown in the webchat
+      // unless a budget is set -- preferable to breaking non-thinking models.
       const thinkingBudget = parseInt(this.thinking_budget);
       const hasBudget = this.thinking_budget !== '' && !Number.isNaN(thinkingBudget);
 
@@ -128,12 +161,32 @@ export class GoogleGemini {
       if(!hasBudget || thinkingBudget !== 0) {
         thinkingConfig.includeThoughts = true;
       }
-      google_gemini_body.generationConfig.thinkingConfig = thinkingConfig;
+      if(hasBudget && Object.keys(thinkingConfig).length > 0) {
+        google_gemini_body.generationConfig.thinkingConfig = thinkingConfig;
+      }
 
       const tempFloat = parseFloat(this.temperature);
 
       if(this.temperature != '' && !Number.isNaN(tempFloat)) {
         google_gemini_body.generationConfig.temperature = tempFloat;
+      }
+
+      const maxOutputTokensInt = parseInt(this.max_output_tokens);
+
+      if(!Number.isNaN(maxOutputTokensInt) && maxOutputTokensInt > 0) {
+        google_gemini_body.generationConfig.maxOutputTokens = maxOutputTokensInt;
+      }
+
+      const topPFloat = parseFloat(this.top_p);
+
+      if(this.top_p !== '' && !Number.isNaN(topPFloat)) {
+        google_gemini_body.generationConfig.topP = topPFloat;
+      }
+
+      const topKInt = parseInt(this.top_k);
+
+      if(this.top_k !== '' && !Number.isNaN(topKInt)) {
+        google_gemini_body.generationConfig.topK = topKInt;
       }
 
       //  console.log(">>>>>>>>>>>>>>>>> [ThunderAI] Google Gemini API request: " + JSON.stringify(google_gemini_body));

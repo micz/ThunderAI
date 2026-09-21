@@ -227,14 +227,23 @@ mode, `top_p`, provider-proprietary fields). The pref holds a **raw JSON string*
 user in the Advanced options of the connection panel; `parseExtraBody()` in
 `js/api/api-utils.js` turns it into an object at request time.
 
-- **Three providers, and one of them differs in *where* the data goes.** Gemini and Anthropic build
-  differently-shaped bodies and have no such field.
+- **Four providers, and they differ in *where* the data goes.** Anthropic builds a
+  differently-shaped body and has no such field.
 
   | Pref | Spread into |
   |------|-------------|
   | `chatgpt_extra_body` | top level of the request body |
   | `openai_comp_extra_body` | top level of the request body |
   | `ollama_extra_options` | **the `options` object**, not the top level |
+  | `google_gemini_extra_body` | **both levels**: the top level *and*, separately, the nested `generationConfig` |
+
+  Gemini is a two-level merge because the parameters ThunderAI manages
+  (`thinkingConfig`, `temperature`, `maxOutputTokens`, `topP`, `topK`) live inside
+  `generationConfig`. A single top-level spread would let a user's `generationConfig`
+  silently replace the whole managed object, so `parsedExtraBody.generationConfig` is
+  spread into `generationConfig` first (only when it is a plain object) and the managed
+  keys are applied on top. Root keys such as `safetySettings` or `tools` are therefore
+  accepted, while `contents` and `system_instruction` can never be overridden.
 
   Ollama is the exception on purpose: `top_p`, `top_k`, `min_p`, `seed`, `num_predict`,
   `repeat_penalty`, `stop` and `num_keep` all live under `options` in the Ollama API, so spreading
@@ -279,12 +288,19 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
 ### Google Gemini (`google_gemini_api`)
 - Module: `js/api/google_gemini.js`
 - Worker: `js/workers/model-worker-google_gemini.js`
-- Settings keys: `google_gemini_api_key`, `google_gemini_model`, `google_gemini_system_instruction`, `google_gemini_thinking_budget`, `google_gemini_temperature`
+- Settings keys: `google_gemini_api_key`, `google_gemini_model`, `google_gemini_system_instruction`, `google_gemini_thinking_budget`, `google_gemini_temperature`, `google_gemini_max_output_tokens`, `google_gemini_top_p`, `google_gemini_top_k`, `google_gemini_extra_body`
 - `thinking_budget` is coerced with `parseInt` and sent as the integer
-  `thinkingConfig.thinkingBudget`; an empty or unparsable value omits the budget and
-  leaves the choice to the model. See
+  `thinkingConfig.thinkingBudget`; an empty or unparsable value omits the whole
+  `thinkingConfig` and leaves the choice to the model. See
   [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui) for the
   `includeThoughts` flag sent alongside it.
+- `max_output_tokens` maps to `generationConfig.maxOutputTokens` and defaults to `0`,
+  the same "unset" convention as `ollama_num_ctx`: the key is sent only when the parsed
+  integer is `> 0`.
+- `top_p` / `top_k` map to `generationConfig.topP` / `topK` and default to `''`, like
+  `temperature`. They are parsed with `parseFloat` / `parseInt` and sent only when the
+  pref is non-empty and the result is not `NaN`. Ranges are deliberately not validated
+  client-side — an out-of-range value is reported by the API, as with `temperature`.
 
 ### Anthropic / Claude (`anthropic_api`)
 - Module: `js/api/anthropic.js`
@@ -401,10 +417,13 @@ appears:
 - **Google Gemini**: emits `thought: true` parts only when the request carries
   `generationConfig.thinkingConfig.includeThoughts: true`. Without it the API still
   reasons and still bills the tokens (visible as `usageMetadata.thoughtsTokenCount`)
-  while the stream carries answer parts only. `js/api/google_gemini.js` therefore sends
-  `includeThoughts` on every request except when `google_gemini_thinking_budget` is `0`,
-  which disables thinking outright — including when the pref is empty, since a
-  thinking-capable model reasoning on its model default must still show its block.
+  while the stream carries answer parts only. `js/api/google_gemini.js` sends
+  `includeThoughts` whenever a budget is set and is not `0` (which disables thinking
+  outright). When `google_gemini_thinking_budget` is **empty the entire `thinkingConfig`
+  is omitted**, because models without thinking support (the Gemini 2.0 family) reject
+  the key with an HTTP 400. The trade-off: a thinking-capable model reasoning on its own
+  default is not asked for `includeThoughts`, so its thinking block is not shown unless
+  the user sets a budget.
   `includeThoughts` is independent of `thinkingBudget`: the budget governs how much the
   model reasons, the flag whether that reasoning comes back.
 

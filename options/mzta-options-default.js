@@ -72,7 +72,13 @@ export const integration_options_config = {
         model: '',
         system_instruction: '',
         thinking_budget: '',
-        temperature: ''
+        temperature: '',
+        max_output_tokens: 0,
+        // Kept as strings, not numbers: an empty pref must stay distinguishable
+        // from a legitimate 0, which is a valid value for both.
+        top_p: '',
+        top_k: '',
+        extra_body: ''
     },
     anthropic: {
         api_key: '',

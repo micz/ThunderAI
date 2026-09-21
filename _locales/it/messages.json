@@ -1,4 +1,7 @@
 {
+    "prefs_api_extra_body": {
+        "message": "Dati aggiuntivi"
+    },
     "extensionDescription": {
         "message": "Usa ChatGPT, Google Gemini, Claude oppure Ollama per migliorare le tue email!",
         "description": "Description of the extension."
@@ -536,9 +539,6 @@
     },
     "prefs_extra_body_error_not_object": {
         "message": "Il valore deve essere un oggetto JSON, racchiuso tra parentesi graffe."
-    },
-    "prefs_OptionText_openai_comp_extra_body": {
-        "message": "Dati aggiuntivi del corpo"
     },
     "prefs_OptionText_openai_comp_extra_body_info": {
         "message": "Parametri aggiuntivi da inviare a ogni chiamata API, come oggetto JSON. Utile per le opzioni supportate da questo servizio ma non esposte da ThunderAI, come disattivare la modalità di ragionamento: {\"chat_template_kwargs\": {\"thinking\": false}} oppure {\"top_p\": 0.9}. I parametri gestiti da ThunderAI (model, messages, streaming, temperature) non possono essere sovrascritti qui. Un valore non valido viene ignorato."
@@ -1445,9 +1445,6 @@
     },
     "prefs_OptionText_chatgpt_reasoning_effort": {
         "message": "Livello di ragionamento"
-    },
-    "prefs_OptionText_chatgpt_extra_body": {
-        "message": "Dati aggiuntivi"
     },
     "prefs_OptionText_chatgpt_extra_body_info": {
         "message": "Parametri aggiuntivi da inviare a ogni chiamata API, come oggetto JSON, ad esempio {\"top_p\": 0.9}. Utile per le opzioni supportate dall'API di OpenAI ma non esposte da ThunderAI. I parametri gestiti da ThunderAI (model, input, streaming, temperature, reasoning, instructions) non possono essere sovrascritti qui. Un valore non valido viene ignorato."

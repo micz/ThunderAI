@@ -1,4 +1,7 @@
 {
+    "prefs_api_extra_body": {
+        "message": "Extra innehållsdata"
+    },
     "extensionDescription": {
         "message": "Använd ChatGPT, Google Gemini, Claude eller Ollama för att förbättra dina e-postmeddelanden!"
     },
@@ -2025,9 +2028,6 @@
     "prefs_OptionText_diff_granularity_info": {
         "message": "Hur ändringsväljaren jämför originaltexten med svaret. \"Ord\" passar för att korrigera stavning och grammatik; \"Meningar\" är lättare att läsa när svaret skriver om hela meningar. Observera att i en text som består av en enda mening visar \"Meningar\" hela texten som en ändring. Du kan också växla mellan de två medan du granskar ändringarna."
     },
-    "prefs_OptionText_openai_comp_extra_body": {
-        "message": "Extra innehållsdata"
-    },
     "prefs_OptionText_openai_comp_extra_body_info": {
         "message": "Ytterligare parametrar att skicka med varje API-anrop, som ett JSON-objekt. Användbart för alternativ som den här tjänsten stöder men som ThunderAI inte exponerar, som att inaktivera tänkandeläget: {\"chat_template_kwargs\": {\"thinking\": false}} eller {\"top_p\": 0.9}. Parametrarna som hanteras av ThunderAI (modell, meddelanden, strömning, temperatur) kan inte åsidosättas här. Ett ogiltigt värde ignoreras."
     },
@@ -2252,9 +2252,6 @@
     },
     "prefs_OptionText_chatgpt_reasoning_effort": {
         "message": "Resonemangsansträngning"
-    },
-    "prefs_OptionText_chatgpt_extra_body": {
-        "message": "Extra innehållsdata"
     },
     "prefs_OptionText_chatgpt_extra_body_info": {
         "message": "Ytterligare parametrar att skicka med varje API-anrop, som ett JSON-objekt, som {\"top_p\": 0.9}. Användbart för alternativ som OpenAI API stöder men ThunderAI inte exponerar. Parametrarna som hanteras av ThunderAI (modell, indata, strömning, temperatur, resonemang, instruktioner) kan inte åsidosättas här. Ett ogiltigt värde ignoreras."

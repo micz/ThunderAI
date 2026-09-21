@@ -1,4 +1,7 @@
 {
+    "prefs_api_extra_body": {
+        "message": "Data body tambahan"
+    },
     "extensionDescription": {
         "message": "Gunakan ChatGPT, Google Gemini, Claude, atau Ollama untuk menyempurnakan email Anda!"
     },
@@ -2432,9 +2435,6 @@
     "prefs_extra_body_error_not_object": {
         "message": "Nilai harus berupa objek JSON, diapit oleh kurung kurawal."
     },
-    "prefs_OptionText_openai_comp_extra_body": {
-        "message": "Data body tambahan"
-    },
     "prefs_OptionText_openai_comp_extra_body_info": {
         "message": "Parameter tambahan yang dikirim pada setiap panggilan API, sebagai objek JSON. Berguna untuk opsi yang didukung layanan ini tetapi tidak disediakan oleh ThunderAI, seperti menonaktifkan mode berpikir: {\"chat_template_kwargs\": {\"thinking\": false}} atau {\"top_p\": 0.9}. Parameter yang dikelola oleh ThunderAI (model, messages, streaming, temperature) tidak dapat ditimpa di sini. Nilai yang tidak valid akan diabaikan."
     },
@@ -2446,9 +2446,6 @@
     },
     "spamfilter_prompt_missing_explanation": {
         "message": "Prompt khusus Filter Spam tidak ditemukan. Jika Anda mengubah prompt khusus, coba pulihkan prompt Filter Spam bawaan."
-    },
-    "prefs_OptionText_chatgpt_extra_body": {
-        "message": "Data body tambahan"
     },
     "prefs_OptionText_chatgpt_extra_body_info": {
         "message": "Parameter tambahan yang dikirim pada setiap panggilan API, sebagai objek JSON, seperti {\"top_p\": 0.9}. Berguna untuk opsi yang didukung API OpenAI tetapi tidak disediakan oleh ThunderAI. Parameter yang dikelola oleh ThunderAI (model, input, streaming, temperature, reasoning, instructions) tidak dapat ditimpa di sini. Nilai yang tidak valid akan diabaikan."

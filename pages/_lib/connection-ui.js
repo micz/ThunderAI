@@ -357,7 +357,7 @@ export async function injectConnectionUI({
   <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
-        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_extra_body__</span>
+        <span class="opt_title">__MSG_prefs_api_extra_body__</span>
       </label>
     </td>
     <td>
@@ -371,7 +371,7 @@ export async function injectConnectionUI({
   <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
-        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_max_output_tokens__</span>
+        <span class="opt_title">__MSG_prefs_api_max_output_tokens__</span>
       </label>
     </td>
     <td>
@@ -384,7 +384,7 @@ export async function injectConnectionUI({
   <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
-        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_top_p__</span>
+        <span class="opt_title">__MSG_prefs_api_top_p__</span>
       </label>
     </td>
     <td>
@@ -586,6 +586,59 @@ export async function injectConnectionUI({
         <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_thinking_budget" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_thinking_budget" class="option-input"/>
         <br>__MSG_prefs_google_gemini_thinking_budget_Info__
         <br><a href="https://ai.google.dev/gemini-api/docs/thinking#set-budget">__MSG_more_info_string__</a>
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_max_output_tokens__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="number" min="1" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_max_output_tokens" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_max_output_tokens" class="option-input" />
+        <br>__MSG_prefs_google_gemini_max_output_tokens_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_top_p__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_top_p" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_top_p" class="option-input check-number"/>
+        <br>__MSG_prefs_google_gemini_top_p_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_top_k__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_top_k" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_top_k" class="option-input check-number"/>
+        <br>__MSG_prefs_google_gemini_top_k_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_extra_body__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_extra_body" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_extra_body" class="option-input option-textarea check-json"></textarea>
+        <div class="json_error" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_extra_body_error" hidden></div>
+        <br>__MSG_prefs_google_gemini_extra_body_Info__
       </label>
     </td>
   </tr>
@@ -840,7 +893,7 @@ export async function injectConnectionUI({
   <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
-        <span class="opt_title">__MSG_prefs_OptionText_openai_comp_extra_body__</span>
+        <span class="opt_title">__MSG_prefs_api_extra_body__</span>
       </label>
     </td>
     <td>
@@ -897,7 +950,7 @@ export async function injectConnectionUI({
   <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
-        <span class="opt_title">__MSG_prefs_OptionText_anthropic_top_p__</span>
+        <span class="opt_title">__MSG_prefs_api_top_p__</span>
       </label>
     </td>
     <td>
@@ -911,7 +964,7 @@ export async function injectConnectionUI({
   <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
-        <span class="opt_title">__MSG_prefs_OptionText_anthropic_top_k__</span>
+        <span class="opt_title">__MSG_prefs_api_top_k__</span>
       </label>
     </td>
     <td>

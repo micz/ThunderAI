@@ -1,4 +1,7 @@
 {
+    "prefs_api_extra_body": {
+        "message": "追加のボディデータ"
+    },
     "extensionDescription": {
         "message": "ChatGPT、Google Gemini、Claude、Ollama を使ってメールを強化しましょう!"
     },
@@ -645,9 +648,6 @@
     },
     "prefs_extra_body_error_not_object": {
         "message": "値は中括弧で囲まれたJSONオブジェクトである必要があります。"
-    },
-    "prefs_OptionText_openai_comp_extra_body": {
-        "message": "追加のボディデータ"
     },
     "prefs_OptionText_openai_comp_extra_body_info": {
         "message": "すべてのAPI呼び出しで送信する追加パラメーターをJSONオブジェクトで指定します。このサービスは対応しているがThunderAIが公開していないオプション、たとえば思考モードの無効化などに便利です: {\"chat_template_kwargs\": {\"thinking\": false}} または {\"top_p\": 0.9}。ThunderAIが管理するパラメーター（model、messages、streaming、temperature）はここで上書きできません。無効な値は無視されます。"
@@ -1579,9 +1579,6 @@
     },
     "prefs_OptionText_chatgpt_reasoning_effort": {
         "message": "推論の強度"
-    },
-    "prefs_OptionText_chatgpt_extra_body": {
-        "message": "追加のボディデータ"
     },
     "prefs_OptionText_chatgpt_extra_body_info": {
         "message": "すべてのAPI呼び出しで送信する追加パラメーターをJSONオブジェクトで指定します（例: {\"top_p\": 0.9}）。OpenAI APIは対応しているがThunderAIが公開していないオプションに便利です。ThunderAIが管理するパラメーター（model、input、streaming、temperature、reasoning、instructions）はここで上書きできません。無効な値は無視されます。"

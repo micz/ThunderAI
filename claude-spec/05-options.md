@@ -25,7 +25,7 @@ Stored flat in `prefs_default` with `{provider}_{key}` naming:
 chatgpt_api_key, chatgpt_model, chatgpt_developer_messages, chatgpt_temperature, chatgpt_store, chatgpt_reasoning_summary, chatgpt_reasoning_effort, chatgpt_extra_body, chatgpt_max_output_tokens, chatgpt_verbosity, chatgpt_text_format, chatgpt_text_format_schema_name, chatgpt_text_format_schema, chatgpt_top_p, chatgpt_truncation, chatgpt_prompt_cache_key, chatgpt_service_tier, chatgpt_safety_identifier, chatgpt_include_encrypted_reasoning
 ollama_host, ollama_api_key, ollama_model, ollama_num_ctx, ollama_temperature, ollama_think, ollama_format_json, ollama_keep_alive, ollama_system_prompt, ollama_extra_options
 openai_comp_host, openai_comp_model, openai_comp_api_key, openai_comp_use_v1, openai_comp_chat_name, openai_comp_temperature, openai_comp_extra_body
-google_gemini_api_key, google_gemini_model, google_gemini_system_instruction, google_gemini_thinking_budget, google_gemini_temperature
+google_gemini_api_key, google_gemini_model, google_gemini_system_instruction, google_gemini_thinking_budget, google_gemini_temperature, google_gemini_max_output_tokens, google_gemini_top_p, google_gemini_top_k, google_gemini_extra_body
 anthropic_api_key, anthropic_model, anthropic_version, anthropic_max_tokens, anthropic_system_prompt, anthropic_temperature, anthropic_top_p, anthropic_top_k, anthropic_stop_sequences, anthropic_extended_thinking_budget, anthropic_effort
 ```
 

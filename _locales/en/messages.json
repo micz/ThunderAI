@@ -857,10 +857,6 @@
     "message": "The value must be a JSON object, enclosed in curly braces.",
     "description": ""
   },
-  "prefs_OptionText_openai_comp_extra_body" : {
-    "message": "Extra body data",
-    "description": ""
-  },
   "prefs_OptionText_openai_comp_extra_body_info": {
     "message": "Additional parameters to send with every API call, as a JSON object. Useful for options this service supports but ThunderAI doesn't expose, like disabling the thinking mode: {\"chat_template_kwargs\": {\"thinking\": false}} or {\"top_p\": 0.9}. The parameters managed by ThunderAI (model, messages, streaming, temperature) can't be overridden here. An invalid value is ignored.",
     "description": ""
@@ -2003,16 +1999,8 @@
     "message": "The maximum number of tokens to generate in the completion. The token count of your prompt plus max_tokens cannot exceed the model's context length.",
     "description": ""
   },
-  "prefs_OptionText_anthropic_top_p": {
-    "message": "Top P",
-    "description": ""
-  },
   "prefs_OptionText_anthropic_top_p_Info": {
     "message": "Nucleus sampling: the model considers only the tokens whose cumulative probability reaches this value. Ranges from 0.0 to 1.0. Leave empty to use the model default. Anthropic recommends adjusting either Temperature or Top P, but not both. Newer Claude models do not accept this setting at all and use the Effort setting instead: when one of them is selected this field is disabled and its value is not sent.",
-    "description": ""
-  },
-  "prefs_OptionText_anthropic_top_k": {
-    "message": "Top K",
     "description": ""
   },
   "prefs_OptionText_anthropic_top_k_Info": {
@@ -2215,10 +2203,6 @@
     "message": "Reasoning effort",
     "description": ""
   },
-  "prefs_OptionText_chatgpt_extra_body": {
-    "message": "Extra body data",
-    "description": ""
-  },
   "prefs_OptionText_chatgpt_extra_body_info": {
     "message": "Additional parameters to send with every API call, as a JSON object, like {\"top_p\": 0.9}. Useful for options the OpenAI API supports but ThunderAI doesn't expose. The parameters managed by ThunderAI (model, input, streaming, temperature, reasoning, instructions) can't be overridden here. An invalid value is ignored.",
     "description": ""
@@ -2242,10 +2226,6 @@
   "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
     "message": "Detailed",
     "description": "Option for the reasoning summary dropdown: request a more detailed summary."
-  },
-  "prefs_OptionText_chatgpt_max_output_tokens": {
-    "message": "Max output tokens",
-    "description": ""
   },
   "prefs_OptionText_chatgpt_max_output_tokens_Info": {
     "message": "An upper bound on the number of tokens the model can generate for a response, including the reasoning tokens on reasoning models. The minimum accepted value is 16. Leave it empty or at 0 to let the API decide.",
@@ -2289,10 +2269,6 @@
   },
   "prefs_OptionText_chatgpt_text_format_schema_Info": {
     "message": "The JSON Schema the answer must follow, as a JSON object. Only used when the output format above is set to \"JSON schema\". An invalid value is ignored, and the output format is not sent.",
-    "description": ""
-  },
-  "prefs_OptionText_chatgpt_top_p": {
-    "message": "Top P",
     "description": ""
   },
   "prefs_OptionText_chatgpt_top_p_Info": {
@@ -2580,6 +2556,38 @@
   },
   "prefs_google_gemini_thinking_budget_Info": {
     "message": "Define the number of tokens to be used for thinking. Leave this field blank if the selected model does not support thinking or if you want to use the default method. Enter 0 to disable thinking, or -1 to enable dynamic thinking.",
+    "description": ""
+  },
+  "prefs_api_max_output_tokens": {
+    "message": "Max output tokens",
+    "description": ""
+  },
+  "prefs_api_top_p": {
+    "message": "Top P",
+    "description": ""
+  },
+  "prefs_api_top_k": {
+    "message": "Top K",
+    "description": ""
+  },
+  "prefs_api_extra_body": {
+    "message": "Extra body data",
+    "description": ""
+  },
+  "prefs_google_gemini_max_output_tokens_Info": {
+    "message": "The maximum number of tokens that can be generated in the response. Leave it empty or at 0 to let the model decide.",
+    "description": ""
+  },
+  "prefs_google_gemini_top_p_Info": {
+    "message": "Nucleus sampling: the model considers only the tokens whose cumulative probability reaches this value. The accepted range and the default value vary depending on the model. Leave it empty to avoid setting the parameter in the API call.",
+    "description": ""
+  },
+  "prefs_google_gemini_top_k_Info": {
+    "message": "Only sample from the top K options for each subsequent token, removing long tail low probability responses. Not every model supports this parameter. Leave it empty to avoid setting the parameter in the API call.",
+    "description": ""
+  },
+  "prefs_google_gemini_extra_body_Info": {
+    "message": "Additional parameters to send with every API call, as a JSON object. Useful for options the Gemini API supports but ThunderAI doesn't expose, like {\"safetySettings\": []} or {\"generationConfig\": {\"seed\": 42}}. Keys inside \"generationConfig\" are merged into the ones ThunderAI builds. The parameters managed by ThunderAI (contents, system instruction, thinking, temperature, max output tokens, top P, top K) can't be overridden here. An invalid value is ignored.",
     "description": ""
   },
   "prefs_google_gemini_temperature_Info": {
