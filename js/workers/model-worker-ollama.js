@@ -20,7 +20,7 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { Ollama } from '../api/ollama.js';
+import { Ollama, extractUsage } from '../api/ollama.js';
 import { taLogger } from '../mzta-logger.js';
 
 let ollama = null;
@@ -32,6 +32,23 @@ let taLog = null;
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
 let thinkingAccumulator = '';
+let usageData = null;
+
+// The usage captured for the last completed request. Accumulated here and nowhere
+// else: it is deliberately NOT posted anywhere yet, NOT appended to the response
+// text, and NOT pushed into conversationHistory -- the text the callers receive
+// must stay byte-identical to what it was before this layer existed.
+export function getUsageData() {
+    return usageData;
+}
+
+// Only the provider, the model and the token counts. Never the request URL or the
+// headers: Gemini and some OpenAI-compatible endpoints carry the API key in the
+// query string, and a header map carries it outright.
+function logUsageData(usage) {
+    if (!taLog || !taLog.do_debug || usage === null) return;
+    taLog.log("usage data captured: " + JSON.stringify(usage));
+}
 
 self.onmessage = async function(event) {
     switch (event.data.type) {
@@ -60,6 +77,7 @@ self.onmessage = async function(event) {
             break;  // init
         case 'chatMessage':
             conversationHistory.push({ role: 'user', content: event.data.message });
+            usageData = null;
             //console.log(">>>>>>>>>>> conversationHistory: " + JSON.stringify(conversationHistory));
             const response = await ollama.fetchResponse(conversationHistory); //4096);
             postMessage({ type: 'messageSent' });
@@ -148,6 +166,14 @@ self.onmessage = async function(event) {
                     }
             
                     for (const parsedLine of parsedLines) {
+                        // Only the final chunk (done === true) carries the counters;
+                        // extractUsage() returns null for every other one.
+                        const usage = extractUsage(parsedLine);
+                        if (usage !== null) {
+                            usageData = usage;
+                            logUsageData(usageData);
+                        }
+
                         const { message } = parsedLine;
                         const { content, thinking } = message;
                         // Update the UI with the new thinking content

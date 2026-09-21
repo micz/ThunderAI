@@ -19,6 +19,54 @@
 // Some original methods derived from https://github.com/ali-raheem/Aify/blob/4ece286095ea7a6cf89d696902e6b81b5d1c3a4b/plugin/html/API.js
 
 import { parseExtraBody } from './api-utils.js';
+import { createUsageData } from './mzta-api-usage.js';
+
+// Best effort: the OpenAI-compatible servers that implement the usage object do
+// so under the chat/completions names, but plenty of them never send one. See
+// extractUsage() and the stream_options note in fetchResponse().
+export const supportsUsageData = true;
+
+/**
+ * Normalize the usage an OpenAI-compatible server reports.
+ *
+ * The `usage` object sits at the top level of a full response or of the final
+ * streamed chunk -- and in a stream it is only emitted at all when the request
+ * asked for it through stream_options.include_usage (see fetchResponse()). A
+ * server that ignores that parameter simply never sends usage, and this returns
+ * null, which is the expected outcome rather than an error.
+ *
+ * Never throws: every access is guarded, because a partial or unexpected payload
+ * must not break the stream it is being read from.
+ *
+ * @param {object} raw a streamed chunk or a full response body
+ * @returns {object|null} the normalized usage, or null when there is none
+ */
+export function extractUsage(raw) {
+  try{
+    if(raw === null || typeof raw !== 'object') return null;
+
+    const usage = raw.usage;
+    if(usage === null || typeof usage !== 'object') return null;
+
+    const prompt_details = (usage.prompt_tokens_details !== null && typeof usage.prompt_tokens_details === 'object')
+      ? usage.prompt_tokens_details : {};
+    const completion_details = (usage.completion_tokens_details !== null && typeof usage.completion_tokens_details === 'object')
+      ? usage.completion_tokens_details : {};
+
+    return createUsageData({
+      provider: 'openai_comp',
+      model: raw.model,
+      input_tokens: usage.prompt_tokens,
+      output_tokens: usage.completion_tokens,
+      total_tokens: usage.total_tokens,
+      cached_input_tokens: prompt_details.cached_tokens,
+      reasoning_tokens: completion_details.reasoning_tokens,
+    });
+  }catch(error){
+    console.warn("[ThunderAI] OpenAI Comp usage data could not be read, ignoring it: " + error);
+    return null;
+  }
+}
 
 
 export class OpenAIComp {
@@ -104,6 +152,15 @@ export class OpenAIComp {
                 model: this.model,
                 messages: messages,
                 stream: this.stream,
+                // Streamed chat completions emit the `usage` object ONLY when the
+                // request asks for it, and the parameter is meaningless (some
+                // servers reject an unknown field outright) on a non-streamed call,
+                // so it is sent only while streaming. This must degrade gracefully:
+                // several compatible backends -- llama.cpp, LM Studio, a few
+                // OpenRouter models -- ignore it or never send usage anyway, and the
+                // request has to succeed all the same, with extractUsage() simply
+                // returning null.
+                ...(this.stream ? { 'stream_options': { 'include_usage': true } } : {}),
                 ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {}),
                 ...(this.temperature != '' && !Number.isNaN(tempFloat) ? { 'temperature': tempFloat } : {})
             }),

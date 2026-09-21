@@ -638,6 +638,87 @@ API calls require host permissions. These are declared as `optional_permissions`
 - `https://*.anthropic.com/*` for Claude
 - `https://*/*` and `http://*/*` for Ollama and OpenAI-compatible endpoints
 
+## Token usage data
+
+Every provider reports token counts under a different name and a different shape. `js/api/mzta-api-usage.js`
+normalizes them into one object, so nothing downstream has to know a provider's field names. Like
+`api-utils.js` it is **worker-safe**: no DOM, no `browser.*`/`messenger.*`.
+
+```js
+{
+  provider, model,
+  input_tokens, output_tokens, total_tokens,
+  cached_input_tokens, cache_creation_tokens,
+  reasoning_tokens, tokens_per_second,
+}
+```
+
+**`null` and `0` are not interchangeable, and this distinction carries all the way to the UI:**
+
+- `null` — the provider does **not** expose this metric
+- `0` — the provider reported zero
+
+A missing value is therefore never coerced to `0`. `createUsageData(fields)` defaults every absent key to
+`null` and computes `total_tokens` from the input/output pair **only** when both are numbers and no total was
+reported. `isUsageDataEmpty(usage)` is true when there is no object or every numeric field is `null`.
+`mergeUsageData(a, b)` merges two partial objects with `b`'s non-null values winning, recomputing the total —
+Anthropic needs it, because its input and output counts arrive on two different stream events.
+
+Display and formatting helpers deliberately live **outside** this module.
+
+### Per-provider support
+
+Each API module exports `supportsUsageData` (boolean) and, when true, `extractUsage(raw)`, which returns a
+normalized object or `null`. **`extractUsage()` must never throw**: it is called per streamed chunk, so a
+partial or unexpected payload must not break the stream it is reading. Every access is guarded and the body is
+wrapped in `try/catch`.
+
+`supportsUsageData(connection_type)` in `js/mzta-utils.js` answers the same question **by connection type**, so
+the UI can query it without importing every provider module. The two must stay in agreement. ChatGPT Web — and
+any other non-API web integration — is `false`: there is no API to report anything.
+
+| Provider | Populated | Always `null` |
+|---|---|---|
+| `chatgpt_api` (`openai_responses`) | input, output, total, cached_input, reasoning | cache_creation, tokens_per_second |
+| `anthropic_api` | input, output, total *(computed)*, cached_input, cache_creation | reasoning, tokens_per_second |
+| `google_gemini_api` | input, output, total, cached_input, reasoning | cache_creation, tokens_per_second |
+| `ollama_api` | input, output, total *(computed)*, tokens_per_second | cached_input, cache_creation, reasoning |
+| `openai_comp_api` | input, output, total, cached_input, reasoning *(all best effort)* | cache_creation, tokens_per_second |
+| `chatgpt_web` | — *(no extractor)* | everything |
+
+Where the data comes from, per provider:
+
+- **openai_responses** — `response.usage`. While streaming it exists **only** on the final `response.completed`
+  event, under `event.response.usage`; `extractUsage()` accepts both that event and a plain response body.
+- **anthropic** — split across two events: `message_start` carries the input tokens and both cache counters
+  (under `message.usage`), `message_delta` carries the output tokens (cumulative, so the last one wins). The
+  extractor returns a **partial** object and the worker combines the halves with `mergeUsageData()`.
+- **google_gemini** — `usageMetadata`, at the top level of a response or a chunk. In a stream it can appear on
+  several chunks and is **cumulative, not per-chunk**, so the last non-empty one replaces the previous. It can
+  ride on a chunk with no `candidates`, so the worker reads it **before** its candidates guard.
+- **ollama** — the final chunk of `/api/chat` (`done === true`). `tokens_per_second` is derived from
+  `eval_count / (eval_duration / 1e9)`, rounded to one decimal; a missing or zero duration yields `null`, never
+  `Infinity` or `NaN`.
+- **openai_comp** — `usage` on the response or the final streamed chunk, best effort. **A streamed response
+  emits it only when the request includes `stream_options: { include_usage: true }`**, which `fetchResponse()`
+  adds while streaming. Many compatible backends (llama.cpp, LM Studio, some OpenRouter models) ignore the
+  parameter or never send `usage` — the request must still succeed and `extractUsage()` simply returns `null`.
+  The usage frame is a frame with an **empty `choices` array**, so the worker reads it before its `choices`
+  guard.
+
+### Wiring in the workers
+
+Each worker keeps the accumulated usage in a module-level `usageData`, reset at the start of every
+`chatMessage`, and exposes it through `getUsageData()`.
+
+**As of this step the value is captured and nothing more.** It is not posted to any consumer, not appended to
+the response text, and never pushed into `conversationHistory` — the text callers receive is byte-identical to
+what it was before this layer existed, and no usage data is ever sent back to the API. Wiring it to the UI is a
+separate step.
+
+Capture is logged through `taLog` (debug-gated), carrying the **provider, model and token counts only**. Never
+log request URLs or headers: Gemini and some OpenAI-compatible endpoints carry the API key in the query string.
+
 ## Adding a New Provider
 
 1. Create `js/api/<provider>.js` with the API call logic
@@ -649,3 +730,4 @@ API calls require host permissions. These are declared as `optional_permissions`
 7. Add required host permissions to `manifest.json` optional_permissions
 8. Add i18n strings to `_locales/en/messages.json`
 9. Branch on `is_exception` in the worker's error block — see [Error contract between `js/api/*` and workers](#error-contract-between-jsapi-and-workers) above
+10. Export `supportsUsageData` and, when true, `extractUsage()` from the API module, add the connection type to `USAGE_DATA_SUPPORT` in `js/mzta-utils.js`, and accumulate the result in the worker — see [Token usage data](#token-usage-data) above

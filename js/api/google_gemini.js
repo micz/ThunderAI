@@ -18,6 +18,46 @@
 
 
 import { parseExtraBody } from './api-utils.js';
+import { createUsageData } from './mzta-api-usage.js';
+
+// The Gemini API reports token usage on every response.
+export const supportsUsageData = true;
+
+/**
+ * Normalize the usage the Gemini API reports.
+ *
+ * The counters live in `usageMetadata`, at the top level of a full response or of
+ * a streamed chunk. In a stream the object may appear on several chunks and is
+ * cumulative, not per-chunk, so the caller keeps the last non-empty one rather
+ * than adding them up.
+ *
+ * Never throws: every access is guarded, because a partial or unexpected payload
+ * must not break the stream it is being read from.
+ *
+ * @param {object} raw a streamed chunk or a full response body
+ * @returns {object|null} the normalized usage, or null when there is none
+ */
+export function extractUsage(raw) {
+  try{
+    if(raw === null || typeof raw !== 'object') return null;
+
+    const usage = raw.usageMetadata;
+    if(usage === null || typeof usage !== 'object') return null;
+
+    return createUsageData({
+      provider: 'google_gemini',
+      model: raw.modelVersion,
+      input_tokens: usage.promptTokenCount,
+      output_tokens: usage.candidatesTokenCount,
+      total_tokens: usage.totalTokenCount,
+      cached_input_tokens: usage.cachedContentTokenCount,
+      reasoning_tokens: usage.thoughtsTokenCount,
+    });
+  }catch(error){
+    console.warn("[ThunderAI] Google Gemini usage data could not be read, ignoring it: " + error);
+    return null;
+  }
+}
 
 export class GoogleGemini {
 

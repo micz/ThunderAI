@@ -23,12 +23,62 @@ import {
   ANTHROPIC_EFFORT_LEVELS,
   ANTHROPIC_DEFAULT_EFFORT
 } from './anthropic_model_capabilities.js';
+import { createUsageData, isUsageDataEmpty } from './mzta-api-usage.js';
 
 // Smallest extended thinking budget the Messages API accepts. Anything lower is
 // rejected with a 400, so the request builder drops the budget below it and the
 // options page warns about it -- both read this constant, so the two rules cannot
 // drift apart.
 export const ANTHROPIC_MIN_THINKING_BUDGET = 1024;
+
+// The Messages API reports token usage on every response.
+export const supportsUsageData = true;
+
+/**
+ * Normalize the usage the Messages API reports.
+ *
+ * The streamed usage is split across two events, so this returns a PARTIAL
+ * object and the caller combines the pieces with mergeUsageData():
+ *   - `message_start` carries the input tokens and the two cache counters, under
+ *     event.message.usage;
+ *   - `message_delta` carries the output tokens, under event.usage. That count is
+ *     cumulative, so the last event simply wins.
+ * A non-streamed body holds both halves in its top-level `usage` object and is
+ * accepted by the same code path.
+ *
+ * Never throws: every access is guarded, because a partial or unexpected payload
+ * must not break the stream it is being read from.
+ *
+ * @param {object} raw a stream event or a full response body
+ * @returns {object|null} the normalized (possibly partial) usage, or null
+ */
+export function extractUsage(raw) {
+  try{
+    if(raw === null || typeof raw !== 'object') return null;
+
+    // message_start nests both the usage and the model inside `message`; the other
+    // shapes keep them at the top level.
+    const source = (raw.message !== null && typeof raw.message === 'object') ? raw.message : raw;
+    const usage = source.usage;
+    if(usage === null || typeof usage !== 'object') return null;
+
+    const partial = createUsageData({
+      provider: 'anthropic',
+      model: source.model,
+      input_tokens: usage.input_tokens,
+      output_tokens: usage.output_tokens,
+      cached_input_tokens: usage.cache_read_input_tokens,
+      cache_creation_tokens: usage.cache_creation_input_tokens,
+    });
+
+    // A usage object holding no counter at all -- some events carry an empty one --
+    // is worth nothing to the caller and would only overwrite a model already known.
+    return isUsageDataEmpty(partial) ? null : partial;
+  }catch(error){
+    console.warn("[ThunderAI] Claude usage data could not be read, ignoring it: " + error);
+    return null;
+  }
+}
 
 
 export class Anthropic {

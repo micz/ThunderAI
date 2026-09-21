@@ -20,7 +20,8 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { GoogleGemini } from '../api/google_gemini.js';
+import { GoogleGemini, extractUsage } from '../api/google_gemini.js';
+import { isUsageDataEmpty } from '../api/mzta-api-usage.js';
 import { taLogger } from '../mzta-logger.js';
 
 let google_gemini = null;
@@ -32,6 +33,23 @@ let taLog = null;
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
 let thinkingAccumulator = '';
+let usageData = null;
+
+// The usage captured for the last completed request. Accumulated here and nowhere
+// else: it is deliberately NOT posted anywhere yet, NOT appended to the response
+// text, and NOT pushed into conversationHistory -- the text the callers receive
+// must stay byte-identical to what it was before this layer existed.
+export function getUsageData() {
+    return usageData;
+}
+
+// Only the provider, the model and the token counts. Never the request URL or the
+// headers: Gemini and some OpenAI-compatible endpoints carry the API key in the
+// query string, and a header map carries it outright.
+function logUsageData(usage) {
+    if (!taLog || !taLog.do_debug || usage === null) return;
+    taLog.log("usage data captured: " + JSON.stringify(usage));
+}
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
@@ -49,6 +67,7 @@ self.onmessage = async function(event) {
         taLog = new taLogger('model-worker-google_gemini', do_debug);
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', parts: [{"text": event.data.message}] });
+        usageData = null;
 
         const response = await google_gemini.fetchResponse(conversationHistory);
         postMessage({ type: 'messageSent' });
@@ -135,6 +154,16 @@ self.onmessage = async function(event) {
             }
     
             for (const parsedLine of parsedLines) {
+                // Read before the candidates guard below, not after: usageMetadata can
+                // ride on a chunk that carries no candidates at all, and that guard
+                // skips the whole chunk. The metadata is cumulative rather than
+                // per-chunk, so the last non-empty one simply replaces the previous.
+                const usage = extractUsage(parsedLine);
+                if (usage !== null && !isUsageDataEmpty(usage)) {
+                    usageData = usage;
+                    logUsageData(usageData);
+                }
+
                 const { candidates } = parsedLine;
 
                 if (!Array.isArray(candidates) || candidates.length === 0) {

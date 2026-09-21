@@ -20,7 +20,7 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { OpenAI } from '../api/openai_responses.js';
+import { OpenAI, extractUsage } from '../api/openai_responses.js';
 import { taLogger } from '../mzta-logger.js';
 
 let openai = null;
@@ -33,6 +33,23 @@ let conversationHistory = [];
 let assistantResponseAccumulator = '';
 let thinkingAccumulator = '';
 let previous_response_id = null;
+let usageData = null;
+
+// The usage captured for the last completed request. Accumulated here and nowhere
+// else: it is deliberately NOT posted anywhere yet, NOT appended to the response
+// text, and NOT pushed into conversationHistory -- the text the callers receive
+// must stay byte-identical to what it was before this layer existed.
+export function getUsageData() {
+    return usageData;
+}
+
+// Only the provider, the model and the token counts. Never the request URL or the
+// headers: Gemini and some OpenAI-compatible endpoints carry the API key in the
+// query string, and a header map carries it outright.
+function logUsageData(usage) {
+    if (!taLog || !taLog.do_debug || usage === null) return;
+    taLog.log("usage data captured: " + JSON.stringify(usage));
+}
 
 // Reasoning stream events: reasoning_summary_text.delta carries the summary the
 // Responses API exposes for the o-series / gpt-5 models, while some models emit
@@ -63,6 +80,7 @@ self.onmessage = async function(event) {
         previous_response_id = null;
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', content: event.data.message });
+        usageData = null;
 
         let messagesToSend = conversationHistory;
         if (previous_response_id) {
@@ -178,8 +196,14 @@ self.onmessage = async function(event) {
                         thinkingAccumulator += summary_text;
                         postMessage({ type: 'newThinkingToken', payload: { token: summary_text } });
                     }
-                // } else if (parsedLine.type === 'response.completed' && parsedLine.response && parsedLine.response.id) {
-                //     previous_response_id = parsedLine.response.id;
+                } else if (parsedLine.type === 'response.completed') {
+                    // The usage only ever arrives here, on the final event, under
+                    // event.response.usage.
+                    const usage = extractUsage(parsedLine);
+                    if (usage !== null) {
+                        usageData = usage;
+                        logUsageData(usageData);
+                    }
                 } else if (parsedLine.type === 'response.failed' && parsedLine.response && parsedLine.response.error) {
                     const error = parsedLine.response.error;
                     const errorMessage = error.message || JSON.stringify(error);

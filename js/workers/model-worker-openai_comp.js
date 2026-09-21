@@ -20,7 +20,7 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { OpenAIComp } from '../api/openai_comp.js';
+import { OpenAIComp, extractUsage } from '../api/openai_comp.js';
 import { taLogger } from '../mzta-logger.js';
 
 let openai_comp = null;
@@ -32,6 +32,23 @@ let taLog = null;
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
 let thinkingAccumulator = '';
+let usageData = null;
+
+// The usage captured for the last completed request. Accumulated here and nowhere
+// else: it is deliberately NOT posted anywhere yet, NOT appended to the response
+// text, and NOT pushed into conversationHistory -- the text the callers receive
+// must stay byte-identical to what it was before this layer existed.
+export function getUsageData() {
+    return usageData;
+}
+
+// Only the provider, the model and the token counts. Never the request URL or the
+// headers: Gemini and some OpenAI-compatible endpoints carry the API key in the
+// query string, and a header map carries it outright.
+function logUsageData(usage) {
+    if (!taLog || !taLog.do_debug || usage === null) return;
+    taLog.log("usage data captured: " + JSON.stringify(usage));
+}
 
 // Reasoning field names used by the various OpenAI-compatible servers, in priority
 // order: reasoning_content (DeepSeek, vLLM, SGLang), reasoning (OpenRouter, which
@@ -70,6 +87,7 @@ self.onmessage = async function(event) {
         taLog = new taLogger('model-worker-openai_comp', do_debug);
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', content: event.data.message });
+        usageData = null;
 
     const response = await openai_comp.fetchResponse(conversationHistory); //4096);
         postMessage({ type: 'messageSent' });
@@ -158,6 +176,15 @@ self.onmessage = async function(event) {
             }
     
             for (const parsedLine of parsedLines) {
+                // Read before the `choices` guard below, not after: the frame that
+                // carries the usage is precisely a frame with an empty choices array,
+                // which that guard skips. Absent on the many servers that ignore
+                // stream_options.include_usage, and that is fine.
+                const usage = extractUsage(parsedLine);
+                if (usage !== null) {
+                    usageData = usage;
+                    logUsageData(usageData);
+                }
                 const { choices } = parsedLine;
                 if (!choices || choices.length === 0) {
                     // Debug-gated, unlike most warn() calls: a frame without choices is

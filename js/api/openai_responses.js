@@ -20,6 +20,54 @@
 
 import { parseExtraBody } from './api-utils.js';
 import { getOpenAIModelCapabilities } from './openai_model_capabilities.js';
+import { createUsageData } from './mzta-api-usage.js';
+
+// The Responses API reports token usage on every response.
+export const supportsUsageData = true;
+
+/**
+ * Normalize the usage the Responses API reports.
+ *
+ * Accepts either shape, so the streaming worker and a non-streamed caller can
+ * share one extractor:
+ *   - a streamed event, whose usage lives on event.response.usage and is only
+ *     present on the final `response.completed` event;
+ *   - a plain response body, whose usage is at the top level.
+ *
+ * Never throws: every access is guarded, because a partial or unexpected payload
+ * must not break the stream it is being read from.
+ *
+ * @param {object} raw a stream event or a full response body
+ * @returns {object|null} the normalized usage, or null when there is none
+ */
+export function extractUsage(raw) {
+  try{
+    if(raw === null || typeof raw !== 'object') return null;
+
+    // A streamed event carries the response (and therefore the usage) one level down.
+    const response = (raw.response !== null && typeof raw.response === 'object') ? raw.response : raw;
+    const usage = response.usage;
+    if(usage === null || typeof usage !== 'object') return null;
+
+    const input_details = (usage.input_tokens_details !== null && typeof usage.input_tokens_details === 'object')
+      ? usage.input_tokens_details : {};
+    const output_details = (usage.output_tokens_details !== null && typeof usage.output_tokens_details === 'object')
+      ? usage.output_tokens_details : {};
+
+    return createUsageData({
+      provider: 'openai_responses',
+      model: response.model,
+      input_tokens: usage.input_tokens,
+      output_tokens: usage.output_tokens,
+      total_tokens: usage.total_tokens,
+      cached_input_tokens: input_details.cached_tokens,
+      reasoning_tokens: output_details.reasoning_tokens,
+    });
+  }catch(error){
+    console.warn("[ThunderAI] OpenAI Responses usage data could not be read, ignoring it: " + error);
+    return null;
+  }
+}
 
 // The API rejects a max_output_tokens below this value, so a smaller number is
 // treated as "not configured" rather than sent and refused.
