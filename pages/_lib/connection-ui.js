@@ -506,10 +506,13 @@ export async function injectConnectionUI({
       <span class="opt_title">__MSG_prefs_ollama_format_json__</span>
     </label></td>
     <td>
-      <label>
-        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_format_json" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_format_json" class="option-input"/>
-        __MSG_prefs_ollama_format_json_Info__
-      </label>
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <label class="mzta_switch">
+          <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_format_json" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_format_json" class="option-input"/>
+          <span class="track"></span>
+        </label>
+        <span>__MSG_prefs_ollama_format_json_Info__</span>
+      </div>
     </td>
   </tr>
   <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
