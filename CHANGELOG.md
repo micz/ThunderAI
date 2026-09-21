@@ -3,7 +3,6 @@
 
 <h2>Version 5.1.0 - ??/??/2026</h2>
       <ul>
-        <li>Fix: the ThunderAI actions no longer fail silently when the message pane is not visible, like when it is hidden with F8, when no email is displayed or when more emails are selected. The summarize command from the context menu now opens the AI chat window in that case, the add tags command no longer assigns the tags without showing the confirmation dialog, and the other actions stop cleanly instead of leaving the working indicator spinning [<a href="https://github.com/micz/ThunderAI/issues/901">#901</a>].</li>
         <li>The settings are now saved in the local storage of Thunderbird. The existing settings are migrated automatically at the first start, and the synchronized copy is left in place, so nothing is lost if an older version is reinstalled [<a href="https://github.com/micz/ThunderAI/issues/884">#884</a>].</li>
         <li><i>[Ollama API]</i> The Ollama options have been expanded and now adapt to the selected model: the thinking option became a reasoning level, and a System Prompt, a Keep model loaded (keep_alive) option, an Extra options field for additional parameters and an optional API Key have been added [<a href="https://github.com/micz/ThunderAI/issues/502">#502</a>].</li>
         <li><i>[Ollama API]</i> Fix: the context size is now correctly sent to the server when both the context size and the temperature options are set. Previously the context size was silently ignored in that case, and the model ran with its default context size.</li>
