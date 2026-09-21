@@ -248,6 +248,40 @@ messages-area {
     display: none;
 }
 
+/* Session token total. Sits to the LEFT of the API chip, both pushed to the
+   right edge by that chip's margin-left:auto — so this one stays in the normal
+   flow and needs no margin of its own. Muted and quiet: it updates after every
+   answer and must not compete with the model chip for attention. */
+#appHeaderUsage {
+    font-size: .6875rem;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: var(--r-pill);
+    white-space: nowrap;
+    color: var(--ink-3);
+    background: var(--hover);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    /* Not answer text: excluded from any selection dragged across the window. */
+    user-select: none;
+    -moz-user-select: none;
+    cursor: default;
+    /* Ahead of the API chip, which claims the right edge with margin-left:auto. */
+    margin-left: auto;
+    margin-right: 8px;
+}
+
+#appHeaderUsage[hidden] {
+    display: none;
+}
+
+/* With the usage chip present it is the one claiming the right edge, so the API
+   chip must give its auto margin up or the two would be pushed apart. */
+#appHeaderUsage:not([hidden]) ~ #appHeaderApi {
+    margin-left: 0;
+}
+
 #appHeaderModel:empty {
     display: none;
 }

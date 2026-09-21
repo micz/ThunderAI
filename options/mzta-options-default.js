@@ -159,6 +159,10 @@ export const prefs_default = {
     dynamic_menu_force_enter: false,
     placeholders_use_default_value: false,
     hide_thinking: true,
+    // Show the token counts the API reports under each answer in the chat, plus a
+    // session total in the header. Off by default: it is extra chrome most users do
+    // not want, and the web-only integrations cannot report it at all.
+    chat_show_usage_data: false,
     api_webchat_font_scale: 1.0,   // font zoom factor for the API webchat (1.0 = 100%)
     // Default comparison unit of the proofreading change picker: 'words' or
     // 'sentences'. A prompt can override it; '' on a prompt means "inherit this".

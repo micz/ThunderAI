@@ -31,7 +31,8 @@ import {
   hasNoConnectionSelected,
   setTomSelectBorder,
   getMiczItUrl,
-  getCacheStorageUsedSpace
+  getCacheStorageUsedSpace,
+  supportsUsageData
 } from '../js/mzta-utils.js';
 import { taStorage } from '../js/mzta-storage.js';
 import {
@@ -212,6 +213,40 @@ function disable_MaxPromptLength(){
   maxPromptLength.disabled = (conntype_select.value === "chatgpt_web") || hasNoConnectionSelected(conntype_select.value);
   let maxPromptLength_tr = document.getElementById('max_prompt_length_tr');
   maxPromptLength_tr.style.display = (maxPromptLength.disabled) ? 'none' : '';
+}
+
+// Show the "Show usage data in chat" row only when at least one integration that
+// could actually report those counts is configured: the global connection, or any
+// per-feature specific integration. A web-only setup (ChatGPT Web and nothing else)
+// never sees the row, because no web interface exposes token counts.
+//
+// The per-feature integrations are included even though they drive the automatic
+// features, which have no chat UI: a feature integration is still a "currently
+// configured integration", and hiding the row while one is set would be arbitrary.
+// prefs_opt is the same snapshot the feature rows read; the live select value wins
+// over its stored connection_type, since this runs in reaction to that select.
+function disable_ChatShowUsageData(prefs_opt){
+  let row = document.getElementById('chat_show_usage_data_tr');
+  if(!row) return;
+  let conntype_select = document.getElementById('connection_type');
+  const global_type = conntype_select ? conntype_select.value : '';
+
+  // Every connection type in play: the global one plus each feature that opted out
+  // of it. getConnectionType() falls back to the global type on its own, so a feature
+  // without a specific integration simply repeats it -- harmless for an "any of" test.
+  const tempPrefs = { ...prefs_opt, connection_type: global_type };
+  const types = [global_type];
+  for(const prefix of special_prompts_with_integration){
+    types.push(getConnectionType(tempPrefs, null, prefix));
+  }
+
+  const visible = types.some(t => supportsUsageData(t));
+  row.style.display = visible ? '' : 'none';
+
+  // The note about server-dependent availability belongs to the OpenAI Compatible
+  // endpoints alone, so it follows the types actually in use rather than the row.
+  let note = document.getElementById('chat_show_usage_data_openai_comp_note');
+  if(note) note.style.display = types.includes('openai_comp_api') ? '' : 'none';
 }
 
 // Show the "Manage settings" link for a feature only when its flag is enabled;
@@ -707,6 +742,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", () => disable_Summarize(prefs_opt));
   conntype_select.addEventListener("change", () => disable_Translate(prefs_opt));
   conntype_select.addEventListener("change", () => disable_GetCalendarEvent(prefs_opt));
+  conntype_select.addEventListener("change", () => disable_ChatShowUsageData(prefs_opt));
   conntype_select.addEventListener("change", updateDescription);
   conntype_select.addEventListener("change", updateConnPanelTint);
 
@@ -725,6 +761,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   disable_Summarize(prefs_opt);
   disable_Translate(prefs_opt);
   disable_GetCalendarEvent(prefs_opt);
+  disable_ChatShowUsageData(prefs_opt);
   updateSpecificApiIndicators(prefs_opt);
 
   browser.storage.onChanged.addListener(async (changes, area) => {
@@ -747,6 +784,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       disable_Summarize(prefs_opt);
       disable_Translate(prefs_opt);
       await disable_GetCalendarEvent(prefs_opt);
+      disable_ChatShowUsageData(prefs_opt);
     }
   });
 

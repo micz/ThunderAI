@@ -13,6 +13,10 @@
                 <span id="appHeaderName">ThunderAI</span>
             </span>
             <span id="appHeaderModel"></span>
+            <!-- Cumulative token usage for this chat. Hidden until the first
+                 response reports something, and never shown at all when the
+                 option is off or the integration cannot report usage. -->
+            <span id="appHeaderUsage" hidden></span>
             <span id="appHeaderApi" hidden><span class="pill_dot"></span><span id="appHeaderApiName"></span></span>
         </div>
         <messages-area></messages-area>

@@ -22,6 +22,7 @@
 
 import { Ollama, extractUsage } from '../api/ollama.js';
 import { taLogger } from '../mzta-logger.js';
+import { initUsageEmitter, nextUsageMessageId, postUsageData } from './usage-emitter.js';
 
 let ollama = null;
 let stopStreaming = false;
@@ -33,6 +34,10 @@ let conversationHistory = [];
 let assistantResponseAccumulator = '';
 let thinkingAccumulator = '';
 let usageData = null;
+
+// The id the window binds this response's usage badge to. Assigned when the
+// request goes out, so the 'usage' message and the answer it belongs to agree.
+let usageMessageId = null;
 
 // The usage captured for the last completed request. Accumulated here and nowhere
 // else: it is deliberately NOT posted anywhere yet, NOT appended to the response
@@ -74,10 +79,12 @@ self.onmessage = async function(event) {
             do_debug = event.data.do_debug;
             i18nStrings = event.data.i18nStrings;
             taLog = new taLogger('model-worker-ollama', do_debug);
+            initUsageEmitter(event.data);
             break;  // init
         case 'chatMessage':
             conversationHistory.push({ role: 'user', content: event.data.message });
             usageData = null;
+            usageMessageId = nextUsageMessageId();
             //console.log(">>>>>>>>>>> conversationHistory: " + JSON.stringify(conversationHistory));
             const response = await ollama.fetchResponse(conversationHistory); //4096);
             postMessage({ type: 'messageSent' });
@@ -119,6 +126,8 @@ self.onmessage = async function(event) {
                         taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
                         conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                         assistantResponseAccumulator = '';
+                        // Separate from tokensDone and free of any response text: see usage-emitter.js.
+                        postUsageData(usageData, usageMessageId);
                         postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
                         thinkingAccumulator = '';
 
@@ -130,6 +139,8 @@ self.onmessage = async function(event) {
                         taLog.log("AI full response: " + assistantResponseAccumulator);
                         conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                         assistantResponseAccumulator = '';
+                        // Separate from tokensDone and free of any response text: see usage-emitter.js.
+                        postUsageData(usageData, usageMessageId);
                         postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
                         thinkingAccumulator = '';
                         break;

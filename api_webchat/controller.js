@@ -22,7 +22,7 @@
 
 import { prefs_default, integration_options_config } from '../options/mzta-options-default.js';
 import { placeholdersUtils } from '../js/mzta-placeholders.js';
-import { getAPIsInitMessageString, convertNewlinesToBr } from '../js/mzta-utils.js';
+import { getAPIsInitMessageString, convertNewlinesToBr, supportsUsageData } from '../js/mzta-utils.js';
 import { loadPrompt } from '../js/mzta-prompts.js';
 import { buildChatBubbleIcon } from './svgIcons.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
@@ -117,7 +117,11 @@ if (worker) {
         const integration_prefix = integration;
         const options_config = integration_options_config[integration];
         
-        let prefsToGet = { do_debug: prefs_default.do_debug, hide_thinking: prefs_default.hide_thinking };
+        let prefsToGet = {
+            do_debug: prefs_default.do_debug,
+            hide_thinking: prefs_default.hide_thinking,
+            chat_show_usage_data: prefs_default.chat_show_usage_data,
+        };
         for (const key in options_config) {
             prefsToGet[`${integration_prefix}_${key}`] = prefs_default[`${integration_prefix}_${key}`];
         }
@@ -160,6 +164,11 @@ if (worker) {
         }
         messagesArea.setLLMName(llmName);
         messagesArea.setHideThinking(!!prefs_api.hide_thinking);
+        // Only integrations that can report token counts get the usage UI at all:
+        // the option row is hidden for the web-only setups, but a stale "on" value
+        // from a previous provider must not resurrect an empty session counter here.
+        const show_usage = !!prefs_api.chat_show_usage_data && supportsUsageData(llm);
+        messagesArea.setShowUsageData(show_usage);
 
         // Shared by the header chip and the startup info message below.
         const api_strings = {
@@ -196,6 +205,9 @@ if (worker) {
             type: 'init',
             do_debug: prefs_api.do_debug,
             i18nStrings: i18nStrings,
+            // Gates the 'usage' message at the source: with this false the worker
+            // still extracts and debug-logs the usage, but emits nothing.
+            chat_show_usage_data: show_usage,
         };
 
         for (const key in options_config) {
@@ -335,6 +347,12 @@ worker.onmessage = async function(event) {
         case 'newThinkingToken':
             messagesArea.handleNewThinkingToken(payload.token);
             messageInput.showStreamingStatus();
+            break;
+        case 'usage':
+            // A message of its own, carrying no response text. Handled BEFORE the
+            // turn is closed by 'tokensDone', which the worker guarantees by posting
+            // this first.
+            messagesArea.handleUsageData(event.data.messageId, payload);
             break;
         case 'tokensDone':
             await messagesArea.handleTokensDone(promptData);

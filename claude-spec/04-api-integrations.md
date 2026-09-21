@@ -711,13 +711,69 @@ Where the data comes from, per provider:
 Each worker keeps the accumulated usage in a module-level `usageData`, reset at the start of every
 `chatMessage`, and exposes it through `getUsageData()`.
 
-**As of this step the value is captured and nothing more.** It is not posted to any consumer, not appended to
-the response text, and never pushed into `conversationHistory` — the text callers receive is byte-identical to
-what it was before this layer existed, and no usage data is ever sent back to the API. Wiring it to the UI is a
-separate step.
+The value is **never appended to the response text and never pushed into `conversationHistory`** — the text
+callers receive is byte-identical to what it was before this layer existed, and no usage data is ever sent back
+to the API on the next turn. That invariant is the whole contract; everything below only adds a display path.
 
 Capture is logged through `taLog` (debug-gated), carrying the **provider, model and token counts only**. Never
 log request URLs or headers: Gemini and some OpenAI-compatible endpoints carry the API key in the query string.
+
+### Emitting to the chat window
+
+`js/workers/usage-emitter.js` is the single place a worker hands its usage to the chat window. Each worker ends
+a response in two or three different places (end of stream, user stop, a provider-specific terminal event) and
+each of them posts `tokensDone`; routing the usage through one helper is what keeps those ten call sites from
+drifting apart.
+
+- `initUsageEmitter(event.data)` — called from the worker's `init` branch; reads the `chat_show_usage_data`
+  flag the controller puts on the init message.
+- `nextUsageMessageId()` — called once per response, next to the `usageData = null` reset, so the emitted id
+  and the answer it belongs to agree.
+- `postUsageData(usageData, usageMessageId)` — called immediately **before** every `postMessage({type:
+  'tokensDone'})`.
+
+The message is `{ type: 'usage', messageId, payload }`, **separate from `tokensDone` and carrying no text**.
+Nothing is emitted when the option is off, when the provider reported nothing, or when `isUsageDataEmpty()` is
+true — extraction and the debug log still run in all three cases.
+
+Ordering matters: the usage is posted **before** `tokensDone` because the window renders the badge into the
+turn that `tokensDone` then closes. Worker messages are delivered in order, so posting first is sufficient.
+
+### Rendering in the chat window
+
+`api_webchat/usageBadge.js` holds the whole display layer (`js/api/mzta-api-usage.js` must stay DOM-free). It
+builds the compact line `↑ 1,234 · ↓ 567 · Σ 1,801`, the multi-line `title` tooltip, and the session-total
+accumulator. The **null / 0 distinction is carried all the way through**: a null field is omitted entirely, a 0
+is printed, and `addUsageToTotals()` skips nulls rather than adding them as 0.
+
+`MessagesArea.handleUsageData()` appends the badge to `.turn-body` as a **sibling of the `.message` element,
+after it — never inside it**. That placement is the structural half of the guarantee that the badge cannot be
+picked up by anything that reads an answer back out of the DOM; the `data-mzta-usage` attribute
+(`USAGE_MARKER_ATTR`) is the other half.
+
+The extraction paths and why each is safe:
+
+| Path | Source | Why the badge cannot reach it |
+|---|---|---|
+| Copy button | `fullTextHTMLAtAssignment` | An immutable string snapshotted at flush time, never read from the DOM |
+| "Use this answer" / reply | same snapshot, or `picker.composeResultHTML()` | Same; the picker owns content handed to it, in its own shadow root |
+| Save as summary | same snapshot | Same |
+| Diff picker | same snapshot + `prompt_info` | Same |
+| An explicit text selection | `getCurrentSelectionText()` | `user-select: none`, plus the badge's text is subtracted from `selection.toString()` if one was caught anyway |
+| An explicit HTML selection | `getCurrentSelectionHTML()` | `_cloneSelectionWithoutUsage()` removes every `[data-mzta-usage]` node from the cloned range |
+
+`getCurrentSelectionText()` deliberately still returns `selection.toString()` on the normal path rather than
+`textContent` over the scrubbed clone: `toString()` inserts the line breaks between blocks that a bare
+`textContent` would drop, and changing it would alter what the copy button produces for multi-paragraph
+selections.
+
+The **session total** is a cumulative counter in the window header (`#appHeaderUsage`, in the light DOM, so it
+is reached through `document` and not through the shadow root). One chat window is one chat, so a fresh window
+starts from a fresh accumulator and there is nothing to reset between chats. `tokens_per_second` is summed into
+the totals object for shape consistency but dropped before display: the sum of per-turn rates is meaningless.
+
+The **automatic features** (spam filter, tagging, …) have no chat UI and are unaffected: their usage stays in
+the `taLog` debug output.
 
 ## Adding a New Provider
 
@@ -731,3 +787,4 @@ log request URLs or headers: Gemini and some OpenAI-compatible endpoints carry t
 8. Add i18n strings to `_locales/en/messages.json`
 9. Branch on `is_exception` in the worker's error block — see [Error contract between `js/api/*` and workers](#error-contract-between-jsapi-and-workers) above
 10. Export `supportsUsageData` and, when true, `extractUsage()` from the API module, add the connection type to `USAGE_DATA_SUPPORT` in `js/mzta-utils.js`, and accumulate the result in the worker — see [Token usage data](#token-usage-data) above
+11. Wire the worker to `js/workers/usage-emitter.js`: `initUsageEmitter()` in the `init` branch, `nextUsageMessageId()` beside the `usageData` reset, and `postUsageData()` before **every** `tokensDone` — see [Emitting to the chat window](#emitting-to-the-chat-window) above

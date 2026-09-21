@@ -31,6 +31,10 @@ import {
     buildSaveIcon, buildUseAnswerIcon, buildScrollToBottomIcon,
 } from './svgIcons.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
+import {
+    buildUsageBadge, buildSessionTotalText, addUsageToTotals, createSessionTotals,
+    USAGE_MARKER_ATTR,
+} from './usageBadge.js';
 const messagesAreaTemplate = document.createElement('template');
 
 const messagesAreaStyle = document.createElement('style');
@@ -152,6 +156,26 @@ messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
     .message p:last-child{
         margin-bottom: 0;
     }
+    /* ---- token usage badge ----
+       A sibling of .message inside .turn-body, never a descendant of it: every
+       helper that reads an answer out of the DOM walks the message element, so
+       keeping the badge outside is the structural half of the guarantee that it
+       can never be copied, inserted into a reply or fed back to the model. The
+       [data-mzta-usage] attribute is the other half, for the selection paths
+       that start from the user's own range instead of from an element. */
+    .mzta-usage-badge {
+        margin-top: 6px;
+        font-size: .6875rem;
+        line-height: 1.4;
+        color: var(--ink-3);
+        font-variant-numeric: tabular-nums;
+        /* Not answer text: keep it out of any selection the user drags across
+           the transcript, so a select-all + copy cannot pick it up either. */
+        user-select: none;
+        -moz-user-select: none;
+        cursor: default;
+    }
+
     .token {
         display: inline;
         opacity: 0;
@@ -424,6 +448,12 @@ class MessagesArea extends HTMLElement {
         // handleTokensDone, so each turn's flushed HTML snapshot is isolated.
         this._streaming = null;
         this.hideThinking = false;
+        // Token usage UI, off until controller.js enables it: the option must be on
+        // AND the integration must be one that can report the counts.
+        this.showUsageData = false;
+        // Running per-chat totals, allocated only once the feature is enabled. One
+        // window is one chat, so there is nothing to reset between chats.
+        this.sessionUsageTotals = null;
         // Live "Thinking..." placeholder element, while it is on screen.
         this.thinkingLiveEl = null;
         // Wrapper of the turn currently being built. It must survive every
@@ -792,6 +822,71 @@ class MessagesArea extends HTMLElement {
 
     setHideThinking(val) {
         this.hideThinking = !!val;
+    }
+
+    // Enable the usage UI for this window. Off by default, so nothing is rendered
+    // and no session counter appears unless the option is on AND the integration
+    // can report the counts (both judged in controller.js).
+    setShowUsageData(val) {
+        this.showUsageData = !!val;
+        if (this.showUsageData && this.sessionUsageTotals === null) {
+            // Created here rather than in the constructor, so a window that never
+            // enables the feature carries no counter state at all. A window is one
+            // chat, so this is also the "reset when a new chat is opened" rule: a
+            // fresh window starts from a fresh accumulator.
+            this.sessionUsageTotals = createSessionTotals();
+        }
+    }
+
+    // Render the usage of a finished response, and fold it into the session total.
+    //
+    // The messageId identifies the assistant message the worker produced. Only the
+    // turn still open when this arrives can own the badge -- the worker posts the
+    // usage before 'tokensDone', which is what closes that turn -- so the id is
+    // used as a guard rather than as a lookup key: a usage message that somehow
+    // arrives after its turn was closed is dropped instead of landing on the
+    // wrong answer.
+    handleUsageData(messageId, usage) {
+        if (!this.showUsageData) return;
+        if (usage === null || typeof usage !== 'object') return;
+        const turn = this._currentTurnEl;
+        if (turn === null) return;
+        // One badge per turn: a provider that reported twice must not stack them.
+        if (turn._mztaUsageId !== undefined) return;
+        turn._mztaUsageId = messageId;
+
+        const badge = buildUsageBadge(usage);
+        if (badge === null) return;
+
+        // Appended to the turn body as a SIBLING of the message element, after it.
+        // Never inside it: see the .mzta-usage-badge rule in the stylesheet above.
+        const body = turn.querySelector('.turn-body');
+        if (body === null) return;
+        body.appendChild(badge);
+
+        addUsageToTotals(this.sessionUsageTotals, usage);
+        this._renderSessionTotal();
+        // The badge grows the transcript after the answer has settled, exactly like
+        // the action bar does, so the jump button has to be re-read.
+        this._updateJumpButton();
+    }
+
+    // Paint the cumulative session counter in the window header. The header lives
+    // in the light DOM (api_webchat/index.html), outside this element's shadow
+    // root, so it is reached through the document rather than through shadowRoot.
+    _renderSessionTotal() {
+        const chip = document.getElementById('appHeaderUsage');
+        if (chip === null) return;
+        const { text, tooltip } = buildSessionTotalText(this.sessionUsageTotals);
+        if (text === '') {
+            chip.hidden = true;
+            return;
+        }
+        const label = browser.i18n.getMessage('apiwebchat_usage_session_total');
+        chip.textContent = text;
+        chip.title = tooltip === '' ? label : (label + '\n' + tooltip);
+        chip.setAttribute('aria-label', label);
+        chip.hidden = false;
     }
 
     _ensureStreaming() {
@@ -1612,25 +1707,69 @@ class MessagesArea extends HTMLElement {
         }
     }
 
-    getCurrentSelectionHTML() {
+    // The current selection, cloned into a detached container with every usage
+    // badge removed, or null when nothing is selected.
+    //
+    // The badges carry `user-select: none`, which in practice keeps them out of a
+    // dragged selection — but that property is a hint to the selection algorithm,
+    // not a guarantee about what `cloneContents()` hands back: a select-all, a
+    // programmatic range, or a selection whose endpoints straddle the badge can
+    // still bring it along. Since every path that inserts text into a mail or the
+    // clipboard funnels through here, the scrub is done once, structurally, rather
+    // than trusted to CSS.
+    _cloneSelectionWithoutUsage() {
         const selection = window.getSelection();
-        // console.log(">>>>>>>>>>>>>>>> getCurrentSelectionHTML: " + JSON.stringify(selection.toString()));
-        if (selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            const container = document.createElement('div');
-            container.appendChild(range.cloneContents());
-            return container.innerHTML;
+        if (!selection || selection.rangeCount === 0) return null;
+        const container = document.createElement('div');
+        container.appendChild(selection.getRangeAt(0).cloneContents());
+        // The text of each badge that was caught, so getCurrentSelectionText() can
+        // subtract it from selection.toString() without rebuilding that string.
+        // Empty (and left undefined) on the normal path, which is the signal that
+        // nothing was stripped and the raw selection can be returned untouched.
+        const badges = container.querySelectorAll('[' + USAGE_MARKER_ATTR + ']');
+        if (badges.length > 0) {
+            container._mztaHadUsage = Array.from(badges, el => el.textContent);
+            badges.forEach(el => el.remove());
         }
-        return '';
+        return container;
     }
 
-    // Selected text as plain text. Taken straight from the Selection rather
-    // than by stripping getCurrentSelectionHTML(), so entities in the rendered
-    // answer (&amp;, &lt;, &nbsp;, …) come out as the characters the user can
-    // actually see instead of their HTML escapes.
+    getCurrentSelectionHTML() {
+        // console.log(">>>>>>>>>>>>>>>> getCurrentSelectionHTML: " + JSON.stringify(selection.toString()));
+        const container = this._cloneSelectionWithoutUsage();
+        return container ? container.innerHTML : '';
+    }
+
+    // Selected text as plain text. Still taken straight from the Selection, as it
+    // always was: entities in the rendered answer (&amp;, &lt;, &nbsp;, …) come
+    // out as the characters the user can actually see instead of their HTML
+    // escapes, and toString() puts the line breaks between blocks that a bare
+    // textContent over a cloned range would drop. Both are exactly what the copy
+    // button and the "use this answer" path expect, so this string must not be
+    // rebuilt from the DOM.
+    //
+    // The badge is subtracted from it instead, and only when the selection really
+    // caught one — which `user-select: none` normally prevents. So on every
+    // ordinary selection this returns byte-for-byte what it returned before this
+    // feature existed, and in the pathological case the badge's own text is cut
+    // out rather than the whole result being re-derived.
     getCurrentSelectionText() {
         const selection = window.getSelection();
-        return selection ? selection.toString() : '';
+        if (!selection) return '';
+        let text = selection.toString();
+        if (text === '') return '';
+
+        const container = this._cloneSelectionWithoutUsage();
+        if (container === null || !container._mztaHadUsage) return text;
+
+        // Remove each badge's rendered text. Its content is a single line built by
+        // buildUsageBadge(), with no markup of its own, so a plain substring
+        // removal is exact — there is no structure to lose.
+        for (const badgeText of container._mztaHadUsage) {
+            if (badgeText === '') continue;
+            text = text.split(badgeText).join('');
+        }
+        return text.replace(/\n{3,}/g, '\n\n').trim();
     }
 
 }
