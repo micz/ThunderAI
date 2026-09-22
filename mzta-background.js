@@ -527,7 +527,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 _refreshSummary(message);
                 break;
             case 'removeSummary':
-                summaryStore.removeSummary(message.headerMessageId);
+                async function _removeSummary(message) {
+                    await summaryStore.removeSummary(message.headerMessageId);
+                    await _restoreSummaryButton(sender.tab.id, message.headerMessageId);
+                }
+                _removeSummary(message);
                 break;
             case 'chatgpt_saveSummary':
                 async function _saveSummaryFromWebchat(msg) {
@@ -655,7 +659,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 _refreshTranslation(message);
                 break;
             case 'removeTranslation':
-                translationStore.removeTranslation(message.headerMessageId);
+                async function _removeTranslation(message) {
+                    await translationStore.removeTranslation(message.headerMessageId);
+                    await _restoreTranslationButton(sender.tab.id, message.headerMessageId);
+                }
+                _removeTranslation(message);
                 break;
             case 'chatgpt_close':
                     async function _closeChatGptWindow(window_id) {
@@ -881,6 +889,48 @@ function cleanSummaryText(text) {
 // Prevents a slow, stale AI result (summary/translation/button) from rendering on a
 // different email after the user has rapidly clicked through several messages.
 // Mirrors the displayed-message guard already used by updateSpamPanel().
+// After the user deletes a summary / translation from its banner, draw the manual
+// trigger button again: without it the only way back to the result is the menu.
+// Offered whenever initSummary / initTranslation would have shown the button or
+// auto-generated (auto mode 1 or 2). Auto mode is deliberately not re-run here:
+// regenerating what the user has just deleted would defeat the delete.
+async function _restoreSummaryButton(tabId, headerMessageId) {
+    try {
+        let prefs = await mztaPrefs.getPrefs([
+            'summarize',
+            'summarize_auto',
+            'summarize_display_mode',
+            'connection_type',
+            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+        ]);
+        if (!prefs.summarize) return;
+        let summarize_auto = Number.isInteger(prefs.summarize_auto) ? prefs.summarize_auto : prefs_default.summarize_auto;
+        if (summarize_auto === 0) return;
+        if (!isApiUsableConnection(getConnectionType(prefs, null, 'summarize'))) return;
+        await _sendIfCurrent(tabId, headerMessageId, { command: "showSummaryButton", headerMessageId: headerMessageId, webchat: prefs.summarize_display_mode !== 'inline' });
+    } catch (e) {
+        taLog.error("Error in _restoreSummaryButton: " + e);
+    }
+}
+
+async function _restoreTranslationButton(tabId, headerMessageId) {
+    try {
+        let prefs = await mztaPrefs.getPrefs([
+            'translate',
+            'translate_auto',
+            'connection_type',
+            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+        ]);
+        if (!prefs.translate) return;
+        let translate_auto = Number.isInteger(prefs.translate_auto) ? prefs.translate_auto : prefs_default.translate_auto;
+        if (translate_auto === 0) return;
+        if (!isApiUsableConnection(getConnectionType(prefs, null, 'translate'))) return;
+        await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslationButton", headerMessageId: headerMessageId });
+    } catch (e) {
+        taLog.error("Error in _restoreTranslationButton: " + e);
+    }
+}
+
 async function _sendIfCurrent(tabId, headerMessageId, payload) {
     try {
         if (!tabId) return;

@@ -986,6 +986,14 @@ message-display script injection** (the content script fires `initSummary` / `in
 top level); there is no `onMessageDisplayed` listener and no `storage.onChanged` in the content
 script, so a message already open does not pick up a settings change until it is reopened.
 
+**Deleting a result redraws its button.** The "Delete" entry of the summary / translation banner
+menu sends `removeSummary` / `removeTranslation`; after clearing the stored field the background
+calls `_restoreSummaryButton()` / `_restoreTranslationButton()`, which send `showSummaryButton` /
+`showTranslationButton` again under the same gates (`summarize` / `translate` enabled, `*_auto`
+not `0`, `isApiUsableConnection()`). Without this the banner vanished and the only way back was the
+menu. Auto mode (`2`) also gets the button, not a regeneration: re-running the automatic branch
+would immediately undo the delete.
+
 **`summarize_auto` / `translate_auto` must never be stored as `null`.** Their `saveOptions()` cases
 run `parseInt(element.value, 10)`, and an empty select (`selectedIndex === -1`, which
 `restoreOptions()` can produce) parses to `NaN` — storage serializes that as `null`. A stored
