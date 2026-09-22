@@ -183,6 +183,8 @@ export const prefs_default = {
     calendar_enforce_timezone: false,
     calendar_timezone: '',
     calendar_no_selection: false,   // If true do not ask for selection, but use the full prompt
+    calendar_append_email_link: false,  // Append a mid: link to the source email to the event description (added by code, never sent to the AI)
+    task_append_email_link: false,      // Same, for the task description
     spamfilter: false,
     spamfilter_threshold: 70,
     spamfilter_enabled_accounts: [],

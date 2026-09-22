@@ -1245,6 +1245,22 @@
     "message": "If checked, the specified timezone will be enforced for the calendar events and the tasks.",
     "description": ""
   },
+  "prefs_OptionText_append_email_link": {
+    "message": "Append a link to the original email",
+    "description": ""
+  },
+  "prefs_OptionText_calendar_append_email_link_Info": {
+    "message": "If checked, a link to the original email is added at the end of the event description. If the AI returns no description, the description will contain only the link. Not available when the event is created from the clipboard.",
+    "description": ""
+  },
+  "prefs_OptionText_task_append_email_link_Info": {
+    "message": "If checked, a link to the original email is added at the end of the task description. If the AI returns no description, the description will contain only the link.",
+    "description": ""
+  },
+  "calendar_email_link_label": {
+    "message": "Original email:",
+    "description": "Label written before the link to the original email in the description of the calendar events and the tasks."
+  },
   "prefs_OptionText_btnManageCalendarEventInfo": {
     "message": "Manage calendar events settings",
     "description": ""

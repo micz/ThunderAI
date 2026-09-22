@@ -31,6 +31,7 @@ import {
     getTagsList,
     extractJsonObject,
     normalizeDateTimeString,
+    appendMessageLinkToDescription,
     normalizeHtmlSourceNewlines,
     checkIfTagLabelExists,
     getConnectionType,
@@ -472,6 +473,7 @@ export class mzta_Menus {
                             'connection_type',
                             'calendar_enforce_timezone',
                             'calendar_timezone',
+                            'calendar_append_email_link',
                             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
                         ]);
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_calendar_event');
@@ -530,6 +532,15 @@ export class mzta_Menus {
                             calendar_event_data_obj.use_timezone = true;
                             calendar_event_data_obj.timezone = prefs_at.calendar_timezone;
                         }
+                        // Link to the original email, added by code after the response:
+                        // it never reaches the AI. No source message from the clipboard
+                        // or a compose tab (compose details have no headerMessageId).
+                        if (prefs_at.calendar_append_email_link) {
+                            const link_source = (curr_prompt.id === 'prompt_get_calendar_event_from_clipboard' || tabs[0].type === 'messageCompose') ? null : curr_message;
+                            if (!appendMessageLinkToDescription(calendar_event_data_obj, link_source, browser.i18n.getMessage('calendar_email_link_label'))) {
+                                this.logger.log("calendar_append_email_link: no source message, link not added.");
+                            }
+                        }
                         let calendar_event_data_str = JSON.stringify(calendar_event_data_obj);
                         // Timezone management - END
                         this.logger.log("calendar_event_data: " + calendar_event_data);
@@ -562,6 +573,7 @@ export class mzta_Menus {
                             'connection_type',
                             'calendar_enforce_timezone',
                             'calendar_timezone',
+                            'task_append_email_link',
                             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))]);
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_task');
                         if(!isApiUsableConnection(def_conntype)){
@@ -622,6 +634,14 @@ export class mzta_Menus {
                         if(prefs_at.calendar_enforce_timezone){
                             task_data_obj.use_timezone = true;
                             task_data_obj.timezone = prefs_at.calendar_timezone;
+                        }
+                        // Link to the original email, added by code after the response:
+                        // it never reaches the AI. No source message in a compose tab.
+                        if (prefs_at.task_append_email_link) {
+                            const link_source = (tabs[0].type === 'messageCompose') ? null : curr_message;
+                            if (!appendMessageLinkToDescription(task_data_obj, link_source, browser.i18n.getMessage('calendar_email_link_label'))) {
+                                this.logger.log("task_append_email_link: no source message, link not added.");
+                            }
                         }
                         let task_data_str = JSON.stringify(task_data_obj);
                         // Timezone management - END

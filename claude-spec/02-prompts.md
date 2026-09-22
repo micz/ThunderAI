@@ -159,6 +159,24 @@ Some prompts trigger additional Thunderbird actions beyond just sending text to 
 
 These special prompts can have their own dedicated API integration settings (configured in the Options page). The list of these special prompts is in `options/mzta-options-default.js` as `special_prompts_with_integration`.
 
+### Calendar event / task: link to the original email
+
+With `calendar_append_email_link` (events) or `task_append_email_link` (tasks) on, `js/mzta-menus.js` appends a link to the source email to the `description` of the parsed object (`calendar_event_data_obj` / `task_data_obj`), after date normalization and the timezone block, just before `JSON.stringify` and the hand-off to Sparks. It is done **by code, after the response**: the link is never sent to the AI, the prompt texts (`prompt_get_calendar_event_full_text`, `prompt_get_task_full_text`) do not mention it, and the AI JSON contract is unchanged.
+
+Both features use `appendMessageLinkToDescription(data_obj, message, label)` in `js/mzta-utils.js` (label = `calendar_email_link_label`, shared). Composition rule:
+- description a string, non-empty after trim → `description.trim() + "\n\n" + label + " " + link`;
+- description missing, empty or not a string (e.g. a custom prompt that asks for none) → `label + " " + link`;
+- no link can be built → description left exactly as the AI returned it (the helper returns `false`).
+
+Link format (`buildMessageMidLink()`): `"mid:" + headerMessageId`, angle brackets stripped defensively, **no percent-encoding**. This matches Thunderbird itself: "Copy Message Link" (bug 1968470, `msgHdrView.js` `copyMessageLink()`) writes `` `mid:${messageId}` ``, and the `mid:` handler (bug 264270: `MailLinkParent._handleMidLink`, `calApplicationUtils.js` `launchBrowser`) opens `openMessageForMessageId(href.slice(4))`, an exact Message-ID match with no decoding — an encoded id (`%2B`, `%3D`, …) would never be found.
+
+Skipped silently (logged via `this.logger.log`, no alert):
+- `prompt_get_calendar_event_from_clipboard` — no source message; it shares the case block with `prompt_get_calendar_event`, so `curr_prompt.id` is checked explicitly;
+- `messageCompose` tabs — `curr_message` is compose details, not a `MessageHeader`;
+- `curr_message` null (e.g. empty selection in a mail tab) or `headerMessageId` missing/empty.
+
+The description is plain text (`descriptionText` in Sparks); Thunderbird linkifies the `mid:` scheme in the event summary, but HTML descriptions are out of scope.
+
 ### Missing special prompts
 
 The lookup helpers in `js/mzta-prompts.js` (`getSpamFilterPrompt()`, `getAddTagsPrompt()`, `getSummarizePrompt()`, …) are `Array.find()` over `_special_prompts` and return `undefined` when the user has removed or corrupted the entry. Every caller must guard before using the result, and `taPromptUtils.getDefaultLang()` uses optional chaining so a missing prompt yields `''` (no forced language) instead of throwing (issue #855).
