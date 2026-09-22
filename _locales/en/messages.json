@@ -462,8 +462,8 @@
     }
   },
   "customPrompts_search_placeholder": {
-    "message": "Search by name or ID",
-    "description": "Placeholder for the search field that filters the prompts list by name or ID"
+    "message": "Search by name, ID or text…",
+    "description": "Placeholder for the search field that filters the prompts list by name, ID or prompt text"
   },
   "customPrompts_filter_active": {
     "message": "Filtered: $SHOWN$ of $TOTAL$",
@@ -484,6 +484,162 @@
   "customPrompts_filter_clear": {
     "message": "Clear filter",
     "description": "Button in the toolbar badge that clears the search filter and shows all prompts"
+  },
+  "customPrompts_view_detail": {
+    "message": "Detail",
+    "description": "View switch button: list on the left, editor on the right"
+  },
+  "customPrompts_view_table": {
+    "message": "Table",
+    "description": "View switch button: dense table of all prompts"
+  },
+  "customPrompts_view_switch": {
+    "message": "View",
+    "description": "Accessible label of the Detail/Table view switch"
+  },
+  "customPrompts_new_prompt": {
+    "message": "+ New prompt",
+    "description": "Toolbar button that starts a new prompt in the editor"
+  },
+  "customPrompts_badge_system": {
+    "message": "System",
+    "description": "Badge on a built-in prompt"
+  },
+  "customPrompts_badge_personal": {
+    "message": "Personal",
+    "description": "Badge on a prompt created by the user"
+  },
+  "customPrompts_badge_readonly": {
+    "message": "Read-only",
+    "description": "Badge in the editor header of a prompt whose text cannot be changed"
+  },
+  "customPrompts_system_tooltip": {
+    "message": "System prompt, read-only",
+    "description": "Tooltip of the lock glyph shown on read-only prompts in the list"
+  },
+  "customPrompts_system_banner": {
+    "message": "System prompt: its text cannot be changed. Duplicate it to create your own version.",
+    "description": "Banner in the editor for a built-in prompt"
+  },
+  "customPrompts_org_banner": {
+    "message": "Organization prompt: it is managed by your organization's configuration policy and cannot be changed. Duplicate it to create your own version.",
+    "description": "Banner in the editor for a prompt supplied by the enterprise policy"
+  },
+  "customPrompts_btnDuplicate": {
+    "message": "Duplicate",
+    "description": "Button that creates a copy of the selected prompt"
+  },
+  "customPrompts_btnDuplicateEdit": {
+    "message": "Duplicate and edit",
+    "description": "Button that creates an editable personal copy of a read-only prompt"
+  },
+  "customPrompts_btnRestoreDefault": {
+    "message": "Restore default",
+    "description": "Button that restores the default options of a built-in prompt"
+  },
+  "customPrompts_btnRestoreDefault_done": {
+    "message": "Default options restored. Click 'Save All' to save your changes.",
+    "description": "Message shown after restoring a built-in prompt's options"
+  },
+  "customPrompts_btnSavePrompt": {
+    "message": "Save",
+    "description": "Button in the editor that applies the edits to the selected prompt (they are stored by Save All)"
+  },
+  "customPrompts_btnExport": {
+    "message": "Export",
+    "description": "Row menu item that exports a single prompt to a file"
+  },
+  "customPrompts_btnOpen": {
+    "message": "Open",
+    "description": "Table row button that opens a read-only prompt in the detail view"
+  },
+  "customPrompts_more_actions": {
+    "message": "More actions",
+    "description": "Tooltip of the row menu button in the table view"
+  },
+  "customPrompts_col_prompt": {
+    "message": "Prompt",
+    "description": "Table view column header"
+  },
+  "customPrompts_col_text": {
+    "message": "Text",
+    "description": "Table view column header"
+  },
+  "customPrompts_col_menu": {
+    "message": "Menu",
+    "description": "Table view column header"
+  },
+  "customPrompts_col_options": {
+    "message": "Options",
+    "description": "Table view column header"
+  },
+  "customPrompts_col_actions": {
+    "message": "Actions",
+    "description": "Table view column header"
+  },
+  "customPrompts_label_text": {
+    "message": "Prompt text",
+    "description": "Label of the prompt text field in the editor"
+  },
+  "customPrompts_label_options": {
+    "message": "Options",
+    "description": "Label of the options column in the editor"
+  },
+  "customPrompts_label_connection": {
+    "message": "Connection",
+    "description": "Label of the per-prompt connection override section in the editor"
+  },
+  "customPrompts_chip_need_selected": {
+    "message": "Selection",
+    "description": "Short label of the 'Text selection needed' option chip"
+  },
+  "customPrompts_chip_need_signature": {
+    "message": "Signature",
+    "description": "Short label of the 'Always add the signature' option chip"
+  },
+  "customPrompts_chip_need_custom_text": {
+    "message": "Extra text",
+    "description": "Short label of the 'Ask for additional text' option chip"
+  },
+  "customPrompts_chip_define_response_lang": {
+    "message": "Language",
+    "description": "Short label of the 'Define the response language' option chip"
+  },
+  "customPrompts_chip_use_diff_viewer": {
+    "message": "Compare",
+    "description": "Short label of the 'Enable the text comparison viewer' option chip"
+  },
+  "customPrompts_flag_fixed_suffix": {
+    "message": "fixed by the prompt",
+    "description": "Suffix after an option that cannot be changed on a read-only prompt"
+  },
+  "customPrompts_new_prompt_title": {
+    "message": "New prompt",
+    "description": "Editor header while creating a prompt"
+  },
+  "customPrompts_no_selection": {
+    "message": "Select a prompt from the list, or create a new one.",
+    "description": "Editor placeholder when no prompt is selected"
+  },
+  "customPrompts_dirty_confirm": {
+    "message": "The prompt you are editing has changes that have not been applied. What do you want to do?",
+    "description": "Dialog shown when leaving a prompt with unapplied edits"
+  },
+  "customPrompts_dirty_apply": {
+    "message": "Apply changes",
+    "description": "Dialog button: apply the pending edits and continue"
+  },
+  "customPrompts_dirty_discard": {
+    "message": "Discard changes",
+    "description": "Dialog button: throw away the pending edits and continue"
+  },
+  "customPrompts_error_id": {
+    "message": "The ID is required, cannot contain spaces and must be unique.",
+    "description": "Validation message for the prompt ID"
+  },
+  "customPrompts_error_required": {
+    "message": "Name and prompt text are required.",
+    "description": "Validation message for the name and text fields"
   },
   "importPrompts_confirmText": {
     "message": "You are about to import new prompts.",

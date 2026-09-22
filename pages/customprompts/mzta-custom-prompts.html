@@ -11,18 +11,20 @@
 </head>
 <body>
     <div class="page_wrap">
-    <div>
-        <div class="page_eyebrow">ThunderAI</div>
-        <h1 class="page_title">__MSG_customPrompts_managePrompts__</h1>
-        <p>__MSG_customPrompts_managePrompts_info_default__<br>
-            __MSG_customPrompts_managePrompts_info_default_2__<br>
-            __MSG_customPrompts_managePrompts_info_default_3__ <a href="https://micz.it/thunderbird-addon-thunderai/custom-prompts/">__MSG_more_info_string__</a>
-        <br>__MSG_prefs_OptionText_btnManagePrompts_infoline__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_more_info_string__</a>
-    <br><button id="btnManageCustomDataPH">__MSG_prefs_OptionText_btnManageCustomDataPH__</button></p>
-    </div>
-    <div id="import_export">
-        <button id="btnExportAll">__MSG_customPrompts_ExportAll__</button>
-        <button id="btnImport">__MSG_customPrompts_Import__</button>
+    <div class="page_head">
+        <div>
+            <div class="page_eyebrow">ThunderAI</div>
+            <h1 class="page_title">__MSG_customPrompts_managePrompts__</h1>
+            <p>__MSG_customPrompts_managePrompts_info_default__<br>
+                __MSG_customPrompts_managePrompts_info_default_2__<br>
+                __MSG_customPrompts_managePrompts_info_default_3__ <a href="https://micz.it/thunderbird-addon-thunderai/custom-prompts/">__MSG_more_info_string__</a>
+            <br>__MSG_prefs_OptionText_btnManagePrompts_infoline__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_more_info_string__</a>
+            <br><button id="btnManageCustomDataPH">__MSG_prefs_OptionText_btnManageCustomDataPH__</button></p>
+        </div>
+        <div id="import_export">
+            <button id="btnExportAll">__MSG_customPrompts_ExportAll__</button>
+            <button id="btnImport">__MSG_customPrompts_Import__</button>
+        </div>
     </div>
     <!-- Shown by JS only when the policy disables prompt creation, import and export.
          Without it the missing buttons would read as a bug rather than as a policy. -->
@@ -30,116 +32,20 @@
     <!-- Shown by JS only when the policy disables the built-in prompts. Independent of the
          note above: the two restrictions are separate and can be active together. -->
     <div id="managed_restriction_defaults_note" class="managed_restriction_note">__MSG_managed_restriction_default_prompts__</div>
-    <div id="formNew">
-      <table class="width_all">
-        <tr>
-            <td class="w19">
-                <label for="txtIdNew" class="field_title">*__MSG_customPrompts_form_label_ID__:</label>
-                <br>
-                <input type="text" id="txtIdNew" name="id" class="input_new" tabindex="1">
-                <br><span class="small_label">[__MSG_customPrompts_form_label_ID_rules__]</span>                
-            </td>
-            <td rowspan="2" class="w25">
-                <label for="txtTextNew" class="field_title">*__MSG_customPrompts_form_label_Text__:</label>
-                <br>
-                <div class="autocomplete-container editor-wrap">
-                    <div class="editor-backdrop" aria-hidden="true"><div class="editor-highlights"></div></div>
-                    <textarea id="txtTextNew" name="text" class="input_new text_output editor" tabindex="3"></textarea>
-                    <ul class="autocomplete-list hidden"></ul>
-                </div>
-            </td>
-            <td rowspan="2" class="w19">
-                <label for="selectTypeNew" class="field_title">__MSG_customPrompts_add_to_menu__:</label>
-                <br>
-                <select id="selectTypeNew" name="type" tabindex="4" class="type_output">
-                    <option value="0">__MSG_customPrompts_add_to_menu_always__</option>
-                    <option value="1">__MSG_customPrompts_add_to_menu_reading__</option>
-                    <option value="2">__MSG_customPrompts_add_to_menu_composing__</option>
-                </select>
-                <br><br>
-                <label for="selectActionNew" class="field_title">__MSG_customPrompts_form_label_Action__:</label>
-                <br>
-                <select id="selectActionNew" name="action" tabindex="5">
-                    <option value="0">__MSG_customPrompts_close_button__</option>
-                    <option value="1">__MSG_customPrompts_do_reply__</option>
-                    <option value="2">__MSG_customPrompts_substitute_text__</option>
-                </select>
-            </td>
-            <td rowspan="2" class="w19">
-                <label class="field_title">__MSG_customPrompts_Properties__:</label>
-                <br>
-                <label for="checkboxNeedSelectedNew"><span class="need_selected_span"><input type="checkbox" id="checkboxNeedSelectedNew" name="need_selected" class="need_selected_new need_selected" value="1" tabindex="6"> __MSG_customPrompts_form_label_need_selected__</span></label>
-                <label for="checkboxNeedSignatureNew"><input type="checkbox" id="checkboxNeedSignatureNew" name="need_signature" class="need_signature" value="1" tabindex="7"> __MSG_customPrompts_form_label_need_signature__</label>
-                <label for="checkboxNeedCustomTextNew"><span class="need_custom_text_span"><input type="checkbox" id="checkboxNeedCustomTextNew" name="need_custom_text" class="need_custom_text_new need_custom_text" value="1" tabindex="8"> __MSG_customPrompts_form_label_need_custom_text__</span></label>
-                <label for="checkboxDefineResponseLangNew"><input type="checkbox" id="checkboxDefineResponseLangNew" name="define_response_lang" class="define_response_lang" value="1" tabindex="9"> __MSG_customprompts_form_label_define_response_lang__</label>
-                <label for="checkboxUseDiffViewerNew" title="__MSG_customPrompts_form_label_use_diff_viewer_title__"><input type="checkbox" id="checkboxUseDiffViewerNew" name="use_diff_viewer" class="use_diff_viewer" value="1" tabindex="10" title="__MSG_customPrompts_form_label_use_diff_viewer_title__"> __MSG_customPrompts_form_label_use_diff_viewer__</label>
-                <span id="useDiffViewerNew_hint" class="small_label">__MSG_customPrompts_form_label_use_diff_viewer_title__</span>
-            </td>
-        </tr>
-        <tr>
-            <td class="w19">
-              <label for="txtNameNew" class="field_title">*__MSG_customPrompts_form_label_Name__:</label>
-              <br>
-              <input type="text" id="txtNameNew" name="name" class="input_new" tabindex="2">
-            </td>
-        </tr>
-        <!-- Hidden by default: these ChatGPT Web per-prompt overrides only apply
-             when the global connection is ChatGPT Web, so the toggle is revealed
-             from mzta-custom-prompts.js only in that case. -->
-        <tr id="chatgpt_web_additional_info_toggle" style="display: none;"><td colspan="4"><span class="small_info">__MSG_customPrompts_show_additional_info__ [ChatGPT Web]</span></td></tr>
-        <tr id="chatgpt_web_additional_info" style="display: none;"><!-- ChatGPT Web additional info -->
-            <td colspan="2">
-                <label for="chatGPTWebModelNew" class="field_title">__MSG_prefs_OptionText_chatgpt_web_model__:</label>
-                <br>
-                <input type="text" id="chatGPTWebModelNew" name="chatGPTWebModelNew" class="input_new input_additional" tabindex="11">
-                <br><br>
-                <label for="chatGPTWebProjectNew" class="field_title">__MSG_prefs_OptionText_chatgpt_web_project__:</label>
-                <br>
-                <input type="text" id="chatGPTWebProjectNew" name="chatGPTWebProjectNew" class="input_new input_additional" tabindex="12">
-                <br><i class="small_info" id="chatGPTWebProjectNew_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/PROJECT-ID-PROJECT-NAME/project</b>
-                    <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>
-            </td>
-            <td colspan="2">
-                <label for="chatGPTWebCustomGPTNew" class="field_title">__MSG_prefs_OptionText_chatgpt_web_custom_gpt__:</label>
-                <br>
-                <input type="text" id="chatGPTWebCustomGPTNew" name="chatGPTWebCustomGPTNew" class="input_new input_additional" tabindex="13">
-                <br><i class="small_info" id="chatGPTWebCustomGPTNew_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/CUSTOM-GPT-ID</b>
-                    <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>
-            </td>
-        </tr>
-        <tr id="api_additional_info_toggle" class="small_info"><!-- API settings additional info toggle-->
-            <td colspan="4">
-                <span>__MSG_customPrompts_show_additional_info__ [API]</span>
-            </td>
-        </tr>
-        <tr id="api_additional_info" style="display: none;"><!-- API settings additional info -->
-            <td colspan="4" id="api_ui_container">
-                <table style="width: 100%; text-align: left;">
-                    <tr id="api_ui_anchor">
-                    </tr>
-                </table>
-                <!-- Advanced connection fields: the .conn_adv rows injected above are
-                     moved into this table by relocateConnAdvRows(), so expanding the
-                     button opens them below it (same pattern as the options page). -->
-                <button type="button" class="conn_adv_btn" aria-expanded="false" hidden>__MSG_prefs_advanced_options__</button>
-                <table class="conn_adv_table hidden" style="width: 100%; text-align: left;">
-                    <tbody></tbody>
-                </table>
-            </td>
-        </tr>
-    </table>
-        <div class="go_right_float">* __MSG_customPrompts_form_required_fields__</div>
-        <br>
-        <div class="go_right"><button id="btnAddNew" disabled>__MSG_customPrompts_btnAddNewCommit__</button></div>
-    </div>
-    <div id="all_prompts">
+
+    <!-- The List.js container. One list, two views: the class on this element
+         (view-split / view-table) only changes how the same rows are laid out. -->
+    <div id="prompts_card" class="view-split">
         <div id="command_palette">
-          <button id="btnSaveAll" disabled>__MSG_btnSaveAll_string__</button>
-          <div id="search_wrap">
-            <input type="search" id="prompts_search" class="prompts_search_input"
-                   placeholder="__MSG_customPrompts_search_placeholder__"
-                   title="__MSG_customPrompts_search_placeholder__"
-                   autocomplete="off">
+            <div id="search_wrap">
+                <span class="search_icon" aria-hidden="true">⌕</span>
+                <!-- Not class="search": List.js would auto-bind its own filter on it. -->
+                <input type="search" id="prompts_search" class="prompts_search_input"
+                       placeholder="__MSG_customPrompts_search_placeholder__"
+                       title="__MSG_customPrompts_search_placeholder__"
+                       autocomplete="off">
+            </div>
+            <span id="prompts_count"></span>
             <span id="filter_badge" class="hiddendata" role="status" aria-live="polite">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
               <span id="filter_badge_text"></span>
@@ -148,25 +54,154 @@
                 <span>__MSG_customPrompts_filter_clear__</span>
               </button>
             </span>
-          </div>
-          <span id="msgDisplay"></span>
-          <button id="btnNew">__MSG_btnNew_string__</button>
+            <span id="msgDisplay"></span>
+            <div class="toolbar_spacer"></div>
+            <div id="view_switch" role="group" aria-label="__MSG_customPrompts_view_switch__">
+                <button type="button" id="btnViewSplit" data-view="split" aria-pressed="true">▥ __MSG_customPrompts_view_detail__</button>
+                <button type="button" id="btnViewTable" data-view="table" aria-pressed="false">☰ __MSG_customPrompts_view_table__</button>
+            </div>
+            <button id="btnSaveAll" disabled>__MSG_btnSaveAll_string__</button>
+            <button id="btnNew">__MSG_customPrompts_new_prompt__</button>
         </div>
-        <table class="prompts_list">
-            <thead>
-              <tr>
-                <th class="sort" data-sort="id">__MSG_customPrompts_form_label_ID__</th>
-                <th class="sort" data-sort="name">__MSG_customPrompts_form_label_Name__</th>
-                <th class="sort" data-sort="text">__MSG_customPrompts_form_label_Text__</th>
-                <th>&nbsp;</th>
-                <th>__MSG_customPrompts_Properties__</th>
-                <th>&nbsp;</th>
-              </tr>
-            </thead>
-            <tbody class="list">
-            </tbody>
-          </table>
-        <div id="list_footer"><span id="prompts_count"></span></div>
+
+        <div id="card_body">
+            <div id="list_col">
+                <div id="table_head" class="p_grid">
+                    <div>__MSG_customPrompts_col_prompt__</div>
+                    <div>__MSG_customPrompts_col_text__</div>
+                    <div>__MSG_customPrompts_col_menu__</div>
+                    <div>__MSG_customPrompts_col_options__</div>
+                    <div class="col_actions">__MSG_customPrompts_col_actions__</div>
+                </div>
+                <div class="list" id="prompts_list"></div>
+            </div>
+
+            <section id="detail_pane">
+                <div id="detail_empty">__MSG_customPrompts_no_selection__</div>
+                <div id="detail_body" class="hiddendata">
+                    <div class="detail_head">
+                        <div class="detail_title_wrap">
+                            <div class="detail_title_line">
+                                <span id="detail_title"></span>
+                                <span id="detail_ro_badge" class="ro_badge hiddendata">⌧ __MSG_customPrompts_badge_readonly__</span>
+                            </div>
+                            <span id="detail_subid" class="mono_id"></span>
+                        </div>
+                        <div class="toolbar_spacer"></div>
+                        <div class="detail_actions">
+                            <button type="button" id="btnDetailRestore" class="btn_ghost">__MSG_customPrompts_btnRestoreDefault__</button>
+                            <button type="button" id="btnDetailDuplicate" class="btn_ghost">__MSG_customPrompts_btnDuplicate__</button>
+                            <button type="button" id="btnDetailDuplicateEdit" class="btn_primary">__MSG_customPrompts_btnDuplicateEdit__</button>
+                            <button type="button" id="btnDetailDelete" class="btn_danger">__MSG_customPrompts_btnDelete__</button>
+                            <button type="button" id="btnDetailCancel" class="btn_ghost">__MSG_customPrompts_btnCancel__</button>
+                            <button type="button" id="btnDetailSave" class="btn_primary">__MSG_customPrompts_btnSavePrompt__</button>
+                        </div>
+                    </div>
+                    <div id="detail_banner" class="detail_banner hiddendata"></div>
+                    <div id="detail_error" class="detail_error hiddendata"></div>
+
+                    <div class="detail_scroll">
+                        <div class="detail_grid">
+                            <div class="detail_main">
+                                <div class="field_pair">
+                                    <div class="field">
+                                        <label for="detail_id" class="field_label">*__MSG_customPrompts_form_label_ID__</label>
+                                        <input type="text" id="detail_id" class="detail_input detail_edit" autocomplete="off">
+                                        <span class="small_label">[__MSG_customPrompts_form_label_ID_rules__]</span>
+                                    </div>
+                                    <div class="field">
+                                        <label for="detail_name" class="field_label">*__MSG_customPrompts_form_label_Name__</label>
+                                        <input type="text" id="detail_name" class="detail_input detail_edit" autocomplete="off">
+                                    </div>
+                                </div>
+
+                                <label for="detail_text" class="field_label">*__MSG_customPrompts_label_text__</label>
+                                <div class="autocomplete-container editor-wrap">
+                                    <div class="editor-backdrop" aria-hidden="true"><div class="editor-highlights"></div></div>
+                                    <textarea id="detail_text" class="text_output editor detail_edit"></textarea>
+                                    <ul class="autocomplete-list hidden"></ul>
+                                </div>
+
+                                <div class="field_pair">
+                                    <div class="field">
+                                        <label for="detail_type" class="field_label">__MSG_customPrompts_add_to_menu__</label>
+                                        <select id="detail_type" class="detail_input type_output detail_edit">
+                                            <option value="0">__MSG_customPrompts_add_to_menu_always__</option>
+                                            <option value="1">__MSG_customPrompts_add_to_menu_reading__</option>
+                                            <option value="2">__MSG_customPrompts_add_to_menu_composing__</option>
+                                        </select>
+                                    </div>
+                                    <div class="field">
+                                        <label for="detail_action" class="field_label">__MSG_customPrompts_form_label_Action__</label>
+                                        <select id="detail_action" class="detail_input detail_edit">
+                                            <option value="0">__MSG_customPrompts_close_button__</option>
+                                            <option value="1">__MSG_customPrompts_do_reply__</option>
+                                            <option value="2">__MSG_customPrompts_substitute_text__</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <button type="button" id="btnDetailMenuPosition" class="btnMenuPositionItem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>__MSG_menu_position_btn_label__</span></button>
+
+                                <!-- Read-only summary of the connection override, for prompts
+                                     whose override cannot be edited here. -->
+                                <div id="detail_conn_readonly" class="conn_readonly hiddendata">
+                                    <span class="field_label">__MSG_prefs_Connection_type__</span>
+                                    <span id="detail_conn_readonly_value"></span>
+                                </div>
+
+                                <!-- ChatGPT Web per-prompt overrides: they only apply while the
+                                     global connection is ChatGPT Web and this prompt sets no
+                                     api_type override, so JS reveals the section only then. -->
+                                <div id="detail_cgw_section" class="disclosure hiddendata">
+                                    <button type="button" id="detail_cgw_toggle" class="disclosure_toggle cgw_toggle" aria-expanded="false">ChatGPT Web</button>
+                                    <div id="detail_cgw_panel" class="disclosure_panel cgw_panel hiddendata">
+                                        <label for="detail_cgw_model" class="field_label">__MSG_prefs_OptionText_chatgpt_web_model__</label>
+                                        <input type="text" id="detail_cgw_model" class="detail_input detail_edit input_additional">
+                                        <label for="detail_cgw_project" class="field_label">__MSG_prefs_OptionText_chatgpt_web_project__</label>
+                                        <input type="text" id="detail_cgw_project" class="detail_input detail_edit input_additional">
+                                        <i class="small_info" id="detail_cgw_project_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/PROJECT-ID-PROJECT-NAME/project</b>
+                                            <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>
+                                        <label for="detail_cgw_custom_gpt" class="field_label">__MSG_prefs_OptionText_chatgpt_web_custom_gpt__</label>
+                                        <input type="text" id="detail_cgw_custom_gpt" class="detail_input detail_edit input_additional">
+                                        <i class="small_info" id="detail_cgw_custom_gpt_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/CUSTOM-GPT-ID</b>
+                                            <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__
+                                            <br>__MSG_prefs_OptionText_CustomGPT_Warn__</i>
+                                    </div>
+                                </div>
+
+                                <div id="detail_api_section" class="disclosure">
+                                    <button type="button" id="detail_api_toggle" class="disclosure_toggle api_toggle" aria-expanded="false">__MSG_customPrompts_label_connection__ [API]</button>
+                                    <div id="detail_api_panel" class="disclosure_panel api_panel hiddendata">
+                                        <table class="conn_main_table">
+                                            <tbody>
+                                                <tr id="detail_api_anchor"><td style="display:none"></td></tr>
+                                            </tbody>
+                                        </table>
+                                        <!-- Advanced connection fields: the .conn_adv rows injected
+                                             above are moved into this table by relocateConnAdvRows(). -->
+                                        <button type="button" class="conn_adv_btn" aria-expanded="false" hidden>__MSG_prefs_advanced_options__</button>
+                                        <table class="conn_adv_table hidden">
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="detail_side">
+                                <span class="field_label">__MSG_customPrompts_label_options__</span>
+                                <label class="flag_row"><input type="checkbox" id="detail_need_selected" class="flag_switch need_selected" data-flag="need_selected"><span class="flag_text"><span class="flag_label">__MSG_customPrompts_form_label_need_selected__</span><span class="flag_fixed"> — __MSG_customPrompts_flag_fixed_suffix__</span></span></label>
+                                <label class="flag_row"><input type="checkbox" id="detail_need_signature" class="flag_switch need_signature" data-flag="need_signature"><span class="flag_text"><span class="flag_label">__MSG_customPrompts_form_label_need_signature__</span><span class="flag_fixed"> — __MSG_customPrompts_flag_fixed_suffix__</span></span></label>
+                                <label class="flag_row"><input type="checkbox" id="detail_need_custom_text" class="flag_switch need_custom_text" data-flag="need_custom_text"><span class="flag_text"><span class="flag_label">__MSG_customPrompts_form_label_need_custom_text__</span><span class="flag_fixed"> — __MSG_customPrompts_flag_fixed_suffix__</span></span></label>
+                                <label class="flag_row"><input type="checkbox" id="detail_define_response_lang" class="flag_switch define_response_lang" data-flag="define_response_lang"><span class="flag_text"><span class="flag_label">__MSG_customprompts_form_label_define_response_lang__</span><span class="flag_fixed"> — __MSG_customPrompts_flag_fixed_suffix__</span></span></label>
+                                <label class="flag_row" title="__MSG_customPrompts_form_label_use_diff_viewer_title__"><input type="checkbox" id="detail_use_diff_viewer" class="flag_switch use_diff_viewer" data-flag="use_diff_viewer"><span class="flag_text"><span class="flag_label">__MSG_customPrompts_form_label_use_diff_viewer__</span><span class="flag_fixed"> — __MSG_customPrompts_flag_fixed_suffix__</span></span></label>
+                                <span id="detail_diff_hint" class="small_label">__MSG_customPrompts_form_label_use_diff_viewer_title__</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
     </div>
     <div class="storage_space">__MSG_StorageSpace__: <span id="storage_space"></span></div>
     </div>
