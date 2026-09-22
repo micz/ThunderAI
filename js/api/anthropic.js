@@ -173,11 +173,14 @@ export class Anthropic {
         claude_body.stop_sequences = stopSequences;
       }
 
-      // Effort is omitted when it equals the API default, so an untouched
-      // configuration keeps producing exactly the request body it produced before.
+      // A level the user picked is always sent, even one that looks like the API
+      // default: defaults differ per model and can change without notice, so
+      // omitting it would silently ignore an explicit choice. Only the empty
+      // "Default (decided by the API)" option, which is the stored default,
+      // leaves the field out.
       const effort = (this.effort || '').trim();
       const effortIsValid = caps.supportsEffort && effort !== '' && caps.effortLevels.includes(effort);
-      if(effortIsValid && effort !== ANTHROPIC_DEFAULT_EFFORT) {
+      if(effortIsValid) {
         claude_body.output_config = { effort: effort };
       }
 
@@ -222,17 +225,33 @@ export class Anthropic {
 
       // console.log(">>>>>>>>>>>>>>>>> [ThunderAI] Anthropic API request: " + JSON.stringify(claude_body));
 
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: { 
-              "Content-Type": "application/json", 
-              "x-api-key": this.apiKey,
-              "anthropic-version": this.version,
-              "anthropic-dangerous-direct-browser-access": "true",
-          },
-          body: JSON.stringify(claude_body),
-      });
-      return response;
+      const response = await this._postMessages(claude_body);
+      if(response.status !== 400) return response;
+
+      // Safety net for a table that lags behind the API: a 400 naming a parameter
+      // we actually sent is retried exactly once without it. The 400 arrives
+      // before any stream data, so this works for streaming requests too. The
+      // error body is read from a clone, so when there is nothing to drop -- or
+      // the retry fails as well -- the original response is returned unread and
+      // the worker reports it with the describeAnthropicError() hint as before.
+      let errorMessage = '';
+      try {
+        const errorJSON = await response.clone().json();
+        errorMessage = errorJSON?.error?.message ?? '';
+      } catch(e) {
+        return response;
+      }
+      const dropped = dropRejectedParams(claude_body, errorMessage);
+      if(!dropped) return response;
+
+      console.warn("[ThunderAI] Anthropic: model " + this.model + " rejected the request (400);"
+        + " retrying once without: " + dropped.params.join(", ") + ". Detail: " + errorMessage);
+      try {
+        const retryResponse = await this._postMessages(dropped.body);
+        return retryResponse.ok ? retryResponse : response;
+      } catch(e) {
+        return response;
+      }
     }catch (error) {
         console.error("[ThunderAI] Claude API request failed: " + error);
         let output = {};
@@ -241,6 +260,19 @@ export class Anthropic {
         output.error = "Claude API request failed: " + error;
         return output;
     }
+  }
+
+  _postMessages = (claude_body) => {
+    return fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { 
+            "Content-Type": "application/json", 
+            "x-api-key": this.apiKey,
+            "anthropic-version": this.version,
+            "anthropic-dangerous-direct-browser-access": "true",
+        },
+        body: JSON.stringify(claude_body),
+    });
   }
 
 }
@@ -263,17 +295,52 @@ function effortBlocksDisabledThinking(caps, effort) {
 }
 
 // Maps a parameter name that can appear in a 400 error message to the i18n key
-// of the hint explaining it. Order matters: the first match wins, and the more
+// of the hint explaining it, and to the top-level request fields the retry in
+// fetchResponse() drops. Order matters: the first match wins, and the more
 // specific names are checked first so "thinking.type" is not swallowed by a
-// looser match.
+// looser match. The bare 'output_config' and 'thinking' needles come last, as
+// catch-alls for messages that name the field rather than the sub-property:
+// 'thinking' in particular also appears in messages about other parameters
+// ("temperature is not supported with thinking").
+//
+// The three sampling params are dropped together: they share one capability,
+// so a model that rejects one rejects all of them, and dropping them one at a
+// time would spend the single retry on a request that is bound to fail again.
+const ANTHROPIC_SAMPLING_PARAMS = ['temperature', 'top_p', 'top_k'];
 const ANTHROPIC_ERROR_HINTS = [
-  { needle: 'budget_tokens', key: 'anthropic_err_hint_budget_tokens' },
-  { needle: 'thinking.type', key: 'anthropic_err_hint_thinking_type' },
-  { needle: 'temperature',   key: 'anthropic_err_hint_temperature' },
-  { needle: 'top_p',         key: 'anthropic_err_hint_temperature' },
-  { needle: 'top_k',         key: 'anthropic_err_hint_temperature' },
-  { needle: 'effort',        key: 'anthropic_err_hint_effort' },
+  { needle: 'budget_tokens', key: 'anthropic_err_hint_budget_tokens', drop: ['thinking'] },
+  { needle: 'thinking.type', key: 'anthropic_err_hint_thinking_type', drop: ['thinking'] },
+  { needle: 'temperature',   key: 'anthropic_err_hint_temperature',   drop: ANTHROPIC_SAMPLING_PARAMS },
+  { needle: 'top_p',         key: 'anthropic_err_hint_temperature',   drop: ANTHROPIC_SAMPLING_PARAMS },
+  { needle: 'top_k',         key: 'anthropic_err_hint_temperature',   drop: ANTHROPIC_SAMPLING_PARAMS },
+  { needle: 'effort',        key: 'anthropic_err_hint_effort',        drop: ['output_config'] },
+  { needle: 'output_config', key: 'anthropic_err_hint_effort',        drop: ['output_config'] },
+  { needle: 'thinking',      key: 'anthropic_err_hint_thinking_type', drop: ['thinking'] },
 ];
+
+/**
+ * Finds the first ANTHROPIC_ERROR_HINTS entry whose needle appears in a 400
+ * message and whose fields are actually in the request body, and returns a copy
+ * of the body without them. Returns null when the message names nothing we sent,
+ * in which case retrying could not change the outcome.
+ *
+ * @param {object} claude_body the request body that was rejected
+ * @param {string} detailMessage the message text returned by the API
+ * @returns {{body: object, params: string[]}|null}
+ */
+function dropRejectedParams(claude_body, detailMessage) {
+  if(!detailMessage) return null;
+  const haystack = String(detailMessage).toLowerCase();
+  for(const hint of ANTHROPIC_ERROR_HINTS) {
+    if(!haystack.includes(hint.needle)) continue;
+    const params = hint.drop.filter(param => param in claude_body);
+    if(params.length === 0) continue;
+    const body = { ...claude_body };
+    params.forEach(param => delete body[param]);
+    return { body, params };
+  }
+  return null;
+}
 
 /**
  * Prepends a localized hint to a 400 error detail when the API message names a
