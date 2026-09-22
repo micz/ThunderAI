@@ -83,10 +83,14 @@
                         <div class="detail_title_wrap">
                             <div class="detail_title_line">
                                 <span id="detail_title"></span>
-                                <span id="detail_ro_badge" class="ro_badge hiddendata">⌧ __MSG_customPrompts_badge_readonly__</span>
+                                <span id="detail_ro_badge" class="ro_badge hiddendata"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>__MSG_customPrompts_badge_readonly__</span></span>
                             </div>
                             <span id="detail_subid" class="mono_id"></span>
                         </div>
+                        <div class="toolbar_spacer"></div>
+                        <!-- Centred between the title and the actions: it is about where the
+                             prompt appears, not an edit of it. -->
+                        <button type="button" id="btnDetailMenuPosition" class="btnMenuPositionItem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>__MSG_menu_position_btn_label__</span></button>
                         <div class="toolbar_spacer"></div>
                         <div class="detail_actions">
                             <button type="button" id="btnDetailRestore" class="btn_ghost">__MSG_customPrompts_btnRestoreDefault__</button>
@@ -103,7 +107,7 @@
                     <div class="detail_scroll">
                         <div class="detail_grid">
                             <div class="detail_main">
-                                <div class="field_pair">
+                                <div class="field_stack">
                                     <div class="field">
                                         <label for="detail_id" class="field_label">*__MSG_customPrompts_form_label_ID__</label>
                                         <input type="text" id="detail_id" class="detail_input detail_edit" autocomplete="off">
@@ -140,8 +144,6 @@
                                         </select>
                                     </div>
                                 </div>
-
-                                <button type="button" id="btnDetailMenuPosition" class="btnMenuPositionItem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>__MSG_menu_position_btn_label__</span></button>
 
                                 <!-- Read-only summary of the connection override, for prompts
                                      whose override cannot be edited here. -->

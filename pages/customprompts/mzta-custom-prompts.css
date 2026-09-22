@@ -443,11 +443,14 @@ button:focus-visible {
     gap: 6px;
     min-width: 0;
 }
+/* Padlock on read-only prompts: an SVG in currentColor, so it follows the theme
+   token instead of rendering as a coloured emoji. */
 .p_lock {
-    font-size: 11px;
+    display: inline-flex;
     color: var(--lock);
     flex: none;
 }
+.p_lock svg { width: 12px; height: 12px; }
 .p_lock[hidden] { display: none; }
 
 .p-name {
@@ -729,6 +732,9 @@ mark.search_hit {
 }
 
 .ro_badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     flex: none;
     font-size: 10px;
     font-weight: 600;
@@ -740,6 +746,7 @@ mark.search_hit {
     padding: 2px 7px;
     border-radius: 4px;
 }
+.ro_badge svg { width: 10px; height: 10px; }
 
 .detail_actions {
     display: flex;
@@ -818,6 +825,14 @@ mark.search_hit {
     flex-wrap: wrap;
     gap: 16px;
 }
+/* ID and Name: one per row, each input as wide as the text editor below. */
+.field_stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.field_stack .field { width: 100%; }
+
 .field {
     display: flex;
     flex-direction: column;
@@ -853,12 +868,13 @@ mark.search_hit {
 .small_label { font-size: 11.5px; font-style: italic; color: var(--muted2); }
 .small_info { font-size: smaller; }
 
+/* In the detail header, centred between the title and the action buttons by the two
+   .toolbar_spacer siblings around it. */
 .btnMenuPositionItem {
-    align-self: flex-start;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    margin-top: 4px;
+    flex: none;
     padding: 7px 12px;
     background: var(--edit-bg);
     color: var(--body);

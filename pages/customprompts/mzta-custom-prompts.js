@@ -331,7 +331,7 @@ function rowTemplate() {
     return `<div class="p_row p_grid" tabindex="0">
         <div class="p_cell p_cell_prompt">
             <div class="p_line1">
-                <span class="p_name_wrap"><span class="p_lock" hidden>⌧</span><span class="p-name"></span></span>
+                <span class="p_name_wrap"><span class="p_lock" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><span class="p-name"></span></span>
                 <span class="p-type type_badge"></span>
             </div>
             <span class="p-id mono_id"></span>
