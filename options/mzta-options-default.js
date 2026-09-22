@@ -196,6 +196,8 @@ export const prefs_default = {
     summarize_max_messages: 20,          // max number of messages summarized at once (webchat mode); above this the user is warned and the operation is blocked
     summarize_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
     summarize_strip_formatting: false,   // strip HTML/markdown formatting from AI summary
+    summarize_force_lang: false,         // always write the summary in summarize_lang (or default_chatgpt_lang)
+    summarize_lang: '',                  // summary language when summarize_force_lang is on, fallback on default_chatgpt_lang
     summarize_auto_senders: false,       // auto-summarize emails coming from the addresses in the list below
     summarize_auto_senders_list: [],     // sender addresses or domain patterns ("@domain.com", "*@domain.com")
     translate: true,

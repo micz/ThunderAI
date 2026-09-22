@@ -27,9 +27,14 @@ import {
 } from "../../js/mzta-prompts.js";
 import {
     getPlaceholders,
-    mapPlaceholderToSuggestion, placeholdersUtils } from "../../js/mzta-placeholders.js";
+    mapPlaceholderToSuggestion,
+    placeholdersUtils
+} from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
-import { attachEditorHighlight, makeTokenStateResolver } from "../../js/mzta-editor-highlight.js";
+import {
+  attachEditorHighlight,
+  makeTokenStateResolver
+} from "../../js/mzta-editor-highlight.js";
 import {
   normalizeStringList,
   isAPIKeyValue,
@@ -44,6 +49,7 @@ import {
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
+import { taPromptUtils } from '../../js/mzta-utils-prompt.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -116,6 +122,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         summarize_use_specific_el.addEventListener('change', updateConnPanelTint);
     }
     updateConnPanelTint();
+
+    // Force summary language: the language field is only shown when the toggle is on.
+    // Both controls are plain .option-input, saved by saveOptions.
+    document.getElementById('summarize_force_lang').addEventListener('change', updateForceLangState);
+    updateForceLangState();
+    // The preview is refreshed from the storage change, not from the controls' change
+    // event: saveOptions() does not await setPref(), so reading the prefs right after
+    // the change event could still return the previous value.
+    browser.storage.onChanged.addListener((changes) => {
+        if (changes.summarize_force_lang || changes.summarize_lang || changes.default_chatgpt_lang) {
+            updateAdditionalPromptStatements();
+        }
+    });
+    updateAdditionalPromptStatements();
 
     // Auto-summarize senders list
     // The toggle is a plain .option-input (saved by saveOptions), the list is saved explicitly.
@@ -306,6 +326,30 @@ function updateConnPanelTint() {
   }
 }
 
+function updateForceLangState() {
+  const force_lang_el = document.getElementById('summarize_force_lang');
+  const lang_container_el = document.getElementById('summarize_lang_container');
+  if (!force_lang_el || !lang_container_el) return;
+  lang_container_el.classList.toggle('hidden', !force_lang_el.checked);
+}
+
+// Shows below the main prompt the forced-language statement buildSummaryPrompt()
+// appends once at the end of the whole prompt, computed by the same
+// taPromptUtils.getSummaryLang() so the preview can't drift.
+async function updateAdditionalPromptStatements() {
+  const el_statements = document.getElementById('summarize_info_additional_statements');
+  if (!el_statements) return;
+  const specialPrompts = await getSpecialPrompts();
+  const summarize_prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize');
+  const { force_lang_statement } = await taPromptUtils.getSummaryLang(summarize_prompt);
+  if (force_lang_statement !== '') {
+    el_statements.textContent = browser.i18n.getMessage("summarize_info_additional_statements") + " \"" + force_lang_statement + "\".";
+    el_statements.style.display = 'block';
+  } else {
+    el_statements.style.display = 'none';
+  }
+}
+
 function updateDisplayModeConstraint() {
   const summarize_auto_el = document.getElementById('summarize_auto');
   const display_mode_el = document.getElementById('summarize_display_mode');
@@ -314,9 +358,9 @@ function updateDisplayModeConstraint() {
     display_mode_el.value = 'inline';
     display_mode_el.disabled = true;
     mztaPrefs.setPref('summarize_display_mode', 'inline');
-  } else if (autoVal === '0') {
-    display_mode_el.disabled = true;
   } else {
+    // '0' (disabled) keeps the select usable too: the display mode still applies
+    // to the summaries requested manually, e.g. from the context menu.
     display_mode_el.disabled = false;
   }
   updateAutoSendersState();
@@ -507,4 +551,5 @@ async function restoreOptions() {
 
   setCurrentChoice(getting);
   updateDisplayModeConstraint();
+  updateForceLangState();
 }
