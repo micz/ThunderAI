@@ -999,7 +999,10 @@ Two invariants in `MessagesArea`, both easy to break:
   Degrading therefore *replaces* the bar with the toolbar. The toolbar is built at that
   moment, but from the arguments stashed on the turn (`_mztaToolsArgs`) when the bar was
   created, so it stays bound to that answer's own text rather than to whatever is on screen
-  later.
+  later. An error turn (`appendBotMessage(..., 'error')`) also takes the full-bar slot: it
+  degrades the previous bar and gets a Close-only `.action-bar` (built by
+  `_buildCloseButton()`, shared with `addActionButtons()`), with no `_mztaToolsArgs`, so the
+  next degrade just removes it and builds no toolbar.
 
 **Self-closing `chatgpt_close` must be fire-and-forget.** Every button that finishes an
 action (reply / replace / save-summary / plain close) ends by sending
