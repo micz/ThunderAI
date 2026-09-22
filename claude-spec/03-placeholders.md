@@ -573,10 +573,10 @@ source field on the path in question:
 
 | Path | Site | Supplies |
 |---|---|---|
-| Interactive menu (reader, message list, popup, calendar event, task, translate-this) | `js/mzta-menus.js` → `preparePrompt` | everything — the only site passing selection/typed/quoted/tags |
-| Spam filter | `mzta-background.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text` |
-| Auto add-tags (batch loop) | `mzta-background.js` → `preparePrompt` | the same plus `tags_full_list` |
-| Summarize, per-mail template | `js/mzta-utils-prompt.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text` |
+| Interactive menu (reader, message list, popup, calendar event, task, translate-this) | `js/mzta-menus.js` → `preparePrompt` | everything — the only site passing selection/typed/quoted |
+| Spam filter | `mzta-background.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text`, `tags_full_list` |
+| Auto add-tags (batch loop) | `mzta-background.js` → `preparePrompt` | the same as the spam filter |
+| Summarize, per-mail template | `js/mzta-utils-prompt.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text`, `tags_full_list` |
 | Summarize, header + separator prompts | `js/mzta-utils-prompt.js` → `preparePrompt` | only `curr_prompt`/`chatgpt_lang` — every mail placeholder resolves empty |
 | Translation | `js/mzta-utils-prompt.js` → `getPlaceholdersValues` directly | `msg_text`, `mail_subject` — **no `body_text`**, so `{%mail_text_body%}` is empty there |
 | `additional_text` late fill | `api_webchat/controller.js` → `replacePlaceholders` | the deferred half of `skip_additional_text: true` |
@@ -594,7 +594,7 @@ Three things bite when adding one:
   `getPlaceholdersValues()` with no matching entry is silently dropped.
 - **A value that is only in `getPlaceholdersValues()`' argument list is not enough.** That
   function is fed by 6 call sites with *uneven* coverage (see the table under *Placeholder
-  Resolution Order*): only `js/mzta-menus.js` passes selection/typed/quoted/tags, and
+  Resolution Order*): only `js/mzta-menus.js` passes selection/typed/quoted, and
   `buildTranslationPrompt()` passes no `body_text` at all. Check the paths your placeholder needs.
 - **`type: 1` means "reading", not "background".** The reader and the message list are reading
   contexts served by the content-script scraper in `js/mzta-menus.js`, which has no access to the

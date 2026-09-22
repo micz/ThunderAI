@@ -200,6 +200,21 @@ export function extractEmail(text) {
   return match ? match[0] : '';
 }
 
+// tabs.sendMessage() guarded against Thunderbird's crash on tabs with no reachable
+// message browser [#901]. In a 3-pane "mail" tab with the message pane hidden (F8),
+// nothing displayed, or a multi-message view, Thunderbird's ExtensionParent routes
+// the send through a tab object that has no getAttribute() and the promise rejects
+// with "TypeError: (intermediate value).getAttribute is not a function" - every
+// un-awaited call site then dies as an uncaught rejection, killing the whole action
+// with nothing shown to the user. Sending through this helper turns any failure
+// (unreachable pane, closed tab, no listener) into a plain false: the same quiet
+// drop the .catch(() => {}) idiom already gives showGenericError()/showGenericInfo().
+// Resolves true when the message was delivered, so a caller can also use it as a
+// probe - see the summarize context-menu flow in mzta-background.js.
+export function sendTabMessageSafe(tabId, message) {
+  return browser.tabs.sendMessage(tabId, message).then(() => true, () => false);
+}
+
 export async function getMailSubject(tab){
   // console.log(">>>>>>>>>> getMailSubject tab: " + JSON.stringify(tab));
   if(!["mail", "messageCompose","messageDisplay"].includes(tab.type)){
@@ -856,11 +871,27 @@ function generateHexColorForTag() {
   return hexColor;
 }
 
+// Fails soft on both arguments: this resolves a USER-CHOSEN placeholder
+// ({%tags_current_email%}), so a gap in the data must not take down the whole
+// request. Two real cases reach here - a prompt with no curr_message, whose
+// .tags is undefined, and a call site that omits tags_full_list and gets
+// preparePrompt()'s empty ["", []] default.
 export async function transformTagsLabels(labels, tags_list) {
   // console.log(">>>>>>>>> transformTagsLabels labels: " + labels);
   // console.log(">>>>>>>>> transformTagsLabels tags_list: " + tags_list);
+  if(!Array.isArray(labels)) {
+      console.warn("[ThunderAI] transformTagsLabels: no tags to transform, expected an array but got: " + JSON.stringify(labels));
+      return [];
+  }
   let output = [];
   for(let label of labels) {
+      // Fall back to the raw internal key rather than dropping the tag: a key is
+      // still legible in a prompt, while a silent omission hides the tag entirely.
+      if(!tags_list || !tags_list[label]) {
+          console.warn("[ThunderAI] transformTagsLabels: unresolved tag key '" + label + "', using the raw key as fallback.");
+          output.push(label);
+          continue;
+      }
       output.push(tags_list[label].tag);
   }
   return output;

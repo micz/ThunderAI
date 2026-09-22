@@ -59,6 +59,7 @@ import {
     isMessageInAutoSkippedFolder,
     isApiUsableConnection,
     hasSpecificIntegration,
+    sendTabMessageSafe,
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
@@ -781,7 +782,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 return _do_assign_tags(message);
                 break;
             case 'api_send_custom_text':
-                browser.tabs.sendMessage(message.tabId, { command: "api_send_custom_text", custom_text: message.custom_text });
+                sendTabMessageSafe(message.tabId, { command: "api_send_custom_text", custom_text: message.custom_text });
                 break;
             case 'checkSpamReport':
                 if(!prefs_init.spamfilter_show_msg_panel){
@@ -845,7 +846,12 @@ async function _sendIfCurrent(tabId, headerMessageId, payload) {
         if (!tabId) return;
         const current = await browser.messageDisplay.getDisplayedMessage(tabId);
         if (!current || current.headerMessageId !== headerMessageId) return; // stale — drop
-        browser.tabs.sendMessage(tabId, payload);
+        // [#901] The tab may also have no reachable message browser (hidden message
+        // pane, multi-message view): the displayed-message check above cannot tell,
+        // because getDisplayedMessage() still reports the selected message with the
+        // pane hidden. sendTabMessageSafe() drops the send quietly - the result stays
+        // cached and renders the next time the pane is reachable.
+        sendTabMessageSafe(tabId, payload);
     } catch (e) {
         taLog.error("Error in _sendIfCurrent: " + e);
     }
@@ -953,13 +959,13 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
         }
 
         if (await summaryStore.isProcessing(headerMessageId)) {
-            if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+            if (tabId) sendTabMessageSafe(tabId, { command: "showSummaryGenerating" });
             return;
         }
 
         await summaryStore.setProcessing(headerMessageId);
         taWorkingStatus.startWorking();
-        if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+        if (tabId) sendTabMessageSafe(tabId, { command: "showSummaryGenerating" });
 
         let message, fullMessage;
         if (options.messageData) {
@@ -1064,13 +1070,13 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
         }
 
         if (await translationStore.isProcessing(headerMessageId)) {
-            if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+            if (tabId) sendTabMessageSafe(tabId, { command: "showTranslationGenerating" });
             return;
         }
 
         await translationStore.setProcessing(headerMessageId);
         taWorkingStatus.startWorking();
-        if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+        if (tabId) sendTabMessageSafe(tabId, { command: "showTranslationGenerating" });
 
         // messageId travels alongside fullMessage on BOTH branches: the body now
         // comes from getMailInlineTextParts(messageId), so buildTranslationPrompt()
@@ -1318,13 +1324,15 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
             return { success: false };
         }
         let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
+        let tags_full_list = await getTagsList();
         let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt({
             curr_prompt: curr_prompt_spamfilter,
             curr_message: message,
             chatgpt_lang: chatgpt_lang,
             body_text: body_text,
             subject_text: curr_fullMessage.headers.subject,
-            msg_text: msg_text
+            msg_text: msg_text,
+            tags_full_list: tags_full_list
         });
         taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
 
@@ -1454,7 +1462,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     if((_max_prompt_length > 0) && (promptText.length > _max_prompt_length)){
         // Prompt too long
         let tabs = await browser.tabs.query({ active: true, currentWindow: true });
-        browser.tabs.sendMessage(curr_tabId, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('msg_prompt_too_long') });
+        sendTabMessageSafe(curr_tabId, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('msg_prompt_too_long') });
         return;
     }
 
@@ -1815,7 +1823,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 // and point them at the setup wizard.
                 taLog.error("No AI connection selected.");
                 let tabs_noconn = await browser.tabs.query({ active: true, currentWindow: true });
-                browser.tabs.sendMessage(curr_tabId, { command: "sendAlert", curr_tab_type: tabs_noconn[0].type, message: browser.i18n.getMessage('msg_no_connection_selected') });
+                sendTabMessageSafe(curr_tabId, { command: "sendAlert", curr_tab_type: tabs_noconn[0].type, message: browser.i18n.getMessage('msg_no_connection_selected') });
             }else{
                 taLog.error("Unknown API connection type: " + prefs.connection_type);
             }
@@ -2061,7 +2069,10 @@ async function updateSpamPanel(messageId, command, data = null) {
                 if (data) {
                     msg.data = data;
                 }
-                browser.tabs.sendMessage(activeTab.id, msg);
+                // [#901] The active tab may be a mail tab with no reachable message
+                // browser: drop the panel update quietly, the stored report renders
+                // the next time the pane is reachable.
+                sendTabMessageSafe(activeTab.id, msg);
             }
         }
     }
@@ -2397,18 +2408,27 @@ async function processEmails(args) {
         }
         const tabId = tabs[0].id;
 
-        // Inline mode for single message: generate inline summary in the message pane
+        // Inline mode for single message: generate inline summary in the message pane.
+        // The pane may be unreachable - hidden via F8, nothing displayed, multi-message
+        // view - and a plain tabs.sendMessage() to such a tab crashes inside
+        // Thunderbird's ExtensionParent, killing the action with an uncaught rejection
+        // and nothing shown to the user [#901]. The indicator send doubles as the
+        // probe: when the pane cannot receive it, fall back to the webchat flow so the
+        // action still produces something visible.
+        let inline_ready = false;
         if (summarize_prefs.summarize_display_mode === 'inline' && messageArray.length === 1) {
             // Fire the inline loading indicator immediately, before any heavy work
-            browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
-
+            inline_ready = await sendTabMessageSafe(tabId, { command: "showSummaryGenerating" });
+        }
+        if (inline_ready) {
             const msg = messageArray[0];
             const fullMessage = await browser.messages.getFull(msg.id);
             await _generateSummaryForMessage(msg.headerMessageId, tabId, {
                 messageData: { message: msg, fullMessage }
             });
         } else {
-            // Webchat mode, or inline with multiple messages (fallback to webchat).
+            // Webchat mode, or inline with multiple messages / an unreachable message
+            // pane (fallback to webchat).
             // Cap the number of messages to avoid building an unbounded prompt (memory / token blow-up).
             let max_messages = summarize_prefs.summarize_max_messages;
             if (Number.isFinite(max_messages) && max_messages > 0 && messageArray.length > max_messages) {

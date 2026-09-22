@@ -232,6 +232,7 @@
 
         try {
             // console.log('[ThunderAI] Sending prompt to worker:', this.prompt);
+            this.logger.log("fullPrompt: " + this.prompt)
             this.worker.postMessage({ type: 'chatMessage', message: this.prompt });
         } catch (error) {
             clearTimer();
