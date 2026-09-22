@@ -1273,7 +1273,15 @@ export async function* getMessages(list) {
   }
 
   while (page.id) {
-    page = await messenger.messages.continueList(page.id);
+    // A MessageList id expires (and becomes invalid once the list is exhausted elsewhere):
+    // log it and stop here, keeping what was already yielded, instead of throwing into an
+    // unhandled rejection in the middle of the caller's for-await loop.
+    try {
+      page = await messenger.messages.continueList(page.id);
+    } catch (e) {
+      console.error("[ThunderAI] getMessages: continueList(" + page.id + ") failed, the message list is truncated: ", e);
+      return;
+    }
     for (let message of page.messages) {
       yield message;
     }
