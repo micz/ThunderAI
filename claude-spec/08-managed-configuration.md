@@ -85,7 +85,7 @@ policy was read and there is none" from "the policy was never read here".
 
 ## The allowlist
 
-Derived from `Object.keys(prefs_default)`, minus three exclusion rules. Nothing else is
+Derived from `Object.keys(prefs_default)`, minus four exclusion rules. Nothing else is
 hardcoded — a new preference becomes policy-settable the moment it is declared.
 
 ```
@@ -93,17 +93,19 @@ Object.keys(prefs_default)
   minus  /^chatgpt_win_/        window geometry, per machine
   minus  /_enabled_accounts$/   account ids, per profile
   minus  api_webchat_font_scale local UI zoom
+  minus  custom_prompts_view    custom prompts page layout, local UI
 ```
 
-**100 of 108 keys** are policy-settable. The derivation already covers the generated keys:
+**100 of 109 keys** are policy-settable. The derivation already covers the generated keys:
 the six `{prefix}_use_specific_integration` / `{prefix}_connection_type` pairs (from
 `special_prompts_with_integration`) and the per-provider `{integration}_{key}` connection
 keys (from `integration_options_config`) are all spread into `prefs_default` in
 [`options/mzta-options-default.js`](../options/mzta-options-default.js).
 
-The eight excluded keys are per-machine or per-profile state, not configuration: enforcing
+The nine excluded keys are per-machine or per-profile state, not configuration: enforcing
 them across a fleet would push window coordinates from another screen, a font zoom from
-another display, or account ids that do not exist in this profile.
+another display, a page layout the user chose for themselves, or account ids that do not
+exist in this profile.
 
 ## Validation
 
@@ -344,7 +346,7 @@ six feature settings pages and the setup wizard. One `sendMessage` round trip pe
 
 ```javascript
 browser.runtime.sendMessage({ command: 'get_managed_state' })
-// -> { active, orgName, lockedKeys, disablePromptManagement, disableSetupWizard }
+// -> { active, orgName, lockedKeys, disablePromptManagement, disableDefaultPrompts, disableSetupWizard }
 ```
 
 **No page ever calls `browser.storage.managed` itself**, and `runtime.getBackgroundPage()`

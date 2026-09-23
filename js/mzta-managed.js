@@ -87,14 +87,16 @@ const LOCK_SUFFIX = ':locked';
 
 // Preferences an administrator must not set, because they are per-machine or per-profile
 // state rather than configuration. Enforcing any of them across a fleet would be actively
-// harmful: window coordinates from another screen, a font zoom from another display, or
-// account ids that simply do not exist in this profile.
+// harmful: window coordinates from another screen, a font zoom from another display, a
+// page layout the user chose for themselves, or account ids that simply do not exist in
+// this profile.
 const EXCLUDED_KEY_PATTERNS = [
     /^chatgpt_win_/,          // window geometry and position, per machine
     /_enabled_accounts$/,     // account ids, per profile
 ];
 const EXCLUDED_KEYS = new Set([
     'api_webchat_font_scale', // local UI zoom
+    'custom_prompts_view',    // custom prompts page layout (split/table), local UI
 ]);
 
 /**
