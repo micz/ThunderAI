@@ -25,6 +25,7 @@ import { placeholdersUtils } from '../js/mzta-placeholders.js';
 import { getAPIsInitMessageString, convertNewlinesToBr, supportsUsageData } from '../js/mzta-utils.js';
 import { loadPrompt } from '../js/mzta-prompts.js';
 import { buildChatBubbleIcon } from './svgIcons.js';
+import { resolveContextWindow } from './contextWindow.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
 
 // Get the LLM to be used
@@ -37,6 +38,11 @@ const prompt_name = urlParams.get('prompt_name');
 
 // Data received from the user
 let promptData = null;
+// Looks up the model's context window for the usage meter. Set at init only when
+// the usage UI is on, and consumed by the first completed answer: run once, after
+// a response, so a local Ollama model is already loaded and /api/ps can report
+// the context it actually runs with.
+let contextWindowLookup = null;
 
 const messageInput = document.querySelector('message-input');
 const messagesArea = document.querySelector('messages-area');
@@ -169,6 +175,9 @@ if (worker) {
         // from a previous provider must not resurrect an empty session counter here.
         const show_usage = !!prefs_api.chat_show_usage_data && supportsUsageData(llm);
         messagesArea.setShowUsageData(show_usage);
+        if (show_usage) {
+            contextWindowLookup = () => resolveContextWindow(integration, prefs_api);
+        }
 
         // Shared by the header chip and the startup info message below.
         const api_strings = {
@@ -357,6 +366,19 @@ worker.onmessage = async function(event) {
         case 'tokensDone':
             await messagesArea.handleTokensDone(promptData);
             messageInput.enableInput();
+            // The session meter updates once per completed answer, never mid-stream.
+            messageInput.setUsageMeter(messagesArea.getUsageMeterState());
+            if (contextWindowLookup !== null) {
+                const lookup = contextWindowLookup;
+                contextWindowLookup = null;
+                // Not awaited: the meter shows the session total meanwhile, and
+                // turns into a bar once the window is known.
+                lookup().then((tokens) => {
+                    if (tokens === null) return;
+                    messagesArea.setContextWindow(tokens);
+                    messageInput.setUsageMeter(messagesArea.getUsageMeterState());
+                });
+            }
             break;
         case 'error':
             messagesArea.appendBotMessage(payload,'error');

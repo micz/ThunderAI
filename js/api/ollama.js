@@ -203,6 +203,43 @@ export class Ollama {
       }
     }
 
+    /**
+     * GET /api/ps -- the models currently loaded in memory. Each entry carries
+     * `context_length`, the context the server actually runs the model with,
+     * which can be smaller than the model's maximum reported by /api/show.
+     *
+     * Same result contract as fetchModels().
+     */
+    fetchRunningModels = async () => {
+      try{
+        const response = await fetch(this.host + "/api/ps", {
+            method: "GET",
+            headers: this._headers(),
+        });
+
+        if (!response.ok) {
+            const errorDetail = await response.text();
+            console.error("[ThunderAI] Ollama API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
+            let output = {};
+            output.ok = false;
+            output.error = errorDetail;
+            return output;
+        }
+
+        let output = {};
+        output.ok = true;
+        output.response = await response.json();
+        return output;
+      }catch (error) {
+        console.error("[ThunderAI] Ollama API request failed: " + error);
+        let output = {};
+        output.is_exception = true;
+        output.ok = false;
+        output.error = "Ollama API request failed: " + error;
+        return output;
+      }
+    }
+
     fetchModels = async () => {
       try{
         const response = await fetch(this.host + "/api/tags", {

@@ -458,7 +458,7 @@ Worker → controller.js → components
   messageSent      → messageInput.handleMessageSent()
   newToken         → messagesArea.handleNewToken(token)          (feeds StreamingMessage + fading span)
   newThinkingToken → messagesArea.handleNewThinkingToken(token)  (feeds StreamingMessage + live "Thinking…" indicator)
-  usage            → messagesArea.handleUsageData(messageId, payload)  (token-usage badge; optional, see below)
+  usage            → messagesArea.handleUsageData(messageId, payload)  (token-usage chip; optional, see below)
   tokensDone       → messagesArea.handleTokensDone(promptData)   (flush → action buttons)
   error            → messagesArea.appendBotMessage(payload,'error') + messageInput.showErrorStatus()
 

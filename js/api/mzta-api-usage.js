@@ -136,7 +136,21 @@ export function mergeUsageData(a, b) {
 
     // Dropped on purpose so createUsageData() recomputes it from the merged
     // input/output pair, unless one of the two sides actually reported a total.
-    const reported_total = (toUsageNumber(right.total_tokens) !== null) || (toUsageNumber(left.total_tokens) !== null);
+    //
+    // A side whose total is exactly its own input + output is NOT a reported
+    // total: createUsageData() computed it, and there is no way to tell the two
+    // apart. Keeping it would freeze the sum at that side's counts -- Anthropic's
+    // message_start carries output_tokens: 1, so its computed total would win over
+    // the real output that message_delta brings. Recomputing loses nothing even if
+    // the provider did send it, because it equals the sum anyway.
+    const has_reported_total = (u) => {
+        const total = toUsageNumber(u.total_tokens);
+        if (total === null) return false;
+        const input = toUsageNumber(u.input_tokens);
+        const output = toUsageNumber(u.output_tokens);
+        return !(input !== null && output !== null && total === input + output);
+    };
+    const reported_total = has_reported_total(right) || has_reported_total(left);
     if (!reported_total) {
         merged.total_tokens = null;
     }

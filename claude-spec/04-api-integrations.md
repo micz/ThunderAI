@@ -662,7 +662,15 @@ A missing value is therefore never coerced to `0`. `createUsageData(fields)` def
 `null` and computes `total_tokens` from the input/output pair **only** when both are numbers and no total was
 reported. `isUsageDataEmpty(usage)` is true when there is no object or every numeric field is `null`.
 `mergeUsageData(a, b)` merges two partial objects with `b`'s non-null values winning, recomputing the total —
-Anthropic needs it, because its input and output counts arrive on two different stream events.
+Anthropic needs it, because its input and output counts arrive on two different stream events. A side's total
+counts as *reported* only when it differs from that side's own `input + output`: one equal to the sum is
+indistinguishable from the one `createUsageData()` computed, and keeping it would freeze the total at
+`message_start`'s placeholder `output_tokens: 1`.
+
+**Subset invariant.** Every extractor normalizes so that `cached_input_tokens` and `cache_creation_tokens` are
+**part of** `input_tokens`, and `reasoning_tokens` is **part of** `output_tokens`. OpenAI (both APIs) and Ollama
+report it that way natively; Anthropic and Gemini do not and are adjusted in their extractor (below). The chat
+popover's "of which" rows depend on it.
 
 Display and formatting helpers deliberately live **outside** this module.
 
@@ -680,8 +688,8 @@ any other non-API web integration — is `false`: there is no API to report anyt
 | Provider | Populated | Always `null` |
 |---|---|---|
 | `chatgpt_api` (`openai_responses`) | input, output, total, cached_input, reasoning | cache_creation, tokens_per_second |
-| `anthropic_api` | input, output, total *(computed)*, cached_input, cache_creation | reasoning, tokens_per_second |
-| `google_gemini_api` | input, output, total, cached_input, reasoning | cache_creation, tokens_per_second |
+| `anthropic_api` | input *(incl. cache)*, output, total *(computed)*, cached_input, cache_creation | reasoning, tokens_per_second |
+| `google_gemini_api` | input, output *(incl. thoughts)*, total, cached_input, reasoning | cache_creation, tokens_per_second |
 | `ollama_api` | input, output, total *(computed)*, tokens_per_second | cached_input, cache_creation, reasoning |
 | `openai_comp_api` | input, output, total, cached_input, reasoning *(all best effort)* | cache_creation, tokens_per_second |
 | `chatgpt_web` | — *(no extractor)* | everything |
@@ -693,9 +701,15 @@ Where the data comes from, per provider:
 - **anthropic** — split across two events: `message_start` carries the input tokens and both cache counters
   (under `message.usage`), `message_delta` carries the output tokens (cumulative, so the last one wins). The
   extractor returns a **partial** object and the worker combines the halves with `mergeUsageData()`.
+  Claude's `input_tokens` **excludes** the cache (documented total input = `input_tokens +
+  cache_read_input_tokens + cache_creation_input_tokens`), so the extractor sums them into `input_tokens` to
+  honour the subset invariant.
 - **google_gemini** — `usageMetadata`, at the top level of a response or a chunk. In a stream it can appear on
   several chunks and is **cumulative, not per-chunk**, so the last non-empty one replaces the previous. It can
   ride on a chunk with no `candidates`, so the worker reads it **before** its candidates guard.
+  `thoughtsTokenCount` is reported **separately** from `candidatesTokenCount` (the total is prompt + candidates +
+  thoughts + tool use), so the extractor sets `output_tokens = candidates + thoughts`. `promptTokenCount` is
+  documented as already including `cachedContentTokenCount`.
 - **ollama** — the final chunk of `/api/chat` (`done === true`). `tokens_per_second` is derived from
   `eval_count / (eval_duration / 1e9)`, rounded to one decimal; a missing or zero duration yields `null`, never
   `Infinity` or `NaN`.
@@ -736,30 +750,66 @@ The message is `{ type: 'usage', messageId, payload }`, **separate from `tokensD
 Nothing is emitted when the option is off, when the provider reported nothing, or when `isUsageDataEmpty()` is
 true — extraction and the debug log still run in all three cases.
 
-Ordering matters: the usage is posted **before** `tokensDone` because the window renders the badge into the
+Ordering matters: the usage is posted **before** `tokensDone` because the window stores the usage on the
 turn that `tokensDone` then closes. Worker messages are delivered in order, so posting first is sufficient.
 
 ### Rendering in the chat window
 
-`api_webchat/usageBadge.js` holds the whole display layer (`js/api/mzta-api-usage.js` must stay DOM-free). It
-builds the compact line `↑ 1,234 · ↓ 567 · Σ 1,801`, the multi-line `title` tooltip, and the session-total
-accumulator. The **null / 0 distinction is carried all the way through**: a null field is omitted entirely, a 0
-is printed, and `addUsageToTotals()` skips nulls rather than adding them as 0.
+`api_webchat/usageBadge.js` holds the whole display layer (`js/api/mzta-api-usage.js` must stay DOM-free). Two
+levels, never duplicated: a **chip per answer** in its action bar, and a **session meter** above the input field.
+The window header shows only the model and the API, never token counts. The guiding rule is **show only what
+exists**: a null field is omitted entirely, never rendered as `0`, `—` or `n/a`; a reported `0` is printed.
 
-`MessagesArea.handleUsageData()` appends the badge to `.turn-body` as a **sibling of the `.message` element,
-after it — never inside it**. That placement is the structural half of the guarantee that the badge cannot be
-picked up by anything that reads an answer back out of the DOM; the `data-mzta-usage` attribute
-(`USAGE_MARKER_ATTR`) is the other half.
+**Duration.** `MessagesArea` measures it itself, from `appendUserMessage()` (every real prompt is appended just
+before it is posted to the worker) to `handleTokensDone()`, with `performance.now()`. It is therefore available
+for every provider, including an endpoint that reports no usage at all.
+
+**Flow.** `handleUsageData()` only stores the usage on the open turn (`turn._mztaUsage`, once per turn) and folds
+it into the session; it draws nothing. `handleTokensDone()` builds the chip from that usage plus the duration
+(`_buildUsageChipForTurn()`, stored as `turn._mztaUsageChip`) **before** `addActionButtons()`, which places it
+right after Copy. When the answer stops being the newest, `_buildTurnTools()` **moves** the same node into the
+compact toolbar, so earlier answers keep their figures. If `addActionButtons()` bails out early, the chip gets
+an `.action-bar` row of its own. Nothing is shown while streaming.
+
+**Chip text**, first applicable: total → `711 tokens`; output only → `611 output tokens`; no tokens → the
+duration, `3.4 s`. Numbers use `toLocaleString()` with the browser locale.
+
+**Popover.** The chip is a button (`aria-haspopup="dialog"`, `aria-expanded`, `aria-controls`) only when there is
+detail beyond the duration; otherwise it is a static label and there is no popover. The popover sits above the
+chip, left-aligned; it closes on a second click, on Esc (focus returns to the chip) and on a `pointerdown`
+anywhere outside it (document-level listeners, `composedPath()` sees through the open shadow roots). At most one
+is open window-wide. Rows, in order, each only if the value exists:
+
+| Row | Field | Condition |
+|---|---|---|
+| Input | `input_tokens` | |
+| &nbsp;&nbsp;of which cached | `cached_input_tokens` | input known |
+| &nbsp;&nbsp;of which written to cache | `cache_creation_tokens` | input known |
+| Output | `output_tokens` | |
+| &nbsp;&nbsp;of which reasoning | `reasoning_tokens` | output known |
+| **Total** | `total_tokens` | input or output known (the total alone would repeat the chip) |
+| Duration | measured | some row above exists; `· N tok/s` appended when a rate exists |
+
+The rate is `tokens_per_second` when the provider reports it (Ollama, generation phase only), otherwise
+`output_tokens / (durationMs / 1000)` — a wall-clock figure that includes network and prompt processing.
+
+The "of which" rows rely on the **subset invariant** of the normalized object (see
+[Per-provider support](#per-provider-support)).
+
+The chip lives in the action bar, a **sibling of the `.message` element — never inside it**. That placement is
+the structural half of the guarantee that it cannot be picked up by anything that reads an answer back out of
+the DOM; the `data-mzta-usage` attribute (`USAGE_MARKER_ATTR`), set on the chip and on the popover, is the other
+half.
 
 The extraction paths and why each is safe:
 
-| Path | Source | Why the badge cannot reach it |
+| Path | Source | Why the chip cannot reach it |
 |---|---|---|
 | Copy button | `fullTextHTMLAtAssignment` | An immutable string snapshotted at flush time, never read from the DOM |
 | "Use this answer" / reply | same snapshot, or `picker.composeResultHTML()` | Same; the picker owns content handed to it, in its own shadow root |
 | Save as summary | same snapshot | Same |
 | Diff picker | same snapshot + `prompt_info` | Same |
-| An explicit text selection | `getCurrentSelectionText()` | `user-select: none`, plus the badge's text is subtracted from `selection.toString()` if one was caught anyway |
+| An explicit text selection | `getCurrentSelectionText()` | `user-select: none`, plus the chip's text is subtracted from `selection.toString()` if one was caught anyway |
 | An explicit HTML selection | `getCurrentSelectionHTML()` | `_cloneSelectionWithoutUsage()` removes every `[data-mzta-usage]` node from the cloned range |
 
 `getCurrentSelectionText()` deliberately still returns `selection.toString()` on the normal path rather than
@@ -767,10 +817,40 @@ The extraction paths and why each is safe:
 `textContent` would drop, and changing it would alter what the copy button produces for multi-paragraph
 selections.
 
-The **session total** is a cumulative counter in the window header (`#appHeaderUsage`, in the light DOM, so it
-is reached through `document` and not through the shadow root). One chat window is one chat, so a fresh window
-starts from a fresh accumulator and there is nothing to reset between chats. `tokens_per_second` is summed into
-the totals object for shape consistency but dropped before display: the sum of per-turn rates is meaningless.
+### Session meter
+
+`#usageMeter` is the first child of the `<message-input>` shadow root, a full-width row above the textarea (the
+host is `flex-wrap: wrap`). `MessagesArea` keeps the session state (`createSessionUsage()` /
+`addUsageToSession()`):
+
+- `total` — sum of every answer's `total_tokens`; null until one reports it.
+- `context` — `input + output` of the **latest** answer (falling back to its total), i.e. what the next request
+  resends: the workers resend the whole conversation history.
+
+After every `tokensDone`, `controller.js` calls `messageInput.setUsageMeter(messagesArea.getUsageMeterState())`
+(`buildUsageMeterState()`), never mid-stream. Three states:
+
+- **bar** — context window known and `context` known: `Context 711 / 8,192 · 9%`. At **≥ 80%** the fill uses
+  `--warn` and the text adds `— consider starting a new chat`. The track is `role="meter"` with its values.
+- **text** — window unknown, session total known: `Session: 2,340 tokens`.
+- **hidden** — no tokens in the session (also when the usage option is off).
+
+The context window is **only what the provider or the configuration states — never a guess from a per-model
+table**. `api_webchat/contextWindow.js` (`resolveContextWindow(integration, prefs)`, never throws, resolves to a
+positive number or `null`) looks it up; `controller.js` runs it **once, after the first completed answer**, not
+awaited, then calls `messagesArea.setContextWindow()` and repaints the meter (text until then, bar after):
+
+| Provider | Source, most authoritative first |
+|---|---|
+| Ollama | `ollama_num_ctx` setting (> 0) → `/api/ps` `context_length` of the loaded model (`fetchRunningModels()`; the model is loaded once an answer came back, which is why the lookup waits for one) → `num_ctx` in the Modelfile `parameters` of `/api/show` → `model_info["<arch>.context_length"]` of `/api/show` (the model maximum; right for `:cloud` models, which `/api/ps` does not list). Tags match with Ollama's implicit `:latest`. |
+| Gemini | `models.get` → `inputTokenLimit` (`GoogleGemini.fetchModelInfo()`) |
+| Claude | `GET /v1/models/{id}` → `max_input_tokens` (`Anthropic.fetchModelInfo()`) |
+| OpenAI, OpenAI-compatible | none exposed → always `null`, text state |
+
+The floating status pill of `<message-input>` keeps its place on the textarea's top border whether or not the
+meter is shown: the host's row gap (14px) equals the pill's upper half, so the meter row sits just above it.
+
+One chat window is one chat, so a fresh window starts from a fresh accumulator and there is nothing to reset.
 
 The **automatic features** (spam filter, tagging, …) have no chat UI and are unaffected: their usage stays in
 the `taLog` debug output.
