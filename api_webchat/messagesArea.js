@@ -43,7 +43,7 @@ import {
     buildUsageChip,
     createSessionUsage,
     addUsageToSession,
-    buildUsageMeterState,
+    contextTokensOf,
     USAGE_MARKER_ATTR,
     USAGE_CHIP_CSS,
 } from './usageBadge.js';
@@ -455,7 +455,7 @@ class MessagesArea extends HTMLElement {
         // window is one chat, so there is nothing to reset between chats.
         this.sessionUsage = null;
         // Context window of the model in use, in tokens, or null when unknown.
-        // Only then does the meter above the input draw a bar.
+        // Read by the usage popovers each time one opens.
         this.contextWindow = null;
         // performance.now() when the pending request was sent, for the duration
         // shown on the usage chip. Measured here rather than by the worker, so
@@ -845,18 +845,12 @@ class MessagesArea extends HTMLElement {
         }
     }
 
-    // Context window of the active model, when the configuration states it. Any
-    // non-positive or non-numeric value means "unknown": no bar, never a guess.
+    // Context window of the active model, as the provider or the configuration
+    // states it (see contextWindow.js). Any non-positive or non-numeric value
+    // means "unknown": the popover then shows the context count without a maximum.
     setContextWindow(tokens) {
         const n = Number(tokens);
         this.contextWindow = (Number.isFinite(n) && n > 0) ? n : null;
-    }
-
-    // What the session meter above the input should show right now, or null when
-    // the usage UI is off for this window.
-    getUsageMeterState() {
-        if (!this.showUsageData) return null;
-        return buildUsageMeterState(this.sessionUsage, this.contextWindow);
     }
 
     // Record the usage of a finished response, and fold it into the session.
@@ -890,7 +884,15 @@ class MessagesArea extends HTMLElement {
         const durationMs = (this._requestStartedAt !== null)
             ? Math.max(0, performance.now() - this._requestStartedAt) : null;
         this._requestStartedAt = null;
-        const chip = buildUsageChip(turn._mztaUsage ?? null, durationMs);
+        const usage = turn._mztaUsage ?? null;
+        // Context and session total are snapshotted now, so an earlier answer's
+        // popover keeps describing the conversation as it was at that answer. The
+        // window is read live instead: it may be looked up after this answer.
+        const chip = buildUsageChip(usage, durationMs, {
+            context: contextTokensOf(usage),
+            sessionTotal: (usage !== null) ? this.sessionUsage.total : null,
+            getWindow: () => this.contextWindow,
+        });
         if (chip !== null) turn._mztaUsageChip = chip;
     }
 

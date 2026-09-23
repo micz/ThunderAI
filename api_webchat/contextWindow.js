@@ -16,10 +16,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// The context window of the model a chat window talks to, for the session meter
-// above the input. Always what the provider or the configuration states, never a
+// The context window of the model a chat window talks to, for the Context row
+// of the usage popover. Always what the provider or the configuration states, never a
 // guess from a hardcoded per-model table: when nothing states it the result is
-// null and the meter falls back to the plain session total.
+// null and the popover shows the context count without a maximum.
 //
 // Every function here resolves to a positive number or null and never throws: a
 // failed lookup must not disturb the chat, it only costs the bar.
@@ -115,7 +115,7 @@ export async function resolveContextWindow(integration, prefs) {
             default: return null;
         }
     } catch (error) {
-        console.warn('[ThunderAI] The model context window could not be read, the usage meter will show the session total only: ' + error);
+        console.warn('[ThunderAI] The model context window could not be read, the usage popover will show the context without a maximum: ' + error);
         return null;
     }
 }

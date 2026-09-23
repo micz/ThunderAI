@@ -20,29 +20,26 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { buildSendIcon, buildStopIcon, buildCheckIcon, buildAlertIcon } from './svgIcons.js';
+import {
+    buildSendIcon,
+    buildStopIcon,
+    buildCheckIcon,
+    buildAlertIcon
+} from './svgIcons.js';
 import { SHARED_BASE_CSS } from './sharedStyles.js';
-import { USAGE_METER_CSS, renderUsageMeter } from './usageBadge.js';
 
 const messageInputTemplate = document.createElement('template');
 
 const messagesInputStyle  = document.createElement('style');
-messagesInputStyle.textContent = SHARED_BASE_CSS + USAGE_METER_CSS + `
+messagesInputStyle.textContent = SHARED_BASE_CSS + `
     :host {
         display: flex;
-        /* Wraps only for the session usage meter, which takes a full row of its
-           own above the field (flex-basis 100%, first in the DOM). */
-        flex-wrap: wrap;
         justify-content: space-between;
         /* flex-end, not center: the textarea grows upwards, so the send/stop
            buttons must stay pinned to the bottom line rather than drifting to
            the middle of a three-line field. */
         align-items: flex-end;
-        /* The row gap only ever separates the usage meter from the field. It is
-           as tall as the upper half of the floating status pill (#statusLogger,
-           ~27px, centred on the field's top border), so the pill keeps its place
-           on that border and never covers the meter text. */
-        gap: 14px 10px;
+        gap: 10px;
         padding: 12px 16px 16px;
         border-top: 1px solid var(--border);
     }
@@ -267,26 +264,6 @@ messagesInputStyle.textContent = SHARED_BASE_CSS + USAGE_METER_CSS + `
 `;
 messageInputTemplate.content.appendChild(messagesInputStyle);
 
-// Session token meter, above the field. Hidden until the first answer of the
-// session reports usage, and forever when the usage option is off. Filled by
-// setUsageMeter(), from the state messagesArea.js computes.
-const usageMeter = document.createElement('div');
-usageMeter.id = 'usageMeter';
-usageMeter.hidden = true;
-const usageMeterTrack = document.createElement('div');
-usageMeterTrack.id = 'usageMeterTrack';
-usageMeterTrack.setAttribute('role', 'meter');
-usageMeterTrack.setAttribute('aria-valuemin', '0');
-usageMeterTrack.hidden = true;
-const usageMeterFill = document.createElement('div');
-usageMeterFill.id = 'usageMeterFill';
-usageMeterTrack.appendChild(usageMeterFill);
-usageMeter.appendChild(usageMeterTrack);
-const usageMeterText = document.createElement('span');
-usageMeterText.id = 'usageMeterText';
-usageMeter.appendChild(usageMeterText);
-messageInputTemplate.content.appendChild(usageMeter);
-
 // A textarea, not an input: the field grows from one to three lines as the text
 // wraps (see the #messageInputField rule and _autoResize below), then scrolls.
 const inputField = document.createElement('textarea');
@@ -366,7 +343,6 @@ class MessageInput extends HTMLElement {
         this._statusLogger = shadowRoot.querySelector('#statusLogger');
         this._statusLoggerIcon = shadowRoot.querySelector('#statusLoggerIcon');
         this._statusLoggerText = shadowRoot.querySelector('#statusLoggerText');
-        this._usageMeter = shadowRoot.querySelector('#usageMeter');
 
         this._messageInputField.addEventListener('keydown', this._handleKeyDown.bind(this));
         this._messageInputField.addEventListener('input', this._autoResize.bind(this));
@@ -404,16 +380,6 @@ class MessageInput extends HTMLElement {
         this.model = model;
         this._sendButton.title = browser.i18n.getMessage("chagpt_api_send_button") + ": " + this.model;
         this._stopButton.title = browser.i18n.getMessage("chagpt_api_send_button") + ": " + this.model;
-    }
-
-    // Paint the session usage meter. `state` comes from
-    // messagesArea.getUsageMeterState(); null (usage UI off) keeps it hidden.
-    setUsageMeter(state) {
-        if (state === null) {
-            this._usageMeter.hidden = true;
-        } else {
-            renderUsageMeter(this._usageMeter, state);
-        }
     }
 
     handleMessageSent() {

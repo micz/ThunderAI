@@ -20,9 +20,9 @@
 // js/api/mzta-api-usage.js, which must stay DOM-free; everything that turns a
 // usage object into something on screen is here.
 //
-// Two levels, never duplicated:
-//   per answer  -> a chip in the answer's action bar, with a detail popover
-//   per session -> a meter above the input field (see messageInput.js)
+// One chip per answer, in its action bar, with a detail popover that also
+// carries the conversation-level figures (context used, session total). There is
+// no other usage chrome in the window: not in the header, not above the input.
 //
 // The guiding rule is "show only what exists": a null field is omitted entirely,
 // never rendered as "0", "-" or "n/a". A reported 0 is printed. The duration is
@@ -35,8 +35,8 @@ import { toUsageNumber } from '../js/api/mzta-api-usage.js';
 // popover out of any range the user drags across the transcript.
 export const USAGE_MARKER_ATTR = 'data-mzta-usage';
 
-// At or above this share of the context window the meter turns to the warning
-// colour and suggests starting over.
+// At or above this share of the context window the context row turns to the
+// warning colour and suggests starting over.
 const CONTEXT_WARN_PCT = 80;
 
 // Locale-aware thousands separator, the same way the rest of the UI formats
@@ -56,6 +56,21 @@ function formatDuration(durationMs) {
 
 function isDuration(value) {
     return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+}
+
+/**
+ * How much of the context an answer leaves occupied: its input + output, i.e.
+ * what the next request resends (the workers resend the whole conversation
+ * history). Falls back to the total when the pair is incomplete; null when the
+ * provider reported neither.
+ * @param {object|null} usage a normalized usage object
+ * @returns {number|null}
+ */
+export function contextTokensOf(usage) {
+    const input = toUsageNumber(usage?.input_tokens);
+    const output = toUsageNumber(usage?.output_tokens);
+    if (input !== null && output !== null) return input + output;
+    return toUsageNumber(usage?.total_tokens);
 }
 
 // Generation speed. Ollama reports its own rate, measured on the generation phase
@@ -88,16 +103,24 @@ function chipText(usage, durationMs) {
 // every provider so that cached and cache-write tokens are part of the input and
 // reasoning tokens are part of the output (see claude-spec/04-api-integrations.md).
 //
+// `conv` holds the conversation-level figures captured when the answer closed:
+//   context      -> contextTokensOf() this answer, or null
+//   sessionTotal -> sum of the totals of the session up to this answer, or null
+//   window       -> the model's context window as known NOW, or null
+// The window is read at open time rather than captured, because it is looked up
+// asynchronously after the first answer and may arrive after that answer's chip.
+//
 // Returns [] when nothing but the duration is known: the chip is then static and
 // there is no popover at all.
-function popoverRows(usage, durationMs) {
+function popoverRows(usage, durationMs, conv) {
     const rows = [];
-    const add = (labelKey, value, kind = '') => {
+    const add = (label, value, kind = '') => {
         const n = toUsageNumber(value);
-        if (n !== null) rows.push({ label: browser.i18n.getMessage(labelKey), value: formatCount(n), kind });
+        if (n !== null) rows.push({ label: browser.i18n.getMessage(label), value: formatCount(n), kind });
     };
     const input = toUsageNumber(usage?.input_tokens);
     const output = toUsageNumber(usage?.output_tokens);
+    const total = toUsageNumber(usage?.total_tokens);
 
     add('apiwebchat_usage_input', input);
     // A subset row without its parent would be an orphaned "of which".
@@ -111,19 +134,75 @@ function popoverRows(usage, durationMs) {
     }
     // The total alone would only repeat the chip.
     if (input !== null || output !== null) {
-        add('apiwebchat_usage_total', usage.total_tokens, 'total');
+        add('apiwebchat_usage_total', total, 'total');
     }
 
-    if (rows.length > 0 && isDuration(durationMs)) {
+    // Conversation level: how full the context is, and the running session sum.
+    const convRows = [];
+    const context = toUsageNumber(conv?.context);
+    let warn = false;
+    if (context !== null) {
+        const window = toUsageNumber(conv?.window);
+        let value = formatCount(context);
+        if (window !== null && window > 0) {
+            const pct = Math.round(context / window * 100);
+            warn = pct >= CONTEXT_WARN_PCT;
+            value = browser.i18n.getMessage('apiwebchat_usage_context_value',
+                [formatCount(context), formatCount(window), String(pct)]);
+        }
+        convRows.push({ label: browser.i18n.getMessage('apiwebchat_usage_context'), value, kind: warn ? 'warn' : '' });
+    }
+    // Only once the session holds more than this answer: on the first answer it
+    // would just repeat the total.
+    const sessionTotal = toUsageNumber(conv?.sessionTotal);
+    if (sessionTotal !== null && sessionTotal !== total) {
+        convRows.push({ label: browser.i18n.getMessage('apiwebchat_usage_session_total'), value: formatCount(sessionTotal), kind: '' });
+    }
+
+    if (rows.length === 0 && convRows.length === 0) return [];
+
+    if (isDuration(durationMs)) {
         let value = formatDuration(durationMs);
         const rate = tokensPerSecond(usage, durationMs);
         if (rate !== null) {
             value += ' · ' + browser.i18n.getMessage('apiwebchat_usage_speed', [formatCount(rate)]);
         }
-        rows.push({ kind: 'divider' });
+        if (rows.length > 0) rows.push({ kind: 'divider' });
         rows.push({ label: browser.i18n.getMessage('apiwebchat_usage_duration'), value, kind: '' });
     }
+    if (convRows.length > 0) {
+        if (rows.length > 0) rows.push({ kind: 'divider' });
+        rows.push(...convRows);
+        if (warn) {
+            rows.push({ kind: 'note', value: browser.i18n.getMessage('apiwebchat_usage_context_warn') });
+        }
+    }
     return rows;
+}
+
+function renderPopover(popover, rows) {
+    popover.textContent = '';
+    for (const row of rows) {
+        const line = document.createElement('div');
+        if (row.kind === 'divider') {
+            line.classList.add('mzta-usage-divider');
+        } else if (row.kind === 'note') {
+            line.classList.add('mzta-usage-note');
+            line.textContent = row.value;
+        } else {
+            line.classList.add('mzta-usage-row');
+            if (row.kind) line.classList.add('is-' + row.kind);
+            const label = document.createElement('span');
+            label.classList.add('label');
+            label.textContent = row.label;
+            const value = document.createElement('span');
+            value.classList.add('value');
+            value.textContent = row.value;
+            line.appendChild(label);
+            line.appendChild(value);
+        }
+        popover.appendChild(line);
+    }
 }
 
 // ---- popover open/close ----
@@ -135,11 +214,11 @@ let listenersInstalled = false;
 
 function closeOpenPopover(restoreFocus = false) {
     if (openChip === null) return;
-    const { button, popover } = openChip;
+    const { button, popover, caret } = openChip;
     openChip = null;
     popover.hidden = true;
     button.setAttribute('aria-expanded', 'false');
-    button.querySelector('.caret').textContent = '▾';
+    caret.textContent = '▾';
     if (restoreFocus) button.focus();
 }
 
@@ -170,17 +249,24 @@ let popoverSeq = 0;
  *
  * @param {object|null} usage a normalized usage object, or null if none arrived
  * @param {number|null} durationMs send-to-end-of-stream time measured by the window
+ * @param {object} conv conversation figures: {context, sessionTotal} captured when
+ *   the answer closed, and getWindow(), read each time the popover opens
  * @returns {HTMLElement|null}
  */
-export function buildUsageChip(usage, durationMs) {
+export function buildUsageChip(usage, durationMs, conv = {}) {
     const text = chipText(usage, durationMs);
     if (text === '') return null;
+
+    const getWindow = (typeof conv.getWindow === 'function') ? conv.getWindow : () => null;
+    const rowsNow = () => popoverRows(usage, durationMs,
+        { context: conv.context, sessionTotal: conv.sessionTotal, window: getWindow() });
 
     const wrap = document.createElement('span');
     wrap.classList.add('mzta-usage');
 
-    const rows = popoverRows(usage, durationMs);
-    if (rows.length === 0) {
+    // Whether a popover exists at all does not depend on the window: the context
+    // row is there whenever the context count is, with or without its maximum.
+    if (rowsNow().length === 0) {
         const chip = document.createElement('span');
         chip.classList.add('mzta-usage-chip', 'is-static');
         chip.setAttribute(USAGE_MARKER_ATTR, '1');
@@ -209,25 +295,6 @@ export function buildUsageChip(usage, durationMs) {
     popover.setAttribute('aria-label', browser.i18n.getMessage('apiwebchat_usage_label'));
     popover.setAttribute(USAGE_MARKER_ATTR, '1');
     popover.hidden = true;
-    for (const row of rows) {
-        const line = document.createElement('div');
-        if (row.kind === 'divider') {
-            line.classList.add('mzta-usage-divider');
-            popover.appendChild(line);
-            continue;
-        }
-        line.classList.add('mzta-usage-row');
-        if (row.kind) line.classList.add('is-' + row.kind);
-        const label = document.createElement('span');
-        label.classList.add('label');
-        label.textContent = row.label;
-        const value = document.createElement('span');
-        value.classList.add('value');
-        value.textContent = row.value;
-        line.appendChild(label);
-        line.appendChild(value);
-        popover.appendChild(line);
-    }
     button.setAttribute('aria-controls', popover.id);
 
     button.addEventListener('click', () => {
@@ -235,10 +302,13 @@ export function buildUsageChip(usage, durationMs) {
         const wasOpen = openChip !== null && openChip.button === button;
         closeOpenPopover();
         if (wasOpen) return;
+        // Filled on every open, so a context window looked up after this answer
+        // closed still shows up in its popover.
+        renderPopover(popover, rowsNow());
         popover.hidden = false;
         button.setAttribute('aria-expanded', 'true');
         caret.textContent = '▴';
-        openChip = { wrap, button, popover };
+        openChip = { wrap, button, popover, caret };
     });
 
     wrap.appendChild(button);
@@ -293,7 +363,7 @@ export const USAGE_CHIP_CSS = `
         left: 0;
         bottom: calc(100% + 8px);
         z-index: 3;
-        width: 220px;
+        width: 240px;
         max-width: calc(100vw - 48px);
         box-sizing: border-box;
         padding: 12px 14px;
@@ -319,11 +389,22 @@ export const USAGE_CHIP_CSS = `
     .mzta-usage-row .label {
         color: var(--ink-2);
     }
+    .mzta-usage-row .value {
+        white-space: nowrap;
+    }
     .mzta-usage-row.is-sub .label {
         padding-left: 12px;
     }
     .mzta-usage-row.is-total {
         font-weight: 600;
+    }
+    .mzta-usage-row.is-warn .value {
+        color: var(--warn);
+        font-weight: 600;
+    }
+    .mzta-usage-note {
+        font-size: .75rem;
+        color: var(--warn);
     }
     .mzta-usage-divider {
         height: 1px;
@@ -335,18 +416,16 @@ export const USAGE_CHIP_CSS = `
     }
 `;
 
-// ---- session meter ----
+// ---- session ----
 
 /**
  * A fresh session accumulator. One window is one chat, so a window opening is
  * also the reset.
- *   total   -> sum of every answer's total_tokens, null until one reports it
- *   context -> input + output of the latest answer, i.e. what the next request
- *              will resend (the workers resend the whole conversation history)
- * @returns {{total: number|null, context: number|null}}
+ *   total -> sum of every answer's total_tokens, null until one reports it
+ * @returns {{total: number|null}}
  */
 export function createSessionUsage() {
-    return { total: null, context: null };
+    return { total: null };
 }
 
 /**
@@ -357,102 +436,4 @@ export function createSessionUsage() {
 export function addUsageToSession(session, usage) {
     const total = toUsageNumber(usage?.total_tokens);
     if (total !== null) session.total = (session.total ?? 0) + total;
-    const input = toUsageNumber(usage?.input_tokens);
-    const output = toUsageNumber(usage?.output_tokens);
-    const context = (input !== null && output !== null) ? input + output : total;
-    if (context !== null) session.context = context;
-}
-
-/**
- * What the meter above the input should show.
- *   'bar'    -> context window known and some context measured
- *   'text'   -> no known window, but the session has a token total
- *   'hidden' -> no tokens at all in this session
- * @param {object} session from createSessionUsage()
- * @param {number|null} contextWindow tokens, or null when unknown
- * @returns {{mode: string, text: string, pct: number, warn: boolean, used: number|null, max: number|null}}
- */
-export function buildUsageMeterState(session, contextWindow) {
-    const cw = (typeof contextWindow === 'number' && Number.isFinite(contextWindow) && contextWindow > 0) ? contextWindow : null;
-    if (cw !== null && session.context !== null) {
-        const pct = Math.round(session.context / cw * 100);
-        const warn = pct >= CONTEXT_WARN_PCT;
-        let text = browser.i18n.getMessage('apiwebchat_usage_context',
-            [formatCount(session.context), formatCount(cw), String(pct)]);
-        if (warn) text += ' — ' + browser.i18n.getMessage('apiwebchat_usage_context_warn');
-        return { mode: 'bar', text, pct, warn, used: session.context, max: cw };
-    }
-    if (session.total !== null) {
-        return {
-            mode: 'text',
-            text: browser.i18n.getMessage('apiwebchat_usage_session', [formatCount(session.total)]),
-            pct: 0, warn: false, used: null, max: null,
-        };
-    }
-    return { mode: 'hidden', text: '', pct: 0, warn: false, used: null, max: null };
-}
-
-// Styles for the meter, for the message-input shadow root.
-export const USAGE_METER_CSS = `
-    #usageMeter {
-        flex: 1 0 100%;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: .75rem;
-        line-height: 1.2;
-        color: var(--ink-2);
-        font-variant-numeric: tabular-nums;
-        user-select: none;
-        -moz-user-select: none;
-    }
-    #usageMeter[hidden], #usageMeterTrack[hidden] {
-        display: none;
-    }
-    #usageMeterTrack {
-        flex: 1;
-        height: 4px;
-        border-radius: 2px;
-        background: var(--border);
-        overflow: hidden;
-    }
-    #usageMeterFill {
-        height: 100%;
-        background: var(--accent);
-        transition: width .2s ease-out;
-    }
-    #usageMeter.is-warn #usageMeterFill {
-        background: var(--warn);
-    }
-    #usageMeterText {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    /* Text-only mode: no track to push the label right. */
-    #usageMeter.is-text #usageMeterText {
-        flex: 1;
-    }
-`;
-
-/**
- * Paint a meter state into the #usageMeter element built by messageInput.js.
- * @param {HTMLElement} meter the #usageMeter element
- * @param {object} state from buildUsageMeterState()
- */
-export function renderUsageMeter(meter, state) {
-    const track = meter.querySelector('#usageMeterTrack');
-    const fill = meter.querySelector('#usageMeterFill');
-    const text = meter.querySelector('#usageMeterText');
-    meter.hidden = state.mode === 'hidden';
-    meter.classList.toggle('is-text', state.mode === 'text');
-    meter.classList.toggle('is-warn', state.warn);
-    track.hidden = state.mode !== 'bar';
-    text.textContent = state.text;
-    if (state.mode === 'bar') {
-        fill.style.width = Math.min(state.pct, 100) + '%';
-        track.setAttribute('aria-valuenow', String(state.used));
-        track.setAttribute('aria-valuemax', String(state.max));
-        track.setAttribute('aria-valuetext', state.text);
-    }
 }

@@ -755,9 +755,10 @@ turn that `tokensDone` then closes. Worker messages are delivered in order, so p
 
 ### Rendering in the chat window
 
-`api_webchat/usageBadge.js` holds the whole display layer (`js/api/mzta-api-usage.js` must stay DOM-free). Two
-levels, never duplicated: a **chip per answer** in its action bar, and a **session meter** above the input field.
-The window header shows only the model and the API, never token counts. The guiding rule is **show only what
+`api_webchat/usageBadge.js` holds the whole display layer (`js/api/mzta-api-usage.js` must stay DOM-free). The
+only usage chrome is a **chip per answer** in its action bar, with a detail popover that also carries the
+conversation-level figures (context used, session total). There is none in the window header (only the model
+and the API) and none above the input field. The guiding rule is **show only what
 exists**: a null field is omitted entirely, never rendered as `0`, `—` or `n/a`; a reported `0` is printed.
 
 **Duration.** `MessagesArea` measures it itself, from `appendUserMessage()` (every real prompt is appended just
@@ -788,7 +789,20 @@ is open window-wide. Rows, in order, each only if the value exists:
 | Output | `output_tokens` | |
 | &nbsp;&nbsp;of which reasoning | `reasoning_tokens` | output known |
 | **Total** | `total_tokens` | input or output known (the total alone would repeat the chip) |
-| Duration | measured | some row above exists; `· N tok/s` appended when a rate exists |
+| Duration | measured | the popover exists; `· N tok/s` appended when a rate exists |
+| Context | `contextTokensOf(usage)` | input+output (else total) known; `711 / 8,192 · 9%` when the window is known, else just the count. At **≥ 80%** the value uses `--warn` and a note row adds `consider starting a new chat` |
+| Session total | session sum at this answer | known and different from this answer's total (so not on the first answer) |
+
+Dividers separate the token rows, the duration and the conversation rows. The popover exists when there is any
+token row or a context count; with the duration alone the chip is static.
+
+**Conversation figures.** `MessagesArea` keeps `sessionUsage.total` (`createSessionUsage()` /
+`addUsageToSession()`), the sum of every answer's `total_tokens`, null until one reports it; one window is one
+chat, so there is nothing to reset. `_buildUsageChipForTurn()` passes `buildUsageChip()` a **snapshot** of this
+answer's context (input + output: what the next request resends, since the workers resend the whole history)
+and of the session total at that answer, so an earlier answer's popover keeps describing the conversation as it
+was then. The context **window** is passed as a getter instead and **the popover is rebuilt on every open**,
+because the window is looked up asynchronously and may arrive after the first answer's chip was built.
 
 The rate is `tokens_per_second` when the provider reports it (Ollama, generation phase only), otherwise
 `output_tokens / (durationMs / 1000)` — a wall-clock figure that includes network and prompt processing.
@@ -817,40 +831,20 @@ The extraction paths and why each is safe:
 `textContent` would drop, and changing it would alter what the copy button produces for multi-paragraph
 selections.
 
-### Session meter
-
-`#usageMeter` is the first child of the `<message-input>` shadow root, a full-width row above the textarea (the
-host is `flex-wrap: wrap`). `MessagesArea` keeps the session state (`createSessionUsage()` /
-`addUsageToSession()`):
-
-- `total` — sum of every answer's `total_tokens`; null until one reports it.
-- `context` — `input + output` of the **latest** answer (falling back to its total), i.e. what the next request
-  resends: the workers resend the whole conversation history.
-
-After every `tokensDone`, `controller.js` calls `messageInput.setUsageMeter(messagesArea.getUsageMeterState())`
-(`buildUsageMeterState()`), never mid-stream. Three states:
-
-- **bar** — context window known and `context` known: `Context 711 / 8,192 · 9%`. At **≥ 80%** the fill uses
-  `--warn` and the text adds `— consider starting a new chat`. The track is `role="meter"` with its values.
-- **text** — window unknown, session total known: `Session: 2,340 tokens`.
-- **hidden** — no tokens in the session (also when the usage option is off).
+### Context window
 
 The context window is **only what the provider or the configuration states — never a guess from a per-model
 table**. `api_webchat/contextWindow.js` (`resolveContextWindow(integration, prefs)`, never throws, resolves to a
 positive number or `null`) looks it up; `controller.js` runs it **once, after the first completed answer**, not
-awaited, then calls `messagesArea.setContextWindow()` and repaints the meter (text until then, bar after):
+awaited, then calls `messagesArea.setContextWindow()`; popovers opened from then on show the maximum:
 
 | Provider | Source, most authoritative first |
 |---|---|
 | Ollama | `ollama_num_ctx` setting (> 0) → `/api/ps` `context_length` of the loaded model (`fetchRunningModels()`; the model is loaded once an answer came back, which is why the lookup waits for one) → `num_ctx` in the Modelfile `parameters` of `/api/show` → `model_info["<arch>.context_length"]` of `/api/show` (the model maximum; right for `:cloud` models, which `/api/ps` does not list). Tags match with Ollama's implicit `:latest`. |
 | Gemini | `models.get` → `inputTokenLimit` (`GoogleGemini.fetchModelInfo()`) |
 | Claude | `GET /v1/models/{id}` → `max_input_tokens` (`Anthropic.fetchModelInfo()`) |
-| OpenAI, OpenAI-compatible | none exposed → always `null`, text state |
+| OpenAI, OpenAI-compatible | none exposed → always `null`: the Context row shows the count only |
 
-The floating status pill of `<message-input>` keeps its place on the textarea's top border whether or not the
-meter is shown: the host's row gap (14px) equals the pill's upper half, so the meter row sits just above it.
-
-One chat window is one chat, so a fresh window starts from a fresh accumulator and there is nothing to reset.
 
 The **automatic features** (spam filter, tagging, …) have no chat UI and are unaffected: their usage stays in
 the `taLog` debug output.

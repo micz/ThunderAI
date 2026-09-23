@@ -798,7 +798,7 @@
     "description": ""
   },
   "prefs_OptionText_chat_show_usage_data_info": {
-    "message": "The token counts reported by the API are shown next to the buttons of each response, with the details one click away, and a meter above the input field shows the usage of the whole chat session.",
+    "message": "The token counts reported by the API are shown next to the buttons of each response. A click opens the details, including how much of the model context the conversation uses and the total of the whole chat session.",
     "description": ""
   },
   "prefs_OptionText_chat_show_usage_data_openai_comp_note": {
@@ -1911,8 +1911,12 @@
     }
   },
   "apiwebchat_usage_context": {
-    "message": "Context $USED$ / $MAX$ · $PCT$%",
-    "description": "Meter above the input field of the AI chat window: tokens used in the conversation / model context window · percentage",
+    "message": "Context",
+    "description": "Row label of the usage details popover in the AI chat window: tokens the conversation occupies in the model context after this answer"
+  },
+  "apiwebchat_usage_context_value": {
+    "message": "$USED$ / $MAX$ · $PCT$%",
+    "description": "Value of the Context row of the usage details popover in the AI chat window: tokens used / model context window · percentage",
     "placeholders": {
       "used": {
         "content": "$1"
@@ -1927,16 +1931,11 @@
   },
   "apiwebchat_usage_context_warn": {
     "message": "consider starting a new chat",
-    "description": "Appended to the context meter of the AI chat window when the context is at least 80% full"
+    "description": "Note under the Context row of the usage details popover in the AI chat window, shown when the context is at least 80% full"
   },
-  "apiwebchat_usage_session": {
-    "message": "Session: $COUNT$ tokens",
-    "description": "Meter above the input field of the AI chat window, when the model context window is unknown: total tokens of the chat session",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      }
-    }
+  "apiwebchat_usage_session_total": {
+    "message": "Session total",
+    "description": "Row label of the usage details popover in the AI chat window: sum of the tokens of every answer in the chat so far"
   },
   "apiwebchat_scroll_to_latest": {
     "message": "Scroll to latest",

@@ -38,7 +38,7 @@ const prompt_name = urlParams.get('prompt_name');
 
 // Data received from the user
 let promptData = null;
-// Looks up the model's context window for the usage meter. Set at init only when
+// Looks up the model's context window for the usage popover. Set at init only when
 // the usage UI is on, and consumed by the first completed answer: run once, after
 // a response, so a local Ollama model is already loaded and /api/ps can report
 // the context it actually runs with.
@@ -366,17 +366,13 @@ worker.onmessage = async function(event) {
         case 'tokensDone':
             await messagesArea.handleTokensDone(promptData);
             messageInput.enableInput();
-            // The session meter updates once per completed answer, never mid-stream.
-            messageInput.setUsageMeter(messagesArea.getUsageMeterState());
             if (contextWindowLookup !== null) {
                 const lookup = contextWindowLookup;
                 contextWindowLookup = null;
-                // Not awaited: the meter shows the session total meanwhile, and
-                // turns into a bar once the window is known.
+                // Not awaited: the usage popovers read the window when they are
+                // opened, so they pick it up whenever it arrives.
                 lookup().then((tokens) => {
-                    if (tokens === null) return;
-                    messagesArea.setContextWindow(tokens);
-                    messageInput.setUsageMeter(messagesArea.getUsageMeterState());
+                    if (tokens !== null) messagesArea.setContextWindow(tokens);
                 });
             }
             break;
