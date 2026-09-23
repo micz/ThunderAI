@@ -515,7 +515,14 @@ The **custom prompts page renders one
 per form** (`.conn_adv_btn` + `.conn_adv_table`, one pair in the add form and one per
 list row). The button carries the same markup as the options page one (gear + label,
 `.chev` chevron) and is restyled in `mzta-custom-prompts.css` with that page's own
-tokens (`--accent`, `--border2`), since the page does not link `mzta-design.css`. Because several editors can be open at once, its relocation helper
+tokens (`--accent`, `--border2`), since the page does not link `mzta-design.css`.
+The same file also neutralises the saturated legacy `tr.conntype_*` row shading from
+`connection-ui.css`. Rows go transparent with thin separators, and the whole host
+(`#api_ui_container` / `.api_additional_info`) takes the soft options-page provider tint. That
+tint is selected with `:has(tr[id$="_tr"].conntype_<provider>)`, because the connection-type row
+is the only one whose class follows the select. Those rules also set `--tint-border` /
+`--tint-accent`, which the `.conn_adv_btn` uses for its border and text, as on the options page.
+With no provider selected it falls back to `--border2` / `--accent`. Because several editors can be open at once, its relocation helper
 `relocateConnAdvRows(scopeEl)` and `showAdvConnectionOptions(scopeEl, connType)` are
 **scoped to one form**, unlike the options page's document-wide
 `querySelectorAll('#connection_ui_table tr.conn_adv')` — a global query there would
