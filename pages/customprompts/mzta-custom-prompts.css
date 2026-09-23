@@ -1250,32 +1250,36 @@ input.input_additional[type="text"] {
    .conn_adv_table by relocateConnAdvRows(), so the panel opens *below* this
    button and the button itself stays put. `hidden` is set from JS when the
    selected provider exposes no advanced field; the attribute alone would be
-   overridden by the display below, hence the [hidden] guard. */
+   overridden by the display below, hence the [hidden] guard.
+   Looks like the options page #mzta_conn_adv_btn (gear + label on the left,
+   chevron on the right), restated with this page's own tokens since it does
+   not link mzta-design.css. */
 .conn_adv_btn {
-    display: block;
     width: 100%;
-    margin-top: 8px;
-    padding: 5px;
-    border: none;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 9px 12px;
+    background: transparent;
+    border: 1.5px solid var(--border2);
     border-radius: 8px;
-    background: var(--api-hover);
-    color: var(--text);
+    color: var(--accent);
     font: inherit;
-    text-align: center;
+    font-size: 12.5px;
+    font-weight: 700;
     cursor: pointer;
 }
 
 .conn_adv_btn[hidden] { display: none; }
 
-.conn_adv_btn:hover { text-decoration: underline; }
+.conn_adv_btn:hover { border-color: var(--accent); }
 
-.conn_adv_btn::after {
-    content: ' \25BE';   /* ▾ collapsed */
-}
-
-.conn_adv_btn[aria-expanded="true"]::after {
-    content: ' \25B4';   /* ▴ expanded */
-}
+.conn_adv_btn .chev { display: inline-flex; }
+.conn_adv_btn .chev svg { transition: transform .2s; }
+.conn_adv_btn[aria-expanded="true"] .chev svg { transform: rotate(180deg); }
 
 /* Same stacked treatment as the main injected table above. */
 .conn_adv_table {

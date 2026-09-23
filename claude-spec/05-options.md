@@ -508,10 +508,14 @@ fields in `#mzta_conn_panel`. Each provider's fields are tiered into **core** an
 **Field tiering.** In the shared template inside `injectConnectionUI()`
 (`pages/_lib/connection-ui.js`), every advanced field row carries the marker class
 `conn_adv` in addition to its `conntype_<provider>` class. Core rows carry no marker.
-The `conn_adv` class is inert on the 6 feature pages (they render no toggle button),
-so there every advanced field shows flat. The **custom prompts page does render one
+Every page hosting the connection UI hides the `conn_adv` rows behind an "Advanced
+options" disclosure: options page and setup wizard (static markup, see below), the 6
+feature pages (built at runtime, see **Feature pages** below) and custom prompts.
+The **custom prompts page renders one
 per form** (`.conn_adv_btn` + `.conn_adv_table`, one pair in the add form and one per
-list row): because several editors can be open at once, its relocation helper
+list row). The button carries the same markup as the options page one (gear + label,
+`.chev` chevron) and is restyled in `mzta-custom-prompts.css` with that page's own
+tokens (`--accent`, `--border2`), since the page does not link `mzta-design.css`. Because several editors can be open at once, its relocation helper
 `relocateConnAdvRows(scopeEl)` and `showAdvConnectionOptions(scopeEl, connType)` are
 **scoped to one form**, unlike the options page's document-wide
 `querySelectorAll('#connection_ui_table tr.conn_adv')` — a global query there would
@@ -581,8 +585,9 @@ per-provider `--tint-border` / `--tint-accent`, falling back to `--fieldLine` /
 `--accent`); its chevron rotates 180° when expanded via the `[aria-expanded="true"]`
 attribute.
 
-**Show/hide mechanism.** The advanced rows are **moved at runtime** (options page only,
-right after `injectConnectionUI()` in `options/mzta-options.js`) out of
+**Show/hide mechanism.** The advanced rows are **moved at runtime** (on the options page
+right after `injectConnectionUI()` in `options/mzta-options.js`; the wizard and feature pages
+do the same, see their sections) out of
 `#connection_ui_table` and into a second table `#connection_ui_adv_table` that sits
 **below** the button. Because that table follows the button in the DOM, expanding it
 opens the advanced fields *below* the button (the button stays fixed) — exactly like the
@@ -609,6 +614,22 @@ provider switch). The button's `click` handler flips `aria-expanded` and toggles
 UI** — no preference is persisted, so reopening the options page always starts collapsed.
 The connection-test "back to idle" `input`/`change` listeners are bound to **both** tables
 so editing an advanced field also invalidates a prior test result.
+
+**Feature pages.** The 6 feature pages (addtags, spamfilter, summarize, translate,
+get-calendar-event, get-task) carry no disclosure markup. `initializeSpecificIntegrationUI()`
+(`pages/_lib/connection-ui.js`) calls `setupFeatureConnAdv()` right after
+`injectConnectionUI()`. That helper builds `#mzta_conn_adv_btn` (same gear/chevron SVGs,
+parsed with `DOMParser`, label from `prefs_advanced_options`) and `#connection_ui_adv_table`
+right after `#connection_ui_table`, reusing them if the page already has them. It then moves the
+`tr.conn_adv` rows there; a document-wide query is safe because a feature page hosts a single
+form. No separate per-provider sync is needed: the moved rows keep `.specific_integration_sub`
++ `conntype_*`, so `_updateVisibility()` (document-wide) still shows/hides them. The same holds
+for the document-wide `.specific_integration_sub .option-input` save listeners. `_updateVisibility()`
+also shows the button only when the specific integration is on **and** a provider is selected;
+otherwise it hides and collapses it. The disclosure collapses on every connection type change.
+Because `_updateVisibility()` sets an inline `display:table-row`, `mzta-design.css` re-asserts
+`display:block !important` on `body.mzta_feature_page #connection_ui_adv_table tr[style*="table-row"]`,
+the same override each feature page CSS applies to `#connection_ui_table`.
 
 ### Connection Settings Panel — Connection Test Status Strip
 
