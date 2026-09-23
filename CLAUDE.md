@@ -13,7 +13,13 @@ ThunderAI is a **Thunderbird WebExtension (Manifest V2)** that integrates multip
 1. **Localization:** Modify ONLY `_locales/en/messages.json`. All other locale files are managed via Weblate — never touch them.
 2. **`LANG.md` is the release packaging allowlist, not a locale inventory.** It lists only the translations complete enough to ship, and is therefore a *deliberately partial* subset of `_locales/` — locales below the release bar are omitted on purpose. It is maintained by hand: add a locale when its translation is approved for release. Do not "fix" it to match `_locales/`.
 3. **No build system:** There is no bundler, compiler, or package manager. All JS files are plain ES6 modules loaded directly by the browser engine.
-4. **Module imports:** Use relative paths with `.js` extension (e.g., `import { foo } from '../js/mzta-utils.js'`).
+4. **Module imports:** Use relative paths with `.js` extension (e.g., `import { foo } from '../js/mzta-utils.js'`). When importing more than one name from the same file, put each name on its own line (4-space indent, no trailing comma) instead of listing them on a single line:
+   ```js
+   import {
+       buildSendIcon,
+       buildStopIcon,
+   } from './svgIcons.js';
+   ```
 5. **Placeholder format:** Placeholders in prompt text use the `{%placeholder_id%}` syntax (e.g., `{%mail_text_body_or_selected%}`).
 6. **No test suite:** There is no automated test framework. Testing is done manually in Thunderbird.
 7. **Settings defaults:** All new preferences must be added to `options/mzta-options-default.js` in `prefs_default`.
