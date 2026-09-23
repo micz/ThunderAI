@@ -161,7 +161,10 @@ export async function runConnectionTest(connType) {
   let data;
   try {
     // The probe resolves with {ok, error, is_exception}; OpenAIComp may throw on network error.
-    data = await Promise.race([client[probe](), timeout]);
+    // No automatic retry: the test must report the current state of the
+    // connection right away, well within CONN_TEST_TIMEOUT_MS. fetchVersion()
+    // ignores the argument.
+    data = await Promise.race([client[probe]({ maxRetries: 0, timeoutMs: CONN_TEST_TIMEOUT_MS }), timeout]);
   } catch (error) {
     return { status: 'error', message: browser.i18n.getMessage('connTest_error_network') };
   }

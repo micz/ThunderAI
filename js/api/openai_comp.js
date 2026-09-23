@@ -19,6 +19,11 @@
 // Some original methods derived from https://github.com/ali-raheem/Aify/blob/4ece286095ea7a6cf89d696902e6b81b5d1c3a4b/plugin/html/API.js
 
 import { parseExtraBody } from './api-utils.js';
+import { fetchWithRetry } from './api-retry.js';
+
+// Local servers (LM Studio, vLLM, llama.cpp...) may load the model before they
+// send the response headers, so a chat request gets a longer per-attempt timeout.
+const OPENAI_COMP_CHAT_TIMEOUT_MS = 300000;
 
 
 export class OpenAIComp {
@@ -50,7 +55,7 @@ export class OpenAIComp {
   }
 
 
-  fetchModels = async () => {
+  fetchModels = async (retryConfig = {}) => {
     const curr_headers = {
       "Content-Type": "application/json",
     };
@@ -61,10 +66,12 @@ export class OpenAIComp {
       curr_headers['X-Title'] = 'ThunderAI';
     }
 
-    const response = await fetch(this.host + (this.use_v1 ? "/v1" : "") + "/models", {
+    // Some compatible endpoints take the API key in the query string:
+    // fetchWithRetry() never logs the URL.
+    const response = await fetchWithRetry(this.host + (this.use_v1 ? "/v1" : "") + "/models", {
         method: "GET",
         headers: curr_headers,
-    });
+    }, { label: 'OpenAI Comp', ...retryConfig });
 
     if (!response.ok) {
         const errorDetail = await response.text();
@@ -84,7 +91,7 @@ export class OpenAIComp {
     return output;
   }
 
-  fetchResponse = async (messages, maxTokens = 0) => {
+  fetchResponse = async (messages, maxTokens = 0, retryConfig = {}) => {
     try{
       const tempFloat = parseFloat(this.temperature);
       const curr_headers = {
@@ -93,7 +100,7 @@ export class OpenAIComp {
       if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
 
       try {
-        const response = await fetch(this.host + (this.use_v1 ? "/v1" : "") + "/chat/completions", {
+        const response = await fetchWithRetry(this.host + (this.use_v1 ? "/v1" : "") + "/chat/completions", {
             method: "POST",
             headers: curr_headers,
             // The user-supplied extra data is spread first on purpose: every
@@ -107,12 +114,13 @@ export class OpenAIComp {
                 ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {}),
                 ...(this.temperature != '' && !Number.isNaN(tempFloat) ? { 'temperature': tempFloat } : {})
             }),
-        });
+        }, { label: 'OpenAI Comp', timeoutMs: OPENAI_COMP_CHAT_TIMEOUT_MS, ...retryConfig });
         return response;
       }catch (error) {
           console.error("[ThunderAI] OpenAI Comp API request failed: " + error);
           let output = {};
           output.is_exception = true;
+          output.is_aborted = retryConfig.signal?.aborted === true;
           output.ok = false;
           output.error = "OpenAI Comp API request failed: " + error;
           return output;

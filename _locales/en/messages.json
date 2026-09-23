@@ -1823,6 +1823,40 @@
     "message": "Stopping",
     "description": ""
   },
+  "apiwebchat_retrying": {
+    "message": "Server not available ($REASON$), retrying in $SECONDS$ s (attempt $ATTEMPT$ of $MAX$)",
+    "description": "API webchat status bar while a failed request is retried automatically; $REASON$ is e.g. 'HTTP 503' or 'network error'",
+    "placeholders": {
+      "reason": {
+        "content": "$1",
+        "example": "HTTP 503"
+      },
+      "seconds": {
+        "content": "$2",
+        "example": "2"
+      },
+      "attempt": {
+        "content": "$3",
+        "example": "1"
+      },
+      "max": {
+        "content": "$4",
+        "example": "3"
+      }
+    }
+  },
+  "apiwebchat_retry_reason_network": {
+    "message": "network error",
+    "description": "Reason shown in apiwebchat_retrying when the server could not be reached"
+  },
+  "apiwebchat_retry_reason_timeout": {
+    "message": "timeout",
+    "description": "Reason shown in apiwebchat_retrying when the server did not answer in time"
+  },
+  "apiwebchat_request_cancelled": {
+    "message": "Request cancelled.",
+    "description": "API webchat notice shown when the user stops a request before any answer arrived"
+  },
   "apiwebchat_receiving_data": {
     "message": "Receiving data",
     "description": ""

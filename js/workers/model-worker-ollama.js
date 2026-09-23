@@ -28,6 +28,10 @@ let stopStreaming = false;
 let i18nStrings = null;
 let do_debug = false;
 let taLog = null;
+// Set only while waiting for the response headers (including the retry
+// backoff): Stop aborts the request then. Once streaming has started the
+// stopStreaming flag takes over, so a pending reader.read() is never rejected.
+let requestAbort = null;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
@@ -61,8 +65,24 @@ self.onmessage = async function(event) {
         case 'chatMessage':
             conversationHistory.push({ role: 'user', content: event.data.message });
             //console.log(">>>>>>>>>>> conversationHistory: " + JSON.stringify(conversationHistory));
-            const response = await ollama.fetchResponse(conversationHistory); //4096);
+            requestAbort = new AbortController();
+            const response = await ollama.fetchResponse(conversationHistory, {
+                signal: requestAbort.signal,
+                logger: taLog,
+                onRetry: (info) => postMessage({ type: 'newRetryAttempt', payload: info }),
+            });
+            requestAbort = null;
             postMessage({ type: 'messageSent' });
+
+            if (response.is_aborted === true) {
+                // Stopped before any answer arrived: drop the unanswered message, so
+                // the next turn does not send it twice.
+                stopStreaming = false;
+                conversationHistory.pop();
+                taLog.log("Request aborted by the user before the response arrived");
+                postMessage({ type: 'requestAborted' });
+                return;
+            }
 
             if (!response.ok) {
                 let error_message = '';
@@ -174,6 +194,7 @@ self.onmessage = async function(event) {
             break; //chatMessage
         case 'stop':
             stopStreaming = true;
+            if (requestAbort) requestAbort.abort();
             break; //stop
      }
 };

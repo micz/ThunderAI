@@ -1273,6 +1273,8 @@ Each file handles HTTP communication for one provider:
 | `openai_comp.js` | OpenAI-compatible APIs |
 | `openai_comp_configs.js` | Pre-configured providers (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity) |
 | `openai_responses.js` | OpenAI Responses API |
+| `api-utils.js` | Shared worker-safe helpers (`parseExtraBody()`) |
+| `api-retry.js` | `fetchWithRetry()`: automatic retry with backoff, see [04-api-integrations.md](04-api-integrations.md#automatic-retry-handling) |
 
 ## Web Workers (`js/workers/`)
 

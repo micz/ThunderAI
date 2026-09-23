@@ -623,7 +623,8 @@ This keeps API calls off the main thread and avoids blocking the Thunderbird UI.
 
 The provider classes in `js/api/` return **two different shapes** on failure, and workers must branch on `is_exception` before formatting the message:
 
-- **Network-level exception** (server unreachable, DNS failure, CORS rejection): the `catch` block in `fetchResponse()` does **not** return a `Response`. It returns a plain object `{ok: false, is_exception: true, error}` with **no `status` and no `statusText`**, and `error` already includes the provider name (e.g. `"Ollama API request failed: TypeError: NetworkError…"`).
+- **Network-level exception** (server unreachable, DNS failure, CORS rejection, per-attempt timeout -- once the automatic retries are used up): the `catch` block in `fetchResponse()` does **not** return a `Response`. It returns a plain object `{ok: false, is_exception: true, is_aborted, error}` with **no `status` and no `statusText`**, and `error` already includes the provider name (e.g. `"Ollama API request failed: TypeError: NetworkError…"`).
+- **User abort** (Stop pressed before any response arrived): same shape with `is_aborted: true`. Workers check it **before** the error branch and post `requestAborted` instead of `error` (see [Automatic Retry Handling](#automatic-retry-handling)).
 - **HTTP error** (404, 401, 500…): a real `Response` is returned, so `status`, `statusText` and the JSON body are all available.
 
 Reading `response.status` / `response.statusText` in the exception branch yields a literal `"undefined undefined"` in the user-visible error, and re-prefixing the i18n provider string there duplicates the provider name. All five workers therefore build a single `error_text` variable:
@@ -663,6 +664,95 @@ Both use the same layout and a dismiss control; colors come from `_getThemeColor
 
 **Interaction with `mzta_specialCommand`:** v1 cancellation is checked *between* messages, so the in-flight worker prompt is allowed to finish first (bounded by `special_command_timeout`). There is no mid-request `dispose()` in v1; a future enhancement could register the active `mzta_specialCommand` with the controller and terminate its worker on cancel for an immediate abort.
 
+## Automatic Retry Handling
+
+Transient failures (overloaded model, rate limit, gateway error, short network drop) are retried
+automatically instead of surfacing as a hard error. This matters most for the unattended features
+(spamfilter, auto add_tags), where nobody is around to retry by hand.
+
+**Helper.** `fetchWithRetry(url, options, retryConfig)` in `js/api/api-retry.js`. Like
+`api-utils.js` it is worker-safe (its only import is `js/mzta-logger.js`). Every provider class
+uses it for `fetchResponse()` and `fetchModels()`, which both take an optional trailing
+`retryConfig` (for Anthropic, also `_postMessages()`, so the one-shot 400 retry gets transient
+retry too). Ollama's `fetchVersion()`/`fetchModelInfo()` still use plain `fetch()`.
+
+**`retryConfig`:** overrides for `RETRY_DEFAULTS` (`maxRetries` 5, `retryDelaysMs`
+`[5000, 10000, 20000, 30000]`, `retryAfterCapMs` 30000, `timeoutMs` 60000) plus `signal` (user
+abort), `onRetry(info)`, `logger` (a `taLogger`) and `label` (provider name for the logs, set by
+each class).
+
+**Behaviour:**
+- **Retryable statuses:** `RETRYABLE_STATUSES` = 408, 429, 500, 502, 503, 504, 529. Every other
+  status (400, 401, 403, 404...) is returned at once. Network exceptions and per-attempt timeouts
+  are retried too.
+- **Result:** always a `Response` or a throw, never `undefined`. When retries are used up on a
+  retryable status, the **last `Response` is returned unread**, so the workers' existing error
+  formatting (status + JSON detail) is unchanged. On an exception, the last error is rethrown and
+  the class's `catch` turns it into the `is_exception` object.
+- **Backoff:** `retryDelaysMs[attempt]`, the last entry reused once the list runs out, with jitter
+  (random 80-100% of that value): 5 s, 10 s, 20 s, 30 s, 30 s, so up to ~95 s of waiting with the
+  defaults. The schedule is deliberately long: an overloaded model or a rate limit usually lasts
+  tens of seconds, and a short 1-2-4 s schedule gave up before it passed.
+- **Interaction with `special_command_timeout`** (default 120 s): it bounds the whole exchange of a
+  special command, retries included. With the defaults the waits alone take up to ~95 s, so the
+  retries fit only when each attempt fails quickly (the usual 429/503 case). A run of per-attempt
+  timeouts (60 s each) is cut short by `special_command_timeout` first.
+- **`Retry-After`:** when present it replaces the backoff. Both the delta-seconds and the HTTP-date
+  form are accepted (`parseRetryAfter()`), clamped to `[0, retryAfterCapMs]`. The header is readable
+  because extension requests with host permissions are not subject to CORS header filtering.
+- **Per-attempt timeout covers the headers only.** A dedicated `AbortController` + `setTimeout`,
+  combined with the user signal through `AbortSignal.any()`, is cleared as soon as `fetch()`
+  resolves. A bare `AbortSignal.timeout()` would not work: that signal stays attached to the body,
+  so it would cut off any SSE answer that lasts longer than the timeout. Without any timeout a hung
+  connection never produces a 408/504 and no retry would fire. Ollama and OpenAI-compatible chat
+  requests use 300 s (`OLLAMA_CHAT_TIMEOUT_MS`, `OPENAI_COMP_CHAT_TIMEOUT_MS`), because a local
+  server may load the model before sending the headers.
+- **User abort is never retried.** An aborted `signal` stops the loop at once, including during
+  the backoff wait (an abortable sleep).
+- **Only before the body is consumed.** A failure in the middle of an SSE stream is not retried
+  (out of scope).
+- The discarded body of a retried response is cancelled to free the connection.
+
+**Logging:** each retry is logged through `taLogger.log()`, so it only shows with the debug pref on.
+**The request URL is never logged**: Google Gemini (and some OpenAI-compatible endpoints) carry the
+API key in the query string.
+
+**Workers and UI:**
+- Each worker creates an `AbortController` per `chatMessage`, kept in `requestAbort` only while
+  waiting for the response (headers + backoff). It passes `{signal, logger: taLog, onRetry}` to
+  `fetchResponse()`.
+- `onRetry` posts `{type: 'newRetryAttempt', payload: {attempt, maxRetries, delayMs, status, reason}}`
+  (`reason`: `'http'`, `'network'` or `'timeout'`; `status` is `null` for the last two).
+- On `stop`, the worker aborts `requestAbort` if it is still set. Once streaming has started,
+  `requestAbort` is `null` and the existing `stopStreaming` loop handles Stop, so a pending
+  `reader.read()` is never rejected.
+- An aborted request (`is_aborted`) removes the unanswered user message from `conversationHistory`
+  (so the next turn does not send it twice) and posts `requestAborted`.
+- Webchat (`api_webchat/controller.js`): `newRetryAttempt` -> `messageInput.showRetryStatus()`
+  ("Server not available (HTTP 503), retrying in 10 s (attempt 2 of 5)...", keeping the waiting
+  icon). The seconds count down to the retry (a 250 ms interval, text updated only when the
+  whole-second value changes); at zero the pill returns to `showWaitingStatus()`. The countdown is
+  stopped by `setStatusMessage()` and `hideStatusMessage()`, which every other status goes through,
+  so a late tick can never overwrite a newer status; `requestAborted` -> an `apiwebchat_request_cancelled` info notice and `enableInput(false)`.
+  The Stop button is visible while waiting, so a retry can always be cancelled.
+- `mzta_specialCommand` only logs `newRetryAttempt`. The overall `special_command_timeout` still
+  bounds the whole exchange, retries included.
+- The connection test (`js/mzta-connection-test.js`) passes `{maxRetries: 0}`: it must report the
+  current state right away, within its 10 s race.
+
+**Known trade-off:** `fetchResponse()` sends non-idempotent POSTs. Retrying a 500/504 (or a
+timeout) may re-run a generation that actually succeeded server-side, so the tokens can be billed
+twice. Accepted: the alternative is failing an unattended operation that would have succeeded.
+
+**No automatic model fallback (deliberate).** When retries are used up, the error is shown; the
+request is never re-sent to a different model. A fallback would silently replace the model the
+user chose (different quality, different pricing, no indication of which model answered), and any
+hardcoded list would go stale and conflict with the `fetchModels()` design. The failures retry
+covers are time-dependent, not model-dependent; daily quota exhaustion is the only case a fallback
+would address, and there the right answer is to tell the user. If it is ever added, it must be a
+separate opt-in preference with a user-chosen list built from `fetchModels()`, limited to 429/503,
+with the model that actually answered reported in the UI.
+
 ## Optional Permissions
 
 API calls require host permissions. These are declared as `optional_permissions` in `manifest.json` and requested at runtime:
@@ -673,7 +763,7 @@ API calls require host permissions. These are declared as `optional_permissions`
 
 ## Adding a New Provider
 
-1. Create `js/api/<provider>.js` with the API call logic
+1. Create `js/api/<provider>.js` with the API call logic. Use `fetchWithRetry()` (`js/api/api-retry.js`) instead of `fetch()` in `fetchResponse()`/`fetchModels()`, with a trailing `retryConfig` parameter and `is_aborted` in the exception object
 2. Create `js/workers/model-worker-<provider>.js` that imports and calls the API module
 3. Add a new `connection_type` value constant
 4. Add settings keys to `integration_options_config` in `options/mzta-options-default.js`

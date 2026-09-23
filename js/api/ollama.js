@@ -18,6 +18,12 @@
 
 
 import { parseExtraBody } from './api-utils.js';
+import { fetchWithRetry } from './api-retry.js';
+
+// Loading a model into memory happens before Ollama sends the response
+// headers, so the per-attempt timeout of a chat request must be long enough to
+// cover a cold start of a large model.
+const OLLAMA_CHAT_TIMEOUT_MS = 300000;
 
 
 export class Ollama {
@@ -156,12 +162,12 @@ export class Ollama {
       }
     }
 
-    fetchModels = async () => {
+    fetchModels = async (retryConfig = {}) => {
       try{
-        const response = await fetch(this.host + "/api/tags", {
+        const response = await fetchWithRetry(this.host + "/api/tags", {
             method: "GET",
             headers: this._headers(),
-        });
+        }, { label: 'Ollama', ...retryConfig });
 
         if (!response.ok) {
             const errorDetail = await response.text();
@@ -192,7 +198,7 @@ export class Ollama {
     }
 
     
-    fetchResponse = async (messages) => {
+    fetchResponse = async (messages, retryConfig = {}) => {
       try {
         const tempFloat = parseFloat(this.temperature);
 
@@ -211,7 +217,7 @@ export class Ollama {
         };
 
         //console.log(">>>>>>>>>>  messages: " +JSON.stringify(messages));
-        const response = await fetch(this.host + "/api/chat", {
+        const response = await fetchWithRetry(this.host + "/api/chat", {
             method: "POST",
             headers: this._headers(),
             body: JSON.stringify({
@@ -233,12 +239,13 @@ export class Ollama {
                 ...(this.keep_alive !== '' ? { keep_alive: this.keep_alive } : {}),
                 ...(Object.keys(options_obj).length > 0 ? { options: options_obj } : {}),
             }),
-        });
+        }, { label: 'Ollama', timeoutMs: OLLAMA_CHAT_TIMEOUT_MS, ...retryConfig });
         return response;
       }catch (error) {
           console.error("[ThunderAI] Ollama API request failed: " + error);
           let output = {};
           output.is_exception = true;
+          output.is_aborted = retryConfig.signal?.aborted === true;
           output.ok = false;
           output.error = "Ollama API request failed: " + error;
           return output;

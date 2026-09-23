@@ -324,6 +324,8 @@ class MessageInput extends HTMLElement {
 
     model = '';
     _doneTimeout = null;
+    // Interval ticking the retry countdown in the status pill, see showRetryStatus().
+    _retryCountdown = null;
     _customTextArray = [];
     _currentCustomTextIndex = 0;
 
@@ -401,8 +403,18 @@ class MessageInput extends HTMLElement {
         }
     }
 
+    // Every status change goes through here, so this is also where a running
+    // retry countdown stops: no other status can be overwritten by a late tick.
     setStatusMessage(message) {
+        this._stopRetryCountdown();
         this._statusLoggerText.textContent = message;
+    }
+
+    _stopRetryCountdown() {
+        if (this._retryCountdown) {
+            clearInterval(this._retryCountdown);
+            this._retryCountdown = null;
+        }
     }
 
     showStatusMessage(state = 'working') {
@@ -415,6 +427,7 @@ class MessageInput extends HTMLElement {
     }
 
     hideStatusMessage() {
+        this._stopRetryCountdown();
         this._statusLogger.style.display = 'none';
         this._setStatusIcon(null);
         this._setStatusClass(null);
@@ -463,6 +476,51 @@ class MessageInput extends HTMLElement {
         if (!this._statusLogger.classList.contains('status-waiting')) {
             this._setStatusIcon(() => this._buildWaitingImage());
             this.showStatusMessage('waiting');
+        }
+    }
+
+    // A transient failure (overloaded server, rate limit, network drop) is being
+    // retried by fetchWithRetry(). Keeps the waiting icon: from the user's point
+    // of view we are still waiting for the server. The seconds count down to the
+    // retry; at zero the pill goes back to the plain waiting status, because the
+    // new attempt is then in flight.
+    showRetryStatus({ attempt, maxRetries, delayMs, status, reason } = {}) {
+        let reasonText;
+        if (status !== null && status !== undefined) {
+            reasonText = 'HTTP ' + status;
+        } else if (reason === 'timeout') {
+            reasonText = browser.i18n.getMessage('apiwebchat_retry_reason_timeout');
+        } else {
+            reasonText = browser.i18n.getMessage('apiwebchat_retry_reason_network');
+        }
+        if (!this._statusLogger.classList.contains('status-waiting')) {
+            this._setStatusIcon(() => this._buildWaitingImage());
+            this.showStatusMessage('waiting');
+        }
+        // Clears any previous countdown as well.
+        this.setStatusMessage('');
+
+        const retryAt = Date.now() + (delayMs || 0);
+        let shownSeconds = null;
+        // Writes the text directly rather than through setStatusMessage(), which
+        // would stop this very countdown.
+        const tick = () => {
+            const remainingMs = retryAt - Date.now();
+            if (remainingMs <= 0) {
+                this.showWaitingStatus();
+                return;
+            }
+            const seconds = Math.ceil(remainingMs / 1000);
+            if (seconds !== shownSeconds) {
+                shownSeconds = seconds;
+                this._statusLoggerText.textContent = browser.i18n.getMessage('apiwebchat_retrying',
+                    [reasonText, String(seconds), String(attempt), String(maxRetries)]) + '...';
+            }
+        };
+        tick();
+        // A short period keeps each step close to the real second boundary.
+        if (retryAt > Date.now()) {
+            this._retryCountdown = setInterval(tick, 250);
         }
     }
 

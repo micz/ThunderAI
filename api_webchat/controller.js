@@ -328,6 +328,16 @@ worker.onmessage = async function(event) {
         case 'messageSent':
             messageInput.handleMessageSent();
             break;
+        case 'newRetryAttempt':
+            // A transient failure is being retried: say so, instead of leaving a
+            // frozen spinner. The Stop button stays available meanwhile.
+            messageInput.showRetryStatus(payload);
+            break;
+        case 'requestAborted':
+            // Stopped before any answer arrived (e.g. during the retry backoff).
+            messagesArea.appendUserMessage(browser.i18n.getMessage('apiwebchat_request_cancelled'), 'info');
+            messageInput.enableInput(false);
+            break;
         case 'newToken':
             messagesArea.handleNewToken(payload.token);
             messageInput.showStreamingStatus();

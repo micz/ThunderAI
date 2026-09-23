@@ -187,6 +187,11 @@ import { mztaPrefs } from './mzta-prefs.js';
                 switch (type) {
                     case 'messageSent':
                         break;
+                    case 'newRetryAttempt':
+                        // Transient failure being retried by the worker: nothing to
+                        // show, the overall special_command_timeout still applies.
+                        this.logger.log("Retrying the API request: " + JSON.stringify(payload));
+                        break;
                     case 'newToken':
                         this.full_message += payload.token;
                         break;
