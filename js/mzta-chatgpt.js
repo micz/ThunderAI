@@ -34,24 +34,200 @@ let _customTextArray = [];
 let _currentCustomTextIndex = 0;
 let lastSelectedHtml = "";
 
+// Composer lookup, in priority order. ChatGPT rolls out different composers
+// (A/B tests), so a single id lookup is not enough (issues #890, #920).
+const PROMPT_INPUT_SELECTORS = [
+    '#prompt-textarea',
+    'div.ProseMirror[contenteditable="true"]',
+    'form [contenteditable="true"]',
+    'textarea[name="prompt-textarea"]',
+    'form textarea',
+    'main [contenteditable="true"]'
+];
+const SHADOW_WALK_MAX_NODES = 5000;
+const SHADOW_WALK_MAX_DEPTH = 5;
+
+function isElementVisible(el) {
+    if (!el || !el.isConnected || el.hidden) return false;
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden') return false;
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+}
+
+// Our own injected UI (e.g. the custom text textarea) must never be taken for the composer
+function isOwnUiElement(el) {
+    return el.closest('.mzta-header-fixed, [id^="mzta-"]') !== null;
+}
+
+// Bounded recursive walk collecting the open shadow roots of the page
+function getOpenShadowRoots() {
+    const roots = [];
+    const budget = { left: SHADOW_WALK_MAX_NODES };
+    const walk = (root, depth) => {
+        if (depth > SHADOW_WALK_MAX_DEPTH) return;
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+        let node = walker.nextNode();
+        while (node && budget.left > 0) {
+            budget.left--;
+            if (node.shadowRoot) {
+                roots.push(node.shadowRoot);
+                walk(node.shadowRoot, depth + 1);
+            }
+            node = walker.nextNode();
+        }
+    };
+    walk(document.documentElement, 0);
+    return roots;
+}
+
+function queryPromptInput(roots) {
+    for (const selector of PROMPT_INPUT_SELECTORS) {
+        for (const root of roots) {
+            for (const el of root.querySelectorAll(selector)) {
+                if (!isOwnUiElement(el) && isElementVisible(el)) {
+                    return { el: el, selector: selector, inShadow: root !== document };
+                }
+            }
+        }
+    }
+    return null;
+}
+
+// Resolves with the composer element as soon as it appears, or null after timeoutMs
+async function findPromptInput(timeoutMs) {
+    return new Promise(resolve => {
+        let done = false;
+        let observer = null;
+        let pollId = null;
+        let timeoutId = null;
+        const finish = (found) => {
+            if (done) return;
+            done = true;
+            if (observer) observer.disconnect();
+            clearInterval(pollId);
+            clearTimeout(timeoutId);
+            if (found) {
+                doLog("Prompt input found with selector: " + found.selector + (found.inShadow ? " (shadow DOM)" : ""));
+                resolve(found.el);
+            } else {
+                doLog("Prompt input not found after " + timeoutMs + " ms");
+                resolve(null);
+            }
+        };
+        // the shadow DOM walk is the costly part, so it runs only on the polling tick
+        const check = (withShadow) => {
+            if (done) return;
+            try {
+                const roots = withShadow ? [document].concat(getOpenShadowRoots()) : [document];
+                const found = queryPromptInput(roots);
+                if (found) finish(found);
+            } catch (err) {
+                console.error('[ThunderAI] findPromptInput: ', err);
+            }
+        };
+        check(true);
+        if (done) return;
+        observer = new MutationObserver(() => check(false));
+        observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'contenteditable'] });
+        pollId = setInterval(() => check(true), 250);
+        timeoutId = setTimeout(() => finish(null), timeoutMs);
+    });
+}
+
+// Logs page structure only: never page text or the prompt, users paste these logs on GitHub
+function logPromptInputDiagnostics() {
+    try {
+        const shadowRoots = getOpenShadowRoots();
+        const allRoots = [document].concat(shadowRoots);
+        const countAll = (selector) => allRoots.reduce((sum, root) => sum + Array.from(root.querySelectorAll(selector)).filter(el => !isOwnUiElement(el)).length, 0);
+        const candidates = [];
+        for (const root of allRoots) {
+            for (const el of root.querySelectorAll('textarea, [contenteditable], input[type="text"]')) {
+                if (candidates.length >= 5) break;
+                if (isOwnUiElement(el)) continue;
+                const cls = typeof el.className === 'string' ? el.className : (el.getAttribute('class') || '');
+                candidates.push({
+                    tag: el.tagName.toLowerCase(),
+                    id: el.id || '',
+                    name: el.getAttribute('name') || '',
+                    class: cls.substring(0, 100),
+                    contenteditable: el.getAttribute('contenteditable'),
+                    visible: isElementVisible(el),
+                    inShadow: root !== document
+                });
+            }
+            if (candidates.length >= 5) break;
+        }
+        const title = document.title || '';
+        const diag = {
+            url: location.origin + location.pathname,
+            title: title,
+            readyState: document.readyState,
+            contenteditable: countAll('[contenteditable]'),
+            textarea: countAll('textarea'),
+            iframe: countAll('iframe'),
+            openShadowRoots: shadowRoots.length,
+            candidates: candidates,
+            loginButton: document.querySelector('button[data-testid*=login]') !== null,
+            cloudflare: document.querySelector('#challenge-form, #challenge-running, [id^="cf-"], iframe[src*="challenges.cloudflare.com"]') !== null || title.toLowerCase().includes('just a moment'),
+            userAgent: navigator.userAgent
+        };
+        console.warn("[ThunderAI] Diagnostics: " + JSON.stringify(diag));
+    } catch (err) {
+        console.warn("[ThunderAI] Diagnostics failed: ", err);
+    }
+}
+
+// Plain text for a real <textarea>: one line per block element (the prompt arrives as one <p> per line)
+function htmlToPlainText(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const blockTags = ['P', 'DIV', 'LI', 'UL', 'OL', 'BLOCKQUOTE', 'PRE', 'TR', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'];
+    let out = '';
+    const walk = (node) => {
+        for (const child of node.childNodes) {
+            if (child.nodeType === Node.TEXT_NODE) {
+                out += child.nodeValue;
+            } else if (child.nodeType === Node.ELEMENT_NODE) {
+                if (child.tagName === 'BR') {
+                    out += '\\n';
+                    continue;
+                }
+                const isBlock = blockTags.includes(child.tagName);
+                if (isBlock && out !== '' && !out.endsWith('\\n')) out += '\\n';
+                walk(child);
+                if (isBlock) out += '\\n';
+            }
+        }
+    };
+    walk(doc.body);
+    return out.endsWith('\\n') ? out.slice(0, -1) : out;
+}
+
 async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button not found, -2 textarea not found
-    let textArea = document.getElementById('prompt-textarea')
+    let textArea = await findPromptInput(15000);
     //check if the textarea has been found
     if(!textArea) {
         console.error("[ThunderAI] Textarea not found!");
+        logPromptInputDiagnostics();
         return -2;
     }
-    // from sept 2024
-    // Remove existing content
-    while (textArea.firstChild) {
-        textArea.removeChild(textArea.firstChild);
+    if (textArea.tagName === 'TEXTAREA') {
+        // native setter, so React's value tracking notices the change
+        Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(textArea, htmlToPlainText(msg));
+    } else {
+        // from sept 2024
+        // Remove existing content
+        while (textArea.firstChild) {
+            textArea.removeChild(textArea.firstChild);
+        }
+        // Parse msg as HTML and append its nodes
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(msg, 'text/html');
+        Array.from(doc.body.childNodes).forEach(node => {
+            textArea.appendChild(node.cloneNode(true));
+        });
     }
-    // Parse msg as HTML and append its nodes
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(msg, 'text/html');
-    Array.from(doc.body.childNodes).forEach(node => {
-        textArea.appendChild(node.cloneNode(true));
-    });
     textArea.dispatchEvent(new Event('input', { bubbles: true }));
     //wait for the button to change from the audio button to the send button (from nov-2024)
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -669,7 +845,8 @@ async function doProceed(message, customText = ''){
                 doRetry();
             });
             curr_model_warn.insertAdjacentElement('afterend', btn_retry);
-            break;
+            // nothing was sent: stop here, the retry runs its own idle wait
+            return;
     }
     let forcecompletionHintTimeout;
     if(send_result == 0){
@@ -686,10 +863,14 @@ async function doProceed(message, customText = ''){
 
 function doRetry(){
     document.getElementById('mzta-model_warn').style.display = 'none';
-    document.getElementById('mzta-btn_retry').remove();
+    document.getElementById('mzta-btn_retry')?.remove();
     document.getElementById('mzta-loading').style.display = 'inline-block';
     document.getElementById('mzta-curr_msg').textContent = browser.i18n.getMessage("chatgpt_win_working");
-    doProceed(current_message);
+    if (_customTextArray.length > 0) {
+        doProceed(current_message, _customTextArray);
+    } else {
+        doProceed(current_message);
+    }
 }
 
 async function showForceCompletionHint(){
