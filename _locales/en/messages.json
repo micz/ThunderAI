@@ -533,14 +533,6 @@
     "message": "Duplicate and edit",
     "description": "Button that creates an editable personal copy of a read-only prompt"
   },
-  "customPrompts_btnRestoreDefault": {
-    "message": "Restore default",
-    "description": "Button that restores the default options of a built-in prompt"
-  },
-  "customPrompts_btnRestoreDefault_done": {
-    "message": "Default options restored. Click 'Save All' to save your changes.",
-    "description": "Message shown after restoring a built-in prompt's options"
-  },
   "customPrompts_btnSavePrompt": {
     "message": "Save",
     "description": "Button in the editor that applies the edits to the selected prompt (they are stored by Save All)"

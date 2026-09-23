@@ -1016,15 +1016,6 @@ export function getFactoryShowIn(promptId) {
     return prompt?.show_in || "popup";
 }
 
-// Factory need_custom_text for a built-in prompt: the value declared in defaultPrompts.
-// It is the only one of the five flags a user can override on a built-in (see
-// setDefaultPromptsProperties), so it is all "Restore default" on the Custom Prompts
-// page has to put back. "0" for an id that is not a built-in.
-export function getFactoryNeedCustomText(promptId) {
-    const prompt = defaultPrompts.find(dp => dp.id === promptId);
-    return prompt ? String(prompt.need_custom_text) : "0";
-}
-
 // Migration: if dynamic_menu_order_alphabet was true (or unset), assign initial positions
 // so that prompts appear alphabetically with special prompts first, then disable the flag
 // to switch to position-based ordering permanently.

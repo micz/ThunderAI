@@ -40,8 +40,7 @@ import {
     preparePromptsForExport,
     preparePromptsForImport,
     promptBooleanFlags,
-    isPromptFlagOn,
-    getFactoryNeedCustomText
+    isPromptFlagOn
 } from "../../js/mzta-prompts.js";
 import {
     injectConnectionUI,
@@ -783,10 +782,6 @@ function openRowMenu(item, btn) {
     const entries = st.locked
         ? [
             { icon: '⧉', key: 'customPrompts_btnDuplicateEdit', disabled: prompt_mgmt_disabled, run: () => duplicatePrompt(item) },
-            ...(st.is_default ? [
-                { divider: true },
-                { icon: '↺', key: 'customPrompts_btnRestoreDefault', run: () => restoreDefault(item) },
-            ] : []),
         ]
         : [
             { icon: '⧉', key: 'customPrompts_btnDuplicate', disabled: prompt_mgmt_disabled, run: () => duplicatePrompt(item) },
@@ -942,11 +937,6 @@ function bindDetailEvents() {
         e.preventDefault();
         const item = currentItem();
         if (item) duplicatePrompt(item);
-    });
-    detailEl('btnDetailRestore').addEventListener('click', (e) => {
-        e.preventDefault();
-        const item = currentItem();
-        if (item) restoreDefault(item);
     });
     detailEl('btnDetailMenuPosition').addEventListener('click', (e) => {
         e.preventDefault();
@@ -1148,7 +1138,6 @@ function updateDetailButtons() {
     const editable = detailEditable;
     const show = (id, on) => detailEl(id).classList.toggle('hiddendata', !on);
 
-    show('btnDetailRestore', mode === 'edit' && st.is_default);
     show('btnDetailDuplicate', mode === 'edit' && !st.locked);
     show('btnDetailDuplicateEdit', mode === 'edit' && st.locked);
     show('btnDetailDelete', mode === 'edit' && !st.locked);
@@ -1376,17 +1365,6 @@ function deletePrompt(item) {
         if (next) loadDetail(next);
         else showDetailEmpty();
     }
-}
-
-// A built-in's only user-owned flag is need_custom_text, so that is all there is to
-// put back. Pending until Save All, like every other change on this page.
-function restoreDefault(item) {
-    const v = item.values();
-    if (!rowState(v).is_default) return;
-    item.values({ need_custom_text: Number(getFactoryNeedCustomText(v.id)) });
-    refreshRow(item);
-    if (detailMode === 'edit' && String(v.idnum) === String(selectedIdnum)) loadDetail(item);
-    setSomethingChanged();
 }
 
 /* ---------------------------------------------------------------------------
