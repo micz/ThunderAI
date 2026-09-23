@@ -2260,30 +2260,24 @@
         "message": "Détaillé",
         "description": "Option du menu déroulant du résumé du raisonnement : demander un résumé plus détaillé."
     },
-  "prefs_level_minimal": {
-    "message": "Minimal",
-    "description": ""
-  },
-  "prefs_level_low": {
-    "message": "Faible",
-    "description": ""
-  },
-  "prefs_level_medium": {
-    "message": "Moyen",
-    "description": ""
-  },
-  "prefs_level_high": {
-    "message": "Élevé",
-    "description": ""
-  },
-  "prefs_level_xhigh": {
-    "message": "Très élevé",
-    "description": ""
-  },
-  "prefs_level_max": {
-    "message": "Maximum",
-    "description": ""
-  },
+    "prefs_level_minimal": {
+        "message": "Minimal"
+    },
+    "prefs_level_low": {
+        "message": "Faible"
+    },
+    "prefs_level_medium": {
+        "message": "Moyen"
+    },
+    "prefs_level_high": {
+        "message": "Élevé"
+    },
+    "prefs_level_xhigh": {
+        "message": "Très élevé"
+    },
+    "prefs_level_max": {
+        "message": "Maximum"
+    },
     "customDataPH_placeholdersCount": {
         "message": "$COUNT$ espaces réservés de données",
         "description": "Nombre d'espaces réservés de données affichés dans la liste, en pied de page",

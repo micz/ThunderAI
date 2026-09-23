@@ -2287,30 +2287,24 @@
         "message": "Detailliert",
         "description": "Option for the reasoning summary dropdown: request a more detailed summary."
     },
-  "prefs_level_minimal": {
-    "message": "Minimal",
-    "description": ""
-  },
-  "prefs_level_low": {
-    "message": "Niedrig",
-    "description": ""
-  },
-  "prefs_level_medium": {
-    "message": "Mittel",
-    "description": ""
-  },
-  "prefs_level_high": {
-    "message": "Hoch",
-    "description": ""
-  },
-  "prefs_level_xhigh": {
-    "message": "Sehr hoch",
-    "description": ""
-  },
-  "prefs_level_max": {
-    "message": "Maximum",
-    "description": ""
-  },
+    "prefs_level_minimal": {
+        "message": "Minimal"
+    },
+    "prefs_level_low": {
+        "message": "Niedrig"
+    },
+    "prefs_level_medium": {
+        "message": "Mittel"
+    },
+    "prefs_level_high": {
+        "message": "Hoch"
+    },
+    "prefs_level_xhigh": {
+        "message": "Sehr hoch"
+    },
+    "prefs_level_max": {
+        "message": "Maximum"
+    },
     "customDataPH_placeholdersCount": {
         "message": "$COUNT$ Daten-Platzhalter",
         "description": "Footer count of data placeholders shown in the list",

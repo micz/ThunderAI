@@ -1465,28 +1465,22 @@
         "message": "Dettagliato"
     },
     "prefs_level_minimal": {
-        "message": "Minimo",
-        "description": ""
+        "message": "Minimo"
     },
     "prefs_level_low": {
-        "message": "Basso",
-        "description": ""
+        "message": "Basso"
     },
     "prefs_level_medium": {
-        "message": "Medio",
-        "description": ""
+        "message": "Medio"
     },
     "prefs_level_high": {
-        "message": "Alto",
-        "description": ""
+        "message": "Alto"
     },
     "prefs_level_xhigh": {
-        "message": "Molto alto",
-        "description": ""
+        "message": "Molto alto"
     },
     "prefs_level_max": {
-        "message": "Massimo",
-        "description": ""
+        "message": "Massimo"
     },
     "prefs_ollama_temperature_Info": {
         "message": "La temperatura del modello. Aumentare la temperatura farà sì che il modello risponda in modo più creativo. Il valore predefinito è 0,8. Si consiglia di utilizzare valori compresi tra 0 e 1."
