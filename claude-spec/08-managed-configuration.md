@@ -176,12 +176,12 @@ exactly as they were the moment the policy is lifted.
 
 | Site | Treatment |
 |---|---|
-| `pages/customprompts/` `btnNew` | disabled in place |
+| `pages/customprompts/` `btnNew` ("New prompt") | disabled in place |
 | `pages/customprompts/` `#import_export` | **hidden** rather than greyed — a greyed Export/Import pair invites clicking. `#managed_restriction_note` is revealed in its place, so the missing buttons read as policy, not as a bug |
-| `pages/customprompts/` row buttons | Edit/Cancel/Confirm/Delete disabled on the user's own rows (`row_locked`); **Copy disabled on every row**, built-in and org included, because Copy always produces a new prompt |
+| `pages/customprompts/` detail editor and row menu | the user's own prompts are `rowState().locked`: every field is read-only, Save/Delete are not offered and the banner shows `customPrompts_policy_inert_note`; **Duplicate / Duplicate and edit / Export are disabled on every prompt**, built-in and org included, because a copy always produces a new prompt |
 | `pages/menu_order/` rows | dimmed, undraggable, badged `menu_order_badge_policy_inactive` |
 | menus, popup, `loadPrompt()` | filtered out by `getPrompts()` |
-| `exportPrompts()`, `importPrompts()`, `handleCopyClick()`, `handleEditClick()`, `handleDeleteClick()` | early-return guards — the control being disabled or out of sight is not the same as the action being unavailable |
+| `exportPrompts()`, `importPrompts()`, `duplicatePrompt()`, `startNewPrompt()`, `commitDetail()` (new mode), `deletePrompt()` | early-return guards — the control being disabled or out of sight is not the same as the action being unavailable |
 
 This is also why that page uses `pages/_lib/managed-ui.js` instead of its own raw
 `sendMessage`: it needs the restriction accessors, and the state belongs in one cache. The
@@ -248,7 +248,7 @@ What it does **not** touch:
 | Site | Treatment |
 |---|---|
 | menus, popup, `loadPrompt()` | filtered out by `getPrompts()` |
-| `pages/customprompts/` rows | already read-only as built-ins; marked `is_inert`, with `customPrompts_policy_default_inert_note` per row and `#managed_restriction_defaults_note` once for the page — without them a row that has silently vanished from every menu reads as a bug |
+| `pages/customprompts/` rows | already read-only as built-ins; dimmed in the list (`.is_dimmed`), with `customPrompts_policy_default_inert_note` in the detail editor's banner and `#managed_restriction_defaults_note` once for the page — without them a prompt that has silently vanished from every menu reads as a bug |
 | `pages/menu_order/` rows | dimmed, undraggable, badged `menu_order_badge_policy_inactive` (shared with the restriction above: "Disabled by policy" is exactly right for both) |
 
 The built-in prompts are **kept in the merged set**, never filtered out of it, for the same

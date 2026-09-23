@@ -125,6 +125,9 @@ export const prefs_default = {
     chatgpt_win_top: '',
     chatgpt_win_left: '',
     chatgpt_win_save_position: false,
+    // Last view chosen on the Manage Custom Prompts page: 'split' (list + detail editor)
+    // or 'table' (dense overview). UI state only, never read outside that page.
+    custom_prompts_view: 'split',
     default_chatgpt_lang: '',
     default_sign_name: '',
     reply_type: 'reply_all',

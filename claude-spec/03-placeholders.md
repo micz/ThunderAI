@@ -300,8 +300,11 @@ its type is `0` ("always"). The type is read **lazily on every keystroke**, so c
 mid-edit takes effect immediately with no re-registration.
 
 - The 6 single-textarea pages pass an explicit `type_value` (all currently `1`, "reading").
-- The two table-based CRUD pages (customprompts, customdataplaceholders) pass no type and instead
-  resolve it from the row: `textarea.closest('tr')` → `.type_output`. This **must** use `closest()`,
+- The Custom Prompts page passes a **getter function** as `type_value`
+  (`() => detailType.value`): its editor is a single detail pane, not a table row, so there is no
+  `closest('tr')` to search. A function is called on every keystroke, keeping the lazy read.
+- The table-based Data Placeholders page passes no type and instead
+  resolves it from the row: `textarea.closest('tr')` → `.type_output`. This **must** use `closest()`,
   not a fixed `parentNode` chain — the editor markup nests the textarea inside a backdrop wrapper
   (see `claude-spec/05-options.md`), and a fixed chain silently breaks type filtering, throwing on
   every keystroke inside an `input` handler.
@@ -415,7 +418,7 @@ tier readable in the DOM.
 
 **Telling the two apart costs a second call to the one predicate.** `findPlaceholder()` returns
 `null` for both "unknown id" and "wrong type" and **is deliberately left that way**: widening its
-return type would touch `extractPlaceholders()` (runtime) and `decoratePromptText()`, whose
+return type would touch `extractPlaceholders()` (runtime) and `renderPreviewText()` (Custom Prompts page), whose
 contract is documented in three places. So the resolver asks two questions instead —
 `find(inner, list, null)` ("does this id exist at all", type-less, asked **first**) and, only if
 that matched, `find(inner, list, type)` ("is it usable here"). The second `Array.find` is
@@ -424,18 +427,18 @@ repaint already performs unconditionally. Asking the type-less question first is
 mechanism: reversing the order collapses the tiers back into one.
 
 The first, second and fourth states are also rendered in **read mode** on the Manage Custom
-Prompts page, in the same two tiers: `decoratePromptText()` tests the id with `findPlaceholder(..., null)`
+Prompts page, in the same two tiers: `renderPreviewText()` tests the id with `findPlaceholder(..., null)`
 and marks a missing one `.ph_chip_invalid_read.ph_chip_error_read` (+ `editor_placeholder_missing`), then
 hands the type question to the **same** `classifyPlaceholderType()` the live resolver uses and applies
 `.ph_chip_invalid_read` with whatever title it returns. Sharing that helper is what keeps the type-`0`
-`partial_type` warning identical in both modes. Read mode's `type`
-may legitimately be `null` (no `.type_output`, no `.type` span), and then the second call equals
+`partial_type` warning identical in both modes. Read mode's `type` comes from the item's
+stored `type` value and may legitimately be `null`, and then the second call equals
 the first, so nothing is flagged amber. The unterminated state cannot occur there: that function
 matches only complete `PLACEHOLDER_RE` tokens, so an unterminated `{%` is simply left as plain text.
 
 **One predicate, three call sites — four calls.** `placeholdersUtils.findPlaceholder(inner, activePHs, type = null)` is the
 resolution rule, factored out of `extractPlaceholders()` and called by both, so the editor cannot disagree
-with what the prompt will actually resolve at runtime. `decoratePromptText()` on the Manage Custom Prompts
+with what the prompt will actually resolve at runtime. `renderPreviewText()` on the Manage Custom Prompts
 page is the third caller, so the read-only list, the live editor and the runtime all share one definition
 of a resolvable placeholder. It is **sync** and takes an already-fetched list,
 because the backdrop runs on every keystroke and cannot `await`. The `type` argument is **optional**:
@@ -491,12 +494,15 @@ every keystroke. `chip()` reads `textarea.selectionStart/End` live rather than t
 because the ordinary repaint path (`refresh()`, on every `input`) passes none.
 
 **Re-validation on type change.** Validity depends on the prompt type, and the mirror caches its render,
-so `attachHighlightWithValidation()` on the two table pages adds a `change` listener to the row's
-`.type_output` (or `#selectTypeNew` in the add-form) that calls `refresh()`. There was no listener on
+so `attachHighlightWithValidation()` on the Data Placeholders table page adds a `change` listener to the
+row's `.type_output` (or `#selectTypeNew` in the add-form) that calls `refresh()`. There was no listener on
 those selectors before — the autocomplete reads the type lazily per keystroke and never needed one.
-The six settings pages pass a constant type `1`, matching the `type_value` they give the autocomplete.
+The Custom Prompts page has a single detail editor, so it attaches the mirror once, installs the resolver
+once with a getter on `#detail_type`, and refreshes on that select's `change`; neither pitfall below can
+arise there. The six settings pages pass a constant type `1`, matching the `type_value` they give the
+autocomplete.
 
-Two details of that function are load-bearing, and getting either wrong makes the **amber tier silently
+Two details of the table-page function are load-bearing, and getting either wrong makes the **amber tier silently
 unreachable** — every wrong-type token renders as a valid chip:
 
 1. **The resolver is re-installed on every call**, not only when the handle is new. `attachEditorHighlight()`
