@@ -106,10 +106,25 @@ input.option-input[type="text"]{
 
 .api_key-container .toggle-icon {
     position: absolute;
-    right: 0px;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
     cursor: pointer;
+    margin-left: 0;
+    line-height: 0;
+}
+
+/* The host pages size the API key input to the full container width, so the
+   eye icon sits inside the field: keep the text clear of it. The id/class
+   prefixes are needed to outrank the hosts' own padding rules. */
+.api_key-container input.option-input,
+#mzta_card .api_key-container input.option-input,
+#connection_ui_table .api_key-container input.option-input,
+#connection_ui_adv_table .api_key-container input.option-input,
+#formNew .api_key-container input.option-input,
+.api_additional_info .api_key-container input.option-input[type] {
+    margin-right: 0;
+    padding-right: 36px;
 }
 
 #ollama_model_fetch_loading{
