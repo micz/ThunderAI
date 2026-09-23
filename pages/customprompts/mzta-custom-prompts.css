@@ -26,7 +26,7 @@
     --err-text:#a52826;  --err-bg:#fbe3e3;  --err-border:#d98b8a;
     /* Search hit highlight — its own pair, so a match cannot be misread as a token. */
     --hit-bg:#fff3a3;  --hit-text:#3a2f00;
-    --icon-hover-bg:#eceef2;  --save-bg:#eceef2;  --save-text:#a0a4ae;  --box:#ffffff;
+    --icon-hover-bg:#eceef2;  --box:#ffffff;
     /* Prompt type badges and the read-only (system) info banner. */
     --sys-text:#1f4f99;  --sys-bg:#e6efff;  --sys-border:#b9cff5;
     --pers-text:#6b3fb3;  --pers-bg:#f1ebfc;  --pers-border:#d6c6f2;
@@ -61,7 +61,7 @@
         --warn-text:#f0c07a;  --warn-bg:#3a2c14;  --warn-border:#7a5a22;
         --err-text:#f0a3a1;  --err-bg:#3d1b1b;  --err-border:#7d3a38;
         --hit-bg:#6b5a00;  --hit-text:#fff8d0;
-        --icon-hover-bg:#3a3947;  --save-bg:#2b2a33;  --save-text:#6f6f79;  --box:#2b2a33;
+        --icon-hover-bg:#3a3947;  --box:#2b2a33;
         --sys-text:#9fb8e6;  --sys-bg:#1d2a44;  --sys-border:#2d4573;
         --pers-text:#c9b5ef;  --pers-bg:#2a2140;  --pers-border:#4a3a6e;
         --info-bg:#1d2333;  --info-border:#2d4573;  --info-text:#c3d3ef;
@@ -218,13 +218,6 @@ button:focus-visible {
     background: var(--del-hover-bg);
     color: var(--del-hover-text);
 }
-
-/* Save All — quiet until there are changes. */
-#btnSaveAll {
-    background: var(--save-bg);
-    color: var(--save-text);
-}
-#btnSaveAll:not(:disabled) { color: var(--text); }
 
 /* ============================ Card ============================ */
 /* The List.js container. It fills the viewport height so the list and the detail pane

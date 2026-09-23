@@ -27,7 +27,8 @@
  *    laid out by CSS, so search, count and selection carry across a switch for free.
  *  - #detail_pane is a single static editor. Editing no longer happens inside a row:
  *    loadDetail() fills the pane from an item, commitDetail() writes it back with
- *    item.values(). Nothing is persisted until Save All, exactly as before.
+ *    item.values(), and every change to the list is written to storage at once by
+ *    savePrompts(). There is no Save All.
  */
 
 import {
@@ -94,7 +95,8 @@ let shadowed_org_ids = new Set();
 let prompt_mgmt_disabled = false;
 let default_prompts_disabled = false;
 var promptsList = null;
-var somethingChanged = false;
+let saveQueue = Promise.resolve();  // serializes savePrompts() writes
+let saveUnconfirmed = false;        // a write is in flight, or the last one failed
 var positionMax_compose = 0;
 var positionMax_display = 0;
 var idnumMax = 0;
@@ -121,7 +123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // getPromptsForManagement(), not getPrompts(): this page must also list a custom
     // prompt that an organization prompt is currently shadowing. It is shown disabled with
-    // an explanation, and - crucially - it is still saved, because saveAll() rewrites the
+    // an explanation, and - crucially - it is still saved, because savePrompts() rewrites the
     // whole _custom_prompt store from what is listed here.
     let values = await getPromptsForManagement();
 
@@ -607,7 +609,7 @@ function highlightSearchMatches() {
 // Show/hide the toolbar badge announcing that the list is filtered.
 //
 // This is deliberately NOT routed through #msgDisplay: that span is owned exclusively
-// by setSomethingChanged() / setNothingChanged() / setMessage(), which overwrite its
+// by setMessage() / clearMessage(), which overwrite its
 // text and toggle its display. The two states are independent and must be able to
 // show at the same time.
 function updateFilterIndicator() {
@@ -706,13 +708,6 @@ function clearPromptsSearch() {
    =========================================================================== */
 
 function bindToolbar() {
-    document.getElementById('btnSaveAll').addEventListener('click', async (e) => {
-        e.preventDefault();
-        // Pending edits in the pane are part of "all": ask before saving without them.
-        if (!(await confirmLeaveDetail())) return;
-        saveAll();
-    });
-
     document.getElementById('btnNew').addEventListener('click', async (e) => {
         e.preventDefault();
         if (prompt_mgmt_disabled) return;
@@ -1177,8 +1172,7 @@ function updateChatGPTWebVisibility() {
 
 // A flag toggle. On an editable prompt it is just a pending edit; on a read-only
 // prompt the only toggleable flag is a built-in's need_custom_text, which is applied to
-// the item straight away (there is no Save on a read-only prompt), as the old row
-// checkbox did.
+// the item and saved straight away (there is no Save on a read-only prompt).
 function handleFlagChange(e) {
     if (detailLoading) return;
     const cb = e.target;
@@ -1188,7 +1182,7 @@ function handleFlagChange(e) {
         if (flag === 'need_custom_text') {
             item.values({ need_custom_text: cb.checked ? 1 : 0 });
             refreshRow(item);
-            setSomethingChanged();
+            savePrompts();
         }
     } else {
         setDetailDirty(true);
@@ -1245,9 +1239,9 @@ function clearDetailError() {
     ['detail_id', 'detail_name', 'detail_text'].forEach(id => detailEl(id).classList.remove('input_error'));
 }
 
-// "Save" in the pane: apply its fields to the list item (or create it). Nothing is
-// written to storage here - that is Save All's job, as with the old row OK button.
-// Resolves true on success.
+// "Save" in the pane: apply its fields to the list item (or create it), then write the
+// list to storage. Resolves true once the fields are applied; the write itself reports
+// through #msgDisplay.
 async function commitDetail() {
     if (detailMode === 'none') return true;
     const values = readDetailFields();
@@ -1293,8 +1287,8 @@ async function commitDetail() {
         applyDetailState(rowState(item.values()));
         setDetailDirty(false);
     }
-    setSomethingChanged();
     updatePromptsCount();
+    savePrompts();
     return true;
 }
 
@@ -1357,8 +1351,8 @@ function deletePrompt(item) {
     const next = visible[index + 1] || visible[index - 1] || null;
 
     promptsList.remove('idnum', v.idnum);
-    setSomethingChanged();
     updatePromptsCount();
+    savePrompts();
 
     if (wasSelected) {
         setDetailDirty(false);
@@ -1641,7 +1635,7 @@ async function exportPrompts(prompts, filenameBase) {
 function importPrompts() {
     // Guarded as well as hidden - see exportPrompts() above.
     if (prompt_mgmt_disabled) return;
-    if (!confirm(browser.i18n.getMessage("importPrompts_confirmText") + '\n' + browser.i18n.getMessage("customPrompts_managePrompts_info_default_2") + '\n' + browser.i18n.getMessage("customPrompts_managePrompts_info_default_3"))) {
+    if (!confirm(browser.i18n.getMessage("importPrompts_confirmText") + '\n' + browser.i18n.getMessage("customPrompts_managePrompts_info_default_2") + '\n' + browser.i18n.getMessage("customPrompts_import_saved_now"))) {
         return;
     }
     const input = document.createElement('input');
@@ -1671,8 +1665,13 @@ function importPrompts() {
                 const first = promptsList.visibleItems[0];
                 if (first) loadDetail(first);
                 else showDetailEmpty();
-                setSomethingChanged();
-                setMessage(browser.i18n.getMessage('customPrompts_import_completed'), 'orange');
+                await savePrompts();
+                if (!saveUnconfirmed) {
+                    setMessage(browser.i18n.getMessage('customPrompts_import_completed_saved'), 'green');
+                    msgTimeout = setTimeout(() => {
+                        clearMessage();
+                    }, 5000);
+                }
             } catch (err) {
                 alert(browser.i18n.getMessage("importPrompts_invalidFile") + ' ' + err);
                 setMessage(browser.i18n.getMessage('importPrompts_invalidFile'), 'red');
@@ -1683,35 +1682,25 @@ function importPrompts() {
 }
 
 /* ===========================================================================
-   Save All and status messages
+   Saving and status messages
    =========================================================================== */
 
-function setSomethingChanged() {
-    clearTimeout(msgTimeout);
-    somethingChanged = true;
-    document.getElementById('btnSaveAll').disabled = false;
-    let msgDisplay = document.getElementById('msgDisplay');
-    msgDisplay.textContent = browser.i18n.getMessage('customPrompts_unsaved_changes');
-    msgDisplay.style.display = 'inline';
-    msgDisplay.style.color = 'red';
+// Write the whole list to storage. Every change on this page calls it right after
+// touching the list, so there is no pending state and no Save All. Calls are chained:
+// each one snapshots the list when its turn comes, so the last write always holds the
+// latest list, however quickly the changes follow one another.
+function savePrompts() {
+    saveUnconfirmed = true;
+    saveQueue = saveQueue.then(writePrompts);
+    return saveQueue;
 }
 
-function setNothingChanged() {
-    somethingChanged = false;
-    document.getElementById('btnSaveAll').disabled = true;
-    let msgDisplay = document.getElementById('msgDisplay');
-    msgDisplay.textContent = '';
-    msgDisplay.style.display = 'none';
-    msgDisplay.style.color = '';
-}
-
-async function saveAll() {
+async function writePrompts() {
+    if (promptsList == null) return;
     setMessage(browser.i18n.getMessage('customPrompts_start_saving'));
-    setNothingChanged();
-    if (promptsList != null) {
+    try {
         let newPrompts = promptsList.items.map(item => item.values());
         taLog.log('newPrompts: ' + JSON.stringify(newPrompts));
-        setMessage(browser.i18n.getMessage('customPrompts_filtering_prompts'));
         // Organization prompts come from the enterprise policy and must never be written
         // to storage: setCustomPrompts() replaces the whole _custom_prompt array with what
         // it is given, so one left in newCustomPrompts would be copied into the user's own
@@ -1722,16 +1711,19 @@ async function saveAll() {
         // A custom prompt shadowed by an org prompt is still listed on this page, and must
         // still be saved: dropping it here would delete the user's prompt for real.
         let newCustomPrompts = newPrompts.filter(item => item.is_default == 0 && item.is_org != 1);
-        setMessage(browser.i18n.getMessage('customPrompts_saving_default_prompts'));
         await setDefaultPromptsProperties(newDefaultPrompts);
-        setMessage(browser.i18n.getMessage('customPrompts_saving_custom_prompts'));
         await setCustomPrompts(newCustomPrompts);
-        setMessage(browser.i18n.getMessage('customPrompts_reloading_menus'));
         await browser.runtime.sendMessage({command: "reload_menus"});
+        saveUnconfirmed = false;
         setMessage(browser.i18n.getMessage('customPrompts_saved'), 'green');
         msgTimeout = setTimeout(() => {
             clearMessage();
-        }, 10000);
+        }, 5000);
+    } catch (err) {
+        // Left set, so beforeunload still warns: what is on screen is not in storage.
+        saveUnconfirmed = true;
+        taLog.error('Saving the prompts failed: ' + err);
+        setMessage(browser.i18n.getMessage('customPrompts_save_error') + ' ' + err, 'red');
     }
     setStorageSpace();
 }
@@ -1756,9 +1748,10 @@ async function setStorageSpace() {
     document.getElementById('storage_space').textContent = storage_space;
 }
 
-// Unapplied edits in the pane count as unsaved too: they would be lost with the tab.
+// Unapplied edits in the pane would be lost with the tab, and so would the list if its
+// last write has not landed.
 window.addEventListener('beforeunload', function (event) {
-    if (somethingChanged || detailDirty) {
+    if (saveUnconfirmed || detailDirty) {
         event.preventDefault();
     }
 });

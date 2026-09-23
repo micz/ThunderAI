@@ -79,21 +79,21 @@
     "message": "Reindexing list...",
     "description": ""
   },
-  "customPrompts_filtering_prompts": {
-    "message": "Filtering prompts...",
+  "customPrompts_autosave_info": {
+    "message": "Every change is saved immediately.",
+    "description": "Note on the Custom Prompts page: there is no Save All button"
+  },
+  "customPrompts_import_saved_now": {
+    "message": "The imported prompts will be saved immediately.",
+    "description": "Line of the confirmation shown before importing custom prompts"
+  },
+  "customPrompts_import_completed_saved": {
+    "message": "Custom prompts imported and saved!",
     "description": ""
   },
-  "customPrompts_saving_default_prompts": {
-    "message": "Saving default prompts...",
-    "description": ""
-  },
-  "customPrompts_saving_custom_prompts": {
-    "message": "Saving custom prompts...",
-    "description": ""
-  },
-  "customPrompts_reloading_menus": {
-    "message": "Reloading menus...",
-    "description": ""
+  "customPrompts_save_error": {
+    "message": "Error while saving the prompts:",
+    "description": "Followed by the error message"
   },
   "customPrompts_saved": {
     "message": "Prompts saved!",
@@ -535,7 +535,7 @@
   },
   "customPrompts_btnSavePrompt": {
     "message": "Save",
-    "description": "Button in the editor that applies the edits to the selected prompt (they are stored by Save All)"
+    "description": "Button in the editor that saves the edits to the selected prompt"
   },
   "customPrompts_btnExport": {
     "message": "Export",
@@ -639,10 +639,6 @@
   },
   "customPrompts_start_import": {
     "message": "Starting custom prompts import...",
-    "description": ""
-  },
-  "customPrompts_import_completed": {
-    "message": "Custom prompts import completed! You need to click on the 'Save All' button to save your changes.",
     "description": ""
   },
   "importPrompts_invalidFile": {

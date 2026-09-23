@@ -364,7 +364,7 @@ The prompt CRUD screen, **design "2a": one list, two views**. A single card (`#p
 **Layout.**
 - Header (eyebrow, title, description, Custom Data PH button) with the `#import_export` stack on the right, then the two managed-restriction notes, then the card.
 - The card fills the viewport height (`calc(100vh - 48px)`, min 520px), so the list and the detail pane scroll on their own.
-- **Toolbar** (`#command_palette`): search, `#prompts_count` (`customPrompts_promptsCount` / `customPrompts_promptsCount_filtered`), `#filter_badge`, `#msgDisplay`, the view switch (`#view_switch`, a segmented control of `aria-pressed` buttons), `#btnSaveAll` and `#btnNew` ("New prompt").
+- **Toolbar** (`#command_palette`): search, `#prompts_count` (`customPrompts_promptsCount` / `customPrompts_promptsCount_filtered`), `#filter_badge`, `#msgDisplay`, the view switch (`#view_switch`, a segmented control of `aria-pressed` buttons) and `#btnNew` ("New prompt"). There is **no Save All**: every change is written to storage as soon as it is made (see *Saving* below), and the page header says so (`customPrompts_autosave_info`).
 - The detail inputs are styled under `#detail_body .detail_input`: `connection-ui.css` (linked after this stylesheet) sets `input[type="text"] { padding: 2px }`, which would otherwise outrank a bare class.
 - `#card_body` is a grid: `340px | 1fr` in split view (list + `#detail_pane`), a single column in table view (the pane is `display:none`).
 
@@ -389,9 +389,9 @@ The prompt CRUD screen, **design "2a": one list, two views**. A single card (`#p
 **Search** (`#prompts_search`, class `prompts_search_input`): filters on prompt **name, ID and text**, through `promptsList.search(str, ['name','id','text'], promptsSearch)`.
 - The custom function is required, not a refinement: built-in names are `__MSG_` tokens, so `resolvePromptName()` unwraps them first, and the text is matched in its one-line preview form (`<br>` → space).
 - The input deliberately does **not** carry List.js' default `searchClass` of `search`: it lives inside the List container, so List.js would auto-bind a second, competing plain-text filter on the same field.
-- Filtering is display-only and cannot lose data: `saveAll()` iterates `promptsList.items`. The detail pane keeps showing its prompt, pending edits included, even when the search filters that row out.
+- Filtering is display-only and cannot lose data: `writePrompts()` iterates `promptsList.items`. The detail pane keeps showing its prompt, pending edits included, even when the search filters that row out.
 - Matches in the visible name and id are wrapped in `<mark class="search_hit">` (`--hit-*` tokens; metric-neutral). `highlightSearchMatchesIn()` reads the text back with `textContent`, so it is idempotent and marks never nest. `refreshRow()` repaints its own row, and the input handler repaints all rows, because narrowing a needle within an unchanged result set fires no `updated`.
-- **`#filter_badge`** states that the list is filtered (`customPrompts_filter_active`, or `customPrompts_filter_noMatches` + `.filter_badge_empty`), with `#btnClearFilter`. It is `role="status" aria-live="polite"`. It is **not** routed through `#msgDisplay`, which is owned by `setSomethingChanged()` / `setNothingChanged()` / `setMessage()`: "filtered" and "unsaved changes" are independent states that must be able to show at the same time. `#filter_badge.hiddendata` is declared explicitly, since the badge's own `display` would otherwise tie with `.hiddendata`.
+- **`#filter_badge`** states that the list is filtered (`customPrompts_filter_active`, or `customPrompts_filter_noMatches` + `.filter_badge_empty`), with `#btnClearFilter`. It is `role="status" aria-live="polite"`. It is **not** routed through `#msgDisplay`, which is owned by `setMessage()` / `clearMessage()`: "filtered" and the save status are independent states that must be able to show at the same time. `#filter_badge.hiddendata` is declared explicitly, since the badge's own `display` would otherwise tie with `.hiddendata`.
 - `setupPromptsSearch()` runs again after an import (a new List instance), so its listener is guarded by `promptsSearchBound`; the field value is reset on every call.
 
 **Detail editor (`#detail_pane`).** A single static editor, never a List.js item. `detailMode` is `'none' | 'edit' | 'new'`, and `selectedIdnum` identifies the item in edit mode.
@@ -417,12 +417,13 @@ The prompt CRUD screen, **design "2a": one list, two views**. A single card (`#p
   | Built-in / org / shadowed / inert | Duplicate and edit |
 
   Duplicate, Duplicate and edit, and Export are disabled whenever the management policy is on (see [08-managed-configuration.md](08-managed-configuration.md)).
-- **Save** (`commitDetail()`) validates the fields and applies them to the List.js item with `item.values()`, then calls `setSomethingChanged()`. Validation: the id is non-empty, has no whitespace and is unique among the other prompts; name and text are required; errors show in `#detail_error` and as `.input_error` borders. **Nothing is written to storage**: that is still Save All's job, exactly like the old row OK button. Flags are written as numbers `1`/`0`, which `normalizePromptFlags()` collapses on the next read.
+- **Save** (`commitDetail()`) validates the fields and applies them to the List.js item with `item.values()`, then calls `savePrompts()`. Validation: the id is non-empty, has no whitespace and is unique among the other prompts; name and text are required; errors show in `#detail_error` and as `.input_error` borders. Flags are written as numbers `1`/`0`, which `normalizePromptFlags()` collapses on the next read.
 - **New prompt** (`startNewPrompt()`) puts the pane in `'new'` mode, with empty fields and the global API defaults. Save creates the item with the same shape as before (`position_*Max + 1`, next `idnum`, `is_default: 0`, `show_in: 'popup'`), after clearing the search so the new row is visible, and selects it. Cancel returns to the previous selection.
 - **Duplicate / Duplicate and edit** (`duplicatePrompt()`) seed `'new'` mode from a copy. The id becomes `id_<copy_text>` and the name `<resolved name> (<copy_text>)`, API values included. Ownership and policy markers (`is_default`, `is_org`, `_shadowed_by_org`, …) are stripped from the seed.
 - **Delete** confirms (`customPrompts_btnDelete_confirmText`), removes the item and selects the next visible one.
 - **Export** (row menu) runs `exportPrompts([values])`, the same function as Export All, so a single-prompt file has the full format and re-imports like any backup.
-- **Dirty guard**: `detailDirty` is set by any user input in the pane, ignoring programmatic fills (`detailLoading`). Before the pane is repointed — selecting another prompt, Edit/Open from the table, New, Duplicate, Import, Save All — `confirmLeaveDetail()` shows `showChoiceDialog()` with Cancel / Discard / Apply. Apply runs `commitDetail()`, and a failed validation keeps the user in place. `beforeunload` also warns while `detailDirty` is set.
+- **Dirty guard**: `detailDirty` is set by any user input in the pane, ignoring programmatic fills (`detailLoading`). Before the pane is repointed — selecting another prompt, Edit/Open from the table, New, Duplicate, Import — `confirmLeaveDetail()` shows `showChoiceDialog()` with Cancel / Discard / Apply. Apply runs `commitDetail()`, and a failed validation keeps the user in place. `beforeunload` also warns while `detailDirty` is set.
+- **Saving** is immediate. Every mutation of the list — Save in the pane, Delete, a built-in's `need_custom_text` toggle, Import — ends with `savePrompts()`, which chains `writePrompts()` on `saveQueue` so writes never interleave and the last one holds the latest list (each snapshots `promptsList.items` when its turn comes). `writePrompts()` splits the items (`is_default`/`is_org` → `setDefaultPromptsProperties()`, the rest → `setCustomPrompts()`), sends `reload_menus`, and reports in `#msgDisplay`: `customPrompts_start_saving`, then `customPrompts_saved` (cleared after 5 s) or `customPrompts_save_error` in red. `saveUnconfirmed` is set while a write is in flight and stays set after a failure, and `beforeunload` warns on it too. Import asks first (its confirmation includes `customPrompts_import_saved_now`), since it replaces the stored prompts with no way back; on success it shows `customPrompts_import_completed_saved`.
 - The table view's Edit button and the view switch do not discard pending edits: Edit goes through the dirty guard, and the switch keeps the pane's state intact.
 
 **Prompt text highlighting.**
@@ -1183,9 +1184,10 @@ value differs from the stored one, and the click handler disables it again after
 No change to those existing handlers is needed.
 
 The selector deliberately matches only the snake_case `btn_save*` ids used by the feature
-pages. The Custom Prompts, Data Placeholders and Menu Order pages use a single
-camelCase `btnSaveAll` button and keep their own `somethingChanged`-based `beforeunload`
-handler, so they are unaffected.
+pages. The Data Placeholders and Menu Order pages use a single camelCase `btnSaveAll`
+button and keep their own `somethingChanged`-based `beforeunload` handler, and the Custom
+Prompts page saves every change immediately with its own `beforeunload` handler, so they
+are unaffected.
 
 Each page calls `initUnsavedGuard()` as the first statement of its `DOMContentLoaded`
 handler, so the guard is armed even if later async setup fails.
