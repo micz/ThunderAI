@@ -3,7 +3,9 @@
 
 <h2>Version 5.1.0 - ??/??/2026</h2>
       <ul>
-        <li>...</li>
+        <li>Redesigned the Custom Prompts page: a list of the prompts next to a detail editor, plus a table view that shows all the prompts and their options at a glance. The last view chosen is remembered. The search now also looks in the prompt text [<a href="https://github.com/micz/ThunderAI/issues/904">#904</a>].</li>
+        <li>The Custom Prompts page no longer has a "Save All" button: every change is saved immediately, imported prompts included. You are warned before leaving a prompt with unsaved edits [<a href="https://github.com/micz/ThunderAI/issues/904">#904</a>].</li>
+        <li>Added support for the Thunderbird enterprise policies: an administrator can use <i>policies.json</i> to pre-configure or enforce any ThunderAI setting, provide a set of organization prompts, turn off prompt management (creating, copying, importing and exporting prompts), hide the built-in prompts and disable the setup wizard. Settings that are enforced are shown with a lock icon and can't be changed [<a href="https://github.com/micz/ThunderAI/issues/880">#880</a>].</li>
       </ul>
 <h2>Version 5.0.1 - 16/09/2026</h2>
       <ul>
