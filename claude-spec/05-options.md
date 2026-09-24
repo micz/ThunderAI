@@ -193,6 +193,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `add_tags` | `false` | Enable auto-tagging feature |
 | `add_tags_maxnum` | `3` | Max tags to apply |
 | `add_tags_max_messages` | `0` | Maximum number of messages tagged at once from the **context menu**. Above this limit `processEmails()` (`mzta-background.js`) blocks the run and shows the `add_tags_too_many_messages` warning. `0` = no limit. Automatic tagging of incoming mail is never capped. Exposed in the add tags settings page as a number input (`min="0"`, no reset button: the page's restore fallback for number inputs is already `0`). Meant for providers with a daily quota (#901), where a large selection cannot fit anyway. |
+| `add_tags_max_concurrency` | `1` | Maximum messages tagged at once by the add_tags drain of one `processEmails()` call (automatic tagging on receive and the context-menu action). Independent of the other `*_max_concurrency` caps; overlapping calls can exceed it. A value that is not a finite number ≥ 1 (a cleared field is saved as `NaN`) falls back to the default. Number input (`min="1"`) in the add tags settings page, with its default wired into `restoreOptions()`. New tags are still created one at a time (`_enqueueTagAssign()`). See [01-architecture.md](01-architecture.md#concurrent-drains-in-processemails). |
 | `add_tags_hide_exclusions` | `false` | Hide excluded tags from menu |
 | `add_tags_exclusions_exact_match` | `false` | Exact match for exclusions |
 | `add_tags_first_uppercase` | `true` | Capitalize first letter of tags |
@@ -219,7 +220,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `spamfilter_skip_addressbook` | `true` | Skip senders found in any address book (`browser.contacts.quickSearch`) |
 | `spamfilter_show_msg_panel` | `true` | Show info panel on spam detection |
 | `spamfilter_only_inbox` | `false` | Auto spam filter runs only on inbox messages |
-| `spamfilter_max_concurrency` | `1` | Maximum spam analyses in flight at once in the spam drain of one `processEmails()` call (on receive and from the context menu). Overlapping calls (several accounts) can exceed it. A value that is not a finite number ≥ 1 (a cleared field is saved as `NaN`) falls back to the default. Number input (`min="1"`) in the spam filter settings page, with its default wired into `restoreOptions()`. See [01-architecture.md](01-architecture.md#concurrent-drains-spam-filter-and-summarize-in-processemails). |
+| `spamfilter_max_concurrency` | `1` | Maximum spam analyses in flight at once in the spam drain of one `processEmails()` call (on receive and from the context menu). Overlapping calls (several accounts) can exceed it. A value that is not a finite number ≥ 1 (a cleared field is saved as `NaN`) falls back to the default. Number input (`min="1"`) in the spam filter settings page, with its default wired into `restoreOptions()`. See [01-architecture.md](01-architecture.md#concurrent-drains-in-processemails). |
 | `summarize` | `false` | Enable email summarization |
 | `summarize_auto` | `1` | Auto-summarize mode: `0` = disabled, `1` = manual (show "click to generate" button), `2` = automatic (generate on message open), `3` = generate on email receive (background pre-cache via `onNewMailReceived`, no UI during generation) |
 | `summarize_display_mode` | `'inline'` | Where to display summaries: `'inline'` = message pane banner, `'webchat'` = AI chat window. Note: `summarize_auto = 2` and `summarize_auto = 3` always use inline regardless of this setting. |
@@ -234,6 +235,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `translate` | `true` | Enable email translation |
 | `translate_auto` | `0` | Auto-translate mode: `0` = disabled, `1` = manual (show button), `2` = automatic (translate on message open), `3` = generate on email receive (background pre-cache via `onNewMailReceived`, no UI during generation) |
 | `translate_max_display_length` | `0` | Maximum characters shown in inline translation before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
+| `translate_max_concurrency` | `1` | Maximum translations generated at once by the translate drain of one `processEmails()` call (translate on receive and the context-menu action). Independent of the other `*_max_concurrency` caps; overlapping calls can exceed it. Same `NaN` fallback. Number input (`min="1"`) in the translate settings page, with its default wired into `restoreOptions()`. See [01-architecture.md](01-architecture.md#concurrent-drains-in-processemails). |
 | `translate_lang` | `''` | Target language for translation. Falls back to `default_chatgpt_lang` if empty. |
 
 #### Address-list preferences and the empty-string trap
@@ -995,7 +997,7 @@ Three details keep that agreement holding in the background:
 **Execution guards are the backstop** for the window between a connection change and the
 reconciliation, and for callers that bypass the menus. `isApiUsableConnection()` is checked in
 `_generateSpamReportForMessage()` (which had no check at all — the resolved type flowed straight
-into `mzta_specialCommand`), in the `addTagsAuto` branch of `processEmails()` (the menu-path guard
+into `mzta_specialCommand`), in `resolveAddTagsSetup()`, the once-per-batch add_tags setup of `processEmails()` (the menu-path guard
 in `mzta-menus.js` does not cover auto/batch), and in `_generateSummaryForMessage()`,
 `_generateTranslationForMessage()` and `_openSummaryWebchat()` — the latter three previously tested
 `connectionType === 'chatgpt_web'`, which let an *empty* connection through. Each guard reports

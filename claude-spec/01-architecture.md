@@ -122,7 +122,7 @@ newEmailListener  (checks _process_incoming, which includes summarize_auto === 3
 processEmails({ summarizeOnReceive: true })
        ↓  (single loop — shared with addTagsAuto / spamFilter / translateOnReceive;
        ↓   the loop only gates the message and pushes it onto summarizeTargets)
-spam drain (if the spam filter runs in the same batch) → summary drain
+spam drain → add_tags drain (those in the same batch) → summary drain
        ↓  (up to summarize_max_concurrency at once, target re-resolved first)
 _generateSummaryForMessage(headerMessageId, null, { messageData })
   ← tabId is null → no UI messages sent, silent pre-cache
@@ -168,52 +168,78 @@ subscribed IMAP folders that are not checked for new mail, and messages moved by
 There is deliberately **no periodic scan**: no `setInterval`, no `browser.alarms`, no
 `browser.messages.query()` sweep, no recursive folder walk.
 
-### Concurrent drains: spam filter and summarize in `processEmails()`
+### Concurrent drains in `processEmails()`
 
-The spam filter and summarize-on-receive / sender-list summaries do **not** await their AI call
-inside the `for await` message loop: a burst of incoming mail would otherwise become one long serial
-chain (20 messages × ~8 s ≈ 2.5 min for the last one). The loop keeps all the per-message gating —
-account enable lists, `isMessageInAutoSkippedFolder()`, `spamfilter_only_inbox`, the sender list,
-`_summarizeConnectionMissing()` — and pushes each surviving message onto `spamTargets` /
-`summarizeTargets`. After the loop, still inside the outer `try`, the two lists are drained **in
-order, spam first**: a spam verdict can move the message to the junk folder, which makes its summary
-pointless.
+No feature of the shared loop awaits its AI call inside the `for await` message loop: a burst of
+incoming mail (or a large context-menu selection) would otherwise become one long serial chain
+(20 messages × ~8 s ≈ 2.5 min for the last one). The loop keeps all the per-message gating —
+account enable lists, `isMessageInAutoSkippedFolder()`, the only-inbox options, the sender list,
+`_summarizeConnectionMissing()`, the add_tags prompt/connection check — and pushes each surviving
+message onto `spamTargets` / `addTagsTargets` / `summarizeTargets` / `translateTargets`. After the
+loop, still inside the outer `try`, the four lists are drained **in this order: spam, add_tags,
+summary, translate**. Spam goes first because a spam verdict can move the message to the junk
+folder, which makes its tags, summary and translation pointless: a message the spam drain moved is
+**not tagged** (it used to be, when add_tags ran in the loop before the spam filter).
 
 ```
-for await (message of batch)        ← gating only; add_tags and translate still run inline
+for await (message of batch)        ← gating only, no fetch and no AI call
     spamTargets.push({ message })
+    addTagsTargets.push({ message })     (only if resolveAddTagsSetup() found a prompt + usable connection)
     summarizeTargets.push({ message })   (de-duplicated by headerMessageId)
+    translateTargets.push({ message })   (de-duplicated by headerMessageId)
         ↓
-spam drain     runWithConcurrency(spamTargets, spamfilter_max_concurrency, …)
-        ↓        getFull + _loadMessageBody → _generateSpamReportForMessage({ autoMove: true })
-        ↓        { moved: true } → movedToJunk
-summary drain  runWithConcurrency(summarizeTargets, summarize_max_concurrency, …)
-                 skip if in movedToJunk / messages.get() fails / now in an auto-skipped folder
-                 → getFull → _generateSummaryForMessage()
+spam drain       runWithConcurrency(spamTargets, spamfilter_max_concurrency, …)
+        ↓          getFull + _loadMessageBody → _generateSpamReportForMessage({ autoMove: true })
+        ↓          { moved: true } → movedToJunk
+add_tags drain   runWithConcurrency(addTagsTargets, add_tags_max_concurrency, …)
+        ↓          resolveStaleTarget() + _loadMessageBody → prompt → sendPrompt → await _assign_tags()
+summary drain    runWithConcurrency(summarizeTargets, summarize_max_concurrency, …)
+        ↓          resolveStaleTarget() → _generateSummaryForMessage()
+translate drain  runWithConcurrency(translateTargets, translate_max_concurrency, …)
+                   resolveStaleTarget() → _generateTranslationForMessage(…, translateTabId)
 ```
 
 - **`runWithConcurrency(items, limit, fn, shouldStop)`** (`mzta-background.js`): `limit` pull-based
   workers (capped at `items.length`, at least 1) over a shared index. `shouldStop()` is checked
-  before each item is taken, and both drains pass `() => taBatchController.isCancelled()`: a user
+  before each item is taken, and every drain passes `() => taBatchController.isCancelled()`: a user
   Stop or a rate-limit stop keeps **queued** targets from starting; in-flight ones finish, bounded
   by `special_command_timeout`. A throwing `fn` is logged and never stops the others.
-- **Caps.** `spamfilter_max_concurrency` and `summarize_max_concurrency` (default 1 each, i.e. serial as before;
-  independent). A cleared field is saved as `NaN`, so `_concurrencyCap()` falls back to the default.
-  The caps apply per `processEmails()` call: overlapping calls (several accounts receiving at once,
-  each firing `onNewMailReceived`) can exceed them. There is no global budget shared with the other
-  automatic features.
+- **Caps.** `spamfilter_max_concurrency`, `add_tags_max_concurrency`, `summarize_max_concurrency`
+  and `translate_max_concurrency` (default 1 each, i.e. serial as before; independent). The drains
+  run one after the other, so at most one cap is in use at a time. A cleared field is saved as
+  `NaN`, so `_concurrencyCap()` falls back to the default. The caps apply per `processEmails()`
+  call: overlapping calls (several accounts receiving at once, each firing `onNewMailReceived`) can
+  exceed them. There is no global budget.
 - **Targets hold only the MessageHeader.** The full message and the body are fetched by the drain
-  job itself (`browser.messages.getFull()` + `_loadMessageBody()`, the helper `ensureBodyText()`
-  also uses), so memory is bounded by the cap, not by the batch size. A message that can no longer
-  be read is skipped with a log line.
-- **Stale summary targets.** A summary target was collected before the spam drain ran, and the user
-  or a filter may have moved or deleted it meanwhile. The job skips it when the spam drain moved it
-  (`movedToJunk`, filled from the `moved` flag `_generateSpamReportForMessage()` now returns), when
-  `browser.messages.get(message.id)` fails or returns nothing (a moved message gets a new id), or,
-  in auto mode, when the fresh header sits in an auto-skipped folder. These skips are **quiet**:
-  nothing is written to `taSummaryStore`, so the cache is not poisoned for a summary nobody asked
-  for. The fresh header, not the collected one, is passed as `messageData.message`.
-- **Delayed junk move.** `autoMove` now fires from the spam drain, after the whole loop, so spam sits
+  job itself (`browser.messages.getFull()` + `_loadMessageBody()`), so memory is bounded by the cap,
+  not by the batch size. A message that can no longer be read is skipped with a log line; the
+  failure is local to that feature and that message.
+- **Stale targets: `resolveStaleTarget(message, include_sent)`.** Every target after the spam drain
+  was collected before that drain ran, and the user or a filter may have moved or deleted it
+  meanwhile. The add_tags, summary and translate jobs re-read it first and skip it when the spam
+  drain moved it (`movedToJunk`, filled from the `moved` flag `_generateSpamReportForMessage()`
+  returns), when `browser.messages.get(message.id)` fails or returns nothing (a moved message gets
+  a new id), or, in auto mode, when the fresh header sits in an auto-skipped folder (`include_sent`
+  is `add_tags_auto_include_sent` for add_tags). These skips are **quiet**: nothing is written to
+  `taSummaryStore` / `translationStore`, so the cache is not poisoned for a result nobody asked for.
+  The fresh header, not the collected one, is what the job uses (`messageData.message`, the tag
+  target id, the prompt's `curr_message`).
+- **add_tags setup once per batch.** `getAddTagsPrompt()` and `getConnectionType(…, 'add_tags')`
+  are the same for every message, so `resolveAddTagsSetup()` resolves them once (memoized promise),
+  the first time a message passes the add_tags gating. A missing prompt or an unusable connection
+  is logged once and skips add_tags for the whole batch.
+- **Serialized tag assignment.** `_assign_tags()` goes through `_enqueueTagAssign()`, a module-level
+  promise chain, and re-reads `getTagsList()` inside it. `createTag()` gives each new tag a random
+  key, so two parallel jobs that both found the same label missing would otherwise create two tags
+  with that label. The queue also covers the context-menu/popup path, which can overlap with an
+  automatic batch. The drain now awaits `_assign_tags()` (it used to be fire-and-forget). The tag
+  list embedded in the *prompt* is still read per job, so parallel jobs do not see each other's new
+  tags there; only exact-label duplicates are prevented.
+- **Translate tab.** The manual action (`translate: true`) resolves its UI tab once, before the
+  translate drain (`sourceTabId`, else `tabs.query({active, currentWindow})`). With several messages
+  only the one that tab displays gets the panel, through `_sendGeneratingIfCurrent()` /
+  `_sendIfCurrent()`. On receive the tab is `null` (silent pre-cache).
+- **Delayed junk move.** `autoMove` fires from the spam drain, after the whole loop, so spam sits
   in its folder slightly longer than when the analysis ran per message.
 - **Serialized junk moves.** Several analyses run at once, but the moves into the junk folder go
   through `_enqueueJunkMove()`, a module-level promise chain, so only one
@@ -223,14 +249,12 @@ summary drain  runWithConcurrency(summarizeTargets, summarize_max_concurrency, �
   fire-and-forget, and a missing junk folder threw away the whole report.
 - **Progress counter.** A message with deferred jobs is not `tick()`ed by the loop: `pendingJobs`
   counts its jobs, and `finishJob()` ticks it when the last one ends (including a skipped stale
-  summary). Targets that never start because of a cancel are not counted, so the "N processed"
+  target). Targets that never start because of a cancel are not counted, so the "N processed"
   notice stays accurate.
 - **Error paths.** Parallel calls hit the error paths far more often than the serial loop did.
-  Anything a job's `finally` (or a `catch` in the two `_generate*` functions) reads is declared
+  Anything a job's `finally` (or a `catch` in the `_generate*` functions) reads is declared
   above its `try` with a value it can tolerate — the same rule `message_metadata` already follows
   in `_generateSpamReportForMessage()`.
-- Add tags and translate on receive still run inline and serially in the loop; they share the same
-  shape and can move to drains of their own later.
 
 **Idempotency** comes from `taSummaryStore` (cache + `isProcessing()`), which
 `_generateSummaryForMessage()` already consults, so a message caught by *both* triggers costs
@@ -308,41 +332,26 @@ only-inbox guards use `messageFolderHasSpecialUse()` and are authoritative: they
 thing keeping the automatic processing in the Inbox. `_process_incoming` in `newEmailListener`
 remains the cheap gate that avoids waking the whole pipeline when no automatic feature is enabled.
 
-**Lazy per-message body fetch.** In the `processEmails()` loop, `browser.messages.getFull()` and
-the body conversion are deferred to two per-iteration helpers, `ensureFullMessage()` and
-`ensureBodyText()`, each idempotent. Every feature awaits the one it needs only after all of its
-own skip checks have passed. A message discarded by the guards is therefore never fetched or
-converted at all, which matters now that the listener reports every folder. The spam filter and
-summarize no longer fetch anything in the loop: their drain jobs fetch the message themselves (see
-[Concurrent drains](#concurrent-drains-spam-filter-and-summarize-in-processemails)).
-
-**The two helpers are INDEPENDENT.** `ensureBodyText()` used to begin with `await
-ensureFullMessage()`, because the body was extracted from the MIME tree that call returned. It no
-longer does: the body now comes from `getMailInlineTextParts(message.id)`, which needs only the
-message id. Every feature therefore awaits *each* helper it actually uses — in the loop, add-tags
-awaits **both** (`ensureFullMessage()` for `headers.subject`, `ensureBodyText()` for the prompt)
-and translate awaits `ensureFullMessage()`; the spam and summary drain jobs do the equivalent
-fetches themselves. As it
-happens all four still need the full message for its headers, so this saves no `getFull()` today;
-what it buys is that a future body-only consumer would pay for no MIME fetch, and that neither
-helper silently drags the other in. Dropping the implicit call without adding the two explicit ones
-would have left `curr_fullMessage` null under `headers.subject` — the trap to watch for here.
+**No fetch in the loop.** The `processEmails()` loop reads only the `MessageHeader` it is handed:
+`browser.messages.getFull()` and the body conversion happen in the drain jobs, after all of the
+feature's skip checks have passed (see [Concurrent drains](#concurrent-drains-in-processemails)).
+A message discarded by the guards is therefore never fetched or converted at all, which matters now
+that the listener reports every folder. The per-iteration helpers `ensureFullMessage()` /
+`ensureBodyText()` that used to share one fetch between the features of a message are gone: each
+drain job fetches what it uses, so a message handled by several features is read once per feature.
+The full message and the body are **independent** fetches — the body comes from
+`getMailInlineTextParts(message.id)`, which needs only the message id — and each job awaits both
+when it needs both (add_tags: `fullMessage.headers.subject` and the body for the prompt).
 
 **Fetch failures are feature-local.** `messages.onNewMailReceived` fires after message filters
 have run, and a filter running after junk classification may still move or delete the message,
-so `getFull()` can throw because the message is no longer where it was reported. The add-tags work
-block (fetch through `_assign_tags()`) and translate's `ensureFullMessage()` each have their own
-`try/catch` that logs and skips *only that feature*. Without it, the per-message outer
-`catch`+`continue` would drop every later feature: an add-tags fetch failure used to cost the spam
-target, the summarize target (including a sender listed in `summarize_auto_senders_list`) and the
-translation. The outer catch stays as the last resort for genuine per-message errors.
-`ensureFullMessage()` still throws and leaves `curr_fullMessage` null on failure, so a later
-caller retries once.
+so `getFull()` can throw because the message is no longer where it was reported. Every drain job
+catches its own fetch failure and skips *only that feature for that message*; the stale-target
+re-read (`resolveStaleTarget()`) turns most of them into a quiet skip. The loop's outer
+`catch`+`continue` stays as the last resort for genuine per-message errors in the gating.
 
-`ensureBodyText()` prefers the HTML body converted with
-`htmlBodyToPlainText()` and falls back to the whitespace-collapsed plain text part when the HTML
-body is empty. The `finally` block still nulls `curr_fullMessage` / `msg_text` / `body_text` after
-each message.
+`_loadMessageBody()` prefers the HTML body converted with `htmlBodyToPlainText()` and falls back
+to the whitespace-collapsed plain text part when the HTML body is empty.
 
 ### Data Flow: Background Translation on Email Receive (translate_auto = 3)
 
@@ -356,7 +365,10 @@ browser.messages.onNewMailReceived
 newEmailListener  (checks _process_incoming, which includes translate_auto === 3)
        ↓
 processEmails({ translateOnReceive: true })
-       ↓  (single loop — shared with addTagsAuto / spamFilter / summarizeOnReceive)
+       ↓  (single loop — shared with addTagsAuto / spamFilter / summarizeOnReceive;
+       ↓   the loop only gates the message and pushes it onto translateTargets)
+spam drain → add_tags drain → summary drain (those in the same batch) → translate drain
+       ↓  (up to translate_max_concurrency at once, target re-resolved first)
 _generateTranslationForMessage(headerMessageId, null, { messageData })
   ← tabId is null → no UI messages sent, silent pre-cache
        ↓
@@ -560,16 +572,15 @@ plus a **progress counter**:
 that outlived the per-request retries, or that `fetchWithRetry` returned at once because the
 body reports a used-up quota or spend limit, see
 [04-api-integrations.md](04-api-integrations.md#batch-stop-on-rate-limit)), every following
-message would fail the same way. The loop's local
-`stopForRateLimit()` calls `requestCancel('rate_limit')` and breaks out; the failing message is
-not `tick()`ed. In the spam and summary drains the job calls `stopForRateLimit()` instead of
-breaking, and the drains' `shouldStop()` keeps the queued targets from starting (see
-[Concurrent drains](#concurrent-drains-spam-filter-and-summarize-in-processemails)). The
+message would fail the same way. The failing drain job calls the local `stopForRateLimit()`,
+which calls `requestCancel('rate_limit')`; the drains' `shouldStop()` then keeps the queued
+targets from starting, and every later drain is skipped (see
+[Concurrent drains](#concurrent-drains-in-processemails)). The
 `finally` then shows the red `batch_stopped_rate_limit` panel
 ("stopped after N messages: … rate limit or quota was exceeded") instead of the blue
 `batch_stopped_notice`; when the provider asked for a wait too long to retry, it is
 `batch_stopped_retry_after` instead, with the wait formatted by `formatDuration()` ("1 h").
-Checked after each feature of the per-message body: add tags (the
+Checked in each drain job: add tags (the
 `sendPrompt` catch; tags are not assigned), spam filter (`_generateSpamReportForMessage`
 returns `{success: false, rateLimited}`), summarize on receive and translate
 (`_generateSummaryForMessage` / `_generateTranslationForMessage` return `{rateLimited}` from

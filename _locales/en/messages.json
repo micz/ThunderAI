@@ -965,6 +965,14 @@
     "message": "The maximum number of selected messages that can be tagged at once from the context menu. Useful with AI providers that have a daily request quota. Automatic tagging of incoming messages is not limited. Set to 0 for no limit.",
     "description": ""
   },
+  "prefs_OptionText_add_tags_max_concurrency": {
+    "message": "Parallel tagging",
+    "description": "Label of the option limiting how many emails are tagged at the same time"
+  },
+  "prefs_OptionText_add_tags_max_concurrency_Info": {
+    "message": "Maximum number of emails tagged at the same time when several emails are processed together, for example when new mail arrives or several emails are selected. Higher values are faster, but can hit the rate limits of your AI provider or overload a local model such as Ollama. The limit applies to each group of emails processed together.",
+    "description": ""
+  },
   "prompt_add_tags_maxnum": {
     "message": "Limit the number of tags to",
     "description": "" 
@@ -3060,6 +3068,14 @@
   },
   "prefs_OptionText_translate_max_display_length_Info": {
     "message": "Maximum number of characters shown in the inline translation. 0 = no limit. When set, longer text is truncated with a \"See more\" toggle.",
+    "description": ""
+  },
+  "prefs_OptionText_translate_max_concurrency": {
+    "message": "Parallel translations",
+    "description": "Label of the option limiting how many emails are translated at the same time"
+  },
+  "prefs_OptionText_translate_max_concurrency_Info": {
+    "message": "Maximum number of emails translated at the same time when several emails are processed together, for example when new mail arrives or several emails are selected. Higher values are faster, but can hit the rate limits of your AI provider or overload a local model such as Ollama. The limit applies to each group of emails processed together.",
     "description": ""
   },
   "translate_see_more": {

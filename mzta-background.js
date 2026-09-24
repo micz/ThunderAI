@@ -354,7 +354,25 @@ async function _getActiveSpecialIds() {
     return _computeActiveSpecialIds();
 }
 
-async function _assign_tags(_data, create_new_tags = true, exclusions_exact_match = false) {
+// Tail of the tag-assignment queue: every _assign_tags() chains on it, so only one runs at a
+// time. createTag() gives each new tag a random key, so two assignments running together
+// that both find "Invoice" missing would create two tags with the same label; serialized,
+// the second one re-reads the tag list and finds the tag the first one created. Errors are
+// swallowed on the chain itself (the caller gets them from its own promise).
+let _tagAssignChain = Promise.resolve();
+function _enqueueTagAssign(fn) {
+    const run = _tagAssignChain.then(fn);
+    _tagAssignChain = run.catch(() => {});
+    return run;
+}
+
+// Serialized through _enqueueTagAssign(): the add_tags drain of processEmails() runs several
+// messages at once, and the context menu path can overlap with an automatic batch.
+function _assign_tags(_data, create_new_tags = true, exclusions_exact_match = false) {
+    return _enqueueTagAssign(() => _assign_tags_now(_data, create_new_tags, exclusions_exact_match));
+}
+
+async function _assign_tags_now(_data, create_new_tags, exclusions_exact_match) {
     let all_tags_list = await getTagsList();
     all_tags_list = all_tags_list[1];
     // console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
@@ -1215,7 +1233,7 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
         // covers the case where it is not, so no spinner outlives the failed generation.
         _clearGeneratingPanels(tabId, headerMessageId, 'summary');
         taWorkingStatus.stopWorking();
-        // Read only by the processEmails() loop, which stops the batch on a rate limit.
+        // Read only by the processEmails() drains, which stop the batch on a rate limit.
         return { rateLimited: !!error.rateLimited, retryAfterMs: error.retryAfterMs ?? null };
     }
 }
@@ -1356,7 +1374,7 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
         // Same as the summary: no spinner outlives the failed generation.
         _clearGeneratingPanels(tabId, headerMessageId, 'translation');
         taWorkingStatus.stopWorking();
-        // Same as the summary: read only by the processEmails() loop.
+        // Same as the summary: read only by the processEmails() translate drain.
         return { rateLimited: !!error.rateLimited, retryAfterMs: error.retryAfterMs ?? null };
     }
 }
@@ -1561,7 +1579,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
             console.error("[ThunderAI | SpamFilter] Error getting spamfilter: ", err);
             let err_data = await spamReport.saveError(headerMessageId, err.message || String(err), message_metadata || {});
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
-            // rateLimited: the processEmails() loop stops the batch on it.
+            // rateLimited: the processEmails() spam drain stops the batch on it.
             return { success: false, rateLimited: !!err.rateLimited, retryAfterMs: err.retryAfterMs ?? null };
         }
         taLog.log("spamfilter_result: " + spamfilter_result);
@@ -1613,7 +1631,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
 
         spamReport.saveReportData(report_data, headerMessageId);
         await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
-        // moved: read by the processEmails() spam drain, a moved message gets no summary.
+        // moved: read by the processEmails() spam drain, a moved message gets no tags, summary or translation.
         return { success: true, moved: report_data.moved };
 
     } catch (error) {
@@ -2396,7 +2414,7 @@ async function runWithConcurrency(items, limit, fn, shouldStop = () => false) {
 }
 
 // Reads the inline text parts of a message and converts them to plain text, preferring the
-// HTML body. Shared by the processEmails() loop and its spam drain.
+// HTML body. Used by the processEmails() spam and add_tags drains.
 async function _loadMessageBody(messageId) {
     const msg_text = await getMailInlineTextParts(messageId);
     taLog.log("Starting from the HTML body if present and converting to plain text...");
@@ -2466,6 +2484,8 @@ async function processEmails(args) {
             'spamfilter_only_inbox',
             'spamfilter_max_concurrency',
             'summarize_max_concurrency',
+            'add_tags_max_concurrency',
+            'translate_max_concurrency',
             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])),
             'do_debug'
         ]);
@@ -2499,31 +2519,35 @@ async function processEmails(args) {
             }
         }
 
-        // Set when a request is refused with a 429 that outlived the per-request retries
+        // Called when a request is refused with a 429 that outlived the per-request retries
         // (rate limit or used-up quota, see err.rateLimited in mzta_specialCommand). Every
-        // following message would fail the same way, so the whole batch is stopped and the
-        // outer finally tells the user why.
-        let rateLimitHit = false;
+        // following message would fail the same way, so the whole batch is stopped (the
+        // drains stop taking targets) and the outer finally tells the user why.
         const stopForRateLimit = (feature, retryAfterMs = null) => {
             taLog.error("[ThunderAI] " + feature + ": the AI provider refused the request (rate limit or quota exceeded"
                 + (retryAfterMs !== null ? ", retry in " + Math.round(retryAfterMs / 1000) + " s" : "") + "), stopping the batch.");
             taBatchController.requestCancel('rate_limit', retryAfterMs);
-            rateLimitHit = true;
         };
 
-        // Spam filter and summarize run their AI calls concurrently, after the loop: the loop
-        // only applies the per-message gating and collects the surviving targets, then the
-        // spam drain and the summary drain (in this order) run them with at most
+        // Every feature runs its AI calls concurrently, after the loop: the loop only applies
+        // the per-message gating and collects the surviving targets, then the spam, add_tags,
+        // summary and translate drains (in this order) run them with at most
         // *_max_concurrency calls in flight each. The caps are per processEmails() call, so
         // overlapping calls (several accounts receiving at once) can exceed them.
         // Targets hold only the MessageHeader: the full message and body are fetched by the
         // drain job itself, so memory is bounded by the cap and not by the batch size.
         const spamCap = _concurrencyCap(prefs_aats.spamfilter_max_concurrency, prefs_default.spamfilter_max_concurrency);
+        const addTagsCap = _concurrencyCap(prefs_aats.add_tags_max_concurrency, prefs_default.add_tags_max_concurrency);
         const summarizeCap = _concurrencyCap(prefs_aats.summarize_max_concurrency, prefs_default.summarize_max_concurrency);
+        const translateCap = _concurrencyCap(prefs_aats.translate_max_concurrency, prefs_default.translate_max_concurrency);
         const spamTargets = [];
+        const addTagsTargets = [];
         const summarizeTargets = [];
         const summarizeTargetIds = new Set();
-        // headerMessageIds the spam drain moved to the junk folder: their summary is skipped.
+        const translateTargets = [];
+        const translateTargetIds = new Set();
+        // headerMessageIds the spam drain moved to the junk folder: their tags, summary and
+        // translation are skipped.
         const movedToJunk = new Set();
         // message.id -> drain jobs still owed by that message. A message with deferred work is
         // counted as processed (taBatchController.tick()) when its last job ends, so a batch
@@ -2539,6 +2563,40 @@ async function processEmails(args) {
             }
         };
 
+        // The add_tags prompt and its connection are the same for the whole batch: resolved
+        // once, the first time a message passes the add_tags gating, and only then (a batch
+        // where no message gets that far never reads the prompt). A missing prompt or an
+        // unusable connection skips add_tags for every message, logged once.
+        let addTagsSetup = null;
+        const resolveAddTagsSetup = () => {
+            if (!addTagsSetup) {
+                // Never rejects: a rejected memoized promise would throw into the loop's catch
+                // for every message, costing the other features too.
+                addTagsSetup = (async () => {
+                    let prompt = null;
+                    try {
+                        prompt = await getAddTagsPrompt();
+                    } catch (err) {
+                        taLog.error("Auto add_tags: could not read the 'prompt_add_tags' special prompt, skipping: " + (err?.message || err));
+                        return null;
+                    }
+                    if (!prompt) {
+                        taLog.error("Auto add_tags: the 'prompt_add_tags' special prompt is missing, skipping. If you modified the special prompts, try restoring the default Add Tags prompt.");
+                        return null;
+                    }
+                    // Same guard mzta-menus.js applies on the menu path: the auto/batch path
+                    // reaches mzta_specialCommand without passing through it.
+                    const conntype = getConnectionType(prefs_aats, prompt, 'add_tags');
+                    if (!isApiUsableConnection(conntype)) {
+                        console.error("[ThunderAI | Auto add_tags] Invalid connection type: " + conntype);
+                        return null;
+                    }
+                    return { prompt, conntype };
+                })();
+            }
+            return addTagsSetup;
+        };
+
         for await (let message of batchMessages) {
             // Cooperative cancellation: bail out before doing any heavy work (getFull, ...)
             // if the user requested a stop. All break paths fall through to the outer finally.
@@ -2547,37 +2605,9 @@ async function processEmails(args) {
                 break;
             }
 
-            let curr_fullMessage = null;
-            let msg_text = null;
-            let body_text = '';
-
-            // Fetching the message and converting its body is expensive, so both are done
-            // lazily and only once per message: every feature awaits the helper it needs
-            // right before it actually uses the data, after all its own skip checks have
-            // passed. A message discarded by those checks is never fetched at all.
-            async function ensureFullMessage(){
-                if (!curr_fullMessage) {
-                    curr_fullMessage = await browser.messages.getFull(message.id);
-                }
-            }
-
-            // The body no longer needs the full message: getMailInlineTextParts()
-            // takes the message id and asks the API for the inline text parts
-            // directly, so ensureBodyText() no longer implies ensureFullMessage().
-            // The two are now INDEPENDENT, and every feature awaits what it uses:
-            // as it happens all four still need the full message for headers
-            // (subject / report metadata), so nothing here saves a getFull() today
-            // - but a body-only consumer would now pay for no MIME fetch.
-            async function ensureBodyText(){
-                if (msg_text) {
-                    return;
-                }
-                ({ msg_text, body_text } = await _loadMessageBody(message.id));
-            }
-
             // Isolate per-message errors: a single problematic message must not abort the
-            // whole batch. Each feature catches its own fetch/work failures, so one failing
-            // feature does not skip the others; this outer catch is the last resort.
+            // whole batch. The loop only gates and collects targets, and every drain job
+            // catches its own failures; this catch is the last resort.
             try {
 
             // Auto add_tags, spam filter, summarize and translate must never run on messages
@@ -2610,91 +2640,15 @@ async function processEmails(args) {
                         skipAddTags = true;
                     }
                 }
-                let curr_prompt_add_tags = null;
-                let addtags_conntype = '';
-                if (!skipAddTags) {
-                    curr_prompt_add_tags = await getAddTagsPrompt();
-                    if (!curr_prompt_add_tags) {
-                        taLog.error("Auto add_tags: the 'prompt_add_tags' special prompt is missing, skipping. If you modified the special prompts, try restoring the default Add Tags prompt.");
-                        skipAddTags = true;
-                    }
+                if (!skipAddTags && !(await resolveAddTagsSetup())) {
+                    skipAddTags = true;
                 }
                 if (!skipAddTags) {
-                    // Same guard mzta-menus.js applies on the menu path: the auto/batch path
-                    // reaches mzta_specialCommand without passing through it. Skipping rather
-                    // than returning, so the other features in this iteration still run.
-                    addtags_conntype = getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags');
-                    if (!isApiUsableConnection(addtags_conntype)) {
-                        console.error("[ThunderAI | Auto add_tags] Invalid connection type: " + addtags_conntype);
-                        skipAddTags = true;
-                    }
-                }
-                if (!skipAddTags) {
-                    // Failures stay local to add_tags: getFull() throws when a message filter
-                    // moved or deleted the message after onNewMailReceived fired, and that must
-                    // not cost the spam filter, summarize and translate of the same message.
-                    try {
-                        // ensureFullMessage() explicitly: the body no longer implies it,
-                        // and the prompt below reads curr_fullMessage.headers.subject.
-                        await ensureFullMessage();
-                        await ensureBodyText();
-                        let specialFullPrompt_add_tags = '';
-                        let tags_full_list = await getTagsList();
-                        //  console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + JSON.stringify(curr_prompt_add_tags));
-                        let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
-                        specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
-                            curr_prompt: curr_prompt_add_tags,
-                            curr_message: message,
-                            chatgpt_lang: chatgpt_lang,
-                            body_text: body_text,
-                            subject_text: curr_fullMessage.headers.subject,
-                            msg_text: msg_text,
-                            tags_full_list: tags_full_list
-                        });
-                        specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
-                        taLog.log("Special prompt: " + specialFullPrompt_add_tags);
-                        // console.log(">>>>>>>>>> curr_prompt_add_tags.model: " + curr_prompt_add_tags.model);
-                        // console.log(">>>>>>>>>>>>>>>>> getConnectionType add_tags:" + addtags_conntype);
-                        let cmd_addTags = new mzta_specialCommand({
-                            prompt: specialFullPrompt_add_tags,
-                            llm: addtags_conntype,
-                            custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
-                            do_debug: prefs_aats.do_debug,
-                            config: curr_prompt_add_tags
-                        });
-                        let addTagsInitFailed = false;
-                        try {
-                            await cmd_addTags.initWorker();
-                        } catch (err) {
-                            addTagsInitFailed = true;
-                            if (err.isConfigError) {
-                                await showGenericError(err.message, browser.i18n.getMessage('prompt_add_tags') || 'Add tags');
-                            } else {
-                                console.error("[ThunderAI | Auto add_tags] initWorker error: ", err);
-                            }
-                        }
-                        if (!addTagsInitFailed) {
-                            let tags_current_email = [];
-                            try {
-                                tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
-                            } catch (err) {
-                                console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
-                                if (err?.rateLimited) {
-                                    stopForRateLimit('Add tags', err.retryAfterMs ?? null);
-                                }
-                            }
-                            if (!rateLimitHit) {
-                                taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
-                                let _data = { messageId: message.id, tags: tags_current_email };
-                                _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
-                            }
-                        }
-                    } catch (err) {
-                        taLog.error("[ThunderAI | Auto add_tags] Could not process message " + (message?.headerMessageId || message?.id) + ", skipping add_tags: " + (err?.message || err));
-                    }
+                    // Deferred to the add_tags drain, which runs after the spam drain.
+                    addTagsTargets.push({ message });
+                    pendingJobs.set(message.id, (pendingJobs.get(message.id) || 0) + 1);
                 }
             }
-            if (rateLimitHit) break;
 
             if (spamFilter) {
                 let skipSpamFilter = false;
@@ -2750,52 +2704,22 @@ async function processEmails(args) {
                     taLog.log("Message in a folder excluded from the automatic processing, skipping translate...");
                     skipTranslate = true;
                 }
-                if (!skipTranslate) {
-                    // Same filter race as add_tags: a vanished message skips only the translation.
-                    try {
-                        await ensureFullMessage();
-                    } catch (err) {
-                        taLog.error("[ThunderAI | Translate] Could not read message " + (message?.headerMessageId || message?.id) + ", skipping translate: " + (err?.message || err));
-                        skipTranslate = true;
-                    }
-                }
-                if (!skipTranslate) {
-                    let translateTabId = null;
-                    if (translate) {
-                        translateTabId = sourceTabId;
-                        if (!translateTabId) {
-                            const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-                            if (tabs.length > 0) {
-                                translateTabId = tabs[0].id;
-                            }
-                        }
-                    }
-                    // With several messages selected, only the one the tab displays gets
-                    // the generating panel: _generateTranslationForMessage() sends it
-                    // through _sendGeneratingIfCurrent().
-                    taLog.log("[ThunderAI] Generating translation for: " + message.headerMessageId);
-                    const translateResult = await _generateTranslationForMessage(message.headerMessageId, translateTabId, {
-                        messageData: { message, fullMessage: curr_fullMessage }
-                    });
-                    if (translateResult?.rateLimited) {
-                        stopForRateLimit('Translate', translateResult.retryAfterMs);
-                        break;
-                    }
+                // The translation store is keyed on headerMessageId: one target per id is enough.
+                if (!skipTranslate && message.headerMessageId && !translateTargetIds.has(message.headerMessageId)) {
+                    // Deferred to the translate drain, the last one.
+                    translateTargetIds.add(message.headerMessageId);
+                    translateTargets.push({ message });
+                    pendingJobs.set(message.id, (pendingJobs.get(message.id) || 0) + 1);
                 }
             }
 
             } catch (err) {
                 taLog.error("Error processing message " + (message?.headerMessageId || message?.id) + ", skipping: " + (err?.message || err));
                 continue;
-            } finally {
-                // Release heavy per-message references so they can be garbage-collected.
-                curr_fullMessage = null;
-                msg_text = null;
-                body_text = '';
             }
 
             // Give the event loop (and GC) some breathing room every CHUNK_SIZE messages.
-            // A message with deferred spam/summary jobs is counted by finishJob() instead.
+            // A message with deferred jobs is counted by finishJob() instead.
             if (!pendingJobs.has(message.id)) {
                 taBatchController.tick();
             }
@@ -2809,13 +2733,33 @@ async function processEmails(args) {
             }
         }
 
-        // Both drains stop taking new targets as soon as the batch is cancelled: by the user,
+        // Every drain stops taking new targets as soon as the batch is cancelled: by the user,
         // or by stopForRateLimit(), which requests the cancel itself.
         const drainStopped = () => taBatchController.isCancelled();
 
+        // Re-reads a target collected by the loop, for the drains that run after the spam
+        // drain: it may have moved the message, and the user or a filter may have moved or
+        // deleted it meanwhile. Returns { message, fullMessage } with the fresh header, or
+        // null when the message is gone, was moved to the junk folder by the spam drain, or
+        // (auto mode) now sits in an auto-skipped folder; the caller skips it quietly.
+        const resolveStaleTarget = async (message, include_sent = false) => {
+            if (movedToJunk.has(message.headerMessageId)) {
+                return null;
+            }
+            try {
+                const fresh = await browser.messages.get(message.id);
+                if (!fresh || (isAutoMode && isMessageInAutoSkippedFolder(fresh, include_sent))) {
+                    return null;
+                }
+                return { message: fresh, fullMessage: await browser.messages.getFull(fresh.id) };
+            } catch (err) {
+                return null;
+            }
+        };
+
         // Spam drain first: a spam verdict can move the message to the junk folder, which
-        // makes its summary pointless. The junk move therefore happens after the whole loop,
-        // not per message, and is serialized by _enqueueJunkMove().
+        // makes its tags, summary and translation pointless. The junk move therefore happens
+        // after the whole loop, not per message, and is serialized by _enqueueJunkMove().
         if (spamTargets.length > 0 && !drainStopped()) {
             taLog.log("[ThunderAI] Spam filter: analyzing " + spamTargets.length + " message(s), up to " + spamCap + " at a time.");
             await runWithConcurrency(spamTargets, spamCap, async (target) => {
@@ -2854,40 +2798,141 @@ async function processEmails(args) {
             }, drainStopped);
         }
 
-        // Summary drain. The targets were collected before the spam drain, which may have
-        // moved them, and the user or a filter may have moved or deleted them meanwhile: each
-        // one is re-resolved first, and a message that is gone is skipped quietly - nothing is
-        // written to summaryStore for a summary nobody asked for.
+        // add_tags drain. The targets are re-resolved like the summary ones, so a message the
+        // spam drain moved to the junk folder is not tagged. The tags themselves are written
+        // through _assign_tags(), which serializes every assignment (see _enqueueTagAssign()).
+        if (addTagsTargets.length > 0 && !drainStopped()) {
+            const { prompt: curr_prompt_add_tags, conntype: addtags_conntype } = await resolveAddTagsSetup();
+            taLog.log("[ThunderAI] Add tags: tagging " + addTagsTargets.length + " message(s), up to " + addTagsCap + " at a time.");
+            await runWithConcurrency(addTagsTargets, addTagsCap, async (target) => {
+                // Read by the finally: declared above the try, valid from the start.
+                const message = target.message;
+                try {
+                    const resolved = await resolveStaleTarget(message, prefs_aats.add_tags_auto_include_sent);
+                    let body = null;
+                    try {
+                        body = resolved ? await _loadMessageBody(resolved.message.id) : null;
+                    } catch (err) {
+                        body = null;
+                    }
+                    if (!body) {
+                        taLog.log("[ThunderAI] Add tags: " + message.headerMessageId + " is gone or was moved to the junk or an excluded folder, skipping.");
+                        return;
+                    }
+                    const fresh = resolved.message;
+                    let tags_full_list = await getTagsList();
+                    //  console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + JSON.stringify(curr_prompt_add_tags));
+                    let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
+                    let specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
+                        curr_prompt: curr_prompt_add_tags,
+                        curr_message: fresh,
+                        chatgpt_lang: chatgpt_lang,
+                        body_text: body.body_text,
+                        subject_text: resolved.fullMessage.headers.subject,
+                        msg_text: body.msg_text,
+                        tags_full_list: tags_full_list
+                    });
+                    specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
+                    taLog.log("Special prompt: " + specialFullPrompt_add_tags);
+                    // console.log(">>>>>>>>>> curr_prompt_add_tags.model: " + curr_prompt_add_tags.model);
+                    // console.log(">>>>>>>>>>>>>>>>> getConnectionType add_tags:" + addtags_conntype);
+                    let cmd_addTags = new mzta_specialCommand({
+                        prompt: specialFullPrompt_add_tags,
+                        llm: addtags_conntype,
+                        custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
+                        do_debug: prefs_aats.do_debug,
+                        config: curr_prompt_add_tags
+                    });
+                    try {
+                        await cmd_addTags.initWorker();
+                    } catch (err) {
+                        if (err.isConfigError) {
+                            await showGenericError(err.message, browser.i18n.getMessage('prompt_add_tags') || 'Add tags');
+                        } else {
+                            console.error("[ThunderAI | Auto add_tags] initWorker error: ", err);
+                        }
+                        return;
+                    }
+                    let tags_current_email = [];
+                    try {
+                        tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
+                    } catch (err) {
+                        console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
+                        if (err?.rateLimited) {
+                            stopForRateLimit('Add tags', err.retryAfterMs ?? null);
+                            return;
+                        }
+                    }
+                    taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
+                    let _data = { messageId: fresh.id, tags: tags_current_email };
+                    await _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
+                } catch (err) {
+                    taLog.error("[ThunderAI | Auto add_tags] Could not process message " + (message?.headerMessageId || message?.id) + ", skipping add_tags: " + (err?.message || err));
+                } finally {
+                    finishJob(message);
+                }
+            }, drainStopped);
+        }
+
+        // Summary drain. Each target is re-resolved first (resolveStaleTarget()), and a
+        // message that is gone is skipped quietly - nothing is written to summaryStore for a
+        // summary nobody asked for.
         if (summarizeTargets.length > 0 && !drainStopped()) {
             taLog.log("[ThunderAI] Summarize: pre-caching " + summarizeTargets.length + " summary(ies), up to " + summarizeCap + " at a time.");
             await runWithConcurrency(summarizeTargets, summarizeCap, async (target) => {
                 // Read by the finally: declared above the try, valid from the start.
                 const message = target.message;
                 try {
-                    if (movedToJunk.has(message.headerMessageId)) {
-                        taLog.log("[ThunderAI] Summarize: " + message.headerMessageId + " was moved to the junk folder, skipping.");
+                    const resolved = await resolveStaleTarget(message);
+                    if (!resolved) {
+                        taLog.log("[ThunderAI] Summarize: " + message.headerMessageId + " is gone or was moved to the junk or an excluded folder, skipping.");
                         return;
                     }
-                    let fresh = null;
-                    let fullMessage = null;
-                    try {
-                        fresh = await browser.messages.get(message.id);
-                        if (fresh && !(isAutoMode && isMessageInAutoSkippedFolder(fresh))) {
-                            fullMessage = await browser.messages.getFull(fresh.id);
-                        }
-                    } catch (err) {
-                        fresh = null;
-                    }
-                    if (!fresh || !fullMessage) {
-                        taLog.log("[ThunderAI] Summarize: " + message.headerMessageId + " is gone or was moved to an excluded folder, skipping.");
-                        return;
-                    }
-                    taLog.log("[ThunderAI] Pre-caching summary on receive for: " + fresh.headerMessageId + (target.bySender ? " (sender in the auto-summarize list)" : ""));
-                    const summaryResult = await _generateSummaryForMessage(fresh.headerMessageId, null, {
-                        messageData: { message: fresh, fullMessage }
+                    taLog.log("[ThunderAI] Pre-caching summary on receive for: " + resolved.message.headerMessageId + (target.bySender ? " (sender in the auto-summarize list)" : ""));
+                    const summaryResult = await _generateSummaryForMessage(resolved.message.headerMessageId, null, {
+                        messageData: resolved
                     });
                     if (summaryResult?.rateLimited) {
                         stopForRateLimit('Summarize', summaryResult.retryAfterMs);
+                    }
+                } finally {
+                    finishJob(message);
+                }
+            }, drainStopped);
+        }
+
+        // Translate drain, the last one. Targets are re-resolved like the summary ones, and
+        // a vanished message skips only its own translation. The manual action (translate)
+        // shows the result in the tab it was started from: with several messages selected,
+        // only the one that tab displays gets the panel - _generateTranslationForMessage()
+        // goes through _sendGeneratingIfCurrent() / _sendIfCurrent().
+        if (translateTargets.length > 0 && !drainStopped()) {
+            let translateTabId = null;
+            if (translate) {
+                translateTabId = sourceTabId;
+                if (!translateTabId) {
+                    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                    if (tabs.length > 0) {
+                        translateTabId = tabs[0].id;
+                    }
+                }
+            }
+            taLog.log("[ThunderAI] Translate: translating " + translateTargets.length + " message(s), up to " + translateCap + " at a time.");
+            await runWithConcurrency(translateTargets, translateCap, async (target) => {
+                // Read by the finally: declared above the try, valid from the start.
+                const message = target.message;
+                try {
+                    const resolved = await resolveStaleTarget(message);
+                    if (!resolved) {
+                        taLog.log("[ThunderAI] Translate: " + message.headerMessageId + " is gone or was moved to the junk or an excluded folder, skipping.");
+                        return;
+                    }
+                    taLog.log("[ThunderAI] Generating translation for: " + resolved.message.headerMessageId);
+                    const translateResult = await _generateTranslationForMessage(resolved.message.headerMessageId, translateTabId, {
+                        messageData: resolved
+                    });
+                    if (translateResult?.rateLimited) {
+                        stopForRateLimit('Translate', translateResult.retryAfterMs);
                     }
                 } finally {
                     finishJob(message);

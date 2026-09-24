@@ -239,7 +239,9 @@ async function restoreOptions() {
           element.checked = result[element.id] || false;
           break;
         case 'number':
-          element.value = result[element.id] ?? 0;
+          let default_number_value = 0;
+          if(element.id == 'translate_max_concurrency') default_number_value = prefs_default.translate_max_concurrency;
+          element.value = result[element.id] ?? default_number_value;
           break;
         case 'text':
         case 'textarea':

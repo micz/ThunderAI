@@ -167,6 +167,7 @@ export const prefs_default = {
     add_tags: false,
     add_tags_maxnum: 3,
     add_tags_max_messages: 0,   // max messages tagged at once from the context menu (0 = no limit); above this the user is warned and the operation is blocked. Automatic tagging is not capped
+    add_tags_max_concurrency: 1,   // max messages tagged at once in one processEmails() batch (on receive or from the context menu)
     add_tags_hide_exclusions: false,
     add_tags_exclusions_exact_match: false,
     add_tags_first_uppercase: true,
@@ -208,6 +209,7 @@ export const prefs_default = {
     translate: true,
     translate_auto: 0,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
     translate_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
+    translate_max_concurrency: 1,        // max translations generated at once in one processEmails() batch (on receive or from the context menu)
     translate_lang: '',                  // target language, fallback on default_chatgpt_lang
     translate_exclude_lang: '',          // languages to do not translate
     ...generated_prefs
