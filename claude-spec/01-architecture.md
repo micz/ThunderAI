@@ -319,13 +319,25 @@ summarize no longer fetch anything in the loop: their drain jobs fetch the messa
 **The two helpers are INDEPENDENT.** `ensureBodyText()` used to begin with `await
 ensureFullMessage()`, because the body was extracted from the MIME tree that call returned. It no
 longer does: the body now comes from `getMailInlineTextParts(message.id)`, which needs only the
-message id. Every feature therefore awaits *each* helper it actually uses — add-tags and the spam
-filter await **both** (`ensureFullMessage()` for `headers.subject` and the report metadata,
-`ensureBodyText()` for the prompt), summarize and translate await `ensureFullMessage()`. As it
+message id. Every feature therefore awaits *each* helper it actually uses — in the loop, add-tags
+awaits **both** (`ensureFullMessage()` for `headers.subject`, `ensureBodyText()` for the prompt)
+and translate awaits `ensureFullMessage()`; the spam and summary drain jobs do the equivalent
+fetches themselves. As it
 happens all four still need the full message for its headers, so this saves no `getFull()` today;
 what it buys is that a future body-only consumer would pay for no MIME fetch, and that neither
 helper silently drags the other in. Dropping the implicit call without adding the two explicit ones
 would have left `curr_fullMessage` null under `headers.subject` — the trap to watch for here.
+
+**Fetch failures are feature-local.** `messages.onNewMailReceived` fires after message filters
+have run, and a filter running after junk classification may still move or delete the message,
+so `getFull()` can throw because the message is no longer where it was reported. The add-tags work
+block (fetch through `_assign_tags()`) and translate's `ensureFullMessage()` each have their own
+`try/catch` that logs and skips *only that feature*. Without it, the per-message outer
+`catch`+`continue` would drop every later feature: an add-tags fetch failure used to cost the spam
+target, the summarize target (including a sender listed in `summarize_auto_senders_list`) and the
+translation. The outer catch stays as the last resort for genuine per-message errors.
+`ensureFullMessage()` still throws and leaves `curr_fullMessage` null on failure, so a later
+caller retries once.
 
 `ensureBodyText()` prefers the HTML body converted with
 `htmlBodyToPlainText()` and falls back to the whitespace-collapsed plain text part when the HTML
