@@ -2159,30 +2159,24 @@
     "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
         "message": "Terperinci"
     },
-  "prefs_level_minimal": {
-    "message": "Minimal",
-    "description": ""
-  },
-  "prefs_level_low": {
-    "message": "Rendah",
-    "description": ""
-  },
-  "prefs_level_medium": {
-    "message": "Sedang",
-    "description": ""
-  },
-  "prefs_level_high": {
-    "message": "Tinggi",
-    "description": ""
-  },
-  "prefs_level_xhigh": {
-    "message": "Sangat tinggi",
-    "description": ""
-  },
-  "prefs_level_max": {
-    "message": "Maksimal",
-    "description": ""
-  },
+    "prefs_level_minimal": {
+        "message": "Minimal"
+    },
+    "prefs_level_low": {
+        "message": "Rendah"
+    },
+    "prefs_level_medium": {
+        "message": "Sedang"
+    },
+    "prefs_level_high": {
+        "message": "Tinggi"
+    },
+    "prefs_level_xhigh": {
+        "message": "Sangat tinggi"
+    },
+    "prefs_level_max": {
+        "message": "Maksimal"
+    },
     "customDataPH_placeholdersCount": {
         "message": "$COUNT$ placeholder data",
         "placeholders": {

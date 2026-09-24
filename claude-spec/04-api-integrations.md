@@ -32,6 +32,8 @@ Controlled via `js/mzta-chatgpt.js`. Opens a browser window to `chatgpt.com`, in
 
 Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view support.
 
+**Composer lookup** (#890, #920). `chatgpt_sendMsg()` waits up to 15 s for the composer via `findPromptInput()` (a MutationObserver plus a 250 ms poll), trying `MZTA_PROMPT_SELECTORS` in order and taking only **visible** elements, so a hidden fallback `<textarea>` never wins over the visible contenteditable. Open shadow roots are searched too, with a bounded walk, on the poll ticks only. If the wait times out, it falls back to a non-visible `#prompt-textarea`, which is what the old single lookup would have found. A contenteditable gets the HTML nodes. A real `<textarea>` gets the prompt converted to plain text (`htmlToPlainText()`, one line per `<p>`), set through the native `value` setter and followed by a bubbling `input` event. When nothing is found, `logComposerDiagnostics()` always emits one `console.warn("[ThunderAI] Diagnostics: {...}")` line with structural facts only (URL without query, title, element counts, up to 5 candidate inputs, login/Cloudflare hints, UA). It **must never** include page text or the prompt, because users paste it on GitHub. On `-2` (composer not found), `doProceed()` returns right after showing the retry button. It does not enter `chatgpt_isIdle()`, so retries don't stack idle-wait loops. `doRetry()` re-sends `_customTextArray` when custom text was collected.
+
 **The ChatGPT Web setting rows carry unprefixed element ids and are injected only when `no_chatgpt_web` is falsy.** In `injectConnectionUI()` (`pages/_lib/connection-ui.js`) every provider field id is prefixed with `modelId_prefix`, *except* the ChatGPT Web rows (`chatgpt_web_model`, `chatgpt_web_project`, `chatgpt_web_custom_gpt`, `chatgpt_web_tempchat`, `chatgpt_web_load_wait_time`, `btnChatGPTWeb_Tab`): on the options page and in the setup wizard the element id **is** the pref key (`saveOptions` writes `options[element.id]`), so prefixing them there would break persistence. Because bare ids can exist only once per page, those rows are emitted only for the two global consumers, which pass no `no_chatgpt_web`. Every per-prompt and per-feature panel passes `no_chatgpt_web: true` — it never offers the `chatgpt_web` option anyway, and the custom prompts page injects once per add-form plus once per edited row, which previously produced N+1 duplicates of those ids (misbound listeners, and one `btnChatGPTWeb_Tab` click opening N+1 tabs). Consequently the three lookups on those ids are guarded (`if (!no_chatgpt_web)` / optional chaining) — an unguarded lookup would throw on null and abort the rest of the injection, breaking every feature page.
 
 Per-prompt ChatGPT Web overrides are a separate, unrelated mechanism: the custom prompts page renders its **own** in-page `chatgpt_web_*` fields (not injected), which are the ones actually persisted onto the prompt and consumed by `openChatGPT()`.
@@ -308,14 +310,25 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
 - Settings keys: `anthropic_api_key`, `anthropic_model`, `anthropic_version`, `anthropic_max_tokens`, `anthropic_system_prompt`, `anthropic_temperature`, `anthropic_top_p`, `anthropic_top_k`, `anthropic_stop_sequences`, `anthropic_extended_thinking_budget`, `anthropic_effort`
 - **Capability table** (`js/api/anthropic_model_capabilities.js`): which request parameters a Claude
   model accepts depends on the model, and sending one it rejects is a hard 400 — not a silently
-  ignored field. `getAnthropicModelCapabilities(modelId)` matches by **model ID prefix** (so dated
-  variants such as `claude-sonnet-4-5-20250929` resolve to their family, longest prefix first) and
-  returns `{thinkingModes, supportsBudgetTokens, supportsSamplingParams, supportsEffort,
-  effortLevels, defaultThinking}`, plus `disabledThinkingMaxEffort` on the one model that needs it.
-  An unknown ID — users can type any model name — falls back to `ANTHROPIC_MODERN_CAPABILITIES`,
-  deliberately assuming the *modern* contract: a stale setting then degrades to a valid request,
-  whereas assuming the legacy contract would send `temperature`/`budget_tokens` and earn a 400.
-  **The table must be updated as new models ship.**
+  ignored field. `getAnthropicModelCapabilities(modelId)` returns `{thinkingModes,
+  supportsBudgetTokens, supportsSamplingParams, supportsEffort, effortLevels, defaultThinking}`,
+  plus `disabledThinkingMaxEffort` on the one model that needs it (Opus 5).
+  - **Matching is boundary-aware**: an entry matches only the **exact** ID or its **dated
+    snapshot** `<prefix>-YYYYMMDD` (e.g. `claude-sonnet-4-5-20250929`). Any other suffix does not
+    match — in particular a point release is *not* covered by its predecessor: `claude-opus-5`
+    does not match `claude-opus-5-5` or a future `claude-opus-5-6`, which fall back instead of
+    inheriting rules that may no longer hold. Every point release therefore needs its own entry
+    (`claude-opus-5-5`, `claude-fable-5-1`, `claude-mythos-5-1`). Aliases with other suffixes
+    (e.g. `-latest`) fall back too.
+  - An unknown ID — users can type any model name — falls back to `ANTHROPIC_MODERN_CAPABILITIES`,
+    deliberately assuming the *modern* contract: a stale setting then degrades to a valid request,
+    whereas assuming the legacy contract would send `temperature`/`budget_tokens` and earn a 400.
+    The fallback's `thinkingModes` is **`['adaptive']` only**, so ThunderAI never sends
+    `thinking: {type:'disabled'}` to an unknown model: newer models (Fable 5.x, Opus 5.5) reject
+    it, whereas omitting `thinking` is always valid. Trade-off: on an unknown model that thinks by
+    default, thinking may consume part of `max_tokens`.
+  - **The table must be updated as new models ship.** The 400 retry below is a safety net, not a
+    substitute.
 - **Request body construction** is entirely driven by that table, and every field is opt-in:
   - `temperature` is sent only when `supportsSamplingParams` and the user set a value. It is now
     **independent of the thinking configuration** — the old rule that extended thinking suppressed
@@ -349,9 +362,14 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
     (newer models think unless told not to, which silently eats `max_tokens` and truncates the reply).
     On models that already default to no thinking the field stays omitted, so their request bodies are
     byte-identical to what they were before the table existed.
-  - `output_config: {effort}` only when `supportsEffort` and the level is valid for that model.
-    Omitted when the level equals `ANTHROPIC_DEFAULT_EFFORT` (`high`), which is the API default —
-    kept behind that named constant so it is easy to change.
+  - `output_config: {effort}` whenever the stored level is **non-empty**, `supportsEffort` holds and
+    the level is in that model's `effortLevels` — **including `high`**. It is omitted only for the
+    empty "Default (decided by the API)" option (`anthropic_effort: ''`, the stored default).
+    ThunderAI **never relies on the API's default effort** to decide what to send: defaults differ
+    per model (Opus 5.5 defaults to `medium`) and can change, so omitting a level that "looks like
+    the default" would silently ignore an explicit choice. There is deliberately no per-model
+    `defaultEffort` field. `ANTHROPIC_DEFAULT_EFFORT` (`high`) survives only as the level *assumed*
+    to be in force when none is sent, for `effortBlocksDisabledThinking()`.
   - Any other combination omits the field entirely. **A configuration that is impossible for the
     selected model degrades to a valid request, never to a 400.** Stored prefs are never rewritten:
     the user may switch back to an older model, so incompatibility is resolved at request-build time
@@ -387,12 +405,27 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
   ("this model uses Effort instead") is identical — via
   `applyState('anthropic_top_p', caps.supportsSamplingParams)` and the same for `top_k`.
   `anthropic_stop_sequences` is a plain textarea with no capability note, because it is never gated.
+- **One-shot retry on a 400** (`fetchResponse()` in `js/api/anthropic.js`): when the Messages API
+  answers HTTP 400 and the error message names a parameter that was **actually sent**, the request
+  is repeated **exactly once** without it, and a `console.warn` names the model and the dropped
+  field(s). Matching reuses the needles of `ANTHROPIC_ERROR_HINTS`, each of which also carries the
+  top-level fields to `drop` (`dropRejectedParams()`): `budget_tokens` / `thinking.type` /
+  `thinking` → `thinking`; `effort` / `output_config` → `output_config`; `temperature` / `top_p` /
+  `top_k` → **all three sampling params together** (they share one capability, so dropping them one
+  at a time would waste the single retry). The first entry whose needle matches *and* whose fields
+  are in the body wins; if none qualifies, there is no retry. Only status 400 is retried. The error
+  body is read from `response.clone()`, so the original response stays unread: it is returned as-is
+  when there is nothing to drop, when the retry fails for any reason, or when the retry throws, and
+  the worker then reports the **original** error with the `describeAnthropicError()` hint. The 400
+  arrives before any stream data, so this works identically for streaming and non-streaming
+  requests. Stored prefs are never touched — the next request rebuilds the full body and may earn
+  the same 400 + retry again, which is why the table still has to be kept current.
 - **400 error hints**: `describeAnthropicError(detail, model, i18nStrings)` inspects a 400 body and,
-  when the message names `temperature` / `top_p` / `top_k` / `thinking.type` / `budget_tokens` /
-  `effort`, prepends a localized hint naming the incompatible option; otherwise the raw detail is
-  returned unchanged. It takes `i18nStrings` as a parameter because it runs inside a Web Worker,
-  where `browser.i18n` is unavailable — the same threading already used for
-  `anthropic_api_request_failed`.
+  when the message names `budget_tokens` / `thinking.type` / `temperature` / `top_p` / `top_k` /
+  `effort` / `output_config` / `thinking` (checked in that order, first match wins), prepends a
+  localized hint naming the incompatible option; otherwise the raw detail is returned unchanged.
+  It takes `i18nStrings` as a parameter because it runs inside a Web Worker, where `browser.i18n`
+  is unavailable — the same threading already used for `anthropic_api_request_failed`.
 
 See [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui) for how the resulting stream is surfaced.
 

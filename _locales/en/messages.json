@@ -1257,6 +1257,22 @@
     "message": "If checked, the specified timezone will be enforced for the calendar events and the tasks.",
     "description": ""
   },
+  "prefs_OptionText_append_email_link": {
+    "message": "Append a link to the original email",
+    "description": ""
+  },
+  "prefs_OptionText_calendar_append_email_link_Info": {
+    "message": "If checked, a link to the original email is added at the end of the event description. If the AI returns no description, the description will contain only the link. Not available when the event is created from the clipboard.",
+    "description": ""
+  },
+  "prefs_OptionText_task_append_email_link_Info": {
+    "message": "If checked, a link to the original email is added at the end of the task description. If the AI returns no description, the description will contain only the link.",
+    "description": ""
+  },
+  "calendar_email_link_label": {
+    "message": "Original email:",
+    "description": "Label written before the link to the original email in the description of the calendar events and the tasks."
+  },
   "prefs_OptionText_btnManageCalendarEventInfo": {
     "message": "Manage calendar events settings",
     "description": ""
@@ -2802,6 +2818,26 @@
   },
   "prefs_OptionText_summarize_strip_formatting_Info": {
       "message": "Remove HTML and Markdown formatting from the AI-generated summary, showing plain text only.",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_force_lang": {
+      "message": "Force summary language",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_force_lang_Info": {
+      "message": "If checked, the summary is always written in the selected language, regardless of the language of the emails. The summaries already generated are not updated: use \"Refresh summary\" to generate them again.",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_lang_Info": {
+      "message": "Language of the summary. Leave it empty to use the default language set in the ThunderAI options. If both are empty, no language is forced.",
+      "description": ""
+  },
+  "prompt_summarize_force_lang": {
+      "message": "The summary must be written in",
+      "description": ""
+  },
+  "summarize_info_additional_statements": {
+      "message": "This statement will be added at the end of the prompt:",
       "description": ""
   },
   "Summarize_auto_senders_title": {

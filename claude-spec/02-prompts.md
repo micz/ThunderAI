@@ -159,6 +159,24 @@ Some prompts trigger additional Thunderbird actions beyond just sending text to 
 
 These special prompts can have their own dedicated API integration settings (configured in the Options page). The list of these special prompts is in `options/mzta-options-default.js` as `special_prompts_with_integration`.
 
+### Calendar event / task: link to the original email
+
+With `calendar_append_email_link` (events) or `task_append_email_link` (tasks) on, `js/mzta-menus.js` appends a link to the source email to the `description` of the parsed object (`calendar_event_data_obj` / `task_data_obj`), after date normalization and the timezone block, just before `JSON.stringify` and the hand-off to Sparks. It is done **by code, after the response**: the link is never sent to the AI, the prompt texts (`prompt_get_calendar_event_full_text`, `prompt_get_task_full_text`) do not mention it, and the AI JSON contract is unchanged.
+
+Both features use `appendMessageLinkToDescription(data_obj, message, label)` in `js/mzta-utils.js` (label = `calendar_email_link_label`, shared). Composition rule:
+- description a string, non-empty after trim → `description.trim() + "\n\n" + label + " " + link`;
+- description missing, empty or not a string (e.g. a custom prompt that asks for none) → `label + " " + link`;
+- no link can be built → description left exactly as the AI returned it (the helper returns `false`).
+
+Link format (`buildMessageMidLink()`): `"mid:" + headerMessageId`, angle brackets stripped defensively, **no percent-encoding**. This matches Thunderbird itself: "Copy Message Link" (bug 1968470, `msgHdrView.js` `copyMessageLink()`) writes `` `mid:${messageId}` ``, and the `mid:` handler (bug 264270: `MailLinkParent._handleMidLink`, `calApplicationUtils.js` `launchBrowser`) opens `openMessageForMessageId(href.slice(4))`, an exact Message-ID match with no decoding — an encoded id (`%2B`, `%3D`, …) would never be found.
+
+Skipped silently (logged via `this.logger.log`, no alert):
+- `prompt_get_calendar_event_from_clipboard` — no source message; it shares the case block with `prompt_get_calendar_event`, so `curr_prompt.id` is checked explicitly;
+- `messageCompose` tabs — `curr_message` is compose details, not a `MessageHeader`;
+- `curr_message` null (e.g. empty selection in a mail tab) or `headerMessageId` missing/empty.
+
+The description is plain text (`descriptionText` in Sparks); Thunderbird linkifies the `mid:` scheme in the event summary, but HTML descriptions are out of scope.
+
 ### Missing special prompts
 
 The lookup helpers in `js/mzta-prompts.js` (`getSpamFilterPrompt()`, `getAddTagsPrompt()`, `getSummarizePrompt()`, …) are `Array.find()` over `_special_prompts` and return `undefined` when the user has removed or corrupted the entry. Every caller must guard before using the result, and `taPromptUtils.getDefaultLang()` uses optional chaining so a missing prompt yields `''` (no forced language) instead of throwing (issue #855).
@@ -319,6 +337,10 @@ The summarize feature uses two distinct prompt pathways:
 - All summary paths (inline, webchat single, webchat multi) use this single method
 - Accepts an array of `{ message, fullMessage }` entries
 - Returns `{ promptText, promptInfo }` where `promptInfo` is the `prompt_summarize` prompt object
+- Language: `taPromptUtils.getSummaryLang(prompt_summarize)` returns `{ chatgpt_lang, force_lang_statement }`.
+  - `chatgpt_lang` is passed to every `preparePrompt()` call (main prompt, separator, each email block), as before. With `summarize_force_lang` off it is `getDefaultLang(prompt_summarize)` (normally `''`, since `define_response_lang` is `"0"`), so the prompt is byte-identical to the pre-option one. With the flag on it is `''`, so it can't contradict the forced language.
+  - `force_lang_statement` is `prompt_summarize_force_lang + " " + (summarize_lang || default_chatgpt_lang) + "."` when the flag is on, `''` otherwise or when both languages are empty (never `reply_same_lang`). It is appended **once**, at the very end of the whole prompt after the last email, preceded by `\n\n`. Deliberately **not** after each email: `preparePrompt()` joins `chatgpt_lang` to the email body with a single space, so there it reads as part of the email text.
+  - The default prompt texts are not touched (they are localised and frozen in `_special_prompts`).
 
 ### Translate: Inline-Only Prompt System
 

@@ -416,7 +416,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         }
 
                         if (await summaryStore.isProcessing(message.headerMessageId)) {
-                            browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+                            await _sendGeneratingIfCurrent(tabId, message.headerMessageId, { command: "showSummaryGenerating", headerMessageId: message.headerMessageId });
                             return;
                         }
 
@@ -435,7 +435,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                                 taLog.log("[ThunderAI] No AI connection able to reach an API, skipping the auto-summarize sender list for: " + message.headerMessageId);
                             } else {
                                 taLog.log("[ThunderAI] Sender in the auto-summarize list, generating summary for: " + message.headerMessageId);
-                                _generateSummaryForMessage(message.headerMessageId, tabId, { resolvedMessage: message });
+                                _generateSummaryForMessage(message.headerMessageId, tabId, { resolvedMessage: message })
+                                    .catch(e => _handleTaskError('initSummary (sender list)', e, tabId, message.headerMessageId, 'summary'));
                                 return;
                             }
                         }
@@ -464,7 +465,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                                 taLog.log("Message in a folder excluded from the automatic processing, skipping the automatic summarize...");
                                 return;
                             }
-                            _generateSummaryForMessage(message.headerMessageId, tabId, { resolvedMessage: message });
+                            _generateSummaryForMessage(message.headerMessageId, tabId, { resolvedMessage: message })
+                                .catch(e => _handleTaskError('initSummary (auto)', e, tabId, message.headerMessageId, 'summary'));
                             return;
                         }
 
@@ -478,19 +480,24 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         taLog.error("Error in initSummary: " + e);
                     }
                 }
-                _initSummary();
+                // Not awaited (the listener contract stays synchronous); the .catch() is a
+                // safety net on top of the internal try/catch. No headerMessageId is known here.
+                _initSummary().catch(e => _handleTaskError('initSummary', e, sender.tab?.id, null, 'summary'));
                 break;
             case 'triggerSummaryGeneration':
                 async function _triggerSummaryGeneration(message) {
                     let tabId = sender.tab.id;
-                    // Fire the inline loading indicator immediately, before any await
-                    browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+                    // Fire the inline loading indicator immediately, before any await.
+                    // Sent directly, not through _sendGeneratingIfCurrent(): the id comes from
+                    // this very tab's content script, which also re-checks it against its own
+                    // document before drawing the panel.
+                    sendTabMessageSafe(tabId, { command: "showSummaryGenerating", headerMessageId: message.headerMessageId });
                     // No resolve hint: the content script sends only headerMessageId, so
                     // _resolveMessage lands on the tabId route (c) — the message the user
                     // just clicked on is the one this tab displays.
                     await _generateSummaryForMessage(message.headerMessageId, tabId);
                 }
-                _triggerSummaryGeneration(message);
+                _triggerSummaryGeneration(message).catch(e => _handleTaskError('triggerSummaryGeneration', e, sender.tab?.id, message.headerMessageId, 'summary'));
                 break;
             case 'triggerSummaryWebchat':
                 async function _triggerSummaryWebchat(message) {
@@ -498,7 +505,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     // Same as triggerSummaryGeneration: resolves via the tabId route (c).
                     await _openSummaryWebchat(message.headerMessageId, tabId);
                 }
-                _triggerSummaryWebchat(message);
+                _triggerSummaryWebchat(message).catch(e => _handleTaskError('triggerSummaryWebchat', e, sender.tab?.id, message.headerMessageId, 'summary'));
                 break;
             case 'generate_summary':
                 async function _generate_summary(message) {
@@ -506,7 +513,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     // (and message.tabId), so _resolveMessage uses the tabId route (c).
                     await _generateSummaryForMessage(message.headerMessageId, message.tabId);
                 }
-                _generate_summary(message);
+                _generate_summary(message).catch(e => _handleTaskError('generate_summary', e, message.tabId, message.headerMessageId, 'summary'));
                 break;
             case 'refreshSummary':
                 async function _refreshSummary(message) {
@@ -518,16 +525,21 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         await _openSummaryWebchat(message.headerMessageId, tabId);
                     } else {
                         // Fire the inline loading indicator immediately, before any await
-                        browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+                        // (direct send — see triggerSummaryGeneration).
+                        sendTabMessageSafe(tabId, { command: "showSummaryGenerating", headerMessageId: message.headerMessageId });
                         await summaryStore.removeSummary(message.headerMessageId);
                         // Resolves via the tabId route (c) — see triggerSummaryGeneration.
                         await _generateSummaryForMessage(message.headerMessageId, tabId);
                     }
                 }
-                _refreshSummary(message);
+                _refreshSummary(message).catch(e => _handleTaskError('refreshSummary', e, sender.tab?.id, message.headerMessageId, 'summary'));
                 break;
             case 'removeSummary':
-                summaryStore.removeSummary(message.headerMessageId);
+                async function _removeSummary(message) {
+                    await summaryStore.removeSummary(message.headerMessageId);
+                    await _restoreSummaryButton(sender.tab.id, message.headerMessageId);
+                }
+                _removeSummary(message);
                 break;
             case 'chatgpt_saveSummary':
                 async function _saveSummaryFromWebchat(msg) {
@@ -583,7 +595,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         }
 
                         if (await translationStore.isProcessing(message.headerMessageId)) {
-                            browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+                            await _sendGeneratingIfCurrent(tabId, message.headerMessageId, { command: "showTranslationGenerating", headerMessageId: message.headerMessageId });
                             return;
                         }
 
@@ -612,7 +624,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                                 taLog.log("Message in a folder excluded from the automatic processing, skipping the automatic translation...");
                                 return;
                             }
-                            _generateTranslationForMessage(message.headerMessageId, tabId, { resolvedMessage: message });
+                            _generateTranslationForMessage(message.headerMessageId, tabId, { resolvedMessage: message })
+                                .catch(e => _handleTaskError('initTranslation (auto)', e, tabId, message.headerMessageId, 'translation'));
                             return;
                         }
 
@@ -622,13 +635,15 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         taLog.error("Error in initTranslation: " + e);
                     }
                 }
-                _initTranslation();
+                // Safety net on top of the internal try/catch — see initSummary.
+                _initTranslation().catch(e => _handleTaskError('initTranslation', e, sender.tab?.id, null, 'translation'));
                 break;
             case 'triggerTranslationGeneration':
                 async function _triggerTranslationGeneration(message) {
                     let tabId = sender.tab.id;
                     // Fire the inline loading indicator immediately, before any await
-                    browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+                    // (direct send — see triggerSummaryGeneration).
+                    sendTabMessageSafe(tabId, { command: "showTranslationGenerating", headerMessageId: message.headerMessageId });
                     let prefs_tl = await mztaPrefs.getPrefs([
                         'translate_lang',
                         'default_chatgpt_lang'
@@ -642,20 +657,32 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     }
                     await _generateTranslationForMessage(message.headerMessageId, tabId);
                 }
-                _triggerTranslationGeneration(message);
+                _triggerTranslationGeneration(message).catch(e => _handleTaskError('triggerTranslationGeneration', e, sender.tab?.id, message.headerMessageId, 'translation'));
                 break;
             case 'refreshTranslation':
                 async function _refreshTranslation(message) {
                     let tabId = sender.tab.id;
                     // Fire the inline loading indicator immediately, before any await
-                    browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+                    // (direct send — see triggerSummaryGeneration).
+                    sendTabMessageSafe(tabId, { command: "showTranslationGenerating", headerMessageId: message.headerMessageId });
                     await translationStore.removeTranslation(message.headerMessageId);
                     await _generateTranslationForMessage(message.headerMessageId, tabId);
                 }
-                _refreshTranslation(message);
+                _refreshTranslation(message).catch(e => _handleTaskError('refreshTranslation', e, sender.tab?.id, message.headerMessageId, 'translation'));
                 break;
+            case 'getDisplayedMessageId':
+                // Asked once by the message display script at load, so it knows which
+                // message its document shows and can ignore generating panels / hide
+                // commands meant for another one. null when unknown.
+                return browser.messageDisplay.getDisplayedMessage(sender.tab.id)
+                    .then(m => m?.headerMessageId ?? null)
+                    .catch(() => null);
             case 'removeTranslation':
-                translationStore.removeTranslation(message.headerMessageId);
+                async function _removeTranslation(message) {
+                    await translationStore.removeTranslation(message.headerMessageId);
+                    await _restoreTranslationButton(sender.tab.id, message.headerMessageId);
+                }
+                _removeTranslation(message);
                 break;
             case 'chatgpt_close':
                     async function _closeChatGptWindow(window_id) {
@@ -790,7 +817,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         let displayedMessage = await browser.messageDisplay.getDisplayedMessage(tabId);
                         if (!displayedMessage) return false;
                         taLog.log("Displayed message found.");
-                        return specialContextMenuActions[message.promptId]([displayedMessage]);
+                        // Pass tabId on: the UI tab must be the one the message came from.
+                        return specialContextMenuActions[message.promptId]([displayedMessage], tabId);
                     }
                     return _shortcut_special();
                 }
@@ -881,6 +909,48 @@ function cleanSummaryText(text) {
 // Prevents a slow, stale AI result (summary/translation/button) from rendering on a
 // different email after the user has rapidly clicked through several messages.
 // Mirrors the displayed-message guard already used by updateSpamPanel().
+// After the user deletes a summary / translation from its banner, draw the manual
+// trigger button again: without it the only way back to the result is the menu.
+// Offered whenever initSummary / initTranslation would have shown the button or
+// auto-generated (auto mode 1 or 2). Auto mode is deliberately not re-run here:
+// regenerating what the user has just deleted would defeat the delete.
+async function _restoreSummaryButton(tabId, headerMessageId) {
+    try {
+        let prefs = await mztaPrefs.getPrefs([
+            'summarize',
+            'summarize_auto',
+            'summarize_display_mode',
+            'connection_type',
+            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+        ]);
+        if (!prefs.summarize) return;
+        let summarize_auto = Number.isInteger(prefs.summarize_auto) ? prefs.summarize_auto : prefs_default.summarize_auto;
+        if (summarize_auto === 0) return;
+        if (!isApiUsableConnection(getConnectionType(prefs, null, 'summarize'))) return;
+        await _sendIfCurrent(tabId, headerMessageId, { command: "showSummaryButton", headerMessageId: headerMessageId, webchat: prefs.summarize_display_mode !== 'inline' });
+    } catch (e) {
+        taLog.error("Error in _restoreSummaryButton: " + e);
+    }
+}
+
+async function _restoreTranslationButton(tabId, headerMessageId) {
+    try {
+        let prefs = await mztaPrefs.getPrefs([
+            'translate',
+            'translate_auto',
+            'connection_type',
+            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+        ]);
+        if (!prefs.translate) return;
+        let translate_auto = Number.isInteger(prefs.translate_auto) ? prefs.translate_auto : prefs_default.translate_auto;
+        if (translate_auto === 0) return;
+        if (!isApiUsableConnection(getConnectionType(prefs, null, 'translate'))) return;
+        await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslationButton", headerMessageId: headerMessageId });
+    } catch (e) {
+        taLog.error("Error in _restoreTranslationButton: " + e);
+    }
+}
+
 async function _sendIfCurrent(tabId, headerMessageId, payload) {
     try {
         if (!tabId) return;
@@ -895,6 +965,48 @@ async function _sendIfCurrent(tabId, headerMessageId, payload) {
     } catch (e) {
         taLog.error("Error in _sendIfCurrent: " + e);
     }
+}
+
+// Loading-indicator counterpart of _sendIfCurrent(). The generating panels used to be sent
+// unguarded, on the theory that they are transient and quickly replaced by the result. They
+// are not when the result is dropped: if the panel lands on a tab that displays message X
+// while message Y is being generated, the final showSummary / showTranslation for Y is
+// (correctly) discarded by _sendIfCurrent(), and nothing ever removes X's spinner.
+// So the panel is sent only when the tab displays headerMessageId; otherwise it is skipped
+// and the caller keeps generating — the result lands in the cache, and the terminal
+// _sendIfCurrent() still renders it if the user comes back to the message in time.
+// Returns { current, delivered }: current=false → the tab shows another message (or there is
+// no tab) and nothing was sent; delivered mirrors sendTabMessageSafe(), the #901 probe.
+async function _sendGeneratingIfCurrent(tabId, headerMessageId, payload) {
+    try {
+        if (!tabId || !headerMessageId) return { current: false, delivered: false };
+        const current = await browser.messageDisplay.getDisplayedMessage(tabId);
+        if (!current || current.headerMessageId !== headerMessageId) {
+            taLog.log("_sendGeneratingIfCurrent: tab " + tabId + " displays " + (current?.headerMessageId || "nothing") + ", not " + headerMessageId + " - generating panel skipped.");
+            return { current: false, delivered: false };
+        }
+        const delivered = await sendTabMessageSafe(tabId, payload);
+        return { current: true, delivered: delivered };
+    } catch (e) {
+        taLog.error("Error in _sendGeneratingIfCurrent: " + e);
+        return { current: false, delivered: false };
+    }
+}
+
+// Remove a generating panel that a failed task may have left behind. Message-aware like
+// the show commands: the content script ignores it when headerMessageId is given and its
+// document displays another message. kind: 'summary' | 'translation' | 'both'.
+function _clearGeneratingPanels(tabId, headerMessageId = null, kind = 'both') {
+    if (!tabId) return;
+    if (kind !== 'translation') sendTabMessageSafe(tabId, { command: "hideSummaryGenerating", headerMessageId: headerMessageId });
+    if (kind !== 'summary') sendTabMessageSafe(tabId, { command: "hideTranslationGenerating", headerMessageId: headerMessageId });
+}
+
+// .catch() handler for the fire-and-forget runtime.onMessage tasks: log the rejection
+// instead of leaving it unhandled, and clear any generating panel it left spinning.
+function _handleTaskError(label, error, tabId, headerMessageId = null, kind = 'both') {
+    taLog.error("Error in " + label + ": " + (error?.message || error));
+    _clearGeneratingPanels(tabId, headerMessageId, kind);
 }
 
 // Resolve a message from its headerMessageId, avoiding browser.messages.query()
@@ -923,7 +1035,18 @@ async function _sendIfCurrent(tabId, headerMessageId, payload) {
 //
 // Returns the message object, or null when it cannot be resolved — callers keep their
 // own "Message not found" bookkeeping.
+//
+// A falsy headerMessageId returns null immediately. Passed to (d) it is worse than slow:
+// the schema drops an undefined / empty property, so query() runs with NO filter, matches
+// every message of every account, and messages[0] is an arbitrary message from an
+// arbitrary folder — which would then be summarized/translated in place of the real one.
+// The guard comes before (a) too, so an empty id can never "match" an empty id.
 async function _resolveMessage(headerMessageId, messageId = null, tabId = null, resolvedMessage = null) {
+    if (!headerMessageId) {
+        taLog.error("_resolveMessage: empty headerMessageId (" + JSON.stringify(headerMessageId) + "), refusing to resolve.");
+        return null;
+    }
+
     if (resolvedMessage && resolvedMessage.headerMessageId === headerMessageId) {
         return resolvedMessage;
     }
@@ -947,6 +1070,7 @@ async function _resolveMessage(headerMessageId, messageId = null, tabId = null, 
         }
     }
 
+    taLog.warn("_resolveMessage: falling back to messages.query() for " + headerMessageId + " (messageId: " + messageId + ", tabId: " + tabId + ")");
     const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
     if (!messageResult || messageResult.messages.length === 0) return null;
     return messageResult.messages[0];
@@ -981,7 +1105,16 @@ async function _summarizeConnectionMissing() {
 // options.messageId: numeric message id, when the caller has one — see _resolveMessage()
 // options.resolvedMessage: the message object the caller already holds (e.g. from
 //   getDisplayedMessage) — the cheapest route, used by the auto-display paths. See _resolveMessage()
+//
+// The generating panel goes through _sendGeneratingIfCurrent(): when tabId displays another
+// message it is skipped, but tabId is still used for the resolution (route c) and for the
+// terminal _sendIfCurrent() sends, which are message-guarded already.
 async function _generateSummaryForMessage(headerMessageId, tabId = null, options = {}) {
+    // Before setProcessing()/saveError(): an empty id would key the store on undefined.
+    if (!headerMessageId) {
+        taLog.error("[ThunderAI] Summary: empty headerMessageId (" + JSON.stringify(headerMessageId) + "), nothing to summarize.");
+        return;
+    }
     try {
         let prefs = await mztaPrefs.getPrefs([
             'connection_type',
@@ -999,13 +1132,13 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
         }
 
         if (await summaryStore.isProcessing(headerMessageId)) {
-            if (tabId) sendTabMessageSafe(tabId, { command: "showSummaryGenerating" });
+            await _sendGeneratingIfCurrent(tabId, headerMessageId, { command: "showSummaryGenerating", headerMessageId: headerMessageId });
             return;
         }
 
         await summaryStore.setProcessing(headerMessageId);
         taWorkingStatus.startWorking();
-        if (tabId) sendTabMessageSafe(tabId, { command: "showSummaryGenerating" });
+        await _sendGeneratingIfCurrent(tabId, headerMessageId, { command: "showSummaryGenerating", headerMessageId: headerMessageId });
 
         let message, fullMessage;
         if (options.messageData) {
@@ -1047,6 +1180,7 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
             return;
         }
 
+        taLog.log("[ThunderAI] Summary: building the prompt for " + message.headerMessageId + " (folder: " + message.folder?.path + ")");
         const { promptText } = await taPromptUtils.buildSummaryPrompt([{ message, fullMessage }]);
 
         const cmd = new mzta_specialCommand({
@@ -1076,6 +1210,9 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
         console.error("[ThunderAI] Error generating summary:", error);
         if (!error.isConfigError) await summaryStore.saveError(headerMessageId, error.message || String(error));
         await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: error.message || "Failed to generate summary" } });
+        // The error banner above already replaces the panel when it is delivered; this
+        // covers the case where it is not, so no spinner outlives the failed generation.
+        _clearGeneratingPanels(tabId, headerMessageId, 'summary');
         taWorkingStatus.stopWorking();
     }
 }
@@ -1086,7 +1223,13 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
 // options.messageId: numeric message id, when the caller has one — see _resolveMessage()
 // options.resolvedMessage: the message object the caller already holds (e.g. from
 //   getDisplayedMessage) — the cheapest route, used by the auto-display paths. See _resolveMessage()
+// The generating panel is message-aware — see _generateSummaryForMessage().
 async function _generateTranslationForMessage(headerMessageId, tabId = null, options = {}) {
+    // Before setProcessing()/saveError(): an empty id would key the store on undefined.
+    if (!headerMessageId) {
+        taLog.error("[ThunderAI] Translation: empty headerMessageId (" + JSON.stringify(headerMessageId) + "), nothing to translate.");
+        return;
+    }
     try {
         let prefs = await mztaPrefs.getPrefs([
             'connection_type',
@@ -1110,20 +1253,22 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
         }
 
         if (await translationStore.isProcessing(headerMessageId)) {
-            if (tabId) sendTabMessageSafe(tabId, { command: "showTranslationGenerating" });
+            await _sendGeneratingIfCurrent(tabId, headerMessageId, { command: "showTranslationGenerating", headerMessageId: headerMessageId });
             return;
         }
 
         await translationStore.setProcessing(headerMessageId);
         taWorkingStatus.startWorking();
-        if (tabId) sendTabMessageSafe(tabId, { command: "showTranslationGenerating" });
+        await _sendGeneratingIfCurrent(tabId, headerMessageId, { command: "showTranslationGenerating", headerMessageId: headerMessageId });
 
         // messageId travels alongside fullMessage on BOTH branches: the body now
         // comes from getMailInlineTextParts(messageId), so buildTranslationPrompt()
         // needs the id, not just the parsed message.
-        let fullMessage, curr_messageId;
+        // usedMessage is only for the diagnostic log before the prompt is built.
+        let fullMessage, curr_messageId, usedMessage;
         if (options.messageData) {
             fullMessage = options.messageData.fullMessage;
+            usedMessage = options.messageData.message;
             curr_messageId = options.messageData.message?.id;
             // The ?. above is what keeps a caller passing only { fullMessage } from
             // throwing - but an undefined id reaches getMailInlineTextParts() and comes
@@ -1148,6 +1293,7 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
                 taWorkingStatus.stopWorking();
                 return;
             }
+            usedMessage = message;
             curr_messageId = message.id;
             fullMessage = await browser.messages.getFull(message.id);
         }
@@ -1164,6 +1310,7 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
             taWorkingStatus.stopWorking();
             return;
         }
+        taLog.log("[ThunderAI] Translation: building the prompt for " + usedMessage?.headerMessageId + " (folder: " + usedMessage?.folder?.path + ")");
         const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, curr_messageId);
 
         const cmd = new mzta_specialCommand({
@@ -1203,6 +1350,8 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
         console.error("[ThunderAI] Error generating translation:", error);
         if (!error.isConfigError) await translationStore.saveError(headerMessageId, error.message || String(error));
         await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { error: true, message: error.message || "Failed to generate translation" } });
+        // Same as the summary: no spinner outlives the failed generation.
+        _clearGeneratingPanels(tabId, headerMessageId, 'translation');
         taWorkingStatus.stopWorking();
     }
 }
@@ -1230,6 +1379,11 @@ function _buildReportMetadata(message, curr_fullMessage) {
 // options.prefs: pass pre-fetched prefs to avoid re-querying
 // options.autoMove: if true, move spam messages to junk folder (default: false)
 async function _generateSpamReportForMessage(headerMessageId, options = {}) {
+    // Before removeReportData()/setProcessing(): an empty id would key the store on undefined.
+    if (!headerMessageId) {
+        taLog.error("[ThunderAI | SpamFilter] Empty headerMessageId (" + JSON.stringify(headerMessageId) + "), nothing to analyze.");
+        return { success: false };
+    }
     // Declared outside the try so the final catch can still attach whatever
     // metadata was captured before the failure.
     let message_metadata = null;
@@ -1464,6 +1618,7 @@ async function _openSummaryWebchat(headerMessageId, tabId, messageId = null) {
             return;
         }
 
+        taLog.log("[ThunderAI] Summary webchat: building the prompt for " + curr_message.headerMessageId + " (folder: " + curr_message.folder?.path + ")");
         const { promptText, promptInfo } = await taPromptUtils.buildSummaryPrompt([{ message: curr_message, fullMessage: curr_message_full }]);
         promptInfo.headerMessageId = headerMessageId;
         promptInfo.summaryTabId = tabId;
@@ -2009,15 +2164,69 @@ await menus.loadMenus(await _computeActiveSpecialIds());
 // based on each prompt's show_in property. The menu item IDs use the format 'mzta-ctx-<prompt_id>'.
 // Special prompts (add_tags, spamfilter, summarize, translate) are routed to processEmails()
 // for batch processing. Regular prompts are executed via menus.executeMenuAction().
+//
+// The messages AND the UI tab of a special action must come from the same place: the tab
+// the menu was opened in. info.selectedMessages is a snapshot of a message-list selection
+// that is not bound to that tab (several mail tabs/windows, a right-click that does not
+// move the selection, a selection still in transition), while processEmails() used to pick
+// its UI tab with tabs.query({active, currentWindow}), i.e. the last focused window. When
+// the two disagreed, the generating panel was drawn on the displayed message while another
+// message, from another folder, was sent to the AI — and the result, correctly dropped by
+// _sendIfCurrent(), never replaced the spinner. So the selection is read from the clicked
+// tab (mailTabs.getSelectedMessages(tab.id)) and tab.id is passed down as sourceTabId.
+// info.selectedMessages is kept only as a fallback when that call fails.
 
 const specialContextMenuActions = {
-    'prompt_add_tags': (messages) => processEmails({ messages, addTagsAuto: true }),
-    'prompt_spamfilter': (messages) => processEmails({ messages, spamFilter: true }),
-    'prompt_summarize': (messages) => processEmails({ messages, summarize: true }),
-    'prompt_translate_this': (messages) => processEmails({ messages, translate: true }),
+    'prompt_add_tags': (messages, sourceTabId = null) => processEmails({ messages, addTagsAuto: true, sourceTabId }),
+    'prompt_spamfilter': (messages, sourceTabId = null) => processEmails({ messages, spamFilter: true, sourceTabId }),
+    'prompt_summarize': (messages, sourceTabId = null) => processEmails({ messages, summarize: true, sourceTabId }),
+    'prompt_translate_this': (messages, sourceTabId = null) => processEmails({ messages, translate: true, sourceTabId }),
 };
 
-browser.menus.onClicked.addListener((info, tab) => {
+// Returns the MessageList a context-menu action must work on: the selection of the clicked
+// tab, or info.selectedMessages when that cannot be read. Also writes one diagnostic log
+// entry comparing the three views of "the message the user means" (only the first page of
+// each MessageList is described), marked MISMATCH when they disagree.
+async function _getClickSelection(info, tab) {
+    const describe = (list) => (list?.messages || []).map(m => ({ id: m.id, headerMessageId: m.headerMessageId, folder: m.folder?.path }));
+
+    let tabSelection = null;
+    let displayed = null;
+    if (tab?.id) {
+        try {
+            tabSelection = await browser.mailTabs.getSelectedMessages(tab.id);
+        } catch (e) {
+            taLog.log("menus.onClicked: mailTabs.getSelectedMessages(" + tab.id + ") failed, falling back to info.selectedMessages: " + e);
+        }
+        try {
+            displayed = await browser.messageDisplay.getDisplayedMessage(tab.id);
+        } catch (e) {
+            taLog.log("menus.onClicked: messageDisplay.getDisplayedMessage(" + tab.id + ") failed: " + e);
+        }
+    }
+
+    const infoDesc = describe(info.selectedMessages);
+    const tabDesc = tabSelection ? describe(tabSelection) : null;
+    const displayedDesc = displayed ? { id: displayed.id, headerMessageId: displayed.headerMessageId, folder: displayed.folder?.path } : null;
+
+    const idsOf = (desc) => desc.map(d => d.headerMessageId).join('\n');
+    let mismatch = false;
+    if (tabDesc && idsOf(infoDesc) !== idsOf(tabDesc)) mismatch = true;
+    const used = tabDesc || infoDesc;
+    if (used.length === 1 && displayedDesc && displayedDesc.headerMessageId !== used[0].headerMessageId) mismatch = true;
+
+    taLog.log("[ThunderAI] menus.onClicked " + (mismatch ? "MISMATCH " : "") + JSON.stringify({
+        tab: { id: tab?.id, windowId: tab?.windowId, type: tab?.type },
+        info_selectedMessages: infoDesc,
+        mailTabs_getSelectedMessages: tabDesc,
+        messageDisplay_getDisplayedMessage: displayedDesc,
+        using: tabSelection ? 'mailTabs.getSelectedMessages' : 'info.selectedMessages'
+    }));
+
+    return tabSelection || info.selectedMessages;
+}
+
+browser.menus.onClicked.addListener(async (info, tab) => {
     const menuItemId = info.menuItemId;
     if (typeof menuItemId !== 'string' || !menuItemId.startsWith('mzta-ctx-')) {
         return;
@@ -2025,7 +2234,16 @@ browser.menus.onClicked.addListener((info, tab) => {
     const promptId = menuItemId.replace('mzta-ctx-', '');
 
     if (specialContextMenuActions[promptId]) {
-        specialContextMenuActions[promptId](getMessages(info.selectedMessages));
+        let selection = null;
+        try {
+            selection = await _getClickSelection(info, tab);
+            await specialContextMenuActions[promptId](getMessages(selection), tab?.id);
+        } catch (e) {
+            taLog.error("Error in the context menu action " + promptId + ": " + (e?.message || e));
+            // Only a single-message selection can have drawn a generating panel.
+            const single = (selection?.messages?.length === 1 && !selection.id) ? selection.messages[0].headerMessageId : null;
+            _clearGeneratingPanels(tab?.id, single);
+        }
     } else {
         menus.executeMenuAction(promptId);
     }
@@ -2131,6 +2349,10 @@ async function processEmails(args) {
         translateOnReceive = false,
         translate = false,
         isAutoMode = false,
+        // The tab the action was started from (context menu, shortcut). Used as the UI tab of
+        // the summarize/translate flows; tabs.query({active, currentWindow}) is only the
+        // fallback when absent — see the comment above specialContextMenuActions.
+        sourceTabId = null,
     } = args;
 
     // Auto-summarize restricted to a sender list: the decision is per message, so only the
@@ -2396,11 +2618,17 @@ async function processEmails(args) {
                     await ensureFullMessage();
                     let translateTabId = null;
                     if (translate) {
-                        const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-                        if (tabs.length > 0) {
-                            translateTabId = tabs[0].id;
+                        translateTabId = sourceTabId;
+                        if (!translateTabId) {
+                            const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                            if (tabs.length > 0) {
+                                translateTabId = tabs[0].id;
+                            }
                         }
                     }
+                    // With several messages selected, only the one the tab displays gets
+                    // the generating panel: _generateTranslationForMessage() sends it
+                    // through _sendGeneratingIfCurrent().
                     taLog.log("[ThunderAI] Generating translation for: " + message.headerMessageId);
                     await _generateTranslationForMessage(message.headerMessageId, translateTabId, {
                         messageData: { message, fullMessage: curr_fullMessage }
@@ -2443,12 +2671,15 @@ async function processEmails(args) {
             messageArray.push(msg);
         }
 
-        const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-        if (tabs.length === 0) {
-            taLog.error("[ThunderAI] Summarize aborted: no active tab available.");
-            return;
+        let tabId = sourceTabId;
+        if (!tabId) {
+            const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+            if (tabs.length === 0) {
+                taLog.error("[ThunderAI] Summarize aborted: no active tab available.");
+                return;
+            }
+            tabId = tabs[0].id;
         }
-        const tabId = tabs[0].id;
 
         // Inline mode for single message: generate inline summary in the message pane.
         // The pane may be unreachable - hidden via F8, nothing displayed, multi-message
@@ -2457,10 +2688,17 @@ async function processEmails(args) {
         // and nothing shown to the user [#901]. The indicator send doubles as the
         // probe: when the pane cannot receive it, fall back to the webchat flow so the
         // action still produces something visible.
+        // The indicator is message-aware (_sendGeneratingIfCurrent): when the tab displays
+        // another message it is not drawn at all, and the summary is still generated
+        // inline — silently, into the cache — rather than falling back to the webchat.
         let inline_ready = false;
         if (summarize_prefs.summarize_display_mode === 'inline' && messageArray.length === 1) {
             // Fire the inline loading indicator immediately, before any heavy work
-            inline_ready = await sendTabMessageSafe(tabId, { command: "showSummaryGenerating" });
+            const gen = await _sendGeneratingIfCurrent(tabId, messageArray[0].headerMessageId, { command: "showSummaryGenerating", headerMessageId: messageArray[0].headerMessageId });
+            if (!gen.current) {
+                taLog.warn("[ThunderAI] Summarize: tab " + tabId + " does not display " + messageArray[0].headerMessageId + ", generating without the inline panel.");
+            }
+            inline_ready = gen.delivered || !gen.current;
         }
         if (inline_ready) {
             const msg = messageArray[0];
@@ -2490,6 +2728,7 @@ async function processEmails(args) {
                 const fullMessage = await browser.messages.getFull(curr_message.id);
                 messageDataArray.push({ message: curr_message, fullMessage });
             }
+            taLog.log("[ThunderAI] Summarize webchat: building the prompt for " + JSON.stringify(messageDataArray.map(d => ({ headerMessageId: d.message.headerMessageId, folder: d.message.folder?.path }))));
             const { promptText, promptInfo } = await taPromptUtils.buildSummaryPrompt(messageDataArray);
 
             openChatGPT(promptText, promptInfo.action, tabId, promptInfo.name, promptInfo.need_custom_text, promptInfo);

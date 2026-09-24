@@ -1663,6 +1663,73 @@ export async function injectConnectionUI({
   };
 }
 
+// Per-connection "Advanced options" disclosure for the feature pages, mirroring
+// the options page (#mzta_conn_adv_btn + #connection_ui_adv_table). The button
+// and the table are built here, so the 6 feature pages need no extra markup.
+// Feature pages host a single connection form, so the document-wide query that
+// moves the .conn_adv rows is safe (unlike custom prompts, see there).
+// The moved rows keep their .specific_integration_sub / conntype_* classes, so
+// the per-provider visibility of _updateVisibility() still reaches them.
+const CONN_ADV_GEAR_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>';
+const CONN_ADV_CHEV_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+
+function parseSvg(svgText) {
+  return document.importNode(new DOMParser().parseFromString(svgText, 'image/svg+xml').documentElement, true);
+}
+
+function setupFeatureConnAdv() {
+  const coreTable = document.getElementById('connection_ui_table');
+  if (!coreTable) return null;
+
+  let btn = document.getElementById('mzta_conn_adv_btn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'mzta_conn_adv_btn';
+    btn.type = 'button';
+    const labelSpan = document.createElement('span');
+    labelSpan.style.cssText = 'display:flex;align-items:center;gap:9px;';
+    labelSpan.appendChild(parseSvg(CONN_ADV_GEAR_SVG));
+    labelSpan.appendChild(document.createTextNode(browser.i18n.getMessage('prefs_advanced_options')));
+    const chev = document.createElement('span');
+    chev.className = 'chev';
+    chev.appendChild(parseSvg(CONN_ADV_CHEV_SVG));
+    btn.appendChild(labelSpan);
+    btn.appendChild(chev);
+    coreTable.after(btn);
+  }
+
+  let advTable = document.getElementById('connection_ui_adv_table');
+  if (!advTable) {
+    advTable = document.createElement('table');
+    advTable.id = 'connection_ui_adv_table';
+    advTable.appendChild(document.createElement('tbody'));
+    btn.after(advTable);
+  }
+  const advBody = advTable.tBodies[0] || advTable.appendChild(document.createElement('tbody'));
+  coreTable.querySelectorAll('tr.conn_adv').forEach(tr => advBody.appendChild(tr));
+
+  const reset = () => {
+    btn.setAttribute('aria-expanded', 'false');
+    advTable.classList.add('hidden');
+  };
+  btn.addEventListener('click', () => {
+    const expanded = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+    advTable.classList.toggle('hidden', expanded);
+  });
+  reset();
+
+  return {
+    reset,
+    // Hidden (and collapsed) while there is nothing to disclose: integration
+    // off, or no provider chosen yet.
+    setVisible: (visible) => {
+      btn.style.display = visible ? '' : 'none';
+      if (!visible) reset();
+    }
+  };
+}
+
 export async function initializeSpecificIntegrationUI({
   prefix,
   promptId,
@@ -1686,6 +1753,9 @@ export async function initializeSpecificIntegrationUI({
   } catch (e) {
       console.error(`Failed to inject connection UI (${prefix})`, e);
   }
+
+  // Move the advanced rows behind the "Advanced options" disclosure.
+  const connAdv = setupFeatureConnAdv();
 
   // 2. Restore Options
   if (restoreOptionsCallback) {
@@ -1744,6 +1814,7 @@ export async function initializeSpecificIntegrationUI({
       if (conntype_row) conntype_row.style.display = checked ? 'table-row' : 'none';
       if (conntype_end_el) conntype_end_el.style.display = checked ? 'table-row' : 'none';
       if (conntype_row) changeConnTypeRowColor(conntype_row, conntype_el);
+      if (connAdv) connAdv.setVisible(checked && !hasNoConnectionSelected(conntype_el.value));
   };
 
   // Check global connection type: when the global connection cannot run this
@@ -1844,6 +1915,8 @@ export async function initializeSpecificIntegrationUI({
 
   // Event Listeners for Inputs
   conntype_el.addEventListener('change', async () => {
+      // Reopen closed on every provider change, like the options page.
+      if (connAdv) connAdv.reset();
       _updateVisibility(use_specific_integration_el.checked);
       if (use_specific_integration_el.checked) await _updatePrompt();
       // A usable connection may have just been chosen: the mandatory flag becomes

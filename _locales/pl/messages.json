@@ -1663,28 +1663,22 @@
         "description": "Option for the reasoning summary dropdown: request a more detailed summary."
     },
     "prefs_level_minimal": {
-        "message": "Minimalny",
-        "description": ""
+        "message": "Minimalny"
     },
     "prefs_level_low": {
-        "message": "Niski",
-        "description": ""
+        "message": "Niski"
     },
     "prefs_level_medium": {
-        "message": "Średni",
-        "description": ""
+        "message": "Średni"
     },
     "prefs_level_high": {
-        "message": "Wysoki",
-        "description": ""
+        "message": "Wysoki"
     },
     "prefs_level_xhigh": {
-        "message": "Bardzo wysoki",
-        "description": ""
+        "message": "Bardzo wysoki"
     },
     "prefs_level_max": {
-        "message": "Maksymalny",
-        "description": ""
+        "message": "Maksymalny"
     },
     "prefs_ollama_temperature_Info": {
         "message": "Temperatura modelu. Zwiększenie temperatury sprawia, że model odpowiada bardziej kreatywnie. Wartość domyślna to 0,8. Zaleca się używanie wartości od 0 do 1."

@@ -187,6 +187,8 @@ export const prefs_default = {
     calendar_enforce_timezone: false,
     calendar_timezone: '',
     calendar_no_selection: false,   // If true do not ask for selection, but use the full prompt
+    calendar_append_email_link: false,  // Append a mid: link to the source email to the event description (added by code, never sent to the AI)
+    task_append_email_link: false,      // Same, for the task description
     spamfilter: false,
     spamfilter_threshold: 70,
     spamfilter_enabled_accounts: [],
@@ -200,6 +202,8 @@ export const prefs_default = {
     summarize_max_messages: 20,          // max number of messages summarized at once (webchat mode); above this the user is warned and the operation is blocked
     summarize_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
     summarize_strip_formatting: false,   // strip HTML/markdown formatting from AI summary
+    summarize_force_lang: false,         // always write the summary in summarize_lang (or default_chatgpt_lang)
+    summarize_lang: '',                  // summary language when summarize_force_lang is on, fallback on default_chatgpt_lang
     summarize_auto_senders: false,       // auto-summarize emails coming from the addresses in the list below
     summarize_auto_senders_list: [],     // sender addresses or domain patterns ("@domain.com", "*@domain.com")
     translate: true,

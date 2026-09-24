@@ -34,24 +34,195 @@ let _customTextArray = [];
 let _currentCustomTextIndex = 0;
 let lastSelectedHtml = "";
 
+// Composer selectors, in priority order (see #890, #920: some users get a different composer)
+const MZTA_PROMPT_SELECTORS = [
+    '#prompt-textarea',
+    'div.ProseMirror[contenteditable="true"]',
+    'form [contenteditable="true"]',
+    'textarea[name="prompt-textarea"]',
+    'form textarea',
+    'main [contenteditable="true"]'
+];
+const MZTA_SHADOW_MAX_NODES = 5000;    // bound for the shadow roots walk
+const MZTA_SHADOW_MAX_ROOTS = 50;
+
+function isElementVisible(el) {
+    if (!el || !el.isConnected || el.hidden) return false;
+    const style = window.getComputedStyle(el);
+    if (!style || style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse') return false;
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+}
+
+function isOwnUiElement(el) {
+    return !!(el.closest && el.closest('.mzta-header-fixed'));
+}
+
+// Walks the open shadow roots, descending into nested ones, visiting at most MZTA_SHADOW_MAX_NODES elements
+function collectOpenShadowRoots() {
+    const roots = [];
+    const queue = [document];
+    let visited = 0;
+    while (queue.length > 0 && visited < MZTA_SHADOW_MAX_NODES && roots.length < MZTA_SHADOW_MAX_ROOTS) {
+        const all = queue.shift().querySelectorAll('*');
+        for (let i = 0; i < all.length && visited < MZTA_SHADOW_MAX_NODES && roots.length < MZTA_SHADOW_MAX_ROOTS; i++) {
+            visited++;
+            const sr = all[i].shadowRoot;
+            if (sr) {
+                roots.push(sr);
+                queue.push(sr);
+            }
+        }
+    }
+    return roots;
+}
+
+function locatePromptInput(includeShadow) {
+    for (const selector of MZTA_PROMPT_SELECTORS) {
+        for (const el of document.querySelectorAll(selector)) {
+            if (!isOwnUiElement(el) && isElementVisible(el)) {
+                doLog("findPromptInput matched selector: " + selector);
+                return el;
+            }
+        }
+    }
+    if (!includeShadow) return null;
+    const shadowRoots = collectOpenShadowRoots();
+    if (shadowRoots.length === 0) return null;
+    for (const selector of MZTA_PROMPT_SELECTORS) {
+        for (const root of shadowRoots) {
+            for (const el of root.querySelectorAll(selector)) {
+                if (isElementVisible(el)) {
+                    doLog("findPromptInput matched selector in shadow root: " + selector);
+                    return el;
+                }
+            }
+        }
+    }
+    return null;
+}
+
+async function findPromptInput(timeoutMs) {     // returns the composer element or null
+    const immediate = locatePromptInput(true);
+    if (immediate) return immediate;
+    return new Promise(resolve => {
+        let done = false;
+        let observer = null;
+        let pollId = null;
+        let timeoutId = null;
+        const finish = (el) => {
+            if (done) return;
+            done = true;
+            if (observer) observer.disconnect();
+            clearInterval(pollId);
+            clearTimeout(timeoutId);
+            resolve(el);
+        };
+        const check = (includeShadow) => {
+            if (done) return;
+            const el = locatePromptInput(includeShadow);
+            if (el) finish(el);
+        };
+        // the shadow roots walk is heavier, so it runs only on the polling ticks
+        observer = new MutationObserver(() => check(false));
+        observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'hidden', 'contenteditable'] });
+        pollId = setInterval(() => check(true), 250);
+        timeoutId = setTimeout(() => {
+            // last resort: the legacy lookup, even if the element does not look visible
+            const legacy = document.getElementById('prompt-textarea');
+            if (legacy) doLog("findPromptInput timeout, falling back to the non-visible #prompt-textarea");
+            finish(legacy);
+        }, timeoutMs);
+    });
+}
+
+// Diagnostics for #890 and #920. Users paste these logs on GitHub: never log page text or the prompt.
+function logComposerDiagnostics() {
+    const diag = {};
+    try {
+        diag.url = location.origin + location.pathname;
+        diag.title = (document.title || '').slice(0, 100);
+        diag.readyState = document.readyState;
+        diag.contenteditable = document.querySelectorAll('[contenteditable]').length;
+        diag.textarea = document.querySelectorAll('textarea').length;
+        diag.iframe = document.querySelectorAll('iframe').length;
+        diag.shadowRoots = collectOpenShadowRoots().length;
+        const candidates = [];
+        for (const el of document.querySelectorAll('textarea, [contenteditable], ' + MZTA_PROMPT_SELECTORS.join(', '))) {
+            if (isOwnUiElement(el)) continue;
+            candidates.push({
+                tag: el.tagName.toLowerCase(),
+                id: el.id || '',
+                name: el.getAttribute('name') || '',
+                class: (el.getAttribute('class') || '').slice(0, 100),
+                visible: isElementVisible(el)
+            });
+            if (candidates.length >= 5) break;
+        }
+        diag.candidates = candidates;
+        diag.loginButton = document.querySelector('button[data-testid*=login]') !== null;
+        diag.authPage = location.pathname.startsWith('/auth/');
+        diag.cloudflare = document.querySelector('#challenge-form, #challenge-running, #challenge-stage, [id^="cf-"], iframe[src*="challenges.cloudflare.com"], script[src*="challenges.cloudflare.com"]') !== null
+            || (document.title || '').toLowerCase().indexOf('just a moment') !== -1;
+        diag.userAgent = navigator.userAgent;
+    } catch (err) {
+        diag.error = String(err);
+    }
+    console.warn("[ThunderAI] Diagnostics: " + JSON.stringify(diag));
+}
+
+// Converts the HTML prompt (one <p> per line) to plain text for a real <textarea>
+function htmlToPlainText(html) {
+    const blockTags = ['P', 'DIV', 'LI', 'UL', 'OL', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'PRE', 'TR', 'TABLE', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER'];
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    let out = '';
+    const walk = (node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            out += node.nodeValue;
+            return;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+        if (node.tagName === 'BR') {
+            out += '\\n';
+            return;
+        }
+        const isBlock = blockTags.includes(node.tagName);
+        if (isBlock && out !== '' && !out.endsWith('\\n')) out += '\\n';
+        const startLen = out.length;
+        node.childNodes.forEach(walk);
+        // an empty block is an empty line; a block ending with a nested block already ended its line
+        if (isBlock && (out.length === startLen || !out.endsWith('\\n'))) out += '\\n';
+    };
+    doc.body.childNodes.forEach(walk);
+    if (out.endsWith('\\n')) out = out.slice(0, -1);
+    return out;
+}
+
 async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button not found, -2 textarea not found
-    let textArea = document.getElementById('prompt-textarea')
+    let textArea = await findPromptInput(15000);
     //check if the textarea has been found
     if(!textArea) {
         console.error("[ThunderAI] Textarea not found!");
+        logComposerDiagnostics();
         return -2;
     }
-    // from sept 2024
-    // Remove existing content
-    while (textArea.firstChild) {
-        textArea.removeChild(textArea.firstChild);
+    if (textArea.tagName === 'TEXTAREA') {
+        // a real textarea: set the value with the native setter so React notices the change
+        const nativeSetter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
+        nativeSetter.call(textArea, htmlToPlainText(msg));
+    } else {
+        // from sept 2024
+        // Remove existing content
+        while (textArea.firstChild) {
+            textArea.removeChild(textArea.firstChild);
+        }
+        // Parse msg as HTML and append its nodes
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(msg, 'text/html');
+        Array.from(doc.body.childNodes).forEach(node => {
+            textArea.appendChild(node.cloneNode(true));
+        });
     }
-    // Parse msg as HTML and append its nodes
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(msg, 'text/html');
-    Array.from(doc.body.childNodes).forEach(node => {
-        textArea.appendChild(node.cloneNode(true));
-    });
     textArea.dispatchEvent(new Event('input', { bubbles: true }));
     //wait for the button to change from the audio button to the send button (from nov-2024)
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -669,7 +840,8 @@ async function doProceed(message, customText = ''){
                 doRetry();
             });
             curr_model_warn.insertAdjacentElement('afterend', btn_retry);
-            break;
+            // nothing was sent: wait for the retry instead of stacking another idle-wait loop
+            return;
     }
     let forcecompletionHintTimeout;
     if(send_result == 0){
@@ -686,10 +858,14 @@ async function doProceed(message, customText = ''){
 
 function doRetry(){
     document.getElementById('mzta-model_warn').style.display = 'none';
-    document.getElementById('mzta-btn_retry').remove();
+    document.getElementById('mzta-btn_retry')?.remove();
     document.getElementById('mzta-loading').style.display = 'inline-block';
     document.getElementById('mzta-curr_msg').textContent = browser.i18n.getMessage("chatgpt_win_working");
-    doProceed(current_message);
+    if (_customTextArray.length > 0) {
+        doProceed(current_message, _customTextArray);
+    } else {
+        doProceed(current_message);
+    }
 }
 
 async function showForceCompletionHint(){

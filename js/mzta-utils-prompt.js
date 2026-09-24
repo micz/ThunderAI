@@ -132,14 +132,36 @@ export const taPromptUtils = {
         return chatgpt_lang;
     },
 
-    
+    // Language statements for the summary prompt:
+    // - chatgpt_lang: passed to every preparePrompt() call, as it has always been.
+    //   With summarize_force_lang off it is exactly getDefaultLang(prompt), so a
+    //   define_response_lang set on prompt_summarize is still honoured; with it on
+    //   it is '', so it can't contradict the forced language.
+    // - force_lang_statement: appended ONCE at the very end of the whole prompt,
+    //   on its own line. Not after each email: preparePrompt() glues chatgpt_lang to
+    //   the email body with a space, where it reads as part of the email.
+    //   The language is summarize_lang, falling back on default_chatgpt_lang; if
+    //   both are empty nothing is forced. getDefaultLang() is deliberately not used
+    //   here: its reply_same_lang fallback is the opposite of forcing a language.
+    async getSummaryLang(curr_prompt){
+        let prefs = await mztaPrefs.getPrefs(['summarize_force_lang', 'summarize_lang', 'default_chatgpt_lang']);
+        if(!prefs.summarize_force_lang){
+            return { chatgpt_lang: await taPromptUtils.getDefaultLang(curr_prompt), force_lang_statement: '' };
+        }
+        let lang = String(prefs.summarize_lang ?? '').trim() || String(prefs.default_chatgpt_lang ?? '').trim();
+        if(lang === ''){
+            return { chatgpt_lang: '', force_lang_statement: '' };
+        }
+        return { chatgpt_lang: '', force_lang_statement: browser.i18n.getMessage("prompt_summarize_force_lang") + " " + lang + "." };
+    },
+
     async buildSummaryPrompt(messageDataArray) {
         const specialPrompts = await getSpecialPrompts();
         const prompt = specialPrompts.find(p => p.id === 'prompt_summarize');
         const prompt_email = specialPrompts.find(p => p.id === 'prompt_summarize_email_template');
         const prompt_email_separator = specialPrompts.find(p => p.id === 'prompt_summarize_email_separator');
 
-        const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
+        const { chatgpt_lang, force_lang_statement } = await taPromptUtils.getSummaryLang(prompt);
 
         const prompt_string = await taPromptUtils.preparePrompt({
             curr_prompt: prompt,
@@ -181,7 +203,10 @@ export const taPromptUtils = {
         }
 
         const messages_string = messages_list.join(prompt_email_separator_string);
-        const promptText = prompt_string + prompt_email_separator_string + messages_string;
+        let promptText = prompt_string + prompt_email_separator_string + messages_string;
+        if (force_lang_statement !== '') {
+            promptText += "\n\n" + force_lang_statement;
+        }
 
         return { promptText, promptInfo: prompt };
     },

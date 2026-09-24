@@ -321,6 +321,34 @@ function createThreeDotsMenu(isDark, menuItems, panelColors) {
     return wrapper;
 }
 
+// The headerMessageId of the message this document displays, asked once to the background
+// (null when unknown, e.g. in a compose window). A message display script runs in a fresh
+// document per displayed message, so this never changes for the life of the script.
+// The generating panels and their hide commands carry the headerMessageId they belong to
+// and are checked against it: a panel meant for another message is never drawn here, so it
+// cannot be left spinning when that message's result is (correctly) not delivered to us.
+const _mztaDisplayedMsgId = browser.runtime.sendMessage({ command: "getDisplayedMessageId" }).catch(() => null);
+
+// Accept a panel command only when it names a message and that message is ours (or ours is
+// unknown — then the background's own check is the only guard, as before).
+function _isForThisMessage(headerMessageId, docId) {
+    return !!headerMessageId && (!docId || docId === headerMessageId);
+}
+
+// Those checks wait for _mztaDisplayedMsgId, so they complete asynchronously while the
+// result commands (showSummary, showSummaryButton, ...) act synchronously. Until the lookup
+// resolves, a result arriving after the generating command would otherwise be painted over
+// by the late spinner. Every result command bumps its feature's counter; a generating
+// command that sees the counter moved on the way does nothing.
+const _mztaPanelSeq = { summary: 0, translation: 0 };
+
+// A message change replaces the whole document, so panels never outlive their message. The
+// one document that survives is an already-open tab when the extension is reloaded: the
+// script is injected again (tabs.executeScript in mzta-background.js) into a DOM that may
+// still hold a spinner drawn by the previous instance, whose generation died with it.
+_removePanel('mzta-summary-generating');
+_removePanel('mzta-translation-generating');
+
 browser.runtime.onMessage.addListener((message) => {
 switch (message.command) {
   case "getSelectedText": {
@@ -1204,6 +1232,7 @@ switch (message.command) {
   }
 
   case "showSummary": {
+    _mztaPanelSeq.summary++;
     _removePanel('mzta-summary-generating');
     _removePanel('mzta-summary-banner');
     _removeToolbarItem('mzta-toolbar-summary');
@@ -1389,7 +1418,11 @@ switch (message.command) {
   }
 
   case "showSummaryGenerating": {
-    if (document.getElementById('mzta-summary-generating')) return Promise.resolve(true);
+    const seq = _mztaPanelSeq.summary;
+    return _mztaDisplayedMsgId.then(docId => {
+    if (seq !== _mztaPanelSeq.summary) return false;
+    if (!_isForThisMessage(message.headerMessageId, docId)) return false;
+    if (document.getElementById('mzta-summary-generating')) return true;
 
     _removePanel('mzta-summary-banner');
     _removeToolbarItem('mzta-toolbar-summary');
@@ -1417,10 +1450,21 @@ switch (message.command) {
     genContainer.appendChild(genTitle);
 
     _addPanel('mzta-summary-generating', genContainer);
-    return Promise.resolve(true);
+    return true;
+    });
+  }
+
+  case "hideSummaryGenerating": {
+    // Without a headerMessageId the caller does not know which message it was: clear anyway.
+    return _mztaDisplayedMsgId.then(docId => {
+      if (message.headerMessageId && !_isForThisMessage(message.headerMessageId, docId)) return false;
+      _removePanel('mzta-summary-generating');
+      return true;
+    });
   }
 
   case "showSummaryButton": {
+    _mztaPanelSeq.summary++;
     if (document.getElementById('mzta-toolbar-summary')) return Promise.resolve(true);
 
     const colors = _getThemeColors();
@@ -1452,6 +1496,7 @@ switch (message.command) {
   }
 
   case "showTranslation": {
+    _mztaPanelSeq.translation++;
     _removePanel('mzta-translation-generating');
     _removePanel('mzta-translation-banner');
     _removeToolbarItem('mzta-toolbar-translation');
@@ -1639,7 +1684,11 @@ switch (message.command) {
   }
 
   case "showTranslationGenerating": {
-    if (document.getElementById('mzta-translation-generating')) return Promise.resolve(true);
+    const seq = _mztaPanelSeq.translation;
+    return _mztaDisplayedMsgId.then(docId => {
+    if (seq !== _mztaPanelSeq.translation) return false;
+    if (!_isForThisMessage(message.headerMessageId, docId)) return false;
+    if (document.getElementById('mzta-translation-generating')) return true;
 
     _removePanel('mzta-translation-banner');
     _removeToolbarItem('mzta-toolbar-translation');
@@ -1666,10 +1715,21 @@ switch (message.command) {
     genContainer.appendChild(genTitle);
 
     _addPanel('mzta-translation-generating', genContainer);
-    return Promise.resolve(true);
+    return true;
+    });
+  }
+
+  case "hideTranslationGenerating": {
+    // Same rule as hideSummaryGenerating.
+    return _mztaDisplayedMsgId.then(docId => {
+      if (message.headerMessageId && !_isForThisMessage(message.headerMessageId, docId)) return false;
+      _removePanel('mzta-translation-generating');
+      return true;
+    });
   }
 
   case "showTranslationButton": {
+    _mztaPanelSeq.translation++;
     _removePanel('mzta-translation-generating');
     if (document.getElementById('mzta-toolbar-translation')) return Promise.resolve(true);
 

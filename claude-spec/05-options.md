@@ -210,6 +210,8 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `calendar_enforce_timezone` | `false` | Force specific timezone |
 | `calendar_timezone` | `''` | IANA timezone id to enforce (see note below) |
 | `calendar_no_selection` | `false` | Skip selection prompt |
+| `calendar_append_email_link` | `false` | Append a `mid:` link to the source email to the event description (added by code after the response, never sent to the AI — see [02-prompts.md](02-prompts.md#calendar-event--task-link-to-the-original-email)). Deliberately **not** prefixed `get_calendar_event_`, which is the per-feature integration prefix |
+| `task_append_email_link` | `false` | Same, for the task description. Deliberately **not** prefixed `get_task_` |
 | `spamfilter` | `false` | Enable spam filter |
 | `spamfilter_threshold` | `70` | Spam confidence threshold (%) |
 | `spamfilter_enabled_accounts` | `[]` | Accounts where spam filter is active |
@@ -223,6 +225,8 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `summarize_max_display_length` | `0` | Maximum characters shown in inline summary before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
 | `summarize_max_messages` | `20` | Maximum number of messages summarized at once in webchat mode. Above this limit `processEmails()` (`mzta-background.js`) blocks the operation and shows the `summarize_too_many_messages` warning. `0` = no limit. Only applies to the webchat/multi-message flow; inline single-message summaries are unaffected. Exposed in the summarize settings page. |
 | `summarize_strip_formatting` | `false` | Strip HTML and Markdown formatting from AI-generated summaries, showing plain text only. |
+| `summarize_force_lang` | `false` | Force the summary language. When on, `buildSummaryPrompt()` appends `prompt_summarize_force_lang + " " + lang + "."` once, on its own line, at the end of the whole prompt (see [02-prompts.md](02-prompts.md)). Off = exactly the previous behaviour (`getDefaultLang(prompt_summarize)`). Cached summaries are not regenerated. |
+| `summarize_lang` | `''` | Summary language used when `summarize_force_lang` is on. Falls back to `default_chatgpt_lang`; if both are empty nothing is appended (the `reply_same_lang` fallback of `getDefaultLang()` is never used). Plain `type="text"` input, not a textarea, so `saveOptions()` does not run `normalizeStringList()` on it. |
 | `summarize_auto_senders` | `false` | Auto-summarize emails whose sender matches `summarize_auto_senders_list`. **Independent of `summarize_auto`** — it works even when `summarize_auto = 0`. See [01-architecture.md](01-architecture.md#data-flow-auto-summarize-by-sender-address-list) for the two triggers. |
 | `summarize_auto_senders_list` | `[]` | Sender addresses / domain patterns matched by `matchAddressList()` (`js/mzta-utils.js`): exact address, `@domain.com`, or `*@domain.com`. Stored as an array via `normalizeStringList(value, 2)`; tested with `hasAddressListEntries()` (see the note below the table). |
 | `translate` | `true` | Enable email translation |
@@ -343,6 +347,7 @@ The summarize settings page provides:
 4. **Max display length** (`summarize_max_display_length`) — number input, limits inline summary text to N characters. `0` = no limit. When truncated, a "See more"/"See less" toggle link is appended.
 5. **Max messages** (`summarize_max_messages`) — number input, caps how many messages can be summarized at once in webchat mode. Above the limit the operation is blocked with the `summarize_too_many_messages` warning. `0` = no limit.
 6. **Strip formatting** (`summarize_strip_formatting`) — checkbox, removes HTML/Markdown formatting from AI summary responses, displaying plain text only. Default: off.
+   - **Force summary language** (`summarize_force_lang`) — checkbox, followed by the `summarize_lang` text field inside `#summarize_lang_container`, which `updateForceLangState()` hides while the toggle is off (on load, on toggle change, at the end of `restoreOptions()`). Below the main prompt editor, `#summarize_info_additional_statements` previews the statement that will be appended, computed by the same `taPromptUtils.getSummaryLang()` used by `buildSummaryPrompt()`, and is hidden when nothing is appended. It is refreshed from `browser.storage.onChanged` (keys `summarize_force_lang`, `summarize_lang`, `default_chatgpt_lang`), not from the controls' `change` event, because `saveOptions()` does not await `setPref()`. The two other `.summarize_info_additional_statements` divs (email template, separator) are unused.
 7. **Automatic summary sender list** — its own `.mzta_section` card (see the visual-design note below), holding the `summarize_auto_senders` toggle and the `summarize_auto_senders_list` textarea. The textarea carries **no** `.option-input` class: like the spamfilter skip list it is saved explicitly by its own Save button through `normalizeStringList(value, 2)`, with the `#auto_senders_unsaved` indicator handled exactly as in `pages/spamfilter/mzta-spamfilter.js`. `updateAutoSendersState()` disables the textarea and its Save button when the toggle is off, and disables the **whole card** (plus showing an explanatory note) when `summarize_auto === 3`, since that mode already summarizes every incoming message; it is called on load, on every toggle change, and from `updateDisplayModeConstraint()`.
 8. **Three editable prompts** (used by context menu summarize and webchat mode):
    - Summarize instruction prompt (`prompt_summarize`)
@@ -504,10 +509,21 @@ fields in `#mzta_conn_panel`. Each provider's fields are tiered into **core** an
 **Field tiering.** In the shared template inside `injectConnectionUI()`
 (`pages/_lib/connection-ui.js`), every advanced field row carries the marker class
 `conn_adv` in addition to its `conntype_<provider>` class. Core rows carry no marker.
-The `conn_adv` class is inert on the 6 feature pages (they render no toggle button),
-so there every advanced field shows flat. The **custom prompts page does render one
+Every page hosting the connection UI hides the `conn_adv` rows behind an "Advanced
+options" disclosure: options page and setup wizard (static markup, see below), the 6
+feature pages (built at runtime, see **Feature pages** below) and custom prompts.
+The **custom prompts page renders one
 per form** (`.conn_adv_btn` + `.conn_adv_table`, one pair in the add form and one per
-list row): because several editors can be open at once, its relocation helper
+list row). The button carries the same markup as the options page one (gear + label,
+`.chev` chevron) and is restyled in `mzta-custom-prompts.css` with that page's own
+tokens (`--accent`, `--border2`), since the page does not link `mzta-design.css`.
+The same file also neutralises the saturated legacy `tr.conntype_*` row shading from
+`connection-ui.css`. Rows go transparent with thin separators, and the whole host
+(`#api_ui_container` / `.api_additional_info`) takes the soft options-page provider tint. That
+tint is selected with `:has(tr[id$="_tr"].conntype_<provider>)`, because the connection-type row
+is the only one whose class follows the select. Those rules also set `--tint-border` /
+`--tint-accent`, which the `.conn_adv_btn` uses for its border and text, as on the options page.
+With no provider selected it falls back to `--border2` / `--accent`. Because several editors can be open at once, its relocation helper
 `relocateConnAdvRows(scopeEl)` and `showAdvConnectionOptions(scopeEl, connType)` are
 **scoped to one form**, unlike the options page's document-wide
 `querySelectorAll('#connection_ui_table tr.conn_adv')` — a global query there would
@@ -577,8 +593,9 @@ per-provider `--tint-border` / `--tint-accent`, falling back to `--fieldLine` /
 `--accent`); its chevron rotates 180° when expanded via the `[aria-expanded="true"]`
 attribute.
 
-**Show/hide mechanism.** The advanced rows are **moved at runtime** (options page only,
-right after `injectConnectionUI()` in `options/mzta-options.js`) out of
+**Show/hide mechanism.** The advanced rows are **moved at runtime** (on the options page
+right after `injectConnectionUI()` in `options/mzta-options.js`; the wizard and feature pages
+do the same, see their sections) out of
 `#connection_ui_table` and into a second table `#connection_ui_adv_table` that sits
 **below** the button. Because that table follows the button in the DOM, expanding it
 opens the advanced fields *below* the button (the button stays fixed) — exactly like the
@@ -605,6 +622,22 @@ provider switch). The button's `click` handler flips `aria-expanded` and toggles
 UI** — no preference is persisted, so reopening the options page always starts collapsed.
 The connection-test "back to idle" `input`/`change` listeners are bound to **both** tables
 so editing an advanced field also invalidates a prior test result.
+
+**Feature pages.** The 6 feature pages (addtags, spamfilter, summarize, translate,
+get-calendar-event, get-task) carry no disclosure markup. `initializeSpecificIntegrationUI()`
+(`pages/_lib/connection-ui.js`) calls `setupFeatureConnAdv()` right after
+`injectConnectionUI()`. That helper builds `#mzta_conn_adv_btn` (same gear/chevron SVGs,
+parsed with `DOMParser`, label from `prefs_advanced_options`) and `#connection_ui_adv_table`
+right after `#connection_ui_table`, reusing them if the page already has them. It then moves the
+`tr.conn_adv` rows there; a document-wide query is safe because a feature page hosts a single
+form. No separate per-provider sync is needed: the moved rows keep `.specific_integration_sub`
++ `conntype_*`, so `_updateVisibility()` (document-wide) still shows/hides them. The same holds
+for the document-wide `.specific_integration_sub .option-input` save listeners. `_updateVisibility()`
+also shows the button only when the specific integration is on **and** a provider is selected;
+otherwise it hides and collapses it. The disclosure collapses on every connection type change.
+Because `_updateVisibility()` sets an inline `display:table-row`, `mzta-design.css` re-asserts
+`display:block !important` on `body.mzta_feature_page #connection_ui_adv_table tr[style*="table-row"]`,
+the same override each feature page CSS applies to `#connection_ui_table`.
 
 ### Connection Settings Panel — Connection Test Status Strip
 
@@ -986,6 +1019,14 @@ stored stays readable no matter what the connection is now. Note these handlers 
 message-display script injection** (the content script fires `initSummary` / `initTranslation` at
 top level); there is no `onMessageDisplayed` listener and no `storage.onChanged` in the content
 script, so a message already open does not pick up a settings change until it is reopened.
+
+**Deleting a result redraws its button.** The "Delete" entry of the summary / translation banner
+menu sends `removeSummary` / `removeTranslation`; after clearing the stored field the background
+calls `_restoreSummaryButton()` / `_restoreTranslationButton()`, which send `showSummaryButton` /
+`showTranslationButton` again under the same gates (`summarize` / `translate` enabled, `*_auto`
+not `0`, `isApiUsableConnection()`). Without this the banner vanished and the only way back was the
+menu. Auto mode (`2`) also gets the button, not a regeneration: re-running the automatic branch
+would immediately undo the delete.
 
 **`summarize_auto` / `translate_auto` must never be stored as `null`.** Their `saveOptions()` cases
 run `parseInt(element.value, 10)`, and an empty select (`selectedIndex === -1`, which

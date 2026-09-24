@@ -2434,28 +2434,22 @@
         "message": "Detalhado"
     },
     "prefs_level_minimal": {
-        "message": "Mínimo",
-        "description": ""
+        "message": "Mínimo"
     },
     "prefs_level_low": {
-        "message": "Baixo",
-        "description": ""
+        "message": "Baixo"
     },
     "prefs_level_medium": {
-        "message": "Médio",
-        "description": ""
+        "message": "Médio"
     },
     "prefs_level_high": {
-        "message": "Alto",
-        "description": ""
+        "message": "Alto"
     },
     "prefs_level_xhigh": {
-        "message": "Muito alto",
-        "description": ""
+        "message": "Muito alto"
     },
     "prefs_level_max": {
-        "message": "Máximo",
-        "description": ""
+        "message": "Máximo"
     },
     "menu_order_reset_all": {
         "message": "Resetar tudo"

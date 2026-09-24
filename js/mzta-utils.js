@@ -1037,6 +1037,30 @@ export function normalizeDateTimeString(str) {
   return `${y}${mo}${d}T${h}${mi}${s}${z}`;
 }
 
+// RFC 2392 mid: URI for a MessageHeader.headerMessageId, '' when unusable.
+// The id is NOT percent-encoded, on purpose: Thunderbird builds its own links as
+// `mid:${messageId}` (msgHdrView.js copyMessageLink, bug 1968470) and opens them
+// with openMessageForMessageId(href.slice(4)) - an exact match, no decoding
+// (MailLinkParent / calApplicationUtils.js, bug 264270). An encoded id such as
+// "a%2Bb@x" would never be found. Brackets are stripped defensively only.
+export function buildMessageMidLink(headerMessageId) {
+  if (typeof headerMessageId !== 'string') return '';
+  const id = headerMessageId.trim().replace(/^</, '').replace(/>$/, '').trim();
+  return id === '' ? '' : 'mid:' + id;
+}
+
+// Appends "label link" to data_obj.description (calendar event / task objects),
+// AFTER the AI response has been parsed: the link is never sent to the AI.
+// Returns false, leaving the description untouched, when no link can be built.
+export function appendMessageLinkToDescription(data_obj, message, label) {
+  const link = buildMessageMidLink(message?.headerMessageId);
+  if (link === '') return false;
+  const link_line = label + ' ' + link;
+  const desc = (typeof data_obj.description === 'string') ? data_obj.description.trim() : '';
+  data_obj.description = (desc !== '') ? desc + '\n\n' + link_line : link_line;
+  return true;
+}
+
 export function isAPIKeyValue(id){
   return id.endsWith('_api_key');
 }
@@ -1292,7 +1316,15 @@ export async function* getMessages(list) {
   }
 
   while (page.id) {
-    page = await messenger.messages.continueList(page.id);
+    // A MessageList id expires (and becomes invalid once the list is exhausted elsewhere):
+    // log it and stop here, keeping what was already yielded, instead of throwing into an
+    // unhandled rejection in the middle of the caller's for-await loop.
+    try {
+      page = await messenger.messages.continueList(page.id);
+    } catch (e) {
+      console.error("[ThunderAI] getMessages: continueList(" + page.id + ") failed, the message list is truncated: ", e);
+      return;
+    }
     for (let message of page.messages) {
       yield message;
     }

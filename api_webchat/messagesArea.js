@@ -1019,6 +1019,19 @@ class MessagesArea extends HTMLElement {
         messageElement.classList.add('message', type);
         messageElement.textContent = messageText;
         body.appendChild(messageElement);
+        if (type === 'error') {
+            // An error ends the exchange with no answer to act on, but the user
+            // still needs a way out: give the error turn the full-bar slot with
+            // a Close-only bar. The previous answer's bar degrades to its icon
+            // toolbar as usual. No _mztaToolsArgs is stashed, so when the next
+            // answer arrives _degradeFullActionBar() simply removes this bar.
+            this._degradeFullActionBar();
+            const actionButtons = document.createElement('div');
+            actionButtons.classList.add('action-bar');
+            actionButtons.appendChild(this._buildCloseButton());
+            body.appendChild(actionButtons);
+            this._lastFullBarTurn = this._currentTurnEl;
+        }
         // This is a terminal message (typically an error), not a streaming
         // turn: close it so the next answer starts its own.
         this._currentTurnEl = null;
@@ -1277,12 +1290,7 @@ class MessagesArea extends HTMLElement {
         // "use this answer" split button
         const splitButton = this._buildUseThisAnswerButton(promptData, reply_type_pref, fullTextHTMLAtAssignment, turn);
 
-        const closeButton = document.createElement('button');
-        closeButton.textContent = browser.i18n.getMessage("chatgpt_win_close");
-        closeButton.classList.add('close_btn', 'mzta-btn-tertiary');
-        closeButton.addEventListener('click', async () => {
-            browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id}).catch(() => {});    // close window
-        });
+        const closeButton = this._buildCloseButton();
         if(promptData.action != "0") {
             actionButtons.appendChild(splitButton);
             selectionInfo.style.display = "block"; // show selection info
@@ -1322,6 +1330,16 @@ class MessagesArea extends HTMLElement {
         // no-op while the user sits at the anchored prompt. Refresh here so the
         // button's state is never left over from before the bar existed.
         this._updateJumpButton();
+    }
+
+    _buildCloseButton() {
+        const closeButton = document.createElement('button');
+        closeButton.textContent = browser.i18n.getMessage("chatgpt_win_close");
+        closeButton.classList.add('close_btn', 'mzta-btn-tertiary');
+        closeButton.addEventListener('click', async () => {
+            browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id}).catch(() => {});    // close window
+        });
+        return closeButton;
     }
 
     // Swap the full action bar of the previously-newest answer for the compact

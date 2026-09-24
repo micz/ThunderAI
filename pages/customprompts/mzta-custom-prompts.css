@@ -1223,6 +1223,40 @@ input.input_additional[type="text"] {
     margin-bottom: 6px;
 }
 
+/* ---- Provider tint, as on the options page ----
+   connection-ui.css paints every injected conntype_* row with the saturated
+   legacy colour (!important), so the panel read as a stack of loud blocks on
+   top of the blue --api-bg. Here the rows go transparent (thin separators
+   instead) and the whole panel takes a soft tint of the selected provider.
+   The provider is read from the connection-type row (`<selectId>_tr`), the only
+   row whose conntype_* class follows the select (changeConnTypeRowColor); the
+   other rows carry a fixed one, hidden or not, so they can't drive :has().
+   No provider selected (no API override) ⇒ no class ⇒ the plain --api-bg. */
+#api_ui_container tr[class*="conntype_"],
+.api_additional_info tr[class*="conntype_"] {
+    background: transparent !important;
+    border-radius: 0;
+    border-top: 1px solid var(--tint-line, var(--border2));
+}
+#api_ui_container tr[id$="_tr"],
+.api_additional_info tr[id$="_tr"] { border-top: none; }
+
+#api_ui_container, .api_additional_info { --tint-line: rgba(0,0,0,.10); }
+#api_ui_container:has(tr[id$="_tr"].conntype_chatgpt_api),       .api_additional_info:has(tr[id$="_tr"].conntype_chatgpt_api)       { background: rgba(10,83,214,.08) !important;  --tint-line: rgba(10,83,214,.25); --tint-border: rgba(10,83,214,.40); --tint-accent: rgb(10,83,214); }
+#api_ui_container:has(tr[id$="_tr"].conntype_ollama_api),        .api_additional_info:has(tr[id$="_tr"].conntype_ollama_api)        { background: rgba(31,122,46,.08) !important;  --tint-line: rgba(31,122,46,.25); --tint-border: rgba(31,122,46,.40); --tint-accent: rgb(31,122,46); }
+#api_ui_container:has(tr[id$="_tr"].conntype_openai_comp_api),   .api_additional_info:has(tr[id$="_tr"].conntype_openai_comp_api)   { background: rgba(122,43,191,.08) !important; --tint-line: rgba(122,43,191,.25); --tint-border: rgba(122,43,191,.40); --tint-accent: rgb(122,43,191); }
+#api_ui_container:has(tr[id$="_tr"].conntype_google_gemini_api), .api_additional_info:has(tr[id$="_tr"].conntype_google_gemini_api) { background: rgba(150,120,12,.08) !important; --tint-line: rgba(150,120,12,.25); --tint-border: rgba(150,120,12,.40); --tint-accent: rgb(150,120,12); }
+#api_ui_container:has(tr[id$="_tr"].conntype_anthropic_api),     .api_additional_info:has(tr[id$="_tr"].conntype_anthropic_api)     { background: rgba(168,20,80,.08) !important;  --tint-line: rgba(168,20,80,.25); --tint-border: rgba(168,20,80,.40); --tint-accent: rgb(168,20,80); }
+
+@media (prefers-color-scheme: dark) {
+    #api_ui_container, .api_additional_info { --tint-line: rgba(255,255,255,.10); }
+    #api_ui_container:has(tr[id$="_tr"].conntype_chatgpt_api),       .api_additional_info:has(tr[id$="_tr"].conntype_chatgpt_api)       { background: rgba(10,83,214,.20) !important;  --tint-line: rgba(10,83,214,.45); --tint-border: rgba(10,83,214,.55); --tint-accent: rgb(120,171,244); }
+    #api_ui_container:has(tr[id$="_tr"].conntype_ollama_api),        .api_additional_info:has(tr[id$="_tr"].conntype_ollama_api)        { background: rgba(31,122,46,.20) !important;  --tint-line: rgba(31,122,46,.45); --tint-border: rgba(31,122,46,.55); --tint-accent: rgb(154,196,161); }
+    #api_ui_container:has(tr[id$="_tr"].conntype_openai_comp_api),   .api_additional_info:has(tr[id$="_tr"].conntype_openai_comp_api)   { background: rgba(122,43,191,.20) !important; --tint-line: rgba(122,43,191,.45); --tint-border: rgba(122,43,191,.55); --tint-accent: rgb(195,163,226); }
+    #api_ui_container:has(tr[id$="_tr"].conntype_google_gemini_api), .api_additional_info:has(tr[id$="_tr"].conntype_google_gemini_api) { background: rgba(150,120,12,.20) !important; --tint-line: rgba(150,120,12,.45); --tint-border: rgba(150,120,12,.55); --tint-accent: rgb(208,194,140); }
+    #api_ui_container:has(tr[id$="_tr"].conntype_anthropic_api),     .api_additional_info:has(tr[id$="_tr"].conntype_anthropic_api)     { background: rgba(168,20,80,.20) !important;  --tint-line: rgba(168,20,80,.45); --tint-border: rgba(168,20,80,.55); --tint-accent: rgb(216,150,177); }
+}
+
 .api_additional_info_toggle {
     text-align: center;
     padding: 5px;
@@ -1250,32 +1284,37 @@ input.input_additional[type="text"] {
    .conn_adv_table by relocateConnAdvRows(), so the panel opens *below* this
    button and the button itself stays put. `hidden` is set from JS when the
    selected provider exposes no advanced field; the attribute alone would be
-   overridden by the display below, hence the [hidden] guard. */
+   overridden by the display below, hence the [hidden] guard.
+   Looks like the options page #mzta_conn_adv_btn (gear + label on the left,
+   chevron on the right, provider-tinted via the --tint-border / --tint-accent
+   set by the provider tint rules above), restated here since this page does
+   not link mzta-design.css. */
 .conn_adv_btn {
-    display: block;
     width: 100%;
-    margin-top: 8px;
-    padding: 5px;
-    border: none;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 9px 12px;
+    background: transparent;
+    border: 1.5px solid var(--tint-border, var(--border2));
     border-radius: 8px;
-    background: var(--api-hover);
-    color: var(--text);
+    color: var(--tint-accent, var(--accent));
     font: inherit;
-    text-align: center;
+    font-size: 12.5px;
+    font-weight: 700;
     cursor: pointer;
 }
 
 .conn_adv_btn[hidden] { display: none; }
 
-.conn_adv_btn:hover { text-decoration: underline; }
+.conn_adv_btn:hover { border-color: var(--tint-accent, var(--accent)); }
 
-.conn_adv_btn::after {
-    content: ' \25BE';   /* ▾ collapsed */
-}
-
-.conn_adv_btn[aria-expanded="true"]::after {
-    content: ' \25B4';   /* ▴ expanded */
-}
+.conn_adv_btn .chev { display: inline-flex; }
+.conn_adv_btn .chev svg { transition: transform .2s; }
+.conn_adv_btn[aria-expanded="true"] .chev svg { transform: rotate(180deg); }
 
 /* Same stacked treatment as the main injected table above. */
 .conn_adv_table {

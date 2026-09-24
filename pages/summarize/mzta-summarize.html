@@ -109,6 +109,23 @@
                         <span class="track"></span>
                     </label>
                 </div>
+
+                <!-- force summary language -->
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_summarize_force_lang__</div>
+                        <div class="feature_desc">__MSG_prefs_OptionText_summarize_force_lang_Info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="summarize_force_lang" name="summarize_force_lang" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+                <!-- summary language override, shown only when summarize_force_lang is on -->
+                <div class="mzta_field hidden" id="summarize_lang_container">
+                    <input type="text" id="summarize_lang" name="summarize_lang" class="option-input" />
+                    <span class="mzta_help">__MSG_prefs_OptionText_summarize_lang_Info__</span>
+                </div>
             </div>
 
             <!-- AUTO-SUMMARIZE SENDERS -->
@@ -155,7 +172,7 @@
                         <textarea id="summarize_prompt_text" rows="15" class="editor"></textarea>
                         <ul class="autocomplete-list hidden"></ul>
                     </div>
-                    <div class="summarize_info_additional_statements"></div>
+                    <div id="summarize_info_additional_statements" class="summarize_info_additional_statements feature_desc"></div>
                     <div class="btn_div">
                         <button id="btn_reset_prompt" class="btn_secondary" disabled>__MSG_reset_default__</button>
                         <button id="btn_save_prompt" class="btn_primary" disabled>__MSG_save__</button>

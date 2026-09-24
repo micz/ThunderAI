@@ -314,6 +314,15 @@ message: ids are per-folder and can be reused after a delete + compaction. (a) r
 the same reason: a caller that resolved the message earlier may now hold a stale reference.
 A mismatch falls through to the next route rather than returning the wrong message.
 
+**A falsy `headerMessageId` returns `null` at once**, before route (a). Handed to (d) it would be
+worse than slow: the schema drops an `undefined` / empty property, so `query()` runs with *no
+filter*, matches every message of every account, and `messages[0]` is an arbitrary message from
+an arbitrary folder — summarized in place of the real one. Reaching (d) at all is logged with
+`taLog.warn()`, since no normal user-facing path should get there. The three generators
+(`_generateSummaryForMessage`, `_generateTranslationForMessage`, `_generateSpamReportForMessage`)
+also bail out on a falsy id **before** `setProcessing()` / `saveError()`, so no store is ever
+keyed on `undefined`.
+
 The generators keep their own "Message not found" handling: `_resolveMessage()` returns `null`
 and the caller runs its existing `saveError()` / `_sendIfCurrent()` / `taWorkingStatus.stopWorking()`
 bookkeeping unchanged.
@@ -343,11 +352,60 @@ already-saved cache is unaffected, so revisiting the message later shows the cor
 on cache hit. This generalizes the same displayed-message check already used by
 `updateSpamPanel()`.
 
-The transient *loading* indicators (`showSummaryGenerating`, `showTranslationGenerating`,
-`showSpamCheckInProgress`) are intentionally **not** guarded — they are not keyed to a
-specific result, are idempotent in the content script, and are quickly replaced; guarding
-them would add latency without preventing wrong-content display. That is the *staleness*
-question; their *delivery* is a separate concern — see the next section.
+**The summary/translation loading indicators are message-aware too.** They used to be sent
+unguarded, on the theory that they are transient and quickly replaced by the result. They are
+not when the result is dropped: a `showSummaryGenerating` drawn on a tab displaying message X
+while message Y is being generated is never replaced, because the final `showSummary` for Y is
+correctly discarded by `_sendIfCurrent()` — the spinner spins forever. So:
+
+- `showSummaryGenerating` / `showTranslationGenerating` always carry `headerMessageId`.
+- Inside the generators (and the `initSummary` / `initTranslation` "already processing" path)
+  they go through **`_sendGeneratingIfCurrent(tabId, headerMessageId, payload)`**, which returns
+  `{ current, delivered }`. When the tab displays another message the panel is skipped and
+  generation **continues**: the result lands in the cache, and `tabId` is still used for the
+  resolution (route c) and for the terminal `_sendIfCurrent()` sends, so the result still
+  renders if the user comes back to the message before the AI answers.
+- The trigger/refresh handlers (`triggerSummaryGeneration`, `refreshSummary`,
+  `triggerTranslationGeneration`, `refreshTranslation`) keep a direct send, before any await:
+  the id comes from that very tab's content script.
+- The content script checks every generating command against **its own** message: at load it
+  asks the background once (`getDisplayedMessageId` → `getDisplayedMessage(sender.tab.id)`),
+  and draws the panel only when the supplied id is non-empty and matches (or its own id is
+  unknown, e.g. in a compose window). Because that check is asynchronous, each result command
+  (`showSummary`, `showSummaryButton`, `showTranslation`, `showTranslationButton`) bumps a
+  per-feature counter, and a generating command that sees the counter moved does nothing — a
+  result can never be painted over by a late spinner.
+- `hideSummaryGenerating` / `hideTranslationGenerating` remove a panel (message-aware when an id
+  is given, unconditional otherwise). The background sends them through
+  `_clearGeneratingPanels()` from the generators' `catch` blocks and from `_handleTaskError()`,
+  the `.catch()` attached to every fire-and-forget task in the `runtime.onMessage` listener.
+- A message change replaces the document, so panels never outlive their message; the one
+  surviving document — an already-open tab re-injected on extension reload — gets both
+  generating panels removed when the script loads.
+
+`showSpamCheckInProgress` is still unguarded here (`updateSpamPanel()` already checks the
+displayed message). That is the *staleness* question; *delivery* is a separate concern — see
+the next section.
+
+### Context-menu actions: one source for messages and UI tab
+
+`browser.menus.onClicked` reads the selection from the **clicked tab**
+(`mailTabs.getSelectedMessages(tab.id)`, falling back to `info.selectedMessages` only when that
+fails) and passes `tab.id` to `processEmails()` as `sourceTabId`; the summarize and translate
+branches use it as their UI tab and fall back to `tabs.query({active, currentWindow})` only when
+it is absent. `info.selectedMessages` is not bound to the clicked tab (several mail
+tabs/windows, a right-click that does not move the selection) and the active-tab query resolves
+to the last focused window, so the two could disagree — the generating panel ended up on the
+displayed message while another message, from another folder, was sent to the AI. The
+`shortcut_do_prompt` path passes its `tabId` the same way. The handler awaits
+`processEmails()`; a rejection is logged and clears any generating panel.
+
+With `do_debug` on, each click logs one entry with `tab.id/windowId/type` and, for
+`info.selectedMessages`, `mailTabs.getSelectedMessages()` and `getDisplayedMessage()`, the
+`id`, `headerMessageId` and `folder.path` of each message, prefixed `MISMATCH` when they
+disagree. The generators also log the `headerMessageId` and `folder.path` actually used right
+before the prompt is built. `getMessages()` (`js/mzta-utils.js`) logs and stops, keeping what it
+already yielded, when `continueList()` fails on an expired MessageList id.
 
 ### Unreachable message pane (`sendTabMessageSafe`, [#901](https://github.com/micz/ThunderAI/issues/901))
 
@@ -375,9 +433,11 @@ Two deliberate behaviours on top of the plain drop:
 
 - **The context-menu summarize flow uses the indicator send as a probe.** In `'inline'`
   mode with a single message, `processEmails()` awaits the `showSummaryGenerating`
-  send; when the pane cannot receive it, it falls back to the webchat flow — the same
-  fallback already used for inline mode with multiple messages — so the action still
-  produces something visible instead of dying.
+  send (through `_sendGeneratingIfCurrent()`); when the pane cannot receive it
+  (`current && !delivered`), it falls back to the webchat flow — the same fallback already
+  used for inline mode with multiple messages — so the action still produces something
+  visible instead of dying. When the tab displays another message (`!current`) the panel is
+  not drawn and the summary is generated inline anyway, silently, into the cache.
 - **`act()` bails out cleanly when the body cannot be scraped.** `getMailBody()` talks
   to the content script; when the first send rejects, the action logs, calls
   `taWorkingStatus.stopWorking()` and returns `{ok:'0'}` — previously the rejection
@@ -389,7 +449,9 @@ Two deliberate behaviours on top of the plain drop:
 messaged us is alive by construction, so its tab has a browser), awaited sends whose
 rejection the caller observes (e.g. `chatgpt_replaceSelectedText`), and the chat tabs
 the background itself created. `showGenericError()` / `showGenericInfo()` keep their
-own `.catch(() => {})`, which is the same quiet drop.
+own `.catch(() => {})`, which is the same quiet drop. (The generating-panel sends of the
+trigger/refresh handlers go to `sender.tab` but use `sendTabMessageSafe()` anyway: they are
+not awaited, so a rejection would otherwise surface as unhandled.)
 
 ### Batch cancellation (`taBatchController`)
 
@@ -1006,7 +1068,10 @@ Two invariants in `MessagesArea`, both easy to break:
   Degrading therefore *replaces* the bar with the toolbar. The toolbar is built at that
   moment, but from the arguments stashed on the turn (`_mztaToolsArgs`) when the bar was
   created, so it stays bound to that answer's own text rather than to whatever is on screen
-  later.
+  later. An error turn (`appendBotMessage(..., 'error')`) also takes the full-bar slot: it
+  degrades the previous bar and gets a Close-only `.action-bar` (built by
+  `_buildCloseButton()`, shared with `addActionButtons()`), with no `_mztaToolsArgs`, so the
+  next degrade just removes it and builds no toolbar.
 
 **Self-closing `chatgpt_close` must be fire-and-forget.** Every button that finishes an
 action (reply / replace / save-summary / plain close) ends by sending

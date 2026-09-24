@@ -1330,6 +1330,15 @@ body.mzta_feature_page .feature_desc {
 }
 body.mzta_feature_page .feature_name { font-size: 15px; font-weight: 600; }
 
+/* Advanced connection rows moved into #connection_ui_adv_table by
+   initializeSpecificIntegrationUI(): its _updateVisibility() sets an inline
+   `display:table-row` on the visible ones, which would beat the stacked
+   `display:block` restyle. Same override each feature page CSS applies to
+   #connection_ui_table; hidden rows keep their inline `display:none`. */
+body.mzta_feature_page #connection_ui_adv_table tr[style*="table-row"] {
+    display: block !important;
+}
+
 /* Injected connection rows: match the feature-page text scale.
    connection-ui.js emits most description text as a bare text node inside
    <label> (after a <br>), not wrapped in .small_info/<i>, so the .mzta_help
