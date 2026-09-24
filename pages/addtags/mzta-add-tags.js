@@ -33,6 +33,8 @@ import {
 } from "../../js/mzta-addtags-exclusion-list.js";
 import {
   getAccountsList,
+  getTagsList,
+  intersectTagsLists,
   normalizeStringList,
   isAPIKeyValue,
   setTomSelectBorder,
@@ -180,6 +182,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('add_tags_force_lang').addEventListener('change', updateAdditionalPromptStatements);
     document.getElementById('add_tags_auto_uselist').addEventListener('change', updateAdditionalPromptStatements);
     document.getElementById('add_tags_auto_uselist_list').addEventListener('change', updateAdditionalPromptStatements);
+    document.getElementById('add_tags_auto_force_existing').addEventListener('change', updateAdditionalPromptStatements);
+    addtags_textarea.addEventListener('change', updateAdditionalPromptStatements);
 
     updateAdditionalPromptStatements();
 
@@ -281,19 +285,36 @@ async function updateAdditionalPromptStatements(){
       'add_tags_force_lang',
       'default_chatgpt_lang',
       'add_tags_auto_uselist',
-      'add_tags_auto_uselist_list'
+      'add_tags_auto_uselist_list',
+      'add_tags_auto_force_existing'
     ]);
+    // Mirrors taPromptUtils.finalizePrompt_add_tags() [#926]
+    let show_force_lang = !prefs_.add_tags_auto_force_existing && prefs_.add_tags_force_lang && prefs_.default_chatgpt_lang !== '';
+    let uselist_active = prefs_.add_tags_auto_uselist && prefs_.add_tags_auto_uselist_list.trim() !== '';
+    let force_existing_list = '';
+    if(prefs_.add_tags_auto_force_existing){
+        let existing_tags_list = (await getTagsList())[0];
+        if(uselist_active){
+            force_existing_list = intersectTagsLists(prefs_.add_tags_auto_uselist_list, existing_tags_list);
+        }else if(!document.getElementById('addtags_prompt_text').value.includes("{%tags_full_list%}")){
+            force_existing_list = existing_tags_list;
+        }
+    }
+    let show_use_list = !prefs_.add_tags_auto_force_existing && uselist_active;
     let el_tag_limit = document.getElementById('addtags_info_additional_statements');
-    if((prefs_.add_tags_maxnum > 0)||(prefs_.add_tags_force_lang && prefs_.default_chatgpt_lang !== '')||(prefs_.add_tags_auto_uselist && prefs_.add_tags_auto_uselist_list.trim() !== '')){
+    if((prefs_.add_tags_maxnum > 0)||show_force_lang||show_use_list||(force_existing_list !== '')){
         el_tag_limit.textContent = browser.i18n.getMessage("addtags_info_additional_statements") + " \""
         if(prefs_.add_tags_maxnum > 0){
           el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + prefs_.add_tags_maxnum +". "
         }
-        if(prefs_.add_tags_force_lang && prefs_.default_chatgpt_lang !== ''){
+        if(show_force_lang){
           el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + prefs_.default_chatgpt_lang + ". "
         }
-        if(prefs_.add_tags_auto_uselist && prefs_.add_tags_auto_uselist_list.trim() !== ''){
+        if(show_use_list){
           el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_use_list") + ": " + prefs_.add_tags_auto_uselist_list + ".";
+        }
+        if(force_existing_list !== ''){
+          el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_force_existing") + ": " + force_existing_list + ".";
         }
         el_tag_limit.textContent = el_tag_limit.textContent.trim();
         el_tag_limit.textContent += "\".";

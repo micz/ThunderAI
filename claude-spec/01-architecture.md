@@ -191,6 +191,7 @@ runPipeline(target)                 ← one message, features in series
                moved to junk → stop here (no tags, summary, translation)
                otherwise messages.get(id) again (a filter may have moved it) → gone → stop
     add_tags   (same fullMessage/body) → prompt → sendPrompt → await _assign_tags()
+               (force existing: non-existing tags skipped, see 02-prompts.md)
     summary    → _generateSummaryForMessage()
     translate  → _generateTranslationForMessage(…, translateTabId)
     (batchStopped() checked between features)

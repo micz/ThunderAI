@@ -1397,6 +1397,10 @@
     "message": "Use only the tags in this comma separated list",
     "description": ""
   },
+  "prompt_add_tags_force_existing": {
+    "message": "Choose the tags ONLY from this comma separated list of existing tags, using them exactly as written, and do not invent new ones",
+    "description": ""
+  },
   "prefs_OptionText_add_tags_auto_only_inbox": {
     "message": "Only add tags to emails in the inbox",
     "description": ""

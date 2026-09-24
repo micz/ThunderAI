@@ -21,7 +21,8 @@ import {
     extractJsonObject,
     getMailInlineTextParts,
     htmlBodyToPlainText,
-    cleanupNewlines
+    cleanupNewlines,
+    intersectTagsLists
 } from './mzta-utils.js';
 import { getSpecialPrompts } from './mzta-prompts.js';
 import { mztaPrefs } from './mzta-prefs.js';
@@ -96,14 +97,29 @@ export const taPromptUtils = {
         return fullPrompt;
     },
 
-    finalizePrompt_add_tags(fullPrompt, add_tags_maxnum, add_tags_force_lang, default_chatgpt_lang, add_tags_auto_uselist = false, add_tags_auto_uselist_list = ''){
+    finalizePrompt_add_tags(fullPrompt, add_tags_maxnum, add_tags_force_lang, default_chatgpt_lang, add_tags_auto_uselist = false, add_tags_auto_uselist_list = '', add_tags_force_existing = false, existing_tags_list = '', prompt_text_raw = ''){
         if(add_tags_maxnum > 0){
             fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + add_tags_maxnum +".";
         }
-        if(add_tags_force_lang && default_chatgpt_lang !== ''){
+        // With force existing the language is dictated by the existing tags [#926]
+        if(!add_tags_force_existing && add_tags_force_lang && default_chatgpt_lang !== ''){
             fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + default_chatgpt_lang + ".";
         }
-        if(add_tags_auto_uselist && add_tags_auto_uselist_list && add_tags_auto_uselist_list.length > 0){
+        let uselist_active = add_tags_auto_uselist && add_tags_auto_uselist_list && add_tags_auto_uselist_list.length > 0;
+        if(add_tags_force_existing){
+            // The model must see the existing tags, otherwise it invents new ones that
+            // are then all filtered out [#926]
+            if(uselist_active){
+                let tags_intersection = intersectTagsLists(add_tags_auto_uselist_list, existing_tags_list);
+                if(tags_intersection !== ''){
+                    fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_force_existing") + ": " + tags_intersection + ".";
+                }else{
+                    console.warn("[ThunderAI] Add tags: none of the tags in the use list exists, and force existing tags is active. No tags list sent to the AI.");
+                }
+            }else if(existing_tags_list && existing_tags_list.length > 0 && !String(prompt_text_raw || '').includes("{%tags_full_list%}")){
+                fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_force_existing") + ": " + existing_tags_list + ".";
+            }
+        }else if(uselist_active){
             fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_use_list") + ": " + add_tags_auto_uselist_list + ".";
         }
 

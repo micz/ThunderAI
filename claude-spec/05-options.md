@@ -199,7 +199,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `add_tags_first_uppercase` | `true` | Capitalize first letter of tags |
 | `add_tags_force_lang` | `true` | Force language for tags |
 | `add_tags_auto` | `false` | Auto-tag on message open |
-| `add_tags_auto_force_existing` | `false` | Only use existing tags |
+| `add_tags_auto_force_existing` | `false` | Only use existing tags. The prompt gets the existing tags list (or its intersection with the use list), and force_lang is not appended. Non-existing tags in the response are dropped. See [02-prompts.md](02-prompts.md#add-tags-extra-prompt-statements) |
 | `add_tags_auto_only_inbox` | `true` | Auto-tag only inbox messages |
 | `add_tags_auto_include_sent` | `false` | Also auto-tag sent messages (opts back into the `sent` folder, which the automatic processing skips by default) |
 | `add_tags_auto_uselist` | `false` | Use tag allow-list |

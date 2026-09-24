@@ -414,7 +414,7 @@ export class mzta_Menus {
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
-                        fullPrompt = taPromptUtils.finalizePrompt_add_tags(fullPrompt, prefs_at.add_tags_maxnum, prefs_at.add_tags_force_lang, prefs_at.default_chatgpt_lang);
+                        fullPrompt = taPromptUtils.finalizePrompt_add_tags(fullPrompt, prefs_at.add_tags_maxnum, prefs_at.add_tags_force_lang, prefs_at.default_chatgpt_lang, false, '', prefs_at.add_tags_auto_force_existing, tags_full_list[0], curr_prompt.text);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let create_new_tags = !prefs_at.add_tags_auto_force_existing;
                         let all_tags_list = tags_full_list[1];

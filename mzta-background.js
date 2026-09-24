@@ -390,9 +390,14 @@ async function _assign_tags_now(_data, create_new_tags, exclusions_exact_match) 
     }
     for (const tag of tags_final) {
         // console.log(">>>>>>>>>>>>>>> tag: " + JSON.stringify(tag));
-        if (create_new_tags && !checkIfTagLabelExists(tag, all_tags_list)) {
-            taLog.log("Creating tag: " + tag);
-            await createTag(tag);
+        if (!checkIfTagLabelExists(tag, all_tags_list)) {
+            if (create_new_tags) {
+                taLog.log("Creating tag: " + tag);
+                await createTag(tag);
+            } else {
+                taLog.log("Skipping non-existing tag: " + tag);
+                continue;
+            }
         }
         new_tags.push(tag);
     }
@@ -2741,7 +2746,7 @@ async function processEmails(args) {
                 msg_text: body.msg_text,
                 tags_full_list: tags_full_list
             });
-            specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
+            specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list, prefs_aats.add_tags_auto_force_existing, tags_full_list[0], curr_prompt_add_tags.text);
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
             let cmd_addTags = new mzta_specialCommand({
                 prompt: specialFullPrompt_add_tags,

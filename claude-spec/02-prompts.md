@@ -177,6 +177,20 @@ Skipped silently (logged via `this.logger.log`, no alert):
 
 The description is plain text (`descriptionText` in Sparks); Thunderbird linkifies the `mid:` scheme in the event summary, but HTML descriptions are out of scope.
 
+### Add tags: extra prompt statements
+
+`taPromptUtils.finalizePrompt_add_tags()` (`js/mzta-utils-prompt.js`) appends statements to the prepared prompt, each on its own line (`" \n"`). It is called from both flows: the manual action (`js/mzta-menus.js`, with no use list) and the automatic/batch flow (`runAddTags` in `mzta-background.js`).
+- `add_tags_maxnum > 0` → `prompt_add_tags_maxnum N.`
+- `add_tags_force_lang` + `default_chatgpt_lang` → `prompt_add_tags_force_lang LANG.`. **Suppressed when `add_tags_auto_force_existing` is on**, because the existing tags dictate the language.
+- `add_tags_auto_force_existing` **off**: use list active → `prompt_add_tags_use_list: LIST.`
+- `add_tags_auto_force_existing` **on** (issue #926): the existing tags are sent to the model, which otherwise invented names that were then all filtered out.
+  - With an active use list → `prompt_add_tags_force_existing: X.`, where X = `intersectTagsLists(uselist, existing)` (`js/mzta-utils.js`: case-insensitive, written as the existing tag is). This replaces the use-list statement. An empty intersection → `console.warn` and no list statement.
+  - Without a use list → `prompt_add_tags_force_existing: <tags_full_list[0]>.`. It is skipped when the raw prompt text already contains `{%tags_full_list%}` or when no tags exist.
+
+The response is still filtered afterwards as a safety net: `checkIfTagLabelExists()` in the manual flow, and `_assign_tags_now()` in the automatic flow, which skips non-existing tags ("Skipping non-existing tag") when `create_new_tags` is false.
+
+The Add Tags settings page (`updateAdditionalPromptStatements()` in `pages/addtags/mzta-add-tags.js`) previews the same statements with the same rules, and must be kept in sync with `finalizePrompt_add_tags()`.
+
 ### Missing special prompts
 
 The lookup helpers in `js/mzta-prompts.js` (`getSpamFilterPrompt()`, `getAddTagsPrompt()`, `getSummarizePrompt()`, …) are `Array.find()` over `_special_prompts` and return `undefined` when the user has removed or corrupted the entry. Every caller must guard before using the result, and `taPromptUtils.getDefaultLang()` uses optional chaining so a missing prompt yields `''` (no forced language) instead of throwing (issue #855).

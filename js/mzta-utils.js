@@ -714,6 +714,22 @@ export function checkIfTagLabelExists(tag_label, tags_list) {
   return Object.values(tags_list).some(label => label.tag.toLowerCase() === lowerTagLabel);
 }
 
+// Returns the tags of uselist_list that also exist in existing_tags_list (both comma separated
+// strings), compared case-insensitively and written as the existing tag is, joined by ", ".
+// Empty string when none match.
+export function intersectTagsLists(uselist_list, existing_tags_list) {
+  const splitList = (list) => String(list || '').split(',').map(t => t.trim()).filter(t => t !== '');
+  const existing = splitList(existing_tags_list);
+  const result = [];
+  for (const tag of splitList(uselist_list)) {
+    const match = existing.find(e => e.toLowerCase() === tag.toLowerCase());
+    if (match && !result.includes(match)) {
+      result.push(match);
+    }
+  }
+  return result.join(', ');
+}
+
 // export async function assignTagsToMessage(messageId, tags) {
 //   console.log(">>>>>>>>>>> assignTagsToMessage messageId: tags: " + JSON.stringify(tags));
 //   tags = tags.map(tag => `$ta-${sanitizeString(tag)}`);
