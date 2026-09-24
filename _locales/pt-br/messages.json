@@ -803,9 +803,6 @@
     "prefs_doc_open_welcome": {
         "message": "Abrir a página de boas-vindas"
     },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Insira manualmente o modelo"
-    },
     "OpenAIComp_force_model_ask": {
         "message": "Insira aqui o nome do modelo que você deseja usar."
     },
@@ -1498,9 +1495,6 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Observe que quaisquer tags <br> na resposta da IA serão substituídas por quebras de linha."
-    },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Limpar lista de modelos"
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Tem certeza de que deseja limpar a lista de modelos? Esta ação não pode ser desfeita."

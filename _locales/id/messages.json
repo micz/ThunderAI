@@ -730,9 +730,6 @@
     "prefs_doc_open_welcome": {
         "message": "Buka Halaman Selamat Datang"
     },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Masukkan model secara manual"
-    },
     "OpenAIComp_force_model_ask": {
         "message": "Masukkan nama model yang ingin Anda gunakan di sini."
     },
@@ -1408,9 +1405,6 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Harap diperhatikan bahwa tag <br> apa pun dalam respons AI akan diganti dengan line break."
-    },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Hapus Daftar Model"
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Apakah Anda yakin ingin menghapus Daftar Model? Tindakan ini tidak dapat dibatalkan."

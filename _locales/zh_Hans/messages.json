@@ -536,9 +536,6 @@
     "placeholder_cc_list": {
         "message": "抄送列表"
     },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "手动填入模型"
-    },
     "Ollama_Models": {
         "message": "Ollama 模型"
     },
