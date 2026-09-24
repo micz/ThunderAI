@@ -47,12 +47,20 @@ const PROMPT_INPUT_SELECTORS = [
 const SHADOW_WALK_MAX_NODES = 5000;
 const SHADOW_WALK_MAX_DEPTH = 5;
 
-function isElementVisible(el) {
-    if (!el || !el.isConnected || el.hidden) return false;
+// null when visible, otherwise why the element is considered invisible
+function getHiddenReason(el) {
+    if (!el || !el.isConnected) return 'disconnected';
+    if (el.hidden) return 'hidden-attr';
     const style = window.getComputedStyle(el);
-    if (style.display === 'none' || style.visibility === 'hidden') return false;
+    if (style.display === 'none') return 'display-none';
+    if (style.visibility === 'hidden') return 'visibility-hidden';
     const rect = el.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0;
+    if (rect.width <= 0 || rect.height <= 0) return 'zero-size';
+    return null;
+}
+
+function isElementVisible(el) {
+    return getHiddenReason(el) === null;
 }
 
 // Our own injected UI (e.g. the custom text textarea) must never be taken for the composer
@@ -78,7 +86,24 @@ function getOpenShadowRoots() {
         }
     };
     walk(document.documentElement, 0);
+    // true when the walk stopped early, so some shadow roots may be missing
+    roots.truncated = budget.left <= 0;
     return roots;
+}
+
+// Per selector: how many elements match, how many are visible, how many are our own UI
+function getSelectorStats(roots) {
+    return PROMPT_INPUT_SELECTORS.map(selector => {
+        const stat = { selector: selector, matches: 0, visible: 0, ownUi: 0 };
+        for (const root of roots) {
+            for (const el of root.querySelectorAll(selector)) {
+                stat.matches++;
+                if (isOwnUiElement(el)) stat.ownUi++;
+                else if (isElementVisible(el)) stat.visible++;
+            }
+        }
+        return stat;
+    });
 }
 
 function queryPromptInput(roots) {
@@ -101,14 +126,18 @@ async function findPromptInput(timeoutMs) {
         let observer = null;
         let pollId = null;
         let timeoutId = null;
+        let progressId = null;
+        const startTime = Date.now();
+        doLog("findPromptInput start, timeout " + timeoutMs + " ms, readyState " + document.readyState);
         const finish = (found) => {
             if (done) return;
             done = true;
             if (observer) observer.disconnect();
             clearInterval(pollId);
+            clearInterval(progressId);
             clearTimeout(timeoutId);
             if (found) {
-                doLog("Prompt input found with selector: " + found.selector + (found.inShadow ? " (shadow DOM)" : ""));
+                doLog("Prompt input found after " + (Date.now() - startTime) + " ms with selector: " + found.selector + (found.inShadow ? " (shadow DOM)" : ""));
                 resolve(found.el);
             } else {
                 doLog("Prompt input not found after " + timeoutMs + " ms");
@@ -132,7 +161,43 @@ async function findPromptInput(timeoutMs) {
         observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'contenteditable'] });
         pollId = setInterval(() => check(true), 250);
         timeoutId = setTimeout(() => finish(null), timeoutMs);
+        if (mztaDoDebug == 1) {
+            // shows whether the composer never appears or appears and disappears
+            progressId = setInterval(() => {
+                try {
+                    const stats = getSelectorStats([document].concat(getOpenShadowRoots()));
+                    doLog("findPromptInput still waiting after " + (Date.now() - startTime) + " ms, readyState " + document.readyState + ", selectors: " + JSON.stringify(stats.map(s => s.matches + "/" + s.visible + "/" + s.ownUi)) + " (matches/visible/ownUi)");
+                } catch (err) {
+                    console.error('[ThunderAI] findPromptInput progress: ', err);
+                }
+            }, 3000);
+        }
     });
+}
+
+function getElementClass(el) {
+    return typeof el.className === 'string' ? el.className : (el.getAttribute('class') || '');
+}
+
+// "tag#id.firstClass" for up to 3 ancestors, closest first
+function describeAncestors(el) {
+    const parts = [];
+    let node = el.parentElement;
+    while (node && parts.length < 3) {
+        const firstClass = getElementClass(node).trim().split(' ')[0];
+        parts.push(node.tagName.toLowerCase() + (node.id ? '#' + node.id : '') + (firstClass ? '.' + firstClass.substring(0, 40) : ''));
+        node = node.parentElement;
+    }
+    return parts.join(' < ');
+}
+
+// Runs one diagnostics section, so a failure there does not lose the whole log line
+function diagSection(fn) {
+    try {
+        return fn();
+    } catch (err) {
+        return 'error: ' + (err && err.message ? err.message : String(err));
+    }
 }
 
 // Logs page structure only: never page text or the prompt, users paste these logs on GitHub
@@ -140,34 +205,74 @@ function logPromptInputDiagnostics() {
     try {
         const shadowRoots = getOpenShadowRoots();
         const allRoots = [document].concat(shadowRoots);
-        const countAll = (selector) => allRoots.reduce((sum, root) => sum + Array.from(root.querySelectorAll(selector)).filter(el => !isOwnUiElement(el)).length, 0);
-        const candidates = [];
-        for (const root of allRoots) {
-            for (const el of root.querySelectorAll('textarea, [contenteditable], input[type="text"]')) {
-                if (candidates.length >= 5) break;
-                if (isOwnUiElement(el)) continue;
-                const cls = typeof el.className === 'string' ? el.className : (el.getAttribute('class') || '');
-                candidates.push({
-                    tag: el.tagName.toLowerCase(),
-                    id: el.id || '',
-                    name: el.getAttribute('name') || '',
-                    class: cls.substring(0, 100),
-                    contenteditable: el.getAttribute('contenteditable'),
-                    visible: isElementVisible(el),
-                    inShadow: root !== document
-                });
+        const queryAll = (selector) => allRoots.reduce((list, root) => list.concat(Array.from(root.querySelectorAll(selector))), []).filter(el => !isOwnUiElement(el));
+        const countAll = (selector) => queryAll(selector).length;
+        const countVisible = (selector) => queryAll(selector).filter(el => isElementVisible(el)).length;
+        const candidates = diagSection(() => {
+            const list = [];
+            for (const root of allRoots) {
+                for (const el of root.querySelectorAll('textarea, [contenteditable], input[type="text"]')) {
+                    if (list.length >= 10) break;
+                    if (isOwnUiElement(el)) continue;
+                    const rect = el.getBoundingClientRect();
+                    list.push({
+                        tag: el.tagName.toLowerCase(),
+                        id: el.id || '',
+                        name: el.getAttribute('name') || '',
+                        class: getElementClass(el).substring(0, 100),
+                        role: el.getAttribute('role') || '',
+                        testid: el.getAttribute('data-testid') || '',
+                        ariaLabel: (el.getAttribute('aria-label') || '').substring(0, 60),
+                        contenteditable: el.getAttribute('contenteditable'),
+                        visible: isElementVisible(el),
+                        hiddenReason: getHiddenReason(el),
+                        w: Math.round(rect.width),
+                        h: Math.round(rect.height),
+                        inForm: el.closest('form') !== null,
+                        inShadow: root !== document,
+                        parents: describeAncestors(el)
+                    });
+                }
+                if (list.length >= 10) break;
             }
-            if (candidates.length >= 5) break;
-        }
+            return list;
+        });
         const title = document.title || '';
         const diag = {
+            extVersion: diagSection(() => browser.runtime.getManifest().version),
             url: location.origin + location.pathname,
+            authUrl: location.pathname.startsWith('/auth'),
             title: title,
             readyState: document.readyState,
+            visibilityState: document.visibilityState,
+            hasFocus: diagSection(() => document.hasFocus()),
+            msSinceLoad: Math.round(performance.now()),
+            viewport: window.innerWidth + 'x' + window.innerHeight,
+            lang: document.documentElement.lang || '',
+            navigatorLang: navigator.language,
+            selectors: diagSection(() => getSelectorStats(allRoots)),
             contenteditable: countAll('[contenteditable]'),
             textarea: countAll('textarea'),
+            form: countAll('form'),
+            main: countAll('main'),
+            sendButton: countAll('[data-testid="send-button"]'),
+            dialogs: diagSection(() => countVisible('[role="dialog"], [aria-modal="true"]')),
+            alerts: diagSection(() => countVisible('[role="alert"]')),
             iframe: countAll('iframe'),
+            iframeOrigins: diagSection(() => queryAll('iframe').slice(0, 5).map(f => {
+                try { return new URL(f.src, location.href).origin; } catch (e) { return ''; }
+            })),
             openShadowRoots: shadowRoots.length,
+            shadowWalkTruncated: shadowRoots.truncated,
+            // a composer inside a closed shadow root is visible only as its custom element
+            customTags: diagSection(() => {
+                const tags = new Set();
+                for (const el of document.querySelectorAll('*')) {
+                    if (tags.size >= 10) break;
+                    if (el.tagName.includes('-')) tags.add(el.tagName.toLowerCase());
+                }
+                return Array.from(tags);
+            }),
             candidates: candidates,
             loginButton: document.querySelector('button[data-testid*=login]') !== null,
             cloudflare: document.querySelector('#challenge-form, #challenge-running, [id^="cf-"], iframe[src*="challenges.cloudflare.com"]') !== null || title.toLowerCase().includes('just a moment'),
@@ -176,6 +281,22 @@ function logPromptInputDiagnostics() {
         console.warn("[ThunderAI] Diagnostics: " + JSON.stringify(diag));
     } catch (err) {
         console.warn("[ThunderAI] Diagnostics failed: ", err);
+    }
+}
+
+// Same rules as logPromptInputDiagnostics: structure only, no page text
+function logSendButtonDiagnostics() {
+    try {
+        const buttons = Array.from(document.querySelectorAll('form button, [data-testid$="-button"]')).filter(el => !isOwnUiElement(el));
+        const diag = {
+            buttons: buttons.length,
+            formButtons: document.querySelectorAll('form button').length,
+            testids: Array.from(new Set(buttons.map(b => b.getAttribute('data-testid')).filter(Boolean))).slice(0, 15),
+            ariaLabels: Array.from(new Set(buttons.map(b => (b.getAttribute('aria-label') || '').substring(0, 40)).filter(Boolean))).slice(0, 15)
+        };
+        console.warn("[ThunderAI] Send button diagnostics: " + JSON.stringify(diag));
+    } catch (err) {
+        console.warn("[ThunderAI] Send button diagnostics failed: ", err);
     }
 }
 
@@ -229,6 +350,8 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button
         });
     }
     textArea.dispatchEvent(new Event('input', { bubbles: true }));
+    // lengths only, never the prompt itself
+    doLog("Prompt input filled: tag " + textArea.tagName.toLowerCase() + ", content length " + (textArea.tagName === 'TEXTAREA' ? textArea.value.length : (textArea.textContent || '').length) + " (prompt length " + msg.length + ")");
     //wait for the button to change from the audio button to the send button (from nov-2024)
     await new Promise(resolve => setTimeout(resolve, 1000));
     let sendButton = document.querySelector('[data-testid="send-button"]') // pre-GPT-4o
@@ -237,6 +360,7 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button
     //check if the sendbutton has been found
     if (!sendButton) {
         console.error("[ThunderAI] Send button not found!");
+        logSendButtonDiagnostics();
         return -1;
     }
     const delaySend = setInterval(() => {
