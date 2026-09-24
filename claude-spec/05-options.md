@@ -686,6 +686,38 @@ A successful Ollama test also re-runs `updateOllamaModelCapabilityUI()`, because
 host permission through the test is often what makes `/api/show` reachable in the first place
 — see [04-api-integrations.md](04-api-integrations.md#ollama-ollama_api).
 
+### Connection Settings Panel — "Update list" Model Fetch Buttons
+
+Each API provider's model row in `injectConnectionUI()` (`.models_fetch_row`) holds the model
+select, the `btnUpdate<Provider>Models` button and a `<provider>_model_fetch_loading` span
+(class `.models_fetch_loading`); below the row sits a `<provider>_model_fetch_status` box
+(`.models_fetch_status`, hidden when empty, right-aligned so it sits under the button). All ids
+carry the `modelId_prefix`.
+
+The click handlers drive the row through `modelsFetchUI(modelId_prefix, btnId, provider)`:
+
+- **loading** — the button is hidden (`display:none`) and the loading label takes its place, so
+  it cannot be clicked twice; any previous status message is cleared. Just before hiding the
+  button, its `offsetWidth` and computed `font` / `letter-spacing` are copied onto the label
+  (centred, not italic), so the label looks like the button text and the row does not shift.
+  This is read at runtime because every host page styles its buttons differently.
+- **done** (success) — the list is merged into the select, the button comes back and the status
+  box shows `Models_Fetch_Done` in green (`.is_ok`). After `MODELS_FETCH_OK_VISIBLE_MS` (30 s)
+  `.is_fading` fades it out (1 s opacity transition, `MODELS_FETCH_OK_FADE_MS`) and it is then
+  hidden. The timers are stored on the status element, because `modelsFetchUI()` builds a new
+  object per click: a new click cancels the pending fade.
+- **error** — the button comes back immediately and the reason is written in red in the status
+  box, with no timer: it stays until the next click. This replaces the old `alert()`s and
+  covers HTTP errors, a denied optional host permission (ChatGPT, Claude), Ollama's "no
+  models" and network exceptions.
+
+The fetch goes through `fetchModelsWithTimeout(client)`, the same `Promise.race` as the
+connection test: none of the `fetchModels()` implementations sets its own timeout, so after
+`MODELS_FETCH_TIMEOUT_MS` (20 s) the row reports `connTest_error_timeout`. It always resolves
+to an `{ok, error|response}` result, also when `fetchModels()` throws (OpenAIComp does not catch).
+`parseModelsFetchError()` extracts `error.message` from a JSON error body. The `warn_*()` helpers
+still manage the button's `disabled` state, independently of its visibility.
+
 ### Setup Wizard (`pages/setup-wizard/`)
 
 A guided **first-run flow** that walks a new user through the minimum needed to get

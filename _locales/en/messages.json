@@ -589,6 +589,10 @@
     "message": "Error trying to fetch Ollama models",
     "description": ""
   },
+  "Models_Fetch_Done": {
+    "message": "Models list loaded",
+    "description": "Confirmation shown in green under the models select after the 'Update list' button has fetched the models list successfully. It fades out after a few seconds."
+  },
   "API_Models_Error_NoModels": {
     "message": "No models found",
     "description": ""

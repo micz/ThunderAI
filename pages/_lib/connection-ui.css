@@ -24,16 +24,6 @@ tr.conntype_anthropic_api, tr.conntype_anthropic_api2{
     background-color: rgb(255, 168, 204) !important;
 }
 
-#chatgpt_model_fetch_loading{
-    display: none;
-    font-style: italic;
-}
-
-#google_gemini_model_fetch_loading{
-    display: none;
-    font-style: italic;
-}
-
 textarea.option-textarea{
     width: -moz-available;
     height: 10em;
@@ -127,21 +117,6 @@ input.option-input[type="text"]{
     padding-right: 36px;
 }
 
-#ollama_model_fetch_loading{
-    display: none;
-    font-style: italic;
-}
-
-#openai_comp_model_fetch_loading{
-    display: none;
-    font-style: italic;
-}
-
-#anthropic_model_fetch_loading{
-    display: none;
-    font-style: italic;
-}
-
 .conntype_chatgpt_web_option{
     cursor: pointer;
 }
@@ -171,6 +146,37 @@ span.opt_title{
 .models_fetch_row .models_fetch_select .ts-wrapper,
 .models_fetch_row .models_fetch_select select{
     width: 100%;
+}
+
+/* Shown in place of the hidden "Update list" button while the models are fetched.
+   modelsFetchUI() copies the button's width and font onto it at click time. */
+.models_fetch_row .models_fetch_loading{
+    flex: 0 0 auto;
+    align-self: center;
+    box-sizing: border-box;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Result of the last "Update list" click, under the model row (modelsFetchUI()).
+   Red for an error, which stays until the next click; green (.is_ok) when the
+   list was loaded, faded out after 30s by adding .is_fading. */
+.models_fetch_status{
+    margin-top: 4px;
+    line-height: 1.4;
+    text-align: right;
+    color: var(--jsonError, #b3261e);
+    overflow-wrap: break-word;
+    opacity: 1;
+    transition: opacity 1s ease;
+}
+
+.models_fetch_status.is_ok{
+    color: var(--success, #1f8a5b);
+}
+
+.models_fetch_status.is_fading{
+    opacity: 0;
 }
 
 .models_fetch_row button{
@@ -206,5 +212,10 @@ span.opt_title{
 
     .api_key-container .toggle-icon img {
         filter: invert(1);
+    }
+
+    /* --success has no dark variant in mzta-design.css: too dark on a dark row. */
+    .models_fetch_status.is_ok{
+        color: #6fd6a0;
     }
 }

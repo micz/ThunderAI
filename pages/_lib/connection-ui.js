@@ -266,8 +266,9 @@ export async function injectConnectionUI({
           <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" class="option-input"></select>
         </label>
         <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateChatGPTModels">__MSG_Models_Fetch__</button>
-        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model_fetch_loading" style="display:none">__MSG_Loading__</span>
+        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model_fetch_loading" style="display:none">__MSG_Loading__</span>
       </div>
+      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model_fetch_status" hidden></div>
     </td>
   </tr>
   <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
@@ -558,8 +559,9 @@ export async function injectConnectionUI({
           <select id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" class="option-input"></select>
         </label>
         <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateGoogleGeminiModels">__MSG_Models_Fetch__</button>
-        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model_fetch_loading" style="display:none">__MSG_Loading__</span>
+        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model_fetch_loading" style="display:none">__MSG_Loading__</span>
       </div>
+      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model_fetch_status" hidden></div>
     </td>
   </tr>
   <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
@@ -702,8 +704,9 @@ export async function injectConnectionUI({
           <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" class="option-input"></select>
         </label>
         <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOllamaModels">__MSG_Models_Fetch__</button>
-        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model_fetch_loading" style="display:none">__MSG_Loading__</span>
+        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model_fetch_loading" style="display:none">__MSG_Loading__</span>
       </div>
+      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model_fetch_status" hidden></div>
     </td>
   </tr>
    <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
@@ -862,8 +865,9 @@ export async function injectConnectionUI({
           <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" class="option-input"></select>
         </label>
         <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOpenAICompModels">__MSG_Models_Fetch__</button>
-        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model_fetch_loading" style="display:none">__MSG_Loading__</span>
+        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model_fetch_loading" style="display:none">__MSG_Loading__</span>
       </div>
+      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model_fetch_status" hidden></div>
     </td>
   </tr>
   <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
@@ -929,8 +933,9 @@ export async function injectConnectionUI({
           <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" class="option-input"></select>
         </label>
         <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateAnthropicModels">__MSG_Models_Fetch__</button>
-        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model_fetch_loading" style="display:none">__MSG_Loading__</span>
+        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model_fetch_loading" style="display:none">__MSG_Loading__</span>
       </div>
+      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model_fetch_status" hidden></div>
     </td>
   </tr>
   <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
@@ -1244,47 +1249,37 @@ export async function injectConnectionUI({
   // updateOpenAIModelCapabilityUI() themselves after their restore.
 
   document.getElementById(getPrefixedId('btnUpdateChatGPTModels')).addEventListener('click', async () => {
-    document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'inline';
+    const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateChatGPTModels', 'chatgpt');
+    fetchUI.loading();
     let openai = new OpenAI({
       apiKey: document.getElementById(getPrefixedId("chatgpt_api_key")).value,
     });
     let granted = await messenger.permissions.request({ origins: ["https://*.openai.com/*"] });
     if(!granted){
-        document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
         taLog.log("OpenAI API permission denied");
-        alert(browser.i18n.getMessage("Optional_Permission_Denied_Model_Fetching"));
+        fetchUI.error(browser.i18n.getMessage("Optional_Permission_Denied_Model_Fetching"));
         return;
     }
-    openai.fetchModels().then((data) => {
-      if(!data.ok){
-        let errorDetail;
-        try {
-          errorDetail = JSON.parse(data.error);
-          errorDetail = errorDetail.error.message;
-        } catch (e) {
-          errorDetail = data.error;
-        }
-        document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
-        console.error("[ThunderAI] " + browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("ChatGPT_Models_Error_fetching")+": " + errorDetail);
-        return;
-      }
-      taLog.log("ChatGPT models: " + JSON.stringify(data));
-      data.response.forEach(model => {
-        if (!Array.from(select_chatgpt_model.options).some(option => option.value === model.id)) {
-          const option = document.createElement('option');
-          option.value = model.id;
-          option.text = model.id;
-          select_chatgpt_model.appendChild(option);
-        }
-      });
-      syncTomSelect(select_chatgpt_model);
-      autoSelectSingleModel(select_chatgpt_model);
-      updateOpenAIModelCapabilityUI(modelId_prefix);
-      document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
-    });
-    
     warn_ChatGPT_APIKeyEmpty(modelId_prefix);
+    let data = await fetchModelsWithTimeout(openai);
+    if(!data.ok){
+      console.error("[ThunderAI] " + browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
+      fetchUI.error(browser.i18n.getMessage("ChatGPT_Models_Error_fetching") + ": " + parseModelsFetchError(data.error));
+      return;
+    }
+    taLog.log("ChatGPT models: " + JSON.stringify(data));
+    data.response.forEach(model => {
+      if (!Array.from(select_chatgpt_model.options).some(option => option.value === model.id)) {
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.text = model.id;
+        select_chatgpt_model.appendChild(option);
+      }
+    });
+    syncTomSelect(select_chatgpt_model);
+    autoSelectSingleModel(select_chatgpt_model);
+    updateOpenAIModelCapabilityUI(modelId_prefix);
+    fetchUI.done();
   });
 
   // Google Gemini API model fetching
@@ -1297,39 +1292,30 @@ export async function injectConnectionUI({
   select_google_gemini_model.addEventListener("change", () => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateGoogleGeminiModels')).addEventListener('click', async () => {
-    document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'inline';
+    const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateGoogleGeminiModels', 'google_gemini');
+    fetchUI.loading();
     let google_gemini = new GoogleGemini({
       apiKey: document.getElementById(getPrefixedId("google_gemini_api_key")).value,
     });
-    google_gemini.fetchModels().then((data) => {
-      if(!data.ok){
-        let errorDetail;
-        try {
-          errorDetail = JSON.parse(data.error);
-          errorDetail = errorDetail.error.message;
-        } catch (e) {
-          errorDetail = data.error;
-        }
-        document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'none';
-        console.error("[ThunderAI] " + browser.i18n.getMessage("GoogleGemini_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("GoogleGemini_Models_Error_fetching")+": " + errorDetail);
-        return;
-      }
-      taLog.log("GoogleGemini models: " + JSON.stringify(data));
-      data.response.forEach(model => {
-        if (!Array.from(select_google_gemini_model.options).some(option => option.value === model.name.substring(model.name.lastIndexOf("/") + 1))) {
-          const option = document.createElement('option');
-          option.value = model.name.substring(model.name.lastIndexOf("/") + 1);
-          option.text = model.displayName;
-          select_google_gemini_model.appendChild(option);
-        }
-      });
-      syncTomSelect(select_google_gemini_model);
-      autoSelectSingleModel(select_google_gemini_model);
-      document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'none';
-    });
-    
     warn_GoogleGemini_APIKeyEmpty(modelId_prefix);
+    let data = await fetchModelsWithTimeout(google_gemini);
+    if(!data.ok){
+      console.error("[ThunderAI] " + browser.i18n.getMessage("GoogleGemini_Models_Error_fetching"));
+      fetchUI.error(browser.i18n.getMessage("GoogleGemini_Models_Error_fetching") + ": " + parseModelsFetchError(data.error));
+      return;
+    }
+    taLog.log("GoogleGemini models: " + JSON.stringify(data));
+    data.response.forEach(model => {
+      if (!Array.from(select_google_gemini_model.options).some(option => option.value === model.name.substring(model.name.lastIndexOf("/") + 1))) {
+        const option = document.createElement('option');
+        option.value = model.name.substring(model.name.lastIndexOf("/") + 1);
+        option.text = model.displayName;
+        select_google_gemini_model.appendChild(option);
+      }
+    });
+    syncTomSelect(select_google_gemini_model);
+    autoSelectSingleModel(select_google_gemini_model);
+    fetchUI.done();
   });
 
   // Ollama API Model fetching
@@ -1358,58 +1344,42 @@ export async function injectConnectionUI({
   // pages call updateOllamaModelCapabilityUI() themselves after the restore.
 
   document.getElementById(getPrefixedId('btnUpdateOllamaModels')).addEventListener('click', async () => {
-    document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'inline';
+    const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateOllamaModels', 'ollama');
+    fetchUI.loading();
     let ollama = new Ollama({
       host: document.getElementById(getPrefixedId("ollama_host")).value,
       api_key: document.getElementById(getPrefixedId("ollama_api_key")).value,
     });
-    try {
-      let data = await ollama.fetchModels();
-      if(!data){
-        document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
-        console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-        return;
-      }
-      if(!data.ok){
-        let errorDetail;
-        try {
-          errorDetail = JSON.parse(data.error);
-          errorDetail = errorDetail.error.message;
-        } catch (e) {
-          errorDetail = data.error;
-        }
-        document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
-        console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + errorDetail);
-        return;
-      }
-      if(data.response.models.length == 0){
-        document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
-        console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + browser.i18n.getMessage("API_Models_Error_NoModels"));
-        return;
-      }
-      taLog.log("Ollama models: " + JSON.stringify(data));
-      data.response.models.forEach(model => {
-        if (!Array.from(select_ollama_model.options).some(option => option.value === model.model)) {
-          const option = document.createElement('option');
-          option.value = model.model;
-          option.text = model.name + " (" + model.model + ")";
-          select_ollama_model.appendChild(option);
-        }
-      });
-      syncTomSelect(select_ollama_model);
-      autoSelectSingleModel(select_ollama_model);
-      updateOllamaModelCapabilityUI(modelId_prefix);
-      document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
-    } catch (error) {
-      document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
-      taLog.error(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-      alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + error.message);
-    }
-    
     warn_Ollama_HostEmpty(modelId_prefix);
+    let data = await fetchModelsWithTimeout(ollama);
+    if(!data){
+      console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+      fetchUI.error(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+      return;
+    }
+    if(!data.ok){
+      console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+      fetchUI.error(browser.i18n.getMessage("Ollama_Models_Error_fetching") + ": " + parseModelsFetchError(data.error));
+      return;
+    }
+    if(!data.response?.models?.length){
+      console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+      fetchUI.error(browser.i18n.getMessage("Ollama_Models_Error_fetching") + ": " + browser.i18n.getMessage("API_Models_Error_NoModels"));
+      return;
+    }
+    taLog.log("Ollama models: " + JSON.stringify(data));
+    data.response.models.forEach(model => {
+      if (!Array.from(select_ollama_model.options).some(option => option.value === model.model)) {
+        const option = document.createElement('option');
+        option.value = model.model;
+        option.text = model.name + " (" + model.model + ")";
+        select_ollama_model.appendChild(option);
+      }
+    });
+    syncTomSelect(select_ollama_model);
+    autoSelectSingleModel(select_ollama_model);
+    updateOllamaModelCapabilityUI(modelId_prefix);
+    fetchUI.done();
   });
 
   // OpenAI Comp API Model fetching
@@ -1422,41 +1392,32 @@ export async function injectConnectionUI({
   select_openai_comp_model.addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateOpenAICompModels')).addEventListener('click', async () => {
-    document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'inline';
+    const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateOpenAICompModels', 'openai_comp');
+    fetchUI.loading();
     let openai_comp = new OpenAIComp({
       host: document.getElementById(getPrefixedId("openai_comp_host")).value,
       apiKey: document.getElementById(getPrefixedId("openai_comp_api_key")).value,
       use_v1: document.getElementById(getPrefixedId("openai_comp_use_v1")).checked,
     });
-    openai_comp.fetchModels().then((data) => {
-      if(!data.ok){
-        let errorDetail;
-        try {
-          errorDetail = JSON.parse(data.error);
-          errorDetail = errorDetail.error.message;
-        } catch (e) {
-          errorDetail = data.error;
-        }
-        document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'none';
-        console.error("[ThunderAI] " + browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching")+": " + errorDetail);
-        return;
-      }
-      taLog.log("OpenAIComp models: " + JSON.stringify(data));
-      data.response.forEach(model => {
-        if (!Array.from(select_openai_comp_model.options).some(option => option.value === model.id)) {
-          const option = document.createElement('option');
-          option.value = model.id;
-          option.text = model.id;
-          select_openai_comp_model.appendChild(option);
-        }
-      });
-      syncTomSelect(select_openai_comp_model);
-      autoSelectSingleModel(select_openai_comp_model);
-      document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'none';
-    });
-    
     warn_OpenAIComp_HostEmpty(modelId_prefix);
+    let data = await fetchModelsWithTimeout(openai_comp);
+    if(!data.ok){
+      console.error("[ThunderAI] " + browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
+      fetchUI.error(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching") + ": " + parseModelsFetchError(data.error));
+      return;
+    }
+    taLog.log("OpenAIComp models: " + JSON.stringify(data));
+    data.response.forEach(model => {
+      if (!Array.from(select_openai_comp_model.options).some(option => option.value === model.id)) {
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.text = model.id;
+        select_openai_comp_model.appendChild(option);
+      }
+    });
+    syncTomSelect(select_openai_comp_model);
+    autoSelectSingleModel(select_openai_comp_model);
+    fetchUI.done();
   });
 
    // Anthropic API model fetching
@@ -1475,51 +1436,41 @@ export async function injectConnectionUI({
   // restore, next to showConnectionOptions().
 
   document.getElementById(getPrefixedId('btnUpdateAnthropicModels')).addEventListener('click', async () => {
-    document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'inline';
+    const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateAnthropicModels', 'anthropic');
+    fetchUI.loading();
     let anthropic = new Anthropic({
       apiKey: document.getElementById(getPrefixedId("anthropic_api_key")).value,
       version: document.getElementById(getPrefixedId("anthropic_version")).value,
     });
     let granted = await messenger.permissions.request({ origins: ["https://*.anthropic.com/*"] });
     if(!granted){
-        document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
         taLog.warn("Claude API web permission denied");
-        alert(browser.i18n.getMessage("Optional_Permission_Denied_Model_Fetching"));
+        fetchUI.error(browser.i18n.getMessage("Optional_Permission_Denied_Model_Fetching"));
         return;
     }
-    anthropic.fetchModels().then((data) => {
-      if(!data.ok){
-        let errorDetail;
-        try {
-          errorDetail = JSON.parse(data.error);
-          errorDetail = errorDetail.error.message;
-        } catch (e) {
-          errorDetail = data.error;
-        }
-        document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
-        console.error("[ThunderAI] " + browser.i18n.getMessage("Anthropic_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("Anthropic_Models_Error_fetching")+": " + errorDetail);
-        return;
-      }
-      taLog.log("Anthropic models: " + JSON.stringify(data));
-      data.response.forEach(model => {
-        const existingOption = Array.from(select_anthropic_model.options).find(option => option.value === model.id);
-        if (existingOption) {
-          existingOption.text = model.display_name + " (" + model.id + ")";
-        } else {
-          const option = document.createElement('option');
-          option.value = model.id;
-          option.text = model.display_name + " (" + model.id + ")";
-          select_anthropic_model.appendChild(option);
-        }
-      });
-      syncTomSelect(select_anthropic_model);
-      autoSelectSingleModel(select_anthropic_model);
-      updateAnthropicModelCapabilityUI(modelId_prefix);
-      document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
-    });
-    
     warn_Anthropic_APIKeyEmpty(modelId_prefix);
+    let data = await fetchModelsWithTimeout(anthropic);
+    if(!data.ok){
+      console.error("[ThunderAI] " + browser.i18n.getMessage("Anthropic_Models_Error_fetching"));
+      fetchUI.error(browser.i18n.getMessage("Anthropic_Models_Error_fetching") + ": " + parseModelsFetchError(data.error));
+      return;
+    }
+    taLog.log("Anthropic models: " + JSON.stringify(data));
+    data.response.forEach(model => {
+      const existingOption = Array.from(select_anthropic_model.options).find(option => option.value === model.id);
+      if (existingOption) {
+        existingOption.text = model.display_name + " (" + model.id + ")";
+      } else {
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.text = model.display_name + " (" + model.id + ")";
+        select_anthropic_model.appendChild(option);
+      }
+    });
+    syncTomSelect(select_anthropic_model);
+    autoSelectSingleModel(select_anthropic_model);
+    updateAnthropicModelCapabilityUI(modelId_prefix);
+    fetchUI.done();
   });
 
     document.getElementById(getPrefixedId('btnOpenAICompForceModel')).addEventListener('click', () => {
@@ -2231,6 +2182,96 @@ function checkAnthropicThinkingBudget(modelId_prefix = ''){
   if(errorBox) {
     errorBox.textContent = errorText;
     errorBox.hidden = (errorText === '');
+  }
+}
+
+// None of the fetchModels() implementations sets a timeout of its own, so without
+// this an unreachable endpoint would leave the "Update list" row stuck on "Loading..."
+const MODELS_FETCH_TIMEOUT_MS = 20000;
+
+// How long the green "list loaded" confirmation stays before fading out. The red
+// errors have no timer: they stay until the next click on the button.
+const MODELS_FETCH_OK_VISIBLE_MS = 30000;
+// Must match the opacity transition of .models_fetch_status.is_fading in connection-ui.css.
+const MODELS_FETCH_OK_FADE_MS = 1000;
+
+// Drives the "Update list" row of a provider: while fetching, the button is hidden
+// and the loading label takes its place (so it cannot be clicked twice). When done
+// the button comes back and the status box below the row says how it went: green
+// on success (fading out after MODELS_FETCH_OK_VISIBLE_MS), red on error.
+function modelsFetchUI(modelId_prefix, btnId, provider) {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const btn = document.getElementById(getPrefixedId(btnId));
+  const loadingEl = document.getElementById(getPrefixedId(`${provider}_model_fetch_loading`));
+  const statusBox = document.getElementById(getPrefixedId(`${provider}_model_fetch_status`));
+  // A new object is built on every click, so the fade timers live on the element:
+  // a click during the 30 seconds must cancel the pending fade of the previous result.
+  const setStatus = (message, isOk = false) => {
+    clearTimeout(statusBox._mztaFadeTimer);
+    clearTimeout(statusBox._mztaHideTimer);
+    statusBox.classList.remove('is_fading');
+    statusBox.classList.toggle('is_ok', isOk);
+    statusBox.textContent = message;
+    statusBox.hidden = (message === '');
+    if (isOk) {
+      statusBox._mztaFadeTimer = setTimeout(() => {
+        statusBox.classList.add('is_fading');
+        statusBox._mztaHideTimer = setTimeout(() => setStatus(''), MODELS_FETCH_OK_FADE_MS);
+      }, MODELS_FETCH_OK_VISIBLE_MS);
+    }
+  };
+  const showButton = () => {
+    loadingEl.style.display = 'none';
+    btn.style.display = '';
+  };
+  return {
+    loading: () => {
+      setStatus('');
+      // The label takes the button's place: give it the button's width and text font,
+      // read while the button is still rendered, so the row does not jump. Each host
+      // page styles its buttons differently, hence the runtime read instead of CSS.
+      const btnStyle = getComputedStyle(btn);
+      loadingEl.style.width = `${btn.offsetWidth}px`;
+      loadingEl.style.font = btnStyle.font;
+      loadingEl.style.letterSpacing = btnStyle.letterSpacing;
+      btn.style.display = 'none';
+      loadingEl.style.display = 'inline-block';
+    },
+    done: () => {
+      showButton();
+      setStatus(browser.i18n.getMessage('Models_Fetch_Done'), true);
+    },
+    error: (message) => {
+      showButton();
+      setStatus(message);
+    },
+  };
+}
+
+// Same race as the connection test (js/mzta-connection-test.js). Always resolves:
+// a timeout or a thrown network error (OpenAIComp.fetchModels() does not catch)
+// becomes an {ok: false, error} result like any HTTP failure.
+async function fetchModelsWithTimeout(client) {
+  let timer;
+  const timeout = new Promise((resolve) => {
+    timer = setTimeout(() => resolve({ ok: false, error: browser.i18n.getMessage('connTest_error_timeout') }), MODELS_FETCH_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([client.fetchModels(), timeout]);
+  } catch (error) {
+    return { ok: false, error: error?.message || String(error) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// The providers return the raw response body as the error: pull out the
+// {"error": {"message": ...}} message when there is one.
+function parseModelsFetchError(error) {
+  try {
+    return JSON.parse(error).error.message ?? error;
+  } catch (e) {
+    return error;
   }
 }
 
