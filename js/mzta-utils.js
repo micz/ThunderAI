@@ -128,8 +128,10 @@ export function formatDuration(ms, lang = browser.i18n.getUILanguage()) {
   try {
     return new Intl.DurationFormat(lang, { style: 'short' }).format(duration);
   } catch (e) {
-    const short = { days: 'd', hours: 'h', minutes: 'min', seconds: 's' };
-    return kept.map(unit => duration[unit] + ' ' + short[unit]).join(' ');
+    const unitName = { days: 'day', hours: 'hour', minutes: 'minute', seconds: 'second' };
+    const pieces = kept.map(unit =>
+      new Intl.NumberFormat(lang, { style: 'unit', unit: unitName[unit], unitDisplay: 'short' }).format(duration[unit]));
+    return new Intl.ListFormat(lang, { type: 'unit', style: 'short' }).format(pieces);
   }
 }
 
