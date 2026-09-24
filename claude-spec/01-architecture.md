@@ -500,7 +500,7 @@ Worker. No framework, no build step; plain ES6 modules under the strict default 
 
 ```
 index.html
-  ├── #appHeader                           — logo, product name, static model chip (light DOM)
+  ├── #appHeader                           — logo, product name, static model chip, session token total (light DOM)
   ├── <messages-area>   (messagesArea.js)  — renders the conversation transcript
   ├── <message-input>   (messageInput.js)  — input field, send/stop buttons, status pill
   └── controller.js                        — DI / worker wiring (see below)
@@ -520,6 +520,7 @@ Worker → controller.js → components
   messageSent      → messageInput.handleMessageSent()
   newToken         → messagesArea.handleNewToken(token)          (feeds StreamingMessage + fading span)
   newThinkingToken → messagesArea.handleNewThinkingToken(token)  (feeds StreamingMessage + live "Thinking…" indicator)
+  usage            → messagesArea.handleUsageData(messageId, payload)  (token-usage chip; optional, see below)
   tokensDone       → messagesArea.handleTokensDone(promptData)   (flush → action buttons)
   error            → messagesArea.appendBotMessage(payload,'error') + messageInput.showErrorStatus()
 
@@ -528,6 +529,12 @@ background → controller.js (browser.runtime commands)
   api_send_custom_text → merge custom text into the prompt, then send
   api_error            → render an error bot message
 ```
+
+The `usage` message is **separate from `tokensDone` and carries no response text**, and is only
+emitted when `chat_show_usage_data` is on and the integration reports usage. It is posted *before*
+`tokensDone` so it lands while the turn it belongs to is still open. See
+[04-api-integrations.md](04-api-integrations.md#emitting-to-the-chat-window) for the worker side and
+the DOM-extraction invariants.
 
 Per bot response a fresh `StreamingMessage` accumulates raw + thinking tokens and, on flush,
 returns an **immutable HTML snapshot**; `<messages-area>` renders it and hands the thinking

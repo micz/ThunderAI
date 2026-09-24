@@ -18,6 +18,57 @@
 
 
 import { parseExtraBody } from './api-utils.js';
+import { createUsageData, toUsageNumber } from './mzta-api-usage.js';
+
+// The Gemini API reports token usage on every response.
+export const supportsUsageData = true;
+
+/**
+ * Normalize the usage the Gemini API reports.
+ *
+ * The counters live in `usageMetadata`, at the top level of a full response or of
+ * a streamed chunk. In a stream the object may appear on several chunks and is
+ * cumulative, not per-chunk, so the caller keeps the last non-empty one rather
+ * than adding them up.
+ *
+ * Never throws: every access is guarded, because a partial or unexpected payload
+ * must not break the stream it is being read from.
+ *
+ * @param {object} raw a streamed chunk or a full response body
+ * @returns {object|null} the normalized usage, or null when there is none
+ */
+export function extractUsage(raw) {
+  try{
+    if(raw === null || typeof raw !== 'object') return null;
+
+    const usage = raw.usageMetadata;
+    if(usage === null || typeof usage !== 'object') return null;
+
+    // Gemini counts the thoughts SEPARATELY from candidatesTokenCount (the total is
+    // prompt + candidates + thoughts + tool use), while the normalized contract is
+    // "reasoning_tokens is a subset of output_tokens", as it already is for OpenAI
+    // and Ollama. So the output is candidates + thoughts. cachedContentTokenCount
+    // needs no such fix: promptTokenCount is documented as including it.
+    const thoughts = toUsageNumber(usage.thoughtsTokenCount);
+    let output_tokens = toUsageNumber(usage.candidatesTokenCount);
+    if(output_tokens !== null && thoughts !== null){
+      output_tokens += thoughts;
+    }
+
+    return createUsageData({
+      provider: 'google_gemini',
+      model: raw.modelVersion,
+      input_tokens: usage.promptTokenCount,
+      output_tokens: output_tokens,
+      total_tokens: usage.totalTokenCount,
+      cached_input_tokens: usage.cachedContentTokenCount,
+      reasoning_tokens: usage.thoughtsTokenCount,
+    });
+  }catch(error){
+    console.warn("[ThunderAI] Google Gemini usage data could not be read, ignoring it: " + error);
+    return null;
+  }
+}
 
 export class GoogleGemini {
 
@@ -104,6 +155,44 @@ export class GoogleGemini {
     }
   }
   
+  /**
+   * GET models/{model} -- one model's metadata, notably inputTokenLimit (the
+   * context window). Same result contract as fetchModels(), with the Model
+   * resource as the response.
+   */
+  fetchModelInfo = async (model) => {
+    try{
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + "?key=" + this.apiKey, {
+          method: "GET",
+          headers: {
+              "Content-Type": "application/json"
+          },
+      });
+
+      if (!response.ok) {
+          const errorDetail = await response.text();
+          // No URL in the log: it carries the API key.
+          console.error("[ThunderAI] Google Gemini API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
+          let output = {};
+          output.ok = false;
+          output.error = errorDetail;
+          return output;
+      }
+
+      let output = {};
+      output.ok = true;
+      output.response = await response.json();
+      return output;
+    }catch (error) {
+      console.error("[ThunderAI] Google Gemini API request failed: " + error);
+      let output = {};
+      output.is_exception = true;
+      output.ok = false;
+      output.error = "Google Gemini API request failed: " + error;
+      return output;
+    }
+  }
+
   fetchResponse = async (messages) => {
     try {
 

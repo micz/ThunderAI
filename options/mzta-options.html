@@ -329,6 +329,20 @@
                 <span class="track"></span>
               </label>
             </div>
+            <!-- Only meaningful when the configured integration can report token
+                 counts: hidden outright for the web-only setups. -->
+            <div class="mzta_adv_row" id="chat_show_usage_data_tr" style="display:none;">
+              <div class="mzta_adv_info">
+                <div class="mzta_adv_name">__MSG_prefs_OptionText_chat_show_usage_data__</div>
+                <div class="mzta_adv_desc">__MSG_prefs_OptionText_chat_show_usage_data_info__
+                  <span id="chat_show_usage_data_openai_comp_note" style="display:none;">__MSG_prefs_OptionText_chat_show_usage_data_openai_comp_note__</span>
+                </div>
+              </div>
+              <label class="mzta_switch">
+                <input type="checkbox" id="chat_show_usage_data" name="chat_show_usage_data" class="option-input" />
+                <span class="track"></span>
+              </label>
+            </div>
             <div class="mzta_adv_row">
               <div class="mzta_adv_info">
                 <div class="mzta_adv_name">__MSG_prefs_OptionText_diff_granularity__</div>

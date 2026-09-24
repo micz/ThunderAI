@@ -25,16 +25,32 @@ import './diffPicker.js';    // registers the <diff-picker> custom element
 import { textToBlockHtml } from './diffPicker.js';
 import { renderThinkingBlock } from './thinkingBlock.js';
 import { StreamingMessage } from './streamingMessage.js';
-import { SHARED_BASE_CSS, BUTTON_CSS } from './sharedStyles.js';
 import {
-    buildSparkleIcon, buildCopyIcon, buildCheckIcon, buildDiffIcon,
-    buildSaveIcon, buildUseAnswerIcon, buildScrollToBottomIcon,
+    SHARED_BASE_CSS,
+    BUTTON_CSS
+} from './sharedStyles.js';
+import {
+    buildSparkleIcon,
+    buildCopyIcon,
+    buildCheckIcon,
+    buildDiffIcon,
+    buildSaveIcon,
+    buildUseAnswerIcon,
+    buildScrollToBottomIcon,
 } from './svgIcons.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
+import {
+    buildUsageChip,
+    createSessionUsage,
+    addUsageToSession,
+    contextTokensOf,
+    USAGE_MARKER_ATTR,
+    USAGE_CHIP_CSS,
+} from './usageBadge.js';
 const messagesAreaTemplate = document.createElement('template');
 
 const messagesAreaStyle = document.createElement('style');
-messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
+messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + USAGE_CHIP_CSS + `
     /* Exactly one box here scrolls, and it is #messages. The host must not:
        a wheel event over #messages bubbles up to it, so if both declared
        overflow the transcript could end up scrolling in a box whose scrollTop
@@ -152,6 +168,14 @@ messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
     .message p:last-child{
         margin-bottom: 0;
     }
+    /* The token usage chip (USAGE_CHIP_CSS, prepended above) lives in the
+       action bar, a sibling of .message inside .turn-body and never a
+       descendant of it: every helper that reads an answer out of the DOM walks
+       the message element, so keeping the chip outside is the structural half
+       of the guarantee that it can never be copied, inserted into a reply or
+       fed back to the model. The [data-mzta-usage] attribute is the other half,
+       for the selection paths that start from the user's own range. */
+
     .token {
         display: inline;
         opacity: 0;
@@ -424,6 +448,19 @@ class MessagesArea extends HTMLElement {
         // handleTokensDone, so each turn's flushed HTML snapshot is isolated.
         this._streaming = null;
         this.hideThinking = false;
+        // Token usage UI, off until controller.js enables it: the option must be on
+        // AND the integration must be one that can report the counts.
+        this.showUsageData = false;
+        // Running per-chat usage, allocated only once the feature is enabled. One
+        // window is one chat, so there is nothing to reset between chats.
+        this.sessionUsage = null;
+        // Context window of the model in use, in tokens, or null when unknown.
+        // Read by the usage popovers each time one opens.
+        this.contextWindow = null;
+        // performance.now() when the pending request was sent, for the duration
+        // shown on the usage chip. Measured here rather than by the worker, so
+        // every provider has it, including those that report no usage at all.
+        this._requestStartedAt = null;
         // Live "Thinking..." placeholder element, while it is on screen.
         this.thinkingLiveEl = null;
         // Wrapper of the turn currently being built. It must survive every
@@ -794,6 +831,71 @@ class MessagesArea extends HTMLElement {
         this.hideThinking = !!val;
     }
 
+    // Enable the usage UI for this window. Off by default, so nothing is rendered
+    // and no session counter appears unless the option is on AND the integration
+    // can report the counts (both judged in controller.js).
+    setShowUsageData(val) {
+        this.showUsageData = !!val;
+        if (this.showUsageData && this.sessionUsage === null) {
+            // Created here rather than in the constructor, so a window that never
+            // enables the feature carries no counter state at all. A window is one
+            // chat, so this is also the "reset when a new chat is opened" rule: a
+            // fresh window starts from a fresh accumulator.
+            this.sessionUsage = createSessionUsage();
+        }
+    }
+
+    // Context window of the active model, as the provider or the configuration
+    // states it (see contextWindow.js). Any non-positive or non-numeric value
+    // means "unknown": the popover then shows the context count without a maximum.
+    setContextWindow(tokens) {
+        const n = Number(tokens);
+        this.contextWindow = (Number.isFinite(n) && n > 0) ? n : null;
+    }
+
+    // Record the usage of a finished response, and fold it into the session.
+    //
+    // Nothing is drawn yet: the chip goes in the action bar, which only exists once
+    // 'tokensDone' arrives, and it also carries the duration, which is only known
+    // then. See _buildUsageChipForTurn().
+    //
+    // The messageId identifies the assistant message the worker produced. Only the
+    // turn still open when this arrives can own the usage -- the worker posts it
+    // before 'tokensDone', which is what closes that turn -- so the id is used as a
+    // guard rather than as a lookup key: a usage message that somehow arrives after
+    // its turn was closed is dropped instead of landing on the wrong answer.
+    handleUsageData(messageId, usage) {
+        if (!this.showUsageData) return;
+        if (usage === null || typeof usage !== 'object') return;
+        const turn = this._currentTurnEl;
+        if (turn === null) return;
+        // One usage per turn: a provider that reported twice must not count twice.
+        if (turn._mztaUsageId !== undefined) return;
+        turn._mztaUsageId = messageId;
+        turn._mztaUsage = usage;
+        addUsageToSession(this.sessionUsage, usage);
+    }
+
+    // Build the chip of the turn being closed, from its usage (if any arrived) and
+    // the measured duration. Stored on the turn, so the action bar can place it and
+    // the compact toolbar can take it over when a newer answer arrives.
+    _buildUsageChipForTurn(turn) {
+        if (!this.showUsageData || turn === null) return;
+        const durationMs = (this._requestStartedAt !== null)
+            ? Math.max(0, performance.now() - this._requestStartedAt) : null;
+        this._requestStartedAt = null;
+        const usage = turn._mztaUsage ?? null;
+        // Context and session total are snapshotted now, so an earlier answer's
+        // popover keeps describing the conversation as it was at that answer. The
+        // window is read live instead: it may be looked up after this answer.
+        const chip = buildUsageChip(usage, durationMs, {
+            context: contextTokensOf(usage),
+            sessionTotal: (usage !== null) ? this.sessionUsage.total : null,
+            getWindow: () => this.contextWindow,
+        });
+        if (chip !== null) turn._mztaUsageChip = chip;
+    }
+
     _ensureStreaming() {
         if (!this._streaming) {
             this._streaming = new StreamingMessage();
@@ -818,7 +920,19 @@ class MessagesArea extends HTMLElement {
         // message, so the flush above is a no-op and would leave the indicator
         // spinning forever.
         this._removeThinkingIndicator();
+        const closingTurn = this._currentTurnEl;
+        this._buildUsageChipForTurn(closingTurn);
         await this.addActionButtons(promptData);
+        // addActionButtons() places the chip in the bar. When it bailed out before
+        // building one, the chip still gets a row of its own.
+        const chip = closingTurn?._mztaUsageChip;
+        if (chip && !chip.isConnected) {
+            const row = document.createElement('div');
+            row.classList.add('action-bar');
+            row.appendChild(chip);
+            closingTurn.querySelector('.turn-body')?.appendChild(row);
+            this._updateJumpButton();
+        }
         // The exchange is over, so the anchor has nothing left to hold: its job
         // was to keep the view still while the answer streamed into it. Dropping
         // it here is what lets the follow below reach the REAL bottom.
@@ -853,6 +967,12 @@ class MessagesArea extends HTMLElement {
         // A user message ends the previous model turn, so the next token
         // opens a fresh one.
         this._currentTurnEl = null;
+        // Every real prompt is appended right before it is posted to the worker,
+        // so this is the start of the duration shown on the answer's usage chip.
+        // Info turns are notices, not requests.
+        if (type !== 'info') {
+            this._requestStartedAt = performance.now();
+        }
         // console.log("[ThunderAI] appendUserMessage: " + messageText);
         const turn = this._beginUserTurn(type);
 
@@ -1179,6 +1299,11 @@ class MessagesArea extends HTMLElement {
         // copy button
         actionButtons.appendChild(this._buildCopyButton(fullTextHTMLAtAssignment, false, turn));
 
+        // token usage chip, right after Copy (built in handleTokensDone)
+        if(turn._mztaUsageChip) {
+            actionButtons.appendChild(turn._mztaUsageChip);
+        }
+
         // Save as Summary button (only shown for summary webchat sessions)
         const saveSummaryButton = this._buildSaveSummaryButton(promptData, fullTextHTMLAtAssignment);
         if(saveSummaryButton) {
@@ -1253,6 +1378,12 @@ class MessagesArea extends HTMLElement {
         tools.setAttribute('aria-label', browser.i18n.getMessage("apiwebchat_turn_tools"));
 
         tools.appendChild(this._buildCopyButton(fullTextHTMLAtAssignment, true, ownerTurn));
+
+        // The usage chip moves here from the full bar, so an earlier answer keeps
+        // its figures. Moved, not rebuilt: the node is about to leave with the bar.
+        if(ownerTurn?._mztaUsageChip) {
+            tools.appendChild(ownerTurn._mztaUsageChip);
+        }
 
         if(promptData.action != "0") {
             const useBtn = this._makeIconButton(
@@ -1630,25 +1761,69 @@ class MessagesArea extends HTMLElement {
         }
     }
 
-    getCurrentSelectionHTML() {
+    // The current selection, cloned into a detached container with every usage
+    // chip and popover removed, or null when nothing is selected.
+    //
+    // They carry `user-select: none`, which in practice keeps them out of a
+    // dragged selection — but that property is a hint to the selection algorithm,
+    // not a guarantee about what `cloneContents()` hands back: a select-all, a
+    // programmatic range, or a selection whose endpoints straddle the badge can
+    // still bring it along. Since every path that inserts text into a mail or the
+    // clipboard funnels through here, the scrub is done once, structurally, rather
+    // than trusted to CSS.
+    _cloneSelectionWithoutUsage() {
         const selection = window.getSelection();
-        // console.log(">>>>>>>>>>>>>>>> getCurrentSelectionHTML: " + JSON.stringify(selection.toString()));
-        if (selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            const container = document.createElement('div');
-            container.appendChild(range.cloneContents());
-            return container.innerHTML;
+        if (!selection || selection.rangeCount === 0) return null;
+        const container = document.createElement('div');
+        container.appendChild(selection.getRangeAt(0).cloneContents());
+        // The text of each badge that was caught, so getCurrentSelectionText() can
+        // subtract it from selection.toString() without rebuilding that string.
+        // Empty (and left undefined) on the normal path, which is the signal that
+        // nothing was stripped and the raw selection can be returned untouched.
+        const badges = container.querySelectorAll('[' + USAGE_MARKER_ATTR + ']');
+        if (badges.length > 0) {
+            container._mztaHadUsage = Array.from(badges, el => el.textContent);
+            badges.forEach(el => el.remove());
         }
-        return '';
+        return container;
     }
 
-    // Selected text as plain text. Taken straight from the Selection rather
-    // than by stripping getCurrentSelectionHTML(), so entities in the rendered
-    // answer (&amp;, &lt;, &nbsp;, …) come out as the characters the user can
-    // actually see instead of their HTML escapes.
+    getCurrentSelectionHTML() {
+        // console.log(">>>>>>>>>>>>>>>> getCurrentSelectionHTML: " + JSON.stringify(selection.toString()));
+        const container = this._cloneSelectionWithoutUsage();
+        return container ? container.innerHTML : '';
+    }
+
+    // Selected text as plain text. Still taken straight from the Selection, as it
+    // always was: entities in the rendered answer (&amp;, &lt;, &nbsp;, …) come
+    // out as the characters the user can actually see instead of their HTML
+    // escapes, and toString() puts the line breaks between blocks that a bare
+    // textContent over a cloned range would drop. Both are exactly what the copy
+    // button and the "use this answer" path expect, so this string must not be
+    // rebuilt from the DOM.
+    //
+    // The badge is subtracted from it instead, and only when the selection really
+    // caught one — which `user-select: none` normally prevents. So on every
+    // ordinary selection this returns byte-for-byte what it returned before this
+    // feature existed, and in the pathological case the badge's own text is cut
+    // out rather than the whole result being re-derived.
     getCurrentSelectionText() {
         const selection = window.getSelection();
-        return selection ? selection.toString() : '';
+        if (!selection) return '';
+        let text = selection.toString();
+        if (text === '') return '';
+
+        const container = this._cloneSelectionWithoutUsage();
+        if (container === null || !container._mztaHadUsage) return text;
+
+        // Remove each chip's rendered text. The chip is a single line built by
+        // buildUsageChip(), so a plain substring removal is exact. A closed popover
+        // contributes nothing to toString() and its entry simply never matches.
+        for (const badgeText of container._mztaHadUsage) {
+            if (badgeText === '') continue;
+            text = text.split(badgeText).join('');
+        }
+        return text.replace(/\n{3,}/g, '\n\n').trim();
     }
 
 }

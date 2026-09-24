@@ -20,7 +20,12 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { buildSendIcon, buildStopIcon, buildCheckIcon, buildAlertIcon } from './svgIcons.js';
+import {
+    buildSendIcon,
+    buildStopIcon,
+    buildCheckIcon,
+    buildAlertIcon
+} from './svgIcons.js';
 import { SHARED_BASE_CSS } from './sharedStyles.js';
 
 const messageInputTemplate = document.createElement('template');

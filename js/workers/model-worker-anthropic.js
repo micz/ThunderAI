@@ -22,9 +22,12 @@
 
 import {
     Anthropic,
-    describeAnthropicError
+    describeAnthropicError,
+    extractUsage
 } from '../api/anthropic.js';
+import { mergeUsageData } from '../api/mzta-api-usage.js';
 import { taLogger } from '../mzta-logger.js';
+import { initUsageEmitter, nextUsageMessageId, postUsageData } from './usage-emitter.js';
 
 let anthropic = null;
 let stopStreaming = false;
@@ -35,6 +38,27 @@ let taLog = null;
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
 let thinkingAccumulator = '';
+let usageData = null;
+
+// The id the window binds this response's usage badge to. Assigned when the
+// request goes out, so the 'usage' message and the answer it belongs to agree.
+let usageMessageId = null;
+
+// The usage captured for the last completed request. Accumulated here and nowhere
+// else: it is deliberately NOT posted anywhere yet, NOT appended to the response
+// text, and NOT pushed into conversationHistory -- the text the callers receive
+// must stay byte-identical to what it was before this layer existed.
+export function getUsageData() {
+    return usageData;
+}
+
+// Only the provider, the model and the token counts. Never the request URL or the
+// headers: Gemini and some OpenAI-compatible endpoints carry the API key in the
+// query string, and a header map carries it outright.
+function logUsageData(usage) {
+    if (!taLog || !taLog.do_debug || usage === null) return;
+    taLog.log("usage data captured: " + JSON.stringify(usage));
+}
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
@@ -51,8 +75,11 @@ self.onmessage = async function(event) {
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-anthropic', do_debug);
+        initUsageEmitter(event.data);
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', content: event.data.message });
+        usageData = null;
+        usageMessageId = nextUsageMessageId();
 
     const response = await anthropic.fetchResponse(conversationHistory);
         postMessage({ type: 'messageSent' });
@@ -99,6 +126,8 @@ self.onmessage = async function(event) {
                 taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                 assistantResponseAccumulator = '';
+                // Separate from tokensDone and free of any response text: see usage-emitter.js.
+                postUsageData(usageData, usageMessageId);
                 postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
                 thinkingAccumulator = '';
                 break;
@@ -109,6 +138,8 @@ self.onmessage = async function(event) {
                 taLog.log("AI full response: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                 assistantResponseAccumulator = '';
+                // Separate from tokensDone and free of any response text: see usage-emitter.js.
+                postUsageData(usageData, usageMessageId);
                 postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
                 thinkingAccumulator = '';
                 break;
@@ -169,14 +200,26 @@ self.onmessage = async function(event) {
                             break;
 
                         case 'message_start':
-                            // optional
+                        case 'message_delta': {
+                            // The usage arrives in two halves: the input tokens and
+                            // the cache counters in message_start, the output tokens
+                            // in message_delta. The latter is cumulative, so merging
+                            // each one in turn leaves the last value standing.
+                            const usage = extractUsage(parsedData);
+                            if (usage !== null) {
+                                usageData = mergeUsageData(usageData, usage);
+                                logUsageData(usageData);
+                            }
                             break;
+                        }
 
                         case 'message_stop':
                             taLog.log("AI full reasoning: " + thinkingAccumulator);
                             taLog.log("AI full response: " + assistantResponseAccumulator);
                             conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                             assistantResponseAccumulator = '';
+                            // Separate from tokensDone and free of any response text: see usage-emitter.js.
+                            postUsageData(usageData, usageMessageId);
                             postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
                             thinkingAccumulator = '';
                             return; // end the loop

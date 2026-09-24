@@ -989,6 +989,25 @@ export function isApiUsableConnection(connection_type){
   return !hasNoConnectionSelected(connection_type) && (connection_type !== 'chatgpt_web');
 }
 
+// Which connection types report token usage, so the UI can ask without importing
+// every provider module (each one also exports its own `supportsUsageData`, and
+// the two must stay in agreement). The web interfaces -- ChatGPT Web and any
+// other non-API integration -- have no API to report it, hence false.
+const USAGE_DATA_SUPPORT = {
+  chatgpt_web: false,
+  chatgpt_api: true,
+  google_gemini_api: true,
+  anthropic_api: true,
+  ollama_api: true,
+  openai_comp_api: true,
+};
+
+// True when the given connection type can report token usage. An unknown or unset
+// type answers false: nothing can be shown for a provider we know nothing about.
+export function supportsUsageData(connection_type){
+  return USAGE_DATA_SUPPORT[connection_type] === true;
+}
+
 export function extractJsonObject(inputString) {
   try {
     const jsonMatch = inputString.match(/\{[\s\S]*\}/);

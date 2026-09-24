@@ -18,6 +18,53 @@
 
 
 import { parseExtraBody } from './api-utils.js';
+import { createUsageData } from './mzta-api-usage.js';
+
+// /api/chat reports its counters on the final chunk.
+export const supportsUsageData = true;
+
+/**
+ * Normalize the usage Ollama reports on the final chunk of /api/chat.
+ *
+ * Only the chunk flagged `done: true` carries the counters, so anything else
+ * returns null. Ollama gives no total, hence the computed one, and no rate: the
+ * tokens per second are derived from eval_count over eval_duration, which the
+ * server reports in nanoseconds.
+ *
+ * Never throws: every access is guarded, because a partial or unexpected payload
+ * must not break the stream it is being read from.
+ *
+ * @param {object} raw a streamed chunk or a full response body
+ * @returns {object|null} the normalized usage, or null when there is none
+ */
+export function extractUsage(raw) {
+  try{
+    if(raw === null || typeof raw !== 'object') return null;
+    if(raw.done !== true) return null;
+
+    const eval_count = raw.eval_count;
+    const eval_duration = raw.eval_duration;
+
+    // Guarded on both operands: a missing or zero duration would yield Infinity or
+    // NaN, and "not measurable" is exactly what null is for.
+    let tokens_per_second = null;
+    if(typeof eval_count === 'number' && Number.isFinite(eval_count)
+       && typeof eval_duration === 'number' && Number.isFinite(eval_duration) && eval_duration > 0){
+      tokens_per_second = Math.round((eval_count / (eval_duration / 1e9)) * 10) / 10;
+    }
+
+    return createUsageData({
+      provider: 'ollama',
+      model: raw.model,
+      input_tokens: raw.prompt_eval_count,
+      output_tokens: eval_count,
+      tokens_per_second: tokens_per_second,
+    });
+  }catch(error){
+    console.warn("[ThunderAI] Ollama usage data could not be read, ignoring it: " + error);
+    return null;
+  }
+}
 
 
 export class Ollama {
@@ -131,6 +178,43 @@ export class Ollama {
             method: "POST",
             headers: this._headers(),
             body: JSON.stringify({ model: model }),
+        });
+
+        if (!response.ok) {
+            const errorDetail = await response.text();
+            console.error("[ThunderAI] Ollama API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
+            let output = {};
+            output.ok = false;
+            output.error = errorDetail;
+            return output;
+        }
+
+        let output = {};
+        output.ok = true;
+        output.response = await response.json();
+        return output;
+      }catch (error) {
+        console.error("[ThunderAI] Ollama API request failed: " + error);
+        let output = {};
+        output.is_exception = true;
+        output.ok = false;
+        output.error = "Ollama API request failed: " + error;
+        return output;
+      }
+    }
+
+    /**
+     * GET /api/ps -- the models currently loaded in memory. Each entry carries
+     * `context_length`, the context the server actually runs the model with,
+     * which can be smaller than the model's maximum reported by /api/show.
+     *
+     * Same result contract as fetchModels().
+     */
+    fetchRunningModels = async () => {
+      try{
+        const response = await fetch(this.host + "/api/ps", {
+            method: "GET",
+            headers: this._headers(),
         });
 
         if (!response.ok) {

@@ -671,6 +671,217 @@ API calls require host permissions. These are declared as `optional_permissions`
 - `https://*.anthropic.com/*` for Claude
 - `https://*/*` and `http://*/*` for Ollama and OpenAI-compatible endpoints
 
+## Token usage data
+
+Every provider reports token counts under a different name and a different shape. `js/api/mzta-api-usage.js`
+normalizes them into one object, so nothing downstream has to know a provider's field names. Like
+`api-utils.js` it is **worker-safe**: no DOM, no `browser.*`/`messenger.*`.
+
+```js
+{
+  provider, model,
+  input_tokens, output_tokens, total_tokens,
+  cached_input_tokens, cache_creation_tokens,
+  reasoning_tokens, tokens_per_second,
+}
+```
+
+**`null` and `0` are not interchangeable, and this distinction carries all the way to the UI:**
+
+- `null` — the provider does **not** expose this metric
+- `0` — the provider reported zero
+
+A missing value is therefore never coerced to `0`. `createUsageData(fields)` defaults every absent key to
+`null` and computes `total_tokens` from the input/output pair **only** when both are numbers and no total was
+reported. `isUsageDataEmpty(usage)` is true when there is no object or every numeric field is `null`.
+`mergeUsageData(a, b)` merges two partial objects with `b`'s non-null values winning, recomputing the total —
+Anthropic needs it, because its input and output counts arrive on two different stream events. A side's total
+counts as *reported* only when it differs from that side's own `input + output`: one equal to the sum is
+indistinguishable from the one `createUsageData()` computed, and keeping it would freeze the total at
+`message_start`'s placeholder `output_tokens: 1`.
+
+**Subset invariant.** Every extractor normalizes so that `cached_input_tokens` and `cache_creation_tokens` are
+**part of** `input_tokens`, and `reasoning_tokens` is **part of** `output_tokens`. OpenAI (both APIs) and Ollama
+report it that way natively; Anthropic and Gemini do not and are adjusted in their extractor (below). The chat
+popover's "of which" rows depend on it.
+
+Display and formatting helpers deliberately live **outside** this module.
+
+### Per-provider support
+
+Each API module exports `supportsUsageData` (boolean) and, when true, `extractUsage(raw)`, which returns a
+normalized object or `null`. **`extractUsage()` must never throw**: it is called per streamed chunk, so a
+partial or unexpected payload must not break the stream it is reading. Every access is guarded and the body is
+wrapped in `try/catch`.
+
+`supportsUsageData(connection_type)` in `js/mzta-utils.js` answers the same question **by connection type**, so
+the UI can query it without importing every provider module. The two must stay in agreement. ChatGPT Web — and
+any other non-API web integration — is `false`: there is no API to report anything.
+
+| Provider | Populated | Always `null` |
+|---|---|---|
+| `chatgpt_api` (`openai_responses`) | input, output, total, cached_input, reasoning | cache_creation, tokens_per_second |
+| `anthropic_api` | input *(incl. cache)*, output, total *(computed)*, cached_input, cache_creation | reasoning, tokens_per_second |
+| `google_gemini_api` | input, output *(incl. thoughts)*, total, cached_input, reasoning | cache_creation, tokens_per_second |
+| `ollama_api` | input, output, total *(computed)*, tokens_per_second | cached_input, cache_creation, reasoning |
+| `openai_comp_api` | input, output, total, cached_input, reasoning *(all best effort)* | cache_creation, tokens_per_second |
+| `chatgpt_web` | — *(no extractor)* | everything |
+
+Where the data comes from, per provider:
+
+- **openai_responses** — `response.usage`. While streaming it exists **only** on the final `response.completed`
+  event, under `event.response.usage`; `extractUsage()` accepts both that event and a plain response body.
+- **anthropic** — split across two events: `message_start` carries the input tokens and both cache counters
+  (under `message.usage`), `message_delta` carries the output tokens (cumulative, so the last one wins). The
+  extractor returns a **partial** object and the worker combines the halves with `mergeUsageData()`.
+  Claude's `input_tokens` **excludes** the cache (documented total input = `input_tokens +
+  cache_read_input_tokens + cache_creation_input_tokens`), so the extractor sums them into `input_tokens` to
+  honour the subset invariant.
+- **google_gemini** — `usageMetadata`, at the top level of a response or a chunk. In a stream it can appear on
+  several chunks and is **cumulative, not per-chunk**, so the last non-empty one replaces the previous. It can
+  ride on a chunk with no `candidates`, so the worker reads it **before** its candidates guard.
+  `thoughtsTokenCount` is reported **separately** from `candidatesTokenCount` (the total is prompt + candidates +
+  thoughts + tool use), so the extractor sets `output_tokens = candidates + thoughts`. `promptTokenCount` is
+  documented as already including `cachedContentTokenCount`.
+- **ollama** — the final chunk of `/api/chat` (`done === true`). `tokens_per_second` is derived from
+  `eval_count / (eval_duration / 1e9)`, rounded to one decimal; a missing or zero duration yields `null`, never
+  `Infinity` or `NaN`.
+- **openai_comp** — `usage` on the response or the final streamed chunk, best effort. **A streamed response
+  emits it only when the request includes `stream_options: { include_usage: true }`**, which `fetchResponse()`
+  adds while streaming. Many compatible backends (llama.cpp, LM Studio, some OpenRouter models) ignore the
+  parameter or never send `usage` — the request must still succeed and `extractUsage()` simply returns `null`.
+  The usage frame is a frame with an **empty `choices` array**, so the worker reads it before its `choices`
+  guard.
+
+### Wiring in the workers
+
+Each worker keeps the accumulated usage in a module-level `usageData`, reset at the start of every
+`chatMessage`, and exposes it through `getUsageData()`.
+
+The value is **never appended to the response text and never pushed into `conversationHistory`** — the text
+callers receive is byte-identical to what it was before this layer existed, and no usage data is ever sent back
+to the API on the next turn. That invariant is the whole contract; everything below only adds a display path.
+
+Capture is logged through `taLog` (debug-gated), carrying the **provider, model and token counts only**. Never
+log request URLs or headers: Gemini and some OpenAI-compatible endpoints carry the API key in the query string.
+
+### Emitting to the chat window
+
+`js/workers/usage-emitter.js` is the single place a worker hands its usage to the chat window. Each worker ends
+a response in two or three different places (end of stream, user stop, a provider-specific terminal event) and
+each of them posts `tokensDone`; routing the usage through one helper is what keeps those ten call sites from
+drifting apart.
+
+- `initUsageEmitter(event.data)` — called from the worker's `init` branch; reads the `chat_show_usage_data`
+  flag the controller puts on the init message.
+- `nextUsageMessageId()` — called once per response, next to the `usageData = null` reset, so the emitted id
+  and the answer it belongs to agree.
+- `postUsageData(usageData, usageMessageId)` — called immediately **before** every `postMessage({type:
+  'tokensDone'})`.
+
+The message is `{ type: 'usage', messageId, payload }`, **separate from `tokensDone` and carrying no text**.
+Nothing is emitted when the option is off, when the provider reported nothing, or when `isUsageDataEmpty()` is
+true — extraction and the debug log still run in all three cases.
+
+Ordering matters: the usage is posted **before** `tokensDone` because the window stores the usage on the
+turn that `tokensDone` then closes. Worker messages are delivered in order, so posting first is sufficient.
+
+### Rendering in the chat window
+
+`api_webchat/usageBadge.js` holds the whole display layer (`js/api/mzta-api-usage.js` must stay DOM-free). The
+only usage chrome is a **chip per answer** in its action bar, with a detail popover that also carries the
+conversation-level figures (context used, session total). There is none in the window header (only the model
+and the API) and none above the input field. The guiding rule is **show only what
+exists**: a null field is omitted entirely, never rendered as `0`, `—` or `n/a`; a reported `0` is printed.
+
+**Duration.** `MessagesArea` measures it itself, from `appendUserMessage()` (every real prompt is appended just
+before it is posted to the worker) to `handleTokensDone()`, with `performance.now()`. It is therefore available
+for every provider, including an endpoint that reports no usage at all.
+
+**Flow.** `handleUsageData()` only stores the usage on the open turn (`turn._mztaUsage`, once per turn) and folds
+it into the session; it draws nothing. `handleTokensDone()` builds the chip from that usage plus the duration
+(`_buildUsageChipForTurn()`, stored as `turn._mztaUsageChip`) **before** `addActionButtons()`, which places it
+right after Copy. When the answer stops being the newest, `_buildTurnTools()` **moves** the same node into the
+compact toolbar, so earlier answers keep their figures. If `addActionButtons()` bails out early, the chip gets
+an `.action-bar` row of its own. Nothing is shown while streaming.
+
+**Chip text**, first applicable: total → `711 tokens`; output only → `611 output tokens`; no tokens → the
+duration, `3.4 s`. Numbers use `toLocaleString()` with the browser locale.
+
+**Popover.** The chip is a button (`aria-haspopup="dialog"`, `aria-expanded`, `aria-controls`) only when there is
+detail beyond the duration; otherwise it is a static label and there is no popover. The popover sits above the
+chip, left-aligned; it closes on a second click, on Esc (focus returns to the chip) and on a `pointerdown`
+anywhere outside it (document-level listeners, `composedPath()` sees through the open shadow roots). At most one
+is open window-wide. Rows, in order, each only if the value exists:
+
+| Row | Field | Condition |
+|---|---|---|
+| Input | `input_tokens` | |
+| &nbsp;&nbsp;of which cached | `cached_input_tokens` | input known |
+| &nbsp;&nbsp;of which written to cache | `cache_creation_tokens` | input known |
+| Output | `output_tokens` | |
+| &nbsp;&nbsp;of which reasoning | `reasoning_tokens` | output known |
+| **Total** | `total_tokens` | input or output known (the total alone would repeat the chip) |
+| Duration | measured | the popover exists; `· N tok/s` appended when a rate exists |
+| Context | `contextTokensOf(usage)` | input+output (else total) known; `711 / 8,192 · 9%` when the window is known, else just the count. At **≥ 80%** the value uses `--warn` and a note row adds `consider starting a new chat` |
+| Session total | session sum at this answer | known and different from this answer's total (so not on the first answer) |
+
+Dividers separate the token rows, the duration and the conversation rows. The popover exists when there is any
+token row or a context count; with the duration alone the chip is static.
+
+**Conversation figures.** `MessagesArea` keeps `sessionUsage.total` (`createSessionUsage()` /
+`addUsageToSession()`), the sum of every answer's `total_tokens`, null until one reports it; one window is one
+chat, so there is nothing to reset. `_buildUsageChipForTurn()` passes `buildUsageChip()` a **snapshot** of this
+answer's context (input + output: what the next request resends, since the workers resend the whole history)
+and of the session total at that answer, so an earlier answer's popover keeps describing the conversation as it
+was then. The context **window** is passed as a getter instead and **the popover is rebuilt on every open**,
+because the window is looked up asynchronously and may arrive after the first answer's chip was built.
+
+The rate is `tokens_per_second` when the provider reports it (Ollama, generation phase only), otherwise
+`output_tokens / (durationMs / 1000)` — a wall-clock figure that includes network and prompt processing.
+
+The "of which" rows rely on the **subset invariant** of the normalized object (see
+[Per-provider support](#per-provider-support)).
+
+The chip lives in the action bar, a **sibling of the `.message` element — never inside it**. That placement is
+the structural half of the guarantee that it cannot be picked up by anything that reads an answer back out of
+the DOM; the `data-mzta-usage` attribute (`USAGE_MARKER_ATTR`), set on the chip and on the popover, is the other
+half.
+
+The extraction paths and why each is safe:
+
+| Path | Source | Why the chip cannot reach it |
+|---|---|---|
+| Copy button | `fullTextHTMLAtAssignment` | An immutable string snapshotted at flush time, never read from the DOM |
+| "Use this answer" / reply | same snapshot, or `picker.composeResultHTML()` | Same; the picker owns content handed to it, in its own shadow root |
+| Save as summary | same snapshot | Same |
+| Diff picker | same snapshot + `prompt_info` | Same |
+| An explicit text selection | `getCurrentSelectionText()` | `user-select: none`, plus the chip's text is subtracted from `selection.toString()` if one was caught anyway |
+| An explicit HTML selection | `getCurrentSelectionHTML()` | `_cloneSelectionWithoutUsage()` removes every `[data-mzta-usage]` node from the cloned range |
+
+`getCurrentSelectionText()` deliberately still returns `selection.toString()` on the normal path rather than
+`textContent` over the scrubbed clone: `toString()` inserts the line breaks between blocks that a bare
+`textContent` would drop, and changing it would alter what the copy button produces for multi-paragraph
+selections.
+
+### Context window
+
+The context window is **only what the provider or the configuration states — never a guess from a per-model
+table**. `api_webchat/contextWindow.js` (`resolveContextWindow(integration, prefs)`, never throws, resolves to a
+positive number or `null`) looks it up; `controller.js` runs it **once, after the first completed answer**, not
+awaited, then calls `messagesArea.setContextWindow()`; popovers opened from then on show the maximum:
+
+| Provider | Source, most authoritative first |
+|---|---|
+| Ollama | `ollama_num_ctx` setting (> 0) → `/api/ps` `context_length` of the loaded model (`fetchRunningModels()`; the model is loaded once an answer came back, which is why the lookup waits for one) → `num_ctx` in the Modelfile `parameters` of `/api/show` → `model_info["<arch>.context_length"]` of `/api/show` (the model maximum; right for `:cloud` models, which `/api/ps` does not list). Tags match with Ollama's implicit `:latest`. |
+| Gemini | `models.get` → `inputTokenLimit` (`GoogleGemini.fetchModelInfo()`) |
+| Claude | `GET /v1/models/{id}` → `max_input_tokens` (`Anthropic.fetchModelInfo()`) |
+| OpenAI, OpenAI-compatible | none exposed → always `null`: the Context row shows the count only |
+
+
+The **automatic features** (spam filter, tagging, …) have no chat UI and are unaffected: their usage stays in
+the `taLog` debug output.
+
 ## Adding a New Provider
 
 1. Create `js/api/<provider>.js` with the API call logic
@@ -682,3 +893,5 @@ API calls require host permissions. These are declared as `optional_permissions`
 7. Add required host permissions to `manifest.json` optional_permissions
 8. Add i18n strings to `_locales/en/messages.json`
 9. Branch on `is_exception` in the worker's error block — see [Error contract between `js/api/*` and workers](#error-contract-between-jsapi-and-workers) above
+10. Export `supportsUsageData` and, when true, `extractUsage()` from the API module, add the connection type to `USAGE_DATA_SUPPORT` in `js/mzta-utils.js`, and accumulate the result in the worker — see [Token usage data](#token-usage-data) above
+11. Wire the worker to `js/workers/usage-emitter.js`: `initUsageEmitter()` in the `init` branch, `nextUsageMessageId()` beside the `usageData` reset, and `postUsageData()` before **every** `tokensDone` — see [Emitting to the chat window](#emitting-to-the-chat-window) above

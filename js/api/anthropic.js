@@ -23,12 +23,75 @@ import {
   ANTHROPIC_EFFORT_LEVELS,
   ANTHROPIC_DEFAULT_EFFORT
 } from './anthropic_model_capabilities.js';
+import { createUsageData, isUsageDataEmpty, toUsageNumber } from './mzta-api-usage.js';
 
 // Smallest extended thinking budget the Messages API accepts. Anything lower is
 // rejected with a 400, so the request builder drops the budget below it and the
 // options page warns about it -- both read this constant, so the two rules cannot
 // drift apart.
 export const ANTHROPIC_MIN_THINKING_BUDGET = 1024;
+
+// The Messages API reports token usage on every response.
+export const supportsUsageData = true;
+
+/**
+ * Normalize the usage the Messages API reports.
+ *
+ * The streamed usage is split across two events, so this returns a PARTIAL
+ * object and the caller combines the pieces with mergeUsageData():
+ *   - `message_start` carries the input tokens and the two cache counters, under
+ *     event.message.usage;
+ *   - `message_delta` carries the output tokens, under event.usage. That count is
+ *     cumulative, so the last event simply wins.
+ * A non-streamed body holds both halves in its top-level `usage` object and is
+ * accepted by the same code path.
+ *
+ * Never throws: every access is guarded, because a partial or unexpected payload
+ * must not break the stream it is being read from.
+ *
+ * @param {object} raw a stream event or a full response body
+ * @returns {object|null} the normalized (possibly partial) usage, or null
+ */
+export function extractUsage(raw) {
+  try{
+    if(raw === null || typeof raw !== 'object') return null;
+
+    // message_start nests both the usage and the model inside `message`; the other
+    // shapes keep them at the top level.
+    const source = (raw.message !== null && typeof raw.message === 'object') ? raw.message : raw;
+    const usage = source.usage;
+    if(usage === null || typeof usage !== 'object') return null;
+
+    // Claude's input_tokens EXCLUDES the cached part: the documented total input is
+    // input_tokens + cache_read_input_tokens + cache_creation_input_tokens. Every
+    // other provider reports an input count that already includes its cached
+    // tokens, and the normalized contract is "cached_input_tokens and
+    // cache_creation_tokens are subsets of input_tokens", so the sum is taken here.
+    // A cache counter that is absent adds nothing; a missing input_tokens stays null.
+    const cache_read = toUsageNumber(usage.cache_read_input_tokens);
+    const cache_creation = toUsageNumber(usage.cache_creation_input_tokens);
+    let input_tokens = toUsageNumber(usage.input_tokens);
+    if(input_tokens !== null){
+      input_tokens += (cache_read ?? 0) + (cache_creation ?? 0);
+    }
+
+    const partial = createUsageData({
+      provider: 'anthropic',
+      model: source.model,
+      input_tokens: input_tokens,
+      output_tokens: usage.output_tokens,
+      cached_input_tokens: cache_read,
+      cache_creation_tokens: cache_creation,
+    });
+
+    // A usage object holding no counter at all -- some events carry an empty one --
+    // is worth nothing to the caller and would only overwrite a model already known.
+    return isUsageDataEmpty(partial) ? null : partial;
+  }catch(error){
+    console.warn("[ThunderAI] Claude usage data could not be read, ignoring it: " + error);
+    return null;
+  }
+}
 
 
 export class Anthropic {
@@ -74,6 +137,45 @@ export class Anthropic {
     this.stream = stream;
   }
 
+
+  /**
+   * GET /v1/models/{model_id} -- one model's metadata, notably max_input_tokens
+   * (the context window). Same result contract as fetchModels(), with the
+   * ModelInfo object as the response.
+   */
+  fetchModelInfo = async (model) => {
+    try{
+      const response = await fetch("https://api.anthropic.com/v1/models/" + encodeURIComponent(model), {
+          method: "GET",
+          headers: {
+              "Content-Type": "application/json",
+              "x-api-key": this.apiKey,
+              "anthropic-version": this.version,
+          },
+      });
+
+      if (!response.ok) {
+          const errorDetail = await response.text();
+          console.error("[ThunderAI] Claude API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
+          let output = {};
+          output.ok = false;
+          output.error = errorDetail;
+          return output;
+      }
+
+      let output = {};
+      output.ok = true;
+      output.response = await response.json();
+      return output;
+    }catch (error) {
+      console.error("[ThunderAI] Claude API request failed: " + error);
+      let output = {};
+      output.is_exception = true;
+      output.ok = false;
+      output.error = "Claude API request failed: " + error;
+      return output;
+    }
+  }
 
   fetchModels = async () => {
     try{
