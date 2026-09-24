@@ -156,6 +156,7 @@ export const prefs_default = {
     chatgpt_web_custom_gpt: '',
     chatgpt_web_load_wait_time: 1000,
     special_command_timeout: 120000,   // ms before a hung special command (API worker) is aborted
+    batch_max_concurrency: 1,   // max messages processed at once by one processEmails() batch (auto add tags / spam filter / summarize / translate, on receive or from the context menu); each message runs its features in series
     dynamic_menu_force_enter: false,
     placeholders_use_default_value: false,
     hide_thinking: true,
@@ -167,7 +168,6 @@ export const prefs_default = {
     add_tags: false,
     add_tags_maxnum: 3,
     add_tags_max_messages: 0,   // max messages tagged at once from the context menu (0 = no limit); above this the user is warned and the operation is blocked. Automatic tagging is not capped
-    add_tags_max_concurrency: 1,   // max messages tagged at once in one processEmails() batch (on receive or from the context menu)
     add_tags_hide_exclusions: false,
     add_tags_exclusions_exact_match: false,
     add_tags_first_uppercase: true,
@@ -194,11 +194,9 @@ export const prefs_default = {
     spamfilter_skip_addressbook: true,
     spamfilter_show_msg_panel: true,
     spamfilter_only_inbox: false,   // If true, auto spam filter runs only on inbox folders
-    spamfilter_max_concurrency: 1,  // max spam analyses in flight at once in one processEmails() batch
     summarize: false,
     summarize_auto: 1,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
     summarize_display_mode: 'inline',    // 'inline' or 'webchat'
-    summarize_max_concurrency: 1,        // max summaries generated at once on receive, in one processEmails() batch
     summarize_max_messages: 20,          // max number of messages summarized at once (webchat mode); above this the user is warned and the operation is blocked
     summarize_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
     summarize_strip_formatting: false,   // strip HTML/markdown formatting from AI summary
@@ -209,7 +207,6 @@ export const prefs_default = {
     translate: true,
     translate_auto: 0,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
     translate_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
-    translate_max_concurrency: 1,        // max translations generated at once in one processEmails() batch (on receive or from the context menu)
     translate_lang: '',                  // target language, fallback on default_chatgpt_lang
     translate_exclude_lang: '',          // languages to do not translate
     ...generated_prefs

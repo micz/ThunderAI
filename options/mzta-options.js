@@ -109,6 +109,7 @@ async function restoreOptions() {
           if(element.id == 'chatgpt_win_height') default_number_value = prefs_default.chatgpt_win_height;
           if(element.id == 'chatgpt_win_width') default_number_value = prefs_default.chatgpt_win_width;
           if(element.id == 'special_command_timeout') default_number_value = prefs_default.special_command_timeout;
+          if(element.id == 'batch_max_concurrency') default_number_value = prefs_default.batch_max_concurrency;
           element.value = result[element.id] ?? default_number_value;
           break;
         case 'text':

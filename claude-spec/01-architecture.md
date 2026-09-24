@@ -121,9 +121,9 @@ newEmailListener  (checks _process_incoming, which includes summarize_auto === 3
        ↓
 processEmails({ summarizeOnReceive: true })
        ↓  (single loop — shared with addTagsAuto / spamFilter / translateOnReceive;
-       ↓   the loop only gates the message and pushes it onto summarizeTargets)
-spam drain → add_tags drain (those in the same batch) → summary drain
-       ↓  (up to summarize_max_concurrency at once, target re-resolved first)
+       ↓   the loop only gates the message and sets target.summarize)
+per-message pipeline: spam → add_tags (those in the same batch) → summary
+       ↓  (up to batch_max_concurrency messages at once)
 _generateSummaryForMessage(headerMessageId, null, { messageData })
   ← tabId is null → no UI messages sent, silent pre-cache
        ↓
@@ -153,7 +153,7 @@ subscribed IMAP folders that are not checked for new mail, and messages moved by
    processEmails({ summarizeSenders: [...] })
         ↓  (per message, inside the shared loop)
    summarizeOnReceive || matchAddressList(message.author, summarizeSenders)
-        ↓  (pushed onto summarizeTargets, run by the summary drain)
+        ↓  (sets target.summarize, run by the message's pipeline)
    _generateSummaryForMessage(headerMessageId, null, { messageData })   ← silent pre-cache
 
 2. On message open, if reception did not catch it
@@ -168,91 +168,98 @@ subscribed IMAP folders that are not checked for new mail, and messages moved by
 There is deliberately **no periodic scan**: no `setInterval`, no `browser.alarms`, no
 `browser.messages.query()` sweep, no recursive folder walk.
 
-### Concurrent drains in `processEmails()`
+### Per-message pipelines in `processEmails()`
 
 No feature of the shared loop awaits its AI call inside the `for await` message loop: a burst of
 incoming mail (or a large context-menu selection) would otherwise become one long serial chain
 (20 messages × ~8 s ≈ 2.5 min for the last one). The loop keeps all the per-message gating —
 account enable lists, `isMessageInAutoSkippedFolder()`, the only-inbox options, the sender list,
-`_summarizeConnectionMissing()`, the add_tags prompt/connection check — and pushes each surviving
-message onto `spamTargets` / `addTagsTargets` / `summarizeTargets` / `translateTargets`. After the
-loop, still inside the outer `try`, the four lists are drained **in this order: spam, add_tags,
-summary, translate**. Spam goes first because a spam verdict can move the message to the junk
-folder, which makes its tags, summary and translation pointless: a message the spam drain moved is
-**not tagged** (it used to be, when add_tags ran in the loop before the spam filter).
+`_summarizeConnectionMissing()`, the add_tags prompt/connection check — and builds **one target per
+message**, `{ message, spam, addTags, summarize, bySender, translate }`, with a flag for each
+feature that message needs. After the loop, still inside the outer `try`, up to
+`batch_max_concurrency` messages run at once, and **each message goes through its features in
+series: spam, add_tags, summary, translate** (`runPipeline()`).
 
 ```
 for await (message of batch)        ← gating only, no fetch and no AI call
-    spamTargets.push({ message })
-    addTagsTargets.push({ message })     (only if resolveAddTagsSetup() found a prompt + usable connection)
-    summarizeTargets.push({ message })   (de-duplicated by headerMessageId)
-    translateTargets.push({ message })   (de-duplicated by headerMessageId)
+    targets.push({ message, spam, addTags, summarize, translate })
         ↓
-spam drain       runWithConcurrency(spamTargets, spamfilter_max_concurrency, …)
-        ↓          getFull + _loadMessageBody → _generateSpamReportForMessage({ autoMove: true })
-        ↓          { moved: true } → movedToJunk
-add_tags drain   runWithConcurrency(addTagsTargets, add_tags_max_concurrency, …)
-        ↓          resolveStaleTarget() + _loadMessageBody → prompt → sendPrompt → await _assign_tags()
-summary drain    runWithConcurrency(summarizeTargets, summarize_max_concurrency, …)
-        ↓          resolveStaleTarget() → _generateSummaryForMessage()
-translate drain  runWithConcurrency(translateTargets, translate_max_concurrency, …)
-                   resolveStaleTarget() → _generateTranslationForMessage(…, translateTabId)
+runWithConcurrency(targets, batch_max_concurrency, runPipeline, batchStopped)
+
+runPipeline(target)                 ← one message, features in series
+    spam       getFull + _loadMessageBody → _generateSpamReportForMessage({ autoMove: true })
+               moved to junk → stop here (no tags, summary, translation)
+               otherwise messages.get(id) again (a filter may have moved it) → gone → stop
+    add_tags   (same fullMessage/body) → prompt → sendPrompt → await _assign_tags()
+    summary    → _generateSummaryForMessage()
+    translate  → _generateTranslationForMessage(…, translateTabId)
+    (batchStopped() checked between features)
 ```
+
+Why per message and not per feature (the previous design ran one "drain" per feature, each over
+the whole batch, one after the other): every message is **done as soon as possible** — the first
+incoming mail has its tags, summary and translation after its own four calls, not after the whole
+batch went through the spam filter, then tagging, then summaries — and the message is fetched
+once for all its features.
 
 - **`runWithConcurrency(items, limit, fn, shouldStop)`** (`mzta-background.js`): `limit` pull-based
   workers (capped at `items.length`, at least 1) over a shared index. `shouldStop()` is checked
-  before each item is taken, and every drain passes `() => taBatchController.isCancelled()`: a user
-  Stop or a rate-limit stop keeps **queued** targets from starting; in-flight ones finish, bounded
-  by `special_command_timeout`. A throwing `fn` is logged and never stops the others.
-- **Caps.** `spamfilter_max_concurrency`, `add_tags_max_concurrency`, `summarize_max_concurrency`
-  and `translate_max_concurrency` (default 1 each, i.e. serial as before; independent). The drains
-  run one after the other, so at most one cap is in use at a time. A cleared field is saved as
-  `NaN`, so `_concurrencyCap()` falls back to the default. The caps apply per `processEmails()`
-  call: overlapping calls (several accounts receiving at once, each firing `onNewMailReceived`) can
-  exceed them. There is no global budget.
-- **Targets hold only the MessageHeader.** The full message and the body are fetched by the drain
-  job itself (`browser.messages.getFull()` + `_loadMessageBody()`), so memory is bounded by the cap,
-  not by the batch size. A message that can no longer be read is skipped with a log line; the
-  failure is local to that feature and that message.
-- **Stale targets: `resolveStaleTarget(message, include_sent)`.** Every target after the spam drain
-  was collected before that drain ran, and the user or a filter may have moved or deleted it
-  meanwhile. The add_tags, summary and translate jobs re-read it first and skip it when the spam
-  drain moved it (`movedToJunk`, filled from the `moved` flag `_generateSpamReportForMessage()`
-  returns), when `browser.messages.get(message.id)` fails or returns nothing (a moved message gets
-  a new id), or, in auto mode, when the fresh header sits in an auto-skipped folder (`include_sent`
-  is `add_tags_auto_include_sent` for add_tags). These skips are **quiet**: nothing is written to
-  `taSummaryStore` / `translationStore`, so the cache is not poisoned for a result nobody asked for.
-  The fresh header, not the collected one, is what the job uses (`messageData.message`, the tag
-  target id, the prompt's `curr_message`).
+  before each item is taken; `batchStopped` is `() => taBatchController.isCancelled()`. A throwing
+  `fn` is logged and never stops the others.
+- **One cap: `batch_max_concurrency`** (default 1, i.e. serial as before). Each pipeline has one AI
+  call in flight at a time, so the cap is also the maximum number of AI requests in flight. There
+  are no per-feature caps: with N > 1, N messages can be in their spam step together, i.e. N
+  requests to the spam filter's connection (relevant for a local Ollama). A cleared field is saved
+  as `NaN`, so `_concurrencyCap()` falls back to the default. The cap applies per
+  `processEmails()` call: overlapping calls (several accounts receiving at once, each firing
+  `onNewMailReceived`) can exceed it. There is no global budget.
+- **Spam first, per message.** A spam verdict can move the message to the junk folder, which makes
+  its tags, summary and translation pointless, so the pipeline stops there: a message the spam
+  filter moved is **not tagged** (on `main`, add_tags ran before the spam filter and tagged it).
+  `_generateSpamReportForMessage()` returns `{ moved }` for this, and the junk move is awaited
+  before it returns.
+- **Re-read after the spam step.** The analysis takes a while, and a filter or the user may move or
+  delete the message meanwhile: after the spam step the header is re-read with
+  `browser.messages.get(message.id)` (a moved message gets a new id, so this fails) and the
+  pipeline stops quietly when it is gone. Each later feature also skips, in auto mode, a header now
+  in an auto-skipped folder (`add_tags_auto_include_sent` for add_tags). Nothing is written to
+  `taSummaryStore` / `translationStore` for a skipped message, so the cache is not poisoned.
+- **Targets hold only the MessageHeader.** The full message and the body are fetched by the
+  pipeline (`ensureFull()` / `ensureBody()`, per pipeline and lazy), once for all its features, so
+  memory is bounded by the cap, not by the batch size. A fetch failure skips only the feature that
+  needed it, with a log line; the next feature retries the fetch once.
+- **De-duplication.** Summary and translation stores are keyed on `headerMessageId`, so the loop
+  sets `summarize` / `translate` only on the first target with a given id.
 - **add_tags setup once per batch.** `getAddTagsPrompt()` and `getConnectionType(…, 'add_tags')`
-  are the same for every message, so `resolveAddTagsSetup()` resolves them once (memoized promise),
-  the first time a message passes the add_tags gating. A missing prompt or an unusable connection
-  is logged once and skips add_tags for the whole batch.
+  are the same for every message, so `resolveAddTagsSetup()` resolves them once (memoized promise
+  that never rejects), the first time a message passes the add_tags gating. A missing prompt or an
+  unusable connection is logged once and skips add_tags for the whole batch.
 - **Serialized tag assignment.** `_assign_tags()` goes through `_enqueueTagAssign()`, a module-level
   promise chain, and re-reads `getTagsList()` inside it. `createTag()` gives each new tag a random
-  key, so two parallel jobs that both found the same label missing would otherwise create two tags
-  with that label. The queue also covers the context-menu/popup path, which can overlap with an
-  automatic batch. The drain now awaits `_assign_tags()` (it used to be fire-and-forget). The tag
-  list embedded in the *prompt* is still read per job, so parallel jobs do not see each other's new
-  tags there; only exact-label duplicates are prevented.
+  key, so two parallel pipelines that both found the same label missing would otherwise create two
+  tags with that label. The queue also covers the context-menu/popup path, which can overlap with
+  an automatic batch. The pipeline awaits `_assign_tags()`. The tag list embedded in the *prompt*
+  is still read per message, so parallel pipelines do not see each other's new tags there; only
+  exact-label duplicates are prevented.
 - **Translate tab.** The manual action (`translate: true`) resolves its UI tab once, before the
-  translate drain (`sourceTabId`, else `tabs.query({active, currentWindow})`). With several messages
-  only the one that tab displays gets the panel, through `_sendGeneratingIfCurrent()` /
+  pipelines start (`sourceTabId`, else `tabs.query({active, currentWindow})`). With several
+  messages only the one that tab displays gets the panel, through `_sendGeneratingIfCurrent()` /
   `_sendIfCurrent()`. On receive the tab is `null` (silent pre-cache).
-- **Delayed junk move.** `autoMove` fires from the spam drain, after the whole loop, so spam sits
-  in its folder slightly longer than when the analysis ran per message.
+- **Delayed junk move.** The spam step runs after the whole loop, so spam sits in its folder
+  slightly longer than when the analysis ran inside the loop.
 - **Serialized junk moves.** Several analyses run at once, but the moves into the junk folder go
   through `_enqueueJunkMove()`, a module-level promise chain, so only one
   `messages.update({junk})` + `messages.move()` is in flight at a time (concurrent moves over IMAP
   were never exercised). The move is awaited: a failure — including an account with no junk folder —
-  is logged and leaves `report_data.moved = false`, and the verdict is still saved. It used to be
-  fire-and-forget, and a missing junk folder threw away the whole report.
-- **Progress counter.** A message with deferred jobs is not `tick()`ed by the loop: `pendingJobs`
-  counts its jobs, and `finishJob()` ticks it when the last one ends (including a skipped stale
-  target). Targets that never start because of a cancel are not counted, so the "N processed"
-  notice stays accurate.
+  is logged and leaves `report_data.moved = false`, and the verdict is still saved.
+- **Stop and rate limit.** `batchStopped()` is checked before each message is taken and between the
+  features of a message: after a Stop or a rate-limit stop, queued messages do not start and
+  in-flight ones stop after their current call (bounded by `special_command_timeout`).
+- **Progress counter.** A message with a target is not `tick()`ed by the loop: its pipeline ticks
+  it in its `finally`, also when it stopped early (moved to junk, gone, batch stopped between
+  features). Targets that never start because of a cancel are not counted.
 - **Error paths.** Parallel calls hit the error paths far more often than the serial loop did.
-  Anything a job's `finally` (or a `catch` in the `_generate*` functions) reads is declared
+  Anything the pipeline's `finally` (or a `catch` in the `_generate*` functions) reads is declared
   above its `try` with a value it can tolerate — the same rule `message_metadata` already follows
   in `_generateSpamReportForMessage()`.
 
@@ -333,21 +340,21 @@ thing keeping the automatic processing in the Inbox. `_process_incoming` in `new
 remains the cheap gate that avoids waking the whole pipeline when no automatic feature is enabled.
 
 **No fetch in the loop.** The `processEmails()` loop reads only the `MessageHeader` it is handed:
-`browser.messages.getFull()` and the body conversion happen in the drain jobs, after all of the
-feature's skip checks have passed (see [Concurrent drains](#concurrent-drains-in-processemails)).
+`browser.messages.getFull()` and the body conversion happen in the per-message pipeline, after all of the
+feature's skip checks have passed (see [Per-message pipelines](#per-message-pipelines-in-processemails)).
 A message discarded by the guards is therefore never fetched or converted at all, which matters now
 that the listener reports every folder. The per-iteration helpers `ensureFullMessage()` /
-`ensureBodyText()` that used to share one fetch between the features of a message are gone: each
-drain job fetches what it uses, so a message handled by several features is read once per feature.
+`ensureBodyText()` became `ensureFull()` / `ensureBody()` inside `runPipeline()`: lazy and cached
+per pipeline, so a message handled by several features is fetched once for all of them.
 The full message and the body are **independent** fetches — the body comes from
-`getMailInlineTextParts(message.id)`, which needs only the message id — and each job awaits both
+`getMailInlineTextParts(message.id)`, which needs only the message id — and each feature awaits both
 when it needs both (add_tags: `fullMessage.headers.subject` and the body for the prompt).
 
 **Fetch failures are feature-local.** `messages.onNewMailReceived` fires after message filters
 have run, and a filter running after junk classification may still move or delete the message,
-so `getFull()` can throw because the message is no longer where it was reported. Every drain job
-catches its own fetch failure and skips *only that feature for that message*; the stale-target
-re-read (`resolveStaleTarget()`) turns most of them into a quiet skip. The loop's outer
+so `getFull()` can throw because the message is no longer where it was reported. The pipeline
+catches each fetch failure and skips *only that feature for that message* (the next feature retries
+the fetch); the re-read after the spam step turns most of them into a quiet skip. The loop's outer
 `catch`+`continue` stays as the last resort for genuine per-message errors in the gating.
 
 `_loadMessageBody()` prefers the HTML body converted with `htmlBodyToPlainText()` and falls back
@@ -366,9 +373,9 @@ newEmailListener  (checks _process_incoming, which includes translate_auto === 3
        ↓
 processEmails({ translateOnReceive: true })
        ↓  (single loop — shared with addTagsAuto / spamFilter / summarizeOnReceive;
-       ↓   the loop only gates the message and pushes it onto translateTargets)
-spam drain → add_tags drain → summary drain (those in the same batch) → translate drain
-       ↓  (up to translate_max_concurrency at once, target re-resolved first)
+       ↓   the loop only gates the message and sets target.translate)
+per-message pipeline: spam → add_tags → summary (those in the same batch) → translate
+       ↓  (up to batch_max_concurrency messages at once)
 _generateTranslationForMessage(headerMessageId, null, { messageData })
   ← tabId is null → no UI messages sent, silent pre-cache
        ↓
@@ -572,15 +579,15 @@ plus a **progress counter**:
 that outlived the per-request retries, or that `fetchWithRetry` returned at once because the
 body reports a used-up quota or spend limit, see
 [04-api-integrations.md](04-api-integrations.md#batch-stop-on-rate-limit)), every following
-message would fail the same way. The failing drain job calls the local `stopForRateLimit()`,
-which calls `requestCancel('rate_limit')`; the drains' `shouldStop()` then keeps the queued
-targets from starting, and every later drain is skipped (see
-[Concurrent drains](#concurrent-drains-in-processemails)). The
+message would fail the same way. The failing pipeline calls the local `stopForRateLimit()`,
+which calls `requestCancel('rate_limit')` and stops that pipeline; `batchStopped()` then keeps
+the queued messages from starting, and the in-flight ones stop before their next feature (see
+[Per-message pipelines](#per-message-pipelines-in-processemails)). The
 `finally` then shows the red `batch_stopped_rate_limit` panel
 ("stopped after N messages: … rate limit or quota was exceeded") instead of the blue
 `batch_stopped_notice`; when the provider asked for a wait too long to retry, it is
 `batch_stopped_retry_after` instead, with the wait formatted by `formatDuration()` ("1 h").
-Checked in each drain job: add tags (the
+Checked after each feature of the pipeline: add tags (the
 `sendPrompt` catch; tags are not assigned), spam filter (`_generateSpamReportForMessage`
 returns `{success: false, rateLimited}`), summarize on receive and translate
 (`_generateSummaryForMessage` / `_generateTranslationForMessage` return `{rateLimited}` from
@@ -600,14 +607,14 @@ the popup's "Stop processing" button must not appear for them.
 
 **Cooperative check points** in `processEmails`: at the top of the `for await` message loop
 (before the heavy `getFull`), after the between-chunks `setTimeout(0)` yield, after a
-rate-limited failure (see above), before each drain and before each queued drain target
-(`runWithConcurrency`'s `shouldStop()`), and inside the
+rate-limited failure (see above), before each queued message (`runWithConcurrency`'s
+`shouldStop()`), between the features of a message, and inside the
 separate `summarize` block (before each `getFull` and before opening the webchat). All
 `break`/`return` paths fall through to the existing `finally`, so `stopWorking()` +
 `endBatch()` always run.
 
-**Abort latency (v1):** cancellation is checked *between* messages (and between drain targets),
-so the messages currently in flight — up to the drain's cap — finish first — bounded by `special_command_timeout` (default 120s). There is no
+**Abort latency (v1):** cancellation is checked *between* messages (and between the features of a message),
+so the AI calls currently in flight — up to `batch_max_concurrency` — finish first — bounded by `special_command_timeout` (default 120s). There is no
 mid-request worker termination in v1.
 
 The UI trigger lives in the toolbar popup (`popup/mzta-popup.html/.js/.css`); see
