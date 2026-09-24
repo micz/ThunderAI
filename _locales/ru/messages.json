@@ -641,9 +641,6 @@
     "prefs_SurveyLinkText2": {
         "message": "Нажмите здесь, это займет всего минуту!"
     },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Вставка модели вручную"
-    },
     "OpenAIComp_force_model_ask": {
         "message": "Вставьте сюда название модели, которую вы хотите использовать."
     },
@@ -1142,9 +1139,6 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Обратите внимание, что любые теги <br> в ответе ИИ будут заменены переносами строк."
-    },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Очистить список моделей"
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Вы уверены, что хотите очистить список моделей? Это действие не может быть отменено."

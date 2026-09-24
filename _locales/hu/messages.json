@@ -724,9 +724,6 @@
     "prefs_doc_open_welcome": {
         "message": "Üdvözlőoldal megnyitása"
     },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Modell kézi megadása"
-    },
     "OpenAIComp_force_model_ask": {
         "message": "Adja meg a használni kívánt modell nevét."
     },
@@ -1396,9 +1393,6 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Kérjük, vegye figyelembe, hogy az AI válaszában található <br> tagek soremeléssel lesznek helyettesítve."
-    },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Modell-lista törlése"
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Biztosan törölni szeretné a modellek listáját? Ez a művelet nem vonható vissza."

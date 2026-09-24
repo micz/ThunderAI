@@ -653,9 +653,6 @@
     "prefs_SurveyLinkText2": {
         "message": "Dela din feedback"
     },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Infoga modell manuellt"
-    },
     "OpenAIComp_force_model_ask": {
         "message": "Ange här modellnamnet du vill använda."
     },
@@ -1091,9 +1088,6 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Observera att alla <br>-taggar i AI:ns svar kommer att ersättas med radbrytningar."
-    },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Rensa modelllistan"
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Är du säker på att du vill rensa modellistan? Den här åtgärden kan inte ångras."

@@ -855,9 +855,6 @@
     "anthropic_empty_apikey": {
         "message": "您尚未新增 Claude API 的 API 金鑰。請在選項頁面中輸入一個。"
     },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "手動輸入模型"
-    },
     "prefs_OptionText_btnManageTaskInfo": {
         "message": "管理任務設定"
     },
@@ -1142,9 +1139,6 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "請注意，AI 回應中的任何 <br> 標籤將被替換為換行。"
-    },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "清除模型清單"
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "確定要清除模型清單嗎？這個動作無法復原。"
