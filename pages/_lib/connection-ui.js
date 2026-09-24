@@ -265,10 +265,10 @@ export async function injectConnectionUI({
         <label class="models_fetch_select">
           <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" class="option-input"></select>
         </label>
-        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateChatGPTModels">__MSG_Models_Fetch__</button>
-        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model_fetch_loading" style="display:none">__MSG_Loading__</span>
+        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateChatGPTModels">${MODELS_REFRESH_SVG}<span>__MSG_Models_Fetch__</span></button>
+        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model_fetch_loading" style="display:none">${MODELS_REFRESH_SVG}<span>__MSG_Loading__</span></span>
       </div>
-      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model_fetch_status" hidden></div>
+      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model_fetch_status" role="status" aria-live="polite" hidden></div>
     </td>
   </tr>
   <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
@@ -558,10 +558,10 @@ export async function injectConnectionUI({
         <label class="models_fetch_select">
           <select id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" class="option-input"></select>
         </label>
-        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateGoogleGeminiModels">__MSG_Models_Fetch__</button>
-        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model_fetch_loading" style="display:none">__MSG_Loading__</span>
+        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateGoogleGeminiModels">${MODELS_REFRESH_SVG}<span>__MSG_Models_Fetch__</span></button>
+        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model_fetch_loading" style="display:none">${MODELS_REFRESH_SVG}<span>__MSG_Loading__</span></span>
       </div>
-      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model_fetch_status" hidden></div>
+      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model_fetch_status" role="status" aria-live="polite" hidden></div>
     </td>
   </tr>
   <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
@@ -703,10 +703,10 @@ export async function injectConnectionUI({
         <label class="models_fetch_select">
           <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" class="option-input"></select>
         </label>
-        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOllamaModels">__MSG_Models_Fetch__</button>
-        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model_fetch_loading" style="display:none">__MSG_Loading__</span>
+        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOllamaModels">${MODELS_REFRESH_SVG}<span>__MSG_Models_Fetch__</span></button>
+        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model_fetch_loading" style="display:none">${MODELS_REFRESH_SVG}<span>__MSG_Loading__</span></span>
       </div>
-      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model_fetch_status" hidden></div>
+      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model_fetch_status" role="status" aria-live="polite" hidden></div>
     </td>
   </tr>
    <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
@@ -853,21 +853,24 @@ export async function injectConnectionUI({
   </tr>
   <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
-      <label>
+      <div class="models_label_row">
         <span class="opt_title">__MSG_OpenAIComp_Models__</span>
-        <br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnOpenAICompForceModel" class="btn_small">__MSG_prefs_OpenAIComp_ForceModel__</button>
-      <br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnOpenAICompClearModelsList" class="btn_small">__MSG_prefs_OpenAIComp_ClearModelsList__</button></td>
-      </label>
+        <div class="models_label_actions">
+          <button type="button" id="${modelId_prefix ? `${modelId_prefix}` : ''}btnOpenAICompForceModel" class="models_action_btn models_action_add">${MODELS_PLUS_SVG}<span>__MSG_prefs_OpenAIComp_AddManually__</span></button>
+          <span class="models_action_divider" aria-hidden="true"></span>
+          <button type="button" id="${modelId_prefix ? `${modelId_prefix}` : ''}btnOpenAICompClearModelsList" class="models_action_btn models_action_clear">__MSG_prefs_OpenAIComp_ClearList__</button>
+        </div>
+      </div>
     </td>
     <td>
       <div class="models_fetch_row">
         <label class="models_fetch_select">
           <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" class="option-input"></select>
         </label>
-        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOpenAICompModels">__MSG_Models_Fetch__</button>
-        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model_fetch_loading" style="display:none">__MSG_Loading__</span>
+        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOpenAICompModels">${MODELS_REFRESH_SVG}<span>__MSG_Models_Fetch__</span></button>
+        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model_fetch_loading" style="display:none">${MODELS_REFRESH_SVG}<span>__MSG_Loading__</span></span>
       </div>
-      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model_fetch_status" hidden></div>
+      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model_fetch_status" role="status" aria-live="polite" hidden></div>
     </td>
   </tr>
   <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
@@ -932,10 +935,10 @@ export async function injectConnectionUI({
         <label class="models_fetch_select">
           <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" class="option-input"></select>
         </label>
-        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateAnthropicModels">__MSG_Models_Fetch__</button>
-        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model_fetch_loading" style="display:none">__MSG_Loading__</span>
+        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateAnthropicModels">${MODELS_REFRESH_SVG}<span>__MSG_Models_Fetch__</span></button>
+        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model_fetch_loading" style="display:none">${MODELS_REFRESH_SVG}<span>__MSG_Loading__</span></span>
       </div>
-      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model_fetch_status" hidden></div>
+      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model_fetch_status" role="status" aria-live="polite" hidden></div>
     </td>
   </tr>
   <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
@@ -1624,6 +1627,12 @@ export async function injectConnectionUI({
 const CONN_ADV_GEAR_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>';
 const CONN_ADV_CHEV_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
 
+// Icons of the model fields, used in the injectConnectionUI() template: the
+// "+ Add manually" action (OpenAI Comp) and the "Update list" buttons. Decorative,
+// the buttons carry their own text.
+const MODELS_PLUS_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+const MODELS_REFRESH_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>';
+
 function parseSvg(svgText) {
   return document.importNode(new DOMParser().parseFromString(svgText, 'image/svg+xml').documentElement, true);
 }
@@ -2211,8 +2220,10 @@ function modelsFetchUI(modelId_prefix, btnId, provider) {
     clearTimeout(statusBox._mztaHideTimer);
     statusBox.classList.remove('is_fading');
     statusBox.classList.toggle('is_ok', isOk);
-    statusBox.textContent = message;
+    // Unhide before writing: the box is an aria-live region, and a text change
+    // made while it is still hidden may not be announced.
     statusBox.hidden = (message === '');
+    statusBox.textContent = message;
     if (isOk) {
       statusBox._mztaFadeTimer = setTimeout(() => {
         statusBox.classList.add('is_fading');
@@ -2227,15 +2238,17 @@ function modelsFetchUI(modelId_prefix, btnId, provider) {
   return {
     loading: () => {
       setStatus('');
-      // The label takes the button's place: give it the button's width and text font,
-      // read while the button is still rendered, so the row does not jump. Each host
+      // The label takes the button's place: give it the button's width, text font and
+      // text colour, read while the button is still rendered, so the row does not jump
+      // and the label (with its spinning icon) looks like the button text. Each host
       // page styles its buttons differently, hence the runtime read instead of CSS.
       const btnStyle = getComputedStyle(btn);
       loadingEl.style.width = `${btn.offsetWidth}px`;
       loadingEl.style.font = btnStyle.font;
       loadingEl.style.letterSpacing = btnStyle.letterSpacing;
+      loadingEl.style.color = btnStyle.color;
       btn.style.display = 'none';
-      loadingEl.style.display = 'inline-block';
+      loadingEl.style.display = 'inline-flex';
     },
     done: () => {
       showButton();

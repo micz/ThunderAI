@@ -579,6 +579,30 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     padding: 5px 9px !important;
     border-radius: 7px !important;
 }
+/* The ghost actions next to a field label (.models_action_btn, connection-ui.css)
+   are not bordered buttons: undo the button rule above, which outranks their
+   class-level rules. Colours and hover states stay in connection-ui.css. */
+#connection_ui_table .models_action_btn,
+#connection_ui_adv_table .models_action_btn {
+    border: none;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 13px;
+    font-weight: 500;
+    margin: 0;
+}
+#connection_ui_table .models_action_add:hover,
+#connection_ui_adv_table .models_action_add:hover {
+    background: color-mix(in srgb, var(--tint-accent, var(--accent)) 10%, transparent);
+}
+#connection_ui_table .models_action_clear,
+#connection_ui_adv_table .models_action_clear {
+    color: var(--dim);
+}
+#connection_ui_table .models_action_clear:hover,
+#connection_ui_adv_table .models_action_clear:hover {
+    color: var(--jsonError);
+}
 /* TomSelect controls match the field look and follow the light/dark theme.
    The vendored tom-select CSS hardcodes light colors (#fff backgrounds, #303030
    text) on the control, on the inner <input> that shows the selected item, and

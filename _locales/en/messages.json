@@ -1089,10 +1089,6 @@
     "message": "Open the Welcome Page",
     "description": ""
   },
-  "prefs_OpenAIComp_ForceModel": {
-    "message": "Manually insert model",
-    "description": ""
-  },
   "OpenAIComp_force_model_ask": {
     "message": "Insert here the model name you want to use.",
     "description": ""
@@ -2623,9 +2619,13 @@
     "message": "Please note that any <br> tags in the AI's response will be replaced with line breaks.",
     "description": ""
   },
-  "prefs_OpenAIComp_ClearModelsList": {
-    "message": "Clear Models List",
-    "description": ""
+  "prefs_OpenAIComp_AddManually": {
+    "message": "Add manually",
+    "description": "Small button next to the OpenAI Compatible API models label: asks for a model name and adds it to the list. It is preceded by a plus icon."
+  },
+  "prefs_OpenAIComp_ClearList": {
+    "message": "Clear list",
+    "description": "Small button next to the OpenAI Compatible API models label: removes all the models from the list, after a confirmation."
   },
   "OpenAIComp_ClearModelsList_Confirm": {
     "message": "Are you sure you want to clear the Models List? This action cannot be undone.",

@@ -153,22 +153,64 @@ span.opt_title{
 .models_fetch_row .models_fetch_loading{
     flex: 0 0 auto;
     align-self: center;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     box-sizing: border-box;
     text-align: center;
     white-space: nowrap;
 }
 
+/* The same refresh icon as the button, spinning while the models are fetched.
+   Own keyframes: mzta-design.css (mztaspin) is not loaded on every host page. */
+.models_fetch_loading svg{
+    flex: 0 0 auto;
+    animation: models_fetch_spin 1s linear infinite;
+}
+
+@keyframes models_fetch_spin{
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce){
+    .models_fetch_loading svg{
+        animation: none;
+    }
+}
+
 /* Result of the last "Update list" click, under the model row (modelsFetchUI()).
    Red for an error, which stays until the next click; green (.is_ok) when the
-   list was loaded, faded out after 30s by adding .is_fading. */
+   list was loaded, faded out after 30s by adding .is_fading. Right-aligned so it
+   sits under the button, with a leading icon (::before) in the state colour.
+   Plain inline flow, not flex: with flex the text becomes one full-width item
+   as soon as it wraps, and the icon is left stranded at the far left. */
 .models_fetch_status{
     margin-top: 4px;
+    font-size: 13px;
     line-height: 1.4;
     text-align: right;
     color: var(--jsonError, #b3261e);
     overflow-wrap: break-word;
     opacity: 1;
     transition: opacity 1s ease;
+}
+
+/* Drawn as a mask filled with currentColor, so it follows the red/green state
+   (and the dark-mode override) without colours of its own. Alert-circle for an
+   error, check-circle for .is_ok. */
+.models_fetch_status::before{
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
+    vertical-align: -2px;
+    background-color: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='8' x2='12' y2='12'/%3E%3Cline x1='12' y1='16' x2='12.01' y2='16'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.models_fetch_status.is_ok::before{
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 11.08V12a10 10 0 1 1-5.93-9.14'/%3E%3Cpolyline points='22 4 12 14.01 9 11.01'/%3E%3C/svg%3E");
 }
 
 .models_fetch_status.is_ok{
@@ -181,8 +223,80 @@ span.opt_title{
 
 .models_fetch_row button{
     flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     white-space: nowrap;
     margin: 0 !important;
+}
+
+.models_fetch_row button svg{
+    flex: 0 0 auto;
+}
+
+/* Label row of the OpenAI Comp models field: the label on the left, the small
+   "+ Add manually" / "Clear list" actions on the right. When the row is too
+   narrow the actions wrap below the label, still right-aligned (margin-left:auto).
+   Colours come from the provider tint (--tint-*) where the host sets it, with the
+   base tokens of either design system as fallback: mzta-design.css (--dim,
+   --jsonError, --line) or the Custom Prompts page (--muted, --err-text). */
+.models_label_row{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+}
+
+.models_label_actions{
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.models_action_divider{
+    width: 1px;
+    height: 14px;
+    background: var(--tint-border, var(--line, currentColor));
+}
+
+.models_action_btn{
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+}
+
+.models_action_btn:focus-visible{
+    outline: 2px solid var(--tint-accent, var(--accent));
+    outline-offset: 1px;
+}
+
+.models_action_add{
+    color: var(--tint-accent, var(--accent));
+}
+
+.models_action_add:hover{
+    background: color-mix(in srgb, var(--tint-accent, var(--accent)) 10%, transparent);
+}
+
+.models_action_clear{
+    color: var(--dim, var(--muted));
+}
+
+.models_action_clear:hover{
+    color: var(--jsonError, var(--err-text, #b3261e));
 }
 
 @media (prefers-color-scheme: dark) {

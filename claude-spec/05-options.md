@@ -689,16 +689,37 @@ host permission through the test is often what makes `/api/show` reachable in th
 ### Connection Settings Panel — "Update list" Model Fetch Buttons
 
 Each API provider's model row in `injectConnectionUI()` (`.models_fetch_row`) holds the model
-select, the `btnUpdate<Provider>Models` button and a `<provider>_model_fetch_loading` span
-(class `.models_fetch_loading`); below the row sits a `<provider>_model_fetch_status` box
-(`.models_fetch_status`, hidden when empty, right-aligned so it sits under the button). All ids
-carry the `modelId_prefix`.
+select, the `btnUpdate<Provider>Models` button (refresh icon `MODELS_REFRESH_SVG` + text in a
+`<span>`) and a `<provider>_model_fetch_loading` span (class `.models_fetch_loading`); below the
+row sits a `<provider>_model_fetch_status` box. All ids carry the `modelId_prefix`.
+
+The status box (`.models_fetch_status`) is a `role="status"` / `aria-live="polite"` region, hidden
+when empty. It is right-aligned text in plain inline flow (not flex: with flex the wrapped text
+becomes one full-width item and the icon ends up far left), so it sits under the button and wraps
+naturally. The leading `::before` is an inline-block icon drawn as a CSS mask filled with
+`currentColor` (alert-circle, or check-circle with `.is_ok`), so it stays next to the first word
+of the text and follows the red/green state colour.
+
+**OpenAI Comp label row.** The label cell of the OpenAI Comp models field is a
+`.models_label_row` flex row: the label on the left and, in `.models_label_actions`, two small
+ghost buttons separated by a `.models_action_divider`, "+ Add manually"
+(`btnOpenAICompForceModel`, `.models_action_add`, accent colour, prompts for a model name) and
+"Clear list" (`btnOpenAICompClearModelsList`, `.models_action_clear`, muted, turning to the
+error colour on hover, asks for a native `confirm()` first). On narrow widths the actions wrap
+below the label, still right-aligned. Their colours come from the provider tint
+(`--tint-accent` / `--tint-border`, set on `#mzta_conn_panel.tint_<provider>` or by the Custom
+Prompts page) with the base tokens of either design system as fallback; the base rules are in
+`connection-ui.css`, and `mzta-design.css` undoes the bordered `#connection_ui_table button`
+style for them.
 
 The click handlers drive the row through `modelsFetchUI(modelId_prefix, btnId, provider)`:
 
 - **loading** — the button is hidden (`display:none`) and the loading label takes its place, so
-  it cannot be clicked twice; any previous status message is cleared. Just before hiding the
-  button, its `offsetWidth` and computed `font` / `letter-spacing` are copied onto the label
+  it cannot be clicked twice; any previous status message is cleared. (`setStatus()` unhides the
+  box before writing its text, so the live region announces the change.) The label holds the same
+  `MODELS_REFRESH_SVG` icon as the button, spinning (`models_fetch_spin`, off under
+  `prefers-reduced-motion`), and is shown as `inline-flex`. Just before hiding the button, its
+  `offsetWidth` and computed `font` / `letter-spacing` / `color` are copied onto the label
   (centred, not italic), so the label looks like the button text and the row does not shift.
   This is read at runtime because every host page styles its buttons differently.
 - **done** (success) — the list is merged into the select, the button comes back and the status
