@@ -1513,6 +1513,14 @@
     "message": "If the value returned by the AI is above this threshold, the email will be moved to the spam folder.",
     "description": ""
   },
+  "prefs_OptionText_spamfilter_max_concurrency": {
+    "message": "Parallel analyses",
+    "description": "Label of the option limiting how many emails the spam filter analyzes at the same time"
+  },
+  "prefs_OptionText_spamfilter_max_concurrency_Info": {
+    "message": "Maximum number of emails analyzed at the same time when several emails are processed together, for example when new mail arrives. Higher values are faster, but can hit the rate limits of your AI provider or overload a local model such as Ollama. The limit applies to each group of emails processed together.",
+    "description": ""
+  },
   "prefs_OptionText_spamfilter_show_msg_panel": {
     "message": "Show spam report panel",
     "description": ""
@@ -2768,6 +2776,14 @@
   },
   "prefs_OptionText_summarize_max_messages_Info": {
       "message": "Maximum number of messages that can be summarized at once in webchat mode. Above this limit the operation is blocked with a warning. Set to 0 for no limit.",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_max_concurrency": {
+      "message": "Parallel summaries",
+      "description": "Label of the option limiting how many summaries are generated at the same time"
+  },
+  "prefs_OptionText_summarize_max_concurrency_Info": {
+      "message": "Maximum number of summaries generated at the same time when emails are summarized on receive. Higher values are faster, but can hit the rate limits of your AI provider or overload a local model such as Ollama. The limit applies to each group of emails received together.",
       "description": ""
   },
   "prefs_OptionText_summarize_strip_formatting": {

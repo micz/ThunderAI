@@ -120,7 +120,10 @@ browser.messages.onNewMailReceived
 newEmailListener  (checks _process_incoming, which includes summarize_auto === 3)
        ↓
 processEmails({ summarizeOnReceive: true })
-       ↓  (single loop — shared with addTagsAuto / spamFilter / translateOnReceive)
+       ↓  (single loop — shared with addTagsAuto / spamFilter / translateOnReceive;
+       ↓   the loop only gates the message and pushes it onto summarizeTargets)
+spam drain (if the spam filter runs in the same batch) → summary drain
+       ↓  (up to summarize_max_concurrency at once, target re-resolved first)
 _generateSummaryForMessage(headerMessageId, null, { messageData })
   ← tabId is null → no UI messages sent, silent pre-cache
        ↓
@@ -150,7 +153,7 @@ subscribed IMAP folders that are not checked for new mail, and messages moved by
    processEmails({ summarizeSenders: [...] })
         ↓  (per message, inside the shared loop)
    summarizeOnReceive || matchAddressList(message.author, summarizeSenders)
-        ↓
+        ↓  (pushed onto summarizeTargets, run by the summary drain)
    _generateSummaryForMessage(headerMessageId, null, { messageData })   ← silent pre-cache
 
 2. On message open, if reception did not catch it
@@ -164,6 +167,70 @@ subscribed IMAP folders that are not checked for new mail, and messages moved by
 
 There is deliberately **no periodic scan**: no `setInterval`, no `browser.alarms`, no
 `browser.messages.query()` sweep, no recursive folder walk.
+
+### Concurrent drains: spam filter and summarize in `processEmails()`
+
+The spam filter and summarize-on-receive / sender-list summaries do **not** await their AI call
+inside the `for await` message loop: a burst of incoming mail would otherwise become one long serial
+chain (20 messages × ~8 s ≈ 2.5 min for the last one). The loop keeps all the per-message gating —
+account enable lists, `isMessageInAutoSkippedFolder()`, `spamfilter_only_inbox`, the sender list,
+`_summarizeConnectionMissing()` — and pushes each surviving message onto `spamTargets` /
+`summarizeTargets`. After the loop, still inside the outer `try`, the two lists are drained **in
+order, spam first**: a spam verdict can move the message to the junk folder, which makes its summary
+pointless.
+
+```
+for await (message of batch)        ← gating only; add_tags and translate still run inline
+    spamTargets.push({ message })
+    summarizeTargets.push({ message })   (de-duplicated by headerMessageId)
+        ↓
+spam drain     runWithConcurrency(spamTargets, spamfilter_max_concurrency, …)
+        ↓        getFull + _loadMessageBody → _generateSpamReportForMessage({ autoMove: true })
+        ↓        { moved: true } → movedToJunk
+summary drain  runWithConcurrency(summarizeTargets, summarize_max_concurrency, …)
+                 skip if in movedToJunk / messages.get() fails / now in an auto-skipped folder
+                 → getFull → _generateSummaryForMessage()
+```
+
+- **`runWithConcurrency(items, limit, fn, shouldStop)`** (`mzta-background.js`): `limit` pull-based
+  workers (capped at `items.length`, at least 1) over a shared index. `shouldStop()` is checked
+  before each item is taken, and both drains pass `() => taBatchController.isCancelled()`: a user
+  Stop or a rate-limit stop keeps **queued** targets from starting; in-flight ones finish, bounded
+  by `special_command_timeout`. A throwing `fn` is logged and never stops the others.
+- **Caps.** `spamfilter_max_concurrency` and `summarize_max_concurrency` (default 1 each, i.e. serial as before;
+  independent). A cleared field is saved as `NaN`, so `_concurrencyCap()` falls back to the default.
+  The caps apply per `processEmails()` call: overlapping calls (several accounts receiving at once,
+  each firing `onNewMailReceived`) can exceed them. There is no global budget shared with the other
+  automatic features.
+- **Targets hold only the MessageHeader.** The full message and the body are fetched by the drain
+  job itself (`browser.messages.getFull()` + `_loadMessageBody()`, the helper `ensureBodyText()`
+  also uses), so memory is bounded by the cap, not by the batch size. A message that can no longer
+  be read is skipped with a log line.
+- **Stale summary targets.** A summary target was collected before the spam drain ran, and the user
+  or a filter may have moved or deleted it meanwhile. The job skips it when the spam drain moved it
+  (`movedToJunk`, filled from the `moved` flag `_generateSpamReportForMessage()` now returns), when
+  `browser.messages.get(message.id)` fails or returns nothing (a moved message gets a new id), or,
+  in auto mode, when the fresh header sits in an auto-skipped folder. These skips are **quiet**:
+  nothing is written to `taSummaryStore`, so the cache is not poisoned for a summary nobody asked
+  for. The fresh header, not the collected one, is passed as `messageData.message`.
+- **Delayed junk move.** `autoMove` now fires from the spam drain, after the whole loop, so spam sits
+  in its folder slightly longer than when the analysis ran per message.
+- **Serialized junk moves.** Several analyses run at once, but the moves into the junk folder go
+  through `_enqueueJunkMove()`, a module-level promise chain, so only one
+  `messages.update({junk})` + `messages.move()` is in flight at a time (concurrent moves over IMAP
+  were never exercised). The move is awaited: a failure — including an account with no junk folder —
+  is logged and leaves `report_data.moved = false`, and the verdict is still saved. It used to be
+  fire-and-forget, and a missing junk folder threw away the whole report.
+- **Progress counter.** A message with deferred jobs is not `tick()`ed by the loop: `pendingJobs`
+  counts its jobs, and `finishJob()` ticks it when the last one ends (including a skipped stale
+  summary). Targets that never start because of a cancel are not counted, so the "N processed"
+  notice stays accurate.
+- **Error paths.** Parallel calls hit the error paths far more often than the serial loop did.
+  Anything a job's `finally` (or a `catch` in the two `_generate*` functions) reads is declared
+  above its `try` with a value it can tolerate — the same rule `message_metadata` already follows
+  in `_generateSpamReportForMessage()`.
+- Add tags and translate on receive still run inline and serially in the loop; they share the same
+  shape and can move to drains of their own later.
 
 **Idempotency** comes from `taSummaryStore` (cache + `isProcessing()`), which
 `_generateSummaryForMessage()` already consults, so a message caught by *both* triggers costs
@@ -245,7 +312,9 @@ remains the cheap gate that avoids waking the whole pipeline when no automatic f
 the body conversion are deferred to two per-iteration helpers, `ensureFullMessage()` and
 `ensureBodyText()`, each idempotent. Every feature awaits the one it needs only after all of its
 own skip checks have passed. A message discarded by the guards is therefore never fetched or
-converted at all, which matters now that the listener reports every folder.
+converted at all, which matters now that the listener reports every folder. The spam filter and
+summarize no longer fetch anything in the loop: their drain jobs fetch the message themselves (see
+[Concurrent drains](#concurrent-drains-spam-filter-and-summarize-in-processemails)).
 
 **The two helpers are INDEPENDENT.** `ensureBodyText()` used to begin with `await
 ensureFullMessage()`, because the body was extracted from the MIME tree that call returned. It no
@@ -481,7 +550,10 @@ body reports a used-up quota or spend limit, see
 [04-api-integrations.md](04-api-integrations.md#batch-stop-on-rate-limit)), every following
 message would fail the same way. The loop's local
 `stopForRateLimit()` calls `requestCancel('rate_limit')` and breaks out; the failing message is
-not `tick()`ed. The `finally` then shows the red `batch_stopped_rate_limit` panel
+not `tick()`ed. In the spam and summary drains the job calls `stopForRateLimit()` instead of
+breaking, and the drains' `shouldStop()` keeps the queued targets from starting (see
+[Concurrent drains](#concurrent-drains-spam-filter-and-summarize-in-processemails)). The
+`finally` then shows the red `batch_stopped_rate_limit` panel
 ("stopped after N messages: … rate limit or quota was exceeded") instead of the blue
 `batch_stopped_notice`; when the provider asked for a wait too long to retry, it is
 `batch_stopped_retry_after` instead, with the wait formatted by `formatDuration()` ("1 h").
@@ -505,13 +577,14 @@ the popup's "Stop processing" button must not appear for them.
 
 **Cooperative check points** in `processEmails`: at the top of the `for await` message loop
 (before the heavy `getFull`), after the between-chunks `setTimeout(0)` yield, after a
-rate-limited failure (see above), and inside the
+rate-limited failure (see above), before each drain and before each queued drain target
+(`runWithConcurrency`'s `shouldStop()`), and inside the
 separate `summarize` block (before each `getFull` and before opening the webchat). All
 `break`/`return` paths fall through to the existing `finally`, so `stopWorking()` +
 `endBatch()` always run.
 
-**Abort latency (v1):** cancellation is checked *between* messages, so the message currently
-in flight finishes first — bounded by `special_command_timeout` (default 120s). There is no
+**Abort latency (v1):** cancellation is checked *between* messages (and between drain targets),
+so the messages currently in flight — up to the drain's cap — finish first — bounded by `special_command_timeout` (default 120s). There is no
 mid-request worker termination in v1.
 
 The UI trigger lives in the toolbar popup (`popup/mzta-popup.html/.js/.css`); see

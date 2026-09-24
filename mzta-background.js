@@ -1378,6 +1378,17 @@ function _buildReportMetadata(message, curr_fullMessage) {
     };
 }
 
+// Tail of the junk-move queue: every move to the junk folder chains on it, so only one is
+// in flight at a time even when several spam analyses run concurrently. Errors are
+// swallowed on the chain itself (the caller gets them from its own promise), so one failed
+// move never blocks the following ones.
+let _junkMoveChain = Promise.resolve();
+function _enqueueJunkMove(fn) {
+    const run = _junkMoveChain.then(fn);
+    _junkMoveChain = run.catch(() => {});
+    return run;
+}
+
 // options.messageData: { message, fullMessage, body_text, msg_text } — pass pre-fetched data to avoid re-querying
 // options.messageId: numeric message id, when the caller has one — see _resolveMessage()
 // options.tabId: only used to resolve the message (the panel finds its own tab) — see _resolveMessage()
@@ -1580,16 +1591,30 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
 
         if (options.autoMove && jsonObj.spamValue >= report_data.SpamThreshold) {
             taLog.log("Marking as spam [" + headerMessageId + "]");
-            messenger.messages.update(message.id, { junk: true });
-            let spamFolder = await messenger.folders.query({ accountId: message.folder.accountId, specialUse: ['junk'] });
-            messenger.messages.move([message.id], spamFolder[0].id);
-            report_data.moved = true;
-            taLog.log("Marked as spam [" + headerMessageId + "]");
+            // Serialized through _enqueueJunkMove(): the on-receive spam drain analyzes several
+            // messages at once, and concurrent moves into the junk folder (IMAP especially)
+            // were never exercised. A failed move keeps the verdict: the report is still saved,
+            // with moved = false.
+            try {
+                await _enqueueJunkMove(async () => {
+                    await messenger.messages.update(message.id, { junk: true });
+                    let spamFolder = await messenger.folders.query({ accountId: message.folder.accountId, specialUse: ['junk'] });
+                    if (!spamFolder || spamFolder.length === 0) {
+                        throw new Error("no junk folder for account " + message.folder.accountId);
+                    }
+                    await messenger.messages.move([message.id], spamFolder[0].id);
+                });
+                report_data.moved = true;
+                taLog.log("Marked as spam [" + headerMessageId + "]");
+            } catch (err) {
+                taLog.error("[ThunderAI | SpamFilter] Could not move the message to the junk folder [" + headerMessageId + "]: " + (err?.message || err));
+            }
         }
 
         spamReport.saveReportData(report_data, headerMessageId);
         await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
-        return { success: true };
+        // moved: read by the processEmails() spam drain, a moved message gets no summary.
+        return { success: true, moved: report_data.moved };
 
     } catch (error) {
         console.error("[ThunderAI] Error generating spam report:", error);
@@ -2344,6 +2369,50 @@ async function updateSpamPanel(messageId, command, data = null) {
     }
 }
 
+// Runs fn(item) over items with at most `limit` calls in flight: `limit` pull-based workers
+// share one index, so a slow item never holds back the others. shouldStop() is checked
+// before each item is taken, so a cancel keeps queued items from starting (the ones in
+// flight finish, bounded by special_command_timeout). A throwing fn is logged and never
+// stops the rest.
+async function runWithConcurrency(items, limit, fn, shouldStop = () => false) {
+    if (!items || items.length === 0) return;
+    const workerCount = Math.max(1, Math.min(Math.floor(limit) || 1, items.length));
+    let next = 0;
+    const worker = async () => {
+        while (next < items.length && !shouldStop()) {
+            const item = items[next++];
+            try {
+                await fn(item);
+            } catch (err) {
+                taLog.error("[ThunderAI] runWithConcurrency: an item failed: " + (err?.message || err));
+            }
+        }
+    };
+    const workers = [];
+    for (let i = 0; i < workerCount; i++) {
+        workers.push(worker());
+    }
+    await Promise.all(workers);
+}
+
+// Reads the inline text parts of a message and converts them to plain text, preferring the
+// HTML body. Shared by the processEmails() loop and its spam drain.
+async function _loadMessageBody(messageId) {
+    const msg_text = await getMailInlineTextParts(messageId);
+    taLog.log("Starting from the HTML body if present and converting to plain text...");
+    let body_text = htmlBodyToPlainText(msg_text.html);
+    if (body_text.length == 0) {
+        taLog.log("No HTML found in the message body, using plain text...");
+        body_text = cleanupNewlines(msg_text.text);
+    }
+    return { msg_text, body_text };
+}
+
+// A concurrency pref as a usable cap: a cleared number field is saved as NaN.
+function _concurrencyCap(value, fallback) {
+    return (Number.isFinite(value) && value >= 1) ? Math.floor(value) : fallback;
+}
+
 async function processEmails(args) {
     const {
         messages,
@@ -2395,6 +2464,8 @@ async function processEmails(args) {
             'spamfilter_skip_addresses',
             'spamfilter_skip_addressbook',
             'spamfilter_only_inbox',
+            'spamfilter_max_concurrency',
+            'summarize_max_concurrency',
             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])),
             'do_debug'
         ]);
@@ -2440,6 +2511,34 @@ async function processEmails(args) {
             rateLimitHit = true;
         };
 
+        // Spam filter and summarize run their AI calls concurrently, after the loop: the loop
+        // only applies the per-message gating and collects the surviving targets, then the
+        // spam drain and the summary drain (in this order) run them with at most
+        // *_max_concurrency calls in flight each. The caps are per processEmails() call, so
+        // overlapping calls (several accounts receiving at once) can exceed them.
+        // Targets hold only the MessageHeader: the full message and body are fetched by the
+        // drain job itself, so memory is bounded by the cap and not by the batch size.
+        const spamCap = _concurrencyCap(prefs_aats.spamfilter_max_concurrency, prefs_default.spamfilter_max_concurrency);
+        const summarizeCap = _concurrencyCap(prefs_aats.summarize_max_concurrency, prefs_default.summarize_max_concurrency);
+        const spamTargets = [];
+        const summarizeTargets = [];
+        const summarizeTargetIds = new Set();
+        // headerMessageIds the spam drain moved to the junk folder: their summary is skipped.
+        const movedToJunk = new Set();
+        // message.id -> drain jobs still owed by that message. A message with deferred work is
+        // counted as processed (taBatchController.tick()) when its last job ends, so a batch
+        // stopped mid-drain does not count the messages whose jobs never started.
+        const pendingJobs = new Map();
+        const finishJob = (message) => {
+            const left = (pendingJobs.get(message.id) || 1) - 1;
+            if (left > 0) {
+                pendingJobs.set(message.id, left);
+            } else {
+                pendingJobs.delete(message.id);
+                taBatchController.tick();
+            }
+        };
+
         for await (let message of batchMessages) {
             // Cooperative cancellation: bail out before doing any heavy work (getFull, ...)
             // if the user requested a stop. All break paths fall through to the outer finally.
@@ -2473,13 +2572,7 @@ async function processEmails(args) {
                 if (msg_text) {
                     return;
                 }
-                msg_text = await getMailInlineTextParts(message.id);
-                taLog.log("Starting from the HTML body if present and converting to plain text...");
-                body_text = htmlBodyToPlainText(msg_text.html);
-                if( body_text.length == 0 ){
-                    taLog.log("No HTML found in the message body, using plain text...");
-                    body_text = cleanupNewlines(msg_text.text);
-                }
+                ({ msg_text, body_text } = await _loadMessageBody(message.id));
             }
 
             // Isolate per-message errors: a single problematic message must not abort the
@@ -2615,24 +2708,9 @@ async function processEmails(args) {
                     }
                 }
                 if (!skipSpamFilter) {
-                    // ensureFullMessage() explicitly: the body no longer implies it,
-                    // but _buildReportMetadata() reads fullMessage.headers, so the
-                    // spam report needs the full message for its METADATA.
-                    await ensureFullMessage();
-                    await ensureBodyText();
-                    const spamResult = await _generateSpamReportForMessage(
-                        message.headerMessageId,
-                        {
-                            messageData: { message, fullMessage: curr_fullMessage, body_text, msg_text },
-                            prefs: prefs_aats,
-                            autoMove: true,
-                            skip_addresses: spamfilter_skip_addresses,
-                            skip_addressbook: spamfilter_skip_addressbook
-                        });
-                    if (spamResult?.rateLimited) {
-                        stopForRateLimit('Spam filter', spamResult.retryAfterMs);
-                        break;
-                    }
+                    // Deferred to the spam drain after the loop.
+                    spamTargets.push({ message });
+                    pendingJobs.set(message.id, (pendingJobs.get(message.id) || 0) + 1);
                 }
             }
 
@@ -2649,16 +2727,12 @@ async function processEmails(args) {
                     taLog.log("[ThunderAI] No AI connection able to reach an API, skipping summarize on receive for: " + message.headerMessageId);
                     skipSummarize = true;
                 }
-                if (!skipSummarize) {
-                    await ensureFullMessage();
-                    taLog.log("[ThunderAI] Pre-caching summary on receive for: " + message.headerMessageId + (summarizeOnReceive ? "" : " (sender in the auto-summarize list)"));
-                    const summaryResult = await _generateSummaryForMessage(message.headerMessageId, null, {
-                        messageData: { message, fullMessage: curr_fullMessage }
-                    });
-                    if (summaryResult?.rateLimited) {
-                        stopForRateLimit('Summarize', summaryResult.retryAfterMs);
-                        break;
-                    }
+                // The summary store is keyed on headerMessageId: one target per id is enough.
+                if (!skipSummarize && message.headerMessageId && !summarizeTargetIds.has(message.headerMessageId)) {
+                    // Deferred to the summary drain, which runs after the spam drain.
+                    summarizeTargetIds.add(message.headerMessageId);
+                    summarizeTargets.push({ message, bySender: !summarizeOnReceive });
+                    pendingJobs.set(message.id, (pendingJobs.get(message.id) || 0) + 1);
                 }
             }
 
@@ -2705,7 +2779,10 @@ async function processEmails(args) {
             }
 
             // Give the event loop (and GC) some breathing room every CHUNK_SIZE messages.
-            taBatchController.tick();
+            // A message with deferred spam/summary jobs is counted by finishJob() instead.
+            if (!pendingJobs.has(message.id)) {
+                taBatchController.tick();
+            }
             processedCount++;
             if (processedCount % CHUNK_SIZE === 0) {
                 await new Promise(r => setTimeout(r, 0));
@@ -2714,6 +2791,92 @@ async function processEmails(args) {
                     break;
                 }
             }
+        }
+
+        // Both drains stop taking new targets as soon as the batch is cancelled: by the user,
+        // or by stopForRateLimit(), which requests the cancel itself.
+        const drainStopped = () => taBatchController.isCancelled();
+
+        // Spam drain first: a spam verdict can move the message to the junk folder, which
+        // makes its summary pointless. The junk move therefore happens after the whole loop,
+        // not per message, and is serialized by _enqueueJunkMove().
+        if (spamTargets.length > 0 && !drainStopped()) {
+            taLog.log("[ThunderAI] Spam filter: analyzing " + spamTargets.length + " message(s), up to " + spamCap + " at a time.");
+            await runWithConcurrency(spamTargets, spamCap, async (target) => {
+                // Read by the finally: declared above the try, valid from the start.
+                const message = target.message;
+                try {
+                    let fullMessage = null;
+                    let body = null;
+                    try {
+                        // ensureFullMessage() equivalent: _buildReportMetadata() reads
+                        // fullMessage.headers, so the spam report needs the full message.
+                        fullMessage = await browser.messages.getFull(message.id);
+                        body = await _loadMessageBody(message.id);
+                    } catch (err) {
+                        taLog.error("[ThunderAI | SpamFilter] Could not read message " + message.headerMessageId + ", skipping: " + (err?.message || err));
+                        return;
+                    }
+                    const spamResult = await _generateSpamReportForMessage(
+                        message.headerMessageId,
+                        {
+                            messageData: { message, fullMessage, body_text: body.body_text, msg_text: body.msg_text },
+                            prefs: prefs_aats,
+                            autoMove: true,
+                            skip_addresses: spamfilter_skip_addresses,
+                            skip_addressbook: spamfilter_skip_addressbook
+                        });
+                    if (spamResult?.moved) {
+                        movedToJunk.add(message.headerMessageId);
+                    }
+                    if (spamResult?.rateLimited) {
+                        stopForRateLimit('Spam filter', spamResult.retryAfterMs);
+                    }
+                } finally {
+                    finishJob(message);
+                }
+            }, drainStopped);
+        }
+
+        // Summary drain. The targets were collected before the spam drain, which may have
+        // moved them, and the user or a filter may have moved or deleted them meanwhile: each
+        // one is re-resolved first, and a message that is gone is skipped quietly - nothing is
+        // written to summaryStore for a summary nobody asked for.
+        if (summarizeTargets.length > 0 && !drainStopped()) {
+            taLog.log("[ThunderAI] Summarize: pre-caching " + summarizeTargets.length + " summary(ies), up to " + summarizeCap + " at a time.");
+            await runWithConcurrency(summarizeTargets, summarizeCap, async (target) => {
+                // Read by the finally: declared above the try, valid from the start.
+                const message = target.message;
+                try {
+                    if (movedToJunk.has(message.headerMessageId)) {
+                        taLog.log("[ThunderAI] Summarize: " + message.headerMessageId + " was moved to the junk folder, skipping.");
+                        return;
+                    }
+                    let fresh = null;
+                    let fullMessage = null;
+                    try {
+                        fresh = await browser.messages.get(message.id);
+                        if (fresh && !(isAutoMode && isMessageInAutoSkippedFolder(fresh))) {
+                            fullMessage = await browser.messages.getFull(fresh.id);
+                        }
+                    } catch (err) {
+                        fresh = null;
+                    }
+                    if (!fresh || !fullMessage) {
+                        taLog.log("[ThunderAI] Summarize: " + message.headerMessageId + " is gone or was moved to an excluded folder, skipping.");
+                        return;
+                    }
+                    taLog.log("[ThunderAI] Pre-caching summary on receive for: " + fresh.headerMessageId + (target.bySender ? " (sender in the auto-summarize list)" : ""));
+                    const summaryResult = await _generateSummaryForMessage(fresh.headerMessageId, null, {
+                        messageData: { message: fresh, fullMessage }
+                    });
+                    if (summaryResult?.rateLimited) {
+                        stopForRateLimit('Summarize', summaryResult.retryAfterMs);
+                    }
+                } finally {
+                    finishJob(message);
+                }
+            }, drainStopped);
         }
     }
 

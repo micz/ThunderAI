@@ -193,9 +193,11 @@ export const prefs_default = {
     spamfilter_skip_addressbook: true,
     spamfilter_show_msg_panel: true,
     spamfilter_only_inbox: false,   // If true, auto spam filter runs only on inbox folders
+    spamfilter_max_concurrency: 1,  // max spam analyses in flight at once in one processEmails() batch
     summarize: false,
     summarize_auto: 1,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
     summarize_display_mode: 'inline',    // 'inline' or 'webchat'
+    summarize_max_concurrency: 1,        // max summaries generated at once on receive, in one processEmails() batch
     summarize_max_messages: 20,          // max number of messages summarized at once (webchat mode); above this the user is warned and the operation is blocked
     summarize_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
     summarize_strip_formatting: false,   // strip HTML/markdown formatting from AI summary
