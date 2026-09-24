@@ -1814,8 +1814,8 @@
     "prefs_OptionText_special_command_timeout_Info": {
         "message": "Zeit in Millisekunden, bevor eine hängende KI-Anfrage (automatisches Hinzufügen von Tags, Spam-Filter, Zusammenfassen, Übersetzen) abgebrochen wird. Erhöhen Sie diesen Wert, wenn Sie langsame lokale Modelle verwenden. Dies gilt nur für API-basierte Verbindungen, nicht für die ChatGPT-Weboberfläche."
     },
-    "prefs_OptionText_summarize_max_messages": {
-        "message": "Maximale Anzahl an Nachrichten"
+    "prefs_OptionText_max_messages": {
+        "message": "Max. Nachrichten"
     },
     "prefs_OptionText_summarize_max_messages_Info": {
         "message": "Maximale Anzahl von Nachrichten, die im Webchat-Modus auf einmal zusammengefasst werden können. Oberhalb dieses Limits wird der Vorgang mit einer Warnung blockiert. Setzen Sie den Wert auf 0 für kein Limit."

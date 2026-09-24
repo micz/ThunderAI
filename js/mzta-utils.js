@@ -110,6 +110,29 @@ export function getLanguageDisplayName(languageCode) {
    return lang_string.charAt(0).toUpperCase() + lang_string.slice(1);
 }
 
+// Human-readable duration for the UI ("1 h", "1 h, 30 min", "45 s"), localized through
+// Intl.DurationFormat. Only the two largest units are kept, and seconds are dropped from an
+// hour up: a wait of hours does not need them.
+export function formatDuration(ms, lang = browser.i18n.getUILanguage()) {
+  let rest = Math.max(1, Math.ceil(ms / 1000));
+  const units = [['days', 86400], ['hours', 3600], ['minutes', 60], ['seconds', 1]];
+  const parts = {};
+  for (const [unit, size] of units) {
+    const n = Math.floor(rest / size);
+    rest -= n * size;
+    if (n > 0) parts[unit] = n;
+  }
+  if (parts.days || parts.hours) delete parts.seconds;
+  const kept = Object.keys(parts).slice(0, 2);
+  const duration = Object.fromEntries(kept.map(unit => [unit, parts[unit]]));
+  try {
+    return new Intl.DurationFormat(lang, { style: 'short' }).format(duration);
+  } catch (e) {
+    const short = { days: 'd', hours: 'h', minutes: 'min', seconds: 's' };
+    return kept.map(unit => duration[unit] + ' ' + short[unit]).join(' ');
+  }
+}
+
 export function getMiczItUrl(path) {
   const lang = browser.i18n.getUILanguage().split('-')[0];
   const prefix = MICZ_IT_LOCALIZED_LANGS.includes(lang) ? `${lang}/` : '';

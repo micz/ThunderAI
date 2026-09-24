@@ -466,9 +466,37 @@ plus a **progress counter**:
   A `_activeBatches` counter allows overlapping batches; the cancel flag and `processed`
   counter are reset only when the **last** active batch exits, so a single cancel request is
   honored by every overlapping batch and never leaks into a future one.
-- `requestCancel()` / `isCancelled()` — set/read the global flag.
+- `requestCancel(reason = 'user', retryAfterMs = null)` / `isCancelled()` — set/read the global flag
+  (`retryAfterMs`: the wait the provider asked for, the longest one kept). `reason` is
+  `'user'` (Stop button) or `'rate_limit'` (set by `processEmails` itself, see below); a
+  `'rate_limit'` reason is never overwritten by a later `'user'` one. Reset with the flag.
 - `tick()` / `processed` — increments the "N processed" counter shown in the popup.
-- `isWorking()` / `getStatus()` — report `{ working, processed, cancelRequested }`.
+- `isWorking()` / `getStatus()` — report `{ working, processed, cancelRequested, cancelReason }`.
+- `endBatch()` returns `{ lastExit, cancelled, processed, reason, retryAfterMs }`, a snapshot taken before the
+  reset, which picks the notice shown by the `finally` of `processEmails`.
+
+**Automatic stop on a rate limit (#901).** When a message fails with `err.rateLimited` (a 429
+that outlived the per-request retries, or that `fetchWithRetry` returned at once because the
+body reports a used-up quota or spend limit, see
+[04-api-integrations.md](04-api-integrations.md#batch-stop-on-rate-limit)), every following
+message would fail the same way. The loop's local
+`stopForRateLimit()` calls `requestCancel('rate_limit')` and breaks out; the failing message is
+not `tick()`ed. The `finally` then shows the red `batch_stopped_rate_limit` panel
+("stopped after N messages: … rate limit or quota was exceeded") instead of the blue
+`batch_stopped_notice`; when the provider asked for a wait too long to retry, it is
+`batch_stopped_retry_after` instead, with the wait formatted by `formatDuration()` ("1 h").
+Checked after each feature of the per-message body: add tags (the
+`sendPrompt` catch; tags are not assigned), spam filter (`_generateSpamReportForMessage`
+returns `{success: false, rateLimited}`), summarize on receive and translate
+(`_generateSummaryForMessage` / `_generateTranslationForMessage` return `{rateLimited}` from
+their catch; other callers ignore it). The context-menu summarize block makes no per-message
+API call and is unaffected. Only the current batch stops: in auto mode each incoming mail
+starts a new batch, which may hit the 429 again.
+
+**Add tags selection cap.** On the context-menu path (`addTagsAuto && !isAutoMode`), a
+`add_tags_max_messages` > 0 makes the loop collect the selection into an array first (the
+paged list can be read only once) and abort with `add_tags_too_many_messages` when it is
+larger. Automatic tagging of incoming mail is never capped.
 
 **Scope decision:** `isWorking()` tracks its own `_activeBatches` counter, **not**
 `taWorkingStatus.WorkingLevel`. Standalone operations (e.g. a single inline summary via
@@ -476,7 +504,8 @@ plus a **progress counter**:
 the popup's "Stop processing" button must not appear for them.
 
 **Cooperative check points** in `processEmails`: at the top of the `for await` message loop
-(before the heavy `getFull`), after the between-chunks `setTimeout(0)` yield, and inside the
+(before the heavy `getFull`), after the between-chunks `setTimeout(0)` yield, after a
+rate-limited failure (see above), and inside the
 separate `summarize` block (before each `getFull` and before opening the webchat). All
 `break`/`return` paths fall through to the existing `finally`, so `stopWorking()` +
 `endBatch()` always run.

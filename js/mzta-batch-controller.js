@@ -31,6 +31,11 @@ export const taBatchController = {
 
     taLog: console,
     _cancelRequested: false,
+    // Why the batch was stopped: 'user' (Stop button) or 'rate_limit' (the AI provider
+    // refused more requests, see processEmails()). null while no cancel is pending.
+    _cancelReason: null,
+    // With a 'rate_limit' stop: the wait the provider asked for (ms), when it said so.
+    _retryAfterMs: null,
     _activeBatches: 0,
     processed: 0,
 
@@ -46,14 +51,16 @@ export const taBatchController = {
     //
     // Returns a snapshot taken BEFORE the reset, so the caller can show a "stopped after
     // N messages" notice exactly once (when lastExit && cancelled). `processed` is captured
-    // here because it is zeroed on the last-batch reset.
+    // here because it is zeroed on the last-batch reset; `reason` picks the notice.
     endBatch(){
         this._activeBatches--;
         const lastExit = this._activeBatches <= 0;
-        const result = { lastExit: lastExit, cancelled: this._cancelRequested, processed: this.processed };
+        const result = { lastExit: lastExit, cancelled: this._cancelRequested, processed: this.processed, reason: this._cancelReason, retryAfterMs: this._retryAfterMs };
         if(lastExit){
             this._activeBatches = 0;
             this._cancelRequested = false;
+            this._cancelReason = null;
+            this._retryAfterMs = null;
             this.processed = 0;
         }
         this.taLog.log("[taBatchController] endBatch, activeBatches: " + this._activeBatches);
@@ -61,9 +68,18 @@ export const taBatchController = {
     },
 
     // Ask all active batches to stop at their next cooperative checkpoint.
-    requestCancel(){
+    // A 'rate_limit' reason wins over 'user': the user must learn the provider refused
+    // the work, even if they also pressed Stop.
+    // retryAfterMs: with 'rate_limit', the wait the provider asked for; the longest one is kept.
+    requestCancel(reason = 'user', retryAfterMs = null){
         this._cancelRequested = true;
-        this.taLog.log("[taBatchController] cancel requested");
+        if(this._cancelReason !== 'rate_limit'){
+            this._cancelReason = reason;
+        }
+        if(Number.isFinite(retryAfterMs) && !(this._retryAfterMs >= retryAfterMs)){
+            this._retryAfterMs = retryAfterMs;
+        }
+        this.taLog.log("[taBatchController] cancel requested, reason: " + reason);
     },
 
     isCancelled(){
@@ -84,6 +100,7 @@ export const taBatchController = {
             working: this.isWorking(),
             processed: this.processed,
             cancelRequested: this._cancelRequested,
+            cancelReason: this._cancelReason,
         };
     },
 };

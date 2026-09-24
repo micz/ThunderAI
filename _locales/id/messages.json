@@ -1762,7 +1762,7 @@
     "prefs_OptionText_special_command_timeout_Info": {
         "message": "Waktu dalam milidetik sebelum permintaan AI yang macet (penambahan tag otomatis, filter spam, ringkas, terjemahkan) dihentikan. Tingkatkan nilainya jika Anda menggunakan model lokal yang lambat. Ini hanya berlaku untuk koneksi berbasis API, bukan untuk Antarmuka Web ChatGPT."
     },
-    "prefs_OptionText_summarize_max_messages": {
+    "prefs_OptionText_max_messages": {
         "message": "Maksimum pesan"
     },
     "prefs_OptionText_summarize_max_messages_Info": {

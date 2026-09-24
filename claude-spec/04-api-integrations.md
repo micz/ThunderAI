@@ -638,11 +638,14 @@ if(response.is_exception === true){
     error_text = i18nStrings["<provider>_api_request_failed"] + ": " + response.status + " " + response.statusText
         + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
 }
-postMessage({ type: 'error', payload: error_text });
+const retryAfterMs = Number.isFinite(response.retryAfterMs) ? response.retryAfterMs : null;
+postMessage({ type: 'error', payload: error_text, rateLimited: response.status === 429 || retryAfterMs !== null, retryAfterMs: retryAfterMs });
 throw new Error("[ThunderAI] <Provider> API request failed: " + error_text);
 ```
 
 The `postMessage` payload and the `throw` reuse the same `error_text` so the UI panel and the console message cannot drift apart.
+
+`rateLimited` and `retryAfterMs` are siblings of `payload` (which stays a string, so the connection test is unaffected). `retryAfterMs` is set when `fetchWithRetry` gave up because the server asked to wait longer than `retryAfterCapMs` (see [Automatic Retry Handling](#automatic-retry-handling)); such a response is always `rateLimited`, whatever its status. Otherwise `rateLimited` is `true` only for an HTTP 429 returned after the retries are used up or classified as terminal: Gemini `RESOURCE_EXHAUSTED`, OpenAI `rate_limit_exceeded` / `insufficient_quota` and Anthropic `rate_limit_error` are all 429. It is `false` on an `is_exception` (no `status`). 503/529 (overloaded) are deliberately not flagged: they mean no capacity, not no quota. The mid-stream error posts (OpenAI Responses `response.failed`, Ollama stream errors) do not set it.
 
 ### Batch cancellation (user-triggered stop)
 
@@ -662,6 +665,8 @@ Both use the same layout and a dismiss control; colors come from `_getThemeColor
 
 **Popup payload:** `preparePopupMenu(tab)` adds `output.batchStatus = taBatchController.getStatus()` to the response of the existing `popup_menu_ready` message, so the popup gets the initial batch state without an extra round-trip. When `batchStatus.working` is true the popup shows a "Stop processing — N processed" banner and polls `batch_status` every ~1s while open.
 
+<a id="batch-stop-on-rate-limit"></a>**Automatic stop on a rate limit (#901):** `mzta_specialCommand.sendPrompt()` copies the worker's `rateLimited` flag and `retryAfterMs` onto the rejected Error (`err.rateLimited`, `err.retryAfterMs`). It also records the `status` of each `newRetryAttempt`: long `Retry-After` waits can outlast `special_command_timeout`, so a timeout that fires while the last retried failure was a 429 is flagged too. `processEmails()` stops the whole batch on such an error with `requestCancel('rate_limit')`, and the `finally` shows `showGenericError(batch_stopped_rate_limit)` — or `batch_stopped_retry_after` ("… asks to retry in 1 h") when the provider named a wait, the longest one kept by `requestCancel(reason, retryAfterMs)` — instead of the `batch_stopped_notice` info panel. See [01-architecture.md](01-architecture.md#batch-cancellation-tabatchcontroller) for the check points.
+
 **Interaction with `mzta_specialCommand`:** v1 cancellation is checked *between* messages, so the in-flight worker prompt is allowed to finish first (bounded by `special_command_timeout`). There is no mid-request `dispose()` in v1; a future enhancement could register the active `mzta_specialCommand` with the controller and terminate its worker on cancel for an immediate abort.
 
 ## Automatic Retry Handling
@@ -677,7 +682,7 @@ uses it for `fetchResponse()` and `fetchModels()`, which both take an optional t
 retry too). Ollama's `fetchVersion()`/`fetchModelInfo()` still use plain `fetch()`.
 
 **`retryConfig`:** overrides for `RETRY_DEFAULTS` (`maxRetries` 5, `retryDelaysMs`
-`[5000, 10000, 20000, 30000]`, `retryAfterCapMs` 30000, `timeoutMs` 60000) plus `signal` (user
+`[5000, 10000, 20000, 30000]`, `retryAfterCapMs` 60000, `timeoutMs` 60000) plus `signal` (user
 abort), `onRetry(info)`, `logger` (a `taLogger`) and `label` (provider name for the logs, set by
 each class).
 
@@ -698,8 +703,31 @@ each class).
   retries fit only when each attempt fails quickly (the usual 429/503 case). A run of per-attempt
   timeouts (60 s each) is cut short by `special_command_timeout` first.
 - **`Retry-After`:** when present it replaces the backoff. Both the delta-seconds and the HTTP-date
-  form are accepted (`parseRetryAfter()`), clamped to `[0, retryAfterCapMs]`. The header is readable
-  because extension requests with host permissions are not subject to CORS header filtering.
+  form are accepted (`parseRetryAfter()`, clamped at 0; `fetchWithRetry` calls it with no upper
+  cap). The header is readable because extension requests with host permissions are not subject to
+  CORS header filtering. Without the header, Gemini's `google.rpc.RetryInfo.retryDelay` (body,
+  `"34s"`) is used the same way.
+- **A wait longer than `retryAfterCapMs` (60 s) is not retried:** the response is returned at once,
+  carrying the requested wait as a non-standard expando `response.retryAfterMs`. A per-minute window
+  needs at most ~60 s; a server asking for more (e.g. `Retry-After: 3600`) will not clear the limit
+  within `special_command_timeout` anyway. Earlier versions clamped the wait to the cap and retried,
+  which only repeated a certain failure. The workers forward the value (`retryAfterMs` in the
+  `error` message) and the user is told when to retry, formatted by `formatDuration()`
+  (`js/mzta-utils.js`, `Intl.DurationFormat` short style, the two largest units, no seconds from an
+  hour up: "1 h", "1 h, 30 min"): the webchat adds the `api_retry_after_hint` paragraph under the
+  error (`appendBotMessage(text, 'error', hintText)`), a batch stops with `batch_stopped_retry_after`.
+- **429s that retrying cannot fix are returned at once (#901).** On a 429 that would otherwise be
+  retried, `inspectRateLimitBody()` reads `response.clone()` (so the worker still gets the original
+  body unread) and `classifyRateLimitBody()` recognises, from the providers' documented bodies:
+  OpenAI (and compatible servers) `error.code: "insufficient_quota"` (no credit / monthly budget;
+  `rate_limit_exceeded` stays retryable); Anthropic `error.details.error_code:
+  "enforced_spend_limit_reached"` (monthly spend cap, sent without `retry-after`); Gemini a
+  `google.rpc.QuotaFailure` detail whose `violations[].quotaId` contains `PerDay`/`Daily` (e.g.
+  `GenerateRequestsPerDayPerProjectPerModel-FreeTier`). The daily Gemini 429 still carries a short
+  `RetryInfo` (~34 s), which is why the quotaId, not the delay, decides. An array-wrapped Gemini body
+  (`[{error}]`) is accepted. An unreadable or unrecognised body is retried as before. The worker
+  still flags the returned 429 `rateLimited`, so a running batch stops at the first such message
+  (about 1 s instead of ~95 s of doomed retries).
 - **Per-attempt timeout covers the headers only.** A dedicated `AbortController` + `setTimeout`,
   combined with the user signal through `AbortSignal.any()`, is cleared as soon as `fetch()`
   resolves. A bare `AbortSignal.timeout()` would not work: that signal stays attached to the body,
@@ -729,14 +757,19 @@ API key in the query string.
 - An aborted request (`is_aborted`) removes the unanswered user message from `conversationHistory`
   (so the next turn does not send it twice) and posts `requestAborted`.
 - Webchat (`api_webchat/controller.js`): `newRetryAttempt` -> `messageInput.showRetryStatus()`
-  ("Server not available (HTTP 503), retrying in 10 s (attempt 2 of 5)...", keeping the waiting
+  ("Server not available (HTTP 503), retrying in 10 s (attempt 2 of 5)...", or, for a 429,
+  `apiwebchat_retrying_rate_limit`: "Rate limit reached, retrying in 10 s (attempt 2 of 5)..."
+  (kept short: the pill is one line wide), keeping the waiting
   icon). The seconds count down to the retry (a 250 ms interval, text updated only when the
   whole-second value changes); at zero the pill returns to `showWaitingStatus()`. The countdown is
   stopped by `setStatusMessage()` and `hideStatusMessage()`, which every other status goes through,
   so a late tick can never overwrite a newer status; `requestAborted` -> an `apiwebchat_request_cancelled` info notice and `enableInput(false)`.
   The Stop button is visible while waiting, so a retry can always be cancelled.
-- `mzta_specialCommand` only logs `newRetryAttempt`. The overall `special_command_timeout` still
+- `mzta_specialCommand` only logs `newRetryAttempt` (and remembers its `status`, see
+  [Batch cancellation](#batch-stop-on-rate-limit)). The overall `special_command_timeout` still
   bounds the whole exchange, retries included.
+- A 429 still failing after the retries marks the `error` message `rateLimited`, which stops a
+  running batch (#901): retrying the next message against a used-up daily quota cannot help.
 - The connection test (`js/mzta-connection-test.js`) passes `{maxRetries: 0}`: it must report the
   current state right away, within its 10 s race.
 

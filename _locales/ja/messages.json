@@ -1815,7 +1815,7 @@
     "prefs_OptionText_summarize_max_display_length_Info": {
         "message": "インライン要約で表示する最大文字数です。0に設定すると制限なしになります。"
     },
-    "prefs_OptionText_summarize_max_messages": {
+    "prefs_OptionText_max_messages": {
         "message": "最大メッセージ数"
     },
     "prefs_OptionText_summarize_max_messages_Info": {

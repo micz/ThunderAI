@@ -961,6 +961,10 @@
     "message": "The maximum number of tags proposed by the AI. Set to 0 if you don't want to limit the number of tags.",
     "description": ""
   },
+  "prefs_OptionText_add_tags_max_messages_Info": {
+    "message": "The maximum number of selected messages that can be tagged at once from the context menu. Useful with AI providers that have a daily request quota. Automatic tagging of incoming messages is not limited. Set to 0 for no limit.",
+    "description": ""
+  },
   "prompt_add_tags_maxnum": {
     "message": "Limit the number of tags to",
     "description": "" 
@@ -1842,6 +1846,24 @@
       "max": {
         "content": "$4",
         "example": "3"
+      }
+    }
+  },
+  "apiwebchat_retrying_rate_limit": {
+    "message": "Rate limit reached, retrying in $SECONDS$ s (attempt $ATTEMPT$ of $MAX$)",
+    "description": "API webchat status bar while a request refused with HTTP 429 (too many requests: the provider's rate limit) is retried automatically",
+    "placeholders": {
+      "seconds": {
+        "content": "$1",
+        "example": "10"
+      },
+      "attempt": {
+        "content": "$2",
+        "example": "2"
+      },
+      "max": {
+        "content": "$3",
+        "example": "5"
       }
     }
   },
@@ -2740,9 +2762,9 @@
       "message": "Maximum number of characters to display in the inline summary. Set to 0 for no limit.",
       "description": ""
   },
-  "prefs_OptionText_summarize_max_messages": {
+  "prefs_OptionText_max_messages": {
       "message": "Max messages",
-      "description": ""
+      "description": "Label of the option limiting how many messages can be processed at once (shared by the summarize and add tags settings pages)"
   },
   "prefs_OptionText_summarize_max_messages_Info": {
       "message": "Maximum number of messages that can be summarized at once in webchat mode. Above this limit the operation is blocked with a warning. Set to 0 for no limit.",
@@ -2873,6 +2895,48 @@
   "batch_stop_source": {
       "message": "Batch stop",
       "description": "Source label shown as the prefix of the notice displayed when the user stops the running email processing jobs"
+  },
+  "batch_stopped_rate_limit": {
+      "message": "Email processing stopped after $COUNT$ messages: the AI provider's rate limit or quota was exceeded. Try again later.",
+      "description": "Error shown when the running email processing jobs were stopped automatically because the AI provider refused further requests (HTTP 429: rate limit or daily quota exhausted), reporting how many messages were processed before stopping",
+      "placeholders": {
+          "count": {
+              "content": "$1"
+          }
+      }
+  },
+  "batch_stopped_retry_after": {
+      "message": "Email processing stopped after $COUNT$ messages: the AI provider is not accepting requests and asks to retry in $WAIT$.",
+      "description": "Error shown when the running email processing jobs were stopped automatically because the AI provider asked to wait longer than ThunderAI waits on its own. $WAIT$ is a localized duration such as '1 h' or '1 h, 30 min'",
+      "placeholders": {
+          "count": {
+              "content": "$1"
+          },
+          "wait": {
+              "content": "$2"
+          }
+      }
+  },
+  "api_retry_after_hint": {
+      "message": "The AI provider asks to retry in $WAIT$.",
+      "description": "Shown under an API error in the chat window when the provider asked to wait longer than ThunderAI waits on its own. $WAIT$ is a localized duration such as '1 h' or '1 h, 30 min'",
+      "placeholders": {
+          "wait": {
+              "content": "$1"
+          }
+      }
+  },
+  "add_tags_too_many_messages": {
+      "message": "You selected $SELECTED$ messages, but at most $MAX$ can be tagged at once. Please select fewer messages.",
+      "description": "Shown when the user tries to add tags to more messages than the configured limit",
+      "placeholders": {
+          "selected": {
+              "content": "$1"
+          },
+          "max": {
+              "content": "$2"
+          }
+      }
   },
   "summarize_collapse": {
       "message": "Collapse summary",

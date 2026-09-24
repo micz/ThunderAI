@@ -172,11 +172,17 @@ import { mztaPrefs } from './mzta-prefs.js';
 
     sendPrompt(){
         const promise = new Promise((resolve, reject) => {
+            // HTTP status of the last retried failure. Long Retry-After waits can outlast
+            // special_command_timeout, so a request still retrying a 429 when the timer
+            // fires is reported as rate limited too, not as a plain timeout.
+            let lastRetryStatus = null;
             // Abort the worker if it never replies (e.g. a hung network connection),
             // so the caller's queue is not stuck waiting forever. Cleared on any outcome.
             let timeoutId = setTimeout(() => {
                 this.logger.error("Special command timed out after " + this.timeout_ms + " ms");
-                reject(new Error(`[ThunderAI] Special command timed out after ${this.timeout_ms} ms`));
+                const err = new Error(`[ThunderAI] Special command timed out after ${this.timeout_ms} ms`);
+                if (lastRetryStatus === 429) err.rateLimited = true;
+                reject(err);
             }, this.timeout_ms);
             const clearTimer = () => { clearTimeout(timeoutId); };
 
@@ -191,6 +197,7 @@ import { mztaPrefs } from './mzta-prefs.js';
                         // Transient failure being retried by the worker: nothing to
                         // show, the overall special_command_timeout still applies.
                         this.logger.log("Retrying the API request: " + JSON.stringify(payload));
+                        lastRetryStatus = payload?.status ?? null;
                         break;
                     case 'newToken':
                         this.full_message += payload.token;
@@ -215,11 +222,18 @@ import { mztaPrefs } from './mzta-prefs.js';
                         resolve(cleaned); // Resolve the promise with the full message
                         break;
                     }
-                    case 'error':
+                    case 'error': {
                         clearTimer();
                         console.error('[ThunderAI] Error from API worker:', payload);
-                        reject(new Error(`[ThunderAI] Error from API worker: ${payload}`)); // Use a single error object
+                        const err = new Error(`[ThunderAI] Error from API worker: ${payload}`); // Use a single error object
+                        // Set by the workers on a 429 that outlived the retries: the
+                        // batch loop in processEmails() stops on it.
+                        if (event.data.rateLimited === true) err.rateLimited = true;
+                        // The wait the provider asked for, when too long to retry: shown to the user.
+                        if (Number.isFinite(event.data.retryAfterMs)) err.retryAfterMs = event.data.retryAfterMs;
+                        reject(err);
                         break;
+                    }
                     default:
                         console.error('[ThunderAI] Unknown event type from API worker:', type);
                 }

@@ -1787,8 +1787,8 @@
     "prefs_OptionText_special_command_timeout_Info": {
         "message": "Temps (en millisecondes) avant l'annulation d'une requête IA bloquée (balisage automatique, filtre anti-spam, résumé, traduction). Augmentez cette valeur si vous utilisez des modèles locaux lents. Cela s'applique uniquement aux connexions via API, et non à l'interface web de ChatGPT."
     },
-    "prefs_OptionText_summarize_max_messages": {
-        "message": "Nombre max. de messages"
+    "prefs_OptionText_max_messages": {
+        "message": "Messages max."
     },
     "prefs_OptionText_summarize_max_messages_Info": {
         "message": "Nombre maximum de messages pouvant être résumés en une seule fois en mode webchat. Au-delà de cette limite, l'opération est bloquée et un avertissement s'affiche. Définissez sur 0 pour n'appliquer aucune limite."

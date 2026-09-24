@@ -22,7 +22,7 @@
 
 import { prefs_default, integration_options_config } from '../options/mzta-options-default.js';
 import { placeholdersUtils } from '../js/mzta-placeholders.js';
-import { getAPIsInitMessageString, convertNewlinesToBr } from '../js/mzta-utils.js';
+import { getAPIsInitMessageString, convertNewlinesToBr, formatDuration } from '../js/mzta-utils.js';
 import { loadPrompt } from '../js/mzta-prompts.js';
 import { buildChatBubbleIcon } from './svgIcons.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
@@ -351,7 +351,10 @@ worker.onmessage = async function(event) {
             messageInput.enableInput();
             break;
         case 'error':
-            messagesArea.appendBotMessage(payload,'error');
+            // The provider asked to wait longer than fetchWithRetry() accepts: say when to retry.
+            messagesArea.appendBotMessage(payload, 'error', Number.isFinite(event.data.retryAfterMs)
+                ? browser.i18n.getMessage('api_retry_after_hint', [formatDuration(event.data.retryAfterMs)])
+                : '');
             messageInput.enableInput(false);
             messageInput.showErrorStatus();
             break;

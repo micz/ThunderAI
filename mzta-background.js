@@ -60,6 +60,7 @@ import {
     isApiUsableConnection,
     hasSpecificIntegration,
     sendTabMessageSafe,
+    formatDuration,
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
@@ -1214,6 +1215,8 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
         // covers the case where it is not, so no spinner outlives the failed generation.
         _clearGeneratingPanels(tabId, headerMessageId, 'summary');
         taWorkingStatus.stopWorking();
+        // Read only by the processEmails() loop, which stops the batch on a rate limit.
+        return { rateLimited: !!error.rateLimited, retryAfterMs: error.retryAfterMs ?? null };
     }
 }
 
@@ -1353,6 +1356,8 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
         // Same as the summary: no spinner outlives the failed generation.
         _clearGeneratingPanels(tabId, headerMessageId, 'translation');
         taWorkingStatus.stopWorking();
+        // Same as the summary: read only by the processEmails() loop.
+        return { rateLimited: !!error.rateLimited, retryAfterMs: error.retryAfterMs ?? null };
     }
 }
 
@@ -1545,7 +1550,8 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
             console.error("[ThunderAI | SpamFilter] Error getting spamfilter: ", err);
             let err_data = await spamReport.saveError(headerMessageId, err.message || String(err), message_metadata || {});
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
-            return { success: false };
+            // rateLimited: the processEmails() loop stops the batch on it.
+            return { success: false, rateLimited: !!err.rateLimited, retryAfterMs: err.retryAfterMs ?? null };
         }
         taLog.log("spamfilter_result: " + spamfilter_result);
 
@@ -2374,6 +2380,7 @@ async function processEmails(args) {
     if (addTagsAuto || spamFilter || summarizeOnReceive || summarizeSendersActive || translateOnReceive || translate) {
         let prefs_aats = await mztaPrefs.getPrefs([
             'add_tags_maxnum',
+            'add_tags_max_messages',
             'connection_type',
             'add_tags_force_lang',
             'default_chatgpt_lang',
@@ -2400,7 +2407,40 @@ async function processEmails(args) {
         const CHUNK_SIZE = 5;
         let processedCount = 0;
 
-        for await (let message of messages) {
+        // Cap on a manual Add tags run (context menu), like summarize_max_messages: a large
+        // selection launched by mistake could never fit in a free-tier daily quota. Automatic
+        // tagging of incoming mail is not capped. The selection is collected (headers only)
+        // just when a cap is set, since the paged message list can only be read once.
+        let batchMessages = messages;
+        const add_tags_max_messages = prefs_aats.add_tags_max_messages;
+        if (addTagsAuto && !isAutoMode && Number.isFinite(add_tags_max_messages) && add_tags_max_messages > 0) {
+            batchMessages = [];
+            for await (let msg of messages) {
+                batchMessages.push(msg);
+            }
+            if (batchMessages.length > add_tags_max_messages) {
+                taLog.error("[ThunderAI] Add tags aborted: " + batchMessages.length + " messages selected, limit is " + add_tags_max_messages + ".");
+                await showGenericError(
+                    browser.i18n.getMessage('add_tags_too_many_messages', [String(batchMessages.length), String(add_tags_max_messages)]),
+                    browser.i18n.getMessage('prompt_add_tags') || 'Add tags'
+                );
+                return;
+            }
+        }
+
+        // Set when a request is refused with a 429 that outlived the per-request retries
+        // (rate limit or used-up quota, see err.rateLimited in mzta_specialCommand). Every
+        // following message would fail the same way, so the whole batch is stopped and the
+        // outer finally tells the user why.
+        let rateLimitHit = false;
+        const stopForRateLimit = (feature, retryAfterMs = null) => {
+            taLog.error("[ThunderAI] " + feature + ": the AI provider refused the request (rate limit or quota exceeded"
+                + (retryAfterMs !== null ? ", retry in " + Math.round(retryAfterMs / 1000) + " s" : "") + "), stopping the batch.");
+            taBatchController.requestCancel('rate_limit', retryAfterMs);
+            rateLimitHit = true;
+        };
+
+        for await (let message of batchMessages) {
             // Cooperative cancellation: bail out before doing any heavy work (getFull, ...)
             // if the user requested a stop. All break paths fall through to the outer finally.
             if (taBatchController.isCancelled()) {
@@ -2541,14 +2581,20 @@ async function processEmails(args) {
                             tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
                         } catch (err) {
                             console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
+                            if (err?.rateLimited) {
+                                stopForRateLimit('Add tags', err.retryAfterMs ?? null);
+                            }
                         }
-                        taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
-                        let _data = { messageId: message.id, tags: tags_current_email };
-                        _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
+                        if (!rateLimitHit) {
+                            taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
+                            let _data = { messageId: message.id, tags: tags_current_email };
+                            _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
+                        }
                     }
                 }
             }
-    
+            if (rateLimitHit) break;
+
             if (spamFilter) {
                 let skipSpamFilter = false;
                 if(isAutoMode && message_in_skipped_folder){
@@ -2574,7 +2620,7 @@ async function processEmails(args) {
                     // spam report needs the full message for its METADATA.
                     await ensureFullMessage();
                     await ensureBodyText();
-                    await _generateSpamReportForMessage(
+                    const spamResult = await _generateSpamReportForMessage(
                         message.headerMessageId,
                         {
                             messageData: { message, fullMessage: curr_fullMessage, body_text, msg_text },
@@ -2583,6 +2629,10 @@ async function processEmails(args) {
                             skip_addresses: spamfilter_skip_addresses,
                             skip_addressbook: spamfilter_skip_addressbook
                         });
+                    if (spamResult?.rateLimited) {
+                        stopForRateLimit('Spam filter', spamResult.retryAfterMs);
+                        break;
+                    }
                 }
             }
 
@@ -2602,9 +2652,13 @@ async function processEmails(args) {
                 if (!skipSummarize) {
                     await ensureFullMessage();
                     taLog.log("[ThunderAI] Pre-caching summary on receive for: " + message.headerMessageId + (summarizeOnReceive ? "" : " (sender in the auto-summarize list)"));
-                    await _generateSummaryForMessage(message.headerMessageId, null, {
+                    const summaryResult = await _generateSummaryForMessage(message.headerMessageId, null, {
                         messageData: { message, fullMessage: curr_fullMessage }
                     });
+                    if (summaryResult?.rateLimited) {
+                        stopForRateLimit('Summarize', summaryResult.retryAfterMs);
+                        break;
+                    }
                 }
             }
 
@@ -2630,9 +2684,13 @@ async function processEmails(args) {
                     // the generating panel: _generateTranslationForMessage() sends it
                     // through _sendGeneratingIfCurrent().
                     taLog.log("[ThunderAI] Generating translation for: " + message.headerMessageId);
-                    await _generateTranslationForMessage(message.headerMessageId, translateTabId, {
+                    const translateResult = await _generateTranslationForMessage(message.headerMessageId, translateTabId, {
                         messageData: { message, fullMessage: curr_fullMessage }
                     });
+                    if (translateResult?.rateLimited) {
+                        stopForRateLimit('Translate', translateResult.retryAfterMs);
+                        break;
+                    }
                 }
             }
 
@@ -2739,9 +2797,18 @@ async function processEmails(args) {
         taWorkingStatus.stopWorking();
         // endBatch() returns a snapshot taken before the counters are reset. When the last
         // active batch exits because the user requested a cancel, notify how many messages
-        // were processed before stopping.
+        // were processed before stopping. A stop caused by a rate limit / used-up quota is an
+        // error, not a choice of the user, so it gets the red panel and says why.
         const batchResult = taBatchController.endBatch();
-        if (batchResult.lastExit && batchResult.cancelled) {
+        if (batchResult.lastExit && batchResult.cancelled && batchResult.reason === 'rate_limit') {
+            // When the provider said how long to wait, the notice tells the user when to retry.
+            await showGenericError(
+                Number.isFinite(batchResult.retryAfterMs)
+                    ? browser.i18n.getMessage('batch_stopped_retry_after', [String(batchResult.processed), formatDuration(batchResult.retryAfterMs)])
+                    : browser.i18n.getMessage('batch_stopped_rate_limit', [String(batchResult.processed)]),
+                browser.i18n.getMessage('batch_stop_source')
+            );
+        } else if (batchResult.lastExit && batchResult.cancelled) {
             await showGenericInfo(
                 browser.i18n.getMessage('batch_stopped_notice', [String(batchResult.processed)]),
                 browser.i18n.getMessage('batch_stop_source')

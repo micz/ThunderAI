@@ -114,7 +114,11 @@ self.onmessage = async function(event) {
                 taLog.log("error_message: " + JSON.stringify(error_message));
                 error_text = i18nStrings["OpenAIComp_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
             }
-            postMessage({ type: 'error', payload: error_text });
+            // rateLimited: a 429 still failing after the retries (rate limit or used-up quota),
+            // or a server asking to wait longer than fetchWithRetry() accepts (retryAfterMs,
+            // shown to the user): processEmails() stops the whole batch. False on an is_exception.
+            const retryAfterMs = Number.isFinite(response.retryAfterMs) ? response.retryAfterMs : null;
+            postMessage({ type: 'error', payload: error_text, rateLimited: response.status === 429 || retryAfterMs !== null, retryAfterMs: retryAfterMs });
             throw new Error("[ThunderAI] OpenAI Comp API request failed: " + error_text);
         }
 

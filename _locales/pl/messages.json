@@ -1886,8 +1886,8 @@
     "prefs_OptionText_summarize_max_display_length_Info": {
         "message": "Maksymalna liczba znaków wyświetlanych w podsumowaniu wewnątrz wiersza. Ustaw 0, aby brak limitu."
     },
-    "prefs_OptionText_summarize_max_messages": {
-        "message": "Maks. liczba wiadomości"
+    "prefs_OptionText_max_messages": {
+        "message": "Maks. wiadomości"
     },
     "prefs_OptionText_summarize_max_messages_Info": {
         "message": "Maksymalna liczba wiadomości, które można jednocześnie podsumować w trybie webchat. Powyżej tego limitu operacja jest blokowana z ostrzeżeniem. Ustaw 0, aby brak limitu."

@@ -192,6 +192,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 |-----|---------|-------------|
 | `add_tags` | `false` | Enable auto-tagging feature |
 | `add_tags_maxnum` | `3` | Max tags to apply |
+| `add_tags_max_messages` | `0` | Maximum number of messages tagged at once from the **context menu**. Above this limit `processEmails()` (`mzta-background.js`) blocks the run and shows the `add_tags_too_many_messages` warning. `0` = no limit. Automatic tagging of incoming mail is never capped. Exposed in the add tags settings page as a number input (`min="0"`, no reset button: the page's restore fallback for number inputs is already `0`). Meant for providers with a daily quota (#901), where a large selection cannot fit anyway. |
 | `add_tags_hide_exclusions` | `false` | Hide excluded tags from menu |
 | `add_tags_exclusions_exact_match` | `false` | Exact match for exclusions |
 | `add_tags_first_uppercase` | `true` | Capitalize first letter of tags |
@@ -1042,7 +1043,7 @@ with `Number.isInteger()` before comparing, which also repairs profiles that alr
 legitimate **0** ("flag everything") along with the genuinely missing values and silently applies
 the default 70 instead. `getSpamThreshold()` in `mzta-background.js` now guards with
 `Number.isFinite()`, so only an absent or non-numeric value — including the `null` an emptied
-number input stores — falls back. The other numeric prefs (`add_tags_maxnum`,
+number input stores — falls back. The other numeric prefs (`add_tags_maxnum`, `add_tags_max_messages`,
 `summarize_max_messages`, `summarize_max_display_length`, `translate_max_display_length`) are
 already safe at their consumers, either via `Number.isFinite()` or because `|| 0` / `> 0` is the
 intended behaviour for them; their `saveOptions()` cases are deliberately left untouched.

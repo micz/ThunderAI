@@ -513,8 +513,13 @@ class MessageInput extends HTMLElement {
             const seconds = Math.ceil(remainingMs / 1000);
             if (seconds !== shownSeconds) {
                 shownSeconds = seconds;
-                this._statusLoggerText.textContent = browser.i18n.getMessage('apiwebchat_retrying',
-                    [reasonText, String(seconds), String(attempt), String(maxRetries)]) + '...';
+                // A 429 is not a server outage: the provider refuses requests for a
+                // while (rate limit), so it gets its own wording.
+                this._statusLoggerText.textContent = (status === 429
+                    ? browser.i18n.getMessage('apiwebchat_retrying_rate_limit',
+                        [String(seconds), String(attempt), String(maxRetries)])
+                    : browser.i18n.getMessage('apiwebchat_retrying',
+                        [reasonText, String(seconds), String(attempt), String(maxRetries)])) + '...';
             }
         };
         tick();

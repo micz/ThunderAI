@@ -28,7 +28,10 @@ export const RETRY_DEFAULTS = {
     // (5 s, 10 s, 20 s, 30 s, 30 s). An overloaded model or a rate limit usually
     // lasts tens of seconds, so a short 1-2-4 s schedule would give up too early.
     retryDelaysMs: [5000, 10000, 20000, 30000],
-    retryAfterCapMs: 30000,
+    // Longest wait the server may ask for (Retry-After, Gemini's RetryInfo). A per-minute
+    // window can need up to ~60 s; a longer request means the limit will not clear
+    // soon (hourly/daily quota), so the retries stop and the 429 is returned at once.
+    retryAfterCapMs: 60000,
     // Covers only the wait for the response headers, see fetchWithRetry().
     timeoutMs: 60000,
 };
@@ -46,6 +49,10 @@ const defaultLogger = new taLogger('api-retry', false);
  * waiting with exponential backoff and jitter, or for the Retry-After header
  * when the server sends one. The retry happens only before the body is
  * consumed: a failure in the middle of a stream is not retried.
+ *
+ * A failure that retrying cannot fix is returned at once instead: a 429 whose
+ * body reports a used-up quota or spend limit (see classifyRateLimitBody()), or
+ * any response asking for a wait longer than retryAfterCapMs.
  *
  * Always either returns a Response (possibly a non-ok one, unread, when the
  * status is not retryable or the retries are used up) or throws.
@@ -95,22 +102,41 @@ export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
             clearTimeout(timer);
         }
 
+        let retryAfterMs = null;
         if (response !== null) {
             if (!RETRYABLE_STATUSES.includes(response.status) || attempt === maxRetries) {
+                return response;
+            }
+            let bodyInfo = { terminal: false, reason: '', retryAfterMs: null };
+            if (response.status === 429) {
+                bodyInfo = await inspectRateLimitBody(response);
+                if (bodyInfo.terminal) {
+                    logger.log(label + " request failed (HTTP 429, " + bodyInfo.reason + "), not retrying: waiting cannot help");
+                    return response;
+                }
+            }
+            // The Retry-After header wins over the body's own hint.
+            retryAfterMs = parseRetryAfter(response.headers.get('Retry-After'), Infinity);
+            if (retryAfterMs === null) retryAfterMs = bodyInfo.retryAfterMs;
+            if (retryAfterMs !== null && retryAfterMs > cfg.retryAfterCapMs) {
+                logger.log(label + " request failed (HTTP " + response.status + "), the server asks to wait "
+                    + Math.round(retryAfterMs / 1000) + " s, more than " + Math.round(cfg.retryAfterCapMs / 1000) + " s: not retrying");
+                // Non-standard expando: the workers forward it with the error, so the
+                // user is told when the provider will accept requests again.
+                response.retryAfterMs = retryAfterMs;
                 return response;
             }
             // Release the connection: this response will never be read.
             response.body?.cancel().catch(() => {});
         }
 
-        const retryAfterMs = response !== null ? parseRetryAfter(response.headers.get('Retry-After'), cfg.retryAfterCapMs) : null;
         const delayMs = retryAfterMs !== null ? retryAfterMs : backoffDelay(attempt, cfg);
         const status = response !== null ? response.status : null;
 
         logger.log(label + " request failed (" + (status !== null ? "HTTP " + status : reason)
             + (lastError && response === null ? ": " + lastError : "")
             + "), retry " + (attempt + 1) + " of " + maxRetries + " in " + delayMs + " ms"
-            + (retryAfterMs !== null ? " (Retry-After)" : ""));
+            + (retryAfterMs !== null ? " (asked by the server)" : ""));
 
         if (typeof onRetry === 'function') {
             try {
@@ -138,6 +164,64 @@ function backoffDelay(attempt, cfg) {
         ? cfg.retryDelaysMs : RETRY_DEFAULTS.retryDelaysMs;
     const base = delays[Math.min(attempt, delays.length - 1)];
     return Math.round(base * (0.8 + Math.random() * 0.2));
+}
+
+/**
+ * Read a 429 body through a clone, so the Response itself stays unread for the
+ * worker's error formatting. Any read or parse failure means "no information":
+ * the 429 is then retried as before.
+ */
+async function inspectRateLimitBody(response) {
+    try {
+        return classifyRateLimitBody(JSON.parse(await response.clone().text()));
+    } catch (e) {
+        return { terminal: false, reason: '', retryAfterMs: null };
+    }
+}
+
+/**
+ * Tell a 429 that clears in seconds (per-minute rate limit) from one that
+ * retrying cannot fix before the quota resets. Recognised bodies:
+ * - OpenAI (and compatible servers): error.code 'insufficient_quota' (no credit
+ *   or monthly budget reached); 'rate_limit_exceeded' is the transient one.
+ * - Anthropic: error.details.error_code 'enforced_spend_limit_reached' (monthly
+ *   spend cap; it comes without a retry-after header).
+ * - Google Gemini: a google.rpc.QuotaFailure detail whose quotaId names a daily
+ *   window (e.g. GenerateRequestsPerDayPerProjectPerModel-FreeTier). The
+ *   RetryInfo.retryDelay sent with it is just a few seconds, so it is not trusted
+ *   there; for the other quotas it is returned as the wait.
+ *
+ * @returns {{terminal: boolean, reason: string, retryAfterMs: number|null}}
+ */
+export function classifyRateLimitBody(body) {
+    const result = { terminal: false, reason: '', retryAfterMs: null };
+    // Some Gemini endpoints wrap the error object in an array.
+    const error = (Array.isArray(body) ? body[0] : body)?.error;
+    if (!error || typeof error !== 'object') return result;
+
+    if (error.code === 'insufficient_quota') {
+        return { ...result, terminal: true, reason: 'insufficient_quota' };
+    }
+    if (error.details?.error_code === 'enforced_spend_limit_reached') {
+        return { ...result, terminal: true, reason: 'enforced_spend_limit_reached' };
+    }
+    if (Array.isArray(error.details)) {
+        for (const detail of error.details) {
+            const type = String(detail?.['@type'] || '');
+            if (type.endsWith('google.rpc.QuotaFailure') && Array.isArray(detail.violations)) {
+                const daily = detail.violations.find(v => /PerDay|Daily/i.test(String(v?.quotaId || '')));
+                if (daily) {
+                    return { ...result, terminal: true, reason: 'daily quota ' + daily.quotaId };
+                }
+            }
+            if (type.endsWith('google.rpc.RetryInfo')) {
+                // A protobuf Duration in its JSON form: "34s", "34.07s".
+                const m = /^(\d+(?:\.\d+)?)s$/.exec(String(detail.retryDelay || '').trim());
+                if (m) result.retryAfterMs = Math.round(parseFloat(m[1]) * 1000);
+            }
+        }
+    }
+    return result;
 }
 
 /**

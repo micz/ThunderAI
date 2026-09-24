@@ -152,6 +152,10 @@ messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
     .message p:last-child{
         margin-bottom: 0;
     }
+    /* A hint under an error message (see appendBotMessage). */
+    .message.error + .message.error {
+        margin-top: 10px;
+    }
     .token {
         display: inline;
         opacity: 0;
@@ -873,7 +877,9 @@ class MessagesArea extends HTMLElement {
         this._resumeFollowing();
     }
 
-    appendBotMessage(messageText, type="bot") {
+    // hintText: optional second paragraph under the message (e.g. when the provider
+    // accepts requests again), kept apart so it is not lost inside a long error text.
+    appendBotMessage(messageText, type="bot", hintText = '') {
         // console.log("[ThunderAI] appendBotMessage: " + messageText);
 
         this.fullTextHTML = messageText;
@@ -899,6 +905,12 @@ class MessagesArea extends HTMLElement {
         messageElement.classList.add('message', type);
         messageElement.textContent = messageText;
         body.appendChild(messageElement);
+        if (hintText) {
+            const hintElement = document.createElement('div');
+            hintElement.classList.add('message', type);
+            hintElement.textContent = hintText;
+            body.appendChild(hintElement);
+        }
         if (type === 'error') {
             // An error ends the exchange with no answer to act on, but the user
             // still needs a way out: give the error turn the full-bar slot with

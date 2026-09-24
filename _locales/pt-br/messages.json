@@ -1615,7 +1615,7 @@
     "prefs_OptionText_summarize_max_display_length_Info": {
         "message": "Número máximo de caracteres a serem exibidos no resumo embutido. Defina como 0 para sem limite."
     },
-    "prefs_OptionText_summarize_max_messages": {
+    "prefs_OptionText_max_messages": {
         "message": "Máximo de mensagens"
     },
     "prefs_OptionText_summarize_max_messages_Info": {
