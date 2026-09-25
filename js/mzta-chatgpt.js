@@ -306,12 +306,12 @@ function getComposerContainer(el) {
 }
 
 // Button structure for diagnostics. aria-labels are localized: logged here, never matched.
-function describeButtons(container, max) {
+function describeButtons(container, max, extended) {
     if (!container) return [];
     return Array.from(container.querySelectorAll('button')).filter(b => !isOwnUiElement(b)).slice(0, max).map((b, index) => {
         const use = b.querySelector('use');
         const path = b.querySelector('path');
-        return {
+        const desc = {
             index: index,
             type: b.getAttribute('type') || '',
             id: b.id || '',
@@ -323,6 +323,12 @@ function describeButtons(container, max) {
             pathD: path ? (path.getAttribute('d') || '').substring(0, 30) : '',
             visible: isElementVisible(b)
         };
+        // completion diagnostics only, the send button diagnostics keep their format
+        if (extended) {
+            desc.ariaHaspopup = b.getAttribute('aria-haspopup') || '';
+            desc.class = getElementClass(b).substring(0, 60);
+        }
+        return desc;
     });
 }
 
@@ -363,6 +369,10 @@ function findSendButton(composerEl) {
         ['form-submit', () => {
             const form = composerEl ? composerEl.closest('form') : null;
             return form ? Array.from(form.querySelectorAll('button[type="submit"]')) : [];
+        }],
+        ['composer-size-token-submit', () => {
+            const form = composerEl ? composerEl.closest('form') : null;
+            return form ? Array.from(form.querySelectorAll('button.size-token-button-composer[type="submit"]')) : [];
         }],
         ['ancestor-submit', () => {
             if (!composerEl || composerEl.closest('form')) return [];
@@ -808,7 +818,7 @@ function getTurnButtonsContainer(el) {
 }
 
 // Same rules as logPromptInputDiagnostics: structure and lengths only, never the answer
-function logCompletionDiagnostics(last, length, stableMs, waitingMs) {
+function logCompletionDiagnostics(last, length, stableMs, waitingMs, state) {
     try {
         const turn = last ? getMessageTurn(last.el) : null;
         const composer = current_composer_el && current_composer_el.isConnected ? current_composer_el : queryPromptInput([document])?.el;
@@ -822,8 +832,13 @@ function logCompletionDiagnostics(last, length, stableMs, waitingMs) {
             length: length,
             stableMs: stableMs,
             signals: diagSection(() => getGenerationSignals(turn)),
-            turnButtons: diagSection(() => last ? describeButtons(getTurnButtonsContainer(last.el), 12) : []),
-            composerButtons: diagSection(() => describeButtons(getComposerContainer(composer), 12))
+            turnButtons: diagSection(() => last ? describeButtons(getTurnButtonsContainer(last.el), 12, true) : []),
+            composerButtons: diagSection(() => describeButtons(getComposerContainer(composer), 12, true)),
+            generationObserved: state ? state.generationObserved : null,
+            isGeneratingNow: state ? state.isGeneratingNow : null,
+            assistantAtStart: state ? state.assistantAtStart : null,
+            assistantNow: countElements('[data-message-author-role="assistant"]'),
+            minTurnIndex: state ? state.minTurnIndex : null
         };
         console.warn("[ThunderAI] Completion diagnostics: " + JSON.stringify(diag));
     } catch (err) {
@@ -838,8 +853,26 @@ async function chatgpt_isIdle() {
         let lastLength = -1;
         let lastChange = Date.now();
         let diagLogged = false;
+        // per-call state, isIdle can run more than once in the same page (custom texts)
+        const assistantAtStart = countElements('[data-message-author-role="assistant"]');
+        // the new turn usually exists already when this starts (send verification waits 1.5 s)
+        const minTurnIndex = send_baseline ? send_baseline.assistant : assistantAtStart;
+        let generationObserved = false;
+        let lastGeneratingAt = 0;
+        // Stop button of the newer UI (issue #920), matched by icon or composer classes, never by label
+        const stopButtonPresent = () => {
+            const stopPath = document.querySelector('button path[d^="M4.5 5.75C4.5 5.05964"]');
+            if (stopPath && !isOwnUiElement(stopPath)) return true;
+            const form = current_composer_el && current_composer_el.isConnected ? current_composer_el.closest('form') : null;
+            if (form) return form.querySelector('button.size-token-button-composer.bg-composer-primary[type="button"]') !== null;
+            return document.querySelector('form button.size-token-button-composer.bg-composer-primary[type="button"]') !== null;
+        };
         const intervalId = setInterval(() => {
-            if (chatgpt_getRegenerateButton() || do_force_completion) {
+            const regenerateButton = chatgpt_getRegenerateButton(minTurnIndex);
+            if (regenerateButton || do_force_completion) {
+                if (do_force_completion) doLog("Completion forced by the user");
+                else if (isNewUiActionButton(regenerateButton)) doLog("Completion detected by the new UI action button");
+                else doLog("Completion detected by the regenerate button");
                 clearInterval(intervalId); resolve(true);
                 return;
             }
@@ -847,20 +880,36 @@ async function chatgpt_isIdle() {
             // counts as complete once its length has been stable for 4 s and no generation
             // signal is left (see getGenerationSignals)
             try {
+                const generatingNow = stopButtonPresent();
+                if (generatingNow) {
+                    generationObserved = true;
+                    lastGeneratingAt = Date.now();
+                } else if (generationObserved && Date.now() - lastGeneratingAt >= 4000) {
+                    // Stop gone for 1 s, then 3 s more without a new UI action button: covers icon changes
+                    doLog("Completion detected by the end of generation (stop button gone for " + (Date.now() - lastGeneratingAt) + " ms)");
+                    clearInterval(intervalId); resolve(true);
+                    return;
+                }
                 const last = getNewAssistantMessage();
                 const length = last ? (last.el.textContent || '').trim().length : -1;
                 if (!last || last.el !== lastEl || length !== lastLength) {
                     lastEl = last ? last.el : null;
                     lastLength = length;
                     lastChange = Date.now();
-                } else if (length > 0 && Date.now() - lastChange >= 4000 && !isGenerationInProgress(getMessageTurn(last.el))) {
-                    doLog("Completion detected by the stability fallback (" + last.kind + ", length " + length + ", stable for " + (Date.now() - lastChange) + " ms)");
+                } else if (length > 0 && Date.now() - lastChange >= 4000 && !isGenerationInProgress(getMessageTurn(last.el)) && !generatingNow) {
+                    // !generatingNow: the text stays unchanged during thinking pauses too
+                    doLog("Completion detected by the stability fallback (" + last.kind + ", length " + length + ", stable for " + (Date.now() - lastChange) + " ms, no stop button)");
                     clearInterval(intervalId); resolve(true);
                     return;
                 }
                 if (!diagLogged && Date.now() - startTime > 60000) {
                     diagLogged = true;
-                    logCompletionDiagnostics(last, length, Date.now() - lastChange, Date.now() - startTime);
+                    logCompletionDiagnostics(last, length, Date.now() - lastChange, Date.now() - startTime, {
+                        generationObserved: generationObserved,
+                        isGeneratingNow: generatingNow,
+                        assistantAtStart: assistantAtStart,
+                        minTurnIndex: minTurnIndex
+                    });
                 }
             } catch (err) {
                 console.error('[ThunderAI] chatgpt_isIdle: ', err);
@@ -869,7 +918,27 @@ async function chatgpt_isIdle() {
     });
 }
 
-function chatgpt_getRegenerateButton() {
+// Regenerate and copy icons of the newer UI (issue #920): cursor-interaction, inline paths, no testid
+const NEW_UI_ACTION_PATHS = 'path[d^="M14.0219 8.22363"], path[d^="M13.468 11.1216"]';
+
+function isNewUiActionButton(el) {
+    return !!el && typeof el.querySelector === 'function' && el.querySelector(NEW_UI_ACTION_PATHS) !== null;
+}
+
+// Index of the assistant message the element belongs to, -1 if none
+function getAssistantTurnIndex(el) {
+    const messages = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
+    const own = el.closest('[data-message-author-role="assistant"]');
+    if (own) return messages.indexOf(own);
+    const article = el.closest('article');
+    if (!article) return -1;
+    for (let i = messages.length - 1; i >= 0; i--) {
+        if (article.contains(messages[i])) return i;
+    }
+    return -1;
+}
+
+function chatgpt_getRegenerateButton(minTurnIndex) {
     let first_try = [...document.querySelectorAll('use')]
                         .find(u => u.getAttribute('href')?.includes('#' + 'ec66f0'))
                         ?.closest('button') || null;
@@ -886,6 +955,14 @@ function chatgpt_getRegenerateButton() {
             return mainSVG.parentNode.parentNode;
         }
     }
+    // newer UI, only in turns at or after minTurnIndex when given
+    for (const path of document.querySelectorAll(NEW_UI_ACTION_PATHS)) {
+        const button = path.closest('button');
+        if (!button || isOwnUiElement(button)) continue;
+        if (typeof minTurnIndex === 'number' && getAssistantTurnIndex(button) < minTurnIndex) continue;
+        return button;
+    }
+    return null;
 }
 
 function chatpgt_scrollToBottom () {
