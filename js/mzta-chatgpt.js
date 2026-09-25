@@ -147,6 +147,8 @@ async function findPromptInput(timeoutMs) {
             clearTimeout(timeoutId);
             if (found) {
                 doLog("Prompt input found after " + (Date.now() - startTime) + " ms with selector: " + found.selector + (found.inShadow ? " (shadow DOM)" : ""));
+                // the focus and timeout outcomes emit their own line in any mode
+                if (mztaDoDebug == 1) logComposerDiagnostics('found', found.el, found.selector);
                 resolve(found.el);
             } else {
                 doLog("Prompt input not found after " + timeoutMs + " ms");
@@ -287,7 +289,7 @@ function logPromptInputDiagnostics() {
             cloudflare: document.querySelector('#challenge-form, #challenge-running, [id^="cf-"], iframe[src*="challenges.cloudflare.com"]') !== null || title.toLowerCase().includes('just a moment'),
             userAgent: navigator.userAgent
         };
-        console.warn("[ThunderAI] Diagnostics: " + JSON.stringify(diag));
+        console.log("[ThunderAI] Diagnostics: " + JSON.stringify(diag));
     } catch (err) {
         console.warn("[ThunderAI] Diagnostics failed: ", err);
     }
@@ -332,11 +334,16 @@ function describeButtons(container, max, extended) {
     });
 }
 
-// Same rules as logPromptInputDiagnostics: structure only, no page text
-function logSendButtonDiagnostics(composerEl) {
+// Same rules as logPromptInputDiagnostics: structure only, no page text.
+// attempt: { strategy, method, verified } of the send attempt, fields null when not known yet
+function logSendButtonDiagnostics(composerEl, attempt) {
     try {
         const buttons = Array.from(document.querySelectorAll('form button, [data-testid$="-button"]')).filter(el => !isOwnUiElement(el));
         const diag = {
+            strategy: attempt ? attempt.strategy : null,
+            method: attempt ? attempt.method : null,
+            verified: attempt ? attempt.verified : null,
+            composerEmpty: diagSection(() => composerEl && composerEl.isConnected ? isComposerEmpty(composerEl) : null),
             buttons: buttons.length,
             formButtons: document.querySelectorAll('form button').length,
             testids: Array.from(new Set(buttons.map(b => b.getAttribute('data-testid')).filter(Boolean))).slice(0, 15),
@@ -344,7 +351,7 @@ function logSendButtonDiagnostics(composerEl) {
             composerInForm: diagSection(() => composerEl ? composerEl.closest('form') !== null : false),
             composerButtons: diagSection(() => describeButtons(getComposerContainer(composerEl), 12))
         };
-        console.warn("[ThunderAI] Send button diagnostics: " + JSON.stringify(diag));
+        console.log("[ThunderAI] Send button diagnostics: " + JSON.stringify(diag));
     } catch (err) {
         console.warn("[ThunderAI] Send button diagnostics failed: ", err);
     }
@@ -453,8 +460,8 @@ function getSelectorPath(el) {
 }
 
 // Same rules as logPromptInputDiagnostics: structure only, never the composer's content,
-// aria-label or placeholder
-function logComposerDiagnostics(source, el) {
+// aria-label or placeholder. selector: the PROMPT_INPUT_SELECTORS entry that matched, if any
+function logComposerDiagnostics(source, el, selector) {
     try {
         const element = !el ? null : diagSection(() => {
             const root = el.getRootNode ? el.getRootNode() : null;
@@ -493,6 +500,7 @@ function logComposerDiagnostics(source, el) {
         const title = document.title || '';
         const diag = {
             source: source,
+            selector: selector || null,
             element: element,
             path: location.pathname,
             title: title,
@@ -534,7 +542,7 @@ function logComposerDiagnostics(source, el) {
             cloudflare: document.querySelector('#challenge-form, #challenge-running, [id^="cf-"], iframe[src*="challenges.cloudflare.com"]') !== null || title.toLowerCase().includes('just a moment'),
             userAgent: navigator.userAgent
         };
-        console.warn("[ThunderAI] Composer diagnostics: " + JSON.stringify(diag));
+        console.log("[ThunderAI] Composer diagnostics: " + JSON.stringify(diag));
     } catch (err) {
         console.warn("[ThunderAI] Composer diagnostics failed: ", err);
     }
@@ -765,6 +773,7 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
     if (user_selected_composer && isElementVisible(user_selected_composer)) {
         doLog("Reusing the composer selected by the user");
         textArea = user_selected_composer;
+        if (mztaDoDebug == 1) logComposerDiagnostics('reused', textArea);
     } else {
         textArea = await findPromptInput(15000);
     }
@@ -775,6 +784,9 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
         textArea = await waitForUserComposerFocus(60000);
         if (!textArea) return -2;
         user_selected_composer = textArea;
+    } else if (mztaDoDebug == 1) {
+        // the failure path above already logged it
+        logPromptInputDiagnostics();
     }
     current_composer_el = textArea;
     send_baseline = takeSendBaseline();
@@ -801,16 +813,24 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
     //the newer composer renders its submit button only once there is text
     await waitMs(1000);
     let diagLogged = false;
+    // for the send button diagnostics: the last method used, verified once the outcome is known
+    const attempt = { strategy: null, method: null, verified: null };
     const sendButton = findSendButton(textArea);
     if (sendButton) {
         const outcome = await sendWithButton(sendButton, textArea, method);
-        if (outcome !== 'sent') {
+        // sendWithButton re-queries the button, so the strategy is read after it
+        attempt.strategy = last_send_button_strategy;
+        if (outcome === 'sent') {
+            attempt.method = method.toLowerCase() == 'click' ? 'click' : 'enter';
+        } else {
             doLog("Send button not usable (" + outcome + "), sending Enter");
             dispatchEnter(textArea);
+            attempt.method = 'enter';
         }
     } else {
         console.error("[ThunderAI] Send button not found, sending Enter");
-        logSendButtonDiagnostics(textArea);
+        attempt.method = 'enter';
+        logSendButtonDiagnostics(textArea, attempt);
         diagLogged = true;
         dispatchEnter(textArea);
     }
@@ -819,6 +839,7 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
         const form = textArea.closest('form');
         if (form && typeof form.requestSubmit === 'function') {
             doLog("Send not verified, trying form.requestSubmit()");
+            attempt.method = 'requestSubmit';
             try {
                 requestSubmitGuarded(form);
             } catch (err) {
@@ -828,11 +849,14 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
         }
         if (!isSendVerified(textArea, send_baseline)) {
             console.error("[ThunderAI] The prompt could not be sent!");
-            if (!diagLogged) logSendButtonDiagnostics(textArea);
+            attempt.verified = false;
+            if (!diagLogged) logSendButtonDiagnostics(textArea, attempt);
             return -1;
         }
     }
     doLog("Send verified");
+    attempt.verified = true;
+    if (mztaDoDebug == 1 && !diagLogged) logSendButtonDiagnostics(textArea, attempt);
     return 0;   //everything is ok
 }
 
@@ -889,7 +913,7 @@ function logCompletionDiagnostics(last, length, stableMs, waitingMs, state) {
                 return buttons.length > 0 ? describeAncestorChain(buttons[buttons.length - 1], 15) : [];
             })
         };
-        console.warn("[ThunderAI] Completion diagnostics: " + JSON.stringify(diag));
+        console.log("[ThunderAI] Completion diagnostics: " + JSON.stringify(diag));
     } catch (err) {
         console.warn("[ThunderAI] Completion diagnostics failed: ", err);
     }
@@ -916,52 +940,111 @@ async function chatgpt_isIdle() {
         const actionButtonsAtStart = chatgpt_countActionButtons();
         let generationObserved = false;
         let lastGeneratingAt = 0;
-        // Stop button of the newer UI (issue #920), matched by icon only, never by label.
-        // The composer primary button is not enough: in the idle state it is the voice chat button.
-        const stopButtonPresent = () => {
-            const stopPath = document.querySelector('button path[d^="M4.5 5.75C4.5 5.05964"]');
-            if (stopPath && !isOwnUiElement(stopPath)) return true;
-            return false;
+        // timings for the completion summary only, they never decide completion
+        let firstGeneratingAt = 0;
+        let lastGeneratingSignals = null;
+        let composerIdleAfterGenAt = 0;
+        let actionButtonsAboveAt = 0;
+        let intervalId = null;
+        const diagState = (generatingNow) => ({
+            generationObserved: generationObserved,
+            isGeneratingNow: generatingNow,
+            assistantAtStart: assistantAtStart,
+            minTurnIndex: minTurnIndex,
+            fallbackTurn: fallbackTurn,
+            actionButtonsAtStart: actionButtonsAtStart
+        });
+        // ms from the call start, null if it never happened
+        const sinceStart = (time) => time ? time - startTime : null;
+        const finish = (condition) => {
+            clearInterval(intervalId);
+            const now = Date.now();
+            try {
+                if (mztaDoDebug == 1) {
+                    const last = getNewAssistantMessage();
+                    const length = last ? (last.el.textContent || '').trim().length : -1;
+                    logCompletionDiagnostics(last, length, now - lastChange, now - startTime, diagState(chatgpt_isGenerating()));
+                }
+                // always emitted: timings and signal names only, never page text
+                const summary = {
+                    condition: condition,
+                    totalMs: now - startTime,
+                    generationObserved: generationObserved,
+                    firstGeneratingAtMs: sinceStart(firstGeneratingAt),
+                    lastGeneratingAtMs: sinceStart(lastGeneratingAt),
+                    sinceGenerationStoppedMs: lastGeneratingAt ? now - lastGeneratingAt : null,
+                    generatingSignals: lastGeneratingSignals,
+                    composerIsIdle: diagSection(() => chatgpt_composerIsIdle()),
+                    composerIdleAfterGenerationAtMs: sinceStart(composerIdleAfterGenAt),
+                    actionButtons: {
+                        baseline: actionButtonsAtStart,
+                        atCompletion: diagSection(() => chatgpt_countActionButtons()),
+                        firstAboveBaselineAtMs: sinceStart(actionButtonsAboveAt)
+                    }
+                };
+                console.warn("[ThunderAI] Completion summary: " + JSON.stringify(summary));
+            } catch (err) {
+                console.warn("[ThunderAI] Completion summary failed: ", err);
+            } finally {
+                resolve(true);
+            }
         };
-        const intervalId = setInterval(() => {
+        intervalId = setInterval(() => {
             const regenerateButton = chatgpt_getRegenerateButton(minTurnIndex, fallbackTurn);
             if (regenerateButton || do_force_completion) {
-                if (do_force_completion) doLog("Completion forced by the user");
-                else if (isNewUiActionButton(regenerateButton)) doLog("Completion detected by the new UI action button");
-                else doLog("Completion detected by the regenerate button");
-                clearInterval(intervalId); resolve(true);
+                if (do_force_completion) {
+                    doLog("Completion forced by the user");
+                    finish('force');
+                } else if (isNewUiActionButton(regenerateButton)) {
+                    doLog("Completion detected by the new UI action button");
+                    finish('newRegenTurn');
+                } else {
+                    doLog("Completion detected by the regenerate button");
+                    finish('oldRegen');
+                }
                 return;
             }
             // Fallback for UIs where the regenerate button markers are missing: the new answer
             // counts as complete once its length has been stable for 4 s and no generation
             // signal is left (see getGenerationSignals)
             try {
-                const generatingNow = stopButtonPresent();
+                const generatingNow = chatgpt_isGenerating();
                 if (generatingNow) {
+                    if (!firstGeneratingAt) firstGeneratingAt = Date.now();
+                    // generation resumed: the idle composer must be seen again after it stops
+                    composerIdleAfterGenAt = 0;
+                    if (!actionButtonsAboveAt && chatgpt_countActionButtons() > actionButtonsAtStart) actionButtonsAboveAt = Date.now();
                     generationObserved = true;
                     lastGeneratingAt = Date.now();
                 } else if (generationObserved && Date.now() - lastGeneratingAt >= 4000) {
                     // Stop gone for 1 s, then 3 s more without a new UI action button: covers icon changes
                     doLog("Completion detected by the end of generation (stop button gone for " + (Date.now() - lastGeneratingAt) + " ms)");
-                    clearInterval(intervalId); resolve(true);
+                    finish('safetyNet');
                     return;
                 }
                 if (!generatingNow) {
                     const actionButtons = chatgpt_countActionButtons();
+                    if (!actionButtonsAboveAt && actionButtons > actionButtonsAtStart) actionButtonsAboveAt = Date.now();
+                    if (generationObserved && !composerIdleAfterGenAt && chatgpt_composerIsIdle()) composerIdleAfterGenAt = Date.now();
                     // generationObserved: a copy button on the new user turn must not count as the answer
                     if (generationObserved && actionButtons > actionButtonsAtStart) {
                         doLog("Completion detected by new action buttons (" + actionButtonsAtStart + " at start, " + actionButtons + " now, stop button seen and gone)");
-                        clearInterval(intervalId); resolve(true);
+                        finish('actionButtons');
                         return;
                     }
                     if (generationObserved && Date.now() - lastGeneratingAt >= 1000 && chatgpt_composerIsIdle()) {
                         doLog("Completion detected by the idle composer (stop button gone for " + (Date.now() - lastGeneratingAt) + " ms)");
-                        clearInterval(intervalId); resolve(true);
+                        finish('stopGoneComposerIdle');
                         return;
                     }
                 }
                 const last = getNewAssistantMessage();
                 const length = last ? (last.el.textContent || '').trim().length : -1;
+                if (generatingNow) {
+                    // stopPath is what chatgpt_isGenerating checks, the others are sampled alongside
+                    const signals = getGenerationSignals(last ? getMessageTurn(last.el) : null);
+                    lastGeneratingSignals = { stopPath: true, stopButton: signals.stopButton, ariaBusy: signals.ariaBusy, streamingClass: signals.streamingClass };
+                }
                 if (!last || last.el !== lastEl || length !== lastLength) {
                     lastEl = last ? last.el : null;
                     lastLength = length;
@@ -969,19 +1052,12 @@ async function chatgpt_isIdle() {
                 } else if (length > 0 && Date.now() - lastChange >= 4000 && !isGenerationInProgress(getMessageTurn(last.el)) && !generatingNow) {
                     // !generatingNow: the text stays unchanged during thinking pauses too
                     doLog("Completion detected by the stability fallback (" + last.kind + ", length " + length + ", stable for " + (Date.now() - lastChange) + " ms, no stop button)");
-                    clearInterval(intervalId); resolve(true);
+                    finish('stability');
                     return;
                 }
                 if (!diagLogged && Date.now() - startTime > 60000) {
                     diagLogged = true;
-                    logCompletionDiagnostics(last, length, Date.now() - lastChange, Date.now() - startTime, {
-                        generationObserved: generationObserved,
-                        isGeneratingNow: generatingNow,
-                        assistantAtStart: assistantAtStart,
-                        minTurnIndex: minTurnIndex,
-                        fallbackTurn: fallbackTurn,
-                        actionButtonsAtStart: actionButtonsAtStart
-                    });
+                    logCompletionDiagnostics(last, length, Date.now() - lastChange, Date.now() - startTime, diagState(generatingNow));
                 }
             } catch (err) {
                 console.error('[ThunderAI] chatgpt_isIdle: ', err);
@@ -1025,6 +1101,14 @@ function getButtonsWithPath(pathSelector) {
 // Regenerate and copy buttons in the whole page, whatever turn they belong to
 function chatgpt_countActionButtons() {
     return getButtonsWithPath(NEW_UI_ACTION_PATHS).length;
+}
+
+// Stop button of the newer UI (issue #920), matched by icon only, never by label.
+// The composer primary button is not enough: in the idle state it is the voice chat button.
+function chatgpt_isGenerating() {
+    const stopPath = document.querySelector('button path[d^="M4.5 5.75C4.5 5.05964"]');
+    if (stopPath && !isOwnUiElement(stopPath)) return true;
+    return false;
 }
 
 // The composer primary button is in the send or voice chat state, and no Stop button exists
@@ -1671,15 +1755,10 @@ async function doProceed(message, customText = ''){
             // nothing was sent: stop here, the retry runs its own idle wait
             return;
     }
-    let forcecompletionHintTimeout;
     if(send_result == 0){
-            forcecompletionHintTimeout = setTimeout(() => {
-            document.getElementById('mzta-forcecomp-hint').style.display = 'block';
-        }, delay_wait_completion);
-    }
-    await chatgpt_isIdle();
-    if(send_result == 0){
-        clearTimeout(forcecompletionHintTimeout);
+        await showForceCompletionHint();
+    } else {
+        await chatgpt_isIdle();
     }
     operation_done();
 }
@@ -1701,12 +1780,29 @@ async function doRetry(){
     }
 }
 
+// Waits for completion, showing the force completion hint after delay_wait_completion ms
+// without generation. The countdown restarts while ChatGPT is generating; if generation
+// is never seen, the hint appears delay_wait_completion ms after the start, as before.
 async function showForceCompletionHint(){
-    const forcecompletionHintTimeout = setTimeout(() => {
-        document.getElementById('mzta-forcecomp-hint').style.display = 'block';
-    }, delay_wait_completion);
-    await chatgpt_isIdle();
-    clearTimeout(forcecompletionHintTimeout);
+    const hint = document.getElementById('mzta-forcecomp-hint');
+    let countdownStart = Date.now();
+    const forcecompletionHintInterval = setInterval(() => {
+        try {
+            if (chatgpt_isGenerating()) {
+                countdownStart = Date.now();
+                hint.style.display = 'none';
+            } else if (Date.now() - countdownStart >= delay_wait_completion) {
+                hint.style.display = 'block';
+            }
+        } catch (err) {
+            console.error('[ThunderAI] showForceCompletionHint: ', err);
+        }
+    }, 250);
+    try {
+        await chatgpt_isIdle();
+    } finally {
+        clearInterval(forcecompletionHintInterval);
+    }
 }
 
 function removeTagsAndReturnHTML(rootElement, removeTags, preserveTags) {
