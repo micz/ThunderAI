@@ -259,6 +259,12 @@ once for all its features.
 - **Progress counter.** A message with a target is not `tick()`ed by the loop: its pipeline ticks
   it in its `finally`, also when it stopped early (moved to junk, gone, batch stopped between
   features). Targets that never start because of a cancel are not counted.
+- **Working indicator.** `taWorkingStatus.WorkingLevel` is 1 for the batch itself
+  (`processEmails()` start/`finally`) plus 1 per AI call in flight: every feature — spam
+  (`_generateSpamReportForMessage()`), add_tags (`runAddTags()`), summary, translate — brackets its
+  own `initWorker()` + `sendPrompt()` with `startWorking()` / `stopWorking()` in a `finally`, so
+  the level drops back on every return path. Early exits before the AI call (cache hit, skip
+  address, missing prompt) are not counted.
 - **Error paths.** Parallel calls hit the error paths far more often than the serial loop did.
   Anything the pipeline's `finally` (or a `catch` in the `_generate*` functions) reads is declared
   above its `try` with a value it can tolerate — the same rule `message_metadata` already follows

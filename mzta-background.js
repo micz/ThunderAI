@@ -1574,18 +1574,24 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
             do_debug: prefs.do_debug,
             config: curr_prompt_spamfilter
         });
-        await cmd_spamfilter.initWorker();
-
         let spamfilter_result = '';
-        taLog.log("Sending the prompt...");
+        // Counted in WorkingLevel like the summary and translation calls (see runAddTags()).
+        taWorkingStatus.startWorking();
         try {
-            spamfilter_result = (await cmd_spamfilter.sendPrompt()).trim();
-        } catch (err) {
-            console.error("[ThunderAI | SpamFilter] Error getting spamfilter: ", err);
-            let err_data = await spamReport.saveError(headerMessageId, err.message || String(err), message_metadata || {});
-            await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
-            // rateLimited: the processEmails() pipeline stops the batch on it.
-            return { success: false, rateLimited: !!err.rateLimited, retryAfterMs: err.retryAfterMs ?? null };
+            await cmd_spamfilter.initWorker();
+
+            taLog.log("Sending the prompt...");
+            try {
+                spamfilter_result = (await cmd_spamfilter.sendPrompt()).trim();
+            } catch (err) {
+                console.error("[ThunderAI | SpamFilter] Error getting spamfilter: ", err);
+                let err_data = await spamReport.saveError(headerMessageId, err.message || String(err), message_metadata || {});
+                await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+                // rateLimited: the processEmails() pipeline stops the batch on it.
+                return { success: false, rateLimited: !!err.rateLimited, retryAfterMs: err.retryAfterMs ?? null };
+            }
+        } finally {
+            taWorkingStatus.stopWorking();
         }
         taLog.log("spamfilter_result: " + spamfilter_result);
 
@@ -2755,26 +2761,33 @@ async function processEmails(args) {
                 do_debug: prefs_aats.do_debug,
                 config: curr_prompt_add_tags
             });
-            try {
-                await cmd_addTags.initWorker();
-            } catch (err) {
-                if (err.isConfigError) {
-                    await showGenericError(err.message, browser.i18n.getMessage('prompt_add_tags') || 'Add tags');
-                } else {
-                    console.error("[ThunderAI | Auto add_tags] initWorker error: ", err);
-                }
-                return false;
-            }
             let tags_current_email = [];
+            // Counted in WorkingLevel like the summary and translation calls, so the toolbar
+            // icon reflects every AI call in flight, not just the batch.
+            taWorkingStatus.startWorking();
             try {
-                tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
-            } catch (err) {
-                console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
-                if (err?.rateLimited) {
-                    // Tags are not assigned.
-                    stopForRateLimit('Add tags', err.retryAfterMs ?? null);
-                    return true;
+                try {
+                    await cmd_addTags.initWorker();
+                } catch (err) {
+                    if (err.isConfigError) {
+                        await showGenericError(err.message, browser.i18n.getMessage('prompt_add_tags') || 'Add tags');
+                    } else {
+                        console.error("[ThunderAI | Auto add_tags] initWorker error: ", err);
+                    }
+                    return false;
                 }
+                try {
+                    tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
+                } catch (err) {
+                    console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
+                    if (err?.rateLimited) {
+                        // Tags are not assigned.
+                        stopForRateLimit('Add tags', err.retryAfterMs ?? null);
+                        return true;
+                    }
+                }
+            } finally {
+                taWorkingStatus.stopWorking();
             }
             taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
             let _data = { messageId: msg.id, tags: tags_current_email };
