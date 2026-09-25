@@ -82,23 +82,35 @@ The send then proceeds as follows:
 
 `logSendButtonDiagnostics(composerEl)` writes `Send button diagnostics:` when no button is found or the send is not verified. It has the aggregate counts, the testids and the aria-labels, plus `composerButtons`: up to 12 buttons of the composer container, described by `describeButtons()` (index, type, id, testid, disabled, aria-label, data-state, `<use>` href, the first 30 chars of `path d`, visible).
 
-**Completion.** Each `chatgpt_isIdle()` call starts with fresh local state, because it can run more than once in the same page (custom texts). It computes `minTurnIndex` from `send_baseline.assistant`, or, without a baseline, from the assistant count at call start. The baseline is needed because the call starts at least 1.5 s after the send, and by then the new turn usually exists already. The call resolves on the first of the following, and `doLog()` records which one fired:
+**Completion.** Each `chatgpt_isIdle()` call starts with fresh local state, because it can run more than once in the same page (custom texts). It computes `minTurnIndex` from `send_baseline.assistant`, or, without a baseline, from the assistant count at call start. The baseline is needed because the call starts at least 1.5 s after the send, and by then the new turn usually exists already. At call start it also records `actionButtonsAtStart` (`chatgpt_countActionButtons()`) and, when there are no `[data-message-author-role=assistant]` elements, a `fallbackTurn` (see **Turn selectors** below).
+
+The newer UI (issue #920) has one composer primary button, `button.size-token-button-composer`, with three states: send (`type=submit`), stop (a `path[d^="M4.5 5.75C4.5 5.05964"]`) and voice chat, shown when idle with an empty composer (a `path[d^="M8.22266 2.45825"]`, `type=button`). Because stop and voice chat are both `type=button`, the composer classes alone never mean "generating". The local `stopButtonPresent()` check detects generation only by the Stop path, language-neutrally. `chatgpt_composerIsIdle()` is true when no Stop path exists and there is either a `size-token-button-composer[type=submit]` or a button with the voice path. `chatgpt_countActionButtons()` counts, page-wide and whatever turn they belong to, the buttons containing the new regenerate (`M14.0219 8.22363`) or copy (`M13.468 11.1216`) path. Each button counts once, and ThunderAI's own UI is excluded.
+
+The call resolves on the first of the following, and `doLog()` records which one fired:
 1. **Force completion.**
-2. **Old-UI regenerate button.** `chatgpt_getRegenerateButton(minTurnIndex)` finds it through the old checks: the `<use>` sprite, the `.cursor-pointer` loop with the path prefixes and the good-response testid, and the read-aloud icon. These checks ignore `minTurnIndex`.
-3. **New-UI action button.** The same function also looks for a button containing the new regenerate (`M14.0219 8.22363`) or copy (`M13.468 11.1216`) path. When `minTurnIndex` is given, the button must belong to an assistant turn with an index at or above it. `getAssistantTurnIndex()` finds that turn through the closest `[data-message-author-role=assistant]`, or the assistant message inside the closest `article`.
-4. **End of generation.** The Stop button was seen during this call and has now been gone for 4 s: 1 s, plus 3 s in which no new-UI action button appeared. A local `stopButtonPresent()` check detects the Stop button, language-neutrally, by:
-   - a button containing `path[d^="M4.5 5.75C4.5 5.05964"]`, or
-   - `button.size-token-button-composer.bg-composer-primary[type=button]` in the composer's form.
-5. **Stability fallback**, when all of these hold:
-   - the new assistant message has non-empty text. It must have appeared after the send: the assistant count is above `send_baseline`, or, without role attributes, the `main article` count is at least 2 above it.
+2. **Old-UI regenerate button.** `chatgpt_getRegenerateButton(minTurnIndex, fallbackTurn)` finds it through the old checks: the `<use>` sprite, the `.cursor-pointer` loop with the path prefixes and the good-response testid, and the read-aloud icon. These checks ignore `minTurnIndex`.
+3. **New-UI action button.** The same function also looks for a button containing the new regenerate or copy path. When `minTurnIndex` is given, the button must belong to an assistant turn with an index at or above it. `getAssistantTurnIndex()` finds that turn through the closest `[data-message-author-role=assistant]`, or the assistant message inside the closest `article`. Without role elements and with a `fallbackTurn`, the button must instead be inside a fallback turn whose index (`getFallbackTurnIndex()`) is at least `fallbackTurn.minIndex`.
+4. **End of generation.** The Stop button was seen during this call and has now been gone for 4 s: 1 s, plus a 3 s safety net.
+5. **New action buttons.** The Stop button was seen during this call and is gone now, and `chatgpt_countActionButtons()` is above `actionButtonsAtStart`. Requiring the Stop button to have been seen keeps a copy button on the new user turn from counting as the answer.
+6. **Idle composer.** The Stop button was seen, has been gone for at least 1 s, and `chatgpt_composerIsIdle()` is true.
+7. **Stability fallback**, when all of these hold:
+   - the new assistant message has non-empty text. It must have appeared after the send: the assistant count is above `send_baseline`, or, without role attributes, the `main article` count (or the count of the fallback turn selector in use) is at least 2 above it.
    - the text length (only the length is read) has been stable for 4 s
    - `getGenerationSignals()` reports no stop button, no `aria-busy` and no `streaming` class in the last turn
    - `stopButtonPresent()` is false, since the text also stays still during "thinking" pauses
 
-Stopping early costs little: the panel buttons appear sooner, and the user still picks the text by hand. After 60 s of waiting, one `Completion diagnostics:` line is logged. It contains:
+**Turn selectors.** Turns are found with `[data-message-author-role=assistant]`, then `main article`. After those, `FALLBACK_TURN_SELECTORS` tries `[data-message-id]` and `[data-turn]`. These two are guesses for a new-UI variant that has neither roles nor articles: harmless if absent. `takeSendBaseline()` also stores their counts (`messageId`, `turn`). Since they may match user turns too, they are handled like articles:
+- `getNewAssistantMessage()` requires the count to be at least baseline + 2.
+- `fallbackTurn.minIndex` is baseline + 1, or, without a baseline, the count at call start.
+
+Stopping early costs little: the panel buttons appear sooner, and the user still picks the text by hand. After 60 s of waiting, one `Completion diagnostics:` line is logged. It holds structure only, never page text, and aria-labels are logged but never matched. It contains:
 - the counts versus the baseline, the length, how long it has been stable, and the signals;
 - `generationObserved`, `isGeneratingNow`, `assistantAtStart`, `assistantNow` and `minTurnIndex`;
-- `describeButtons(..., extended)` for the last turn and for the composer container. Extended mode adds `ariaHaspopup` and the first 60 chars of the class.
+- `describeButtons(..., extended)` for the last turn and for the composer container. Extended mode adds `ariaHaspopup` and the first 60 chars of the class;
+- `messageId` and `turn` counts, `turnSelector` (the turn selector that matches now, `''` if none) and `fallbackTurn`;
+- `composerIsIdle`, and `actionButtons: {baseline, now}`;
+- `pathButtons`: page-wide counts of buttons containing each `NEW_UI_BUTTON_PATHS` prefix. These are regenerate, copy, rate (`M15.3702 10.3242`), share (`M16.6663 10.1681`), stop and voice;
+- `copyAncestors`: the ancestor chain of the last copy button, or of the last regenerate button when there is no copy button, up to `main` or 15 levels. `describeAncestorChain()` gives, for each level, the tag, id, role, the names (not the values) of the `data-*` attributes, and the class cut to 60 chars.
 
 `doProceed()` returns right after showing the retry button on `-2` (nothing was sent), so each retry doesn't add another `chatgpt_isIdle()` loop. On `-1` it deliberately falls through: the prompt is already in the composer, the user is asked to press send by hand, and the idle wait then finishes the operation normally. `doRetry()` shows `chatgpt_win_retrying` for 800 ms before the new attempt, so a retry that fails again is visibly different from a dead button, and it re-sends `_customTextArray` when the user entered custom text.
 

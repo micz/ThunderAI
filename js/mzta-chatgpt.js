@@ -626,11 +626,20 @@ function countElements(selector) {
     return document.querySelectorAll(selector).length;
 }
 
+// Candidate turn selectors for UIs without role attributes or articles (issue #920).
+// They are guesses, tried after the existing ones: harmless if absent.
+const FALLBACK_TURN_SELECTORS = [
+    { kind: 'messageId', selector: '[data-message-id]' },
+    { kind: 'turn', selector: '[data-turn]' }
+];
+
 function takeSendBaseline() {
     return {
         assistant: countElements('[data-message-author-role="assistant"]'),
         user: countElements('[data-message-author-role="user"]'),
-        article: countElements('main article')
+        article: countElements('main article'),
+        messageId: countElements('[data-message-id]'),
+        turn: countElements('[data-turn]')
     };
 }
 
@@ -639,7 +648,24 @@ function getLastAssistantMessage() {
     if (messages.length > 0) return { el: messages[messages.length - 1], count: messages.length, kind: 'assistant' };
     const articles = document.querySelectorAll('main article');
     if (articles.length > 0) return { el: articles[articles.length - 1], count: articles.length, kind: 'article' };
+    for (const candidate of FALLBACK_TURN_SELECTORS) {
+        const turns = document.querySelectorAll(candidate.selector);
+        if (turns.length > 0) return { el: turns[turns.length - 1], count: turns.length, kind: candidate.kind };
+    }
     return null;
+}
+
+// The first fallback turn selector with matches, null if none
+function getFallbackTurnCandidate() {
+    return FALLBACK_TURN_SELECTORS.find(candidate => document.querySelector(candidate.selector) !== null) || null;
+}
+
+// Which turn selector the turn lookups use now, '' if none matches
+function getMatchedTurnSelector() {
+    if (document.querySelector('[data-message-author-role="assistant"]')) return '[data-message-author-role="assistant"]';
+    if (document.querySelector('main article')) return 'main article';
+    const candidate = getFallbackTurnCandidate();
+    return candidate ? candidate.selector : '';
 }
 
 // The last assistant message, only if it appeared after the send. Without the role attribute
@@ -647,6 +673,8 @@ function getLastAssistantMessage() {
 function getNewAssistantMessage() {
     const last = getLastAssistantMessage();
     if (!last || !send_baseline) return last;
+    // fallback turn selectors may match user turns too, like articles
+    if (last.kind !== 'assistant' && last.kind !== 'article') return last.count >= send_baseline[last.kind] + 2 ? last : null;
     const minCount = last.kind === 'assistant' ? send_baseline.assistant + 1 : send_baseline.article + 2;
     return last.count >= minCount ? last : null;
 }
@@ -838,7 +866,28 @@ function logCompletionDiagnostics(last, length, stableMs, waitingMs, state) {
             isGeneratingNow: state ? state.isGeneratingNow : null,
             assistantAtStart: state ? state.assistantAtStart : null,
             assistantNow: countElements('[data-message-author-role="assistant"]'),
-            minTurnIndex: state ? state.minTurnIndex : null
+            minTurnIndex: state ? state.minTurnIndex : null,
+            messageId: countElements('[data-message-id]'),
+            turn: countElements('[data-turn]'),
+            turnSelector: diagSection(() => getMatchedTurnSelector()),
+            fallbackTurn: state ? state.fallbackTurn : null,
+            composerIsIdle: diagSection(() => chatgpt_composerIsIdle()),
+            actionButtons: {
+                baseline: state ? state.actionButtonsAtStart : null,
+                now: diagSection(() => chatgpt_countActionButtons())
+            },
+            pathButtons: diagSection(() => {
+                const counts = {};
+                for (const name of Object.keys(NEW_UI_BUTTON_PATHS)) {
+                    counts[name] = getButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS[name])).length;
+                }
+                return counts;
+            }),
+            copyAncestors: diagSection(() => {
+                const copyButtons = getButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS.copy));
+                const buttons = copyButtons.length > 0 ? copyButtons : getButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS.regenerate));
+                return buttons.length > 0 ? describeAncestorChain(buttons[buttons.length - 1], 15) : [];
+            })
         };
         console.warn("[ThunderAI] Completion diagnostics: " + JSON.stringify(diag));
     } catch (err) {
@@ -857,18 +906,25 @@ async function chatgpt_isIdle() {
         const assistantAtStart = countElements('[data-message-author-role="assistant"]');
         // the new turn usually exists already when this starts (send verification waits 1.5 s)
         const minTurnIndex = send_baseline ? send_baseline.assistant : assistantAtStart;
+        // without role attributes: a candidate turn selector, the answer comes after the new user turn
+        const fallbackCandidate = assistantAtStart === 0 ? getFallbackTurnCandidate() : null;
+        const fallbackTurn = fallbackCandidate ? {
+            selector: fallbackCandidate.selector,
+            minIndex: send_baseline ? send_baseline[fallbackCandidate.kind] + 1 : countElements(fallbackCandidate.selector)
+        } : null;
+        // turn-independent: new-UI action buttons already in the page when this call starts
+        const actionButtonsAtStart = chatgpt_countActionButtons();
         let generationObserved = false;
         let lastGeneratingAt = 0;
-        // Stop button of the newer UI (issue #920), matched by icon or composer classes, never by label
+        // Stop button of the newer UI (issue #920), matched by icon only, never by label.
+        // The composer primary button is not enough: in the idle state it is the voice chat button.
         const stopButtonPresent = () => {
             const stopPath = document.querySelector('button path[d^="M4.5 5.75C4.5 5.05964"]');
             if (stopPath && !isOwnUiElement(stopPath)) return true;
-            const form = current_composer_el && current_composer_el.isConnected ? current_composer_el.closest('form') : null;
-            if (form) return form.querySelector('button.size-token-button-composer.bg-composer-primary[type="button"]') !== null;
-            return document.querySelector('form button.size-token-button-composer.bg-composer-primary[type="button"]') !== null;
+            return false;
         };
         const intervalId = setInterval(() => {
-            const regenerateButton = chatgpt_getRegenerateButton(minTurnIndex);
+            const regenerateButton = chatgpt_getRegenerateButton(minTurnIndex, fallbackTurn);
             if (regenerateButton || do_force_completion) {
                 if (do_force_completion) doLog("Completion forced by the user");
                 else if (isNewUiActionButton(regenerateButton)) doLog("Completion detected by the new UI action button");
@@ -890,6 +946,20 @@ async function chatgpt_isIdle() {
                     clearInterval(intervalId); resolve(true);
                     return;
                 }
+                if (!generatingNow) {
+                    const actionButtons = chatgpt_countActionButtons();
+                    // generationObserved: a copy button on the new user turn must not count as the answer
+                    if (generationObserved && actionButtons > actionButtonsAtStart) {
+                        doLog("Completion detected by new action buttons (" + actionButtonsAtStart + " at start, " + actionButtons + " now, stop button seen and gone)");
+                        clearInterval(intervalId); resolve(true);
+                        return;
+                    }
+                    if (generationObserved && Date.now() - lastGeneratingAt >= 1000 && chatgpt_composerIsIdle()) {
+                        doLog("Completion detected by the idle composer (stop button gone for " + (Date.now() - lastGeneratingAt) + " ms)");
+                        clearInterval(intervalId); resolve(true);
+                        return;
+                    }
+                }
                 const last = getNewAssistantMessage();
                 const length = last ? (last.el.textContent || '').trim().length : -1;
                 if (!last || last.el !== lastEl || length !== lastLength) {
@@ -908,7 +978,9 @@ async function chatgpt_isIdle() {
                         generationObserved: generationObserved,
                         isGeneratingNow: generatingNow,
                         assistantAtStart: assistantAtStart,
-                        minTurnIndex: minTurnIndex
+                        minTurnIndex: minTurnIndex,
+                        fallbackTurn: fallbackTurn,
+                        actionButtonsAtStart: actionButtonsAtStart
                     });
                 }
             } catch (err) {
@@ -925,6 +997,66 @@ function isNewUiActionButton(el) {
     return !!el && typeof el.querySelector === 'function' && el.querySelector(NEW_UI_ACTION_PATHS) !== null;
 }
 
+// Path prefixes of the newer UI buttons (issue #920). The composer primary button
+// (button.size-token-button-composer) is send (type=submit), stop or voice chat (idle).
+const NEW_UI_BUTTON_PATHS = {
+    regenerate: 'M14.0219 8.22363',
+    copy: 'M13.468 11.1216',
+    rate: 'M15.3702 10.3242',
+    share: 'M16.6663 10.1681',
+    stop: 'M4.5 5.75C4.5 5.05964',
+    voice: 'M8.22266 2.45825'
+};
+
+function newUiPathSelector(prefix) {
+    return 'path[d^="' + prefix + '"]';
+}
+
+// Buttons of the page (not our own UI) containing a path matching the selector, in document order
+function getButtonsWithPath(pathSelector) {
+    const buttons = new Set();
+    for (const path of document.querySelectorAll(pathSelector)) {
+        const button = path.closest('button');
+        if (button && !isOwnUiElement(button)) buttons.add(button);
+    }
+    return Array.from(buttons);
+}
+
+// Regenerate and copy buttons in the whole page, whatever turn they belong to
+function chatgpt_countActionButtons() {
+    return getButtonsWithPath(NEW_UI_ACTION_PATHS).length;
+}
+
+// The composer primary button is in the send or voice chat state, and no Stop button exists
+function chatgpt_composerIsIdle() {
+    if (getButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS.stop)).length > 0) return false;
+    const sendButton = Array.from(document.querySelectorAll('button.size-token-button-composer[type="submit"]')).some(b => !isOwnUiElement(b));
+    return sendButton || getButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS.voice)).length > 0;
+}
+
+// Ancestor chain for diagnostics, up to main or maxLevels: structure only, data-* names without values
+function describeAncestorChain(el, maxLevels) {
+    const chain = [];
+    let node = el ? el.parentElement : null;
+    for (let i = 0; node && i < maxLevels; i++, node = node.parentElement) {
+        chain.push({
+            tag: node.tagName.toLowerCase(),
+            id: node.id || '',
+            role: node.getAttribute('role') || '',
+            data: Array.from(node.attributes).map(a => a.name).filter(name => name.startsWith('data-')),
+            class: getElementClass(node).substring(0, 60)
+        });
+        if (node.tagName === 'MAIN') break;
+    }
+    return chain;
+}
+
+// Index of the fallback turn (see FALLBACK_TURN_SELECTORS) the element belongs to, -1 if none
+function getFallbackTurnIndex(el, selector) {
+    const own = el.closest(selector);
+    return own ? Array.from(document.querySelectorAll(selector)).indexOf(own) : -1;
+}
+
 // Index of the assistant message the element belongs to, -1 if none
 function getAssistantTurnIndex(el) {
     const messages = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
@@ -938,7 +1070,7 @@ function getAssistantTurnIndex(el) {
     return -1;
 }
 
-function chatgpt_getRegenerateButton(minTurnIndex) {
+function chatgpt_getRegenerateButton(minTurnIndex, fallbackTurn) {
     let first_try = [...document.querySelectorAll('use')]
                         .find(u => u.getAttribute('href')?.includes('#' + 'ec66f0'))
                         ?.closest('button') || null;
@@ -959,6 +1091,11 @@ function chatgpt_getRegenerateButton(minTurnIndex) {
     for (const path of document.querySelectorAll(NEW_UI_ACTION_PATHS)) {
         const button = path.closest('button');
         if (!button || isOwnUiElement(button)) continue;
+        // no role attributes: the turn index comes from the fallback turn selector
+        if (fallbackTurn && document.querySelector('[data-message-author-role="assistant"]') === null) {
+            if (getFallbackTurnIndex(button, fallbackTurn.selector) >= fallbackTurn.minIndex) return button;
+            continue;
+        }
         if (typeof minTurnIndex === 'number' && getAssistantTurnIndex(button) < minTurnIndex) continue;
         return button;
     }
