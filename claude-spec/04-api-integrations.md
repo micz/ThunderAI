@@ -32,9 +32,65 @@ Controlled via `js/mzta-chatgpt.js`. Opens a browser window to `chatgpt.com`, in
 
 Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view support.
 
-**The composer is located by `findPromptInput(timeoutMs)`, never by a single id lookup.** `chatgpt_sendMsg()` waits up to 15 s for the first *visible* element matching `PROMPT_INPUT_SELECTORS` (in priority order: `#prompt-textarea`, ProseMirror contenteditable, `form [contenteditable]`, `textarea[name=prompt-textarea]`, `form textarea`, `main [contenteditable]`). It uses a MutationObserver plus a 250 ms poll; only the poll also searches open shadow roots (bounded walk, `SHADOW_WALK_MAX_NODES`/`SHADOW_WALK_MAX_DEPTH`). Invisible matches are skipped, since ChatGPT keeps a hidden fallback `<textarea>` next to the visible contenteditable. Elements inside ThunderAI's own injected UI (`.mzta-header-fixed`, `[id^="mzta-"]`) are also skipped. A contenteditable receives the prompt HTML nodes. A real `<textarea>` receives `htmlToPlainText()` (one line per block) through the native `value` setter, so React notices the change. When nothing is found, `logPromptInputDiagnostics()` writes one `console.warn("[ThunderAI] Diagnostics: …")` JSON line even without debug mode. It holds page structure only and never page text or the prompt, because users paste it on GitHub (issues #890, #920): extension version, URL without query, title, readyState/visibility/focus, time since load, viewport size, languages, per-selector stats from `getSelectorStats()` (matches / visible / own UI), element counts (contenteditable, textarea, form, main, send button, visible dialogs and alerts, iframes and their origins), open shadow root count plus whether the bounded walk was truncated, up to 10 custom element tags (the only trace of a closed shadow root), up to 10 candidate inputs (attributes, `getHiddenReason()`, size, form/shadow membership, 3 ancestors), login/Cloudflare flags and UA. Each section runs through `diagSection()`, so one failing section does not lose the line. With debug on, `findPromptInput` also logs its start and, every 3 s while waiting, the per-selector stats; after filling the composer `chatgpt_sendMsg()` logs the tag and content length (never the content). When the send button is missing, `logSendButtonDiagnostics()` writes a similar `Send button diagnostics:` line (button counts, `data-testid` and `aria-label` values).
+**Everything in the ChatGPT page is identified by structure, never by localized text.** ChatGPT ships in dozens of languages and rolls out UI variants gradually (issues #890, #920, #924), so `aria-label`, placeholder, title and text content are never matched. Button aria-labels may appear in diagnostics, nothing else does. Existing selectors always come first so that older UIs keep working. `mzta_script` is a template literal: no backticks or `${…}` inside it, and backslashes are doubled.
 
-`doProceed()` returns right after showing the retry button on `-2` (nothing was sent), so each retry doesn't add another `chatgpt_isIdle()` loop. On `-1` (send button not found) it deliberately falls through: the prompt is already in the composer, the user can press send by hand, and the idle wait then finishes the operation normally. `doRetry()` re-sends `_customTextArray` when the user entered custom text.
+**The composer is located by `findPromptInput(timeoutMs)`, never by a single id lookup.** `chatgpt_sendMsg()` waits up to 15 s for the first *visible* element matching `PROMPT_INPUT_SELECTORS`. The selectors, in priority order:
+1. `#prompt-textarea`
+2. ProseMirror contenteditable with `[data-composer-markdown]`
+3. `[contenteditable][role=textbox][data-virtualkeyboard]`
+4. ProseMirror contenteditable
+5. `form [contenteditable]`
+6. `textarea[name=prompt-textarea]`
+7. `form textarea`
+8. `main [contenteditable]`
+
+- **Lookup:** a MutationObserver plus a 250 ms poll. Only the poll also searches open shadow roots (bounded walk, `SHADOW_WALK_MAX_NODES`/`SHADOW_WALK_MAX_DEPTH`).
+- **Skipped matches:** invisible elements, since ChatGPT keeps a hidden fallback `<textarea>` next to the visible contenteditable, and elements inside ThunderAI's own injected UI (`.mzta-header-fixed`, `[id^="mzta-"]`).
+- **Filling:** a contenteditable receives the prompt HTML nodes. A real `<textarea>` receives `htmlToPlainText()` (one line per block) through the native `value` setter, so React notices the change.
+
+When nothing is found, `logPromptInputDiagnostics()` writes one `console.warn("[ThunderAI] Diagnostics: …")` JSON line, even without debug mode. It holds page structure only, never page text or the prompt, because users paste it on GitHub. Its fields:
+- extension version, URL without query, title
+- readyState, visibility and focus, time since load, viewport size, languages
+- per-selector stats from `getSelectorStats()` (matches / visible / own UI)
+- element counts: contenteditable, textarea, form, main, send button, visible dialogs and alerts, iframes and their origins
+- open shadow root count, and whether the bounded walk was truncated
+- up to 10 custom element tags (the only trace of a closed shadow root)
+- up to 10 candidate inputs: attributes, `getHiddenReason()`, size, form/shadow membership, 3 ancestors
+- login and Cloudflare flags, UA
+
+Each section runs through `diagSection()`, so one failing section does not lose the line. With debug on, `findPromptInput` also logs its start and, every 3 s while waiting, the per-selector stats. After filling the composer, `chatgpt_sendMsg()` logs the tag and content length (never the content).
+
+**If no selector matches, the user points at the composer.** `waitForUserComposerFocus(60000)` shows `chatgpt_composer_click_to_continue` in the panel, then waits:
+- **Detection:** a capture `focusin` listener on `document` takes `composedPath()[0]` and walks up to the editable element via `findEditableHost()`. The walk crosses open shadow boundaries and accepts `isContentEditable` (climbing to the editing host), `<textarea>` or `[role=textbox]`, skipping ThunderAI's own UI. The deep `activeElement` is also checked once at start, because clicking into an element that already has focus fires no `focusin`.
+- **Focus found:** the element becomes `user_selected_composer`, which later retries in the same page reuse while it stays visible.
+- **Timeout:** after 60 s, `-2`.
+- **Diagnostics:** both outcomes emit one `[ThunderAI] Composer diagnostics:` line. For the element: source, tag/id/name/role, contenteditable, aria-multiline, `data-*` attribute names only, class (150 chars), shadow root mode or a possible closed-shadow host, iframe, ancestors up to the form or 8 levels, and a CSS path from `getSelectorPath()`. For the page: path, title, readyState, forms with button and editable counts, contenteditable/textarea/textbox counts, iframe origins, open shadow hosts, open dialog ids, login/Cloudflare flags and UA.
+
+**Sending and verifying.** `send_baseline` (assistant, user and `main article` counts) is taken before the composer is filled. After the existing 1000 ms wait, `findSendButton(composerEl)` tries these strategies and returns the first visible match. Each strategy is logged only when it changes:
+1. `existing`: the old testid and SVG-path selectors
+2. `#composer-submit-button`
+3. `form-submit`: `button[type=submit]` in the composer's form
+4. `ancestor-submit`: without a form, the first of up to 6 ancestors holding one
+
+The send then proceeds as follows:
+- **Button found:** `sendWithButton()` waits for it to be enabled, re-querying through `findSendButton()` while it is disabled, then clicks or sends Enter according to `method`. After 10 s it gives up and falls back to Enter.
+- **No button:** Enter directly (keydown with key/code `Enter`, keyCode/which 13), whatever `method` is.
+- **Verification:** after 1.5 s, `isSendVerified()` checks that the composer is empty or disconnected, that a new user or assistant message exists, or that the stop button is present.
+- **Second attempt:** if the send is not verified and a form exists, `requestSubmitGuarded()` calls `form.requestSubmit()` and checks again. A bubbling `submit` listener on `window` cancels the submit if the page did not, since a native submit would navigate the popup and drop the script.
+- **Failure:** only a failed second check returns `-1`.
+
+`logSendButtonDiagnostics(composerEl)` writes `Send button diagnostics:` when no button is found or the send is not verified. It has the aggregate counts, the testids and the aria-labels, plus `composerButtons`: up to 12 buttons of the composer container, described by `describeButtons()` (index, type, id, testid, disabled, aria-label, data-state, `<use>` href, the first 30 chars of `path d`, visible).
+
+**Completion.** `chatgpt_isIdle()` still resolves first on `chatgpt_getRegenerateButton()` or force completion. Its fallback considers the answer complete when all of these hold:
+- the new assistant message has non-empty text. It must have appeared after the send: the assistant count is above `send_baseline`, or, without role attributes, the `main article` count is at least 2 above it.
+- the text length (only the length is read) has been stable for 4 s
+- `getGenerationSignals()` reports no stop button, no `aria-busy` and no `streaming` class in the last turn
+
+Stopping early costs little: the panel buttons appear sooner, and the user still picks the text by hand. After 60 s of waiting, one `Completion diagnostics:` line lists the counts versus the baseline, the length, how long it has been stable, the signals, and `describeButtons()` for the last turn and for the composer container.
+
+`doProceed()` returns right after showing the retry button on `-2` (nothing was sent), so each retry doesn't add another `chatgpt_isIdle()` loop. On `-1` it deliberately falls through: the prompt is already in the composer, the user is asked to press send by hand, and the idle wait then finishes the operation normally. `doRetry()` shows `chatgpt_win_retrying` for 800 ms before the new attempt, so a retry that fails again is visibly different from a dead button, and it re-sends `_customTextArray` when the user entered custom text.
+
+**Injected UI colors are explicit.** Newer ChatGPT CSS resets `textarea` to a transparent background with no border, so `#mzta-custom_textarea` sets its own background, text and caret colors, border, font and `color-scheme`. ThunderAI elements must not rely on inherited colors or ChatGPT CSS variables.
 
 **The ChatGPT Web setting rows carry unprefixed element ids and are injected only when `no_chatgpt_web` is falsy.** In `injectConnectionUI()` (`pages/_lib/connection-ui.js`) every provider field id is prefixed with `modelId_prefix`, *except* the ChatGPT Web rows (`chatgpt_web_model`, `chatgpt_web_project`, `chatgpt_web_custom_gpt`, `chatgpt_web_tempchat`, `chatgpt_web_load_wait_time`, `btnChatGPTWeb_Tab`): on the options page and in the setup wizard the element id **is** the pref key (`saveOptions` writes `options[element.id]`), so prefixing them there would break persistence. Because bare ids can exist only once per page, those rows are emitted only for the two global consumers, which pass no `no_chatgpt_web`. Every per-prompt and per-feature panel passes `no_chatgpt_web: true` — it never offers the `chatgpt_web` option anyway, and the custom prompts page injects once per add-form plus once per edited row, which previously produced N+1 duplicates of those ids (misbound listeners, and one `btnChatGPTWeb_Tab` click opening N+1 tabs). Consequently the three lookups on those ids are guarded (`if (!no_chatgpt_web)` / optional chaining) — an unguarded lookup would throw on null and abort the rest of the injection, breaking every feature page.
 
