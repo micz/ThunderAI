@@ -940,7 +940,7 @@ async function chatgpt_isIdle() {
         const actionButtonsAtStart = chatgpt_countActionButtons();
         let generationObserved = false;
         let lastGeneratingAt = 0;
-        // timings for the completion summary only, they never decide completion
+        // timings for the completion summary only (debug mode), they never decide completion
         let firstGeneratingAt = 0;
         let lastGeneratingSignals = null;
         let composerIdleAfterGenAt = 0;
@@ -964,25 +964,25 @@ async function chatgpt_isIdle() {
                     const last = getNewAssistantMessage();
                     const length = last ? (last.el.textContent || '').trim().length : -1;
                     logCompletionDiagnostics(last, length, now - lastChange, now - startTime, diagState(chatgpt_isGenerating()));
+                    // debug only: timings and signal names only, never page text
+                    const summary = {
+                        condition: condition,
+                        totalMs: now - startTime,
+                        generationObserved: generationObserved,
+                        firstGeneratingAtMs: sinceStart(firstGeneratingAt),
+                        lastGeneratingAtMs: sinceStart(lastGeneratingAt),
+                        sinceGenerationStoppedMs: lastGeneratingAt ? now - lastGeneratingAt : null,
+                        generatingSignals: lastGeneratingSignals,
+                        composerIsIdle: diagSection(() => chatgpt_composerIsIdle()),
+                        composerIdleAfterGenerationAtMs: sinceStart(composerIdleAfterGenAt),
+                        actionButtons: {
+                            baseline: actionButtonsAtStart,
+                            atCompletion: diagSection(() => chatgpt_countActionButtons()),
+                            firstAboveBaselineAtMs: sinceStart(actionButtonsAboveAt)
+                        }
+                    };
+                    console.warn("[ThunderAI] Completion summary: " + JSON.stringify(summary));
                 }
-                // always emitted: timings and signal names only, never page text
-                const summary = {
-                    condition: condition,
-                    totalMs: now - startTime,
-                    generationObserved: generationObserved,
-                    firstGeneratingAtMs: sinceStart(firstGeneratingAt),
-                    lastGeneratingAtMs: sinceStart(lastGeneratingAt),
-                    sinceGenerationStoppedMs: lastGeneratingAt ? now - lastGeneratingAt : null,
-                    generatingSignals: lastGeneratingSignals,
-                    composerIsIdle: diagSection(() => chatgpt_composerIsIdle()),
-                    composerIdleAfterGenerationAtMs: sinceStart(composerIdleAfterGenAt),
-                    actionButtons: {
-                        baseline: actionButtonsAtStart,
-                        atCompletion: diagSection(() => chatgpt_countActionButtons()),
-                        firstAboveBaselineAtMs: sinceStart(actionButtonsAboveAt)
-                    }
-                };
-                console.warn("[ThunderAI] Completion summary: " + JSON.stringify(summary));
             } catch (err) {
                 console.warn("[ThunderAI] Completion summary failed: ", err);
             } finally {
@@ -1010,10 +1010,12 @@ async function chatgpt_isIdle() {
             try {
                 const generatingNow = chatgpt_isGenerating();
                 if (generatingNow) {
-                    if (!firstGeneratingAt) firstGeneratingAt = Date.now();
-                    // generation resumed: the idle composer must be seen again after it stops
-                    composerIdleAfterGenAt = 0;
-                    if (!actionButtonsAboveAt && chatgpt_countActionButtons() > actionButtonsAtStart) actionButtonsAboveAt = Date.now();
+                    if (mztaDoDebug == 1) {
+                        if (!firstGeneratingAt) firstGeneratingAt = Date.now();
+                        // generation resumed: the idle composer must be seen again after it stops
+                        composerIdleAfterGenAt = 0;
+                        if (!actionButtonsAboveAt && chatgpt_countActionButtons() > actionButtonsAtStart) actionButtonsAboveAt = Date.now();
+                    }
                     generationObserved = true;
                     lastGeneratingAt = Date.now();
                 } else if (generationObserved && Date.now() - lastGeneratingAt >= 4000) {
@@ -1024,15 +1026,23 @@ async function chatgpt_isIdle() {
                 }
                 if (!generatingNow) {
                     const actionButtons = chatgpt_countActionButtons();
-                    if (!actionButtonsAboveAt && actionButtons > actionButtonsAtStart) actionButtonsAboveAt = Date.now();
-                    if (generationObserved && !composerIdleAfterGenAt && chatgpt_composerIsIdle()) composerIdleAfterGenAt = Date.now();
+                    // chatgpt_composerIsIdle runs at most once per tick, and only when a check needs it
+                    let composerIdle = null;
+                    const composerIsIdle = () => {
+                        if (composerIdle === null) composerIdle = !!chatgpt_composerIsIdle();
+                        return composerIdle;
+                    };
+                    if (mztaDoDebug == 1) {
+                        if (!actionButtonsAboveAt && actionButtons > actionButtonsAtStart) actionButtonsAboveAt = Date.now();
+                        if (generationObserved && !composerIdleAfterGenAt && composerIsIdle()) composerIdleAfterGenAt = Date.now();
+                    }
                     // generationObserved: a copy button on the new user turn must not count as the answer
                     if (generationObserved && actionButtons > actionButtonsAtStart) {
                         doLog("Completion detected by new action buttons (" + actionButtonsAtStart + " at start, " + actionButtons + " now, stop button seen and gone)");
                         finish('actionButtons');
                         return;
                     }
-                    if (generationObserved && Date.now() - lastGeneratingAt >= 1000 && chatgpt_composerIsIdle()) {
+                    if (generationObserved && Date.now() - lastGeneratingAt >= 1000 && composerIsIdle()) {
                         doLog("Completion detected by the idle composer (stop button gone for " + (Date.now() - lastGeneratingAt) + " ms)");
                         finish('stopGoneComposerIdle');
                         return;
@@ -1040,7 +1050,7 @@ async function chatgpt_isIdle() {
                 }
                 const last = getNewAssistantMessage();
                 const length = last ? (last.el.textContent || '').trim().length : -1;
-                if (generatingNow) {
+                if (mztaDoDebug == 1 && generatingNow) {
                     // stopPath is what chatgpt_isGenerating checks, the others are sampled alongside
                     const signals = getGenerationSignals(last ? getMessageTurn(last.el) : null);
                     lastGeneratingSignals = { stopPath: true, stopButton: signals.stopButton, ariaBusy: signals.ariaBusy, streamingClass: signals.streamingClass };
@@ -1055,7 +1065,7 @@ async function chatgpt_isIdle() {
                     finish('stability');
                     return;
                 }
-                if (!diagLogged && Date.now() - startTime > 60000) {
+                if (mztaDoDebug == 1 && !diagLogged && Date.now() - startTime > 60000) {
                     diagLogged = true;
                     logCompletionDiagnostics(last, length, Date.now() - lastChange, Date.now() - startTime, diagState(generatingNow));
                 }

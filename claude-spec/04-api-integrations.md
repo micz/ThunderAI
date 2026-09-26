@@ -99,14 +99,14 @@ The call resolves on the first of the following, and `doLog()` records which one
    - `getGenerationSignals()` reports no stop button, no `aria-busy` and no `streaming` class in the last turn
    - `chatgpt_isGenerating()` is false, since the text also stays still during "thinking" pauses
 
-**Completion summary.** Every branch resolves through a local `finish(condition)`, which always emits one `console.warn("[ThunderAI] Completion summary: …")` line, whether debug is on or off. It holds timings and signal names only. All times are ms from the call start, and null when the event never happened:
+**Completion summary.** Every branch resolves through a local `finish(condition)`, which always resolves the promise (in its `finally`) and, only with debug on (`mztaDoDebug == 1`), emits one `console.warn("[ThunderAI] Completion summary: …")` line. It holds timings and signal names only. All times are ms from the call start, and null when the event never happened:
 - `condition`, `totalMs`, `generationObserved`;
 - `firstGeneratingAtMs` and `lastGeneratingAtMs`, when `chatgpt_isGenerating()` was first and last true, and `sinceGenerationStoppedMs`;
 - `generatingSignals` at the last true sample. `stopPath` is the one signal that drives `chatgpt_isGenerating()`; `stopButton`, `ariaBusy` and `streamingClass` from `getGenerationSignals()` are sampled alongside it for information;
 - `composerIsIdle` at completion, and `composerIdleAfterGenerationAtMs`: the first idle sample after the last generating one;
 - `actionButtons: {baseline, atCompletion, firstAboveBaselineAtMs}`.
 
-This tracking never decides completion. The extra DOM queries run only until each value is recorded. With debug on, `finish()` also emits a `Completion diagnostics:` line just before the summary, with the same fields as the 60 s one.
+This tracking never decides completion, and with debug off it is skipped entirely: the 100 ms loop then runs only the checks that decide completion. With debug on, the extra DOM queries run only until each value is recorded. In the not-generating branch `chatgpt_composerIsIdle()` is evaluated lazily, at most once per tick, and shared by the debug timing and the `stopGoneComposerIdle` check. With debug on, `finish()` also emits a `Completion diagnostics:` line just before the summary, with the same fields as the 60 s one.
 
 **Force-completion hint.** After a verified send, `doProceed()` waits through `showForceCompletionHint()`, which wraps `chatgpt_isIdle()`:
 - A 250 ms interval shows `#mzta-forcecomp-hint` once `delay_wait_completion` (7 s) has passed with `chatgpt_isGenerating()` false.
@@ -118,7 +118,7 @@ This tracking never decides completion. The extra DOM queries run only until eac
 - `getNewAssistantMessage()` requires the count to be at least baseline + 2.
 - `fallbackTurn.minIndex` is baseline + 1, or, without a baseline, the count at call start.
 
-Stopping early costs little: the panel buttons appear sooner, and the user still picks the text by hand. After 60 s of waiting, one `Completion diagnostics:` line is logged (and, with debug on, another one at completion, see **Completion summary**). It holds structure only, never page text, and aria-labels are logged but never matched. It contains:
+Stopping early costs little: the panel buttons appear sooner, and the user still picks the text by hand. With debug on, after 60 s of waiting, one `Completion diagnostics:` line is logged (and another one at completion, see **Completion summary**). It holds structure only, never page text, and aria-labels are logged but never matched. It contains:
 - the counts versus the baseline, the length, how long it has been stable, and the signals;
 - `generationObserved`, `isGeneratingNow`, `assistantAtStart`, `assistantNow` and `minTurnIndex`;
 - `describeButtons(..., extended)` for the last turn and for the composer container. Extended mode adds `ariaHaspopup` and the first 60 chars of the class;
