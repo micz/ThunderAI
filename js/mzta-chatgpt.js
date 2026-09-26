@@ -40,6 +40,13 @@ let current_composer_el = null;
 // message counts taken just before sending, so an older answer is never taken as the new one
 let send_baseline = null;
 let last_send_button_strategy = null;
+// ancestor padded so the composer clears the ThunderAI bar, with its original inline style
+let overlap_fix = null;
+// layout for which no ancestor resolved the overlap, so it is not retried on every mutation
+let overlap_failed_key = null;
+let overlap_watch_installed = false;
+let overlap_throttle_timer = null;
+let overlap_last_run = 0;
 
 // Composer lookup, in priority order. ChatGPT rolls out different composers
 // (A/B tests), so a single id lookup is not enough (issues #890, #920, #924).
@@ -789,6 +796,7 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
         logPromptInputDiagnostics();
     }
     current_composer_el = textArea;
+    mztaFixComposerOverlap('composer-found');
     send_baseline = takeSendBaseline();
     if (textArea.tagName === 'TEXTAREA') {
         // native setter, so React's value tracking notices the change
@@ -1530,6 +1538,156 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     fixedDiv.appendChild(forcecompletionHint_div);
 
     document.body.insertBefore(fixedDiv, document.body.firstChild);
+    installComposerOverlapWatch();
+    mztaFixComposerOverlap('bar-shown');
+}
+
+// The composer used for the last send, or the same lookup findPromptInput() does (light DOM only)
+function getComposerForLayout() {
+    for (const el of [current_composer_el, user_selected_composer]) {
+        if (el && isElementVisible(el)) return el;
+    }
+    const found = queryPromptInput([document]);
+    return found ? found.el : null;
+}
+
+// Parent element, crossing a shadow root boundary to its host
+function getLayoutParent(node) {
+    if (node.parentElement) return node.parentElement;
+    const root = node.parentNode;
+    return (root && root.host) ? root.host : null;
+}
+
+function describeLayoutElement(el, depth) {
+    return { tag: el.tagName.toLowerCase(), id: el.id || '', class: getElementClass(el).substring(0, 60), depth: depth };
+}
+
+function revertOverlapFix() {
+    if (!overlap_fix) return;
+    const el = overlap_fix.el;
+    el.style.setProperty('padding-bottom', overlap_fix.padding, overlap_fix.paddingPriority);
+    el.style.setProperty('box-sizing', overlap_fix.boxSizing, overlap_fix.boxSizingPriority);
+    overlap_fix = null;
+}
+
+// The new ChatGPT layout is a full-height app with the composer anchored at the bottom,
+// so padding on body does not move it: pad the closest ancestor that actually lifts it above the bar
+function mztaFixComposerOverlap(reason) {
+    try {
+        const bar = document.querySelector('.mzta-header-fixed');
+        if (!bar || !bar.isConnected) return;
+        const barHeight = Math.ceil(bar.getBoundingClientRect().height);
+        const composer = getComposerForLayout();
+        if (!composer) return;
+        const form = composer.closest('form') || composer;
+        const overlaps = () => form.getBoundingClientRect().bottom > bar.getBoundingClientRect().top + 4;
+
+        let changed = false;
+        if (overlap_fix) {
+            // still in place and still enough for the current bar height
+            if (overlap_fix.el.isConnected && overlap_fix.barHeight === barHeight && !overlaps()) return;
+            revertOverlapFix();
+            changed = true;
+        }
+        const formBefore = form.getBoundingClientRect();
+        if (!overlaps()) {
+            overlap_failed_key = null;
+            if (changed) {
+                doLog("Composer overlap fix reverted, no longer needed (" + reason + ")");
+                logLayoutDiagnostics(reason, barHeight, formBefore, formBefore, null, []);
+            }
+            return;
+        }
+        const failedKey = [barHeight, window.innerWidth, window.innerHeight, Math.round(formBefore.bottom)].join('|');
+        if (!changed && overlap_failed_key === failedKey) return;
+
+        const examined = [];
+        let node = getLayoutParent(form);
+        let depth = 1;
+        while (node && node !== document.body && node !== document.documentElement && depth <= 12) {
+            const cs = window.getComputedStyle(node);
+            examined.push({ depth: depth, tag: node.tagName.toLowerCase(), position: cs.position, display: cs.display, height: cs.height, overflowY: cs.overflowY });
+            const saved = {
+                el: node,
+                depth: depth,
+                barHeight: barHeight,
+                padding: node.style.getPropertyValue('padding-bottom'),
+                paddingPriority: node.style.getPropertyPriority('padding-bottom'),
+                boxSizing: node.style.getPropertyValue('box-sizing'),
+                boxSizingPriority: node.style.getPropertyPriority('box-sizing')
+            };
+            node.style.setProperty('padding-bottom', barHeight + 'px', 'important');
+            node.style.setProperty('box-sizing', 'border-box', 'important');
+            overlap_fix = saved;
+            if (!overlaps()) break;
+            revertOverlapFix();
+            node = getLayoutParent(node);
+            depth++;
+        }
+        const formAfter = form.getBoundingClientRect();
+        if (overlap_fix) {
+            overlap_failed_key = null;
+            const chosen = describeLayoutElement(overlap_fix.el, overlap_fix.depth);
+            doLog("Composer overlap fixed (" + reason + "): padding-bottom " + barHeight + "px on " + JSON.stringify(chosen));
+            logLayoutDiagnostics(reason, barHeight, formBefore, formAfter, chosen, examined);
+        } else {
+            overlap_failed_key = failedKey;
+            doLog("Composer overlap not fixed (" + reason + "): no ancestor lifted the composer above the bar, " + examined.length + " examined");
+            logLayoutDiagnostics(reason, barHeight, formBefore, formAfter, null, examined);
+        }
+    } catch (err) {
+        console.error('[ThunderAI] mztaFixComposerOverlap: ', err);
+    }
+}
+
+// Layout measurements only, never page text
+function logLayoutDiagnostics(reason, barHeight, formBefore, formAfter, chosen, examined) {
+    if (mztaDoDebug != 1) return;
+    console.warn("[ThunderAI] Layout diagnostics: " + JSON.stringify({
+        reason: reason,
+        innerWidth: window.innerWidth,
+        innerHeight: window.innerHeight,
+        barHeight: barHeight,
+        formBefore: { top: Math.round(formBefore.top), bottom: Math.round(formBefore.bottom) },
+        formAfter: { top: Math.round(formAfter.top), bottom: Math.round(formAfter.bottom) },
+        chosen: chosen,
+        ancestors: examined
+    }));
+}
+
+// At most one run every 500 ms, with a trailing run so the last change is always handled
+function scheduleComposerOverlapFix(reason) {
+    if (overlap_throttle_timer) return;
+    const wait = Math.max(0, 500 - (Date.now() - overlap_last_run));
+    overlap_throttle_timer = setTimeout(() => {
+        overlap_throttle_timer = null;
+        overlap_last_run = Date.now();
+        mztaFixComposerOverlap(reason);
+    }, wait);
+}
+
+function isOwnUiNode(node) {
+    const el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+    return el !== null && isOwnUiElement(el);
+}
+
+// ChatGPT re-renders and can replace the padded element: re-check on resize and DOM changes
+function installComposerOverlapWatch() {
+    if (overlap_watch_installed) return;
+    overlap_watch_installed = true;
+    window.addEventListener('resize', () => scheduleComposerOverlapFix('resize'));
+    // childList only: the fix changes inline styles, which are attributes, so it cannot trigger itself
+    const observer = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+            // ThunderAI's own bar updates (status text, buttons) are not layout changes of the page
+            if (isOwnUiNode(m.target)) continue;
+            const nodes = Array.from(m.addedNodes).concat(Array.from(m.removedNodes));
+            if (nodes.length > 0 && nodes.every(n => isOwnUiNode(n))) continue;
+            scheduleComposerOverlapFix('mutation');
+            return;
+        }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
 }
 
 // Create SVG icons as functions
@@ -1683,6 +1841,7 @@ function operation_done(){
     document.getElementById('mzta-loading').style.display = 'none';
     document.getElementById('mzta-force-completion').style.display = 'none';
     document.getElementById('mzta-forcecomp-hint').style.display = 'none';
+    mztaFixComposerOverlap('completed');
     chatpgt_scrollToBottom();
 }
 
