@@ -25,6 +25,7 @@ ThunderAI is a **Thunderbird WebExtension (Manifest V2)** that integrates multip
 7. **Settings defaults:** All new preferences must be added to `options/mzta-options-default.js` in `prefs_default`.
 8. **Keep spec files up to date:** When making code changes that affect a subsystem described in claude-spec/, update the relevant spec file to reflect the new behavior. Read the spec before modifying, update it after.
 9. **Never commit on your own initiative.** Do not run `git commit` (or `git push`, or create branches) unless explicitly asked to in that same request. Finishing a task is *not* permission to commit it: stage or leave the work modified, report what is ready, and let the maintainer decide when to commit and how to word the message. Approval to implement a plan is not approval to commit it.
+10. **Never show the full diff in chat.** When finishing a task, do not paste the complete diff (or whole rewritten files) into the final message. Summarize what changed — files touched with clickable links, and a short description per change — and let the maintainer inspect the actual diff in the editor or via git. Short snippets are fine only when needed to explain a specific decision.
 
 ## Directory Map
 
