@@ -42,6 +42,7 @@ import {
 } from "../_lib/connection-ui.js";
 import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
+import { initReminderUI } from "../_lib/reminder-ui.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
 
 let autocompleteSuggestions = [];
@@ -157,6 +158,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (get_task_textarea_hl) get_task_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
         placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(get_task_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
+
+    // "Let the AI set a reminder" section [#887]. After restoreOptions() (checkbox
+    // state) and after the prompt text is loaded (warning and preview read it).
+    await initReminderUI({
+        feature: 'task',
+        promptTextarea: get_task_textarea,
+        statementsEl: document.getElementById('get_task_info_additional_statements')
+    });
 
 });
 

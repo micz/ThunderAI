@@ -907,6 +907,18 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 }
 .feature_locked_note.shown { display: block; }
 
+/* Non-blocking amber caveat under a feature row, shown by JS (.shown) — e.g. the
+   reminder warning on the calendar event / task pages. Same look as the note above. */
+.feature_warn_note {
+    display: none;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--warning);
+    margin-top: 5px;
+    line-height: 1.4;
+}
+.feature_warn_note.shown { display: block; }
+
 /* ===========================================================================
    ADVANCED OPTIONS (app-level disclosure)
    =========================================================================== */

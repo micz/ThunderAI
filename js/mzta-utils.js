@@ -23,7 +23,7 @@ import {
 import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js'
 import { mztaPrefs } from './mzta-prefs.js';
 
-const sparks_min = '3.0.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
+const sparks_min = '3.1.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
 const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
 
 export const getMenuContextCompose = () => 'compose_action_menu';
@@ -1059,6 +1059,41 @@ export function appendMessageLinkToDescription(data_obj, message, label) {
   const desc = (typeof data_obj.description === 'string') ? data_obj.description.trim() : '';
   data_obj.description = (desc !== '') ? desc + '\n\n' + link_line : link_line;
   return true;
+}
+
+// Upper bound for reminderMinutes (4 weeks). Larger values are treated as invalid.
+export const REMINDER_MINUTES_MAX = 40320;
+
+// Normalizes data_obj.reminderMinutes (calendar event / task objects) before the
+// hand-off to Sparks, which reads it as: absent = Thunderbird default reminder,
+// -1 = no reminder, >= 0 = minutes before the event start / task due date.
+// ACCEPTING is unconditional: a valid value returned by the AI is always kept,
+// even with the feature's reminder checkbox off (the user may ask for it in the
+// main prompt). The checkbox only decides what a missing or invalid value means:
+// on = "no reminder" (-1), off = field removed, so Thunderbird's defaults apply.
+// Valid = a non-negative integer, or a string holding one, up to REMINDER_MINUTES_MAX.
+// The string "default" is what the format instruction asks for when NO reminder
+// rules are given at all (neither in the rules option nor in the main prompt):
+// field removed whatever the checkbox, so Thunderbird's defaults apply. null stays
+// "rules given, none applies" -> no reminder with the checkbox on.
+export function normalizeReminderMinutes(data_obj, reminder_enabled, logger = null) {
+  const raw = data_obj.reminderMinutes;
+  let value = null;
+  if (typeof raw === 'number' && Number.isInteger(raw)) {
+    value = raw;
+  } else if (typeof raw === 'string' && /^\s*\d+\s*$/.test(raw)) {
+    value = parseInt(raw.trim(), 10);
+  }
+  if (typeof raw === 'string' && raw.trim().toLowerCase() === 'default') {
+    delete data_obj.reminderMinutes;
+  } else if (value !== null && value >= 0 && value <= REMINDER_MINUTES_MAX) {
+    data_obj.reminderMinutes = value;
+  } else if (reminder_enabled) {
+    data_obj.reminderMinutes = -1;
+  } else {
+    delete data_obj.reminderMinutes;
+  }
+  logger?.log("reminderMinutes: raw = " + JSON.stringify(raw) + ", final = " + JSON.stringify(data_obj.reminderMinutes));
 }
 
 export function isAPIKeyValue(id){

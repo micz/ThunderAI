@@ -1273,6 +1273,50 @@
     "message": "Original email:",
     "description": "Label written before the link to the original email in the description of the calendar events and the tasks."
   },
+  "prompt_calendar_reminder_format": {
+    "message": "In addition to the fields described above, add to the JSON object an integer field \"reminderMinutes\": the number of minutes before the event start at which the reminder must be set, following the reminder rules given in this prompt. If reminder rules are given but none of them applies, set \"reminderMinutes\" to null. If no reminder rules are given at all, set \"reminderMinutes\" to the string \"default\".",
+    "description": "Appended to the calendar event prompt sent to the AI when the reminder option is enabled. Do not translate \"reminderMinutes\", \"null\" and \"default\"."
+  },
+  "prompt_task_reminder_format": {
+    "message": "In addition to the fields described above, add to the JSON object an integer field \"reminderMinutes\": the number of minutes before the task due date (or before its initial date, if there is no due date) at which the reminder must be set, following the reminder rules given in this prompt. If reminder rules are given but none of them applies, set \"reminderMinutes\" to null. If no reminder rules are given at all, set \"reminderMinutes\" to the string \"default\".",
+    "description": "Appended to the task prompt sent to the AI when the reminder option is enabled. Do not translate \"reminderMinutes\", \"null\" and \"default\"."
+  },
+  "prompt_reminder_rules_intro": {
+    "message": "Reminder rules:",
+    "description": "Sent to the AI before the reminder rules written by the user."
+  },
+  "prefs_OptionText_reminder_enabled": {
+    "message": "Let the AI set a reminder",
+    "description": ""
+  },
+  "prefs_OptionText_calendar_reminder_enabled_Info": {
+    "message": "If checked, the AI is asked to set a reminder, relative to the event start, following the reminder rules. If no rule applies, the event is created with no reminder. If no rules are written, neither here nor in the main prompt, Thunderbird's default reminder settings apply. If not checked, Thunderbird's default reminder settings apply, unless the main prompt asks the AI for a reminder.",
+    "description": ""
+  },
+  "prefs_OptionText_task_reminder_enabled_Info": {
+    "message": "If checked, the AI is asked to set a reminder, relative to the task due date (or to its initial date, if there is no due date), following the reminder rules. If no rule applies, the task is created with no reminder. If no rules are written, neither here nor in the main prompt, Thunderbird's default reminder settings apply. If not checked, Thunderbird's default reminder settings apply, unless the main prompt asks the AI for a reminder.",
+    "description": ""
+  },
+  "prefs_OptionText_reminder_rules_title": {
+    "message": "Reminder rules",
+    "description": ""
+  },
+  "prefs_OptionText_reminder_rules_Info": {
+    "message": "Write the rules in natural language. This field is optional: the rules can also be written directly in the main prompt above.",
+    "description": ""
+  },
+  "prefs_OptionText_calendar_reminder_rules_example": {
+    "message": "Example: \"If the event is in the morning in building A or B, set the reminder 45 minutes before. If it's in the afternoon, 15 minutes before. Otherwise, no reminder.\"",
+    "description": ""
+  },
+  "prefs_OptionText_task_reminder_rules_example": {
+    "message": "Example: \"If the task is about a payment, set the reminder one day before the due date. If it's about a report, two hours before. Otherwise, no reminder.\"",
+    "description": ""
+  },
+  "reminder_prompt_warning": {
+    "message": "The main prompt contains \"reminderMinutes\", but \"Let the AI set a reminder\" is not checked: the reminder returned by the AI will be used, but when the AI returns none, Thunderbird's default reminder will apply. Check the option to get no reminder in that case.",
+    "description": "Do not translate \"reminderMinutes\"."
+  },
   "prefs_OptionText_btnManageCalendarEventInfo": {
     "message": "Manage calendar events settings",
     "description": ""

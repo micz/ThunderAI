@@ -212,6 +212,10 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `calendar_no_selection` | `false` | Skip selection prompt |
 | `calendar_append_email_link` | `false` | Append a `mid:` link to the source email to the event description (added by code after the response, never sent to the AI — see [02-prompts.md](02-prompts.md#calendar-event--task-link-to-the-original-email)). Deliberately **not** prefixed `get_calendar_event_`, which is the per-feature integration prefix |
 | `task_append_email_link` | `false` | Same, for the task description. Deliberately **not** prefixed `get_task_` |
+| `calendar_reminder_enabled` | `false` | "Let the AI set a reminder" for events: ask for `reminderMinutes` and send `-1` (no reminder) when the AI returns none/invalid; Thunderbird's default when the AI answers `"default"` (no rules given at all). A valid AI value is used **even when false** — see [02-prompts.md](02-prompts.md#calendar-event--task-reminder-887). Not prefixed `get_calendar_event_` (integration prefix) |
+| `calendar_reminder_rules` | `''` | Optional natural-language reminder rules, appended to the event prompt (after `prompt_reminder_rules_intro`) only when `calendar_reminder_enabled` is true |
+| `task_reminder_enabled` | `false` | Same as `calendar_reminder_enabled`, for tasks (reference: due date, or initial date) |
+| `task_reminder_rules` | `''` | Same as `calendar_reminder_rules`, for tasks |
 | `spamfilter` | `false` | Enable spam filter |
 | `spamfilter_threshold` | `70` | Spam confidence threshold (%) |
 | `spamfilter_enabled_accounts` | `[]` | Accounts where spam filter is active |
@@ -958,7 +962,11 @@ via `getFeatureConnState(prefs_opt, 'get_calendar_event')` and `…, 'get_task')
 in `special_prompts_with_integration`, so they take specific integrations like the other four. It
 previously read the global select directly, which made the UI *more* restrictive than the execution
 path (`mzta-menus.js` already honoured the override). Sparks presence (`checkSparksPresence()`)
-stays an orthogonal, additional requirement. The "Sparks missing" notice (`#no_sparks`) is hidden
+stays an orthogonal, additional requirement. `sparks_min` is `'3.1.0'` since v5.1.0, because the
+payloads may carry `reminderMinutes` (#887); an older Sparks returns `0` from `checkSparksPresence()`,
+so both rows (and with them the "Manage" buttons opening the two settings pages) are hidden, the
+`wrong_sparks_text` banner is shown and `doGetSparkFeature()` drops the menu entries — an old Sparks
+never receives the new field. The "Sparks missing" notice (`#no_sparks`) is hidden
 when **both** features are unusable on their own connection — with a per-feature judgement, keying
 it on a single global flag would hide a genuinely missing add-on.
 
@@ -1268,6 +1276,28 @@ handler, so they are unaffected.
 
 Each page calls `initUnsavedGuard()` as the first statement of its `DOMContentLoaded`
 handler, so the guard is armed even if later async setup fails.
+
+### Reminder Section (Calendar Event / Task pages, `pages/_lib/reminder-ui.js`)
+
+Both pages carry the same "Let the AI set a reminder" section (#887), placed **after** the prompt
+section (its help text refers to "the main prompt above"), with the same ids on both pages except the
+checkbox, whose id is the pref (`calendar_reminder_enabled` / `task_reminder_enabled`).
+`initReminderUI({feature, promptTextarea, statementsEl})` is called at the end of the page setup,
+after `restoreOptions()` (checkbox state) and after the prompt text is loaded. It does the following:
+- The checkbox is a plain `.option-input`, saved by the page's `saveOptions()`. It shows or hides
+  `#reminder_rules_block`, which is hidden by default in the page CSS.
+- The rules textarea `#reminder_rules` uses the **explicit Save** pattern (`#btn_save_reminder_rules`,
+  `#reminder_rules_unsaved`), the same one as `summarize_auto_senders_list`, so the unsaved-changes guard
+  above covers it. The value is stored trimmed. It is a **plain** textarea without placeholder
+  highlighting, because the rules are appended after placeholder resolution (see
+  [02-prompts.md](02-prompts.md#calendar-event--task-reminder-887)).
+- The non-blocking warning `#reminder_prompt_warning` (`.feature_warn_note`, amber, shared in
+  `mzta-design.css`) is shown while the **live** prompt text contains `reminderMinutes` and the
+  checkbox is off. In that case an AI value is used, but a missing one leaves Thunderbird's default.
+  It is refreshed on the prompt textarea's `input` and on the checkbox's `change`.
+- The existing `#{prefix}_info_additional_statements` div previews exactly what `finalizePrompt_*()`
+  will append, via the same `taPromptUtils.getReminderPromptStatements()` on the live values, with
+  the `addtags_info_additional_statements` label.
 
 ## Adding a New Preference
 
