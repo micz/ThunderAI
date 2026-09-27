@@ -37,7 +37,7 @@ let lastSelectedHtml = "";
 let user_selected_composer = null;
 // composer used for the last send, needed by the completion diagnostics
 let current_composer_el = null;
-// message counts taken just before sending, so an older answer is never taken as the new one
+// debug only: message counts taken just before sending, for the completion diagnostics
 let send_baseline = null;
 let last_send_button_strategy = null;
 // ancestor padded so the composer clears the ThunderAI bar, with its original inline style
@@ -47,6 +47,11 @@ let overlap_failed_key = null;
 let overlap_watch_installed = false;
 let overlap_throttle_timer = null;
 let overlap_last_run = 0;
+// layout watch: the ResizeObserver, the elements it observes, and the bar and form the interval check compares
+let overlap_resize_observer = null;
+let overlap_observed = new Set();
+let overlap_watched_bar = null;
+let overlap_watched_form = null;
 
 // Composer lookup, in priority order. ChatGPT rolls out different composers
 // (A/B tests), so a single id lookup is not enough (issues #890, #920, #924).
@@ -703,8 +708,7 @@ function getMessageTurn(el) {
 // - ariaBusy: aria-busy="true" on the last turn or inside it
 // - streamingClass: a class containing "streaming" in the last turn (ChatGPT has used
 //   result-streaming and streaming-animation on the answer being written)
-// None of them is guaranteed in the newer UI, so the completion fallback also requires
-// the answer length to be stable for a while.
+// None of them is guaranteed in the newer UI, which is detected by chatgpt_isGenerating().
 function getGenerationSignals(turn) {
     return {
         stopButton: document.querySelector('[data-testid="stop-button"]') !== null,
@@ -713,21 +717,38 @@ function getGenerationSignals(turn) {
     };
 }
 
-function isGenerationInProgress(turn) {
-    const signals = getGenerationSignals(turn);
-    return signals.stopButton || signals.ariaBusy || signals.streamingClass;
-}
-
 function isComposerEmpty(el) {
     if (el.tagName === 'TEXTAREA') return el.value.trim() === '';
     return (el.textContent || '').trim() === '';
 }
 
-// Sent when the composer was cleared or re-rendered away, or a new message or the stop button appeared
-function isSendVerified(el, baseline) {
+// Sent when the composer was cleared or re-rendered away, or the stop button (old or new UI) appeared
+function isSendVerified(el) {
     if (!el.isConnected || isComposerEmpty(el)) return true;
-    if (baseline && (countElements('[data-message-author-role="user"]') > baseline.user || countElements('[data-message-author-role="assistant"]') > baseline.assistant)) return true;
-    return getGenerationSignals(null).stopButton;
+    return getGenerationSignals(null).stopButton || chatgpt_isGenerating();
+}
+
+// Checks isSendVerified() every 100 ms: resolves true as soon as it holds, false after maxMs
+function waitForSendVerified(el, maxMs) {
+    return new Promise(resolve => {
+        const startTime = Date.now();
+        const check = () => {
+            try {
+                if (isSendVerified(el)) {
+                    resolve(true);
+                    return;
+                }
+            } catch (err) {
+                console.error('[ThunderAI] waitForSendVerified: ', err);
+            }
+            if (Date.now() - startTime >= maxMs) {
+                resolve(false);
+                return;
+            }
+            setTimeout(check, 100);
+        };
+        check();
+    });
 }
 
 function dispatchEnter(el) {
@@ -797,7 +818,8 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
     }
     current_composer_el = textArea;
     mztaFixComposerOverlap('composer-found');
-    send_baseline = takeSendBaseline();
+    // counting turns is only needed by the completion diagnostics
+    send_baseline = mztaDoDebug == 1 ? takeSendBaseline() : null;
     if (textArea.tagName === 'TEXTAREA') {
         // native setter, so React's value tracking notices the change
         Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(textArea, htmlToPlainText(msg));
@@ -842,8 +864,7 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
         diagLogged = true;
         dispatchEnter(textArea);
     }
-    await waitMs(1500);
-    if (!isSendVerified(textArea, send_baseline)) {
+    if (!(await waitForSendVerified(textArea, 1500))) {
         const form = textArea.closest('form');
         if (form && typeof form.requestSubmit === 'function') {
             doLog("Send not verified, trying form.requestSubmit()");
@@ -853,9 +874,9 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
             } catch (err) {
                 console.error('[ThunderAI] requestSubmit: ', err);
             }
-            await waitMs(1500);
+            await waitForSendVerified(textArea, 1500);
         }
-        if (!isSendVerified(textArea, send_baseline)) {
+        if (!isSendVerified(textArea)) {
             console.error("[ThunderAI] The prompt could not be sent!");
             attempt.verified = false;
             if (!diagLogged) logSendButtonDiagnostics(textArea, attempt);
@@ -930,22 +951,25 @@ function logCompletionDiagnostics(last, length, stableMs, waitingMs, state) {
 async function chatgpt_isIdle() {
     return new Promise(resolve => {
         const startTime = Date.now();
-        let lastEl = null;
-        let lastLength = -1;
-        let lastChange = Date.now();
         let diagLogged = false;
         // per-call state, isIdle can run more than once in the same page (custom texts)
-        const assistantAtStart = countElements('[data-message-author-role="assistant"]');
-        // the new turn usually exists already when this starts (send verification waits 1.5 s)
-        const minTurnIndex = send_baseline ? send_baseline.assistant : assistantAtStart;
-        // without role attributes: a candidate turn selector, the answer comes after the new user turn
-        const fallbackCandidate = assistantAtStart === 0 ? getFallbackTurnCandidate() : null;
-        const fallbackTurn = fallbackCandidate ? {
-            selector: fallbackCandidate.selector,
-            minIndex: send_baseline ? send_baseline[fallbackCandidate.kind] + 1 : countElements(fallbackCandidate.selector)
-        } : null;
         // turn-independent: new-UI action buttons already in the page when this call starts
         const actionButtonsAtStart = chatgpt_countActionButtons();
+        // debug only, for the completion diagnostics: they count turns and never decide completion
+        let assistantAtStart = null;
+        let minTurnIndex = null;
+        let fallbackTurn = null;
+        if (mztaDoDebug == 1) {
+            assistantAtStart = countElements('[data-message-author-role="assistant"]');
+            // the new turn usually exists already when this starts (after the send verification)
+            minTurnIndex = send_baseline ? send_baseline.assistant : assistantAtStart;
+            // without role attributes: a candidate turn selector, the answer comes after the new user turn
+            const fallbackCandidate = assistantAtStart === 0 ? getFallbackTurnCandidate() : null;
+            fallbackTurn = fallbackCandidate ? {
+                selector: fallbackCandidate.selector,
+                minIndex: send_baseline ? send_baseline[fallbackCandidate.kind] + 1 : countElements(fallbackCandidate.selector)
+            } : null;
+        }
         let generationObserved = false;
         let lastGeneratingAt = 0;
         // timings for the completion summary only (debug mode), they never decide completion
@@ -964,14 +988,19 @@ async function chatgpt_isIdle() {
         });
         // ms from the call start, null if it never happened
         const sinceStart = (time) => time ? time - startTime : null;
+        // debug only: the turn lookups and the answer length are computed here, never on every tick.
+        // stableMs is no longer tracked, so it is logged as null
+        const logDiagnosticsNow = (generatingNow) => {
+            const last = getNewAssistantMessage();
+            const length = last ? (last.el.textContent || '').trim().length : -1;
+            logCompletionDiagnostics(last, length, null, Date.now() - startTime, diagState(generatingNow));
+        };
         const finish = (condition) => {
             clearInterval(intervalId);
             const now = Date.now();
             try {
                 if (mztaDoDebug == 1) {
-                    const last = getNewAssistantMessage();
-                    const length = last ? (last.el.textContent || '').trim().length : -1;
-                    logCompletionDiagnostics(last, length, now - lastChange, now - startTime, diagState(chatgpt_isGenerating()));
+                    logDiagnosticsNow(chatgpt_isGenerating());
                     // debug only: timings and signal names only, never page text
                     const summary = {
                         condition: condition,
@@ -998,23 +1027,18 @@ async function chatgpt_isIdle() {
             }
         };
         intervalId = setInterval(() => {
-            const regenerateButton = chatgpt_getRegenerateButton(minTurnIndex, fallbackTurn);
-            if (regenerateButton || do_force_completion) {
-                if (do_force_completion) {
-                    doLog("Completion forced by the user");
-                    finish('force');
-                } else if (isNewUiActionButton(regenerateButton)) {
-                    doLog("Completion detected by the new UI action button");
-                    finish('newRegenTurn');
-                } else {
-                    doLog("Completion detected by the regenerate button");
-                    finish('oldRegen');
-                }
+            if (do_force_completion) {
+                doLog("Completion forced by the user");
+                finish('force');
                 return;
             }
-            // Fallback for UIs where the regenerate button markers are missing: the new answer
-            // counts as complete once its length has been stable for 4 s and no generation
-            // signal is left (see getGenerationSignals)
+            if (chatgpt_getRegenerateButton()) {
+                doLog("Completion detected by the regenerate button");
+                finish('oldRegen');
+                return;
+            }
+            // Newer UI without the old regenerate markers: completion follows the Stop icon
+            // (chatgpt_isGenerating), seen during this call and then gone
             try {
                 const generatingNow = chatgpt_isGenerating();
                 if (generatingNow) {
@@ -1023,6 +1047,9 @@ async function chatgpt_isIdle() {
                         // generation resumed: the idle composer must be seen again after it stops
                         composerIdleAfterGenAt = 0;
                         if (!actionButtonsAboveAt && chatgpt_countActionButtons() > actionButtonsAtStart) actionButtonsAboveAt = Date.now();
+                        // stopPath is what chatgpt_isGenerating checks, the others are sampled alongside
+                        const signals = getGenerationSignals(null);
+                        lastGeneratingSignals = { stopPath: true, stopButton: signals.stopButton, ariaBusy: signals.ariaBusy, streamingClass: signals.streamingClass };
                     }
                     generationObserved = true;
                     lastGeneratingAt = Date.now();
@@ -1056,26 +1083,9 @@ async function chatgpt_isIdle() {
                         return;
                     }
                 }
-                const last = getNewAssistantMessage();
-                const length = last ? (last.el.textContent || '').trim().length : -1;
-                if (mztaDoDebug == 1 && generatingNow) {
-                    // stopPath is what chatgpt_isGenerating checks, the others are sampled alongside
-                    const signals = getGenerationSignals(last ? getMessageTurn(last.el) : null);
-                    lastGeneratingSignals = { stopPath: true, stopButton: signals.stopButton, ariaBusy: signals.ariaBusy, streamingClass: signals.streamingClass };
-                }
-                if (!last || last.el !== lastEl || length !== lastLength) {
-                    lastEl = last ? last.el : null;
-                    lastLength = length;
-                    lastChange = Date.now();
-                } else if (length > 0 && Date.now() - lastChange >= 4000 && !isGenerationInProgress(getMessageTurn(last.el)) && !generatingNow) {
-                    // !generatingNow: the text stays unchanged during thinking pauses too
-                    doLog("Completion detected by the stability fallback (" + last.kind + ", length " + length + ", stable for " + (Date.now() - lastChange) + " ms, no stop button)");
-                    finish('stability');
-                    return;
-                }
                 if (mztaDoDebug == 1 && !diagLogged && Date.now() - startTime > 60000) {
                     diagLogged = true;
-                    logCompletionDiagnostics(last, length, Date.now() - lastChange, Date.now() - startTime, diagState(generatingNow));
+                    logDiagnosticsNow(generatingNow);
                 }
             } catch (err) {
                 console.error('[ThunderAI] chatgpt_isIdle: ', err);
@@ -1086,10 +1096,6 @@ async function chatgpt_isIdle() {
 
 // Regenerate and copy icons of the newer UI (issue #920): cursor-interaction, inline paths, no testid
 const NEW_UI_ACTION_PATHS = 'path[d^="M14.0219 8.22363"], path[d^="M13.468 11.1216"]';
-
-function isNewUiActionButton(el) {
-    return !!el && typeof el.querySelector === 'function' && el.querySelector(NEW_UI_ACTION_PATHS) !== null;
-}
 
 // Path prefixes of the newer UI buttons (issue #920). The composer primary button
 // (button.size-token-button-composer) is send (type=submit), stop or voice chat (idle).
@@ -1153,26 +1159,8 @@ function describeAncestorChain(el, maxLevels) {
     return chain;
 }
 
-// Index of the fallback turn (see FALLBACK_TURN_SELECTORS) the element belongs to, -1 if none
-function getFallbackTurnIndex(el, selector) {
-    const own = el.closest(selector);
-    return own ? Array.from(document.querySelectorAll(selector)).indexOf(own) : -1;
-}
-
-// Index of the assistant message the element belongs to, -1 if none
-function getAssistantTurnIndex(el) {
-    const messages = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
-    const own = el.closest('[data-message-author-role="assistant"]');
-    if (own) return messages.indexOf(own);
-    const article = el.closest('article');
-    if (!article) return -1;
-    for (let i = messages.length - 1; i >= 0; i--) {
-        if (article.contains(messages[i])) return i;
-    }
-    return -1;
-}
-
-function chatgpt_getRegenerateButton(minTurnIndex, fallbackTurn) {
+// Old UI only: the newer UI action buttons are counted by chatgpt_countActionButtons()
+function chatgpt_getRegenerateButton() {
     let first_try = [...document.querySelectorAll('use')]
                         .find(u => u.getAttribute('href')?.includes('#' + 'ec66f0'))
                         ?.closest('button') || null;
@@ -1188,18 +1176,6 @@ function chatgpt_getRegenerateButton(minTurnIndex, fallbackTurn) {
             //console.log(">>>>>>>>>> found read aloud icon!");
             return mainSVG.parentNode.parentNode;
         }
-    }
-    // newer UI, only in turns at or after minTurnIndex when given
-    for (const path of document.querySelectorAll(NEW_UI_ACTION_PATHS)) {
-        const button = path.closest('button');
-        if (!button || isOwnUiElement(button)) continue;
-        // no role attributes: the turn index comes from the fallback turn selector
-        if (fallbackTurn && document.querySelector('[data-message-author-role="assistant"]') === null) {
-            if (getFallbackTurnIndex(button, fallbackTurn.selector) >= fallbackTurn.minIndex) return button;
-            continue;
-        }
-        if (typeof minTurnIndex === 'number' && getAssistantTurnIndex(button) < minTurnIndex) continue;
-        return button;
     }
     return null;
 }
@@ -1637,6 +1613,9 @@ function mztaFixComposerOverlap(reason) {
         }
     } catch (err) {
         console.error('[ThunderAI] mztaFixComposerOverlap: ', err);
+    } finally {
+        // the form or the padded ancestor may have changed with this run
+        syncComposerOverlapWatch();
     }
 }
 
@@ -1666,28 +1645,58 @@ function scheduleComposerOverlapFix(reason) {
     }, wait);
 }
 
-function isOwnUiNode(node) {
-    const el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
-    return el !== null && isOwnUiElement(el);
+// Observes the bar, the composer form and the padded ancestor. ChatGPT can replace the form
+// after sending: elements that are disconnected or no longer current are unobserved
+function syncComposerOverlapWatch() {
+    if (!overlap_resize_observer) return;
+    try {
+        const bar = document.querySelector('.mzta-header-fixed');
+        const composer = getComposerForLayout();
+        const form = composer ? composer.closest('form') : null;
+        const targets = [bar, form, overlap_fix && overlap_fix.el.isConnected ? overlap_fix.el : null].filter(Boolean);
+        for (const el of Array.from(overlap_observed)) {
+            if (!el.isConnected || !targets.includes(el)) {
+                overlap_resize_observer.unobserve(el);
+                overlap_observed.delete(el);
+            }
+        }
+        for (const el of targets) {
+            if (!overlap_observed.has(el)) {
+                overlap_resize_observer.observe(el);
+                overlap_observed.add(el);
+            }
+        }
+        overlap_watched_bar = bar;
+        overlap_watched_form = form;
+    } catch (err) {
+        console.error('[ThunderAI] syncComposerOverlapWatch: ', err);
+    }
 }
 
-// ChatGPT re-renders and can replace the padded element: re-check on resize and DOM changes
+// ChatGPT re-renders and can replace the padded element: re-check on resize of the window or of the watched elements
 function installComposerOverlapWatch() {
     if (overlap_watch_installed) return;
     overlap_watch_installed = true;
     window.addEventListener('resize', () => scheduleComposerOverlapFix('resize'));
-    // childList only: the fix changes inline styles, which are attributes, so it cannot trigger itself
-    const observer = new MutationObserver((mutations) => {
-        for (const m of mutations) {
-            // ThunderAI's own bar updates (status text, buttons) are not layout changes of the page
-            if (isOwnUiNode(m.target)) continue;
-            const nodes = Array.from(m.addedNodes).concat(Array.from(m.removedNodes));
-            if (nodes.length > 0 && nodes.every(n => isOwnUiNode(n))) continue;
-            scheduleComposerOverlapFix('mutation');
-            return;
+    // a removed observed element triggers one last notification (zero size), the fix run then re-syncs
+    overlap_resize_observer = new ResizeObserver(() => scheduleComposerOverlapFix('resize-observer'));
+    syncComposerOverlapWatch();
+    // safety net for position changes that resize no observed element: two rects, nothing else
+    setInterval(() => {
+        try {
+            if (overlap_fix && !overlap_fix.el.isConnected) {
+                scheduleComposerOverlapFix('interval');
+                return;
+            }
+            const bar = overlap_watched_bar;
+            const form = overlap_watched_form;
+            if (bar && form && bar.isConnected && form.isConnected && form.getBoundingClientRect().bottom > bar.getBoundingClientRect().top + 4) {
+                scheduleComposerOverlapFix('interval');
+            }
+        } catch (err) {
+            console.error('[ThunderAI] composer overlap check: ', err);
         }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+    }, 2000);
 }
 
 // Create SVG icons as functions
