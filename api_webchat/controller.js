@@ -157,6 +157,13 @@ if (worker) {
         const i18n_msg_key = integration === 'openai_comp' ? 'OpenAIComp_api_request_failed' : `${integration}_api_request_failed`;
         i18nStrings[i18n_msg_key] = browser.i18n.getMessage(i18n_msg_key);
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
+        if (integration === 'anthropic') {
+            // 400 hints for describeAnthropicError(). The literal "$MODEL$" is passed
+            // as the substitution so the worker can fill in the model it actually sent.
+            for (const key of ['anthropic_err_hint_temperature', 'anthropic_err_hint_budget_tokens', 'anthropic_err_hint_thinking_type', 'anthropic_err_hint_effort']) {
+                i18nStrings[key] = browser.i18n.getMessage(key, ['$MODEL$']);
+            }
+        }
 
         messageInput.setModel(prefs_api[`${integration_prefix}_model`]);
         

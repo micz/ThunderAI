@@ -435,6 +435,11 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
   localized hint naming the incompatible option; otherwise the raw detail is returned unchanged.
   It takes `i18nStrings` as a parameter because it runs inside a Web Worker, where `browser.i18n`
   is unavailable — the same threading already used for `anthropic_api_request_failed`.
+  `api_webchat/controller.js` fills the four `anthropic_err_hint_*` keys only for the `anthropic`
+  integration; a missing key makes the function return the raw detail. Each message declares a
+  `model` placeholder (`$1`), and the controller resolves it with the literal string `$MODEL$`,
+  which the worker then replaces with the model the request was actually sent with. Without the
+  `placeholders` block, Firefox would blank the undeclared `$MODEL$` when it loads the locale.
 
 See [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui) for how the resulting stream is surfaced.
 
