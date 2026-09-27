@@ -188,16 +188,23 @@ export async function getCurrentIdentity(msgHeader, getFull = false) {
 }
 
 
-// Extracts the first email address found in a string, '' if there is none.
-// Accepts a raw header value like 'Name <addr@domain.com>'.
+// Local part: RFC 5322 atext (so "user+tag" and "o'brien" are kept whole) plus
+// Unicode letters/digits; domain: dot-separated Unicode labels.
+const EMAIL_REGEX = /[\p{L}\p{N}.!#$%&'*+\/=?^_`{|}~-]+@[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)+/u;
+
+// Extracts the first email address found in a string, '' if there is none
+// (or if the value is not a string).
+// Accepts a raw header value like 'Name <addr@domain.com>': the address inside
+// the angle brackets wins over anything address-like in the display name.
 // The case is preserved: getIdentityForMessage() compares the result with the
 // identity addresses as they were configured, so callers that need a
 // case-insensitive match have to lowercase it themselves.
 export function extractEmail(text) {
-  if((text=='')||(text==undefined)) return '';
-  const emailRegex = /[\w.-]+@[\w.-]+\.\w+/;
-  const match = text.match(emailRegex);
-  return match ? match[0] : '';
+  if (typeof text !== 'string' || text === '') return '';
+  const bracketed = text.match(/<([^<>]*)>/);
+  const match = (bracketed && bracketed[1].match(EMAIL_REGEX)) || text.match(EMAIL_REGEX);
+  // Leading quotes/dots are delimiters, not part of the address ('john@x.com').
+  return match ? match[0].replace(/^['.]+/, '') : '';
 }
 
 // tabs.sendMessage() guarded against Thunderbird's crash on tabs with no reachable
