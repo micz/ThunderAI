@@ -930,6 +930,11 @@ function logCompletionDiagnostics(last, length, stableMs, waitingMs, state) {
                 baseline: state ? state.actionButtonsAtStart : null,
                 now: diagSection(() => chatgpt_countActionButtons())
             },
+            regenerateButtons: {
+                baseline: state ? state.regenerateButtonsAtStart : null,
+                atCompletion: diagSection(() => chatgpt_countRegenerateButtons()),
+                firstAboveBaselineAtMs: state ? state.regenerateButtonsAboveAtMs : null
+            },
             pathButtons: diagSection(() => {
                 const counts = {};
                 for (const name of Object.keys(NEW_UI_BUTTON_PATHS)) {
@@ -956,6 +961,8 @@ async function chatgpt_isIdle() {
         // per-call state, isIdle can run more than once in the same page (custom texts)
         // turn-independent: new-UI action buttons already in the page when this call starts
         const actionButtonsAtStart = chatgpt_countActionButtons();
+        // the same for the regenerate buttons alone, the copy button of the new user turn does not change it
+        const regenerateButtonsAtStart = chatgpt_countRegenerateButtons();
         // debug only, for the completion diagnostics: they count turns and never decide completion
         let assistantAtStart = null;
         let minTurnIndex = null;
@@ -978,6 +985,7 @@ async function chatgpt_isIdle() {
         let lastGeneratingSignals = null;
         let composerIdleAfterGenAt = 0;
         let actionButtonsAboveAt = 0;
+        let regenerateButtonsAboveAt = 0;
         let intervalId = null;
         const diagState = (generatingNow) => ({
             generationObserved: generationObserved,
@@ -985,7 +993,9 @@ async function chatgpt_isIdle() {
             assistantAtStart: assistantAtStart,
             minTurnIndex: minTurnIndex,
             fallbackTurn: fallbackTurn,
-            actionButtonsAtStart: actionButtonsAtStart
+            actionButtonsAtStart: actionButtonsAtStart,
+            regenerateButtonsAtStart: regenerateButtonsAtStart,
+            regenerateButtonsAboveAtMs: sinceStart(regenerateButtonsAboveAt)
         });
         // ms from the call start, null if it never happened
         const sinceStart = (time) => time ? time - startTime : null;
@@ -996,7 +1006,8 @@ async function chatgpt_isIdle() {
             const length = last ? (last.el.textContent || '').trim().length : -1;
             logCompletionDiagnostics(last, length, null, Date.now() - startTime, diagState(generatingNow));
         };
-        const finish = (condition) => {
+        // actionButtonsReason: which sub-condition fired 'actionButtons' ("regenerate" or "total")
+        const finish = (condition, actionButtonsReason) => {
             clearInterval(intervalId);
             const now = Date.now();
             try {
@@ -1005,6 +1016,7 @@ async function chatgpt_isIdle() {
                     // debug only: timings and signal names only, never page text
                     const summary = {
                         condition: condition,
+                        actionButtonsReason: actionButtonsReason || null,
                         totalMs: now - startTime,
                         generationObserved: generationObserved,
                         firstGeneratingAtMs: sinceStart(firstGeneratingAt),
@@ -1017,6 +1029,11 @@ async function chatgpt_isIdle() {
                             baseline: actionButtonsAtStart,
                             atCompletion: diagSection(() => chatgpt_countActionButtons()),
                             firstAboveBaselineAtMs: sinceStart(actionButtonsAboveAt)
+                        },
+                        regenerateButtons: {
+                            baseline: regenerateButtonsAtStart,
+                            atCompletion: diagSection(() => chatgpt_countRegenerateButtons()),
+                            firstAboveBaselineAtMs: sinceStart(regenerateButtonsAboveAt)
                         }
                     };
                     console.warn("[ThunderAI] Completion summary: " + JSON.stringify(summary));
@@ -1048,6 +1065,7 @@ async function chatgpt_isIdle() {
                         // generation resumed: the idle composer must be seen again after it stops
                         composerIdleAfterGenAt = 0;
                         if (!actionButtonsAboveAt && chatgpt_countActionButtons() > actionButtonsAtStart) actionButtonsAboveAt = Date.now();
+                        if (!regenerateButtonsAboveAt && chatgpt_countRegenerateButtons() > regenerateButtonsAtStart) regenerateButtonsAboveAt = Date.now();
                         // stopPath (new UI) and stopButton (old UI) are what chatgpt_isGenerating checks,
                         // ariaBusy and streamingClass are sampled alongside
                         const signals = getGenerationSignals(null);
@@ -1062,7 +1080,14 @@ async function chatgpt_isIdle() {
                     return;
                 }
                 if (!generatingNow) {
-                    const actionButtons = chatgpt_countActionButtons();
+                    // the counts decide completion only after the stop button was seen,
+                    // before that they are needed by the debug timings only
+                    let actionButtons = null;
+                    let regenerateButtons = null;
+                    if (generationObserved || mztaDoDebug == 1) {
+                        actionButtons = chatgpt_countActionButtons();
+                        regenerateButtons = chatgpt_countRegenerateButtons();
+                    }
                     // chatgpt_composerIsIdle runs at most once per tick, and only when a check needs it
                     let composerIdle = null;
                     const composerIsIdle = () => {
@@ -1071,13 +1096,20 @@ async function chatgpt_isIdle() {
                     };
                     if (mztaDoDebug == 1) {
                         if (!actionButtonsAboveAt && actionButtons > actionButtonsAtStart) actionButtonsAboveAt = Date.now();
+                        if (!regenerateButtonsAboveAt && regenerateButtons > regenerateButtonsAtStart) regenerateButtonsAboveAt = Date.now();
                         if (generationObserved && !composerIdleAfterGenAt && composerIsIdle()) composerIdleAfterGenAt = Date.now();
                     }
-                    // generationObserved: a copy button on the new user turn must not count as the answer
-                    if (generationObserved && actionButtons > actionButtonsAtStart) {
-                        doLog("Completion detected by new action buttons (" + actionButtonsAtStart + " at start, " + actionButtons + " now, stop button seen and gone)");
-                        finish('actionButtons');
-                        return;
+                    // The copy button of the new user turn raises the total count right after sending:
+                    // a new regenerate button (answers only), or the user copy button plus at least
+                    // one answer button (in case the regenerate icon changes)
+                    if (generationObserved) {
+                        const actionButtonsReason = regenerateButtons > regenerateButtonsAtStart ? 'regenerate'
+                            : (actionButtons >= actionButtonsAtStart + 2 ? 'total' : null);
+                        if (actionButtonsReason) {
+                            doLog("Completion detected by new action buttons (" + actionButtonsReason + " count; regenerate " + regenerateButtonsAtStart + " at start, " + regenerateButtons + " now; total " + actionButtonsAtStart + " at start, " + actionButtons + " now; stop button seen and gone)");
+                            finish('actionButtons', actionButtonsReason);
+                            return;
+                        }
                     }
                     if (generationObserved && Date.now() - lastGeneratingAt >= 1000 && composerIsIdle()) {
                         doLog("Completion detected by the idle composer (stop button gone for " + (Date.now() - lastGeneratingAt) + " ms)");
@@ -1127,6 +1159,11 @@ function getButtonsWithPath(pathSelector) {
 // Regenerate and copy buttons in the whole page, whatever turn they belong to
 function chatgpt_countActionButtons() {
     return getButtonsWithPath(NEW_UI_ACTION_PATHS).length;
+}
+
+// Regenerate buttons in the whole page: only completed answers have one, the user turns never do
+function chatgpt_countRegenerateButtons() {
+    return getButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS.regenerate)).length;
 }
 
 // Stop button of the newer UI (issue #920), matched by icon only, never by label.
