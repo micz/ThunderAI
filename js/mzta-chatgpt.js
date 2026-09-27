@@ -708,7 +708,8 @@ function getMessageTurn(el) {
 // - ariaBusy: aria-busy="true" on the last turn or inside it
 // - streamingClass: a class containing "streaming" in the last turn (ChatGPT has used
 //   result-streaming and streaming-animation on the answer being written)
-// None of them is guaranteed in the newer UI, which is detected by chatgpt_isGenerating().
+// None of them is guaranteed in the newer UI. chatgpt_isGenerating() uses only the two stop buttons:
+// streamingClass stays true after completion in the old UI.
 function getGenerationSignals(turn) {
     return {
         stopButton: document.querySelector('[data-testid="stop-button"]') !== null,
@@ -725,7 +726,7 @@ function isComposerEmpty(el) {
 // Sent when the composer was cleared or re-rendered away, or the stop button (old or new UI) appeared
 function isSendVerified(el) {
     if (!el.isConnected || isComposerEmpty(el)) return true;
-    return getGenerationSignals(null).stopButton || chatgpt_isGenerating();
+    return chatgpt_isGenerating();
 }
 
 // Checks isSendVerified() every 100 ms: resolves true as soon as it holds, false after maxMs
@@ -1032,14 +1033,14 @@ async function chatgpt_isIdle() {
                 finish('force');
                 return;
             }
-            if (chatgpt_getRegenerateButton()) {
-                doLog("Completion detected by the regenerate button");
-                finish('oldRegen');
-                return;
-            }
-            // Newer UI without the old regenerate markers: completion follows the Stop icon
-            // (chatgpt_isGenerating), seen during this call and then gone
             try {
+                if (chatgpt_getRegenerateButton()) {
+                    doLog("Completion detected by the regenerate button");
+                    finish('oldRegen');
+                    return;
+                }
+                // Without the old regenerate markers: completion follows the stop button
+                // (chatgpt_isGenerating), seen during this call and then gone
                 const generatingNow = chatgpt_isGenerating();
                 if (generatingNow) {
                     if (mztaDoDebug == 1) {
@@ -1047,9 +1048,10 @@ async function chatgpt_isIdle() {
                         // generation resumed: the idle composer must be seen again after it stops
                         composerIdleAfterGenAt = 0;
                         if (!actionButtonsAboveAt && chatgpt_countActionButtons() > actionButtonsAtStart) actionButtonsAboveAt = Date.now();
-                        // stopPath is what chatgpt_isGenerating checks, the others are sampled alongside
+                        // stopPath (new UI) and stopButton (old UI) are what chatgpt_isGenerating checks,
+                        // ariaBusy and streamingClass are sampled alongside
                         const signals = getGenerationSignals(null);
-                        lastGeneratingSignals = { stopPath: true, stopButton: signals.stopButton, ariaBusy: signals.ariaBusy, streamingClass: signals.streamingClass };
+                        lastGeneratingSignals = { stopPath: chatgpt_hasNewUiStopPath(), stopButton: chatgpt_hasOldUiStopButton(), ariaBusy: signals.ariaBusy, streamingClass: signals.streamingClass };
                     }
                     generationObserved = true;
                     lastGeneratingAt = Date.now();
@@ -1129,10 +1131,19 @@ function chatgpt_countActionButtons() {
 
 // Stop button of the newer UI (issue #920), matched by icon only, never by label.
 // The composer primary button is not enough: in the idle state it is the voice chat button.
-function chatgpt_isGenerating() {
+function chatgpt_hasNewUiStopPath() {
     const stopPath = document.querySelector('button path[d^="M4.5 5.75C4.5 5.05964"]');
-    if (stopPath && !isOwnUiElement(stopPath)) return true;
-    return false;
+    return !!stopPath && !isOwnUiElement(stopPath);
+}
+
+// Stop button of the old UI: data-testid="stop-button", with a sprite icon instead of an inline path
+function chatgpt_hasOldUiStopButton() {
+    return Array.from(document.querySelectorAll('[data-testid="stop-button"]')).some(b => !isOwnUiElement(b));
+}
+
+// Either stop button, old or new UI
+function chatgpt_isGenerating() {
+    return chatgpt_hasNewUiStopPath() || chatgpt_hasOldUiStopButton();
 }
 
 // The composer primary button is in the send or voice chat state, and no Stop button exists
@@ -1690,6 +1701,11 @@ function installComposerOverlapWatch() {
             }
             const bar = overlap_watched_bar;
             const form = overlap_watched_form;
+            // ChatGPT can replace the form (or the bar) after sending: re-sync on the new one
+            if ((form && !form.isConnected) || (bar && !bar.isConnected)) {
+                scheduleComposerOverlapFix('interval');
+                return;
+            }
             if (bar && form && bar.isConnected && form.isConnected && form.getBoundingClientRect().bottom > bar.getBoundingClientRect().top + 4) {
                 scheduleComposerOverlapFix('interval');
             }
