@@ -160,7 +160,7 @@ export async function runConnectionTest(connType) {
 
   let data;
   try {
-    // The probe resolves with {ok, error, is_exception}; OpenAIComp may throw on network error.
+    // The probe resolves with {ok, error, is_exception}; the catch is a safety net for an unexpected throw.
     data = await Promise.race([client[probe](), timeout]);
   } catch (error) {
     return { status: 'error', message: browser.i18n.getMessage('connTest_error_network') };

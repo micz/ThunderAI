@@ -81,6 +81,7 @@ import {
     checkExcludedTag
 } from './js/mzta-addtags-exclusion-list.js';
 import { mztaPrefs } from './js/mzta-prefs.js';
+import { sanitizeBlockHtml } from './js/mzta-richtext.js';
 import { migratePrefsToLocal, isSyncDrained, migrateOllamaThinkLevel } from './js/mzta-prefs-migration.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
@@ -951,6 +952,37 @@ async function _restoreTranslationButton(tabId, headerMessageId) {
     }
 }
 
+// Same test as _isHtml() in js/mzta-compose-script.js, which picks the HTML or the
+// plain-text rendering of the translation: the two must agree.
+const _PANEL_HTML_RE = /<[a-z][^>]*>/i;
+
+// The summary / translation panels insert model HTML into the message pane, and that
+// output is untrusted: a translation or summary of a crafted email can carry <style>
+// or other markup that restyles the message or hides ThunderAI's own panels. So every
+// panel payload crosses the ONE sanitizer (js/mzta-richtext.js) here, on its way out
+// of _sendIfCurrent(), which every show command goes through. That covers the fresh
+// results and the cached ones alike, including entries stored by older versions. The
+// stored object is never modified: the payload is copied.
+function _sanitizePanelPayload(payload) {
+    const data = payload?.data;
+    if (!data || data.error) return payload;
+    if (payload.command === 'showSummary' && data.summary_html) {
+        return { ...payload, data: { ...data, summary_html: sanitizeBlockHtml(data.summary_html) } };
+    }
+    if (payload.command === 'showTranslation' && typeof data.translated_text === 'string' && _PANEL_HTML_RE.test(data.translated_text)) {
+        // Plain text is left alone: a DOMParser round trip would encode "a < b" as
+        // "a &lt; b", which the panel then shows literally through textContent. For
+        // the same reason, HTML left with no tag at all after sanitizing is handed on
+        // as its text, so it takes the plain-text branch without stray entities.
+        let clean = sanitizeBlockHtml(data.translated_text);
+        if (!_PANEL_HTML_RE.test(clean)) {
+            clean = new DOMParser().parseFromString(clean, 'text/html').body.textContent;
+        }
+        return { ...payload, data: { ...data, translated_text: clean } };
+    }
+    return payload;
+}
+
 async function _sendIfCurrent(tabId, headerMessageId, payload) {
     try {
         if (!tabId) return;
@@ -961,7 +993,7 @@ async function _sendIfCurrent(tabId, headerMessageId, payload) {
         // because getDisplayedMessage() still reports the selected message with the
         // pane hidden. sendTabMessageSafe() drops the send quietly - the result stays
         // cached and renders the next time the pane is reachable.
-        sendTabMessageSafe(tabId, payload);
+        sendTabMessageSafe(tabId, _sanitizePanelPayload(payload));
     } catch (e) {
         taLog.error("Error in _sendIfCurrent: " + e);
     }

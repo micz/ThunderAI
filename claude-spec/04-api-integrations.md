@@ -330,12 +330,21 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
   - **The table must be updated as new models ship.** The 400 retry below is a safety net, not a
     substitute.
 - **Request body construction** is entirely driven by that table, and every field is opt-in:
-  - `temperature` is sent only when `supportsSamplingParams` and the user set a value. It is now
-    **independent of the thinking configuration** — the old rule that extended thinking suppressed
-    temperature no longer holds, because on newer models temperature is rejected outright regardless.
-  - `top_p` and `top_k` follow exactly the same rule as `temperature`: gated on
-    `supportsSamplingParams`, parsed with `parseFloat` / `parseInt`, skipped when the pref is `''`
-    or unparsable. They are **sent independently of each other and of `temperature`** — there is
+  - **The thinking decision is made first** (budget checks, then `thinking` enabled / disabled /
+    omitted, see below), and the sampling params are gated on it. `thinkingActive` is true when
+    `thinking` is sent with a type other than `'disabled'` (enabled or adaptive), or when it is
+    omitted on a model whose `defaultThinking` is `'adaptive'`.
+  - `temperature` is sent only when `supportsSamplingParams`, the user set a value, **and thinking
+    is not active**. The API does not allow temperature to be modified while thinking is on
+    (models that accept it at all: Haiku 4.5, Sonnet/Opus 4.5, Sonnet/Opus 4.6, earlier Claude 4);
+    the newer models reject it outright regardless, via `supportsSamplingParams: false`.
+  - `top_p` and `top_k` follow the same rule as `temperature`: gated on `supportsSamplingParams`,
+    parsed with `parseFloat` / `parseInt`, skipped when the pref is `''` or unparsable. While
+    thinking is active `top_k` is never sent, and `top_p` is sent only within
+    `ANTHROPIC_THINKING_TOP_P_MIN`..`MAX` (0.95–1, per "Sampling parameters" in the official
+    thinking docs). Every value dropped this way logs a `[ThunderAI]` `console.warn`, like the
+    thinking-budget warnings; **the stored prefs are never rewritten**, only the request body changes.
+    The params are **sent independently of each other and of `temperature`** — there is
     deliberately no mutual-exclusion logic. The API accepts the combination and only advises
     against it, so silently dropping one of two values the user explicitly set would be the more
     surprising behaviour. Both prefs are stored as **strings**, so an empty value stays

@@ -31,6 +31,12 @@ import { createUsageData, isUsageDataEmpty, toUsageNumber } from './mzta-api-usa
 // drift apart.
 export const ANTHROPIC_MIN_THINKING_BUDGET = 1024;
 
+// While thinking is on, the models that accept sampling params at all only take
+// top_p within this range (temperature and top_k not at all). See "Sampling
+// parameters" in https://platform.claude.com/docs/en/build-with-claude/thinking
+const ANTHROPIC_THINKING_TOP_P_MIN = 0.95;
+const ANTHROPIC_THINKING_TOP_P_MAX = 1;
+
 // The Messages API reports token usage on every response.
 export const supportsUsageData = true;
 
@@ -239,31 +245,6 @@ export class Anthropic {
       // a hard 400, so every field below is gated on the capability table.
       const caps = getAnthropicModelCapabilities(this.model);
 
-      // Sampling params are independent of the thinking configuration now: on a
-      // model that accepts them the user's value is sent whatever thinking does,
-      // and on a model that rejects them it is never sent at all. The stored
-      // value is left untouched either way, so switching back to an older model
-      // restores it.
-      const tempFloat = parseFloat(this.temperature);
-      if(caps.supportsSamplingParams && this.temperature != '' && !Number.isNaN(tempFloat)) {
-        claude_body.temperature = tempFloat;
-      }
-
-      // top_p and top_k follow exactly the same rule, and are sent independently
-      // of each other and of temperature. The API accepts the combination -- it
-      // only advises against it -- so there is deliberately no mutual exclusion
-      // here: silently dropping one of two values the user explicitly set would
-      // be the more surprising behaviour.
-      const topPFloat = parseFloat(this.top_p);
-      if(caps.supportsSamplingParams && this.top_p != '' && !Number.isNaN(topPFloat)) {
-        claude_body.top_p = topPFloat;
-      }
-
-      const topKInt = parseInt(this.top_k);
-      if(caps.supportsSamplingParams && this.top_k != '' && !Number.isNaN(topKInt)) {
-        claude_body.top_k = topKInt;
-      }
-
       // Not capability-gated: every model accepts stop_sequences. Stored as one
       // sequence per line; blank lines are dropped here rather than at save time,
       // so the user's formatting of the textarea is left alone.
@@ -324,6 +305,55 @@ export class Anthropic {
       // Every other combination -- a budget set on a model that rejects
       // budget_tokens, thinking off on a model that cannot turn it off -- omits
       // the field entirely, which is always a valid request.
+
+      // Sampling params depend on the thinking decision above, so they come after
+      // it. On a model that rejects them they are never sent at all. On a model
+      // that accepts them, the API still restricts them while thinking is on --
+      // enabled or adaptive, or omitted on a model that thinks by default:
+      // temperature and top_k cannot be set at all, and top_p only within
+      // ANTHROPIC_THINKING_TOP_P_MIN..MAX. A value that would be rejected is left
+      // out of the request with a warning, like the thinking budget above. The
+      // stored value is left untouched either way, so turning thinking off or
+      // switching back to another model restores it.
+      const thinkingActive = claude_body.thinking
+        ? claude_body.thinking.type !== 'disabled'
+        : caps.defaultThinking === 'adaptive';
+
+      const tempFloat = parseFloat(this.temperature);
+      if(caps.supportsSamplingParams && this.temperature != '' && !Number.isNaN(tempFloat)) {
+        if(thinkingActive) {
+          console.warn("[ThunderAI] Anthropic: temperature " + tempFloat
+            + " cannot be modified while extended thinking is on; it will not be sent.");
+        } else {
+          claude_body.temperature = tempFloat;
+        }
+      }
+
+      // top_p and top_k follow the same rule, and are sent independently of each
+      // other and of temperature. The API accepts the combination -- it only
+      // advises against it -- so there is deliberately no mutual exclusion here:
+      // silently dropping one of two values the user explicitly set would be the
+      // more surprising behaviour.
+      const topPFloat = parseFloat(this.top_p);
+      if(caps.supportsSamplingParams && this.top_p != '' && !Number.isNaN(topPFloat)) {
+        if(thinkingActive && (topPFloat < ANTHROPIC_THINKING_TOP_P_MIN || topPFloat > ANTHROPIC_THINKING_TOP_P_MAX)) {
+          console.warn("[ThunderAI] Anthropic: top_p " + topPFloat
+            + " is outside the range accepted while extended thinking is on ("
+            + ANTHROPIC_THINKING_TOP_P_MIN + " - " + ANTHROPIC_THINKING_TOP_P_MAX + "); it will not be sent.");
+        } else {
+          claude_body.top_p = topPFloat;
+        }
+      }
+
+      const topKInt = parseInt(this.top_k);
+      if(caps.supportsSamplingParams && this.top_k != '' && !Number.isNaN(topKInt)) {
+        if(thinkingActive) {
+          console.warn("[ThunderAI] Anthropic: top_k " + topKInt
+            + " cannot be modified while extended thinking is on; it will not be sent.");
+        } else {
+          claude_body.top_k = topKInt;
+        }
+      }
 
       // console.log(">>>>>>>>>>>>>>>>> [ThunderAI] Anthropic API request: " + JSON.stringify(claude_body));
 

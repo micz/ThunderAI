@@ -21,6 +21,9 @@
         <li><i>[All APIs]</i> Added the <i>Show usage data in chat</i> option: each answer shows the tokens used, with a click opening the details (input, cached, output, reasoning, duration, context used and session total) [<a href="https://github.com/micz/ThunderAI/issues/496">#496</a>].</li>
         <li>Added the <i>Force summary language</i> option in the Summarize settings, to always get the summary in a chosen language regardless of the language of the emails. If no language is entered, the default language set in the ThunderAI options is used [<a href="https://github.com/micz/ThunderAI/issues/907">#907</a>].</li>
         <li>Added the <i>Append a link to the original email</i> option in the Calendar Event and Task settings, to add a link to the source email at the end of the description of the created event or task. The link is added by ThunderAI and is never sent to the AI [<a href="https://github.com/micz/ThunderAI/issues/906">#906</a>].</li>
+        <li><i>[Claude API]</i> Fix: on the models that accept both a custom <i>Temperature</i> and an <i>Extended thinking budget</i> (e.g. Claude Haiku 4.5, Sonnet 4.5 and 4.6), setting both made every request fail with an error. While extended thinking is on, the Temperature and <i>Top K</i> are no longer sent, and <i>Top P</i> is sent only between 0.95 and 1, as required by the API. The saved values are not changed.</li>
+        <li>Fix: the HTML of the inline summary and translation panels is now sanitized before being shown in the message pane, so a crafted email can no longer inject styles or other markup through its summary or translation, also for the already saved results.</li>
+        <li><i>[OpenAI Comp API]</i> Fix: a network error while updating the models list is now reported like any other error, and servers that return the models list as a plain array are supported.</li>
         <li>Minor bugs fixed.</li>
         <li>...</li>
       </ul>

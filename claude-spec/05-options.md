@@ -735,7 +735,10 @@ The click handlers drive the row through `modelsFetchUI(modelId_prefix, btnId, p
 The fetch goes through `fetchModelsWithTimeout(client)`, the same `Promise.race` as the
 connection test: none of the `fetchModels()` implementations sets its own timeout, so after
 `MODELS_FETCH_TIMEOUT_MS` (20 s) the row reports `connTest_error_timeout`. It always resolves
-to an `{ok, error|response}` result, also when `fetchModels()` throws (OpenAIComp does not catch).
+to an `{ok, error|response}` result, also when `fetchModels()` throws. Every implementation,
+OpenAIComp included, catches its own network errors and resolves `{ok:false, is_exception:true,
+error}`, so the `catch` there is only a safety net. OpenAIComp also accepts a bare-array
+`/models` answer besides `{data:[...]}`, and turns any other shape into an empty list.
 `parseModelsFetchError()` extracts `error.message` from a JSON error body. The `warn_*()` helpers
 still manage the button's `disabled` state, independently of its visibility.
 

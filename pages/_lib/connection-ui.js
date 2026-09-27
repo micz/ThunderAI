@@ -2262,8 +2262,8 @@ function modelsFetchUI(modelId_prefix, btnId, provider) {
 }
 
 // Same race as the connection test (js/mzta-connection-test.js). Always resolves:
-// a timeout or a thrown network error (OpenAIComp.fetchModels() does not catch)
-// becomes an {ok: false, error} result like any HTTP failure.
+// a timeout or an unexpected throw (the fetchModels() implementations catch their
+// own network errors) becomes an {ok: false, error} result like any HTTP failure.
 async function fetchModelsWithTimeout(client) {
   let timer;
   const timeout = new Promise((resolve) => {

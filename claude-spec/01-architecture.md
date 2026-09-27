@@ -383,6 +383,28 @@ correctly discarded by `_sendIfCurrent()` — the spinner spins forever. So:
   surviving document — an already-open tab re-injected on extension reload — gets both
   generating panels removed when the script loads.
 
+**Panel HTML sanitization.** `_sendIfCurrent()` is also the single point where the panel
+payloads are sanitized: every send goes through `_sanitizePanelPayload(payload)` first. The
+summary / translation text is model output about a possibly crafted email, and the content
+script inserts it into the message pane, so a `<style>` or similar markup could restyle the
+message or hide ThunderAI's own panels.
+- `showSummary`: `data.summary_html` is passed through `sanitizeBlockHtml()` (`js/mzta-richtext.js`,
+  the ONE sanitizer).
+- `showTranslation`: `data.translated_text` is sanitized **only when it looks like HTML**, using the
+  same `/<[a-z][^>]*>/i` test as the content script's `_isHtml()`. Plain text is left untouched,
+  because a DOMParser round trip would encode `<` / `&` and the plain branch shows them literally.
+  HTML left with no tag after sanitizing is handed on as its decoded text.
+- The payload is copied, and the stored object is never modified. Because the gate sits on the
+  send and not on the save, **cached results** (including entries written by older versions)
+  cross it exactly like fresh ones, in both `summarize_display_mode`s (the webchat save,
+  `chatgpt_saveSummary`, sends through `_sendIfCurrent()` too).
+- Everything else in these panels (plain `summary`, `translated_subject`, error messages, the spam
+  report, `showGeneric*`) is rendered through `textContent` and needs no sanitizing.
+- Defense in depth in the content script: `_renderSafeHtml()` in `js/mzta-compose-script.js`, used
+  by **both** the summary and the translation panel, removes `script, img, style, link, iframe,
+  frame, frameset, object, embed, form, meta, base, svg, math, template, noscript`, every `on*` and
+  `style` attribute, and `javascript:` / `vbscript:` / `data:` URLs.
+
 `showSpamCheckInProgress` is still unguarded here (`updateSpamPanel()` already checks the
 displayed message). That is the *staleness* question; *delivery* is a separate concern — see
 the next section.
@@ -916,7 +938,8 @@ classic-script constraint:
   (default collapses `\n{2,}` for the body contract, `{keepParagraphs}` caps at `\n\n` for insertion,
   `{keepColumns}` is verbatim for `{%mail_plain_text_part%}`).
 - **`js/mzta-richtext.js`** — an **ES module** hosting the ONE **sanitizer** + **tag taxonomy** (see
-  the render section above and [07-diff-picker.md](07-diff-picker.md)), plus **`globalThis`
+  the render section above and [07-diff-picker.md](07-diff-picker.md); the background also uses it
+  for the summary/translation panel payloads, see *Panel HTML sanitization*), plus **`globalThis`
   re-exports** of the projection above (`htmlToLines`/`linesToHtml`/`normalizePlain`/
   `hasLineStructure`) so module-world callers get a clean `import`. The re-exports resolve the global
   at CALL time, so the module loads fine even where the classic script is absent as long as they are

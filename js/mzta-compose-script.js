@@ -231,11 +231,34 @@ function _isHtml(text) {
     return /<[a-z][^>]*>/i.test(text);
 }
 
+// Elements that must never reach the message pane from a panel payload: active
+// content, external resources, forms, document-level tags and style sheets (a
+// <style> could restyle the message or hide ThunderAI's own panels).
+const _UNSAFE_PANEL_TAGS = 'script, img, style, link, iframe, frame, frameset, object, embed, form, meta, base, svg, math, template, noscript';
+const _URL_ATTRS = ['href', 'src', 'action', 'formaction', 'xlink:href'];
+const _UNSAFE_URL_RE = /^(javascript|vbscript|data):/i;
+
+// Defense in depth: the background already runs every panel payload through the
+// shared sanitizer (_sanitizePanelPayload() in mzta-background.js), but this is
+// the last step before model HTML enters the pane, so it strips the dangerous
+// parts again on its own. The formatting the panels rely on (paragraphs, lists,
+// bold/italic, line breaks, links) is left alone.
 function _renderSafeHtml(container, html) {
     container.textContent = '';
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
-    doc.querySelectorAll('script, img').forEach(el => el.remove());
+    doc.querySelectorAll(_UNSAFE_PANEL_TAGS).forEach(el => el.remove());
+    doc.body.querySelectorAll('*').forEach(el => {
+        for (const attr of Array.from(el.attributes)) {
+            const name = attr.name.toLowerCase();
+            // Inline styles too: a model-supplied one can overlay or hide the pane.
+            if (name.startsWith('on') || name === 'style') {
+                el.removeAttribute(attr.name);
+            } else if (_URL_ATTRS.includes(name) && _UNSAFE_URL_RE.test(attr.value.replace(/[\s\u0000-\u001f]/g, ''))) {
+                el.removeAttribute(attr.name);
+            }
+        }
+    });
     while (doc.body.firstChild) {
         container.appendChild(doc.body.firstChild);
     }
@@ -1286,20 +1309,10 @@ switch (message.command) {
     summaryText.className = 'thunderai-summary-content';
     const hasHtml = !!summaryData.summary_html && !summaryData.stripFormatting;
 
-    function setSummaryHtml(element, html) {
-        element.textContent = '';
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        while (doc.body.firstChild) {
-            element.appendChild(doc.body.firstChild);
-        }
-        element.querySelectorAll('p').forEach(p => { p.style.marginBlockStart = '0'; });
-    }
-
     if (summaryData.error) {
         summaryText.textContent = summaryData.message || browser.i18n.getMessage("summarize_error");
     } else if (hasHtml) {
-        setSummaryHtml(summaryText, summaryData.summary_html);
+        _renderSafeHtml(summaryText, summaryData.summary_html);
     } else {
         summaryText.textContent = summaryData.summary;
     }

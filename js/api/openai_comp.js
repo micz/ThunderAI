@@ -99,37 +99,55 @@ export class OpenAIComp {
 
 
   fetchModels = async () => {
-    const curr_headers = {
-      "Content-Type": "application/json",
-    };
-    if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
-    
-    if(this.host.includes('openrouter.ai')) {
-      curr_headers['HTTP-Referer'] = 'https://micz.it/thunderbird-addon-thunderai/';
-      curr_headers['X-Title'] = 'ThunderAI';
+    try{
+      const curr_headers = {
+        "Content-Type": "application/json",
+      };
+      if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
+
+      if(this.host.includes('openrouter.ai')) {
+        curr_headers['HTTP-Referer'] = 'https://micz.it/thunderbird-addon-thunderai/';
+        curr_headers['X-Title'] = 'ThunderAI';
+      }
+
+      const response = await fetch(this.host + (this.use_v1 ? "/v1" : "") + "/models", {
+          method: "GET",
+          headers: curr_headers,
+      });
+
+      if (!response.ok) {
+          const errorDetail = await response.text();
+          let err_msg = "[ThunderAI] OpenAI Comp API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
+          console.error(err_msg);
+          let output = {};
+          output.ok = false;
+          output.error = errorDetail;
+          return output;
+      }
+
+      let output = {};
+      output.ok = true;
+      let output_response = await response.json();
+      // The OpenAI shape is { data: [...] }, but some compatible servers answer
+      // with the bare array. Anything else becomes an empty list, so the callers
+      // can always iterate the response.
+      if(Array.isArray(output_response)) {
+        output.response = output_response;
+      } else if(Array.isArray(output_response?.data)) {
+        output.response = output_response.data;
+      } else {
+        output.response = [];
+      }
+
+      return output;
+    }catch (error) {
+      console.error("[ThunderAI] OpenAI Comp API request failed: " + error);
+      let output = {};
+      output.is_exception = true;
+      output.ok = false;
+      output.error = "OpenAI Comp API request failed: " + error;
+      return output;
     }
-
-    const response = await fetch(this.host + (this.use_v1 ? "/v1" : "") + "/models", {
-        method: "GET",
-        headers: curr_headers,
-    });
-
-    if (!response.ok) {
-        const errorDetail = await response.text();
-        let err_msg = "[ThunderAI] OpenAI Comp API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
-        console.error(err_msg);
-        let output = {};
-        output.ok = false;
-        output.error = errorDetail;
-        return output;
-    }
-
-    let output = {};
-    output.ok = true;
-    let output_response = await response.json();
-    output.response = output_response.data;
-
-    return output;
   }
 
   fetchResponse = async (messages, maxTokens = 0) => {
