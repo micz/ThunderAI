@@ -1067,17 +1067,22 @@ export const REMINDER_MINUTES_MAX = 40320;
 // Normalizes data_obj.reminderMinutes (calendar event / task objects) before the
 // hand-off to Sparks, which reads it as: absent = Thunderbird default reminder,
 // -1 = no reminder, >= 0 = minutes before the event start / task due date.
-// ACCEPTING is unconditional: a valid value returned by the AI is always kept,
-// even with the feature's reminder checkbox off (the user may ask for it in the
-// main prompt). The checkbox only decides what a missing or invalid value means:
-// on = "no reminder" (-1), off = field removed, so Thunderbird's defaults apply.
-// Valid = a non-negative integer, or a string holding one, up to REMINDER_MINUTES_MAX.
-// The string "default" is what the format instruction asks for when NO reminder
-// rules are given at all (neither in the rules option nor in the main prompt):
-// field removed whatever the checkbox, so Thunderbird's defaults apply. null stays
-// "rules given, none applies" -> no reminder with the checkbox on.
+// The feature's reminder checkbox is the single switch:
+// - off: the field is ALWAYS removed, whatever the AI returned (even if the main
+//   prompt asks for "reminderMinutes"), so Thunderbird's defaults apply.
+// - on: a valid value is kept. Valid = a non-negative integer, or a string holding
+//   one, up to REMINDER_MINUTES_MAX. The string "default" (what the format
+//   instruction asks for when NO reminder rules are given at all, neither in the
+//   rules option nor in the main prompt) removes the field, so Thunderbird's
+//   defaults apply. null ("rules given, none applies"), a missing field or an
+//   invalid value becomes -1 (no reminder).
 export function normalizeReminderMinutes(data_obj, reminder_enabled, logger = null) {
   const raw = data_obj.reminderMinutes;
+  if (!reminder_enabled) {
+    delete data_obj.reminderMinutes;
+    logger?.log("reminderMinutes: raw = " + JSON.stringify(raw) + ", final = " + JSON.stringify(data_obj.reminderMinutes) + " (reminder option off)");
+    return;
+  }
   let value = null;
   if (typeof raw === 'number' && Number.isInteger(raw)) {
     value = raw;
@@ -1088,10 +1093,8 @@ export function normalizeReminderMinutes(data_obj, reminder_enabled, logger = nu
     delete data_obj.reminderMinutes;
   } else if (value !== null && value >= 0 && value <= REMINDER_MINUTES_MAX) {
     data_obj.reminderMinutes = value;
-  } else if (reminder_enabled) {
-    data_obj.reminderMinutes = -1;
   } else {
-    delete data_obj.reminderMinutes;
+    data_obj.reminderMinutes = -1;
   }
   logger?.log("reminderMinutes: raw = " + JSON.stringify(raw) + ", final = " + JSON.stringify(data_obj.reminderMinutes));
 }

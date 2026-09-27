@@ -189,7 +189,7 @@ export const prefs_default = {
     calendar_no_selection: false,   // If true do not ask for selection, but use the full prompt
     calendar_append_email_link: false,  // Append a mid: link to the source email to the event description (added by code, never sent to the AI)
     task_append_email_link: false,      // Same, for the task description
-    calendar_reminder_enabled: false,   // Ask the AI for a reminder (reminderMinutes) and send "no reminder" when it returns none. A valid value is always used, even if false
+    calendar_reminder_enabled: false,   // Ask the AI for a reminder (reminderMinutes) and send "no reminder" when it returns none. If false, reminderMinutes is always dropped (Thunderbird default reminder)
     calendar_reminder_rules: '',        // Optional natural-language reminder rules appended to the prompt when calendar_reminder_enabled is true
     task_reminder_enabled: false,       // Same, for tasks
     task_reminder_rules: '',            // Same, for tasks

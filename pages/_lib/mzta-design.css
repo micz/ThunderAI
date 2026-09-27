@@ -919,6 +919,29 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 }
 .feature_warn_note.shown { display: block; }
 
+/* Preview of the reminder text appended to the prompt (calendar event / task
+   pages, ../_lib/reminder-ui.js): the fixed format instruction in the dimmed
+   tone, the user's rules set apart by an accent rule so the two read as
+   different sources. */
+.reminder_statements_box {
+    margin-top: 6px;
+    padding: 10px 12px;
+    background: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 6px;
+}
+.reminder_statements_format {
+    color: var(--dim);
+}
+.reminder_statements_rules {
+    color: var(--text);
+    border-left: 3px solid var(--accent);
+    padding-left: 10px;
+}
+.reminder_statements_format + .reminder_statements_rules {
+    margin-top: 10px;
+}
+
 /* ===========================================================================
    ADVANCED OPTIONS (app-level disclosure)
    =========================================================================== */

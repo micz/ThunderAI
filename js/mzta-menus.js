@@ -494,7 +494,7 @@ export class mzta_Menus {
                         *   "location": "YourLocation",
                         *   "attendees": [attendee1@example.com,attendee2@example.com,attendee3@example.com]
                         *  } 
-                        *  plus an optional integer "reminderMinutes" (see normalizeReminderMinutes()) [#887]
+                        *  plus an optional "reminderMinutes", only with the reminder option on (see normalizeReminderMinutes()) [#887]
                         */
                         fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt, curr_prompt.text, prefs_at.calendar_reminder_enabled, prefs_at.calendar_reminder_rules);
                         this.logger.log("fullPrompt: " + fullPrompt);
@@ -530,7 +530,7 @@ export class mzta_Menus {
                         if (calendar_event_data_obj.endDate) {
                             calendar_event_data_obj.endDate = normalizeDateTimeString(calendar_event_data_obj.endDate);
                         }
-                        // Reminder: a valid AI value is always kept, the checkbox decides what "none" means [#887]
+                        // Reminder: the checkbox is the single switch (off = field always removed) [#887]
                         normalizeReminderMinutes(calendar_event_data_obj, prefs_at.calendar_reminder_enabled, this.logger);
                         // Timezone management
                         calendar_event_data_obj.use_timezone = false;
@@ -597,7 +597,7 @@ export class mzta_Menus {
                         *   "description": "Detailed task description including action items, and relevant notes from the email.",
                         *   "location": "YourLocation"
                         *  } 
-                        *  plus an optional integer "reminderMinutes" (see normalizeReminderMinutes()) [#887]
+                        *  plus an optional "reminderMinutes", only with the reminder option on (see normalizeReminderMinutes()) [#887]
                         */
                         fullPrompt = taPromptUtils.finalizePrompt_get_task(fullPrompt, curr_prompt.text, prefs_at.task_reminder_enabled, prefs_at.task_reminder_rules);
                         this.logger.log("fullPrompt: " + fullPrompt);
@@ -633,7 +633,7 @@ export class mzta_Menus {
                             if (!task_data_obj.initialDate) {
                                 delete task_data_obj.initialDate;
                             }
-                            // Reminder: a valid AI value is always kept, the checkbox decides what "none" means [#887]
+                            // Reminder: the checkbox is the single switch (off = field always removed) [#887]
                             normalizeReminderMinutes(task_data_obj, prefs_at.task_reminder_enabled, this.logger);
                         }catch(err){
                             console.error("[ThunderAI] Error extracting JSON object from task data: ", err.message);

@@ -212,7 +212,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `calendar_no_selection` | `false` | Skip selection prompt |
 | `calendar_append_email_link` | `false` | Append a `mid:` link to the source email to the event description (added by code after the response, never sent to the AI — see [02-prompts.md](02-prompts.md#calendar-event--task-link-to-the-original-email)). Deliberately **not** prefixed `get_calendar_event_`, which is the per-feature integration prefix |
 | `task_append_email_link` | `false` | Same, for the task description. Deliberately **not** prefixed `get_task_` |
-| `calendar_reminder_enabled` | `false` | "Let the AI set a reminder" for events: ask for `reminderMinutes` and send `-1` (no reminder) when the AI returns none/invalid; Thunderbird's default when the AI answers `"default"` (no rules given at all). A valid AI value is used **even when false** — see [02-prompts.md](02-prompts.md#calendar-event--task-reminder-887). Not prefixed `get_calendar_event_` (integration prefix) |
+| `calendar_reminder_enabled` | `false` | "Let the AI set a reminder" for events: ask for `reminderMinutes` and send `-1` (no reminder) when the AI returns none/invalid; Thunderbird's default when the AI answers `"default"` (no rules given at all). It is the **single switch**: when false, `reminderMinutes` is always dropped from the AI response (Thunderbird's default), even if the main prompt asks for it — see [02-prompts.md](02-prompts.md#calendar-event--task-reminder-887). Not prefixed `get_calendar_event_` (integration prefix) |
 | `calendar_reminder_rules` | `''` | Optional natural-language reminder rules, appended to the event prompt (after `prompt_reminder_rules_intro`) only when `calendar_reminder_enabled` is true |
 | `task_reminder_enabled` | `false` | Same as `calendar_reminder_enabled`, for tasks (reference: due date, or initial date) |
 | `task_reminder_rules` | `''` | Same as `calendar_reminder_rules`, for tasks |
@@ -1282,8 +1282,12 @@ handler, so the guard is armed even if later async setup fails.
 Both pages carry the same "Let the AI set a reminder" section (#887), placed **after** the prompt
 section (its help text refers to "the main prompt above"), with the same ids on both pages except the
 checkbox, whose id is the pref (`calendar_reminder_enabled` / `task_reminder_enabled`).
-`initReminderUI({feature, promptTextarea, statementsEl})` is called at the end of the page setup,
-after `restoreOptions()` (checkbox state) and after the prompt text is loaded. It does the following:
+`initReminderUI({feature, promptTextarea, statementsEl})` is called right after the prompt text is
+loaded (so after `restoreOptions()`, which sets the checkbox state), and **before** the editor
+decoration (placeholders, highlight, autocomplete), so a failure there cannot leave the section
+uninitialized. A missing page element is logged and the setup is skipped. A failure loading the saved
+rules is logged and the setup continues with an empty textarea: the listeners and the first
+`refresh()` always run. A failed save is logged and leaves the Save button enabled. It does the following:
 - The checkbox is a plain `.option-input`, saved by the page's `saveOptions()`. It shows or hides
   `#reminder_rules_block`, which is hidden by default in the page CSS.
 - The rules textarea `#reminder_rules` uses the **explicit Save** pattern (`#btn_save_reminder_rules`,
@@ -1293,11 +1297,16 @@ after `restoreOptions()` (checkbox state) and after the prompt text is loaded. I
   [02-prompts.md](02-prompts.md#calendar-event--task-reminder-887)).
 - The non-blocking warning `#reminder_prompt_warning` (`.feature_warn_note`, amber, shared in
   `mzta-design.css`) is shown while the **live** prompt text contains `reminderMinutes` and the
-  checkbox is off. In that case an AI value is used, but a missing one leaves Thunderbird's default.
+  checkbox is off. In that case the main prompt's reminder instructions are ignored (the AI value is
+  discarded, Thunderbird's default applies) until the option is checked.
   It is refreshed on the prompt textarea's `input` and on the checkbox's `change`.
 - The existing `#{prefix}_info_additional_statements` div previews exactly what `finalizePrompt_*()`
-  will append, via the same `taPromptUtils.getReminderPromptStatements()` on the live values, with
-  the `addtags_info_additional_statements` label.
+  will append, from `taPromptUtils.getReminderPromptParts()` on the live values (the same pieces
+  `getReminderPromptStatements()` joins for the real prompt), with the
+  `addtags_info_additional_statements` label. No quotes: the text sits in a boxed
+  `.reminder_statements_box` (shared in `mzta-design.css`), with the fixed format instruction dimmed
+  (`.reminder_statements_format`) and the user's rules, with their bold intro, set apart by an
+  accent left border (`.reminder_statements_rules`). Built through the DOM, since the rules are user text.
 
 ## Adding a New Preference
 

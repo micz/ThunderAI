@@ -147,6 +147,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     get_task_textarea.value = get_task_prompt.text;
     get_task_reset_btn.disabled = (get_task_textarea.value === browser.i18n.getMessage('prompt_get_task_full_text'));
 
+    // "Let the AI set a reminder" section [#887]. After restoreOptions() (checkbox
+    // state) and after the prompt text is loaded (warning and preview read it).
+    // Kept before the editor decoration below, so a failure there cannot leave it
+    // uninitialized.
+    await initReminderUI({
+        feature: 'task',
+        promptTextarea: get_task_textarea,
+        statementsEl: document.getElementById('get_task_info_additional_statements')
+    });
+
     // Full list, kept for token validation. Deliberately NOT filtered like the
     // suggestions: {%additional_text%} is a real placeholder that this page simply
     // does not offer, so the editor must not flag it as unknown.
@@ -158,14 +168,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (get_task_textarea_hl) get_task_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
         placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(get_task_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
-
-    // "Let the AI set a reminder" section [#887]. After restoreOptions() (checkbox
-    // state) and after the prompt text is loaded (warning and preview read it).
-    await initReminderUI({
-        feature: 'task',
-        promptTextarea: get_task_textarea,
-        statementsEl: document.getElementById('get_task_info_additional_statements')
-    });
 
 });
 

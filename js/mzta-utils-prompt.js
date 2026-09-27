@@ -137,24 +137,36 @@ export const taPromptUtils = {
     },
 
     // Text appended to the calendar event / task prompt to ASK the AI for a
-    // reminderMinutes value; '' when the feature's reminder checkbox is off.
-    // Accepting the value does not depend on this: see normalizeReminderMinutes()
-    // in mzta-utils.js. Also used by the settings pages for the live preview.
+    // reminderMinutes value; '' when the feature's reminder checkbox is off. The
+    // same checkbox gates accepting the value: with it off, normalizeReminderMinutes()
+    // in mzta-utils.js always drops it. Also used by the settings pages for the live preview.
     // promptTemplate is the prompt text as saved (curr_prompt.text), NOT the
     // resolved prompt: an email body mentioning "reminderMinutes" must not
     // suppress the format instruction, and the settings page checks the same text.
     // The rules are appended after placeholder resolution, so they are sent verbatim.
     getReminderPromptStatements(feature, promptTemplate, reminder_enabled, reminder_rules){
-        if(!reminder_enabled) return '';
+        const parts = taPromptUtils.getReminderPromptParts(feature, promptTemplate, reminder_enabled, reminder_rules);
         let statements = [];
+        if(parts.format !== '') statements.push(parts.format);
+        if(parts.rules !== '') statements.push(parts.rulesIntro + "\n" + parts.rules);
+        return statements.join(" \n");
+    },
+
+    // The pieces getReminderPromptStatements() joins, kept apart so the settings
+    // pages can render the fixed instruction and the user's rules differently.
+    // Each field is '' when that piece is not appended.
+    getReminderPromptParts(feature, promptTemplate, reminder_enabled, reminder_rules){
+        let parts = { format: '', rulesIntro: '', rules: '' };
+        if(!reminder_enabled) return parts;
         if(!String(promptTemplate ?? '').includes('reminderMinutes')){
-            statements.push(browser.i18n.getMessage(REMINDER_FEATURES[feature].formatMsgId));
+            parts.format = browser.i18n.getMessage(REMINDER_FEATURES[feature].formatMsgId);
         }
         let rules = String(reminder_rules ?? '').trim();
         if(rules !== ''){
-            statements.push(browser.i18n.getMessage("prompt_reminder_rules_intro") + "\n" + rules);
+            parts.rulesIntro = browser.i18n.getMessage("prompt_reminder_rules_intro");
+            parts.rules = rules;
         }
-        return statements.join(" \n");
+        return parts;
     },
 
     appendReminderStatements(fullPrompt, feature, promptTemplate, reminder_enabled, reminder_rules){
