@@ -198,6 +198,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     get_calendar_event_save_btn.addEventListener('click', async () => {
+        // The same rule the switch enforces when it is turned on, applied from the other
+        // side: with "Do not ask to select text" on, a prompt that does not read the body
+        // would be sent with no message text at all. Reset needs no check of its own - it
+        // only refills the textarea with the default text, which has the placeholder, and
+        // saving goes through here.
+        if (get_calendar_event_no_selection.checked && !hasBodyPlaceholder(get_calendar_event_textarea.value)) {
+            alert(browser.i18n.getMessage('prefs_OptionText_calendar_no_selection_save_missing_placeholder'));
+            return;
+        }
         specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event').text = get_calendar_event_textarea.value;
         specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event_from_clipboard').text = get_calendar_event_textarea.value;
         await setSpecialPrompts(specialPrompts);

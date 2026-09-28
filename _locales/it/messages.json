@@ -1629,6 +1629,9 @@
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "Il prompt deve contenere il segnaposto {%mail_text_body_or_selected%} o {%mail_html_body_or_selected%} per abilitare questa opzione. Per favore, aggiungi uno di questi segnaposto al prompt o ripristina quello predefinito."
     },
+    "prefs_OptionText_calendar_no_selection_save_missing_placeholder": {
+        "message": "L'opzione \"Non chiedere di selezionare del testo\" è attiva, quindi il prompt deve contenere il segnaposto {%mail_text_body_or_selected%} o {%mail_html_body_or_selected%}. Per favore, aggiungi uno di questi segnaposto al prompt o ripristina quello predefinito."
+    },
     "prefs_OptionText_calendar_no_selection_policy_missing_placeholder": {
         "message": "La tua organizzazione ha attivato questa opzione, ma il prompt non contiene né {%mail_text_body_or_selected%} né {%mail_html_body_or_selected%}, quindi il corpo del messaggio non viene inviato all'IA. Aggiungi uno di questi segnaposto al prompt o ripristina quello predefinito."
     },

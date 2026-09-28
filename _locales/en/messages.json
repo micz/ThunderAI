@@ -2571,6 +2571,10 @@
     "message": "The prompt must contain the placeholder {%mail_text_body_or_selected%} or {%mail_html_body_or_selected%} to enable this option. Please add one of these placeholders to the prompt or reset it to the default.",
     "description": ""
   },
+  "prefs_OptionText_calendar_no_selection_save_missing_placeholder": {
+    "message": "The option \"Do not ask to select text\" is enabled, so the prompt must contain the placeholder {%mail_text_body_or_selected%} or {%mail_html_body_or_selected%}. Please add one of these placeholders to the prompt or reset it to the default.",
+    "description": "Alert shown when saving the calendar event prompt without the body placeholder while the 'Do not ask to select text' option is enabled; the prompt is not saved"
+  },
   "prefs_OptionText_calendar_no_selection_policy_missing_placeholder": {
     "message": "Your organization has enabled this option, but the prompt contains neither {%mail_text_body_or_selected%} nor {%mail_html_body_or_selected%}, so the message body is not sent to the AI. Add one of these placeholders to the prompt or reset it to the default.",
     "description": "Note next to the calendar 'Do not ask to select text' switch when the enterprise policy locks it on and the calendar prompt lacks the body placeholder"

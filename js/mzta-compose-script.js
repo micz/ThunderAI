@@ -868,17 +868,21 @@ switch (message.command) {
         img.title = browser.i18n.getMessage("addtags_exclude_tag");
         img.className = 'exclude-tag-icon';
         if (!exclusions_locked) img.addEventListener('click', () => {
+          // Stored lowercase, like the Add Tags settings page does (normalizeStringList()),
+          // and compared case-insensitively: the match itself ignores case, so "Foo" and
+          // "foo" are the same exclusion, and a stored "foo" must be removable from "Foo".
+          const tag_lc = word.tag.toLowerCase();
           if (!label.classList.contains('tag_excluded')) {
             label.classList.add('tag_excluded');
-            if (!add_tags_exclusions_list.includes(word.tag)) {
-              add_tags_exclusions_list.push(word.tag);
+            if (!add_tags_exclusions_list.some(ex => ex.toLowerCase() === tag_lc)) {
+              add_tags_exclusions_list.push(tag_lc);
               addTags_setExclusionList(add_tags_exclusions_list);
             }
           } else {
             label.classList.remove('tag_excluded');
-            const idx = add_tags_exclusions_list.indexOf(word.tag);
-            if (idx > -1) {
-              add_tags_exclusions_list.splice(idx, 1);
+            const new_list = add_tags_exclusions_list.filter(ex => ex.toLowerCase() !== tag_lc);
+            if (new_list.length !== add_tags_exclusions_list.length) {
+              add_tags_exclusions_list = new_list;
               addTags_setExclusionList(add_tags_exclusions_list);
             }
           }

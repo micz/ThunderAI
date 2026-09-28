@@ -233,7 +233,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         let excl_array_new = normalizeStringList(excl_list_textarea.value, 2);
         addTags_setExclusionList(excl_array_new);
         excl_list_save_btn.disabled = true;
-        excl_list_textarea.value = excl_array_new.join('\n');
+        // The saved list is the new baseline for the dirty check above: without this,
+        // editing the text back to the pre-save value would disable Save again.
+        excl_list_string = excl_array_new.join('\n');
+        excl_list_textarea.value = excl_list_string;
         document.getElementById('excl_list_unsaved').classList.add('hidden');
     });
 

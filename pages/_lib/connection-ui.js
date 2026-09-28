@@ -45,6 +45,7 @@ import {
   clearPromptAPI
 } from '../../js/mzta-prompts.js';
 import { mztaPrefs } from '../../js/mzta-prefs.js';
+import { mztaManaged } from '../../js/mzta-managed.js';
 import { isManagedSecret } from './managed-ui.js';
 
 export const varConnectionUI = {
@@ -1446,6 +1447,13 @@ export async function initializeSpecificIntegrationUI({
   // what the user sees. Only for a usable value: an empty one means "nothing chosen yet".
   const _persistSelectedConnection = async () => {
       if (hasNoConnectionSelected(conntype_el.value)) return;
+      // A policy-supplied value (locked or initial) is never persisted from here. The raw
+      // read below cannot see it, so it would find '' and write what the select shows: for
+      // a locked key the write guard refuses it, but an initial value would be stored as the
+      // user's own choice without the user ever touching the select. Reads resolve the
+      // policy value on their own, so nothing is lost by not writing. A real user change
+      // still reaches storage through the page's saveOptions().
+      if (mztaManaged.hasManagedValue(conntype_select_id)) return;
       // Deliberately NOT routed through mztaPrefs (issue #163): the default here must
       // stay '' and not prefs_default[conntype_select_id], which is 'chatgpt_api'. This is a
       // no-op guard comparing the stored value against what the select shows; with the

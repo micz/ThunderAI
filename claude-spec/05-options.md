@@ -199,7 +199,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `add_tags_maxnum` | `3` | Max tags to apply |
 | `add_tags_hide_exclusions` | `false` | Hide excluded tags from menu |
 | `add_tags_exclusions_exact_match` | `false` | Exact match for exclusions |
-| `add_tags_exclusions` | `[]` | Tags never assigned: array of strings, substring match unless `add_tags_exclusions_exact_match`. Read and written through `mztaPrefs` by `js/mzta-addtags-exclusion-list.js` (background and the Add Tags page) and, for the tag dialog in `js/mzta-compose-script.js`, through the `addtags_get_exclusion_prefs` / `addtags_set_exclusions` background commands. The storage key predates its declaration, so existing lists carry over with no migration. Policy-settable. |
+| `add_tags_exclusions` | `[]` | Tags never assigned: array of strings, substring match unless `add_tags_exclusions_exact_match`. Read and written through `mztaPrefs` by `js/mzta-addtags-exclusion-list.js` (background and the Add Tags page) and, for the tag dialog in `js/mzta-compose-script.js`, through the `addtags_get_exclusion_prefs` / `addtags_set_exclusions` background commands. Entries are stored lowercase by both writers (the page via `normalizeStringList()`, the dialog's exclude icon by lowercasing), and the dialog adds and removes them case-insensitively. The storage key predates its declaration, so existing lists carry over with no migration. Policy-settable. |
 | `add_tags_first_uppercase` | `true` | Capitalize first letter of tags |
 | `add_tags_force_lang` | `true` | Force language for tags |
 | `add_tags_auto` | `false` | Auto-tag on message open |
@@ -1307,7 +1307,10 @@ case for nearly every user and is swallowed silently.
   `{prefix}_connection_type`. It is a no-op guard comparing the stored value against what the
   select shows; with the `prefs_default` value a first-time write of exactly `chatgpt_api`
   would compare equal to the substituted default and be skipped, leaving the pref unwritten.
-  Only the *default* is special: the area follows `PREFS_AREA` like everything else.
+  Only the *default* is special: the area follows `PREFS_AREA` like everything else. Because
+  that raw read cannot see the enterprise policy, the function returns early when the key has
+  a policy-supplied value: a locked one is refused by the write guard anyway, and an initial
+  one must not be stored as a user choice the user never made.
 - **The `storage.local` / `storage.session` record stores** (`taStorage`, `taSummaryStore`,
   `taTranslationStore`, `taSpamReport`, the custom prompt/placeholder payloads) are not
   preferences and are out of scope. They now share an area with the preferences, which is safe
