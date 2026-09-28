@@ -1,6 +1,11 @@
  # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI Release Notes
 
 
+<h2>Version 5.0.3 - 28/09/2026</h2>
+      <ul>
+        <li><i>[ChatGPT Web]</i> Fix: ThunderAI works again with the new ChatGPT interface. If the message box can't be found, ThunderAI asks you to click inside it and then continues. The Retry button now shows that a new attempt is in progress [<a href="https://github.com/micz/ThunderAI/issues/924">#924</a>].</li>
+        <li>Fix: the spam badge in the message pane no longer jitters, and it no longer makes the message body jump up and down [<a href="https://github.com/micz/ThunderAI/issues/929">#929</a>].</li>
+      </ul>
 <h2>Version 5.0.2 - 22/09/2026</h2>
       <ul>
         <li>Fix: the <i>{%tags_current_email%}</i> placeholder no longer breaks the summarize and the spam filter prompts, and the tags are now correctly resolved to their current names [<a href="https://github.com/micz/ThunderAI/issues/911">#911</a>].</li>

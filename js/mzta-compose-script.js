@@ -163,8 +163,7 @@ const _TOOLBAR_SLOT_ORDER = ['mzta-toolbar-spam', 'mzta-toolbar-summary', 'mzta-
 
 function _addToolbarItem(id, element) {
     const { toolbar } = _ensureContainer();
-    const existing = document.getElementById(id);
-    if (existing) existing.remove();
+    _detachToolbarItem(document.getElementById(id));
     element.id = id;
 
     const myIndex = _TOOLBAR_SLOT_ORDER.indexOf(id);
@@ -179,9 +178,16 @@ function _addToolbarItem(id, element) {
     _updateToolbarVisibility();
 }
 
+// An item may hold resources that outlive its node (the spam badge's ResizeObserver):
+// it exposes them as _mztaCleanup, released here on every removal or replacement.
+function _detachToolbarItem(el) {
+    if (!el) return;
+    if (el._mztaCleanup) el._mztaCleanup();
+    el.remove();
+}
+
 function _removeToolbarItem(id) {
-    const el = document.getElementById(id);
-    if (el) el.remove();
+    _detachToolbarItem(document.getElementById(id));
     _updateToolbarVisibility();
 }
 
@@ -1078,7 +1084,6 @@ switch (message.command) {
     _removeToolbarItem('mzta-toolbar-spam');
 
     const data = message.data;
-    if (document.getElementById('mzta-spam-report-banner')) return Promise.resolve(true);
 
     const colors = _getThemeColors(data.spamValue, data.SpamThreshold);
     const sc = colors.spam;
@@ -1177,23 +1182,40 @@ switch (message.command) {
 
     _addToolbarItem('mzta-toolbar-spam', badge);
 
+    // Always judge the overflow in the wider layout (branding + menu), never in the
+    // one currently showing. Measuring the current layout flipped forever when the
+    // text fit beside the chevron but not beside the branding: each layout proved the
+    // other right, and the badge height changed on every flip, which moved the whole
+    // email up and down [#929]. Measured this way, one width gives one answer.
     const _updateSpamVisibility = () => {
         if (badgeText.style.whiteSpace === 'normal') return; // already expanded, don't interfere
+        chevron.style.display = 'none';
+        branding.style.display = '';
+        spamMenu.style.display = 'inline-flex';
+        // The wide layout's row is the taller one (the ⋯ button). Holding the row at
+        // that height means a layout switch never moves the email below it, so it
+        // can't toggle the pane's scrollbar and hand the observer a new width.
+        topRow.style.minHeight = topRow.offsetHeight + 'px';
         if (badgeText.scrollWidth > badgeText.clientWidth) {
             chevron.style.display = 'inline';
             branding.style.display = 'none';
             spamMenu.style.display = 'none';
-        } else {
-            chevron.style.display = 'none';
-            branding.style.display = '';
-            spamMenu.style.display = 'inline-flex';
         }
     };
 
     requestAnimationFrame(_updateSpamVisibility);
 
-    const _spamResizeObserver = new ResizeObserver(_updateSpamVisibility);
+    // Only a new width can change the answer. Height changes are this badge's own
+    // layout switch, so they are ignored.
+    let _spamLastWidth = null;
+    const _spamResizeObserver = new ResizeObserver((entries) => {
+        const width = entries[entries.length - 1].contentRect.width;
+        if (width === _spamLastWidth) return;
+        _spamLastWidth = width;
+        _updateSpamVisibility();
+    });
     _spamResizeObserver.observe(badge);
+    badge._mztaCleanup = () => _spamResizeObserver.disconnect();
 
     return Promise.resolve(true);
   }
