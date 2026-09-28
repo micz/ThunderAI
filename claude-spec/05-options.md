@@ -1004,7 +1004,7 @@ through the channel its caller already owns (`spamReport` / `summaryStore` / `tr
 `_summarizeConnectionMissing()` applies the same predicate **ahead** of those guards, for the two
 automatic summarize triggers (the sender-list branch of `initSummary` and the summarize-on-receive
 branch of `processEmails()`). It is not redundant with the guard inside
-`_generateSummaryForMessage()`: that one runs after `setProcessing()` and persists the error into
+`_generateSummaryForMessage()`: that one runs inside the summary job and persists the error into
 `summaryStore`, which is the right behaviour for a user-initiated run but wrong for an automatic
 one. The pre-check keeps automatic triggers silent. It used `hasNoConnectionSelected()` until it
 was aligned here, so `chatgpt_web` slipped past it and produced exactly that spurious cached error.

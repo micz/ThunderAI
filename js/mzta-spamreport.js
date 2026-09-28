@@ -21,6 +21,8 @@ import { taLogger } from './mzta-logger.js';
 
 export class taSpamReport {
 
+    // In-flight state lives in taJobRegistry (js/mzta-job-registry.js). The prefix is kept
+    // only so clear*() still sweeps keys written to storage.session by older versions.
     _processing_prefix = 'mzta-spam-processing-';
     _max_reports = 100;
     _storage = null;
@@ -31,26 +33,10 @@ export class taSpamReport {
         this.taLog = new taLogger('mzta-spamreport', do_debug);
     }
 
-    async setProcessing(data_id) {
-        this.taLog.log("[setProcessing] data_id: " + data_id);
-        const key = this._processing_prefix + data_id;
-        await browser.storage.session.set({ [key]: true });
-    }
-
-    async isProcessing(data_id) {
-        this.taLog.log("[isProcessing] data_id: " + data_id);
-        const key = this._processing_prefix + data_id;
-        let output = await browser.storage.session.get(key);
-        let result = output[key] || false;
-        this.taLog.log("[isProcessing] result: " + result);
-        return result;
-    }
-
     async saveReportData(data, data_id) {
         this.taLog.log("[saveReportData] data_id: " + data_id);
         try {
             await this._storage.writeSpam(data_id, data, true);
-            await browser.storage.session.remove(this._processing_prefix + data_id);
         } catch (e) {
             this.taLog.error("[saveReportData] error: " + e);
             throw e;
@@ -97,7 +83,6 @@ export class taSpamReport {
     async removeReportData(data_id) {
         this.taLog.log("[removeReportData] data_id: " + data_id);
         await this._storage.deleteSpamField(data_id);
-        await browser.storage.session.remove(this._processing_prefix + data_id);
     }
 
     async getAllReportData() {

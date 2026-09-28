@@ -77,6 +77,7 @@ import { taSummaryStore } from './js/mzta-summarystore.js';
 import { taTranslationStore } from './js/mzta-translationstore.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
 import { taBatchController } from './js/mzta-batch-controller.js';
+import { taJobRegistry } from './js/mzta-job-registry.js';
 import {
     addTags_getExclusionList,
     checkExcludedTag
@@ -172,6 +173,7 @@ await reload_pref_init();
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
 taWorkingStatus.taLog = taLog;
 taBatchController.taLog = taLog;
+taJobRegistry.taLog = taLog;
 let spamReport = new taSpamReport(prefs_init.do_debug);
 let summaryStore = new taSummaryStore(prefs_init.do_debug);
 let translationStore = new taTranslationStore(prefs_init.do_debug);
@@ -432,6 +434,18 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         let message = await browser.messageDisplay.getDisplayedMessage(tabId);
                         if (!message) return;
 
+                        // A summary job already running on this message (the batch, another
+                        // tab, a context-menu action): join it, so this panel shows its
+                        // spinner and then its result. Joining never calls the API.
+                        // Checked before the cache: a job landing between the cache read and
+                        // this check would otherwise leave its result AND the manual button.
+                        // A job starting after it replaces the button with its own broadcast.
+                        if (taJobRegistry.isRunning('summary', message.headerMessageId)) {
+                            _generateSummaryForMessage(message.headerMessageId, tabId, { resolvedMessage: message })
+                                .catch(e => _handleTaskError('initSummary (join)', e, tabId, message.headerMessageId, 'summary'));
+                            return;
+                        }
+
                         // Always show cached summary if available, regardless of summarize_auto
                         let cachedSummary = await summaryStore.loadSummary(message.headerMessageId);
                         if (cachedSummary && !cachedSummary.error) {
@@ -439,16 +453,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             return;
                         }
 
-                        if (await summaryStore.isProcessing(message.headerMessageId)) {
-                            await _sendGeneratingIfCurrent(tabId, message.headerMessageId, { command: "showSummaryGenerating", headerMessageId: message.headerMessageId });
-                            return;
-                        }
-
                         // Auto-summarize the senders in summarize_auto_senders_list. This is the
                         // second trigger of the feature: it catches the messages the
                         // onNewMailReceived listener never saw (subscribed IMAP folders that are
                         // not checked for new mail, or messages moved by a server-side filter).
-                        // It runs after the cache and isProcessing() checks above, so a message
+                        // It runs after the running-job and cache checks above, so a message
                         // caught on reception too is never summarized twice, and before the
                         // summarize_auto check below, because the sender list must work even
                         // when auto-summarize is disabled in general.
@@ -518,8 +527,9 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     sendTabMessageSafe(tabId, { command: "showSummaryGenerating", headerMessageId: message.headerMessageId });
                     // No resolve hint: the content script sends only headerMessageId, so
                     // _resolveMessage lands on the tabId route (c) — the message the user
-                    // just clicked on is the one this tab displays.
-                    await _generateSummaryForMessage(message.headerMessageId, tabId);
+                    // just clicked on is the one this tab displays. manual: joins (and
+                    // revives) a running job instead of starting a second one.
+                    await _generateSummaryForMessage(message.headerMessageId, tabId, { manual: true });
                 }
                 _triggerSummaryGeneration(message).catch(e => _handleTaskError('triggerSummaryGeneration', e, sender.tab?.id, message.headerMessageId, 'summary'));
                 break;
@@ -535,7 +545,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _generate_summary(message) {
                     // Manual trigger: the content script supplies only headerMessageId
                     // (and message.tabId), so _resolveMessage uses the tabId route (c).
-                    await _generateSummaryForMessage(message.headerMessageId, message.tabId);
+                    await _generateSummaryForMessage(message.headerMessageId, message.tabId, { manual: true });
                 }
                 _generate_summary(message).catch(e => _handleTaskError('generate_summary', e, message.tabId, message.headerMessageId, 'summary'));
                 break;
@@ -551,19 +561,25 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         // Fire the inline loading indicator immediately, before any await
                         // (direct send — see triggerSummaryGeneration).
                         sendTabMessageSafe(tabId, { command: "showSummaryGenerating", headerMessageId: message.headerMessageId });
-                        await summaryStore.removeSummary(message.headerMessageId);
                         // Resolves via the tabId route (c) — see triggerSummaryGeneration.
-                        await _generateSummaryForMessage(message.headerMessageId, tabId);
+                        // refresh: the job drops the old summary itself. Not done here: with a
+                        // job already running, refresh joins it instead of starting a second
+                        // generation next to it.
+                        await _generateSummaryForMessage(message.headerMessageId, tabId, { manual: true, refresh: true });
                     }
                 }
                 _refreshSummary(message).catch(e => _handleTaskError('refreshSummary', e, sender.tab?.id, message.headerMessageId, 'summary'));
                 break;
             case 'removeSummary':
                 async function _removeSummary(message) {
+                    // First, synchronously: a job still running for this message must not
+                    // save or show its result when it lands, or the deleted summary would
+                    // come back.
+                    taJobRegistry.invalidate('summary', message.headerMessageId);
                     await summaryStore.removeSummary(message.headerMessageId);
                     await _restoreSummaryButton(sender.tab.id, message.headerMessageId);
                 }
-                _removeSummary(message);
+                _removeSummary(message).catch(e => _handleTaskError('removeSummary', e, sender.tab?.id, message.headerMessageId, 'summary'));
                 break;
             case 'chatgpt_saveSummary':
                 async function _saveSummaryFromWebchat(msg) {
@@ -611,15 +627,17 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         let message = await browser.messageDisplay.getDisplayedMessage(tabId);
                         if (!message) return;
 
+                        // A translation job already running: join it (see initSummary).
+                        if (taJobRegistry.isRunning('translation', message.headerMessageId)) {
+                            _generateTranslationForMessage(message.headerMessageId, tabId, { resolvedMessage: message })
+                                .catch(e => _handleTaskError('initTranslation (join)', e, tabId, message.headerMessageId, 'translation'));
+                            return;
+                        }
+
                         // Always show cached translation if available, regardless of translate_auto
                         let cachedTranslation = await translationStore.loadTranslation(message.headerMessageId);
                         if (cachedTranslation && !cachedTranslation.error) {
                             await _sendIfCurrent(tabId, message.headerMessageId, { command: "showTranslation", data: { ...cachedTranslation, maxDisplayLength: prefs.translate_max_display_length } });
-                            return;
-                        }
-
-                        if (await translationStore.isProcessing(message.headerMessageId)) {
-                            await _sendGeneratingIfCurrent(tabId, message.headerMessageId, { command: "showTranslationGenerating", headerMessageId: message.headerMessageId });
                             return;
                         }
 
@@ -679,7 +697,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         await _sendIfCurrent(tabId, message.headerMessageId, { command: "showTranslationButton", headerMessageId: message.headerMessageId });
                         return;
                     }
-                    await _generateTranslationForMessage(message.headerMessageId, tabId);
+                    await _generateTranslationForMessage(message.headerMessageId, tabId, { manual: true });
                 }
                 _triggerTranslationGeneration(message).catch(e => _handleTaskError('triggerTranslationGeneration', e, sender.tab?.id, message.headerMessageId, 'translation'));
                 break;
@@ -689,8 +707,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     // Fire the inline loading indicator immediately, before any await
                     // (direct send — see triggerSummaryGeneration).
                     sendTabMessageSafe(tabId, { command: "showTranslationGenerating", headerMessageId: message.headerMessageId });
-                    await translationStore.removeTranslation(message.headerMessageId);
-                    await _generateTranslationForMessage(message.headerMessageId, tabId);
+                    // refresh: the job drops the old translation itself (see refreshSummary).
+                    await _generateTranslationForMessage(message.headerMessageId, tabId, { manual: true, refresh: true });
                 }
                 _refreshTranslation(message).catch(e => _handleTaskError('refreshTranslation', e, sender.tab?.id, message.headerMessageId, 'translation'));
                 break;
@@ -703,10 +721,12 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     .catch(() => null);
             case 'removeTranslation':
                 async function _removeTranslation(message) {
+                    // First, synchronously — see removeSummary.
+                    taJobRegistry.invalidate('translation', message.headerMessageId);
                     await translationStore.removeTranslation(message.headerMessageId);
                     await _restoreTranslationButton(sender.tab.id, message.headerMessageId);
                 }
-                _removeTranslation(message);
+                _removeTranslation(message).catch(e => _handleTaskError('removeTranslation', e, sender.tab?.id, message.headerMessageId, 'translation'));
                 break;
             case 'chatgpt_close':
                     async function _closeChatGptWindow(window_id) {
@@ -886,11 +906,16 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         if (sender.tab.type !== 'messageDisplay' && sender.tab.type !== 'mail') return;
                         let message = await browser.messageDisplay.getDisplayedMessage(tabId);
                         if (!message) return;
+                        // A running analysis first, synchronously: join it, so this panel
+                        // shows the in-progress badge and then the report (a stored report
+                        // would be the one the job is about to replace).
+                        if (taJobRegistry.isRunning('spam', message.headerMessageId)) {
+                            await _generateSpamReportForMessage(message.headerMessageId, { tabId: tabId });
+                            return;
+                        }
                         let report = await spamReport.loadReportData(message.headerMessageId);
                         if (report) {
                             await _sendIfCurrent(tabId, message.headerMessageId, { command: "showSpamReport", data: report });
-                        } else if (await spamReport.isProcessing(message.headerMessageId)) {
-                            browser.tabs.sendMessage(tabId, { command: "showSpamCheckInProgress" });
                         }
                     } catch (e) {
                         taLog.error("Error in checkSpamReport: " + e);
@@ -904,7 +929,9 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'refreshSpamReport':
                 // The panel this comes from lives in the message display, so the sender tab is
                 // showing the very message to re-check: enough to resolve it without a query.
-                _generateSpamReportForMessage(message.headerMessageId, { tabId: sender.tab.id });
+                // A running analysis is joined, not repeated (see _generateSpamReportForMessage()).
+                _generateSpamReportForMessage(message.headerMessageId, { tabId: sender.tab.id })
+                    .catch(e => taLog.error("Error in refreshSpamReport: " + (e?.message || e)));
                 break;
             case 'batch_status':
                 return Promise.resolve(taBatchController.getStatus());
@@ -938,6 +965,8 @@ function cleanSummaryText(text) {
 // Offered whenever initSummary / initTranslation would have shown the button or
 // auto-generated (auto mode 1 or 2). Auto mode is deliberately not re-run here:
 // regenerating what the user has just deleted would defeat the delete.
+// tabId = null: every tab displaying the message (_sendToTabsDisplaying) - used when a
+// running job was invalidated by the delete and lands with nothing to show.
 async function _restoreSummaryButton(tabId, headerMessageId) {
     try {
         let prefs = await mztaPrefs.getPrefs([
@@ -951,7 +980,12 @@ async function _restoreSummaryButton(tabId, headerMessageId) {
         let summarize_auto = Number.isInteger(prefs.summarize_auto) ? prefs.summarize_auto : prefs_default.summarize_auto;
         if (summarize_auto === 0) return;
         if (!isApiUsableConnection(getConnectionType(prefs, null, 'summarize'))) return;
-        await _sendIfCurrent(tabId, headerMessageId, { command: "showSummaryButton", headerMessageId: headerMessageId, webchat: prefs.summarize_display_mode !== 'inline' });
+        const payload = { command: "showSummaryButton", headerMessageId: headerMessageId, webchat: prefs.summarize_display_mode !== 'inline' };
+        if (tabId) {
+            await _sendIfCurrent(tabId, headerMessageId, payload);
+        } else {
+            await _sendToTabsDisplaying(headerMessageId, payload);
+        }
     } catch (e) {
         taLog.error("Error in _restoreSummaryButton: " + e);
     }
@@ -969,7 +1003,12 @@ async function _restoreTranslationButton(tabId, headerMessageId) {
         let translate_auto = Number.isInteger(prefs.translate_auto) ? prefs.translate_auto : prefs_default.translate_auto;
         if (translate_auto === 0) return;
         if (!isApiUsableConnection(getConnectionType(prefs, null, 'translate'))) return;
-        await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslationButton", headerMessageId: headerMessageId });
+        const payload = { command: "showTranslationButton", headerMessageId: headerMessageId };
+        if (tabId) {
+            await _sendIfCurrent(tabId, headerMessageId, payload);
+        } else {
+            await _sendToTabsDisplaying(headerMessageId, payload);
+        }
     } catch (e) {
         taLog.error("Error in _restoreTranslationButton: " + e);
     }
@@ -1015,6 +1054,37 @@ async function _sendGeneratingIfCurrent(tabId, headerMessageId, payload) {
         taLog.error("Error in _sendGeneratingIfCurrent: " + e);
         return { current: false, delivered: false };
     }
+}
+
+// Broadcast a panel command to EVERY tab that displays headerMessageId: mail tabs and
+// message windows alike, several at once when the message is open in more than one place.
+// This is how a job updates the panels, whoever started it: the batch has no tab of its
+// own, and a caller that joined a running job may be gone by the time it lands. Before
+// this, the result went only to the starter's tab, so a panel that found the job running
+// kept its spinner forever, and a message opened while the batch worked on it never
+// showed the batch's progress.
+// Each tab is checked with getDisplayedMessage() right before the send (the same staleness
+// rule as _sendIfCurrent) and the send goes through sendTabMessageSafe() [#901]. Awaited
+// by the jobs, so a tab always receives the generating panel before the result; the
+// content script's own guards (_mztaDisplayedMsgId, _mztaPanelSeq) still apply.
+async function _sendToTabsDisplaying(headerMessageId, payload) {
+    if (!headerMessageId) return;
+    let tabs = [];
+    try {
+        tabs = (await browser.tabs.query({})).filter(tab => tab.type === 'mail' || tab.type === 'messageDisplay');
+    } catch (e) {
+        taLog.error("Error in _sendToTabsDisplaying (tabs.query): " + e);
+        return;
+    }
+    await Promise.all(tabs.map(async (tab) => {
+        try {
+            const current = await browser.messageDisplay.getDisplayedMessage(tab.id);
+            if (!current || current.headerMessageId !== headerMessageId) return;
+            await sendTabMessageSafe(tab.id, payload);
+        } catch (e) {
+            // A tab closing mid-query, a tab type without a message display: skip it.
+        }
+    }));
 }
 
 // Remove a generating panel that a failed task may have left behind. Message-aware like
@@ -1107,7 +1177,7 @@ async function _resolveMessage(headerMessageId, messageId = null, tabId = null, 
 // The predicate is isApiUsableConnection(), the same one used by the menus, by
 // _generateSummaryForMessage() and by every other feature: chatgpt_web has no API and cannot
 // produce a summary, so it must be treated exactly like a missing connection here. Skipping
-// early matters because _generateSummaryForMessage() rejects it only after setProcessing(),
+// early matters because _generateSummaryForMessage() rejects it only inside its job,
 // persisting an error into summaryStore — an automatic run would poison the cache for a
 // message the user never asked to summarize.
 async function _summarizeConnectionMissing() {
@@ -1124,21 +1194,98 @@ async function _summarizeConnectionMissing() {
     }
 }
 
-// tabId is optional — if null, runs silently (background pre-cache, no UI update)
+// Summary of one message, shared by every caller: panel button, auto display, context menu,
+// refresh and the processEmails() batch.
+// tabId is optional: the tab the caller wants the outcome in (null for the batch). It is
+//   also used to resolve the message (route c of _resolveMessage()).
 // options.messageData: { message, fullMessage } — pass pre-fetched data to avoid re-querying
 // options.messageId: numeric message id, when the caller has one — see _resolveMessage()
 // options.resolvedMessage: the message object the caller already holds (e.g. from
 //   getDisplayedMessage) — the cheapest route, used by the auto-display paths. See _resolveMessage()
+// options.manual: an explicit user action; it may revive a job invalidated by a delete.
+// options.refresh: regenerate; the job drops the stored summary first and skips the cache.
 //
-// The generating panel goes through _sendGeneratingIfCurrent(): when tabId displays another
-// message it is skipped, but tabId is still used for the resolution (route c) and for the
-// terminal _sendIfCurrent() sends, which are message-guarded already.
-async function _generateSummaryForMessage(headerMessageId, tabId = null, options = {}) {
-    // Before setProcessing()/saveError(): an empty id would key the store on undefined.
+// At most one summary job per message is in flight (taJobRegistry). A caller that finds
+// one running JOINS it (_joinSummaryJob) instead of calling the API again or giving up:
+// the batch and a manual trigger can reach the same message at any moment. The lookup and
+// the registration are synchronous and back to back, before any await, so two callers
+// arriving together cannot both start (the storage.session flag this replaces was checked
+// and set across several awaits).
+//
+// The job broadcasts its panels to every tab displaying the message
+// (_sendToTabsDisplaying): the generating panel when it starts, the result or the error
+// when it ends. So a batch job updates any open panel, and a joiner's tab gets the result.
+//
+// Returns (never rejects) the job outcome: { status, data, errorMessage, rateLimited, retryAfterMs }.
+// rateLimited is read by the processEmails() pipeline, which stops the batch on it.
+function _generateSummaryForMessage(headerMessageId, tabId = null, options = {}) {
+    // Before any job or store write: an empty id would key the store on undefined.
     if (!headerMessageId) {
         taLog.error("[ThunderAI] Summary: empty headerMessageId (" + JSON.stringify(headerMessageId) + "), nothing to summarize.");
-        return;
+        return Promise.resolve({ status: 'skipped' });
     }
+    const running = taJobRegistry.get('summary', headerMessageId);
+    if (running) return _joinSummaryJob(running, headerMessageId, tabId, options);
+    return taJobRegistry.start('summary', headerMessageId, (entry) => _runSummaryJob(entry, headerMessageId, tabId, options)).promise;
+}
+
+// A caller that found a summary job running: no startWorking(), no store write, no API
+// call. Its own tab gets the generating panel and then the outcome, even though the job
+// broadcasts too: this caller's spinner (or the direct one of the trigger handlers) can
+// reach its tab AFTER the job's result broadcast, and this final send is what replaces it.
+async function _joinSummaryJob(entry, headerMessageId, tabId, options) {
+    taJobRegistry.logJoin(entry);
+    // The user deleted the summary while it was being generated, then asked for it again:
+    // take the running job's result instead of starting a second call. Automatic callers
+    // (auto display, batch) never revive: regenerating what the user deleted would defeat
+    // the delete.
+    if (options.manual) taJobRegistry.revive(entry);
+    await _sendGeneratingIfCurrent(tabId, headerMessageId, { command: "showSummaryGenerating", headerMessageId: headerMessageId });
+    const outcome = await entry.promise;
+    if (tabId) {
+        if (outcome.data) {
+            await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: outcome.data });
+        } else if (outcome.status === 'cancelled') {
+            await _restoreSummaryButton(tabId, headerMessageId);
+        } else {
+            _clearGeneratingPanels(tabId, headerMessageId, 'summary');
+        }
+    }
+    return outcome;
+}
+
+// The end of a summary job that got past its generating panel: store the result (or the
+// error) and broadcast it — unless the user deleted the summary meanwhile
+// (taJobRegistry.invalidate()): then nothing is saved or shown, and every tab displaying
+// the message gets its manual button back instead of the spinner, as after a delete.
+// store: the store write to run, or null (config errors are shown but not stored, so the
+// next attempt runs again instead of hitting a cached error).
+async function _endSummaryJob(entry, headerMessageId, data, store) {
+    if (entry.invalidated) {
+        taLog.log("[ThunderAI] Summary for " + headerMessageId + " was deleted while being generated, result discarded.");
+        await _sendToTabsDisplaying(headerMessageId, { command: "hideSummaryGenerating", headerMessageId: headerMessageId });
+        await _restoreSummaryButton(null, headerMessageId);
+        return { status: 'cancelled' };
+    }
+    if (store) {
+        try {
+            await store();
+        } catch (e) {
+            taLog.error("[ThunderAI] Summary: could not store the result for " + headerMessageId + ": " + e);
+        }
+    }
+    // The banner's Refresh / Delete buttons send data.headerMessageId back: the error
+    // payloads built above do not carry it.
+    data = { headerMessageId: headerMessageId, ...data };
+    await _sendToTabsDisplaying(headerMessageId, { command: "showSummary", data: data });
+    return data.error
+        ? { status: 'error', data: data, errorMessage: data.message }
+        : { status: 'ok', data: data };
+}
+
+async function _runSummaryJob(entry, headerMessageId, tabId, options) {
+    // One startWorking()/stopWorking() pair per job that really works (past the cache).
+    let working = false;
     try {
         let prefs = await mztaPrefs.getPrefs([
             'connection_type',
@@ -1148,21 +1295,26 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
             'summarize_strip_formatting',
             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
         ]);
+        const display = { maxDisplayLength: prefs.summarize_max_display_length, stripFormatting: prefs.summarize_strip_formatting };
 
-        let cachedSummary = await summaryStore.loadSummary(headerMessageId);
-        if (cachedSummary && !cachedSummary.error) {
-            await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { ...cachedSummary, maxDisplayLength: prefs.summarize_max_display_length, stripFormatting: prefs.summarize_strip_formatting } });
-            return;
+        if (options.refresh) {
+            // Inside the job, not in the refresh handler: the old summary is dropped only by
+            // the caller that owns the generation, never while another job is running.
+            await summaryStore.removeSummary(headerMessageId);
+        } else {
+            let cachedSummary = await summaryStore.loadSummary(headerMessageId);
+            if (cachedSummary && !cachedSummary.error) {
+                // Not broadcast: the other tabs already show it. The outcome carries it for
+                // any joiner.
+                const data = { ...cachedSummary, ...display };
+                await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: data });
+                return { status: 'ok', data: data, cached: true };
+            }
         }
 
-        if (await summaryStore.isProcessing(headerMessageId)) {
-            await _sendGeneratingIfCurrent(tabId, headerMessageId, { command: "showSummaryGenerating", headerMessageId: headerMessageId });
-            return;
-        }
-
-        await summaryStore.setProcessing(headerMessageId);
+        working = true;
         taWorkingStatus.startWorking();
-        await _sendGeneratingIfCurrent(tabId, headerMessageId, { command: "showSummaryGenerating", headerMessageId: headerMessageId });
+        await _sendToTabsDisplaying(headerMessageId, { command: "showSummaryGenerating", headerMessageId: headerMessageId });
 
         let message, fullMessage;
         if (options.messageData) {
@@ -1175,18 +1327,12 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
             if (!message?.id) {
                 taLog.error('[ThunderAI] Summary: options.messageData has no message.id - callers must pass { message, fullMessage }.');
                 const errorMsg = browser.i18n.getMessage('summarize_error_no_message_id');
-                await summaryStore.saveError(headerMessageId, errorMsg);
-                await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: errorMsg } });
-                taWorkingStatus.stopWorking();
-                return;
+                return await _endSummaryJob(entry, headerMessageId, { error: true, message: errorMsg }, () => summaryStore.saveError(headerMessageId, errorMsg));
             }
         } else {
             message = await _resolveMessage(headerMessageId, options.messageId, tabId, options.resolvedMessage);
             if (!message) {
-                await summaryStore.saveError(headerMessageId, "Message not found");
-                await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: "Message not found" } });
-                taWorkingStatus.stopWorking();
-                return;
+                return await _endSummaryJob(entry, headerMessageId, { error: true, message: "Message not found" }, () => summaryStore.saveError(headerMessageId, "Message not found"));
             }
             fullMessage = await browser.messages.getFull(message.id);
         }
@@ -1198,10 +1344,7 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
         // through into mzta_specialCommand.
         if (!isApiUsableConnection(connectionType)) {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
-            await summaryStore.saveError(headerMessageId, errorMsg);
-            await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: errorMsg } });
-            taWorkingStatus.stopWorking();
-            return;
+            return await _endSummaryJob(entry, headerMessageId, { error: true, message: errorMsg }, () => summaryStore.saveError(headerMessageId, errorMsg));
         }
 
         taLog.log("[ThunderAI] Summary: building the prompt for " + message.headerMessageId + " (folder: " + message.folder?.path + ")");
@@ -1226,66 +1369,120 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
             summary_date: new Date(),
             headerMessageId: headerMessageId
         };
-        await summaryStore.saveSummary(summaryData, headerMessageId);
-        await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { ...summaryData, maxDisplayLength: prefs.summarize_max_display_length, stripFormatting: prefs.summarize_strip_formatting } });
-        taWorkingStatus.stopWorking();
+        return await _endSummaryJob(entry, headerMessageId, { ...summaryData, ...display }, () => summaryStore.saveSummary(summaryData, headerMessageId));
 
     } catch (error) {
         console.error("[ThunderAI] Error generating summary:", error);
-        if (!error.isConfigError) await summaryStore.saveError(headerMessageId, error.message || String(error));
-        await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: error.message || "Failed to generate summary" } });
-        // The error banner above already replaces the panel when it is delivered; this
-        // covers the case where it is not, so no spinner outlives the failed generation.
-        _clearGeneratingPanels(tabId, headerMessageId, 'summary');
-        taWorkingStatus.stopWorking();
-        // Read only by the processEmails() pipeline, which stops the batch on a rate limit.
-        return { rateLimited: !!error.rateLimited, retryAfterMs: error.retryAfterMs ?? null };
+        // A config error (e.g. a missing API key) is shown but not stored: the next attempt
+        // must run again once the user fixed the settings. No in-flight flag can be left
+        // behind either: the registry drops the entry when this job settles.
+        const storedMessage = error.message || String(error);
+        const outcome = await _endSummaryJob(entry, headerMessageId,
+            { error: true, message: error.message || "Failed to generate summary" },
+            error.isConfigError ? null : () => summaryStore.saveError(headerMessageId, storedMessage));
+        // The error banner above already replaces the panel where it is delivered; this
+        // covers the tabs where it is not, so no spinner outlives the failed generation.
+        await _sendToTabsDisplaying(headerMessageId, { command: "hideSummaryGenerating", headerMessageId: headerMessageId });
+        return { ...outcome, rateLimited: !!error.rateLimited, retryAfterMs: error.retryAfterMs ?? null };
+    } finally {
+        if (working) taWorkingStatus.stopWorking();
     }
 }
 
-// tabId is optional — if null, runs silently (background pre-cache, no UI update)
+// Translation of one message: same contract as _generateSummaryForMessage() — one job per
+// message in taJobRegistry, joiners await it, the job broadcasts its panels.
 // options.messageData: { message, fullMessage } — pass pre-fetched data to avoid re-querying.
 //   `message` is required: its .id feeds the body read (getMailInlineTextParts).
-// options.messageId: numeric message id, when the caller has one — see _resolveMessage()
-// options.resolvedMessage: the message object the caller already holds (e.g. from
-//   getDisplayedMessage) — the cheapest route, used by the auto-display paths. See _resolveMessage()
-// The generating panel is message-aware — see _generateSummaryForMessage().
+// options.messageId / options.resolvedMessage: see _resolveMessage()
+// options.manual / options.refresh: see _generateSummaryForMessage().
 async function _generateTranslationForMessage(headerMessageId, tabId = null, options = {}) {
-    // Before setProcessing()/saveError(): an empty id would key the store on undefined.
+    // Before any job or store write: an empty id would key the store on undefined.
     if (!headerMessageId) {
         taLog.error("[ThunderAI] Translation: empty headerMessageId (" + JSON.stringify(headerMessageId) + "), nothing to translate.");
-        return;
+        return { status: 'skipped' };
     }
+    // No target language: a guard that must neither create a job nor write the store. It
+    // needs a prefs read, so it comes first; the synchronous lookup/registration below
+    // follows it with no await in between.
+    let prefs_lang = await mztaPrefs.getPrefs(['translate_lang', 'default_chatgpt_lang']);
+    const lang = prefs_lang.translate_lang || prefs_lang.default_chatgpt_lang || '';
+    if (!lang) {
+        taLog.warn("Translation skipped: no language configured (translate_lang and default_chatgpt_lang are both empty).");
+        return { status: 'skipped' };
+    }
+    const running = taJobRegistry.get('translation', headerMessageId);
+    if (running) return _joinTranslationJob(running, headerMessageId, tabId, options);
+    return taJobRegistry.start('translation', headerMessageId, (entry) => _runTranslationJob(entry, headerMessageId, tabId, options, lang)).promise;
+}
+
+// See _joinSummaryJob().
+async function _joinTranslationJob(entry, headerMessageId, tabId, options) {
+    taJobRegistry.logJoin(entry);
+    if (options.manual) taJobRegistry.revive(entry);
+    await _sendGeneratingIfCurrent(tabId, headerMessageId, { command: "showTranslationGenerating", headerMessageId: headerMessageId });
+    const outcome = await entry.promise;
+    if (tabId) {
+        if (outcome.data) {
+            await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: outcome.data });
+        } else if (outcome.status === 'cancelled') {
+            await _restoreTranslationButton(tabId, headerMessageId);
+        } else {
+            _clearGeneratingPanels(tabId, headerMessageId, 'translation');
+        }
+    }
+    return outcome;
+}
+
+// See _endSummaryJob().
+async function _endTranslationJob(entry, headerMessageId, data, store) {
+    if (entry.invalidated) {
+        taLog.log("[ThunderAI] Translation for " + headerMessageId + " was deleted while being generated, result discarded.");
+        await _sendToTabsDisplaying(headerMessageId, { command: "hideTranslationGenerating", headerMessageId: headerMessageId });
+        await _restoreTranslationButton(null, headerMessageId);
+        return { status: 'cancelled' };
+    }
+    if (store) {
+        try {
+            await store();
+        } catch (e) {
+            taLog.error("[ThunderAI] Translation: could not store the result for " + headerMessageId + ": " + e);
+        }
+    }
+    // The banner's Refresh / Delete buttons send data.headerMessageId back: the error
+    // payloads built above do not carry it.
+    data = { headerMessageId: headerMessageId, ...data };
+    await _sendToTabsDisplaying(headerMessageId, { command: "showTranslation", data: data });
+    return data.error
+        ? { status: 'error', data: data, errorMessage: data.message }
+        : { status: 'ok', data: data };
+}
+
+async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) {
+    let working = false;
     try {
         let prefs = await mztaPrefs.getPrefs([
             'connection_type',
             'do_debug',
-            'default_chatgpt_lang',
-            'translate_lang',
             'translate_max_display_length',
             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
         ]);
+        const display = { maxDisplayLength: prefs.translate_max_display_length };
 
-        let cachedTranslation = await translationStore.loadTranslation(headerMessageId);
-        if (cachedTranslation && !cachedTranslation.error) {
-            await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { ...cachedTranslation, maxDisplayLength: prefs.translate_max_display_length } });
-            return;
+        if (options.refresh) {
+            // See _runSummaryJob().
+            await translationStore.removeTranslation(headerMessageId);
+        } else {
+            let cachedTranslation = await translationStore.loadTranslation(headerMessageId);
+            if (cachedTranslation && !cachedTranslation.error) {
+                const data = { ...cachedTranslation, ...display };
+                await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: data });
+                return { status: 'ok', data: data, cached: true };
+            }
         }
 
-        const lang = prefs.translate_lang || prefs.default_chatgpt_lang || '';
-        if (!lang) {
-            taLog.warn("Translation skipped: no language configured (translate_lang and default_chatgpt_lang are both empty).");
-            return;
-        }
-
-        if (await translationStore.isProcessing(headerMessageId)) {
-            await _sendGeneratingIfCurrent(tabId, headerMessageId, { command: "showTranslationGenerating", headerMessageId: headerMessageId });
-            return;
-        }
-
-        await translationStore.setProcessing(headerMessageId);
+        working = true;
         taWorkingStatus.startWorking();
-        await _sendGeneratingIfCurrent(tabId, headerMessageId, { command: "showTranslationGenerating", headerMessageId: headerMessageId });
+        await _sendToTabsDisplaying(headerMessageId, { command: "showTranslationGenerating", headerMessageId: headerMessageId });
 
         // messageId travels alongside fullMessage on BOTH branches: the body now
         // comes from getMailInlineTextParts(messageId), so buildTranslationPrompt()
@@ -1306,18 +1503,12 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
             if (!curr_messageId) {
                 taLog.error('[ThunderAI] Translation: options.messageData has no message.id - callers must pass { message, fullMessage }.');
                 const errorMsg = browser.i18n.getMessage('translate_error_no_message_id');
-                await translationStore.saveError(headerMessageId, errorMsg);
-                await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { error: true, message: errorMsg } });
-                taWorkingStatus.stopWorking();
-                return;
+                return await _endTranslationJob(entry, headerMessageId, { error: true, message: errorMsg }, () => translationStore.saveError(headerMessageId, errorMsg));
             }
         } else {
             const message = await _resolveMessage(headerMessageId, options.messageId, tabId, options.resolvedMessage);
             if (!message) {
-                await translationStore.saveError(headerMessageId, "Message not found");
-                await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { error: true, message: "Message not found" } });
-                taWorkingStatus.stopWorking();
-                return;
+                return await _endTranslationJob(entry, headerMessageId, { error: true, message: "Message not found" }, () => translationStore.saveError(headerMessageId, "Message not found"));
             }
             usedMessage = message;
             curr_messageId = message.id;
@@ -1331,10 +1522,7 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
         // through into mzta_specialCommand.
         if (!isApiUsableConnection(connectionType)) {
             const errorMsg = browser.i18n.getMessage('translate_chatgpt_web_not_supported');
-            await translationStore.saveError(headerMessageId, errorMsg);
-            await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { error: true, message: errorMsg } });
-            taWorkingStatus.stopWorking();
-            return;
+            return await _endTranslationJob(entry, headerMessageId, { error: true, message: errorMsg }, () => translationStore.saveError(headerMessageId, errorMsg));
         }
         taLog.log("[ThunderAI] Translation: building the prompt for " + usedMessage?.headerMessageId + " (folder: " + usedMessage?.folder?.path + ")");
         const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, curr_messageId);
@@ -1368,19 +1556,20 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
             lang: lang,
             headerMessageId: headerMessageId
         };
-        await translationStore.saveTranslation(translationData, headerMessageId);
-        await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { ...translationData, maxDisplayLength: prefs.translate_max_display_length } });
-        taWorkingStatus.stopWorking();
+        return await _endTranslationJob(entry, headerMessageId, { ...translationData, ...display }, () => translationStore.saveTranslation(translationData, headerMessageId));
 
     } catch (error) {
         console.error("[ThunderAI] Error generating translation:", error);
-        if (!error.isConfigError) await translationStore.saveError(headerMessageId, error.message || String(error));
-        await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { error: true, message: error.message || "Failed to generate translation" } });
+        // Same as the summary: a config error is shown, not stored.
+        const storedMessage = error.message || String(error);
+        const outcome = await _endTranslationJob(entry, headerMessageId,
+            { error: true, message: error.message || "Failed to generate translation" },
+            error.isConfigError ? null : () => translationStore.saveError(headerMessageId, storedMessage));
         // Same as the summary: no spinner outlives the failed generation.
-        _clearGeneratingPanels(tabId, headerMessageId, 'translation');
-        taWorkingStatus.stopWorking();
-        // Same as the summary: read only by the processEmails() pipeline.
-        return { rateLimited: !!error.rateLimited, retryAfterMs: error.retryAfterMs ?? null };
+        await _sendToTabsDisplaying(headerMessageId, { command: "hideTranslationGenerating", headerMessageId: headerMessageId });
+        return { ...outcome, rateLimited: !!error.rateLimited, retryAfterMs: error.retryAfterMs ?? null };
+    } finally {
+        if (working) taWorkingStatus.stopWorking();
     }
 }
 
@@ -1414,15 +1603,53 @@ function _enqueueJunkMove(fn) {
 
 // options.messageData: { message, fullMessage, body_text, msg_text } — pass pre-fetched data to avoid re-querying
 // options.messageId: numeric message id, when the caller has one — see _resolveMessage()
-// options.tabId: only used to resolve the message (the panel finds its own tab) — see _resolveMessage()
+// options.tabId: used to resolve the message (see _resolveMessage()) and, when this caller
+//   joins a running analysis, the tab it delivers the report to
 // options.prefs: pass pre-fetched prefs to avoid re-querying
 // options.autoMove: if true, move spam messages to junk folder (default: false)
-async function _generateSpamReportForMessage(headerMessageId, options = {}) {
-    // Before removeReportData()/setProcessing(): an empty id would key the store on undefined.
+//
+// One spam analysis per message is in flight (taJobRegistry, kind 'spam'): the batch, the
+// context menu and the panel's Refresh can reach the same message together, and a second
+// analysis could also try a second junk move. A caller that finds one running JOINS it.
+// Only the job that owns the entry can reach the junk move; a joiner never moves anything.
+// Returns (never rejects) { status, success, moved, rateLimited, retryAfterMs, data: { report } }:
+// `moved` and `rateLimited` are read by the processEmails() pipeline.
+function _generateSpamReportForMessage(headerMessageId, options = {}) {
+    // Before any job or store write: an empty id would key the store on undefined.
     if (!headerMessageId) {
         taLog.error("[ThunderAI | SpamFilter] Empty headerMessageId (" + JSON.stringify(headerMessageId) + "), nothing to analyze.");
-        return { success: false };
+        return Promise.resolve({ status: 'skipped', success: false, moved: false });
     }
+    const running = taJobRegistry.get('spam', headerMessageId);
+    if (running) return _joinSpamJob(running, headerMessageId, options);
+    return taJobRegistry.start('spam', headerMessageId, (entry) => _runSpamJob(entry, headerMessageId, options)).promise;
+}
+
+// A caller that found a spam analysis running. An autoMove caller (the batch) that joins
+// a manual check (Refresh, no autoMove) still wants the verdict applied: it asks the job
+// through entry.wantsMove, read when the job reaches its verdict, so the message is still
+// moved - once, by the job. A joiner arriving after that point gets the outcome as it is.
+async function _joinSpamJob(entry, headerMessageId, options) {
+    taJobRegistry.logJoin(entry);
+    if (options.autoMove) entry.wantsMove = true;
+    const tabId = options.tabId;
+    const showPanel = tabId && prefs_init.spamfilter_show_msg_panel;
+    if (showPanel) await _sendIfCurrent(tabId, headerMessageId, { command: "showSpamCheckInProgress" });
+    const outcome = await entry.promise;
+    // Same reason as _joinSummaryJob(): the in-progress badge above may have reached the
+    // tab after the job's broadcast, so this caller replaces it with the report itself.
+    if (showPanel && outcome.data?.report) {
+        await _sendIfCurrent(tabId, headerMessageId, { command: "showSpamReport", data: outcome.data.report });
+    }
+    return outcome;
+}
+
+// The outcome of a spam job: report is what the panel shows (the verdict or the error).
+function _spamOutcome(success, report, extra = {}) {
+    return { status: success ? 'ok' : 'error', success: success, moved: false, data: { report: report }, ...extra };
+}
+
+async function _runSpamJob(entry, headerMessageId, options) {
     // Declared outside the try so the final catch can still attach whatever
     // metadata was captured before the failure.
     let message_metadata = null;
@@ -1436,7 +1663,6 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         ]);
 
         await spamReport.removeReportData(headerMessageId);
-        await spamReport.setProcessing(headerMessageId);
 
         await updateSpamPanel(headerMessageId, "showSpamCheckInProgress");
 
@@ -1453,7 +1679,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
             if (!message) {
                 let err_data = await spamReport.saveError(headerMessageId, "Message not found");
                 await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
-                return { success: false };
+                return _spamOutcome(false, err_data);
             }
             // Snapshot the MessageHeader fields first: getFull() can fail, or resolve
             // with empty headers, when a user filter removes the message mid-analysis.
@@ -1464,7 +1690,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
                 console.error("[ThunderAI | SpamFilter] Error getting the full message: ", err);
                 let err_data = await spamReport.saveError(headerMessageId, err.message || String(err), message_metadata || {});
                 await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
-                return { success: false };
+                return _spamOutcome(false, err_data);
             }
             message_metadata = _buildReportMetadata(message, curr_fullMessage);
             msg_text = await getMailInlineTextParts(message.id);
@@ -1497,7 +1723,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
                 report_data.SpamThreshold = getSpamThreshold(prefs);
                 spamReport.saveReportData(report_data, headerMessageId);
                 await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
-                return { success: true };
+                return _spamOutcome(true, report_data);
             }
         }
 
@@ -1529,7 +1755,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
                         report_data.SpamThreshold = getSpamThreshold(prefs);
                         spamReport.saveReportData(report_data, headerMessageId);
                         await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
-                        return { success: true };
+                        return _spamOutcome(true, report_data);
                     }
                 }
             } catch (err) {
@@ -1543,18 +1769,18 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
             taLog.error("Spam filter: the 'prompt_spamfilter' special prompt is missing, skipping. If you modified the special prompts, try restoring the default Spam Filter prompt.");
             let err_data = await spamReport.saveError(headerMessageId, browser.i18n.getMessage('spamfilter_prompt_missing_explanation'), message_metadata || {});
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
-            return { success: false };
+            return _spamOutcome(false, err_data);
         }
         // The connection can be unusable even with spamfilter still true in storage (a
         // wizard run, a prefs import): without this the resolved type flowed straight into
-        // mzta_specialCommand. setProcessing() already ran, so report the error through
-        // spamReport instead of returning bare, or the panel would sit on "in progress".
+        // mzta_specialCommand. The in-progress badge is already shown, so report the error
+        // through spamReport instead of returning bare, or the panel would sit on it.
         let spam_conntype = getConnectionType(prefs, curr_prompt_spamfilter, 'spamfilter');
         if (!isApiUsableConnection(spam_conntype)) {
             console.error("[ThunderAI | SpamFilter] Invalid connection type: " + spam_conntype);
             let err_data = await spamReport.saveError(headerMessageId, browser.i18n.getMessage('msg_no_connection_selected'), message_metadata || {});
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
-            return { success: false };
+            return _spamOutcome(false, err_data);
         }
         let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
         let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt({
@@ -1588,7 +1814,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
                 let err_data = await spamReport.saveError(headerMessageId, err.message || String(err), message_metadata || {});
                 await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
                 // rateLimited: the processEmails() pipeline stops the batch on it.
-                return { success: false, rateLimited: !!err.rateLimited, retryAfterMs: err.retryAfterMs ?? null };
+                return _spamOutcome(false, err_data, { rateLimited: !!err.rateLimited, retryAfterMs: err.retryAfterMs ?? null });
             }
         } finally {
             taWorkingStatus.stopWorking();
@@ -1603,7 +1829,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
             console.error("[ThunderAI | SpamFilter] Error extracting JSON from AI response: ", e);
             let err_data = await spamReport.saveError(headerMessageId, e.message || String(e), message_metadata || {});
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
-            return { success: false };
+            return _spamOutcome(false, err_data);
         }
         taLog.log("SpamFilter jsonObj: " + JSON.stringify(jsonObj));
 
@@ -1618,7 +1844,8 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         report_data.moved = false;
         report_data.SpamThreshold = getSpamThreshold(prefs);
 
-        if (options.autoMove && jsonObj.spamValue >= report_data.SpamThreshold) {
+        // entry.wantsMove: an autoMove caller joined this job (see _joinSpamJob()).
+        if ((options.autoMove || entry.wantsMove) && jsonObj.spamValue >= report_data.SpamThreshold) {
             taLog.log("Marking as spam [" + headerMessageId + "]");
             // Serialized through _enqueueJunkMove(): processEmails() analyzes several
             // messages at once, and concurrent moves into the junk folder (IMAP especially)
@@ -1643,17 +1870,22 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         spamReport.saveReportData(report_data, headerMessageId);
         await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
         // moved: read by the processEmails() pipeline, a moved message gets no tags, summary or translation.
-        return { success: true, moved: report_data.moved };
+        return _spamOutcome(true, report_data, { moved: report_data.moved });
 
     } catch (error) {
         console.error("[ThunderAI] Error generating spam report:", error);
-        if (error.isConfigError) {
-            await updateSpamPanel(headerMessageId, "showSpamReport", { spamValue: -999, explanation: error.message || String(error) });
-        } else {
-            let err_data = await spamReport.saveError(headerMessageId, error.message || String(error), message_metadata || {});
-            await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+        // A config error is shown but not stored, so a later check runs again once the
+        // settings are fixed. Nothing is left "in progress": the registry drops the entry.
+        let err_data = { spamValue: -999, explanation: error.message || String(error) };
+        if (!error.isConfigError) {
+            try {
+                err_data = await spamReport.saveError(headerMessageId, error.message || String(error), message_metadata || {});
+            } catch (e) {
+                taLog.error("[ThunderAI | SpamFilter] Could not store the error for " + headerMessageId + ": " + e);
+            }
         }
-        return { success: false };
+        await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+        return _spamOutcome(false, err_data);
     }
 }
 
@@ -2378,24 +2610,17 @@ async function showGenericInfo(infoMsg, source) {
     }
 }
 
-async function updateSpamPanel(messageId, command, data = null) {
-    if (prefs_init.spamfilter_show_msg_panel) {
-        let tabs = await browser.tabs.query({ active: true, currentWindow: true });
-        if (tabs.length > 0) {
-            let activeTab = tabs[0];
-            let displayedMessage = await browser.messageDisplay.getDisplayedMessage(activeTab.id);
-            if (displayedMessage && displayedMessage.headerMessageId === messageId) {
-                let msg = { command: command };
-                if (data) {
-                    msg.data = data;
-                }
-                // [#901] The active tab may be a mail tab with no reachable message
-                // browser: drop the panel update quietly, the stored report renders
-                // the next time the pane is reachable.
-                sendTabMessageSafe(activeTab.id, msg);
-            }
-        }
+// Spam panel update for every tab displaying the message, not just the active tab of the
+// current window: the analysis may be running for a message open in another window, or in
+// two places at once. _sendToTabsDisplaying() keeps the displayed-message check and the
+// #901 quiet drop (the stored report renders the next time the pane is reachable).
+async function updateSpamPanel(headerMessageId, command, data = null) {
+    if (!prefs_init.spamfilter_show_msg_panel) return;
+    let msg = { command: command };
+    if (data) {
+        msg.data = data;
     }
+    await _sendToTabsDisplaying(headerMessageId, msg);
 }
 
 // Runs fn(item) over items with at most `limit` calls in flight: `limit` pull-based workers
@@ -2464,7 +2689,9 @@ async function processEmails(args) {
     const summarizeSendersActive = hasAddressListEntries(summarizeSenders);
 
     taWorkingStatus.startWorking();
-    taBatchController.beginBatch();
+    // This call's own cancel token: a Stop or a rate-limit stop cancels the batches active
+    // at that moment, never one started afterwards (e.g. a manual Summarize right after).
+    const batch = taBatchController.beginBatch();
 
     // Wrap the whole body so taWorkingStatus.stopWorking() always runs, even on a throw
     // (OOM, failed getFull, missing active tab, ...). Otherwise WorkingLevel stays > 0
@@ -2591,7 +2818,7 @@ async function processEmails(args) {
         for await (let message of batchMessages) {
             // Cooperative cancellation: bail out before doing any heavy work (getFull, ...)
             // if the user requested a stop. All break paths fall through to the outer finally.
-            if (taBatchController.isCancelled()) {
+            if (taBatchController.isCancelled(batch)) {
                 taLog.log("[ThunderAI] Batch processing cancelled by user, stopping.");
                 break;
             }
@@ -2711,7 +2938,7 @@ async function processEmails(args) {
             processedCount++;
             if (processedCount % CHUNK_SIZE === 0) {
                 await new Promise(r => setTimeout(r, 0));
-                if (taBatchController.isCancelled()) {
+                if (taBatchController.isCancelled(batch)) {
                     taLog.log("[ThunderAI] Batch processing cancelled by user (between chunks), stopping.");
                     break;
                 }
@@ -2721,12 +2948,13 @@ async function processEmails(args) {
         // Stops the pipelines as soon as the batch is cancelled: by the user, or by
         // stopForRateLimit(), which requests the cancel itself. Checked before each message is
         // taken (runWithConcurrency) and between the features of a message.
-        const batchStopped = () => taBatchController.isCancelled();
+        const batchStopped = () => taBatchController.isCancelled(batch);
 
-        // The manual Translate action shows the result in the tab it was started from: with
-        // several messages selected, only the one that tab displays gets the panel -
-        // _generateTranslationForMessage() goes through _sendGeneratingIfCurrent() /
-        // _sendIfCurrent(). On receive the tab is null (silent pre-cache).
+        // The manual Translate action delivers the result to the tab it was started from
+        // (only for the message that tab displays, through _sendIfCurrent()); every tab
+        // displaying a message also follows its job through the job's own broadcast
+        // (_sendToTabsDisplaying()), so on receive, with a null tab, an open panel still
+        // shows the progress and the result.
         let translateTabId = null;
         if (translate && targets.some(t => t.translate)) {
             translateTabId = sourceTabId;
@@ -2739,7 +2967,33 @@ async function processEmails(args) {
         }
 
         // add_tags for one message. Returns true when the batch was stopped by a rate limit.
+        // One add_tags job per message (taJobRegistry): the context menu, the popup dialog
+        // (js/mzta-menus.js) and this batch can reach the same message together. A job
+        // already running is joined, with no second AI call: its tags are assigned by it
+        // (auto / context menu) or confirmed by the user (dialog, data.assigned = false), so
+        // a joiner never assigns anything. Once it ended, a new run is allowed again.
         const runAddTags = async (msg, fullMessage, body) => {
+            const tags_job_id = msg.headerMessageId;
+            let outcome;
+            const running = tags_job_id ? taJobRegistry.get('add_tags', tags_job_id) : null;
+            if (running) {
+                taJobRegistry.logJoin(running);
+                outcome = await running.promise;
+            } else if (tags_job_id) {
+                outcome = await taJobRegistry.start('add_tags', tags_job_id, () => runAddTagsJob(msg, fullMessage, body)).promise;
+            } else {
+                outcome = await runAddTagsJob(msg, fullMessage, body);
+            }
+            if (outcome.rateLimited) {
+                // Tags are not assigned.
+                stopForRateLimit('Add tags', outcome.retryAfterMs ?? null);
+                return true;
+            }
+            return false;
+        };
+
+        // The add_tags work itself. Resolves to the job outcome.
+        const runAddTagsJob = async (msg, fullMessage, body) => {
             const { prompt: curr_prompt_add_tags, conntype: addtags_conntype } = await resolveAddTagsSetup();
             let tags_full_list = await getTagsList();
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
@@ -2774,16 +3028,15 @@ async function processEmails(args) {
                     } else {
                         console.error("[ThunderAI | Auto add_tags] initWorker error: ", err);
                     }
-                    return false;
+                    return { status: 'error', errorMessage: err?.message || String(err) };
                 }
                 try {
                     tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
                 } catch (err) {
                     console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
                     if (err?.rateLimited) {
-                        // Tags are not assigned.
-                        stopForRateLimit('Add tags', err.retryAfterMs ?? null);
-                        return true;
+                        // Tags are not assigned; runAddTags() stops the batch.
+                        return { status: 'error', errorMessage: err.message, rateLimited: true, retryAfterMs: err.retryAfterMs ?? null };
                     }
                 }
             } finally {
@@ -2793,7 +3046,7 @@ async function processEmails(args) {
             let _data = { messageId: msg.id, tags: tags_current_email };
             // Serialized with every other tag assignment, see _enqueueTagAssign().
             await _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
-            return false;
+            return { status: 'ok', data: { tags: tags_current_email, assigned: true } };
         };
 
         // One message through its features, in series. Spam first: a spam verdict can move
@@ -2921,8 +3174,13 @@ async function processEmails(args) {
                         return;
                     }
                     taLog.log("[ThunderAI] Generating translation for: " + curr.headerMessageId);
+                    // Joins a translation already running for this message (e.g. the user
+                    // clicked the panel button while the message was queued). manual only for
+                    // the context-menu action: the automatic batch never revives a job the
+                    // user invalidated by deleting the translation.
                     const translateResult = await _generateTranslationForMessage(curr.headerMessageId, translateTabId, {
-                        messageData: { message: curr, fullMessage }
+                        messageData: { message: curr, fullMessage },
+                        manual: !isAutoMode
                     });
                     if (translateResult?.rateLimited) {
                         stopForRateLimit('Translate', translateResult.retryAfterMs);
@@ -2939,7 +3197,7 @@ async function processEmails(args) {
         }
     }
 
-    if (summarize && !taBatchController.isCancelled()) {
+    if (summarize && !taBatchController.isCancelled(batch)) {
         let summarize_prefs = await mztaPrefs.getPrefs([
             'summarize_display_mode',
             'summarize_max_messages'
@@ -2983,8 +3241,11 @@ async function processEmails(args) {
         if (inline_ready) {
             const msg = messageArray[0];
             const fullMessage = await browser.messages.getFull(msg.id);
+            // manual: a summary job already running on this message (the batch) is joined,
+            // and its result lands in this tab's panel.
             await _generateSummaryForMessage(msg.headerMessageId, tabId, {
-                messageData: { message: msg, fullMessage }
+                messageData: { message: msg, fullMessage },
+                manual: true
             });
         } else {
             // Webchat mode, or inline with multiple messages / an unreachable message
@@ -3001,7 +3262,7 @@ async function processEmails(args) {
             }
             const messageDataArray = [];
             for (let curr_message of messageArray) {
-                if (taBatchController.isCancelled()) {
+                if (taBatchController.isCancelled(batch)) {
                     taLog.log("[ThunderAI] Summarize cancelled by user, stopping.");
                     return;
                 }
@@ -3021,7 +3282,7 @@ async function processEmails(args) {
         // active batch exits because the user requested a cancel, notify how many messages
         // were processed before stopping. A stop caused by a rate limit / used-up quota is an
         // error, not a choice of the user, so it gets the red panel and says why.
-        const batchResult = taBatchController.endBatch();
+        const batchResult = taBatchController.endBatch(batch);
         if (batchResult.lastExit && batchResult.cancelled && batchResult.reason === 'rate_limit') {
             // When the provider said how long to wait, the notice tells the user when to retry.
             await showGenericError(
