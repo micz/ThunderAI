@@ -68,7 +68,9 @@ import {
     getSummarizePrompt,
     getTranslatePrompt,
     migrateMenuOrderAlphabetic,
-    migrateEnabledToShowIn
+    migrateEnabledToShowIn,
+    migrateCalendarNoSelection,
+    getSpecialPrompts
 } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taSummaryStore } from './js/mzta-summarystore.js';
@@ -77,11 +79,12 @@ import { taWorkingStatus } from './js/mzta-working-status.js';
 import { taBatchController } from './js/mzta-batch-controller.js';
 import {
     addTags_getExclusionList,
+    addTags_setExclusionList,
     checkExcludedTag
 } from './js/mzta-addtags-exclusion-list.js';
 import { mztaPrefs } from './js/mzta-prefs.js';
 import { migratePrefsToLocal, isSyncDrained } from './js/mzta-prefs-migration.js';
-import { mztaManaged } from './js/mzta-managed.js';
+import { mztaManaged, MANAGED_SECRET_MARKER } from './js/mzta-managed.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -111,6 +114,9 @@ if (!await isSyncDrained()) {
     await migrateDefaultPromptsPropStorage();
 }
 if (_prefs_migration_ok) await migrateEnabledToShowIn();
+// Reads the user's stored calendar_no_selection, so it needs the sync copy to be in place
+// for the same reason as the migration above.
+if (_prefs_migration_ok) await migrateCalendarNoSelection();
 
 var original_html = '';
 var modified_html = '';
@@ -153,6 +159,11 @@ const PREFS_INIT_KEYS = {
 const MENU_RELEVANT_KEYS = [
     'add_tags', 'get_calendar_event', 'get_calendar_event_from_clipboard', 'get_task',
     'spamfilter', 'summarize', 'translate', 'connection_type',
+    // Not a gating key, but the menus hold the prompt objects taken at the last rebuild, and
+    // need_selected of the calendar prompt is derived from this preference on read
+    // (applyCalendarNoSelection() in js/mzta-prompts.js): without a rebuild a change would
+    // only take effect at the next restart.
+    'calendar_no_selection',
     ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
 ];
 
@@ -168,6 +179,35 @@ let prefs_init = {};
 // preference. With no policy installed this resolves silently and changes nothing.
 await mztaManaged.loadManaged();
 
+// Hydration of the policy VALUES for every other extension context (see managedReady() in
+// js/mzta-managed.js). Registered here, on its own, rather than in the main onMessage
+// listener further down: that one only exists after every startup await, and a page opened
+// during startup would otherwise hydrate empty and show the unmanaged values. The main
+// listener's default branch returns false for this command, so the two never compete.
+browser.runtime.onMessage.addListener((message, sender) => {
+    if (!message || message.command !== 'get_managed_values') return false;
+    const empty = { values: {}, lockedKeys: [] };
+    // Extension pages only. Content scripts (compose and message display) share this
+    // channel but never import js/mzta-prefs.js, so they have no use for the values.
+    const ext_root = browser.runtime.getURL('');
+    if (!sender || typeof sender.url !== 'string' || !sender.url.startsWith(ext_root)) {
+        return Promise.resolve(empty);
+    }
+    // A policy-supplied API key goes ONLY to the API chat window, which needs it to call
+    // the provider. Every settings page gets MANAGED_SECRET_MARKER instead, so the key can
+    // neither be revealed with the password eye toggle nor copied into a prompt.
+    const is_webchat = sender.url.startsWith(browser.runtime.getURL('api_webchat/'));
+    const values = {};
+    const locked = mztaManaged.getLockedKeys();
+    for (const key of Object.keys(prefs_default)) {
+        if (!mztaManaged.hasManagedValue(key)) continue;
+        values[key] = (key.endsWith('_api_key') && !is_webchat)
+            ? MANAGED_SECRET_MARKER
+            : mztaManaged.getManagedValue(key);
+    }
+    return Promise.resolve({ values: values, lockedKeys: locked });
+});
+
 // Repair any feature flag left enabled on an unusable connection before anything derives
 // from it: this is where a wizard run or a prefs import from a previous session gets
 // healed, since no options page needs to be opened for it to happen.
@@ -175,6 +215,26 @@ await _reconcileFeatureFlags(await _readFeatureConnPrefs());
 await reload_pref_init();
 
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
+
+// calendar_no_selection sends the whole message body instead of a selection, which only
+// works if the calendar prompt reads the body. The settings page refuses to enable it
+// otherwise, but a policy can set it without passing through that page - so say so here,
+// with warn() because it is not gated on do_debug and an administrator must see it.
+await (async () => {
+    try {
+        if (await mztaPrefs.getPref('calendar_no_selection') !== true) return;
+        const calendar_prompt = (await getSpecialPrompts()).find(p => p.id === 'prompt_get_calendar_event');
+        const text = (calendar_prompt && typeof calendar_prompt.text === 'string') ? calendar_prompt.text : '';
+        if (!text.includes('{%mail_text_body_or_selected%}') && !text.includes('{%mail_html_body_or_selected%}')) {
+            taLog.warn('calendar_no_selection is enabled' +
+                (mztaManaged.hasManagedValue('calendar_no_selection') ? ' by the managed configuration' : '') +
+                ', but the calendar event prompt contains neither {%mail_text_body_or_selected%} nor ' +
+                '{%mail_html_body_or_selected%}: the message body will not be sent to the AI.');
+        }
+    } catch (e) {
+        taLog.error('Could not check the calendar prompt placeholders: ' + e);
+    }
+})();
 taWorkingStatus.taLog = taLog;
 taBatchController.taLog = taLog;
 let spamReport = new taSpamReport(prefs_init.do_debug);
@@ -854,6 +914,29 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     return _assign_tags(message,true, prefs_assign_tags.add_tags_exclusions_exact_match);
                 }
                 return _do_assign_tags(message);
+                break;
+            // The tag dialog in js/mzta-compose-script.js, a classic content script, cannot
+            // import js/mzta-prefs.js. These two give it the tag exclusion preferences
+            // resolved against the enterprise policy, and a write that goes through the
+            // write guard.
+            case 'addtags_get_exclusion_prefs':
+                async function _addtags_get_exclusion_prefs() {
+                    let prefs_excl = await mztaPrefs.getPrefs([
+                        'add_tags_exclusions',
+                        'add_tags_hide_exclusions',
+                        'add_tags_exclusions_exact_match'
+                    ]);
+                    prefs_excl.exclusions_locked = mztaManaged.isManagedLocked('add_tags_exclusions');
+                    return prefs_excl;
+                }
+                return _addtags_get_exclusion_prefs();
+                break;
+            case 'addtags_set_exclusions':
+                if (!Array.isArray(message.list) || !message.list.every(el => typeof el === 'string')) {
+                    taLog.warn('addtags_set_exclusions: the list must be an array of strings, ignored.');
+                    return Promise.resolve(false);
+                }
+                return addTags_setExclusionList(message.list).then(() => true);
                 break;
             case 'api_send_custom_text':
                 browser.tabs.sendMessage(message.tabId, { command: "api_send_custom_text", custom_text: message.custom_text });

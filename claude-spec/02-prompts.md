@@ -71,7 +71,7 @@ user's storage or deletes the user's shadowed prompt for real.
 | `text` | string | The prompt template text — usually an i18n key (e.g. `prompt_reply_full_text`); may contain `{%placeholder%}` tokens |
 | `type` | string | `"0"` = always visible, `"1"` = reading email only, `"2"` = composing only |
 | `action` | string | `"0"` = close, `"1"` = reply (open compose), `"2"` = substitute text in-place |
-| `need_selected` | string | `"0"` = use full message body, `"1"` = requires text selection |
+| `need_selected` | string | `"0"` = use full message body, `"1"` = requires text selection. For `prompt_get_calendar_event` it is **derived**, see below |
 | `need_signature` | string | `"0"` = no signature, `"1"` = include signature |
 | `need_custom_text` | string | `"0"` = no custom input, `"1"` = show custom text input field |
 | `define_response_lang` | string | `"0"` = no language hint, `"1"` = append response language instruction |
@@ -344,6 +344,15 @@ The preference read feeding it **must** include `getDynamicSettingsDefaults(['us
 
 Notable dependency:
 
+- `need_selected` of `prompt_get_calendar_event` is **derived from the `calendar_no_selection`
+  preference** on every read, by `applyCalendarNoSelection()` at the end of
+  `getSpecialPrompts()` — the narrowest point every consumer (menus, popup, `loadPrompt()`,
+  the feature pages, `buildSummaryPrompt()`/`buildTranslationPrompt()`) goes through. The
+  preference is policy-settable, and a value derived from a policy must never be written to
+  storage. The overlaid value does reach storage when a feature page writes the whole
+  `_special_prompts` array back, which is harmless: no reader trusts the stored value, every
+  read overwrites it again. `prompt_get_calendar_event_from_clipboard` is not overlaid: its
+  `need_selected` is always `"0"`, since the clipboard replaces both selection and body.
 - `prompt_get_calendar_event_from_clipboard` is emitted only if **both** `get_calendar_event` and `get_calendar_event_from_clipboard` are active. If `get_calendar_event` is off, neither calendar prompt is shown regardless of the clipboard pref. Both share the `get_calendar_event` prefix for the connection check.
 
 ### Summarize: Dual-Mode Prompt System

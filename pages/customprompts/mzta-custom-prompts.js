@@ -76,7 +76,8 @@ import {
     getManagedState,
     isPromptManagementDisabled,
     areDefaultPromptsDisabled,
-    disableForManagedRestriction
+    disableForManagedRestriction,
+    seedFromGlobal
 } from "../_lib/managed-ui.js";
 
 // Id prefix of the detail editor's injected connection fields. The pane is the only
@@ -1480,7 +1481,10 @@ function populateConnectionUI(itemValues) {
             if (!inputEl) continue;
             let val = itemValues[propName];
             if (val === undefined || (inputEl.type !== 'checkbox' && val === '')) {
-                if (prefs[propName] !== undefined) val = prefs[propName];
+                // Never from a policy-supplied global value: the field is saved back into
+                // the prompt, where it would outlive the policy (see seedFromGlobal()).
+                const seed = seedFromGlobal(prefs, propName);
+                if (seed !== undefined) val = seed;
             }
             if (inputEl.type === 'checkbox') {
                 inputEl.checked = (val === true || val === 'true');

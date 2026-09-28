@@ -45,7 +45,13 @@ import {
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
-import { applyManagedUI } from '../_lib/managed-ui.js';
+import {
+    applyManagedUI,
+    seedFromGlobal,
+    isLockedKey,
+    lockCompanions,
+    setDisabledRespectingManaged
+} from '../_lib/managed-ui.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -178,8 +184,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     skip_addresses_textarea.value = skip_addresses_string;
 
+    // data-mzta-pref: applyManagedUI() above has already disabled and marked the textarea
+    // when the policy locks the list. Its Save button is ours to lock.
+    lockCompanions('spamfilter_skip_addresses', [skip_addresses_save_btn]);
+
     skip_addresses_textarea.addEventListener('input', (event) => {
-        skip_addresses_save_btn.disabled = (event.target.value === skip_addresses_string);
+        setDisabledRespectingManaged(skip_addresses_save_btn, (event.target.value === skip_addresses_string));
         if(skip_addresses_save_btn.disabled){
             document.getElementById('skip_addresses_unsaved').classList.add('hidden');
         } else {
@@ -188,6 +198,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     skip_addresses_save_btn.addEventListener('click', () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isLockedKey('spamfilter_skip_addresses')) return;
         let skip_array_new = normalizeStringList(skip_addresses_textarea.value, 2);
         spamfilter_setSkipAddresses(skip_array_new);
         skip_addresses_save_btn.disabled = true;
@@ -202,6 +214,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     skip_addressbook_checkbox.checked = prefs_skip_ab.spamfilter_skip_addressbook;
 
     skip_addressbook_checkbox.addEventListener('change', async (event) => {
+        // Locked: no permission prompt and no write, even if the checkbox was re-enabled
+        // from the developer tools. Put back the enforced state the change just flipped.
+        if (isLockedKey('spamfilter_skip_addressbook')) {
+            event.target.checked = !event.target.checked;
+            return;
+        }
         if (event.target.checked) {
             try {
                 const granted = await browser.permissions.request({ permissions: ["addressBooks"] });
@@ -521,8 +539,10 @@ async function restoreOptions() {
           // Inherit the global connection only when this select can actually offer it:
           // chatgpt_web has no <option> here (it has no API), so inheriting it would show
           // a value the control cannot represent. Leave it blank instead.
-          getting['spamfilter_connection_type'] = isApiUsableConnection(getting['connection_type'])
-              ? getting['connection_type']
+          // seedFromGlobal(): never seed from a policy-supplied global value - these fields are
+          // written into the special prompt, where it would outlive the policy.
+          getting['spamfilter_connection_type'] = isApiUsableConnection(seedFromGlobal(getting, 'connection_type'))
+              ? seedFromGlobal(getting, 'connection_type')
               : '';
       }
       for (const [integration, options] of Object.entries(integration_options_config)) {
@@ -531,7 +551,7 @@ async function restoreOptions() {
               if (spamfilter_prompt[propName] !== undefined && spamfilter_prompt[propName] !== '') {
                   getting[`spamfilter_${propName}`] = spamfilter_prompt[propName];
               } else {
-                  getting[`spamfilter_${propName}`] = getting[propName];
+                  getting[`spamfilter_${propName}`] = seedFromGlobal(getting, propName);
               }
           }
       }
@@ -546,6 +566,7 @@ async function spamfilter_getSkipAddresses() {
 }
 
 function spamfilter_setSkipAddresses(spamfilter_skip_addresses) {
+    if (isLockedKey('spamfilter_skip_addresses')) return;
     mztaPrefs.setPref('spamfilter_skip_addresses', spamfilter_skip_addresses);
 }
 

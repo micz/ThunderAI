@@ -43,7 +43,7 @@ import {
 import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
-import { applyManagedUI } from '../_lib/managed-ui.js';
+import { applyManagedUI, seedFromGlobal, isLockedKey } from '../_lib/managed-ui.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -130,20 +130,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     get_calendar_event_use_specific_integration.addEventListener('change', updateConnPanelTint);
     updateConnPanelTint();
 
+    // calendar_no_selection is the single source of truth: need_selected of the calendar
+    // prompt is derived from it on every read (applyCalendarNoSelection() in
+    // js/mzta-prompts.js), so this handler no longer writes the prompt. The preference itself
+    // is stored by saveOptions(), registered above and therefore run first; the background
+    // rebuilds the menus from storage.onChanged, and the explicit reload_menus below only
+    // makes it immediate.
     get_calendar_event_no_selection.addEventListener('change', async (event) => {
         if (event.target.checked) {
             const currentPromptText = get_calendar_event_textarea.value;
-            const hasBodyOrSelected = currentPromptText.includes('{%mail_text_body_or_selected%}') || currentPromptText.includes('{%mail_html_body_or_selected%}');
-            if (!hasBodyOrSelected) {
+            if (!hasBodyPlaceholder(currentPromptText)) {
                 alert(browser.i18n.getMessage('prefs_OptionText_calendar_no_selection_missing_placeholder'));
                 event.target.checked = false;
-                return;
+                // saveOptions() has already stored true: roll the preference back too, or the
+                // switch would come back on at the next visit with the prompt unchanged.
+                await mztaPrefs.setPref('calendar_no_selection', false);
             }
         }
-        specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event').need_selected = event.target.checked ? '0' : '1';
-        await setSpecialPrompts(specialPrompts);
         browser.runtime.sendMessage({command: "reload_menus"});
     });
+
+    // A policy can lock the option on without passing through the check above. Say so next
+    // to the switch when the saved prompt cannot work with it (the background also warns).
+    const updateNoSelectionPolicyNote = () => {
+        const note = document.getElementById('calendar_no_selection_policy_note');
+        if (!note) return;
+        const show = isLockedKey('calendar_no_selection') && get_calendar_event_no_selection.checked &&
+            !hasBodyPlaceholder(get_calendar_event_prompt.text);
+        note.textContent = show ? browser.i18n.getMessage('prefs_OptionText_calendar_no_selection_policy_missing_placeholder') : '';
+        note.classList.toggle('shown', show);
+    };
 
     get_calendar_event_from_clipboard.addEventListener('change', async (event) => {
         if (event.target.checked) {
@@ -185,6 +201,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event').text = get_calendar_event_textarea.value;
         specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event_from_clipboard').text = get_calendar_event_textarea.value;
         await setSpecialPrompts(specialPrompts);
+        updateNoSelectionPolicyNote();
         get_calendar_event_save_btn.disabled = true;
         document.getElementById('get_calendar_event_prompt_unsaved').classList.add('hidden');
         browser.runtime.sendMessage({command: "reload_menus"});
@@ -195,6 +212,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     get_calendar_event_textarea.value = get_calendar_event_prompt.text;
     get_calendar_event_reset_btn.disabled = (get_calendar_event_textarea.value === browser.i18n.getMessage('prompt_get_calendar_event_full_text'));
+    updateNoSelectionPolicyNote();
 
     // Full list, kept for token validation. Deliberately NOT filtered like the
     // suggestions: {%additional_text%} is a real placeholder that this page simply
@@ -211,6 +229,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
+
+// The calendar_no_selection option sends the whole message body, which only works if the
+// prompt reads it through one of these two placeholders.
+function hasBodyPlaceholder(text) {
+  return (typeof text === 'string') &&
+    (text.includes('{%mail_text_body_or_selected%}') || text.includes('{%mail_html_body_or_selected%}'));
+}
 
 // Methods to manage options, derived from: /options/mzta-options.js
 
@@ -336,8 +361,10 @@ async function restoreOptions() {
           // Inherit the global connection only when this select can actually offer it:
           // chatgpt_web has no <option> here (it has no API), so inheriting it would show
           // a value the control cannot represent. Leave it blank instead.
-          getting['get_calendar_event_connection_type'] = isApiUsableConnection(getting['connection_type'])
-              ? getting['connection_type']
+          // seedFromGlobal(): never seed from a policy-supplied global value - these fields are
+          // written into the special prompt, where it would outlive the policy.
+          getting['get_calendar_event_connection_type'] = isApiUsableConnection(seedFromGlobal(getting, 'connection_type'))
+              ? seedFromGlobal(getting, 'connection_type')
               : '';
       }
       for (const [integration, options] of Object.entries(integration_options_config)) {
@@ -346,7 +373,7 @@ async function restoreOptions() {
               if (get_calendar_event_prompt[propName] !== undefined && get_calendar_event_prompt[propName] !== '') {
                   getting[`get_calendar_event_${propName}`] = get_calendar_event_prompt[propName];
               } else {
-                  getting[`get_calendar_event_${propName}`] = getting[propName];
+                  getting[`get_calendar_event_${propName}`] = seedFromGlobal(getting, propName);
               }
           }
       }

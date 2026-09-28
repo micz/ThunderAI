@@ -25,10 +25,12 @@
  *
  *      { active, orgName, lockedKeys }
  *
- *  Note what is NOT in that payload: the managed VALUES. A page only needs to know which
- *  controls to disable, so a policy-supplied API key never travels over the message
- *  channel at all. The value already reaches the input through the normal preference read
- *  (js/mzta-prefs.js resolves it), and for an API key the field is masked anyway.
+ *  Note what is NOT in that payload: the managed VALUES. Those reach the page through the
+ *  normal preference read: js/mzta-prefs.js awaits mztaManaged.managedReady(), which in a
+ *  page hydrates them once from the background ("get_managed_values"), so an input restored
+ *  from mztaPrefs already holds the enforced or initial value. A policy-supplied API key is
+ *  the exception: a settings page only ever receives MANAGED_SECRET_MARKER in its place
+ *  (see js/mzta-managed.js).
  *
  *  This is presentation only. It is NOT what stops a locked preference being written -
  *  that is the write guard in js/mzta-prefs.js, which holds even if a page forgets to call
@@ -36,6 +38,8 @@
  */
 
 import { taLogger } from '../../js/mzta-logger.js';
+import { mztaManaged, MANAGED_SECRET_MARKER } from '../../js/mzta-managed.js';
+import { prefs_default } from '../../options/mzta-options-default.js';
 
 let _state = null;
 let _logger = null;
@@ -44,8 +48,9 @@ let _logger = null;
  * Fetch the managed state once and cache it for the lifetime of the page.
  *
  * Never throws and never leaves a page half-rendered: if the background is not ready yet
- * the page simply behaves as an unmanaged one, which is the correct fallback because the
- * write guard still protects every locked key.
+ * the page simply behaves as an unmanaged one. The background still enforces every locked
+ * key on its own reads, and the write guard in js/mzta-prefs.js holds wherever the values
+ * could be hydrated.
  */
 export async function getManagedState(do_debug = false) {
     if (_state) return _state;
@@ -109,6 +114,13 @@ export function isLockedKey(key) {
  * id IS its preference key (that is how saveOptions() and restoreOptions() work). So the
  * mapping needs no table - the policy key and the element id are the same string.
  *
+ * A control with its own load/save logic (a textarea saved as a normalised list, a checkbox
+ * that requests a permission) must NOT be an .option-input, or the generic saveOptions() /
+ * restoreOptions() would handle it and break its serialisation. Such a control opts in
+ * explicitly with data-mzta-pref="<preference key>" instead, and is matched against the
+ * locked set exactly like an .option-input is by its id. Its companion buttons are the
+ * page's business: see lockCompanions().
+ *
  * Safe to call repeatedly: a page that injects controls later (the connection panel builds
  * its provider rows on demand) calls it again and the already-marked ones are skipped.
  */
@@ -120,9 +132,10 @@ export async function applyManagedUI(root = document, do_debug = false) {
     // selector per locked key: an id-suffix selector would also catch unrelated controls
     // whose id merely ends with the key ("translate" would match "auto_translate").
     const locked = new Set(state.lockedKeys);
-    root.querySelectorAll('.option-input').forEach(element => {
-        if (!element.id) return;
-        if (!locked.has(element.id)) return;
+    root.querySelectorAll('.option-input, [data-mzta-pref]').forEach(element => {
+        const key = controlPrefKey(element);
+        if (!key) return;
+        if (!locked.has(key)) return;
         if (element.dataset.mztaManaged === '1') return;
         element.dataset.mztaManaged = '1';
         element.disabled = true;
@@ -131,6 +144,59 @@ export async function applyManagedUI(root = document, do_debug = false) {
     });
 
     return state;
+}
+
+/**
+ * The preference key a control is bound to: its explicit data-mzta-pref opt-in, or else the
+ * id of an .option-input. '' for anything else.
+ */
+function controlPrefKey(element) {
+    if (element.dataset.mztaPref) return element.dataset.mztaPref;
+    if (element.classList.contains('option-input')) return element.id || '';
+    return '';
+}
+
+/**
+ * Disable the companion controls of a data-mzta-pref control - its Save or Reset button, and
+ * anything else that would change the preference - when that preference is locked.
+ *
+ * They are marked like the control itself, so setDisabledRespectingManaged() keeps them
+ * disabled when page logic later reassigns `disabled` (an "unsaved changes" check does, on
+ * every input). Synchronous, like isLockedKey(): getManagedState() - or applyManagedUI() -
+ * must have been awaited first. Returns whether the key is locked, so the caller can guard
+ * its own handlers with the same answer.
+ */
+export function lockCompanions(key, elements) {
+    if (!isLockedKey(key)) return false;
+    elements.forEach(element => {
+        if (!element) return;
+        element.dataset.mztaManaged = '1';
+        element.disabled = true;
+        element.title = browser.i18n.getMessage('managed_marker_tooltip');
+    });
+    return true;
+}
+
+/**
+ * The value a per-feature or per-prompt connection field is SEEDED with from its global
+ * counterpart, when the prompt has no value of its own.
+ *
+ * A policy-supplied global value (locked or not) is never used as a seed: the seeded fields
+ * are written into the prompt (_special_prompts, _custom_prompt) on the next save - on a
+ * feature page even on page open - with no write guard, because they are prompt
+ * properties, not preferences. A seeded policy value would therefore outlive the policy,
+ * and a seeded API key would be MANAGED_SECRET_MARKER, i.e. garbage sent to the provider.
+ * Such a field starts from prefs_default instead. With no policy this is exactly
+ * prefs[key], as before.
+ */
+export function seedFromGlobal(prefs, key) {
+    if (mztaManaged.hasManagedValue(key)) return prefs_default[key];
+    return prefs[key];
+}
+
+/** True when the value is the stand-in a settings page shows for a policy-supplied API key. */
+export function isManagedSecret(value) {
+    return value === MANAGED_SECRET_MARKER;
 }
 
 /**

@@ -95,6 +95,8 @@
 */
 
 import { integration_options_config } from "../options/mzta-options-default.js";
+import { MANAGED_SECRET_MARKER } from "./mzta-managed.js";
+import { mztaPrefs } from "./mzta-prefs.js";
 
 // The five boolean-ish prompt flags documented above. Canonical representation
 // is the string "0"/"1" -- that is what the definitions below declare, and what
@@ -704,6 +706,8 @@ export function preparePromptsForExport(prompts, include_api_settings = false){
         // longer applies.
         // (is_default rows are already covered by the allowedKeys filter above.)
         TRANSIENT_PROMPT_FLAGS.forEach(flag => delete prompt[flag]);
+        // Same for the managed API key placeholder: it is not a key.
+        stripManagedSecretMarkers(prompt);
     });
     return output;
 }
@@ -938,7 +942,23 @@ function stripTransientFlags(prompts) {
     return prompts.map(prompt => {
         const copy = Object.assign({}, prompt);
         TRANSIENT_PROMPT_FLAGS.forEach(flag => delete copy[flag]);
+        stripManagedSecretMarkers(copy);
         return copy;
+    });
+}
+
+/**
+ * Drop every per-prompt API key that holds MANAGED_SECRET_MARKER, the stand-in a settings
+ * page shows for a policy-supplied key. Stored in a prompt it would be sent to the provider
+ * as the key, and would outlive the policy. The pages never seed a prompt's fields from a
+ * policy value (seedFromGlobal() in pages/_lib/managed-ui.js), so this is the second line
+ * of defence, at the same gates as the transient flags above.
+ */
+function stripManagedSecretMarkers(prompt) {
+    Object.keys(prompt).forEach(key => {
+        if (key.endsWith('_api_key') && prompt[key] === MANAGED_SECRET_MARKER) {
+            delete prompt[key];
+        }
     });
 }
 
@@ -959,6 +979,7 @@ export async function getSpecialPrompts(){
             prompt.custom_icon = "";
             normalizePromptFlags(prompt);
         })
+        await applyCalendarNoSelection(def_specPrompts);
         return def_specPrompts;
     } else {
         let updatedPrompts = structuredClone(prefs._special_prompts);
@@ -993,8 +1014,37 @@ export async function getSpecialPrompts(){
             await browser.storage.local.set({ _special_prompts: updatedPrompts });
         }
 
+        // After the write-back above, so this derived value is not what triggers it.
+        await applyCalendarNoSelection(updatedPrompts);
         return updatedPrompts;
     }
+}
+
+/**
+ * The calendar_no_selection preference is the single source of truth for whether the
+ * calendar event prompt needs a text selection. need_selected on prompt_get_calendar_event
+ * is DERIVED from it here, on every read, and never the other way round.
+ *
+ * Why at read time: the preference is policy-settable, and a value derived from a policy
+ * must not be written to storage, or it would outlive the policy. getSpecialPrompts() is
+ * the narrowest point every consumer goes through (getPrompts(), loadPrompt(), the menus,
+ * the feature pages, buildSummaryPrompt()/buildTranslationPrompt()).
+ *
+ * Why persisting it is harmless (and therefore NOT stripped at the storage gate like the
+ * TRANSIENT_PROMPT_FLAGS): the feature pages write the whole array back, so the overlaid
+ * value does reach storage - but no reader ever trusts the stored need_selected of this
+ * prompt, because every read overwrites it again from the preference. Stripping it would
+ * instead need a storage read inside every write, to restore a value nothing uses.
+ *
+ * prompt_get_calendar_event_from_clipboard is deliberately NOT overlaid: its need_selected
+ * is always "0" by definition, since the clipboard replaces both the selection and the
+ * body (js/mzta-menus.js), so the preference means nothing for it.
+ */
+async function applyCalendarNoSelection(prompts) {
+    const calendar = prompts.find(p => p.id === 'prompt_get_calendar_event');
+    if (!calendar) return;
+    const no_selection = await mztaPrefs.getPref('calendar_no_selection');
+    calendar.need_selected = (no_selection === true) ? "0" : "1";
 }
 
 export async function setSpecialPrompts(prompts) {
@@ -1116,6 +1166,42 @@ export async function migrateEnabledToShowIn() {
     }
 
     await browser.storage.local.set({ _migrated_enabled_to_showin: true });
+}
+
+// One-shot: make calendar_no_selection agree with what actually ran until now.
+//
+// Before this version the calendar prompt's behaviour was driven by the stored
+// need_selected of prompt_get_calendar_event, and calendar_no_selection only restored the
+// checkbox on the settings page. The two could disagree - the page stored the preference
+// before rolling the checkbox back on a failed placeholder check, and a prompt reset or
+// import touched only need_selected. From now on the preference wins (see
+// applyCalendarNoSelection()), so where they disagree the preference is aligned to
+// need_selected ONCE, and no user silently changes behaviour on upgrade.
+//
+// Deliberately NOT routed through js/mzta-prefs.js (issue #163), like the flags above: it
+// must compare the user's own STORED values, not a policy-resolved one, and it runs in the
+// migration block, before the policy is loaded. What it writes is the user's own prior
+// behaviour, not anything the administrator imposed - the same reasoning that leaves the
+// sync -> local migration unguarded (claude-spec/08-managed-configuration.md).
+export async function migrateCalendarNoSelection() {
+    const flag = await browser.storage.local.get({ _migrated_calendar_no_selection: false });
+    if (flag._migrated_calendar_no_selection) {
+        return;
+    }
+    const stored = await browser.storage.local.get({ _special_prompts: null, calendar_no_selection: null });
+    const calendar = Array.isArray(stored._special_prompts)
+        ? stored._special_prompts.find(p => p.id === 'prompt_get_calendar_event')
+        : undefined;
+    // No stored calendar prompt: it has only ever run with the shipped need_selected "1",
+    // which is exactly what the preference's default (false) derives. Nothing to align.
+    if (calendar) {
+        const ran_without_selection = (calendar.need_selected === "0") || (calendar.need_selected === 0);
+        const pref_says = (stored.calendar_no_selection === true);
+        if (ran_without_selection !== pref_says) {
+            await browser.storage.local.set({ calendar_no_selection: ran_without_selection });
+        }
+    }
+    await browser.storage.local.set({ _migrated_calendar_no_selection: true });
 }
 
 export async function getSpamFilterPrompt(){

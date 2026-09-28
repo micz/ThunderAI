@@ -45,6 +45,7 @@ import {
   clearPromptAPI
 } from '../../js/mzta-prompts.js';
 import { mztaPrefs } from '../../js/mzta-prefs.js';
+import { isManagedSecret } from './managed-ui.js';
 
 export const varConnectionUI = {
   permission_all_urls: false,
@@ -802,6 +803,8 @@ export async function injectConnectionUI({
   const icon_img_chatgpt_api_key = document.getElementById(getPrefixedId('pwd-icon_chatgpt_api_key'));
 
   toggleIcon_chatgpt_api_key.addEventListener('click', () => {
+      // A policy-supplied key is only a placeholder here: nothing to reveal.
+      if (isManagedSecret(passwordField_chatgpt_api_key.value)) return;
       const type = passwordField_chatgpt_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_chatgpt_api_key.setAttribute('type', type);
 
@@ -813,6 +816,8 @@ export async function injectConnectionUI({
   const icon_img_google_gemini_api_key = document.getElementById(getPrefixedId('pwd-icon_google_gemini_api_key'));
 
   toggleIcon_google_gemini_api_key.addEventListener('click', () => {
+      // A policy-supplied key is only a placeholder here: nothing to reveal.
+      if (isManagedSecret(passwordField_google_gemini_api_key.value)) return;
       const type = passwordField_google_gemini_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_google_gemini_api_key.setAttribute('type', type);
 
@@ -824,6 +829,8 @@ export async function injectConnectionUI({
   const icon_img_openai_comp_api_key = document.getElementById(getPrefixedId('pwd-icon_openai_comp_api_key'));
 
   toggleIcon_openai_comp_api_key.addEventListener('click', () => {
+      // A policy-supplied key is only a placeholder here: nothing to reveal.
+      if (isManagedSecret(passwordField_openai_comp_api_key.value)) return;
       const type = passwordField_openai_comp_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_openai_comp_api_key.setAttribute('type', type);
 
@@ -835,6 +842,8 @@ export async function injectConnectionUI({
   const icon_img_anthropic_api_key = document.getElementById(getPrefixedId('pwd-icon_anthropic_api_key'));
 
   toggleIcon_anthropic_api_key.addEventListener('click', () => {
+      // A policy-supplied key is only a placeholder here: nothing to reveal.
+      if (isManagedSecret(passwordField_anthropic_api_key.value)) return;
       const type = passwordField_anthropic_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_anthropic_api_key.setAttribute('type', type);
 
@@ -911,6 +920,9 @@ export async function injectConnectionUI({
   select_chatgpt_model.addEventListener("change", () => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateChatGPTModels')).addEventListener('click', async () => {
+    // The organization's key never reaches this page (MANAGED_SECRET_MARKER stands in for
+    // it), so the models cannot be fetched with it from here.
+    if (isManagedSecret(document.getElementById(getPrefixedId("chatgpt_api_key")).value)) return;
     document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'inline';
     let openai = new OpenAI({
       apiKey: document.getElementById(getPrefixedId("chatgpt_api_key")).value,
@@ -963,6 +975,9 @@ export async function injectConnectionUI({
   select_google_gemini_model.addEventListener("change", () => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateGoogleGeminiModels')).addEventListener('click', async () => {
+    // The organization's key never reaches this page (MANAGED_SECRET_MARKER stands in for
+    // it), so the models cannot be fetched with it from here.
+    if (isManagedSecret(document.getElementById(getPrefixedId("google_gemini_api_key")).value)) return;
     document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'inline';
     let google_gemini = new GoogleGemini({
       apiKey: document.getElementById(getPrefixedId("google_gemini_api_key")).value,
@@ -1070,6 +1085,9 @@ export async function injectConnectionUI({
   select_openai_comp_model.addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateOpenAICompModels')).addEventListener('click', async () => {
+    // The organization's key never reaches this page (MANAGED_SECRET_MARKER stands in for
+    // it), so the models cannot be fetched with it from here.
+    if (isManagedSecret(document.getElementById(getPrefixedId("openai_comp_api_key")).value)) return;
     document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'inline';
     let openai_comp = new OpenAIComp({
       host: document.getElementById(getPrefixedId("openai_comp_host")).value,
@@ -1123,6 +1141,9 @@ export async function injectConnectionUI({
   // restore, next to showConnectionOptions().
 
   document.getElementById(getPrefixedId('btnUpdateAnthropicModels')).addEventListener('click', async () => {
+    // The organization's key never reaches this page (MANAGED_SECRET_MARKER stands in for
+    // it), so the models cannot be fetched with it from here.
+    if (isManagedSecret(document.getElementById(getPrefixedId("anthropic_api_key")).value)) return;
     document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'inline';
     let anthropic = new Anthropic({
       apiKey: document.getElementById(getPrefixedId("anthropic_api_key")).value,
@@ -1754,7 +1775,8 @@ function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {
     modelChatGPT.style.border = '';
   }else{
     apiKeyInput.style.border = '';
-    btnFetchChatGPTModels.disabled = false;
+    // Not with a policy-supplied key: the page only holds its placeholder.
+    btnFetchChatGPTModels.disabled = isManagedSecret(apiKeyInput.value);
     toggleTomSelectDisabled(modelChatGPT, false);
     if((modelChatGPT.selectedIndex === -1)||(modelChatGPT.value === '')){
       modelChatGPT.style.border = '2px solid red';
@@ -1777,7 +1799,8 @@ function warn_GoogleGemini_APIKeyEmpty(modelId_prefix) {
     modelGoogleGemini.style.border = '';
   }else{
     apiKeyInput.style.border = '';
-    btnFetchGoogleGeminiModels.disabled = false;
+    // Not with a policy-supplied key: the page only holds its placeholder.
+    btnFetchGoogleGeminiModels.disabled = isManagedSecret(apiKeyInput.value);
     toggleTomSelectDisabled(modelGoogleGemini, false);
     if((modelGoogleGemini.selectedIndex === -1)||(modelGoogleGemini.value === '')){
       modelGoogleGemini.style.border = '2px solid red';
@@ -1905,7 +1928,8 @@ function warn_Anthropic_APIKeyEmpty(modelId_prefix) {
     modelAnthropic.style.border = '';
   }else{
     apiKeyInput.style.border = '';
-    btnFetchAnthropicModels.disabled = false;
+    // Not with a policy-supplied key: the page only holds its placeholder.
+    btnFetchAnthropicModels.disabled = isManagedSecret(apiKeyInput.value);
     toggleTomSelectDisabled(modelAnthropic, false);
     if((modelAnthropic.selectedIndex === -1)||(modelAnthropic.value === '')){
       modelAnthropic.style.border = '2px solid red';

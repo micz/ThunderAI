@@ -43,7 +43,7 @@ import {
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
-import { applyManagedUI } from '../_lib/managed-ui.js';
+import { applyManagedUI, seedFromGlobal } from '../_lib/managed-ui.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -296,8 +296,10 @@ async function restoreOptions() {
           // Inherit the global connection only when this select can actually offer it:
           // chatgpt_web has no <option> here (it has no API), so inheriting it would show
           // a value the control cannot represent. Leave it blank instead.
-          getting['translate_connection_type'] = isApiUsableConnection(getting['connection_type'])
-              ? getting['connection_type']
+          // seedFromGlobal(): never seed from a policy-supplied global value - these fields are
+          // written into the special prompt, where it would outlive the policy.
+          getting['translate_connection_type'] = isApiUsableConnection(seedFromGlobal(getting, 'connection_type'))
+              ? seedFromGlobal(getting, 'connection_type')
               : '';
       }
       for (const [integration, options] of Object.entries(integration_options_config)) {
@@ -306,7 +308,7 @@ async function restoreOptions() {
               if (translate_prompt[propName] !== undefined && translate_prompt[propName] !== '') {
                   getting[`translate_${propName}`] = translate_prompt[propName];
               } else {
-                  getting[`translate_${propName}`] = getting[propName];
+                  getting[`translate_${propName}`] = seedFromGlobal(getting, propName);
               }
           }
       }

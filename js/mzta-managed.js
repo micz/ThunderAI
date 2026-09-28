@@ -32,9 +32,11 @@
  *
  *  Two hard constraints shape everything here:
  *
- *  1. It must be loaded ONLY in the background page. browser.storage.managed.get() is
- *     known to fail on options pages in Thunderbird, so every other context obtains the
- *     managed state through browser.runtime.sendMessage instead. Nothing in this file may
+ *  1. The policy is READ only in the background page (loadManaged()).
+ *     browser.storage.managed.get() is known to fail on options pages in Thunderbird, so
+ *     every other context obtains the managed state through browser.runtime.sendMessage
+ *     instead: the values are hydrated by managedReady() ("get_managed_values"), the page
+ *     state by pages/_lib/managed-ui.js ("get_managed_state"). Nothing in this file may
  *     depend on a DOM.
  *
  *  2. The policy is read ONCE, at startup. Thunderbird fires no change events for the
@@ -84,6 +86,19 @@ const ORG_ID_PATTERN = /^[a-z0-9-]+$/;
 
 // Sibling key that downgrades an enforced value to a mere initial value: "<key>:locked".
 const LOCK_SUFFIX = ':locked';
+
+/**
+ * What a settings page receives in place of a policy-supplied API key.
+ *
+ * The background hands the real key only to the API chat window, which needs it to call
+ * the provider (see the "get_managed_values" handler in mzta-background.js). Every other
+ * page gets this sentinel: non-empty, so presence checks such as the popup's
+ * isConnectionConfigured() still see a configured connection, but worthless as a key.
+ * The password eye toggle, "Fetch models" and the connection test refuse to act on it,
+ * and js/mzta-prefs.js and the prompt storage gates in js/mzta-prompts.js refuse to
+ * persist it, so it can never be sent to a provider or outlive the policy.
+ */
+export const MANAGED_SECRET_MARKER = '⁣managed-by-policy⁣';
 
 // Preferences an administrator must not set, because they are per-machine or per-profile
 // state rather than configuration. Enforcing any of them across a fleet would be actively
@@ -144,6 +159,9 @@ export const mztaManaged = {
     // read once and every caller awaits the same Promise, which once settled returns
     // immediately. That is why js/mzta-prefs.js can afford to await it on every read.
     _loadPromise: null,
+    // Same pattern as _loadPromise, for every context that is NOT the background page: the
+    // Promise of the one-shot "get_managed_values" round trip started by managedReady().
+    _hydratePromise: null,
 
     // Same masking rule as js/mzta-prefs.js: a policy file is world-readable, but that is
     // no reason to copy a provider key into the error console as well.
@@ -168,20 +186,58 @@ export const mztaManaged = {
     },
 
     /**
-     * Await whatever loading is in flight, without starting any.
+     * Make the policy available to the resolution in js/mzta-prefs.js, in any context.
      *
      * This is what js/mzta-prefs.js awaits before resolving a preference, and what an
      * early-firing listener (commands, context menus, compose events) awaits to be sure
-     * the policy is in place. In the background page it resolves once loadManaged() has
-     * finished; in every other context no load was ever started, so it resolves
-     * immediately and every getter reports "not managed" - which is correct there,
-     * because those contexts get the managed state over runtime.sendMessage instead.
+     * the policy is in place.
+     *
+     * - In the background page it awaits loadManaged(), which that page starts explicitly
+     *   before its first preference read. It never starts anything there.
+     * - In every other extension context (options and settings pages, popup, API chat
+     *   window) it HYDRATES the values once from the background, over runtime.sendMessage
+     *   ("get_managed_values"), so every read resolves locked > stored > unlocked > default
+     *   exactly as it does in the background. That is also what makes the write guard in
+     *   js/mzta-prefs.js effective in pages.
+     *
+     * Hydration is started by the first preference READ, never by importing the module,
+     * and it never touches browser.storage.managed - that call is the one known to fail
+     * on options pages, and it stays confined to loadManaged().
      */
     async managedReady() {
-        // Awaiting the stored Promise, not calling it - see _loadPromise above.
-        // Null when loadManaged() was never called (every context except the background
-        // page), so there is simply nothing in flight to wait for.
-        if (this._loadPromise) await this._loadPromise;
+        // Awaiting the stored Promise, not calling it - see _loadPromise above. The
+        // background sets it synchronously before its first preference read, so it can
+        // never end up messaging itself below.
+        if (this._loadPromise) {
+            await this._loadPromise;
+            return;
+        }
+        if (!this._hydratePromise) this._hydratePromise = this._hydrate();
+        await this._hydratePromise;
+    },
+
+    /**
+     * Fill _values and _locked from the background. Fails OPEN: any failure leaves the
+     * context unmanaged, which is what it was before hydration existed, and the
+     * background still enforces every locked key on its own reads.
+     *
+     * Policy-supplied API keys arrive as MANAGED_SECRET_MARKER, except in the API chat
+     * window - the background decides, from the sender, never this side.
+     */
+    async _hydrate() {
+        try {
+            const reply = await browser.runtime.sendMessage({ command: 'get_managed_values' });
+            if (!reply || typeof reply !== 'object' ||
+                !reply.values || typeof reply.values !== 'object') {
+                this.logger.warn('Could not hydrate the managed configuration: no valid reply.');
+                return;
+            }
+            const locked = Array.isArray(reply.lockedKeys) ? reply.lockedKeys : [];
+            this._values = { ...reply.values };
+            this._locked = new Set(locked.filter(k => this.hasManagedValue(k)));
+        } catch (e) {
+            this.logger.warn('Could not hydrate the managed configuration: ' + e);
+        }
     },
 
     async _doLoad() {
@@ -270,12 +326,24 @@ export const mztaManaged = {
             const expected = typeof prefs_default[key];
             const actual = typeof value;
             // Arrays are objects to typeof; compare them as such so a list preference
-            // (spamfilter_skip_addresses, summarize_auto_senders_list) validates properly.
+            // (spamfilter_skip_addresses, summarize_auto_senders_list, add_tags_exclusions)
+            // validates properly.
             const expected_is_array = Array.isArray(prefs_default[key]);
             if (expected_is_array) {
                 if (!Array.isArray(value)) {
                     this.logger.warn('Policy: "' + key + '" must be an array, got ' +
                         actual + ', ignored.');
+                    continue;
+                }
+                // Every array preference is a list of strings, and every consumer calls
+                // string methods on its elements (checkExcludedTag() lowercases them,
+                // matchAddressList() compares them). A single non-string element rejects
+                // the WHOLE value: filtering it out would be a silent coercion, which is
+                // exactly what this validation never does.
+                const bad_index = value.findIndex(el => typeof el !== 'string');
+                if (bad_index !== -1) {
+                    this.logger.warn('Policy: "' + key + '" must be an array of strings, ' +
+                        'element ' + bad_index + ' is ' + typeof value[bad_index] + ', ignored.');
                     continue;
                 }
             } else if (actual !== expected) {
@@ -541,7 +609,8 @@ function validateOrgPrompts(raw, orgId, logger) {
 }
 
 /**
- * Await the in-flight policy load, without starting one. See mztaManaged.managedReady().
+ * Await the policy, see mztaManaged.managedReady(): the in-flight load in the background,
+ * the one-shot hydration everywhere else.
  *
  * Deliberately a function and not a module-level promise: evaluating
  * mztaManaged.loadManaged() here would read storage.managed on every page that

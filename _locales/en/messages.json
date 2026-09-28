@@ -2571,6 +2571,10 @@
     "message": "The prompt must contain the placeholder {%mail_text_body_or_selected%} or {%mail_html_body_or_selected%} to enable this option. Please add one of these placeholders to the prompt or reset it to the default.",
     "description": ""
   },
+  "prefs_OptionText_calendar_no_selection_policy_missing_placeholder": {
+    "message": "Your organization has enabled this option, but the prompt contains neither {%mail_text_body_or_selected%} nor {%mail_html_body_or_selected%}, so the message body is not sent to the AI. Add one of these placeholders to the prompt or reset it to the default.",
+    "description": "Note next to the calendar 'Do not ask to select text' switch when the enterprise policy locks it on and the calendar prompt lacks the body placeholder"
+  },
   "customPrompts_btnCopy": {
     "message": "Copy",
     "description": ""
@@ -3235,6 +3239,10 @@
   "connTest_error_timeout": {
     "message": "Timed out — no response from the endpoint",
     "description": "Connection test status strip: error message when the request exceeds the timeout"
+  },
+  "connTest_managed_api_key": {
+    "message": "The API key is set by your organization and cannot be tested from here",
+    "description": "Connection test status strip: shown instead of running the test when the API key is supplied by the enterprise policy, which never passes the real key to the settings page"
   },
   "connTest_link_test": {
     "message": "Test now",

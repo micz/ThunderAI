@@ -43,7 +43,7 @@ import {
 import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
-import { applyManagedUI } from '../_lib/managed-ui.js';
+import { applyManagedUI, seedFromGlobal } from '../_lib/managed-ui.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -289,8 +289,10 @@ async function restoreOptions() {
           // Inherit the global connection only when this select can actually offer it:
           // chatgpt_web has no <option> here (it has no API), so inheriting it would show
           // a value the control cannot represent. Leave it blank instead.
-          getting['get_task_connection_type'] = isApiUsableConnection(getting['connection_type'])
-              ? getting['connection_type']
+          // seedFromGlobal(): never seed from a policy-supplied global value - these fields are
+          // written into the special prompt, where it would outlive the policy.
+          getting['get_task_connection_type'] = isApiUsableConnection(seedFromGlobal(getting, 'connection_type'))
+              ? seedFromGlobal(getting, 'connection_type')
               : '';
       }
       for (const [integration, options] of Object.entries(integration_options_config)) {
@@ -299,7 +301,7 @@ async function restoreOptions() {
               if (get_task_prompt[propName] !== undefined && get_task_prompt[propName] !== '') {
                   getting[`get_task_${propName}`] = get_task_prompt[propName];
               } else {
-                  getting[`get_task_${propName}`] = getting[propName];
+                  getting[`get_task_${propName}`] = seedFromGlobal(getting, propName);
               }
           }
       }

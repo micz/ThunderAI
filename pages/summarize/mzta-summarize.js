@@ -44,7 +44,13 @@ import {
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
-import { applyManagedUI } from '../_lib/managed-ui.js';
+import {
+    applyManagedUI,
+    seedFromGlobal,
+    isLockedKey,
+    lockCompanions,
+    setDisabledRespectingManaged
+} from '../_lib/managed-ui.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -131,8 +137,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     auto_senders_textarea.value = auto_senders_string;
 
+    // data-mzta-pref: applyManagedUI() above has already disabled and marked the textarea
+    // when the policy locks the list. Its Save button is ours to lock.
+    lockCompanions('summarize_auto_senders_list', [auto_senders_save_btn]);
+
     auto_senders_textarea.addEventListener('input', (event) => {
-        auto_senders_save_btn.disabled = (event.target.value === auto_senders_string);
+        setDisabledRespectingManaged(auto_senders_save_btn, (event.target.value === auto_senders_string));
         if(auto_senders_save_btn.disabled){
             document.getElementById('auto_senders_unsaved').classList.add('hidden');
         } else {
@@ -141,6 +151,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     auto_senders_save_btn.addEventListener('click', () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isLockedKey('summarize_auto_senders_list')) return;
         let auto_senders_array_new = normalizeStringList(auto_senders_textarea.value, 2);
         summarize_setAutoSendersList(auto_senders_array_new);
         auto_senders_save_btn.disabled = true;
@@ -340,8 +352,10 @@ function updateAutoSendersState(){
   const summarize_auto_el = document.getElementById('summarize_auto');
   const allSummarized = (String(summarize_auto_el.value) === '3');
 
-  toggle_el.disabled = allSummarized;
-  list_el.disabled = allSummarized || !toggle_el.checked;
+  // Through the managed-aware setter: this runs on every summarize_auto change, after
+  // applyManagedUI(), and a plain assignment would re-enable a control the policy locked.
+  setDisabledRespectingManaged(toggle_el, allSummarized);
+  setDisabledRespectingManaged(list_el, allSummarized || !toggle_el.checked);
   // Never re-enable Save here: it is owned by the dirty-state check on the textarea.
   if(list_el.disabled){
     save_btn.disabled = true;
@@ -369,6 +383,7 @@ async function summarize_getAutoSendersList() {
 }
 
 function summarize_setAutoSendersList(summarize_auto_senders_list) {
+  if (isLockedKey('summarize_auto_senders_list')) return;
   mztaPrefs.setPref('summarize_auto_senders_list', summarize_auto_senders_list);
 }
 
@@ -492,8 +507,10 @@ async function restoreOptions() {
           // Inherit the global connection only when this select can actually offer it:
           // chatgpt_web has no <option> here (it has no API), so inheriting it would show
           // a value the control cannot represent. Leave it blank instead.
-          getting['summarize_connection_type'] = isApiUsableConnection(getting['connection_type'])
-              ? getting['connection_type']
+          // seedFromGlobal(): never seed from a policy-supplied global value - these fields are
+          // written into the special prompt, where it would outlive the policy.
+          getting['summarize_connection_type'] = isApiUsableConnection(seedFromGlobal(getting, 'connection_type'))
+              ? seedFromGlobal(getting, 'connection_type')
               : '';
       }
       for (const [integration, options] of Object.entries(integration_options_config)) {
@@ -502,7 +519,7 @@ async function restoreOptions() {
               if (addtags_prompt[propName] !== undefined && addtags_prompt[propName] !== '') {
                   getting[`summarize_${propName}`] = addtags_prompt[propName];
               } else {
-                  getting[`summarize_${propName}`] = getting[propName];
+                  getting[`summarize_${propName}`] = seedFromGlobal(getting, propName);
               }
           }
       }

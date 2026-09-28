@@ -23,8 +23,11 @@
  *  so that no writer has to bypass this module.
  *
  *  A handful of call sites still read storage directly and are documented at their own
- *  lines: the two one-shot migration flags in js/mzta-prompts.js, the classic content
- *  script js/mzta-compose-script.js, and one guarded read in pages/_lib/connection-ui.js.
+ *  lines: the one-shot migration flags in js/mzta-prompts.js (including
+ *  migrateCalendarNoSelection(), which must compare the user's raw stored values) and one
+ *  guarded read in pages/_lib/connection-ui.js. The classic content script
+ *  js/mzta-compose-script.js no longer reads preferences from storage: it asks the
+ *  background, which resolves them here.
  *  All of them must use the same area as PREFS_AREA.
  *
  *  ENTERPRISE MANAGED CONFIGURATION (js/mzta-managed.js) sits in front of this module.
@@ -33,12 +36,18 @@
  *
  *      locked policy value > user value in storage.local > unlocked policy value > prefs_default
  *
- *  and every write skips a locked key. See _resolveDefaults() and _applyLocked() below.
+ *  and every write skips a locked key. See _defaultsFor() and _applyLocked() below.
+ *
+ *  This holds in EVERY extension context, not only the background page: outside it,
+ *  mztaManaged.managedReady() hydrates the policy values from the background on the first
+ *  read (see js/mzta-managed.js), so a settings page shows the enforced or initial value and
+ *  the write guard is live there too. A policy-supplied API key reaches a settings page only
+ *  as MANAGED_SECRET_MARKER, which the writers below refuse to persist.
  */
 
 import { prefs_default } from '../options/mzta-options-default.js';
 import { taLogger } from './mzta-logger.js';
-import { mztaManaged } from './mzta-managed.js';
+import { mztaManaged, MANAGED_SECRET_MARKER } from './mzta-managed.js';
 
 // Preferences live in storage.local, NOT storage.sync. They were moved there because
 // storage.sync has a narrow quota — the same reason the large prompt payloads were moved
@@ -198,6 +207,15 @@ export const mztaPrefs = {
                 'configuration, write skipped.');
             return;
         }
+        // The stand-in a settings page shows for a policy-supplied API key. It is not a
+        // key, and storing it would replace whatever the user had with garbage that
+        // outlives the policy. Normally unreachable - saveOptions() fires only on a user
+        // edit, which changes the value - so this is defence in depth.
+        if (value === MANAGED_SECRET_MARKER) {
+            this._logWarning('setPref: "' + pref_id + '" holds the managed API key ' +
+                'placeholder, write skipped.');
+            return;
+        }
         this.logger.log('Saving option: ' + pref_id + ' = ' +
             this._logValue(pref_id, JSON.stringify(value)));
         return await PREFS_AREA.set({ [pref_id]: value });
@@ -224,7 +242,8 @@ export const mztaPrefs = {
         const skipped = [];
         const log_parts = [];
         Object.entries(prefs_obj).forEach(([pref_id, value]) => {
-            if (mztaManaged.isManagedLocked(pref_id)) {
+            // Same two guards as setPref(): a locked key, and the API key placeholder.
+            if (mztaManaged.isManagedLocked(pref_id) || value === MANAGED_SECRET_MARKER) {
                 skipped.push(pref_id);
                 return;
             }
@@ -233,7 +252,8 @@ export const mztaPrefs = {
                 this._logValue(pref_id, JSON.stringify(value)));
         });
         if (skipped.length > 0) {
-            this._logWarning('setPrefs: locked by the managed configuration, skipped: ' +
+            this._logWarning('setPrefs: locked by the managed configuration (or a managed ' +
+                'API key placeholder), skipped: ' +
                 skipped.join(', '));
         }
         if (log_parts.length === 0) return;

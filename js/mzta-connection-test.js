@@ -27,6 +27,7 @@ import { Anthropic } from './api/anthropic.js';
 import { Ollama } from './api/ollama.js';
 import { OpenAIComp } from './api/openai_comp.js';
 import { prepareOriginURL } from './mzta-utils.js';
+import { MANAGED_SECRET_MARKER } from './mzta-managed.js';
 
 const CONN_TEST_TIMEOUT_MS = 10000;
 
@@ -36,23 +37,27 @@ function _val(id) {
 }
 
 // Provider registry: for each testable connection_type, how to build the client from the
-// current form fields, its display-name i18n key, and how to obtain the needed host
-// permission. chatgpt_web is intentionally absent (no testable endpoint).
+// current form fields, its display-name i18n key, the id of its API key field (if any), and
+// how to obtain the needed host permission. chatgpt_web is intentionally absent (no
+// testable endpoint).
 const TESTABLE = {
   chatgpt_api: {
     nameKey: 'prefs_Connection_type_ChatGPT_API',
+    keyId: 'chatgpt_api_key',
     makeClient: () => new OpenAI({ apiKey: _val('chatgpt_api_key') }),
     requestPermission: async () =>
       messenger.permissions.request({ origins: ['https://*.openai.com/*'] }),
   },
   google_gemini_api: {
     nameKey: 'prefs_Connection_type_Google_Gemini_API',
+    keyId: 'google_gemini_api_key',
     makeClient: () => new GoogleGemini({ apiKey: _val('google_gemini_api_key') }),
     requestPermission: async () =>
       messenger.permissions.request({ origins: ['https://generativelanguage.googleapis.com/*'] }),
   },
   anthropic_api: {
     nameKey: 'prefs_Connection_type_Anthropic_API',
+    keyId: 'anthropic_api_key',
     makeClient: () => new Anthropic({
       apiKey: _val('anthropic_api_key'),
       version: _val('anthropic_version'),
@@ -67,6 +72,7 @@ const TESTABLE = {
   },
   openai_comp_api: {
     nameKey: 'prefs_Connection_type_OpenAI_Comp_API',
+    keyId: 'openai_comp_api_key',
     makeClient: () => {
       const use_v1_el = document.getElementById('openai_comp_use_v1');
       return new OpenAIComp({
@@ -134,6 +140,12 @@ export async function runConnectionTest(connType) {
   }
 
   const apiName = browser.i18n.getMessage(entry.nameKey) || connType;
+
+  // A key supplied by the organization's policy never reaches this page: the field holds a
+  // placeholder, which must not be sent to the provider as if it were the key.
+  if (entry.keyId && _val(entry.keyId) === MANAGED_SECRET_MARKER) {
+    return { status: 'error', message: browser.i18n.getMessage('connTest_managed_api_key') };
+  }
 
   // Ensure we have the host permission the request needs (mirrors the fetch-models buttons).
   const granted = await entry.requestPermission();

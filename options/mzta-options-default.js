@@ -153,6 +153,9 @@ export const prefs_default = {
     add_tags_maxnum: 3,
     add_tags_hide_exclusions: false,
     add_tags_exclusions_exact_match: false,
+    // Tags never assigned (substring match unless add_tags_exclusions_exact_match). Array of
+    // strings; the storage key predates its declaration here, so existing lists carry over.
+    add_tags_exclusions: [],
     add_tags_first_uppercase: true,
     add_tags_force_lang: true,
     add_tags_auto: false,

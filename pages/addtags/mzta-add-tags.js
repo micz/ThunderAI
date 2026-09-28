@@ -45,7 +45,13 @@ import {
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
-import { applyManagedUI } from '../_lib/managed-ui.js';
+import {
+    applyManagedUI,
+    seedFromGlobal,
+    isLockedKey,
+    lockCompanions,
+    setDisabledRespectingManaged
+} from '../_lib/managed-ui.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -206,8 +212,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     excl_list_textarea.value = excl_list_string;
 
+    // data-mzta-pref="add_tags_exclusions" (the element id is not the preference key):
+    // applyManagedUI() above has already disabled and marked the textarea when the policy
+    // locks the list. Its Save button is ours to lock.
+    lockCompanions('add_tags_exclusions', [excl_list_save_btn]);
+
     excl_list_textarea.addEventListener('input', (event) => {
-        excl_list_save_btn.disabled = (event.target.value === excl_list_string);
+        setDisabledRespectingManaged(excl_list_save_btn, (event.target.value === excl_list_string));
         if(excl_list_save_btn.disabled){
             document.getElementById('excl_list_unsaved').classList.add('hidden');
         } else {
@@ -216,6 +227,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     excl_list_save_btn.addEventListener('click', () => {
+        // The button being disabled is not the same as the action being unavailable. The
+        // write guard in js/mzta-prefs.js would refuse it anyway.
+        if (isLockedKey('add_tags_exclusions')) return;
         let excl_array_new = normalizeStringList(excl_list_textarea.value, 2);
         addTags_setExclusionList(excl_array_new);
         excl_list_save_btn.disabled = true;
@@ -442,8 +456,10 @@ async function restoreOptions() {
           // Inherit the global connection only when this select can actually offer it:
           // chatgpt_web has no <option> here (it has no API), so inheriting it would show
           // a value the control cannot represent. Leave it blank instead.
-          getting['add_tags_connection_type'] = isApiUsableConnection(getting['connection_type'])
-              ? getting['connection_type']
+          // seedFromGlobal(): never seed from a policy-supplied global value - these fields are
+          // written into the special prompt, where it would outlive the policy.
+          getting['add_tags_connection_type'] = isApiUsableConnection(seedFromGlobal(getting, 'connection_type'))
+              ? seedFromGlobal(getting, 'connection_type')
               : '';
       }
       for (const [integration, options] of Object.entries(integration_options_config)) {
@@ -452,7 +468,7 @@ async function restoreOptions() {
               if (addtags_prompt[propName] !== undefined && addtags_prompt[propName] !== '') {
                   getting[`add_tags_${propName}`] = addtags_prompt[propName];
               } else {
-                  getting[`add_tags_${propName}`] = getting[propName];
+                  getting[`add_tags_${propName}`] = seedFromGlobal(getting, propName);
               }
           }
       }

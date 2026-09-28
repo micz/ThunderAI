@@ -16,7 +16,7 @@ to the site by hand.
 | **Module** | [`js/mzta-managed.js`](../js/mzta-managed.js) — reads and validates only |
 | **Resolution** | [`js/mzta-prefs.js`](../js/mzta-prefs.js) — the preference choke point |
 | **Permissions** | none added; `storage` was already granted |
-| **When read** | once, at background startup |
+| **When read** | once, at background startup; every other extension context **hydrates** the values from the background on its first preference read |
 
 Explicitly **out of scope**, and not to be added: fetching configuration from a URL
 (rejected by the Thunderbird review team) and ADMX templates.
@@ -79,9 +79,91 @@ after the migration block (documented as having to run first) and before
 It must **never** be triggered by importing the module. `js/mzta-prefs.js` imports
 `js/mzta-managed.js`, and is itself imported by all fourteen options and settings pages —
 a load-on-import would fire `browser.storage.managed.get()` on every one of them, where the
-call is known to fail in Thunderbird. Hence `managedReady()` is a *function* that awaits
-whatever load is in flight without starting one, and `hasLoaded()` distinguishes "the
-policy was read and there is none" from "the policy was never read here".
+call is known to fail in Thunderbird. Hence `managedReady()` is a *function*, and
+`hasLoaded()` distinguishes "the policy was read and there is none" from "the policy was
+never read here".
+
+### Hydration in every other context
+
+`loadManaged()` fills `_values` and `_locked` in the background page only. Until 5.1 that
+meant every other context resolved preferences **without** the policy: a locked field was
+disabled but showed the user's old stored value, an unlocked initial value was never shown,
+the API chat window (`api_webchat/controller.js`) called the provider with the stored key,
+model and host instead of the policy ones, the popup offered the setup wizard to a
+policy-configured profile — and the write guard was inert in pages, because
+`isManagedLocked()` was always false there.
+
+`managedReady()` therefore does one of two things:
+
+- **background** — `_loadPromise` is set (synchronously, by the `loadManaged()` call before
+  the first preference read), so it just awaits the load. It never starts anything, and so
+  the background can never end up messaging itself;
+- **everywhere else** — it starts `_hydrate()` once and awaits it. `_hydrate()` sends
+  `{command: 'get_managed_values'}` and fills `_values` / `_locked` from
+  `{values, lockedKeys}` (a locked key without a value is dropped).
+
+Hydration is started by the **first preference read**, never by importing the module, and
+never calls `browser.storage.managed` — the reason for the import rule above does not apply
+to a `sendMessage`. It lives at the choke point rather than in each page on purpose: every
+page reads preferences *before* it calls `getManagedState()` (the options page restores its
+inputs, the feature pages inject and restore the connection panel, the popup reads the
+connection first), and the chat window and the popup never render managed controls at all.
+
+It **fails open**: a rejection, `undefined` or a malformed reply leaves the context
+unmanaged, with a `taLogger.warn()`. Nothing is retried; the background still enforces every
+locked key on its own reads.
+
+`get_managed_values` is answered by a **dedicated `runtime.onMessage` listener registered
+right after `loadManaged()`** in `mzta-background.js`, not by the main listener: that one only
+exists after every startup `await`, and a page opened during startup would otherwise hydrate
+empty. The main listener's `default` branch returns `false`, so the two never compete. Only
+extension pages are answered (`sender.url` under `runtime.getURL('')`); a content script gets
+an empty payload — none of them imports `js/mzta-prefs.js`.
+
+### Policy-supplied API keys
+
+The previous design kept every policy value off the message channel, which also kept a
+policy-supplied key out of the one context that needs it: the API chat window calls the
+provider itself. The rule is now **split by page**:
+
+| Context | Receives |
+|---|---|
+| `api_webchat/` (decided by the background from `sender.url`) | the real key |
+| every other extension page | `MANAGED_SECRET_MARKER`, exported by `js/mzta-managed.js` |
+
+The marker is non-empty on purpose, so presence checks (`isConnectionConfigured()` in the
+popup, the empty-key warnings) see a configured connection. Everything that would *use* or
+*show* it refuses to:
+
+- the password eye toggles in `pages/_lib/connection-ui.js` do nothing;
+- the "Fetch models" handlers return early, and the empty-key warnings keep the fetch button
+  disabled;
+- `runConnectionTest()` returns `connTest_managed_api_key` instead of sending it;
+- `mztaPrefs.setPref()` / `setPrefs()` refuse to write it (per key, like the lock guard);
+- the prompt storage gates (`stripTransientFlags()`, used by `setCustomPrompts()` /
+  `setSpecialPrompts()`, and `preparePromptsForExport()`) drop any `*_api_key` holding it.
+
+**The trade-off**, to be stated in the administrator documentation: on the settings pages a
+user cannot reveal, test or fetch models with the organization's key. The key is still in
+`policies.json`, which is readable on the machine, so this is about not *displaying* it in
+the add-on, not about secrecy. An unlocked (`":locked": false`) policy key shows as the
+marker until the user types their own, which is then stored and wins, per the resolution
+order.
+
+### No seeding from policy values
+
+The six feature pages pre-fill their per-feature connection fields
+(`{prefix}_{integration}_{key}`, and `{prefix}_connection_type`) from the global value when
+the special prompt has none, and `initializeSpecificIntegrationUI()` writes those fields into
+the prompt with `_updatePrompt()` — **on page open** when the specific integration is on. The
+custom prompts editor does the same into `_custom_prompt`. These are prompt properties, not
+preferences, so no write guard stands in the way: a seeded policy value would outlive the
+policy, and a seeded marker would be sent to the provider as the key.
+
+So a seed never comes from a policy-supplied value: `seedFromGlobal(prefs, key)` in
+`pages/_lib/managed-ui.js` returns `prefs_default[key]` when `mztaManaged.hasManagedValue(key)`
+and `prefs[key]` otherwise — exactly the previous behaviour with no policy. Any new code that
+copies a global preference into a prompt must go through it.
 
 ## The allowlist
 
@@ -96,7 +178,7 @@ Object.keys(prefs_default)
   minus  custom_prompts_view    custom prompts page layout, local UI
 ```
 
-**100 of 109 keys** are policy-settable. The derivation already covers the generated keys:
+**101 of 110 keys** are policy-settable. The derivation already covers the generated keys:
 the six `{prefix}_use_specific_integration` / `{prefix}_connection_type` pairs (from
 `special_prompts_with_integration`) and the per-provider `{integration}_{key}` connection
 keys (from `integration_options_config`) are all spread into `prefs_default` in
@@ -112,6 +194,12 @@ exist in this profile.
 Every key is checked against the allowlist **and** against the type of its `prefs_default`
 counterpart. A type mismatch is never coerced. Unknown keys, excluded keys and mismatches
 are skipped with a `taLogger.warn()` and never applied.
+
+Array preferences (`spamfilter_skip_addresses`, `summarize_auto_senders_list`,
+`add_tags_exclusions`; the excluded `*_enabled_accounts` too) are all **arrays of strings**,
+and their consumers call string methods on the elements. An array containing a non-string
+element is warned about and rejected **as a whole** — not filtered, which would be a silent
+coercion.
 
 `taLogger.warn()` is deliberate: unlike `.log()` it is **not** gated on `do_debug`, so an
 administrator sees a malformed policy without having to turn on debugging first.
@@ -317,7 +405,9 @@ not, and would forbid a prefix a user may already be using legitimately.
 |---|---|
 | `_reconcileFeatureFlags()` ([mzta-background.js](../mzta-background.js)) | skips a locked flag. It repairs by *writing* `false`, which the guard would refuse anyway — without the skip the only effect would be a warning on every startup. A policy-enabled feature with an unusable connection stays on and does nothing: a misconfiguration for the administrator to fix, not one to override silently. |
 | `storage.onChanged` ×2 ([mzta-background.js](../mzta-background.js), [options/mzta-options.js](../options/mzta-options.js)) | filter locked keys out of the changed set. A locked key cannot have meaningfully changed — the policy value shadows it on every read. |
-| `hasNoConnectionSelected()`, `getConnectionType()` ([js/mzta-utils.js](../js/mzta-utils.js)) | **unchanged.** Both take values their callers already fetched through `mztaPrefs`, so a policy-supplied `connection_type` flows through on its own, and the blue setup-wizard banners in the popup, welcome page and options page stay hidden by themselves. |
+| `hasNoConnectionSelected()`, `getConnectionType()` ([js/mzta-utils.js](../js/mzta-utils.js)) | **unchanged.** Both take values their callers already fetched through `mztaPrefs`, so a policy-supplied `connection_type` flows through on its own, and the blue setup-wizard banners in the popup, welcome page and options page stay hidden by themselves — in the pages thanks to the hydration above, which is what makes those reads see the policy at all. |
+| tag dialog in [js/mzta-compose-script.js](../js/mzta-compose-script.js) | a classic content script cannot import `mztaPrefs`. It reads `add_tags_exclusions`, `add_tags_hide_exclusions`, `add_tags_exclusions_exact_match` and the lock state through the `addtags_get_exclusion_prefs` background command, and writes the list through `addtags_set_exclusions` (→ `mztaPrefs.setPref()`, so the guard applies). When `add_tags_exclusions` is locked, the per-tag "exclude" icon is not rendered at all. No content script reads preferences from storage any more. |
+| `calendar_no_selection` ([js/mzta-prompts.js](../js/mzta-prompts.js)) | the behaviour used to be driven only by `need_selected` of `prompt_get_calendar_event`, written by the settings page's change listener, so a policy value showed a checked box and changed nothing. `need_selected` is now **derived** from the resolved preference on every `getSpecialPrompts()` read (never written because of the policy; see [02-prompts.md](02-prompts.md)), and the preference is in `MENU_RELEVANT_KEYS`. The page's placeholder check cannot stop a policy, so the background `taLogger.warn()`s at startup, and the page shows `prefs_OptionText_calendar_no_selection_policy_missing_placeholder` when the key is locked on, if the prompt has neither `{%mail_text_body_or_selected%}` nor `{%mail_html_body_or_selected%}`. The one-shot `migrateCalendarNoSelection()` aligned the preference once to the stored `need_selected`, so no unmanaged user changed behaviour on upgrade. |
 | sync → local migration ([js/mzta-prefs-migration.js](../js/mzta-prefs-migration.js)) | **deliberately untouched.** See below. |
 
 ### Why the migration is not guarded
@@ -342,7 +432,8 @@ the single most surprising property of the mechanism.
 ## UI
 
 [`pages/_lib/managed-ui.js`](../pages/_lib/managed-ui.js), shared by the options page, the
-six feature settings pages and the setup wizard. One `sendMessage` round trip per page:
+six feature settings pages and the setup wizard. One `sendMessage` round trip per page for
+the page state (the values travel separately, in the hydration round trip):
 
 ```javascript
 browser.runtime.sendMessage({ command: 'get_managed_state' })
@@ -352,10 +443,11 @@ browser.runtime.sendMessage({ command: 'get_managed_state' })
 **No page ever calls `browser.storage.managed` itself**, and `runtime.getBackgroundPage()`
 is not used.
 
-Note what the payload does **not** carry: the managed *values*. A page only needs to know
-which controls to disable, so a policy-supplied API key never travels over the message
-channel at all. The value reaches the input through the normal preference read, and an API
-key field is masked anyway.
+Note what the payload does **not** carry: the managed *values*. Those reach the page through
+the normal preference read, because `js/mzta-prefs.js` hydrates them on the first read (see
+[Hydration in every other context](#hydration-in-every-other-context)); a policy-supplied API
+key arrives only as `MANAGED_SECRET_MARKER`. So an input restored from `mztaPrefs` already
+holds the enforced or initial value by the time `applyManagedUI()` disables it.
 
 Control matching relies on the invariant `saveOptions()`/`restoreOptions()` already depend
 on: **an `.option-input` element's `id` IS its preference key.** So no mapping table is
@@ -365,6 +457,33 @@ controls whose id merely ends with the key (`translate` would match `auto_transl
 
 `applyManagedUI()` must run **after** the connection panel has injected its provider rows,
 and after `restoreOptions()` has populated the inputs.
+
+### Controls with their own load/save logic: `data-mzta-pref`
+
+Some preferences are edited by a control that must **not** be an `.option-input`, because
+`saveOptions()` / `restoreOptions()` would then handle it generically and break its own
+serialisation: `spamfilter_skip_addresses`, `summarize_auto_senders_list` and
+`add_tags_exclusions` (textareas saved as normalised lists by their Save buttons), and
+`spamfilter_skip_addressbook` (a checkbox whose change handler requests the `addressBooks`
+permission). They opt in explicitly with `data-mzta-pref="<preference key>"`.
+`applyManagedUI()` walks `.option-input, [data-mzta-pref]` in the same single pass against the
+same `Set`, taking the key from `data-mzta-pref` when present and from the `id` otherwise, and
+gives the match exactly the `.option-input` treatment. `addtags_excl_list` is the one whose id
+is not the key.
+
+Their companion controls are the page's: `lockCompanions(key, elements)` marks each one
+`data-mzta-managed="1"`, disables it and titles it `managed_marker_tooltip` when the key is
+locked, so `setDisabledRespectingManaged()` — which the pages' "unsaved changes" input
+handlers now use — keeps it disabled. Every save function, the Save click handlers and the
+`spamfilter_skip_addressbook` change handler also **return early** when the key is locked, so
+neither a write nor the permission prompt can be triggered from a control re-enabled in the
+developer tools. `updateAutoSendersState()` on the summarize page, which reassigns `disabled`
+on every `summarize_auto` change, uses the respecting setter too: it could previously
+re-enable a locked `summarize_auto_senders` toggle.
+
+The marker lands in the two existing contexts described below: the textareas' `.mzta_field`
+flex column (appended as the last child, after the Save button row), and the checkbox's
+`.feature_row` (before the `.mzta_switch`). No new CSS was needed.
 
 `applyManagedUI()` covers locked *preferences* only. A restriction has no preference behind
 it, and its controls are plain buttons and links rather than `.option-input` fields, so
@@ -460,7 +579,14 @@ Both are presentation only; the authoritative block remains the write guard in
 
 Nothing to do. Declare it in `prefs_default` as usual
 ([05-options.md](05-options.md#adding-a-new-preference)) and it is policy-settable, with
-type validation, a working write guard and automatic UI disabling.
+type validation, a working write guard and automatic UI disabling — provided it is read and
+written through `mztaPrefs` and its control is an `.option-input` whose id is the key. Two
+cases need a line of code:
+
+- a control with its own load/save logic gets `data-mzta-pref` and `lockCompanions()` (see
+  above);
+- a classic content script cannot use `mztaPrefs`: give it a background command that does,
+  as the tag dialog does.
 
 The only decision is whether it is genuinely *configuration*. If it is per-machine or
 per-profile state, add it to the exclusions in `js/mzta-managed.js` with a comment saying

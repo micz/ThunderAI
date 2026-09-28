@@ -2,7 +2,7 @@
 
 ## Overview
 
-Extension preferences are stored in **`browser.storage.local`** — defaults and the full list of valid keys are defined in `options/mzta-options-default.js`. Every preference **read** goes through the accessor module `js/mzta-prefs.js` (see [Preference access](#preference-access-jsmzta-prefsjs) below); direct storage calls are no longer the norm. The large-payload keys (`_custom_prompt`, `_default_prompts_properties`, `_special_prompts`, `_custom_placeholder`, `add_tags_exclusions`) live in the same area.
+Extension preferences are stored in **`browser.storage.local`** — defaults and the full list of valid keys are defined in `options/mzta-options-default.js`. Every preference **read** goes through the accessor module `js/mzta-prefs.js` (see [Preference access](#preference-access-jsmzta-prefsjs) below); direct storage calls are no longer the norm. The large-payload keys (`_custom_prompt`, `_default_prompts_properties`, `_special_prompts`, `_custom_placeholder`) live in the same area. `add_tags_exclusions` used to be one of them, read and written directly; it is now a declared preference (see the Add Tags table), with the same storage key.
 
 **Preferences used to live in `browser.storage.sync`** and were moved for the same reason the prompt payloads were moved in [#129](https://github.com/micz/ThunderAI/issues/129): `storage.sync` has a narrow quota. The consequence is deliberate and is the one behavioural change of that move — **preferences no longer follow the user across profiles or devices.** The one-time copy is `migratePrefsToLocal()` (`js/mzta-prefs-migration.js`), which runs first at the top of `mzta-background.js`; it never overwrites a key already present in local and **deliberately leaves the `sync` copy in place**, so a downgrade to an older version still finds the user's settings. Once `storage.sync` holds nothing any migration still needs, it writes the marker **`_prefs_migrated_from_sync`** into `storage.local`; every later startup returns on that single read instead of enumerating both storage areas, and `isSyncDrained()` lets `mzta-background.js` skip the two #129 migrations, which would otherwise each pay a `storage.sync.get()` forever. The marker means *"sync is drained"*, not merely *"the preferences were copied"*: it is withheld while a #129 payload is still in sync (a pre-#129 profile), so those migrations are never skipped before they have run, and the marker is set on the following startup. It is deliberately **not** used to skip `migrateEnabledToShowIn()` or `migrateMenuOrderAlphabetic()`, which act on `storage.local` data and own their own flags. The marker is not a preference (no UI, no `prefs_default` entry, leading underscore), so it never surfaces in `getAllPrefs()` or `restoreOptions()`. On the run that copies, it is written **inside the same `set()`** as the preferences, so the whole migration lands atomically — a partial write would otherwise leave the one-shot flags behind and let `migrateMenuOrderAlphabetic()` destroy the user's custom menu ordering. See [01-architecture.md](01-architecture.md#storage).
 
@@ -199,6 +199,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `add_tags_maxnum` | `3` | Max tags to apply |
 | `add_tags_hide_exclusions` | `false` | Hide excluded tags from menu |
 | `add_tags_exclusions_exact_match` | `false` | Exact match for exclusions |
+| `add_tags_exclusions` | `[]` | Tags never assigned: array of strings, substring match unless `add_tags_exclusions_exact_match`. Read and written through `mztaPrefs` by `js/mzta-addtags-exclusion-list.js` (background and the Add Tags page) and, for the tag dialog in `js/mzta-compose-script.js`, through the `addtags_get_exclusion_prefs` / `addtags_set_exclusions` background commands. The storage key predates its declaration, so existing lists carry over with no migration. Policy-settable. |
 | `add_tags_first_uppercase` | `true` | Capitalize first letter of tags |
 | `add_tags_force_lang` | `true` | Force language for tags |
 | `add_tags_auto` | `false` | Auto-tag on message open |
@@ -213,7 +214,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `get_task` | `true` | Enable task creation |
 | `calendar_enforce_timezone` | `false` | Force specific timezone |
 | `calendar_timezone` | `''` | IANA timezone id to enforce (see note below) |
-| `calendar_no_selection` | `false` | Skip selection prompt |
+| `calendar_no_selection` | `false` | Skip selection prompt. **The single source of truth**: `need_selected` of `prompt_get_calendar_event` is derived from it on every read by `applyCalendarNoSelection()` in `getSpecialPrompts()` (see [02-prompts.md](02-prompts.md)), never written from it. A change reloads the menus (`MENU_RELEVANT_KEYS`). `migrateCalendarNoSelection()` aligned it once to the stored `need_selected` on upgrade. |
 | `spamfilter` | `false` | Enable spam filter |
 | `spamfilter_threshold` | `70` | Spam confidence threshold (%) |
 | `spamfilter_enabled_accounts` | `[]` | Accounts where spam filter is active |
@@ -1293,10 +1294,14 @@ case for nearly every user and is swallowed silently.
   `migratePrefsToLocal()` carries them across — see the `dynamic_menu_order_alphabet` row above
   for what breaks otherwise.
 - **`js/mzta-compose-script.js`** is registered as a *classic* content script, so it has no
-  module context and cannot import. Its defaults are hardcoded and must be kept in step with
-  `prefs_default` **and its area with `PREFS_AREA`** by hand — it reads two real preferences
-  (`add_tags_hide_exclusions`, `add_tags_exclusions_exact_match`), so a wrong area silently
-  yields the hardcoded defaults for every user.
+  module context and cannot import. It no longer reads storage at all: the tag dialog gets
+  `add_tags_exclusions`, `add_tags_hide_exclusions` and `add_tags_exclusions_exact_match`
+  from the `addtags_get_exclusion_prefs` background command, resolved by `mztaPrefs` (so the
+  enterprise policy applies), and writes the list with `addtags_set_exclusions` (so the write
+  guard applies). Any preference it needs in future must go the same way.
+- **`migrateCalendarNoSelection()`** in `js/mzta-prompts.js` reads the raw stored
+  `calendar_no_selection` and `_special_prompts` on purpose: it compares the user's own
+  stored values, before the policy is loaded.
 - **One read in `pages/_lib/connection-ui.js`** (`_persistSelectedConnection`) keeps a
   hardcoded `''` default, which differs from `prefs_default`'s `'chatgpt_api'` for
   `{prefix}_connection_type`. It is a no-op guard comparing the stored value against what the
