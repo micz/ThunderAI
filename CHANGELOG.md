@@ -1,6 +1,10 @@
  # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI Release Notes
 
 
+<h2>Version 5.0.3 - ??/??/2026</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 5.0.2 - 22/09/2026</h2>
       <ul>
         <li>Fix: the <i>{%tags_current_email%}</i> placeholder no longer breaks the summarize and the spam filter prompts, and the tags are now correctly resolved to their current names [<a href="https://github.com/micz/ThunderAI/issues/911">#911</a>].</li>
