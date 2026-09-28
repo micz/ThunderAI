@@ -243,6 +243,14 @@
     "message": "Retry",
     "description": ""
   },
+  "chatgpt_win_retrying": {
+    "message": "Retrying…",
+    "description": "Shown in the ChatGPT window panel for a moment after the Retry button is clicked"
+  },
+  "chatgpt_composer_click_to_continue": {
+    "message": "Could not locate the ChatGPT message box. Click inside it to continue.",
+    "description": "Shown in the ChatGPT window panel when the ChatGPT message input cannot be found automatically"
+  },
   "chatgpt_sendbutton_not_found_error": {
     "message": "Click the send button to submit the prompt.",
     "description": ""
