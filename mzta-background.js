@@ -84,7 +84,11 @@ import {
 } from './js/mzta-addtags-exclusion-list.js';
 import { mztaPrefs } from './js/mzta-prefs.js';
 import { sanitizeBlockHtml } from './js/mzta-richtext.js';
-import { migratePrefsToLocal, isSyncDrained, migrateOllamaThinkLevel } from './js/mzta-prefs-migration.js';
+import {
+    migratePrefsToLocal,
+    isSyncDrained,
+    migrateOllamaThinkLevel
+} from './js/mzta-prefs-migration.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);

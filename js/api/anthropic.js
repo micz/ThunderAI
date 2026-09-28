@@ -24,7 +24,11 @@ import {
   ANTHROPIC_DEFAULT_EFFORT
 } from './anthropic_model_capabilities.js';
 import { fetchWithRetry } from './api-retry.js';
-import { createUsageData, isUsageDataEmpty, toUsageNumber } from './mzta-api-usage.js';
+import {
+  createUsageData,
+  isUsageDataEmpty,
+  toUsageNumber
+} from './mzta-api-usage.js';
 
 // Smallest extended thinking budget the Messages API accepts. Anything lower is
 // rejected with a 400, so the request builder drops the budget below it and the
