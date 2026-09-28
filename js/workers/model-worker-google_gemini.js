@@ -20,10 +20,17 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { GoogleGemini, extractUsage } from '../api/google_gemini.js';
+import {
+    GoogleGemini,
+    extractUsage
+} from '../api/google_gemini.js';
 import { isUsageDataEmpty } from '../api/mzta-api-usage.js';
 import { taLogger } from '../mzta-logger.js';
-import { initUsageEmitter, nextUsageMessageId, postUsageData } from './usage-emitter.js';
+import {
+    initUsageEmitter,
+    nextUsageMessageId,
+    postUsageData
+} from './usage-emitter.js';
 
 let google_gemini = null;
 let stopStreaming = false;

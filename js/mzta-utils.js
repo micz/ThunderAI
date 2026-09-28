@@ -16,10 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {
-  getDynamicSettingValue
-} from '../options/mzta-options-default.js';
-
+import { getDynamicSettingValue } from '../options/mzta-options-default.js';
 import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js'
 import { mztaPrefs } from './mzta-prefs.js';
 

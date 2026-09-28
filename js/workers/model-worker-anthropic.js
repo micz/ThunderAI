@@ -27,7 +27,11 @@ import {
 } from '../api/anthropic.js';
 import { mergeUsageData } from '../api/mzta-api-usage.js';
 import { taLogger } from '../mzta-logger.js';
-import { initUsageEmitter, nextUsageMessageId, postUsageData } from './usage-emitter.js';
+import {
+    initUsageEmitter,
+    nextUsageMessageId,
+    postUsageData
+} from './usage-emitter.js';
 
 let anthropic = null;
 let stopStreaming = false;

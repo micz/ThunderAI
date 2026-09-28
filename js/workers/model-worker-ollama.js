@@ -20,9 +20,16 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { Ollama, extractUsage } from '../api/ollama.js';
+import {
+    Ollama,
+    extractUsage
+} from '../api/ollama.js';
 import { taLogger } from '../mzta-logger.js';
-import { initUsageEmitter, nextUsageMessageId, postUsageData } from './usage-emitter.js';
+import {
+    initUsageEmitter,
+    nextUsageMessageId,
+    postUsageData
+} from './usage-emitter.js';
 
 let ollama = null;
 let stopStreaming = false;
