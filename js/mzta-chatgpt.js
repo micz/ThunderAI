@@ -60,8 +60,19 @@ let overlap_resize_observer = null;
 let overlap_observed = new Set();
 let overlap_watched_bar = null;
 let overlap_watched_form = null;
-// true while run() waits for the page, so the checkTab retry does not start a second run
+// true while run() waits for the page, so a second chatgpt_send does not start a second run
 let run_pending = false;
+// set right before the prompt flow starts: doProceed()/showCustomTextField() run once per script instance
+let prompt_flow_started = false;
+let not_logged_in_alerted = false;
+// the nodes addCustomDiv() inserts into the page: ChatGPT's re-render can detach them, the same nodes are re-inserted
+let mzta_ui_bar = null;
+let mzta_ui_style = null;
+let ui_watch_installed = false;
+let ui_body_observer = null;
+let ui_observed_body = null;
+// debug only: how many times the UI was re-attached
+let ui_reattached_count = 0;
 
 // Composer lookup, in priority order. ChatGPT rolls out different composers
 // (A/B tests), so a single id lookup is not enough (issues #890, #920, #924).
@@ -1093,7 +1104,8 @@ async function chatgpt_isIdle() {
                             baseline: regenerateButtonsAtStart,
                             atCompletion: diagSection(() => chatgpt_countRegenerateButtons()),
                             firstAboveBaselineAtMs: sinceStart(regenerateButtonsAboveAt)
-                        }
+                        },
+                        uiReattached: ui_reattached_count
                     };
                     console.warn("[ThunderAI] Completion summary: " + JSON.stringify(summary));
                 }
@@ -1296,8 +1308,14 @@ function chatpgt_scrollToBottom () {
 }
 
 function addCustomDiv(prompt_action,tabId,mailMessageId) {
+    // already created: never duplicate the UI, only re-attach it
+    if (mzta_ui_bar || mzta_ui_style) {
+        mztaEnsureUiAttached('addCustomDiv-again');
+        return;
+    }
     // Create <style> element for the CSS
     var style = document.createElement('style');
+    mzta_ui_style = style;
     style.textContent = ".mzta-header-fixed {position:fixed;bottom:0;left: 0;height:100px;width:100%;background-color: #333;color: white;text-align: center;padding: 10px 0;z-index: 1000;border-top: 3px solid white;}"
     style.textContent += "body {padding-bottom: 100px !important;} [id^='headlessui-dialog-panel-:r']{padding-bottom: 100px !important;} [data-testid='screen-thread']{padding-bottom: 100px !important;} [slot='content']{padding-bottom: 100px !important;}";
     style.textContent += ".mzta-btn {background-color: #007bff;border: none;color: white;padding: 8px 15px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;margin: 4px 2px;transition-duration: 0.4s;cursor: pointer;border-radius: 5px;}";
@@ -1338,6 +1356,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
 
     // Fixed div
     var fixedDiv = document.createElement('div');
+    mzta_ui_bar = fixedDiv;
     fixedDiv.classList.add('mzta-header-fixed');
     fixedDiv.textContent = '';
 
@@ -1620,9 +1639,57 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
 
     fixedDiv.appendChild(forcecompletionHint_div);
 
-    document.body.insertBefore(fixedDiv, document.body.firstChild);
+    // appended, not inserted as first child: ChatGPT's re-render of the start of body removed it (issue #924)
+    document.body.appendChild(fixedDiv);
+    installUiAttachWatch();
     installComposerOverlapWatch();
     mztaFixComposerOverlap('bar-shown');
+}
+
+// Re-inserts the SAME bar and style nodes if the page detached them, so every element
+// reference, listener and state held by the script stays valid
+function mztaEnsureUiAttached(reason) {
+    try {
+        const reattached = [];
+        if (mzta_ui_style && !mzta_ui_style.isConnected) {
+            const styleParent = document.head || document.documentElement;
+            if (styleParent) {
+                styleParent.appendChild(mzta_ui_style);
+                reattached.push('style');
+            }
+        }
+        if (mzta_ui_bar && !mzta_ui_bar.isConnected && document.body) {
+            document.body.appendChild(mzta_ui_bar);
+            reattached.push('bar');
+        }
+        // body itself may have been replaced
+        watchUiBody();
+        if (reattached.length > 0) {
+            if (mztaDoDebug == 1) ui_reattached_count++;
+            doLog("UI re-attached (" + reason + "): " + reattached.join(', '));
+            scheduleComposerOverlapFix('ui-reattached');
+        }
+    } catch (err) {
+        console.error('[ThunderAI] mztaEnsureUiAttached: ', err);
+    }
+}
+
+// Observes the current body (direct children only), moving to the new one when body is replaced
+function watchUiBody() {
+    if (!ui_body_observer || !document.body || ui_observed_body === document.body) return;
+    ui_body_observer.disconnect();
+    ui_body_observer.observe(document.body, { childList: true });
+    ui_observed_body = document.body;
+}
+
+// documentElement children catch body or head being replaced, body children catch the bar being removed
+function installUiAttachWatch() {
+    if (ui_watch_installed) return;
+    ui_watch_installed = true;
+    const rootObserver = new MutationObserver(() => mztaEnsureUiAttached('root-mutation'));
+    rootObserver.observe(document.documentElement, { childList: true });
+    ui_body_observer = new MutationObserver(() => mztaEnsureUiAttached('body-mutation'));
+    watchUiBody();
 }
 
 // The composer used for the last send, or the same lookup findPromptInput() does (light DOM only)
@@ -1791,6 +1858,8 @@ function installComposerOverlapWatch() {
     // safety net for position changes that resize no observed element: two rects, nothing else
     setInterval(() => {
         try {
+            // safety net for detachments the observers miss (e.g. the style removed from inside head)
+            mztaEnsureUiAttached('interval');
             if (overlap_fix && !overlap_fix.el.isConnected) {
                 scheduleComposerOverlapFix('interval');
                 return;
@@ -1992,6 +2061,10 @@ function showCustomTextField(){
 }
 
 async function doProceed(message, customText = ''){
+    if (!message) {
+        console.error("[ThunderAI] doProceed: no message, nothing to send.");
+        return;
+    }
     let _gpt_model = mztaGPTModel;
     doLog("doProceed _gpt_model: " + JSON.stringify(_gpt_model));
     if(_gpt_model != ''){
@@ -2199,6 +2272,10 @@ document.addEventListener("selectionchange", function() {
      if(current_action === '0'){
          return;
      }
+     // ThunderAI's bar does not exist yet
+     if(!mzta_ui_bar){
+         return;
+     }
      // Set a timeout to delay the execution of the callback
      selectionChangeTimeout = setTimeout(function() {
         let btn_ok = document.getElementById('mzta-btn_ok');
@@ -2234,11 +2311,13 @@ document.addEventListener("selectionchange", function() {
 });
 
 function enableButton(btn){
+    if (!btn) return;
     btn.disabled = false;
     btn.classList.remove('btn_disabled');
 }
 
 function disableButton(btn){
+    if (!btn) return;
     btn.disabled = true;
     btn.classList.add('btn_disabled');
 }
@@ -2338,8 +2417,20 @@ function doLog(msg){
     }
 }
 
-async function run(checkTab = null) {
-    if (run_pending) return;
+async function run() {
+    if (prompt_flow_started) {
+        doLog("run: prompt flow already started, duplicate start skipped.");
+        mztaEnsureUiAttached('run-again');
+        return;
+    }
+    if (run_pending) {
+        doLog("run: already waiting for the page, duplicate start skipped.");
+        return;
+    }
+    if (!current_message) {
+        doLog("run: no message yet, prompt flow not started.");
+        return;
+    }
     run_pending = true;
     let loggedIn = false;
     try {
@@ -2350,16 +2441,19 @@ async function run(checkTab = null) {
     }
     if(!loggedIn){
         // User not logged in
-        if(checkTab){
-            clearInterval(checkTab);
+        if(!not_logged_in_alerted){
+            not_logged_in_alerted = true;
+            doLog("User not logged in, showing warning message.");
+            alert(browser.i18n.getMessage("chatgpt_user_not_logged_in"));
+        }else{
+            doLog("User not logged in, warning message already shown.");
         }
-        doLog("User not logged in, showing warning message.");
-        alert(browser.i18n.getMessage("chatgpt_user_not_logged_in"));
         // we are not closing the window, because the user could try to log in
         // doLog("User not logged in, closing window.");
         // browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
     }else{
         addCustomDiv(current_action,current_tabId,current_mailMessageId);
+        prompt_flow_started = true;
         (async () => {
             if(mztaDoCustomText === "1"){
                 showCustomTextField();
@@ -2386,21 +2480,12 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if((current_mailMessageId == -1) && (current_action == '1')) {    // we are using the reply from the compose window!
                 current_action = '2'; // replace text
             }
-            run(checkTab);
+            run();
             break;
         case "chatgpt_alive":
             sendResponse({isAlive: true});
             break;
     }
 });
-
-let checkTab = setInterval(() => {
-    let customDiv = document.getElementById('mzta-custom_text');
-    if(customDiv){
-        clearInterval(checkTab);
-    }else{
-        run(checkTab);
-    }
-}, 1000);
 
 `
