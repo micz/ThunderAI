@@ -1,0 +1,8 @@
+[
+  { "id": "account1", "name": "Work", "type": "imap", "identities": [ { "id": "id1", "email": "user@acme.example" } ] },
+  { "id": "account2", "name": "Colleague", "type": "imap", "identities": [ { "id": "id2", "email": "other@acme.example" } ] },
+  { "id": "account3", "name": "Mixed", "type": "imap", "identities": [ { "id": "id3", "email": "me@gmail.example" }, { "id": "id4", "email": "Bob@Partner.example" } ] },
+  { "id": "account4", "name": "Local Folders", "type": "none", "identities": [] },
+  { "id": "account5", "name": "Feeds", "type": "rss", "identities": [] },
+  { "id": "account6", "name": "Tagged", "type": "imap", "identities": [ { "id": "id6", "email": "user+tag@elsewhere.example" } ] }
+]

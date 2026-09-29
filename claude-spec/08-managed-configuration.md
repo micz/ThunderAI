@@ -869,7 +869,8 @@ why.
 
 Either way the administrator key reference on micz.it is now out of date — it is generated
 from `prefs_default` by hand, so a new or newly excluded preference has to be reflected
-there too.
+there too. So do the "103 of 112" count in [The allowlist](#the-allowlist) and the counts in
+`tests/managed/04-allowlist-derivation.test.mjs`, which fails until they are updated.
 
 ## Adding a restriction
 
@@ -886,6 +887,55 @@ Different from adding a preference, and more work — there is no allowlist to f
    it out of a list that some page writes back to storage, and make sure the mark cannot be
    persisted. See `_disable_prompt_management` above — a restriction that filters the wrong
    list does not restrict the user's prompts, it deletes them.
+6. A policy fixture and a test file for it in `tests/` — see [Testing](#testing).
 
 Prefer a locked preference whenever one would do. Reach for a restriction only when there
 is genuinely no user-facing setting to lock.
+
+## Testing
+
+This file is the contract the automated suite in [`tests/`](../tests/) checks. Run it from
+the repository root, with Node 21 or later and nothing to install:
+
+```sh
+node --test "tests/**/*.test.mjs"
+```
+
+CI runs it on every push and pull request (`.github/workflows/tests.yml`). How it works and
+how to add a scenario: [`tests/README.md`](../tests/README.md).
+
+**One file per policy scenario.** `mztaManaged` is a singleton that reads the policy once,
+so each file in `tests/managed/` is one extension context with one policy
+(`tests/fixtures/`), and `node --test` runs each in its own process. A second context, such
+as the background seen from a page, or Thunderbird restarted without the policy, comes from
+a separate module instance or a worker thread (`tests/helpers/`), never from resetting the
+singleton.
+
+| Spec section | Test files (`tests/managed/`) |
+|---|---|
+| Overview: no policy, silent rejection | `01-no-policy` |
+| Resolution order, log masking | `02-resolution-order` |
+| The write guard (per key, marker, no residue) | `03-write-guard` |
+| The allowlist, Validation, The lock convention | `04-validation`, `04-allowlist-derivation` |
+| Hydration, Policy-supplied API keys, Load ordering | `05a`–`05e` |
+| Organization prompts | `06a-org-prompts`, `06b-org-prompts-*` |
+| Enforced special prompt texts | `06c`–`06e` |
+| Restrictions | `06f`–`06i` |
+| Account lists by policy | `07a`, `07b` |
+| Interaction points: per-feature provider override | `08-provider-override-locked-off` |
+
+`04-allowlist-derivation` also checks the **103 of 112** count in [The allowlist](#the-allowlist).
+When a preference is added, update that sentence and the test's expected count together.
+
+**Not covered:** the DOM side (`pages/_lib/managed-ui.js`, `pages/_lib/connection-ui.js` and
+the pages calling them) and the parts of `mzta-background.js` that only run inside its
+startup: `get_managed_state`, the startup warnings and `processEmails()`. They are tested
+only through the functions they call, and by hand in Thunderbird. The
+`get_managed_values` listener is the exception: the suite cuts it out of
+`mzta-background.js` by its command guard and runs it verbatim, so moving or restructuring
+it means updating `tests/helpers/background-handler.mjs`.
+
+**Rule:** a change to anything this file describes comes with a scenario for it. Tests are
+written from this file, not from the code: a failing test is reported as a potential bug
+against the section it contradicts, and never fixed by changing the source to match the
+test.

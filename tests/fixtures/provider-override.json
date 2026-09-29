@@ -1,0 +1,8 @@
+{
+  "spamfilter_use_specific_integration": false,
+  "get_calendar_event_use_specific_integration": false,
+  "add_tags_use_specific_integration": false,
+  "add_tags_use_specific_integration:locked": false,
+  "translate_use_specific_integration": true,
+  "translate_connection_type": "ollama_api"
+}

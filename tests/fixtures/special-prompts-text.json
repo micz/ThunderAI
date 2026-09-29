@@ -1,0 +1,16 @@
+{
+  "_org_name": "ACME",
+  "_special_prompts_text": {
+    "prompt_spamfilter": "ACME spam check of {%mail_html_body%}. Answer as JSON: {\"explanation\": \"why\", \"spamValue\": 0}",
+    "prompt_add_tags": "ACME: suggest some labels for {%mail_text_body%}",
+    "prompt_get_calendar_event": "ACME calendar: return startDate, endDate and summary as JSON",
+    "prompt_get_task": "ACME task: return the summary as JSON",
+    "prompt_translate_this": "Translate {%mail_html_body%}. Return JSON with subject, body and status.",
+    "prompt_summarize_email_separator": "   ",
+    "prompt_summarize": "   ",
+    "prompt_summarize_email_template": "",
+    "prompt_does_not_exist": "whatever",
+    "prompt_reply": "a built-in, not a special prompt"
+  },
+  "_special_prompts_text:locked": false
+}

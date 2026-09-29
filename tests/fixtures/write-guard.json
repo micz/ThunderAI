@@ -1,0 +1,9 @@
+{
+  "_org_name": "ACME",
+  "connection_type": "chatgpt_api",
+  "chatgpt_api_key": "sk-org-SECRET-guard",
+  "default_sign_name": "ACME Staff",
+  "spamfilter": true,
+  "chatgpt_model": "gpt-org",
+  "chatgpt_model:locked": false
+}

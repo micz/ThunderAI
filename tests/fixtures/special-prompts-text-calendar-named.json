@@ -1,0 +1,7 @@
+{
+  "_special_prompts_text": {
+    "prompt_get_calendar_event": "ACME calendar: return startDate, endDate and summary as JSON",
+    "prompt_get_calendar_event_from_clipboard": "missing the response format",
+    "prompt_spamfilter": "Check {%mail_html_body%}, answer {\"explanation\": \"\", \"spamvalue\": 0}"
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "spamfilter_enabled_accounts_match": ["not an entry", 42, null],
+  "add_tags_enabled_accounts_match": []
+}
