@@ -503,9 +503,13 @@ correctly discarded by `_sendIfCurrent()` — the spinner spins forever. So:
   surviving document — an already-open tab re-injected on extension reload — gets both
   generating panels removed when the script loads.
 
-**Panel HTML sanitization.** `_sendIfCurrent()` is also the single point where the panel
-payloads are sanitized: every send goes through `_sanitizePanelPayload(payload)` first. The
-summary / translation text is model output about a possibly crafted email, and the content
+**Panel HTML sanitization.** The two send helpers are the sanitization gates: both
+`_sendIfCurrent()` (one tab) and `_sendToTabsDisplaying()` (every tab displaying the message)
+pass the payload through `_sanitizePanelPayload(payload)` before sending. Fresh results of the
+shared summary / translation jobs are broadcast through `_sendToTabsDisplaying()`, which
+sanitizes once before the per-tab loop; cached results and the webchat save go through
+`_sendIfCurrent()`. `_sanitizePanelPayload()` returns every other command (spam panel, buttons,
+generating / hide panels, error payloads) unchanged. The summary / translation text is model output about a possibly crafted email, and the content
 script inserts it into the message pane, so a `<style>` or similar markup could restyle the
 message or hide ThunderAI's own panels.
 - `showSummary`: `data.summary_html` is passed through `sanitizeBlockHtml()` (`js/mzta-richtext.js`,
@@ -514,9 +518,9 @@ message or hide ThunderAI's own panels.
   same `/<[a-z][^>]*>/i` test as the content script's `_isHtml()`. Plain text is left untouched,
   because a DOMParser round trip would encode `<` / `&` and the plain branch shows them literally.
   HTML left with no tag after sanitizing is handed on as its decoded text.
-- The payload is copied, and the stored object is never modified. Because the gate sits on the
+- The payload is copied, and the stored object is never modified. Because the gates sit on the
   send and not on the save, **cached results** (including entries written by older versions)
-  cross it exactly like fresh ones, in both `summarize_display_mode`s (the webchat save,
+  cross them exactly like fresh ones, in both `summarize_display_mode`s (the webchat save,
   `chatgpt_saveSummary`, sends through `_sendIfCurrent()` too).
 - Everything else in these panels (plain `summary`, `translated_subject`, error messages, the spam
   report, `showGeneric*`) is rendered through `textContent` and needs no sanitizing.

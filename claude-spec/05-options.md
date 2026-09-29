@@ -739,8 +739,10 @@ The click handlers drive the row through `modelsFetchUI(modelId_prefix, btnId, p
   models" and network exceptions.
 
 The fetch goes through `fetchModelsWithTimeout(client)`, the same `Promise.race` as the
-connection test: none of the `fetchModels()` implementations sets its own timeout, so after
-`MODELS_FETCH_TIMEOUT_MS` (20 s) the row reports `connTest_error_timeout`. It always resolves
+connection test. The providers go through `fetchWithRetry()`, which has its own per-attempt
+timeout and retries; this call passes `{ maxRetries: 0, timeoutMs: MODELS_FETCH_TIMEOUT_MS }` on
+purpose, because the user is waiting on the button, so after `MODELS_FETCH_TIMEOUT_MS` (20 s)
+the row reports `connTest_error_timeout` and no retry keeps running in the background. It always resolves
 to an `{ok, error|response}` result, also when `fetchModels()` throws. Every implementation,
 OpenAIComp included, catches its own network errors and resolves `{ok:false, is_exception:true,
 error}`, so the `catch` there is only a safety net. OpenAIComp also accepts a bare-array

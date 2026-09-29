@@ -2194,8 +2194,10 @@ function checkAnthropicThinkingBudget(modelId_prefix = ''){
   }
 }
 
-// None of the fetchModels() implementations sets a timeout of its own, so without
-// this an unreachable endpoint would leave the "Update list" row stuck on "Loading..."
+// The fetchModels() implementations go through fetchWithRetry() (js/api/api-retry.js),
+// which has its own per-attempt timeout and automatic retries. fetchModelsWithTimeout()
+// disables the retries on purpose, since the user is waiting for the button result, and
+// aligns the per-attempt timeout with this one, so no request outlives "Loading...".
 const MODELS_FETCH_TIMEOUT_MS = 20000;
 
 // How long the green "list loaded" confirmation stays before fading out. The red
@@ -2270,7 +2272,7 @@ async function fetchModelsWithTimeout(client) {
     timer = setTimeout(() => resolve({ ok: false, error: browser.i18n.getMessage('connTest_error_timeout') }), MODELS_FETCH_TIMEOUT_MS);
   });
   try {
-    return await Promise.race([client.fetchModels(), timeout]);
+    return await Promise.race([client.fetchModels({ maxRetries: 0, timeoutMs: MODELS_FETCH_TIMEOUT_MS }), timeout]);
   } catch (error) {
     return { ok: false, error: error?.message || String(error) };
   } finally {

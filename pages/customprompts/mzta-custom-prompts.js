@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         modelId_prefix: NEW_PROMPT_PREFIX,
         no_chatgpt_web: true,
         taLog: taLog,
-        customButtonLabel: browser.i18n.getMessage("Reset"),
+        customButtonLabel: browser.i18n.getMessage("reset"),
         customButtonCallback: () => {
             resetApiSettings('new_prompt_api_type');
         }
@@ -537,7 +537,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         // }
                         if(!Array.isArray(obj.prompts)) {
                             alert(browser.i18n.getMessage("importPrompts_invalidPrompts"));
-                            setMessage(browser.i18n.getMessage('customPrompts_invalidPrompts'),'red');
+                            setMessage(browser.i18n.getMessage('importPrompts_invalidPrompts'),'red');
                             return;
                         }
                         //setCustomPrompts(obj.prompts);
@@ -594,7 +594,7 @@ function handleEditClick(e) {
             modelId_prefix: prefix,
             no_chatgpt_web: true,
             taLog: taLog,
-            customButtonLabel: browser.i18n.getMessage("Reset"),
+            customButtonLabel: browser.i18n.getMessage("reset"),
             customButtonCallback: () => {
                 resetApiSettings(selectId, id);
             }

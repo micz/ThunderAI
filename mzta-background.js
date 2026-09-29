@@ -1023,9 +1023,10 @@ const _PANEL_HTML_RE = /<[a-z][^>]*>/i;
 // output is untrusted: a translation or summary of a crafted email can carry <style>
 // or other markup that restyles the message or hides ThunderAI's own panels. So every
 // panel payload crosses the ONE sanitizer (js/mzta-richtext.js) here, on its way out
-// of _sendIfCurrent(), which every show command goes through. That covers the fresh
-// results and the cached ones alike, including entries stored by older versions. The
-// stored object is never modified: the payload is copied.
+// of both send helpers: _sendIfCurrent() (one tab) and _sendToTabsDisplaying() (the
+// broadcast of the fresh job results). That covers the fresh results and the cached
+// ones alike, including entries stored by older versions. The stored object is never
+// modified: the payload is copied.
 function _sanitizePanelPayload(payload) {
     const data = payload?.data;
     if (!data || data.error) return payload;
@@ -1099,8 +1100,10 @@ async function _sendGeneratingIfCurrent(tabId, headerMessageId, payload) {
 // rule as _sendIfCurrent) and the send goes through sendTabMessageSafe() [#901]. Awaited
 // by the jobs, so a tab always receives the generating panel before the result; the
 // content script's own guards (_mztaDisplayedMsgId, _mztaPanelSeq) still apply.
+// The payload is sanitized once through _sanitizePanelPayload(), like _sendIfCurrent().
 async function _sendToTabsDisplaying(headerMessageId, payload) {
     if (!headerMessageId) return;
+    const safePayload = _sanitizePanelPayload(payload);
     let tabs = [];
     try {
         tabs = (await browser.tabs.query({})).filter(tab => tab.type === 'mail' || tab.type === 'messageDisplay');
@@ -1112,7 +1115,7 @@ async function _sendToTabsDisplaying(headerMessageId, payload) {
         try {
             const current = await browser.messageDisplay.getDisplayedMessage(tab.id);
             if (!current || current.headerMessageId !== headerMessageId) return;
-            await sendTabMessageSafe(tab.id, payload);
+            await sendTabMessageSafe(tab.id, safePayload);
         } catch (e) {
             // A tab closing mid-query, a tab type without a message display: skip it.
         }
