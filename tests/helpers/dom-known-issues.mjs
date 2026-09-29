@@ -12,17 +12,7 @@
  */
 
 export const REASONS = {
-    displayModeForcedByAuto:
-        'policy conflict, not necessarily a bug - the sweep locks summarize_auto to "3" and '
-        + 'summarize_display_mode to "webchat"; updateDisplayModeConstraint() shows (and tries to store) '
-        + '"inline", the only mode auto-summarize supports. Spec 08 does not say what a contradictory '
-        + 'policy shows',
 };
 
 export const KNOWN = {
-    'summarize': {
-        locked: {
-            summarize_display_mode: { value: REASONS.displayModeForcedByAuto },
-        },
-    },
 };

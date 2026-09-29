@@ -18,6 +18,15 @@ const SCENARIOS = {
     async readPrefs({ mztaPrefs }, ctl, keys) {
         return mztaPrefs.getPrefs(keys);
     },
+    /** What the loader made of the policy: {key: {managed, value, locked}}. */
+    async managedKeys({ mztaManaged }, ctl, keys) {
+        await mztaManaged.managedReady();
+        return Object.fromEntries(keys.map(k => [k, {
+            managed: mztaManaged.hasManagedValue(k),
+            value: mztaManaged.getManagedValue(k),
+            locked: mztaManaged.isManagedLocked(k),
+        }]));
+    },
     /** The invocation view (menus, popup, loadPrompt()). */
     async invocablePrompts({ prompts }) {
         return prompts.getPrompts();

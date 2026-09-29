@@ -15,6 +15,10 @@
  *
  *  Known failures are passed in as `todo` ({key: {aspect: 'potential bug: ...'}}): the
  *  assertion still runs and is reported as a failing TODO, never skipped.
+ *
+ *  A key whose shown value the spec derives from the other locked keys, rather than from its
+ *  own policy value, is passed in as `expected` ({key: {value, why}}): the locked "shows"
+ *  assertion checks that value instead. `why` names the spec rule, and goes in the test title.
  */
 
 import { test, after } from 'node:test';
@@ -189,7 +193,7 @@ function sweepHeaderTests(page, prep) {
  * stored. Then the write attempts: every locked control changed through the DOM, before and
  * after being re-enabled by hand.
  */
-export async function lockedSweep(page, { todo } = {}) {
+export async function lockedSweep(page, { todo, expected = {} } = {}) {
     const prep = await prepare(page);
     const policy = { _org_name: ORG_NAME };
     for (const c of prep.cases) policy[c.key] = c.P;
@@ -207,7 +211,12 @@ export async function lockedSweep(page, { todo } = {}) {
             assert.equal(el().disabled, true, 'disabled');
             assert.equal(el().dataset.mztaManaged, '1', 'data-mzta-managed');
         });
-        test(`locked ${c.key}: shows the policy value, not the stored user value`, t('value'), () => {
+        if (expected[c.key]) {
+            const { value, why } = expected[c.key];
+            test(`locked ${c.key}: shows ${JSON.stringify(value)} (${why}), not the stored user value`, t('value'), () => {
+                assert.ok(shows(el(), value), `expected ${JSON.stringify(value)}, shows ${describeShown(el())}`);
+            });
+        } else test(`locked ${c.key}: shows the policy value, not the stored user value`, t('value'), () => {
             const expected = isSecret(c.key) ? MANAGED_SECRET_MARKER : c.P;
             assert.ok(shows(el(), expected),
                 `expected ${JSON.stringify(isSecret(c.key) ? 'MANAGED_SECRET_MARKER' : expected)}, shows ${describeShown(el())}`);

@@ -346,7 +346,7 @@ The summarize settings page provides:
 3. **Display mode dropdown** (`summarize_display_mode`) — controls where summaries are shown:
    - `'inline'` — summary banner in the message pane (default)
    - `'webchat'` — opens the AI chat window
-   - Note: `summarize_auto = 2` always generates inline regardless of this setting. Context menu summarize with multiple messages always falls back to webchat.
+   - Note: `summarize_auto = 2` and `summarize_auto = 3` always generate inline regardless of this setting. Context menu summarize with multiple messages always falls back to webchat.
 4. **Max display length** (`summarize_max_display_length`) — number input, limits inline summary text to N characters. `0` = no limit. When truncated, a "See more"/"See less" toggle link is appended.
 5. **Max messages** (`summarize_max_messages`) — number input, caps how many messages can be summarized at once in webchat mode. Above the limit the operation is blocked with the `summarize_too_many_messages` warning. `0` = no limit.
 6. **Strip formatting** (`summarize_strip_formatting`) — checkbox, removes HTML/Markdown formatting from AI summary responses, displaying plain text only. Default: off.

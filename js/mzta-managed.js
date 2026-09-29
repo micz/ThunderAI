@@ -411,6 +411,8 @@ export const mztaManaged = {
             if (lock_overrides[key] !== false) this._locked.add(key);
         }
 
+        reconcileSummarizeDisplayMode(this._values, this._locked, this.logger);
+
         // A ":locked" modifier for a key that carries no value has nothing to act on.
         for (const target of Object.keys(lock_overrides)) {
             if (target === POLICY_SPECIAL_PROMPTS_TEXT) {
@@ -566,6 +568,28 @@ export const mztaManaged = {
         return this._disableSetupWizard;
     },
 };
+
+/**
+ * An automatic summary (summarize_auto 2 or 3) is always shown inline, so a policy that sets
+ * one of those modes and also supplies summarize_display_mode gets 'inline', whatever it wrote,
+ * and the display mode takes the lock of summarize_auto: enforced when summarize_auto is
+ * enforced, an initial value when summarize_auto is one. Normalised here, once, rather than at
+ * every reader: the resolved value is then the one the whole add-on reads - the summarize page,
+ * the context menu summarize, the refresh - with nothing to reconcile later.
+ */
+function reconcileSummarizeDisplayMode(values, locked, logger) {
+    if (values.summarize_auto !== 2 && values.summarize_auto !== 3) return;
+    if (!Object.prototype.hasOwnProperty.call(values, 'summarize_display_mode')) return;
+    const auto_locked = locked.has('summarize_auto');
+    if (values.summarize_display_mode === 'inline' && locked.has('summarize_display_mode') === auto_locked) return;
+    logger.warn('Policy: "summarize_display_mode" is ' + JSON.stringify(values.summarize_display_mode) +
+        (locked.has('summarize_display_mode') ? ' (locked)' : ' (initial)') + ', but "summarize_auto" is ' +
+        values.summarize_auto + (auto_locked ? ' (locked)' : ' (initial)') + ', which only shows summaries ' +
+        'inline: using "inline"' + (auto_locked ? ' (locked).' : ' (initial).'));
+    values.summarize_display_mode = 'inline';
+    if (auto_locked) locked.add('summarize_display_mode');
+    else locked.delete('summarize_display_mode');
+}
 
 /**
  * Read a restriction key.

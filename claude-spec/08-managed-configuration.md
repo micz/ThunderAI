@@ -208,6 +208,29 @@ for the reason in [No seeding from policy values](#no-seeding-from-policy-values
 page-open block that copies the prompt's `api_type` into the preference is stopped by the
 per-key write guard of `setPrefs()`, as before.
 
+### An automatic summary is always inline
+
+With `summarize_auto` at `2` or `3` an automatic summary is always shown inline, whatever
+`summarize_display_mode` says (see `05-options.md`). A policy that sets `summarize_auto` to
+`2`/`3` and also supplies `summarize_display_mode` gets `'inline'` for it, whatever it wrote,
+and **the display mode takes the lock of `summarize_auto`**: enforced when `summarize_auto` is
+locked, an initial value when it is `":locked": false` — whatever the display mode's own
+`":locked"` said. `reconcileSummarizeDisplayMode()` in `js/mzta-managed.js` rewrites the accepted
+value and lock right after validation (pass 2), with a `taLogger.warn()` naming both keys. It is
+not rejected: the administrator's intent - automatic summaries - is clear, and `'webchat'` is
+simply not a mode they can be shown in.
+
+Normalised once, at load, so the resolved value is the one every reader gets, in the
+background and, through hydration, in every page: the summarize page shows `'inline'` (its
+`updateDisplayModeConstraint()` would force it anyway), and the context menu summarize and the
+summary's refresh, which read `summarize_display_mode` directly, follow it too - just as they
+follow the `'inline'` the page stores without a policy.
+
+With an initial `summarize_auto` both keys are initial, so the user's stored values win as for
+any other key, and a user who goes back to manual mode (`1`) can pick `'webchat'` again. A
+display mode the policy does not supply is left alone: the user's stored value is the page's
+business, as without a policy.
+
 ## The allowlist
 
 Derived from `Object.keys(prefs_default)`, minus four exclusion rules. Nothing else is
@@ -267,13 +290,19 @@ administrator sees a malformed policy without having to turn on debugging first.
 
 API key values are masked in all log output, the same rule `js/mzta-prefs.js` applies.
 
+Validation is per key, with **one cross-key rule**: a policy `summarize_auto` of `2`/`3` turns a
+policy-supplied `summarize_display_mode` into `'inline'`, with the lock of `summarize_auto` (see
+[An automatic summary is always inline](#an-automatic-summary-is-always-inline)).
+
 ### The lock convention
 
 Every key present in the policy is **enforced**. A sibling `"<key>:locked": false`
 downgrades it to a mere initial value the user may change. A `":locked"` modifier whose
 target carries no value is warned about and ignored. The `*_enabled_accounts_match` keys
 are always enforced: they have no control of their own, so an initial value could never be
-changed; `":locked": false` on them is warned about and ignored.
+changed; `":locked": false` on them is warned about and ignored. A `summarize_display_mode`
+reconciled with an automatic `summarize_auto` takes that key's lock instead of its own, see
+[An automatic summary is always inline](#an-automatic-summary-is-always-inline).
 
 ### Structural keys
 
@@ -964,6 +993,7 @@ unmanaged baseline of a page, comes from a separate module instance or a worker 
 | Locked model selects | - | `options/07-locked-model`, `setup-wizard/07-locked-model` |
 | No seeding from policy values | - | `spamfilter/05-no-seeding-from-policy` |
 | A locked per-feature connection type | - | `<feature>/02-sweep-locked`, `spamfilter/06-locked-connection-type` |
+| An automatic summary is always inline | `09` | `summarize/02-sweep-locked` (`expected`) |
 | Organization prompts | `06a-org-prompts`, `06b-org-prompts-*` | - |
 | Enforced special prompt texts (and its UI) | `06c`-`06e` | `<feature>/07-special-prompts-text`, `get-calendar-event/08-…-calendar-named` |
 | Restrictions | `06f`-`06i` | `customprompts/10`, `customprompts/11`, `menu_order/10`, `<page>/10-disable-setup-wizard` (popup, onboarding, options, setup-wizard) |

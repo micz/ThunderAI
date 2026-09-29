@@ -226,6 +226,12 @@ not written by hand (`helpers/dom-sweep.mjs`):
 
 A new preference with a control on a swept page is therefore covered the moment it exists.
 
+When the spec derives what a locked control shows from the *other* locked keys rather than
+from its own policy value, the sweep file passes `expected: {key: {value, why}}` to
+`lockedSweep()`, and that value is asserted instead (today only `summarize_display_mode`, which
+the policy loader resolves to `'inline'` because the sweep locks `summarize_auto` to 3). It is a spec rule, not a known bug: those go in
+`dom-known-issues.mjs`.
+
 ### Adding a page
 
 1. Add it to `PAGES` in `helpers/dom-page.mjs`.
