@@ -1,15 +1,23 @@
 name: Tests
 
+# On demand only, never on every commit: run it by hand (Actions → Tests → Run workflow,
+# or `gh workflow run tests.yml --ref <branch>`), or add the `run-tests` label to a pull
+# request. The label is removed when the run ends, so adding it again runs the suite again.
 on:
-  push:
-  pull_request:
   workflow_dispatch:
+  pull_request:
+    types: [labeled]
 
 permissions:
   contents: read
 
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   managed-configuration:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'run-tests'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -30,3 +38,17 @@ jobs:
         run: npm ci
       - name: Whole suite (level 1 and DOM tests)
         run: npm test
+
+  unlabel:
+    needs: managed-configuration
+    if: always() && github.event_name == 'pull_request' && github.event.label.name == 'run-tests'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Remove the run-tests label
+        run: gh pr edit ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --remove-label run-tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # On a pull request from a fork the token is read-only: the label stays, the run does not fail for it.
+        continue-on-error: true

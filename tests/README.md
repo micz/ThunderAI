@@ -38,10 +38,12 @@ test.
 - To see the modules' console output (it is captured and hidden by default), set
   `TEST_VERBOSE=1`.
 
-CI runs on every push and pull request
-([`.github/workflows/tests.yml`](../.github/workflows/tests.yml), Node 22 and 24): level 1
-first, **before** installing anything (which proves it still needs no install), then
-`npm ci && npm test`.
+CI runs on demand, never on every commit
+([`.github/workflows/tests.yml`](../.github/workflows/tests.yml), Node 22 and 24): by hand
+(Actions → Tests → Run workflow, or `gh workflow run tests.yml --ref <branch>`, on any
+branch), or by adding the `run-tests` label to a pull request. The label is removed when
+the run ends, so adding it again runs the suite again. Level 1 runs first, **before**
+installing anything (which proves it still needs no install), then `npm ci && npm test`.
 
 Nothing here is packaged: `create_xpi_from_folder.bat`, the packaging script shared by the
 add-ons (outside this repository), must exclude the root `tests\` folder, `package.json`,
