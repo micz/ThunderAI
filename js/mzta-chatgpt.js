@@ -23,6 +23,8 @@
 export const mzta_script = `
 // page timing (issue #924), ms since navigation start; logged only in debug mode
 let script_start_ms = performance.now();
+// injected at document_start, so the document can still be loading here (issue #924)
+let ready_state_at_inject = document.readyState;
 let custom_text_start_ms = null;
 let custom_text_ms = null;
 let page_timing_logged = false;
@@ -57,6 +59,8 @@ let overlap_resize_observer = null;
 let overlap_observed = new Set();
 let overlap_watched_bar = null;
 let overlap_watched_form = null;
+// true while run() waits for the page, so the checkTab retry does not start a second run
+let run_pending = false;
 
 // Composer lookup, in priority order. ChatGPT rolls out different composers
 // (A/B tests), so a single id lookup is not enough (issues #890, #920, #924).
@@ -645,6 +649,27 @@ function htmlToPlainText(html) {
 
 function waitMs(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Resolves once document.head and document.body exist: the script can be injected
+// while the document is still loading (issue #924)
+function waitForHeadAndBody() {
+    return new Promise(resolve => {
+        if (document.head && document.body) {
+            resolve();
+            return;
+        }
+        let observer = null;
+        const check = () => {
+            if (!document.head || !document.body) return;
+            if (observer) observer.disconnect();
+            document.removeEventListener('DOMContentLoaded', check);
+            resolve();
+        };
+        observer = new MutationObserver(check);
+        observer.observe(document.documentElement || document, { childList: true, subtree: true });
+        document.addEventListener('DOMContentLoaded', check);
+    });
 }
 
 function countElements(selector) {
@@ -1913,8 +1938,16 @@ function operation_done(){
     chatpgt_scrollToBottom();
 }
 
-function checkLoggedIn(){
-    return !window.location.href.startsWith('https://chatgpt.com/auth/') && document.querySelector('button[data-testid*=login]') === null;
+// While the document is still loading the login button may not be rendered yet:
+// the decision waits for the composer, or for findPromptInput() to give up (issue #924)
+async function checkLoggedIn(){
+    if (window.location.href.startsWith('https://chatgpt.com/auth/')) return false;
+    if (document.readyState !== 'complete' && !queryPromptInput([document])) {
+        doLog("checkLoggedIn: page still loading (" + document.readyState + "), waiting for the composer");
+        const composer = await findPromptInput(15000);
+        doLog("checkLoggedIn: composer " + (composer ? "found" : "not found") + ", readyState " + document.readyState);
+    }
+    return document.querySelector('button[data-testid*=login]') === null;
 }
 
 function showCustomTextField(){
@@ -2258,7 +2291,10 @@ function logPageTiming(sendDoneMs){
             loadEventEnd: nav ? r(nav.loadEventEnd) : null,
             scriptStartMs: r(script_start_ms),
             sendDoneMs: r(sendDoneMs),
-            customTextMs: r(custom_text_ms)
+            customTextMs: r(custom_text_ms),
+            readyReason: mztaReadyReason,
+            readyStateAtSend: mztaReadyStateAtSend,
+            readyStateAtInject: ready_state_at_inject
         }));
     } catch (err) {
         console.warn("[ThunderAI] Page timing failed: ", err);
@@ -2271,8 +2307,17 @@ function doLog(msg){
     }
 }
 
-function run(checkTab = null) {
-    if(!checkLoggedIn()){
+async function run(checkTab = null) {
+    if (run_pending) return;
+    run_pending = true;
+    let loggedIn = false;
+    try {
+        await waitForHeadAndBody();
+        loggedIn = await checkLoggedIn();
+    } finally {
+        run_pending = false;
+    }
+    if(!loggedIn){
         // User not logged in
         if(checkTab){
             clearInterval(checkTab);
