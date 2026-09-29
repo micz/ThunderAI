@@ -179,7 +179,7 @@ Object.keys(prefs_default)
   minus  custom_prompts_view    custom prompts page layout, local UI
 ```
 
-**101 of 110 keys** are policy-settable. The derivation already covers the generated keys:
+**103 of 112 keys** are policy-settable. The derivation already covers the generated keys:
 the six `{prefix}_use_specific_integration` / `{prefix}_connection_type` pairs (from
 `special_prompts_with_integration`) and the per-provider `{integration}_{key}` connection
 keys (from `integration_options_config`) are all spread into `prefs_default` in
@@ -189,6 +189,15 @@ The nine excluded keys are per-machine or per-profile state, not configuration: 
 them across a fleet would push window coordinates from another screen, a font zoom from
 another display, a page layout the user chose for themselves, or account ids that do not
 exist in this profile.
+
+**`{feature}_enabled_accounts_match` is allowed while `{feature}_enabled_accounts` stays
+excluded** (`spamfilter_…`, `add_tags_…`). The anchored `/_enabled_accounts$/` does not
+catch the `_match` suffix, on purpose. The two keys hold different things: the excluded one
+holds account ids (`account1`, …), which Thunderbird assigns per profile, so no fleet-wide
+value can be right; the `_match` one holds names that are the same on every machine — an
+identity address, a domain, `local` — and the ids are **resolved from them at read time**,
+per profile, never stored. So the stored preference stays per-profile and the user's, and
+the policy never has to name an id. See [Account lists by policy](#account-lists-by-policy-_enabled_accounts_match).
 
 ## Validation
 
@@ -202,6 +211,15 @@ and their consumers call string methods on the elements. An array containing a n
 element is warned about and rejected **as a whole** — not filtered, which would be a silent
 coercion.
 
+**Exception: the `*_enabled_accounts_match` account matchers**, validated entry by entry by
+`validateAccountMatchers()`. An entry that is not an account matcher — *including a
+non-string one* — is skipped with a warning naming its index, and the rest still apply. The
+whole-array rule exists so a list its consumers read as-is is never coerced; here every
+entry is content-validated anyway, and rejecting the whole list would fail **open** (back to
+the user's selection, possibly every account) for a list whose job is to limit where mail
+is sent to an AI provider. For the same reason a list whose entries are all invalid is kept,
+empty — "no account" — with a warning. Details in [Account lists by policy](#account-lists-by-policy-_enabled_accounts_match).
+
 `taLogger.warn()` is deliberate: unlike `.log()` it is **not** gated on `do_debug`, so an
 administrator sees a malformed policy without having to turn on debugging first.
 
@@ -211,7 +229,9 @@ API key values are masked in all log output, the same rule `js/mzta-prefs.js` ap
 
 Every key present in the policy is **enforced**. A sibling `"<key>:locked": false`
 downgrades it to a mere initial value the user may change. A `":locked"` modifier whose
-target carries no value is warned about and ignored.
+target carries no value is warned about and ignored. The `*_enabled_accounts_match` keys
+are always enforced: they have no control of their own, so an initial value could never be
+changed; `":locked": false` on them is warned about and ignored.
 
 ### Structural keys
 
@@ -539,6 +559,88 @@ the contract (`getEnforcedTextPlaceholderProblems()`). The text is still enforce
 administrator asked for it, and it runs. The existing `calendar_no_selection` startup check
 reads `getSpecialPrompts()`, so it covers an enforced calendar text on its own.
 
+## Account lists by policy (`*_enabled_accounts_match`)
+
+Lets an administrator decide which accounts the **automatic** spam filter and the
+**automatic** Add Tags run on. `spamfilter_enabled_accounts` / `add_tags_enabled_accounts`
+cannot be set by policy (see [The allowlist](#the-allowlist)), so each has a policy-settable
+counterpart, `spamfilter_enabled_accounts_match` / `add_tags_enabled_accounts_match`,
+declared in `prefs_default` as `[]` and therefore covered by the allowlist, the type check
+and the write guard like any other preference.
+
+```json
+"spamfilter_enabled_accounts_match": ["micthdev@gmail.com", "@acme.example", "local"]
+```
+
+### Entries
+
+`isAccountMatcherEntry()` in [`js/mzta-managed.js`](../js/mzta-managed.js); case-insensitive,
+surrounding whitespace ignored, stored lowercased:
+
+| Entry | Matches |
+|---|---|
+| `user@acme.example` | an account with an identity of that address |
+| `@acme.example`, `*@acme.example` | an account with an identity in that domain |
+| `local` | Local Folders (account type `none`), which has no identity |
+
+Addresses and domains are matched by **`matchAddressList()`** in `js/mzta-utils.js`, the
+helper `summarize_auto_senders_list` uses, against each identity's `email`; an account
+matches when any of its identities does. An entry is accepted only in the shape
+`extractEmail()` (which `matchAddressList()` runs) recognises — `[\w.-]+@[\w.-]+\.\w+` — so
+an entry that could never match is rejected loudly instead: this includes an address with a
+`+` tag, which that helper cannot see. The domain form still covers such an identity.
+
+**Other identity-less accounts — RSS feeds (`rss`) — are never matched.** They have no
+stable name a fleet-wide policy could use, and the spam filter has no business on feed
+items. A managed list therefore always leaves feeds out; add a literal next to `local` if an
+organization ever needs auto-tagging on feeds.
+
+### Resolution
+
+`resolveEnabledAccounts(feature, storedList)` in [`js/mzta-utils.js`](../js/mzta-utils.js)
+returns `{restricted, accountIds, managed}`:
+
+- **not managed** (the policy supplies no `_match` value): exactly the stored list, with the
+  existing semantics — `restricted` is `stored.length > 0`, so an empty list is all accounts;
+- **managed**: `accountIds` resolved from `browser.accounts.list(false)` and the matchers,
+  and `restricted` is **always true**. An empty result means **no account**, never "all
+  accounts" — the `[]`-means-all convention belongs to the stored list only, and applying it
+  here would turn a policy that matches nothing into a policy that enables everything. It is
+  `taLogger.warn()`ed once per context — at startup in the background, which resolves both
+  lists for that purpose — and again only after the list has matched something in between.
+
+The resolved ids **replace** the stored list in `processEmails()` (`mzta-background.js`),
+the only place either feature decides whether an account is in scope (auto mode only, as
+before). They are **never written** to `{feature}_enabled_accounts`: the stored value stays
+the user's, untouched, and removing the policy restores it.
+
+The matchers are read from `mztaManaged`, **not** through `mztaPrefs`: the key is
+policy-only, and a stray stored value must not limit anything without a policy. An empty
+array in the policy means "not managed" and is not recorded at all.
+
+**Resolved at each check, not on account events.** `processEmails()` resolves once per
+batch (one `accounts.list(false)` call, no folders), so an account created, removed or given
+a new identity after startup is picked up at the next batch without listening to
+`accounts.onCreated` / `onUpdated` / `onDeleted`. A cached list would need all three
+listeners plus identity events to stay right, and a missed one would silently leave a new
+account unfiltered — or filtered against the policy; the per-batch cost is negligible next
+to the AI call it gates. If the account list cannot be read, the result is "no account":
+fail closed, since the policy asked to limit.
+
+### The account checkboxes
+
+`lockAccountSelector(feature, container, companions)` in
+[`pages/_lib/managed-ui.js`](../pages/_lib/managed-ui.js), called by `pages/spamfilter/` and
+`pages/addtags/` after they have built and checked the account checkboxes. When
+`{feature}_enabled_accounts_match` is locked it re-checks every box from the **resolved**
+list, disables and marks each one (`data-mzta-managed`), makes "Select All" / "Deselect All"
+inert through `lockCompanions()`, puts the marker right of the section title, and replaces
+the "Each change is saved immediately" line with `AccountSelector_managed_note` — or
+`AccountSelector_managed_none` when the list matches nothing here. The page's checkbox
+`change` handler and both button handlers **return early** on its result; the write guard
+does not cover `{feature}_enabled_accounts` (it is not locked), so this early return is what
+keeps the page from writing the user's list while it is overridden.
+
 ## Interaction points
 
 | Where | What |
@@ -550,6 +652,7 @@ reads `getSpecialPrompts()`, so it covers an enforced calendar text on its own.
 | `calendar_no_selection` ([js/mzta-prompts.js](../js/mzta-prompts.js)) | the behaviour used to be driven only by `need_selected` of `prompt_get_calendar_event`, written by the settings page's change listener, so a policy value showed a checked box and changed nothing. `need_selected` is now **derived** from the resolved preference on every `getSpecialPrompts()` read (never written because of the policy; see [02-prompts.md](02-prompts.md)), and the preference is in `MENU_RELEVANT_KEYS`. The page's placeholder check cannot stop a policy, so the background `taLogger.warn()`s at startup, and the page shows `prefs_OptionText_calendar_no_selection_policy_missing_placeholder` when the key is locked on, if the prompt has neither `{%mail_text_body_or_selected%}` nor `{%mail_html_body_or_selected%}`. The one-shot `migrateCalendarNoSelection()` aligned the preference once to the stored `need_selected`, so no unmanaged user changed behaviour on upgrade. |
 | per-feature provider override ([js/mzta-prompts.js](../js/mzta-prompts.js), [pages/_lib/connection-ui.js](../pages/_lib/connection-ui.js)) | the override lives in the special prompt (`api_type` + `{integration}_{key}`), not in a preference, so locking `{prefix}_use_specific_integration` to `false` did not stop an override saved before the policy: `getConnectionType()` and `initWorker()` still honoured `prompt.api_type`. `applyLockedOffIntegrations()` now hides it on every `getSpecialPrompts()` read — **locked-off case only**; unmanaged profiles and `getConnectionType()` are unchanged. It is a **read-time overlay that must never be persisted**: unlike `need_selected` above, a stored `api_type: ''` would erase the user's own override, so `setSpecialPrompts()` restores the stored override fields of those prompts (`keepStoredOverrides()`) and the override returns untouched when the policy is removed. The feature page keeps the toggle off, never forces it on as mandatory, and never calls `_updatePrompt()` / `clearPromptAPI()` while locked; the background `taLogger.warn()`s at startup for each locked-off feature with a stored override. Full treatment in [04-api-integrations.md](04-api-integrations.md#when-a-policy-locks-the-override-off). |
 | special prompt texts ([js/mzta-prompts.js](../js/mzta-prompts.js), the six feature pages) | `_special_prompts_text` is overlaid by `applyEnforcedTexts()` at the end of `getSpecialPrompts()` — third overlay, after the two above — and kept out of storage by `keepStoredTexts()` in `setSpecialPrompts()` plus the transient `_text_by_policy` marker. The feature pages make the textarea read-only and its Save/Reset inert (`lockEnforcedPromptText()`), and the background warns at startup about missing placeholders. See [Enforced special prompt texts](#enforced-special-prompt-texts-_special_prompts_text). |
+| account scope of the automatic spam filter / Add Tags ([mzta-background.js](../mzta-background.js) `processEmails()`, [js/mzta-utils.js](../js/mzta-utils.js)) | `{feature}_enabled_accounts` is read as before, but the in-scope check uses `resolveEnabledAccounts()`, which substitutes the ids resolved from a policy `{feature}_enabled_accounts_match` — once per batch, never stored, and "no account" when nothing matches. See [Account lists by policy](#account-lists-by-policy-_enabled_accounts_match). |
 | sync → local migration ([js/mzta-prefs-migration.js](../js/mzta-prefs-migration.js)) | **deliberately untouched.** See below. |
 
 ### Why the migration is not guarded
@@ -626,6 +729,10 @@ re-enable a locked `summarize_auto_senders` toggle.
 The marker lands right of the textarea's group title (see "Group titles win over the
 column" below; the `.mzta_field` column is only the fallback), and in the checkbox's
 `.feature_row` (before the `.mzta_switch`). No new CSS was needed.
+
+The account checkboxes of the spam filter and Add Tags pages are the same pattern with a
+twist — the locked key (`*_enabled_accounts_match`) is not the one the checkboxes save — and
+have their own helper, `lockAccountSelector()`; see [Account lists by policy](#account-lists-by-policy-_enabled_accounts_match).
 
 `applyManagedUI()` covers locked *preferences* only. A restriction has no preference behind
 it, and its controls are plain buttons and links rather than `.option-input` fields, so

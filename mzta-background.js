@@ -54,6 +54,7 @@ import {
     hasNoConnectionSelected,
     matchAddressList,
     hasAddressListEntries,
+    resolveEnabledAccounts,
     extractEmail,
     messageFolderHasSpecialUse,
     isMessageInAutoSkippedFolder,
@@ -241,6 +242,22 @@ await (async () => {
         }
     } catch (e) {
         taLog.error('Could not check the calendar prompt placeholders: ' + e);
+    }
+})();
+
+// A policy account list ({feature}_enabled_accounts_match) that matches no account in this
+// profile turns the automatic feature off here, which is easy to miss - resolve it once now
+// so resolveEnabledAccounts() warns at startup rather than only at the first new mail. It
+// warns once, and again only after the list has matched something in between.
+await (async () => {
+    try {
+        for (const feature of ['spamfilter', 'add_tags']) {
+            if (mztaManaged.hasManagedValue(feature + '_enabled_accounts_match')) {
+                await resolveEnabledAccounts(feature, []);
+            }
+        }
+    } catch (e) {
+        taLog.error('Could not resolve the policy account lists: ' + e);
     }
 })();
 
@@ -2330,6 +2347,17 @@ async function processEmails(args) {
         let spamfilter_skip_addresses = prefs_aats.spamfilter_skip_addresses;
         let spamfilter_skip_addressbook = prefs_aats.spamfilter_skip_addressbook;
 
+        // The accounts the automatic runs are limited to: the stored selection, or the one a
+        // policy resolves from {feature}_enabled_accounts_match, which replaces it. Resolved
+        // once per batch, so an account added since the last batch is already covered.
+        // `restricted` false means every account; true with an empty list means none.
+        let addtags_accounts = (isAutoMode && addTagsAuto)
+            ? await resolveEnabledAccounts('add_tags', prefs_aats.add_tags_enabled_accounts)
+            : { restricted: false, accountIds: [] };
+        let spamfilter_accounts = (isAutoMode && spamFilter)
+            ? await resolveEnabledAccounts('spamfilter', prefs_aats.spamfilter_enabled_accounts)
+            : { restricted: false, accountIds: [] };
+
         // Process in small chunks, yielding to the event loop between chunks so the
         // garbage collector can reclaim memory and the UI stays responsive on large selections.
         const CHUNK_SIZE = 5;
@@ -2394,9 +2422,9 @@ async function processEmails(args) {
                     taLog.log("Message in a folder excluded from the automatic processing, skipping add_tags...");
                     skipAddTags = true;
                 }
-                if(!skipAddTags && isAutoMode && prefs_aats.add_tags_enabled_accounts.length > 0){
+                if(!skipAddTags && isAutoMode && addtags_accounts.restricted){
                     let accountId = message.folder.accountId;
-                    if(!prefs_aats.add_tags_enabled_accounts.includes(accountId)){
+                    if(!addtags_accounts.accountIds.includes(accountId)){
                         taLog.log("Account " + accountId + " not enabled for add_tags, skipping...");
                         skipAddTags = true;
                     }
@@ -2490,9 +2518,9 @@ async function processEmails(args) {
                     taLog.log("Message in a folder excluded from the automatic processing, skipping spamfilter...");
                     skipSpamFilter = true;
                 }
-                if(!skipSpamFilter && isAutoMode && prefs_aats.spamfilter_enabled_accounts.length > 0){
+                if(!skipSpamFilter && isAutoMode && spamfilter_accounts.restricted){
                     let accountId = message.folder.accountId;
-                    if(!prefs_aats.spamfilter_enabled_accounts.includes(accountId)){
+                    if(!spamfilter_accounts.accountIds.includes(accountId)){
                         taLog.log("Account " + accountId + " not enabled for spamfilter, skipping...");
                         skipSpamFilter = true;
                     }

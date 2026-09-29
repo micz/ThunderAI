@@ -2067,6 +2067,14 @@
     "message": "Choose the accounts where the automatic spam filter is enabled",
     "description": ""
   },
+  "AccountSelector_managed_note": {
+    "message": "The accounts are selected by your organization's configuration policy and cannot be changed here.",
+    "description": "Note above the account checkboxes (Spam Filter and Add Tags settings pages) when an enterprise policy decides which accounts the automatic feature runs on"
+  },
+  "AccountSelector_managed_none": {
+    "message": "Your organization's configuration policy limits this feature to accounts that do not exist in this profile, so it does not run automatically on any account.",
+    "description": "Note above the account checkboxes (Spam Filter and Add Tags settings pages) when the enterprise policy's account list matches no account of the user"
+  },
   "prefs_OptionText_chatgpt_web_project": {
     "message": "ChatGPT Web Project",
     "description": ""

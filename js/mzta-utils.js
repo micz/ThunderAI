@@ -22,6 +22,8 @@ import {
 
 import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js'
 import { mztaPrefs } from './mzta-prefs.js';
+import { mztaManaged, managedReady, ACCOUNT_MATCH_LOCAL } from './mzta-managed.js';
+import { taLogger } from './mzta-logger.js';
 
 const sparks_min = '3.0.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
 const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
@@ -840,6 +842,71 @@ export function matchAddressList(author, list) {
     if (entry.startsWith('@')) return senderDomain === entry.slice(1);
     return senderEmail === entry;
   });
+}
+
+// Keys resolveEnabledAccounts() has already warned about resolving to no account, so the
+// warning is printed once per transition rather than on every batch of new mail.
+const _accountMatchWarned = new Set();
+
+/* The accounts an automatic feature ('spamfilter' or 'add_tags') may run on.
+
+   Returns { restricted, accountIds, managed }:
+    - restricted false: every account (the stored "empty list = all accounts");
+    - restricted true: only accountIds, which may be EMPTY and then means NO account.
+
+   Without a policy it is exactly the stored {feature}_enabled_accounts, passed in by the
+   caller, which has already read it through mztaPrefs. When the policy supplies
+   {feature}_enabled_accounts_match, the ids are resolved here from browser.accounts and the
+   matchers, and REPLACE the stored list:
+    - an account matches when any of its identities matches an address or domain entry
+      (matchAddressList(), the helper summarize_auto_senders_list uses);
+    - Local Folders (type "none") has no identity and matches only ACCOUNT_MATCH_LOCAL;
+    - any other identity-less account (RSS feeds) is never matched: it has no stable name
+      to put in a fleet-wide policy, and the spam filter has no business on feed items.
+
+   The matchers are read from mztaManaged, not through mztaPrefs: they are policy-only, and
+   a value that somehow reached storage.local must not limit anything without a policy.
+   Resolved on every call, never cached and never written to {feature}_enabled_accounts:
+   accounts added, removed or re-addressed are picked up at the next call without listening
+   to accounts.onCreated/onUpdated/onDeleted, and removing the policy restores the user's
+   own selection. */
+export async function resolveEnabledAccounts(feature, storedList, { warnIfNone = true } = {}) {
+  const stored = Array.isArray(storedList) ? storedList : [];
+  const unmanaged = { restricted: stored.length > 0, accountIds: stored, managed: false };
+  const matchKey = feature + '_enabled_accounts_match';
+  await managedReady();
+  if (!mztaManaged.hasManagedValue(matchKey)) return unmanaged;
+  const matchers = mztaManaged.getManagedValue(matchKey);
+  if (!Array.isArray(matchers)) return unmanaged;
+
+  const matchLocal = matchers.includes(ACCOUNT_MATCH_LOCAL);
+  const addressMatchers = matchers.filter(entry => entry !== ACCOUNT_MATCH_LOCAL);
+  let accounts = [];
+  try {
+    accounts = await browser.accounts.list(false);
+  } catch (e) {
+    // Fail closed: the policy asked to limit the accounts, so an unreadable account list
+    // must not turn into "all accounts".
+    new taLogger('mzta-utils', false).warn('resolveEnabledAccounts: could not list the accounts for "' +
+      matchKey + '": ' + e);
+  }
+  const accountIds = accounts.filter(account => {
+    if (account.type === 'none') return matchLocal;
+    return (account.identities || []).some(identity =>
+      matchAddressList(identity.email, addressMatchers));
+  }).map(account => account.id);
+
+  if (accountIds.length === 0) {
+    if (warnIfNone && !_accountMatchWarned.has(matchKey)) {
+      _accountMatchWarned.add(matchKey);
+      new taLogger('mzta-utils', false).warn('Policy: "' + matchKey + '" ' +
+        JSON.stringify(matchers) + ' matches no account in this profile: the automatic ' +
+        feature + ' runs on no account.');
+    }
+  } else {
+    _accountMatchWarned.delete(matchKey);
+  }
+  return { restricted: true, accountIds: accountIds, managed: true };
 }
 
 export function prepareOriginURL(url) {

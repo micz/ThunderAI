@@ -208,7 +208,8 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `add_tags_auto_include_sent` | `false` | Also auto-tag sent messages (opts back into the `sent` folder, which the automatic processing skips by default) |
 | `add_tags_auto_uselist` | `false` | Use tag allow-list |
 | `add_tags_auto_uselist_list` | `''` | Tag allow-list content |
-| `add_tags_enabled_accounts` | `[]` | Accounts where auto-tag is active |
+| `add_tags_enabled_accounts` | `[]` | Accounts where auto-tag is active: account ids, per profile, so **not** policy-settable. `[]` = all accounts. Replaced at read time — never overwritten — by the ids resolved from `add_tags_enabled_accounts_match` when a policy sets it (`resolveEnabledAccounts()`, `js/mzta-utils.js`). |
+| `add_tags_enabled_accounts_match` | `[]` | **Policy-only**, no control of its own: account matchers (`user@domain`, `@domain` / `*@domain`, `local` for Local Folders) resolved to account ids on every automatic batch; the result replaces `add_tags_enabled_accounts`, and an empty result means **no** account. `[]` = not managed. Always enforced, validated entry by entry. See [08-managed-configuration.md](08-managed-configuration.md#account-lists-by-policy-_enabled_accounts_match). |
 | `get_calendar_event` | `true` | Enable calendar event extraction |
 | `get_calendar_event_from_clipboard` | `false` | Enable calendar from clipboard |
 | `get_task` | `true` | Enable task creation |
@@ -217,7 +218,8 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `calendar_no_selection` | `false` | Skip selection prompt. **The single source of truth**: `need_selected` of `prompt_get_calendar_event` is derived from it on every read by `applyCalendarNoSelection()` in `getSpecialPrompts()` (see [02-prompts.md](02-prompts.md)), never written from it. A change reloads the menus (`MENU_RELEVANT_KEYS`). `migrateCalendarNoSelection()` aligned it once to the stored `need_selected` on upgrade. |
 | `spamfilter` | `false` | Enable spam filter |
 | `spamfilter_threshold` | `70` | Spam confidence threshold (%) |
-| `spamfilter_enabled_accounts` | `[]` | Accounts where spam filter is active |
+| `spamfilter_enabled_accounts` | `[]` | Accounts where the automatic spam filter is active: account ids, per profile, so **not** policy-settable. `[]` = all accounts. Replaced at read time — never overwritten — by the ids resolved from `spamfilter_enabled_accounts_match` when a policy sets it. |
+| `spamfilter_enabled_accounts_match` | `[]` | **Policy-only**, same as `add_tags_enabled_accounts_match`, for the automatic spam filter. |
 | `spamfilter_skip_addresses` | `[]` | Senders never sent to the AI for spam filtering. **Exact addresses only** — unlike `summarize_auto_senders_list` it has no domain-pattern support, because widening the match would silently change the meaning of lists users have already saved. Tested with `hasAddressListEntries()` (see the note below the table). |
 | `spamfilter_skip_addressbook` | `true` | Skip senders found in any address book (`browser.contacts.quickSearch`) |
 | `spamfilter_show_msg_panel` | `true` | Show info panel on spam detection |

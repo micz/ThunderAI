@@ -40,6 +40,7 @@
 import { taLogger } from '../../js/mzta-logger.js';
 import { mztaManaged, managedReady, MANAGED_SECRET_MARKER } from '../../js/mzta-managed.js';
 import { prefs_default } from '../../options/mzta-options-default.js';
+import { resolveEnabledAccounts } from '../../js/mzta-utils.js';
 
 let _state = null;
 let _logger = null;
@@ -224,6 +225,54 @@ export async function lockEnforcedPromptText(textarea, promptIds, companions = [
     textarea.title = browser.i18n.getMessage('managed_prompt_text_tooltip');
     disableCompanions(companions);
     markManaged(textarea, state, textarea.closest('.mzta_field'));
+    return true;
+}
+
+/**
+ * Show the account selector of an automatic feature ('spamfilter', 'add_tags') as the policy
+ * resolves it, when {feature}_enabled_accounts_match is set, and take the editing away.
+ *
+ * Not applyManagedUI() territory: the checkboxes are built by the page, one per account, and
+ * are bound to {feature}_enabled_accounts, which is not what the policy sets. So:
+ *
+ *  - every checkbox is (re)checked from resolveEnabledAccounts() - the stored selection is
+ *    not what applies - then disabled and marked like a locked control;
+ *  - `companions` ("Select All" / "Deselect All") are disabled via lockCompanions();
+ *  - the marker goes right of the section title, and a note under it says the list is set
+ *    by the policy, or that it matches no account, which would otherwise read as a bug.
+ *
+ * Call it AFTER the page has built and checked the boxes. Returns whether the selector is
+ * managed: the page's change and Select/Deselect handlers must return early on it. The
+ * stored {feature}_enabled_accounts is never written from here, so the user's own selection
+ * comes back when the policy is removed.
+ */
+export async function lockAccountSelector(feature, container, companions = [], do_debug = false) {
+    const key = feature + '_enabled_accounts_match';
+    const state = await getManagedState(do_debug);
+    if (!container || !isLockedKey(key)) return false;
+    const resolved = await resolveEnabledAccounts(feature, [], { warnIfNone: false });
+    container.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.checked = resolved.accountIds.includes(checkbox.value);
+        checkbox.dataset.mztaManaged = '1';
+        checkbox.disabled = true;
+        checkbox.title = browser.i18n.getMessage('managed_marker_tooltip');
+    });
+    lockCompanions(key, companions);
+
+    const section = container.closest('.mzta_section');
+    const title = section ? section.querySelector(':scope > .mzta_prompt_title') : null;
+    if (title) markManaged(title, state, title);
+    if (!document.getElementById(container.id + '_managed_note')) {
+        // "Each change is saved immediately" is no longer true: the note takes its place.
+        const infoline = section ? section.querySelector(':scope > p.mzta_help') : null;
+        if (infoline) infoline.style.display = 'none';
+        const note = document.createElement('p');
+        note.className = 'mzta_help';
+        note.id = container.id + '_managed_note';
+        note.textContent = browser.i18n.getMessage(resolved.accountIds.length > 0
+            ? 'AccountSelector_managed_note' : 'AccountSelector_managed_none');
+        container.before(note);
+    }
     return true;
 }
 

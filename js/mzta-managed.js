@@ -117,6 +117,33 @@ const EXCLUDED_KEYS = new Set([
     'custom_prompts_view',    // custom prompts page layout (split/table), local UI
 ]);
 
+// {feature}_enabled_accounts_match: the fleet-wide counterpart of the excluded
+// {feature}_enabled_accounts. Its entries name accounts by what is the same on every machine
+// (an identity address, a domain, or ACCOUNT_MATCH_LOCAL for Local Folders), and the account
+// ids are resolved from them at read time, per profile - see resolveEnabledAccounts() in
+// js/mzta-utils.js. The resolved ids are never stored, so the user's own selection survives.
+//
+// Always enforced: the key has no control of its own, so an unlocked (":locked": false)
+// value would be an "initial value" nothing lets the user change.
+const ACCOUNT_MATCH_KEY_PATTERN = /_enabled_accounts_match$/;
+export const ACCOUNT_MATCH_LOCAL = 'local';
+// Same address shape extractEmail() in js/mzta-utils.js recognises, which is what
+// matchAddressList() compares against: an entry it could never produce would never match.
+const ACCOUNT_MATCH_ADDRESS = /^[\w.-]+@[\w.-]+\.\w+$/;
+const ACCOUNT_MATCH_DOMAIN = /^\*?@[\w.-]+\.\w+$/;
+
+/**
+ * True when the string is a valid account matcher: a full address ("user@acme.example"), a
+ * domain pattern ("@acme.example" or "*@acme.example", the syntax matchAddressList() accepts)
+ * or ACCOUNT_MATCH_LOCAL. Case-insensitive, surrounding whitespace ignored.
+ */
+export function isAccountMatcherEntry(entry) {
+    if (typeof entry !== 'string') return false;
+    const e = entry.trim().toLowerCase();
+    return e === ACCOUNT_MATCH_LOCAL || ACCOUNT_MATCH_ADDRESS.test(e) ||
+           ACCOUNT_MATCH_DOMAIN.test(e);
+}
+
 /**
  * The set of preference keys an enterprise policy may set.
  *
@@ -326,7 +353,8 @@ export const mztaManaged = {
         // Pass 2: validate each candidate preference against the allowlist and against the
         // TYPE of its prefs_default counterpart. A type mismatch is never coerced: an
         // administrator who writes "true" instead of true gets a warning, not a surprise.
-        for (const [key, value] of Object.entries(candidates)) {
+        for (const [key, raw_value] of Object.entries(candidates)) {
+            let value = raw_value;
             if (!this._allowlist.has(key)) {
                 if (key in prefs_default) {
                     this.logger.warn('Policy: "' + key + '" cannot be set by policy ' +
@@ -348,11 +376,25 @@ export const mztaManaged = {
                         actual + ', ignored.');
                     continue;
                 }
+                if (ACCOUNT_MATCH_KEY_PATTERN.test(key)) {
+                    // An empty list means "not managed": the user's own account
+                    // selection stays in effect, so there is nothing to record.
+                    if (value.length === 0) continue;
+                    value = validateAccountMatchers(key, value, this.logger);
+                    this._values[key] = value;
+                    if (lock_overrides[key] === false) {
+                        this.logger.warn('Policy: "' + key + LOCK_SUFFIX + '": false is not ' +
+                            'supported, ignored: an account list set by policy is always enforced.');
+                    }
+                    this._locked.add(key);
+                    continue;
+                }
                 // Every array preference is a list of strings, and every consumer calls
                 // string methods on its elements (checkExcludedTag() lowercases them,
                 // matchAddressList() compares them). A single non-string element rejects
                 // the WHOLE value: filtering it out would be a silent coercion, which is
-                // exactly what this validation never does.
+                // exactly what this validation never does. The account matchers above are
+                // the exception, see validateAccountMatchers().
                 const bad_index = value.findIndex(el => typeof el !== 'string');
                 if (bad_index !== -1) {
                     this.logger.warn('Policy: "' + key + '" must be an array of strings, ' +
@@ -651,6 +693,38 @@ function validateOrgPrompts(raw, orgId, logger) {
         });
     });
 
+    return out;
+}
+
+/**
+ * Validate a non-empty {feature}_enabled_accounts_match array.
+ *
+ * Each entry is checked on its own, like validateOrgPrompts(): one that is not an account
+ * matcher (see isAccountMatcherEntry()) is skipped with a warning naming it, and the rest
+ * still apply. A NON-STRING element is treated the same way, unlike the other array
+ * preferences, which reject the whole value on one: there the whole-array rule avoids
+ * coercing a list that consumers read as-is, whereas here every entry is already validated
+ * one by one, and rejecting the whole list would fail OPEN - back to the user's own
+ * selection, possibly every account - which is the wrong direction for a list that limits
+ * where mail is sent to an AI provider.
+ *
+ * For the same reason a list whose entries are ALL invalid is still kept, empty: the
+ * administrator asked to limit the accounts, so the feature runs on none rather than on all.
+ */
+function validateAccountMatchers(key, raw, logger) {
+    const out = [];
+    raw.forEach((entry, index) => {
+        if (!isAccountMatcherEntry(entry)) {
+            logger.warn('Policy: "' + key + '"[' + index + '] (' + JSON.stringify(entry) +
+                ') is not an address, a domain pattern ("@domain" or "*@domain") or "' +
+                ACCOUNT_MATCH_LOCAL + '", skipped.');
+            return;
+        }
+        out.push(entry.trim().toLowerCase());
+    });
+    if (out.length === 0) {
+        logger.warn('Policy: "' + key + '" has no valid entry: the feature will run on no account.');
+    }
     return out;
 }
 

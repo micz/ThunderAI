@@ -165,6 +165,9 @@ export const prefs_default = {
     add_tags_auto_uselist: false,
     add_tags_auto_uselist_list: '',
     add_tags_enabled_accounts: [],
+    // Policy-only: profile-independent matchers ("user@x", "@x", "*@x", "local") that replace
+    // add_tags_enabled_accounts while a policy supplies them. See resolveEnabledAccounts().
+    add_tags_enabled_accounts_match: [],
     get_calendar_event: true,
     get_calendar_event_from_clipboard: false,  // Enable calendar event from clipboard menu item
     get_task: true,
@@ -174,6 +177,8 @@ export const prefs_default = {
     spamfilter: false,
     spamfilter_threshold: 70,
     spamfilter_enabled_accounts: [],
+    // Policy-only, same as add_tags_enabled_accounts_match above.
+    spamfilter_enabled_accounts_match: [],
     spamfilter_skip_addresses: [],
     spamfilter_skip_addressbook: true,
     spamfilter_show_msg_panel: true,

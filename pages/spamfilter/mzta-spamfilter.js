@@ -52,7 +52,8 @@ import {
     lockCompanions,
     setDisabledRespectingManaged,
     lockEnforcedPromptText,
-    isEnforcedPromptText
+    isEnforcedPromptText,
+    lockAccountSelector
 } from '../_lib/managed-ui.js';
 
 let autocompleteSuggestions = [];
@@ -273,9 +274,16 @@ document.addEventListener('DOMContentLoaded', async () => {
          checkbox.checked = false;
        }
      });
- 
+
+     // A policy spamfilter_enabled_accounts_match replaces the stored selection: show the
+     // accounts it resolves to, read-only, and never write spamfilter_enabled_accounts.
+     const accounts_managed = await lockAccountSelector('spamfilter', accountsContainer,
+         [document.getElementById('accounts_select_all'), document.getElementById('accounts_deselect_all')],
+         taLog.do_debug);
+
      document.querySelectorAll('.accountCheckbox').forEach(checkbox => {
        checkbox.addEventListener('change', () => {
+       if (accounts_managed) return;
        let selectedAccounts = Array.from(document.querySelectorAll('.accountCheckbox:checked')).map(checkbox => checkbox.value);
        if (selectedAccounts.length === 0) {
           checkbox.checked = true; // Prevent deselecting the last selected checkbox
@@ -293,11 +301,13 @@ document.addEventListener('DOMContentLoaded', async () => {
      });
  
      document.getElementById('accounts_select_all').addEventListener('click', () => {
+       if (accounts_managed) return;
        let checkboxes = document.querySelectorAll('.accountCheckbox');
        checkboxes.forEach(checkbox => checkbox.checked = true);
      });
-     
+
      document.getElementById('accounts_deselect_all').addEventListener('click', () => {
+       if (accounts_managed) return;
        let checkboxes = document.querySelectorAll('.accountCheckbox');
        checkboxes.forEach(checkbox => checkbox.checked = false);
      });
