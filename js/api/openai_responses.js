@@ -20,6 +20,7 @@
 
 import { parseExtraBody } from './api-utils.js';
 import { getOpenAIModelCapabilities } from './openai_model_capabilities.js';
+import { fetchWithRetry } from './api-retry.js';
 import { createUsageData } from './mzta-api-usage.js';
 
 // The Responses API reports token usage on every response.
@@ -184,15 +185,15 @@ export class OpenAI {
   }
 
 
-  fetchModels = async () => {
+  fetchModels = async (retryConfig = {}) => {
     try{
-      const response = await fetch("https://api.openai.com/v1/models", {
+      const response = await fetchWithRetry("https://api.openai.com/v1/models", {
           method: "GET",
           headers: {
               "Content-Type": "application/json",
               Authorization: "Bearer "+ this.apiKey
           },
-      });
+      }, { label: 'OpenAI', ...retryConfig });
 
       if (!response.ok) {
           const errorDetail = await response.text();
@@ -220,7 +221,7 @@ export class OpenAI {
     }
   }
 
-  fetchResponse = async (messages, previous_response_id = null) => {
+  fetchResponse = async (messages, previous_response_id = null, retryConfig = {}) => {
 
     const input = messages.map(msg => ({
       role: msg.role,
@@ -304,19 +305,20 @@ export class OpenAI {
     // console.log(">>>>>>>>>>> OpenAI API request: " + JSON.stringify(messages));
 
     try {
-      const response = await fetch("https://api.openai.com/v1/responses", {
+      const response = await fetchWithRetry("https://api.openai.com/v1/responses", {
           method: "POST",
           headers: { 
               "Content-Type": "application/json", 
               Authorization: "Bearer "+ this.apiKey
           },
           body: JSON.stringify(request_body),
-      });
+      }, { label: 'OpenAI', ...retryConfig });
       return response;
     }catch (error) {
         console.error("[ThunderAI] OpenAI Responses API request failed: " + error);
         let output = {};
         output.is_exception = true;
+        output.is_aborted = retryConfig.signal?.aborted === true;
         output.ok = false;
         output.error = "OpenAI Responses API request failed: " + error;
         return output;

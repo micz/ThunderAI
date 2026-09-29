@@ -57,6 +57,7 @@ import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
 import { mzta_specialCommand } from './mzta-special-commands.js';
 import { taWorkingStatus } from './mzta-working-status.js';
+import { taJobRegistry } from './mzta-job-registry.js';
 import { mztaPrefs } from './mzta-prefs.js';
  
 export class mzta_Menus {
@@ -415,7 +416,7 @@ export class mzta_Menus {
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
-                        fullPrompt = taPromptUtils.finalizePrompt_add_tags(fullPrompt, prefs_at.add_tags_maxnum, prefs_at.add_tags_force_lang, prefs_at.default_chatgpt_lang);
+                        fullPrompt = taPromptUtils.finalizePrompt_add_tags(fullPrompt, prefs_at.add_tags_maxnum, prefs_at.add_tags_force_lang, prefs_at.default_chatgpt_lang, false, '', prefs_at.add_tags_auto_force_existing, tags_full_list[0], curr_prompt.text);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let create_new_tags = !prefs_at.add_tags_auto_force_existing;
                         let all_tags_list = tags_full_list[1];
@@ -431,9 +432,43 @@ export class mzta_Menus {
                             do_debug: prefs_at.do_debug,
                             config: curr_prompt
                         });
-                        await cmd_addTags.initWorker();
+                        // One add_tags job per message (taJobRegistry): the automatic batch, the
+                        // context menu and this dialog path can reach the same message at once.
+                        // A job already running is JOINED - its tags feed the dialog below and
+                        // no second AI call is made. Only when it did not produce tags (error,
+                        // skipped) does this path run its own call. get() and start() are
+                        // synchronous and back to back, so two callers cannot both start.
+                        const tags_job_id = curr_message?.headerMessageId || '';
+                        let tags_outcome = null;
+                        let tags_running = tags_job_id ? taJobRegistry.get('add_tags', tags_job_id) : null;
+                        while (tags_running) {
+                            taJobRegistry.logJoin(tags_running);
+                            const joined = await tags_running.promise;
+                            if (joined.status === 'ok' && Array.isArray(joined.data?.tags)) {
+                                tags_outcome = joined;
+                                break;
+                            }
+                            tags_running = taJobRegistry.get('add_tags', tags_job_id);
+                        }
+                        if (!tags_outcome) {
+                            // assigned: false - a batch joining this job must not assign the
+                            // tags itself, the user confirms them in the dialog.
+                            const run_tags = async () => {
+                                try {
+                                    await cmd_addTags.initWorker();
+                                    const tags = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt());
+                                    return { status: 'ok', data: { tags: tags, assigned: false } };
+                                } catch (err) {
+                                    return { status: 'error', error: err, errorMessage: err?.message || String(err), rateLimited: !!err?.rateLimited, retryAfterMs: err?.retryAfterMs ?? null };
+                                }
+                            };
+                            tags_outcome = tags_job_id
+                                ? await taJobRegistry.start('add_tags', tags_job_id, run_tags).promise
+                                : await run_tags();
+                        }
                         try{
-                            tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt());
+                            if (tags_outcome.status !== 'ok') throw (tags_outcome.error || new Error(tags_outcome.errorMessage));
+                            tags_current_email = tags_outcome.data.tags;
                             if(!create_new_tags){
                                     this.logger.log("Not creating new tags, only showing existing ones...");
                                 }

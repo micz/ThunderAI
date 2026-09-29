@@ -156,6 +156,7 @@ export const prefs_default = {
     chatgpt_web_custom_gpt: '',
     chatgpt_web_load_wait_time: 1000,
     special_command_timeout: 120000,   // ms before a hung special command (API worker) is aborted
+    batch_max_concurrency: 1,   // max messages processed at once by one processEmails() batch (auto add tags / spam filter / summarize / translate, on receive or from the context menu); each message runs its features in series
     dynamic_menu_force_enter: false,
     placeholders_use_default_value: false,
     hide_thinking: true,
@@ -170,6 +171,7 @@ export const prefs_default = {
     max_prompt_length: 30000,   // max string length for prompt
     add_tags: false,
     add_tags_maxnum: 3,
+    add_tags_max_messages: 0,   // max messages tagged at once from the context menu (0 = no limit); above this the user is warned and the operation is blocked. Automatic tagging is not capped
     add_tags_hide_exclusions: false,
     add_tags_exclusions_exact_match: false,
     add_tags_first_uppercase: true,

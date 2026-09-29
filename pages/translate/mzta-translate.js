@@ -239,7 +239,8 @@ async function restoreOptions() {
           element.checked = result[element.id] || false;
           break;
         case 'number':
-          element.value = result[element.id] ?? 0;
+          let default_number_value = 0;
+          element.value = result[element.id] ?? default_number_value;
           break;
         case 'text':
         case 'textarea':

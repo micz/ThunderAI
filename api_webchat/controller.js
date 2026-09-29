@@ -20,9 +20,17 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { prefs_default, integration_options_config } from '../options/mzta-options-default.js';
+import {
+    prefs_default,
+    integration_options_config
+} from '../options/mzta-options-default.js';
 import { placeholdersUtils } from '../js/mzta-placeholders.js';
-import { getAPIsInitMessageString, convertNewlinesToBr, supportsUsageData } from '../js/mzta-utils.js';
+import {
+    getAPIsInitMessageString,
+    convertNewlinesToBr,
+    formatDuration,
+    supportsUsageData
+} from '../js/mzta-utils.js';
 import { loadPrompt } from '../js/mzta-prompts.js';
 import { buildChatBubbleIcon } from './svgIcons.js';
 import { resolveContextWindow } from './contextWindow.js';
@@ -356,6 +364,16 @@ worker.onmessage = async function(event) {
         case 'messageSent':
             messageInput.handleMessageSent();
             break;
+        case 'newRetryAttempt':
+            // A transient failure is being retried: say so, instead of leaving a
+            // frozen spinner. The Stop button stays available meanwhile.
+            messageInput.showRetryStatus(payload);
+            break;
+        case 'requestAborted':
+            // Stopped before any answer arrived (e.g. during the retry backoff).
+            messagesArea.appendUserMessage(browser.i18n.getMessage('apiwebchat_request_cancelled'), 'info');
+            messageInput.enableInput(false);
+            break;
         case 'newToken':
             messagesArea.handleNewToken(payload.token);
             messageInput.showStreamingStatus();
@@ -384,7 +402,10 @@ worker.onmessage = async function(event) {
             }
             break;
         case 'error':
-            messagesArea.appendBotMessage(payload,'error');
+            // The provider asked to wait longer than fetchWithRetry() accepts: say when to retry.
+            messagesArea.appendBotMessage(payload, 'error', Number.isFinite(event.data.retryAfterMs)
+                ? browser.i18n.getMessage('api_retry_after_hint', [formatDuration(event.data.retryAfterMs)])
+                : '');
             messageInput.enableInput(false);
             messageInput.showErrorStatus();
             break;

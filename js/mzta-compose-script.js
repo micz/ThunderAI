@@ -1500,6 +1500,9 @@ switch (message.command) {
 
   case "showSummaryButton": {
     _mztaPanelSeq.summary++;
+    // The button replaces any spinner, like showTranslationButton: it is also sent when a
+    // running job was invalidated (summary removed meanwhile) and will show nothing else.
+    _removePanel('mzta-summary-generating');
     if (document.getElementById('mzta-toolbar-summary')) return Promise.resolve(true);
 
     const colors = _getThemeColors();

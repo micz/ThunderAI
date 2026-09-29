@@ -18,6 +18,7 @@
 
 
 import { parseExtraBody } from './api-utils.js';
+import { fetchWithRetry } from './api-retry.js';
 import { createUsageData, toUsageNumber } from './mzta-api-usage.js';
 
 // The Gemini API reports token usage on every response.
@@ -119,14 +120,15 @@ export class GoogleGemini {
   }
 
 
-  fetchModels = async () => {
+  fetchModels = async (retryConfig = {}) => {
     try{
-      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models?key=" + this.apiKey, {
+      // The API key travels in the query string: fetchWithRetry() never logs the URL.
+      const response = await fetchWithRetry("https://generativelanguage.googleapis.com/v1beta/models?key=" + this.apiKey, {
           method: "GET",
           headers: {
               "Content-Type": "application/json"
           },
-      });
+      }, { label: 'Google Gemini', ...retryConfig });
 
       if (!response.ok) {
           const errorDetail = await response.text();
@@ -193,7 +195,7 @@ export class GoogleGemini {
     }
   }
 
-  fetchResponse = async (messages) => {
+  fetchResponse = async (messages, retryConfig = {}) => {
     try {
 
       // Two-level merge: the parameters ThunderAI manages live inside the nested
@@ -280,18 +282,19 @@ export class GoogleGemini {
 
       //  console.log(">>>>>>>>>>>>>>>>> [ThunderAI] Google Gemini API request: " + JSON.stringify(google_gemini_body));
 
-      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + this.model + ":" + (this.stream ? 'streamGenerateContent?alt=sse&' : 'generateContent?') + "key=" + this.apiKey, {
+      const response = await fetchWithRetry("https://generativelanguage.googleapis.com/v1beta/models/" + this.model + ":" + (this.stream ? 'streamGenerateContent?alt=sse&' : 'generateContent?') + "key=" + this.apiKey, {
           method: "POST",
           headers: { 
               "Content-Type": "application/json"
           },
           body: JSON.stringify(google_gemini_body),
-      });
+      }, { label: 'Google Gemini', ...retryConfig });
       return response;
     }catch (error) {
         console.error("[ThunderAI] Google Gemini API request failed: " + error);
         let output = {};
         output.is_exception = true;
+        output.is_aborted = retryConfig.signal?.aborted === true;
         output.ok = false;
         output.error = "Google Gemini API request failed: " + error;
         return output;

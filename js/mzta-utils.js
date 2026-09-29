@@ -110,6 +110,31 @@ export function getLanguageDisplayName(languageCode) {
    return lang_string.charAt(0).toUpperCase() + lang_string.slice(1);
 }
 
+// Human-readable duration for the UI ("1 h", "1 h, 30 min", "45 s"), localized through
+// Intl.DurationFormat. Only the two largest units are kept, and seconds are dropped from an
+// hour up: a wait of hours does not need them.
+export function formatDuration(ms, lang = browser.i18n.getUILanguage()) {
+  let rest = Math.max(1, Math.ceil(ms / 1000));
+  const units = [['days', 86400], ['hours', 3600], ['minutes', 60], ['seconds', 1]];
+  const parts = {};
+  for (const [unit, size] of units) {
+    const n = Math.floor(rest / size);
+    rest -= n * size;
+    if (n > 0) parts[unit] = n;
+  }
+  if (parts.days || parts.hours) delete parts.seconds;
+  const kept = Object.keys(parts).slice(0, 2);
+  const duration = Object.fromEntries(kept.map(unit => [unit, parts[unit]]));
+  try {
+    return new Intl.DurationFormat(lang, { style: 'short' }).format(duration);
+  } catch (e) {
+    const unitName = { days: 'day', hours: 'hour', minutes: 'minute', seconds: 'second' };
+    const pieces = kept.map(unit =>
+      new Intl.NumberFormat(lang, { style: 'unit', unit: unitName[unit], unitDisplay: 'short' }).format(duration[unit]));
+    return new Intl.ListFormat(lang, { type: 'unit', style: 'short' }).format(pieces);
+  }
+}
+
 export function getMiczItUrl(path) {
   const lang = browser.i18n.getUILanguage().split('-')[0];
   const prefix = MICZ_IT_LOCALIZED_LANGS.includes(lang) ? `${lang}/` : '';
@@ -694,6 +719,22 @@ export function checkIfTagLabelExists(tag_label, tags_list) {
   // console.log(">>>>>>>>>>> checkIfTagExists tag_label: " + tag_label);
   const lowerTagLabel = tag_label.toLowerCase();
   return Object.values(tags_list).some(label => label.tag.toLowerCase() === lowerTagLabel);
+}
+
+// Returns the tags of uselist_list that also exist in existing_tags_list (both comma separated
+// strings), compared case-insensitively and written as the existing tag is, joined by ", ".
+// Empty string when none match.
+export function intersectTagsLists(uselist_list, existing_tags_list) {
+  const splitList = (list) => String(list || '').split(',').map(t => t.trim()).filter(t => t !== '');
+  const existing = splitList(existing_tags_list);
+  const result = [];
+  for (const tag of splitList(uselist_list)) {
+    const match = existing.find(e => e.toLowerCase() === tag.toLowerCase());
+    if (match && !result.includes(match)) {
+      result.push(match);
+    }
+  }
+  return result.join(', ');
 }
 
 // export async function assignTagsToMessage(messageId, tags) {

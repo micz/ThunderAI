@@ -23,6 +23,7 @@ import {
   ANTHROPIC_EFFORT_LEVELS,
   ANTHROPIC_DEFAULT_EFFORT
 } from './anthropic_model_capabilities.js';
+import { fetchWithRetry } from './api-retry.js';
 import { createUsageData, isUsageDataEmpty, toUsageNumber } from './mzta-api-usage.js';
 
 // Smallest extended thinking budget the Messages API accepts. Anything lower is
@@ -183,16 +184,16 @@ export class Anthropic {
     }
   }
 
-  fetchModels = async () => {
+  fetchModels = async (retryConfig = {}) => {
     try{
-      const response = await fetch("https://api.anthropic.com/v1/models", {
+      const response = await fetchWithRetry("https://api.anthropic.com/v1/models", {
           method: "GET",
           headers: {
               "Content-Type": "application/json",
               "x-api-key": this.apiKey,
               "anthropic-version": this.version,
           },
-      });
+      }, { label: 'Anthropic', ...retryConfig });
 
       if (!response.ok) {
           const errorDetail = await response.text();
@@ -220,7 +221,7 @@ export class Anthropic {
     }
   }
 
-  fetchResponse = async (messages) => {
+  fetchResponse = async (messages, retryConfig = {}) => {
 
     try {
 
@@ -357,7 +358,7 @@ export class Anthropic {
 
       // console.log(">>>>>>>>>>>>>>>>> [ThunderAI] Anthropic API request: " + JSON.stringify(claude_body));
 
-      const response = await this._postMessages(claude_body);
+      const response = await this._postMessages(claude_body, retryConfig);
       if(response.status !== 400) return response;
 
       // Safety net for a table that lags behind the API: a 400 naming a parameter
@@ -379,7 +380,7 @@ export class Anthropic {
       console.warn("[ThunderAI] Anthropic: model " + this.model + " rejected the request (400);"
         + " retrying once without: " + dropped.params.join(", ") + ". Detail: " + errorMessage);
       try {
-        const retryResponse = await this._postMessages(dropped.body);
+        const retryResponse = await this._postMessages(dropped.body, retryConfig);
         return retryResponse.ok ? retryResponse : response;
       } catch(e) {
         return response;
@@ -388,14 +389,15 @@ export class Anthropic {
         console.error("[ThunderAI] Claude API request failed: " + error);
         let output = {};
         output.is_exception = true;
+        output.is_aborted = retryConfig.signal?.aborted === true;
         output.ok = false;
         output.error = "Claude API request failed: " + error;
         return output;
     }
   }
 
-  _postMessages = (claude_body) => {
-    return fetch("https://api.anthropic.com/v1/messages", {
+  _postMessages = (claude_body, retryConfig = {}) => {
+    return fetchWithRetry("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { 
             "Content-Type": "application/json", 
@@ -404,7 +406,7 @@ export class Anthropic {
             "anthropic-dangerous-direct-browser-access": "true",
         },
         body: JSON.stringify(claude_body),
-    });
+    }, { label: 'Anthropic', ...retryConfig });
   }
 
 }

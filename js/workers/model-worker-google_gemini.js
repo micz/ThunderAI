@@ -30,6 +30,10 @@ let stopStreaming = false;
 let i18nStrings = null;
 let do_debug = false;
 let taLog = null;
+// Set only while waiting for the response headers (including the retry
+// backoff): Stop aborts the request then. Once streaming has started the
+// stopStreaming flag takes over, so a pending reader.read() is never rejected.
+let requestAbort = null;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
@@ -76,8 +80,24 @@ self.onmessage = async function(event) {
         usageData = null;
         usageMessageId = nextUsageMessageId();
 
-        const response = await google_gemini.fetchResponse(conversationHistory);
+        requestAbort = new AbortController();
+        const response = await google_gemini.fetchResponse(conversationHistory, {
+            signal: requestAbort.signal,
+            logger: taLog,
+            onRetry: (info) => postMessage({ type: 'newRetryAttempt', payload: info }),
+        });
+        requestAbort = null;
         postMessage({ type: 'messageSent' });
+
+        if (response.is_aborted === true) {
+            // Stopped before any answer arrived: drop the unanswered message, so
+            // the next turn does not send it twice.
+            stopStreaming = false;
+            conversationHistory.pop();
+            taLog.log("Request aborted by the user before the response arrived");
+            postMessage({ type: 'requestAborted' });
+            return;
+        }
 
         if (!response.ok) {
             let error_message = '';
@@ -99,7 +119,11 @@ self.onmessage = async function(event) {
                 taLog.log("error_message: " + JSON.stringify(error_message));
                 error_text = i18nStrings["google_gemini_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
             }
-            postMessage({ type: 'error', payload: error_text });
+            // rateLimited: a 429 still failing after the retries (rate limit or used-up quota),
+            // or a server asking to wait longer than fetchWithRetry() accepts (retryAfterMs,
+            // shown to the user): processEmails() stops the whole batch. False on an is_exception.
+            const retryAfterMs = Number.isFinite(response.retryAfterMs) ? response.retryAfterMs : null;
+            postMessage({ type: 'error', payload: error_text, rateLimited: response.status === 429 || retryAfterMs !== null, retryAfterMs: retryAfterMs });
             throw new Error("[ThunderAI] Google Gemini API request failed: " + error_text);
         }
 
@@ -217,5 +241,6 @@ self.onmessage = async function(event) {
         }
     } else if (event.data.type === 'stop') {
         stopStreaming = true;
+        if (requestAbort) requestAbort.abort();
     }
 };

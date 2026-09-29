@@ -186,6 +186,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `diff_granularity` | `'words'` | Comparison unit the proofreading change picker **opens with**: `'words'` or `'sentences'`. The picker's own toolbar toggle changes it for the current review; there is no per-prompt override — see [07-diff-picker.md](07-diff-picker.md). Rendered as a `<select>` in the advanced section; needs an explicit entry in `restoreOptions()`'s `select-one` branch, since a select restoring to `''` would render blank. |
 | `max_prompt_length` | `30000` | Max prompt string length |
 | `special_command_timeout` | `120000` | Timeout (ms) before a hung special-command API worker is aborted (`js/mzta-special-commands.js`). Exposed in the main options page as a number input; **always shown** (not hidden for ChatGPT Web), because a single special prompt may use a specific API even when the global `connection_type` is `chatgpt_web`. Has no effect on ChatGPT Web connections, which use no API worker. |
+| `batch_max_concurrency` | `1` | Maximum messages processed at once by one `processEmails()` call (auto add tags, spam filter, summarize and translate — on receive and from the context menu). Each message runs its features in series (spam, add_tags, summary, translate), so this is also the maximum number of AI requests in flight. There are no per-feature caps. Overlapping calls (several accounts) can exceed it. A value that is not a finite number ≥ 1 (a cleared field is saved as `NaN`) falls back to the default. Number input (`min="1"`) in the advanced section of the main options page, with its default wired into `restoreOptions()`. Does not affect the context-menu summarize flow. See [01-architecture.md](01-architecture.md#per-message-pipelines-in-processemails). |
 
 ### Feature Flags
 
@@ -193,12 +194,13 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 |-----|---------|-------------|
 | `add_tags` | `false` | Enable auto-tagging feature |
 | `add_tags_maxnum` | `3` | Max tags to apply |
+| `add_tags_max_messages` | `0` | Maximum number of messages tagged at once from the **context menu**. Above this limit `processEmails()` (`mzta-background.js`) blocks the run and shows the `add_tags_too_many_messages` warning. `0` = no limit. Automatic tagging of incoming mail is never capped. Exposed in the add tags settings page as a number input (`min="0"`, no reset button: the page's restore fallback for number inputs is already `0`). Meant for providers with a daily quota (#901), where a large selection cannot fit anyway. |
 | `add_tags_hide_exclusions` | `false` | Hide excluded tags from menu |
 | `add_tags_exclusions_exact_match` | `false` | Exact match for exclusions |
 | `add_tags_first_uppercase` | `true` | Capitalize first letter of tags |
 | `add_tags_force_lang` | `true` | Force language for tags |
 | `add_tags_auto` | `false` | Auto-tag on message open |
-| `add_tags_auto_force_existing` | `false` | Only use existing tags |
+| `add_tags_auto_force_existing` | `false` | Only use existing tags. The prompt gets the existing tags list (or its intersection with the use list), and force_lang is not appended. Non-existing tags in the response are dropped. See [02-prompts.md](02-prompts.md#add-tags-extra-prompt-statements) |
 | `add_tags_auto_only_inbox` | `true` | Auto-tag only inbox messages |
 | `add_tags_auto_include_sent` | `false` | Also auto-tag sent messages (opts back into the `sent` folder, which the automatic processing skips by default) |
 | `add_tags_auto_uselist` | `false` | Use tag allow-list |
@@ -737,8 +739,10 @@ The click handlers drive the row through `modelsFetchUI(modelId_prefix, btnId, p
   models" and network exceptions.
 
 The fetch goes through `fetchModelsWithTimeout(client)`, the same `Promise.race` as the
-connection test: none of the `fetchModels()` implementations sets its own timeout, so after
-`MODELS_FETCH_TIMEOUT_MS` (20 s) the row reports `connTest_error_timeout`. It always resolves
+connection test. The providers go through `fetchWithRetry()`, which has its own per-attempt
+timeout and retries; this call passes `{ maxRetries: 0, timeoutMs: MODELS_FETCH_TIMEOUT_MS }` on
+purpose, because the user is waiting on the button, so after `MODELS_FETCH_TIMEOUT_MS` (20 s)
+the row reports `connTest_error_timeout` and no retry keeps running in the background. It always resolves
 to an `{ok, error|response}` result, also when `fetchModels()` throws. Every implementation,
 OpenAIComp included, catches its own network errors and resolves `{ok:false, is_exception:true,
 error}`, so the `catch` there is only a safety net. OpenAIComp also accepts a bare-array
@@ -1057,7 +1061,7 @@ Three details keep that agreement holding in the background:
 **Execution guards are the backstop** for the window between a connection change and the
 reconciliation, and for callers that bypass the menus. `isApiUsableConnection()` is checked in
 `_generateSpamReportForMessage()` (which had no check at all — the resolved type flowed straight
-into `mzta_specialCommand`), in the `addTagsAuto` branch of `processEmails()` (the menu-path guard
+into `mzta_specialCommand`), in `resolveAddTagsSetup()`, the once-per-batch add_tags setup of `processEmails()` (the menu-path guard
 in `mzta-menus.js` does not cover auto/batch), and in `_generateSummaryForMessage()`,
 `_generateTranslationForMessage()` and `_openSummaryWebchat()` — the latter three previously tested
 `connectionType === 'chatgpt_web'`, which let an *empty* connection through. Each guard reports
@@ -1067,7 +1071,7 @@ through the channel its caller already owns (`spamReport` / `summaryStore` / `tr
 `_summarizeConnectionMissing()` applies the same predicate **ahead** of those guards, for the two
 automatic summarize triggers (the sender-list branch of `initSummary` and the summarize-on-receive
 branch of `processEmails()`). It is not redundant with the guard inside
-`_generateSummaryForMessage()`: that one runs after `setProcessing()` and persists the error into
+`_generateSummaryForMessage()`: that one runs inside the summary job and persists the error into
 `summaryStore`, which is the right behaviour for a user-initiated run but wrong for an automatic
 one. The pre-check keeps automatic triggers silent. It used `hasNoConnectionSelected()` until it
 was aligned here, so `chatgpt_web` slipped past it and produced exactly that spurious cached error.
@@ -1107,7 +1111,7 @@ with `Number.isInteger()` before comparing, which also repairs profiles that alr
 legitimate **0** ("flag everything") along with the genuinely missing values and silently applies
 the default 70 instead. `getSpamThreshold()` in `mzta-background.js` now guards with
 `Number.isFinite()`, so only an absent or non-numeric value — including the `null` an emptied
-number input stores — falls back. The other numeric prefs (`add_tags_maxnum`,
+number input stores — falls back. The other numeric prefs (`add_tags_maxnum`, `add_tags_max_messages`,
 `summarize_max_messages`, `summarize_max_display_length`, `translate_max_display_length`) are
 already safe at their consumers, either via `Number.isFinite()` or because `|| 0` / `> 0` is the
 intended behaviour for them; their `saveOptions()` cases are deliberately left untouched.
