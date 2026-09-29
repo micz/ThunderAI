@@ -18,7 +18,7 @@ import {
 } from '../helpers/background-handler.mjs';
 
 const POLICY = loadFixture('hydration.json');
-const EMPTY = { values: {}, lockedKeys: [], specialPromptsText: {} };
+const EMPTY = { values: {}, lockedKeys: [], specialPromptsText: {}, specialPromptsConnection: {} };
 
 let ctx, listener;
 

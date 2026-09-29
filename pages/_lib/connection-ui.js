@@ -1395,6 +1395,15 @@ export async function initializeSpecificIntegrationUI({
       && mztaManaged.getManagedValue(use_specific_integration_id) === false;
   if (locked_off) use_specific_integration_el.checked = false;
 
+  // The policy supplies this feature's connection (_special_prompts_connection). The prompt
+  // this page loaded already carries it (applyPolicyConnections() in js/mzta-prompts.js), the
+  // switch and the type select are locked on by the preferences the entry implies, and
+  // applyManagedUI() locks every enforced field. What is left for this function: never write
+  // the policy's values into the prompt. Nothing is written on page open (no seeding, no
+  // persisting of the pair), and a user change writes only the fields the policy leaves
+  // unlocked - setSpecialPrompts() keeps an untouched policy default out of storage as well.
+  const policy_connected = mztaManaged.getSpecialPromptConnection(prefix) !== undefined;
+
   // Helper to update prompt.
   // Serialized through _updatePromptQueue so concurrent callers can't interleave
   // their load-modify-save and persist a stale/wrong value.
@@ -1417,6 +1426,9 @@ export async function initializeSpecificIntegrationUI({
               for (const key of Object.keys(options)) {
                   let propName = `${integration}_${key}`;
                   let elementId = `${model_prefix}${propName}`;
+                  // A field the policy connection enforces keeps what the prompt holds (the
+                  // policy value, put back to the stored one by setSpecialPrompts()).
+                  if (mztaManaged.isEnforcedConnectionControl(elementId)) continue;
                   let element = document.getElementById(elementId);
                   if (element) {
                       prompt[propName] = (element.type === 'checkbox') ? element.checked : element.value;
@@ -1456,7 +1468,10 @@ export async function initializeSpecificIntegrationUI({
   // feature with nothing to run against - the administrator's misconfiguration to fix, as in
   // _reconcileFeatureFlags() in mzta-background.js.
   let globalPrefs = await mztaPrefs.getPrefs(['connection_type']);
-  const mandatory_integration = !locked_off && ((globalPrefs.connection_type === 'chatgpt_web')
+  // Nor when the policy supplies the connection: the switch is then locked on by the policy
+  // and carries the managed marker, which says why; the "mandatory" badge would be a second,
+  // wrong explanation, and persisting the flag is the write guard's to refuse.
+  const mandatory_integration = !locked_off && !policy_connected && ((globalPrefs.connection_type === 'chatgpt_web')
       || hasNoConnectionSelected(globalPrefs.connection_type));
   if (mandatory_integration) {
       use_specific_integration_el.checked = true;
@@ -1534,6 +1549,12 @@ export async function initializeSpecificIntegrationUI({
           _updateVisibility(false);
           return;
       }
+      // Locked on by the policy connection: same reasoning, the other way round.
+      if (policy_connected) {
+          event.target.checked = true;
+          _updateVisibility(true);
+          return;
+      }
       _updateVisibility(event.target.checked);
       if (!event.target.checked) {
           // Clear both halves of the state together. clearPromptAPI() empties the prompt's
@@ -1558,6 +1579,9 @@ export async function initializeSpecificIntegrationUI({
   // Event Listeners for Inputs
   conntype_el.addEventListener('change', async () => {
       _updateVisibility(use_specific_integration_el.checked);
+      // A locked type select can only change if it was re-enabled by hand: nothing to save,
+      // and a save would only rewrite the prompt with what it already holds.
+      if (mztaManaged.isManagedLocked(conntype_select_id)) return;
       if (use_specific_integration_el.checked) await _updatePrompt();
       // A usable connection may have just been chosen: the mandatory flag becomes
       // meaningful now, so persist it.
@@ -1571,13 +1595,17 @@ export async function initializeSpecificIntegrationUI({
   document.querySelectorAll(".specific_integration_sub .option-input").forEach(element => {
       if (element === conntype_el) return;
       element.addEventListener("change", async () => {
+          // Same for a field the policy connection enforces, re-enabled by hand.
+          if (mztaManaged.isEnforcedConnectionControl(element.id)) return;
           if (use_specific_integration_el.checked) await _updatePrompt();
       });
   });
 
   // Initial State Apply
   _updateVisibility(use_specific_integration_el.checked);
-  if (use_specific_integration_el.checked) {
+  // Not with a policy connection: this page-open write exists to seed the prompt, and what the
+  // panel shows is then the policy's connection, not something to store as the user's.
+  if (use_specific_integration_el.checked && !policy_connected) {
       await _updatePrompt();
       // Same reason as in the checkbox handler, for the flag that was already on when the
       // page opened (including the mandatory case, where it is forced on here): the select

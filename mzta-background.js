@@ -73,6 +73,7 @@ import {
     migrateCalendarNoSelection,
     getSpecialPrompts,
     getIgnoredProviderOverrides,
+    getReplacedProviderOverrides,
     getEnforcedTextPlaceholderProblems
 } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
@@ -189,7 +190,7 @@ await mztaManaged.loadManaged();
 // listener's default branch returns false for this command, so the two never compete.
 browser.runtime.onMessage.addListener((message, sender) => {
     if (!message || message.command !== 'get_managed_values') return false;
-    const empty = { values: {}, lockedKeys: [], specialPromptsText: {} };
+    const empty = { values: {}, lockedKeys: [], specialPromptsText: {}, specialPromptsConnection: {} };
     // Extension pages only. Content scripts (compose and message display) share this
     // channel but never import js/mzta-prefs.js, so they have no use for the values.
     const ext_root = browser.runtime.getURL('');
@@ -208,12 +209,24 @@ browser.runtime.onMessage.addListener((message, sender) => {
             ? MANAGED_SECRET_MARKER
             : mztaManaged.getManagedValue(key);
     }
+    // The per-feature connections are overlaid by getSpecialPrompts() in every context too.
+    // Their API keys follow the same rule as the global ones: the real key for the API chat
+    // window (it runs a feature's connection itself, via loadPrompt()), the marker elsewhere.
+    const connections = mztaManaged.getSpecialPromptsConnection();
+    if (!is_webchat) {
+        for (const entry of Object.values(connections)) {
+            for (const [name, field] of Object.entries(entry.fields)) {
+                if (name.endsWith('_api_key')) field.value = MANAGED_SECRET_MARKER;
+            }
+        }
+    }
     // The enforced special prompt texts: getSpecialPrompts() overlays them in every context,
     // and the feature pages show them read-only. No secret in them.
     return Promise.resolve({
         values: values,
         lockedKeys: locked,
-        specialPromptsText: mztaManaged.getSpecialPromptsText()
+        specialPromptsText: mztaManaged.getSpecialPromptsText(),
+        specialPromptsConnection: connections
     });
 });
 
@@ -275,6 +288,22 @@ await (async () => {
         }
     } catch (e) {
         taLog.error('Could not check the per-feature provider overrides: ' + e);
+    }
+})();
+
+// The reverse case: a connection enforced by the policy (_special_prompts_connection) replaces
+// a provider override the user stored for that feature. The stored one is kept and comes back
+// when the policy is removed, but it no longer runs - say so, naming the feature and the field
+// and never the value.
+await (async () => {
+    try {
+        for (const { prefix, field } of await getReplacedProviderOverrides()) {
+            taLog.warn(`The ${prefix} connection is enforced by the managed configuration: its ` +
+                `${field} replaces the one stored in the ${prefix} special prompt, which is kept ` +
+                'and applies again if the policy stops enforcing it.');
+        }
+    } catch (e) {
+        taLog.error('Could not check the per-feature connections enforced by policy: ' + e);
     }
 })();
 

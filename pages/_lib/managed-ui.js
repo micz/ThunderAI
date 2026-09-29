@@ -137,12 +137,17 @@ export function isEnforcedPref(key) {
  */
 export async function applyManagedUI(root = document, do_debug = false) {
     const state = await getManagedState(do_debug);
-    if (!state.active || state.lockedKeys.length === 0) return state;
+    // The connection fields a policy connection enforces (_special_prompts_connection) are
+    // not preferences, so they are not in lockedKeys; but the feature pages' connection panel
+    // names its inputs `${prefix}_${field}`, which is exactly what this list holds, so they get
+    // the same treatment. Read from the hydrated values, as isEnforcedPref() does.
+    await managedReady();
+    const locked = new Set([...state.lockedKeys, ...mztaManaged.getEnforcedConnectionControlIds()]);
+    if (!state.active || locked.size === 0) return state;
 
     // Walk the controls once and test each against the locked set, rather than running a
     // selector per locked key: an id-suffix selector would also catch unrelated controls
     // whose id merely ends with the key ("translate" would match "auto_translate").
-    const locked = new Set(state.lockedKeys);
     root.querySelectorAll('.option-input, [data-mzta-pref]').forEach(element => {
         const key = controlPrefKey(element);
         if (!key) return;
@@ -303,6 +308,16 @@ export async function lockAccountSelector(feature, container, companions = [], d
 export function seedFromGlobal(prefs, key) {
     if (mztaManaged.hasManagedValue(key)) return prefs_default[key];
     return prefs[key];
+}
+
+/**
+ * True when this special prompt's connection comes from the policy (_special_prompts_connection):
+ * getSpecialPrompts() overlaid it and marked the prompt. Its api_type and fields are then the
+ * administrator's, not the user's, and must not be copied anywhere - a feature page's page-open
+ * block would otherwise store them as `${prefix}_*` preferences.
+ */
+export function isPolicyConnection(prompt) {
+    return !!prompt && prompt._connection_by_policy === true;
 }
 
 /** True when the value is the stand-in a settings page shows for a policy-supplied API key. */

@@ -46,6 +46,7 @@ import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
     applyManagedUI,
     seedFromGlobal,
+    isPolicyConnection,
     isEnforcedPref,
     isLockedKey,
     lockEnforcedPromptText,
@@ -64,7 +65,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     let specialPrompts = await getSpecialPrompts();
     let get_calendar_event_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event');
 
-    if (get_calendar_event_prompt && get_calendar_event_prompt.api_type && get_calendar_event_prompt.api_type !== '') {
+    // Not for a connection supplied by the policy: that one is the administrator's, and copying it
+    // into the {prefix}_* preferences would store it (spec 08, _special_prompts_connection).
+    if (get_calendar_event_prompt && get_calendar_event_prompt.api_type && get_calendar_event_prompt.api_type !== '' && !isPolicyConnection(get_calendar_event_prompt)) {
         let update_prefs = {};
         update_prefs['get_calendar_event_connection_type'] = get_calendar_event_prompt.api_type;
         // getConnectionType() reads the prefixed connection type only when this flag is on,

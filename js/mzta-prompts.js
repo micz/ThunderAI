@@ -752,6 +752,18 @@ export function preparePromptsForExport(prompts, include_api_settings = false){
     let output = JSON.parse(JSON.stringify(prompts));
     output.forEach(prompt => {
 
+        // A connection supplied by the policy (applyPolicyConnections()) is not the prompt's:
+        // an exported file must never carry the administrator's host, model or key, and the
+        // user's own override it stands in for is not in this object. So none is exported.
+        if(prompt._connection_by_policy === true){
+            delete prompt.api_type;
+            for (const [integration, options] of Object.entries(integration_options_config)) {
+                for (const key of Object.keys(options)) {
+                    delete prompt[`${integration}_${key}`];
+                }
+            }
+        }
+
         if(!include_api_settings){
             delete prompt.api_type;
             for (const [integration, options] of Object.entries(integration_options_config)) {
@@ -1033,7 +1045,8 @@ export async function setDefaultPromptsProperties(prompts) {
  * that save hand their whole in-memory prompt objects straight through.
  */
 const TRANSIENT_PROMPT_FLAGS = ['_shadowed_by_org', '_inert_by_policy',
-                                '_default_inert_by_policy', '_text_by_policy'];
+                                '_default_inert_by_policy', '_text_by_policy',
+                                '_connection_by_policy'];
 
 function stripTransientFlags(prompts) {
     return prompts.map(prompt => {
@@ -1078,6 +1091,7 @@ export async function getSpecialPrompts(){
         })
         await applyCalendarNoSelection(def_specPrompts);
         await applyLockedOffIntegrations(def_specPrompts);
+        await applyPolicyConnections(def_specPrompts);
         await applyEnforcedTexts(def_specPrompts);
         return def_specPrompts;
     } else {
@@ -1116,6 +1130,7 @@ export async function getSpecialPrompts(){
         // After the write-back above, so these derived values are not what triggers it.
         await applyCalendarNoSelection(updatedPrompts);
         await applyLockedOffIntegrations(updatedPrompts);
+        await applyPolicyConnections(updatedPrompts);
         await applyEnforcedTexts(updatedPrompts);
         return updatedPrompts;
     }
@@ -1270,6 +1285,134 @@ export async function getIgnoredProviderOverrides() {
 }
 
 /**
+ * The per-feature connection enforced by the policy (_special_prompts_connection, validated in
+ * js/mzta-managed.js). The mirror image of the locked-off overlay above: instead of hiding the
+ * user's override it puts the administrator's in its place, and like it this is a READ-TIME
+ * overlay that must NEVER reach storage - the feature pages write the whole array back, and a
+ * stored policy value would replace the user's own and outlive the policy. setSpecialPrompts()
+ * puts the stored fields back (keepStoredConnections()), so removing the policy restores the
+ * user's override exactly, field by field.
+ *
+ * Per prompt: api_type is always the policy's; an enforced field always wins over the stored
+ * one; an unlocked field applies only while the prompt has no value of its own for it (absent
+ * or ''). _connection_by_policy marks the prompt for the pages; it is in TRANSIENT_PROMPT_FLAGS.
+ *
+ * The prompts per feature come from specialPromptIdsForPrefix(), as for the locked-off overlay:
+ * prompt_summarize alone for summarize, both calendar prompts for get_calendar_event. A prefix
+ * locked off is skipped - validation already refuses that combination, so this only guards the
+ * order of the two overlays, which then can never touch the same prompt.
+ */
+
+// A prompt's own value for a field: '' is how the settings UI stores "nothing".
+function hasPromptValue(prompt, key) {
+    const value = prompt[key];
+    return value !== undefined && value !== null && value !== '';
+}
+
+// {prompt id: connection entry} for every feature whose connection the policy supplies.
+// Synchronous for the same reason as lockedOffIntegrationPrefixes().
+function policyConnectionsById() {
+    const byId = new Map();
+    const lockedOff = lockedOffIntegrationPrefixes();
+    for (const [prefix, entry] of Object.entries(mztaManaged.getSpecialPromptsConnection())) {
+        if (lockedOff.includes(prefix)) continue;
+        specialPromptIdsForPrefix(prefix).forEach(id => byId.set(id, entry));
+    }
+    return byId;
+}
+
+async function applyPolicyConnections(prompts) {
+    await managedReady();
+    const byId = policyConnectionsById();
+    if (byId.size === 0) return;
+    prompts.forEach(prompt => {
+        const entry = byId.get(prompt.id);
+        if (!entry) return;
+        prompt.api_type = entry.api_type;
+        for (const [name, field] of Object.entries(entry.fields)) {
+            if (field.locked || !hasPromptValue(prompt, name)) prompt[name] = field.value;
+        }
+        prompt._connection_by_policy = true;
+    });
+}
+
+// The storage half of the above. `prompts` must already be copies (stripTransientFlags()
+// makes them, and has already dropped any API key holding MANAGED_SECRET_MARKER).
+// - api_type and the enforced fields: what storage already holds is put back, so no write
+//   can store the policy's value or change the user's own while the policy is in force;
+// - an unlocked field holding the policy value, or absent (a MANAGED_SECRET_MARKER dropped by
+//   stripTransientFlags(), or a writer that never had the field): storage keeps what it holds.
+//   The policy default is what the overlay shows while the user has no value of their own, so
+//   it is never stored as the user's - not even over a stored value of theirs, which is what a
+//   stale copy of the array would do (the feature pages' text Save writes back the array they
+//   loaded at page open). The cost: a user cannot store exactly the policy default as their
+//   own value; while the policy holds that makes no difference, since it is what they get.
+//   Any other value is the user's, and saved.
+async function keepStoredConnections(prompts) {
+    const byId = policyConnectionsById();
+    if (!prompts.some(prompt => byId.has(prompt.id))) return prompts;
+    const stored = await browser.storage.local.get({ _special_prompts: null });
+    const storedById = new Map((Array.isArray(stored._special_prompts) ? stored._special_prompts : [])
+        .map(prompt => [prompt.id, prompt]));
+    prompts.forEach(prompt => {
+        const entry = byId.get(prompt.id);
+        if (!entry) return;
+        const original = storedById.get(prompt.id);
+        const restore = key => {
+            if (original && Object.prototype.hasOwnProperty.call(original, key)) {
+                prompt[key] = original[key];
+            } else {
+                delete prompt[key];
+            }
+        };
+        restore('api_type');
+        for (const [name, field] of Object.entries(entry.fields)) {
+            if (field.locked) {
+                restore(name);
+            } else if (prompt[name] === field.value || !Object.prototype.hasOwnProperty.call(prompt, name)) {
+                restore(name);
+            }
+        }
+    });
+    return prompts;
+}
+
+/**
+ * For the startup warning in mzta-background.js: every [{prefix, field}] where the connection
+ * the policy enforces replaces a value the user stored in that feature's special prompt -
+ * api_type, or an ENFORCED field holding a different non-empty value. An unlocked policy field
+ * never replaces anything (a stored value wins over it). Reads storage directly, since
+ * getSpecialPrompts() hides exactly what is being looked for.
+ */
+export async function getReplacedProviderOverrides() {
+    await managedReady();
+    const connections = mztaManaged.getSpecialPromptsConnection();
+    const lockedOff = lockedOffIntegrationPrefixes();
+    const prefixes = Object.keys(connections).filter(prefix => !lockedOff.includes(prefix));
+    if (prefixes.length === 0) return [];
+    const stored = await browser.storage.local.get({ _special_prompts: null });
+    const storedPrompts = Array.isArray(stored._special_prompts) ? stored._special_prompts : [];
+    const out = [];
+    for (const prefix of prefixes) {
+        const entry = connections[prefix];
+        const ids = specialPromptIdsForPrefix(prefix);
+        const reported = new Set();
+        const check = (prompt, field, policyValue) => {
+            if (reported.has(field) || !hasPromptValue(prompt, field) || prompt[field] === policyValue) return;
+            reported.add(field);
+            out.push({ prefix: prefix, field: field });
+        };
+        storedPrompts.filter(prompt => ids.includes(prompt.id)).forEach(prompt => {
+            check(prompt, 'api_type', entry.api_type);
+            for (const [name, field] of Object.entries(entry.fields)) {
+                if (field.locked) check(prompt, name, field.value);
+            }
+        });
+    }
+    return out;
+}
+
+/**
  * The text of a special prompt can be enforced by the policy (_special_prompts_text, see
  * js/mzta-managed.js). It is not a preference, so there is no write guard to hold it back
  * and no prefs_default entry for the allowlist to reach: like the provider override above,
@@ -1331,7 +1474,8 @@ export async function getEnforcedTextPlaceholderProblems() {
 export async function setSpecialPrompts(prompts) {
     // console.log(">>>>>>>>>>>> setSpecialPrompts prompts: " + JSON.stringify(prompts));
     const copies = stripTransientFlags(prompts);
-    await browser.storage.local.set({_special_prompts: await keepStoredTexts(await keepStoredOverrides(copies))});
+    await browser.storage.local.set({_special_prompts:
+        await keepStoredTexts(await keepStoredConnections(await keepStoredOverrides(copies)))});
 }
 
 export function getHiddenSpecialPromptIds() {

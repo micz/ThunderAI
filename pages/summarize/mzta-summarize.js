@@ -47,6 +47,7 @@ import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
     applyManagedUI,
     seedFromGlobal,
+    isPolicyConnection,
     isEnforcedPref,
     isLockedKey,
     lockCompanions,
@@ -69,7 +70,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     let summarize_email_template = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_template');
     let summarize_email_separator = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_separator');
 
-    if (summarize_prompt && summarize_prompt.api_type && summarize_prompt.api_type !== '') {
+    // Not for a connection supplied by the policy: that one is the administrator's, and copying it
+    // into the {prefix}_* preferences would store it (spec 08, _special_prompts_connection).
+    if (summarize_prompt && summarize_prompt.api_type && summarize_prompt.api_type !== '' && !isPolicyConnection(summarize_prompt)) {
         let update_prefs = {};
         update_prefs['summarize_connection_type'] = summarize_prompt.api_type;
         // getConnectionType() reads the prefixed connection type only when this flag is on,

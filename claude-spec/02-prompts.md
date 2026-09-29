@@ -55,8 +55,9 @@ needs its own view purely because it also lists and rewrites the **special** pro
 The three flags describe the current policy state, not the prompt, so they are stripped in
 `setCustomPrompts()`, `setSpecialPrompts()` and `preparePromptsForExport()` — a stored or
 exported `_inert_by_policy` would outlive the policy that set it. `TRANSIENT_PROMPT_FLAGS`
-also holds `_text_by_policy`, set on a special prompt whose text the policy enforces (see
-Special Prompt Visibility Dependencies below). **Both** pages that persist prompts
+also holds `_text_by_policy`, set on a special prompt whose text the policy enforces, and
+`_connection_by_policy`, set on one whose connection the policy supplies (see Special Prompt
+Visibility Dependencies below). **Both** pages that persist prompts
 rewrite a whole store from what they list (`setCustomPrompts()` replaces `_custom_prompt`
 entirely), so their filters must exclude `is_org` from the custom-prompt save and include
 it in the default-properties save. Getting this wrong either copies org prompts into the
@@ -378,8 +379,16 @@ Notable dependency:
   `false`. Unlike `need_selected`, this overlay must **not** reach storage — it would erase
   the user's override — so `setSpecialPrompts()` restores the stored override fields of
   those prompts before writing. See [04-api-integrations.md](04-api-integrations.md#when-a-policy-locks-the-override-off).
+- The provider override can also be **supplied** by the policy (`_special_prompts_connection`):
+  `applyPolicyConnections()`, the third overlay, puts the administrator's `api_type` and fields
+  on the feature's prompts (enforced fields always, unlocked ones only where the prompt has no
+  value) and sets the transient `_connection_by_policy` marker. It must **not** reach storage
+  either: `setSpecialPrompts()` puts back the stored `api_type` and enforced fields, and keeps an
+  unlocked field that still holds the policy value out, with `keepStoredConnections()`. It can
+  never apply to the same prompt as the locked-off overlay. See
+  [08-managed-configuration.md](08-managed-configuration.md#enforced-per-feature-connections-_special_prompts_connection).
 - The **text** of any special prompt can be enforced by the policy (`_special_prompts_text`),
-  and is overlaid by `applyEnforcedTexts()`, the third overlay at the end of
+  and is overlaid by `applyEnforcedTexts()`, the fourth and last overlay at the end of
   `getSpecialPrompts()`, which also sets the transient `_text_by_policy` marker. Like the
   provider override it must **not** reach storage: `setSpecialPrompts()` puts back the stored
   (or shipped) text of every enforced id with `keepStoredTexts()`, so the user's text

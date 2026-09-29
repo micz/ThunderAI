@@ -1,0 +1,16 @@
+{
+  "spamfilter_use_specific_integration": false,
+  "add_tags_use_specific_integration": false,
+  "add_tags_use_specific_integration:locked": false,
+  "translate_use_specific_integration": true,
+  "translate_use_specific_integration:locked": false,
+  "translate_connection_type": "chatgpt_api",
+  "get_task_connection_type": "ollama_api",
+  "get_task_connection_type:locked": false,
+  "_special_prompts_connection": {
+    "spamfilter": { "api_type": "ollama_api", "ollama_host": "http://ollama.example.org:11434" },
+    "add_tags": { "api_type": "ollama_api", "ollama_host": "http://ollama.example.org:11434" },
+    "translate": { "api_type": "ollama_api", "ollama_host": "http://ollama.example.org:11434" },
+    "get_task": { "api_type": "ollama_api", "ollama_host": "http://ollama.example.org:11434" }
+  }
+}

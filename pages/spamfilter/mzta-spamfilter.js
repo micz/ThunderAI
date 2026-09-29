@@ -48,6 +48,7 @@ import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
     applyManagedUI,
     seedFromGlobal,
+    isPolicyConnection,
     isEnforcedPref,
     isLockedKey,
     lockCompanions,
@@ -74,7 +75,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     let specialPrompts = await getSpecialPrompts();
     let spamfilter_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter');
 
-    if (spamfilter_prompt && spamfilter_prompt.api_type && spamfilter_prompt.api_type !== '') {
+    // Not for a connection supplied by the policy: that one is the administrator's, and copying it
+    // into the {prefix}_* preferences would store it (spec 08, _special_prompts_connection).
+    if (spamfilter_prompt && spamfilter_prompt.api_type && spamfilter_prompt.api_type !== '' && !isPolicyConnection(spamfilter_prompt)) {
         let update_prefs = {};
         update_prefs['spamfilter_connection_type'] = spamfilter_prompt.api_type;
         // getConnectionType() reads the prefixed connection type only when this flag is on,

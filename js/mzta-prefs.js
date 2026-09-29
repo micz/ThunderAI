@@ -202,7 +202,11 @@ export const mztaPrefs = {
         // Silent for the caller - no call site checks a return value - but warned in the
         // console, because a write to a locked key means some UI is still enabled that the
         // managed layer should have disabled.
-        if (mztaManaged.isManagedLocked(pref_id)) {
+        // The second test covers the feature-page connection fields a policy connection
+        // enforces (_special_prompts_connection): not preferences, but the pages' generic
+        // saveOptions() writes every .option-input under its id, so it would otherwise store
+        // an enforced value as `${prefix}_${field}`.
+        if (mztaManaged.isManagedLocked(pref_id) || mztaManaged.isEnforcedConnectionControl(pref_id)) {
             this._logWarning('setPref: "' + pref_id + '" is locked by the managed ' +
                 'configuration, write skipped.');
             return;
@@ -243,7 +247,8 @@ export const mztaPrefs = {
         const log_parts = [];
         Object.entries(prefs_obj).forEach(([pref_id, value]) => {
             // Same two guards as setPref(): a locked key, and the API key placeholder.
-            if (mztaManaged.isManagedLocked(pref_id) || value === MANAGED_SECRET_MARKER) {
+            if (mztaManaged.isManagedLocked(pref_id) || mztaManaged.isEnforcedConnectionControl(pref_id) ||
+                value === MANAGED_SECRET_MARKER) {
                 skipped.push(pref_id);
                 return;
             }

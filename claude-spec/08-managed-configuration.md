@@ -66,6 +66,12 @@ Skipping the write is what keeps the policy the only source of that value.
 `setPrefs()` skips **per key**, not atomically: its callers seed a whole provider block at
 once, and one locked key must not block the other seven or eight.
 
+Both also skip `mztaManaged.isEnforcedConnectionControl(key)`: the `${prefix}_${field}` ids
+of the feature-page connection fields a policy connection enforces. These are not preferences.
+But every feature page's generic `saveOptions()` writes each `.option-input` under its id, the
+injected connection panel included, so without the skip a control re-enabled by hand would
+store an enforced value there. With no policy the set is empty and those writes happen as before.
+
 The UI disabling in [`pages/_lib/managed-ui.js`](../pages/_lib/managed-ui.js) is
 presentation only. The guard holds even if a page forgets to call it, or a control is
 re-enabled from the developer tools.
@@ -99,9 +105,10 @@ policy-configured profile — and the write guard was inert in pages, because
   the first preference read), so it just awaits the load. It never starts anything, and so
   the background can never end up messaging itself;
 - **everywhere else** — it starts `_hydrate()` once and awaits it. `_hydrate()` sends
-  `{command: 'get_managed_values'}` and fills `_values` / `_locked` / `_specialPromptsText`
-  from `{values, lockedKeys, specialPromptsText}` (a locked key without a value is dropped;
-  a non-string text is dropped).
+  `{command: 'get_managed_values'}` and fills `_values` / `_locked` / `_specialPromptsText` /
+  `_specialPromptsConnection` from `{values, lockedKeys, specialPromptsText,
+  specialPromptsConnection}`. What is malformed is dropped: a locked key without a value, a
+  non-string text, a connection entry or field that does not have the validated shape.
 
 Hydration is started by the **first preference read**, never by importing the module, and
 never calls `browser.storage.managed` — the reason for the import rule above does not apply
@@ -131,6 +138,11 @@ provider itself. The rule is now **split by page**:
 |---|---|
 | `api_webchat/` (decided by the background from `sender.url`) | the real key |
 | every other extension page | `MANAGED_SECRET_MARKER`, exported by `js/mzta-managed.js` |
+
+The same rule covers every `*_api_key` field of a policy connection
+([`_special_prompts_connection`](#enforced-per-feature-connections-_special_prompts_connection)),
+in `specialPromptsConnection`. The chat window runs a feature's connection itself (summarize in
+webchat display mode: `loadPrompt()` in `api_webchat/controller.js`).
 
 The marker is non-empty on purpose, so presence checks (`isConnectionConfigured()` in the
 popup, the empty-key warnings) see a configured connection. Everything that would *use* or
@@ -316,6 +328,7 @@ Keys starting with `_` are structures and metadata, never preferences. **No key 
 | `_org_id` | `[a-z0-9-]+`, the prompt-id namespace |
 | `_org_prompts` | the fourth prompt set |
 | `_special_prompts_text` | enforced text of special prompts, `{<special prompt id>: <text>}`; **enforced only**, see [below](#enforced-special-prompt-texts-_special_prompts_text) |
+| `_special_prompts_connection` | per-feature connection, `{<feature prefix>: {api_type, <field>: value, "<field>:locked": false}}`; `api_type` always enforced, see [below](#enforced-per-feature-connections-_special_prompts_connection) |
 | `_disable_prompt_management` | restriction: no prompt creation, copy, import or export; existing custom prompts read-only and inactive |
 | `_disable_default_prompts` | restriction: the built-in prompts are not available in the menus |
 | `_disable_setup_wizard` | restriction: the setup wizard cannot be opened |
@@ -509,7 +522,8 @@ lives in `_special_prompts`, not in `prefs_default`, so the allowlist cannot rea
 text, so nothing for the lock convention to downgrade to an initial value. A
 `"_special_prompts_text:locked"` key is warned about and ignored; the texts stay enforced.
 Only the text is covered: every other property of the special prompt (icon, menu visibility,
-provider override) stays the user's.
+provider override) stays the user's - the provider override has a key of its own,
+[`_special_prompts_connection`](#enforced-per-feature-connections-_special_prompts_connection).
 
 ### Validation
 
@@ -577,7 +591,7 @@ attendees…) are not. Every shipped text passes the contract.
 ### Application: a read-time overlay, never persisted
 
 `applyEnforcedTexts()` runs at the end of `getSpecialPrompts()`, after
-`applyCalendarNoSelection()` and `applyLockedOffIntegrations()`: it replaces `text` and sets
+`applyCalendarNoSelection()`, `applyLockedOffIntegrations()` and `applyPolicyConnections()`: it replaces `text` and sets
 `_text_by_policy: true`. In pages the texts arrive with the hydration
 (`specialPromptsText` in the `get_managed_values` reply), and the overlay awaits
 `managedReady()`, so every context sees the same text.
@@ -629,6 +643,211 @@ The feature pages' placeholder checks never see an enforced text, so the backgro
 the contract (`getEnforcedTextPlaceholderProblems()`). The text is still enforced — the
 administrator asked for it, and it runs. The existing `calendar_no_selection` startup check
 reads `getSpecialPrompts()`, so it covers an enforced calendar text on its own.
+
+## Enforced per-feature connections (`_special_prompts_connection`)
+
+This key lets the administrator set the connection of a feature that supports a specific
+integration: every prefix of `special_prompts_with_integration` (`add_tags`, `spamfilter`,
+`summarize`, `get_calendar_event`, `get_task`, `translate`). The prefix is the same one
+`{prefix}_use_specific_integration` uses.
+
+Neither the allowlist nor `_special_prompts_text` can do this. The per-feature override is not
+a preference: it lives in the special prompt (`api_type` plus the `{integration}_{key}` fields,
+see [04-api-integrations.md](04-api-integrations.md#per-feature-provider-override-specific-integration)).
+Only `{prefix}_use_specific_integration` is in `prefs_default`.
+
+```json
+"_special_prompts_connection": {
+  "spamfilter": {
+    "api_type": "openai_comp_api",
+    "openai_comp_host": "https://ai-gateway.example.org",
+    "openai_comp_api_key": "…",
+    "openai_comp_model": "gpt-4o-mini",
+    "openai_comp_model:locked": false
+  }
+}
+```
+
+The field names are **exactly** the override properties stored on the special prompt:
+`${integration}_${key}` for a key of `integration_options_config[integration]`, where
+`integration` is the `api_type` without `_api`. There is no translation layer, so a field added
+to `integration_options_config` can be set here the moment it is declared (see
+[Adding a policy-settable preference](#adding-a-policy-settable-preference) for what still needs a hand).
+
+### Lock semantics
+
+The convention is the rest of this file's: every field present is **enforced**, and a sibling
+`"<field>:locked": false` makes it an initial value.
+
+| Field | Resolution on the prompt |
+|---|---|
+| `api_type` | **always enforced**. `"api_type:locked": false` is warned about and ignored: an unlocked provider under enforced provider-specific fields makes no sense |
+| enforced field | the policy value, always, over any stored value |
+| unlocked field | the policy value only while the prompt has none of its own (absent or `''`); never written to storage |
+| field the policy does not name | the user's, as without a policy; if the prompt has none either, `initWorker()` falls back to the global preference, as before |
+
+A top-level `"_special_prompts_connection:locked"` is warned about and ignored.
+
+### Implied preferences and conflicts
+
+`getConnectionType()` reads `{prefix}_use_specific_integration` / `{prefix}_connection_type`
+**before** `prompt.api_type`. The menu gating and the options feature row read only that
+pair (`prompt = null`). So an entry accepted by validation **implies** both, injected into
+`_values` / `_locked` right after validation:
+`{prefix}_use_specific_integration = true` and `{prefix}_connection_type = api_type`, both
+locked. They are ordinary allowlisted preferences from then on. Hydration, the write guard,
+`applyManagedUI()` (the switch and the type select locked and marked) and
+[A locked per-feature connection type](#a-locked-per-feature-connection-type) apply to them unchanged.
+
+When the policy also sets those preferences explicitly:
+
+| Explicit value in the same policy | Result |
+|---|---|
+| `{prefix}_use_specific_integration: false`, locked **or** initial | the connection entry is **skipped**, with a `taLogger.warn()`. The explicit switch wins; the feature falls back to the global connection, which the administrator controls too |
+| `{prefix}_use_specific_integration: true`, initial | upgraded to enforced, with a warning |
+| `{prefix}_connection_type`, different or initial | replaced by `api_type`, locked, with a warning |
+
+The first rule is what keeps the two per-feature overlays apart. A prefix locked off gets the
+locked-off overlay ([Interaction points](#interaction-points)) and never a connection entry.
+`applyPolicyConnections()` also skips any locked-off prefix itself, so the order of the two
+overlays cannot matter.
+
+### Validation
+
+`validateSpecialPromptsConnection()` in [`js/mzta-managed.js`](../js/mzta-managed.js) runs in
+pass 3. It follows the same style as `validateSpecialPromptsText()`: the value must be a plain
+object (otherwise the whole key is ignored), and each entry is checked on its own. **An entry
+without a usable `api_type` is skipped as a whole**; every other problem skips only the field.
+Every skip is a `taLogger.warn()` naming the feature and the field, and the rest of the policy
+still applies.
+
+- The key must be a prefix of `special_prompts_with_integration`, and the entry a plain object.
+- `api_type` is required and must be one of `featureConnectionTypes()`. That list is derived,
+  not written out: the entries of `valid_connection_types` that have an
+  `integration_options_config` block, which is the same mapping `initWorker()` uses. Those are
+  exactly the types the feature panels offer, since they inject with `no_chatgpt_web: true`. So
+  `chatgpt_web` is rejected for every feature.
+- Each other field must belong to that `api_type`. A field of another provider gets its own
+  message ("belongs to the X connection, not to Y").
+- Its type must be the type of its `integration_options_config` default, never coerced. Then
+  come the content rules (`connectionFieldProblem()`):
+
+  | Field | Rule |
+  |---|---|
+  | `*_host` | parses as an `http:` or `https:` URL |
+  | `*_model` | not empty |
+  | numeric default (`ollama_num_ctx`, `anthropic_max_tokens`, `anthropic_extended_thinking_budget`) | a non-negative integer; `anthropic_max_tokens` ≥ 1 |
+  | `*_temperature` | `''` or a finite number ≥ 0 |
+  | `google_gemini_thinking_budget` | `''` or an integer (`-1` is Gemini's "dynamic") |
+  | `*_extra_body` | `''` or JSON that parses to a plain object, the `parseExtraBody()` contract |
+
+  The settings UI enforces none of these; it saves what is typed and the request builders
+  cope. A user's typo breaks that user's feature. A policy typo breaks it for the whole fleet,
+  and the user can do nothing about it.
+- `"<field>:locked"` must be a boolean. Anything else is warned about, and the field stays
+  enforced. A `":locked"` whose field was rejected or is absent is warned about.
+
+The validated form is `{prefix: {api_type, fields: {name: {value, locked}}}}`. The accessors are:
+
+- `getSpecialPromptsConnection()` and `getSpecialPromptConnection(prefix)`, which return copies;
+- `getEnforcedConnectionControlIds()` and `isEnforcedConnectionControl(id)`, the
+  `${prefix}_${field}` ids of the locked fields.
+
+The key counts towards `_active`.
+
+### Secrets
+
+API key fields follow [Policy-supplied API keys](#policy-supplied-api-keys) exactly:
+
+- **In the background:** `getSpecialPrompts()` overlays the real key, which is what
+  `initWorker()` and `menus.allPrompts` get.
+- **In `get_managed_values`:** every `*_api_key` field of `specialPromptsConnection` is
+  `MANAGED_SECRET_MARKER` except for `api_webchat/`, which runs a feature's connection itself.
+  A content script gets `{}`.
+- **On a feature page:** the key field shows the marker, which the eye toggle, "Update", the
+  empty-key checks and the storage gates already refuse. The feature pages have no connection
+  test (only the options page and the setup wizard do), so the refusal of
+  `runConnectionTest()` has no site there.
+- **Never persisted, never exported:** `stripTransientFlags()` drops a marker key before the
+  storage gate below. `preparePromptsForExport()` removes `api_type` and every override field
+  from a prompt marked `_connection_by_policy`, whatever `include_api_settings` says. No
+  shipped caller exports special prompts today; this is a guard for any future one.
+
+### Application: a read-time overlay, never persisted
+
+`applyPolicyConnections()` in [`js/mzta-prompts.js`](../js/mzta-prompts.js) runs in both
+branches of `getSpecialPrompts()`. The order is `applyCalendarNoSelection()` →
+`applyLockedOffIntegrations()` → **`applyPolicyConnections()`** → `applyEnforcedTexts()`. It
+awaits `managedReady()`, applies the table above to every prompt of `specialPromptIdsForPrefix(prefix)`,
+and sets the transient `_connection_by_policy: true`, which is in `TRANSIENT_PROMPT_FLAGS`.
+
+The prompts per feature are the ones the locked-off overlay uses:
+
+- **summarize:** `prompt_summarize` alone. The email template and separator are text
+  fragments, never a command's `config`, never edited by the panel.
+- **get_calendar_event:** both calendar prompts. The clipboard variant runs with the same
+  prefix, and with the overlay it now runs the feature's connection too; without a policy it
+  never carries override fields at all.
+
+**Why read-time only.** The feature pages write the whole `_special_prompts` array back: text
+Save writes the array the page loaded at page open, and `savePrompt()` / `clearPromptAPI()` do a
+load-modify-save. A stored policy value would replace the user's own override and outlive the
+policy. So `setSpecialPrompts()` runs `keepStoredConnections()` after `keepStoredOverrides()`.
+For each policy-connected prompt:
+
+- `api_type` and every enforced field get back what storage holds (deleted if it holds none);
+- an unlocked field that holds the policy value, or that is absent (a marker dropped by
+  `stripTransientFlags()`, or a writer that never had the field), gets back what storage holds.
+  So the policy default is never stored as the user's value, **not even over a stored value of
+  theirs**: that is exactly what a stale array copy would write. The cost is that a user cannot
+  store exactly the policy default as their own value, which makes no difference while the
+  policy holds;
+- any other value is the user's, and saved.
+
+The lock state is read synchronously from `mztaManaged`, as for `keepStoredOverrides()`: before
+`loadManaged()` (the migration block) nothing is supplied and the gate is a no-op. **Removing
+the policy restores the user's override exactly, field by field**, and the preference pair
+falls back to what the user stored.
+
+### The connection panel
+
+The feature pages need no page-specific logic beyond one guard:
+
+- **The switch and the type select** are the implied locked preferences, so `applyManagedUI()`
+  disables and marks them. `restoreOptions()` shows the enforced type through `isEnforcedPref()`.
+- **The fields.** `applyManagedUI()` matches `state.lockedKeys` **plus**
+  `getEnforcedConnectionControlIds()`: the panel names its inputs `${prefix}_${field}`. Every
+  enforced field is therefore disabled and marked like a locked preference, with the marker in
+  its `td`. That brings every existing mechanism with it:
+  - `syncSecretToggle()` shows the padlock (it reads `data-mzta-managed`);
+  - `isManagedModel()` keeps the enforced model in a disabled select and disables "Update"
+    ([Locked model selects](#locked-model-selects));
+  - `setDisabledRespectingManaged()` keeps page logic from re-enabling anything.
+- **Unlocked fields** stay editable and show the overlay: the user's value, or the policy
+  default. An unlocked policy key shows the marker, with the padlock, until the user types
+  their own.
+- **`initializeSpecificIntegrationUI()`** computes `policy_connected`:
+  - no "mandatory" forcing: the managed marker is the explanation;
+  - no page-open `_updatePrompt()`, `_persistSelectedConnection()` or
+    `_persistMandatoryIntegration()`: what the panel shows is the policy's, not something to seed;
+  - `_updatePrompt()` never copies an enforced field from the DOM;
+  - the per-field listener ignores an enforced field, and the type-select listener ignores a
+    locked select, so a control re-enabled by hand writes nothing at all;
+  - the switch handler forces a re-enabled switch back on without `clearPromptAPI()`.
+- **The one page guard.** Each feature page has a page-open block that copies `prompt.api_type`
+  and the fields into `{prefix}_*` preferences. It skips a prompt for which
+  `isPolicyConnection(prompt)` (`pages/_lib/managed-ui.js`) is true.
+- **The write guard** refuses the enforced ids that the pages' `saveOptions()` would write (see
+  [The write guard](#the-write-guard)).
+
+### Startup warning
+
+In the background, `getReplacedProviderOverrides()` reads the raw store. The background then
+`taLogger.warn()`s once for each value the policy replaces that the user stored for the
+feature: the policy `api_type`, or an **enforced** field holding a different, non-empty value.
+The warning names the feature and the field, never the value. An unlocked field replaces
+nothing. The skips (invalid `api_type`, conflict with an explicit `false`) are warned about by
+validation, which runs once, at startup.
 
 ## Account lists by policy (`*_enabled_accounts_match`)
 
@@ -722,7 +941,8 @@ keeps the page from writing the user's list while it is overridden.
 | tag dialog in [js/mzta-compose-script.js](../js/mzta-compose-script.js) | a classic content script cannot import `mztaPrefs`. It reads `add_tags_exclusions`, `add_tags_hide_exclusions`, `add_tags_exclusions_exact_match` and the lock state through the `addtags_get_exclusion_prefs` background command, and writes the list through `addtags_set_exclusions` (→ `mztaPrefs.setPref()`, so the guard applies). When `add_tags_exclusions` is locked, the per-tag "exclude" icon is not rendered at all. No content script reads preferences from storage any more. |
 | `calendar_no_selection` ([js/mzta-prompts.js](../js/mzta-prompts.js)) | the behaviour used to be driven only by `need_selected` of `prompt_get_calendar_event`, written by the settings page's change listener, so a policy value showed a checked box and changed nothing. `need_selected` is now **derived** from the resolved preference on every `getSpecialPrompts()` read (never written because of the policy; see [02-prompts.md](02-prompts.md)), and the preference is in `MENU_RELEVANT_KEYS`. The page's placeholder check cannot stop a policy, so the background `taLogger.warn()`s at startup, and the page shows `prefs_OptionText_calendar_no_selection_policy_missing_placeholder` when the key is locked on, if the prompt has neither `{%mail_text_body_or_selected%}` nor `{%mail_html_body_or_selected%}`. The one-shot `migrateCalendarNoSelection()` aligned the preference once to the stored `need_selected`, so no unmanaged user changed behaviour on upgrade. |
 | per-feature provider override ([js/mzta-prompts.js](../js/mzta-prompts.js), [pages/_lib/connection-ui.js](../pages/_lib/connection-ui.js)) | the override lives in the special prompt (`api_type` + `{integration}_{key}`), not in a preference, so locking `{prefix}_use_specific_integration` to `false` did not stop an override saved before the policy: `getConnectionType()` and `initWorker()` still honoured `prompt.api_type`. `applyLockedOffIntegrations()` now hides it on every `getSpecialPrompts()` read — **locked-off case only**; unmanaged profiles and `getConnectionType()` are unchanged. It is a **read-time overlay that must never be persisted**: unlike `need_selected` above, a stored `api_type: ''` would erase the user's own override, so `setSpecialPrompts()` restores the stored override fields of those prompts (`keepStoredOverrides()`) and the override returns untouched when the policy is removed. The feature page keeps the toggle off, never forces it on as mandatory, and never calls `_updatePrompt()` / `clearPromptAPI()` while locked; the background `taLogger.warn()`s at startup for each locked-off feature with a stored override. Full treatment in [04-api-integrations.md](04-api-integrations.md#when-a-policy-locks-the-override-off). |
-| special prompt texts ([js/mzta-prompts.js](../js/mzta-prompts.js), the six feature pages) | `_special_prompts_text` is overlaid by `applyEnforcedTexts()` at the end of `getSpecialPrompts()` — third overlay, after the two above — and kept out of storage by `keepStoredTexts()` in `setSpecialPrompts()` plus the transient `_text_by_policy` marker. The feature pages make the textarea read-only and its Save/Reset inert (`lockEnforcedPromptText()`), and the background warns at startup about missing placeholders. See [Enforced special prompt texts](#enforced-special-prompt-texts-_special_prompts_text). |
+| per-feature connection supplied by policy ([js/mzta-prompts.js](../js/mzta-prompts.js), [pages/_lib/connection-ui.js](../pages/_lib/connection-ui.js), [js/mzta-prefs.js](../js/mzta-prefs.js), the six feature pages) | `_special_prompts_connection` is overlaid by `applyPolicyConnections()`, right after the locked-off overlay (the two can never apply to the same feature), and kept out of storage by `keepStoredConnections()` in `setSpecialPrompts()` plus the transient `_connection_by_policy` marker. Each entry implies a locked `{prefix}_use_specific_integration` / `{prefix}_connection_type` pair, so `getConnectionType()` and the `prompt = null` callers follow it unchanged. The write guard also refuses the enforced `${prefix}_${field}` panel ids. The background warns at startup about every stored user value it replaces. See [Enforced per-feature connections](#enforced-per-feature-connections-_special_prompts_connection). |
+| special prompt texts ([js/mzta-prompts.js](../js/mzta-prompts.js), the six feature pages) | `_special_prompts_text` is overlaid by `applyEnforcedTexts()` at the end of `getSpecialPrompts()` — the last overlay, after the three above — and kept out of storage by `keepStoredTexts()` in `setSpecialPrompts()` plus the transient `_text_by_policy` marker. The feature pages make the textarea read-only and its Save/Reset inert (`lockEnforcedPromptText()`), and the background warns at startup about missing placeholders. See [Enforced special prompt texts](#enforced-special-prompt-texts-_special_prompts_text). |
 | account scope of the automatic spam filter / Add Tags ([mzta-background.js](../mzta-background.js) `processEmails()`, [js/mzta-utils.js](../js/mzta-utils.js)) | `{feature}_enabled_accounts` is read as before, but the in-scope check uses `resolveEnabledAccounts()`, which substitutes the ids resolved from a policy `{feature}_enabled_accounts_match` — once per batch, never stored, and "no account" when nothing matches. See [Account lists by policy](#account-lists-by-policy-_enabled_accounts_match). |
 | sync → local migration ([js/mzta-prefs-migration.js](../js/mzta-prefs-migration.js)) | **deliberately untouched.** See below. |
 
@@ -805,7 +1025,9 @@ The account checkboxes of the spam filter and Add Tags pages are the same patter
 twist — the locked key (`*_enabled_accounts_match`) is not the one the checkboxes save — and
 have their own helper, `lockAccountSelector()`; see [Account lists by policy](#account-lists-by-policy-_enabled_accounts_match).
 
-`applyManagedUI()` covers locked *preferences* only. A restriction has no preference behind
+`applyManagedUI()` covers locked *preferences*, plus the connection-panel fields a policy
+connection enforces, which are matched by their `${prefix}_${field}` id in the same pass (see
+[The connection panel](#the-connection-panel)). A restriction has no preference behind
 it, and its controls are plain buttons and links rather than `.option-input` fields, so
 there is an explicit counterpart: `disableForManagedRestriction()`, called at the few sites
 a restriction covers. It marks the element with the same `data-mzta-managed` attribute, so
@@ -928,6 +1150,23 @@ The only decision is whether it is genuinely *configuration*. If it is per-machi
 per-profile state, add it to the exclusions in `js/mzta-managed.js` with a comment saying
 why.
 
+A new **per-provider connection field**, a key added to `integration_options_config`, is at
+once a global preference (above) and a field of [`_special_prompts_connection`](#enforced-per-feature-connections-_special_prompts_connection),
+with type validation, the overlay, the storage gate and the UI lock. By hand:
+
+- give it a content rule in `connectionFieldProblem()` if its type alone does not make a value
+  usable (a URL, a number held in a string, JSON, an enumeration);
+- if it is a secret, name it `*_api_key`, or the marker rules of
+  [Policy-supplied API keys](#policy-supplied-api-keys) do not apply to it;
+- make sure the connection panel names its input `${modelId_prefix}${integration}_${key}`,
+  like the others, or `applyManagedUI()` cannot find it.
+
+A new **feature** with a specific integration, a prefix added to
+`special_prompts_with_integration`, is accepted as a key of `_special_prompts_connection`
+automatically. By hand: its prefix → prompt ids in `getActiveSpecialPromptsIDs()` (which the
+overlays read), the page guard of [The connection panel](#the-connection-panel) on its page, and an entry in
+`tests/helpers/feature-pages.mjs`, which `tests/managed/10h` requires.
+
 Either way the administrator key reference on micz.it is now out of date — it is generated
 from `prefs_default` by hand, so a new or newly excluded preference has to be reflected
 there too. So do the "103 of 112" count in [The allowlist](#the-allowlist) and the counts in
@@ -998,6 +1237,7 @@ unmanaged baseline of a page, comes from a separate module instance or a worker 
 | An automatic summary is always inline | `09` | `summarize/02-sweep-locked` (`expected`) |
 | Organization prompts | `06a-org-prompts`, `06b-org-prompts-*` | - |
 | Enforced special prompt texts (and its UI) | `06c`-`06e` | `<feature>/07-special-prompts-text`, `get-calendar-event/08-…-calendar-named` |
+| Enforced per-feature connections (and its UI) | `10a`-`10h` (validation, malformed, resolution and `initWorker()`, conflicts, never persisted / export / write guard / removal, hydration, webchat, feature-page coverage) | `<feature>/13-connection-enforced`, `<feature>/14-connection-unlocked` (generated from `tests/helpers/feature-pages.mjs`) |
 | Restrictions | `06f`-`06i` | `customprompts/10`, `customprompts/11`, `menu_order/10`, `<page>/10-disable-setup-wizard` (popup, onboarding, options, setup-wizard) |
 | Account lists by policy (and the account checkboxes) | `07a`, `07b` | `spamfilter/08`, `spamfilter/09`, `addtags/08`, `addtags/09` |
 | Interaction points: per-feature provider override | `08-provider-override-locked-off` | - |

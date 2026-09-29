@@ -46,6 +46,7 @@ import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
     applyManagedUI,
     seedFromGlobal,
+    isPolicyConnection,
     isEnforcedPref,
     lockEnforcedPromptText,
     isEnforcedPromptText
@@ -63,7 +64,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     let specialPrompts = await getSpecialPrompts();
     let translate_prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_translate_this');
 
-    if (translate_prompt && translate_prompt.api_type && translate_prompt.api_type !== '') {
+    // Not for a connection supplied by the policy: that one is the administrator's, and copying it
+    // into the {prefix}_* preferences would store it (spec 08, _special_prompts_connection).
+    if (translate_prompt && translate_prompt.api_type && translate_prompt.api_type !== '' && !isPolicyConnection(translate_prompt)) {
         let update_prefs = {};
         update_prefs['translate_connection_type'] = translate_prompt.api_type;
         // getConnectionType() reads the prefixed connection type only when this flag is on,

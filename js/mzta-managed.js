@@ -50,7 +50,9 @@
 
 import {
     prefs_default,
-    valid_connection_types
+    valid_connection_types,
+    integration_options_config,
+    special_prompts_with_integration
 } from '../options/mzta-options-default.js';
 import { taLogger } from './mzta-logger.js';
 
@@ -63,6 +65,10 @@ const POLICY_ORG_PROMPTS = '_org_prompts';
 // {<special prompt id>: <enforced text>}. Enforced only: there is no preference behind a
 // special prompt's text, so nothing for the ":locked" convention to downgrade to.
 const POLICY_SPECIAL_PROMPTS_TEXT = '_special_prompts_text';
+// {<feature prefix>: {api_type, <integration>_<key>: value, "<field>:locked": false}}: the
+// per-feature connection override, which lives in the special prompt and not in a preference.
+// See validateSpecialPromptsConnection().
+const POLICY_SPECIAL_PROMPTS_CONNECTION = '_special_prompts_connection';
 
 // Restrictions: policy-only switches that take something away from the user rather than
 // set a preference. They are structural keys, not entries in prefs_default, because there
@@ -179,6 +185,9 @@ export const mztaManaged = {
     _orgId: '',
     _orgPrompts: [],
     _specialPromptsText: {}, // {special prompt id: enforced text}, validated
+    // {feature prefix: {api_type, fields: {<integration>_<key>: {value, locked}}}}, validated.
+    // api_type is always enforced; a field is enforced unless "<field>:locked" said false.
+    _specialPromptsConnection: {},
     _schemaVersion: 0,
     _disablePromptManagement: false,
     _disableDefaultPrompts: false,
@@ -274,6 +283,7 @@ export const mztaManaged = {
                     if (typeof text === 'string') this._specialPromptsText[id] = text;
                 }
             }
+            this._specialPromptsConnection = normalizeHydratedConnections(reply.specialPromptsConnection);
         } catch (e) {
             this.logger.warn('Could not hydrate the managed configuration: ' + e);
         }
@@ -328,6 +338,7 @@ export const mztaManaged = {
                         break;
                     case POLICY_ORG_PROMPTS:
                     case POLICY_SPECIAL_PROMPTS_TEXT:
+                    case POLICY_SPECIAL_PROMPTS_CONNECTION:
                         // Validated in pass 3, once the rest of the policy is known.
                         break;
                     case POLICY_DISABLE_PROMPT_MANAGEMENT:
@@ -420,6 +431,12 @@ export const mztaManaged = {
                     'ignored: a special prompt text set by policy is always enforced.');
                 continue;
             }
+            if (target === POLICY_SPECIAL_PROMPTS_CONNECTION) {
+                this.logger.warn('Policy: "' + target + LOCK_SUFFIX + '" is not supported, ' +
+                    'ignored: lock single fields inside a feature entry instead ("<field>' +
+                    LOCK_SUFFIX + '": false).');
+                continue;
+            }
             if (!(target in this._values)) {
                 this.logger.warn('Policy: "' + target + LOCK_SUFFIX + '" has no matching ' +
                     'value for "' + target + '", ignored.');
@@ -442,11 +459,20 @@ export const mztaManaged = {
                 checkSpecialPromptText, this.logger);
         }
 
+        // Enforced per-feature connections. After pass 2 and after the ":locked" check above:
+        // an entry is checked against the explicit {prefix}_use_specific_integration and
+        // {prefix}_connection_type, and then implies both, locked (see the function).
+        if (POLICY_SPECIAL_PROMPTS_CONNECTION in policy) {
+            this._specialPromptsConnection = validateSpecialPromptsConnection(
+                policy[POLICY_SPECIAL_PROMPTS_CONNECTION], this._values, this._locked, this.logger);
+        }
+
         // A policy that only restricts - no preference, no prompt - is still a policy: the
         // banner and the disabled buttons must be explained, so it counts as active.
         this._active = (Object.keys(this._values).length > 0) ||
                        (this._orgPrompts.length > 0) ||
                        (Object.keys(this._specialPromptsText).length > 0) ||
+                       (Object.keys(this._specialPromptsConnection).length > 0) ||
                        this._disablePromptManagement ||
                        this._disableDefaultPrompts ||
                        this._disableSetupWizard;
@@ -464,6 +490,12 @@ export const mztaManaged = {
                 (Object.keys(this._specialPromptsText).length > 0
                     ? ' (' + Object.keys(this._specialPromptsText).join(', ') + ')' : '') + '.');
             this.logger.log('Managed preferences: {' + summary.join(', ') + '}');
+            for (const [prefix, entry] of Object.entries(this._specialPromptsConnection)) {
+                this.logger.log('Managed connection for "' + prefix + '": ' + entry.api_type + ', {' +
+                    Object.entries(entry.fields).map(([name, f]) => name +
+                        (f.locked ? ' (locked)' : ' (initial)') + ': ' + this._logValue(name, f.value))
+                        .join(', ') + '}');
+            }
             const restrictions = [];
             if (this._disablePromptManagement) restrictions.push(POLICY_DISABLE_PROMPT_MANAGEMENT);
             if (this._disableDefaultPrompts) restrictions.push(POLICY_DISABLE_DEFAULT_PROMPTS);
@@ -538,6 +570,49 @@ export const mztaManaged = {
     getSpecialPromptText(id) {
         return Object.prototype.hasOwnProperty.call(this._specialPromptsText, id)
             ? this._specialPromptsText[id] : undefined;
+    },
+
+    /**
+     * The enforced per-feature connections, {prefix: {api_type, fields: {name: {value,
+     * locked}}}}, as a deep copy (safe to send over runtime.sendMessage). Empty object when the
+     * policy supplies none. The background holds the real API keys; a hydrated settings page
+     * holds MANAGED_SECRET_MARKER in their place (the API chat window, the real key).
+     */
+    getSpecialPromptsConnection() {
+        return structuredClone(this._specialPromptsConnection);
+    },
+
+    /** The connection the policy supplies for this feature prefix (a copy), or undefined. */
+    getSpecialPromptConnection(prefix) {
+        return Object.prototype.hasOwnProperty.call(this._specialPromptsConnection, prefix)
+            ? structuredClone(this._specialPromptsConnection[prefix]) : undefined;
+    },
+
+    /**
+     * The ids of the feature-page controls whose value the policy enforces: `${prefix}_${field}`
+     * for every locked field of every connection entry, which is exactly how the connection
+     * panel names its inputs (pages/_lib/connection-ui.js, modelId_prefix = `${prefix}_`).
+     * They are not preferences, so they never appear in getLockedKeys().
+     */
+    getEnforcedConnectionControlIds() {
+        const ids = [];
+        for (const [prefix, entry] of Object.entries(this._specialPromptsConnection)) {
+            for (const [name, field] of Object.entries(entry.fields)) {
+                if (field.locked) ids.push(prefix + '_' + name);
+            }
+        }
+        return ids;
+    },
+
+    /** True when `id` is one of getEnforcedConnectionControlIds(). */
+    isEnforcedConnectionControl(id) {
+        if (typeof id !== 'string') return false;
+        for (const [prefix, entry] of Object.entries(this._specialPromptsConnection)) {
+            if (!id.startsWith(prefix + '_')) continue;
+            const field = entry.fields[id.slice(prefix.length + 1)];
+            if (field && field.locked) return true;
+        }
+        return false;
     },
 
     /**
@@ -808,6 +883,225 @@ function validateSpecialPromptsText(raw, validIds, checkText, logger) {
     const CLIPBOARD = 'prompt_get_calendar_event_from_clipboard';
     if ((CALENDAR in out) && !(CLIPBOARD in raw)) {
         out[CLIPBOARD] = out[CALENDAR];
+    }
+    return out;
+}
+
+const isPlainObject = v => !!v && typeof v === 'object' && !Array.isArray(v);
+const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+
+/**
+ * The connection types a feature's specific-integration panel offers: the ones with an
+ * integration_options_config block, i.e. every API connection. Derived, not listed, with the
+ * same api_type -> integration mapping initWorker() in js/mzta-special-commands.js uses;
+ * chatgpt_web has no block (it has no API) and the panels never offer it (no_chatgpt_web).
+ */
+export function featureConnectionTypes() {
+    return valid_connection_types.filter(
+        type => hasOwn(integration_options_config, type.replace(/_api$/, '')));
+}
+
+// The integration a prompt field name such as "openai_comp_host" belongs to, or ''.
+function integrationOfField(name) {
+    for (const [integration, options] of Object.entries(integration_options_config)) {
+        if (name.startsWith(integration + '_') && hasOwn(options, name.slice(integration.length + 1))) {
+            return integration;
+        }
+    }
+    return '';
+}
+
+function isHttpUrl(value) {
+    try {
+        const url = new URL(value);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * What is wrong with a connection field value, or '' when it is valid. `key` is the
+ * integration_options_config key (host, model, temperature...), `defaultValue` its default:
+ * the type must be the default's, never coerced - the same rule as for a preference. On top,
+ * the content rules the request builders depend on. The settings UI checks none of them (it
+ * saves whatever is typed), but a value typed by a user only breaks that user's feature, while
+ * a policy value breaks it for the whole fleet with nothing the user can do about it.
+ */
+function connectionFieldProblem(key, value, defaultValue) {
+    const expected = typeof defaultValue;
+    if (typeof value !== expected) return 'must be of type ' + expected + ', got ' + typeof value;
+    if (expected === 'number') {
+        if (!Number.isInteger(value) || value < 0) return 'must be a non-negative integer';
+        if (key === 'max_tokens' && value < 1) return 'must be at least 1';
+        return '';
+    }
+    if (expected !== 'string') return '';
+    switch (key) {
+        case 'host':
+            return isHttpUrl(value) ? '' : 'must be an http:// or https:// URL';
+        case 'model':
+            return value.trim() !== '' ? '' : 'must not be empty';
+        case 'temperature': {
+            if (value.trim() === '') return '';
+            const n = Number(value);
+            return (Number.isFinite(n) && n >= 0) ? '' : 'must be empty or a number not below 0';
+        }
+        case 'thinking_budget':
+            return (value.trim() === '' || /^-?\d+$/.test(value.trim()))
+                ? '' : 'must be empty or an integer';
+        case 'extra_body': {
+            // The contract of parseExtraBody() in js/api/api-utils.js, which would otherwise
+            // silently send nothing.
+            if (value.trim() === '') return '';
+            try {
+                return isPlainObject(JSON.parse(value)) ? '' : 'must be a JSON object';
+            } catch (e) {
+                return 'must be a JSON object (' + e.message + ')';
+            }
+        }
+    }
+    return '';
+}
+
+/**
+ * Validate the _special_prompts_connection object:
+ *   {<feature prefix>: {api_type, <integration>_<key>: value, "<field>:locked": false}}
+ *
+ * The per-feature connection override lives in the special prompt (api_type plus the
+ * {integration}_{key} fields), not in a preference, so the allowlist cannot reach it; this is
+ * its policy counterpart. The field names are exactly the prompt properties, so a field added
+ * to integration_options_config is covered here the moment it is declared.
+ *
+ * Same style as validateSpecialPromptsText(): each feature entry is checked on its own, and
+ * within an entry each field. An invalid field is skipped with a warning and the rest of the
+ * entry applies; an entry without a usable api_type is skipped as a whole, since no field
+ * means anything without it.
+ *
+ * api_type is always enforced: an unlocked provider under enforced provider-specific fields
+ * would make no sense, so "api_type:locked": false is warned about and ignored.
+ *
+ * An accepted entry IMPLIES two preferences, which are written into `values` / `locked` here:
+ * {prefix}_use_specific_integration = true and {prefix}_connection_type = api_type, both
+ * locked. getConnectionType() in js/mzta-utils.js reads that pair before the prompt's
+ * api_type, and several callers (the menu gating, the options feature row) read only the pair,
+ * so the overlay on the prompt alone would not be what runs. An explicit
+ * {prefix}_use_specific_integration: false in the same policy, locked or initial, wins: the
+ * entry is skipped and the feature uses the global connection, which the administrator
+ * controls as well. So the locked-off overlay and this one can never apply to the same feature.
+ */
+function validateSpecialPromptsConnection(raw, values, locked, logger) {
+    const root = '"' + POLICY_SPECIAL_PROMPTS_CONNECTION + '"';
+    if (!isPlainObject(raw)) {
+        logger.warn('Policy: ' + root + ' must be an object mapping feature names to ' +
+            'connections, ignored.');
+        return {};
+    }
+    const allowedTypes = featureConnectionTypes();
+    const out = {};
+    for (const [prefix, entry] of Object.entries(raw)) {
+        const where = root + '["' + prefix + '"]';
+        if (!special_prompts_with_integration.includes(prefix)) {
+            logger.warn('Policy: ' + where + ' is not a feature with a specific integration, ' +
+                'skipped. Valid features: ' + special_prompts_with_integration.join(', ') + '.');
+            continue;
+        }
+        if (!isPlainObject(entry)) {
+            logger.warn('Policy: ' + where + ' must be an object, skipped.');
+            continue;
+        }
+        const api_type = entry.api_type;
+        if (typeof api_type !== 'string' || !allowedTypes.includes(api_type)) {
+            logger.warn('Policy: ' + where + ' has ' + (api_type === undefined ? 'no "api_type"'
+                : 'an invalid "api_type" (' + JSON.stringify(api_type) + ')') + ', the whole ' +
+                'feature entry is skipped. Valid values: ' + allowedTypes.join(', ') + '.');
+            continue;
+        }
+        const useKey = prefix + '_use_specific_integration';
+        const typeKey = prefix + '_connection_type';
+        if (hasOwn(values, useKey) && values[useKey] === false) {
+            logger.warn('Policy: ' + where + ' is skipped: "' + useKey + '" is set to false ' +
+                (locked.has(useKey) ? '(locked)' : '(initial)') + ' in the same policy, and the ' +
+                'explicit switch wins. The feature uses the global connection.');
+            continue;
+        }
+        const apiTypeLock = 'api_type' + LOCK_SUFFIX;
+        if (hasOwn(entry, apiTypeLock) && entry[apiTypeLock] !== true) {
+            logger.warn('Policy: ' + where + '["' + apiTypeLock + '"] is not supported, ignored: ' +
+                'the connection type of a feature set by policy is always enforced.');
+        }
+
+        const integration = api_type.replace(/_api$/, '');
+        const options = integration_options_config[integration];
+        const fields = {};
+        for (const [name, value] of Object.entries(entry)) {
+            if (name === 'api_type' || name.endsWith(LOCK_SUFFIX)) continue;
+            const fwhere = where + '["' + name + '"]';
+            const key = name.startsWith(integration + '_') ? name.slice(integration.length + 1) : null;
+            if (key === null || !hasOwn(options, key)) {
+                const owner = integrationOfField(name);
+                logger.warn('Policy: ' + fwhere + (owner
+                    ? ' belongs to the "' + owner + '" connection, not to "' + api_type + '"'
+                    : ' is not a connection field') + ', skipped. Valid fields for "' + api_type +
+                    '": ' + Object.keys(options).map(k => integration + '_' + k).join(', ') + '.');
+                continue;
+            }
+            const problem = connectionFieldProblem(key, value, options[key]);
+            if (problem !== '') {
+                logger.warn('Policy: ' + fwhere + ' ' + problem + ', skipped.');
+                continue;
+            }
+            // Every field present is enforced unless its "<field>:locked" says false.
+            fields[name] = { value: value, locked: entry[name + LOCK_SUFFIX] !== false };
+        }
+        for (const name of Object.keys(entry)) {
+            if (!name.endsWith(LOCK_SUFFIX) || name === apiTypeLock) continue;
+            const target = name.slice(0, -LOCK_SUFFIX.length);
+            if (typeof entry[name] !== 'boolean') {
+                logger.warn('Policy: ' + where + '["' + name + '"] must be true or false, ' +
+                    'ignored: the field stays enforced.');
+            } else if (!hasOwn(fields, target)) {
+                logger.warn('Policy: ' + where + '["' + name + '"] has no valid value for "' +
+                    target + '", ignored.');
+            }
+        }
+
+        // The implied preference pair, locked. An explicit value the administrator also wrote
+        // is overridden with a warning, never silently.
+        if (hasOwn(values, useKey) && !locked.has(useKey)) {
+            logger.warn('Policy: "' + useKey + '" is an initial value, but ' + where +
+                ' enforces the connection of that feature: it is enforced (true).');
+        }
+        values[useKey] = true;
+        locked.add(useKey);
+        if (hasOwn(values, typeKey) && (values[typeKey] !== api_type || !locked.has(typeKey))) {
+            logger.warn('Policy: "' + typeKey + '" is ' + JSON.stringify(values[typeKey]) +
+                (locked.has(typeKey) ? ' (locked)' : ' (initial)') + ', but ' + where +
+                ' enforces "' + api_type + '": using "' + api_type + '" (locked).');
+        }
+        values[typeKey] = api_type;
+        locked.add(typeKey);
+
+        out[prefix] = { api_type: api_type, fields: fields };
+    }
+    return out;
+}
+
+// The shape check for a hydrated _special_prompts_connection: the background already
+// validated it, so only the structure is re-checked, and anything malformed is dropped.
+function normalizeHydratedConnections(raw) {
+    const out = {};
+    if (!isPlainObject(raw)) return out;
+    for (const [prefix, entry] of Object.entries(raw)) {
+        if (!isPlainObject(entry) || typeof entry.api_type !== 'string' ||
+            !isPlainObject(entry.fields)) continue;
+        const fields = {};
+        for (const [name, field] of Object.entries(entry.fields)) {
+            if (isPlainObject(field) && hasOwn(field, 'value') && typeof field.locked === 'boolean') {
+                fields[name] = { value: field.value, locked: field.locked };
+            }
+        }
+        out[prefix] = { api_type: entry.api_type, fields: fields };
     }
     return out;
 }

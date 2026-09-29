@@ -48,6 +48,7 @@ import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
     applyManagedUI,
     seedFromGlobal,
+    isPolicyConnection,
     isEnforcedPref,
     isLockedKey,
     lockCompanions,
@@ -69,7 +70,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   let specialPrompts = await getSpecialPrompts();
   let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
 
-    if (addtags_prompt && addtags_prompt.api_type && addtags_prompt.api_type !== '') {
+    // Not for a connection supplied by the policy: that one is the administrator's, and copying it
+    // into the {prefix}_* preferences would store it (spec 08, _special_prompts_connection).
+    if (addtags_prompt && addtags_prompt.api_type && addtags_prompt.api_type !== '' && !isPolicyConnection(addtags_prompt)) {
         let update_prefs = {};
         update_prefs['add_tags_connection_type'] = addtags_prompt.api_type;
         // getConnectionType() reads the prefixed connection type only when this flag is on,

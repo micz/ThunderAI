@@ -62,13 +62,16 @@ tests/
 │   │                           get_managed_values listener, the get_managed_state /
 │   │                           get_org_prompts cases
 │   ├── restart.mjs             "restart Thunderbird": run a scenario in a fresh worker thread
+│   ├── feature-pages.mjs       the feature pages with a specific-integration panel, by prefix
+│   │                           (no jsdom: level 1 checks it against special_prompts_with_integration)
 │   │
 │   ├── dom-page.mjs            DOM harness: openPage(), the strict browser proxy, settle()
 │   ├── dom-probe.mjs           a page (or the allowlist) probed in a fresh worker thread
 │   ├── dom-sweep.mjs           the allowlist sweep: lockedSweep(), unlockedSweep()
 │   ├── dom-known-issues.mjs    potential bugs found by the DOM tests, run as TODOs
 │   └── dom-*.mjs               one shared scenario each (no policy, secrets, locked model,
-│                               enforced prompt texts, account selector, banner)
+│                               enforced prompt texts, account selector, banner, policy
+│                               connection)
 ├── fixtures/                   one policy per scenario (what storage.managed.get() returns)
 ├── managed/                    level 1: one file per policy scenario, numbered after the spec
 └── dom/<page>/                 DOM: one file per page × policy scenario
@@ -228,6 +231,14 @@ not written by hand (`helpers/dom-sweep.mjs`):
 
 A new preference with a control on a swept page is therefore covered the moment it exists.
 
+The policy-connection scenarios (`13-connection-enforced`, `14-connection-unlocked`, spec 08
+"Enforced per-feature connections") are generated the same way, from the feature list
+rather than the allowlist. Every page in `helpers/feature-pages.mjs` has the two three-line
+files calling `connectionScenario(page, mode)` (`helpers/dom-connection.mjs`).
+`tests/managed/10h` fails when that map no longer matches `special_prompts_with_integration`,
+or when a page lacks either file. A new feature therefore needs an entry there and the two
+files (copy another page's).
+
 When the spec derives what a locked control shows from the *other* locked keys rather than
 from its own policy value, the sweep file passes `expected: {key: {value, why}}` to
 `lockedSweep()`, and that value is asserted instead (today only `summarize_display_mode`, which
@@ -288,4 +299,5 @@ rules the behaviour correct and the spec is updated.
 - Real layout and CSS. jsdom has no layout engine: the DOM tests check **where** a marker is
   inserted, not the flex overrides in `mzta-design.css` that make it look right, and not what
   a disabled control looks like.
-- The API chat window (`api_webchat/`) as a page: its hydration is level 1 (`05b`).
+- The API chat window (`api_webchat/`) as a page: its hydration is level 1 (`05b`; `10g` for a
+  policy connection).

@@ -1,0 +1,35 @@
+{
+  "_special_prompts_connection:locked": false,
+  "_special_prompts_connection": {
+    "not_a_feature": { "api_type": "chatgpt_api" },
+    "spamfilter": { "api_type": "chatgpt_web" },
+    "add_tags": "chatgpt_api",
+    "translate": { "openai_comp_host": "https://gateway.example.org" },
+    "get_task": { "api_type": "bogus_api" },
+    "summarize": {
+      "api_type": "openai_comp_api",
+      "api_type:locked": false,
+      "openai_comp_host": "ftp://files.example.org",
+      "openai_comp_model": "",
+      "openai_comp_model:locked": false,
+      "openai_comp_api_key": 12345,
+      "ollama_model": "llama3",
+      "made_up_field": "x",
+      "openai_comp_temperature": "hot",
+      "openai_comp_use_v1": "true",
+      "openai_comp_extra_body": "[1, 2]",
+      "openai_comp_chat_name": "Gateway",
+      "openai_comp_chat_name:locked": "no"
+    },
+    "get_calendar_event": {
+      "api_type": "anthropic_api",
+      "anthropic_model": "claude-ok",
+      "anthropic_temperature": "0.3",
+      "anthropic_max_tokens": 0,
+      "anthropic_extended_thinking_budget": 1.5,
+      "anthropic_version": "2023-06-01",
+      "anthropic_system_prompt": "Be brief.",
+      "anthropic_system_prompt:locked": false
+    }
+  }
+}
