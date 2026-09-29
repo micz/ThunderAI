@@ -416,6 +416,102 @@ const specialPrompts = [
     }
 ];
 
+/** The ids of every entry in specialPrompts, menu items or not. */
+export function getSpecialPromptIds() {
+    return specialPrompts.map(p => p.id);
+}
+
+/**
+ * What the code around each special prompt expects of its TEXT, for the enterprise policy's
+ * _special_prompts_text (see js/mzta-managed.js). The user edits the same text on the
+ * feature pages and sees what they break; an administrator's enforced text cannot be fixed
+ * by the user, so it is checked against this contract instead.
+ *
+ * responseKeys - the JSON keys the response parser reads. The output format is spelled out
+ *   in the prompt text itself (e.g. prompt_spamfilter_full_text), not appended by code, so a
+ *   text that does not name them cannot produce them. An enforced text missing one is
+ *   REJECTED by the policy validation: the feature would silently stop working fleet-wide.
+ *   Only the keys without which the result is unusable - the ones the prompt describes as
+ *   optional (location, description, attendees...) are left out.
+ * contentPlaceholders - any one of these carries the message into the prompt. A missing one
+ *   is only WARNED about at startup: the text is still what the administrator enforced.
+ * appendsContent - preparePrompt() appends the message itself when the text has no
+ *   placeholder at all, so a placeholder-free text is not a problem for these.
+ * requiredPlaceholders - each of these must be present (no substitute, no append).
+ * allowBlank - the text may be whitespace only (the separator between summarized emails).
+ */
+const BODY_PLACEHOLDERS = ['mail_text_body', 'mail_html_body',
+                           'mail_text_body_or_selected', 'mail_html_body_or_selected'];
+const SELECTION_OR_BODY_PLACEHOLDERS = ['selected_text', 'selected_html', ...BODY_PLACEHOLDERS];
+
+const SPECIAL_PROMPT_TEXT_CONTRACT = {
+    prompt_add_tags: {
+        responseKeys: ['tags'],
+        contentPlaceholders: BODY_PLACEHOLDERS, appendsContent: true },
+    prompt_get_calendar_event: {
+        responseKeys: ['startDate', 'endDate', 'summary'],
+        contentPlaceholders: SELECTION_OR_BODY_PLACEHOLDERS, appendsContent: true },
+    prompt_get_calendar_event_from_clipboard: {
+        responseKeys: ['startDate', 'endDate', 'summary'],
+        contentPlaceholders: SELECTION_OR_BODY_PLACEHOLDERS, appendsContent: true },
+    prompt_get_task: {
+        responseKeys: ['summary'],
+        contentPlaceholders: SELECTION_OR_BODY_PLACEHOLDERS, appendsContent: true },
+    prompt_spamfilter: {
+        responseKeys: ['spamValue', 'explanation'],
+        contentPlaceholders: BODY_PLACEHOLDERS, appendsContent: true },
+    // Free text: the messages come from the template below, not from this prompt.
+    prompt_summarize: {},
+    prompt_summarize_email_template: {
+        contentPlaceholders: BODY_PLACEHOLDERS, appendsContent: true },
+    prompt_summarize_email_separator: { allowBlank: true },
+    // buildTranslationPrompt() substitutes placeholders directly and never appends.
+    prompt_translate_this: {
+        responseKeys: ['subject', 'body', 'status'],
+        contentPlaceholders: ['mail_html_body', 'mail_text_body'],
+        requiredPlaceholders: ['thunderai_translate_lang'] },
+};
+
+function textHasPlaceholder(text, id) {
+    return new RegExp(`{%\\s*${id}\\s*%}`).test(text);
+}
+
+/**
+ * Check a text meant for special prompt `id` against SPECIAL_PROMPT_TEXT_CONTRACT.
+ *
+ *   missingResponseKeys - JSON keys the parser reads that the text never names
+ *   placeholderProblem  - '' when the message reaches the prompt, otherwise a short English
+ *                         description for a log line (never shown in the UI)
+ *   blank               - the text is whitespace only and that is not allowed for this id
+ */
+export function checkSpecialPromptText(id, text) {
+    const contract = SPECIAL_PROMPT_TEXT_CONTRACT[id] || {};
+    const result = { missingResponseKeys: [], placeholderProblem: '', blank: false };
+    if (!contract.allowBlank && text.trim() === '') {
+        result.blank = true;
+        return result;
+    }
+    // Whole word and case-sensitive, like the parser's property access. A heuristic: it
+    // catches the likely mistake - an instruction rewritten without its output format -
+    // not a subtly wrong format.
+    result.missingResponseKeys = (contract.responseKeys || [])
+        .filter(key => !new RegExp(`\\b${key}\\b`).test(text));
+
+    const problems = [];
+    const content = contract.contentPlaceholders || [];
+    const hasAnyPlaceholder = /{%\s*[^%]+?\s*%}/.test(text);
+    if (content.length > 0 && !content.some(ph => textHasPlaceholder(text, ph)) &&
+        !(contract.appendsContent && !hasAnyPlaceholder)) {
+        problems.push('none of ' + content.map(ph => '{%' + ph + '%}').join(', ') +
+            ' is present, so the message will not be sent to the AI');
+    }
+    (contract.requiredPlaceholders || []).forEach(ph => {
+        if (!textHasPlaceholder(text, ph)) problems.push('{%' + ph + '%} is missing');
+    });
+    result.placeholderProblem = problems.join('; ');
+    return result;
+}
+
 
 // The organization prompts supplied by an enterprise policy: the fourth prompt set,
 // alongside defaultPrompts, _custom_prompt and _special_prompts.
@@ -937,7 +1033,7 @@ export async function setDefaultPromptsProperties(prompts) {
  * that save hand their whole in-memory prompt objects straight through.
  */
 const TRANSIENT_PROMPT_FLAGS = ['_shadowed_by_org', '_inert_by_policy',
-                                '_default_inert_by_policy'];
+                                '_default_inert_by_policy', '_text_by_policy'];
 
 function stripTransientFlags(prompts) {
     return prompts.map(prompt => {
@@ -982,6 +1078,7 @@ export async function getSpecialPrompts(){
         })
         await applyCalendarNoSelection(def_specPrompts);
         await applyLockedOffIntegrations(def_specPrompts);
+        await applyEnforcedTexts(def_specPrompts);
         return def_specPrompts;
     } else {
         let updatedPrompts = structuredClone(prefs._special_prompts);
@@ -1019,6 +1116,7 @@ export async function getSpecialPrompts(){
         // After the write-back above, so these derived values are not what triggers it.
         await applyCalendarNoSelection(updatedPrompts);
         await applyLockedOffIntegrations(updatedPrompts);
+        await applyEnforcedTexts(updatedPrompts);
         return updatedPrompts;
     }
 }
@@ -1171,9 +1269,69 @@ export async function getIgnoredProviderOverrides() {
     });
 }
 
+/**
+ * The text of a special prompt can be enforced by the policy (_special_prompts_text, see
+ * js/mzta-managed.js). It is not a preference, so there is no write guard to hold it back
+ * and no prefs_default entry for the allowlist to reach: like the provider override above,
+ * it is a READ-TIME overlay, applied on every getSpecialPrompts() read, and it must NEVER
+ * reach storage - the feature pages write the whole array back, and a stored enforced text
+ * would replace the user's own and outlive the policy. setSpecialPrompts() puts the stored
+ * text back (keepStoredTexts()), so removing the policy restores the user's text exactly.
+ *
+ * _text_by_policy marks an overlaid prompt for the feature pages. It is in
+ * TRANSIENT_PROMPT_FLAGS, so it is stripped at the storage gates and on export.
+ */
+async function applyEnforcedTexts(prompts) {
+    await managedReady();
+    prompts.forEach(prompt => {
+        const text = mztaManaged.getSpecialPromptText(prompt.id);
+        if (text === undefined) return;
+        prompt.text = text;
+        prompt._text_by_policy = true;
+    });
+}
+
+// The storage half of the above. Synchronous lock state, for the same reason as
+// lockedOffIntegrationPrefixes(): the migration block calls setSpecialPrompts() before
+// loadManaged(), where nothing is enforced and nothing has been overlaid either.
+// A prompt never stored before gets its shipped text, which is what getSpecialPrompts()
+// would have handed out without the policy. `prompts` must already be copies.
+async function keepStoredTexts(prompts) {
+    if (!prompts.some(prompt => mztaManaged.getSpecialPromptText(prompt.id) !== undefined)) {
+        return prompts;
+    }
+    const stored = await browser.storage.local.get({ _special_prompts: null });
+    const storedById = new Map((Array.isArray(stored._special_prompts) ? stored._special_prompts : [])
+        .map(prompt => [prompt.id, prompt]));
+    prompts.forEach(prompt => {
+        if (mztaManaged.getSpecialPromptText(prompt.id) === undefined) return;
+        const original = storedById.get(prompt.id);
+        if (original && typeof original.text === 'string') {
+            prompt.text = original.text;
+        } else {
+            const builtIn = specialPrompts.find(sp => sp.id === prompt.id);
+            prompt.text = builtIn ? browser.i18n.getMessage(builtIn.text) : '';
+        }
+    });
+    return prompts;
+}
+
+/**
+ * For the startup warning in mzta-background.js: every enforced special prompt text whose
+ * placeholders will not carry the message into the prompt, as [{id, problem}]. The response
+ * format was already checked when the policy was read - a text failing that is not enforced.
+ */
+export async function getEnforcedTextPlaceholderProblems() {
+    await managedReady();
+    return Object.entries(mztaManaged.getSpecialPromptsText())
+        .map(([id, text]) => ({ id: id, problem: checkSpecialPromptText(id, text).placeholderProblem }))
+        .filter(entry => entry.problem !== '');
+}
+
 export async function setSpecialPrompts(prompts) {
     // console.log(">>>>>>>>>>>> setSpecialPrompts prompts: " + JSON.stringify(prompts));
-    await browser.storage.local.set({_special_prompts: await keepStoredOverrides(stripTransientFlags(prompts))});
+    const copies = stripTransientFlags(prompts);
+    await browser.storage.local.set({_special_prompts: await keepStoredTexts(await keepStoredOverrides(copies))});
 }
 
 export function getHiddenSpecialPromptIds() {

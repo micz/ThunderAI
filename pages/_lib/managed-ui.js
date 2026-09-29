@@ -38,7 +38,7 @@
  */
 
 import { taLogger } from '../../js/mzta-logger.js';
-import { mztaManaged, MANAGED_SECRET_MARKER } from '../../js/mzta-managed.js';
+import { mztaManaged, managedReady, MANAGED_SECRET_MARKER } from '../../js/mzta-managed.js';
 import { prefs_default } from '../../options/mzta-options-default.js';
 
 let _state = null;
@@ -168,12 +168,61 @@ function controlPrefKey(element) {
  */
 export function lockCompanions(key, elements) {
     if (!isLockedKey(key)) return false;
+    disableCompanions(elements);
+    return true;
+}
+
+function disableCompanions(elements) {
     elements.forEach(element => {
         if (!element) return;
         element.dataset.mztaManaged = '1';
         element.disabled = true;
         element.title = browser.i18n.getMessage('managed_marker_tooltip');
     });
+}
+
+/**
+ * True when the policy enforces the text of this special prompt (_special_prompts_text).
+ *
+ * Synchronous, like isLockedKey(): the values must have been hydrated first, which every
+ * feature page has done by the time it can save - it reads getSpecialPrompts(), which awaits
+ * managedReady(), before anything else. Without a hydrated policy it is false.
+ */
+export function isEnforcedPromptText(promptId) {
+    return mztaManaged.getSpecialPromptText(promptId) !== undefined;
+}
+
+/**
+ * Make a special prompt's text editor read-only when the policy enforces that text, and say
+ * who set it.
+ *
+ * Not applyManagedUI() territory: there is no preference behind a prompt text, so no locked
+ * key to match. The textarea already shows the enforced text - getSpecialPrompts() overlaid
+ * it - so this only takes the editing away:
+ *
+ *  - the textarea becomes readOnly rather than disabled, so the text can still be scrolled,
+ *    selected and copied (a user may well want to start their own prompt from it);
+ *  - `companions` (its Save and Reset buttons) are disabled and marked, exactly like
+ *    lockCompanions() does for a locked preference;
+ *  - the marker goes in the textarea's .mzta_field column, after the button row, where the
+ *    list textareas get theirs: the textarea's own parent is the editor-highlight wrapper.
+ *
+ * `promptIds` lists every prompt the textarea saves (the calendar page writes two). Call it
+ * AFTER the page has filled the textarea and set its buttons' initial state. The page's Save
+ * and Reset handlers must still return early on isEnforcedPromptText(): a control re-enabled
+ * from the developer tools is not the same as the action being available. The storage gate
+ * (keepStoredTexts() in js/mzta-prompts.js) holds regardless.
+ */
+export async function lockEnforcedPromptText(textarea, promptIds, companions = [], do_debug = false) {
+    if (!textarea) return false;
+    await managedReady();
+    if (!promptIds.some(id => isEnforcedPromptText(id))) return false;
+    const state = await getManagedState(do_debug);
+    textarea.readOnly = true;
+    textarea.dataset.mztaManaged = '1';
+    textarea.title = browser.i18n.getMessage('managed_prompt_text_tooltip');
+    disableCompanions(companions);
+    markManaged(textarea, state, textarea.closest('.mzta_field'));
     return true;
 }
 
@@ -203,10 +252,11 @@ export function isManagedSecret(value) {
  * Put a visible marker next to a managed control, so a disabled field reads as "your
  * organization set this" rather than as a bug.
  */
-function markManaged(element, state) {
+function markManaged(element, state, explicitAnchor = null) {
     // The row is the natural anchor on the options page and on every feature page, which
     // all lay their settings out as table rows; fall back to the control's own parent.
-    const anchor = element.closest('td') || element.closest('label') || element.parentElement;
+    const anchor = explicitAnchor || element.closest('td') || element.closest('label') ||
+                   element.parentElement;
     if (!anchor) return;
 
     // A feature toggle is an <input> hidden inside <label class="mzta_switch">. Appending

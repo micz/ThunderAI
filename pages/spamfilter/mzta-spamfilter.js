@@ -50,7 +50,9 @@ import {
     seedFromGlobal,
     isLockedKey,
     lockCompanions,
-    setDisabledRespectingManaged
+    setDisabledRespectingManaged,
+    lockEnforcedPromptText,
+    isEnforcedPromptText
 } from '../_lib/managed-ui.js';
 
 let autocompleteSuggestions = [];
@@ -143,6 +145,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateConnPanelTint();
 
     spamfilter_reset_btn.addEventListener('click', () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isEnforcedPromptText('prompt_spamfilter')) return;
         spamfilter_textarea.value = browser.i18n.getMessage('prompt_spamfilter_full_text');
         spamfilter_reset_btn.disabled = true;
         let event = new Event('input', { bubbles: true, cancelable: true });
@@ -150,6 +154,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     spamfilter_save_btn.addEventListener('click', () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isEnforcedPromptText('prompt_spamfilter')) return;
         specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter').text = spamfilter_textarea.value;
         setSpecialPrompts(specialPrompts);
         spamfilter_save_btn.disabled = true;
@@ -162,6 +168,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     spamfilter_textarea.value = spamfilter_prompt.text;
     spamfilter_reset_btn.disabled = (spamfilter_textarea.value === browser.i18n.getMessage('prompt_spamfilter_full_text'));
+    // A text enforced by the policy is shown (getSpecialPrompts() overlaid it) but not editable.
+    await lockEnforcedPromptText(spamfilter_textarea, ['prompt_spamfilter'],
+        [spamfilter_save_btn, spamfilter_reset_btn], taLog.do_debug);
 
     // Full list, kept for token validation. Deliberately NOT filtered like the
     // suggestions: {%additional_text%} is a real placeholder that this page simply

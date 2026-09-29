@@ -43,7 +43,12 @@ import {
 import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
-import { applyManagedUI, seedFromGlobal } from '../_lib/managed-ui.js';
+import {
+    applyManagedUI,
+    seedFromGlobal,
+    lockEnforcedPromptText,
+    isEnforcedPromptText
+} from '../_lib/managed-ui.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -129,6 +134,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateConnPanelTint();
 
     get_task_reset_btn.addEventListener('click', () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isEnforcedPromptText('prompt_get_task')) return;
         get_task_textarea.value = browser.i18n.getMessage('prompt_get_task_full_text');
         get_task_reset_btn.disabled = true;
         let event = new Event('input', { bubbles: true, cancelable: true });
@@ -136,6 +143,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     get_task_save_btn.addEventListener('click', () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isEnforcedPromptText('prompt_get_task')) return;
         specialPrompts.find(prompt => prompt.id === 'prompt_get_task').text = get_task_textarea.value;
         setSpecialPrompts(specialPrompts);
         get_task_save_btn.disabled = true;
@@ -148,6 +157,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     get_task_textarea.value = get_task_prompt.text;
     get_task_reset_btn.disabled = (get_task_textarea.value === browser.i18n.getMessage('prompt_get_task_full_text'));
+    // A text enforced by the policy is shown (getSpecialPrompts() overlaid it) but not editable.
+    await lockEnforcedPromptText(get_task_textarea, ['prompt_get_task'],
+        [get_task_save_btn, get_task_reset_btn], taLog.do_debug);
 
     // Full list, kept for token validation. Deliberately NOT filtered like the
     // suggestions: {%additional_text%} is a real placeholder that this page simply

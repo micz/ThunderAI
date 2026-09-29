@@ -71,7 +71,8 @@ import {
     migrateEnabledToShowIn,
     migrateCalendarNoSelection,
     getSpecialPrompts,
-    getIgnoredProviderOverrides
+    getIgnoredProviderOverrides,
+    getEnforcedTextPlaceholderProblems
 } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taSummaryStore } from './js/mzta-summarystore.js';
@@ -187,7 +188,7 @@ await mztaManaged.loadManaged();
 // listener's default branch returns false for this command, so the two never compete.
 browser.runtime.onMessage.addListener((message, sender) => {
     if (!message || message.command !== 'get_managed_values') return false;
-    const empty = { values: {}, lockedKeys: [] };
+    const empty = { values: {}, lockedKeys: [], specialPromptsText: {} };
     // Extension pages only. Content scripts (compose and message display) share this
     // channel but never import js/mzta-prefs.js, so they have no use for the values.
     const ext_root = browser.runtime.getURL('');
@@ -206,7 +207,13 @@ browser.runtime.onMessage.addListener((message, sender) => {
             ? MANAGED_SECRET_MARKER
             : mztaManaged.getManagedValue(key);
     }
-    return Promise.resolve({ values: values, lockedKeys: locked });
+    // The enforced special prompt texts: getSpecialPrompts() overlays them in every context,
+    // and the feature pages show them read-only. No secret in them.
+    return Promise.resolve({
+        values: values,
+        lockedKeys: locked,
+        specialPromptsText: mztaManaged.getSpecialPromptsText()
+    });
 });
 
 // Repair any feature flag left enabled on an unusable connection before anything derives
@@ -251,6 +258,21 @@ await (async () => {
         }
     } catch (e) {
         taLog.error('Could not check the per-feature provider overrides: ' + e);
+    }
+})();
+
+// A special prompt text enforced by the policy cannot be fixed by the user, and the feature
+// pages' placeholder checks never see it. Its response format was checked when the policy
+// was read (a text failing that is not enforced at all); here the placeholders are - warn(),
+// not gated on do_debug, so the administrator sees it.
+await (async () => {
+    try {
+        for (const { id, problem } of await getEnforcedTextPlaceholderProblems()) {
+            taLog.warn(`The text of the ${id} special prompt is enforced by the managed ` +
+                `configuration, but ${problem}.`);
+        }
+    } catch (e) {
+        taLog.error('Could not check the placeholders of the enforced special prompt texts: ' + e);
     }
 })();
 taWorkingStatus.taLog = taLog;

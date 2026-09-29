@@ -43,7 +43,12 @@ import {
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
-import { applyManagedUI, seedFromGlobal } from '../_lib/managed-ui.js';
+import {
+    applyManagedUI,
+    seedFromGlobal,
+    lockEnforcedPromptText,
+    isEnforcedPromptText
+} from '../_lib/managed-ui.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -125,6 +130,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // on clicking reset button
     translate_reset_btn.addEventListener("click", () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isEnforcedPromptText('prompt_translate_this')) return;
         translate_textarea.value = browser.i18n.getMessage("prompt_translate_this_full_text");
         translate_reset_btn.disabled = true;
         let event = new Event("input", { bubbles: true, cancelable: true });
@@ -133,6 +140,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // on clicking save button
     translate_save_btn.addEventListener("click", () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isEnforcedPromptText('prompt_translate_this')) return;
         specialPrompts.find(prompt => prompt.id === 'prompt_translate_this').text = translate_textarea.value;
         setSpecialPrompts(specialPrompts);
         translate_save_btn.disabled = true;
@@ -145,6 +154,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     translate_textarea.value = translate_prompt.text;
     translate_reset_btn.disabled = (translate_textarea.value === browser.i18n.getMessage("prompt_translate_this_full_text"));
+    // A text enforced by the policy is shown (getSpecialPrompts() overlaid it) but not editable.
+    await lockEnforcedPromptText(translate_textarea, ['prompt_translate_this'],
+        [translate_save_btn, translate_reset_btn], taLog.do_debug);
 
     // Full list, kept for token validation. Deliberately NOT filtered like the
     // suggestions: {%additional_text%} is a real placeholder that this page simply

@@ -54,7 +54,9 @@ needs its own view purely because it also lists and rewrites the **special** pro
 
 The three flags describe the current policy state, not the prompt, so they are stripped in
 `setCustomPrompts()`, `setSpecialPrompts()` and `preparePromptsForExport()` — a stored or
-exported `_inert_by_policy` would outlive the policy that set it. **Both** pages that persist prompts
+exported `_inert_by_policy` would outlive the policy that set it. `TRANSIENT_PROMPT_FLAGS`
+also holds `_text_by_policy`, set on a special prompt whose text the policy enforces (see
+Special Prompt Visibility Dependencies below). **Both** pages that persist prompts
 rewrite a whole store from what they list (`setCustomPrompts()` replaces `_custom_prompt`
 entirely), so their filters must exclude `is_org` from the custom-prompt save and include
 it in the default-properties save. Getting this wrong either copies org prompts into the
@@ -212,6 +214,23 @@ Some prompts trigger additional Thunderbird actions beyond just sending text to 
 
 These special prompts can have their own dedicated API integration settings (configured in the Options page). The list of these special prompts is in `options/mzta-options-default.js` as `special_prompts_with_integration`.
 
+### The text carries the response format
+
+The output format a feature parses is written **in the prompt text itself** (e.g.
+`prompt_spamfilter_full_text` asks for `{"explanation", "spamValue"}`, `prompt_add_tags_full_text`
+for `{"tags": [...]}`); code appends only extras (`finalizePrompt_add_tags()`). So editing a
+special prompt's text can break its feature. `SPECIAL_PROMPT_TEXT_CONTRACT` in
+`js/mzta-prompts.js` records, per special prompt id, the JSON keys the parser reads and the
+placeholders that carry the message; `checkSpecialPromptText(id, text)` checks a text against
+it. It is used for texts enforced by an enterprise policy, which the user cannot fix (see
+[08-managed-configuration.md](08-managed-configuration.md#output-format-safety-the-response-contract));
+the feature pages do not apply it to the user's own edits. **A change to a shipped text's
+output format, or to a parser, must update that table**, or valid policies start being
+rejected.
+
+When the policy enforces a text, the feature page shows it read-only (`lockEnforcedPromptText()`
+in `pages/_lib/managed-ui.js`) with the managed marker, and its Save/Reset buttons are inert.
+
 ### Missing special prompts
 
 The lookup helpers in `js/mzta-prompts.js` (`getSpamFilterPrompt()`, `getAddTagsPrompt()`, `getSummarizePrompt()`, …) are `Array.find()` over `_special_prompts` and return `undefined` when the user has removed or corrupted the entry. Every caller must guard before using the result, and `taPromptUtils.getDefaultLang()` uses optional chaining so a missing prompt yields `''` (no forced language) instead of throwing (issue #855).
@@ -359,6 +378,13 @@ Notable dependency:
   `false`. Unlike `need_selected`, this overlay must **not** reach storage — it would erase
   the user's override — so `setSpecialPrompts()` restores the stored override fields of
   those prompts before writing. See [04-api-integrations.md](04-api-integrations.md#when-a-policy-locks-the-override-off).
+- The **text** of any special prompt can be enforced by the policy (`_special_prompts_text`),
+  and is overlaid by `applyEnforcedTexts()`, the third overlay at the end of
+  `getSpecialPrompts()`, which also sets the transient `_text_by_policy` marker. Like the
+  provider override it must **not** reach storage: `setSpecialPrompts()` puts back the stored
+  (or shipped) text of every enforced id with `keepStoredTexts()`, so the user's text
+  returns exactly when the policy is removed. See
+  [08-managed-configuration.md](08-managed-configuration.md#enforced-special-prompt-texts-_special_prompts_text).
 - `prompt_get_calendar_event_from_clipboard` is emitted only if **both** `get_calendar_event` and `get_calendar_event_from_clipboard` are active. If `get_calendar_event` is off, neither calendar prompt is shown regardless of the clipboard pref. Both share the `get_calendar_event` prefix for the connection check.
 
 ### Summarize: Dual-Mode Prompt System

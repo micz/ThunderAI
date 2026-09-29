@@ -49,7 +49,9 @@ import {
     seedFromGlobal,
     isLockedKey,
     lockCompanions,
-    setDisabledRespectingManaged
+    setDisabledRespectingManaged,
+    lockEnforcedPromptText,
+    isEnforcedPromptText
 } from '../_lib/managed-ui.js';
 
 let autocompleteSuggestions = [];
@@ -202,6 +204,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // on clicking buttons, reset
     summarize_reset_email_template_btn.addEventListener("click", () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isEnforcedPromptText('prompt_summarize_email_template')) return;
         summarize_textarea_email_template.value = browser.i18n.getMessage("prompt_summarize_email_template_full_text");
         summarize_reset_email_template_btn.disabled = true;
         let event = new Event("input", { bubbles: true, cancelable: true });
@@ -209,6 +213,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     
     summarize_reset_btn.addEventListener("click", () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isEnforcedPromptText('prompt_summarize')) return;
         summarize_textarea.value = browser.i18n.getMessage("prompt_summarize_full_text");
         summarize_reset_btn.disabled = true;
         let event = new Event("input", { bubbles: true, cancelable: true });
@@ -216,6 +222,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     summarize_email_separator_reset_btn.addEventListener("click", () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isEnforcedPromptText('prompt_summarize_email_separator')) return;
         summarize_email_separator_textarea.value = browser.i18n.getMessage("prompt_summarize_email_separator_full_text");
         summarize_email_separator_reset_btn.disabled = true;
         let event = new Event("input", { bubbles: true, cancelable: true });
@@ -224,6 +232,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     // on clicking buttons, save
     summarize_save_email_template_btn.addEventListener("click", () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isEnforcedPromptText('prompt_summarize_email_template')) return;
         specialPrompts.find(prompt => prompt.id === 'prompt_summarize_email_template').text = summarize_textarea_email_template.value;
         setSpecialPrompts(specialPrompts);
         summarize_save_email_template_btn.disabled = true;
@@ -231,6 +241,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     
     summarize_save_btn.addEventListener("click", () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isEnforcedPromptText('prompt_summarize')) return;
         specialPrompts.find(prompt => prompt.id === 'prompt_summarize').text = summarize_textarea.value;
         setSpecialPrompts(specialPrompts);
         summarize_save_btn.disabled = true;
@@ -238,6 +250,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     summarize_email_separator_save_btn.addEventListener("click", () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isEnforcedPromptText('prompt_summarize_email_separator')) return;
         specialPrompts.find(prompt => prompt.id === 'prompt_summarize_email_separator').text = summarize_email_separator_textarea.value;
         setSpecialPrompts(specialPrompts);
         summarize_email_separator_save_btn.disabled = true;
@@ -261,6 +275,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     summarize_reset_btn.disabled = (summarize_textarea.value === browser.i18n.getMessage("prompt_summarize_full_text"));
     summarize_email_separator_textarea.value = summarize_email_separator.text;
     summarize_email_separator_reset_btn.disabled = (summarize_email_separator_textarea.value === browser.i18n.getMessage("prompt_summarize_email_separator_full_text"));
+    // A text enforced by the policy is shown (getSpecialPrompts() overlaid it) but not editable.
+    // Each of the three is enforced on its own.
+    await lockEnforcedPromptText(summarize_textarea, ['prompt_summarize'],
+        [summarize_save_btn, summarize_reset_btn], taLog.do_debug);
+    await lockEnforcedPromptText(summarize_textarea_email_template, ['prompt_summarize_email_template'],
+        [summarize_save_email_template_btn, summarize_reset_email_template_btn], taLog.do_debug);
+    await lockEnforcedPromptText(summarize_email_separator_textarea, ['prompt_summarize_email_separator'],
+        [summarize_email_separator_save_btn, summarize_email_separator_reset_btn], taLog.do_debug);
 
     // Full list, kept for token validation. Deliberately NOT filtered like the
     // suggestions: {%additional_text%} is a real placeholder that this page simply

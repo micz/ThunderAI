@@ -43,7 +43,13 @@ import {
 import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
-import { applyManagedUI, seedFromGlobal, isLockedKey } from '../_lib/managed-ui.js';
+import {
+    applyManagedUI,
+    seedFromGlobal,
+    isLockedKey,
+    lockEnforcedPromptText,
+    isEnforcedPromptText
+} from '../_lib/managed-ui.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -191,6 +197,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     get_calendar_event_reset_btn.addEventListener('click', () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isEnforcedPromptText('prompt_get_calendar_event') ||
+            isEnforcedPromptText('prompt_get_calendar_event_from_clipboard')) return;
         get_calendar_event_textarea.value = browser.i18n.getMessage('prompt_get_calendar_event_full_text');
         get_calendar_event_reset_btn.disabled = true;
         let event = new Event('input', { bubbles: true, cancelable: true });
@@ -198,6 +207,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     get_calendar_event_save_btn.addEventListener('click', async () => {
+        // The button being disabled is not the same as the action being unavailable. This
+        // textarea saves both calendar prompts, so either one being enforced locks it.
+        if (isEnforcedPromptText('prompt_get_calendar_event') ||
+            isEnforcedPromptText('prompt_get_calendar_event_from_clipboard')) return;
         // The same rule the switch enforces when it is turned on, applied from the other
         // side: with "Do not ask to select text" on, a prompt that does not read the body
         // would be sent with no message text at all. Reset needs no check of its own - it
@@ -221,6 +234,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     get_calendar_event_textarea.value = get_calendar_event_prompt.text;
     get_calendar_event_reset_btn.disabled = (get_calendar_event_textarea.value === browser.i18n.getMessage('prompt_get_calendar_event_full_text'));
+    // A text enforced by the policy is shown (getSpecialPrompts() overlaid it) but not editable.
+    // The policy validation gives the clipboard prompt the same text unless it names it too.
+    await lockEnforcedPromptText(get_calendar_event_textarea,
+        ['prompt_get_calendar_event', 'prompt_get_calendar_event_from_clipboard'],
+        [get_calendar_event_save_btn, get_calendar_event_reset_btn], taLog.do_debug);
     updateNoSelectionPolicyNote();
 
     // Full list, kept for token validation. Deliberately NOT filtered like the

@@ -50,6 +50,8 @@ import {
     seedFromGlobal,
     isLockedKey,
     lockCompanions,
+    lockEnforcedPromptText,
+    isEnforcedPromptText,
     setDisabledRespectingManaged
 } from '../_lib/managed-ui.js';
 
@@ -165,6 +167,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     add_tags_auto_uselist_list.disabled = !add_tags_auto_uselist.checked;
 
     addtags_reset_btn.addEventListener('click', () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isEnforcedPromptText('prompt_add_tags')) return;
         addtags_textarea.value = browser.i18n.getMessage('prompt_add_tags_full_text');
         addtags_reset_btn.disabled = true;
         let event = new Event('input', { bubbles: true, cancelable: true });
@@ -172,6 +176,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     addtags_save_btn.addEventListener('click', () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isEnforcedPromptText('prompt_add_tags')) return;
         specialPrompts.find(prompt => prompt.id === 'prompt_add_tags').text = addtags_textarea.value;
         setSpecialPrompts(specialPrompts);
         addtags_save_btn.disabled = true;
@@ -184,6 +190,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     addtags_textarea.value = addtags_prompt.text;
     addtags_reset_btn.disabled = (addtags_textarea.value === browser.i18n.getMessage('prompt_add_tags_full_text'));
+    // A text enforced by the policy is shown (getSpecialPrompts() overlaid it) but not editable.
+    await lockEnforcedPromptText(addtags_textarea, ['prompt_add_tags'],
+        [addtags_save_btn, addtags_reset_btn], taLog.do_debug);
 
     document.getElementById('add_tags_maxnum').addEventListener('change', updateAdditionalPromptStatements);
     document.getElementById('add_tags_force_lang').addEventListener('change', updateAdditionalPromptStatements);

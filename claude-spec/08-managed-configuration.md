@@ -99,8 +99,9 @@ policy-configured profile — and the write guard was inert in pages, because
   the first preference read), so it just awaits the load. It never starts anything, and so
   the background can never end up messaging itself;
 - **everywhere else** — it starts `_hydrate()` once and awaits it. `_hydrate()` sends
-  `{command: 'get_managed_values'}` and fills `_values` / `_locked` from
-  `{values, lockedKeys}` (a locked key without a value is dropped).
+  `{command: 'get_managed_values'}` and fills `_values` / `_locked` / `_specialPromptsText`
+  from `{values, lockedKeys, specialPromptsText}` (a locked key without a value is dropped;
+  a non-string text is dropped).
 
 Hydration is started by the **first preference read**, never by importing the module, and
 never calls `browser.storage.managed` — the reason for the import rule above does not apply
@@ -223,6 +224,7 @@ Keys starting with `_` are structures and metadata, never preferences. **No key 
 | `_org_name` | display name, for the banner and markers |
 | `_org_id` | `[a-z0-9-]+`, the prompt-id namespace |
 | `_org_prompts` | the fourth prompt set |
+| `_special_prompts_text` | enforced text of special prompts, `{<special prompt id>: <text>}`; **enforced only**, see [below](#enforced-special-prompt-texts-_special_prompts_text) |
 | `_disable_prompt_management` | restriction: no prompt creation, copy, import or export; existing custom prompts read-only and inactive |
 | `_disable_default_prompts` | restriction: the built-in prompts are not available in the menus |
 | `_disable_setup_wizard` | restriction: the setup wizard cannot be opened |
@@ -399,6 +401,143 @@ This is deliberately **not** paired with UI validation forbidding an `org_` pref
 would be bypassable by writing to storage directly, adds nothing to a runtime rule that is
 not, and would forbid a prefix a user may already be using legitimately.
 
+## Enforced special prompt texts (`_special_prompts_text`)
+
+Replaces and enforces the **text** of special prompts (Spam Filter, Add Tags, Summarize,
+Translate, Calendar Event, Task). Neither of the other two mechanisms can do it: the text
+lives in `_special_prompts`, not in `prefs_default`, so the allowlist cannot reach it, and
+`_org_prompts` only creates new `org_<org_id>_*` prompts.
+
+```json
+"_special_prompts_text": {
+  "prompt_spamfilter": "… {%mail_html_body%} … {\"explanation\": …, \"spamValue\": …}"
+}
+```
+
+**Enforced only — there is no `:locked` variant.** There is no preference behind a prompt
+text, so nothing for the lock convention to downgrade to an initial value. A
+`"_special_prompts_text:locked"` key is warned about and ignored; the texts stay enforced.
+Only the text is covered: every other property of the special prompt (icon, menu visibility,
+provider override) stays the user's.
+
+### Validation
+
+`validateSpecialPromptsText()` in [`js/mzta-managed.js`](../js/mzta-managed.js), same style
+as `validateOrgPrompts()`: the value must be a plain object, and each entry is checked on its
+own — an invalid one is skipped with a `taLogger.warn()` naming it, the rest still apply.
+
+- the key must be the id of an entry in `specialPrompts` ([js/mzta-prompts.js](../js/mzta-prompts.js),
+  `getSpecialPromptIds()`), **including the non-menu ones**: `prompt_summarize_email_template`,
+  `prompt_summarize_email_separator` and `prompt_get_calendar_event_from_clipboard`;
+- the value must be a non-empty string, and not whitespace only — except
+  `prompt_summarize_email_separator`, for which whitespace is a legitimate text;
+- the text must satisfy the **response contract** below.
+
+`js/mzta-prompts.js` owns the ids and the contract; `mzta-managed.js` imports it
+**dynamically** inside `_doLoad()`, because `mzta-prompts.js` statically imports
+`mzta-managed.js`.
+
+The calendar page edits `prompt_get_calendar_event` and `…_from_clipboard` through **one**
+textarea and always saves both. So an enforced `prompt_get_calendar_event` also applies to
+the clipboard variant, unless the policy names that id too (even with an invalid value — an
+administrator who named it did not ask for the copy).
+
+### Output-format safety: the response contract
+
+Every special prompt whose answer is parsed carries its output format **inside the text**
+(`prompt_spamfilter_full_text` itself asks for `{"explanation", "spamValue"}`); the code
+only appends extras (`finalizePrompt_add_tags()`: tag count, language, allowed list). An
+administrator's text without that format would silently break the parser for the whole
+fleet, and the user could do nothing about it — which is the difference from the same
+mistake made by a user on their own feature page.
+
+The chosen approach is **validate and reject**, not "move the format into code":
+
+- moving the format out of the text would change the text every user edits today, need a
+  migration of every stored user text (which already contains the format) and new
+  translatable strings — a behaviour change for unmanaged users, which this mechanism must
+  never cause;
+- rejecting keeps the feature working: the user's own text stays in effect, and the
+  warning tells the administrator exactly which field is missing. Enforcing and warning
+  would have left a fleet with a feature that fails on every message.
+
+`SPECIAL_PROMPT_TEXT_CONTRACT` in `js/mzta-prompts.js`, checked by `checkSpecialPromptText()`:
+
+| Id | `responseKeys` (reject if missing) | Message placeholder (warn if missing) |
+|---|---|---|
+| `prompt_spamfilter` | `spamValue`, `explanation` | any body placeholder¹, or none at all² |
+| `prompt_add_tags` | `tags` | any body placeholder¹, or none at all² |
+| `prompt_get_calendar_event`, `…_from_clipboard` | `startDate`, `endDate`, `summary` | `selected_text`, `selected_html` or a body placeholder¹, or none at all² |
+| `prompt_get_task` | `summary` | as calendar |
+| `prompt_translate_this` | `subject`, `body`, `status` | `mail_html_body` or `mail_text_body`, **and** `thunderai_translate_lang` |
+| `prompt_summarize_email_template` | — | any body placeholder¹, or none at all² |
+| `prompt_summarize`, `prompt_summarize_email_separator` | — | — (free text) |
+
+¹ `mail_text_body`, `mail_html_body`, `mail_text_body_or_selected`, `mail_html_body_or_selected`.
+² `preparePrompt()` appends the message itself to a text with no placeholder at all.
+`buildTranslationPrompt()` never appends, hence the stricter translate row.
+
+A response key is matched as a whole, case-sensitive word — the parser's property access. It
+is a heuristic: it catches the likely mistake (an instruction rewritten without its output
+format), not a subtly malformed one. Only the keys without which the result is unusable are
+listed; the ones the shipped text itself calls optional (location, description,
+attendees…) are not. Every shipped text passes the contract.
+
+### Application: a read-time overlay, never persisted
+
+`applyEnforcedTexts()` runs at the end of `getSpecialPrompts()`, after
+`applyCalendarNoSelection()` and `applyLockedOffIntegrations()`: it replaces `text` and sets
+`_text_by_policy: true`. In pages the texts arrive with the hydration
+(`specialPromptsText` in the `get_managed_values` reply), and the overlay awaits
+`managedReady()`, so every context sees the same text.
+
+It must **never** reach storage: the feature pages rewrite the whole `_special_prompts`
+array, and a stored enforced text would replace the user's own and outlive the policy. Two
+gates, as for the provider override:
+
+- `_text_by_policy` is in `TRANSIENT_PROMPT_FLAGS`, so `setSpecialPrompts()` and
+  `preparePromptsForExport()` strip it;
+- `setSpecialPrompts()` runs `keepStoredTexts()`: for every enforced id it puts back the
+  **stored** text, or the shipped (i18n) text for a prompt never stored — what
+  `getSpecialPrompts()` would have handed out without the policy. The decision is by id,
+  from `mztaManaged`, synchronously, not by the marker, so it holds even for a caller that
+  dropped the marker. Before `loadManaged()` (the migration block) nothing is enforced and
+  it is a no-op.
+
+Removing the policy therefore restores the user's text **exactly**, including a legacy
+stored value that is still the raw i18n key.
+
+### UI
+
+`lockEnforcedPromptText(textarea, promptIds, companions)` in
+[`pages/_lib/managed-ui.js`](../pages/_lib/managed-ui.js), called by each of the six feature
+pages after it has filled the textarea and set its buttons' initial state (summarize: three
+times, one per textarea; calendar: with both calendar ids). It follows [Controls with their
+own load/save logic](#controls-with-their-own-loadsave-logic-data-mzta-pref), without a
+preference key:
+
+- the textarea already shows the enforced text (the overlay), and becomes **`readOnly`**,
+  not disabled, so the text can still be scrolled, selected and copied — a user may want to
+  start a custom prompt from it; it gets `data-mzta-managed="1"` and the
+  `managed_prompt_text_tooltip` title. `#mzta_card .editor-wrap .editor[data-mzta-managed="1"]`
+  in `mzta-design.css` hides the caret, since no `:disabled` styling applies;
+- the Save and Reset buttons are disabled and marked like `lockCompanions()` does;
+- the marker, padlock included, is appended to the textarea's `.mzta_field` column after the
+  button row — the list textareas' context, whose CSS already exists. `markManaged()` takes
+  that anchor explicitly: the textarea's own parent is the editor-highlight wrapper.
+
+Every Save and Reset handler also **returns early** on `isEnforcedPromptText(id)` (the
+calendar Save on either calendar id). Both helpers read `mztaManaged` after hydration, not
+the `get_managed_state` payload, which carries no prompt data.
+
+### Startup warning
+
+The feature pages' placeholder checks never see an enforced text, so the background
+`taLogger.warn()`s at startup for each enforced text that fails the placeholder column of
+the contract (`getEnforcedTextPlaceholderProblems()`). The text is still enforced — the
+administrator asked for it, and it runs. The existing `calendar_no_selection` startup check
+reads `getSpecialPrompts()`, so it covers an enforced calendar text on its own.
+
 ## Interaction points
 
 | Where | What |
@@ -409,6 +548,7 @@ not, and would forbid a prefix a user may already be using legitimately.
 | tag dialog in [js/mzta-compose-script.js](../js/mzta-compose-script.js) | a classic content script cannot import `mztaPrefs`. It reads `add_tags_exclusions`, `add_tags_hide_exclusions`, `add_tags_exclusions_exact_match` and the lock state through the `addtags_get_exclusion_prefs` background command, and writes the list through `addtags_set_exclusions` (→ `mztaPrefs.setPref()`, so the guard applies). When `add_tags_exclusions` is locked, the per-tag "exclude" icon is not rendered at all. No content script reads preferences from storage any more. |
 | `calendar_no_selection` ([js/mzta-prompts.js](../js/mzta-prompts.js)) | the behaviour used to be driven only by `need_selected` of `prompt_get_calendar_event`, written by the settings page's change listener, so a policy value showed a checked box and changed nothing. `need_selected` is now **derived** from the resolved preference on every `getSpecialPrompts()` read (never written because of the policy; see [02-prompts.md](02-prompts.md)), and the preference is in `MENU_RELEVANT_KEYS`. The page's placeholder check cannot stop a policy, so the background `taLogger.warn()`s at startup, and the page shows `prefs_OptionText_calendar_no_selection_policy_missing_placeholder` when the key is locked on, if the prompt has neither `{%mail_text_body_or_selected%}` nor `{%mail_html_body_or_selected%}`. The one-shot `migrateCalendarNoSelection()` aligned the preference once to the stored `need_selected`, so no unmanaged user changed behaviour on upgrade. |
 | per-feature provider override ([js/mzta-prompts.js](../js/mzta-prompts.js), [pages/_lib/connection-ui.js](../pages/_lib/connection-ui.js)) | the override lives in the special prompt (`api_type` + `{integration}_{key}`), not in a preference, so locking `{prefix}_use_specific_integration` to `false` did not stop an override saved before the policy: `getConnectionType()` and `initWorker()` still honoured `prompt.api_type`. `applyLockedOffIntegrations()` now hides it on every `getSpecialPrompts()` read — **locked-off case only**; unmanaged profiles and `getConnectionType()` are unchanged. It is a **read-time overlay that must never be persisted**: unlike `need_selected` above, a stored `api_type: ''` would erase the user's own override, so `setSpecialPrompts()` restores the stored override fields of those prompts (`keepStoredOverrides()`) and the override returns untouched when the policy is removed. The feature page keeps the toggle off, never forces it on as mandatory, and never calls `_updatePrompt()` / `clearPromptAPI()` while locked; the background `taLogger.warn()`s at startup for each locked-off feature with a stored override. Full treatment in [04-api-integrations.md](04-api-integrations.md#when-a-policy-locks-the-override-off). |
+| special prompt texts ([js/mzta-prompts.js](../js/mzta-prompts.js), the six feature pages) | `_special_prompts_text` is overlaid by `applyEnforcedTexts()` at the end of `getSpecialPrompts()` — third overlay, after the two above — and kept out of storage by `keepStoredTexts()` in `setSpecialPrompts()` plus the transient `_text_by_policy` marker. The feature pages make the textarea read-only and its Save/Reset inert (`lockEnforcedPromptText()`), and the background warns at startup about missing placeholders. See [Enforced special prompt texts](#enforced-special-prompt-texts-_special_prompts_text). |
 | sync → local migration ([js/mzta-prefs-migration.js](../js/mzta-prefs-migration.js)) | **deliberately untouched.** See below. |
 
 ### Why the migration is not guarded

@@ -2615,6 +2615,10 @@
     "message": "This setting is set by your organization's configuration policy and cannot be changed here.",
     "description": "Tooltip on the managed marker"
   },
+  "managed_prompt_text_tooltip": {
+    "message": "This prompt text is set by your organization's configuration policy and cannot be changed here. You can still select and copy it.",
+    "description": "Tooltip on a special prompt text editor (Spam Filter, Add Tags, Summarize, Translate, Calendar Event, Task settings pages) whose text is enforced by an enterprise policy"
+  },
   "managed_restriction_tooltip": {
     "message": "This action is disabled by your organization's configuration policy.",
     "description": "Tooltip on a button or link disabled by an enterprise policy restriction"

@@ -60,6 +60,9 @@ const POLICY_SCHEMA_VERSION = '_schema_version';
 const POLICY_ORG_NAME = '_org_name';
 const POLICY_ORG_ID = '_org_id';
 const POLICY_ORG_PROMPTS = '_org_prompts';
+// {<special prompt id>: <enforced text>}. Enforced only: there is no preference behind a
+// special prompt's text, so nothing for the ":locked" convention to downgrade to.
+const POLICY_SPECIAL_PROMPTS_TEXT = '_special_prompts_text';
 
 // Restrictions: policy-only switches that take something away from the user rather than
 // set a preference. They are structural keys, not entries in prefs_default, because there
@@ -148,6 +151,7 @@ export const mztaManaged = {
     _orgName: '',
     _orgId: '',
     _orgPrompts: [],
+    _specialPromptsText: {}, // {special prompt id: enforced text}, validated
     _schemaVersion: 0,
     _disablePromptManagement: false,
     _disableDefaultPrompts: false,
@@ -235,6 +239,14 @@ export const mztaManaged = {
             const locked = Array.isArray(reply.lockedKeys) ? reply.lockedKeys : [];
             this._values = { ...reply.values };
             this._locked = new Set(locked.filter(k => this.hasManagedValue(k)));
+            // Already validated by the background; only the shape is re-checked here.
+            const texts = reply.specialPromptsText;
+            this._specialPromptsText = {};
+            if (texts && typeof texts === 'object' && !Array.isArray(texts)) {
+                for (const [id, text] of Object.entries(texts)) {
+                    if (typeof text === 'string') this._specialPromptsText[id] = text;
+                }
+            }
         } catch (e) {
             this.logger.warn('Could not hydrate the managed configuration: ' + e);
         }
@@ -288,6 +300,7 @@ export const mztaManaged = {
                             ? value.trim().toLowerCase() : '';
                         break;
                     case POLICY_ORG_PROMPTS:
+                    case POLICY_SPECIAL_PROMPTS_TEXT:
                         // Validated in pass 3, once the rest of the policy is known.
                         break;
                     case POLICY_DISABLE_PROMPT_MANAGEMENT:
@@ -358,6 +371,11 @@ export const mztaManaged = {
 
         // A ":locked" modifier for a key that carries no value has nothing to act on.
         for (const target of Object.keys(lock_overrides)) {
+            if (target === POLICY_SPECIAL_PROMPTS_TEXT) {
+                this.logger.warn('Policy: "' + target + LOCK_SUFFIX + '" is not supported, ' +
+                    'ignored: a special prompt text set by policy is always enforced.');
+                continue;
+            }
             if (!(target in this._values)) {
                 this.logger.warn('Policy: "' + target + LOCK_SUFFIX + '" has no matching ' +
                     'value for "' + target + '", ignored.');
@@ -370,10 +388,21 @@ export const mztaManaged = {
                 policy[POLICY_ORG_PROMPTS], this._orgId, this.logger);
         }
 
+        // Enforced special prompt texts. js/mzta-prompts.js owns the special prompt ids and
+        // what their texts must contain; imported dynamically because it statically imports
+        // this module.
+        if (POLICY_SPECIAL_PROMPTS_TEXT in policy) {
+            const { getSpecialPromptIds, checkSpecialPromptText } = await import('./mzta-prompts.js');
+            this._specialPromptsText = validateSpecialPromptsText(
+                policy[POLICY_SPECIAL_PROMPTS_TEXT], getSpecialPromptIds(),
+                checkSpecialPromptText, this.logger);
+        }
+
         // A policy that only restricts - no preference, no prompt - is still a policy: the
         // banner and the disabled buttons must be explained, so it counts as active.
         this._active = (Object.keys(this._values).length > 0) ||
                        (this._orgPrompts.length > 0) ||
+                       (Object.keys(this._specialPromptsText).length > 0) ||
                        this._disablePromptManagement ||
                        this._disableDefaultPrompts ||
                        this._disableSetupWizard;
@@ -386,7 +415,10 @@ export const mztaManaged = {
             this.logger.log('Managed configuration active' +
                 (this._orgName ? ' for "' + this._orgName + '"' : '') +
                 ', ' + Object.keys(this._values).length + ' preference(s), ' +
-                this._orgPrompts.length + ' organization prompt(s).');
+                this._orgPrompts.length + ' organization prompt(s), ' +
+                Object.keys(this._specialPromptsText).length + ' enforced special prompt text(s)' +
+                (Object.keys(this._specialPromptsText).length > 0
+                    ? ' (' + Object.keys(this._specialPromptsText).join(', ') + ')' : '') + '.');
             this.logger.log('Managed preferences: {' + summary.join(', ') + '}');
             const restrictions = [];
             if (this._disablePromptManagement) restrictions.push(POLICY_DISABLE_PROMPT_MANAGEMENT);
@@ -448,6 +480,20 @@ export const mztaManaged = {
     /** The validated organization prompts. Always an array, possibly empty. */
     getOrgPrompts() {
         return this._orgPrompts;
+    },
+
+    /**
+     * The enforced special prompt texts, {id: text}, as a copy (safe to send over
+     * runtime.sendMessage). Empty object when the policy enforces none.
+     */
+    getSpecialPromptsText() {
+        return { ...this._specialPromptsText };
+    },
+
+    /** The enforced text of this special prompt, or undefined when the policy sets none. */
+    getSpecialPromptText(id) {
+        return Object.prototype.hasOwnProperty.call(this._specialPromptsText, id)
+            ? this._specialPromptsText[id] : undefined;
     },
 
     /**
@@ -605,6 +651,66 @@ function validateOrgPrompts(raw, orgId, logger) {
         });
     });
 
+    return out;
+}
+
+/**
+ * Validate the _special_prompts_text object: {<special prompt id>: <enforced text>}.
+ *
+ * Same shape as validateOrgPrompts(): each entry is checked on its own, a bad one is dropped
+ * with a warning naming it, and the rest still apply.
+ *
+ * The response format is part of the text (the shipped prompt_spamfilter_full_text itself
+ * asks for {"explanation", "spamValue"}), not appended by code, so a text that no longer
+ * names the keys the parser reads would break the feature for the whole fleet with nothing
+ * the user could do about it. Such a text is REJECTED - the user's own text stays in effect -
+ * rather than enforced with a warning. Missing placeholders are not rejected here: the text
+ * still runs, it just may not see the message, and the background warns at startup.
+ *
+ * prompt_get_calendar_event and prompt_get_calendar_event_from_clipboard are edited through
+ * one textarea and always saved together, so an enforced text for the first also applies to
+ * the second unless the policy names that one too.
+ */
+function validateSpecialPromptsText(raw, validIds, checkText, logger) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+        logger.warn('Policy: "' + POLICY_SPECIAL_PROMPTS_TEXT + '" must be an object ' +
+            'mapping special prompt ids to texts, ignored.');
+        return {};
+    }
+
+    const out = {};
+    for (const [id, text] of Object.entries(raw)) {
+        const where = '"' + POLICY_SPECIAL_PROMPTS_TEXT + '"["' + id + '"]';
+        if (!validIds.includes(id)) {
+            logger.warn('Policy: ' + where + ' is not a special prompt id, skipped. Valid ids: ' +
+                validIds.join(', ') + '.');
+            continue;
+        }
+        if (typeof text !== 'string' || text === '') {
+            logger.warn('Policy: ' + where + ' must be a non-empty string, skipped.');
+            continue;
+        }
+        const check = checkText(id, text);
+        if (check.blank) {
+            logger.warn('Policy: ' + where + ' contains only whitespace, skipped.');
+            continue;
+        }
+        if (check.missingResponseKeys.length > 0) {
+            logger.warn('Policy: ' + where + ' does not ask for the response field(s) ' +
+                check.missingResponseKeys.map(k => '"' + k + '"').join(', ') +
+                ' that ThunderAI reads from the answer, skipped: the feature could not use ' +
+                'the response. Keep the output format of the default text. The user\'s own ' +
+                'text stays in effect.');
+            continue;
+        }
+        out[id] = text;
+    }
+
+    const CALENDAR = 'prompt_get_calendar_event';
+    const CLIPBOARD = 'prompt_get_calendar_event_from_clipboard';
+    if ((CALENDAR in out) && !(CLIPBOARD in raw)) {
+        out[CLIPBOARD] = out[CALENDAR];
+    }
     return out;
 }
 
