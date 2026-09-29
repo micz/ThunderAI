@@ -182,6 +182,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `dynamic_menu_order_alphabet` | `true` | Internal migration flag only; no UI. **Not declared in `prefs_default`** — unlike every other preference, its default (`true`) is hardcoded in the `browser.storage.local.get()` call in `js/mzta-prompts.js`, not in `options/mzta-options-default.js`. **Because that default means "not yet run", the flag has to be carried across by `migratePrefsToLocal()`** — reading it from an area the migration did not populate would re-run `migrateMenuOrderAlphabetic()` and overwrite the user's custom menu ordering. Set to `false` by `migrateMenuOrderAlphabetic()` on first boot after upgrade to bootstrap position-based ordering. It is therefore also one of the two deliberate **bypasses** of `js/mzta-prefs.js` — see [Preference access](#preference-access-jsmzta-prefsjs). See `claude-spec/02-prompts.md` for details. |
 | `placeholders_use_default_value` | `false` | Use placeholder defaults when empty |
 | `hide_thinking` | `true` | Controls the initial state of the thinking `<details>` block prepended above the answer: `true` = collapsed by default, `false` = open by default. The user can always toggle with a click; thinking content is never discarded. |
+| `chat_show_usage_data` | `true` | Show the token counts the API reports as a chip in each answer's action bar in the chat window, whose detail popover also shows the context used and the session total. **Row visibility is conditional**: `disable_ChatShowUsageData()` in `options/mzta-options.js` hides `#chat_show_usage_data_tr` unless at least one *currently configured* integration reports usage — the global `connection_type` or any `special_prompts_with_integration` prefix resolved through `getConnectionType()`, tested with `supportsUsageData()` from `js/mzta-utils.js`. A web-only setup never sees the row. The nested `#chat_show_usage_data_openai_comp_note` is shown only when one of those types is `openai_comp_api`, because availability then depends on the specific server. Both are `display:none` in the markup so there is no flash before the function runs, and the function is called at load, on every `connection_type` change, and from the `storage.onChanged` handler that also refreshes the feature rows. |
 | `diff_granularity` | `'words'` | Comparison unit the proofreading change picker **opens with**: `'words'` or `'sentences'`. The picker's own toolbar toggle changes it for the current review; there is no per-prompt override — see [07-diff-picker.md](07-diff-picker.md). Rendered as a `<select>` in the advanced section; needs an explicit entry in `restoreOptions()`'s `select-one` branch, since a select restoring to `''` would render blank. |
 | `max_prompt_length` | `30000` | Max prompt string length |
 | `special_command_timeout` | `120000` | Timeout (ms) before a hung special-command API worker is aborted (`js/mzta-special-commands.js`). Exposed in the main options page as a number input; **always shown** (not hidden for ChatGPT Web), because a single special prompt may use a specific API even when the global `connection_type` is `chatgpt_web`. Has no effect on ChatGPT Web connections, which use no API worker. |
@@ -213,6 +214,10 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `calendar_no_selection` | `false` | Skip selection prompt |
 | `calendar_append_email_link` | `false` | Append a `mid:` link to the source email to the event description (added by code after the response, never sent to the AI — see [02-prompts.md](02-prompts.md#calendar-event--task-link-to-the-original-email)). Deliberately **not** prefixed `get_calendar_event_`, which is the per-feature integration prefix |
 | `task_append_email_link` | `false` | Same, for the task description. Deliberately **not** prefixed `get_task_` |
+| `calendar_reminder_enabled` | `false` | "Let the AI set a reminder" for events: ask for `reminderMinutes` and send `-1` (no reminder) when the AI returns none/invalid; Thunderbird's default when the AI answers `"default"` (no rules given at all). It is the **single switch**: when false, `reminderMinutes` is always dropped from the AI response (Thunderbird's default), even if the main prompt asks for it — see [02-prompts.md](02-prompts.md#calendar-event--task-reminder-887). Not prefixed `get_calendar_event_` (integration prefix) |
+| `calendar_reminder_rules` | `''` | Optional natural-language reminder rules, appended to the event prompt (after `prompt_reminder_rules_intro`) only when `calendar_reminder_enabled` is true |
+| `task_reminder_enabled` | `false` | Same as `calendar_reminder_enabled`, for tasks (reference: due date, or initial date) |
+| `task_reminder_rules` | `''` | Same as `calendar_reminder_rules`, for tasks |
 | `spamfilter` | `false` | Enable spam filter |
 | `spamfilter_threshold` | `70` | Spam confidence threshold (%) |
 | `spamfilter_enabled_accounts` | `[]` | Accounts where spam filter is active |
@@ -687,6 +692,62 @@ A successful Ollama test also re-runs `updateOllamaModelCapabilityUI()`, because
 host permission through the test is often what makes `/api/show` reachable in the first place
 — see [04-api-integrations.md](04-api-integrations.md#ollama-ollama_api).
 
+### Connection Settings Panel — "Update list" Model Fetch Buttons
+
+Each API provider's model row in `injectConnectionUI()` (`.models_fetch_row`) holds the model
+select, the `btnUpdate<Provider>Models` button (refresh icon `MODELS_REFRESH_SVG` + text in a
+`<span>`) and a `<provider>_model_fetch_loading` span (class `.models_fetch_loading`); below the
+row sits a `<provider>_model_fetch_status` box. All ids carry the `modelId_prefix`.
+
+The status box (`.models_fetch_status`) is a `role="status"` / `aria-live="polite"` region, hidden
+when empty. It is right-aligned text in plain inline flow (not flex: with flex the wrapped text
+becomes one full-width item and the icon ends up far left), so it sits under the button and wraps
+naturally. The leading `::before` is an inline-block icon drawn as a CSS mask filled with
+`currentColor` (alert-circle, or check-circle with `.is_ok`), so it stays next to the first word
+of the text and follows the red/green state colour.
+
+**OpenAI Comp label row.** The label cell of the OpenAI Comp models field is a
+`.models_label_row` flex row: the label on the left and, in `.models_label_actions`, two small
+ghost buttons separated by a `.models_action_divider`, "+ Add manually"
+(`btnOpenAICompForceModel`, `.models_action_add`, accent colour, prompts for a model name) and
+"Clear list" (`btnOpenAICompClearModelsList`, `.models_action_clear`, muted, turning to the
+error colour on hover, asks for a native `confirm()` first). On narrow widths the actions wrap
+below the label, still right-aligned. Their colours come from the provider tint
+(`--tint-accent` / `--tint-border`, set on `#mzta_conn_panel.tint_<provider>` or by the Custom
+Prompts page) with the base tokens of either design system as fallback; the base rules are in
+`connection-ui.css`, and `mzta-design.css` undoes the bordered `#connection_ui_table button`
+style for them.
+
+The click handlers drive the row through `modelsFetchUI(modelId_prefix, btnId, provider)`:
+
+- **loading** — the button is hidden (`display:none`) and the loading label takes its place, so
+  it cannot be clicked twice; any previous status message is cleared. (`setStatus()` unhides the
+  box before writing its text, so the live region announces the change.) The label holds the same
+  `MODELS_REFRESH_SVG` icon as the button, spinning (`models_fetch_spin`, off under
+  `prefers-reduced-motion`), and is shown as `inline-flex`. Just before hiding the button, its
+  `offsetWidth` and computed `font` / `letter-spacing` / `color` are copied onto the label
+  (centred, not italic), so the label looks like the button text and the row does not shift.
+  This is read at runtime because every host page styles its buttons differently.
+- **done** (success) — the list is merged into the select, the button comes back and the status
+  box shows `Models_Fetch_Done` in green (`.is_ok`). After `MODELS_FETCH_OK_VISIBLE_MS` (30 s)
+  `.is_fading` fades it out (1 s opacity transition, `MODELS_FETCH_OK_FADE_MS`) and it is then
+  hidden. The timers are stored on the status element, because `modelsFetchUI()` builds a new
+  object per click: a new click cancels the pending fade.
+- **error** — the button comes back immediately and the reason is written in red in the status
+  box, with no timer: it stays until the next click. This replaces the old `alert()`s and
+  covers HTTP errors, a denied optional host permission (ChatGPT, Claude), Ollama's "no
+  models" and network exceptions.
+
+The fetch goes through `fetchModelsWithTimeout(client)`, the same `Promise.race` as the
+connection test: none of the `fetchModels()` implementations sets its own timeout, so after
+`MODELS_FETCH_TIMEOUT_MS` (20 s) the row reports `connTest_error_timeout`. It always resolves
+to an `{ok, error|response}` result, also when `fetchModels()` throws. Every implementation,
+OpenAIComp included, catches its own network errors and resolves `{ok:false, is_exception:true,
+error}`, so the `catch` there is only a safety net. OpenAIComp also accepts a bare-array
+`/models` answer besides `{data:[...]}`, and turns any other shape into an empty list.
+`parseModelsFetchError()` extracts `error.message` from a JSON error body. The `warn_*()` helpers
+still manage the button's `disabled` state, independently of its visibility.
+
 ### Setup Wizard (`pages/setup-wizard/`)
 
 A guided **first-run flow** that walks a new user through the minimum needed to get
@@ -903,7 +964,11 @@ via `getFeatureConnState(prefs_opt, 'get_calendar_event')` and `…, 'get_task')
 in `special_prompts_with_integration`, so they take specific integrations like the other four. It
 previously read the global select directly, which made the UI *more* restrictive than the execution
 path (`mzta-menus.js` already honoured the override). Sparks presence (`checkSparksPresence()`)
-stays an orthogonal, additional requirement. The "Sparks missing" notice (`#no_sparks`) is hidden
+stays an orthogonal, additional requirement. `sparks_min` is `'3.1.0'` since v5.1.0, because the
+payloads may carry `reminderMinutes` (#887); an older Sparks returns `0` from `checkSparksPresence()`,
+so both rows (and with them the "Manage" buttons opening the two settings pages) are hidden, the
+`wrong_sparks_text` banner is shown and `doGetSparkFeature()` drops the menu entries — an old Sparks
+never receives the new field. The "Sparks missing" notice (`#no_sparks`) is hidden
 when **both** features are unusable on their own connection — with a per-feature judgement, keying
 it on a single global flag would hide a genuinely missing add-on.
 
@@ -1213,6 +1278,37 @@ handler, so they are unaffected.
 
 Each page calls `initUnsavedGuard()` as the first statement of its `DOMContentLoaded`
 handler, so the guard is armed even if later async setup fails.
+
+### Reminder Section (Calendar Event / Task pages, `pages/_lib/reminder-ui.js`)
+
+Both pages carry the same "Let the AI set a reminder" section (#887), placed **after** the prompt
+section (its help text refers to "the main prompt above"), with the same ids on both pages except the
+checkbox, whose id is the pref (`calendar_reminder_enabled` / `task_reminder_enabled`).
+`initReminderUI({feature, promptTextarea, statementsEl})` is called right after the prompt text is
+loaded (so after `restoreOptions()`, which sets the checkbox state), and **before** the editor
+decoration (placeholders, highlight, autocomplete), so a failure there cannot leave the section
+uninitialized. A missing page element is logged and the setup is skipped. A failure loading the saved
+rules is logged and the setup continues with an empty textarea: the listeners and the first
+`refresh()` always run. A failed save is logged and leaves the Save button enabled. It does the following:
+- The checkbox is a plain `.option-input`, saved by the page's `saveOptions()`. It shows or hides
+  `#reminder_rules_block`, which is hidden by default in the page CSS.
+- The rules textarea `#reminder_rules` uses the **explicit Save** pattern (`#btn_save_reminder_rules`,
+  `#reminder_rules_unsaved`), the same one as `summarize_auto_senders_list`, so the unsaved-changes guard
+  above covers it. The value is stored trimmed. It is a **plain** textarea without placeholder
+  highlighting, because the rules are appended after placeholder resolution (see
+  [02-prompts.md](02-prompts.md#calendar-event--task-reminder-887)).
+- The non-blocking warning `#reminder_prompt_warning` (`.feature_warn_note`, amber, shared in
+  `mzta-design.css`) is shown while the **live** prompt text contains `reminderMinutes` and the
+  checkbox is off. In that case the main prompt's reminder instructions are ignored (the AI value is
+  discarded, Thunderbird's default applies) until the option is checked.
+  It is refreshed on the prompt textarea's `input` and on the checkbox's `change`.
+- The existing `#{prefix}_info_additional_statements` div previews exactly what `finalizePrompt_*()`
+  will append, from `taPromptUtils.getReminderPromptParts()` on the live values (the same pieces
+  `getReminderPromptStatements()` joins for the real prompt), with the
+  `addtags_info_additional_statements` label. No quotes: the text sits in a boxed
+  `.reminder_statements_box` (shared in `mzta-design.css`), with the fixed format instruction dimmed
+  (`.reminder_statements_format`) and the user's rules, with their bold intro, set apart by an
+  accent left border (`.reminder_statements_rules`). Built through the DOM, since the rules are user text.
 
 ## Adding a New Preference
 

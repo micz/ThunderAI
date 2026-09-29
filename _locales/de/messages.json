@@ -621,9 +621,6 @@
     "prefs_SurveyLinkText2": {
         "message": "Geben Sie Ihr Feedback ab"
     },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Modell manuell einfügen"
-    },
     "OpenAIComp_force_model_ask": {
         "message": "Fügen Sie hier den Namen des Modells ein, das Sie verwenden möchten."
     },
@@ -1170,9 +1167,6 @@
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Möchten Sie die Modellliste wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
-    },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Modellliste löschen"
     },
     "prefs_OptionText_add_tags_auto_uselist": {
         "message": "Verwenden Sie nur diese Tags"

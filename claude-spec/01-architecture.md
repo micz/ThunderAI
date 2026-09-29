@@ -503,6 +503,28 @@ correctly discarded by `_sendIfCurrent()` — the spinner spins forever. So:
   surviving document — an already-open tab re-injected on extension reload — gets both
   generating panels removed when the script loads.
 
+**Panel HTML sanitization.** `_sendIfCurrent()` is also the single point where the panel
+payloads are sanitized: every send goes through `_sanitizePanelPayload(payload)` first. The
+summary / translation text is model output about a possibly crafted email, and the content
+script inserts it into the message pane, so a `<style>` or similar markup could restyle the
+message or hide ThunderAI's own panels.
+- `showSummary`: `data.summary_html` is passed through `sanitizeBlockHtml()` (`js/mzta-richtext.js`,
+  the ONE sanitizer).
+- `showTranslation`: `data.translated_text` is sanitized **only when it looks like HTML**, using the
+  same `/<[a-z][^>]*>/i` test as the content script's `_isHtml()`. Plain text is left untouched,
+  because a DOMParser round trip would encode `<` / `&` and the plain branch shows them literally.
+  HTML left with no tag after sanitizing is handed on as its decoded text.
+- The payload is copied, and the stored object is never modified. Because the gate sits on the
+  send and not on the save, **cached results** (including entries written by older versions)
+  cross it exactly like fresh ones, in both `summarize_display_mode`s (the webchat save,
+  `chatgpt_saveSummary`, sends through `_sendIfCurrent()` too).
+- Everything else in these panels (plain `summary`, `translated_subject`, error messages, the spam
+  report, `showGeneric*`) is rendered through `textContent` and needs no sanitizing.
+- Defense in depth in the content script: `_renderSafeHtml()` in `js/mzta-compose-script.js`, used
+  by **both** the summary and the translation panel, removes `script, img, style, link, iframe,
+  frame, frameset, object, embed, form, meta, base, svg, math, template, noscript`, every `on*` and
+  `style` attribute, and `javascript:` / `vbscript:` / `data:` URLs.
+
 `showSpamCheckInProgress` carries no id: `updateSpamPanel()` broadcasts it through
 `_sendToTabsDisplaying()`, which checks every tab's displayed message, and a joiner sends it to its
 own tab through `_sendIfCurrent()`. That is the *staleness* question; *delivery* is a separate
@@ -734,7 +756,7 @@ Worker. No framework, no build step; plain ES6 modules under the strict default 
 
 ```
 index.html
-  ├── #appHeader                           — logo, product name, static model chip (light DOM)
+  ├── #appHeader                           — logo, product name, static model chip, session token total (light DOM)
   ├── <messages-area>   (messagesArea.js)  — renders the conversation transcript
   ├── <message-input>   (messageInput.js)  — input field, send/stop buttons, status pill
   └── controller.js                        — DI / worker wiring (see below)
@@ -754,6 +776,7 @@ Worker → controller.js → components
   messageSent      → messageInput.handleMessageSent()
   newToken         → messagesArea.handleNewToken(token)          (feeds StreamingMessage + fading span)
   newThinkingToken → messagesArea.handleNewThinkingToken(token)  (feeds StreamingMessage + live "Thinking…" indicator)
+  usage            → messagesArea.handleUsageData(messageId, payload)  (token-usage chip; optional, see below)
   tokensDone       → messagesArea.handleTokensDone(promptData)   (flush → action buttons)
   error            → messagesArea.appendBotMessage(payload,'error') + messageInput.showErrorStatus()
 
@@ -762,6 +785,12 @@ background → controller.js (browser.runtime commands)
   api_send_custom_text → merge custom text into the prompt, then send
   api_error            → render an error bot message
 ```
+
+The `usage` message is **separate from `tokensDone` and carries no response text**, and is only
+emitted when `chat_show_usage_data` is on and the integration reports usage. It is posted *before*
+`tokensDone` so it lands while the turn it belongs to is still open. See
+[04-api-integrations.md](04-api-integrations.md#emitting-to-the-chat-window) for the worker side and
+the DOM-extraction invariants.
 
 Per bot response a fresh `StreamingMessage` accumulates raw + thinking tokens and, on flush,
 returns an **immutable HTML snapshot**; `<messages-area>` renders it and hands the thinking
@@ -1143,7 +1172,8 @@ classic-script constraint:
   (default collapses `\n{2,}` for the body contract, `{keepParagraphs}` caps at `\n\n` for insertion,
   `{keepColumns}` is verbatim for `{%mail_plain_text_part%}`).
 - **`js/mzta-richtext.js`** — an **ES module** hosting the ONE **sanitizer** + **tag taxonomy** (see
-  the render section above and [07-diff-picker.md](07-diff-picker.md)), plus **`globalThis`
+  the render section above and [07-diff-picker.md](07-diff-picker.md); the background also uses it
+  for the summary/translation panel payloads, see *Panel HTML sanitization*), plus **`globalThis`
   re-exports** of the projection above (`htmlToLines`/`linesToHtml`/`normalizePlain`/
   `hasLineStructure`) so module-world callers get a clean `import`. The re-exports resolve the global
   at CALL time, so the module loads fine even where the classic script is absent as long as they are
@@ -1477,7 +1507,7 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 | `js/mzta-menus.js` | Context menu creation and management |
 | `js/mzta-prompts.js` | Prompt definitions (built-in) and custom prompt loading |
 | `js/mzta-placeholders.js` | Placeholder definitions and resolution logic |
-| `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.). Shared message-inspection helpers used by the auto-processing features: `extractEmail()` (the single copy of the address regex — **case-preserving**, since `getIdentityForMessage()` compares against the configured identities), `matchAddressList()` / `hasAddressListEntries()`, `messageFolderHasSpecialUse()` / `isMessageInAutoSkippedFolder()` (+ the `AUTO_SKIP_SPECIAL_USE` list); `sendTabMessageSafe()` (tabs.sendMessage guarded against tabs with no reachable message browser — see [Unreachable message pane](#unreachable-message-pane-sendtabmessagesafe-901)) |
+| `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.). Shared message-inspection helpers used by the auto-processing features: `extractEmail()` (the single copy of the address regex — **case-preserving**, since `getIdentityForMessage()` compares against the configured identities; prefers the `<...>` part of the header, keeps RFC 5322 local parts such as `user+tag` / `o'brien` and Unicode addresses whole, returns `''` for non-string input), `matchAddressList()` / `hasAddressListEntries()`, `messageFolderHasSpecialUse()` / `isMessageInAutoSkippedFolder()` (+ the `AUTO_SKIP_SPECIAL_USE` list); `sendTabMessageSafe()` (tabs.sendMessage guarded against tabs with no reachable message browser — see [Unreachable message pane](#unreachable-message-pane-sendtabmessagesafe-901)) |
 | `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection, `buildSummaryPrompt()` for unified summary prompt assembly, `buildTranslationPrompt()` for translation prompt assembly) |
 | `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders unified toolbar (spam badge, summary/translation trigger buttons) and content panels (generic error, spam explanation, summary, translation) in message display via `#mzta-container` |
 | `js/mzta-chatgpt.js` | ChatGPT Web integration (opens browser window, reads DOM) |

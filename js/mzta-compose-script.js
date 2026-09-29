@@ -163,8 +163,7 @@ const _TOOLBAR_SLOT_ORDER = ['mzta-toolbar-spam', 'mzta-toolbar-summary', 'mzta-
 
 function _addToolbarItem(id, element) {
     const { toolbar } = _ensureContainer();
-    const existing = document.getElementById(id);
-    if (existing) existing.remove();
+    _detachToolbarItem(document.getElementById(id));
     element.id = id;
 
     const myIndex = _TOOLBAR_SLOT_ORDER.indexOf(id);
@@ -179,9 +178,16 @@ function _addToolbarItem(id, element) {
     _updateToolbarVisibility();
 }
 
+// An item may hold resources that outlive its node (the spam badge's ResizeObserver):
+// it exposes them as _mztaCleanup, released here on every removal or replacement.
+function _detachToolbarItem(el) {
+    if (!el) return;
+    if (el._mztaCleanup) el._mztaCleanup();
+    el.remove();
+}
+
 function _removeToolbarItem(id) {
-    const el = document.getElementById(id);
-    if (el) el.remove();
+    _detachToolbarItem(document.getElementById(id));
     _updateToolbarVisibility();
 }
 
@@ -231,11 +237,34 @@ function _isHtml(text) {
     return /<[a-z][^>]*>/i.test(text);
 }
 
+// Elements that must never reach the message pane from a panel payload: active
+// content, external resources, forms, document-level tags and style sheets (a
+// <style> could restyle the message or hide ThunderAI's own panels).
+const _UNSAFE_PANEL_TAGS = 'script, img, style, link, iframe, frame, frameset, object, embed, form, meta, base, svg, math, template, noscript';
+const _URL_ATTRS = ['href', 'src', 'action', 'formaction', 'xlink:href'];
+const _UNSAFE_URL_RE = /^(javascript|vbscript|data):/i;
+
+// Defense in depth: the background already runs every panel payload through the
+// shared sanitizer (_sanitizePanelPayload() in mzta-background.js), but this is
+// the last step before model HTML enters the pane, so it strips the dangerous
+// parts again on its own. The formatting the panels rely on (paragraphs, lists,
+// bold/italic, line breaks, links) is left alone.
 function _renderSafeHtml(container, html) {
     container.textContent = '';
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
-    doc.querySelectorAll('script, img').forEach(el => el.remove());
+    doc.querySelectorAll(_UNSAFE_PANEL_TAGS).forEach(el => el.remove());
+    doc.body.querySelectorAll('*').forEach(el => {
+        for (const attr of Array.from(el.attributes)) {
+            const name = attr.name.toLowerCase();
+            // Inline styles too: a model-supplied one can overlay or hide the pane.
+            if (name.startsWith('on') || name === 'style') {
+                el.removeAttribute(attr.name);
+            } else if (_URL_ATTRS.includes(name) && _UNSAFE_URL_RE.test(attr.value.replace(/[\s\u0000-\u001f]/g, ''))) {
+                el.removeAttribute(attr.name);
+            }
+        }
+    });
     while (doc.body.firstChild) {
         container.appendChild(doc.body.firstChild);
     }
@@ -1111,7 +1140,6 @@ switch (message.command) {
     _removeToolbarItem('mzta-toolbar-spam');
 
     const data = message.data;
-    if (document.getElementById('mzta-spam-report-banner')) return Promise.resolve(true);
 
     const colors = _getThemeColors(data.spamValue, data.SpamThreshold);
     const sc = colors.spam;
@@ -1210,23 +1238,40 @@ switch (message.command) {
 
     _addToolbarItem('mzta-toolbar-spam', badge);
 
+    // Always judge the overflow in the wider layout (branding + menu), never in the
+    // one currently showing. Measuring the current layout flipped forever when the
+    // text fit beside the chevron but not beside the branding: each layout proved the
+    // other right, and the badge height changed on every flip, which moved the whole
+    // email up and down [#929]. Measured this way, one width gives one answer.
     const _updateSpamVisibility = () => {
         if (badgeText.style.whiteSpace === 'normal') return; // already expanded, don't interfere
+        chevron.style.display = 'none';
+        branding.style.display = '';
+        spamMenu.style.display = 'inline-flex';
+        // The wide layout's row is the taller one (the ⋯ button). Holding the row at
+        // that height means a layout switch never moves the email below it, so it
+        // can't toggle the pane's scrollbar and hand the observer a new width.
+        topRow.style.minHeight = topRow.offsetHeight + 'px';
         if (badgeText.scrollWidth > badgeText.clientWidth) {
             chevron.style.display = 'inline';
             branding.style.display = 'none';
             spamMenu.style.display = 'none';
-        } else {
-            chevron.style.display = 'none';
-            branding.style.display = '';
-            spamMenu.style.display = 'inline-flex';
         }
     };
 
     requestAnimationFrame(_updateSpamVisibility);
 
-    const _spamResizeObserver = new ResizeObserver(_updateSpamVisibility);
+    // Only a new width can change the answer. Height changes are this badge's own
+    // layout switch, so they are ignored.
+    let _spamLastWidth = null;
+    const _spamResizeObserver = new ResizeObserver((entries) => {
+        const width = entries[entries.length - 1].contentRect.width;
+        if (width === _spamLastWidth) return;
+        _spamLastWidth = width;
+        _updateSpamVisibility();
+    });
     _spamResizeObserver.observe(badge);
+    badge._mztaCleanup = () => _spamResizeObserver.disconnect();
 
     return Promise.resolve(true);
   }
@@ -1286,20 +1331,10 @@ switch (message.command) {
     summaryText.className = 'thunderai-summary-content';
     const hasHtml = !!summaryData.summary_html && !summaryData.stripFormatting;
 
-    function setSummaryHtml(element, html) {
-        element.textContent = '';
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        while (doc.body.firstChild) {
-            element.appendChild(doc.body.firstChild);
-        }
-        element.querySelectorAll('p').forEach(p => { p.style.marginBlockStart = '0'; });
-    }
-
     if (summaryData.error) {
         summaryText.textContent = summaryData.message || browser.i18n.getMessage("summarize_error");
     } else if (hasHtml) {
-        setSummaryHtml(summaryText, summaryData.summary_html);
+        _renderSafeHtml(summaryText, summaryData.summary_html);
     } else {
         summaryText.textContent = summaryData.summary;
     }

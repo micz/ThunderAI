@@ -160,7 +160,7 @@ export async function runConnectionTest(connType) {
 
   let data;
   try {
-    // The probe resolves with {ok, error, is_exception}; OpenAIComp may throw on network error.
+    // The probe resolves with {ok, error, is_exception}; the catch is a safety net for an unexpected throw.
     // No automatic retry: the test must report the current state of the
     // connection right away, well within CONN_TEST_TIMEOUT_MS. fetchVersion()
     // ignores the argument.

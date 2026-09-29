@@ -24,12 +24,81 @@ import {
   ANTHROPIC_DEFAULT_EFFORT
 } from './anthropic_model_capabilities.js';
 import { fetchWithRetry } from './api-retry.js';
+import { createUsageData, isUsageDataEmpty, toUsageNumber } from './mzta-api-usage.js';
 
 // Smallest extended thinking budget the Messages API accepts. Anything lower is
 // rejected with a 400, so the request builder drops the budget below it and the
 // options page warns about it -- both read this constant, so the two rules cannot
 // drift apart.
 export const ANTHROPIC_MIN_THINKING_BUDGET = 1024;
+
+// While thinking is on, the models that accept sampling params at all only take
+// top_p within this range (temperature and top_k not at all). See "Sampling
+// parameters" in https://platform.claude.com/docs/en/build-with-claude/thinking
+const ANTHROPIC_THINKING_TOP_P_MIN = 0.95;
+const ANTHROPIC_THINKING_TOP_P_MAX = 1;
+
+// The Messages API reports token usage on every response.
+export const supportsUsageData = true;
+
+/**
+ * Normalize the usage the Messages API reports.
+ *
+ * The streamed usage is split across two events, so this returns a PARTIAL
+ * object and the caller combines the pieces with mergeUsageData():
+ *   - `message_start` carries the input tokens and the two cache counters, under
+ *     event.message.usage;
+ *   - `message_delta` carries the output tokens, under event.usage. That count is
+ *     cumulative, so the last event simply wins.
+ * A non-streamed body holds both halves in its top-level `usage` object and is
+ * accepted by the same code path.
+ *
+ * Never throws: every access is guarded, because a partial or unexpected payload
+ * must not break the stream it is being read from.
+ *
+ * @param {object} raw a stream event or a full response body
+ * @returns {object|null} the normalized (possibly partial) usage, or null
+ */
+export function extractUsage(raw) {
+  try{
+    if(raw === null || typeof raw !== 'object') return null;
+
+    // message_start nests both the usage and the model inside `message`; the other
+    // shapes keep them at the top level.
+    const source = (raw.message !== null && typeof raw.message === 'object') ? raw.message : raw;
+    const usage = source.usage;
+    if(usage === null || typeof usage !== 'object') return null;
+
+    // Claude's input_tokens EXCLUDES the cached part: the documented total input is
+    // input_tokens + cache_read_input_tokens + cache_creation_input_tokens. Every
+    // other provider reports an input count that already includes its cached
+    // tokens, and the normalized contract is "cached_input_tokens and
+    // cache_creation_tokens are subsets of input_tokens", so the sum is taken here.
+    // A cache counter that is absent adds nothing; a missing input_tokens stays null.
+    const cache_read = toUsageNumber(usage.cache_read_input_tokens);
+    const cache_creation = toUsageNumber(usage.cache_creation_input_tokens);
+    let input_tokens = toUsageNumber(usage.input_tokens);
+    if(input_tokens !== null){
+      input_tokens += (cache_read ?? 0) + (cache_creation ?? 0);
+    }
+
+    const partial = createUsageData({
+      provider: 'anthropic',
+      model: source.model,
+      input_tokens: input_tokens,
+      output_tokens: usage.output_tokens,
+      cached_input_tokens: cache_read,
+      cache_creation_tokens: cache_creation,
+    });
+
+    // A usage object holding no counter at all -- some events carry an empty one --
+    // is worth nothing to the caller and would only overwrite a model already known.
+    return isUsageDataEmpty(partial) ? null : partial;
+  }catch(error){
+    console.warn("[ThunderAI] Claude usage data could not be read, ignoring it: " + error);
+    return null;
+  }
+}
 
 
 export class Anthropic {
@@ -75,6 +144,45 @@ export class Anthropic {
     this.stream = stream;
   }
 
+
+  /**
+   * GET /v1/models/{model_id} -- one model's metadata, notably max_input_tokens
+   * (the context window). Same result contract as fetchModels(), with the
+   * ModelInfo object as the response.
+   */
+  fetchModelInfo = async (model) => {
+    try{
+      const response = await fetch("https://api.anthropic.com/v1/models/" + encodeURIComponent(model), {
+          method: "GET",
+          headers: {
+              "Content-Type": "application/json",
+              "x-api-key": this.apiKey,
+              "anthropic-version": this.version,
+          },
+      });
+
+      if (!response.ok) {
+          const errorDetail = await response.text();
+          console.error("[ThunderAI] Claude API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
+          let output = {};
+          output.ok = false;
+          output.error = errorDetail;
+          return output;
+      }
+
+      let output = {};
+      output.ok = true;
+      output.response = await response.json();
+      return output;
+    }catch (error) {
+      console.error("[ThunderAI] Claude API request failed: " + error);
+      let output = {};
+      output.is_exception = true;
+      output.ok = false;
+      output.error = "Claude API request failed: " + error;
+      return output;
+    }
+  }
 
   fetchModels = async (retryConfig = {}) => {
     try{
@@ -138,31 +246,6 @@ export class Anthropic {
       // a hard 400, so every field below is gated on the capability table.
       const caps = getAnthropicModelCapabilities(this.model);
 
-      // Sampling params are independent of the thinking configuration now: on a
-      // model that accepts them the user's value is sent whatever thinking does,
-      // and on a model that rejects them it is never sent at all. The stored
-      // value is left untouched either way, so switching back to an older model
-      // restores it.
-      const tempFloat = parseFloat(this.temperature);
-      if(caps.supportsSamplingParams && this.temperature != '' && !Number.isNaN(tempFloat)) {
-        claude_body.temperature = tempFloat;
-      }
-
-      // top_p and top_k follow exactly the same rule, and are sent independently
-      // of each other and of temperature. The API accepts the combination -- it
-      // only advises against it -- so there is deliberately no mutual exclusion
-      // here: silently dropping one of two values the user explicitly set would
-      // be the more surprising behaviour.
-      const topPFloat = parseFloat(this.top_p);
-      if(caps.supportsSamplingParams && this.top_p != '' && !Number.isNaN(topPFloat)) {
-        claude_body.top_p = topPFloat;
-      }
-
-      const topKInt = parseInt(this.top_k);
-      if(caps.supportsSamplingParams && this.top_k != '' && !Number.isNaN(topKInt)) {
-        claude_body.top_k = topKInt;
-      }
-
       // Not capability-gated: every model accepts stop_sequences. Stored as one
       // sequence per line; blank lines are dropped here rather than at save time,
       // so the user's formatting of the textarea is left alone.
@@ -223,6 +306,55 @@ export class Anthropic {
       // Every other combination -- a budget set on a model that rejects
       // budget_tokens, thinking off on a model that cannot turn it off -- omits
       // the field entirely, which is always a valid request.
+
+      // Sampling params depend on the thinking decision above, so they come after
+      // it. On a model that rejects them they are never sent at all. On a model
+      // that accepts them, the API still restricts them while thinking is on --
+      // enabled or adaptive, or omitted on a model that thinks by default:
+      // temperature and top_k cannot be set at all, and top_p only within
+      // ANTHROPIC_THINKING_TOP_P_MIN..MAX. A value that would be rejected is left
+      // out of the request with a warning, like the thinking budget above. The
+      // stored value is left untouched either way, so turning thinking off or
+      // switching back to another model restores it.
+      const thinkingActive = claude_body.thinking
+        ? claude_body.thinking.type !== 'disabled'
+        : caps.defaultThinking === 'adaptive';
+
+      const tempFloat = parseFloat(this.temperature);
+      if(caps.supportsSamplingParams && this.temperature != '' && !Number.isNaN(tempFloat)) {
+        if(thinkingActive) {
+          console.warn("[ThunderAI] Anthropic: temperature " + tempFloat
+            + " cannot be modified while extended thinking is on; it will not be sent.");
+        } else {
+          claude_body.temperature = tempFloat;
+        }
+      }
+
+      // top_p and top_k follow the same rule, and are sent independently of each
+      // other and of temperature. The API accepts the combination -- it only
+      // advises against it -- so there is deliberately no mutual exclusion here:
+      // silently dropping one of two values the user explicitly set would be the
+      // more surprising behaviour.
+      const topPFloat = parseFloat(this.top_p);
+      if(caps.supportsSamplingParams && this.top_p != '' && !Number.isNaN(topPFloat)) {
+        if(thinkingActive && (topPFloat < ANTHROPIC_THINKING_TOP_P_MIN || topPFloat > ANTHROPIC_THINKING_TOP_P_MAX)) {
+          console.warn("[ThunderAI] Anthropic: top_p " + topPFloat
+            + " is outside the range accepted while extended thinking is on ("
+            + ANTHROPIC_THINKING_TOP_P_MIN + " - " + ANTHROPIC_THINKING_TOP_P_MAX + "); it will not be sent.");
+        } else {
+          claude_body.top_p = topPFloat;
+        }
+      }
+
+      const topKInt = parseInt(this.top_k);
+      if(caps.supportsSamplingParams && this.top_k != '' && !Number.isNaN(topKInt)) {
+        if(thinkingActive) {
+          console.warn("[ThunderAI] Anthropic: top_k " + topKInt
+            + " cannot be modified while extended thinking is on; it will not be sent.");
+        } else {
+          claude_body.top_k = topKInt;
+        }
+      }
 
       // console.log(">>>>>>>>>>>>>>>>> [ThunderAI] Anthropic API request: " + JSON.stringify(claude_body));
 

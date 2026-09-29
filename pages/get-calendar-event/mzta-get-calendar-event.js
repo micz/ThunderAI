@@ -42,6 +42,7 @@ import {
 } from "../_lib/connection-ui.js";
 import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
+import { initReminderUI } from "../_lib/reminder-ui.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
 
 let autocompleteSuggestions = [];
@@ -192,6 +193,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     get_calendar_event_textarea.value = get_calendar_event_prompt.text;
     get_calendar_event_reset_btn.disabled = (get_calendar_event_textarea.value === browser.i18n.getMessage('prompt_get_calendar_event_full_text'));
+
+    // "Let the AI set a reminder" section [#887]. After restoreOptions() (checkbox
+    // state) and after the prompt text is loaded (warning and preview read it).
+    // Kept before the editor decoration below, so a failure there cannot leave it
+    // uninitialized.
+    await initReminderUI({
+        feature: 'calendar',
+        promptTextarea: get_calendar_event_textarea,
+        statementsEl: document.getElementById('get_calendar_event_info_additional_statements')
+    });
 
     // Full list, kept for token validation. Deliberately NOT filtered like the
     // suggestions: {%additional_text%} is a real placeholder that this page simply

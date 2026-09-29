@@ -20,10 +20,58 @@
 
 import { parseExtraBody } from './api-utils.js';
 import { fetchWithRetry } from './api-retry.js';
+import { createUsageData } from './mzta-api-usage.js';
 
 // Local servers (LM Studio, vLLM, llama.cpp...) may load the model before they
 // send the response headers, so a chat request gets a longer per-attempt timeout.
 const OPENAI_COMP_CHAT_TIMEOUT_MS = 300000;
+
+// Best effort: the OpenAI-compatible servers that implement the usage object do
+// so under the chat/completions names, but plenty of them never send one. See
+// extractUsage() and the stream_options note in fetchResponse().
+export const supportsUsageData = true;
+
+/**
+ * Normalize the usage an OpenAI-compatible server reports.
+ *
+ * The `usage` object sits at the top level of a full response or of the final
+ * streamed chunk -- and in a stream it is only emitted at all when the request
+ * asked for it through stream_options.include_usage (see fetchResponse()). A
+ * server that ignores that parameter simply never sends usage, and this returns
+ * null, which is the expected outcome rather than an error.
+ *
+ * Never throws: every access is guarded, because a partial or unexpected payload
+ * must not break the stream it is being read from.
+ *
+ * @param {object} raw a streamed chunk or a full response body
+ * @returns {object|null} the normalized usage, or null when there is none
+ */
+export function extractUsage(raw) {
+  try{
+    if(raw === null || typeof raw !== 'object') return null;
+
+    const usage = raw.usage;
+    if(usage === null || typeof usage !== 'object') return null;
+
+    const prompt_details = (usage.prompt_tokens_details !== null && typeof usage.prompt_tokens_details === 'object')
+      ? usage.prompt_tokens_details : {};
+    const completion_details = (usage.completion_tokens_details !== null && typeof usage.completion_tokens_details === 'object')
+      ? usage.completion_tokens_details : {};
+
+    return createUsageData({
+      provider: 'openai_comp',
+      model: raw.model,
+      input_tokens: usage.prompt_tokens,
+      output_tokens: usage.completion_tokens,
+      total_tokens: usage.total_tokens,
+      cached_input_tokens: prompt_details.cached_tokens,
+      reasoning_tokens: completion_details.reasoning_tokens,
+    });
+  }catch(error){
+    console.warn("[ThunderAI] OpenAI Comp usage data could not be read, ignoring it: " + error);
+    return null;
+  }
+}
 
 
 export class OpenAIComp {
@@ -56,39 +104,57 @@ export class OpenAIComp {
 
 
   fetchModels = async (retryConfig = {}) => {
-    const curr_headers = {
-      "Content-Type": "application/json",
-    };
-    if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
-    
-    if(this.host.includes('openrouter.ai')) {
-      curr_headers['HTTP-Referer'] = 'https://micz.it/thunderbird-addon-thunderai/';
-      curr_headers['X-Title'] = 'ThunderAI';
+    try{
+      const curr_headers = {
+        "Content-Type": "application/json",
+      };
+      if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
+
+      if(this.host.includes('openrouter.ai')) {
+        curr_headers['HTTP-Referer'] = 'https://micz.it/thunderbird-addon-thunderai/';
+        curr_headers['X-Title'] = 'ThunderAI';
+      }
+
+      // Some compatible endpoints take the API key in the query string:
+      // fetchWithRetry() never logs the URL.
+      const response = await fetchWithRetry(this.host + (this.use_v1 ? "/v1" : "") + "/models", {
+          method: "GET",
+          headers: curr_headers,
+      }, { label: 'OpenAI Comp', ...retryConfig });
+
+      if (!response.ok) {
+          const errorDetail = await response.text();
+          let err_msg = "[ThunderAI] OpenAI Comp API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
+          console.error(err_msg);
+          let output = {};
+          output.ok = false;
+          output.error = errorDetail;
+          return output;
+      }
+
+      let output = {};
+      output.ok = true;
+      let output_response = await response.json();
+      // The OpenAI shape is { data: [...] }, but some compatible servers answer
+      // with the bare array. Anything else becomes an empty list, so the callers
+      // can always iterate the response.
+      if(Array.isArray(output_response)) {
+        output.response = output_response;
+      } else if(Array.isArray(output_response?.data)) {
+        output.response = output_response.data;
+      } else {
+        output.response = [];
+      }
+
+      return output;
+    }catch (error) {
+      console.error("[ThunderAI] OpenAI Comp API request failed: " + error);
+      let output = {};
+      output.is_exception = true;
+      output.ok = false;
+      output.error = "OpenAI Comp API request failed: " + error;
+      return output;
     }
-
-    // Some compatible endpoints take the API key in the query string:
-    // fetchWithRetry() never logs the URL.
-    const response = await fetchWithRetry(this.host + (this.use_v1 ? "/v1" : "") + "/models", {
-        method: "GET",
-        headers: curr_headers,
-    }, { label: 'OpenAI Comp', ...retryConfig });
-
-    if (!response.ok) {
-        const errorDetail = await response.text();
-        let err_msg = "[ThunderAI] OpenAI Comp API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
-        console.error(err_msg);
-        let output = {};
-        output.ok = false;
-        output.error = errorDetail;
-        return output;
-    }
-
-    let output = {};
-    output.ok = true;
-    let output_response = await response.json();
-    output.response = output_response.data;
-
-    return output;
   }
 
   fetchResponse = async (messages, maxTokens = 0, retryConfig = {}) => {
@@ -111,6 +177,15 @@ export class OpenAIComp {
                 model: this.model,
                 messages: messages,
                 stream: this.stream,
+                // Streamed chat completions emit the `usage` object ONLY when the
+                // request asks for it, and the parameter is meaningless (some
+                // servers reject an unknown field outright) on a non-streamed call,
+                // so it is sent only while streaming. This must degrade gracefully:
+                // several compatible backends -- llama.cpp, LM Studio, a few
+                // OpenRouter models -- ignore it or never send usage anyway, and the
+                // request has to succeed all the same, with extractUsage() simply
+                // returning null.
+                ...(this.stream ? { 'stream_options': { 'include_usage': true } } : {}),
                 ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {}),
                 ...(this.temperature != '' && !Number.isNaN(tempFloat) ? { 'temperature': tempFloat } : {})
             }),

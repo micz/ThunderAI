@@ -650,9 +650,6 @@
     "prefs_SurveyLinkText2": {
         "message": "Haz clic aquí, ¡solo toma un minuto!"
     },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Insertar modelo manualmente"
-    },
     "OpenAIComp_force_model_ask": {
         "message": "Inserte aquí el nombre del modelo que desea usar."
     },
@@ -1181,9 +1178,6 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Tenga en cuenta que cualquier etiqueta <br> en la respuesta de la IA será reemplazada por saltos de línea."
-    },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Borrar lista de modelos"
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "¿Estás seguro de que deseas borrar la lista de modelos? Esta acción no se puede deshacer."

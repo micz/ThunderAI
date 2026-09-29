@@ -27,6 +27,21 @@ import {
 import { getSpecialPrompts } from './mzta-prompts.js';
 import { mztaPrefs } from './mzta-prefs.js';
 
+// Per-feature settings of the AI reminder [#887]: same logic for calendar events
+// and tasks, only the prefs and the format instruction (reference date) differ.
+export const REMINDER_FEATURES = {
+    calendar: {
+        enabledPref: 'calendar_reminder_enabled',
+        rulesPref: 'calendar_reminder_rules',
+        formatMsgId: 'prompt_calendar_reminder_format'
+    },
+    task: {
+        enabledPref: 'task_reminder_enabled',
+        rulesPref: 'task_reminder_rules',
+        formatMsgId: 'prompt_task_reminder_format'
+    }
+};
+
 export const taPromptUtils = {
 
     async getDefaultSignature(){
@@ -126,12 +141,57 @@ export const taPromptUtils = {
         return fullPrompt;
     },
 
-    finalizePrompt_get_calendar_event(fullPrompt){
+    finalizePrompt_get_calendar_event(fullPrompt, promptTemplate = '', reminder_enabled = false, reminder_rules = ''){
         fullPrompt = fullPrompt.replace("{%cc_list%}", "");
         fullPrompt = fullPrompt.replace("{%recipients%}", "");
 
+        return taPromptUtils.appendReminderStatements(fullPrompt, 'calendar', promptTemplate, reminder_enabled, reminder_rules);
+    },
+
+    finalizePrompt_get_task(fullPrompt, promptTemplate = '', reminder_enabled = false, reminder_rules = ''){
+        return taPromptUtils.appendReminderStatements(fullPrompt, 'task', promptTemplate, reminder_enabled, reminder_rules);
+    },
+
+    // Text appended to the calendar event / task prompt to ASK the AI for a
+    // reminderMinutes value; '' when the feature's reminder checkbox is off. The
+    // same checkbox gates accepting the value: with it off, normalizeReminderMinutes()
+    // in mzta-utils.js always drops it. Also used by the settings pages for the live preview.
+    // promptTemplate is the prompt text as saved (curr_prompt.text), NOT the
+    // resolved prompt: an email body mentioning "reminderMinutes" must not
+    // suppress the format instruction, and the settings page checks the same text.
+    // The rules are appended after placeholder resolution, so they are sent verbatim.
+    getReminderPromptStatements(feature, promptTemplate, reminder_enabled, reminder_rules){
+        const parts = taPromptUtils.getReminderPromptParts(feature, promptTemplate, reminder_enabled, reminder_rules);
+        let statements = [];
+        if(parts.format !== '') statements.push(parts.format);
+        if(parts.rules !== '') statements.push(parts.rulesIntro + "\n" + parts.rules);
+        return statements.join(" \n");
+    },
+
+    // The pieces getReminderPromptStatements() joins, kept apart so the settings
+    // pages can render the fixed instruction and the user's rules differently.
+    // Each field is '' when that piece is not appended.
+    getReminderPromptParts(feature, promptTemplate, reminder_enabled, reminder_rules){
+        let parts = { format: '', rulesIntro: '', rules: '' };
+        if(!reminder_enabled) return parts;
+        if(!String(promptTemplate ?? '').includes('reminderMinutes')){
+            parts.format = browser.i18n.getMessage(REMINDER_FEATURES[feature].formatMsgId);
+        }
+        let rules = String(reminder_rules ?? '').trim();
+        if(rules !== ''){
+            parts.rulesIntro = browser.i18n.getMessage("prompt_reminder_rules_intro");
+            parts.rules = rules;
+        }
+        return parts;
+    },
+
+    appendReminderStatements(fullPrompt, feature, promptTemplate, reminder_enabled, reminder_rules){
+        let statements = taPromptUtils.getReminderPromptStatements(feature, promptTemplate, reminder_enabled, reminder_rules);
+        if(statements !== ''){
+            fullPrompt += " \n" + statements;
+        }
         return fullPrompt;
-    },   
+    },
 
     async getDefaultLang(curr_prompt){
         let chatgpt_lang = '';

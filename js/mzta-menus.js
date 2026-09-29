@@ -32,6 +32,7 @@ import {
     extractJsonObject,
     normalizeDateTimeString,
     appendMessageLinkToDescription,
+    normalizeReminderMinutes,
     normalizeHtmlSourceNewlines,
     checkIfTagLabelExists,
     getConnectionType,
@@ -509,6 +510,8 @@ export class mzta_Menus {
                             'calendar_enforce_timezone',
                             'calendar_timezone',
                             'calendar_append_email_link',
+                            'calendar_reminder_enabled',
+                            'calendar_reminder_rules',
                             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
                         ]);
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_calendar_event');
@@ -526,8 +529,9 @@ export class mzta_Menus {
                         *   "location": "YourLocation",
                         *   "attendees": [attendee1@example.com,attendee2@example.com,attendee3@example.com]
                         *  } 
+                        *  plus an optional "reminderMinutes", only with the reminder option on (see normalizeReminderMinutes()) [#887]
                         */
-                        fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt);
+                        fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt, curr_prompt.text, prefs_at.calendar_reminder_enabled, prefs_at.calendar_reminder_rules);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_GetCalendarEvent = new mzta_specialCommand({
                             prompt: fullPrompt,
@@ -561,6 +565,8 @@ export class mzta_Menus {
                         if (calendar_event_data_obj.endDate) {
                             calendar_event_data_obj.endDate = normalizeDateTimeString(calendar_event_data_obj.endDate);
                         }
+                        // Reminder: the checkbox is the single switch (off = field always removed) [#887]
+                        normalizeReminderMinutes(calendar_event_data_obj, prefs_at.calendar_reminder_enabled, this.logger);
                         // Timezone management
                         calendar_event_data_obj.use_timezone = false;
                         if(prefs_at.calendar_enforce_timezone){
@@ -609,6 +615,8 @@ export class mzta_Menus {
                             'calendar_enforce_timezone',
                             'calendar_timezone',
                             'task_append_email_link',
+                            'task_reminder_enabled',
+                            'task_reminder_rules',
                             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))]);
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_task');
                         if(!isApiUsableConnection(def_conntype)){
@@ -624,7 +632,9 @@ export class mzta_Menus {
                         *   "description": "Detailed task description including action items, and relevant notes from the email.",
                         *   "location": "YourLocation"
                         *  } 
+                        *  plus an optional "reminderMinutes", only with the reminder option on (see normalizeReminderMinutes()) [#887]
                         */
+                        fullPrompt = taPromptUtils.finalizePrompt_get_task(fullPrompt, curr_prompt.text, prefs_at.task_reminder_enabled, prefs_at.task_reminder_rules);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_GetTask = new mzta_specialCommand({
                             prompt: fullPrompt,
@@ -658,6 +668,8 @@ export class mzta_Menus {
                             if (!task_data_obj.initialDate) {
                                 delete task_data_obj.initialDate;
                             }
+                            // Reminder: the checkbox is the single switch (off = field always removed) [#887]
+                            normalizeReminderMinutes(task_data_obj, prefs_at.task_reminder_enabled, this.logger);
                         }catch(err){
                             console.error("[ThunderAI] Error extracting JSON object from task data: ", err.message);
                             sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_getting_data_error") + ": " + err.message });

@@ -266,7 +266,10 @@ the two above: `from` is a *scalar* that can also be an `{id, type}` reference, 
 
 **Not visible in the calendar-event flow.** `finalizePrompt_get_calendar_event()`
 (`js/mzta-utils-prompt.js`) strips `{%cc_list%}` and `{%recipients%}` out of the prompt entirely for
-that flow, so it is unaffected by any of the above by design.
+that flow, so it is unaffected by any of the above by design. It (and `finalizePrompt_get_task()`)
+also appends the reminder instruction and the user's reminder rules (#887, see
+[02-prompts.md](02-prompts.md#calendar-event--task-reminder-887)) — **after** resolution, so
+placeholders written in the reminder rules are not resolved.
 
 ## Dynamic Placeholders
 

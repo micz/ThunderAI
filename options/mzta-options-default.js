@@ -160,6 +160,10 @@ export const prefs_default = {
     dynamic_menu_force_enter: false,
     placeholders_use_default_value: false,
     hide_thinking: true,
+    // Show the token counts the API reports under each answer in the chat, plus a
+    // session total in the header. Off by default: it is extra chrome most users do
+    // not want, and the web-only integrations cannot report it at all.
+    chat_show_usage_data: true,
     api_webchat_font_scale: 1.0,   // font zoom factor for the API webchat (1.0 = 100%)
     // Default comparison unit of the proofreading change picker: 'words' or
     // 'sentences'. A prompt can override it; '' on a prompt means "inherit this".
@@ -187,6 +191,10 @@ export const prefs_default = {
     calendar_no_selection: false,   // If true do not ask for selection, but use the full prompt
     calendar_append_email_link: false,  // Append a mid: link to the source email to the event description (added by code, never sent to the AI)
     task_append_email_link: false,      // Same, for the task description
+    calendar_reminder_enabled: false,   // Ask the AI for a reminder (reminderMinutes) and send "no reminder" when it returns none. If false, reminderMinutes is always dropped (Thunderbird default reminder)
+    calendar_reminder_rules: '',        // Optional natural-language reminder rules appended to the prompt when calendar_reminder_enabled is true
+    task_reminder_enabled: false,       // Same, for tasks
+    task_reminder_rules: '',            // Same, for tasks
     spamfilter: false,
     spamfilter_threshold: 70,
     spamfilter_enabled_accounts: [],

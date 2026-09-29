@@ -36,9 +36,10 @@
 // the module-world consumers (background, menus, utils).
 //
 // The sanitizer, by contrast, is only ever needed in module world (the webchat
-// renderer and the diff picker) - the content script never sanitizes, because
-// model output is already sanitized upstream before it reaches the compose
-// window. So the sanitizer + taxonomy live HERE, self-contained, with no
+// renderer, the diff picker, and the background's summary/translation panel
+// payloads, _sanitizePanelPayload()) - model output is sanitized upstream before
+// it reaches the content script, which only keeps a small defense-in-depth strip
+// of its own (_renderSafeHtml()). So the sanitizer + taxonomy live HERE, self-contained, with no
 // dependency on the classic globals. That is deliberate: this module also loads
 // on the api_webchat page, which has no classic script at all.
 

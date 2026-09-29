@@ -799,9 +799,6 @@
     "prefs_SurveyLinkText2": {
         "message": "フィードバックをお寄せください"
     },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "モデルを手動で入力"
-    },
     "OpenAIComp_force_model_ask": {
         "message": "使用するモデル名をここに入力してください。"
     },
@@ -1698,9 +1695,6 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "AIの応答に含まれる<br>タグは改行に置換されます。"
-    },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "モデルリストをクリア"
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "モデルリストをクリアしてもよろしいですか？この操作は元に戻せません。"

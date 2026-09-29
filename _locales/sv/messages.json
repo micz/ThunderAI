@@ -653,9 +653,6 @@
     "prefs_SurveyLinkText2": {
         "message": "Dela din feedback"
     },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Infoga modell manuellt"
-    },
     "OpenAIComp_force_model_ask": {
         "message": "Ange här modellnamnet du vill använda."
     },
@@ -1091,9 +1088,6 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Observera att alla <br>-taggar i AI:ns svar kommer att ersättas med radbrytningar."
-    },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Rensa modelllistan"
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Är du säker på att du vill rensa modellistan? Den här åtgärden kan inte ångras."
@@ -2515,5 +2509,100 @@
     },
     "specific_integration_mandatory_no_connection": {
         "message": "Detta alternativ är obligatoriskt och kan inte stängas av: ingen global AI-anslutning har valts ännu. Välj ett specifikt API nedan eller konfigurera en global anslutning i ThunderAI-inställningarna."
+    },
+    "Models_Fetch_Done": {
+        "message": "Listan över modeller har lästs in"
+    },
+    "prefs_OptionText_chat_show_usage_data": {
+        "message": "Visa användningsdata i chatten"
+    },
+    "prefs_OptionText_chat_show_usage_data_info": {
+        "message": "Antalet token som rapporteras av API:et visas bredvid knapparna för varje svar. Ett klick öppnar detaljerna, inklusive hur stor del av modellens kontext som används av konversationen samt totalsumman för hela chattsessionen."
+    },
+    "prefs_OptionText_chat_show_usage_data_openai_comp_note": {
+        "message": "Vid användning av ett OpenAI-kompatibelt API beror tillgången på den specifika serverimplementeringen: vissa servrar rapporterar aldrig token-förbrukning."
+    },
+    "prefs_OptionText_append_email_link": {
+        "message": "Lägg till en länk till det ursprungliga e-postmeddelandet"
+    },
+    "prefs_OptionText_calendar_append_email_link_Info": {
+        "message": "Om detta alternativ är valt läggs en länk till det ursprungliga e-postmeddelandet till i slutet av händelsebeskrivningen. Om AI:n inte genererar någon beskrivning kommer beskrivningen endast att innehålla länken. Funktionen är inte tillgänglig när händelsen skapas från urklipp."
+    },
+    "prefs_OptionText_task_append_email_link_Info": {
+        "message": "Om detta är markerat läggs en länk till det ursprungliga e-postmeddelandet till i slutet av uppgiftsbeskrivningen. Om AI:n inte returnerar någon beskrivning kommer beskrivningen endast att innehålla länken."
+    },
+    "calendar_email_link_label": {
+        "message": "Ursprungligt e-postmeddelande:"
+    },
+    "apiwebchat_usage_label": {
+        "message": "Tokenanvändning"
+    },
+    "apiwebchat_usage_input": {
+        "message": "Indata"
+    },
+    "apiwebchat_usage_output": {
+        "message": "Utdata"
+    },
+    "apiwebchat_usage_total": {
+        "message": "Totalt"
+    },
+    "apiwebchat_usage_chip_tokens": {
+        "message": "$COUNT$ token",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_chip_output_tokens": {
+        "message": "$COUNT$ utdatatoken",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_of_which_cached": {
+        "message": "varav cachade"
+    },
+    "apiwebchat_usage_of_which_cache_write": {
+        "message": "varav skrivna till cache"
+    },
+    "apiwebchat_usage_of_which_reasoning": {
+        "message": "varav resonemang"
+    },
+    "apiwebchat_usage_duration": {
+        "message": "Varaktighet"
+    },
+    "apiwebchat_usage_speed": {
+        "message": "$RATE$ tok/s",
+        "placeholders": {
+            "rate": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_context": {
+        "message": "Kontext"
+    },
+    "apiwebchat_usage_context_value": {
+        "message": "$USED$ / $MAX$ · $PCT$%",
+        "placeholders": {
+            "used": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            },
+            "pct": {
+                "content": "$3"
+            }
+        }
+    },
+    "apiwebchat_usage_context_warn": {
+        "message": "överväg att starta en ny chatt"
+    },
+    "apiwebchat_usage_session_total": {
+        "message": "Totalt session"
     }
 }

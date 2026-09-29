@@ -730,9 +730,6 @@
     "prefs_doc_open_welcome": {
         "message": "Buka Halaman Selamat Datang"
     },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Masukkan model secara manual"
-    },
     "OpenAIComp_force_model_ask": {
         "message": "Masukkan nama model yang ingin Anda gunakan di sini."
     },
@@ -1341,7 +1338,7 @@
         "message": "Aktifkan thinking"
     },
     "prefs_ollama_think_Info": {
-        "message": "Jika dicentang, Model akan berpikir sebelum menjawab. Opsi ini hanya berfungsi dengan model yang mendukung fitur 'think'."
+        "message": "Buat model melakukan reasoning sebelum menjawab. \"Default model\" tidak mengirimkan pengaturan apa pun dan membiarkan model menentukan sendiri, yang pada beberapa model berarti tetap melakukan reasoning: pilih \"Nonaktif\" untuk menonaktifkan reasoning secara eksplisit. Tingkat reasoning yang tersedia bergantung pada model yang dipilih dan ditampilkan setelah model dipilih."
     },
     "prefs_ollama_format_json": {
         "message": "Paksa output JSON"
@@ -1408,9 +1405,6 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Harap diperhatikan bahwa tag <br> apa pun dalam respons AI akan diganti dengan line break."
-    },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Hapus Daftar Model"
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Apakah Anda yakin ingin menghapus Daftar Model? Tindakan ini tidak dapat dibatalkan."
@@ -2488,5 +2482,338 @@
     },
     "anthropic_note_effort_unsupported": {
         "message": "Model yang dipilih tidak mendukung pengaturan Upaya. Gunakan anggaran Pemikiran diperluas sebagai gantinya."
+    },
+    "Models_Fetch_Done": {
+        "message": "Daftar model dimuat"
+    },
+    "prefs_OptionText_chat_show_usage_data": {
+        "message": "Tampilkan data penggunaan di chat"
+    },
+    "prefs_OptionText_chat_show_usage_data_info": {
+        "message": "Jumlah token yang dilaporkan oleh API ditampilkan di samping tombol pada setiap respons. Klik untuk membuka detail, termasuk jumlah konteks model yang digunakan oleh percakapan dan total keseluruhan sesi chat."
+    },
+    "prefs_OptionText_chat_show_usage_data_openai_comp_note": {
+        "message": "Dengan API yang Kompatibel dengan OpenAI, ketersediaan bergantung pada implementasi server tertentu: beberapa server tidak pernah melaporkan penggunaan token."
+    },
+    "prefs_OptionText_append_email_link": {
+        "message": "Tambahkan tautan ke email asli"
+    },
+    "prefs_OptionText_calendar_append_email_link_Info": {
+        "message": "Jika dicentang, tautan ke email asli akan ditambahkan di akhir deskripsi acara. Jika AI tidak menghasilkan deskripsi, deskripsi hanya akan berisi tautan tersebut. Tidak tersedia ketika acara dibuat dari clipboard."
+    },
+    "prefs_OptionText_task_append_email_link_Info": {
+        "message": "Jika dicentang, tautan ke email asli akan ditambahkan di akhir deskripsi tugas. Jika AI tidak menghasilkan deskripsi, deskripsi hanya akan berisi tautan tersebut."
+    },
+    "calendar_email_link_label": {
+        "message": "Email asli:"
+    },
+    "apiwebchat_usage_label": {
+        "message": "Penggunaan token"
+    },
+    "apiwebchat_usage_input": {
+        "message": "Masukan"
+    },
+    "apiwebchat_usage_output": {
+        "message": "Keluaran"
+    },
+    "apiwebchat_usage_total": {
+        "message": "Total"
+    },
+    "apiwebchat_usage_chip_tokens": {
+        "message": "$COUNT$ token",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_chip_output_tokens": {
+        "message": "$COUNT$ token keluaran",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_of_which_cached": {
+        "message": "yang di antaranya berasal dari cache"
+    },
+    "apiwebchat_usage_of_which_cache_write": {
+        "message": "yang di antaranya ditulis ke cache"
+    },
+    "apiwebchat_usage_of_which_reasoning": {
+        "message": "yang di antaranya merupakan token penalaran"
+    },
+    "apiwebchat_usage_duration": {
+        "message": "Durasi"
+    },
+    "apiwebchat_usage_speed": {
+        "message": "$RATE$ tok/dtk",
+        "placeholders": {
+            "rate": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_context": {
+        "message": "Konteks"
+    },
+    "apiwebchat_usage_context_value": {
+        "message": "$USED$ / $MAX$ · $PCT$%",
+        "placeholders": {
+            "used": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            },
+            "pct": {
+                "content": "$3"
+            }
+        }
+    },
+    "apiwebchat_usage_context_warn": {
+        "message": "pertimbangkan untuk memulai chat baru"
+    },
+    "apiwebchat_usage_session_total": {
+        "message": "Total sesi"
+    },
+    "prefs_OptionText_anthropic_top_p_Info": {
+        "message": "Nucleus sampling: model hanya mempertimbangkan token yang probabilitas kumulatifnya mencapai nilai ini. Nilainya berkisar dari 0,0 hingga 1,0. Biarkan kosong untuk menggunakan nilai bawaan model. Anthropic menyarankan penyesuaian Temperature atau Top P, tetapi bukan keduanya. Model Claude yang lebih baru sama sekali tidak menerima pengaturan ini dan menggunakan pengaturan Effort sebagai gantinya: ketika salah satunya dipilih, kolom ini dinonaktifkan dan nilainya tidak dikirim."
+    },
+    "prefs_OptionText_anthropic_top_k_Info": {
+        "message": "Hanya mengambil sampel dari K opsi teratas untuk setiap token berikutnya, sehingga menghapus respons berprobabilitas rendah pada ekor panjang. Biarkan kosong untuk menggunakan nilai bawaan model. Model Claude yang lebih baru tidak menerima pengaturan ini dan menggunakan pengaturan Effort sebagai gantinya: ketika salah satunya dipilih, kolom ini dinonaktifkan dan nilainya tidak dikirim."
+    },
+    "prefs_OptionText_anthropic_stop_sequences": {
+        "message": "Urutan penghentian"
+    },
+    "prefs_OptionText_anthropic_stop_sequences_Info": {
+        "message": "Urutan teks kustom yang akan menyebabkan model berhenti menghasilkan keluaran. Masukkan satu urutan per baris; baris kosong diabaikan. Biarkan kosong untuk menonaktifkan. Pengaturan ini diterima oleh semua model Claude."
+    },
+    "anthropic_warn_thinking_budget_min": {
+        "message": "Anggaran extended thinking harus setidaknya $MIN$ token. Nilai saat ini tidak akan dikirim dan extended thinking tidak akan diminta.",
+        "placeholders": {
+            "min": {
+                "content": "$1"
+            }
+        }
+    },
+    "anthropic_warn_thinking_budget_max": {
+        "message": "Anggaran extended thinking harus lebih rendah daripada Max Tokens ($MAX$). Nilai saat ini tidak akan dikirim dan extended thinking tidak akan diminta.",
+        "placeholders": {
+            "max": {
+                "content": "$1"
+            }
+        }
+    },
+    "anthropic_err_hint_temperature": {
+        "message": "Model Claude yang dipilih ($MODEL$) tidak menerima pengaturan Temperature. Kosongkan kolom Temperature atau gunakan pengaturan Effort sebagai gantinya."
+    },
+    "anthropic_err_hint_budget_tokens": {
+        "message": "Model Claude yang dipilih ($MODEL$) tidak menerima anggaran extended thinking manual. Atur Extended thinking budget ke 0 dan gunakan pengaturan Effort sebagai gantinya."
+    },
+    "anthropic_err_hint_thinking_type": {
+        "message": "Model Claude yang dipilih ($MODEL$) tidak menerima konfigurasi thinking ini. Periksa pengaturan Extended thinking budget dan Effort."
+    },
+    "anthropic_err_hint_effort": {
+        "message": "Model Claude yang dipilih ($MODEL$) tidak menerima tingkat Effort ini. Pilih tingkat lain pada halaman opsi."
+    },
+    "prefs_level_off": {
+        "message": "Nonaktif"
+    },
+    "prefs_level_none": {
+        "message": "Tidak ada"
+    },
+    "prefs_level_on": {
+        "message": "Aktif"
+    },
+    "prefs_OptionText_chatgpt_max_output_tokens_Info": {
+        "message": "Batas atas jumlah token yang dapat dihasilkan model untuk satu respons, termasuk token penalaran pada model reasoning. Nilai minimum yang diterima adalah 16. Biarkan kosong atau atur ke 0 agar API yang menentukan."
+    },
+    "prefs_OptionText_chatgpt_verbosity": {
+        "message": "Tingkat kerincian"
+    },
+    "prefs_OptionText_chatgpt_verbosity_Info": {
+        "message": "Seberapa panjang dan rinci jawaban yang dihasilkan, tanpa mengubah prompt. Hanya keluarga gpt-5 yang mendukungnya: pada model lain, kolom ini dinonaktifkan dan nilainya tidak dikirim."
+    },
+    "prefs_OptionText_chatgpt_text_format": {
+        "message": "Format keluaran"
+    },
+    "prefs_OptionText_chatgpt_text_format_Info": {
+        "message": "Memaksa model untuk menjawab dengan JSON yang valid. \"Objek JSON\" hanya menjamin bahwa jawaban merupakan JSON yang valid, sehingga prompt tetap harus menjelaskan struktur yang diinginkan, sedangkan \"JSON schema\" juga memastikan jawaban mengikuti schema di bawah ini. Perlu diperhatikan bahwa pengaturan ini mengubah jawaban yang ditampilkan di jendela chat menjadi JSON mentah."
+    },
+    "prefs_OptionText_chatgpt_text_format_json_object": {
+        "message": "Objek JSON"
+    },
+    "prefs_OptionText_chatgpt_text_format_json_schema": {
+        "message": "JSON schema"
+    },
+    "prefs_OptionText_chatgpt_text_format_schema_name": {
+        "message": "Nama JSON schema"
+    },
+    "prefs_OptionText_chatgpt_text_format_schema_name_Info": {
+        "message": "Nama untuk schema di bawah yang diwajibkan oleh API. Gunakan hanya huruf, angka, garis bawah, dan tanda hubung. Format keluaran tidak akan dikirim sama sekali jika kolom ini kosong."
+    },
+    "prefs_OptionText_chatgpt_text_format_schema": {
+        "message": "JSON schema"
+    },
+    "prefs_OptionText_chatgpt_text_format_schema_Info": {
+        "message": "JSON Schema yang harus diikuti oleh jawaban, dalam bentuk objek JSON. Hanya digunakan ketika format keluaran di atas diatur ke \"JSON schema\". Nilai yang tidak valid akan diabaikan dan format keluaran tidak akan dikirim."
+    },
+    "prefs_OptionText_chatgpt_top_p_Info": {
+        "message": "Nucleus sampling: model hanya mempertimbangkan token yang probabilitas kumulatifnya mencapai nilai ini. Nilainya berkisar dari 0,0 hingga 1,0. Biarkan kosong untuk menggunakan nilai bawaan model. OpenAI menyarankan penyesuaian Temperature atau Top P, tetapi bukan keduanya. Model reasoning tidak menerima pengaturan ini: ketika salah satunya dipilih, kolom ini dinonaktifkan dan nilainya tidak dikirim."
+    },
+    "prefs_OptionText_chatgpt_truncation": {
+        "message": "Pemotongan"
+    },
+    "prefs_OptionText_chatgpt_truncation_Info": {
+        "message": "Tindakan ketika percakapan melampaui jendela konteks model. \"Otomatis\" menghapus pesan dari bagian tengah percakapan agar sesuai, sedangkan \"Dinonaktifkan\" menyebabkan permintaan gagal dengan kesalahan."
+    },
+    "prefs_OptionText_chatgpt_truncation_auto": {
+        "message": "Otomatis"
+    },
+    "prefs_OptionText_chatgpt_truncation_disabled": {
+        "message": "Dinonaktifkan"
+    },
+    "prefs_OptionText_chatgpt_prompt_cache_key": {
+        "message": "Kunci cache prompt"
+    },
+    "prefs_OptionText_chatgpt_prompt_cache_key_Info": {
+        "message": "Permintaan yang menggunakan kunci yang sama dapat memakai kembali cache prompt OpenAI, sehingga mengurangi biaya dan latensi untuk prompt berulang. Anda dapat menggunakan string apa pun: gunakan string yang sama pada permintaan yang diawali teks yang sama."
+    },
+    "prefs_OptionText_chatgpt_service_tier": {
+        "message": "Tingkat layanan"
+    },
+    "prefs_OptionText_chatgpt_service_tier_Info": {
+        "message": "Tingkat pemrosesan yang digunakan untuk permintaan. \"Flex\" dan \"Priority\" hanya tersedia pada paket dan model tertentu, dan API akan beralih ke tingkat default ketika tingkat yang dipilih tidak dapat digunakan."
+    },
+    "prefs_OptionText_chatgpt_service_tier_auto": {
+        "message": "Otomatis"
+    },
+    "prefs_OptionText_chatgpt_service_tier_default": {
+        "message": "Default"
+    },
+    "prefs_OptionText_chatgpt_service_tier_flex": {
+        "message": "Flex"
+    },
+    "prefs_OptionText_chatgpt_service_tier_priority": {
+        "message": "Priority"
+    },
+    "prefs_OptionText_chatgpt_safety_identifier": {
+        "message": "Pengenal keamanan"
+    },
+    "prefs_OptionText_chatgpt_safety_identifier_Info": {
+        "message": "Pengenal yang stabil untuk pengguna akhir, yang membantu OpenAI mendeteksi penyalahgunaan dari satu pengguna. Jangan gunakan alamat email atau data pribadi lainnya: hash data tersebut, atau gunakan string lain yang tetap sama pada setiap permintaan. Pengaturan ini menggantikan parameter \"user\" yang sudah tidak digunakan."
+    },
+    "prefs_OptionText_chatgpt_include_encrypted_reasoning": {
+        "message": "Sertakan reasoning terenkripsi"
+    },
+    "prefs_OptionText_chatgpt_include_encrypted_reasoning_Info": {
+        "message": "Minta API untuk mengembalikan reasoning model dalam bentuk terenkripsi agar dapat digunakan kembali pada permintaan berikutnya tanpa disimpan oleh OpenAI. Hanya bermakna jika \"Use storage\" di atas dinonaktifkan, dan hanya pada model reasoning."
+    },
+    "chatgpt_note_sampling_unsupported": {
+        "message": "Model yang dipilih tidak menerima pengaturan ini dan mengabaikan kolom ini. Gunakan pengaturan Reasoning effort sebagai gantinya. Nilainya disimpan jika Anda beralih kembali ke model lain."
+    },
+    "chatgpt_note_reasoning_unsupported": {
+        "message": "Model yang dipilih tidak mendukung reasoning, sehingga pengaturan ini tidak dikirim. Nilainya disimpan jika Anda beralih kembali ke model reasoning."
+    },
+    "chatgpt_note_verbosity_unsupported": {
+        "message": "Model yang dipilih tidak mendukung pengaturan Verbosity, sehingga pengaturan ini tidak dikirim. Nilainya disimpan jika Anda beralih kembali ke model yang mendukungnya."
+    },
+    "prefs_ollama_think_default": {
+        "message": "Default model"
+    },
+    "ollama_note_thinking_unsupported": {
+        "message": "Model ini tidak melaporkan dukungan untuk thinking, sehingga pengaturan ini diabaikan."
+    },
+    "ollama_num_ctx_max_info": {
+        "message": "Model ini mendukung hingga $MAX$ token konteks.",
+        "placeholders": {
+            "max": {
+                "content": "$1",
+                "example": "131072"
+            }
+        }
+    },
+    "prefs_Ollama_API_Key": {
+        "message": "Kunci API Ollama"
+    },
+    "prefs_Ollama_API_Key_Info": {
+        "message": "Hanya diperlukan untuk API hosted di ollama.com atau server yang di-host sendiri di balik proxy yang memerlukan autentikasi. Biarkan kosong untuk instalasi Ollama lokal standar."
+    },
+    "prefs_ollama_keep_alive": {
+        "message": "Pertahankan model tetap dimuat"
+    },
+    "prefs_ollama_keep_alive_Info": {
+        "message": "Durasi Ollama mempertahankan model di memori setelah permintaan: gunakan durasi seperti 5m atau 30m, -1 untuk mempertahankan model tetap dimuat tanpa batas waktu, atau 0 untuk segera membongkar model. Biarkan kosong untuk menggunakan nilai default server (5 menit). Menaikkan nilainya berguna ketika auto-tagging, filter spam, atau auto-summarize berjalan pada email masuk, karena model tidak perlu dimuat ulang untuk setiap pesan."
+    },
+    "Ollama_System_Prompt": {
+        "message": "System Prompt"
+    },
+    "Ollama_System_Prompt_Info": {
+        "message": "Dikirim sebagai pesan sistem pada awal setiap percakapan untuk memberikan peran atau instruksi tetap kepada model."
+    },
+    "prefs_OptionText_ollama_extra_options": {
+        "message": "Opsi tambahan"
+    },
+    "prefs_OptionText_ollama_extra_options_info": {
+        "message": "Parameter tambahan yang dikirim di dalam objek \"options\" Ollama, dalam bentuk objek JSON. Berguna untuk opsi yang tidak tersedia di ThunderAI, seperti {\"top_p\": 0.9, \"seed\": 42} atau {\"num_predict\": 512}. Parameter yang dikelola ThunderAI (jumlah token konteks dan temperature) tidak dapat ditimpa di sini. Nilai yang tidak valid akan diabaikan."
+    },
+    "prefs_OpenAIComp_AddManually": {
+        "message": "Tambahkan secara manual"
+    },
+    "prefs_OpenAIComp_ClearList": {
+        "message": "Hapus daftar"
+    },
+    "specific_integration_mandatory_badge": {
+        "message": "Wajib"
+    },
+    "specific_integration_mandatory_chatgpt_web": {
+        "message": "Opsi ini wajib dan tidak dapat dinonaktifkan: ChatGPT Web Integration yang dipilih sebagai koneksi global tidak dapat menjalankan fitur ini. Pilih API tertentu di bawah."
+    },
+    "specific_integration_mandatory_no_connection": {
+        "message": "Opsi ini wajib dan tidak dapat dinonaktifkan: belum ada koneksi AI global yang dipilih. Pilih API tertentu di bawah atau konfigurasi koneksi global di pengaturan ThunderAI."
+    },
+    "prefs_api_max_output_tokens": {
+        "message": "Maksimum token keluaran"
+    },
+    "prefs_api_top_p": {
+        "message": "Top P"
+    },
+    "prefs_api_top_k": {
+        "message": "Top K"
+    },
+    "prefs_google_gemini_max_output_tokens_Info": {
+        "message": "Jumlah maksimum token yang dapat dihasilkan dalam respons. Biarkan kosong atau atur ke 0 agar model yang menentukan."
+    },
+    "prefs_google_gemini_top_p_Info": {
+        "message": "Nucleus sampling: model hanya mempertimbangkan token yang probabilitas kumulatifnya mencapai nilai ini. Rentang yang diterima dan nilai default berbeda-beda tergantung model. Biarkan kosong agar parameter tidak ditetapkan dalam panggilan API."
+    },
+    "prefs_google_gemini_top_k_Info": {
+        "message": "Hanya mengambil sampel dari K opsi teratas untuk setiap token berikutnya, sehingga menghapus respons berprobabilitas rendah pada ekor panjang. Tidak semua model mendukung parameter ini. Biarkan kosong agar parameter tidak ditetapkan dalam panggilan API."
+    },
+    "prefs_google_gemini_extra_body_Info": {
+        "message": "Parameter tambahan yang dikirim bersama setiap panggilan API, dalam bentuk objek JSON. Berguna untuk opsi yang didukung Gemini API tetapi tidak tersedia di ThunderAI, seperti {\"safetySettings\": []} atau {\"generationConfig\": {\"seed\": 42}}. Kunci di dalam \"generationConfig\" akan digabungkan dengan konfigurasi yang dibuat oleh ThunderAI. Parameter yang dikelola oleh ThunderAI (contents, system instruction, thinking, temperature, max output tokens, top P, top K) tidak dapat ditimpa di sini. Nilai yang tidak valid akan diabaikan."
+    },
+    "prefs_OptionText_summarize_force_lang": {
+        "message": "Paksa bahasa ringkasan"
+    },
+    "prefs_OptionText_summarize_force_lang_Info": {
+        "message": "Jika dicentang, ringkasan selalu ditulis dalam bahasa yang dipilih, terlepas dari bahasa email. Ringkasan yang sudah dibuat tidak akan diperbarui: gunakan \"Segarkan ringkasan\" untuk membuatnya kembali."
+    },
+    "prefs_OptionText_summarize_lang_Info": {
+        "message": "Bahasa ringkasan. Biarkan kosong untuk menggunakan bahasa default yang ditetapkan dalam opsi ThunderAI. Jika keduanya kosong, tidak ada bahasa yang dipaksakan."
+    },
+    "prompt_summarize_force_lang": {
+        "message": "Ringkasan harus ditulis dalam"
+    },
+    "summarize_info_additional_statements": {
+        "message": "Pernyataan ini akan ditambahkan pada akhir prompt:"
+    },
+    "summarize_error_no_message_id": {
+        "message": "Pesan tidak dapat dibaca: ringkasan hanya akan dibuat berdasarkan subjek."
+    },
+    "translate_error_no_message_id": {
+        "message": "Pesan tidak dapat dibaca: terjemahan hanya akan dibuat berdasarkan subjek."
     }
 }

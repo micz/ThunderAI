@@ -530,9 +530,6 @@
     "prefs_SurveyLinkText2": {
         "message": "Klikněte zde, zabere to jen minutu!"
     },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Ručně vložit model"
-    },
     "OpenAIComp_force_model_ask": {
         "message": "Zde vložte název modelu, který chcete použít."
     },
@@ -1361,9 +1358,6 @@
     },
     "customDataPH_add_to_menu": {
         "message": "Použitelné v promptech přidaných do nabídky"
-    },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Vymazat seznam modelů"
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Opravdu chcete vymazat seznam modelů? Tuto akci nelze vzít zpět."

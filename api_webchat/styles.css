@@ -60,6 +60,8 @@
     --err-bg: #fdeaea;
     --err-ink: #c62828;
     --err-border: #f3b6b6;
+    /* Context meter nearing the model's window (see api_webchat/usageBadge.js). */
+    --warn: #d9822b;
 
     --shadow: rgba(20, 40, 80, .22);
 
@@ -101,6 +103,7 @@
         --err-bg: #3a1f22;
         --err-ink: #f38b8b;
         --err-border: #6b3034;
+        --warn: #e8a15a;
 
         --shadow: rgba(0, 0, 0, .55);
     }

@@ -589,6 +589,10 @@
     "message": "Error trying to fetch Ollama models",
     "description": ""
   },
+  "Models_Fetch_Done": {
+    "message": "Models list loaded",
+    "description": "Confirmation shown in green under the models select after the 'Update list' button has fetched the models list successfully. It fades out after a few seconds."
+  },
   "API_Models_Error_NoModels": {
     "message": "No models found",
     "description": ""
@@ -791,6 +795,18 @@
   },
   "prefs_OptionText_hide_thinking_info": {
     "message": "Controls the initial state of the thinking block shown above the answer. If checked, the block is collapsed by default and can be opened with a click. If unchecked, the block is open by default and can be collapsed with a click. The thinking content is always preserved.",
+    "description": ""
+  },
+  "prefs_OptionText_chat_show_usage_data": {
+    "message": "Show usage data in chat",
+    "description": ""
+  },
+  "prefs_OptionText_chat_show_usage_data_info": {
+    "message": "The token counts reported by the API are shown next to the buttons of each response. A click opens the details, including how much of the model context the conversation uses and the total of the whole chat session.",
+    "description": ""
+  },
+  "prefs_OptionText_chat_show_usage_data_openai_comp_note": {
+    "message": "With an OpenAI Compatible API, availability depends on the specific server implementation: some servers never report token usage.",
     "description": ""
   },
   "prefs_OptionText_thinking_summary": {
@@ -1085,10 +1101,6 @@
     "message": "Open the Welcome Page",
     "description": ""
   },
-  "prefs_OpenAIComp_ForceModel": {
-    "message": "Manually insert model",
-    "description": ""
-  },
   "OpenAIComp_force_model_ask": {
     "message": "Insert here the model name you want to use.",
     "description": ""
@@ -1272,6 +1284,50 @@
   "calendar_email_link_label": {
     "message": "Original email:",
     "description": "Label written before the link to the original email in the description of the calendar events and the tasks."
+  },
+  "prompt_calendar_reminder_format": {
+    "message": "In addition to the fields described above, add to the JSON object a field \"reminderMinutes\", which must have one of these three values: an integer, the number of minutes before the event start at which the reminder must be set, following the reminder rules given in this prompt; null, if reminder rules are given but none of them applies; the string \"default\", if no reminder rules are given at all.",
+    "description": "Appended to the calendar event prompt sent to the AI when the reminder option is enabled. Do not translate \"reminderMinutes\", \"null\" and \"default\"."
+  },
+  "prompt_task_reminder_format": {
+    "message": "In addition to the fields described above, add to the JSON object a field \"reminderMinutes\", which must have one of these three values: an integer, the number of minutes before the task due date (or before its initial date, if there is no due date) at which the reminder must be set, following the reminder rules given in this prompt; null, if reminder rules are given but none of them applies; the string \"default\", if no reminder rules are given at all.",
+    "description": "Appended to the task prompt sent to the AI when the reminder option is enabled. Do not translate \"reminderMinutes\", \"null\" and \"default\"."
+  },
+  "prompt_reminder_rules_intro": {
+    "message": "Reminder rules:",
+    "description": "Sent to the AI before the reminder rules written by the user."
+  },
+  "prefs_OptionText_reminder_enabled": {
+    "message": "Let the AI set a reminder",
+    "description": ""
+  },
+  "prefs_OptionText_calendar_reminder_enabled_Info": {
+    "message": "If checked, the AI is asked to set a reminder, relative to the event start, following the reminder rules. The rules can be written in the field below or directly in the main prompt: in both cases this option must be checked. If no rule applies, the event is created with no reminder. If no rules are written, neither below nor in the main prompt, Thunderbird's default reminder settings apply. If not checked, Thunderbird's default reminder settings always apply.",
+    "description": ""
+  },
+  "prefs_OptionText_task_reminder_enabled_Info": {
+    "message": "If checked, the AI is asked to set a reminder, relative to the task due date (or to its initial date, if there is no due date), following the reminder rules. The rules can be written in the field below or directly in the main prompt: in both cases this option must be checked. If no rule applies, the task is created with no reminder. If no rules are written, neither below nor in the main prompt, Thunderbird's default reminder settings apply. If not checked, Thunderbird's default reminder settings always apply.",
+    "description": ""
+  },
+  "prefs_OptionText_reminder_rules_title": {
+    "message": "Reminder rules",
+    "description": ""
+  },
+  "prefs_OptionText_reminder_rules_Info": {
+    "message": "Write the rules in natural language. This field is optional: if it is empty, the rules are taken from the main prompt above.",
+    "description": ""
+  },
+  "prefs_OptionText_calendar_reminder_rules_example": {
+    "message": "Example: \"If the event is in the morning in building A or B, set the reminder 45 minutes before. If it's in the afternoon, 15 minutes before. Otherwise, no reminder.\"",
+    "description": ""
+  },
+  "prefs_OptionText_task_reminder_rules_example": {
+    "message": "Example: \"If the task is about a payment, set the reminder one day before the due date. If it's about a report, two hours before. Otherwise, no reminder.\"",
+    "description": ""
+  },
+  "reminder_prompt_warning": {
+    "message": "The main prompt contains \"reminderMinutes\", but \"Let the AI set a reminder\" is not checked: the reminder instructions in the main prompt are ignored, and Thunderbird's default reminder applies, until the option is checked.",
+    "description": "Do not translate \"reminderMinutes\"."
   },
   "prefs_OptionText_btnManageCalendarEventInfo": {
     "message": "Manage calendar events settings",
@@ -1923,6 +1979,92 @@
     "message": "Answer actions",
     "description": "Accessible label for the small toolbar shown on each answer in the AI chat window"
   },
+  "apiwebchat_usage_label": {
+    "message": "Token usage",
+    "description": "Accessible label of the token usage details popover opened from the chip next to an answer in the AI chat window"
+  },
+  "apiwebchat_usage_input": {
+    "message": "Input",
+    "description": "Row label of the usage details popover in the AI chat window: tokens sent to the model"
+  },
+  "apiwebchat_usage_output": {
+    "message": "Output",
+    "description": "Row label of the usage details popover in the AI chat window: tokens generated by the model"
+  },
+  "apiwebchat_usage_total": {
+    "message": "Total",
+    "description": "Row label of the usage details popover in the AI chat window: total tokens"
+  },
+  "apiwebchat_usage_chip_tokens": {
+    "message": "$COUNT$ tokens",
+    "description": "Usage chip next to an answer in the AI chat window: total tokens of that answer",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_usage_chip_output_tokens": {
+    "message": "$COUNT$ output tokens",
+    "description": "Usage chip next to an answer in the AI chat window, when the provider reports only the generated tokens",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_usage_of_which_cached": {
+    "message": "of which cached",
+    "description": "Indented row of the usage details popover in the AI chat window: part of the input tokens read from the provider cache"
+  },
+  "apiwebchat_usage_of_which_cache_write": {
+    "message": "of which written to cache",
+    "description": "Indented row of the usage details popover in the AI chat window: part of the input tokens written to the provider cache"
+  },
+  "apiwebchat_usage_of_which_reasoning": {
+    "message": "of which reasoning",
+    "description": "Indented row of the usage details popover in the AI chat window: part of the output tokens spent on reasoning/thinking"
+  },
+  "apiwebchat_usage_duration": {
+    "message": "Duration",
+    "description": "Row label of the usage details popover in the AI chat window: time from sending the request to the end of the answer"
+  },
+  "apiwebchat_usage_speed": {
+    "message": "$RATE$ tok/s",
+    "description": "Generation speed in the usage details popover of the AI chat window (tokens per second)",
+    "placeholders": {
+      "rate": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_usage_context": {
+    "message": "Context",
+    "description": "Row label of the usage details popover in the AI chat window: tokens the conversation occupies in the model context after this answer"
+  },
+  "apiwebchat_usage_context_value": {
+    "message": "$USED$ / $MAX$ · $PCT$%",
+    "description": "Value of the Context row of the usage details popover in the AI chat window: tokens used / model context window · percentage",
+    "placeholders": {
+      "used": {
+        "content": "$1"
+      },
+      "max": {
+        "content": "$2"
+      },
+      "pct": {
+        "content": "$3"
+      }
+    }
+  },
+  "apiwebchat_usage_context_warn": {
+    "message": "consider starting a new chat",
+    "description": "Note under the Context row of the usage details popover in the AI chat window, shown when the context is at least 80% full"
+  },
+  "apiwebchat_usage_session_total": {
+    "message": "Session total",
+    "description": "Row label of the usage details popover in the AI chat window: sum of the tokens of every answer in the chat so far"
+  },
   "apiwebchat_scroll_to_latest": {
     "message": "Scroll to latest",
     "description": "Accessible label for the floating button in the AI chat window that jumps back to the newest content and resumes auto-scrolling"
@@ -2143,19 +2285,39 @@
   },
   "anthropic_err_hint_temperature": {
     "message": "The selected Claude model ($MODEL$) does not accept the Temperature setting. Clear the Temperature field, or use the Effort setting instead.",
-    "description": ""
+    "description": "$MODEL$ is the Claude model ID",
+    "placeholders": {
+      "model": {
+        "content": "$1"
+      }
+    }
   },
   "anthropic_err_hint_budget_tokens": {
     "message": "The selected Claude model ($MODEL$) does not accept a manual extended thinking budget. Set the Extended thinking budget to 0 and use the Effort setting instead.",
-    "description": ""
+    "description": "$MODEL$ is the Claude model ID",
+    "placeholders": {
+      "model": {
+        "content": "$1"
+      }
+    }
   },
   "anthropic_err_hint_thinking_type": {
     "message": "The selected Claude model ($MODEL$) does not accept this thinking configuration. Check the Extended thinking budget and Effort settings.",
-    "description": ""
+    "description": "$MODEL$ is the Claude model ID",
+    "placeholders": {
+      "model": {
+        "content": "$1"
+      }
+    }
   },
   "anthropic_err_hint_effort": {
     "message": "The selected Claude model ($MODEL$) does not accept this Effort level. Choose a different level in the options page.",
-    "description": ""
+    "description": "$MODEL$ is the Claude model ID",
+    "placeholders": {
+      "model": {
+        "content": "$1"
+      }
+    }
   },
   "prefs_OptionText_anthropic_effort": {
     "message": "Effort",
@@ -2589,9 +2751,13 @@
     "message": "Please note that any <br> tags in the AI's response will be replaced with line breaks.",
     "description": ""
   },
-  "prefs_OpenAIComp_ClearModelsList": {
-    "message": "Clear Models List",
-    "description": ""
+  "prefs_OpenAIComp_AddManually": {
+    "message": "Add manually",
+    "description": "Small button next to the OpenAI Compatible API models label: asks for a model name and adds it to the list. It is preceded by a plus icon."
+  },
+  "prefs_OpenAIComp_ClearList": {
+    "message": "Clear list",
+    "description": "Small button next to the OpenAI Compatible API models label: removes all the models from the list, after a confirmation."
   },
   "OpenAIComp_ClearModelsList_Confirm": {
     "message": "Are you sure you want to clear the Models List? This action cannot be undone.",

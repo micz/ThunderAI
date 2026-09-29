@@ -177,6 +177,38 @@ Skipped silently (logged via `this.logger.log`, no alert):
 
 The description is plain text (`descriptionText` in Sparks); Thunderbird linkifies the `mid:` scheme in the event summary, but HTML descriptions are out of scope.
 
+### Calendar event / task: reminder (#887)
+
+**Sparks contract** (Sparks ≥ 3.1.0, hence `sparks_min = '3.1.0'` in `js/mzta-utils.js`): an optional integer `reminderMinutes` in the JSON of both `openCalendarEventDialog` and `openTaskDialog`:
+- absent → Thunderbird's default reminder settings apply;
+- `-1` → explicitly no reminder;
+- `>= 0` → one reminder that many minutes before the event start (events) / the due date (tasks; the initial date if there is no due date; ignored by Sparks if the task has no dates).
+
+Identical for the two features, each with its own prefs (`calendar_reminder_enabled` / `calendar_reminder_rules`, `task_reminder_enabled` / `task_reminder_rules`), implemented once and parameterized by the `REMINDER_FEATURES` map in `js/mzta-utils-prompt.js` (`calendar` / `task` → prefs + format message id).
+
+**The `*_reminder_enabled` checkbox is the single switch** for both asking for the value (prompt side, `taPromptUtils.getReminderPromptStatements()`) and accepting it (response side, `normalizeReminderMinutes()` in `js/mzta-utils.js`). Checkbox off → nothing is appended to the prompt **and** `reminderMinutes` is always removed from the AI response, whatever the main prompt says, so Thunderbird's default reminder applies. An option labeled "Let the AI set a reminder" that still let the AI set one when off would be contradictory.
+
+The rules can live in the optional rules textarea **or** directly in the main prompt (which users customize, possibly adding `reminderMinutes` to its JSON format); in both cases the checkbox must be on. Rules written only in the main prompt = checkbox on, rules textarea empty.
+
+**Asking (prompt side).** `finalizePrompt_get_calendar_event(fullPrompt, promptTemplate, enabled, rules)` (after its `{%cc_list%}`/`{%recipients%}` stripping) and `finalizePrompt_get_task(...)` both go through `appendReminderStatements()` → `getReminderPromptStatements(feature, promptTemplate, enabled, rules)`. Checkbox off → nothing appended. Checkbox on, in this order, joined with `" \n"`:
+1. the format instruction (`prompt_calendar_reminder_format` / `prompt_task_reminder_format` — they differ only in the reference date), **unless** the template already contains the case-sensitive string `reminderMinutes`. It is worded ("in addition to the fields described above, add to the JSON object…") to work whatever JSON format the main prompt describes, and describes the field as having one of three values: an integer (minutes before the reference date), `null` when rules are given but none applies, or the string `"default"` when no reminder rules are given at all (neither in the rules option nor in the main prompt — only the AI can tell, since the main-prompt rules are natural language);
+2. if the rules trimmed are non-empty: `prompt_reminder_rules_intro` + `"\n"` + rules — **also** when (1) was skipped.
+
+The `reminderMinutes` check runs on the **template** (`curr_prompt.text`), not on the resolved `fullPrompt`: an email body that happens to contain the word must not suppress the instruction, and the settings-page warning checks the same live text. The default prompt texts (`prompt_get_calendar_event_full_text`, `prompt_get_task_full_text`) are unchanged. `prompt_get_calendar_event_from_clipboard` shares the calendar case block, so it is covered. The rules are appended **after** placeholder resolution, so `{%…%}` in them is sent verbatim — which is why the rules textarea has no placeholder highlighting/autocomplete.
+
+**Accepting (response side).** In `js/mzta-menus.js`, after `extractJsonObject()` and the date normalization (inside the same `try` for tasks), `normalizeReminderMinutes(data_obj, enabled, this.logger)`:
+- checkbox **off** → field **deleted**, whatever its value (Thunderbird defaults); nothing else is checked;
+- checkbox **on**:
+  - valid = a non-negative integer, or a string of digits (converted), `<= REMINDER_MINUTES_MAX` (40320, 4 weeks); `1.5`, `"-5"`, `40321`, `true`, `"abc"` are invalid;
+  - valid → kept (as a number);
+  - `"default"` (trimmed, case-insensitive) → field **deleted**: no rules anywhere, so the user gets Thunderbird's standard reminder, not "no reminder";
+  - `null` (rules given, none applies), missing or invalid → `-1` (the user asked for "no rule → no reminder");
+- raw and final values are logged in both cases.
+
+Resulting meaning of the value sent to Sparks: absent = Thunderbird default (checkbox off, or `"default"`), `-1` = no reminder, `>= 0` = the AI's reminder.
+
+Consequence worth knowing: since Sparks 3.1.0, an event/task without `reminderMinutes` gets Thunderbird's default reminder (when enabled in Thunderbird) — previously none was set.
+
 ### Add tags: extra prompt statements
 
 `taPromptUtils.finalizePrompt_add_tags()` (`js/mzta-utils-prompt.js`) appends statements to the prepared prompt, each on its own line (`" \n"`). It is called from both flows: the manual action (`js/mzta-menus.js`, with no use list) and the automatic/batch flow (`runAddTags` in `mzta-background.js`).

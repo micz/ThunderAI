@@ -42,3 +42,13 @@
 .unsaved {
     color: #d93025;
 }
+
+/* Reminder rules block and appended-text preview are shown by JS
+   (../_lib/reminder-ui.js). Hidden by default so nothing flashes before it runs. */
+#reminder_rules_block,
+.reminder_statements {
+    display: none;
+}
+.reminder_statements {
+    white-space: pre-line;
+}

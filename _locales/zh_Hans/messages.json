@@ -536,9 +536,6 @@
     "placeholder_cc_list": {
         "message": "抄送列表"
     },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "手动填入模型"
-    },
     "Ollama_Models": {
         "message": "Ollama 模型"
     },
@@ -885,7 +882,7 @@
         "message": "您确定要清除所有已存储的数据（包含：摘要、垃圾邮件报告、翻译等）吗？此操作无法撤销。"
     },
     "prefs_storage_clear_done": {
-        "message": "清除存储后显示的消息",
+        "message": "已删除 $COUNT$ 条记录。",
         "placeholders": {
             "count": {
                 "content": "$1"

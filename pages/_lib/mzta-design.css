@@ -579,6 +579,30 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     padding: 5px 9px !important;
     border-radius: 7px !important;
 }
+/* The ghost actions next to a field label (.models_action_btn, connection-ui.css)
+   are not bordered buttons: undo the button rule above, which outranks their
+   class-level rules. Colours and hover states stay in connection-ui.css. */
+#connection_ui_table .models_action_btn,
+#connection_ui_adv_table .models_action_btn {
+    border: none;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 13px;
+    font-weight: 500;
+    margin: 0;
+}
+#connection_ui_table .models_action_add:hover,
+#connection_ui_adv_table .models_action_add:hover {
+    background: color-mix(in srgb, var(--tint-accent, var(--accent)) 10%, transparent);
+}
+#connection_ui_table .models_action_clear,
+#connection_ui_adv_table .models_action_clear {
+    color: var(--dim);
+}
+#connection_ui_table .models_action_clear:hover,
+#connection_ui_adv_table .models_action_clear:hover {
+    color: var(--jsonError);
+}
 /* TomSelect controls match the field look and follow the light/dark theme.
    The vendored tom-select CSS hardcodes light colors (#fff backgrounds, #303030
    text) on the control, on the inner <input> that shows the selected item, and
@@ -882,6 +906,41 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     line-height: 1.4;
 }
 .feature_locked_note.shown { display: block; }
+
+/* Non-blocking amber caveat under a feature row, shown by JS (.shown) — e.g. the
+   reminder warning on the calendar event / task pages. Same look as the note above. */
+.feature_warn_note {
+    display: none;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--warning);
+    margin-top: 5px;
+    line-height: 1.4;
+}
+.feature_warn_note.shown { display: block; }
+
+/* Preview of the reminder text appended to the prompt (calendar event / task
+   pages, ../_lib/reminder-ui.js): the fixed format instruction in the dimmed
+   tone, the user's rules set apart by an accent rule so the two read as
+   different sources. */
+.reminder_statements_box {
+    margin-top: 6px;
+    padding: 10px 12px;
+    background: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 6px;
+}
+.reminder_statements_format {
+    color: var(--dim);
+}
+.reminder_statements_rules {
+    color: var(--text);
+    border-left: 3px solid var(--accent);
+    padding-left: 10px;
+}
+.reminder_statements_format + .reminder_statements_rules {
+    margin-top: 10px;
+}
 
 /* ===========================================================================
    ADVANCED OPTIONS (app-level disclosure)

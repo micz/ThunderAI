@@ -23,7 +23,7 @@ import {
 import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js'
 import { mztaPrefs } from './mzta-prefs.js';
 
-const sparks_min = '3.0.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
+const sparks_min = '3.1.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
 const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
 
 export const getMenuContextCompose = () => 'compose_action_menu';
@@ -213,16 +213,23 @@ export async function getCurrentIdentity(msgHeader, getFull = false) {
 }
 
 
-// Extracts the first email address found in a string, '' if there is none.
-// Accepts a raw header value like 'Name <addr@domain.com>'.
+// Local part: RFC 5322 atext (so "user+tag" and "o'brien" are kept whole) plus
+// Unicode letters/digits; domain: dot-separated Unicode labels.
+const EMAIL_REGEX = /[\p{L}\p{N}.!#$%&'*+\/=?^_`{|}~-]+@[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)+/u;
+
+// Extracts the first email address found in a string, '' if there is none
+// (or if the value is not a string).
+// Accepts a raw header value like 'Name <addr@domain.com>': the address inside
+// the angle brackets wins over anything address-like in the display name.
 // The case is preserved: getIdentityForMessage() compares the result with the
 // identity addresses as they were configured, so callers that need a
 // case-insensitive match have to lowercase it themselves.
 export function extractEmail(text) {
-  if((text=='')||(text==undefined)) return '';
-  const emailRegex = /[\w.-]+@[\w.-]+\.\w+/;
-  const match = text.match(emailRegex);
-  return match ? match[0] : '';
+  if (typeof text !== 'string' || text === '') return '';
+  const bracketed = text.match(/<([^<>]*)>/);
+  const match = (bracketed && bracketed[1].match(EMAIL_REGEX)) || text.match(EMAIL_REGEX);
+  // Leading quotes/dots are delimiters, not part of the address ('john@x.com').
+  return match ? match[0].replace(/^['.]+/, '') : '';
 }
 
 // tabs.sendMessage() guarded against Thunderbird's crash on tabs with no reachable
@@ -1030,6 +1037,25 @@ export function isApiUsableConnection(connection_type){
   return !hasNoConnectionSelected(connection_type) && (connection_type !== 'chatgpt_web');
 }
 
+// Which connection types report token usage, so the UI can ask without importing
+// every provider module (each one also exports its own `supportsUsageData`, and
+// the two must stay in agreement). The web interfaces -- ChatGPT Web and any
+// other non-API integration -- have no API to report it, hence false.
+const USAGE_DATA_SUPPORT = {
+  chatgpt_web: false,
+  chatgpt_api: true,
+  google_gemini_api: true,
+  anthropic_api: true,
+  ollama_api: true,
+  openai_comp_api: true,
+};
+
+// True when the given connection type can report token usage. An unknown or unset
+// type answers false: nothing can be shown for a provider we know nothing about.
+export function supportsUsageData(connection_type){
+  return USAGE_DATA_SUPPORT[connection_type] === true;
+}
+
 export function extractJsonObject(inputString) {
   try {
     const jsonMatch = inputString.match(/\{[\s\S]*\}/);
@@ -1081,6 +1107,44 @@ export function appendMessageLinkToDescription(data_obj, message, label) {
   const desc = (typeof data_obj.description === 'string') ? data_obj.description.trim() : '';
   data_obj.description = (desc !== '') ? desc + '\n\n' + link_line : link_line;
   return true;
+}
+
+// Upper bound for reminderMinutes (4 weeks). Larger values are treated as invalid.
+export const REMINDER_MINUTES_MAX = 40320;
+
+// Normalizes data_obj.reminderMinutes (calendar event / task objects) before the
+// hand-off to Sparks, which reads it as: absent = Thunderbird default reminder,
+// -1 = no reminder, >= 0 = minutes before the event start / task due date.
+// The feature's reminder checkbox is the single switch:
+// - off: the field is ALWAYS removed, whatever the AI returned (even if the main
+//   prompt asks for "reminderMinutes"), so Thunderbird's defaults apply.
+// - on: a valid value is kept. Valid = a non-negative integer, or a string holding
+//   one, up to REMINDER_MINUTES_MAX. The string "default" (what the format
+//   instruction asks for when NO reminder rules are given at all, neither in the
+//   rules option nor in the main prompt) removes the field, so Thunderbird's
+//   defaults apply. null ("rules given, none applies"), a missing field or an
+//   invalid value becomes -1 (no reminder).
+export function normalizeReminderMinutes(data_obj, reminder_enabled, logger = null) {
+  const raw = data_obj.reminderMinutes;
+  if (!reminder_enabled) {
+    delete data_obj.reminderMinutes;
+    logger?.log("reminderMinutes: raw = " + JSON.stringify(raw) + ", final = " + JSON.stringify(data_obj.reminderMinutes) + " (reminder option off)");
+    return;
+  }
+  let value = null;
+  if (typeof raw === 'number' && Number.isInteger(raw)) {
+    value = raw;
+  } else if (typeof raw === 'string' && /^\s*\d+\s*$/.test(raw)) {
+    value = parseInt(raw.trim(), 10);
+  }
+  if (typeof raw === 'string' && raw.trim().toLowerCase() === 'default') {
+    delete data_obj.reminderMinutes;
+  } else if (value !== null && value >= 0 && value <= REMINDER_MINUTES_MAX) {
+    data_obj.reminderMinutes = value;
+  } else {
+    data_obj.reminderMinutes = -1;
+  }
+  logger?.log("reminderMinutes: raw = " + JSON.stringify(raw) + ", final = " + JSON.stringify(data_obj.reminderMinutes));
 }
 
 export function isAPIKeyValue(id){
