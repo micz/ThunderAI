@@ -27,6 +27,7 @@ let script_start_ms = performance.now();
 let ready_state_at_inject = document.readyState;
 let custom_text_start_ms = null;
 let custom_text_ms = null;
+let send_button_wait_ms = null;
 let page_timing_logged = false;
 let force_go = false;
 let do_force_completion = false;
@@ -782,6 +783,32 @@ function waitForSendVerified(el, maxMs) {
     });
 }
 
+// Waits at least 150 ms after the input event, then checks findSendButton() every 100 ms:
+// resolves with the first enabled button, or after maxMs with whatever the lookup returns (even null or disabled)
+function waitForSendButtonReady(composerEl, maxMs) {
+    return new Promise(resolve => {
+        const startTime = Date.now();
+        const check = () => {
+            let btn = null;
+            try {
+                btn = findSendButton(composerEl);
+                if (btn && !btn.disabled && btn.getAttribute('aria-disabled') !== 'true') {
+                    resolve(btn);
+                    return;
+                }
+            } catch (err) {
+                console.error('[ThunderAI] waitForSendButtonReady: ', err);
+            }
+            if (Date.now() - startTime >= maxMs) {
+                resolve(btn);
+                return;
+            }
+            setTimeout(check, 100);
+        };
+        setTimeout(check, Math.min(150, maxMs));
+    });
+}
+
 function dispatchEnter(el) {
     try { el.focus(); } catch (err) { /* the keydown below does not depend on it */ }
     el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
@@ -872,11 +899,13 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
     doLog("Prompt input filled: tag " + textArea.tagName.toLowerCase() + ", content length " + (textArea.tagName === 'TEXTAREA' ? textArea.value.length : (textArea.textContent || '').length) + " (prompt length " + msg.length + ")");
     //wait for the button to change from the audio button to the send button (from nov-2024),
     //the newer composer renders its submit button only once there is text
-    await waitMs(1000);
+    const sendButtonWaitStart = Date.now();
+    const sendButton = await waitForSendButtonReady(textArea, 1000);
+    send_button_wait_ms = Date.now() - sendButtonWaitStart;
+    doLog("Send button wait: " + send_button_wait_ms + " ms, button " + (sendButton ? ((!sendButton.disabled && sendButton.getAttribute('aria-disabled') !== 'true') ? "enabled" : "disabled") : "not found"));
     let diagLogged = false;
     // for the send button diagnostics: the last method used, verified once the outcome is known
     const attempt = { strategy: null, method: null, verified: null };
-    const sendButton = findSendButton(textArea);
     if (sendButton) {
         const outcome = await sendWithButton(sendButton, textArea, method);
         // sendWithButton re-queries the button, so the strategy is read after it
@@ -2292,6 +2321,8 @@ function logPageTiming(sendDoneMs){
             scriptStartMs: r(script_start_ms),
             sendDoneMs: r(sendDoneMs),
             customTextMs: r(custom_text_ms),
+            loadWaitMs: (typeof mztaLoadWaitMs === 'number') ? r(mztaLoadWaitMs) : null,
+            sendButtonWaitMs: r(send_button_wait_ms),
             readyReason: mztaReadyReason,
             readyStateAtSend: mztaReadyStateAtSend,
             readyStateAtInject: ready_state_at_inject

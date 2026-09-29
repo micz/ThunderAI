@@ -1548,10 +1548,11 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     let mztaReplyType="`+ reply_type_pref.reply_type + `";
                     let mztaReadyReason=`+ JSON.stringify(String(message.readyReason)) +`;
                     let mztaReadyStateAtSend=`+ JSON.stringify(String(message.readyStateAtSend)) +`;
+                    let mztaLoadWaitMs=`+ JSON.stringify(Number(_wait_time)) +`;
                     `;
 
                     taLog.log("pre_script: " + pre_script);
-                    taLog.log("Waiting " + _wait_time + " millisec");
+                    taLog.log("Waiting " + _wait_time + " millisec (readyReason " + message.readyReason + ")");
                     await new Promise(resolve => setTimeout(resolve, _wait_time));
                     taLog.log("Waiting " + _wait_time + " millisec done");
                     
