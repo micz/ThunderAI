@@ -340,7 +340,10 @@ export async function openPage(page, opts = {}) {
     const observer = new window.MutationObserver(list => { mutations += list.length; });
     observer.observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
 
-    const settle = async ({ cap = 5000 } = {}) => {
+    // The cap is a safety net against a page that never goes idle, not a timing assumption:
+    // it is wall-clock time and includes the page's whole init, which a loaded CI machine
+    // running many jsdom files in parallel can stretch well past a few seconds.
+    const settle = async ({ cap = 30000 } = {}) => {
         const start = Date.now();
         let quiet = 0;
         while (quiet < 3) {

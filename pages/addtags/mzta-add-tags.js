@@ -162,10 +162,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let add_tags_auto_uselist = document.getElementById('add_tags_auto_uselist');
     let add_tags_auto_uselist_list = document.getElementById('add_tags_auto_uselist_list');
+    // Through the managed-aware setter: both run after applyManagedUI(), and a plain
+    // assignment would re-enable the list when the policy locks it.
     add_tags_auto_uselist.addEventListener('click', (event) => {
-      add_tags_auto_uselist_list.disabled = !event.target.checked;
+      setDisabledRespectingManaged(add_tags_auto_uselist_list, !event.target.checked);
     });
-    add_tags_auto_uselist_list.disabled = !add_tags_auto_uselist.checked;
+    setDisabledRespectingManaged(add_tags_auto_uselist_list, !add_tags_auto_uselist.checked);
 
     addtags_reset_btn.addEventListener('click', () => {
         // The button being disabled is not the same as the action being unavailable.

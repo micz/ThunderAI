@@ -143,7 +143,10 @@ popup, the empty-key warnings) see a configured connection. Everything that woul
   event `applyManagedUI()` dispatches on each control it locks). Typing an own key over an
   unlocked policy key brings the eye back;
 - the "Fetch models" handlers return early, and the empty-key warnings keep the fetch button
-  disabled;
+  disabled. That includes the checks that do not look at the key first: the OpenAI-compatible
+  host check (the key is optional there, but never the marker) and the Anthropic version
+  check, which runs after `warn_Anthropic_APIKeyEmpty()` and repeats its key checks rather
+  than undoing them;
 - `runConnectionTest()` returns `connTest_managed_api_key` instead of sending it;
 - `mztaPrefs.setPref()` / `setPrefs()` refuse to write it (per key, like the lock guard);
 - the prompt storage gates (`stripTransientFlags()`, used by `setCustomPrompts()` /
@@ -165,7 +168,10 @@ list the user cannot pick from is pointless. In `pages/_lib/connection-ui.js`,
 
 - the connection checks (`warn_*Empty()`) never enable the fetch button while it is set;
 - `toggleTomSelectDisabled()` never re-enables the select (or its Tom Select) while it is set,
-  and disables it without `clear()`, so the enforced model stays shown;
+  whatever the caller asks, and disables it without `clear()`, so the enforced model stays
+  shown - `clear()` would also fire a `change` that tries to save `''`. The empty-credential
+  branches of the `warn_*Empty()` checks leave its `selectedIndex` alone for the same reason,
+  so emptying a key or host and typing it back never loses the enforced model;
 - the model select's `mzta-managed` event re-runs its provider's checks, because
   `applyManagedUI()` runs after the connection panel has been built and checked.
 
@@ -807,7 +813,10 @@ A feature toggle is an `<input type="checkbox">` visually hidden **inside**
   label branch wins and appending would drop the badge *inside* the switch — left of the
   track and inside its click target. When the control is inside a `.mzta_switch`, the
   marker is therefore inserted **before that label**, as a sibling in `.feature_row`, so
-  the row reads `… [Managed by Org] (toggle)`.
+  the row reads `… [Managed by Org] (toggle)`. One marker per host: `markManaged()` skips a
+  host that already has a `.managed_marker` as a **direct child** - a marker further down
+  belongs to another control (a `.mzta_field` can hold a nested switch row with its own), and
+  does not say this one is locked.
 - **Two layout contexts.** Wherever it lands, the marker ends up a *flex item*, and the base
   `.managed_marker` rule — an `inline-flex` chip sized by its content — is not enough on its
   own, because a flex parent's `align-items: stretch` overrides that sizing. Each context
@@ -843,7 +852,12 @@ A feature toggle is an `<input type="checkbox">` visually hidden **inside**
     `dataset.mztaManaged === '1'`, so a policy-locked control can never be re-enabled by
     page logic. Call sites that previously read back `.disabled` to decide **row
     visibility** were changed to test their own condition instead: a lock must grey a row
-    out, never hide it.
+    out, never hide it. Every page-logic assignment that can run after `applyManagedUI()`
+    goes through it, including `updateAnthropicModelCapabilityUI()` (the fields the selected
+    model does not support), `updateDisplayModeConstraint()` on the summarize page and the
+    `add_tags_auto_uselist` toggle on the Add Tags page. `disable_ApiFeature()` also leaves a
+    locked flag's `checked` alone: a policy-enabled feature with an unusable connection stays
+    on (see [Interaction points](#interaction-points)), so the toggle keeps showing it.
   - `lockControl()` — a capturing `click`/`keydown` swallower on the `.mzta_switch` label,
     so even a re-enabled input cannot be flipped by clicking the track or the row label.
 

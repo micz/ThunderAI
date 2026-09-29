@@ -171,7 +171,7 @@ jsdom does not execute `<script type="module">`, so `openPage(page, opts)` in
 `settle()` does not sleep for a fixed time: it turns the event loop until three consecutive
 turns pass with no browser-mock promise in flight, no pending `setTimeout` (both realms'
 timers are tracked; ones longer than 1 s are not waited for) and no DOM mutation. It throws
-"did not settle", naming what is pending, after 5 s. `ctx.fire(el, type)` and
+"did not settle", naming what is pending, after 30 s (a safety net: the time includes the page's whole init, which a loaded machine stretches). `ctx.fire(el, type)` and
 `ctx.click(el)` settle after the event too.
 
 Every file ends with `assertHarnessClean(ctx)`: no unmocked API or background command was

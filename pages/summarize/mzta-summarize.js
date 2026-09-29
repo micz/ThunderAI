@@ -347,14 +347,16 @@ function updateDisplayModeConstraint() {
   const summarize_auto_el = document.getElementById('summarize_auto');
   const display_mode_el = document.getElementById('summarize_display_mode');
   const autoVal = String(summarize_auto_el.value);
+  // Through the managed-aware setter: this runs on every summarize_auto change, after
+  // applyManagedUI(), and a plain assignment would re-enable a locked display mode.
   if (autoVal === '2' || autoVal === '3') {
     display_mode_el.value = 'inline';
-    display_mode_el.disabled = true;
+    setDisabledRespectingManaged(display_mode_el, true);
     mztaPrefs.setPref('summarize_display_mode', 'inline');
   } else if (autoVal === '0') {
-    display_mode_el.disabled = true;
+    setDisabledRespectingManaged(display_mode_el, true);
   } else {
-    display_mode_el.disabled = false;
+    setDisabledRespectingManaged(display_mode_el, false);
   }
   updateAutoSendersState();
   updateAutoSendersNotice();

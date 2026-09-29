@@ -13,7 +13,6 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { openPage, assertHarnessClean } from './dom-page.mjs';
-import { REASONS } from './dom-known-issues.mjs';
 
 export const MODELS = {
     chatgpt_model: { value: 'gpt-org-enforced', btn: 'btnUpdateChatGPTModels', cred: 'chatgpt_api_key' },
@@ -57,8 +56,7 @@ export async function lockedModelScenario(page) {
             check(key, 'at page open');
         });
 
-        test(`${key}: emptying and retyping ${MODELS[key].cred} neither clears nor re-enables it`,
-            { todo: REASONS.lockedModelClearedOnEmptyCredential }, async () => {
+        test(`${key}: emptying and retyping ${MODELS[key].cred} neither clears nor re-enables it`, async () => {
             const cred = ctx.$('#' + MODELS[key].cred);
             const own = cred.value;
             cred.value = '';

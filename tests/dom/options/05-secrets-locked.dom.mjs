@@ -10,12 +10,6 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { openPage, assertHarnessClean, msg } from '../../helpers/dom-page.mjs';
-import { REASONS } from '../../helpers/dom-known-issues.mjs';
-
-const FETCH_TODO = {
-    openai_comp_api_key: REASONS.fetchEnabledByHostCheck,
-    anthropic_api_key: REASONS.fetchEnabledByVersionCheck,
-};
 
 const KEYS = {
     chatgpt_api_key: { conn: 'chatgpt_api', fetch: 'btnUpdateChatGPTModels' },
@@ -66,7 +60,7 @@ for (const [key, { fetch }] of Object.entries(KEYS)) {
         assert.match(img.getAttribute('src'), /pwd-locked\.svg$/, 'the padlock turned back into an eye');
     });
 
-    test(`${key}: "Fetch models" is disabled`, { todo: FETCH_TODO[key] }, () => {
+    test(`${key}: "Fetch models" is disabled`, () => {
         assert.equal(ctx.$('#' + fetch).disabled, true, fetch + ' enabled');
     });
 

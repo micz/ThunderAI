@@ -7,7 +7,6 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { openPage, assertHarnessClean } from '../../helpers/dom-page.mjs';
-import { REASONS } from '../../helpers/dom-known-issues.mjs';
 
 const ctx = await openPage('addtags', {
     policy: { add_tags_auto_uselist_list: 'invoice, contract' },
@@ -22,7 +21,7 @@ test('the locked list starts disabled and marked', () => {
     assert.equal(list().dataset.mztaManaged, '1');
 });
 
-test('flipping add_tags_auto_uselist never re-enables the locked list', { todo: REASONS.uselistReenabled }, async () => {
+test('flipping add_tags_auto_uselist never re-enables the locked list', async () => {
     const toggle = ctx.$('#add_tags_auto_uselist');
     for (let i = 0; i < 3; i++) {
         await ctx.click(toggle);

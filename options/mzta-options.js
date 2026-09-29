@@ -280,7 +280,12 @@ function disable_ApiFeature(prefs_opt, prefix, manageBtnId){
   // is on their way to configuring a per-feature API, and that page is behind this very
   // toggle — clearing it here used to strand them: the feature switched itself back off
   // between enabling it and finishing the setup.
-  checkbox.checked = state.disabled ? false : checkbox.checked;
+  // Never for a policy-locked flag: a policy-enabled feature with an unusable connection
+  // stays on (see _reconcileFeatureFlags() in mzta-background.js), so the page must keep
+  // showing the enforced value rather than a switch-off the write guard would refuse anyway.
+  if (!isLockedKey(prefix)) {
+    checkbox.checked = state.disabled ? false : checkbox.checked;
+  }
   // With no connection selected the toggle is greyed out: there is nothing to
   // enable the feature against yet. A policy-locked toggle stays disabled regardless.
   setDisabledRespectingManaged(checkbox, state.no_connection);

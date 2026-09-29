@@ -46,7 +46,7 @@ import {
 } from '../../js/mzta-prompts.js';
 import { mztaPrefs } from '../../js/mzta-prefs.js';
 import { mztaManaged } from '../../js/mzta-managed.js';
-import { isManagedSecret } from './managed-ui.js';
+import { isManagedSecret, setDisabledRespectingManaged } from './managed-ui.js';
 
 export const varConnectionUI = {
   permission_all_urls: false,
@@ -1158,6 +1158,11 @@ export async function injectConnectionUI({
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_APIKeyEmpty(modelId_prefix));
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_VersionEmpty(modelId_prefix));
   select_anthropic_model.addEventListener("change", () => updateAnthropicModelCapabilityUI(modelId_prefix));
+  // The effort select gets every level now, before restoreOptions() runs: with no <option>
+  // yet, the restore would find nothing to select and the stored (or enforced) value would
+  // be lost - updateAnthropicModelCapabilityUI() later narrows the list and keeps whatever
+  // is selected by then.
+  fillAnthropicEffortOptions(document.getElementById(getPrefixedId('anthropic_effort')), ANTHROPIC_EFFORT_LEVELS);
   // No initial call here: this runs before restoreOptions() has written the saved
   // model into the select, so the capabilities would be computed from an empty
   // model ID. The page calls updateAnthropicModelCapabilityUI() itself after the
@@ -1731,9 +1736,10 @@ function isManagedModel(element) {
 }
 
 function toggleTomSelectDisabled(element, disabled) {
-  if (!disabled && isManagedModel(element)) {
+  if (isManagedModel(element)) {
+    // Whatever the caller asks: never re-enabled, and disabled without clear(), so the
+    // enforced model stays visible (clear() would also fire a change that tries to save '').
     element.disabled = true;
-    // Disabled without clear(): the enforced model must stay visible.
     element.tomselect?.disable();
     return;
   }
@@ -1867,7 +1873,8 @@ function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {
     apiKeyInput.style.border = '2px solid red';
     btnFetchChatGPTModels.disabled = true;
     toggleTomSelectDisabled(modelChatGPT, true);
-    modelChatGPT.selectedIndex = -1;
+    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
+    if (!isManagedModel(modelChatGPT)) modelChatGPT.selectedIndex = -1;
     modelChatGPT.style.border = '';
   }else{
     apiKeyInput.style.border = '';
@@ -1891,7 +1898,8 @@ function warn_GoogleGemini_APIKeyEmpty(modelId_prefix) {
     apiKeyInput.style.border = '2px solid red';
     btnFetchGoogleGeminiModels.disabled = true;
     toggleTomSelectDisabled(modelGoogleGemini, true);
-    modelGoogleGemini.selectedIndex = -1;
+    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
+    if (!isManagedModel(modelGoogleGemini)) modelGoogleGemini.selectedIndex = -1;
     modelGoogleGemini.style.border = '';
   }else{
     apiKeyInput.style.border = '';
@@ -1916,7 +1924,8 @@ function warn_Ollama_HostEmpty(modelId_prefix) {
     hostInput.style.border = '2px solid red';
     btnFetchOllamaModels.disabled = true;
     toggleTomSelectDisabled(modelOllama, true);
-    modelOllama.selectedIndex = -1;
+    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
+    if (!isManagedModel(modelOllama)) modelOllama.selectedIndex = -1;
     modelOllama.style.border = '';
     btnGiveAllUrlsPermission_ollama_api.disabled = true;
   }else{
@@ -1942,12 +1951,17 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
     hostInput.style.border = '2px solid red';
     btnUpdateOpenAICompModels.disabled = true;
     toggleTomSelectDisabled(modelOpenAIComp, true);
-    modelOpenAIComp.selectedIndex = -1;
+    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
+    if (!isManagedModel(modelOpenAIComp)) modelOpenAIComp.selectedIndex = -1;
     modelOpenAIComp.style.border = '';
     btnGiveAllUrlsPermission_openai_comp_api.disabled = true;
   }else{
     hostInput.style.border = '';
-    btnUpdateOpenAICompModels.disabled = isManagedModel(modelOpenAIComp);
+    // The API key is optional here, but a policy-supplied one is only a placeholder on this
+    // page: the models cannot be fetched with it.
+    const apiKeyOpenAIComp = document.getElementById(getPrefixedId('openai_comp_api_key'));
+    btnUpdateOpenAICompModels.disabled = isManagedModel(modelOpenAIComp)
+        || (!!apiKeyOpenAIComp && isManagedSecret(apiKeyOpenAIComp.value));
     toggleTomSelectDisabled(modelOpenAIComp, false);
     if((modelOpenAIComp.selectedIndex === -1)||(modelOpenAIComp.value === '')){
       modelOpenAIComp.style.border = '2px solid red';
@@ -1973,7 +1987,9 @@ export function updateAnthropicModelCapabilityUI(modelId_prefix = '') {
   const applyState = (fieldId, supported) => {
     const field = document.getElementById(getPrefixedId(fieldId));
     const note = document.getElementById(getPrefixedId(fieldId + '_unsupported'));
-    if(field) field.disabled = !supported;
+    // Through the managed-aware setter: this runs on every model change, after
+    // applyManagedUI(), and a plain assignment would re-enable a locked field.
+    if(field) setDisabledRespectingManaged(field, !supported);
     if(note) note.style.display = supported ? 'none' : '';
   };
 
@@ -1984,10 +2000,14 @@ export function updateAnthropicModelCapabilityUI(modelId_prefix = '') {
   const effortSelect = document.getElementById(getPrefixedId('anthropic_effort'));
   if(!effortSelect) return;
 
-  // Keep whatever is stored selected even when this model does not offer it, so
-  // the value survives a round trip through a model that cannot use it.
+  fillAnthropicEffortOptions(effortSelect, caps.supportsEffort ? caps.effortLevels : ANTHROPIC_EFFORT_LEVELS);
+}
+
+// (Re)builds the effort <option> list. Keeps whatever is currently selected even when the
+// new list does not offer it, so the value survives a round trip through a model that
+// cannot use it.
+function fillAnthropicEffortOptions(effortSelect, levels) {
   const current = effortSelect.value;
-  const levels = caps.supportsEffort ? caps.effortLevels : ANTHROPIC_EFFORT_LEVELS;
   effortSelect.textContent = '';
 
   const emptyOption = document.createElement('option');
@@ -2020,7 +2040,8 @@ function warn_Anthropic_APIKeyEmpty(modelId_prefix) {
     apiKeyInput.style.border = '2px solid red';
     btnFetchAnthropicModels.disabled = true;
     toggleTomSelectDisabled(modelAnthropic, true);
-    modelAnthropic.selectedIndex = -1;
+    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
+    if (!isManagedModel(modelAnthropic)) modelAnthropic.selectedIndex = -1;
     modelAnthropic.style.border = '';
   }else{
     apiKeyInput.style.border = '';
@@ -2044,11 +2065,16 @@ function warn_Anthropic_VersionEmpty(modelId_prefix) {
     versionInput.style.border = '2px solid red';
     btnFetchAnthropicModels.disabled = true;
     toggleTomSelectDisabled(modelAnthropic, true);
-    modelAnthropic.selectedIndex = -1;
+    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
+    if (!isManagedModel(modelAnthropic)) modelAnthropic.selectedIndex = -1;
     modelAnthropic.style.border = '';
   }else{
     versionInput.style.border = '';
-    btnFetchAnthropicModels.disabled = isManagedModel(modelAnthropic);
+    // Runs after warn_Anthropic_APIKeyEmpty(): repeat its key checks rather than undo them,
+    // or a missing or policy-supplied key would get the fetch button back.
+    const apiKeyAnthropic = document.getElementById(getPrefixedId('anthropic_api_key'));
+    btnFetchAnthropicModels.disabled = isManagedModel(modelAnthropic)
+        || !apiKeyAnthropic || apiKeyAnthropic.value === '' || isManagedSecret(apiKeyAnthropic.value);
     toggleTomSelectDisabled(modelAnthropic, false);
     if((modelAnthropic.selectedIndex === -1)||(modelAnthropic.value === '')){
       modelAnthropic.style.border = '2px solid red';

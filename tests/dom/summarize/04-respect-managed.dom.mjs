@@ -8,7 +8,6 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { openPage, assertHarnessClean } from '../../helpers/dom-page.mjs';
-import { REASONS } from '../../helpers/dom-known-issues.mjs';
 
 const LOCKED = ['summarize_auto_senders', 'summarize_auto_senders_list', 'summarize_display_mode'];
 const ctx = await openPage('summarize', {
@@ -44,7 +43,7 @@ test('summarize_auto_senders, its list and Save stay disabled for every summariz
     }
 });
 
-test('summarize_display_mode stays disabled for every summarize_auto value', { todo: REASONS.displayModeReenabled }, () => {
+test('summarize_display_mode stays disabled for every summarize_auto value', () => {
     for (const [value, s] of Object.entries(seen)) {
         assert.equal(s.display, true, 'summarize_display_mode re-enabled at summarize_auto=' + value);
     }

@@ -119,6 +119,15 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
   deliberately assuming the *modern* contract: a stale setting then degrades to a valid request,
   whereas assuming the legacy contract would send `temperature`/`budget_tokens` and earn a 400.
   **The table must be updated as new models ship.**
+- **Settings UI** (`updateAnthropicModelCapabilityUI()` in `pages/_lib/connection-ui.js`): the
+  options the selected model rejects stay visible and populated but disabled, with a note, and
+  the `anthropic_effort` list is narrowed to the model's `effortLevels` while keeping the
+  selected value (a stale level is kept as an extra option). `injectConnectionUI()` fills that
+  select with every level of `ANTHROPIC_EFFORT_LEVELS` right away, before the page's
+  `restoreOptions()` runs: with no `<option>` yet, the restore would have nothing to select and
+  the stored value would be lost on every page (options, setup wizard, feature pages). The
+  disabled state goes through `setDisabledRespectingManaged()`, so a field locked by policy is
+  never re-enabled by a model change.
 - **Request body construction** is entirely driven by that table, and every field is opt-in:
   - `temperature` is sent only when `supportsSamplingParams` and the user set a value. It is now
     **independent of the thinking configuration** — the old rule that extended thinking suppressed

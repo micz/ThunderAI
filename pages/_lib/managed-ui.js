@@ -321,7 +321,10 @@ function markManaged(element, state, explicitAnchor = null) {
     // the badge goes right of that title rather than under the buttons.
     const groupTitle = groupTitleFor(target);
     if (groupTitle) target = groupTitle;
-    if (target.querySelector('.managed_marker')) return;
+    // One marker per host, checked on its direct children only: a host can CONTAIN another
+    // control's marker (a .mzta_field holding a nested switch row), and that one does not
+    // say this control is locked.
+    if (target.querySelector(':scope > .managed_marker')) return;
 
     const marker = document.createElement('span');
     marker.className = 'managed_marker';

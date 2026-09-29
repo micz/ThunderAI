@@ -11,7 +11,6 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { openPage, assertHarnessClean } from '../../helpers/dom-page.mjs';
-import { REASONS } from '../../helpers/dom-known-issues.mjs';
 
 const LOCKED = ['spamfilter', 'summarize', 'get_task', 'max_prompt_length'];
 const ctx = await openPage('options', {
@@ -68,7 +67,7 @@ test('with no connection selected, locked controls stay disabled', async () => {
     allStillLocked('with no connection selected');
 });
 
-test('with no connection selected, a policy-enabled feature is still shown on', { todo: REASONS.lockedFeatureShownOff }, () => {
+test('with no connection selected, a policy-enabled feature is still shown on', () => {
     for (const id of ['spamfilter', 'summarize']) {
         assert.equal(ctx.$('#' + id).checked, true, id + ' shown switched off, the policy says on');
     }
