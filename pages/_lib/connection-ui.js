@@ -861,6 +861,18 @@ export async function injectConnectionUI({
   });
   updateSecretToggles(modelId_prefix);
 
+  // applyManagedUI() locks a model select after the checks above ran: run them again so
+  // its "Update" button is disabled too (see isManagedModel()).
+  [
+    ['chatgpt_model', [warn_ChatGPT_APIKeyEmpty]],
+    ['google_gemini_model', [warn_GoogleGemini_APIKeyEmpty]],
+    ['ollama_model', [warn_Ollama_HostEmpty]],
+    ['openai_comp_model', [warn_OpenAIComp_HostEmpty]],
+    ['anthropic_model', [warn_Anthropic_APIKeyEmpty, warn_Anthropic_VersionEmpty]],
+  ].forEach(([model, checks]) => {
+    getModelEl(model, modelId_prefix)?.addEventListener('mzta-managed', () => checks.forEach(check => check(modelId_prefix)));
+  });
+
   // Null when the ChatGPT Web rows were not injected (see chatgpt_web_rows).
   const btnChatGPTWeb_Tab = document.getElementById('btnChatGPTWeb_Tab');
   btnChatGPTWeb_Tab?.addEventListener('click', async () => {
@@ -1711,7 +1723,20 @@ function autoSelectSingleModel(element) {
   element.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
+// A model select the policy locked (applyManagedUI() marks it) stays disabled, whatever the
+// connection checks decide: fetching models for it would be pointless, and re-enabling it
+// would let the user pick a model the write guard then refuses to save.
+function isManagedModel(element) {
+  return !!element && element.dataset.mztaManaged === '1';
+}
+
 function toggleTomSelectDisabled(element, disabled) {
+  if (!disabled && isManagedModel(element)) {
+    element.disabled = true;
+    // Disabled without clear(): the enforced model must stay visible.
+    element.tomselect?.disable();
+    return;
+  }
   element.disabled = disabled;
   if (element.tomselect) {
     if (disabled) {
@@ -1847,7 +1872,7 @@ function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {
   }else{
     apiKeyInput.style.border = '';
     // Not with a policy-supplied key: the page only holds its placeholder.
-    btnFetchChatGPTModels.disabled = isManagedSecret(apiKeyInput.value);
+    btnFetchChatGPTModels.disabled = isManagedSecret(apiKeyInput.value) || isManagedModel(modelChatGPT);
     toggleTomSelectDisabled(modelChatGPT, false);
     if((modelChatGPT.selectedIndex === -1)||(modelChatGPT.value === '')){
       modelChatGPT.style.border = '2px solid red';
@@ -1871,7 +1896,7 @@ function warn_GoogleGemini_APIKeyEmpty(modelId_prefix) {
   }else{
     apiKeyInput.style.border = '';
     // Not with a policy-supplied key: the page only holds its placeholder.
-    btnFetchGoogleGeminiModels.disabled = isManagedSecret(apiKeyInput.value);
+    btnFetchGoogleGeminiModels.disabled = isManagedSecret(apiKeyInput.value) || isManagedModel(modelGoogleGemini);
     toggleTomSelectDisabled(modelGoogleGemini, false);
     if((modelGoogleGemini.selectedIndex === -1)||(modelGoogleGemini.value === '')){
       modelGoogleGemini.style.border = '2px solid red';
@@ -1896,7 +1921,7 @@ function warn_Ollama_HostEmpty(modelId_prefix) {
     btnGiveAllUrlsPermission_ollama_api.disabled = true;
   }else{
     hostInput.style.border = '';
-    btnFetchOllamaModels.disabled = false;
+    btnFetchOllamaModels.disabled = isManagedModel(modelOllama);
     toggleTomSelectDisabled(modelOllama, false);
     if((modelOllama.selectedIndex === -1)||(modelOllama.value === '')){
       modelOllama.style.border = '2px solid red';
@@ -1922,7 +1947,7 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
     btnGiveAllUrlsPermission_openai_comp_api.disabled = true;
   }else{
     hostInput.style.border = '';
-    btnUpdateOpenAICompModels.disabled = false;
+    btnUpdateOpenAICompModels.disabled = isManagedModel(modelOpenAIComp);
     toggleTomSelectDisabled(modelOpenAIComp, false);
     if((modelOpenAIComp.selectedIndex === -1)||(modelOpenAIComp.value === '')){
       modelOpenAIComp.style.border = '2px solid red';
@@ -2000,7 +2025,7 @@ function warn_Anthropic_APIKeyEmpty(modelId_prefix) {
   }else{
     apiKeyInput.style.border = '';
     // Not with a policy-supplied key: the page only holds its placeholder.
-    btnFetchAnthropicModels.disabled = isManagedSecret(apiKeyInput.value);
+    btnFetchAnthropicModels.disabled = isManagedSecret(apiKeyInput.value) || isManagedModel(modelAnthropic);
     toggleTomSelectDisabled(modelAnthropic, false);
     if((modelAnthropic.selectedIndex === -1)||(modelAnthropic.value === '')){
       modelAnthropic.style.border = '2px solid red';
@@ -2023,7 +2048,7 @@ function warn_Anthropic_VersionEmpty(modelId_prefix) {
     modelAnthropic.style.border = '';
   }else{
     versionInput.style.border = '';
-    btnFetchAnthropicModels.disabled = false;
+    btnFetchAnthropicModels.disabled = isManagedModel(modelAnthropic);
     toggleTomSelectDisabled(modelAnthropic, false);
     if((modelAnthropic.selectedIndex === -1)||(modelAnthropic.value === '')){
       modelAnthropic.style.border = '2px solid red';

@@ -156,6 +156,19 @@ the add-on, not about secrecy. An unlocked (`":locked": false`) policy key shows
 marker until the user types their own, which is then stored and wins, per the resolution
 order.
 
+### Locked model selects
+
+A locked `{provider}_model` (`chatgpt_model`, `google_gemini_model`, `ollama_model`,
+`openai_comp_model`, `anthropic_model`) also takes its "Fetch models" button away: fetching a
+list the user cannot pick from is pointless. In `pages/_lib/connection-ui.js`,
+`isManagedModel()` reads the `data-mzta-managed` mark `applyManagedUI()` sets, and:
+
+- the connection checks (`warn_*Empty()`) never enable the fetch button while it is set;
+- `toggleTomSelectDisabled()` never re-enables the select (or its Tom Select) while it is set,
+  and disables it without `clear()`, so the enforced model stays shown;
+- the model select's `mzta-managed` event re-runs its provider's checks, because
+  `applyManagedUI()` runs after the connection panel has been built and checked.
+
 ### No seeding from policy values
 
 The six feature pages pre-fill their per-feature connection fields
