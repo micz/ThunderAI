@@ -46,6 +46,7 @@ import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
     applyManagedUI,
     seedFromGlobal,
+    isEnforcedPref,
     isLockedKey,
     lockEnforcedPromptText,
     isEnforcedPromptText
@@ -382,7 +383,10 @@ async function restoreOptions() {
   let get_calendar_event_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event');
 
   if (get_calendar_event_prompt) {
-      if (get_calendar_event_prompt.api_type && get_calendar_event_prompt.api_type !== '') {
+      if (isEnforcedPref('get_calendar_event_connection_type')) {
+          // Enforced by the policy: getting already holds the enforced value, and that is what
+          // runs (getConnectionType() reads it before the prompt's api_type). Show it as it is.
+      } else if (get_calendar_event_prompt.api_type && get_calendar_event_prompt.api_type !== '') {
           getting['get_calendar_event_connection_type'] = get_calendar_event_prompt.api_type;
       } else {
           // Inherit the global connection only when this select can actually offer it:

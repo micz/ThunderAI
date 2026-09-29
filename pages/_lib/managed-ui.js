@@ -109,6 +109,16 @@ export function isLockedKey(key) {
 }
 
 /**
+ * True when the given preference key is enforced by the policy, readable BEFORE
+ * getManagedState() or applyManagedUI() has run - in a page's restoreOptions(), for instance.
+ * Needs only a preference read to have been awaited first (js/mzta-prefs.js awaits
+ * managedReady()), which restoreOptions() has always done by the time it decides anything.
+ */
+export function isEnforcedPref(key) {
+    return mztaManaged.isManagedLocked(key);
+}
+
+/**
  * Disable every control bound to a locked preference and mark it as managed.
  *
  * Relies on the invariant the options page already depends on: an .option-input element's

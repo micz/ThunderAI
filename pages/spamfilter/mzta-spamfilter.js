@@ -48,6 +48,7 @@ import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
     applyManagedUI,
     seedFromGlobal,
+    isEnforcedPref,
     isLockedKey,
     lockCompanions,
     setDisabledRespectingManaged,
@@ -552,7 +553,10 @@ async function restoreOptions() {
   let spamfilter_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter');
 
   if (spamfilter_prompt) {
-      if (spamfilter_prompt.api_type && spamfilter_prompt.api_type !== '') {
+      if (isEnforcedPref('spamfilter_connection_type')) {
+          // Enforced by the policy: getting already holds the enforced value, and that is what
+          // runs (getConnectionType() reads it before the prompt's api_type). Show it as it is.
+      } else if (spamfilter_prompt.api_type && spamfilter_prompt.api_type !== '') {
           getting['spamfilter_connection_type'] = spamfilter_prompt.api_type;
       } else {
           // Inherit the global connection only when this select can actually offer it:

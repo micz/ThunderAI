@@ -46,6 +46,7 @@ import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
     applyManagedUI,
     seedFromGlobal,
+    isEnforcedPref,
     lockEnforcedPromptText,
     isEnforcedPromptText
 } from '../_lib/managed-ui.js';
@@ -295,7 +296,10 @@ async function restoreOptions() {
   let get_task_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_get_task');
 
   if (get_task_prompt) {
-      if (get_task_prompt.api_type && get_task_prompt.api_type !== '') {
+      if (isEnforcedPref('get_task_connection_type')) {
+          // Enforced by the policy: getting already holds the enforced value, and that is what
+          // runs (getConnectionType() reads it before the prompt's api_type). Show it as it is.
+      } else if (get_task_prompt.api_type && get_task_prompt.api_type !== '') {
           getting['get_task_connection_type'] = get_task_prompt.api_type;
       } else {
           // Inherit the global connection only when this select can actually offer it:

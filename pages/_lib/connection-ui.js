@@ -1407,7 +1407,11 @@ export async function initializeSpecificIntegrationUI({
           let prompt = await loadPrompt(promptId);
           if(!prompt) return;
 
-          prompt.api_type = conntype;
+          // A {prefix}_connection_type enforced by the policy is never written into the prompt:
+          // there it would outlive the policy (spec 08 "No seeding from policy values"). The
+          // stored api_type is left as it is; while the lock holds getConnectionType() reads
+          // the enforced preference before it anyway.
+          if (!mztaManaged.isManagedLocked(conntype_select_id)) prompt.api_type = conntype;
 
           for (const [integration, options] of Object.entries(integration_options_config)) {
               for (const key of Object.keys(options)) {

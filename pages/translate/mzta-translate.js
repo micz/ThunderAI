@@ -46,6 +46,7 @@ import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
     applyManagedUI,
     seedFromGlobal,
+    isEnforcedPref,
     lockEnforcedPromptText,
     isEnforcedPromptText
 } from '../_lib/managed-ui.js';
@@ -302,7 +303,10 @@ async function restoreOptions() {
   let translate_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_translate_this');
 
   if (translate_prompt) {
-      if (translate_prompt.api_type && translate_prompt.api_type !== '') {
+      if (isEnforcedPref('translate_connection_type')) {
+          // Enforced by the policy: getting already holds the enforced value, and that is what
+          // runs (getConnectionType() reads it before the prompt's api_type). Show it as it is.
+      } else if (translate_prompt.api_type && translate_prompt.api_type !== '') {
           getting['translate_connection_type'] = translate_prompt.api_type;
       } else {
           // Inherit the global connection only when this select can actually offer it:

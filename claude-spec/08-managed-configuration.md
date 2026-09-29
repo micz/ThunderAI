@@ -190,6 +190,24 @@ So a seed never comes from a policy-supplied value: `seedFromGlobal(prefs, key)`
 and `prefs[key]` otherwise — exactly the previous behaviour with no policy. Any new code that
 copies a global preference into a prompt must go through it.
 
+### A locked per-feature connection type
+
+A feature page's `restoreOptions()` normally shows the special prompt's `api_type` in its
+`{prefix}_connection_type` select, or a seed from the global connection when the prompt has
+none: the prompt is the source of truth for that select. A **locked** `{prefix}_connection_type`
+is the exception, on all six pages: the select keeps the enforced value `getAllPrefs()`
+resolved, because that is what runs — `getConnectionType()` reads the per-feature preference
+before the prompt's `api_type`. The test is `isEnforcedPref(key)` in `pages/_lib/managed-ui.js`,
+the synchronous `mztaManaged.isManagedLocked()`, usable before `applyManagedUI()` because the
+preference read has already hydrated the policy. An initial (`":locked": false`) value changes
+nothing: the page shows exactly what it shows without a policy.
+
+The enforced value never reaches the prompt either: `_updatePrompt()` in
+`initializeSpecificIntegrationUI()` leaves `prompt.api_type` as it is while the key is locked,
+for the reason in [No seeding from policy values](#no-seeding-from-policy-values). The
+page-open block that copies the prompt's `api_type` into the preference is stopped by the
+per-key write guard of `setPrefs()`, as before.
+
 ## The allowlist
 
 Derived from `Object.keys(prefs_default)`, minus four exclusion rules. Nothing else is
@@ -945,6 +963,7 @@ unmanaged baseline of a page, comes from a separate module instance or a worker 
 | Hydration, Policy-supplied API keys, Load ordering | `05a`-`05e` | `options/05-secrets-locked`, `options/06-secrets-unlocked` |
 | Locked model selects | - | `options/07-locked-model`, `setup-wizard/07-locked-model` |
 | No seeding from policy values | - | `spamfilter/05-no-seeding-from-policy` |
+| A locked per-feature connection type | - | `<feature>/02-sweep-locked`, `spamfilter/06-locked-connection-type` |
 | Organization prompts | `06a-org-prompts`, `06b-org-prompts-*` | - |
 | Enforced special prompt texts (and its UI) | `06c`-`06e` | `<feature>/07-special-prompts-text`, `get-calendar-event/08-…-calendar-named` |
 | Restrictions | `06f`-`06i` | `customprompts/10`, `customprompts/11`, `menu_order/10`, `<page>/10-disable-setup-wizard` (popup, onboarding, options, setup-wizard) |
