@@ -138,6 +138,7 @@ export async function injectConnectionUI({
       .api_key-container { position: relative; display: flex; align-items: center; }
       .toggle-icon { cursor: pointer; margin-left: 5px; }
       .toggle-icon img { width: 16px; height: 16px; vertical-align: middle; }
+      .toggle-icon.managed_secret { cursor: default; }
       .option-input { flex-grow: 1; }
     `;
     document.head.appendChild(style);
@@ -805,7 +806,7 @@ export async function injectConnectionUI({
 
   toggleIcon_chatgpt_api_key.addEventListener('click', () => {
       // A policy-supplied key is only a placeholder here: nothing to reveal.
-      if (isManagedSecret(passwordField_chatgpt_api_key.value)) return;
+      if (isManagedSecret(passwordField_chatgpt_api_key.value) || toggleIcon_chatgpt_api_key.classList.contains('managed_secret')) return;
       const type = passwordField_chatgpt_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_chatgpt_api_key.setAttribute('type', type);
 
@@ -818,7 +819,7 @@ export async function injectConnectionUI({
 
   toggleIcon_google_gemini_api_key.addEventListener('click', () => {
       // A policy-supplied key is only a placeholder here: nothing to reveal.
-      if (isManagedSecret(passwordField_google_gemini_api_key.value)) return;
+      if (isManagedSecret(passwordField_google_gemini_api_key.value) || toggleIcon_google_gemini_api_key.classList.contains('managed_secret')) return;
       const type = passwordField_google_gemini_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_google_gemini_api_key.setAttribute('type', type);
 
@@ -831,7 +832,7 @@ export async function injectConnectionUI({
 
   toggleIcon_openai_comp_api_key.addEventListener('click', () => {
       // A policy-supplied key is only a placeholder here: nothing to reveal.
-      if (isManagedSecret(passwordField_openai_comp_api_key.value)) return;
+      if (isManagedSecret(passwordField_openai_comp_api_key.value) || toggleIcon_openai_comp_api_key.classList.contains('managed_secret')) return;
       const type = passwordField_openai_comp_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_openai_comp_api_key.setAttribute('type', type);
 
@@ -844,12 +845,21 @@ export async function injectConnectionUI({
 
   toggleIcon_anthropic_api_key.addEventListener('click', () => {
       // A policy-supplied key is only a placeholder here: nothing to reveal.
-      if (isManagedSecret(passwordField_anthropic_api_key.value)) return;
+      if (isManagedSecret(passwordField_anthropic_api_key.value) || toggleIcon_anthropic_api_key.classList.contains('managed_secret')) return;
       const type = passwordField_anthropic_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_anthropic_api_key.setAttribute('type', type);
 
       icon_img_anthropic_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
   });
+
+  // Typing an own key over an unlocked policy key must bring the eye back; a lock applied
+  // later by applyManagedUI() must turn it into the padlock.
+  SECRET_TOGGLE_FIELDS.forEach(field => {
+    const input = document.getElementById(getPrefixedId(field));
+    input?.addEventListener('input', () => syncSecretToggle(field, modelId_prefix));
+    input?.addEventListener('mzta-managed', () => syncSecretToggle(field, modelId_prefix));
+  });
+  updateSecretToggles(modelId_prefix);
 
   // Null when the ChatGPT Web rows were not injected (see chatgpt_web_rows).
   const btnChatGPTWeb_Tab = document.getElementById('btnChatGPTWeb_Tab');
@@ -1570,6 +1580,36 @@ export function updateWarnings(modelId_prefix = '') {
   warn_GoogleGemini_APIKeyEmpty(modelId_prefix);
   warn_Anthropic_APIKeyEmpty(modelId_prefix);
   warn_Anthropic_VersionEmpty(modelId_prefix);
+  updateSecretToggles(modelId_prefix);
+}
+
+// The API key fields with a show/hide eye toggle.
+const SECRET_TOGGLE_FIELDS = ['chatgpt_api_key', 'google_gemini_api_key', 'openai_comp_api_key', 'anthropic_api_key'];
+
+export function updateSecretToggles(modelId_prefix = '') {
+  SECRET_TOGGLE_FIELDS.forEach(field => syncSecretToggle(field, modelId_prefix));
+}
+
+/**
+ * While a key field is managed by the policy (it holds the policy key's placeholder, or it is
+ * locked) the eye has nothing to reveal: show a grey padlock with the default cursor instead.
+ */
+function syncSecretToggle(field, modelId_prefix = '') {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const input = document.getElementById(getPrefixedId(field));
+  const toggle = document.getElementById(getPrefixedId('toggle_' + field));
+  const img = document.getElementById(getPrefixedId('pwd-icon_' + field));
+  if (!input || !toggle || !img) return;
+  const managed = isManagedSecret(input.value) || input.dataset.mztaManaged === '1';
+  toggle.classList.toggle('managed_secret', managed);
+  if (managed) {
+    input.setAttribute('type', 'password');
+    img.src = "/images/pwd-locked.svg";
+    toggle.title = browser.i18n.getMessage('managed_marker_tooltip');
+  } else {
+    img.src = input.getAttribute('type') === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
+    toggle.removeAttribute('title');
+  }
 }
 
 export function changeConnTypeRowColor(conntype_row, conntype_select) {

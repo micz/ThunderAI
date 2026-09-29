@@ -142,6 +142,8 @@ export async function applyManagedUI(root = document, do_debug = false) {
         element.disabled = true;
         lockControl(element);
         markManaged(element, state);
+        // Lets the control's own widgets follow (an API key's eye toggle becomes a padlock).
+        element.dispatchEvent(new Event('mzta-managed'));
     });
 
     return state;

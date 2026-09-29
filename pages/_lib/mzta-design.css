@@ -670,6 +670,7 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 .api_key-container { position: relative; display: flex; align-items: center; }
 .toggle-icon { cursor: pointer; margin-left: 5px; }
 .toggle-icon img { width: 16px; height: 16px; vertical-align: middle; }
+.toggle-icon.managed_secret { cursor: default; }
 
 /* Per-connection advanced toggle button — mirrors the app-level #mzta_adv_toggle
    (gear icon + "Advanced options" label, chevron on the right) but keeps the
@@ -1255,7 +1256,7 @@ a.managed_disabled {
     #miczDescription.tint_openai_comp_api   { --tint-accent: rgb(195,163,226); }
 
     .lightbold { color: #f3f3f3; }
-    .api_key-container .toggle-icon img { filter: invert(1); }
+    .api_key-container .toggle-icon:not(.managed_secret) img { filter: invert(1); }
 }
 
 /* ===========================================================================

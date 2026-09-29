@@ -136,7 +136,12 @@ The marker is non-empty on purpose, so presence checks (`isConnectionConfigured(
 popup, the empty-key warnings) see a configured connection. Everything that would *use* or
 *show* it refuses to:
 
-- the password eye toggles in `pages/_lib/connection-ui.js` do nothing;
+- the password eye toggles in `pages/_lib/connection-ui.js` do nothing, and are shown as a grey
+  padlock (`images/pwd-locked.svg`, class `.managed_secret`, default cursor, tooltip
+  `managed_marker_tooltip`) on all four key fields while the field holds the marker or is locked
+  (`syncSecretToggle()`, run from `updateWarnings()`, on `input`, and on the `mzta-managed`
+  event `applyManagedUI()` dispatches on each control it locks). Typing an own key over an
+  unlocked policy key brings the eye back;
 - the "Fetch models" handlers return early, and the empty-key warnings keep the fetch button
   disabled;
 - `runConnectionTest()` returns `connTest_managed_api_key` instead of sending it;

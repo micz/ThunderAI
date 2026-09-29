@@ -104,6 +104,11 @@ input.option-input[type="text"]{
     cursor: pointer;
 }
 
+/* Policy-managed key: grey padlock in place of the eye, nothing to click. */
+.api_key-container .toggle-icon.managed_secret {
+    cursor: default;
+}
+
 #ollama_model_fetch_loading{
     display: none;
     font-style: italic;
@@ -181,7 +186,7 @@ span.opt_title{
         background-color: rgb(83, 0, 35) !important;
     }
 
-    .api_key-container .toggle-icon img {
+    .api_key-container .toggle-icon:not(.managed_secret) img {
         filter: invert(1);
     }
 }
