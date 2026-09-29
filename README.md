@@ -88,6 +88,22 @@ Drafts, templates, outbox and sent messages are skipped, so a draft is never pro
 - **Found a bug, or have an idea?** Open an issue using the [bug report or feature request templates](https://github.com/micz/ThunderAI/issues/new/choose).
 - **Do you want to help translate this add-on?** [Find out how!](https://micz.it/thunderbird-addon-thunderai/translate/) Translations are managed on [Weblate](https://hosted.weblate.org/engage/thunderai/) — please do not edit the locale files directly, only `_locales/en/messages.json` is edited by hand.
 
+### Running the tests
+
+The add-on itself has no build step and no dependencies: it is plain JavaScript loaded as it is by Thunderbird. The enterprise managed configuration has an automated test suite in [`tests/`](tests/), in two levels, both run from the repository root with Node's built-in test runner:
+
+```sh
+# Level 1 - the modules. Node 21 or later, nothing to install
+node --test "tests/**/*.test.mjs"
+
+# Everything, including the DOM tests (the settings pages loaded in jsdom).
+# Node 22.22+ or 24.15+
+npm ci
+npm test
+```
+
+`npm` is used for development tooling only: [jsdom](https://github.com/jsdom/jsdom) is the one development dependency, and nothing in `package.json` or `node_modules` is part of the add-on or ends up in the XPI. The tests run on every push and pull request. How they work, and how to add a scenario or a page, is explained in [`tests/README.md`](tests/README.md).
+
 ## Privacy and Permissions
 
 You can find all the information on [this page](https://micz.it/thunderbird-addon-thunderai/privacy-permissions/).

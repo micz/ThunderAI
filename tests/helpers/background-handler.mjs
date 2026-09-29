@@ -92,3 +92,34 @@ export function extractManagedValuesListener({ browser, mztaManaged, MANAGED_SEC
         '"use strict"; return (' + text + ');');
     return factory(browser, mztaManaged, MANAGED_SECRET_MARKER, prefs_default);
 }
+
+/**
+ * A `case '<command>':` of the main background listener whose whole body is
+ * `return Promise.resolve(<expression>);` - get_managed_state and get_org_prompts.
+ *
+ * The main listener cannot be extracted as a whole (it closes over half the background
+ * page), but these two cases only read mztaManaged. So the expression is cut out verbatim,
+ * like the get_managed_values listener above, and evaluated against the injected module:
+ * the DOM tests get exactly the payload Thunderbird would hand the page.
+ */
+export function locateBackgroundCase(command, src = backgroundSource()) {
+    const code = stripComments(src);
+    const label = "case '" + command + "':";
+    const at = code.indexOf(label);
+    if (at === -1) throw new Error('background-handler: ' + label + ' not found');
+    const RET = 'return Promise.resolve(';
+    const ret = code.indexOf(RET, at);
+    if (ret === -1 || code.slice(at + label.length, ret).trim() !== '') {
+        throw new Error('background-handler: ' + label + ' is no longer a bare "' + RET + '...)"');
+    }
+    const open = ret + RET.length - 1;
+    const close = matchParen(code, open);
+    return code.slice(open + 1, close - 1).trim();
+}
+
+/** Build a () => payload function for that case, bound to the background's mztaManaged. */
+export function extractBackgroundCase(command, { mztaManaged }) {
+    const text = locateBackgroundCase(command);
+    // eslint-disable-next-line no-new-func
+    return new Function('mztaManaged', '"use strict"; return () => (' + text + ');')(mztaManaged);
+}

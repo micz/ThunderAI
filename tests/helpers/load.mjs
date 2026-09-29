@@ -88,21 +88,31 @@ export async function startBackground(mockOpts = {}) {
  *   policy, local, accounts - as for installBrowserMock()
  *   sender   - the SENDERS entry the page sends from (its url decides what it receives)
  *   remote   - optional replacement for the background's reply (fail-open tests)
+ *   onOtherMessage - optional (message, sender, {bgManaged}) => reply, for every message the
+ *              get_managed_values listener does not answer (the DOM tests answer the other
+ *              background commands with it). Without it they get undefined, as before.
+ *   external - as for installBrowserMock()
+ *   decorate - optional (ctl) => void, run right after the mock is installed and BEFORE any
+ *              module is imported (js/mzta-prefs.js keeps a reference to storage.local from
+ *              import time), so a caller can extend or wrap globalThis.browser in time.
  */
-export async function startPage({ policy = null, local, accounts, sender, remote } = {}) {
+export async function startPage({ policy = null, local, accounts, sender, remote, onOtherMessage, external, decorate } = {}) {
     const { installBrowserMock } = await import('./browser-mock.mjs');
     const { extractManagedValuesListener } = await import('./background-handler.mjs');
     let listener = null;
+    let bgManaged = null;
     const ctl = installBrowserMock({
-        policy, local, accounts,
+        policy, local, accounts, external,
         senderUrl: sender.url,
         remote: remote ?? ((message, s) => {
             const answer = listener(message, s);
-            return answer === false ? undefined : answer;
+            if (answer !== false) return answer;
+            return onOtherMessage ? onOtherMessage(message, s, { bgManaged: bgManaged.mztaManaged }) : undefined;
         }),
     });
+    if (decorate) decorate(ctl);
     const con = captureConsole();
-    const bgManaged = await import(new URL('js/mzta-managed.js?context=background', REPO).href);
+    bgManaged = await import(new URL('js/mzta-managed.js?context=background', REPO).href);
     const mods = await loadModules();
     listener = extractManagedValuesListener({
         browser: ctl.browser,

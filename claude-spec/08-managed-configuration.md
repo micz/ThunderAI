@@ -894,48 +894,71 @@ is genuinely no user-facing setting to lock.
 
 ## Testing
 
-This file is the contract the automated suite in [`tests/`](../tests/) checks. Run it from
-the repository root, with Node 21 or later and nothing to install:
+This file is the contract the automated suite in [`tests/`](../tests/) checks, at two levels:
 
 ```sh
-node --test "tests/**/*.test.mjs"
+node --test "tests/**/*.test.mjs"   # level 1: the modules; Node 21+, nothing to install
+npm ci                              # once: installs jsdom (Node 22.22+ / 24.15+)
+npm test                            # both levels
 ```
 
-CI runs it on every push and pull request (`.github/workflows/tests.yml`). How it works and
-how to add a scenario: [`tests/README.md`](../tests/README.md).
+Run from the repository root. CI runs level 1 **before** installing anything, then
+`npm ci && npm test`, on every push and pull request (`.github/workflows/tests.yml`). How it
+works, how to add a scenario or a page: [`tests/README.md`](../tests/README.md).
 
-**One file per policy scenario.** `mztaManaged` is a singleton that reads the policy once,
-so each file in `tests/managed/` is one extension context with one policy
+- **Level 1** (`tests/managed/*.test.mjs`) imports the shipped modules as they are.
+- **DOM** (`tests/dom/<page>/*.dom.mjs`) loads each page's real HTML file and real module
+  script in jsdom - the project's only dependency, a pinned dev dependency, never shipped and
+  never imported by runtime code - with the page's background answered by the real
+  background code: the `get_managed_values` listener and the `get_managed_state` /
+  `get_org_prompts` cases are cut out of `mzta-background.js` and run verbatim. The browser
+  mock throws on (and records) any API it does not model, so a page the harness cannot run
+  fails instead of silently passing fewer tests.
+
+**One file per policy scenario** - per page and scenario for the DOM tests. `mztaManaged` is
+a singleton that reads the policy once, so each file is one extension context with one policy
 (`tests/fixtures/`), and `node --test` runs each in its own process. A second context, such
-as the background seen from a page, or Thunderbird restarted without the policy, comes from
-a separate module instance or a worker thread (`tests/helpers/`), never from resetting the
-singleton.
+as the background seen from a page, Thunderbird restarted without the policy, or the
+unmanaged baseline of a page, comes from a separate module instance or a worker thread
+(`tests/helpers/`), never from resetting the singleton.
 
-| Spec section | Test files (`tests/managed/`) |
-|---|---|
-| Overview: no policy, silent rejection | `01-no-policy` |
-| Resolution order, log masking | `02-resolution-order` |
-| The write guard (per key, marker, no residue) | `03-write-guard` |
-| The allowlist, Validation, The lock convention | `04-validation`, `04-allowlist-derivation` |
-| Hydration, Policy-supplied API keys, Load ordering | `05a`–`05e` |
-| Organization prompts | `06a-org-prompts`, `06b-org-prompts-*` |
-| Enforced special prompt texts | `06c`–`06e` |
-| Restrictions | `06f`–`06i` |
-| Account lists by policy | `07a`, `07b` |
-| Interaction points: per-feature provider override | `08-provider-override-locked-off` |
+| Spec section | Level 1 (`tests/managed/`) | DOM (`tests/dom/<page>/`) |
+|---|---|---|
+| Overview: no policy, silent rejection | `01-no-policy` | `01-no-policy`, all 13 pages |
+| Resolution order, log masking | `02-resolution-order` | `03-sweep-unlocked` |
+| The write guard (per key, marker, no residue) | `03-write-guard` | `02-sweep-locked` (write attempts, as rendered and re-enabled by hand) |
+| The allowlist, Validation, The lock convention | `04-validation`, `04-allowlist-derivation` | `02-sweep-locked`, `03-sweep-unlocked` (generated from the allowlist) |
+| Hydration, Policy-supplied API keys, Load ordering | `05a`-`05e` | `options/05-secrets-locked`, `options/06-secrets-unlocked` |
+| Locked model selects | - | `options/07-locked-model`, `setup-wizard/07-locked-model` |
+| No seeding from policy values | - | `spamfilter/05-no-seeding-from-policy` |
+| Organization prompts | `06a-org-prompts`, `06b-org-prompts-*` | - |
+| Enforced special prompt texts (and its UI) | `06c`-`06e` | `<feature>/07-special-prompts-text`, `get-calendar-event/08-…-calendar-named` |
+| Restrictions | `06f`-`06i` | `customprompts/10`, `customprompts/11`, `menu_order/10`, `<page>/10-disable-setup-wizard` (popup, onboarding, options, setup-wizard) |
+| Account lists by policy (and the account checkboxes) | `07a`, `07b` | `spamfilter/08`, `spamfilter/09`, `addtags/08`, `addtags/09` |
+| Interaction points: per-feature provider override | `08-provider-override-locked-off` | - |
+| UI: controls, `data-mzta-pref`, marker placement and inertness | - | `02-sweep-locked`, `03-sweep-unlocked`, `<page>/04-respect-managed` |
+| The setup wizard | - | `setup-wizard/02`, `03`, `04-locked-provider`, `07`, `10` |
+| UI: the banner | - | `options/11`, `options/12`, `setup-wizard/11`, `setup-wizard/12` (with and without `_org_name`) |
+
+The allowlist sweep is generated, not hand-written: for every page with managed controls it
+locks - or offers as an initial value - every allowlisted key that has an `.option-input` or
+`[data-mzta-pref]` control there, and compares the result with the same page opened without a
+policy. A new preference with a control on one of those pages is covered the moment it is
+declared.
 
 `04-allowlist-derivation` also checks the **103 of 112** count in [The allowlist](#the-allowlist).
 When a preference is added, update that sentence and the test's expected count together.
 
-**Not covered:** the DOM side (`pages/_lib/managed-ui.js`, `pages/_lib/connection-ui.js` and
-the pages calling them) and the parts of `mzta-background.js` that only run inside its
-startup: `get_managed_state`, the startup warnings and `processEmails()`. They are tested
-only through the functions they call, and by hand in Thunderbird. The
-`get_managed_values` listener is the exception: the suite cuts it out of
-`mzta-background.js` by its command guard and runs it verbatim, so moving or restructuring
-it means updating `tests/helpers/background-handler.mjs`.
+**Not covered:** the parts of `mzta-background.js` that only run inside its startup - the
+startup warnings and `processEmails()` - which are tested only through the functions they
+call, and by hand in Thunderbird. Moving or restructuring the cut-out handlers means updating
+the locators in `tests/helpers/background-handler.mjs`. Nor is real layout: jsdom has none, so
+the DOM tests check where a marker is inserted, not the `mzta-design.css` flex overrides that
+make it look right (see [Marker placement and inertness](#marker-placement-and-inertness)).
 
 **Rule:** a change to anything this file describes comes with a scenario for it. Tests are
 written from this file, not from the code: a failing test is reported as a potential bug
 against the section it contradicts, and never fixed by changing the source to match the
-test.
+test. Until the maintainer fixes the code (or rules the behaviour correct and updates this
+file), such a test keeps its assertion but runs as a node:test **TODO**, with the reason in
+`tests/helpers/dom-known-issues.mjs`: it is printed on every run without failing it.

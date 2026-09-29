@@ -14,12 +14,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # node --test expands a quoted glob itself only from Node 21 on.
+        # node --test expands a quoted glob itself only from Node 21 on; jsdom (the DOM
+        # tests' one dev dependency) needs 22.22+ / 24.15+.
         node: [22, 24]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - name: Run the test suite
+          cache: npm
+      # Before installing anything: the level-1 suite must keep running with no install.
+      - name: Level-1 suite, no dependencies
         run: node --test "tests/**/*.test.mjs"
+      - name: Install the development tooling
+        run: npm ci
+      - name: Whole suite (level 1 and DOM tests)
+        run: npm test

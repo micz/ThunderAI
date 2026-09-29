@@ -125,6 +125,8 @@ function loadEnMessages() {
  *                 background as seen from a page. May return a value, a promise, or throw.
  *                 Without it, sendMessage rejects like a message with no receiving end.
  *   senderUrl   - the url this context sends from (what `remote` receives as sender.url)
+ *   external    - (extensionId, message) => reply: another add-on, for the two-argument
+ *                 sendMessage(extensionId, message). Without it that form rejects.
  * @returns the controller: { browser, calls, sent, setPolicy, setAccounts, dispatchMessage }
  */
 export function installBrowserMock(opts = {}) {
@@ -162,7 +164,16 @@ export function installBrowserMock(opts = {}) {
             getURL(path = '') {
                 return EXT_ORIGIN + String(path).replace(/^\//, '');
             },
-            async sendMessage(message) {
+            async sendMessage(message, ...rest) {
+                // The two-argument form sendMessage(extensionId, message) goes to ANOTHER
+                // add-on (the Sparks presence check). Answered by opts.external when given.
+                if (typeof message === 'string' && rest.length > 0 && typeof rest[0] === 'object') {
+                    sent.push({ to: message, message: clone(rest[0]) });
+                    if (!opts.external) {
+                        throw new Error('Could not establish connection. Receiving end does not exist.');
+                    }
+                    return clone(await opts.external(message, clone(rest[0])));
+                }
                 sent.push(clone(message));
                 if (!remote) {
                     throw new Error('Could not establish connection. Receiving end does not exist.');
