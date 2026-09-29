@@ -1359,11 +1359,21 @@ export async function initializeSpecificIntegrationUI({
   const conntype_row = document.getElementById(conntype_select_id + '_tr');
   const conntype_end_el = document.getElementById('connection_ui_end');
 
+  // The policy locks the specific integration OFF. The prompt this page loads already has
+  // its provider override hidden (applyLockedOffIntegrations() in js/mzta-prompts.js), and
+  // the stored one must survive untouched until the policy is removed: so the toggle stays
+  // off, is never forced on as mandatory, and nothing here writes the prompt. Hydrated by the
+  // preference reads above (restoreOptionsCallback), so the synchronous test is reliable.
+  const locked_off = mztaManaged.isManagedLocked(use_specific_integration_id)
+      && mztaManaged.getManagedValue(use_specific_integration_id) === false;
+  if (locked_off) use_specific_integration_el.checked = false;
+
   // Helper to update prompt.
   // Serialized through _updatePromptQueue so concurrent callers can't interleave
   // their load-modify-save and persist a stale/wrong value.
   let _updatePromptQueue = Promise.resolve();
   const _updatePrompt = () => {
+      if (locked_off) return _updatePromptQueue;
       _updatePromptQueue = _updatePromptQueue.then(async () => {
           let conntype = conntype_el.value;
 
@@ -1409,9 +1419,14 @@ export async function initializeSpecificIntegrationUI({
   // with the first usable connection the user picks — otherwise the feature would
   // read as enabled while still having nothing to run against, and would silently
   // disappear from the menus on the next reload.
+  //
+  // Never when the policy locks it off: forcing it on would contradict the policy and run
+  // _updatePrompt(). A policy that locks it off over an unusable global connection leaves the
+  // feature with nothing to run against - the administrator's misconfiguration to fix, as in
+  // _reconcileFeatureFlags() in mzta-background.js.
   let globalPrefs = await mztaPrefs.getPrefs(['connection_type']);
-  const mandatory_integration = (globalPrefs.connection_type === 'chatgpt_web')
-      || hasNoConnectionSelected(globalPrefs.connection_type);
+  const mandatory_integration = !locked_off && ((globalPrefs.connection_type === 'chatgpt_web')
+      || hasNoConnectionSelected(globalPrefs.connection_type));
   if (mandatory_integration) {
       use_specific_integration_el.checked = true;
       // Kept enabled: a disabled checkbox is excluded from the page's own
@@ -1480,6 +1495,14 @@ export async function initializeSpecificIntegrationUI({
 
   // Event Listener for Checkbox
   use_specific_integration_el.addEventListener('change', async (event) => {
+      // applyManagedUI() disables the toggle; this covers one re-enabled from the developer
+      // tools. clearPromptAPI() below would otherwise try to wipe the stored override, and
+      // the setPref() would only be refused by the write guard.
+      if (locked_off) {
+          event.target.checked = false;
+          _updateVisibility(false);
+          return;
+      }
       _updateVisibility(event.target.checked);
       if (!event.target.checked) {
           // Clear both halves of the state together. clearPromptAPI() empties the prompt's

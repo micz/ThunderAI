@@ -353,6 +353,12 @@ Notable dependency:
   `_special_prompts` array back, which is harmless: no reader trusts the stored value, every
   read overwrites it again. `prompt_get_calendar_event_from_clipboard` is not overlaid: its
   `need_selected` is always `"0"`, since the clipboard replaces both selection and body.
+- The **provider override** (`api_type` + `{integration}_{key}`) of a feature's special
+  prompts is hidden on every read by `applyLockedOffIntegrations()`, also at the end of
+  `getSpecialPrompts()`, when the policy locks `{prefix}_use_specific_integration` to
+  `false`. Unlike `need_selected`, this overlay must **not** reach storage — it would erase
+  the user's override — so `setSpecialPrompts()` restores the stored override fields of
+  those prompts before writing. See [04-api-integrations.md](04-api-integrations.md#when-a-policy-locks-the-override-off).
 - `prompt_get_calendar_event_from_clipboard` is emitted only if **both** `get_calendar_event` and `get_calendar_event_from_clipboard` are active. If `get_calendar_event` is off, neither calendar prompt is shown regardless of the clipboard pref. Both share the `get_calendar_event` prefix for the connection check.
 
 ### Summarize: Dual-Mode Prompt System

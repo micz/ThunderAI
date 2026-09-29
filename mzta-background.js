@@ -70,7 +70,8 @@ import {
     migrateMenuOrderAlphabetic,
     migrateEnabledToShowIn,
     migrateCalendarNoSelection,
-    getSpecialPrompts
+    getSpecialPrompts,
+    getIgnoredProviderOverrides
 } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taSummaryStore } from './js/mzta-summarystore.js';
@@ -233,6 +234,23 @@ await (async () => {
         }
     } catch (e) {
         taLog.error('Could not check the calendar prompt placeholders: ' + e);
+    }
+})();
+
+// A per-feature provider override stored in a special prompt is hidden on read while the
+// policy locks {prefix}_use_specific_integration to false (applyLockedOffIntegrations() in
+// js/mzta-prompts.js). Nothing on the settings page shows it any more, so tell the
+// administrator it exists and is being ignored - warn(), not gated on do_debug.
+await (async () => {
+    try {
+        for (const prefix of await getIgnoredProviderOverrides()) {
+            taLog.warn(`${prefix}_use_specific_integration is locked to false by the managed ` +
+                `configuration: the provider override stored in the ${prefix} special prompt is ` +
+                'ignored, and the feature uses the global connection. It is kept, and applies ' +
+                'again if the policy stops locking the preference.');
+        }
+    } catch (e) {
+        taLog.error('Could not check the per-feature provider overrides: ' + e);
     }
 })();
 taWorkingStatus.taLog = taLog;

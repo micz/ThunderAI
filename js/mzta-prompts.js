@@ -94,9 +94,10 @@
     << All the API settings defined in the default options, with the same IDs. >>
 */
 
-import { integration_options_config } from "../options/mzta-options-default.js";
-import { MANAGED_SECRET_MARKER } from "./mzta-managed.js";
+import { integration_options_config, special_prompts_with_integration } from "../options/mzta-options-default.js";
+import { mztaManaged, managedReady, MANAGED_SECRET_MARKER } from "./mzta-managed.js";
 import { mztaPrefs } from "./mzta-prefs.js";
+import { getActiveSpecialPromptsIDs } from "./mzta-utils.js";
 
 // The five boolean-ish prompt flags documented above. Canonical representation
 // is the string "0"/"1" -- that is what the definitions below declare, and what
@@ -980,6 +981,7 @@ export async function getSpecialPrompts(){
             normalizePromptFlags(prompt);
         })
         await applyCalendarNoSelection(def_specPrompts);
+        await applyLockedOffIntegrations(def_specPrompts);
         return def_specPrompts;
     } else {
         let updatedPrompts = structuredClone(prefs._special_prompts);
@@ -1014,8 +1016,9 @@ export async function getSpecialPrompts(){
             await browser.storage.local.set({ _special_prompts: updatedPrompts });
         }
 
-        // After the write-back above, so this derived value is not what triggers it.
+        // After the write-back above, so these derived values are not what triggers it.
         await applyCalendarNoSelection(updatedPrompts);
+        await applyLockedOffIntegrations(updatedPrompts);
         return updatedPrompts;
     }
 }
@@ -1047,9 +1050,130 @@ async function applyCalendarNoSelection(prompts) {
     calendar.need_selected = (no_selection === true) ? "0" : "1";
 }
 
+/**
+ * The per-feature provider override lives in the special prompt (api_type plus the
+ * {integration}_{key} fields), not in a preference, so the write guard in js/mzta-prefs.js
+ * cannot hold it back: an override configured before a policy locked
+ * {prefix}_use_specific_integration to false would keep running - getConnectionType() falls
+ * through to prompt.api_type, and initWorker() in js/mzta-special-commands.js switches to the
+ * specific API whenever config.api_type is set.
+ *
+ * So, like applyCalendarNoSelection() above, the override is hidden at READ time, on every
+ * getSpecialPrompts() read. Only in the LOCKED-off case: without a policy a legacy profile may
+ * well have prompt.api_type set while the preference is false, and that keeps working.
+ *
+ * Unlike need_selected, this overlay must NEVER reach storage: the feature pages write the
+ * whole array back, and a stored api_type '' would erase the user's own override, which has
+ * to come back untouched when the policy is removed. setSpecialPrompts() therefore restores
+ * the stored override fields of these prompts (keepStoredOverrides()).
+ */
+
+// Every prompt property that makes up a provider override, derived from
+// integration_options_config (the same set clearPromptAPI() resets).
+function providerOverrideKeys() {
+    const keys = ['api_type'];
+    for (const [integration, options] of Object.entries(integration_options_config)) {
+        for (const key of Object.keys(options)) {
+            keys.push(`${integration}_${key}`);
+        }
+    }
+    return keys;
+}
+
+// The special prompts run against a feature's connection. getActiveSpecialPromptsIDs() is
+// the one place that ties a prefix to its prompt ids, so it is asked rather than duplicated:
+// every feature on, only this prefix usable. For summarize that is prompt_summarize alone -
+// the email template and separator are text fragments, never passed as a command's config
+// and never edited by the connection panel. For get_calendar_event it includes the clipboard
+// variant, which runs with the same prefix (js/mzta-menus.js).
+function specialPromptIdsForPrefix(prefix) {
+    return getActiveSpecialPromptsIDs({
+        addtags: true,
+        get_calendar_event: true,
+        get_calendar_event_from_clipboard: true,
+        get_task: true,
+        spamfilter: true,
+        summarize: true,
+        translate: true,
+        effective_conn: { [prefix]: 'chatgpt_api' }
+    });
+}
+
+// Synchronous on purpose: setSpecialPrompts() is also called by the migration block in the
+// background, BEFORE loadManaged(), where awaiting managedReady() would make the background
+// message itself. The lock state is complete wherever an overlaid prompt can exist, because
+// getSpecialPrompts() awaits managedReady() before overlaying.
+// A locked key resolves to its policy value, so reading the value from mztaManaged is the
+// same as reading the preference.
+function lockedOffIntegrationPrefixes() {
+    return special_prompts_with_integration.filter(prefix => {
+        const key = `${prefix}_use_specific_integration`;
+        return mztaManaged.isManagedLocked(key) && mztaManaged.getManagedValue(key) === false;
+    });
+}
+
+function lockedOffSpecialPromptIds() {
+    return lockedOffIntegrationPrefixes().flatMap(prefix => specialPromptIdsForPrefix(prefix));
+}
+
+async function applyLockedOffIntegrations(prompts) {
+    await managedReady();
+    const ids = lockedOffSpecialPromptIds();
+    if (ids.length === 0) return;
+    const keys = providerOverrideKeys();
+    prompts.forEach(prompt => {
+        if (!ids.includes(prompt.id)) return;
+        keys.forEach(key => delete prompt[key]);
+        prompt.api_type = '';
+    });
+}
+
+// The storage half of the above: put back what storage already holds for the overlaid
+// prompts, so no write - a page saving its whole array, savePrompt(), clearPromptAPI() -
+// can persist the overlay or change the user's override while the policy is in force.
+// `prompts` must already be copies (stripTransientFlags() makes them).
+async function keepStoredOverrides(prompts) {
+    const ids = lockedOffSpecialPromptIds();
+    if (ids.length === 0) return prompts;
+    const stored = await browser.storage.local.get({ _special_prompts: null });
+    const storedById = new Map((Array.isArray(stored._special_prompts) ? stored._special_prompts : [])
+        .map(prompt => [prompt.id, prompt]));
+    const keys = providerOverrideKeys();
+    prompts.forEach(prompt => {
+        if (!ids.includes(prompt.id)) return;
+        const original = storedById.get(prompt.id);
+        keys.forEach(key => {
+            if (original && Object.prototype.hasOwnProperty.call(original, key)) {
+                prompt[key] = original[key];
+            } else {
+                delete prompt[key];
+            }
+        });
+    });
+    return prompts;
+}
+
+/**
+ * For the startup warning in mzta-background.js: the feature prefixes whose
+ * {prefix}_use_specific_integration is locked off while a stored special prompt still
+ * carries a provider override, which is therefore being ignored. Reads storage directly,
+ * since getSpecialPrompts() hides exactly what is being looked for.
+ */
+export async function getIgnoredProviderOverrides() {
+    await managedReady();
+    const prefixes = lockedOffIntegrationPrefixes();
+    if (prefixes.length === 0) return [];
+    const stored = await browser.storage.local.get({ _special_prompts: null });
+    const storedPrompts = Array.isArray(stored._special_prompts) ? stored._special_prompts : [];
+    return prefixes.filter(prefix => {
+        const ids = specialPromptIdsForPrefix(prefix);
+        return storedPrompts.some(p => ids.includes(p.id) && p.api_type && p.api_type !== '');
+    });
+}
+
 export async function setSpecialPrompts(prompts) {
     // console.log(">>>>>>>>>>>> setSpecialPrompts prompts: " + JSON.stringify(prompts));
-    await browser.storage.local.set({_special_prompts: stripTransientFlags(prompts)});
+    await browser.storage.local.set({_special_prompts: await keepStoredOverrides(stripTransientFlags(prompts))});
 }
 
 export function getHiddenSpecialPromptIds() {
