@@ -21,6 +21,11 @@
 // Using a full string to inject it in the ChatGPT page to avoid any security error
 
 export const mzta_script = `
+// page timing (issue #924), ms since navigation start; logged only in debug mode
+let script_start_ms = performance.now();
+let custom_text_start_ms = null;
+let custom_text_ms = null;
+let page_timing_logged = false;
 let force_go = false;
 let do_force_completion = false;
 let current_message = null;
@@ -1832,6 +1837,7 @@ function customTextBtnClick(args) {
         args.customBtn.classList.add('disabled');
         args.customLoading.style.display = 'inline-block';
         args.customLoading.style.display = 'none';
+        if (custom_text_start_ms !== null && custom_text_ms === null) custom_text_ms = performance.now() - custom_text_start_ms;
         doProceed(current_message, _customTextArray);
         args.customDiv.style.display = 'none';
         
@@ -1918,6 +1924,7 @@ function showCustomTextField(){
             _customTextArray.push({ placeholder: "{%additional_text%}", info: "" });
     }
     _currentCustomTextIndex = 0;
+    if (custom_text_start_ms === null) custom_text_start_ms = performance.now();
     document.getElementById('mzta-custom_text').style.display = 'block';
     renderCustomTextStep();
 }
@@ -1958,6 +1965,7 @@ async function doProceed(message, customText = ''){
     }
 
     let send_result = await chatgpt_sendMsg(final_prompt,'click');
+    if (mztaDoDebug == 1) logPageTiming(performance.now());
     //console.log(">>>>>>>>>>> send_result: " + send_result);
     switch(send_result){
         case -1:        // prompt not sent, it is still in the composer
@@ -2234,6 +2242,26 @@ function selectContentOnClick(event) {
         // Add the new range to the selection
         selection.addRange(range);
         // console.log(">>>>>>>>>>>>> selectContentOnClick selection.rangeCount: " + selection.rangeCount);
+    }
+}
+
+function logPageTiming(sendDoneMs){
+    if (page_timing_logged) return;
+    page_timing_logged = true;
+    try {
+        const nav = performance.getEntriesByType('navigation')[0];
+        const r = (v) => (typeof v === 'number' ? Math.round(v) : null);
+        console.warn("[ThunderAI] Page timing: " + JSON.stringify({
+            responseStart: nav ? r(nav.responseStart) : null,
+            domInteractive: nav ? r(nav.domInteractive) : null,
+            domContentLoadedEventEnd: nav ? r(nav.domContentLoadedEventEnd) : null,
+            loadEventEnd: nav ? r(nav.loadEventEnd) : null,
+            scriptStartMs: r(script_start_ms),
+            sendDoneMs: r(sendDoneMs),
+            customTextMs: r(custom_text_ms)
+        }));
+    } catch (err) {
+        console.warn("[ThunderAI] Page timing failed: ", err);
     }
 }
 

@@ -19,9 +19,34 @@
 const urlParams = new URLSearchParams(window.location.search);
 const call_id = urlParams.get('call_id');
 
-async function page_ready(call_id){
-    await browser.runtime.sendMessage({command: "chatgpt_web_ready_" + call_id});
+const loaderStartMs = performance.now();
+const READY_FALLBACK_MS = 10000;
+let ready_sent = false;
+let ready_fallback_timer = null;
+
+async function page_ready(call_id, readyReason){
+    if (ready_sent) return;
+    ready_sent = true;
+    clearTimeout(ready_fallback_timer);
+    window.removeEventListener('load', onPageLoad);
+    await browser.runtime.sendMessage({
+        command: "chatgpt_web_ready_" + call_id,
+        loaderStartMs: loaderStartMs,
+        readySentMs: performance.now(),
+        readyReason: readyReason
+    });
 }
 
-page_ready(call_id);
+function onPageLoad(){
+    page_ready(call_id, "load");
+}
+
+// Registered at document_end: document_idle also waits for the page's main thread
+// to go idle, which on slower machines delayed the ready message by ~20 s (issue #924)
+if (document.readyState === "complete") {
+    page_ready(call_id, "already-complete");
+} else {
+    window.addEventListener('load', onPageLoad);
+    ready_fallback_timer = setTimeout(() => page_ready(call_id, "timeout"), READY_FALLBACK_MS);
+}
 //console.log(">>>>>>>>>>> [ThunderAI] call_id: " + call_id)

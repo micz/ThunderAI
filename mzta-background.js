@@ -168,7 +168,7 @@ messenger.messageDisplayScripts.register({
 browser.contentScripts.register({
     matches: ["https://*.chatgpt.com/*"],
     js: [{file: "js/mzta-chatgpt-loader.js"}],
-    runAt: "document_idle"
+    runAt: "document_end"
   });
 
 // Listen for shortcut command
@@ -1564,6 +1564,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 }
             
                 if (message.command === "chatgpt_web_ready_" + rand_call_id) {
+                    taLog.log("[chatgpt_web] Page ready: reason " + message.readyReason + ", loaderStartMs " + Math.round(message.loaderStartMs) + ", readySentMs " + Math.round(message.readySentMs));
                     return handleChatGptWeb(sender.tab)
                 }
                 return false;
