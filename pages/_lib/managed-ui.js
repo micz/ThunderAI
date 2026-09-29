@@ -204,8 +204,9 @@ export function isEnforcedPromptText(promptId) {
  *    selected and copied (a user may well want to start their own prompt from it);
  *  - `companions` (its Save and Reset buttons) are disabled and marked, exactly like
  *    lockCompanions() does for a locked preference;
- *  - the marker goes in the textarea's .mzta_field column, after the button row, where the
- *    list textareas get theirs: the textarea's own parent is the editor-highlight wrapper.
+ *  - the marker goes right of the group title the textarea's .mzta_field is headed by (see
+ *    groupTitleFor()), where the list textareas get theirs: the textarea's own parent is the
+ *    editor-highlight wrapper.
  *
  * `promptIds` lists every prompt the textarea saves (the calendar page writes two). Call it
  * AFTER the page has filled the textarea and set its buttons' initial state. The page's Save
@@ -264,7 +265,11 @@ function markManaged(element, state, explicitAnchor = null) {
     // track and inside the label's click target. Place it before the label instead, so the
     // row reads "... [Managed by Org] (toggle)" and the badge is not clickable.
     const switchLabel = element.closest('.mzta_switch');
-    const target = switchLabel && switchLabel.parentElement ? switchLabel.parentElement : anchor;
+    let target = switchLabel && switchLabel.parentElement ? switchLabel.parentElement : anchor;
+    // A textarea block (prompt text, address lists) is a .mzta_field headed by a group title:
+    // the badge goes right of that title rather than under the buttons.
+    const groupTitle = groupTitleFor(target);
+    if (groupTitle) target = groupTitle;
     if (target.querySelector('.managed_marker')) return;
 
     const marker = document.createElement('span');
@@ -279,6 +284,24 @@ function markManaged(element, state, explicitAnchor = null) {
     } else {
         target.appendChild(marker);
     }
+}
+
+/**
+ * The title a .mzta_field is headed by: its own .opt_title_small (a section holding several
+ * fields, like the summarize prompts), or else the section's .mzta_prompt_title when the field
+ * is the only one in the section. null when there is no unambiguous title - a section title
+ * over several fields would not say which one is locked.
+ */
+function groupTitleFor(field) {
+    if (!field.classList.contains('mzta_field')) return null;
+    const ownTitle = field.querySelector(':scope > .opt_title_small');
+    if (ownTitle) return ownTitle;
+    const section = field.parentElement;
+    if (!section || !section.classList.contains('mzta_section')) return null;
+    const sectionTitle = section.querySelector(':scope > .mzta_prompt_title');
+    if (!sectionTitle) return null;
+    if (section.querySelectorAll(':scope > .mzta_field').length !== 1) return null;
+    return sectionTitle;
 }
 
 /**

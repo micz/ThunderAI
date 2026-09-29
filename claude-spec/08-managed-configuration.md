@@ -522,9 +522,10 @@ preference key:
   `managed_prompt_text_tooltip` title. `#mzta_card .editor-wrap .editor[data-mzta-managed="1"]`
   in `mzta-design.css` hides the caret, since no `:disabled` styling applies;
 - the Save and Reset buttons are disabled and marked like `lockCompanions()` does;
-- the marker, padlock included, is appended to the textarea's `.mzta_field` column after the
-  button row — the list textareas' context, whose CSS already exists. `markManaged()` takes
-  that anchor explicitly: the textarea's own parent is the editor-highlight wrapper.
+- the marker, padlock included, goes right of the group title heading the textarea's
+  `.mzta_field` (see "Group titles win over the column" below) — the same placement the list
+  textareas get. `markManaged()` takes the `.mzta_field` anchor explicitly: the textarea's
+  own parent is the editor-highlight wrapper.
 
 Every Save and Reset handler also **returns early** on `isEnforcedPromptText(id)` (the
 calendar Save on either calendar id). Both helpers read `mztaManaged` after hydration, not
@@ -622,8 +623,8 @@ developer tools. `updateAutoSendersState()` on the summarize page, which reassig
 on every `summarize_auto` change, uses the respecting setter too: it could previously
 re-enable a locked `summarize_auto_senders` toggle.
 
-The marker lands in the two existing contexts described below: the textareas' `.mzta_field`
-flex column (appended as the last child, after the Save button row), and the checkbox's
+The marker lands right of the textarea's group title (see "Group titles win over the
+column" below; the `.mzta_field` column is only the fallback), and in the checkbox's
 `.feature_row` (before the `.mzta_switch`). No new CSS was needed.
 
 `applyManagedUI()` covers locked *preferences* only. A restriction has no preference behind
@@ -695,6 +696,14 @@ A feature toggle is an `<input type="checkbox">` visually hidden **inside**
 
   Both overrides are `flex: none; align-self: flex-start` plus context-appropriate margins.
   A new field layout that hosts the marker needs the same treatment.
+- **Group titles win over the column.** When the resolved anchor is a `.mzta_field`,
+  `groupTitleFor()` looks for the title heading it: the field's own direct
+  `.opt_title_small` (a section with several fields, e.g. the three summarize prompts), or
+  else the section's `.mzta_prompt_title` when the field is the section's only direct
+  `.mzta_field`. If one is found the marker is appended inside that title, i.e. right of it
+  (the base inline chip, no override needed). Only when no unambiguous title exists — a
+  section title over several untitled fields would not say which one is locked — does the
+  marker fall back to the `.mzta_field` column above.
 - **Padlock.** The badge carries a padlock glyph via `.managed_marker::before` in
   `pages/_lib/mzta-design.css`, the same one `#managed_config_banner` and
   `.managed_restriction_note` use, so every managed surface reads alike. It is CSS, not
