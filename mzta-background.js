@@ -51,6 +51,7 @@ import {
     cleanupNewlines,
     convertNewlinesToParagraphs,
     getConnectionType,
+    applyPromptConnection,
     hasNoConnectionSelected,
     matchAddressList,
     hasAddressListEntries,
@@ -67,6 +68,7 @@ import {
     getSpamFilterPrompt,
     getAddTagsPrompt,
     getSummarizePrompt,
+    getSpecialPromptPrefix,
     getTranslatePrompt,
     migrateMenuOrderAlphabetic,
     migrateEnabledToShowIn,
@@ -1688,7 +1690,15 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     //console.log(">>>>>>>>>>>>>>>> prefs: " + JSON.stringify(prefs));
     // console.log(">>>>>>>>>>>>>>>> prompt_info: " + JSON.stringify(prompt_info));
 
-    prefs.connection_type = getConnectionType(prefs, prompt_info);
+    // A special prompt (the summary opened in the chat window) resolves its connection with its
+    // feature prefix, exactly as the caller's usability check did: without it the
+    // {prefix}_use_specific_integration / {prefix}_connection_type pair is ignored, and the window
+    // could open on a connection other than the one checked. null for any other prompt.
+    prefs.connection_type = getConnectionType(prefs, prompt_info, getSpecialPromptPrefix(prompt_info.id));
+    // The configuration checks below must judge what the window will run: the prompt's own
+    // provider override on top of the global values, by the rule api_webchat/controller.js
+    // applies. Only those checks read `prefs` for provider fields; the window loads its own.
+    prefs = applyPromptConnection(prefs, prompt_info);
 
     taLog.log("Prompt length: " + promptText.length);
     let _max_prompt_length = prefs.max_prompt_length;

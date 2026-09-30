@@ -17,7 +17,8 @@
  */
 
 import {
-  getDynamicSettingValue
+  getDynamicSettingValue,
+  integration_options_config
 } from '../options/mzta-options-default.js';
 
 import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js'
@@ -1093,6 +1094,25 @@ export function getConnectionType(prefs, prompt, prefix = null) {
         if (prompt.api_type && prompt.api_type !== '') return prompt.api_type;
     }
     return defaultType;
+}
+
+// The provider settings a call with `prefs.connection_type` actually uses: `prefs` (the
+// global values) with the prompt's own {integration}_{key} fields on top, when the prompt
+// carries a provider override of exactly that type. The same rule the API chat window applies
+// in api_webchat/controller.js (prompt.api_type === llm, fields that are not undefined), so a
+// check made here on the result judges the configuration the window will really run.
+// Returns a new object; `prefs` is not modified.
+export function applyPromptConnection(prefs, prompt) {
+    const out = { ...prefs };
+    if (!prompt || !prompt.api_type || prompt.api_type !== prefs.connection_type) return out;
+    const integration = prompt.api_type.replace(/_api$/, '');
+    const options = integration_options_config[integration];
+    if (!options) return out;
+    for (const key of Object.keys(options)) {
+        const prefKey = `${integration}_${key}`;
+        if (prompt[prefKey] !== undefined) out[prefKey] = prompt[prefKey];
+    }
+    return out;
 }
 
 export async function checkSparksPresence() {

@@ -1212,6 +1212,17 @@ function specialPromptIdsForPrefix(prefix) {
     });
 }
 
+/**
+ * The feature prefix ({prefix}_use_specific_integration) a special prompt runs with, or null
+ * for any other prompt. The same prefix -> ids encoding as the overlays above, so both calendar
+ * prompts map to get_calendar_event, and the summarize template and separator map to nothing.
+ * For callers that receive a prompt and must resolve its connection as the feature does
+ * (openChatGPT() in mzta-background.js).
+ */
+export function getSpecialPromptPrefix(id) {
+    return special_prompts_with_integration.find(prefix => specialPromptIdsForPrefix(prefix).includes(id)) || null;
+}
+
 // Synchronous on purpose: setSpecialPrompts() is also called by the migration block in the
 // background, BEFORE loadManaged(), where awaiting managedReady() would make the background
 // message itself. The lock state is complete wherever an overlaid prompt can exist, because
