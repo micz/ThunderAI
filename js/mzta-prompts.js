@@ -1082,7 +1082,11 @@ function stripManagedSecretMarkers(prompt) {
 
 export async function setCustomPrompts(prompts) {
     // console.log(">>>>>>>>>>>> setCustomPrompts prompts: " + JSON.stringify(prompts));
-    await browser.storage.local.set({_custom_prompt: stripTransientFlags(prompts)});
+    // An organization prompt is never stored: the policy is its only source of truth. The
+    // callers split the merged views themselves, but a caller that forgets would copy every
+    // org prompt into the user's own prompts, where it outlives the policy. The gate holds it.
+    const own = prompts.filter(prompt => String(prompt.is_org) !== '1');
+    await browser.storage.local.set({_custom_prompt: stripTransientFlags(own)});
 }
 
 export async function getSpecialPrompts(){
@@ -1587,8 +1591,12 @@ export async function migrateMenuOrderAlphabetic() {
         prompt.position_context = pos;
     });
 
-    const defaultPromptsToSave = ordered.filter(p => String(p.is_default) === '1' && String(p.is_special) !== '1');
-    const customPromptsToSave = ordered.filter(p => String(p.is_default) === '0' && String(p.is_special) !== '1');
+    // Same split as saveAll() in pages/menu_order/: an org prompt is never stored, but its
+    // menu position is the user's and rides in _default_prompts_properties like a built-in's.
+    const defaultPromptsToSave = ordered.filter(p =>
+        (String(p.is_default) === '1' || String(p.is_org) === '1') && String(p.is_special) !== '1');
+    const customPromptsToSave = ordered.filter(p =>
+        String(p.is_default) === '0' && String(p.is_special) !== '1' && String(p.is_org) !== '1');
     const visibleSpecialsToSave = ordered.filter(p => String(p.is_special) === '1');
     const hiddenSpecialsToPreserve = allPrompts.filter(p => hiddenSpecialIds.includes(p.id));
 

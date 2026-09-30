@@ -1245,7 +1245,7 @@ unmanaged baseline of a page, comes from a separate module instance or a worker 
 | No seeding from policy values | - | `spamfilter/05-no-seeding-from-policy` |
 | A locked per-feature connection type | - | `<feature>/02-sweep-locked`, `spamfilter/06-locked-connection-type` |
 | An automatic summary is always inline | `09` | `summarize/02-sweep-locked` (`expected`) |
-| Organization prompts | `06a-org-prompts`, `06b-org-prompts-*` | - |
+| Organization prompts | `06a-org-prompts`, `06b-org-prompts-*`, `12-org-prompts-never-stored` | - |
 | Enforced special prompt texts (and its UI) | `06c`-`06e` | `<feature>/07-special-prompts-text`, `get-calendar-event/08-…-calendar-named` |
 | Enforced per-feature connections (and its UI) | `10a`-`10i` (validation, malformed, resolution and `initWorker()`, conflicts, never persisted / export / write guard / removal, hydration, webchat, feature-page coverage, the chat window's connection and configuration checks) | `<feature>/13-connection-enforced`, `<feature>/14-connection-unlocked` (generated from `tests/helpers/feature-pages.mjs`) |
 | Restrictions | `06f`-`06i` | `customprompts/10`, `customprompts/11`, `menu_order/10`, `<page>/10-disable-setup-wizard` (popup, onboarding, options, setup-wizard) |

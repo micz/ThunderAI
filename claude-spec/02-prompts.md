@@ -71,7 +71,10 @@ out.
 rewrite a whole store from what they list (`setCustomPrompts()` replaces `_custom_prompt`
 entirely), so their filters must exclude `is_org` from the custom-prompt save and include
 it in the default-properties save. Getting this wrong either copies org prompts into the
-user's storage or deletes the user's shadowed prompt for real.
+user's storage or deletes the user's shadowed prompt for real. The same split applies to
+`migrateMenuOrderAlphabetic()`, which rewrites the same stores from `getPromptsForMenuOrder()`
+at startup. `setCustomPrompts()` also drops any `is_org: "1"` entry it is handed, so a writer
+that forgets the filter still cannot store an org prompt.
 
 ## Prompt Properties
 
@@ -349,7 +352,7 @@ The reset is **in-memory only**: it closes any open icon popover, clears the dee
 The `dynamic_menu_order_alphabet` preference (previously a user-facing option) has been retired and removed from the UI, but the key still exists in storage as a one-shot migration flag. At every background startup, `migrateMenuOrderAlphabetic()` in `js/mzta-prompts.js` runs:
 
 1. Reads `dynamic_menu_order_alphabet` (defaults to `true` if unset)
-2. If `true`: sorts all visible prompts with special prompts first (alphabetically), then the rest (alphabetically), and assigns sequential `position_display` = `position_compose` = `position_context` numbers. Hidden special prompts are preserved untouched.
+2. If `true`: sorts all visible prompts with special prompts first (alphabetically), then the rest (alphabetically), and assigns sequential `position_display` = `position_compose` = `position_context` numbers. Hidden special prompts are preserved untouched. Organization prompts get a position too, saved in `_default_prompts_properties`, and are never written to `_custom_prompt` (see Organization prompts above).
 3. Persists the new positions via `setDefaultPromptsProperties` / `setCustomPrompts` / `setSpecialPrompts`
 4. Sets `dynamic_menu_order_alphabet = false` in sync storage so the migration does not run again
 
