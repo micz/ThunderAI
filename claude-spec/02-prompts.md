@@ -58,7 +58,16 @@ exported `_inert_by_policy` would outlive the policy that set it. `TRANSIENT_PRO
 also holds `_text_by_policy`, set on a special prompt whose text the policy enforces, and
 `_connection_by_policy`, set on one whose connection the policy supplies, and `_user_fields`,
 set by the connection panel on the field the user just changed (see Special Prompt
-Visibility Dependencies below). **Both** pages that persist prompts
+Visibility Dependencies below).
+
+The same two storage gates also drop `idnum` (`VIEW_PROMPT_FIELDS`). It is the row number each of
+the three views above gives its entries, renumbered on every read, which the pages' List.js rows
+are keyed by; it is not a property of the prompt. A prompt handed back from a view (`loadPrompt()`
+goes through `getPrompts()`, and the connection panel's `_updatePrompt()` saves what it returns)
+used to store a stale one, which nothing ever read back. `preparePromptsForExport()` already left it
+out.
+
+**Both** pages that persist prompts
 rewrite a whole store from what they list (`setCustomPrompts()` replaces `_custom_prompt`
 entirely), so their filters must exclude `is_org` from the custom-prompt save and include
 it in the default-properties save. Getting this wrong either copies org prompts into the

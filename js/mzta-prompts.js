@@ -1048,10 +1048,18 @@ const TRANSIENT_PROMPT_FLAGS = ['_shadowed_by_org', '_inert_by_policy',
                                 '_default_inert_by_policy', '_text_by_policy',
                                 '_connection_by_policy', '_user_fields'];
 
+// Fields a prompt VIEW attaches, not the prompt: idnum is the row number getPrompts(),
+// getPromptsForManagement() and getPromptsForMenuOrder() give each entry of the list they
+// return (the pages' List.js rows are keyed by it), renumbered on every read. A prompt that
+// comes back from one of them - loadPrompt() goes through getPrompts() - would otherwise store
+// a stale row number, which nothing reads back (every view renumbers). Stripped at the same gates.
+const VIEW_PROMPT_FIELDS = ['idnum'];
+
 function stripTransientFlags(prompts) {
     return prompts.map(prompt => {
         const copy = Object.assign({}, prompt);
         TRANSIENT_PROMPT_FLAGS.forEach(flag => delete copy[flag]);
+        VIEW_PROMPT_FIELDS.forEach(field => delete copy[field]);
         stripManagedSecretMarkers(copy);
         return copy;
     });
