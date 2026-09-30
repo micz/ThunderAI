@@ -445,8 +445,8 @@ is genuinely no user-facing setting to lock.
 This file is the contract the automated suite in [`tests/`](../tests/) checks, at two levels:
 
 ```sh
-node --test "tests/**/*.test.mjs"   # level 1: the modules; Node 21+, nothing to install
-npm ci                              # once: installs jsdom (Node 22.22+ / 24.15+)
+node --test "tests/**/*.test.mjs"   # level 1: the modules; Node 22+, nothing to install
+npm ci                              # once: installs jsdom (Node ^22.22.2 || ^24.15.0 || >=26)
 npm test                            # both levels
 ```
 

@@ -24,8 +24,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # node --test expands a quoted glob itself only from Node 21 on; jsdom (the DOM
-        # tests' one dev dependency) needs 22.22+ / 24.15+.
+        # node --test expands a quoted glob itself only from Node 21 on; jsdom 30.1.1 (the DOM
+        # tests' one dev dependency) needs ^22.22.2 || ^24.15.0 || >=26, which is engines.node in
+        # package.json. A major here resolves to its latest release, inside that range.
         node: [22, 24]
     steps:
       - uses: actions/checkout@v4

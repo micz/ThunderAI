@@ -9,8 +9,8 @@ There are two levels:
 
 | Level | Where | What it loads | Needs |
 |---|---|---|---|
-| **1** | `tests/managed/*.test.mjs` | the shipped modules, imported as they are | Node 21+, **nothing to install** |
-| **DOM** | `tests/dom/<page>/*.dom.mjs` | each page's real HTML and script, in [jsdom](https://github.com/jsdom/jsdom) | Node 22.22+ / 24.15+, `npm ci` |
+| **1** | `tests/managed/*.test.mjs` | the shipped modules, imported as they are | Node 22+, **nothing to install** |
+| **DOM** | `tests/dom/<page>/*.dom.mjs` | each page's real HTML and script, in [jsdom](https://github.com/jsdom/jsdom) | Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`, `npm ci` |
 
 Both use only Node's built-in runner (`node:test`, `node:assert/strict`). jsdom is the
 project's **only** dependency, a dev dependency pinned to an exact version in the root
@@ -27,10 +27,12 @@ npm test                              # both levels
 npm run test:dom                      # DOM tests only
 ```
 
-Run it from the repository root. Level 1 needs **Node 21 or later** (22/24 LTS
-recommended), because the runner expands the quoted glob itself only from Node 21 on. An
-older Node reports `Could not find '...\tests\**\*.test.mjs'`: upgrade it. The DOM tests need
-what jsdom 30 needs: Node 22.22+ or 24.15+. Don't run a bare `node --test` either: its
+Run it from the repository root. Level 1 needs **Node 22 or later**, the oldest release CI
+runs it on (22 and 24). The hard floor is Node 21, the first whose runner expands the quoted
+glob itself - an older Node reports `Could not find '...\tests\**\*.test.mjs'` - but 21 is out
+of support and never tested. The DOM tests need what jsdom 30.1.1 needs, `^22.22.2 || ^24.15.0
+|| >=26.0.0`, which is also `engines.node` in `package.json`: `npm ci` warns on another Node
+(`npm config set engine-strict true` makes it refuse). Don't run a bare `node --test` either: its
 default discovery also picks up `js/mzta-connection-test.js`, which is shipped code, not a
 test.
 
