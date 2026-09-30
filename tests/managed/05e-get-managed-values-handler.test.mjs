@@ -3,7 +3,7 @@
 //    right after loadManaged() in mzta-background.js; other commands return false;
 //  - only extension pages are answered (sender.url under runtime.getURL('')); anything
 //    else gets an empty payload;
-//  - api_webchat/ gets the real API key, every other page MANAGED_SECRET_MARKER;
+//  - the API chat window (api_webchat/index.html) gets the real API key, every other page MANAGED_SECRET_MARKER;
 //  - loadManaged() is called in exactly one place, before _reconcileFeatureFlags().
 // The listener is the real one, cut out of mzta-background.js (see helpers/background-handler.mjs).
 

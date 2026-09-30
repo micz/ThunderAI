@@ -136,7 +136,7 @@ provider itself. The rule is now **split by page**:
 
 | Context | Receives |
 |---|---|
-| `api_webchat/` (decided by the background from `sender.url`) | the real key |
+| the API chat window, `api_webchat/index.html` (decided by the background from a prefix match on `sender.url`) | the real key |
 | every other extension page | `MANAGED_SECRET_MARKER`, exported by `js/mzta-managed.js` |
 
 The same rule covers every `*_api_key` field of a policy connection
@@ -762,7 +762,7 @@ API key fields follow [Policy-supplied API keys](#policy-supplied-api-keys) exac
 - **In the background:** `getSpecialPrompts()` overlays the real key, which is what
   `initWorker()` and `menus.allPrompts` get.
 - **In `get_managed_values`:** every `*_api_key` field of `specialPromptsConnection` is
-  `MANAGED_SECRET_MARKER` except for `api_webchat/`, which runs a feature's connection itself.
+  `MANAGED_SECRET_MARKER` except for the API chat window (`api_webchat/index.html`), which runs a feature's connection itself.
   A content script gets `{}`.
 - **On a feature page:** the key field shows the marker, which the eye toggle, "Update", the
   empty-key checks and the storage gates already refuse. The feature pages have no connection
