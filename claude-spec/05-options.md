@@ -221,7 +221,8 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `spamfilter` | `false` | Enable spam filter |
 | `spamfilter_threshold` | `70` | Spam confidence threshold (%) |
 | `spamfilter_enabled_accounts` | `[]` | Accounts where spam filter is active |
-| `spamfilter_skip_addresses` | `[]` | Senders never sent to the AI for spam filtering. **Exact addresses only** — unlike `summarize_auto_senders_list` it has no domain-pattern support, because widening the match would silently change the meaning of lists users have already saved. Tested with `hasAddressListEntries()` (see the note below the table). |
+| `spamfilter_skip_addresses` | `[]` | Allow list: senders never sent to the AI for spam filtering (report with spamValue 0). Entries are exact addresses, `@domain.com` or `*@domain.com`, matched by `matchAddressListType()` like `summarize_auto_senders_list`. Lists saved before domain support hold exact addresses only, which match exactly as before. Tested with `hasAddressListEntries()` (see the note below the table). |
+| `spamfilter_block_addresses` | `[]` | Block list: senders always reported as spam (spamValue 100) without an AI call; in automatic mode (`autoMove`) the message is also marked junk and moved to the account's junk folder. Same entry syntax as `spamfilter_skip_addresses`. On a sender in both lists the more specific entry wins (exact beats domain), and on equal specificity the allow list wins. Both lists are checked before `spamfilter_skip_addressbook`. Saved by its own Save button through `normalizeStringList(value, 2)`. See [01-architecture.md](01-architecture.md#data-flow-spam-filter-sender-rules). |
 | `spamfilter_skip_addressbook` | `true` | Skip senders found in any address book (`browser.contacts.quickSearch`) |
 | `spamfilter_show_msg_panel` | `true` | Show info panel on spam detection |
 | `spamfilter_only_inbox` | `false` | Auto spam filter runs only on inbox messages |
@@ -242,7 +243,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 
 #### Address-list preferences and the empty-string trap
 
-The user-typed lists (`spamfilter_skip_addresses`, `summarize_auto_senders_list`,
+The user-typed lists (`spamfilter_skip_addresses`, `spamfilter_block_addresses`, `summarize_auto_senders_list`,
 `add_tags_exclusions`, `add_tags_auto_uselist_list`) all go through `normalizeStringList()`
 (`js/mzta-utils.js`), which splits on newlines **and** commas, trims, lowercases, dedupes,
 **drops the empty entries** and sorts. `returnType` selects the shape: `0` comma-separated

@@ -198,6 +198,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('skip_addresses_unsaved').classList.add('hidden');
     });
 
+    // Block addresses list
+    let block_addresses_textarea = document.getElementById('spamfilter_block_addresses');
+    let block_addresses_save_btn = document.getElementById('btn_save_block_addresses');
+
+    let block_addresses_value = await spamfilter_getBlockAddresses();
+    let block_addresses_string = block_addresses_value.join('\n');
+
+    block_addresses_textarea.value = block_addresses_string;
+
+    block_addresses_textarea.addEventListener('input', (event) => {
+        block_addresses_save_btn.disabled = (event.target.value === block_addresses_string);
+        if(block_addresses_save_btn.disabled){
+            document.getElementById('block_addresses_unsaved').classList.add('hidden');
+        } else {
+            document.getElementById('block_addresses_unsaved').classList.remove('hidden');
+        }
+    });
+
+    block_addresses_save_btn.addEventListener('click', () => {
+        let block_array_new = normalizeStringList(block_addresses_textarea.value, 2);
+        spamfilter_setBlockAddresses(block_array_new);
+        block_addresses_save_btn.disabled = true;
+        block_addresses_string = block_array_new.join('\n');
+        block_addresses_textarea.value = block_addresses_string;
+        document.getElementById('block_addresses_unsaved').classList.add('hidden');
+    });
+
     // Address book skip option
     let skip_addressbook_checkbox = document.getElementById('spamfilter_skip_addressbook');
     let prefs_skip_ab = await mztaPrefs.getPrefs(['spamfilter_skip_addressbook']);
@@ -549,6 +576,15 @@ async function spamfilter_getSkipAddresses() {
 
 function spamfilter_setSkipAddresses(spamfilter_skip_addresses) {
     mztaPrefs.setPref('spamfilter_skip_addresses', spamfilter_skip_addresses);
+}
+
+async function spamfilter_getBlockAddresses() {
+    let prefs = await mztaPrefs.getPrefs(['spamfilter_block_addresses']);
+    return prefs.spamfilter_block_addresses;
+}
+
+function spamfilter_setBlockAddresses(spamfilter_block_addresses) {
+    mztaPrefs.setPref('spamfilter_block_addresses', spamfilter_block_addresses);
 }
 
 /**

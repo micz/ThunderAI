@@ -1140,10 +1140,10 @@
         "message": "Lista de exclusão de endereços de e-mail"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "E-mails desses endereços não serão enviados à IA para filtragem de spam."
+        "message": "E-mails desses endereços ou domínios não serão enviados à IA para filtragem de spam."
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "Adicione um endereço de e-mail por linha ou separado por vírgula."
+        "message": "Adicione uma entrada por linha ou separadas por vírgula. Uma entrada pode ser um endereço de e-mail completo (user@domain.com) ou um domínio inteiro (@domain.com)."
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "O remetente está na lista de exclusão de antispam de endereços de e-mail."

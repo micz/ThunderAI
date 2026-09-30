@@ -143,8 +143,13 @@ taSummaryStore.saveSummary()
 `summarize_auto_senders` + `summarize_auto_senders_list` summarize emails from specific senders
 automatically, with no click. This is **independent of `summarize_auto`** and works even when
 `summarize_auto = 0`. Matching goes through `matchAddressList(author, list)`
-(`js/mzta-utils.js`), which extracts the address from the raw author header with the same regex
-used by the spamfilter skip list and supports exact addresses, `@domain.com`, and `*@domain.com`.
+(`js/mzta-utils.js`), which extracts the address from the raw author header with
+`extractEmail()` and supports exact addresses, `@domain.com`, and `*@domain.com` (a domain entry
+matches that domain only, not its subdomains). `matchAddressList()` is a boolean wrapper around
+`matchAddressListType(author, list)`, which returns `'exact'`, `'domain'` or `null` with the
+same parsing rules — an exact entry wins over a domain entry wherever it sits in the list. The
+spam filter allow/block lists use the typed variant to rank the two lists by specificity (see
+[Spam filter sender rules](#data-flow-spam-filter-sender-rules)).
 
 There are **two triggers**, because `onNewMailReceived` does not fire for every delivery path —
 subscribed IMAP folders that are not checked for new mail, and messages moved by a server-side
@@ -173,6 +178,44 @@ subscribed IMAP folders that are not checked for new mail, and messages moved by
 
 There is deliberately **no periodic scan**: no `setInterval`, no `browser.alarms`, no
 `browser.messages.query()` sweep, no recursive folder walk.
+
+### Data Flow: Spam filter sender rules
+
+`_runSpamJob()` (`mzta-background.js`) decides some messages by rule, without an AI call, after
+the message is loaded and before the prompt is built:
+
+```
+allowMatch = matchAddressListType(author, spamfilter_skip_addresses)    'exact' | 'domain' | null
+blockMatch = matchAddressListType(author, spamfilter_block_addresses)
+blocked    = blockMatch && (!allowMatch || (blockMatch === 'exact' && allowMatch === 'domain'))
+    allowMatch && !blocked  → report spamValue 0   (spamfilter_skip_addresses_explanation)
+    blocked                 → report spamValue 100 (spamfilter_block_addresses_explanation),
+                              junk move when autoMove / entry.wantsMove
+    neither                 → address book check (spamfilter_skip_addressbook), unchanged
+                              → otherwise the AI
+```
+
+- **Precedence:** the more specific match wins (an exact address beats a domain entry); on equal
+  specificity the allow list wins. Both lists come **before** the address book, so a blocked
+  contact is still blocked.
+- **Entries:** exact addresses, `@domain.com`, `*@domain.com` (see `matchAddressListType()`).
+  Lists saved before domain support held exact addresses only and match exactly as before. Both
+  lists are tested with `hasAddressListEntries()`, so a legacy `['']` reads as empty.
+- **Where the lists come from:** `processEmails()` reads both in `prefs_aats` and passes them as
+  `options.skip_addresses` / `options.block_addresses`; any other caller (panel check, Refresh,
+  context menu) leaves them out and `_runSpamJob()` reads them from storage.
+- **`_saveRuleSpamReport(entry, headerMessageId, message, message_metadata, prefs, options,
+  verdict)`** builds, saves and broadcasts every rule-based report (allow list, block list,
+  address book) and returns the `_spamOutcome()` with `moved`. `verdict.isSpam` is explicit, not
+  derived from the threshold, so an allow-list report can never be moved even with a threshold
+  of 0. A blocked message is moved on the same terms as an AI verdict (`options.autoMove` or
+  `entry.wantsMove`), and `moved = true` stops the `processEmails()` pipeline like an AI move. A
+  manual check (no autoMove) only shows the 100 report.
+- **`_moveMessageToJunk(message, headerMessageId)`** is shared by the AI and block-list paths: it
+  marks the message junk and moves it to the account's `specialUse: ['junk']` folder through
+  `_enqueueJunkMove()`. It never throws: a message with no account folder, a missing junk
+  folder or an API error is logged and returns `false`, and the report is saved with
+  `moved = false`.
 
 ### Per-message pipelines in `processEmails()`
 
@@ -598,7 +641,8 @@ never runs twice on a message at the same time.
   move).
 - **Config errors** are broadcast and not stored (a later attempt runs again). Nothing stays
   "in progress": the entry is dropped when the job settles, so a retry in the same session works.
-- **Spam.** Only the job owning the entry can reach `_enqueueJunkMove()`; a joiner never moves.
+- **Spam.** Only the job owning the entry can reach `_moveMessageToJunk()` (and so
+  `_enqueueJunkMove()`), for an AI verdict or a block-list match alike; a joiner never moves.
   An `autoMove` joiner (the batch joining a manual Refresh) sets `entry.wantsMove`, which the job
   reads at its verdict, so the message is still moved, once. A joiner arriving after that point
   gets the outcome without a move. `checkSpamReport` and `refreshSpamReport` join a running

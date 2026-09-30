@@ -1722,10 +1722,10 @@
         "message": "Elenco di esclusione indirizzi email"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "Le email provenienti da questi indirizzi non saranno inviate all'IA per l'analisi antispam."
+        "message": "Le email provenienti da questi indirizzi o domini non saranno inviate all'IA per l'analisi antispam."
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "Aggiungi un indirizzo email per riga, oppure separali con una virgola."
+        "message": "Aggiungi una voce per riga, oppure separale con una virgola. Una voce può essere un indirizzo email completo (user@domain.com) o un intero dominio (@domain.com)."
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "Il mittente è incluso nell'elenco di esclusione antispam degli indirizzi email."

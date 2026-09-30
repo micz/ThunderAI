@@ -1136,10 +1136,10 @@
         "message": "メールアドレスのスキップリスト"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "これらのアドレスからのメールは、スパムフィルタリングのためにAIへ送信されません。"
+        "message": "これらのアドレスまたはドメインからのメールは、スパムフィルタリングのためにAIへ送信されません。"
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "1行に1つのメールアドレスを追加するか、カンマで区切ってください。"
+        "message": "1行に1つの項目を追加するか、カンマで区切ってください。項目には完全なメールアドレス（user@domain.com）またはドメイン全体（@domain.com）を指定できます。"
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "差出人はアンチスパムのメールアドレススキップリストに含まれています。"

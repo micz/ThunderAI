@@ -1465,10 +1465,10 @@
         "message": "Ausschlussliste für E-Mail-Adressen"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "E-Mails von diesen Adressen werden nicht zur Spam-Filterung an die KI gesendet."
+        "message": "E-Mails von diesen Adressen oder Domains werden nicht zur Spam-Filterung an die KI gesendet."
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "Geben Sie eine E-Mail-Adresse pro Zeile ein oder trennen Sie diese durch Kommas."
+        "message": "Geben Sie einen Eintrag pro Zeile ein oder trennen Sie die Einträge durch Kommas. Ein Eintrag kann eine vollständige E-Mail-Adresse (user@domain.com) oder eine ganze Domain (@domain.com) sein."
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "Der Absender befindet sich auf der Antispam-Ausschlussliste."

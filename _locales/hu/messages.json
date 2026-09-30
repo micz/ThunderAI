@@ -1049,10 +1049,10 @@
         "message": "Kihagyandó e-mail címek listája"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "Az itt szereplő címekről érkező e-mailek nem lesznek elküldve az AI-nak spamszűrésre."
+        "message": "Az itt szereplő címekről vagy domainekről érkező e-mailek nem lesznek elküldve az AI-nak spamszűrésre."
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "Soronként egy e-mail címet adjon meg, vagy vesszővel elválasztva."
+        "message": "Soronként egy bejegyzést adjon meg, vagy vesszővel elválasztva. Egy bejegyzés lehet teljes e-mail cím (user@domain.com) vagy egy teljes domain (@domain.com)."
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "A feladó szerepel a spamszűrésből kihagyandó címek listáján."

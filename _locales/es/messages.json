@@ -1374,10 +1374,10 @@
         "message": "Obtener evento de calendario del portapapeles"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "Los correos electrónicos de estas direcciones no se enviarán a la IA para filtrar spam."
+        "message": "Los correos electrónicos de estas direcciones o dominios no se enviarán a la IA para filtrar spam."
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "Agrega una dirección de correo electrónico por línea, o separada por una coma."
+        "message": "Agrega una entrada por línea, o sepáralas con una coma. Una entrada puede ser una dirección de correo electrónico completa (user@domain.com) o un dominio entero (@domain.com)."
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "El remitente está en la lista de omisión antispam de la dirección de correo electrónico."

@@ -1195,10 +1195,10 @@
         "message": "Lista pomijanych adresów e-mail"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "Wiadomości e-mail od tych adresów nie będą wysyłane do AI do filtrowania spamu."
+        "message": "Wiadomości e-mail od tych adresów lub domen nie będą wysyłane do AI do filtrowania spamu."
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "Dodaj po jednym adresie e-mail w wierszu lub oddzielone przecinkami."
+        "message": "Dodaj po jednym wpisie w wierszu lub oddziel je przecinkami. Wpis może być pełnym adresem e-mail (user@domain.com) lub całą domeną (@domain.com)."
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "Nadawca znajduje się na liście pomijanych adresów antyspamowych."

@@ -888,18 +888,32 @@ export function joinAddressList(list){
    Supported entries: "user@domain.com" (exact), "@domain.com" and "*@domain.com" (whole domain).
    Returns false on an empty list or an unparseable author. */
 export function matchAddressList(author, list) {
-  if (!author || !hasAddressListEntries(list)) return false;
+  return matchAddressListType(author, list) !== null;
+}
+
+/* Same matching rules as matchAddressList(), but tells how the sender matched:
+   'exact' when an entry is the sender address itself, 'domain' when only a domain entry
+   ("@domain.com" / "*@domain.com") matches, null when nothing does (or on an empty list or an
+   unparseable author). An exact entry wins over a domain entry wherever it sits in the list,
+   so callers can rank two lists by specificity (see the spam filter allow/block lists). */
+export function matchAddressListType(author, list) {
+  if (!author || !hasAddressListEntries(list)) return null;
   const senderEmail = extractEmail(String(author)).toLowerCase();
-  if (senderEmail === '') return false;
+  if (senderEmail === '') return null;
   const senderDomain = senderEmail.slice(senderEmail.indexOf('@') + 1);
-  return list.some(item => {
-    if (typeof item !== 'string') return false;
+  let domainMatch = false;
+  for (const item of list) {
+    if (typeof item !== 'string') continue;
     let entry = item.trim().toLowerCase();
-    if (entry === '') return false;
+    if (entry === '') continue;
     if (entry.startsWith('*@')) entry = entry.slice(1);
-    if (entry.startsWith('@')) return senderDomain === entry.slice(1);
-    return senderEmail === entry;
-  });
+    if (entry.startsWith('@')) {
+      if (senderDomain === entry.slice(1)) domainMatch = true;
+    } else if (senderEmail === entry) {
+      return 'exact';
+    }
+  }
+  return domainMatch ? 'domain' : null;
 }
 
 export function prepareOriginURL(url) {
