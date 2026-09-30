@@ -113,6 +113,16 @@ export function isEnforcedPref(key) {
 }
 
 /**
+ * True when the policy supplies a value for this preference, enforced or initial. A page that
+ * would store something DERIVED from a preference on page open must not when this is true: what
+ * it derived from may be the policy's, and the stored result would outlive the policy (spec 08
+ * "No seeding from policy values"). Synchronous, like isEnforcedPref().
+ */
+export function isPolicySuppliedPref(key) {
+    return mztaManaged.hasManagedValue(key);
+}
+
+/**
  * Disable every control bound to a locked preference and mark it as managed.
  *
  * Relies on the invariant the options page already depends on: an .option-input element's

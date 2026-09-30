@@ -43,6 +43,7 @@ import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
     applyManagedUI,
     isLockedKey,
+    isPolicySuppliedPref,
     lockCompanions,
     setDisabledRespectingManaged
 } from '../_lib/managed-ui.js';
@@ -200,7 +201,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 // Methods to manage options, derived from: /options/mzta-options.js
 
-function updateDisplayModeConstraint() {
+// `event` is the summarize_auto change event when the user picked a value; restoreOptions() calls
+// it with none, on page open.
+function updateDisplayModeConstraint(event) {
   const summarize_auto_el = document.getElementById('summarize_auto');
   const display_mode_el = document.getElementById('summarize_display_mode');
   const autoVal = String(summarize_auto_el.value);
@@ -209,7 +212,14 @@ function updateDisplayModeConstraint() {
   if (autoVal === '2' || autoVal === '3') {
     display_mode_el.value = 'inline';
     setDisabledRespectingManaged(display_mode_el, true);
-    mztaPrefs.setPref('summarize_display_mode', 'inline');
+    // Stored, because the context menu summarize and the refresh read summarize_display_mode
+    // directly. But not on page open when summarize_auto comes from the policy (locked, or an
+    // initial value): 'inline' would then be derived from the policy, would replace the user's
+    // own display mode and outlive the policy. The policy's reconciliation already resolves a
+    // policy display mode to 'inline' (spec 08 "An automatic summary is always inline").
+    if (event || !isPolicySuppliedPref('summarize_auto')) {
+      mztaPrefs.setPref('summarize_display_mode', 'inline');
+    }
   } else if (autoVal === '0') {
     setDisabledRespectingManaged(display_mode_el, true);
   } else {

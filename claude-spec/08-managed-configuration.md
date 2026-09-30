@@ -219,6 +219,15 @@ any other key, and a user who goes back to manual mode (`1`) can pick `'webchat'
 display mode the policy does not supply is left alone: the user's stored value is the page's
 business, as without a policy.
 
+**The summarize page never stores a display mode derived from a policy `summarize_auto`.** Its
+`updateDisplayModeConstraint()` forces the select to `'inline'` for `summarize_auto` 2/3 and, without
+a policy, also stores `'inline'` - on page open too, since the context menu summarize and the
+refresh read the stored value. On page open it skips that write when `summarize_auto` is
+policy-supplied, locked or initial (`isPolicySuppliedPref()` in `pages/_lib/managed-ui.js`): the
+`'inline'` would be derived from the policy, would replace the user's stored display mode and
+outlive the policy. A change the user makes on the `summarize_auto` select is the user's own, and
+stores `'inline'` as before.
+
 ## The allowlist
 
 Derived from `Object.keys(prefs_default)`, minus four exclusion rules. Nothing else is
@@ -473,7 +482,7 @@ unmanaged baseline of a page, comes from a separate module instance or a worker 
 | Locked model selects | - | `options/07-locked-model`, `setup-wizard/07-locked-model` |
 | No seeding from policy values | - | `spamfilter/05-no-seeding-from-policy` |
 | A locked per-feature connection type | - | `<feature>/02-sweep-locked`, `spamfilter/06-locked-connection-type` |
-| An automatic summary is always inline | `09` | `summarize/02-sweep-locked` (`expected`) |
+| An automatic summary is always inline | `09` | `summarize/02-sweep-locked` (`expected`), `summarize/18`-`20` (no display mode stored from a policy `summarize_auto` on page open) |
 | Organization prompts | `06a-org-prompts`, `06b-org-prompts-*`, `12-org-prompts-never-stored` | - |
 | Enforced special prompt texts (and its UI) | `06c`-`06e` | `<feature>/07-special-prompts-text`, `get-calendar-event/08-…-calendar-named` |
 | Enforced per-feature connections (and its UI) | `10a`-`10i` (validation, malformed, resolution and `initWorker()`, conflicts, never persisted / export / write guard / removal, hydration, webchat, feature-page coverage, the chat window's connection and configuration checks) | `<feature>/13-connection-enforced`, `<feature>/14-connection-unlocked` (generated from `tests/helpers/feature-pages.mjs`) |
