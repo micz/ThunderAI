@@ -14,6 +14,8 @@
     --text:#1a1c22;  --muted:#6a6d78;  --muted2:#9195a0;
     --chip-bg:#f1f2f5;  --rowhover:#f7f9fc;
     --accent:#0a6cff;  --accent-ink:#ffffff;  --accent-hover:#2a80ff;
+    /* Fill of the accent buttons (Add New / commit); same as --accent in light. */
+    --accent-fill:#0a6cff;  --accent-fill-hover:#2a80ff;
     --code:#1d4ed8;  --code-bg:#e7efff;
     --edit-bg:#e7f0ff;  --edit-text:#155bd4;  --edit-border:#bcd6ff;  --edit-hover:#d8e8ff;
     --del-text:#c4413f;  --del-border:#f0cccc;  --del-hover-bg:#fdecec;  --del-hover-text:#d13438;
@@ -46,7 +48,9 @@
         --border:#34333c;  --border2:#3d3c45;
         --text:#f2f2f7;  --muted:#9a9aa4;  --muted2:#7d7d87;
         --chip-bg:#26252c;  --rowhover:#211f26;
-        --accent:#45a1ff;  --accent-ink:#08111f;  --accent-hover:#5fb0ff;
+        --accent:#45a1ff;  --accent-ink:#ffffff;  --accent-hover:#5fb0ff;
+        /* Deeper than --accent so the light label stays readable. */
+        --accent-fill:#1f6fd1;  --accent-fill-hover:#2b7fe6;
         --code:#8fb6ff;  --code-bg:#1a2740;
         --edit-bg:#17304d;  --edit-text:#8fc0ff;  --edit-border:#2a4c78;  --edit-hover:#1d3d63;
         --del-text:#d78d8d;  --del-border:#4a2a2c;  --del-hover-bg:#3a1f22;  --del-hover-text:#ff6b6b;
@@ -143,12 +147,12 @@ button:disabled {
 
 /* Accent (Add New / commit). */
 #btnNew, #btnAddNew {
-    background: var(--accent);
+    background: var(--accent-fill);
     color: var(--accent-ink);
     border: none;
 }
 #btnNew:hover:not(:disabled), #btnAddNew:hover:not(:disabled) {
-    background: var(--accent-hover);
+    background: var(--accent-fill-hover);
     border: none;
 }
 
