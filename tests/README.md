@@ -1,8 +1,9 @@
 # Tests
 
 Automated tests for the enterprise managed configuration. The contract they check is
-[`claude-spec/08-managed-configuration.md`](../claude-spec/08-managed-configuration.md): each
-test file names the spec section it covers.
+[`claude-spec/08-managed-configuration.md`](../claude-spec/08-managed-configuration.md) and its
+topic files `08a-managed-prompts.md`, `08b-managed-connections.md`, `08c-managed-ui.md`: each
+test file names the spec section it covers (as `spec 08 "<section>"`, whichever file holds it).
 
 There are two levels:
 

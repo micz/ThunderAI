@@ -12,7 +12,7 @@ Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI
 ### Organization prompts (the fourth set)
 
 Delivered by the enterprise managed configuration through `_org_prompts` (see
-[08-managed-configuration.md](08-managed-configuration.md)). They differ from the other
+[08a-managed-prompts.md](08a-managed-prompts.md#organization-prompts)). They differ from the other
 three sets in one fundamental way: **they are never stored.** The policy is the only source
 of truth, read once at Thunderbird startup, so a prompt added, changed or removed in the
 policy is reflected at the next start and nothing of the user's is ever touched.
@@ -237,7 +237,7 @@ special prompt's text can break its feature. `SPECIAL_PROMPT_TEXT_CONTRACT` in
 `js/mzta-prompts.js` records, per special prompt id, the JSON keys the parser reads and the
 placeholders that carry the message; `checkSpecialPromptText(id, text)` checks a text against
 it. It is used for texts enforced by an enterprise policy, which the user cannot fix (see
-[08-managed-configuration.md](08-managed-configuration.md#output-format-safety-the-response-contract));
+[08a-managed-prompts.md](08a-managed-prompts.md#output-format-safety-the-response-contract));
 the feature pages do not apply it to the user's own edits. **A change to a shipped text's
 output format, or to a parser, must update that table**, or valid policies start being
 rejected.
@@ -400,14 +400,14 @@ Notable dependency:
   unlocked field that still holds the policy value out unless the writer marked it as the
   user's own choice (`_user_fields`), with `keepStoredConnections()`. It can
   never apply to the same prompt as the locked-off overlay. See
-  [08-managed-configuration.md](08-managed-configuration.md#enforced-per-feature-connections-_special_prompts_connection).
+  [08b-managed-connections.md](08b-managed-connections.md#enforced-per-feature-connections-_special_prompts_connection).
 - The **text** of any special prompt can be enforced by the policy (`_special_prompts_text`),
   and is overlaid by `applyEnforcedTexts()`, the fourth and last overlay at the end of
   `getSpecialPrompts()`, which also sets the transient `_text_by_policy` marker. Like the
   provider override it must **not** reach storage: `setSpecialPrompts()` puts back the stored
   (or shipped) text of every enforced id with `keepStoredTexts()`, so the user's text
   returns exactly when the policy is removed. See
-  [08-managed-configuration.md](08-managed-configuration.md#enforced-special-prompt-texts-_special_prompts_text).
+  [08a-managed-prompts.md](08a-managed-prompts.md#enforced-special-prompt-texts-_special_prompts_text).
 - `prompt_get_calendar_event_from_clipboard` is emitted only if **both** `get_calendar_event` and `get_calendar_event_from_clipboard` are active. If `get_calendar_event` is off, neither calendar prompt is shown regardless of the clipboard pref. Both share the `get_calendar_event` prefix for the connection check.
 
 ### Summarize: Dual-Mode Prompt System

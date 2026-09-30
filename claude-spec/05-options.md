@@ -217,7 +217,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `add_tags_auto_uselist` | `false` | Use tag allow-list |
 | `add_tags_auto_uselist_list` | `''` | Tag allow-list content |
 | `add_tags_enabled_accounts` | `[]` | Accounts where auto-tag is active: account ids, per profile, so **not** policy-settable. `[]` = all accounts. Replaced at read time — never overwritten — by the ids resolved from `add_tags_enabled_accounts_match` when a policy sets it (`resolveEnabledAccounts()`, `js/mzta-utils.js`). |
-| `add_tags_enabled_accounts_match` | `[]` | **Policy-only**, no control of its own: account matchers (`user@domain`, `@domain` / `*@domain`, `local` for Local Folders) resolved to account ids on every automatic batch; the result replaces `add_tags_enabled_accounts`, and an empty result means **no** account. `[]` = not managed. Always enforced, validated entry by entry. See [08-managed-configuration.md](08-managed-configuration.md#account-lists-by-policy-_enabled_accounts_match). |
+| `add_tags_enabled_accounts_match` | `[]` | **Policy-only**, no control of its own: account matchers (`user@domain`, `@domain` / `*@domain`, `local` for Local Folders) resolved to account ids on every automatic batch; the result replaces `add_tags_enabled_accounts`, and an empty result means **no** account. `[]` = not managed. Always enforced, validated entry by entry. See [08b-managed-connections.md](08b-managed-connections.md#account-lists-by-policy-_enabled_accounts_match). |
 | `get_calendar_event` | `true` | Enable calendar event extraction |
 | `get_calendar_event_from_clipboard` | `false` | Enable calendar from clipboard |
 | `get_task` | `true` | Enable task creation |
@@ -427,7 +427,7 @@ The prompt CRUD screen, **design "2a": one list, two views**. A single card (`#p
   | Personal | Duplicate · Delete · Save (plus Cancel while dirty) |
   | Built-in / org / shadowed / inert | Duplicate and edit |
 
-  Duplicate, Duplicate and edit, and Export are disabled whenever the management policy is on (see [08-managed-configuration.md](08-managed-configuration.md)).
+  Duplicate, Duplicate and edit, and Export are disabled whenever the management policy is on (see [08a-managed-prompts.md](08a-managed-prompts.md#_disable_prompt_management)).
 - **Save** (`commitDetail()`) validates the fields and applies them to the List.js item with `item.values()`, then calls `savePrompts()`. Validation: the id is non-empty, has no whitespace and is unique among the other prompts; name and text are required; errors show in `#detail_error` and as `.input_error` borders. Flags are written as numbers `1`/`0`, which `normalizePromptFlags()` collapses on the next read.
 - **New prompt** (`startNewPrompt()`) puts the pane in `'new'` mode, with empty fields and the global API defaults. Save creates the item with the same shape as before (`position_*Max + 1`, next `idnum`, `is_default: 0`, `show_in: 'popup'`), after clearing the search so the new row is visible, and selects it. Cancel returns to the previous selection.
 - **Duplicate / Duplicate and edit** (`duplicatePrompt()`) seed `'new'` mode from a copy. The id becomes `id_<copy_text>` and the name `<resolved name> (<copy_text>)`, API values included. Ownership and policy markers (`is_default`, `is_org`, `_shadowed_by_org`, …) are stripped from the seed.

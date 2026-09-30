@@ -26,6 +26,19 @@ existed.** `browser.storage.managed.get()` *rejects* when no policy is present �
 the normal case for nearly every user, so it is caught and swallowed **silently**, without
 even a debug line.
 
+## The spec files
+
+This specification is split by topic. This file holds the mechanism itself; the others hold
+what is built on it. Test files and code comments cite sections as `spec 08 "<section>"`,
+whichever of the four files the section is in.
+
+| File | Holds |
+|---|---|
+| `08-managed-configuration.md` (this file) | overview, resolution order, write guard, load ordering, hydration, policy-supplied API keys, the allowlist, validation, lock convention, structural keys, interaction points, adding a preference or a restriction, testing |
+| [`08a-managed-prompts.md`](08a-managed-prompts.md) | restrictions, organization prompts, enforced special prompt texts |
+| [`08b-managed-connections.md`](08b-managed-connections.md) | locked model selects, no seeding from policy values, locked per-feature connection type, enforced per-feature connections and the connection mode, account lists |
+| [`08c-managed-ui.md`](08c-managed-ui.md) | `pages/_lib/managed-ui.js`: control matching, `data-mzta-pref`, the setup wizard, marker placement and inertness |
+
 ## Why this is small
 
 Everything rests on [`js/mzta-prefs.js`](../js/mzta-prefs.js) being the single choke point
@@ -152,7 +165,7 @@ provider itself. The rule is now **split by page**:
 | every other extension page | `MANAGED_SECRET_MARKER`, exported by `js/mzta-managed.js` |
 
 The same rule covers every `*_api_key` field of a policy connection
-([`_special_prompts_connection`](#enforced-per-feature-connections-_special_prompts_connection)),
+([`_special_prompts_connection`](08b-managed-connections.md#enforced-per-feature-connections-_special_prompts_connection)),
 in `specialPromptsConnection`. The chat window runs a feature's connection itself (summarize in
 webchat display mode: `loadPrompt()` in `api_webchat/controller.js`).
 
@@ -182,56 +195,6 @@ user cannot reveal, test or fetch models with the organization's key. The key is
 the add-on, not about secrecy. An unlocked (`":locked": false`) policy key shows as the
 marker until the user types their own, which is then stored and wins, per the resolution
 order.
-
-### Locked model selects
-
-A locked `{provider}_model` (`chatgpt_model`, `google_gemini_model`, `ollama_model`,
-`openai_comp_model`, `anthropic_model`) also takes its "Fetch models" button away: fetching a
-list the user cannot pick from is pointless. In `pages/_lib/connection-ui.js`,
-`isManagedModel()` reads the `data-mzta-managed` mark `applyManagedUI()` sets, and:
-
-- the connection checks (`warn_*Empty()`) never enable the fetch button while it is set;
-- `toggleTomSelectDisabled()` never re-enables the select (or its Tom Select) while it is set,
-  whatever the caller asks, and disables it without `clear()`, so the enforced model stays
-  shown - `clear()` would also fire a `change` that tries to save `''`. The empty-credential
-  branches of the `warn_*Empty()` checks leave its `selectedIndex` alone for the same reason,
-  so emptying a key or host and typing it back never loses the enforced model;
-- the model select's `mzta-managed` event re-runs its provider's checks, because
-  `applyManagedUI()` runs after the connection panel has been built and checked.
-
-### No seeding from policy values
-
-The six feature pages pre-fill their per-feature connection fields
-(`{prefix}_{integration}_{key}`, and `{prefix}_connection_type`) from the global value when
-the special prompt has none (`resolveFeatureConnectionPrefs()` in `pages/_lib/feature-page.js`,
-which their `restoreOptions()` calls), and `initializeSpecificIntegrationUI()` writes those fields into
-the prompt with `_updatePrompt()` — **on page open** when the specific integration is on. The
-custom prompts editor does the same into `_custom_prompt`. These are prompt properties, not
-preferences, so no write guard stands in the way: a seeded policy value would outlive the
-policy, and a seeded marker would be sent to the provider as the key.
-
-So a seed never comes from a policy-supplied value: `seedFromGlobal(prefs, key)` in
-`pages/_lib/managed-ui.js` returns `prefs_default[key]` when `mztaManaged.hasManagedValue(key)`
-and `prefs[key]` otherwise — exactly the previous behaviour with no policy. Any new code that
-copies a global preference into a prompt must go through it.
-
-### A locked per-feature connection type
-
-A feature page's `restoreOptions()` normally shows the special prompt's `api_type` in its
-`{prefix}_connection_type` select, or a seed from the global connection when the prompt has
-none: the prompt is the source of truth for that select. A **locked** `{prefix}_connection_type`
-is the exception, on all six pages (the shared `resolveFeatureConnectionPrefs()`): the select
-keeps the enforced value `getAllPrefs()` resolved, because that is what runs — `getConnectionType()` reads the per-feature preference
-before the prompt's `api_type`. The test is `isEnforcedPref(key)` in `pages/_lib/managed-ui.js`,
-the synchronous `mztaManaged.isManagedLocked()`, usable before `applyManagedUI()` because the
-preference read has already hydrated the policy. An initial (`":locked": false`) value changes
-nothing: the page shows exactly what it shows without a policy.
-
-The enforced value never reaches the prompt either: `_updatePrompt()` in
-`initializeSpecificIntegrationUI()` leaves `prompt.api_type` as it is while the key is locked,
-for the reason in [No seeding from policy values](#no-seeding-from-policy-values). The
-page-open copy of the prompt's `api_type` into the preference (`persistPromptConnectionToPrefs()`)
-is stopped by the per-key write guard of `setPrefs()`, as before.
 
 ### An automatic summary is always inline
 
@@ -287,7 +250,7 @@ holds account ids (`account1`, …), which Thunderbird assigns per profile, so n
 value can be right; the `_match` one holds names that are the same on every machine — an
 identity address, a domain, `local` — and the ids are **resolved from them at read time**,
 per profile, never stored. So the stored preference stays per-profile and the user's, and
-the policy never has to name an id. See [Account lists by policy](#account-lists-by-policy-_enabled_accounts_match).
+the policy never has to name an id. See [Account lists by policy](08b-managed-connections.md#account-lists-by-policy-_enabled_accounts_match).
 
 ## Validation
 
@@ -305,7 +268,7 @@ key, with an API key masked) and not applied, exactly like a type mismatch, neve
 
 | Preference | Rule |
 |---|---|
-| per-provider connection key `{integration}_{key}` (from `integration_options_config`) | `connectionFieldProblem()`, the same rules as a field of [`_special_prompts_connection`](#enforced-per-feature-connections-_special_prompts_connection): host a URL, model not empty, temperature, thinking budget, extra body, numbers |
+| per-provider connection key `{integration}_{key}` (from `integration_options_config`) | `connectionFieldProblem()`, the same rules as a field of [`_special_prompts_connection`](08b-managed-connections.md#enforced-per-feature-connections-_special_prompts_connection): host a URL, model not empty, temperature, thinking budget, extra body, numbers |
 | `connection_type` | one of `valid_connection_types` (`''`, "no connection yet", is not a value to enforce) |
 | `{prefix}_connection_type` | one of `featureConnectionTypes()`: never `chatgpt_web`, which the feature panels do not offer |
 | `reply_type`, `diff_granularity`, `summarize_display_mode`, `summarize_auto`, `translate_auto` | one of the values its settings select offers (`PREF_ENUMS`) |
@@ -330,7 +293,7 @@ whole-array rule exists so a list its consumers read as-is is never coerced; her
 entry is content-validated anyway, and rejecting the whole list would fail **open** (back to
 the user's selection, possibly every account) for a list whose job is to limit where mail
 is sent to an AI provider. For the same reason a list whose entries are all invalid is kept,
-empty — "no account" — with a warning. Details in [Account lists by policy](#account-lists-by-policy-_enabled_accounts_match).
+empty — "no account" — with a warning. Details in [Account lists by policy](08b-managed-connections.md#account-lists-by-policy-_enabled_accounts_match).
 
 `taLogger.warn()` is deliberate: unlike `.log()` it is **not** gated on `do_debug`, so an
 administrator sees a malformed policy without having to turn on debugging first.
@@ -362,652 +325,11 @@ Keys starting with `_` are structures and metadata, never preferences. **No key 
 | `_org_name` | display name, for the banner and markers |
 | `_org_id` | `[a-z0-9-]+`, the prompt-id namespace |
 | `_org_prompts` | the fourth prompt set |
-| `_special_prompts_text` | enforced text of special prompts, `{<special prompt id>: <text>}`; **enforced only**, see [below](#enforced-special-prompt-texts-_special_prompts_text) |
-| `_special_prompts_connection` | per-feature connection, `{<feature prefix>: {api_type, <field>: value, "<field>:locked": false}}`; `api_type` always enforced, see [below](#enforced-per-feature-connections-_special_prompts_connection) |
+| `_special_prompts_text` | enforced text of special prompts, `{<special prompt id>: <text>}`; **enforced only**, see [08a](08a-managed-prompts.md#enforced-special-prompt-texts-_special_prompts_text) |
+| `_special_prompts_connection` | per-feature connection, `{<feature prefix>: {api_type, <field>: value, "<field>:locked": false}}`; `api_type` always enforced, see [08b](08b-managed-connections.md#enforced-per-feature-connections-_special_prompts_connection) |
 | `_disable_prompt_management` | restriction: no prompt creation, copy, import or export; existing custom prompts read-only and inactive |
 | `_disable_default_prompts` | restriction: the built-in prompts are not available in the menus |
 | `_disable_setup_wizard` | restriction: the setup wizard cannot be opened |
-
-### Restrictions
-
-The last three are **restrictions**: policy-only switches that take something away rather
-than set a value. They are structural keys, not entries in `prefs_default`, because there
-is no user-facing setting behind them — nothing to show in the options page, nothing to
-store in `storage.local`, and therefore nothing for the lock convention to act on. A
-restriction is simply on (`true`) or absent.
-
-`readRestriction()` accepts only a boolean. `false` is allowed, and means the same as
-absent, so an administrator can write the key out explicitly. Anything else is warned about
-and treated as off — never coerced, because a restriction silently misread as *on* would
-lock a fleet out of its own prompts.
-
-A policy that only restricts — no preference, no prompt — still counts as **active**: the
-banner and the disabled controls have to be explained.
-
-They travel to pages in the `get_managed_values` reply as `disablePromptManagement`,
-`disableDefaultPrompts` and `disableSetupWizard`. They cannot ride in `lockedKeys`, which holds preference keys.
-
-#### `_disable_prompt_management`
-
-The organization takes prompt management away entirely: nothing can be created, copied,
-imported or exported, and the user's **existing** prompts become read-only and stop being
-available anywhere they could be invoked. Built-in and organization prompts are untouched —
-they remain fully usable, which is the point: the user keeps working, with the prompt set
-the organization decided on.
-
-Export is included on purpose — an exported file carries the prompt bodies, and with
-*include API settings* it can carry provider credentials too, so an organization that locks
-prompt management does not want that file produced either.
-
-**The user's prompts are never deleted.** They stay in `_custom_prompt`, are still listed
-(read-only, with an explanation) on both prompt pages, are still saved, and come back
-exactly as they were the moment the policy is lifted.
-
-##### Where it is enforced
-
-| Site | Treatment |
-|---|---|
-| `pages/customprompts/` `btnNew` ("New prompt") | disabled in place |
-| `pages/customprompts/` `#import_export` | **hidden** rather than greyed — a greyed Export/Import pair invites clicking. `#managed_restriction_note` is revealed in its place, so the missing buttons read as policy, not as a bug |
-| `pages/customprompts/` detail editor and row menu | the user's own prompts are `rowState().locked`: every field is read-only, Save/Delete are not offered and the banner shows `customPrompts_policy_inert_note`; **Duplicate / Duplicate and edit / Export are disabled on every prompt**, built-in and org included, because a copy always produces a new prompt |
-| `pages/menu_order/` rows | dimmed, undraggable, badged `menu_order_badge_policy_inactive` |
-| menus, popup, `loadPrompt()` | filtered out by `getPrompts()` |
-| `exportPrompts()`, `importPrompts()`, `duplicatePrompt()`, `startNewPrompt()`, `commitDetail()` (new mode), `deletePrompt()` | early-return guards — the control being disabled or out of sight is not the same as the action being unavailable |
-
-This is also why that page uses `pages/_lib/managed-ui.js` instead of its own raw
-`sendMessage`: it needs the restriction accessors, and the state belongs in one cache. The
-page captures it once into `prompt_mgmt_disabled` before the first row renders, because the
-List.js row template is synchronous and cannot await.
-
-##### The three prompt views, and why the filter is not global
-
-`js/mzta-prompts.js` builds the merged prompt set once in `buildPromptSet()`, which
-**marks** the three reasons a prompt can be inactive instead of dropping them:
-`_shadowed_by_org`, `_inert_by_policy` and `_default_inert_by_policy`. Three views sit on
-top of it:
-
-| View | Drops inactive? | Special prompts | Used by |
-|---|---|---|---|
-| `getPrompts()` | yes | per arguments | menus, popup, `loadPrompt()` |
-| `getPromptsForManagement()` | no | no | `pages/customprompts/`, import, export |
-| `getPromptsForMenuOrder()` | no | yes | `pages/menu_order/`, `migrateMenuOrderAlphabetic()` |
-
-The split is a **data-safety rule, not a style choice**. Both prompt pages rewrite the
-whole `_custom_prompt` store from the list they were handed, so a prompt missing from that
-list is a prompt *deleted* on the next Save. Filtering inside `getPrompts()` alone would
-therefore have made the menu order page erase every custom prompt the moment a user
-reordered anything under the policy. Any future caller that writes back to storage must
-use a non-dropping view for the same reason.
-
-All three flags describe the *current* policy state, never the
-prompt, so they must not be persisted: a stored `_inert_by_policy` would outlive the policy
-that set it. They are stripped in `setCustomPrompts()` and `setSpecialPrompts()` — the two
-gates into storage — and in `preparePromptsForExport()`, so a backup restored elsewhere
-carries no stale policy state.
-
-The restriction fails **open**: `isPromptManagementDisabled()` in `js/mzta-prompts.js`
-returns `false` on any error, matching `managed-ui.js`. A restriction misread as *on* would
-make the user's own prompts vanish from every menu, which is far worse than one briefly not
-applied — the policy is re-read at the next start anyway.
-
-Custom *data placeholders* are deliberately **not** covered. They are text fragments, not
-prompts, and carry no provider credentials — a separate restriction can be added if an
-organization ever asks for one.
-
-#### `_disable_default_prompts`
-
-The organization takes the **built-in** prompts out of the menus. They stop being available
-anywhere they could be invoked — popup, reading, composing and context menus, `loadPrompt()`
-by id — while staying listed, read-only and explained, on both prompt pages.
-
-It is meant for an organization that ships its own prompt set through `_org_prompts` and
-wants only that set to be reachable. It is fully independent of `_disable_prompt_management`:
-the two cover **disjoint** sets of prompts — the built-in ones here, the user's own ones
-there — and can be on together, each with its own explanation.
-
-What it does **not** touch:
-
-- **special prompts** (Add Tags, Summarize, Translate, Spam Filter, Calendar Event, Task).
-  They back features of their own, which stay switched on. They carry `is_default: "1"` as
-  well, because their display properties are stored the same way, so `isBuiltInDefaultPrompt()`
-  tests `is_default === '1' && is_special !== '1'` — a plain `is_default` check would
-  silently disable those features too.
-- the user's own prompts, and the organization's.
-
-##### Where it is enforced
-
-| Site | Treatment |
-|---|---|
-| menus, popup, `loadPrompt()` | filtered out by `getPrompts()` |
-| `pages/customprompts/` rows | already read-only as built-ins; dimmed in the list (`.is_dimmed`), with `customPrompts_policy_default_inert_note` in the detail editor's banner and `#managed_restriction_defaults_note` once for the page — without them a prompt that has silently vanished from every menu reads as a bug |
-| `pages/menu_order/` rows | dimmed, undraggable, badged `menu_order_badge_policy_inactive` (shared with the restriction above: "Disabled by policy" is exactly right for both) |
-
-The built-in prompts are **kept in the merged set**, never filtered out of it, for the same
-data-safety reason as above: `pages/menu_order/` rewrites `_default_prompts_properties` from
-the list it was handed, so dropping them would erase the user's menu positions and custom
-icons on the next Save. `_default_inert_by_policy` rides in `TRANSIENT_PROMPT_FLAGS`, so it
-cannot be persisted. (`setDefaultPromptsProperties()` needs no change — it writes an
-explicit whitelist of fields, so no transient flag can leak through it.)
-
-Fails **open**, like the restriction above: `areDefaultPromptsDisabled()` in
-`js/mzta-prompts.js` returns `false` on any error, because a restriction misread as *on*
-would empty the menus of an unmanaged installation.
-
-#### `_disable_setup_wizard`
-
-The wizard writes connection preferences as the user steps through it, and the write guard
-only covers the keys the policy actually locks. So this is enforced at **four** entry
-points plus the page itself:
-
-| Site | Treatment |
-|---|---|
-| `options/` `btn_setup_wizard`, `btn_options_setup_wizard` | disabled in place |
-| `pages/onboarding/` `wizard_banner` | hidden — it exists only to lead there |
-| `popup/` `setup_wizard_prompt` | link replaced by the explanation text |
-| `pages/setup-wizard/` itself | renders `#wiz_blocked` instead of the wizard |
-
-The page check is not redundant. Every link to it is disabled, so reaching the wizard means
-it was opened by its direct URL; the check runs before anything is built or injected.
-
-The popup case is the odd one: that panel replaces the prompt list when no connection is
-configured, so it cannot simply be hidden. The link text becomes the explanation, so the
-user learns the connection is configured centrally rather than clicking a dead end.
-
-`openSetupWizard()` in the options page also returns early — a restriction must not depend
-on a control staying disabled.
-
-## Organization prompts
-
-Full treatment in [02-prompts.md](02-prompts.md#organization-prompts-the-fourth-set). The
-parts that belong here:
-
-**Ids are composed, not taken verbatim**: `org_<_org_id>_<id>`. `_org_id` may not contain
-an underscore, or `org_acme_foo_bar` would be ambiguous between org `acme`/prompt `foo_bar`
-and org `acme_foo`/prompt `bar` — and two organizations could collide through that
-ambiguity. Without a valid `_org_id` the whole prompt set is refused rather than given
-ambiguous ids.
-
-Because every composed id starts with `org_` and every shipped id starts with `prompt_`,
-collision with a built-in is **structurally impossible** and is not checked for.
-
-**A colliding custom prompt is shadowed, not rejected.** If the user owns a prompt with an
-org prompt's id, the org prompt wins wherever a prompt can be invoked. The reverse would
-let a user disable an organization prompt just by creating one with its id, with nothing
-visible to explain the disappearance. The user's prompt is **not** deleted — it stays in
-`_custom_prompt`, is still saved, and returns when the policy stops supplying that id.
-
-This is deliberately **not** paired with UI validation forbidding an `org_` prefix: that
-would be bypassable by writing to storage directly, adds nothing to a runtime rule that is
-not, and would forbid a prefix a user may already be using legitimately.
-
-## Enforced special prompt texts (`_special_prompts_text`)
-
-Replaces and enforces the **text** of special prompts (Spam Filter, Add Tags, Summarize,
-Translate, Calendar Event, Task). Neither of the other two mechanisms can do it: the text
-lives in `_special_prompts`, not in `prefs_default`, so the allowlist cannot reach it, and
-`_org_prompts` only creates new `org_<org_id>_*` prompts.
-
-```json
-"_special_prompts_text": {
-  "prompt_spamfilter": "… {%mail_html_body%} … {\"explanation\": …, \"spamValue\": …}"
-}
-```
-
-**Enforced only — there is no `:locked` variant.** There is no preference behind a prompt
-text, so nothing for the lock convention to downgrade to an initial value. A
-`"_special_prompts_text:locked"` key is warned about and ignored; the texts stay enforced.
-Only the text is covered: every other property of the special prompt (icon, menu visibility,
-provider override) stays the user's - the provider override has a key of its own,
-[`_special_prompts_connection`](#enforced-per-feature-connections-_special_prompts_connection).
-
-### Validation
-
-`validateSpecialPromptsText()` in [`js/mzta-managed.js`](../js/mzta-managed.js), same style
-as `validateOrgPrompts()`: the value must be a plain object, and each entry is checked on its
-own — an invalid one is skipped with a `taLogger.warn()` naming it, the rest still apply.
-
-- the key must be the id of an entry in `specialPrompts` ([js/mzta-prompts.js](../js/mzta-prompts.js),
-  `getSpecialPromptIds()`), **including the non-menu ones**: `prompt_summarize_email_template`,
-  `prompt_summarize_email_separator` and `prompt_get_calendar_event_from_clipboard`;
-- the value must be a non-empty string, and not whitespace only — except
-  `prompt_summarize_email_separator`, for which whitespace is a legitimate text;
-- the text must satisfy the **response contract** below.
-
-`js/mzta-prompts.js` owns the ids and the contract; `mzta-managed.js` imports it
-**dynamically** inside `_doLoad()`, because `mzta-prompts.js` statically imports
-`mzta-managed.js`.
-
-The calendar page edits `prompt_get_calendar_event` and `…_from_clipboard` through **one**
-textarea and always saves both. So an enforced `prompt_get_calendar_event` also applies to
-the clipboard variant, unless the policy names that id too (even with an invalid value — an
-administrator who named it did not ask for the copy).
-
-### Output-format safety: the response contract
-
-Every special prompt whose answer is parsed carries its output format **inside the text**
-(`prompt_spamfilter_full_text` itself asks for `{"explanation", "spamValue"}`); the code
-only appends extras (`finalizePrompt_add_tags()`: tag count, language, allowed list). An
-administrator's text without that format would silently break the parser for the whole
-fleet, and the user could do nothing about it — which is the difference from the same
-mistake made by a user on their own feature page.
-
-The chosen approach is **validate and reject**, not "move the format into code":
-
-- moving the format out of the text would change the text every user edits today, need a
-  migration of every stored user text (which already contains the format) and new
-  translatable strings — a behaviour change for unmanaged users, which this mechanism must
-  never cause;
-- rejecting keeps the feature working: the user's own text stays in effect, and the
-  warning tells the administrator exactly which field is missing. Enforcing and warning
-  would have left a fleet with a feature that fails on every message.
-
-`SPECIAL_PROMPT_TEXT_CONTRACT` in `js/mzta-prompts.js`, checked by `checkSpecialPromptText()`:
-
-| Id | `responseKeys` (reject if missing) | Message placeholder (warn if missing) |
-|---|---|---|
-| `prompt_spamfilter` | `spamValue`, `explanation` | any body placeholder¹, or none at all² |
-| `prompt_add_tags` | `tags` | any body placeholder¹, or none at all² |
-| `prompt_get_calendar_event`, `…_from_clipboard` | `startDate`, `endDate`, `summary` | `selected_text`, `selected_html` or a body placeholder¹, or none at all² |
-| `prompt_get_task` | `summary` | as calendar |
-| `prompt_translate_this` | `subject`, `body`, `status` | `mail_html_body` or `mail_text_body`, **and** `thunderai_translate_lang` |
-| `prompt_summarize_email_template` | — | any body placeholder¹, or none at all² |
-| `prompt_summarize`, `prompt_summarize_email_separator` | — | — (free text) |
-
-¹ `mail_text_body`, `mail_html_body`, `mail_text_body_or_selected`, `mail_html_body_or_selected`.
-² `preparePrompt()` appends the message itself to a text with no placeholder at all.
-`buildTranslationPrompt()` never appends, hence the stricter translate row.
-
-A response key is matched as a whole, case-sensitive word — the parser's property access. It
-is a heuristic: it catches the likely mistake (an instruction rewritten without its output
-format), not a subtly malformed one. Only the keys without which the result is unusable are
-listed; the ones the shipped text itself calls optional (location, description,
-attendees…) are not. Every shipped text passes the contract.
-
-### Application: a read-time overlay, never persisted
-
-`applyEnforcedTexts()` runs at the end of `getSpecialPrompts()`, after
-`applyCalendarNoSelection()`, `applyLockedOffIntegrations()` and `applyPolicyConnections()`: it replaces `text` and sets
-`_text_by_policy: true`. In pages the texts arrive with the hydration
-(`specialPromptsText` in the `get_managed_values` reply), and the overlay awaits
-`managedReady()`, so every context sees the same text.
-
-It must **never** reach storage: the feature pages rewrite the whole `_special_prompts`
-array, and a stored enforced text would replace the user's own and outlive the policy. Two
-gates, as for the provider override:
-
-- `_text_by_policy` is in `TRANSIENT_PROMPT_FLAGS`, so `setSpecialPrompts()` and
-  `preparePromptsForExport()` strip it;
-- `setSpecialPrompts()` runs `keepStoredTexts()`: for every enforced id it puts back the
-  **stored** text, or the shipped (i18n) text for a prompt never stored — what
-  `getSpecialPrompts()` would have handed out without the policy. The decision is by id,
-  from `mztaManaged`, synchronously, not by the marker, so it holds even for a caller that
-  dropped the marker. Before `loadManaged()` (the migration block) nothing is enforced and
-  it is a no-op.
-
-Removing the policy therefore restores the user's text **exactly**, including a legacy
-stored value that is still the raw i18n key.
-
-### UI
-
-`lockEnforcedPromptText(textarea, promptIds, companions)` in
-[`pages/_lib/managed-ui.js`](../pages/_lib/managed-ui.js), called by `bindSpecialPromptEditor()`
-in [`pages/_lib/feature-page.js`](../pages/_lib/feature-page.js) — the one wiring of a special
-prompt editor (textarea, Save, Reset, "unsaved" note) the six feature pages share — after it
-has filled the textarea and set its buttons' initial state (summarize binds three editors, one
-per textarea; calendar one, with both calendar ids). It follows [Controls with their
-own load/save logic](#controls-with-their-own-loadsave-logic-data-mzta-pref), without a
-preference key:
-
-- the textarea already shows the enforced text (the overlay), and becomes **`readOnly`**,
-  not disabled, so the text can still be scrolled, selected and copied — a user may want to
-  start a custom prompt from it; it gets `data-mzta-managed="1"` and the
-  `managed_prompt_text_tooltip` title. `#mzta_card .editor-wrap .editor[data-mzta-managed="1"]`
-  in `mzta-design.css` hides the caret, since no `:disabled` styling applies;
-- the Save and Reset buttons are disabled and marked like `lockCompanions()` does;
-- the marker, padlock included, goes right of the group title heading the textarea's
-  `.mzta_field` (see "Group titles win over the column" below) — the same placement the list
-  textareas get. `markManaged()` takes the `.mzta_field` anchor explicitly: the textarea's
-  own parent is the editor-highlight wrapper.
-
-The editor's Save and Reset handlers also **return early** on `isEnforcedPromptText(id)` for
-any of its prompt ids (the calendar Save on either calendar id), and its input handler sets the
-buttons through `setDisabledRespectingManaged()`, so not even a dispatched `input` re-enables
-them. Both helpers read `mztaManaged` after hydration.
-
-### Startup warning
-
-The feature pages' placeholder checks never see an enforced text, so the background
-`taLogger.warn()`s at startup for each enforced text that fails the placeholder column of
-the contract (`getEnforcedTextPlaceholderProblems()`). The text is still enforced — the
-administrator asked for it, and it runs. The existing `calendar_no_selection` startup check
-reads `getSpecialPrompts()`, so it covers an enforced calendar text on its own.
-
-## Enforced per-feature connections (`_special_prompts_connection`)
-
-This key lets the administrator set the connection of a feature that supports a specific
-integration: every prefix of `special_prompts_with_integration` (`add_tags`, `spamfilter`,
-`summarize`, `get_calendar_event`, `get_task`, `translate`). The prefix is the same one
-`{prefix}_use_specific_integration` uses.
-
-Neither the allowlist nor `_special_prompts_text` can do this. The per-feature override is not
-a preference: it lives in the special prompt (`api_type` plus the `{integration}_{key}` fields,
-see [04-api-integrations.md](04-api-integrations.md#per-feature-provider-override-specific-integration)).
-Only `{prefix}_use_specific_integration` is in `prefs_default`.
-
-```json
-"_special_prompts_connection": {
-  "spamfilter": {
-    "api_type": "openai_comp_api",
-    "openai_comp_host": "https://ai-gateway.example.org",
-    "openai_comp_api_key": "…",
-    "openai_comp_model": "gpt-4o-mini",
-    "openai_comp_model:locked": false
-  }
-}
-```
-
-The field names are **exactly** the override properties stored on the special prompt:
-`${integration}_${key}` for a key of `integration_options_config[integration]`, where
-`integration` is the `api_type` without `_api`. There is no translation layer, so a field added
-to `integration_options_config` can be set here the moment it is declared (see
-[Adding a policy-settable preference](#adding-a-policy-settable-preference) for what still needs a hand).
-
-### Lock semantics
-
-The convention is the rest of this file's: every field present is **enforced**, and a sibling
-`"<field>:locked": false` makes it an initial value.
-
-| Field | Resolution on the prompt |
-|---|---|
-| `api_type` | **always enforced**. `"api_type:locked": false` is warned about and ignored: an unlocked provider under enforced provider-specific fields makes no sense |
-| enforced field | the policy value, always, over any stored value |
-| unlocked field | the policy value only while the prompt has none of its own (absent or `''`); never written to storage |
-| field the policy does not name | the user's, as without a policy; if the prompt has none either, `initWorker()` falls back to the global preference, as before |
-
-A top-level `"_special_prompts_connection:locked"` is warned about and ignored.
-
-### Implied preferences and conflicts
-
-`getConnectionType()` reads `{prefix}_use_specific_integration` / `{prefix}_connection_type`
-**before** `prompt.api_type`. The menu gating and the options feature row read only that
-pair (`prompt = null`). So an entry accepted by validation **implies** both, injected into
-`_values` / `_locked` right after validation:
-`{prefix}_use_specific_integration = true` and `{prefix}_connection_type = api_type`, both
-locked. They are ordinary allowlisted preferences from then on. Hydration, the write guard,
-`applyManagedUI()` (the switch and the type select locked and marked) and
-[A locked per-feature connection type](#a-locked-per-feature-connection-type) apply to them unchanged.
-
-When the policy also sets those preferences explicitly:
-
-| Explicit value in the same policy | Result |
-|---|---|
-| `{prefix}_use_specific_integration: false`, locked **or** initial | the connection entry is **skipped**, with a `taLogger.warn()`. The explicit switch wins; the feature falls back to the global connection, which the administrator controls too |
-| `{prefix}_use_specific_integration: true`, initial | upgraded to enforced, with a warning |
-| `{prefix}_connection_type`, different or initial | replaced by `api_type`, locked, with a warning |
-
-The first rule is what keeps the two per-feature overlays apart. A prefix locked off gets the
-locked-off overlay ([Interaction points](#interaction-points)) and never a connection entry.
-`applyPolicyConnections()` also skips any locked-off prefix itself, so the order of the two
-overlays cannot matter.
-
-### Validation
-
-`validateSpecialPromptsConnection()` in [`js/mzta-managed.js`](../js/mzta-managed.js) runs in
-pass 3. It follows the same style as `validateSpecialPromptsText()`: the value must be a plain
-object (otherwise the whole key is ignored), and each entry is checked on its own. **An entry
-without a usable `api_type` is skipped as a whole**; every other problem skips only the field.
-Every skip is a `taLogger.warn()` naming the feature and the field, and the rest of the policy
-still applies.
-
-- The key must be a prefix of `special_prompts_with_integration`, and the entry a plain object.
-- `api_type` is required and must be one of `featureConnectionTypes()`. That list is derived,
-  not written out: the entries of `valid_connection_types` that have an
-  `integration_options_config` block, which is the same mapping `initWorker()` uses. Those are
-  exactly the types the feature panels offer, since they inject with `no_chatgpt_web: true`. So
-  `chatgpt_web` is rejected for every feature.
-- Each other field must belong to that `api_type`. A field of another provider gets its own
-  message ("belongs to the X connection, not to Y").
-- Its type must be the type of its `integration_options_config` default, never coerced. Then
-  come the content rules (`connectionFieldProblem()`):
-
-  | Field | Rule |
-  |---|---|
-  | `*_host` | parses as an `http:` or `https:` URL |
-  | `*_model` | not empty |
-  | numeric default (`ollama_num_ctx`, `anthropic_max_tokens`, `anthropic_extended_thinking_budget`) | a non-negative integer; `anthropic_max_tokens` ≥ 1 |
-  | `*_temperature` | `''` or a finite number ≥ 0 |
-  | `google_gemini_thinking_budget` | `''` or an integer (`-1` is Gemini's "dynamic") |
-  | `*_extra_body` | `''` or JSON that parses to a plain object, the `parseExtraBody()` contract |
-
-  The settings UI enforces none of these; it saves what is typed and the request builders
-  cope. A user's typo breaks that user's feature. A policy typo breaks it for the whole fleet,
-  and the user can do nothing about it.
-- `"<field>:locked"` must be a boolean. Anything else is warned about, and the field stays
-  enforced. A `":locked"` whose field was rejected or is absent is warned about.
-
-The validated form is `{prefix: {api_type, fields: {name: {value, locked}}}}`. The accessors are:
-
-- `getSpecialPromptsConnection()` and `getSpecialPromptConnection(prefix)`, which return copies;
-- `getEnforcedConnectionControlIds()` and `isEnforcedConnectionControl(id)`, the
-  `${prefix}_${field}` ids of the locked fields.
-
-The key counts towards `_active`.
-
-### Secrets
-
-API key fields follow [Policy-supplied API keys](#policy-supplied-api-keys) exactly:
-
-- **In the background:** `getSpecialPrompts()` overlays the real key, which is what
-  `initWorker()` and `menus.allPrompts` get.
-- **In `get_managed_values`:** every `*_api_key` field of `specialPromptsConnection` is
-  `MANAGED_SECRET_MARKER` except for `api_webchat/`, which runs a feature's connection itself.
-  A content script gets `{}`.
-- **On a feature page:** the key field shows the marker, which the eye toggle, "Update", the
-  empty-key checks and the storage gates already refuse. The feature pages have no connection
-  test (only the options page and the setup wizard do), so the refusal of
-  `runConnectionTest()` has no site there.
-- **Never persisted, never exported:** `stripTransientFlags()` drops a marker key before the
-  storage gate below. `preparePromptsForExport()` removes `api_type` and every override field
-  from a prompt marked `_connection_by_policy`, whatever `include_api_settings` says. No
-  shipped caller exports special prompts today; this is a guard for any future one.
-
-### Application: a read-time overlay, never persisted
-
-`applyPolicyConnections()` in [`js/mzta-prompts.js`](../js/mzta-prompts.js) runs in both
-branches of `getSpecialPrompts()`. The order is `applyCalendarNoSelection()` →
-`applyLockedOffIntegrations()` → **`applyPolicyConnections()`** → `applyEnforcedTexts()`. It
-awaits `managedReady()`, applies the table above to every prompt of `specialPromptIdsForPrefix(prefix)`,
-and sets the transient `_connection_by_policy: true`, which is in `TRANSIENT_PROMPT_FLAGS`.
-
-The prompts per feature are the ones the locked-off overlay uses:
-
-- **summarize:** `prompt_summarize` alone. The email template and separator are text
-  fragments, never a command's `config`, never edited by the panel.
-- **get_calendar_event:** both calendar prompts. The clipboard variant runs with the same
-  prefix, and with the overlay it now runs the feature's connection too; without a policy it
-  never carries override fields at all.
-
-**Why read-time only.** Every write rewrites the whole `_special_prompts` array from a read that
-carries the overlay: `savePrompt()`, `clearPromptAPI()` and the feature pages' text Save
-(`saveSpecialPromptTexts()`) do a load-modify-save through `getSpecialPrompts()`, and the menu
-order page's `saveAll()` writes back the list it loaded at page open. A stored policy value would
-replace the user's own override and outlive the policy. So `setSpecialPrompts()` runs `keepStoredConnections()` after `keepStoredOverrides()`.
-For each policy-connected prompt:
-
-- `api_type` and every enforced field get back what storage holds (deleted if it holds none);
-- an unlocked field the writer names in the prompt's transient `_user_fields` is saved as
-  written, **even when it equals the policy default**: the user chose it. Only the connection
-  panel sets it: `_updatePrompt(field)` in `initializeSpecificIntegrationUI()` marks the one
-  field whose control fired the `change`. `setSpecialPrompts()` reads it before
-  `stripTransientFlags()` drops it (it is in `TRANSIENT_PROMPT_FLAGS`, so it is never stored or
-  exported). It never lets an enforced field or `api_type` through. A value chosen this way is
-  the user's from then on, and stays after the policy is removed;
-- any other unlocked field that holds the policy value, or that is absent (a marker dropped by
-  `stripTransientFlags()`, or a writer that never had the field), gets back what storage holds.
-  So a policy default the page merely *showed* is never stored as the user's value, **not even
-  over a stored value of theirs**: that is exactly what a stale array copy writes (the menu
-  order page's `saveAll()`, or any caller holding a read from before the user's change), and
-  `getSpecialPrompts()` never sets `_user_fields` on it. The other fields
-  `_updatePrompt()` copies from the panel with the edited one are not marked either;
-- any other value is the user's, and saved.
-
-The lock state is read synchronously from `mztaManaged`, as for `keepStoredOverrides()`: before
-`loadManaged()` (the migration block) nothing is supplied and the gate is a no-op. **Removing
-the policy restores the user's override exactly, field by field**, and the preference pair
-falls back to what the user stored.
-
-### The connection panel
-
-The feature pages need no page-specific logic beyond one guard:
-
-- **The switch and the type select** are the implied locked preferences, so `applyManagedUI()`
-  disables and marks them. `restoreOptions()` shows the enforced type through `isEnforcedPref()`.
-- **The fields.** `applyManagedUI()` matches `state.lockedKeys` **plus**
-  `getEnforcedConnectionControlIds()`: the panel names its inputs `${prefix}_${field}`. Every
-  enforced field is therefore disabled and marked like a locked preference, with the marker in
-  its `td`. That brings every existing mechanism with it:
-  - `syncSecretToggle()` shows the padlock (it reads `data-mzta-managed`);
-  - `isManagedModel()` keeps the enforced model in a disabled select and disables "Update"
-    ([Locked model selects](#locked-model-selects));
-  - `setDisabledRespectingManaged()` keeps page logic from re-enabling anything.
-- **Unlocked fields** stay editable and show the overlay: the user's value, or the policy
-  default. An unlocked policy key shows the marker, with the padlock, until the user types
-  their own.
-- **`initializeSpecificIntegrationUI()`** gets mode `policy` (see [The connection mode](#the-connection-mode)):
-  - no "mandatory" forcing: the managed marker is the explanation;
-  - no page-open `_updatePrompt()`, `_persistSelectedConnection()` or
-    `_persistMandatoryIntegration()`: what the panel shows is the policy's, not something to seed;
-  - `_updatePrompt()` never copies an enforced field from the DOM, and marks the field the user
-    changed in `_user_fields` (see the storage gate above);
-  - the per-field listener ignores an enforced field, and the type-select listener ignores a
-    locked select, so a control re-enabled by hand writes nothing at all;
-  - the switch handler forces a re-enabled switch back on without `clearPromptAPI()`.
-- **The one page guard.** On page open every feature page calls
-  `persistPromptConnectionToPrefs(prefix, prompt)` (`pages/_lib/feature-page.js`), which copies
-  `prompt.api_type` and the fields into `{prefix}_*` preferences. It skips a prompt for which
-  `isPolicyConnection(prompt)` (`pages/_lib/managed-ui.js`) is true.
-- **The write guard** refuses the enforced ids that the pages' `saveOptions()` would write (see
-  [The write guard](#the-write-guard)).
-
-### The connection mode
-
-The policy can hold a feature's specific integration in three ways - the switch locked off, a
-policy connection, the switch locked on alone - and the panel has two modes of its own. Which
-one applies is decided **once**, by `resolveSpecificIntegrationMode(prefix, globalConnType)` in
-`pages/_lib/managed-ui.js`, and `initializeSpecificIntegrationUI()` acts only on the object it
-returns, never re-testing the policy itself. It is pure apart from reading the hydrated policy,
-so it is tested at level 1.
-
-| `kind` | When | Switch held at (`switchValue`) | Writes the prompt | Seeds on open | Mandatory forcing |
-|---|---|---|---|---|---|
-| `locked_off` | `{prefix}_use_specific_integration` locked `false` | off | no | no | no |
-| `policy` | a `_special_prompts_connection` entry for the prefix | on | unlocked fields only | no | no |
-| `locked_on` | `{prefix}_use_specific_integration` locked `true`, no entry | on | yes, the connection is the user's | yes | no |
-| `mandatory` | no lock on the switch, global connection ChatGPT Web or none | - | yes | yes | yes |
-| `free` | otherwise | - | yes | yes | no |
-
-`typeLocked` (a locked `{prefix}_connection_type`, implied by a `policy` entry or set on its own)
-keeps `prompt.api_type` out of `_updatePrompt()` and makes the type-select listener write nothing.
-An initial (`":locked": false`) switch holds nothing: the mode is `mandatory` or `free`.
-
-**A switch the policy holds writes nothing when it changes.** The switch handler tests one thing:
-`switchValue !== null` puts a switch re-enabled from the developer tools back to that value and
-returns. Before the resolver, `locked_on` was not one of the handled cases, so turning such a
-switch off reached `clearPromptAPI()` - a prompt write no write guard covers - and wiped the
-user's stored override, and over an unusable global connection the panel showed the "mandatory"
-badge next to the managed marker. Never `mandatory` under a held switch: the managed marker is the
-explanation, and persisting the switch is the write guard's to refuse anyway.
-
-### Startup warning
-
-In the background, `getReplacedProviderOverrides()` reads the raw store. The background then
-`taLogger.warn()`s once for each value the policy replaces that the user stored for the
-feature: the policy `api_type`, or an **enforced** field holding a different, non-empty value.
-The warning names the feature and the field, never the value. An unlocked field replaces
-nothing. The skips (invalid `api_type`, conflict with an explicit `false`) are warned about by
-validation, which runs once, at startup.
-
-## Account lists by policy (`*_enabled_accounts_match`)
-
-Lets an administrator decide which accounts the **automatic** spam filter and the
-**automatic** Add Tags run on. `spamfilter_enabled_accounts` / `add_tags_enabled_accounts`
-cannot be set by policy (see [The allowlist](#the-allowlist)), so each has a policy-settable
-counterpart, `spamfilter_enabled_accounts_match` / `add_tags_enabled_accounts_match`,
-declared in `prefs_default` as `[]` and therefore covered by the allowlist, the type check
-and the write guard like any other preference.
-
-```json
-"spamfilter_enabled_accounts_match": ["micthdev@gmail.com", "@acme.example", "local"]
-```
-
-### Entries
-
-`isAccountMatcherEntry()` in [`js/mzta-managed.js`](../js/mzta-managed.js); case-insensitive,
-surrounding whitespace ignored, stored lowercased:
-
-| Entry | Matches |
-|---|---|
-| `user@acme.example` | an account with an identity of that address |
-| `@acme.example`, `*@acme.example` | an account with an identity in that domain |
-| `local` | Local Folders (account type `none`), which has no identity |
-
-Addresses and domains are matched by **`matchAddressList()`** in `js/mzta-utils.js`, the
-helper `summarize_auto_senders_list` uses, against each identity's `email`; an account
-matches when any of its identities does. An entry is accepted only in the shape
-`extractEmail()` (which `matchAddressList()` runs) recognises — `[\w.-]+@[\w.-]+\.\w+` — so
-an entry that could never match is rejected loudly instead: this includes an address with a
-`+` tag, which that helper cannot see. The domain form still covers such an identity.
-
-**Other identity-less accounts — RSS feeds (`rss`) — are never matched.** They have no
-stable name a fleet-wide policy could use, and the spam filter has no business on feed
-items. A managed list therefore always leaves feeds out; add a literal next to `local` if an
-organization ever needs auto-tagging on feeds.
-
-### Resolution
-
-`resolveEnabledAccounts(feature, storedList)` in [`js/mzta-utils.js`](../js/mzta-utils.js)
-returns `{restricted, accountIds, managed}`:
-
-- **not managed** (the policy supplies no `_match` value): exactly the stored list, with the
-  existing semantics — `restricted` is `stored.length > 0`, so an empty list is all accounts;
-- **managed**: `accountIds` resolved from `browser.accounts.list(false)` and the matchers,
-  and `restricted` is **always true**. An empty result means **no account**, never "all
-  accounts" — the `[]`-means-all convention belongs to the stored list only, and applying it
-  here would turn a policy that matches nothing into a policy that enables everything. It is
-  `taLogger.warn()`ed once per context — at startup in the background, which resolves both
-  lists for that purpose — and again only after the list has matched something in between.
-
-The resolved ids **replace** the stored list in `processEmails()` (`mzta-background.js`),
-the only place either feature decides whether an account is in scope (auto mode only, as
-before). They are **never written** to `{feature}_enabled_accounts`: the stored value stays
-the user's, untouched, and removing the policy restores it.
-
-The matchers are read from `mztaManaged`, **not** through `mztaPrefs`: the key is
-policy-only, and a stray stored value must not limit anything without a policy. An empty
-array in the policy means "not managed" and is not recorded at all.
-
-**Resolved at each check, not on account events.** `processEmails()` resolves once per
-batch (one `accounts.list(false)` call, no folders), so an account created, removed or given
-a new identity after startup is picked up at the next batch without listening to
-`accounts.onCreated` / `onUpdated` / `onDeleted`. A cached list would need all three
-listeners plus identity events to stay right, and a missed one would silently leave a new
-account unfiltered — or filtered against the policy; the per-batch cost is negligible next
-to the AI call it gates. If the account list cannot be read, the result is "no account":
-fail closed, since the policy asked to limit.
-
-### The account checkboxes
-
-`lockAccountSelector(feature, container, companions)` in
-[`pages/_lib/managed-ui.js`](../pages/_lib/managed-ui.js), called by `pages/spamfilter/` and
-`pages/addtags/` after they have built and checked the account checkboxes. When
-`{feature}_enabled_accounts_match` is locked it re-checks every box from the **resolved**
-list, disables and marks each one (`data-mzta-managed`), makes "Select All" / "Deselect All"
-inert through `lockCompanions()`, puts the marker right of the section title, and replaces
-the "Each change is saved immediately" line with `AccountSelector_managed_note` — or
-`AccountSelector_managed_none` when the list matches nothing here. The page's checkbox
-`change` handler and both button handlers **return early** on its result; the write guard
-does not cover `{feature}_enabled_accounts` (it is not locked), so this early return is what
-keeps the page from writing the user's list while it is overridden.
 
 ## Interaction points
 
@@ -1019,9 +341,9 @@ keeps the page from writing the user's list while it is overridden.
 | tag dialog in [js/mzta-compose-script.js](../js/mzta-compose-script.js) | a classic content script cannot import `mztaPrefs`. It reads `add_tags_exclusions`, `add_tags_hide_exclusions`, `add_tags_exclusions_exact_match` and the lock state through the `addtags_get_exclusion_prefs` background command, and writes the list through `addtags_set_exclusions` (→ `mztaPrefs.setPref()`, so the guard applies). When `add_tags_exclusions` is locked, the per-tag "exclude" icon is not rendered at all. No content script reads preferences from storage any more. |
 | `calendar_no_selection` ([js/mzta-prompts.js](../js/mzta-prompts.js)) | the behaviour used to be driven only by `need_selected` of `prompt_get_calendar_event`, written by the settings page's change listener, so a policy value showed a checked box and changed nothing. `need_selected` is now **derived** from the resolved preference on every `getSpecialPrompts()` read (never written because of the policy; see [02-prompts.md](02-prompts.md)), and the preference is in `MENU_RELEVANT_KEYS`. The page's placeholder check cannot stop a policy, so the background `taLogger.warn()`s at startup, and the page shows `prefs_OptionText_calendar_no_selection_policy_missing_placeholder` when the key is locked on, if the prompt has neither `{%mail_text_body_or_selected%}` nor `{%mail_html_body_or_selected%}`. The one-shot `migrateCalendarNoSelection()` aligned the preference once to the stored `need_selected`, so no unmanaged user changed behaviour on upgrade. |
 | per-feature provider override ([js/mzta-prompts.js](../js/mzta-prompts.js), [pages/_lib/connection-ui.js](../pages/_lib/connection-ui.js)) | the override lives in the special prompt (`api_type` + `{integration}_{key}`), not in a preference, so locking `{prefix}_use_specific_integration` to `false` did not stop an override saved before the policy: `getConnectionType()` and `initWorker()` still honoured `prompt.api_type`. `applyLockedOffIntegrations()` now hides it on every `getSpecialPrompts()` read — **locked-off case only**; unmanaged profiles and `getConnectionType()` are unchanged. It is a **read-time overlay that must never be persisted**: unlike `need_selected` above, a stored `api_type: ''` would erase the user's own override, so `setSpecialPrompts()` restores the stored override fields of those prompts (`keepStoredOverrides()`) and the override returns untouched when the policy is removed. The feature page keeps the toggle off, never forces it on as mandatory, and never calls `_updatePrompt()` / `clearPromptAPI()` while locked; the background `taLogger.warn()`s at startup for each locked-off feature with a stored override. Full treatment in [04-api-integrations.md](04-api-integrations.md#when-a-policy-locks-the-override-off). |
-| per-feature connection supplied by policy ([js/mzta-prompts.js](../js/mzta-prompts.js), [pages/_lib/connection-ui.js](../pages/_lib/connection-ui.js), [js/mzta-prefs.js](../js/mzta-prefs.js), the six feature pages) | `_special_prompts_connection` is overlaid by `applyPolicyConnections()`, right after the locked-off overlay (the two can never apply to the same feature), and kept out of storage by `keepStoredConnections()` in `setSpecialPrompts()` plus the transient `_connection_by_policy` marker. Each entry implies a locked `{prefix}_use_specific_integration` / `{prefix}_connection_type` pair, so `getConnectionType()` and the `prompt = null` callers follow it unchanged. The write guard also refuses the enforced `${prefix}_${field}` panel ids. The background warns at startup about every stored user value it replaces. See [Enforced per-feature connections](#enforced-per-feature-connections-_special_prompts_connection). |
-| special prompt texts ([js/mzta-prompts.js](../js/mzta-prompts.js), the six feature pages) | `_special_prompts_text` is overlaid by `applyEnforcedTexts()` at the end of `getSpecialPrompts()` — the last overlay, after the three above — and kept out of storage by `keepStoredTexts()` in `setSpecialPrompts()` plus the transient `_text_by_policy` marker. The feature pages make the textarea read-only and its Save/Reset inert (`lockEnforcedPromptText()`), and the background warns at startup about missing placeholders. See [Enforced special prompt texts](#enforced-special-prompt-texts-_special_prompts_text). |
-| account scope of the automatic spam filter / Add Tags ([mzta-background.js](../mzta-background.js) `processEmails()`, [js/mzta-utils.js](../js/mzta-utils.js)) | `{feature}_enabled_accounts` is read as before, but the in-scope check uses `resolveEnabledAccounts()`, which substitutes the ids resolved from a policy `{feature}_enabled_accounts_match` — once per batch, never stored, and "no account" when nothing matches. See [Account lists by policy](#account-lists-by-policy-_enabled_accounts_match). |
+| per-feature connection supplied by policy ([js/mzta-prompts.js](../js/mzta-prompts.js), [pages/_lib/connection-ui.js](../pages/_lib/connection-ui.js), [js/mzta-prefs.js](../js/mzta-prefs.js), the six feature pages) | `_special_prompts_connection` is overlaid by `applyPolicyConnections()`, right after the locked-off overlay (the two can never apply to the same feature), and kept out of storage by `keepStoredConnections()` in `setSpecialPrompts()` plus the transient `_connection_by_policy` marker. Each entry implies a locked `{prefix}_use_specific_integration` / `{prefix}_connection_type` pair, so `getConnectionType()` and the `prompt = null` callers follow it unchanged. The write guard also refuses the enforced `${prefix}_${field}` panel ids. The background warns at startup about every stored user value it replaces. See [Enforced per-feature connections](08b-managed-connections.md#enforced-per-feature-connections-_special_prompts_connection). |
+| special prompt texts ([js/mzta-prompts.js](../js/mzta-prompts.js), the six feature pages) | `_special_prompts_text` is overlaid by `applyEnforcedTexts()` at the end of `getSpecialPrompts()` — the last overlay, after the three above — and kept out of storage by `keepStoredTexts()` in `setSpecialPrompts()` plus the transient `_text_by_policy` marker. The feature pages make the textarea read-only and its Save/Reset inert (`lockEnforcedPromptText()`), and the background warns at startup about missing placeholders. See [Enforced special prompt texts](08a-managed-prompts.md#enforced-special-prompt-texts-_special_prompts_text). |
+| account scope of the automatic spam filter / Add Tags ([mzta-background.js](../mzta-background.js) `processEmails()`, [js/mzta-utils.js](../js/mzta-utils.js)) | `{feature}_enabled_accounts` is read as before, but the in-scope check uses `resolveEnabledAccounts()`, which substitutes the ids resolved from a policy `{feature}_enabled_accounts_match` — once per batch, never stored, and "no account" when nothing matches. See [Account lists by policy](08b-managed-connections.md#account-lists-by-policy-_enabled_accounts_match). |
 | sync → local migration ([js/mzta-prefs-migration.js](../js/mzta-prefs-migration.js)) | **deliberately untouched.** See below. |
 
 ### Why the migration is not guarded
@@ -1043,176 +365,6 @@ reload: a policy edit — including a token rotation — takes effect only at th
 Thunderbird start. This is stated twice in the administrator documentation because it is
 the single most surprising property of the mechanism.
 
-## UI
-
-[`pages/_lib/managed-ui.js`](../pages/_lib/managed-ui.js), shared by the options page, the
-six feature settings pages and the setup wizard. It sends **no message of its own**: the page
-state is read from the hydrated `mztaManaged` (see
-[Hydration in every other context](#hydration-in-every-other-context)), which the first
-preference read has already filled:
-
-```javascript
-await getManagedState()
-// -> { active, orgName, lockedKeys, disablePromptManagement, disableDefaultPrompts, disableSetupWizard }
-```
-
-**No page ever calls `browser.storage.managed` itself**, and `runtime.getBackgroundPage()`
-is not used.
-
-The values come with the same hydration, through the normal preference read; a
-policy-supplied API key arrives only as `MANAGED_SECRET_MARKER`. So an input restored from
-`mztaPrefs` already holds the enforced or initial value by the time `applyManagedUI()`
-disables it. `isLockedKey()` and `isEnforcedPref()` are both `mztaManaged.isManagedLocked()`:
-the page's guards and the write guard can never disagree.
-
-Control matching relies on the invariant `saveOptions()`/`restoreOptions()` already depend
-on: **an `.option-input` element's `id` IS its preference key.** So no mapping table is
-needed. The implementation walks the controls once testing against a `Set`, rather than
-running a selector per locked key — an id-suffix selector would also catch unrelated
-controls whose id merely ends with the key (`translate` would match `auto_translate`).
-
-`applyManagedUI()` must run **after** the connection panel has injected its provider rows,
-and after `restoreOptions()` has populated the inputs.
-
-### Controls with their own load/save logic: `data-mzta-pref`
-
-Some preferences are edited by a control that must **not** be an `.option-input`, because
-`saveOptions()` / `restoreOptions()` would then handle it generically and break its own
-serialisation: `spamfilter_skip_addresses`, `summarize_auto_senders_list` and
-`add_tags_exclusions` (textareas saved as normalised lists by their Save buttons), and
-`spamfilter_skip_addressbook` (a checkbox whose change handler requests the `addressBooks`
-permission). They opt in explicitly with `data-mzta-pref="<preference key>"`.
-`applyManagedUI()` walks `.option-input, [data-mzta-pref]` in the same single pass against the
-same `Set`, taking the key from `data-mzta-pref` when present and from the `id` otherwise, and
-gives the match exactly the `.option-input` treatment. `addtags_excl_list` is the one whose id
-is not the key.
-
-Their companion controls are the page's: `lockCompanions(key, elements)` marks each one
-`data-mzta-managed="1"`, disables it and titles it `managed_marker_tooltip` when the key is
-locked, so `setDisabledRespectingManaged()` — which the pages' "unsaved changes" input
-handlers now use — keeps it disabled. Every save function, the Save click handlers and the
-`spamfilter_skip_addressbook` change handler also **return early** when the key is locked, so
-neither a write nor the permission prompt can be triggered from a control re-enabled in the
-developer tools. `updateAutoSendersState()` on the summarize page, which reassigns `disabled`
-on every `summarize_auto` change, uses the respecting setter too: it could previously
-re-enable a locked `summarize_auto_senders` toggle.
-
-The marker lands right of the textarea's group title (see "Group titles win over the
-column" below; the `.mzta_field` column is only the fallback), and in the checkbox's
-`.feature_row` (before the `.mzta_switch`). No new CSS was needed.
-
-The account checkboxes of the spam filter and Add Tags pages are the same pattern with a
-twist — the locked key (`*_enabled_accounts_match`) is not the one the checkboxes save — and
-have their own helper, `lockAccountSelector()`; see [Account lists by policy](#account-lists-by-policy-_enabled_accounts_match).
-
-`applyManagedUI()` covers locked *preferences*, plus the connection-panel fields a policy
-connection enforces, which are matched by their `${prefix}_${field}` id in the same pass (see
-[The connection panel](#the-connection-panel)). A restriction has no preference behind
-it, and its controls are plain buttons and links rather than `.option-input` fields, so
-there is an explicit counterpart: `disableForManagedRestriction()`, called at the few sites
-a restriction covers. It marks the element with the same `data-mzta-managed` attribute, so
-`setDisabledRespectingManaged()` keeps it disabled if page logic later reassigns
-`disabled`, and applies the same `lockControl()` inertness. For an `<a>` — which has no
-`disabled` property the browser honours — it also strips the `href` and adds
-`.managed_disabled`.
-
-`isPromptManagementDisabled()` and `isSetupWizardDisabled()` are synchronous, like
-`isLockedKey()`: the policy must have been hydrated first (`getManagedState()`, or any awaited
-preference read). A caller that has not gets `false`, which is the safe default for a page
-that could not reach the background at all — the same fallback the rest of this module takes.
-
-### The setup wizard
-
-[`pages/setup-wizard/`](../pages/setup-wizard/) writes the same connection preferences as
-the options page, through the same `mztaPrefs.setPref()` path, so the write guard has
-always covered it. What it lacked was the presentation layer: every field was fully
-editable, and a user could walk the whole wizard entering an API key the guard then
-silently refused to persist — the policy held, but the UI said otherwise.
-
-It now calls `showManagedBanner()` and `applyManagedUI()` in the same position as the
-options page: after `injectConnectionUI()` and `restoreOptions()`, before the `change`
-listeners are attached. The connection rows are covered for free by the
-id-IS-the-preference-key invariant, and `showConnectionOptions()` only toggles `display`
-on rows that already exist, so nothing is injected after the marking pass.
-
-**The provider cards are the one wizard-specific case.** They are `<button>` elements, not
-`.option-input` controls, so `applyManagedUI()` cannot reach them and a locked
-`connection_type` would otherwise still be switchable by clicking a card — which dispatches
-a `change` on the hidden select and drives the entire wizard onto a provider the policy
-does not allow. Two guards, mirroring the toggle treatment above:
-
-- `selectProvider()` returns early when `connection_type` is locked and the requested id
-  differs from the current one. The `id !== state.provider` condition is what still lets
-  the boot call through, so the enforced provider is selected and tinted normally.
-- `buildProviderCards()` disables every card and adds `.wiz_provider_card_managed`. All
-  cards are greyed out, including the enforced one — the policy chose it and it cannot be
-  changed here either — but the selected card keeps full opacity so the administrator's
-  choice stays readable.
-
-Cards are built *after* `applyManagedUI()`, which is what populates the state
-`isLockedKey()` reads synchronously.
-
-### Marker placement and inertness
-
-A feature toggle is an `<input type="checkbox">` visually hidden **inside**
-`<label class="mzta_switch">`. Two consequences the implementation has to handle:
-
-- **Placement.** `markManaged()` anchors on `closest('td') || closest('label') ||
-  parentElement`. On the options page the feature rows are flex `div`s, not tables, so the
-  label branch wins and appending would drop the badge *inside* the switch — left of the
-  track and inside its click target. When the control is inside a `.mzta_switch`, the
-  marker is therefore inserted **before that label**, as a sibling in `.feature_row`, so
-  the row reads `… [Managed by Org] (toggle)`. One marker per host: `markManaged()` skips a
-  host that already has a `.managed_marker` as a **direct child** - a marker further down
-  belongs to another control (a `.mzta_field` can hold a nested switch row with its own), and
-  does not say this one is locked.
-- **Two layout contexts.** Wherever it lands, the marker ends up a *flex item*, and the base
-  `.managed_marker` rule — an `inline-flex` chip sized by its content — is not enough on its
-  own, because a flex parent's `align-items: stretch` overrides that sizing. Each context
-  needs its own override in `pages/_lib/mzta-design.css`:
-  - a flex **row** (`.feature_row`, marker inserted before `.mzta_switch`) — the chip must
-    not stretch to the row height and needs the switch's top offset to line up with it;
-  - a flex **column** (`.mzta_field`, marker appended as the last child, under the control's
-    `.mzta_help` text) — without an override the chip stretches to the *full field width*,
-    and `margin-inline-start`, being horizontal, gives it no separation from the help text
-    above.
-
-  Both overrides are `flex: none; align-self: flex-start` plus context-appropriate margins.
-  A new field layout that hosts the marker needs the same treatment.
-- **Group titles win over the column.** When the resolved anchor is a `.mzta_field`,
-  `groupTitleFor()` looks for the title heading it: the field's own direct
-  `.opt_title_small` (a section with several fields, e.g. the three summarize prompts), or
-  else the section's `.mzta_prompt_title` when the field is the section's only direct
-  `.mzta_field`. If one is found the marker is appended inside that title, i.e. right of it
-  (the base inline chip, no override needed). Only when no unambiguous title exists — a
-  section title over several untitled fields would not say which one is locked — does the
-  marker fall back to the `.mzta_field` column above.
-- **Padlock.** The badge carries a padlock glyph via `.managed_marker::before` in
-  `pages/_lib/mzta-design.css`, the same one `#managed_config_banner` and
-  `.managed_restriction_note` use, so every managed surface reads alike. It is CSS, not
-  text, so it stays out of the localised string and out of the accessible name. The badge
-  is an `inline-flex` row with `flex-wrap: nowrap`: the glyph is the icon *for* the
-  label, not a word in it, and must never come apart from it.
-- **Inertness.** `disabled` on the input is not sufficient on its own. `disable_ApiFeature()`
-  and friends reassign `.disabled` unconditionally, and they run again from the
-  `storage.onChanged` listener — i.e. *after* `applyManagedUI()`. Two defences:
-  - `setDisabledRespectingManaged(element, disabled)` — the exported setter those call
-    sites use instead of assigning `.disabled` directly. It ORs in
-    `dataset.mztaManaged === '1'`, so a policy-locked control can never be re-enabled by
-    page logic. Call sites that previously read back `.disabled` to decide **row
-    visibility** were changed to test their own condition instead: a lock must grey a row
-    out, never hide it. Every page-logic assignment that can run after `applyManagedUI()`
-    goes through it, including `updateAnthropicModelCapabilityUI()` (the fields the selected
-    model does not support), `updateDisplayModeConstraint()` on the summarize page and the
-    `add_tags_auto_uselist` toggle on the Add Tags page. `disable_ApiFeature()` also leaves a
-    locked flag's `checked` alone: a policy-enabled feature with an unusable connection stays
-    on (see [Interaction points](#interaction-points)), so the toggle keeps showing it.
-  - `lockControl()` — a capturing `click`/`keydown` swallower on the `.mzta_switch` label,
-    so even a re-enabled input cannot be flipped by clicking the track or the row label.
-
-Both are presentation only; the authoritative block remains the write guard in
-`js/mzta-prefs.js`.
-
 ## Adding a policy-settable preference
 
 Nothing to do. Declare it in `prefs_default` as usual
@@ -1225,7 +377,7 @@ preference is accepted as a non-negative integer. These cases need a line of cod
   "non-negative integer", a fractional number, a format - gets an entry in `PREF_ENUMS` /
   `PREF_NUMBER_RANGES` or a rule in `prefValueProblem()` (see [Content rules](#content-rules));
 - a control with its own load/save logic gets `data-mzta-pref` and `lockCompanions()` (see
-  above);
+  [Controls with their own load/save logic](08c-managed-ui.md#controls-with-their-own-loadsave-logic-data-mzta-pref));
 - a classic content script cannot use `mztaPrefs`: give it a background command that does,
   as the tag dialog does.
 
@@ -1234,7 +386,7 @@ per-profile state, add it to the exclusions in `js/mzta-managed.js` with a comme
 why.
 
 A new **per-provider connection field**, a key added to `integration_options_config`, is at
-once a global preference (above) and a field of [`_special_prompts_connection`](#enforced-per-feature-connections-_special_prompts_connection),
+once a global preference (above) and a field of [`_special_prompts_connection`](08b-managed-connections.md#enforced-per-feature-connections-_special_prompts_connection),
 with type validation, the overlay, the storage gate and the UI lock. By hand:
 
 - give it a content rule in `connectionFieldProblem()` if its type alone does not make a value
@@ -1248,7 +400,7 @@ with type validation, the overlay, the storage gate and the UI lock. By hand:
 A new **feature** with a specific integration, a prefix added to
 `special_prompts_with_integration`, is accepted as a key of `_special_prompts_connection`
 automatically. By hand: its prefix → prompt ids in `getActiveSpecialPromptsIDs()` (which the
-overlays read), the page guard of [The connection panel](#the-connection-panel) on its page, and an entry in
+overlays read), the page guard of [The connection panel](08b-managed-connections.md#the-connection-panel) on its page, and an entry in
 `tests/helpers/feature-pages.mjs`, which `tests/managed/10h` requires.
 
 Either way the administrator key reference on micz.it is now out of date — it is generated
@@ -1270,7 +422,7 @@ Different from adding a preference, and more work — there is no allowlist to f
    URL — plus a visible explanation at each, or the missing control reads as a bug.
 5. If it hides or disables **user data** rather than a control: mark the data, never filter
    it out of a list that some page writes back to storage, and make sure the mark cannot be
-   persisted. See `_disable_prompt_management` above — a restriction that filters the wrong
+   persisted. See [`_disable_prompt_management`](08a-managed-prompts.md#_disable_prompt_management) — a restriction that filters the wrong
    list does not restrict the user's prompts, it deletes them.
 6. A policy fixture and a test file for it in `tests/` — see [Testing](#testing).
 
@@ -1345,7 +497,7 @@ startup warnings and `processEmails()` - which are tested only through the funct
 call, and by hand in Thunderbird. Moving or restructuring the cut-out listener means updating
 the locators in `tests/helpers/background-handler.mjs`. Nor is real layout: jsdom has none, so
 the DOM tests check where a marker is inserted, not the `mzta-design.css` flex overrides that
-make it look right (see [Marker placement and inertness](#marker-placement-and-inertness)).
+make it look right (see [Marker placement and inertness](08c-managed-ui.md#marker-placement-and-inertness)).
 
 **Rule:** a change to anything this file describes comes with a scenario for it. Tests are
 written from this file, not from the code: a failing test is reported as a potential bug
