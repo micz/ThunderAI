@@ -110,7 +110,7 @@ test('an unlocked field the user edits is saved; the untouched policy default is
 });
 
 test('a stale copy holding the policy default never overwrites the user\'s own value', async () => {
-    // What a feature page's text Save does: it writes back the array it loaded at page open.
+    // What a writer holding an old read does (the menu order page's saveAll()).
     const stale = await ctx.prompts.getSpecialPrompts();
     byId(stale, 'prompt_spamfilter').openai_comp_model = 'gpt-4o-mini'; // the unlocked policy default
     delete byId(stale, 'prompt_spamfilter').chatgpt_api_key;            // a field the writer never had

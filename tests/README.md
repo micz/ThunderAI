@@ -237,7 +237,9 @@ rather than the allowlist. Every page in `helpers/feature-pages.mjs` has the two
 files calling `connectionScenario(page, mode)` (`helpers/dom-connection.mjs`).
 `tests/managed/10h` fails when that map no longer matches `special_prompts_with_integration`,
 or when a page lacks either file. A new feature therefore needs an entry there and the two
-files (copy another page's).
+files (copy another page's). The same map generates `15-text-save-keeps-connection`
+(`helpers/dom-text-save.mjs`, no policy): a text Save must not revert a connection change the
+panel saved after page open. `10h` requires it too.
 
 When the spec derives what a locked control shows from the *other* locked keys rather than
 from its own policy value, the sweep file passes `expected: {key: {value, why}}` to

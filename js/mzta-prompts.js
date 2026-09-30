@@ -1347,9 +1347,9 @@ async function applyPolicyConnections(prompts) {
 //   dropped by stripTransientFlags(), or a writer that never had the field): storage keeps what
 //   it holds. The policy default is what the overlay shows while the user has no value of their
 //   own, so it is never stored as the user's merely because it was shown - not even over a
-//   stored value of theirs, which is what a stale copy of the array would do (the feature
-//   pages' text Save writes back the array they loaded at page open, and getSpecialPrompts()
-//   never sets _user_fields);
+//   stored value of theirs, which is what a stale copy of the array would do (the menu order
+//   page writes back the list it loaded at page open, and getSpecialPrompts() never sets
+//   _user_fields);
 // - any other value is the user's, and saved.
 // `userFieldsById` is read by setSpecialPrompts() BEFORE stripTransientFlags() drops the flag.
 async function keepStoredConnections(prompts, userFieldsById = new Map()) {
@@ -1487,6 +1487,24 @@ export async function setSpecialPrompts(prompts) {
     const copies = stripTransientFlags(prompts);
     await browser.storage.local.set({_special_prompts:
         await keepStoredTexts(await keepStoredConnections(await keepStoredOverrides(copies), userFieldsById))});
+}
+
+/**
+ * Save the text of one or more special prompts, {id: text}, and nothing else.
+ *
+ * A load-modify-save on a FRESH read, like savePrompt(): the feature pages used to write back
+ * the whole array they loaded at page open, which silently reverted every change saved since -
+ * the connection panel's _updatePrompt() saves the provider override as the user edits it - and
+ * would carry any stale read-time overlay along. Every other property is saved as storage has it
+ * now; the storage gates of setSpecialPrompts() apply as for any other write.
+ */
+export async function saveSpecialPromptTexts(texts) {
+    const prompts = await getSpecialPrompts();
+    for (const [id, text] of Object.entries(texts)) {
+        const prompt = prompts.find(p => p.id === id);
+        if (prompt) prompt.text = text;
+    }
+    await setSpecialPrompts(prompts);
 }
 
 export function getHiddenSpecialPromptIds() {

@@ -8,11 +8,15 @@
     <div id="miczBackPrefs"><a href="mzta-options.html">__MSG_backToOptionsText__</a></div>
     <div id="miczRelNotes"><h1>ThunderAI Release Notes</h1>
       <h2>Version 5.1.0 - ??/??/2026</h2>
-      <ul>
-        <li>Redesigned the Custom Prompts page: a list of the prompts next to a detail editor, plus a table view that shows all the prompts and their options at a glance. The last view chosen is remembered. The search now also looks in the prompt text [<a href="https://github.com/micz/ThunderAI/issues/904">#904</a>].</li>
+      <li>Redesigned the Custom Prompts page: a list of the prompts next to a detail editor, plus a table view that shows all the prompts and their options at a glance. The last view chosen is remembered. The search now also looks in the prompt text [<a href="https://github.com/micz/ThunderAI/issues/904">#904</a>].</li>
         <li>The Custom Prompts page no longer has a "Save All" button: every change is saved immediately, imported prompts included. You are warned before leaving a prompt with unsaved edits [<a href="https://github.com/micz/ThunderAI/issues/904">#904</a>].</li>
         <li>Added support for the Thunderbird enterprise policies: an administrator can use <i>policies.json</i> to pre-configure or enforce any ThunderAI setting, provide a set of organization prompts, turn off prompt management (creating, copying, importing and exporting prompts), hide the built-in prompts and disable the setup wizard. Settings that are enforced are shown with a lock icon and can't be changed [<a href="https://github.com/micz/ThunderAI/issues/880">#880</a>].</li>
-      </ul>
+        <li>Enterprise policies: the settings pages, the toolbar popup and the AI chat window now show and use the values set by the policy, both the enforced ones and the initial ones. An API key supplied by the policy is never shown in the settings pages [<a href="https://github.com/micz/ThunderAI/issues/880">#880</a>].</li>
+        <li>Enterprise policies: the Add Tags exclusion list can now be set by the policy. The spam filter address list, the "skip senders in the address book" option, the auto-summarize senders list and the Add Tags exclusion list are locked on their settings pages when enforced, and the "exclude this tag" action is not offered in the tag selection dialog [<a href="https://github.com/micz/ThunderAI/issues/880">#880</a>].</li>
+        <li>Enterprise policies: the "Do not ask to select text" option of the calendar event now takes effect when it is set by the policy [<a href="https://github.com/micz/ThunderAI/issues/880">#880</a>].</li>
+        <li>Fix: the "Do not ask to select text" option of the calendar event is no longer shown as enabled after it was refused because the prompt lacks the message body placeholder.</li>
+        <li>Fix: on the settings pages of the AI features (add tags, spam filter, summarize, translate, calendar event, task), saving the prompt text no longer undoes the changes made to the specific connection since the page was opened.</li>
+        <li>...</li>
       <h2>Version 5.0.1 - 16/09/2026</h2>
       <ul>
         <li>The spam report is now wider and easier to read: a scroll box with a fixed header row, truncated values shown in full as a tooltip, resizable rows and a button to expand the report to the whole tab [<a href="https://github.com/micz/ThunderAI/issues/895">#895</a>].</li>

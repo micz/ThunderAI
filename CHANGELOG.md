@@ -10,6 +10,8 @@
         <li>Enterprise policies: the Add Tags exclusion list can now be set by the policy. The spam filter address list, the "skip senders in the address book" option, the auto-summarize senders list and the Add Tags exclusion list are locked on their settings pages when enforced, and the "exclude this tag" action is not offered in the tag selection dialog [<a href="https://github.com/micz/ThunderAI/issues/880">#880</a>].</li>
         <li>Enterprise policies: the "Do not ask to select text" option of the calendar event now takes effect when it is set by the policy [<a href="https://github.com/micz/ThunderAI/issues/880">#880</a>].</li>
         <li>Fix: the "Do not ask to select text" option of the calendar event is no longer shown as enabled after it was refused because the prompt lacks the message body placeholder.</li>
+        <li>Fix: on the settings pages of the AI features (add tags, spam filter, summarize, translate, calendar event, task), saving the prompt text no longer undoes the changes made to the specific connection since the page was opened.</li>
+        <li>...</li>
       </ul>
 <h2>Version 5.0.1 - 16/09/2026</h2>
       <ul>

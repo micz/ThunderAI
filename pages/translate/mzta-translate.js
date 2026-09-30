@@ -23,7 +23,7 @@ import {
 import { taLogger } from "../../js/mzta-logger.js";
 import {
     getSpecialPrompts,
-    setSpecialPrompts
+    saveSpecialPromptTexts
 } from "../../js/mzta-prompts.js";
 import {
     getPlaceholders,
@@ -143,11 +143,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     // on clicking save button
-    translate_save_btn.addEventListener("click", () => {
+    translate_save_btn.addEventListener("click", async () => {
         // The button being disabled is not the same as the action being unavailable.
         if (isEnforcedPromptText('prompt_translate_this')) return;
         specialPrompts.find(prompt => prompt.id === 'prompt_translate_this').text = translate_textarea.value;
-        setSpecialPrompts(specialPrompts);
+        await saveSpecialPromptTexts({ prompt_translate_this: translate_textarea.value });
         translate_save_btn.disabled = true;
         browser.runtime.sendMessage({ command: "reload_menus" });
     });

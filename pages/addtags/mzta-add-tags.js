@@ -20,7 +20,7 @@ import { prefs_default, integration_options_config } from '../../options/mzta-op
 import { taLogger } from '../../js/mzta-logger.js';
 import {
   getSpecialPrompts,
-  setSpecialPrompts
+  saveSpecialPromptTexts
 } from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
@@ -182,11 +182,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         addtags_textarea.dispatchEvent(event);
     });
 
-    addtags_save_btn.addEventListener('click', () => {
+    addtags_save_btn.addEventListener('click', async () => {
         // The button being disabled is not the same as the action being unavailable.
         if (isEnforcedPromptText('prompt_add_tags')) return;
         specialPrompts.find(prompt => prompt.id === 'prompt_add_tags').text = addtags_textarea.value;
-        setSpecialPrompts(specialPrompts);
+        await saveSpecialPromptTexts({ prompt_add_tags: addtags_textarea.value });
         addtags_save_btn.disabled = true;
         document.getElementById('addtags_prompt_unsaved').classList.add('hidden');
         browser.runtime.sendMessage({command: "reload_menus"});

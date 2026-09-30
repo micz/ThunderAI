@@ -23,7 +23,7 @@ import {
 import { taLogger } from "../../js/mzta-logger.js";
 import {
     getSpecialPrompts,
-    setSpecialPrompts
+    saveSpecialPromptTexts
 } from "../../js/mzta-prompts.js";
 import {
     getPlaceholders,
@@ -235,29 +235,29 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     
     // on clicking buttons, save
-    summarize_save_email_template_btn.addEventListener("click", () => {
+    summarize_save_email_template_btn.addEventListener("click", async () => {
         // The button being disabled is not the same as the action being unavailable.
         if (isEnforcedPromptText('prompt_summarize_email_template')) return;
         specialPrompts.find(prompt => prompt.id === 'prompt_summarize_email_template').text = summarize_textarea_email_template.value;
-        setSpecialPrompts(specialPrompts);
+        await saveSpecialPromptTexts({ prompt_summarize_email_template: summarize_textarea_email_template.value });
         summarize_save_email_template_btn.disabled = true;
         browser.runtime.sendMessage({ command: "reload_menus" });
     });
     
-    summarize_save_btn.addEventListener("click", () => {
+    summarize_save_btn.addEventListener("click", async () => {
         // The button being disabled is not the same as the action being unavailable.
         if (isEnforcedPromptText('prompt_summarize')) return;
         specialPrompts.find(prompt => prompt.id === 'prompt_summarize').text = summarize_textarea.value;
-        setSpecialPrompts(specialPrompts);
+        await saveSpecialPromptTexts({ prompt_summarize: summarize_textarea.value });
         summarize_save_btn.disabled = true;
         browser.runtime.sendMessage({ command: "reload_menus" });
     });
 
-    summarize_email_separator_save_btn.addEventListener("click", () => {
+    summarize_email_separator_save_btn.addEventListener("click", async () => {
         // The button being disabled is not the same as the action being unavailable.
         if (isEnforcedPromptText('prompt_summarize_email_separator')) return;
         specialPrompts.find(prompt => prompt.id === 'prompt_summarize_email_separator').text = summarize_email_separator_textarea.value;
-        setSpecialPrompts(specialPrompts);
+        await saveSpecialPromptTexts({ prompt_summarize_email_separator: summarize_email_separator_textarea.value });
         summarize_email_separator_save_btn.disabled = true;
         browser.runtime.sendMessage({ command: "reload_menus" });
     });

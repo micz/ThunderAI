@@ -23,7 +23,7 @@ import {
 import { taLogger } from '../../js/mzta-logger.js';
 import {
   getSpecialPrompts,
-  setSpecialPrompts
+  saveSpecialPromptTexts
 } from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
@@ -146,11 +146,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         get_task_textarea.dispatchEvent(event);
     });
 
-    get_task_save_btn.addEventListener('click', () => {
+    get_task_save_btn.addEventListener('click', async () => {
         // The button being disabled is not the same as the action being unavailable.
         if (isEnforcedPromptText('prompt_get_task')) return;
         specialPrompts.find(prompt => prompt.id === 'prompt_get_task').text = get_task_textarea.value;
-        setSpecialPrompts(specialPrompts);
+        await saveSpecialPromptTexts({ prompt_get_task: get_task_textarea.value });
         get_task_save_btn.disabled = true;
         document.getElementById('get_task_prompt_unsaved').classList.add('hidden');
         browser.runtime.sendMessage({command: "reload_menus"});

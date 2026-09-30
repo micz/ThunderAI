@@ -23,7 +23,7 @@ import {
 import { taLogger } from '../../js/mzta-logger.js';
 import {
   getSpecialPrompts,
-  setSpecialPrompts
+  saveSpecialPromptTexts
 } from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
@@ -158,11 +158,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         spamfilter_textarea.dispatchEvent(event);
     });
 
-    spamfilter_save_btn.addEventListener('click', () => {
+    spamfilter_save_btn.addEventListener('click', async () => {
         // The button being disabled is not the same as the action being unavailable.
         if (isEnforcedPromptText('prompt_spamfilter')) return;
         specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter').text = spamfilter_textarea.value;
-        setSpecialPrompts(specialPrompts);
+        await saveSpecialPromptTexts({ prompt_spamfilter: spamfilter_textarea.value });
         spamfilter_save_btn.disabled = true;
         document.getElementById('spamfilter_prompt_unsaved').classList.add('hidden');
         browser.runtime.sendMessage({command: "reload_menus"});

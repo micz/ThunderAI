@@ -23,7 +23,7 @@
  *                - editing one writes that user field only: api_type, the enforced host and
  *                  the untouched policy defaults are never stored;
  *                - a field the user sets to exactly the policy default is saved as theirs, while
- *                  the stale copy a text Save writes back cannot store that default.
+ *                  a text Save afterwards cannot store the policy default over it.
  *
  *  "No policy = as before" is <page>/01-no-policy, which every page already has.
  */
@@ -225,7 +225,7 @@ export async function connectionScenario(page, mode) {
             await ctx.fire(temp, 'change');
             assert.equal(storedPrompt().openai_comp_temperature, '0.4');
             assert.equal(JSON.stringify(ctx.ctl.localData()).includes('_user_fields'), false, 'transient flag stored');
-            // and back to 0.7, so the stale-copy check below still has a user value to protect
+            // and back to 0.7, so the text Save check below still has a user value to protect
             temp.value = '0.7';
             await ctx.fire(temp, 'input');
             await ctx.fire(temp, 'change');
@@ -243,9 +243,9 @@ export async function connectionScenario(page, mode) {
         });
     }
 
-    // The page's text Save writes back the array it loaded at page open, overlay included - in
-    // 'unlocked' mode after the user edited the connection, i.e. a stale copy still holding the
-    // policy defaults (0.4, the marker) where the user has since stored values of their own.
+    // The page's text Save rewrites the whole array from a fresh read (saveSpecialPromptTexts()),
+    // overlay included - in 'unlocked' mode after the user edited the connection, so the read
+    // holds the policy defaults (the marker) next to values the user has stored.
     test('a text Save writes the array back without storing a policy value over the user\'s', async () => {
         const textarea = ctx.$('#' + feature.textarea);
         const expected = overrideOf(storedPrompt() || USER_OVERRIDE);
@@ -261,8 +261,7 @@ export async function connectionScenario(page, mode) {
         if (mode === 'enforced') {
             assert.deepEqual(overrideOf(p), expected);
         } else {
-            // The fields the policy offers keep the user's values (the rest of a stale copy is
-            // the page's own business, as without a policy).
+            // The fields the policy offers keep the user's values.
             assert.equal(p.openai_comp_temperature, expected.openai_comp_temperature);
             assert.equal(p.openai_comp_api_key, expected.openai_comp_api_key);
             assert.equal(p.openai_comp_model, expected.openai_comp_model);

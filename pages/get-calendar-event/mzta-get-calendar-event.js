@@ -23,7 +23,7 @@ import {
 import { taLogger } from '../../js/mzta-logger.js';
 import {
   getSpecialPrompts,
-  setSpecialPrompts
+  saveSpecialPromptTexts
 } from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
@@ -226,7 +226,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event').text = get_calendar_event_textarea.value;
         specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event_from_clipboard').text = get_calendar_event_textarea.value;
-        await setSpecialPrompts(specialPrompts);
+        await saveSpecialPromptTexts({
+            prompt_get_calendar_event: get_calendar_event_textarea.value,
+            prompt_get_calendar_event_from_clipboard: get_calendar_event_textarea.value,
+        });
         updateNoSelectionPolicyNote();
         get_calendar_event_save_btn.disabled = true;
         document.getElementById('get_calendar_event_prompt_unsaved').classList.add('hidden');

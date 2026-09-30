@@ -789,10 +789,11 @@ The prompts per feature are the ones the locked-off overlay uses:
   prefix, and with the overlay it now runs the feature's connection too; without a policy it
   never carries override fields at all.
 
-**Why read-time only.** The feature pages write the whole `_special_prompts` array back: text
-Save writes the array the page loaded at page open, and `savePrompt()` / `clearPromptAPI()` do a
-load-modify-save. A stored policy value would replace the user's own override and outlive the
-policy. So `setSpecialPrompts()` runs `keepStoredConnections()` after `keepStoredOverrides()`.
+**Why read-time only.** Every write rewrites the whole `_special_prompts` array from a read that
+carries the overlay: `savePrompt()`, `clearPromptAPI()` and the feature pages' text Save
+(`saveSpecialPromptTexts()`) do a load-modify-save through `getSpecialPrompts()`, and the menu
+order page's `saveAll()` writes back the list it loaded at page open. A stored policy value would
+replace the user's own override and outlive the policy. So `setSpecialPrompts()` runs `keepStoredConnections()` after `keepStoredOverrides()`.
 For each policy-connected prompt:
 
 - `api_type` and every enforced field get back what storage holds (deleted if it holds none);
@@ -806,8 +807,9 @@ For each policy-connected prompt:
 - any other unlocked field that holds the policy value, or that is absent (a marker dropped by
   `stripTransientFlags()`, or a writer that never had the field), gets back what storage holds.
   So a policy default the page merely *showed* is never stored as the user's value, **not even
-  over a stored value of theirs**: that is exactly what a stale array copy writes (the text
-  Save), and `getSpecialPrompts()` never sets `_user_fields` on it. The other fields
+  over a stored value of theirs**: that is exactly what a stale array copy writes (the menu
+  order page's `saveAll()`, or any caller holding a read from before the user's change), and
+  `getSpecialPrompts()` never sets `_user_fields` on it. The other fields
   `_updatePrompt()` copies from the panel with the edited one are not marked either;
 - any other value is the user's, and saved.
 
