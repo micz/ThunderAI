@@ -79,8 +79,11 @@ test('applyPromptConnection() applies only a prompt override of the resolved typ
 test('openChatGPT() resolves with the prefix and checks the combined settings', () => {
     const code = stripComments(backgroundSource());
     const start = code.indexOf('async function openChatGPT(');
-    const body = code.slice(start, code.indexOf('switch(prefs.connection_type)', start));
-    assert.ok(start !== -1 && body.length > 0, 'openChatGPT() not found');
+    assert.ok(start !== -1, 'openChatGPT() not found');
+    // Without this check a missing end marker gives -1, and slice() runs to the end of the file.
+    const end = code.indexOf('switch(prefs.connection_type)', start);
+    assert.ok(end !== -1, 'the switch(prefs.connection_type) that ends the checked part was not found');
+    const body = code.slice(start, end);
     assert.match(body, /getConnectionType\(prefs, prompt_info, getSpecialPromptPrefix\(prompt_info\.id\)\)/);
     assert.match(body, /prefs = applyPromptConnection\(prefs, prompt_info\)/);
 });

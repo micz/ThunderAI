@@ -187,6 +187,10 @@ failure with the reason, never as fewer tests passing.
 
 ### Where the background's answers come from
 
+- the code is cut out by `segments()` in `helpers/background-handler.mjs`, a small tokenizer
+  that knows strings, template literals, comments and regex literals (a quote or backtick inside
+  a regex must not open a string); `tests/managed/99-harness-tokenizer` pins it down, on small
+  cases and on the real files;
 - `get_managed_values`: the real listener, as in level 1, evaluated against the background
   instance of `mztaManaged`. It is the only channel a page gets the policy through (values,
   locks, org prompts, restrictions, banner state), so the page hydrates, and sees exactly the
