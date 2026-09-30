@@ -873,7 +873,7 @@ The feature pages need no page-specific logic beyond one guard:
 - **Unlocked fields** stay editable and show the overlay: the user's value, or the policy
   default. An unlocked policy key shows the marker, with the padlock, until the user types
   their own.
-- **`initializeSpecificIntegrationUI()`** computes `policy_connected`:
+- **`initializeSpecificIntegrationUI()`** gets mode `policy` (see [The connection mode](#the-connection-mode)):
   - no "mandatory" forcing: the managed marker is the explanation;
   - no page-open `_updatePrompt()`, `_persistSelectedConnection()` or
     `_persistMandatoryIntegration()`: what the panel shows is the policy's, not something to seed;
@@ -888,6 +888,35 @@ The feature pages need no page-specific logic beyond one guard:
   `isPolicyConnection(prompt)` (`pages/_lib/managed-ui.js`) is true.
 - **The write guard** refuses the enforced ids that the pages' `saveOptions()` would write (see
   [The write guard](#the-write-guard)).
+
+### The connection mode
+
+The policy can hold a feature's specific integration in three ways - the switch locked off, a
+policy connection, the switch locked on alone - and the panel has two modes of its own. Which
+one applies is decided **once**, by `resolveSpecificIntegrationMode(prefix, globalConnType)` in
+`pages/_lib/managed-ui.js`, and `initializeSpecificIntegrationUI()` acts only on the object it
+returns, never re-testing the policy itself. It is pure apart from reading the hydrated policy,
+so it is tested at level 1.
+
+| `kind` | When | Switch held at (`switchValue`) | Writes the prompt | Seeds on open | Mandatory forcing |
+|---|---|---|---|---|---|
+| `locked_off` | `{prefix}_use_specific_integration` locked `false` | off | no | no | no |
+| `policy` | a `_special_prompts_connection` entry for the prefix | on | unlocked fields only | no | no |
+| `locked_on` | `{prefix}_use_specific_integration` locked `true`, no entry | on | yes, the connection is the user's | yes | no |
+| `mandatory` | no lock on the switch, global connection ChatGPT Web or none | - | yes | yes | yes |
+| `free` | otherwise | - | yes | yes | no |
+
+`typeLocked` (a locked `{prefix}_connection_type`, implied by a `policy` entry or set on its own)
+keeps `prompt.api_type` out of `_updatePrompt()` and makes the type-select listener write nothing.
+An initial (`":locked": false`) switch holds nothing: the mode is `mandatory` or `free`.
+
+**A switch the policy holds writes nothing when it changes.** The switch handler tests one thing:
+`switchValue !== null` puts a switch re-enabled from the developer tools back to that value and
+returns. Before the resolver, `locked_on` was not one of the handled cases, so turning such a
+switch off reached `clearPromptAPI()` - a prompt write no write guard covers - and wiped the
+user's stored override, and over an unusable global connection the panel showed the "mandatory"
+badge next to the managed marker. Never `mandatory` under a held switch: the managed marker is the
+explanation, and persisting the switch is the write guard's to refuse anyway.
 
 ### Startup warning
 
@@ -1297,6 +1326,7 @@ unmanaged baseline of a page, comes from a separate module instance or a worker 
 | Restrictions | `06f`-`06i` | `customprompts/10`, `customprompts/11`, `menu_order/10`, `<page>/10-disable-setup-wizard` (popup, onboarding, options, setup-wizard) |
 | Account lists by policy (and the account checkboxes) | `07a`, `07b` | `spamfilter/08`, `spamfilter/09`, `addtags/08`, `addtags/09` |
 | Interaction points: per-feature provider override | `08-provider-override-locked-off` | - |
+| The connection mode | `12b-specific-integration-mode` | `<feature>/17-locked-on-switch` (generated from `tests/helpers/feature-pages.mjs`) |
 | UI: controls, `data-mzta-pref`, marker placement and inertness | - | `02-sweep-locked`, `03-sweep-unlocked`, `<page>/04-respect-managed` |
 | The setup wizard | - | `setup-wizard/02`, `03`, `04-locked-provider`, `07`, `10` |
 | UI: the banner | - | `options/11`, `options/12`, `setup-wizard/11`, `setup-wizard/12` (with and without `_org_name`) |

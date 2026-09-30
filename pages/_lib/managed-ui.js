@@ -36,7 +36,7 @@
 
 import { mztaManaged, managedReady, MANAGED_SECRET_MARKER } from '../../js/mzta-managed.js';
 import { prefs_default } from '../../options/mzta-options-default.js';
-import { resolveEnabledAccounts } from '../../js/mzta-utils.js';
+import { resolveEnabledAccounts, hasNoConnectionSelected } from '../../js/mzta-utils.js';
 
 let _state = null;
 
@@ -312,6 +312,59 @@ export function seedFromGlobal(prefs, key) {
  */
 export function isPolicyConnection(prompt) {
     return !!prompt && prompt._connection_by_policy === true;
+}
+
+/**
+ * The mode of a feature's specific-integration panel ({prefix}_use_specific_integration plus
+ * its connection), decided once, so initializeSpecificIntegrationUI() in connection-ui.js acts on
+ * one answer instead of re-testing the policy at every site. Pure apart from reading the
+ * hydrated policy: call it after a preference read.
+ *
+ *   kind          'locked_off'  the policy locks the switch off: the stored override is hidden
+ *                               (applyLockedOffIntegrations()) and nothing writes the prompt;
+ *                 'policy'      the policy supplies the connection (_special_prompts_connection):
+ *                               the switch is locked on, unlocked fields are the user's to change;
+ *                 'locked_on'   the policy locks the switch on and nothing more: the connection
+ *                               is the user's, as without a policy;
+ *                 'mandatory'   no policy on the switch, and the global connection cannot run the
+ *                               feature (ChatGPT Web, or none chosen): forced on in the UI;
+ *                 'free'        the user's switch, as without a policy.
+ *   switchValue   the value a switch re-enabled by hand is put back to (true / false), or null
+ *                 when the user may change it. Whenever the policy holds the switch, a change
+ *                 must write nothing at all - not even the prompt, which no write guard covers;
+ *   typeLocked    {prefix}_connection_type is locked: never written into the prompt;
+ *   writesPrompt  the panel may write the prompt (_updatePrompt());
+ *   seedsOnOpen   opening the page with the switch on writes the prompt and persists the shown
+ *                 connection type (never for a policy connection: what it shows is the policy's);
+ *   mandatory     the "mandatory" forcing, badge and persisting of the switch. Never under a
+ *                 policy-held switch: the managed marker is the explanation, and the write
+ *                 guard refuses the write anyway;
+ *   mandatoryMsgKey  the note explaining why it is mandatory, or ''.
+ *
+ * An initial (":locked": false) {prefix}_use_specific_integration holds nothing: the mode is
+ * 'mandatory' or 'free', as without a policy.
+ */
+export function resolveSpecificIntegrationMode(prefix, globalConnType) {
+    const useKey = `${prefix}_use_specific_integration`;
+    const switchLocked = mztaManaged.isManagedLocked(useKey);
+    const typeLocked = mztaManaged.isManagedLocked(`${prefix}_connection_type`);
+    let kind;
+    if (switchLocked && mztaManaged.getManagedValue(useKey) === false) kind = 'locked_off';
+    else if (mztaManaged.getSpecialPromptConnection(prefix) !== undefined) kind = 'policy';
+    else if (switchLocked) kind = 'locked_on';
+    else if (globalConnType === 'chatgpt_web' || hasNoConnectionSelected(globalConnType)) kind = 'mandatory';
+    else kind = 'free';
+    return {
+        kind,
+        switchValue: kind === 'locked_off' ? false : (kind === 'policy' || kind === 'locked_on') ? true : null,
+        typeLocked,
+        writesPrompt: kind !== 'locked_off',
+        seedsOnOpen: kind !== 'locked_off' && kind !== 'policy',
+        mandatory: kind === 'mandatory',
+        mandatoryMsgKey: kind !== 'mandatory' ? ''
+            : (globalConnType === 'chatgpt_web' ? 'specific_integration_mandatory_chatgpt_web'
+                                                : 'specific_integration_mandatory_no_connection'),
+    };
 }
 
 /** True when the value is the stand-in a settings page shows for a policy-supplied API key. */

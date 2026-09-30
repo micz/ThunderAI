@@ -239,7 +239,10 @@ files (copy another page's). The same map generates `15-text-save-keeps-connecti
 panel saved after page open. So does `16-mandatory-connection-blank`
 (`helpers/dom-mandatory-blank.mjs`, no policy): with a ChatGPT Web global connection the
 mandatory integration opens with a blank connection type and stores nothing until the user
-chooses. `10h` requires both.
+chooses. And `17-locked-on-switch` (`helpers/dom-locked-on-switch.mjs`): with
+`{prefix}_use_specific_integration` locked on and no policy connection, the switch shows the
+managed marker and not the mandatory badge, and turned off by hand it goes back on and clears
+nothing. `10h` requires all of them.
 
 When the spec derives what a locked control shows from the *other* locked keys rather than
 from its own policy value, the sweep file passes `expected: {key: {value, why}}` to

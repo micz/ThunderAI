@@ -20,7 +20,8 @@ test('every feature page has the connection scenarios', () => {
     for (const { page } of Object.values(FEATURE_PAGES)) {
         for (const file of ['13-connection-enforced.dom.mjs', '14-connection-unlocked.dom.mjs',
                             '15-text-save-keeps-connection.dom.mjs',
-                            '16-mandatory-connection-blank.dom.mjs']) {
+                            '16-mandatory-connection-blank.dom.mjs',
+                            '17-locked-on-switch.dom.mjs']) {
             assert.ok(existsSync(repoPath('tests/dom/' + page + '/' + file)), page + '/' + file + ' missing');
         }
     }
