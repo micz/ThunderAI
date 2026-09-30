@@ -446,6 +446,14 @@ export const mztaManaged = {
                 this.logger.warn('Policy: "' + key + '" must be of type ' + expected +
                     ', got ' + actual + ', ignored.');
                 continue;
+            } else {
+                // The type matches; the content must be usable too (see prefValueProblem()).
+                const problem = prefValueProblem(key, value);
+                if (problem !== '') {
+                    this.logger.warn('Policy: "' + key + '" ' + problem + ' (got ' +
+                        this._logValue(key, value) + '), ignored.');
+                    continue;
+                }
             }
             this._values[key] = value;
             // Every key present in the policy is enforced unless "<key>:locked" says false.
@@ -990,6 +998,85 @@ function connectionFieldProblem(key, value, defaultValue) {
                 return 'must be a JSON object (' + e.message + ')';
             }
         }
+    }
+    return '';
+}
+
+// The preferences whose type alone does not make a value usable, beyond the per-provider
+// connection keys (those use connectionFieldProblem(), see prefValueProblem()). The domains are
+// the ones the settings UI offers: the <option>s of its selects, the min/max of its number inputs.
+const PREF_ENUMS = {
+    connection_type: () => valid_connection_types,
+    reply_type: () => ['reply_all', 'reply_sender'],
+    diff_granularity: () => ['words', 'sentences'],
+    summarize_display_mode: () => ['inline', 'webchat'],
+    summarize_auto: () => [0, 1, 2, 3],
+    translate_auto: () => [0, 1, 2, 3],
+    // The feature panels never offer chatgpt_web, as for _special_prompts_connection.
+    ...Object.fromEntries(special_prompts_with_integration.map(
+        prefix => [prefix + '_connection_type', () => featureConnectionTypes()])),
+};
+// Every other number preference is a non-negative integer (a count, a length, milliseconds);
+// these have a tighter range.
+const PREF_NUMBER_RANGES = {
+    spamfilter_threshold: { min: 0, max: 100 },
+    summarize_max_messages: { min: 1 },
+    add_tags_maxnum: { min: 1 },
+    max_prompt_length: { min: 1 },
+};
+
+// A time zone the calendar pages' select offers: it is built from
+// Intl.supportedValuesOf('timeZone') (pages/_lib/mzta-timezones.js), so the same list decides
+// here. Intl.DateTimeFormat alone would also accept a lowercased id or an alias the select does
+// not list, and the page would then show an empty select over the enforced zone. Without
+// supportedValuesOf() any id the engine accepts is allowed.
+function isTimeZone(value) {
+    if (typeof Intl.supportedValuesOf === 'function') {
+        return Intl.supportedValuesOf('timeZone').includes(value);
+    }
+    try {
+        new Intl.DateTimeFormat(undefined, { timeZone: value });
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * What is wrong with a policy value for a preference whose type already matched, or '' when it
+ * is valid. A type check alone lets through a value the add-on cannot use - a connection_type
+ * that names no provider, a host that is not a URL - and a policy value, unlike a user's typo,
+ * breaks the feature for the whole fleet with nothing the user can do about it. So the same
+ * content rules apply as for a field of _special_prompts_connection:
+ *
+ *  - a per-provider connection key ({integration}_{key}, from integration_options_config):
+ *    connectionFieldProblem(), exactly as for the per-feature connection;
+ *  - an enumeration (PREF_ENUMS): one of the values the settings UI offers;
+ *  - a number: a non-negative integer, within PREF_NUMBER_RANGES where listed;
+ *  - calendar_timezone: '' (no zone enforced) or a zone the calendar select lists.
+ *
+ * Never coerced: a value that fails is warned about and not applied, like a type mismatch.
+ */
+function prefValueProblem(key, value) {
+    const integration = integrationOfField(key);
+    if (integration !== '') {
+        const option = key.slice(integration.length + 1);
+        return connectionFieldProblem(option, value, integration_options_config[integration][option]);
+    }
+    if (hasOwn(PREF_ENUMS, key)) {
+        const allowed = PREF_ENUMS[key]();
+        return allowed.includes(value) ? ''
+            : 'must be one of ' + allowed.map(v => JSON.stringify(v)).join(', ');
+    }
+    if (typeof value === 'number') {
+        if (!Number.isInteger(value) || value < 0) return 'must be a non-negative integer';
+        const range = PREF_NUMBER_RANGES[key];
+        if (range && range.min !== undefined && value < range.min) return 'must be at least ' + range.min;
+        if (range && range.max !== undefined && value > range.max) return 'must be at most ' + range.max;
+        return '';
+    }
+    if (key === 'calendar_timezone') {
+        return (value === '' || isTimeZone(value)) ? '' : 'must be empty or a time zone such as "Europe/Rome"';
     }
     return '';
 }

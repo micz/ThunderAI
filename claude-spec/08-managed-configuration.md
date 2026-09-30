@@ -294,6 +294,28 @@ Every key is checked against the allowlist **and** against the type of its `pref
 counterpart. A type mismatch is never coerced. Unknown keys, excluded keys and mismatches
 are skipped with a `taLogger.warn()` and never applied.
 
+### Content rules
+
+A matching type is not enough: a value of the right type can still be one the add-on cannot
+use, and a policy value, unlike a user's typo, breaks the feature for the whole fleet with
+nothing the user can do about it. So a scalar preference whose type matched is also checked
+by `prefValueProblem()` in `js/mzta-managed.js`; a value that fails is warned about (naming the
+key, with an API key masked) and not applied, exactly like a type mismatch, never coerced.
+
+| Preference | Rule |
+|---|---|
+| per-provider connection key `{integration}_{key}` (from `integration_options_config`) | `connectionFieldProblem()`, the same rules as a field of [`_special_prompts_connection`](#enforced-per-feature-connections-_special_prompts_connection): host a URL, model not empty, temperature, thinking budget, extra body, numbers |
+| `connection_type` | one of `valid_connection_types` (`''`, "no connection yet", is not a value to enforce) |
+| `{prefix}_connection_type` | one of `featureConnectionTypes()`: never `chatgpt_web`, which the feature panels do not offer |
+| `reply_type`, `diff_granularity`, `summarize_display_mode`, `summarize_auto`, `translate_auto` | one of the values its settings select offers (`PREF_ENUMS`) |
+| any other number | a non-negative integer; tighter ranges in `PREF_NUMBER_RANGES`, from the inputs' `min`/`max`: `spamfilter_threshold` 0–100, `summarize_max_messages`, `add_tags_maxnum`, `max_prompt_length` ≥ 1 (`special_command_timeout` has the general rule: 0 is accepted) |
+| `calendar_timezone` | `''` (no zone enforced, the select's empty option) or a zone of `Intl.supportedValuesOf('timeZone')`, the list the calendar pages' select is built from, so the page can always show it (a lowercased id or an alias `Intl.DateTimeFormat` would accept is refused); without `supportedValuesOf()`, any id the engine accepts |
+
+Free-text preferences (languages, sign name, prompts' extra instructions…) have no rule: any
+string is usable. Provider-specific enumerations (`chatgpt_reasoning_effort`,
+`anthropic_effort`…) are not checked either, as in `_special_prompts_connection`: the
+provider's accepted values change with its models.
+
 Array preferences (`spamfilter_skip_addresses`, `summarize_auto_senders_list`,
 `add_tags_exclusions`; the excluded `*_enabled_accounts` too) are all **arrays of strings**,
 and their consumers call string methods on the elements. An array containing a non-string
@@ -1161,9 +1183,12 @@ Both are presentation only; the authoritative block remains the write guard in
 Nothing to do. Declare it in `prefs_default` as usual
 ([05-options.md](05-options.md#adding-a-new-preference)) and it is policy-settable, with
 type validation, a working write guard and automatic UI disabling — provided it is read and
-written through `mztaPrefs` and its control is an `.option-input` whose id is the key. Two
-cases need a line of code:
+written through `mztaPrefs` and its control is an `.option-input` whose id is the key. A number
+preference is accepted as a non-negative integer. These cases need a line of code:
 
+- a value domain its type does not express - a select's options, a number range other than
+  "non-negative integer", a fractional number, a format - gets an entry in `PREF_ENUMS` /
+  `PREF_NUMBER_RANGES` or a rule in `prefValueProblem()` (see [Content rules](#content-rules));
 - a control with its own load/save logic gets `data-mzta-pref` and `lockCompanions()` (see
   above);
 - a classic content script cannot use `mztaPrefs`: give it a background command that does,
@@ -1178,7 +1203,8 @@ once a global preference (above) and a field of [`_special_prompts_connection`](
 with type validation, the overlay, the storage gate and the UI lock. By hand:
 
 - give it a content rule in `connectionFieldProblem()` if its type alone does not make a value
-  usable (a URL, a number held in a string, JSON, an enumeration);
+  usable (a URL, a number held in a string, JSON, an enumeration). The rule then applies to the
+  global preference and to the per-feature field alike;
 - if it is a secret, name it `*_api_key`, or the marker rules of
   [Policy-supplied API keys](#policy-supplied-api-keys) do not apply to it;
 - make sure the connection panel names its input `${modelId_prefix}${integration}_${key}`,
@@ -1253,7 +1279,7 @@ unmanaged baseline of a page, comes from a separate module instance or a worker 
 | Overview: no policy, silent rejection | `01-no-policy` | `01-no-policy`, all 13 pages |
 | Resolution order, log masking | `02-resolution-order` | `03-sweep-unlocked` |
 | The write guard (per key, marker, no residue) | `03-write-guard` | `02-sweep-locked` (write attempts, as rendered and re-enabled by hand) |
-| The allowlist, Validation, The lock convention | `04-validation`, `04-allowlist-derivation` | `02-sweep-locked`, `03-sweep-unlocked` (generated from the allowlist) |
+| The allowlist, Validation (content rules too), The lock convention | `04-validation`, `04-allowlist-derivation`, `04c-value-validation` | `02-sweep-locked`, `03-sweep-unlocked` (generated from the allowlist) |
 | Hydration, Policy-supplied API keys, Load ordering | `05a`-`05g` | `options/05-secrets-locked`, `options/06-secrets-unlocked` |
 | Locked model selects | - | `options/07-locked-model`, `setup-wizard/07-locked-model` |
 | No seeding from policy values | - | `spamfilter/05-no-seeding-from-policy` |
