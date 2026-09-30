@@ -32,7 +32,8 @@ import {
 } from '../_lib/connection-ui.js';
 import {
   isTestableConnection,
-  runConnectionTest
+  runConnectionTest,
+  setConnTestState
 } from '../../js/mzta-connection-test.js';
 import { mztaPrefs } from '../../js/mzta-prefs.js';
 
@@ -154,36 +155,6 @@ function refreshConnTestVisibility() {
   if (!strip) return;
   strip.style.display = isTestableConnection(state.provider) ? 'flex' : 'none';
   setConnTestState('idle');
-}
-
-function setConnTestState(stateName, message) {
-  let strip = document.getElementById('mzta_conn_test');
-  let textEl = document.getElementById('mzta_conn_test_text');
-  let linkEl = document.getElementById('mzta_conn_test_link');
-  if (!strip || !textEl || !linkEl) return;
-  strip.setAttribute('data-state', stateName);
-  switch (stateName) {
-    case 'loading':
-      textEl.textContent = browser.i18n.getMessage('connTest_testing');
-      linkEl.style.display = 'none';
-      break;
-    case 'ok':
-      textEl.textContent = browser.i18n.getMessage('connTest_ok', [message || '']);
-      linkEl.textContent = browser.i18n.getMessage('connTest_link_retest');
-      linkEl.style.display = '';
-      break;
-    case 'error':
-      textEl.textContent = browser.i18n.getMessage('connTest_error', [message || '']);
-      linkEl.textContent = browser.i18n.getMessage('connTest_link_retry');
-      linkEl.style.display = '';
-      break;
-    case 'idle':
-    default:
-      textEl.textContent = browser.i18n.getMessage('connTest_idle');
-      linkEl.textContent = browser.i18n.getMessage('connTest_link_test');
-      linkEl.style.display = '';
-      break;
-  }
 }
 
 // ---- Per-connection advanced disclosure (mirrors options page) -----------

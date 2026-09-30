@@ -46,6 +46,11 @@ import {
   clearPromptAPI
 } from '../../js/mzta-prompts.js';
 import { mztaPrefs } from '../../js/mzta-prefs.js';
+import {
+  isTestableConnection,
+  runConnectionTest,
+  setConnTestState
+} from '../../js/mzta-connection-test.js';
 
 export const varConnectionUI = {
   permission_all_urls: false,
@@ -1617,9 +1622,65 @@ export async function injectConnectionUI({
   };
 }
 
+// Builds a connection test strip (same markup as the static #mzta_conn_test of the
+// options page) right after `afterEl`, for the hosts that create it at runtime: the
+// feature pages and each Custom Prompts form. Any input/change inside `scopeEls`
+// (that form's connection fields) brings it back to idle, and its link runs the
+// non-persistent check on the fields whose ids start with `idPrefix`.
+// `getConnType` returns the connection type currently selected in that form.
+// The strip starts hidden: show it with setConnTestStripVisible().
+export function attachConnTestStrip({ afterEl, scopeEls = [], getConnType, idPrefix = '', id = '' }) {
+  const strip = document.createElement('div');
+  if (id) strip.id = id;
+  strip.className = 'conn_test_strip';
+  strip.style.display = 'none';
+  const dot = document.createElement('span');
+  dot.className = 'conn_test_dot';
+  const text = document.createElement('span');
+  text.className = 'conn_test_text';
+  const link = document.createElement('a');
+  link.href = '#';
+  link.className = 'conn_test_link';
+  strip.append(dot, text, link);
+  afterEl.after(strip);
+  setConnTestState('idle', '', strip);
+
+  scopeEls.forEach(el => {
+    el.addEventListener('input', () => setConnTestState('idle', '', strip));
+    el.addEventListener('change', () => setConnTestState('idle', '', strip));
+  });
+  link.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const connType = getConnType();
+    if (!isTestableConnection(connType)) return;
+    setConnTestState('loading', '', strip);
+    const result = await runConnectionTest(connType, idPrefix);
+    if (result.status === 'ok') {
+      setConnTestState('ok', result.apiName, strip);
+    } else {
+      setConnTestState('error', result.message, strip);
+    }
+    // A successful test may have been the moment the host permission was granted,
+    // so re-probe the model capabilities now that /api/show can actually be reached.
+    if (connType === 'ollama_api' && result.status === 'ok') {
+      updateOllamaModelCapabilityUI(idPrefix);
+    }
+  });
+  return strip;
+}
+
+// Shows the strip only for a testable connection type (an empty "inherit" value and
+// ChatGPT Web are not), and resets it to idle: a previous result no longer applies.
+export function setConnTestStripVisible(strip, connType, visible = true) {
+  if (!strip) return;
+  strip.style.display = (visible && isTestableConnection(connType)) ? 'flex' : 'none';
+  setConnTestState('idle', '', strip);
+}
+
 // Per-connection "Advanced options" disclosure for the feature pages, mirroring
-// the options page (#mzta_conn_adv_btn + #connection_ui_adv_table). The button
-// and the table are built here, so the 6 feature pages need no extra markup.
+// the options page (#mzta_conn_adv_btn + #connection_ui_adv_table), followed by
+// the connection test strip (#mzta_conn_test). The button, the table and the
+// strip are built here, so the 6 feature pages need no extra markup.
 // Feature pages host a single connection form, so the document-wide query that
 // moves the .conn_adv rows is safe (unlike custom prompts, see there).
 // The moved rows keep their .specific_integration_sub / conntype_* classes, so
@@ -1637,7 +1698,7 @@ function parseSvg(svgText) {
   return document.importNode(new DOMParser().parseFromString(svgText, 'image/svg+xml').documentElement, true);
 }
 
-function setupFeatureConnAdv() {
+function setupFeatureConnAdv({ getConnType, idPrefix }) {
   const coreTable = document.getElementById('connection_ui_table');
   if (!coreTable) return null;
 
@@ -1668,6 +1729,15 @@ function setupFeatureConnAdv() {
   const advBody = advTable.tBodies[0] || advTable.appendChild(document.createElement('tbody'));
   coreTable.querySelectorAll('tr.conn_adv').forEach(tr => advBody.appendChild(tr));
 
+  // The unprefixed id is safe for the same single-form reason.
+  const testStrip = document.getElementById('mzta_conn_test') || attachConnTestStrip({
+    afterEl: advTable,
+    scopeEls: [coreTable, advTable],
+    getConnType,
+    idPrefix,
+    id: 'mzta_conn_test'
+  });
+
   const reset = () => {
     btn.setAttribute('aria-expanded', 'false');
     advTable.classList.add('hidden');
@@ -1686,7 +1756,8 @@ function setupFeatureConnAdv() {
     setVisible: (visible) => {
       btn.style.display = visible ? '' : 'none';
       if (!visible) reset();
-    }
+    },
+    setTestVisible: (visible) => setConnTestStripVisible(testStrip, getConnType(), visible)
   };
 }
 
@@ -1715,7 +1786,10 @@ export async function initializeSpecificIntegrationUI({
   }
 
   // Move the advanced rows behind the "Advanced options" disclosure.
-  const connAdv = setupFeatureConnAdv();
+  const connAdv = setupFeatureConnAdv({
+      getConnType: () => document.getElementById(conntype_select_id)?.value,
+      idPrefix: model_prefix
+  });
 
   // 2. Restore Options
   if (restoreOptionsCallback) {
@@ -1775,8 +1849,8 @@ export async function initializeSpecificIntegrationUI({
       if (conntype_end_el) conntype_end_el.style.display = checked ? 'table-row' : 'none';
       if (conntype_row) changeConnTypeRowColor(conntype_row, conntype_el);
       if (connAdv) connAdv.setVisible(checked && !hasNoConnectionSelected(conntype_el.value));
+      if (connAdv) connAdv.setTestVisible(checked);
   };
-
   // Check global connection type: when the global connection cannot run this
   // prompt (ChatGPT Web) or no connection has been chosen yet, a per-prompt
   // specific integration is mandatory.

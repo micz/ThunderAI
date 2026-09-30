@@ -34,7 +34,9 @@ import {
     updateOllamaModelCapabilityUI,
     updateOpenAIModelCapabilityUI,
     checkJsonFieldsByPrefix,
-    getConnectionTypeLabel
+    getConnectionTypeLabel,
+    attachConnTestStrip,
+    setConnTestStripVisible
 } from "../../pages/_lib/connection-ui.js";
 import {
     getLocalStorageUsedSpace,
@@ -228,6 +230,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Move this form's advanced rows behind its disclosure button.
     const newFormConnScope = document.getElementById('api_ui_container');
     relocateConnAdvRows(newFormConnScope);
+    attachFormConnTest(newFormConnScope, 'new_prompt_api_type', NEW_PROMPT_PREFIX);
 
     apiSelect.addEventListener('change', () => {
         showConnectionOptions(apiSelect, NEW_PROMPT_PREFIX);
@@ -601,6 +604,7 @@ function handleEditClick(e) {
         }).then(() => {
             const scopeEl = tr.querySelector('.api_additional_info');
             relocateConnAdvRows(scopeEl);
+            attachFormConnTest(scopeEl, selectId, prefix);
             populateConnectionUI(tr, id, prefix, selectId);
             updateWarnings(prefix);
             updateAnthropicModelCapabilityUI(prefix);
@@ -661,6 +665,21 @@ function relocateConnAdvRows(scopeEl) {
     btn.hidden = (advBody.children.length === 0);
 }
 
+// Add this form's connection test strip below its advanced table. It tests the
+// form's own prefixed fields, so several open editors never share a result.
+// Shown/hidden per provider by showAdvConnectionOptions().
+function attachFormConnTest(scopeEl, selectId, prefix) {
+    if (!scopeEl || scopeEl.querySelector('.conn_test_strip')) return;
+    const advTable = scopeEl.querySelector('.conn_adv_table');
+    if (!advTable) return;
+    attachConnTestStrip({
+        afterEl: advTable,
+        scopeEls: [scopeEl],
+        getConnType: () => document.getElementById(selectId)?.value,
+        idPrefix: prefix
+    });
+}
+
 // Collapse the advanced panel and reset the button state.
 function resetConnAdv(scopeEl) {
     if (!scopeEl) return;
@@ -676,6 +695,9 @@ function resetConnAdv(scopeEl) {
 // reaches them.
 function showAdvConnectionOptions(scopeEl, connType) {
     if (!scopeEl) return;
+    // The test strip follows the provider too: hidden when the prompt inherits the
+    // global connection (empty value), back to idle on every change.
+    setConnTestStripVisible(scopeEl.querySelector('.conn_test_strip'), connType);
     const advTable = scopeEl.querySelector('.conn_adv_table');
     if (!advTable) return;
     advTable.querySelectorAll('tr[class*="conntype_"]').forEach(tr => {
