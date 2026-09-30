@@ -168,7 +168,8 @@ messenger.messageDisplayScripts.register({
 browser.contentScripts.register({
     matches: ["https://*.chatgpt.com/*"],
     js: [{file: "js/mzta-chatgpt-loader.js"}],
-    runAt: "document_idle"
+    // the loader waits for the composer itself, ChatGPT can keep the document loading for ~20 s (issue #924)
+    runAt: "document_start"
   });
 
 // Listen for shortcut command
@@ -1545,14 +1546,18 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     let mztaUseDiffViewer="`+(prompt_info.use_diff_viewer=='1'?'1':'0')+`";
                     let mztaOriginalText="`+ JSON.stringify(originalText).slice(1, -1) +`";
                     let mztaReplyType="`+ reply_type_pref.reply_type + `";
+                    let mztaReadyReason=`+ JSON.stringify(String(message.readyReason)) +`;
+                    let mztaReadyStateAtSend=`+ JSON.stringify(String(message.readyStateAtSend)) +`;
+                    let mztaLoadWaitMs=`+ JSON.stringify(Number(_wait_time)) +`;
                     `;
 
                     taLog.log("pre_script: " + pre_script);
-                    taLog.log("Waiting " + _wait_time + " millisec");
+                    taLog.log("Waiting " + _wait_time + " millisec (readyReason " + message.readyReason + ")");
                     await new Promise(resolve => setTimeout(resolve, _wait_time));
                     taLog.log("Waiting " + _wait_time + " millisec done");
                     
-                    await browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false });
+                    // document_start: the default document_idle would wait for the document to finish loading (issue #924)
+                    await browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false, runAt: "document_start" });
                     // let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
                     let mailMessageId = -1;
                     if(mailMessage) mailMessageId = mailMessage.id;
@@ -1564,6 +1569,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 }
             
                 if (message.command === "chatgpt_web_ready_" + rand_call_id) {
+                    taLog.log("[chatgpt_web] Page ready: reason " + message.readyReason + ", loaderStartMs " + Math.round(message.loaderStartMs) + ", readySentMs " + Math.round(message.readySentMs) + ", readyStateAtSend " + message.readyStateAtSend);
                     return handleChatGptWeb(sender.tab)
                 }
                 return false;
