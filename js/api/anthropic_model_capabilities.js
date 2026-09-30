@@ -34,15 +34,18 @@
 //     so "no extended thinking" must now be requested explicitly.
 //
 // THIS TABLE MUST BE UPDATED AS NEW MODELS SHIP. A model ID that matches no
-// entry falls back to ANTHROPIC_MODERN_CAPABILITIES below.
+// entry falls back to ANTHROPIC_MODERN_CAPABILITIES below, and a parameter the
+// table gets wrong is dropped by the one-shot retry on a 400 in anthropic.js.
 
 // The five effort levels, in ascending order. Used both to validate a stored
 // value and to build the options page selector.
 export const ANTHROPIC_EFFORT_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'];
 
-// `high` is the API default: sending it is equivalent to omitting `output_config`
-// entirely, so we omit it. Kept as a named constant so this is easy to change if
-// the default ever moves.
+// The effort level assumed to be in force when no `output_config` is sent, used
+// only by effortBlocksDisabledThinking() in anthropic.js. Defaults differ per
+// model (e.g. Opus 5.5 defaults to 'medium') and can change without notice, so
+// ThunderAI must never rely on this to decide what to send: a level the user
+// picked is always sent, and only the empty "Default" option omits the field.
 export const ANTHROPIC_DEFAULT_EFFORT = 'high';
 
 // Users can type an arbitrary model ID into the options page, and new models
@@ -51,8 +54,13 @@ export const ANTHROPIC_DEFAULT_EFFORT = 'high';
 // degrades a stale legacy setting into a valid (if slightly less configurable)
 // request, while guessing "legacy" would send temperature/budget_tokens and earn
 // a hard 400. This is a deliberate, conservative choice.
+//
+// For the same reason the fallback never sends `thinking: {type:'disabled'}`:
+// newer models (Fable 5.x, Opus 5.5) reject it, while omitting `thinking` is
+// always a valid request. The trade-off is that on an unknown model that thinks
+// by default, thinking may consume part of max_tokens -- better than a 400.
 export const ANTHROPIC_MODERN_CAPABILITIES = {
-  thinkingModes: ['adaptive', 'disabled'],
+  thinkingModes: ['adaptive'],
   supportsBudgetTokens: false,
   supportsSamplingParams: false,
   supportsEffort: true,
@@ -60,10 +68,14 @@ export const ANTHROPIC_MODERN_CAPABILITIES = {
   defaultThinking: 'adaptive',
 };
 
-// Matched by model ID prefix, so dated variants (claude-sonnet-4-5-20250929)
-// resolve to their family. Entries are sorted by descending prefix length at
-// module load, so a longer, more specific prefix always wins regardless of the
-// order they are declared in here.
+// An entry matches a model ID only when the ID equals its prefix, or is the
+// prefix followed by a dated snapshot suffix (`-YYYYMMDD`, as in
+// claude-sonnet-4-5-20250929). A point release is NOT covered by its
+// predecessor: 'claude-opus-5' does not match 'claude-opus-5-5', so a new model
+// falls back to ANTHROPIC_MODERN_CAPABILITIES instead of inheriting rules that
+// may no longer hold, and each point release needs its own entry. Entries are
+// still sorted by descending prefix length at module load, so the lookup order
+// never depends on the order they are declared in here.
 //
 // defaultThinking: what the API does when the `thinking` field is omitted.
 //   'adaptive' -> thinking runs anyway (and eats into max_tokens)
@@ -110,6 +122,18 @@ const ANTHROPIC_MODEL_CAPABILITIES = [
   },
 
   // --- Opus ---
+  {
+    // Thinking cannot be disabled on this model: {type:'disabled'} is rejected.
+    prefix: 'claude-opus-5-5',
+    capabilities: {
+      thinkingModes: ['adaptive'],
+      supportsBudgetTokens: false,
+      supportsSamplingParams: false,
+      supportsEffort: true,
+      effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+      defaultThinking: 'adaptive',
+    },
+  },
   {
     prefix: 'claude-opus-5',
     capabilities: {
@@ -186,7 +210,29 @@ const ANTHROPIC_MODEL_CAPABILITIES = [
   // Thinking cannot be turned off on these: {type:'disabled'} is rejected, so
   // the only valid options are adaptive or omitting the field.
   {
+    prefix: 'claude-fable-5-1',
+    capabilities: {
+      thinkingModes: ['adaptive'],
+      supportsBudgetTokens: false,
+      supportsSamplingParams: false,
+      supportsEffort: true,
+      effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+      defaultThinking: 'adaptive',
+    },
+  },
+  {
     prefix: 'claude-fable-5',
+    capabilities: {
+      thinkingModes: ['adaptive'],
+      supportsBudgetTokens: false,
+      supportsSamplingParams: false,
+      supportsEffort: true,
+      effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+      defaultThinking: 'adaptive',
+    },
+  },
+  {
+    prefix: 'claude-mythos-5-1',
     capabilities: {
       thinkingModes: ['adaptive'],
       supportsBudgetTokens: false,
@@ -221,15 +267,17 @@ const ANTHROPIC_MODEL_CAPABILITIES = [
 
 ];
 
-// Longest prefix first, so 'claude-opus-4-8' can never be shadowed by a shorter
-// entry that happens to be declared earlier.
+// Longest prefix first. With boundary-aware matching at most one entry can match
+// a given ID, so this only keeps the lookup deterministic.
 const ANTHROPIC_MODEL_CAPABILITIES_SORTED =
   [...ANTHROPIC_MODEL_CAPABILITIES].sort((a, b) => b.prefix.length - a.prefix.length);
 
 /**
  * Returns the capability descriptor for a Claude model ID.
- * Matching is by prefix, so dated variants resolve to their family.
- * An empty, missing or unrecognized ID returns ANTHROPIC_MODERN_CAPABILITIES.
+ * An entry matches the exact ID or its dated snapshot (`<prefix>-YYYYMMDD`);
+ * any other suffix -- including a point release such as '-5' or '-6' -- does
+ * not match. An empty, missing or unrecognized ID returns
+ * ANTHROPIC_MODERN_CAPABILITIES.
  *
  * @param {string} modelId
  * @returns {object} capability descriptor
@@ -239,6 +287,8 @@ export function getAnthropicModelCapabilities(modelId) {
     return ANTHROPIC_MODERN_CAPABILITIES;
   }
   const id = modelId.trim();
-  const entry = ANTHROPIC_MODEL_CAPABILITIES_SORTED.find(e => id.startsWith(e.prefix));
+  const entry = ANTHROPIC_MODEL_CAPABILITIES_SORTED.find(e =>
+    id === e.prefix
+    || (id.startsWith(e.prefix) && /^-\d{8}$/.test(id.slice(e.prefix.length))));
   return entry ? entry.capabilities : ANTHROPIC_MODERN_CAPABILITIES;
 }
