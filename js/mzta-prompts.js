@@ -1046,7 +1046,7 @@ export async function setDefaultPromptsProperties(prompts) {
  */
 const TRANSIENT_PROMPT_FLAGS = ['_shadowed_by_org', '_inert_by_policy',
                                 '_default_inert_by_policy', '_text_by_policy',
-                                '_connection_by_policy'];
+                                '_connection_by_policy', '_user_fields'];
 
 function stripTransientFlags(prompts) {
     return prompts.map(prompt => {
@@ -1340,15 +1340,19 @@ async function applyPolicyConnections(prompts) {
 // makes them, and has already dropped any API key holding MANAGED_SECRET_MARKER).
 // - api_type and the enforced fields: what storage already holds is put back, so no write
 //   can store the policy's value or change the user's own while the policy is in force;
-// - an unlocked field holding the policy value, or absent (a MANAGED_SECRET_MARKER dropped by
-//   stripTransientFlags(), or a writer that never had the field): storage keeps what it holds.
-//   The policy default is what the overlay shows while the user has no value of their own, so
-//   it is never stored as the user's - not even over a stored value of theirs, which is what a
-//   stale copy of the array would do (the feature pages' text Save writes back the array they
-//   loaded at page open). The cost: a user cannot store exactly the policy default as their
-//   own value; while the policy holds that makes no difference, since it is what they get.
-//   Any other value is the user's, and saved.
-async function keepStoredConnections(prompts) {
+// - an unlocked field the writer names in the prompt's transient _user_fields (the connection
+//   panel's _updatePrompt(), for the control the user just changed): the written value is the
+//   user's choice and is saved, even when it equals the policy default;
+// - any other unlocked field holding the policy value, or absent (a MANAGED_SECRET_MARKER
+//   dropped by stripTransientFlags(), or a writer that never had the field): storage keeps what
+//   it holds. The policy default is what the overlay shows while the user has no value of their
+//   own, so it is never stored as the user's merely because it was shown - not even over a
+//   stored value of theirs, which is what a stale copy of the array would do (the feature
+//   pages' text Save writes back the array they loaded at page open, and getSpecialPrompts()
+//   never sets _user_fields);
+// - any other value is the user's, and saved.
+// `userFieldsById` is read by setSpecialPrompts() BEFORE stripTransientFlags() drops the flag.
+async function keepStoredConnections(prompts, userFieldsById = new Map()) {
     const byId = policyConnectionsById();
     if (!prompts.some(prompt => byId.has(prompt.id))) return prompts;
     const stored = await browser.storage.local.get({ _special_prompts: null });
@@ -1358,6 +1362,7 @@ async function keepStoredConnections(prompts) {
         const entry = byId.get(prompt.id);
         if (!entry) return;
         const original = storedById.get(prompt.id);
+        const userFields = userFieldsById.get(prompt.id) || [];
         const restore = key => {
             if (original && Object.prototype.hasOwnProperty.call(original, key)) {
                 prompt[key] = original[key];
@@ -1369,6 +1374,8 @@ async function keepStoredConnections(prompts) {
         for (const [name, field] of Object.entries(entry.fields)) {
             if (field.locked) {
                 restore(name);
+            } else if (userFields.includes(name) && Object.prototype.hasOwnProperty.call(prompt, name)) {
+                // The user's own choice: saved as written.
             } else if (prompt[name] === field.value || !Object.prototype.hasOwnProperty.call(prompt, name)) {
                 restore(name);
             }
@@ -1473,9 +1480,13 @@ export async function getEnforcedTextPlaceholderProblems() {
 
 export async function setSpecialPrompts(prompts) {
     // console.log(">>>>>>>>>>>> setSpecialPrompts prompts: " + JSON.stringify(prompts));
+    // _user_fields is transient, so it is read here, before stripTransientFlags() drops it.
+    const userFieldsById = new Map(prompts
+        .filter(prompt => prompt && Array.isArray(prompt._user_fields))
+        .map(prompt => [prompt.id, prompt._user_fields.filter(f => typeof f === 'string')]));
     const copies = stripTransientFlags(prompts);
     await browser.storage.local.set({_special_prompts:
-        await keepStoredTexts(await keepStoredConnections(await keepStoredOverrides(copies)))});
+        await keepStoredTexts(await keepStoredConnections(await keepStoredOverrides(copies), userFieldsById))});
 }
 
 export function getHiddenSpecialPromptIds() {

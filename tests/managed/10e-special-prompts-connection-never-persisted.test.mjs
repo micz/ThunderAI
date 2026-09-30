@@ -123,6 +123,36 @@ test('a stale copy holding the policy default never overwrites the user\'s own v
     await ctx.prompts.setSpecialPrompts(again);
 });
 
+test('an unlocked field the user sets to the policy default (_user_fields) is saved as theirs', async () => {
+    // What the connection panel's _updatePrompt() does for the control the user changed.
+    const spam = await ctx.prompts.loadPrompt('prompt_spamfilter');
+    spam.openai_comp_model = 'gpt-4o-mini'; // exactly the unlocked policy default
+    spam._user_fields = ['openai_comp_model'];
+    await ctx.prompts.savePrompt(spam);
+    assert.equal(stored('prompt_spamfilter').openai_comp_model, 'gpt-4o-mini');
+    assert.equal('_user_fields' in stored('prompt_spamfilter'), false, 'the transient flag was stored');
+    // _user_fields never lets an enforced field or api_type through.
+    const again = await ctx.prompts.loadPrompt('prompt_spamfilter');
+    again.api_type = 'anthropic_api';
+    again.openai_comp_host = 'http://sneaky:1';
+    again._user_fields = ['openai_comp_host', 'api_type'];
+    await ctx.prompts.savePrompt(again);
+    assert.equal(stored('prompt_spamfilter').api_type, 'chatgpt_api');
+    assert.equal(stored('prompt_spamfilter').openai_comp_host, 'http://user-gateway:8080');
+    // Back to the user's other value, for the checks below.
+    const back = await ctx.prompts.loadPrompt('prompt_spamfilter');
+    back.openai_comp_model = 'user-model-2';
+    back._user_fields = ['openai_comp_model'];
+    await ctx.prompts.savePrompt(back);
+    assert.equal(stored('prompt_spamfilter').openai_comp_model, 'user-model-2');
+});
+
+test('the export strips _user_fields', async () => {
+    const list = await ctx.prompts.getSpecialPrompts();
+    byId(list, 'prompt_spamfilter')._user_fields = ['openai_comp_model'];
+    assert.equal(JSON.stringify(ctx.prompts.preparePromptsForExport(list, true)).includes('_user_fields'), false);
+});
+
 test('the write guard refuses the enforced panel fields, not the unlocked ones', async () => {
     await ctx.mztaPrefs.setPref('spamfilter_openai_comp_host', 'https://ai-gateway.example.org');
     await ctx.mztaPrefs.setPrefs({ summarize_anthropic_model: 'claude-org-sum', spamfilter_openai_comp_model: 'm' });

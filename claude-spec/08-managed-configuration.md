@@ -796,12 +796,19 @@ policy. So `setSpecialPrompts()` runs `keepStoredConnections()` after `keepStore
 For each policy-connected prompt:
 
 - `api_type` and every enforced field get back what storage holds (deleted if it holds none);
-- an unlocked field that holds the policy value, or that is absent (a marker dropped by
+- an unlocked field the writer names in the prompt's transient `_user_fields` is saved as
+  written, **even when it equals the policy default**: the user chose it. Only the connection
+  panel sets it: `_updatePrompt(field)` in `initializeSpecificIntegrationUI()` marks the one
+  field whose control fired the `change`. `setSpecialPrompts()` reads it before
+  `stripTransientFlags()` drops it (it is in `TRANSIENT_PROMPT_FLAGS`, so it is never stored or
+  exported). It never lets an enforced field or `api_type` through. A value chosen this way is
+  the user's from then on, and stays after the policy is removed;
+- any other unlocked field that holds the policy value, or that is absent (a marker dropped by
   `stripTransientFlags()`, or a writer that never had the field), gets back what storage holds.
-  So the policy default is never stored as the user's value, **not even over a stored value of
-  theirs**: that is exactly what a stale array copy would write. The cost is that a user cannot
-  store exactly the policy default as their own value, which makes no difference while the
-  policy holds;
+  So a policy default the page merely *showed* is never stored as the user's value, **not even
+  over a stored value of theirs**: that is exactly what a stale array copy writes (the text
+  Save), and `getSpecialPrompts()` never sets `_user_fields` on it. The other fields
+  `_updatePrompt()` copies from the panel with the edited one are not marked either;
 - any other value is the user's, and saved.
 
 The lock state is read synchronously from `mztaManaged`, as for `keepStoredOverrides()`: before
@@ -830,7 +837,8 @@ The feature pages need no page-specific logic beyond one guard:
   - no "mandatory" forcing: the managed marker is the explanation;
   - no page-open `_updatePrompt()`, `_persistSelectedConnection()` or
     `_persistMandatoryIntegration()`: what the panel shows is the policy's, not something to seed;
-  - `_updatePrompt()` never copies an enforced field from the DOM;
+  - `_updatePrompt()` never copies an enforced field from the DOM, and marks the field the user
+    changed in `_user_fields` (see the storage gate above);
   - the per-field listener ignores an enforced field, and the type-select listener ignores a
     locked select, so a control re-enabled by hand writes nothing at all;
   - the switch handler forces a re-enabled switch back on without `clearPromptAPI()`.

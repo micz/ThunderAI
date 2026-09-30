@@ -1407,14 +1407,18 @@ export async function initializeSpecificIntegrationUI({
   // Helper to update prompt.
   // Serialized through _updatePromptQueue so concurrent callers can't interleave
   // their load-modify-save and persist a stale/wrong value.
+  // `userField`: the prompt field ({integration}_{key}) whose control the user just changed, if
+  // any. Passed on as the transient _user_fields, so that setSpecialPrompts() saves it even when
+  // it equals the policy default of an unlocked field: the user chose it (spec 08, storage gate).
   let _updatePromptQueue = Promise.resolve();
-  const _updatePrompt = () => {
+  const _updatePrompt = (userField = '') => {
       if (locked_off) return _updatePromptQueue;
       _updatePromptQueue = _updatePromptQueue.then(async () => {
           let conntype = conntype_el.value;
 
           let prompt = await loadPrompt(promptId);
           if(!prompt) return;
+          if (userField) prompt._user_fields = [userField];
 
           // A {prefix}_connection_type enforced by the policy is never written into the prompt:
           // there it would outlive the policy (spec 08 "No seeding from policy values"). The
@@ -1597,7 +1601,8 @@ export async function initializeSpecificIntegrationUI({
       element.addEventListener("change", async () => {
           // Same for a field the policy connection enforces, re-enabled by hand.
           if (mztaManaged.isEnforcedConnectionControl(element.id)) return;
-          if (use_specific_integration_el.checked) await _updatePrompt();
+          const field = element.id.startsWith(model_prefix) ? element.id.slice(model_prefix.length) : '';
+          if (use_specific_integration_el.checked) await _updatePrompt(field);
       });
   });
 
