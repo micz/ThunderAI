@@ -50,8 +50,19 @@ jobs:
       pull-requests: write
     steps:
       - name: Remove the run-tests label
-        run: gh pr edit ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --remove-label run-tests
+        # The REST call needs only pull-requests: write (gh pr edit goes through GraphQL, which can
+        # ask for more). A label already gone (removed by hand meanwhile) is not an error.
+        run: |
+          if ! out=$(gh api -X DELETE "repos/${REPO}/issues/${PR}/labels/run-tests" 2>&1); then
+            case "$out" in
+              *"HTTP 404"*|*"Label does not exist"*) echo "The run-tests label is already gone." ;;
+              *) echo "$out"; exit 1 ;;
+            esac
+          fi
         env:
           GH_TOKEN: ${{ github.token }}
-        # On a pull request from a fork the token is read-only: the label stays, the run does not fail for it.
-        continue-on-error: true
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        # On a pull request from a fork the token is read-only: the label stays, and the run does not
+        # fail for it. On this repository's own pull requests a failure here is a real one, and shows.
+        continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
