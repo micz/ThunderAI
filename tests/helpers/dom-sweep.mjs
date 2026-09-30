@@ -210,6 +210,9 @@ export async function lockedSweep(page, { todo, expected = {} } = {}) {
         test(`locked ${c.key}: disabled and marked as managed`, t('disabled'), () => {
             assert.equal(el().disabled, true, 'disabled');
             assert.equal(el().dataset.mztaManaged, '1', 'data-mzta-managed');
+            // A select turned into a Tom Select is operated through the widget, which reads the
+            // native `disabled` only when it is built: the widget itself must be disabled too.
+            if (el().tomselect) assert.equal(el().tomselect.isDisabled, true, 'its Tom Select is still enabled');
         });
         if (expected[c.key]) {
             const { value, why } = expected[c.key];

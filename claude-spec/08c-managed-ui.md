@@ -34,8 +34,15 @@ needed. The implementation walks the controls once testing against a `Set`, rath
 running a selector per locked key — an id-suffix selector would also catch unrelated
 controls whose id merely ends with the key (`translate` would match `auto_translate`).
 
+A matched select turned into a **Tom Select** (`calendar_timezone`, the model selects) also gets
+`tomselect.disable()`: the widget reads the native `disabled` only when it is built, so without it
+the user could still pick another value, which the write guard would refuse while the page shows
+it. (The model selects are kept disabled by `toggleTomSelectDisabled()` as well, see
+[Locked model selects](08b-managed-connections.md#locked-model-selects).)
+
 `applyManagedUI()` must run **after** the connection panel has injected its provider rows,
-and after `restoreOptions()` has populated the inputs.
+and after `restoreOptions()` has populated the inputs - and after the page has built its Tom
+Selects, which `initTimezoneSelect()` does before `initializeSpecificIntegrationUI()`.
 
 ### Controls with their own load/save logic: `data-mzta-pref`
 

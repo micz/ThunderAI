@@ -479,7 +479,7 @@ unmanaged baseline of a page, comes from a separate module instance or a worker 
 | Account lists by policy (and the account checkboxes) | `07a`, `07b` | `spamfilter/08`, `spamfilter/09`, `addtags/08`, `addtags/09` |
 | Interaction points: per-feature provider override | `08-provider-override-locked-off` | - |
 | The connection mode | `12b-specific-integration-mode` | `<feature>/17-locked-on-switch` (generated from `tests/helpers/feature-pages.mjs`) |
-| UI: controls, `data-mzta-pref`, marker placement and inertness | - | `02-sweep-locked`, `03-sweep-unlocked`, `<page>/04-respect-managed` |
+| UI: controls (a Tom Select disabled too), `data-mzta-pref`, marker placement and inertness | - | `02-sweep-locked`, `03-sweep-unlocked`, `<page>/04-respect-managed` |
 | The setup wizard | - | `setup-wizard/02`, `03`, `04-locked-provider`, `07`, `10` |
 | UI: the banner | - | `options/11`, `options/12`, `setup-wizard/11`, `setup-wizard/12` (with and without `_org_name`) |
 

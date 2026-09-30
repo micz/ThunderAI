@@ -149,6 +149,11 @@ export async function applyManagedUI(root = document, do_debug = false) {
         if (element.dataset.mztaManaged === '1') return;
         element.dataset.mztaManaged = '1';
         element.disabled = true;
+        // A select turned into a Tom Select (calendar_timezone, the model selects) is operated
+        // through the widget, which reads the native `disabled` only when it is built: without
+        // this the user could still pick another value, which the write guard would then refuse
+        // while the page shows it.
+        if (element.tomselect) element.tomselect.disable();
         lockControl(element);
         markManaged(element, state);
         // Lets the control's own widgets follow (an API key's eye toggle becomes a padlock).
