@@ -172,10 +172,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         if (apiSettingsRow.style.display === 'none') {
             apiSettingsRow.style.display = 'table-row';
-            apiSettingsToggle.querySelector('span').innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [API]';
+            apiSettingsToggle.querySelector('.toggle_label').innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [API]';
         } else {
             apiSettingsRow.style.display = 'none';
-            apiSettingsToggle.querySelector('span').innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]';
+            apiSettingsToggle.querySelector('.toggle_label').innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]';
         }
     });
 
@@ -271,13 +271,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const additionalInfoRow = document.getElementById('chatgpt_web_additional_info');
         if (additionalInfoRow.style.display === 'none' || additionalInfoRow.style.display === '') {
             additionalInfoRow.style.display = 'table-row';
-            let subspan = chatgptWebAdditionalPropToggle.querySelector('td span');
+            let subspan = chatgptWebAdditionalPropToggle.querySelector('.toggle_label');
             if (subspan) {
                 subspan.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [ChatGPT Web]';
             }
         } else {
             additionalInfoRow.style.display = 'none';
-            let subspan = chatgptWebAdditionalPropToggle.querySelector('td span');
+            let subspan = chatgptWebAdditionalPropToggle.querySelector('.toggle_label');
             if (subspan) {
                 subspan.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [ChatGPT Web]';
             }
@@ -775,7 +775,7 @@ function updateChatGPTWebInfoVisibility() {
     toggle.style.display = applies ? 'table-row' : 'none';
     if (!applies) {
         row.style.display = 'none';
-        const subspan = toggle.querySelector('td span');
+        const subspan = toggle.querySelector('.toggle_label');
         if (subspan) {
             subspan.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [ChatGPT Web]';
         }
@@ -793,7 +793,7 @@ function openAddFormDisclosure(toggleId, rowId, labelSuffix) {
     if (row.style.display === 'table-row') return;   // already open
 
     row.style.display = 'table-row';
-    const subspan = toggle.querySelector('span');
+    const subspan = toggle.querySelector('.toggle_label');
     if (subspan) {
         subspan.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' ' + labelSuffix;
     }
@@ -1096,23 +1096,24 @@ function handleApiInfoToggleClick(e) {
     let additionalInfoRow = element.nextElementSibling;
     if (additionalInfoRow.style.display === 'none' || additionalInfoRow.style.display === '') {
         additionalInfoRow.style.display = 'block';
-        element.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [API]';
+        element.querySelector('.toggle_label').innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [API]';
     } else {
         additionalInfoRow.style.display = 'none';
-        element.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]';
+        element.querySelector('.toggle_label').innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]';
     }
 }
 
 // Click handler for the per-row [ChatGPT Web] additional info toggle.
 function handleChatGPTWebInfoToggleClick(e) {
     e.preventDefault();
-    let additionalInfoRow = e.target.closest('td').querySelector('.chatgpt_web_additional_info');
+    const element = e.currentTarget;
+    let additionalInfoRow = element.closest('td').querySelector('.chatgpt_web_additional_info');
     if (additionalInfoRow.style.display === 'none' || additionalInfoRow.style.display === '') {
         additionalInfoRow.style.display = 'block';
-        e.target.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [ChatGPT Web]';
+        element.querySelector('.toggle_label').innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [ChatGPT Web]';
     } else {
         additionalInfoRow.style.display = 'none';
-        e.target.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [ChatGPT Web]';
+        element.querySelector('.toggle_label').innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [ChatGPT Web]';
     }
 }
 
@@ -1128,7 +1129,7 @@ function toggleApiPropertiesShow(tr) {
 function toggleAdditionalPropertiesEditor(tr) {
     if(prefs.connection_type == 'chatgpt_web' && getRowApiType(tr) === '') {
         let info_toggle = tr.querySelector('.chatgpt_web_additional_info_toggle');
-        info_toggle.style.display = 'block';
+        info_toggle.style.display = 'flex';
         let chatGPTWebModel_show = tr.querySelector('.chatgpt_web_model_show').innerText;
         let chatGPTWebProject_show = tr.querySelector('.chatgpt_web_project_show').innerText;
         let chatGPTWebCustomGPT_show = tr.querySelector('.chatgpt_web_custom_gpt_show').innerText;
@@ -1141,7 +1142,7 @@ function toggleAdditionalPropertiesEditor(tr) {
     }
 
     let api_info_toggle = tr.querySelector('.api_additional_info_toggle');
-    api_info_toggle.style.display = 'block';
+    api_info_toggle.style.display = 'flex';
     if (getRowApiType(tr) !== '') {
         api_info_toggle.click();
     }
@@ -1198,7 +1199,7 @@ function handleCancelClick(e) {
     tr.querySelector('.chatgpt_web_model_output').value = tr.querySelector('.chatgpt_web_model_show').innerText;
     tr.querySelector('.chatgpt_web_project_output').value = tr.querySelector('.chatgpt_web_project_show').innerText;
     tr.querySelector('.chatgpt_web_custom_gpt_output').value = tr.querySelector('.chatgpt_web_custom_gpt_show').innerText;
-    tr.querySelector('.api_additional_info_toggle').innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]';
+    tr.querySelector('.api_additional_info_toggle .toggle_label').innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]';
     toggleApiPropertiesShow(tr);
     hideItemRowEditor(tr);
 }
@@ -1757,7 +1758,7 @@ function loadPromptsList(values){
                         <textarea class="hiddendata text_output editor">` + values.text.replace(/<br\s*\/?>/gi, "\n") + `</textarea>
                         <ul class="autocomplete-list hidden"></ul>
                     </div>
-                    <div class="chatgpt_web_additional_info_toggle small_info">__MSG_customPrompts_show_additional_info__ [ChatGPT Web]</div>
+                    <div class="chatgpt_web_additional_info_toggle disclosure_toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="toggle_label">__MSG_customPrompts_show_additional_info__ [ChatGPT Web]</span></div>
                     <div class="chatgpt_web_additional_info">
                         <span class="field_title_us">__MSG_prefs_OptionText_chatgpt_web_model__:</span>
                         <br>
@@ -1776,7 +1777,7 @@ function loadPromptsList(values){
                         <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__
                         <br>__MSG_prefs_OptionText_CustomGPT_Warn__</i>
                     </div>
-                    <div class="api_additional_info_toggle small_info">__MSG_customPrompts_show_additional_info__ [API]</div>
+                    <div class="api_additional_info_toggle disclosure_toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></svg><span class="toggle_label">__MSG_customPrompts_show_additional_info__ [API]</span></div>
                     <div class="api_additional_info" style="display:none">
                         <table style="width:100%; text-align:left;">
                             <tbody id="api_ui_container_` + values.id + `">

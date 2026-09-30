@@ -80,7 +80,7 @@
         <!-- Hidden by default: these ChatGPT Web per-prompt overrides only apply
              when the global connection is ChatGPT Web, so the toggle is revealed
              from mzta-custom-prompts.js only in that case. -->
-        <tr id="chatgpt_web_additional_info_toggle" style="display: none;"><td colspan="4"><span class="small_info">__MSG_customPrompts_show_additional_info__ [ChatGPT Web]</span></td></tr>
+        <tr id="chatgpt_web_additional_info_toggle" style="display: none;"><td colspan="4"><div class="disclosure_toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="toggle_label">__MSG_customPrompts_show_additional_info__ [ChatGPT Web]</span></div></td></tr>
         <tr id="chatgpt_web_additional_info" style="display: none;"><!-- ChatGPT Web additional info -->
             <td colspan="2">
                 <label for="chatGPTWebModelNew" class="field_title">__MSG_prefs_OptionText_chatgpt_web_model__:</label>
@@ -101,9 +101,9 @@
                     <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>
             </td>
         </tr>
-        <tr id="api_additional_info_toggle" class="small_info"><!-- API settings additional info toggle-->
+        <tr id="api_additional_info_toggle"><!-- API settings additional info toggle-->
             <td colspan="4">
-                <span>__MSG_customPrompts_show_additional_info__ [API]</span>
+                <div class="disclosure_toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></svg><span class="toggle_label">__MSG_customPrompts_show_additional_info__ [API]</span></div>
             </td>
         </tr>
         <tr id="api_additional_info" style="display: none;"><!-- API settings additional info -->

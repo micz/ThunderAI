@@ -33,7 +33,7 @@
     --hit-bg:#fff3a3;  --hit-text:#3a2f00;
     --icon-hover-bg:#eceef2;  --save-bg:#eceef2;  --save-text:#a0a4ae;  --box:#ffffff;
     /* Per-panel identity: ChatGPT Web (warm) vs API (cool). */
-    --cgw-bg:#ffe6d5;  --cgw-hover:#ffd6bd;  --api-bg:#e0efff;  --api-hover:#c9e2ff;
+    --cgw-bg:#ffe6d5;  --cgw-hover:#ffd6bd;  --cgw-text:#6b2f0c;  --api-bg:#e0efff;  --api-hover:#c9e2ff;
 
     --font-ui: 'Segoe UI', system-ui, -apple-system, sans-serif;
     --font-mono: ui-monospace, 'Cascadia Code', monospace;
@@ -55,7 +55,7 @@
         --err-text:#f0a3a1;  --err-bg:#3d1b1b;  --err-border:#7d3a38;
         --hit-bg:#6b5a00;  --hit-text:#fff8d0;
         --icon-hover-bg:#33323b;  --save-bg:#2b2a33;  --save-text:#6f6f79;  --box:#2b2a33;
-        --cgw-bg:#270b00;  --cgw-hover:#581900;  --api-bg:#0f2437;  --api-hover:#1b456d;
+        --cgw-bg:#270b00;  --cgw-hover:#581900;  --cgw-text:#e8b48a;  --api-bg:#0f2437;  --api-hover:#1b456d;
     }
 }
 
@@ -1052,15 +1052,66 @@ table.prompts_list .action_output {
     margin-top: 8px;
 }
 
-.chatgpt_web_additional_info_toggle {
-    cursor: pointer;
-    color: var(--accent);
-    text-align: center;
-    padding: 5px;
+/* [ChatGPT Web] / [API] disclosure toggles — button shape with a leading icon,
+   same as the Menu position button, but each keeps its own panel colour
+   (--cgw-bg / --api-bg). They stay <div>s (not <button>s) so the existing click
+   wiring is untouched; the label lives in .toggle_label so the JS can swap
+   Show/Hide without wiping the icon. No `display` here: the list-row toggles are
+   hidden by their class rule and shown by JS as 'flex'; the add-form ones are
+   always flex inside their (JS-toggled) <tr>. */
+.disclosure_toggle {
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-sizing: border-box;
+    width: 100%;
     margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 9px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: var(--btn-tr);
 }
-.chatgpt_web_additional_info_toggle:hover {
-    text-decoration: underline;
+.chatgpt_web_additional_info_toggle.disclosure_toggle,
+#chatgpt_web_additional_info_toggle .disclosure_toggle {
+    background: var(--cgw-bg);
+    color: var(--cgw-text);
+    border: 1px solid var(--cgw-hover);
+}
+.chatgpt_web_additional_info_toggle.disclosure_toggle:hover,
+#chatgpt_web_additional_info_toggle .disclosure_toggle:hover {
+    background: var(--cgw-hover);
+}
+.api_additional_info_toggle.disclosure_toggle,
+#api_additional_info_toggle .disclosure_toggle {
+    background: var(--api-bg);
+    color: var(--edit-text);
+    border: 1px solid var(--api-hover);
+}
+.api_additional_info_toggle.disclosure_toggle:hover,
+#api_additional_info_toggle .disclosure_toggle:hover {
+    background: var(--api-hover);
+}
+.disclosure_toggle svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+/* Same reason as the action buttons: handlers read the toggle via currentTarget,
+   but keep children out of the hit-testing anyway. */
+.disclosure_toggle > * {
+    pointer-events: none;
+}
+/* Add form only, by row ID: a bare `td > .disclosure_toggle` would also match the
+   list-row toggles (direct children of their <td>) and, being more specific than
+   their `display: none` class rule, would show them outside edit mode. */
+#chatgpt_web_additional_info_toggle .disclosure_toggle,
+#api_additional_info_toggle .disclosure_toggle {
+    display: flex;
 }
 
 /* New-prompt form panel: same warm background as its toggle. On a <tr> the
@@ -1076,21 +1127,6 @@ table.prompts_list .action_output {
 }
 #chatgpt_web_additional_info td:last-child {
     border-radius: 0 8px 8px 0;
-}
-
-/* New-prompt form toggle: styled like the [API] toggle button (ID-targeted so it
-   doesn't pick up the class-based click handlers used by the edit-list rows). */
-#chatgpt_web_additional_info_toggle {
-    background: var(--cgw-bg);
-    color: var(--text);
-    border-radius: 8px;
-    text-align: center;
-    cursor: pointer;
-    padding: 5px;
-    margin-top: 8px;
-}
-#chatgpt_web_additional_info_toggle:hover {
-    text-decoration: underline;
 }
 
 .chatgpt_web_additional_info_show {
@@ -1116,7 +1152,6 @@ input.input_additional[type="text"] {
 .conntype_chatgpt_web_option { cursor: pointer; }
 
 .api_additional_info,
-.api_additional_info_toggle,
 .api_additional_info_show {
     background: var(--api-bg);
     color: var(--text);
@@ -1131,22 +1166,12 @@ input.input_additional[type="text"] {
     margin-top: 8px;
 }
 
-/* New-prompt form: the toggle row is styled by ID only (the panel below carries the
-   .api_additional_info class). It must NOT take that class, or the list-row panel
-   rules below (`tr {display:block}` / `td {display:block; width:auto}`) would strip
-   its cell out of the table layout and shrink it to its text width. */
-#api_additional_info_toggle {
-    background: var(--api-bg);
-    color: var(--text);
-    border-radius: 8px;
-    cursor: pointer;
-    text-align: center;
-    padding: 5px;
+/* New-prompt form: the toggle row must NOT take the .api_additional_info class, or
+   the list-row panel rules below (`tr {display:block}` / `td {display:block;
+   width:auto}`) would strip its cell out of the table layout. Its look comes from
+   the inner .disclosure_toggle; it is the first block of the form, so no top gap. */
+#api_additional_info_toggle .disclosure_toggle {
     margin-top: 0;
-}
-
-#api_additional_info_toggle:hover {
-    text-decoration: underline;
 }
 
 /* New-prompt form panel: same cool background as its toggle. The panel row keeps
@@ -1258,12 +1283,7 @@ input.input_additional[type="text"] {
 }
 
 .api_additional_info_toggle {
-    text-align: center;
-    padding: 5px;
-    cursor: pointer;
-    color: var(--accent);
     display: none;
-    margin-top: 8px;
 }
 
 .api_additional_info_show {
@@ -1275,9 +1295,6 @@ input.input_additional[type="text"] {
     margin-top: 8px;
 }
 
-.api_additional_info_toggle:hover {
-    text-decoration: underline;
-}
 
 /* ---- Advanced connection fields disclosure (per form) ----
    The .conn_adv rows injected by connection-ui.js are relocated into
