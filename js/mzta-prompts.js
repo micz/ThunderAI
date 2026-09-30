@@ -520,9 +520,9 @@ export function checkSpecialPromptText(id, text) {
 // the background page, so a prompt added, changed or removed in the policy is reflected at
 // the next Thunderbird start and nothing of the user's is ever touched.
 //
-// This module runs in BOTH the background page and the settings pages, and only the
-// background may read browser.storage.managed. So: in the background the managed module is
-// imported directly, and everywhere else the prompts are fetched over runtime.sendMessage.
+// This module runs in BOTH the background page and the other extension contexts. Either way
+// the policy comes from js/mzta-managed.js once managedReady() has resolved: in the
+// background the policy it loaded, everywhere else the copy hydrated from it.
 // The result is cached because getPrompts() is called repeatedly while building menus.
 let _orgPromptsCache = null;
 
@@ -530,19 +530,11 @@ async function getOrgPrompts() {
     if (_orgPromptsCache !== null) return _orgPromptsCache;
     let prompts = [];
     try {
-        // Importing mzta-managed.js is harmless in any context - it only READS the policy
-        // when loadManaged() is called, which happens in the background page alone. So the
-        // question is not "where am I" but "has the policy been loaded here", which
-        // hasLoaded() answers without any fragile context sniffing.
-        const { mztaManaged } = await import('./mzta-managed.js');
-        if (mztaManaged.hasLoaded()) {
-            prompts = mztaManaged.getOrgPrompts();
-        } else {
-            prompts = await browser.runtime.sendMessage({ command: 'get_org_prompts' }) || [];
-        }
+        await managedReady();
+        prompts = mztaManaged.getOrgPrompts();
     } catch (e) {
-        // A settings page opened while the background is still starting, or any other
-        // transient failure: behave as if there were no policy rather than break the page.
+        // A failed policy load in the background: behave as if there were no policy rather
+        // than break the menus. In a page managedReady() never throws (hydration fails open).
         prompts = [];
     }
     // Deep-cloned and normalised on the way out, so a caller that mutates a prompt (as the
@@ -557,33 +549,20 @@ export async function getOrgPromptIds() {
     return new Set((await getOrgPrompts()).map(p => String(p.id).toLowerCase()));
 }
 
-// Whether the policy forbids prompt management. Same dual-context shape as getOrgPrompts()
-// above - in the background the managed module is read directly, everywhere else the state
-// comes over runtime.sendMessage - and cached for the same reason: getPrompts() is called
-// repeatedly while building menus.
+// Whether the policy forbids prompt management. Read from js/mzta-managed.js after
+// managedReady(), like getOrgPrompts() above.
 //
 // It fails OPEN (false) on any error, matching pages/_lib/managed-ui.js. A restriction
 // misread as ON would make the user's own prompts vanish from every menu and turn
 // read-only in the management page, which is far worse than a restriction briefly not
 // applied: the policy is re-read at the next start anyway.
-let _promptMgmtDisabledCache = null;
-
 async function isPromptManagementDisabled() {
-    if (_promptMgmtDisabledCache !== null) return _promptMgmtDisabledCache;
-    let disabled = false;
     try {
-        const { mztaManaged } = await import('./mzta-managed.js');
-        if (mztaManaged.hasLoaded()) {
-            disabled = mztaManaged.isPromptManagementDisabled();
-        } else {
-            const state = await browser.runtime.sendMessage({ command: 'get_managed_state' });
-            disabled = (state && state.disablePromptManagement === true);
-        }
+        await managedReady();
+        return mztaManaged.isPromptManagementDisabled();
     } catch (e) {
-        disabled = false;
+        return false;
     }
-    _promptMgmtDisabledCache = disabled;
-    return _promptMgmtDisabledCache;
 }
 
 /**
@@ -596,27 +575,16 @@ function isUserOwnedPrompt(prompt) {
         && String(prompt.is_org) !== '1';
 }
 
-// Whether the policy takes the built-in prompts out of the menus. Same dual-context shape
-// and the same cache as isPromptManagementDisabled() above, and it fails OPEN for the same
-// reason: a restriction misread as ON would empty the menus of an unmanaged installation.
-let _defaultPromptsDisabledCache = null;
-
+// Whether the policy takes the built-in prompts out of the menus. Same source as
+// isPromptManagementDisabled() above, and it fails OPEN for the same reason: a restriction
+// misread as ON would empty the menus of an unmanaged installation.
 async function areDefaultPromptsDisabled() {
-    if (_defaultPromptsDisabledCache !== null) return _defaultPromptsDisabledCache;
-    let disabled = false;
     try {
-        const { mztaManaged } = await import('./mzta-managed.js');
-        if (mztaManaged.hasLoaded()) {
-            disabled = mztaManaged.areDefaultPromptsDisabled();
-        } else {
-            const state = await browser.runtime.sendMessage({ command: 'get_managed_state' });
-            disabled = (state && state.disableDefaultPrompts === true);
-        }
+        await managedReady();
+        return mztaManaged.areDefaultPromptsDisabled();
     } catch (e) {
-        disabled = false;
+        return false;
     }
-    _defaultPromptsDisabledCache = disabled;
-    return _defaultPromptsDisabledCache;
 }
 
 /**

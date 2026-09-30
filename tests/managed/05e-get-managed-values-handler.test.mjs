@@ -1,6 +1,8 @@
 // Spec 08 "Hydration in every other context", background side, and "Load ordering":
-//  - get_managed_values is answered by a dedicated runtime.onMessage listener registered
-//    right after loadManaged() in mzta-background.js; other commands return false;
+//  - get_managed_values is the one channel a page gets the policy through: values and locks,
+//    texts, connections, org prompts, restrictions, banner state; other commands return false;
+//  - it is answered by a dedicated runtime.onMessage listener registered before the first
+//    startup await (the migrations), and answers only once loadManaged() has settled;
 //  - only extension pages are answered (sender.url under runtime.getURL('')); anything
 //    else gets an empty payload;
 //  - api_webchat/ gets the real API key, every other page MANAGED_SECRET_MARKER;
@@ -18,7 +20,11 @@ import {
 } from '../helpers/background-handler.mjs';
 
 const POLICY = loadFixture('hydration.json');
-const EMPTY = { values: {}, lockedKeys: [], specialPromptsText: {}, specialPromptsConnection: {} };
+const EMPTY = {
+    values: {}, lockedKeys: [], specialPromptsText: {}, specialPromptsConnection: {},
+    orgPrompts: [], orgName: '', active: false,
+    disablePromptManagement: false, disableDefaultPrompts: false, disableSetupWizard: false,
+};
 
 let ctx, listener;
 
@@ -45,6 +51,16 @@ test('a settings page gets every policy value, the lock list and the texts; keys
     });
     assert.deepEqual([...reply.lockedKeys].sort(), ['chatgpt_api_key', 'chatgpt_model', 'connection_type']);
     assert.deepEqual(reply.specialPromptsText, POLICY._special_prompts_text);
+});
+
+test('the same reply carries the page state: active, org name, org prompts, restrictions', async () => {
+    const reply = await ask(SENDERS.options);
+    assert.equal(reply.active, true);
+    assert.equal(reply.orgName, ctx.mztaManaged.getOrgName());
+    assert.deepEqual(reply.orgPrompts, ctx.mztaManaged.getOrgPrompts());
+    assert.equal(reply.disablePromptManagement, false);
+    assert.equal(reply.disableDefaultPrompts, false);
+    assert.equal(reply.disableSetupWizard, false);
 });
 
 test('the reply to any non-webchat page never contains a policy key', async () => {
@@ -84,15 +100,13 @@ test('the reply is structured-cloneable (it crosses runtime.sendMessage)', async
 
 const code = stripComments(backgroundSource());
 
-test('the listener is registered right after loadManaged() and before the first preference read', () => {
+test('the listener is registered before the first startup await, so a page opened during startup is answered', () => {
     const { start } = locateManagedValuesListener();
+    const firstAwait = code.search(/^\S.*\bawait\b/m); // the first top-level await
     const load = code.indexOf('await mztaManaged.loadManaged();');
-    const reconcile = code.indexOf('await _reconcileFeatureFlags(');
-    assert.ok(load !== -1 && reconcile !== -1);
-    assert.ok(load < start, 'listener registered before loadManaged()');
-    assert.ok(start < reconcile, 'listener registered after _reconcileFeatureFlags()');
-    // Nothing between loadManaged() and the listener: "right after".
-    assert.equal(code.slice(load + 'await mztaManaged.loadManaged();'.length, start).trim(), '');
+    assert.ok(firstAwait !== -1 && load !== -1);
+    assert.ok(start < firstAwait, 'listener registered after a startup await');
+    assert.ok(start < load);
 });
 
 test('loadManaged() is called in exactly one place in the shipped code', () => {

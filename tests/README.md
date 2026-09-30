@@ -59,8 +59,7 @@ tests/
 │   ├── browser-mock.mjs        in-memory WebExtension API (one mock = one extension context)
 │   ├── load.mjs                module loader, console capture, fixtures, startBackground(), startPage()
 │   ├── background-handler.mjs  real background code cut out of mzta-background.js: the
-│   │                           get_managed_values listener, the get_managed_state /
-│   │                           get_org_prompts cases
+│   │                           get_managed_values listener
 │   ├── restart.mjs             "restart Thunderbird": run a scenario in a fresh worker thread
 │   ├── feature-pages.mjs       the feature pages with a specific-integration panel, by prefix
 │   │                           (no jsdom: level 1 checks it against special_prompts_with_integration)
@@ -187,12 +186,10 @@ failure with the reason, never as fewer tests passing.
 
 ### Where the background's answers come from
 
-- `get_managed_values`: the real listener, as in level 1;
-- `get_managed_state` and `get_org_prompts`: the real `case`s of the main background listener,
-  cut out by `extractBackgroundCase()` in `helpers/background-handler.mjs` and evaluated
-  against the background instance of `mztaManaged` - so the page hydrates, and sees exactly
-  the state, it would in Thunderbird. If one of those cases is restructured (no longer a bare
-  `return Promise.resolve(...)`), the locator throws: update it, not the tests;
+- `get_managed_values`: the real listener, as in level 1, evaluated against the background
+  instance of `mztaManaged`. It is the only channel a page gets the policy through (values,
+  locks, org prompts, restrictions, banner state), so the page hydrates, and sees exactly the
+  state, it would in Thunderbird;
 - `reload_menus`, `get_active_special_ids`, `popup_menu_ready`: a fixed minimal answer
   (`defaultCommands()` in `dom-page.mjs`), overridable with `opts.commands`. These are not
   managed-configuration code;

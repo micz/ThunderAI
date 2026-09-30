@@ -34,10 +34,10 @@
  *
  *  1. The policy is READ only in the background page (loadManaged()).
  *     browser.storage.managed.get() is known to fail on options pages in Thunderbird, so
- *     every other context obtains the managed state through browser.runtime.sendMessage
- *     instead: the values are hydrated by managedReady() ("get_managed_values"), the page
- *     state by pages/_lib/managed-ui.js ("get_managed_state"). Nothing in this file may
- *     depend on a DOM.
+ *     every other context obtains it through browser.runtime.sendMessage instead, in one
+ *     round trip: managedReady() hydrates this module from the background
+ *     ("get_managed_values"), and every accessor then answers as it does in the background.
+ *     Nothing in this file may depend on a DOM.
  *
  *  2. The policy is read ONCE, at startup. Thunderbird fires no change events for the
  *     managed storage area, so there is nothing to listen for and no live reload: an
@@ -202,6 +202,9 @@ export const mztaManaged = {
     // Same pattern as _loadPromise, for every context that is NOT the background page: the
     // Promise of the one-shot "get_managed_values" round trip started by managedReady().
     _hydratePromise: null,
+    // whenLoaded(): settled by loadManaged(), never started by it.
+    _whenLoaded: null,
+    _resolveWhenLoaded: null,
 
     // Same masking rule as js/mzta-prefs.js: a policy file is world-readable, but that is
     // no reason to copy a provider key into the error console as well.
@@ -222,7 +225,23 @@ export const mztaManaged = {
     loadManaged() {
         if (this._loadPromise) return this._loadPromise;
         this._loadPromise = this._doLoad();
+        // Settle whenLoaded() too, even on a failed load, so a waiting caller never hangs.
+        if (this._resolveWhenLoaded) this._loadPromise.then(this._resolveWhenLoaded, this._resolveWhenLoaded);
         return this._loadPromise;
+    },
+
+    /**
+     * Resolve once loadManaged() has settled, WITHOUT starting it. For the background's
+     * get_managed_values listener, which is registered before the startup migrations (so a page
+     * opened during startup is answered at all) and must not answer before the policy is read.
+     * Unlike managedReady() it never hydrates, so the background can never message itself.
+     */
+    whenLoaded() {
+        if (this._loadPromise) return this._loadPromise.then(() => {}, () => {});
+        if (!this._whenLoaded) {
+            this._whenLoaded = new Promise(resolve => { this._resolveWhenLoaded = () => resolve(); });
+        }
+        return this._whenLoaded;
     },
 
     /**
@@ -257,9 +276,12 @@ export const mztaManaged = {
     },
 
     /**
-     * Fill _values and _locked from the background. Fails OPEN: any failure leaves the
-     * context unmanaged, which is what it was before hydration existed, and the
-     * background still enforces every locked key on its own reads.
+     * Fill this context's copy of the policy from the background: the values and locks, the
+     * enforced texts and connections, the organization prompts, the restrictions, and whether a
+     * policy is active at all. This is the ONLY channel a page gets the policy through, so every
+     * accessor below answers the same in every context. Fails OPEN: any failure leaves the
+     * context unmanaged, which is what it was before hydration existed, and the background still
+     * enforces every locked key on its own reads.
      *
      * Policy-supplied API keys arrive as MANAGED_SECRET_MARKER, except in the API chat
      * window - the background decides, from the sender, never this side.
@@ -284,6 +306,14 @@ export const mztaManaged = {
                 }
             }
             this._specialPromptsConnection = normalizeHydratedConnections(reply.specialPromptsConnection);
+            this._orgPrompts = Array.isArray(reply.orgPrompts)
+                ? reply.orgPrompts.filter(p => isPlainObject(p) && typeof p.id === 'string') : [];
+            this._orgName = (typeof reply.orgName === 'string') ? reply.orgName : '';
+            // A restriction is on only for a literal true, as readRestriction() reads it.
+            this._disablePromptManagement = reply.disablePromptManagement === true;
+            this._disableDefaultPrompts = reply.disableDefaultPrompts === true;
+            this._disableSetupWizard = reply.disableSetupWizard === true;
+            this._active = reply.active === true;
         } catch (e) {
             this.logger.warn('Could not hydrate the managed configuration: ' + e);
         }
@@ -511,8 +541,8 @@ export const mztaManaged = {
      *
      * Distinguishes "the policy was read and there is none" from "the policy was never
      * read here", which is what every context other than the background page sees. A
-     * caller that gets false must ask the background over runtime.sendMessage instead of
-     * concluding that no policy exists.
+     * caller must not conclude from false that no policy exists: it awaits managedReady(),
+     * which hydrates the policy from the background, and reads the accessors after that.
      */
     hasLoaded() {
         return this._loaded;

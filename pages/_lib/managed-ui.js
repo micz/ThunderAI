@@ -20,82 +20,74 @@
  *  Managed-configuration UI, shared by the options page and every pages/* settings page.
  *
  *  A settings page NEVER reads browser.storage.managed: that call is known to fail on
- *  options pages in Thunderbird. It asks the background page instead, with a single
- *  "get_managed_state" message, and gets back only what it needs to render:
- *
- *      { active, orgName, lockedKeys }
- *
- *  Note what is NOT in that payload: the managed VALUES. Those reach the page through the
- *  normal preference read: js/mzta-prefs.js awaits mztaManaged.managedReady(), which in a
- *  page hydrates them once from the background ("get_managed_values"), so an input restored
- *  from mztaPrefs already holds the enforced or initial value. A policy-supplied API key is
- *  the exception: a settings page only ever receives MANAGED_SECRET_MARKER in its place
- *  (see js/mzta-managed.js).
+ *  options pages in Thunderbird. Everything it knows about the policy comes from
+ *  js/mzta-managed.js, which managedReady() hydrates once from the background
+ *  ("get_managed_values") - the values and locks, the restrictions, the banner state. The
+ *  first preference read already does that (js/mzta-prefs.js awaits it), so an input restored
+ *  from mztaPrefs holds the enforced or initial value, and getManagedState() below only reads
+ *  the hydrated module: there is no second round trip, and so no second answer to disagree
+ *  with the first. A policy-supplied API key reaches a settings page only as
+ *  MANAGED_SECRET_MARKER (see js/mzta-managed.js).
  *
  *  This is presentation only. It is NOT what stops a locked preference being written -
  *  that is the write guard in js/mzta-prefs.js, which holds even if a page forgets to call
  *  any of this, or if a control is re-enabled from the developer tools.
  */
 
-import { taLogger } from '../../js/mzta-logger.js';
 import { mztaManaged, managedReady, MANAGED_SECRET_MARKER } from '../../js/mzta-managed.js';
 import { prefs_default } from '../../options/mzta-options-default.js';
 import { resolveEnabledAccounts } from '../../js/mzta-utils.js';
 
 let _state = null;
-let _logger = null;
 
 /**
- * Fetch the managed state once and cache it for the lifetime of the page.
+ * The managed state this page renders, read once from the hydrated js/mzta-managed.js and
+ * cached for the lifetime of the page:
  *
- * Never throws and never leaves a page half-rendered: if the background is not ready yet
- * the page simply behaves as an unmanaged one. The background still enforces every locked
- * key on its own reads, and the write guard in js/mzta-prefs.js holds wherever the values
- * could be hydrated.
+ *     { active, orgName, lockedKeys, disablePromptManagement, disableDefaultPrompts,
+ *       disableSetupWizard }
+ *
+ * Never throws and never leaves a page half-rendered: if the hydration failed the page simply
+ * behaves as an unmanaged one (fail open, see managedReady()). The background still enforces
+ * every locked key on its own reads.
  */
 export async function getManagedState(do_debug = false) {
     if (_state) return _state;
-    if (!_logger) _logger = new taLogger("mzta-managed-ui", do_debug);
-    try {
-        const managed = await browser.runtime.sendMessage({ command: 'get_managed_state' });
-        _state = (managed && typeof managed === 'object') ? managed : {};
-    } catch (e) {
-        _logger.warn('Could not read the managed state: ' + e);
-        _state = {};
-    }
-    _state.active = _state.active === true;
-    _state.orgName = _state.orgName || '';
-    _state.lockedKeys = Array.isArray(_state.lockedKeys) ? _state.lockedKeys : [];
-    _state.disablePromptManagement = _state.disablePromptManagement === true;
-    _state.disableDefaultPrompts = _state.disableDefaultPrompts === true;
-    _state.disableSetupWizard = _state.disableSetupWizard === true;
+    await managedReady();
+    _state = {
+        active: mztaManaged.isManagedActive(),
+        orgName: mztaManaged.getOrgName(),
+        lockedKeys: mztaManaged.getLockedKeys(),
+        disablePromptManagement: mztaManaged.isPromptManagementDisabled(),
+        disableDefaultPrompts: mztaManaged.areDefaultPromptsDisabled(),
+        disableSetupWizard: mztaManaged.isSetupWizardDisabled(),
+    };
     return _state;
 }
 
-/**
- * True when the policy forbids creating, importing or exporting prompts.
- *
- * Synchronous, like isLockedKey(): getManagedState() must have run first. A caller that
- * has not awaited it gets false, which is the safe default for a page that could not reach
- * the background page at all.
- */
+// The synchronous accessors below read js/mzta-managed.js directly. They need the policy to
+// have been hydrated, which any awaited preference read - or getManagedState() - has done; a
+// caller that has awaited neither gets false, the safe default of a page that could not reach
+// the background at all.
+
+/** True when the policy forbids creating, importing or exporting prompts. */
 export function isPromptManagementDisabled() {
-    return !!_state && _state.disablePromptManagement === true;
+    return mztaManaged.isPromptManagementDisabled();
 }
 
 /**
- * True when the policy takes the built-in prompts out of the menus. Synchronous, see above.
+ * True when the policy takes the built-in prompts out of the menus.
  *
  * Independent of isPromptManagementDisabled(): the two restrictions cover disjoint sets of
  * prompts - the built-in ones here, the user's own ones there - and can be on together.
  */
 export function areDefaultPromptsDisabled() {
-    return !!_state && _state.disableDefaultPrompts === true;
+    return mztaManaged.areDefaultPromptsDisabled();
 }
 
-/** True when the policy forbids opening the setup wizard. Synchronous, see above. */
+/** True when the policy forbids opening the setup wizard. */
 export function isSetupWizardDisabled() {
-    return !!_state && _state.disableSetupWizard === true;
+    return mztaManaged.isSetupWizardDisabled();
 }
 
 /** The enforced preference keys on this page. Empty array when no policy is active. */
@@ -103,19 +95,21 @@ export async function getLockedKeys(do_debug = false) {
     return (await getManagedState(do_debug)).lockedKeys;
 }
 
-/** True when the given preference key is enforced by the policy. */
+/**
+ * True when the given preference key is enforced by the policy: the same answer the write
+ * guard in js/mzta-prefs.js acts on.
+ */
 export function isLockedKey(key) {
-    return !!_state && _state.lockedKeys.includes(key);
+    return mztaManaged.isManagedLocked(key);
 }
 
 /**
- * True when the given preference key is enforced by the policy, readable BEFORE
- * getManagedState() or applyManagedUI() has run - in a page's restoreOptions(), for instance.
- * Needs only a preference read to have been awaited first (js/mzta-prefs.js awaits
- * managedReady()), which restoreOptions() has always done by the time it decides anything.
+ * Same as isLockedKey(). Kept as the name restoreOptions() code uses: readable before
+ * getManagedState() or applyManagedUI() has run, since restoreOptions() has always awaited a
+ * preference read by the time it decides anything.
  */
 export function isEnforcedPref(key) {
-    return mztaManaged.isManagedLocked(key);
+    return isLockedKey(key);
 }
 
 /**

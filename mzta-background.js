@@ -103,6 +103,67 @@ browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     }
 });
 
+// The enterprise policy for every other extension context (see managedReady() in
+// js/mzta-managed.js): the one channel a page gets it through - values and locks, enforced
+// texts and connections, organization prompts, restrictions, banner state. Registered here,
+// before the first startup await, rather than in the main onMessage listener further down:
+// that one only exists after every startup await, and a page opened during startup would
+// otherwise hydrate empty and run unmanaged. It answers only once loadManaged() (below, after
+// the migrations) has settled: whenLoaded() waits for it without starting it. The main
+// listener's default branch returns false for this command, so the two never compete.
+browser.runtime.onMessage.addListener((message, sender) => {
+    if (!message || message.command !== 'get_managed_values') return false;
+    const empty = {
+        values: {}, lockedKeys: [], specialPromptsText: {}, specialPromptsConnection: {},
+        orgPrompts: [], orgName: '', active: false,
+        disablePromptManagement: false, disableDefaultPrompts: false, disableSetupWizard: false,
+    };
+    // Extension pages only. Content scripts (compose and message display) share this
+    // channel but never import js/mzta-prefs.js, so they have no use for the values.
+    const ext_root = browser.runtime.getURL('');
+    if (!sender || typeof sender.url !== 'string' || !sender.url.startsWith(ext_root)) {
+        return Promise.resolve(empty);
+    }
+    return mztaManaged.whenLoaded().then(() => {
+        // A policy-supplied API key goes ONLY to the API chat window, which needs it to call
+        // the provider. Every settings page gets MANAGED_SECRET_MARKER instead, so the key can
+        // neither be revealed with the password eye toggle nor copied into a prompt.
+        const is_webchat = sender.url.startsWith(browser.runtime.getURL('api_webchat/'));
+        const values = {};
+        for (const key of Object.keys(prefs_default)) {
+            if (!mztaManaged.hasManagedValue(key)) continue;
+            values[key] = (key.endsWith('_api_key') && !is_webchat)
+                ? MANAGED_SECRET_MARKER
+                : mztaManaged.getManagedValue(key);
+        }
+        // The per-feature connections are overlaid by getSpecialPrompts() in every context too.
+        // Their API keys follow the same rule as the global ones: the real key for the API chat
+        // window (it runs a feature's connection itself, via loadPrompt()), the marker elsewhere.
+        const connections = mztaManaged.getSpecialPromptsConnection();
+        if (!is_webchat) {
+            for (const entry of Object.values(connections)) {
+                for (const [name, field] of Object.entries(entry.fields)) {
+                    if (name.endsWith('_api_key')) field.value = MANAGED_SECRET_MARKER;
+                }
+            }
+        }
+        // The enforced special prompt texts: getSpecialPrompts() overlays them in every context,
+        // and the feature pages show them read-only. No secret in them, nor in the org prompts.
+        return {
+            values: values,
+            lockedKeys: mztaManaged.getLockedKeys(),
+            specialPromptsText: mztaManaged.getSpecialPromptsText(),
+            specialPromptsConnection: connections,
+            orgPrompts: mztaManaged.getOrgPrompts(),
+            orgName: mztaManaged.getOrgName(),
+            active: mztaManaged.isManagedActive(),
+            disablePromptManagement: mztaManaged.isPromptManagementDisabled(),
+            disableDefaultPrompts: mztaManaged.areDefaultPromptsDisabled(),
+            disableSetupWizard: mztaManaged.isSetupWizardDisabled(),
+        };
+    });
+});
+
 // Must run FIRST, before anything reads a preference. It also carries the one-shot
 // migration flags into storage.local — migrateEnabledToShowIn() below reads one of them,
 // and migrateMenuOrderAlphabetic() (called further down) reads the other, which would
@@ -178,59 +239,12 @@ let prefs_init = {};
 // The enterprise policy must be in place before the FIRST preference read, because
 // js/mzta-prefs.js resolves every read against it. This is the only place it is loaded:
 // browser.storage.managed is read in the background page and nowhere else, and every
-// other context asks for the state over runtime.sendMessage ("get_managed_state").
+// other context hydrates it over runtime.sendMessage ("get_managed_values", above).
 //
 // It runs after the migration block above, which is documented as having to come first,
 // and before _reconcileFeatureFlags() below, which is the first thing to read a
 // preference. With no policy installed this resolves silently and changes nothing.
 await mztaManaged.loadManaged();
-
-// Hydration of the policy VALUES for every other extension context (see managedReady() in
-// js/mzta-managed.js). Registered here, on its own, rather than in the main onMessage
-// listener further down: that one only exists after every startup await, and a page opened
-// during startup would otherwise hydrate empty and show the unmanaged values. The main
-// listener's default branch returns false for this command, so the two never compete.
-browser.runtime.onMessage.addListener((message, sender) => {
-    if (!message || message.command !== 'get_managed_values') return false;
-    const empty = { values: {}, lockedKeys: [], specialPromptsText: {}, specialPromptsConnection: {} };
-    // Extension pages only. Content scripts (compose and message display) share this
-    // channel but never import js/mzta-prefs.js, so they have no use for the values.
-    const ext_root = browser.runtime.getURL('');
-    if (!sender || typeof sender.url !== 'string' || !sender.url.startsWith(ext_root)) {
-        return Promise.resolve(empty);
-    }
-    // A policy-supplied API key goes ONLY to the API chat window, which needs it to call
-    // the provider. Every settings page gets MANAGED_SECRET_MARKER instead, so the key can
-    // neither be revealed with the password eye toggle nor copied into a prompt.
-    const is_webchat = sender.url.startsWith(browser.runtime.getURL('api_webchat/'));
-    const values = {};
-    const locked = mztaManaged.getLockedKeys();
-    for (const key of Object.keys(prefs_default)) {
-        if (!mztaManaged.hasManagedValue(key)) continue;
-        values[key] = (key.endsWith('_api_key') && !is_webchat)
-            ? MANAGED_SECRET_MARKER
-            : mztaManaged.getManagedValue(key);
-    }
-    // The per-feature connections are overlaid by getSpecialPrompts() in every context too.
-    // Their API keys follow the same rule as the global ones: the real key for the API chat
-    // window (it runs a feature's connection itself, via loadPrompt()), the marker elsewhere.
-    const connections = mztaManaged.getSpecialPromptsConnection();
-    if (!is_webchat) {
-        for (const entry of Object.values(connections)) {
-            for (const [name, field] of Object.entries(entry.fields)) {
-                if (name.endsWith('_api_key')) field.value = MANAGED_SECRET_MARKER;
-            }
-        }
-    }
-    // The enforced special prompt texts: getSpecialPrompts() overlays them in every context,
-    // and the feature pages show them read-only. No secret in them.
-    return Promise.resolve({
-        values: values,
-        lockedKeys: locked,
-        specialPromptsText: mztaManaged.getSpecialPromptsText(),
-        specialPromptsConnection: connections
-    });
-});
 
 // Repair any feature flag left enabled on an unusable connection before anything derives
 // from it: this is where a wizard run or a prefs import from a previous session gets
@@ -936,28 +950,6 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
             case 'get_active_special_ids':
                 return _getActiveSpecialIds();
-                break;
-            // The managed-configuration bridge. browser.storage.managed is read in this
-            // page and nowhere else - the call is known to fail on options pages in
-            // Thunderbird - so every other context asks for the state through these two.
-            case 'get_managed_state':
-                // Deliberately does NOT include the managed VALUES: the options page only
-                // needs to know which controls to disable and what to put in the banner.
-                // Keeping the values here means a policy-supplied API key never travels
-                // over the message channel at all.
-                return Promise.resolve({
-                    active: mztaManaged.isManagedActive(),
-                    orgName: mztaManaged.getOrgName(),
-                    lockedKeys: mztaManaged.getLockedKeys(),
-                    // Restrictions: policy-only switches with no preference behind them,
-                    // so they cannot travel through lockedKeys.
-                    disablePromptManagement: mztaManaged.isPromptManagementDisabled(),
-                    disableDefaultPrompts: mztaManaged.areDefaultPromptsDisabled(),
-                    disableSetupWizard: mztaManaged.isSetupWizardDisabled(),
-                });
-                break;
-            case 'get_org_prompts':
-                return Promise.resolve(mztaManaged.getOrgPrompts());
                 break;
             case 'shortcut_do_prompt':
                 taLog.log("Executing shortcut, promptId: " + message.promptId);

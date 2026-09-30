@@ -105,10 +105,18 @@ policy-configured profile — and the write guard was inert in pages, because
   the first preference read), so it just awaits the load. It never starts anything, and so
   the background can never end up messaging itself;
 - **everywhere else** — it starts `_hydrate()` once and awaits it. `_hydrate()` sends
-  `{command: 'get_managed_values'}` and fills `_values` / `_locked` / `_specialPromptsText` /
-  `_specialPromptsConnection` from `{values, lockedKeys, specialPromptsText,
-  specialPromptsConnection}`. What is malformed is dropped: a locked key without a value, a
-  non-string text, a connection entry or field that does not have the validated shape.
+  `{command: 'get_managed_values'}` and fills this context's copy of the whole policy from
+  `{values, lockedKeys, specialPromptsText, specialPromptsConnection, orgPrompts, orgName,
+  active, disablePromptManagement, disableDefaultPrompts, disableSetupWizard}`. What is
+  malformed is dropped: a locked key without a value, a non-string text, a connection entry or
+  field that does not have the validated shape, an org prompt that is not an object with a
+  string id; a restriction is on only for a literal `true`.
+
+This is the **only** channel a page gets the policy through. Every `mztaManaged` accessor
+then answers in a page exactly as in the background: the prompt views in `js/mzta-prompts.js`
+(org prompts, restrictions) and `pages/_lib/managed-ui.js` (banner, locks, restrictions) read
+the hydrated module, never a second background command, so there is one answer to "is this
+locked" in a page — the one the write guard acts on.
 
 Hydration is started by the **first preference read**, never by importing the module, and
 never calls `browser.storage.managed` — the reason for the import rule above does not apply
@@ -122,9 +130,13 @@ unmanaged, with a `taLogger.warn()`. Nothing is retried; the background still en
 locked key on its own reads.
 
 `get_managed_values` is answered by a **dedicated `runtime.onMessage` listener registered
-right after `loadManaged()`** in `mzta-background.js`, not by the main listener: that one only
-exists after every startup `await`, and a page opened during startup would otherwise hydrate
-empty. The main listener's `default` branch returns `false`, so the two never compete. Only
+before the first startup `await`** in `mzta-background.js` (ahead of the migration block), not
+by the main listener: that one only exists after every startup `await`, and a page opened
+during startup would otherwise get no answer and run unmanaged. The listener answers only once
+`loadManaged()` has settled: it waits on `mztaManaged.whenLoaded()`, which resolves when the
+load does **without starting it** (the load keeps its place after the migrations) and, unlike
+`managedReady()`, never hydrates — so the background can never message itself. The main
+listener's `default` branch returns `false`, so the two never compete. Only
 extension pages are answered (`sender.url` under `runtime.getURL('')`); a content script gets
 an empty payload — none of them imports `js/mzta-prefs.js`.
 
@@ -349,7 +361,7 @@ lock a fleet out of its own prompts.
 A policy that only restricts — no preference, no prompt — still counts as **active**: the
 banner and the disabled controls have to be explained.
 
-They travel to pages in the `get_managed_state` payload as `disablePromptManagement`,
+They travel to pages in the `get_managed_values` reply as `disablePromptManagement`,
 `disableDefaultPrompts` and `disableSetupWizard`. They cannot ride in `lockedKeys`, which holds preference keys.
 
 #### `_disable_prompt_management`
@@ -633,8 +645,7 @@ preference key:
   own parent is the editor-highlight wrapper.
 
 Every Save and Reset handler also **returns early** on `isEnforcedPromptText(id)` (the
-calendar Save on either calendar id). Both helpers read `mztaManaged` after hydration, not
-the `get_managed_state` payload, which carries no prompt data.
+calendar Save on either calendar id). Both helpers read `mztaManaged` after hydration.
 
 ### Startup warning
 
@@ -978,22 +989,24 @@ the single most surprising property of the mechanism.
 ## UI
 
 [`pages/_lib/managed-ui.js`](../pages/_lib/managed-ui.js), shared by the options page, the
-six feature settings pages and the setup wizard. One `sendMessage` round trip per page for
-the page state (the values travel separately, in the hydration round trip):
+six feature settings pages and the setup wizard. It sends **no message of its own**: the page
+state is read from the hydrated `mztaManaged` (see
+[Hydration in every other context](#hydration-in-every-other-context)), which the first
+preference read has already filled:
 
 ```javascript
-browser.runtime.sendMessage({ command: 'get_managed_state' })
+await getManagedState()
 // -> { active, orgName, lockedKeys, disablePromptManagement, disableDefaultPrompts, disableSetupWizard }
 ```
 
 **No page ever calls `browser.storage.managed` itself**, and `runtime.getBackgroundPage()`
 is not used.
 
-Note what the payload does **not** carry: the managed *values*. Those reach the page through
-the normal preference read, because `js/mzta-prefs.js` hydrates them on the first read (see
-[Hydration in every other context](#hydration-in-every-other-context)); a policy-supplied API
-key arrives only as `MANAGED_SECRET_MARKER`. So an input restored from `mztaPrefs` already
-holds the enforced or initial value by the time `applyManagedUI()` disables it.
+The values come with the same hydration, through the normal preference read; a
+policy-supplied API key arrives only as `MANAGED_SECRET_MARKER`. So an input restored from
+`mztaPrefs` already holds the enforced or initial value by the time `applyManagedUI()`
+disables it. `isLockedKey()` and `isEnforcedPref()` are both `mztaManaged.isManagedLocked()`:
+the page's guards and the write guard can never disagree.
 
 Control matching relies on the invariant `saveOptions()`/`restoreOptions()` already depend
 on: **an `.option-input` element's `id` IS its preference key.** So no mapping table is
@@ -1047,9 +1060,9 @@ a restriction covers. It marks the element with the same `data-mzta-managed` att
 `.managed_disabled`.
 
 `isPromptManagementDisabled()` and `isSetupWizardDisabled()` are synchronous, like
-`isLockedKey()`: `getManagedState()` must have been awaited first. A caller that has not
-gets `false`, which is the safe default for a page that could not reach the background at
-all — the same fallback the rest of this module takes.
+`isLockedKey()`: the policy must have been hydrated first (`getManagedState()`, or any awaited
+preference read). A caller that has not gets `false`, which is the safe default for a page
+that could not reach the background at all — the same fallback the rest of this module takes.
 
 ### The setup wizard
 
@@ -1189,8 +1202,9 @@ Different from adding a preference, and more work — there is no allowlist to f
 1. A new `_`-prefixed constant and a `case` in pass 1 of `_doLoad()`, reading through
    `readRestriction()`.
 2. Backing state, an accessor, and a line in the `_active` expression.
-3. A field in the `get_managed_state` payload, and its normalisation plus a synchronous
-   accessor in `managed-ui.js`.
+3. A field in the `get_managed_values` reply, read back in `_hydrate()` (on only for a
+   literal `true`), plus a field in `getManagedState()` and a synchronous accessor in
+   `managed-ui.js`.
 4. An explicit guard at every site it covers — including any that can be reached by direct
    URL — plus a visible explanation at each, or the missing control reads as a bug.
 5. If it hides or disables **user data** rather than a control: mark the data, never filter
@@ -1222,8 +1236,8 @@ works, how to add a scenario or a page: [`tests/README.md`](../tests/README.md).
 - **DOM** (`tests/dom/<page>/*.dom.mjs`) loads each page's real HTML file and real module
   script in jsdom - the project's only dependency, a pinned dev dependency, never shipped and
   never imported by runtime code - with the page's background answered by the real
-  background code: the `get_managed_values` listener and the `get_managed_state` /
-  `get_org_prompts` cases are cut out of `mzta-background.js` and run verbatim. The browser
+  background code: the `get_managed_values` listener, the one channel a page gets the policy
+  through, is cut out of `mzta-background.js` and run verbatim. The browser
   mock throws on (and records) any API it does not model, so a page the harness cannot run
   fails instead of silently passing fewer tests.
 
@@ -1240,7 +1254,7 @@ unmanaged baseline of a page, comes from a separate module instance or a worker 
 | Resolution order, log masking | `02-resolution-order` | `03-sweep-unlocked` |
 | The write guard (per key, marker, no residue) | `03-write-guard` | `02-sweep-locked` (write attempts, as rendered and re-enabled by hand) |
 | The allowlist, Validation, The lock convention | `04-validation`, `04-allowlist-derivation` | `02-sweep-locked`, `03-sweep-unlocked` (generated from the allowlist) |
-| Hydration, Policy-supplied API keys, Load ordering | `05a`-`05e` | `options/05-secrets-locked`, `options/06-secrets-unlocked` |
+| Hydration, Policy-supplied API keys, Load ordering | `05a`-`05g` | `options/05-secrets-locked`, `options/06-secrets-unlocked` |
 | Locked model selects | - | `options/07-locked-model`, `setup-wizard/07-locked-model` |
 | No seeding from policy values | - | `spamfilter/05-no-seeding-from-policy` |
 | A locked per-feature connection type | - | `<feature>/02-sweep-locked`, `spamfilter/06-locked-connection-type` |
@@ -1266,7 +1280,7 @@ When a preference is added, update that sentence and the test's expected count t
 
 **Not covered:** the parts of `mzta-background.js` that only run inside its startup - the
 startup warnings and `processEmails()` - which are tested only through the functions they
-call, and by hand in Thunderbird. Moving or restructuring the cut-out handlers means updating
+call, and by hand in Thunderbird. Moving or restructuring the cut-out listener means updating
 the locators in `tests/helpers/background-handler.mjs`. Nor is real layout: jsdom has none, so
 the DOM tests check where a marker is inserted, not the `mzta-design.css` flex overrides that
 make it look right (see [Marker placement and inertness](#marker-placement-and-inertness)).

@@ -17,9 +17,8 @@
  *    6. dispatch DOMContentLoaded and wait until the page has settled.
  *
  *  The background end of runtime.sendMessage is the real background code wherever it can be
- *  run without starting mzta-background.js: the get_managed_values listener and the
- *  get_managed_state / get_org_prompts cases are cut out of it verbatim
- *  (./background-handler.mjs). The few other commands a page sends get a fixed, minimal
+ *  run without starting mzta-background.js: the get_managed_values listener, the one channel
+ *  a page gets the policy through, is cut out of it verbatim (./background-handler.mjs). The few other commands a page sends get a fixed, minimal
  *  answer (COMMANDS below); anything else is a recorded violation.
  *
  *  One file = one page = one policy, as for the level-1 suite: the page's modules are
@@ -32,7 +31,6 @@ import assert from 'node:assert/strict';
 import { JSDOM, VirtualConsole } from 'jsdom';
 import { EXT_ORIGIN } from './browser-mock.mjs';
 import { startPage, repoPath, REPO } from './load.mjs';
-import { extractBackgroundCase } from './background-handler.mjs';
 
 /** Every page the suite can open: name -> HTML path, relative to the repository root. */
 export const PAGES = {
@@ -302,8 +300,6 @@ export async function openPage(page, opts = {}) {
 
     // 3. mock + modules + background
     let mods = null;
-    let getState = null;
-    let getOrgPrompts = null;
     let commands = null;
     const ctx = await startPage({
         policy: opts.policy ?? null,
@@ -317,16 +313,8 @@ export async function openPage(page, opts = {}) {
             globalThis.browser = strict;
             globalThis.messenger = strict;
         },
-        onOtherMessage(message, sender, { bgManaged }) {
+        onOtherMessage(message, sender) {
             const command = message && message.command;
-            if (command === 'get_managed_state') {
-                getState ??= extractBackgroundCase('get_managed_state', { mztaManaged: bgManaged });
-                return getState();
-            }
-            if (command === 'get_org_prompts') {
-                getOrgPrompts ??= extractBackgroundCase('get_org_prompts', { mztaManaged: bgManaged });
-                return getOrgPrompts();
-            }
             if (commands && Object.hasOwn(commands, command)) return commands[command](message, sender);
             rec.violations.push('unmocked background command ' + JSON.stringify(message));
             throw new Error('dom-page: unmocked background command ' + JSON.stringify(command ?? message));
