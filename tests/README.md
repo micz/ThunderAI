@@ -46,6 +46,11 @@ branch), or by adding the `run-tests` label to a pull request. The label is remo
 the run ends, so adding it again runs the suite again. Level 1 runs first, **before**
 installing anything (which proves it still needs no install), then `npm ci && npm test`.
 
+Nothing waits forever: node:test has no default timeout, so `npm test`, `npm run test:dom` and
+the CI level-1 step pass `--test-timeout=120000` (per test), the CI job has `timeout-minutes: 20`,
+and the worker threads of `helpers/restart.mjs` / `helpers/dom-probe.mjs` reject when they exit
+without an answer or give none within their own timeout (`99-harness-workers`).
+
 Nothing here is packaged: `create_xpi_from_folder.bat`, the packaging script shared by the
 add-ons (outside this repository), must exclude the root `tests\` folder, `package.json`,
 `package-lock.json` and `node_modules\` (`-x!tests -x!package.json -x!package-lock.json

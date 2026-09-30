@@ -62,15 +62,31 @@ async function runInWorker({ mode, page, opts }) {
     throw new Error('dom-probe: unknown mode ' + mode);
 }
 
+// One page opened in jsdom; anything near this means it hangs.
+const WORKER_TIMEOUT_MS = 90000;
+
 function run(data) {
     return new Promise((resolve, reject) => {
         const w = new Worker(new URL(import.meta.url), { workerData: data, stdout: true, stderr: true });
         let err = '';
+        let answered = false;
         w.stderr.on('data', c => { err += c; });
         w.stdout.on('data', () => {});
-        w.once('message', m => (m.error ? reject(new Error(m.error + '\n' + err)) : resolve(m.result)));
-        w.once('error', reject);
-        w.once('exit', code => { if (code !== 0) reject(new Error('dom-probe worker exited with ' + code + '\n' + err)); });
+        const timer = setTimeout(() => {
+            reject(new Error('dom-probe worker (' + data.mode + ') gave no answer in ' + WORKER_TIMEOUT_MS + ' ms\n' + err));
+            w.terminate();
+        }, WORKER_TIMEOUT_MS);
+        w.once('message', m => {
+            answered = true;
+            clearTimeout(timer);
+            if (m.error) reject(new Error(m.error + '\n' + err)); else resolve(m.result);
+        });
+        w.once('error', e => { clearTimeout(timer); reject(e); });
+        // Rejects on ANY exit without an answer, code 0 included (see restart.mjs).
+        w.once('exit', code => {
+            clearTimeout(timer);
+            if (!answered) reject(new Error('dom-probe worker exited with ' + code + ' without an answer\n' + err));
+        });
     });
 }
 

@@ -19,6 +19,8 @@ jobs:
   managed-configuration:
     if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'run-tests'
     runs-on: ubuntu-latest
+    # The whole suite takes a few minutes; a hung run must not sit until GitHub's 6-hour limit.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -33,7 +35,7 @@ jobs:
           cache: npm
       # Before installing anything: the level-1 suite must keep running with no install.
       - name: Level-1 suite, no dependencies
-        run: node --test "tests/**/*.test.mjs"
+        run: node --test --test-timeout=120000 "tests/**/*.test.mjs"
       - name: Install the development tooling
         run: npm ci
       - name: Whole suite (level 1 and DOM tests)
@@ -43,6 +45,7 @@ jobs:
     needs: managed-configuration
     if: always() && github.event_name == 'pull_request' && github.event.label.name == 'run-tests'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       pull-requests: write
     steps:
