@@ -378,6 +378,8 @@ preference is accepted as a non-negative integer. These cases need a line of cod
   `PREF_NUMBER_RANGES` or a rule in `prefValueProblem()` (see [Content rules](#content-rules));
 - a control with its own load/save logic gets `data-mzta-pref` and `lockCompanions()` (see
   [Controls with their own load/save logic](08c-managed-ui.md#controls-with-their-own-loadsave-logic-data-mzta-pref));
+- a button that changes it from outside its control (a "Reset to default") gets
+  `data-mzta-companion-of="<key>"`, and its handler an early return on `isLockedKey()`;
 - a classic content script cannot use `mztaPrefs`: give it a background command that does,
   as the tag dialog does.
 

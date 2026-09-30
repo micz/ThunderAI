@@ -37,6 +37,10 @@ export const COMPANIONS = {
     spamfilter_skip_addresses: ['btn_save_skip_addresses'],
     add_tags_exclusions: ['btn_save_excl_list'],
     summarize_auto_senders_list: ['btn_save_auto_senders'],
+    // "Reset to default" buttons of number inputs.
+    max_prompt_length: ['reset_max_prompt_length'],
+    special_command_timeout: ['reset_special_command_timeout'],
+    summarize_max_messages: ['reset_summarize_max_messages'],
 };
 
 const isSecret = key => key.endsWith('_api_key');
@@ -245,6 +249,19 @@ export async function lockedSweep(page, { todo, expected = {} } = {}) {
                     assert.equal(b.disabled, true, '#' + id + ' disabled');
                     assert.equal(b.dataset.mztaManaged, '1', '#' + id + ' marked');
                 }
+            });
+            test(`locked ${c.key}: a companion re-enabled and clicked by hand leaves the control showing the policy value`, t('companions'), async () => {
+                // Its handler must return early: a Reset that refills the input would show a value
+                // the write guard then refuses to store.
+                for (const id of COMPANIONS[c.key]) {
+                    const b = ctx.document.getElementById(id);
+                    b.disabled = false;
+                    await ctx.click(b);
+                    b.disabled = true;
+                }
+                const want = isSecret(c.key) ? MANAGED_SECRET_MARKER
+                    : (expected[c.key] ? expected[c.key].value : c.P);
+                assert.ok(shows(el(), want), `expected ${JSON.stringify(want)}, shows ${describeShown(el())}`);
             });
         }
         test(`locked ${c.key}: opening the page left the stored user value alone`, t('storage'), () => {

@@ -551,12 +551,15 @@ function setConnTestState(state, message){
 }
 
 function resetMaxPromptLength(){
+  // The button being disabled is not the same as the action being unavailable.
+  if (isLockedKey('max_prompt_length')) return;
   let maxPromptLength = document.getElementById('max_prompt_length');
   maxPromptLength.value = prefs_default.max_prompt_length;
   mztaPrefs.setPref('max_prompt_length', prefs_default.max_prompt_length);
 }
 
 function resetSpecialCommandTimeout(){
+  if (isLockedKey('special_command_timeout')) return;
   let specialCommandTimeout = document.getElementById('special_command_timeout');
   specialCommandTimeout.value = prefs_default.special_command_timeout;
   mztaPrefs.setPref('special_command_timeout', prefs_default.special_command_timeout);

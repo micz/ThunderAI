@@ -160,6 +160,13 @@ export async function applyManagedUI(root = document, do_debug = false) {
         element.dispatchEvent(new Event('mzta-managed'));
     });
 
+    // Plain buttons that change a preference from outside its control (a number input's
+    // "Reset to default") opt in with data-mzta-companion-of="<preference key>", and are locked
+    // with it, like lockCompanions() does by hand. Their handlers must still return early.
+    root.querySelectorAll('[data-mzta-companion-of]').forEach(element => {
+        if (locked.has(element.dataset.mztaCompanionOf)) disableCompanions([element]);
+    });
+
     return state;
 }
 

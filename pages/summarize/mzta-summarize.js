@@ -269,6 +269,8 @@ function summarize_setAutoSendersList(summarize_auto_senders_list) {
 }
 
 function resetSummarizeMaxMessages(){
+  // The button being disabled is not the same as the action being unavailable.
+  if (isLockedKey('summarize_max_messages')) return;
   let summarize_max_messages = document.getElementById('summarize_max_messages');
   summarize_max_messages.value = prefs_default.summarize_max_messages;
   mztaPrefs.setPref('summarize_max_messages', prefs_default.summarize_max_messages);

@@ -67,6 +67,14 @@ developer tools. `updateAutoSendersState()` on the summarize page, which reassig
 on every `summarize_auto` change, uses the respecting setter too: it could previously
 re-enable a locked `summarize_auto_senders` toggle.
 
+**A plain `.option-input` can have companions too**: a number input's "Reset to default" button
+(`reset_max_prompt_length`, `reset_special_command_timeout` on the options page,
+`reset_summarize_max_messages` on the summarize page) refills the input and writes the default.
+Such a button carries `data-mzta-companion-of="<preference key>"` in the markup, and
+`applyManagedUI()` locks it together with its key, exactly as `lockCompanions()` would, with no
+code in the page. Its click handler returns early on `isLockedKey()` as well: re-enabled by hand,
+it would otherwise show a default the write guard then refuses to store.
+
 The marker lands right of the textarea's group title (see "Group titles win over the
 column" below; the `.mzta_field` column is only the fallback), and in the checkbox's
 `.feature_row` (before the `.mzta_switch`). No new CSS was needed.
