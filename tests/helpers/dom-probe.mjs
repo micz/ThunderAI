@@ -6,10 +6,16 @@
  *  allowlisted keys have a control on that page, what those controls accept (select options,
  *  number ranges) and how the page shows them without any policy (the baseline). The page's
  *  modules are singletons, so that cannot happen in the test's own process: it happens here,
- *  in a worker, exactly like helpers/restart.mjs runs a second extension context.
+ *  in a worker (./core/worker.mjs), exactly like helpers/restart.mjs runs a second extension
+ *  context.
  */
 
-import { Worker, isMainThread, workerData, parentPort } from 'node:worker_threads';
+import {
+    isMainThread,
+    workerData,
+    parentPort,
+} from 'node:worker_threads';
+import { runWorker } from './core/worker.mjs';
 
 /** Serialisable description of one managed-candidate control. */
 function describe(el) {
@@ -66,27 +72,11 @@ async function runInWorker({ mode, page, opts }) {
 const WORKER_TIMEOUT_MS = 90000;
 
 function run(data) {
-    return new Promise((resolve, reject) => {
-        const w = new Worker(new URL(import.meta.url), { workerData: data, stdout: true, stderr: true });
-        let err = '';
-        let answered = false;
-        w.stderr.on('data', c => { err += c; });
-        w.stdout.on('data', () => {});
-        const timer = setTimeout(() => {
-            reject(new Error('dom-probe worker (' + data.mode + ') gave no answer in ' + WORKER_TIMEOUT_MS + ' ms\n' + err));
-            w.terminate();
-        }, WORKER_TIMEOUT_MS);
-        w.once('message', m => {
-            answered = true;
-            clearTimeout(timer);
-            if (m.error) reject(new Error(m.error + '\n' + err)); else resolve(m.result);
-        });
-        w.once('error', e => { clearTimeout(timer); reject(e); });
-        // Rejects on ANY exit without an answer, code 0 included (see restart.mjs).
-        w.once('exit', code => {
-            clearTimeout(timer);
-            if (!answered) reject(new Error('dom-probe worker exited with ' + code + ' without an answer\n' + err));
-        });
+    return runWorker(new URL(import.meta.url), data, {
+        label: 'dom-probe worker (' + data.mode + ')',
+        timeoutMs: WORKER_TIMEOUT_MS,
+        captureOutput: true,
+        unwrap: true,
     });
 }
 

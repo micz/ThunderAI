@@ -295,7 +295,7 @@ export async function lockedSweep(page, { todo, expected = {} } = {}) {
         assert.ok(!stored.includes(MANAGED_SECRET_MARKER), 'MANAGED_SECRET_MARKER stored in _special_prompts');
     });
 
-    // Never a known issue: a page the harness cannot run must fail (dom-known-issues.mjs).
+    // Never a known issue: a page the harness cannot run must fail (known-issues/managed.mjs).
     test('the page ran on modelled APIs only', () => assertHarnessClean(ctx));
     return ctx;
 }
@@ -364,7 +364,7 @@ export async function unlockedSweep(page, { todo } = {}) {
         });
     }
 
-    // Never a known issue: a page the harness cannot run must fail (dom-known-issues.mjs).
+    // Never a known issue: a page the harness cannot run must fail (known-issues/managed.mjs).
     test('the page ran on modelled APIs only', () => assertHarnessClean(ctx));
     return ctx;
 }

@@ -454,7 +454,8 @@ Run from the repository root. CI runs level 1 **before** installing anything, th
 `npm ci && npm test`, on demand only: by hand (`workflow_dispatch`, any branch) or when the
 `run-tests` label is added to a pull request, which the run then removes
 (`.github/workflows/tests.yml`). How it
-works, how to add a scenario or a page: [`tests/README.md`](../tests/README.md).
+works: [`tests/README.md`](../tests/README.md); how to add a managed scenario or a page:
+[`tests/managed/README.md`](../tests/managed/README.md).
 
 - **Level 1** (`tests/managed/*.test.mjs`) imports the shipped modules as they are.
 - **DOM** (`tests/dom/<page>/*.dom.mjs`) loads each page's real HTML file and real module
@@ -515,5 +516,5 @@ written from this file, not from the code: a failing test is reported as a poten
 against the section it contradicts, and never fixed by changing the source to match the
 test. Until the maintainer fixes the code (or rules the behaviour correct and updates this
 file), such a test keeps its assertion but runs as a node:test **TODO**, with the reason in
-`tests/helpers/dom-known-issues.mjs`: it is printed on every run without failing it, and fails
+`tests/helpers/known-issues/managed.mjs`: it is printed on every run without failing it, and fails
 the run as soon as it passes, so the entry is removed with the bug.
