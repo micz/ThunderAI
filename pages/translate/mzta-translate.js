@@ -17,13 +17,11 @@
  */
 
 import {
-  prefs_default,
-  integration_options_config
+  prefs_default
 } from '../../options/mzta-options-default.js';
 import { taLogger } from "../../js/mzta-logger.js";
 import {
-    getSpecialPrompts,
-    saveSpecialPromptTexts
+    getSpecialPrompts
 } from "../../js/mzta-prompts.js";
 import {
     getPlaceholders,
@@ -33,24 +31,23 @@ import { attachEditorHighlight, makeTokenStateResolver } from "../../js/mzta-edi
 import {
   normalizeStringList,
   isAPIKeyValue,
-  setTomSelectBorder,
-  isApiUsableConnection
+  setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import {
   initializeSpecificIntegrationUI,
-  isClosedCatalogueSelect,
-  getConnectionTypeLabel
+  isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
-    applyManagedUI,
-    seedFromGlobal,
-    isPolicyConnection,
-    isEnforcedPref,
-    lockEnforcedPromptText,
-    isEnforcedPromptText
+    applyManagedUI
 } from '../_lib/managed-ui.js';
+import {
+    persistPromptConnectionToPrefs,
+    resolveFeatureConnectionPrefs,
+    bindConnPanelTint,
+    bindSpecialPromptEditor
+} from '../_lib/feature-page.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -64,34 +61,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     let specialPrompts = await getSpecialPrompts();
     let translate_prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_translate_this');
 
-    // Not for a connection supplied by the policy: that one is the administrator's, and copying it
-    // into the {prefix}_* preferences would store it (spec 08, _special_prompts_connection).
-    if (translate_prompt && translate_prompt.api_type && translate_prompt.api_type !== '' && !isPolicyConnection(translate_prompt)) {
-        let update_prefs = {};
-        update_prefs['translate_connection_type'] = translate_prompt.api_type;
-        // getConnectionType() reads the prefixed connection type only when this flag is on,
-        // so writing the pair one half at a time leaves the value inert. It matters for the
-        // call sites that pass prompt = null (the menu gating in mzta-background.js and the
-        // feature row in mzta-options.js): they have no prompt to fall back on, so the pref
-        // pair is the only way they can see the per-feature connection.
-        // Only for a usable api_type: chatgpt_web has no <option> in the per-prompt select and
-        // isApiUsableConnection() rejects it, so the pair would read as "on" while the feature
-        // stayed hidden from the menus.
-        if (isApiUsableConnection(translate_prompt.api_type)) {
-            update_prefs['translate_use_specific_integration'] = true;
-        }
-
-        let integration = translate_prompt.api_type.replace('_api', '');
-        if (integration_options_config && integration_options_config[integration]) {
-            for (const key of Object.keys(integration_options_config[integration])) {
-                const propName = `${integration}_${key}`;
-                if (translate_prompt[propName] !== undefined) {
-                    update_prefs[`translate_${propName}`] = translate_prompt[propName];
-                }
-            }
-        }
-        await mztaPrefs.setPrefs(update_prefs);
-    }
+    await persistPromptConnectionToPrefs('translate', translate_prompt);
 
     await initializeSpecificIntegrationUI({
       prefix: 'translate',
@@ -110,57 +80,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         element.addEventListener("change", saveOptions);
     });
 
-    // Colour the connection panel to match the selected provider, and hide the
-    // whole panel when "use specific integration" is off (no empty bordered box).
-    let translate_conntype_el = document.getElementById('translate_connection_type');
-    let translate_use_specific_el = document.getElementById('translate_use_specific_integration');
-    if (translate_conntype_el) {
-        translate_conntype_el.addEventListener('change', updateConnPanelTint);
-    }
-    if (translate_use_specific_el) {
-        translate_use_specific_el.addEventListener('change', updateConnPanelTint);
-    }
-    updateConnPanelTint();
+    bindConnPanelTint('translate');
 
     let translate_textarea = document.getElementById("translate_prompt_text");
-    let translate_save_btn = document.getElementById("btn_save_prompt");
-    let translate_reset_btn = document.getElementById("btn_reset_prompt");
 
-    // on changing textarea
-    translate_textarea.addEventListener("input", (event) => {
-        translate_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_translate_this_full_text'));
-        translate_save_btn.disabled = (event.target.value === translate_prompt.text);
+    await bindSpecialPromptEditor({
+        textarea: translate_textarea,
+        saveBtn: document.getElementById("btn_save_prompt"),
+        resetBtn: document.getElementById("btn_reset_prompt"),
+        specialPrompts: specialPrompts,
+        promptIds: ['prompt_translate_this'],
+        defaultMsgKey: 'prompt_translate_this_full_text',
+        do_debug: taLog.do_debug,
     });
-
-    // on clicking reset button
-    translate_reset_btn.addEventListener("click", () => {
-        // The button being disabled is not the same as the action being unavailable.
-        if (isEnforcedPromptText('prompt_translate_this')) return;
-        translate_textarea.value = browser.i18n.getMessage("prompt_translate_this_full_text");
-        translate_reset_btn.disabled = true;
-        let event = new Event("input", { bubbles: true, cancelable: true });
-        translate_textarea.dispatchEvent(event);
-    });
-
-    // on clicking save button
-    translate_save_btn.addEventListener("click", async () => {
-        // The button being disabled is not the same as the action being unavailable.
-        if (isEnforcedPromptText('prompt_translate_this')) return;
-        specialPrompts.find(prompt => prompt.id === 'prompt_translate_this').text = translate_textarea.value;
-        await saveSpecialPromptTexts({ prompt_translate_this: translate_textarea.value });
-        translate_save_btn.disabled = true;
-        browser.runtime.sendMessage({ command: "reload_menus" });
-    });
-
-    if(translate_prompt.text === 'prompt_translate_this_full_text'){
-        translate_prompt.text = browser.i18n.getMessage(translate_prompt.text);
-    }
-
-    translate_textarea.value = translate_prompt.text;
-    translate_reset_btn.disabled = (translate_textarea.value === browser.i18n.getMessage("prompt_translate_this_full_text"));
-    // A text enforced by the policy is shown (getSpecialPrompts() overlaid it) but not editable.
-    await lockEnforcedPromptText(translate_textarea, ['prompt_translate_this'],
-        [translate_save_btn, translate_reset_btn], taLog.do_debug);
 
     // Full list, kept for token validation. Deliberately NOT filtered like the
     // suggestions: {%additional_text%} is a real placeholder that this page simply
@@ -180,32 +112,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // Methods to manage options, derived from: /options/mzta-options.js
-
-const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
-
-// Tint the connection panel to match the selected connection type, set the
-// provider pill name, and hide the whole panel when "use specific integration"
-// is off. Scoped to the translate prefix.
-function updateConnPanelTint() {
-  let conntype_select = document.getElementById("translate_connection_type");
-  let panel = document.getElementById("mzta_conn_panel");
-  let use_specific = document.getElementById("translate_use_specific_integration");
-  if (!panel) return;
-
-  panel.style.display = (use_specific && use_specific.checked) ? "" : "none";
-
-  if (!conntype_select) return;
-  let conntype = conntype_select.value;
-  for (let t of CONN_TYPES) {
-    panel.classList.toggle("tint_" + t, conntype === t);
-  }
-  let pillName = document.getElementById("mzta_conn_pill_name");
-  if (pillName) {
-    // Resolved from the shared catalogue, not by scraping the select: populateConnectionTypeOptions()
-    // rebuilds the <option> list with replaceChildren(), so a DOM lookup can transiently miss.
-    pillName.textContent = getConnectionTypeLabel(conntype);
-  }
-}
 
 function saveOptions(e) {
   e.preventDefault();
@@ -309,33 +215,7 @@ async function restoreOptions() {
   let specialPrompts = await getSpecialPrompts();
   let translate_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_translate_this');
 
-  if (translate_prompt) {
-      if (isEnforcedPref('translate_connection_type')) {
-          // Enforced by the policy: getting already holds the enforced value, and that is what
-          // runs (getConnectionType() reads it before the prompt's api_type). Show it as it is.
-      } else if (translate_prompt.api_type && translate_prompt.api_type !== '') {
-          getting['translate_connection_type'] = translate_prompt.api_type;
-      } else {
-          // Inherit the global connection only when this select can actually offer it:
-          // chatgpt_web has no <option> here (it has no API), so inheriting it would show
-          // a value the control cannot represent. Leave it blank instead.
-          // seedFromGlobal(): never seed from a policy-supplied global value - these fields are
-          // written into the special prompt, where it would outlive the policy.
-          getting['translate_connection_type'] = isApiUsableConnection(seedFromGlobal(getting, 'connection_type'))
-              ? seedFromGlobal(getting, 'connection_type')
-              : '';
-      }
-      for (const [integration, options] of Object.entries(integration_options_config)) {
-          for (const key of Object.keys(options)) {
-              const propName = `${integration}_${key}`;
-              if (translate_prompt[propName] !== undefined && translate_prompt[propName] !== '') {
-                  getting[`translate_${propName}`] = translate_prompt[propName];
-              } else {
-                  getting[`translate_${propName}`] = seedFromGlobal(getting, propName);
-              }
-          }
-      }
-  }
+  resolveFeatureConnectionPrefs(getting, translate_prompt, 'translate');
 
   // If translate_lang is empty, show default_chatgpt_lang as placeholder/default
   if (!getting['translate_lang']) {

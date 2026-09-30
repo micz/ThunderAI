@@ -17,13 +17,11 @@
  */
 
 import {
-  prefs_default,
-  integration_options_config
+  prefs_default
 } from '../../options/mzta-options-default.js';
 import { taLogger } from "../../js/mzta-logger.js";
 import {
-    getSpecialPrompts,
-    saveSpecialPromptTexts
+    getSpecialPrompts
 } from "../../js/mzta-prompts.js";
 import {
     getPlaceholders,
@@ -34,27 +32,26 @@ import {
   normalizeStringList,
   isAPIKeyValue,
   setTomSelectBorder,
-  hasAddressListEntries,
-  isApiUsableConnection
+  hasAddressListEntries
 } from "../../js/mzta-utils.js";
 import {
   initializeSpecificIntegrationUI,
-  isClosedCatalogueSelect,
-  getConnectionTypeLabel
+  isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
     applyManagedUI,
-    seedFromGlobal,
-    isPolicyConnection,
-    isEnforcedPref,
     isLockedKey,
     lockCompanions,
-    setDisabledRespectingManaged,
-    lockEnforcedPromptText,
-    isEnforcedPromptText
+    setDisabledRespectingManaged
 } from '../_lib/managed-ui.js';
+import {
+    persistPromptConnectionToPrefs,
+    resolveFeatureConnectionPrefs,
+    bindConnPanelTint,
+    bindSpecialPromptEditor
+} from '../_lib/feature-page.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -70,34 +67,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     let summarize_email_template = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_template');
     let summarize_email_separator = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_separator');
 
-    // Not for a connection supplied by the policy: that one is the administrator's, and copying it
-    // into the {prefix}_* preferences would store it (spec 08, _special_prompts_connection).
-    if (summarize_prompt && summarize_prompt.api_type && summarize_prompt.api_type !== '' && !isPolicyConnection(summarize_prompt)) {
-        let update_prefs = {};
-        update_prefs['summarize_connection_type'] = summarize_prompt.api_type;
-        // getConnectionType() reads the prefixed connection type only when this flag is on,
-        // so writing the pair one half at a time leaves the value inert. It matters for the
-        // call sites that pass prompt = null (the menu gating in mzta-background.js and the
-        // feature row in mzta-options.js): they have no prompt to fall back on, so the pref
-        // pair is the only way they can see the per-feature connection.
-        // Only for a usable api_type: chatgpt_web has no <option> in the per-prompt select and
-        // isApiUsableConnection() rejects it, so the pair would read as "on" while the feature
-        // stayed hidden from the menus.
-        if (isApiUsableConnection(summarize_prompt.api_type)) {
-            update_prefs['summarize_use_specific_integration'] = true;
-        }
-
-        let integration = summarize_prompt.api_type.replace('_api', '');
-        if (integration_options_config && integration_options_config[integration]) {
-            for (const key of Object.keys(integration_options_config[integration])) {
-                const propName = `${integration}_${key}`;
-                if (summarize_prompt[propName] !== undefined) {
-                    update_prefs[`summarize_${propName}`] = summarize_prompt[propName];
-                }
-            }
-        }
-        await mztaPrefs.setPrefs(update_prefs);
-    }
+    await persistPromptConnectionToPrefs('summarize', summarize_prompt);
 
     await initializeSpecificIntegrationUI({
       prefix: 'summarize',
@@ -118,19 +88,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById('summarize_auto').addEventListener('change', updateDisplayModeConstraint);
     document.getElementById('reset_summarize_max_messages').addEventListener('click', resetSummarizeMaxMessages);
 
-    // Colour the connection panel to match the selected provider, and hide the
-    // whole panel when "use specific integration" is off (no empty bordered box).
-    // The connection select / checkbox are managed by initializeSpecificIntegrationUI;
-    // we only react to their changes here (no change to the shared connection-ui.js).
-    let summarize_conntype_el = document.getElementById('summarize_connection_type');
-    let summarize_use_specific_el = document.getElementById('summarize_use_specific_integration');
-    if (summarize_conntype_el) {
-        summarize_conntype_el.addEventListener('change', updateConnPanelTint);
-    }
-    if (summarize_use_specific_el) {
-        summarize_use_specific_el.addEventListener('change', updateConnPanelTint);
-    }
-    updateConnPanelTint();
+    bindConnPanelTint('summarize');
 
     // Auto-summarize senders list
     // The toggle is a plain .option-input (saved by saveOptions), the list is saved explicitly.
@@ -179,114 +137,37 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateAutoSendersNotice();
 
     let summarize_textarea = document.getElementById("summarize_prompt_text");
-    let summarize_save_btn = document.getElementById("btn_save_prompt");
-    let summarize_reset_btn = document.getElementById("btn_reset_prompt");
     let summarize_textarea_email_template = document.getElementById("summarize_email_template_text");
-    let summarize_reset_email_template_btn = document.getElementById("btn_reset_email_template");
-    let summarize_save_email_template_btn = document.getElementById("btn_save_email_template");
     let summarize_email_separator_textarea = document.getElementById("summarize_email_separator_text");
-    let summarize_email_separator_save_btn = document.getElementById("btn_save_email_separator");
-    let summarize_email_separator_reset_btn = document.getElementById("btn_reset_email_separator");
 
-    
-    // on changing textareas
-    summarize_textarea.addEventListener("input", (event) => {
-        summarize_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_summarize_full_text'));
-        summarize_save_btn.disabled = (event.target.value === summarize_prompt.text);
+    // Each of the three texts is saved, and can be enforced by the policy, on its own.
+    await bindSpecialPromptEditor({
+        textarea: summarize_textarea,
+        saveBtn: document.getElementById("btn_save_prompt"),
+        resetBtn: document.getElementById("btn_reset_prompt"),
+        specialPrompts: specialPrompts,
+        promptIds: ['prompt_summarize'],
+        defaultMsgKey: 'prompt_summarize_full_text',
+        do_debug: taLog.do_debug,
     });
-    
-    summarize_textarea_email_template.addEventListener("input", (event) => {
-        summarize_reset_email_template_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_summarize_email_template_full_text'));
-        summarize_save_email_template_btn.disabled = (event.target.value === summarize_email_template.text);
+    await bindSpecialPromptEditor({
+        textarea: summarize_textarea_email_template,
+        saveBtn: document.getElementById("btn_save_email_template"),
+        resetBtn: document.getElementById("btn_reset_email_template"),
+        specialPrompts: specialPrompts,
+        promptIds: ['prompt_summarize_email_template'],
+        defaultMsgKey: 'prompt_summarize_email_template_full_text',
+        do_debug: taLog.do_debug,
     });
-
-    summarize_email_separator_textarea.addEventListener("input", (event) => {
-        summarize_email_separator_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_summarize_email_separator_full_text'));
-        summarize_email_separator_save_btn.disabled = (event.target.value === summarize_email_separator.text);
+    await bindSpecialPromptEditor({
+        textarea: summarize_email_separator_textarea,
+        saveBtn: document.getElementById("btn_save_email_separator"),
+        resetBtn: document.getElementById("btn_reset_email_separator"),
+        specialPrompts: specialPrompts,
+        promptIds: ['prompt_summarize_email_separator'],
+        defaultMsgKey: 'prompt_summarize_email_separator_full_text',
+        do_debug: taLog.do_debug,
     });
-    
-
-    // on clicking buttons, reset
-    summarize_reset_email_template_btn.addEventListener("click", () => {
-        // The button being disabled is not the same as the action being unavailable.
-        if (isEnforcedPromptText('prompt_summarize_email_template')) return;
-        summarize_textarea_email_template.value = browser.i18n.getMessage("prompt_summarize_email_template_full_text");
-        summarize_reset_email_template_btn.disabled = true;
-        let event = new Event("input", { bubbles: true, cancelable: true });
-        summarize_textarea_email_template.dispatchEvent(event);
-    });
-    
-    summarize_reset_btn.addEventListener("click", () => {
-        // The button being disabled is not the same as the action being unavailable.
-        if (isEnforcedPromptText('prompt_summarize')) return;
-        summarize_textarea.value = browser.i18n.getMessage("prompt_summarize_full_text");
-        summarize_reset_btn.disabled = true;
-        let event = new Event("input", { bubbles: true, cancelable: true });
-        summarize_textarea.dispatchEvent(event);
-    });
-
-    summarize_email_separator_reset_btn.addEventListener("click", () => {
-        // The button being disabled is not the same as the action being unavailable.
-        if (isEnforcedPromptText('prompt_summarize_email_separator')) return;
-        summarize_email_separator_textarea.value = browser.i18n.getMessage("prompt_summarize_email_separator_full_text");
-        summarize_email_separator_reset_btn.disabled = true;
-        let event = new Event("input", { bubbles: true, cancelable: true });
-        summarize_email_separator_textarea.dispatchEvent(event);
-    });
-    
-    // on clicking buttons, save
-    summarize_save_email_template_btn.addEventListener("click", async () => {
-        // The button being disabled is not the same as the action being unavailable.
-        if (isEnforcedPromptText('prompt_summarize_email_template')) return;
-        specialPrompts.find(prompt => prompt.id === 'prompt_summarize_email_template').text = summarize_textarea_email_template.value;
-        await saveSpecialPromptTexts({ prompt_summarize_email_template: summarize_textarea_email_template.value });
-        summarize_save_email_template_btn.disabled = true;
-        browser.runtime.sendMessage({ command: "reload_menus" });
-    });
-    
-    summarize_save_btn.addEventListener("click", async () => {
-        // The button being disabled is not the same as the action being unavailable.
-        if (isEnforcedPromptText('prompt_summarize')) return;
-        specialPrompts.find(prompt => prompt.id === 'prompt_summarize').text = summarize_textarea.value;
-        await saveSpecialPromptTexts({ prompt_summarize: summarize_textarea.value });
-        summarize_save_btn.disabled = true;
-        browser.runtime.sendMessage({ command: "reload_menus" });
-    });
-
-    summarize_email_separator_save_btn.addEventListener("click", async () => {
-        // The button being disabled is not the same as the action being unavailable.
-        if (isEnforcedPromptText('prompt_summarize_email_separator')) return;
-        specialPrompts.find(prompt => prompt.id === 'prompt_summarize_email_separator').text = summarize_email_separator_textarea.value;
-        await saveSpecialPromptTexts({ prompt_summarize_email_separator: summarize_email_separator_textarea.value });
-        summarize_email_separator_save_btn.disabled = true;
-        browser.runtime.sendMessage({ command: "reload_menus" });
-    });
-
-    
-    if(summarize_prompt.text === 'prompt_summarize_full_text'){
-        summarize_prompt.text = browser.i18n.getMessage(summarize_prompt.text);
-    }
-    if(summarize_email_template.text === 'prompt_summarize_email_template_full_text'){
-        summarize_email_template.text = browser.i18n.getMessage(summarize_email_template.text);
-    }
-    if(summarize_email_separator.text === 'prompt_summarize_email_separator_full_text'){
-        summarize_email_separator.text = browser.i18n.getMessage(summarize_email_separator.text);
-    }
-
-    summarize_textarea_email_template.value = summarize_email_template.text;
-    summarize_reset_email_template_btn.disabled = (summarize_textarea_email_template.value === browser.i18n.getMessage("prompt_summarize_email_template_full_text"));
-    summarize_textarea.value = summarize_prompt.text;
-    summarize_reset_btn.disabled = (summarize_textarea.value === browser.i18n.getMessage("prompt_summarize_full_text"));
-    summarize_email_separator_textarea.value = summarize_email_separator.text;
-    summarize_email_separator_reset_btn.disabled = (summarize_email_separator_textarea.value === browser.i18n.getMessage("prompt_summarize_email_separator_full_text"));
-    // A text enforced by the policy is shown (getSpecialPrompts() overlaid it) but not editable.
-    // Each of the three is enforced on its own.
-    await lockEnforcedPromptText(summarize_textarea, ['prompt_summarize'],
-        [summarize_save_btn, summarize_reset_btn], taLog.do_debug);
-    await lockEnforcedPromptText(summarize_textarea_email_template, ['prompt_summarize_email_template'],
-        [summarize_save_email_template_btn, summarize_reset_email_template_btn], taLog.do_debug);
-    await lockEnforcedPromptText(summarize_email_separator_textarea, ['prompt_summarize_email_separator'],
-        [summarize_email_separator_save_btn, summarize_email_separator_reset_btn], taLog.do_debug);
 
     // Full list, kept for token validation. Deliberately NOT filtered like the
     // suggestions: {%additional_text%} is a real placeholder that this page simply
@@ -318,34 +199,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // Methods to manage options, derived from: /options/mzta-options.js
-
-const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
-
-// Tint the connection panel (border/background/pill) to match the selected
-// connection type, set the provider pill name, and hide the whole panel when
-// the "use specific integration" checkbox is off. Mirrors updateConnPanelTint()
-// on the options page but scoped to the summarize prefix.
-function updateConnPanelTint() {
-  let conntype_select = document.getElementById("summarize_connection_type");
-  let panel = document.getElementById("mzta_conn_panel");
-  let use_specific = document.getElementById("summarize_use_specific_integration");
-  if (!panel) return;
-
-  // Hide the whole panel (not just its rows) when specific integration is off.
-  panel.style.display = (use_specific && use_specific.checked) ? "" : "none";
-
-  if (!conntype_select) return;
-  let conntype = conntype_select.value;
-  for (let t of CONN_TYPES) {
-    panel.classList.toggle("tint_" + t, conntype === t);
-  }
-  let pillName = document.getElementById("mzta_conn_pill_name");
-  if (pillName) {
-    // Resolved from the shared catalogue, not by scraping the select: populateConnectionTypeOptions()
-    // rebuilds the <option> list with replaceChildren(), so a DOM lookup can transiently miss.
-    pillName.textContent = getConnectionTypeLabel(conntype);
-  }
-}
 
 function updateDisplayModeConstraint() {
   const summarize_auto_el = document.getElementById('summarize_auto');
@@ -530,35 +383,9 @@ async function restoreOptions() {
   let getting = await mztaPrefs.getAllPrefs();
 
   let specialPrompts = await getSpecialPrompts();
-  let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_summarize');
+  let summarize_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_summarize');
 
-  if (addtags_prompt) {
-      if (isEnforcedPref('summarize_connection_type')) {
-          // Enforced by the policy: getting already holds the enforced value, and that is what
-          // runs (getConnectionType() reads it before the prompt's api_type). Show it as it is.
-      } else if (addtags_prompt.api_type && addtags_prompt.api_type !== '') {
-          getting['summarize_connection_type'] = addtags_prompt.api_type;
-      } else {
-          // Inherit the global connection only when this select can actually offer it:
-          // chatgpt_web has no <option> here (it has no API), so inheriting it would show
-          // a value the control cannot represent. Leave it blank instead.
-          // seedFromGlobal(): never seed from a policy-supplied global value - these fields are
-          // written into the special prompt, where it would outlive the policy.
-          getting['summarize_connection_type'] = isApiUsableConnection(seedFromGlobal(getting, 'connection_type'))
-              ? seedFromGlobal(getting, 'connection_type')
-              : '';
-      }
-      for (const [integration, options] of Object.entries(integration_options_config)) {
-          for (const key of Object.keys(options)) {
-              const propName = `${integration}_${key}`;
-              if (addtags_prompt[propName] !== undefined && addtags_prompt[propName] !== '') {
-                  getting[`summarize_${propName}`] = addtags_prompt[propName];
-              } else {
-                  getting[`summarize_${propName}`] = seedFromGlobal(getting, propName);
-              }
-          }
-      }
-  }
+  resolveFeatureConnectionPrefs(getting, summarize_prompt, 'summarize');
 
   setCurrentChoice(getting);
   updateDisplayModeConstraint();

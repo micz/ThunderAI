@@ -5,7 +5,8 @@
  *   - it shows the enforced text (the read-time overlay) and is readOnly, NOT disabled - the
  *     text can still be selected and copied;
  *   - it carries data-mzta-managed="1" and the managed_prompt_text_tooltip title;
- *   - its Save and Reset buttons are disabled and marked;
+ *   - its Save and Reset buttons are disabled and marked, and an input event cannot re-enable
+ *     them;
  *   - the marker goes right of the group title heading its .mzta_field;
  *   - Save and Reset, re-enabled by hand and clicked after an edit, write nothing: the
  *     handlers return early on isEnforcedPromptText(), and _special_prompts never receives
@@ -56,6 +57,19 @@ export async function enforcedTextScenario(page, fixture, areas) {
                 assert.equal(b.disabled, true, id + ' enabled');
                 assert.equal(b.dataset.mztaManaged, '1', id + ' not marked');
             }
+        });
+
+        test(`${a.id}: an input event does not re-enable Save or Reset`, async () => {
+            // A readOnly textarea fires no input from typing, but a script can dispatch one: the
+            // editor's input handler must not undo the lock (setDisabledRespectingManaged()).
+            const original = ta().value;
+            ta().value = 'changed by a script';
+            await ctx.fire(ta(), 'input');
+            for (const id of [a.save, a.reset]) {
+                assert.equal(ctx.$('#' + id).disabled, true, id + ' re-enabled by the input handler');
+            }
+            ta().value = original;
+            await ctx.fire(ta(), 'input');
         });
 
         test(`${a.id}: the marker sits right of the group title`, () => {

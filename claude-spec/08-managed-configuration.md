@@ -203,7 +203,8 @@ list the user cannot pick from is pointless. In `pages/_lib/connection-ui.js`,
 
 The six feature pages pre-fill their per-feature connection fields
 (`{prefix}_{integration}_{key}`, and `{prefix}_connection_type`) from the global value when
-the special prompt has none, and `initializeSpecificIntegrationUI()` writes those fields into
+the special prompt has none (`resolveFeatureConnectionPrefs()` in `pages/_lib/feature-page.js`,
+which their `restoreOptions()` calls), and `initializeSpecificIntegrationUI()` writes those fields into
 the prompt with `_updatePrompt()` — **on page open** when the specific integration is on. The
 custom prompts editor does the same into `_custom_prompt`. These are prompt properties, not
 preferences, so no write guard stands in the way: a seeded policy value would outlive the
@@ -219,8 +220,8 @@ copies a global preference into a prompt must go through it.
 A feature page's `restoreOptions()` normally shows the special prompt's `api_type` in its
 `{prefix}_connection_type` select, or a seed from the global connection when the prompt has
 none: the prompt is the source of truth for that select. A **locked** `{prefix}_connection_type`
-is the exception, on all six pages: the select keeps the enforced value `getAllPrefs()`
-resolved, because that is what runs — `getConnectionType()` reads the per-feature preference
+is the exception, on all six pages (the shared `resolveFeatureConnectionPrefs()`): the select
+keeps the enforced value `getAllPrefs()` resolved, because that is what runs — `getConnectionType()` reads the per-feature preference
 before the prompt's `api_type`. The test is `isEnforcedPref(key)` in `pages/_lib/managed-ui.js`,
 the synchronous `mztaManaged.isManagedLocked()`, usable before `applyManagedUI()` because the
 preference read has already hydrated the policy. An initial (`":locked": false`) value changes
@@ -229,8 +230,8 @@ nothing: the page shows exactly what it shows without a policy.
 The enforced value never reaches the prompt either: `_updatePrompt()` in
 `initializeSpecificIntegrationUI()` leaves `prompt.api_type` as it is while the key is locked,
 for the reason in [No seeding from policy values](#no-seeding-from-policy-values). The
-page-open block that copies the prompt's `api_type` into the preference is stopped by the
-per-key write guard of `setPrefs()`, as before.
+page-open copy of the prompt's `api_type` into the preference (`persistPromptConnectionToPrefs()`)
+is stopped by the per-key write guard of `setPrefs()`, as before.
 
 ### An automatic summary is always inline
 
@@ -649,9 +650,11 @@ stored value that is still the raw i18n key.
 ### UI
 
 `lockEnforcedPromptText(textarea, promptIds, companions)` in
-[`pages/_lib/managed-ui.js`](../pages/_lib/managed-ui.js), called by each of the six feature
-pages after it has filled the textarea and set its buttons' initial state (summarize: three
-times, one per textarea; calendar: with both calendar ids). It follows [Controls with their
+[`pages/_lib/managed-ui.js`](../pages/_lib/managed-ui.js), called by `bindSpecialPromptEditor()`
+in [`pages/_lib/feature-page.js`](../pages/_lib/feature-page.js) — the one wiring of a special
+prompt editor (textarea, Save, Reset, "unsaved" note) the six feature pages share — after it
+has filled the textarea and set its buttons' initial state (summarize binds three editors, one
+per textarea; calendar one, with both calendar ids). It follows [Controls with their
 own load/save logic](#controls-with-their-own-loadsave-logic-data-mzta-pref), without a
 preference key:
 
@@ -666,8 +669,10 @@ preference key:
   textareas get. `markManaged()` takes the `.mzta_field` anchor explicitly: the textarea's
   own parent is the editor-highlight wrapper.
 
-Every Save and Reset handler also **returns early** on `isEnforcedPromptText(id)` (the
-calendar Save on either calendar id). Both helpers read `mztaManaged` after hydration.
+The editor's Save and Reset handlers also **return early** on `isEnforcedPromptText(id)` for
+any of its prompt ids (the calendar Save on either calendar id), and its input handler sets the
+buttons through `setDisabledRespectingManaged()`, so not even a dispatched `input` re-enables
+them. Both helpers read `mztaManaged` after hydration.
 
 ### Startup warning
 
@@ -877,8 +882,9 @@ The feature pages need no page-specific logic beyond one guard:
   - the per-field listener ignores an enforced field, and the type-select listener ignores a
     locked select, so a control re-enabled by hand writes nothing at all;
   - the switch handler forces a re-enabled switch back on without `clearPromptAPI()`.
-- **The one page guard.** Each feature page has a page-open block that copies `prompt.api_type`
-  and the fields into `{prefix}_*` preferences. It skips a prompt for which
+- **The one page guard.** On page open every feature page calls
+  `persistPromptConnectionToPrefs(prefix, prompt)` (`pages/_lib/feature-page.js`), which copies
+  `prompt.api_type` and the fields into `{prefix}_*` preferences. It skips a prompt for which
   `isPolicyConnection(prompt)` (`pages/_lib/managed-ui.js`) is true.
 - **The write guard** refuses the enforced ids that the pages' `saveOptions()` would write (see
   [The write guard](#the-write-guard)).

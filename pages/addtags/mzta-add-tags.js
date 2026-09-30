@@ -16,11 +16,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default, integration_options_config } from '../../options/mzta-options-default.js';
+import { prefs_default } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
 import {
-  getSpecialPrompts,
-  saveSpecialPromptTexts
+  getSpecialPrompts
 } from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
@@ -35,28 +34,27 @@ import {
   getAccountsList,
   normalizeStringList,
   isAPIKeyValue,
-  setTomSelectBorder,
-  isApiUsableConnection
+  setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import {
   initializeSpecificIntegrationUI,
-  isClosedCatalogueSelect,
-  getConnectionTypeLabel
+  isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
     applyManagedUI,
-    seedFromGlobal,
-    isPolicyConnection,
-    isEnforcedPref,
     isLockedKey,
     lockCompanions,
-    lockEnforcedPromptText,
-    isEnforcedPromptText,
     setDisabledRespectingManaged,
     lockAccountSelector
 } from '../_lib/managed-ui.js';
+import {
+    persistPromptConnectionToPrefs,
+    resolveFeatureConnectionPrefs,
+    bindConnPanelTint,
+    bindSpecialPromptEditor
+} from '../_lib/feature-page.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -70,34 +68,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let specialPrompts = await getSpecialPrompts();
   let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
 
-    // Not for a connection supplied by the policy: that one is the administrator's, and copying it
-    // into the {prefix}_* preferences would store it (spec 08, _special_prompts_connection).
-    if (addtags_prompt && addtags_prompt.api_type && addtags_prompt.api_type !== '' && !isPolicyConnection(addtags_prompt)) {
-        let update_prefs = {};
-        update_prefs['add_tags_connection_type'] = addtags_prompt.api_type;
-        // getConnectionType() reads the prefixed connection type only when this flag is on,
-        // so writing the pair one half at a time leaves the value inert. It matters for the
-        // call sites that pass prompt = null (the menu gating in mzta-background.js and the
-        // feature row in mzta-options.js): they have no prompt to fall back on, so the pref
-        // pair is the only way they can see the per-feature connection.
-        // Only for a usable api_type: chatgpt_web has no <option> in the per-prompt select and
-        // isApiUsableConnection() rejects it, so the pair would read as "on" while the feature
-        // stayed hidden from the menus.
-        if (isApiUsableConnection(addtags_prompt.api_type)) {
-            update_prefs['add_tags_use_specific_integration'] = true;
-        }
-
-        let integration = addtags_prompt.api_type.replace('_api', '');
-        if (integration_options_config && integration_options_config[integration]) {
-             for (const key of Object.keys(integration_options_config[integration])) {
-                 const propName = `${integration}_${key}`;
-                 if (addtags_prompt[propName] !== undefined) {
-                     update_prefs[`add_tags_${propName}`] = addtags_prompt[propName];
-                 }
-             }
-        }
-        await mztaPrefs.setPrefs(update_prefs);
-    }
+    await persistPromptConnectionToPrefs('add_tags', addtags_prompt);
 
     await initializeSpecificIntegrationUI({
       prefix: 'add_tags',
@@ -118,28 +89,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     let prefs_add_tags = await mztaPrefs.getPrefs(['add_tags_enabled_accounts']);
 
     let addtags_textarea = document.getElementById('addtags_prompt_text');
-    let addtags_save_btn = document.getElementById('btn_save_prompt');
-    let addtags_reset_btn = document.getElementById('btn_reset_prompt');
-    let add_tags_use_specific_integration = document.getElementById('add_tags_use_specific_integration');
 
-    addtags_textarea.addEventListener('input', (event) => {
-        addtags_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_add_tags_full_text'));
-        addtags_save_btn.disabled = (event.target.value === addtags_prompt.text);
-        if(addtags_save_btn.disabled){
-            document.getElementById('addtags_prompt_unsaved').classList.add('hidden');
-        } else {
-            document.getElementById('addtags_prompt_unsaved').classList.remove('hidden');
-        }
-    });
-
-    // Colour the connection panel to match the selected provider, and hide the
-    // whole panel when "use specific integration" is off (no empty bordered box).
-    let add_tags_conntype_el = document.getElementById('add_tags_connection_type');
-    if (add_tags_conntype_el) {
-        add_tags_conntype_el.addEventListener('change', updateConnPanelTint);
-    }
-    add_tags_use_specific_integration.addEventListener('change', updateConnPanelTint);
-    updateConnPanelTint();
+    bindConnPanelTint('add_tags');
 
     let add_tags_auto_el = document.getElementById('add_tags_auto');
     let add_tags_auto_only_inbox_tr = document.getElementById('add_tags_auto_only_inbox_tr');
@@ -173,33 +124,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     setDisabledRespectingManaged(add_tags_auto_uselist_list, !add_tags_auto_uselist.checked);
 
-    addtags_reset_btn.addEventListener('click', () => {
-        // The button being disabled is not the same as the action being unavailable.
-        if (isEnforcedPromptText('prompt_add_tags')) return;
-        addtags_textarea.value = browser.i18n.getMessage('prompt_add_tags_full_text');
-        addtags_reset_btn.disabled = true;
-        let event = new Event('input', { bubbles: true, cancelable: true });
-        addtags_textarea.dispatchEvent(event);
+    await bindSpecialPromptEditor({
+        textarea: addtags_textarea,
+        saveBtn: document.getElementById('btn_save_prompt'),
+        resetBtn: document.getElementById('btn_reset_prompt'),
+        unsavedEl: document.getElementById('addtags_prompt_unsaved'),
+        specialPrompts: specialPrompts,
+        promptIds: ['prompt_add_tags'],
+        defaultMsgKey: 'prompt_add_tags_full_text',
+        do_debug: taLog.do_debug,
     });
-
-    addtags_save_btn.addEventListener('click', async () => {
-        // The button being disabled is not the same as the action being unavailable.
-        if (isEnforcedPromptText('prompt_add_tags')) return;
-        specialPrompts.find(prompt => prompt.id === 'prompt_add_tags').text = addtags_textarea.value;
-        await saveSpecialPromptTexts({ prompt_add_tags: addtags_textarea.value });
-        addtags_save_btn.disabled = true;
-        document.getElementById('addtags_prompt_unsaved').classList.add('hidden');
-        browser.runtime.sendMessage({command: "reload_menus"});
-    });
-
-    if(addtags_prompt.text === 'prompt_add_tags_full_text'){
-        addtags_prompt.text = browser.i18n.getMessage(addtags_prompt.text);
-    }
-    addtags_textarea.value = addtags_prompt.text;
-    addtags_reset_btn.disabled = (addtags_textarea.value === browser.i18n.getMessage('prompt_add_tags_full_text'));
-    // A text enforced by the policy is shown (getSpecialPrompts() overlaid it) but not editable.
-    await lockEnforcedPromptText(addtags_textarea, ['prompt_add_tags'],
-        [addtags_save_btn, addtags_reset_btn], taLog.do_debug);
 
     document.getElementById('add_tags_maxnum').addEventListener('change', updateAdditionalPromptStatements);
     document.getElementById('add_tags_force_lang').addEventListener('change', updateAdditionalPromptStatements);
@@ -352,33 +286,6 @@ async function updateAdditionalPromptStatements(){
 
 // Methods to manage options, derived from: /options/mzta-options.js
 
-const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
-
-// Tint the connection panel (border/background/pill) to match the selected
-// connection type, set the provider pill name, and hide the whole panel when
-// the "use specific integration" checkbox is off. Mirrors the summarize page,
-// scoped to the add_tags prefix.
-function updateConnPanelTint() {
-  let conntype_select = document.getElementById("add_tags_connection_type");
-  let panel = document.getElementById("mzta_conn_panel");
-  let use_specific = document.getElementById("add_tags_use_specific_integration");
-  if (!panel) return;
-
-  panel.style.display = (use_specific && use_specific.checked) ? "" : "none";
-
-  if (!conntype_select) return;
-  let conntype = conntype_select.value;
-  for (let t of CONN_TYPES) {
-    panel.classList.toggle("tint_" + t, conntype === t);
-  }
-  let pillName = document.getElementById("mzta_conn_pill_name");
-  if (pillName) {
-    // Resolved from the shared catalogue, not by scraping the select: populateConnectionTypeOptions()
-    // rebuilds the <option> list with replaceChildren(), so a DOM lookup can transiently miss.
-    pillName.textContent = getConnectionTypeLabel(conntype);
-  }
-}
-
 function saveOptions(e) {
   e.preventDefault();
   let options = {};
@@ -477,33 +384,7 @@ async function restoreOptions() {
   let specialPrompts = await getSpecialPrompts();
   let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
 
-  if (addtags_prompt) {
-      if (isEnforcedPref('add_tags_connection_type')) {
-          // Enforced by the policy: getting already holds the enforced value, and that is what
-          // runs (getConnectionType() reads it before the prompt's api_type). Show it as it is.
-      } else if (addtags_prompt.api_type && addtags_prompt.api_type !== '') {
-          getting['add_tags_connection_type'] = addtags_prompt.api_type;
-      } else {
-          // Inherit the global connection only when this select can actually offer it:
-          // chatgpt_web has no <option> here (it has no API), so inheriting it would show
-          // a value the control cannot represent. Leave it blank instead.
-          // seedFromGlobal(): never seed from a policy-supplied global value - these fields are
-          // written into the special prompt, where it would outlive the policy.
-          getting['add_tags_connection_type'] = isApiUsableConnection(seedFromGlobal(getting, 'connection_type'))
-              ? seedFromGlobal(getting, 'connection_type')
-              : '';
-      }
-      for (const [integration, options] of Object.entries(integration_options_config)) {
-          for (const key of Object.keys(options)) {
-              const propName = `${integration}_${key}`;
-              if (addtags_prompt[propName] !== undefined && addtags_prompt[propName] !== '') {
-                  getting[`add_tags_${propName}`] = addtags_prompt[propName];
-              } else {
-                  getting[`add_tags_${propName}`] = seedFromGlobal(getting, propName);
-              }
-          }
-      }
-  }
+  resolveFeatureConnectionPrefs(getting, addtags_prompt, 'add_tags');
 
   setCurrentChoice(getting);
 }
