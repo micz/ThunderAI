@@ -11,4 +11,4 @@ file: js\lib\diff.js
 source: https://cdn.jsdelivr.net/npm/diff@9.0.0/dist/diff.js
 
 file: api_webchat/markdown-it.min.js
-source: https://cdn.jsdelivr.net/npm/markdown-it@14.3.0/dist/markdown-it.min.js
+source: https://cdn.jsdelivr.net/npm/markdown-it@14.3.1/dist/markdown-it.min.js
