@@ -298,10 +298,16 @@ it runs them.
 
 A test that fails against the shipped code is **not** changed to pass, and neither is the
 source. Its reason goes in `helpers/dom-known-issues.mjs` - which spec section it contradicts
-and what the code does instead - and the test runs with `{ todo: reason }`: node:test still
-executes the assertion and prints it as `# TODO`, without failing the run. Remove the entry
-once the code is fixed (node:test reports a passing TODO as well), or once the maintainer
-rules the behaviour correct and the spec is updated.
+and what the code does instead - and the test runs through `knownTest(name, reason, fn)`:
+the assertion still executes, and while it fails the test is printed as `# TODO` with the
+reason and the actual failure, without failing the run. **Once it passes the run fails**
+("stale known issue"): remove the entry, so it cannot go on hiding a later regression of the
+same test. The same once the maintainer rules the behaviour correct and the spec is updated.
+
+What an entry may cover is limited (`validateKnown()`, checked by `99-harness-known-issues`): a
+per-key sweep aspect names its key - there is no `'*'` fallback that would hide a whole page -,
+`'*'` is only for the page-wide `writes` test, and the harness check ("the page ran on modelled
+APIs only") is never a known issue.
 
 ## What is not covered
 

@@ -515,4 +515,5 @@ written from this file, not from the code: a failing test is reported as a poten
 against the section it contradicts, and never fixed by changing the source to match the
 test. Until the maintainer fixes the code (or rules the behaviour correct and updates this
 file), such a test keeps its assertion but runs as a node:test **TODO**, with the reason in
-`tests/helpers/dom-known-issues.mjs`: it is printed on every run without failing it.
+`tests/helpers/dom-known-issues.mjs`: it is printed on every run without failing it, and fails
+the run as soon as it passes, so the entry is removed with the bug.

@@ -26,6 +26,7 @@ import assert from 'node:assert/strict';
 import { probeAllowlist, probePage } from './dom-probe.mjs';
 import { openPage, assertHarnessClean, msg } from './dom-page.mjs';
 import { prefs_default } from '../../options/mzta-options-default.js';
+import { todoFor, knownTest } from './dom-known-issues.mjs';
 
 export const ORG_NAME = 'Acme Test Org';
 
@@ -174,10 +175,6 @@ async function prepare(page) {
     return { allowlist, inventory, cases, unsweepable, local, baseline, baseByKey };
 }
 
-function todoFor(todo = {}, key, aspect) {
-    return (todo[key] && todo[key][aspect]) || (todo['*'] && todo['*'][aspect]) || undefined;
-}
-
 function sweepHeaderTests(page, prep) {
     test('the sweep found allowlisted controls on this page', () => {
         assert.ok(prep.cases.length > 0, 'no allowlisted control on ' + page);
@@ -210,8 +207,8 @@ export async function lockedSweep(page, { todo, expected = {} } = {}) {
 
     for (const c of prep.cases) {
         const el = () => ctx.document.getElementById(c.control.id);
-        const t = aspect => ({ todo: todoFor(todo, c.key, aspect) });
-        test(`locked ${c.key}: disabled and marked as managed`, t('disabled'), () => {
+        const t = aspect => todoFor(todo, c.key, aspect);
+        knownTest(`locked ${c.key}: disabled and marked as managed`, t('disabled'), () => {
             assert.equal(el().disabled, true, 'disabled');
             assert.equal(el().dataset.mztaManaged, '1', 'data-mzta-managed');
             // A select turned into a Tom Select is operated through the widget, which reads the
@@ -220,15 +217,15 @@ export async function lockedSweep(page, { todo, expected = {} } = {}) {
         });
         if (expected[c.key]) {
             const { value, why } = expected[c.key];
-            test(`locked ${c.key}: shows ${JSON.stringify(value)} (${why}), not the stored user value`, t('value'), () => {
+            knownTest(`locked ${c.key}: shows ${JSON.stringify(value)} (${why}), not the stored user value`, t('value'), () => {
                 assert.ok(shows(el(), value), `expected ${JSON.stringify(value)}, shows ${describeShown(el())}`);
             });
-        } else test(`locked ${c.key}: shows the policy value, not the stored user value`, t('value'), () => {
+        } else knownTest(`locked ${c.key}: shows the policy value, not the stored user value`, t('value'), () => {
             const expected = isSecret(c.key) ? MANAGED_SECRET_MARKER : c.P;
             assert.ok(shows(el(), expected),
                 `expected ${JSON.stringify(isSecret(c.key) ? 'MANAGED_SECRET_MARKER' : expected)}, shows ${describeShown(el())}`);
         });
-        test(`locked ${c.key}: marker (with the org name) where the spec puts it`, t('marker'), () => {
+        knownTest(`locked ${c.key}: marker (with the org name) where the spec puts it`, t('marker'), () => {
             const { host, before } = expectedMarkerHost(el());
             assert.ok(host, 'no marker host');
             const marker = host.querySelector(':scope > .managed_marker');
@@ -242,7 +239,7 @@ export async function lockedSweep(page, { todo, expected = {} } = {}) {
             }
         });
         if (COMPANIONS[c.key]) {
-            test(`locked ${c.key}: companion controls disabled and marked`, t('companions'), () => {
+            knownTest(`locked ${c.key}: companion controls disabled and marked`, t('companions'), () => {
                 for (const id of COMPANIONS[c.key]) {
                     const b = ctx.document.getElementById(id);
                     assert.ok(b, 'missing companion #' + id);
@@ -250,7 +247,7 @@ export async function lockedSweep(page, { todo, expected = {} } = {}) {
                     assert.equal(b.dataset.mztaManaged, '1', '#' + id + ' marked');
                 }
             });
-            test(`locked ${c.key}: a companion re-enabled and clicked by hand leaves the control showing the policy value`, t('companions'), async () => {
+            knownTest(`locked ${c.key}: a companion re-enabled and clicked by hand leaves the control showing the policy value`, t('companions'), async () => {
                 // Its handler must return early: a Reset that refills the input would show a value
                 // the write guard then refuses to store.
                 for (const id of COMPANIONS[c.key]) {
@@ -264,12 +261,12 @@ export async function lockedSweep(page, { todo, expected = {} } = {}) {
                 assert.ok(shows(el(), want), `expected ${JSON.stringify(want)}, shows ${describeShown(el())}`);
             });
         }
-        test(`locked ${c.key}: opening the page left the stored user value alone`, t('storage'), () => {
+        knownTest(`locked ${c.key}: opening the page left the stored user value alone`, t('storage'), () => {
             assert.deepEqual(ctx.ctl.localData()[c.key], c.U);
         });
     }
 
-    test('write attempts through the UI never reach storage.local (write guard)', { todo: todoFor(todo, '*', 'writes') }, async () => {
+    knownTest('write attempts through the UI never reach storage.local (write guard)', todoFor(todo, '*', 'writes'), async () => {
         const since = ctx.ctl.calls.length;
         for (const pass of ['as rendered', 're-enabled by hand']) {
             for (const c of prep.cases) {
@@ -298,7 +295,8 @@ export async function lockedSweep(page, { todo, expected = {} } = {}) {
         assert.ok(!stored.includes(MANAGED_SECRET_MARKER), 'MANAGED_SECRET_MARKER stored in _special_prompts');
     });
 
-    test('the page ran on modelled APIs only', { todo: todoFor(todo, '*', 'harness') }, () => assertHarnessClean(ctx));
+    // Never a known issue: a page the harness cannot run must fail (dom-known-issues.mjs).
+    test('the page ran on modelled APIs only', () => assertHarnessClean(ctx));
     return ctx;
 }
 
@@ -342,9 +340,9 @@ export async function unlockedSweep(page, { todo } = {}) {
 
     for (const c of prep.cases) {
         const el = () => ctx.document.getElementById(c.control.id);
-        const t = aspect => ({ todo: todoFor(todo, c.key, aspect) });
+        const t = aspect => todoFor(todo, c.key, aspect);
         const base = prep.baseByKey.get(c.key);
-        test(`unlocked ${c.key}: shows the user's value exactly as the same page does without a policy`, t('value'), () => {
+        knownTest(`unlocked ${c.key}: shows the user's value exactly as the same page does without a policy`, t('value'), () => {
             // Compared with the baseline rather than with U itself: some pages derive what a
             // control shows from more than its preference (a feature page's connection select
             // follows the special prompt, a mandatory toggle is forced on). What the policy
@@ -358,7 +356,7 @@ export async function unlockedSweep(page, { todo } = {}) {
                 assert.ok(shows(el(), c.U), 'expected the user value ' + JSON.stringify(c.U) + ', shows ' + describeShown(el()));
             }
         });
-        test(`unlocked ${c.key}: as editable as without a policy`, t('editable'), () => {
+        knownTest(`unlocked ${c.key}: as editable as without a policy`, t('editable'), () => {
             assert.ok(base, 'no baseline for ' + c.key);
             assert.equal(el().disabled, base.disabled, 'disabled differs from the unmanaged page');
             assert.equal(!!el().readOnly, base.readOnly, 'readOnly differs from the unmanaged page');
@@ -366,6 +364,7 @@ export async function unlockedSweep(page, { todo } = {}) {
         });
     }
 
-    test('the page ran on modelled APIs only', { todo: todoFor(todo, '*', 'harness') }, () => assertHarnessClean(ctx));
+    // Never a known issue: a page the harness cannot run must fail (dom-known-issues.mjs).
+    test('the page ran on modelled APIs only', () => assertHarnessClean(ctx));
     return ctx;
 }
