@@ -156,6 +156,14 @@ mandatory case, where the box is forced on at load) — skipping empty values an
 Without it the panel shows a provider while the pref stays empty, and the options page's pill,
 which reads the pref, stays hidden on a feature that looks configured.
 
+That is why the `''` pre-fill must reach the DOM **as a blank select** on every page
+(`selectedIndex = -1` for a closed-catalogue connection select, `isClosedCatalogueSelect()`).
+In the mandatory case the box is forced on at load, so whatever the select shows is persisted
+there and then: a select falling back to its first option would store OpenAI API as the
+feature's connection, a choice the user never made, just by opening the page. `summarize` and
+`translate` did exactly that (`selectedIndex = 0`) until 5.1; their other selects, which always
+have a value, still fall back to their first option.
+
 **The same label rule applies to the per-feature panel pill** (`#mzta_conn_pill_name`, set by
 each page's local `updateConnPanelTint()`): all six feature pages import
 `getConnectionTypeLabel()` rather than reading the select's `<option>` text. Their selects are

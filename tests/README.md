@@ -239,7 +239,10 @@ files calling `connectionScenario(page, mode)` (`helpers/dom-connection.mjs`).
 or when a page lacks either file. A new feature therefore needs an entry there and the two
 files (copy another page's). The same map generates `15-text-save-keeps-connection`
 (`helpers/dom-text-save.mjs`, no policy): a text Save must not revert a connection change the
-panel saved after page open. `10h` requires it too.
+panel saved after page open. So does `16-mandatory-connection-blank`
+(`helpers/dom-mandatory-blank.mjs`, no policy): with a ChatGPT Web global connection the
+mandatory integration opens with a blank connection type and stores nothing until the user
+chooses. `10h` requires both.
 
 When the spec derives what a locked control shows from the *other* locked keys rather than
 from its own policy value, the sweep file passes `expected: {key: {value, why}}` to

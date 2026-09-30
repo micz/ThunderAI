@@ -513,7 +513,11 @@ async function restoreOptions() {
               }
               element.value = restoreValue;
               if (element.value === '') {
-                element.selectedIndex = 0;
+                // A connection select stays blank (an unset specific integration, or a stale type
+                // it does not offer): preselecting its first option would be stored as a choice
+                // the user never made - on page open, when the integration is mandatory. The
+                // other selects always have a value, and fall back to their first option.
+                element.selectedIndex = canSynthesize ? 0 : -1;
               }
             }
         }else{
