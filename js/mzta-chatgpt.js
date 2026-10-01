@@ -1331,7 +1331,8 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     style.textContent += "#mzta-custom_text{padding:10px;width:auto;max-width:80%;height:auto;max-height:80%;border-radius:5px;overflow:auto;position:fixed;top:50%;left:50%;display:none;transform:translate(-50%,-50%);text-align:center;background-color:#333;color:white;border:3px solid white;}";
     style.textContent += "#mzta-custom_loading{height:50px;display:none;}";
     // explicit colors: newer ChatGPT CSS resets textarea to a transparent background and no border
-    style.textContent += "#mzta-custom_textarea{color:black;background-color:white;caret-color:black;color-scheme:light;border:1px solid #ccc;border-radius:3px;font-family:sans-serif;padding:1px;font-size:15px;width:100%;}";
+    // explicit resize/overflow too: some ChatGPT CSS variants remove the textarea resize handle
+    style.textContent += "#mzta-custom_textarea{color:black;background-color:white;caret-color:black;color-scheme:light;border:1px solid #ccc;border-radius:3px;font-family:sans-serif;padding:1px;font-size:15px;width:100%;resize:vertical;overflow:auto;}";
     style.textContent += "#mzta-custom_info{text-align:center;width:100%;padding-bottom:10px;font-size:15px;}";
     style.textContent += "#mzta-custom_info span{font-size:0.8em;}";
     style.textContent += "#mzta-custom_step{position: absolute;bottom: 5px;right: 10px;font-size: 12px;color: #ccc;}";
