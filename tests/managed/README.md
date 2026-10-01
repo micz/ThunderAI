@@ -162,7 +162,9 @@ the policy loader resolves to `'inline'` because the sweep locks `summarize_auto
 
 On top of the general steps ([`tests/README.md`](../README.md#adding-a-page)):
 
-1. Add it to `PAGES` in `helpers/core/dom-harness.mjs`.
+1. Add it to `PAGES`: the pages managed tests open today are all core pages (`CORE_PAGES` in
+   `helpers/core/dom-harness.mjs`); a page only the managed configuration needs would go in
+   the `pages` of `helpers/plugins/managed.mjs`.
 2. Create `tests/dom/<page>/01-no-policy.dom.mjs` with `noPolicyScenario()`, and, for a page
    with managed controls, the two sweep files (copy an existing pair: they are three lines).
 3. If `assertHarnessClean()` fails with an unmocked API, model it in `addPageApis()`; an

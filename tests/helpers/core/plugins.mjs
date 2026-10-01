@@ -38,6 +38,10 @@
  *                                  listeners  [(message, sender) => answer], WebExtension style
  *                                  commands   {command: (message, sender, fields) => answer}
  *
+ *    pages                         DOM harness: {name: HTML path from the repository root}, the
+ *                                  area's own pages, added to PAGES when the harness loads. A
+ *                                  name the core or another plugin already defines is an error.
+ *
  *    pageApis(browser, opts)       DOM harness: page-side APIs, added after the core ones and
  *                                  before the strict proxy wraps the mock.
  *

@@ -185,6 +185,7 @@ The contract, also documented in `helpers/core/plugins.mjs`:
 | `modules(imp)` → object | after the core modules | the area's own modules, added to `mods` and the ctx |
 | `startBackground(ctx)` → fields? | a background context, once the modules are loaded | the area's background state |
 | `remoteBackground({browser, ctl, imp})` → `{start(mods)}` | a page context, **before** the page's modules are imported; `start(mods)` after them, resolving to `{fields, listeners, commands}` | the page's background: `fields` are added to the ctx, `listeners` / `commands` answer the page's messages |
+| `pages` (object) | DOM harness, merged into `PAGES` when the harness loads | the area's own pages, `{name: HTML path}`; a name already defined (by the core or another plugin) is an error |
 | `pageApis(browser, opts)` | DOM harness, after the core page-side APIs, before the strict proxy | page-side APIs |
 | `pageCommands(mods)` → map | DOM harness, after the core default commands | fixed answers to background commands |
 
@@ -274,7 +275,9 @@ is evaluated as the classic script it is.
 
 ### Adding a page
 
-1. Add it to `PAGES` in `helpers/core/dom-harness.mjs`.
+1. Add it to `CORE_PAGES` in `helpers/core/dom-harness.mjs` if every branch has it, or to the
+   `pages` of the area's plugin (`helpers/plugins/<area>.mjs`) if it belongs to one area: either
+   way it ends up in `PAGES`, the key `openPage()` takes.
 2. Create its first file in `tests/dom/<page>/` (named after the convention above), ending
    with `assertHarnessClean(ctx)`.
 3. If `assertHarnessClean()` fails with an unmocked API, model it in `addPageApis()` (or in

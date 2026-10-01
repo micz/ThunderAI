@@ -41,8 +41,8 @@ import {
 } from './load.mjs';
 import { plugins } from './plugins.mjs';
 
-/** Every page the suite can open: name -> HTML path, relative to the repository root. */
-export const PAGES = {
+/** The pages every branch has: name -> HTML path, relative to the repository root. */
+const CORE_PAGES = {
     'options': 'options/mzta-options.html',
     'setup-wizard': 'pages/setup-wizard/mzta-setup-wizard.html',
     'spamfilter': 'pages/spamfilter/mzta-spamfilter.html',
@@ -57,6 +57,26 @@ export const PAGES = {
     'popup': 'popup/mzta-popup.html',
     'onboarding': 'pages/onboarding/onboarding.html',
 };
+
+/**
+ * Every page the suite can open: the core ones plus each plugin's `pages`, merged when this
+ * module loads, so the export is complete from the first import. A name defined twice (by the
+ * core and a plugin, or by two plugins) is an error, never a silent override.
+ */
+export const PAGES = { ...CORE_PAGES };
+{
+    const owner = Object.fromEntries(Object.keys(CORE_PAGES).map(name => [name, 'the core']));
+    for (const p of await plugins()) {
+        for (const [name, rel] of Object.entries(p.pages || {})) {
+            if (Object.hasOwn(PAGES, name)) {
+                throw new Error('dom-page: page "' + name + '" defined by both ' + owner[name]
+                    + ' and the ' + p.name + ' plugin');
+            }
+            PAGES[name] = rel;
+            owner[name] = 'the ' + p.name + ' plugin';
+        }
+    }
+}
 
 /** The window globals page code reaches for as bare names. Explicit, not "everything":
  *  copying the whole window would shadow Node's own URL, fetch, structuredClone, timers... */
