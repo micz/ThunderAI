@@ -161,7 +161,7 @@ provider itself. The rule is now **split by page**:
 
 | Context | Receives |
 |---|---|
-| `api_webchat/` (decided by the background from `sender.url`) | the real key |
+| the API chat window, `api_webchat/index.html` (decided by the background from a prefix match on `sender.url`) | the real key |
 | every other extension page | `MANAGED_SECRET_MARKER`, exported by `js/mzta-managed.js` |
 
 The same rule covers every `*_api_key` field of a policy connection

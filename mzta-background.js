@@ -128,7 +128,9 @@ browser.runtime.onMessage.addListener((message, sender) => {
         // A policy-supplied API key goes ONLY to the API chat window, which needs it to call
         // the provider. Every settings page gets MANAGED_SECRET_MARKER instead, so the key can
         // neither be revealed with the password eye toggle nor copied into a prompt.
-        const is_webchat = sender.url.startsWith(browser.runtime.getURL('api_webchat/'));
+        // Matched on the page, not the folder: index.html is the only page in api_webchat/, and
+        // the webext linter reads a getURL() folder argument as a missing packaged file.
+        const is_webchat = sender.url.startsWith(browser.runtime.getURL('api_webchat/index.html'));
         const values = {};
         for (const key of Object.keys(prefs_default)) {
             if (!mztaManaged.hasManagedValue(key)) continue;
