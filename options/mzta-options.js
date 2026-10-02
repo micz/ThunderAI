@@ -23,6 +23,7 @@ import {
   special_prompts_with_integration
 } from './mzta-options-default.js';
 import { taLogger } from '../js/mzta-logger.js';
+import { normalizeOllamaThink } from '../js/api/ollama.js';
 import {
   checkSparksPresence,
   openTab,
@@ -36,6 +37,7 @@ import {
 import { taStorage } from '../js/mzta-storage.js';
 import {
   injectConnectionUI,
+  updateOllamaThinkingUI,
   updateAnthropicModelCapabilityUI,
   varConnectionUI,
   showConnectionOptions,
@@ -140,7 +142,9 @@ async function restoreOptions() {
   }
 
   let getting = await browser.storage.sync.get(prefs_default);
+  getting.ollama_think = String(normalizeOllamaThink(getting.ollama_think));
   setCurrentChoice(getting);
+  await updateOllamaThinkingUI('', getting.ollama_think, taLog);
 }
 
 // Per-provider base tint colours (same palette used in mzta-options.css and

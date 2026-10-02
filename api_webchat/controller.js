@@ -21,6 +21,7 @@
  */
 
 import { prefs_default, integration_options_config } from '../options/mzta-options-default.js';
+import { normalizeOllamaThink } from '../js/api/ollama.js';
 import { placeholdersUtils } from '../js/mzta-placeholders.js';
 import { getAPIsInitMessageString, convertNewlinesToBr } from '../js/mzta-utils.js';
 import { loadPrompt } from '../js/mzta-prompts.js';
@@ -226,7 +227,7 @@ if (worker) {
                 { key: 'thinking_budget', labelKey: 'prefs_google_gemini_thinking_budget', type: 'string' }
             ],
             ollama: [
-                { key: 'think', labelKey: 'prefs_ollama_think', type: 'boolean' },
+                { key: 'think', labelKey: 'prefs_ollama_think', type: 'ollama_think' },
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
                 { key: 'num_ctx', labelKey: 'prefs_ollama_num_ctx', type: 'number_gt_zero' }
             ],
@@ -251,11 +252,19 @@ if (worker) {
                 const prefKey = `${integration}_${item.key}`;
                 const value = prefs[prefKey];
 
-                if (value !== undefined && value !== null && value !== '') {
+                if (item.type === 'ollama_think' || (value !== undefined && value !== null && value !== '')) {
                     let displayValue;
                     let shouldAdd = false;
 
                     switch (item.type) {
+                        case 'ollama_think': {
+                            const think = normalizeOllamaThink(value);
+                            displayValue = typeof think === 'string' ? think.charAt(0).toUpperCase() + think.slice(1)
+                                : browser.i18n.getMessage(think === null ? 'prefs_ollama_think_default'
+                                    : think ? 'prefs_ollama_think_on' : 'prefs_ollama_think_off');
+                            shouldAdd = true;
+                            break;
+                        }
                         case 'boolean':
                             displayValue = value ? 'Yes' : 'No';
                             shouldAdd = true;

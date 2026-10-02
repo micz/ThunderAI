@@ -2241,6 +2241,36 @@
     "message": "If checked, the Model will think before answering. This option works only with models that support the 'think' feature.",
     "description": ""
   },
+  "prefs_ollama_think_off": {
+    "message": "Off",
+    "description": "Ollama thinking selector: sends the Boolean false."
+  },
+  "prefs_ollama_think_on": {
+    "message": "On",
+    "description": "Ollama thinking selector: sends the Boolean true when the model advertises it."
+  },
+  "prefs_ollama_think_levels_Info": {
+    "message": "Thinking controls are provided by the selected model. Model default uses the model's own setting.",
+    "description": "Help text for the Ollama thinking selector populated from model information."
+  },
+  "prefs_ollama_think_default": {
+    "message": "Model default",
+    "description": "Ollama thinking selector: omit think; append the model default when reported."
+  },
+  "prefs_ollama_think_unavailable": {
+    "message": "Thinking controls unavailable.",
+    "description": "Ollama has no thinking metadata, only reports false, or model information could not be loaded."
+  },
+  "prefs_ollama_think_fallback": {
+    "message": "The saved value “$VALUE$” is not supported by this model. Using model default.",
+    "description": "Ollama thinking value is not in the selected model's reported controls.",
+    "placeholders": {
+      "value": {
+        "content": "$1",
+        "example": "a model-defined level"
+      }
+    }
+  },
   "prefs_ollama_format_json": {
     "message": "Force JSON output",
     "description": ""

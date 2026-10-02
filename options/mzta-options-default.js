@@ -34,7 +34,8 @@ export const integration_options_config = {
         model: '',
         num_ctx: 0,
         temperature: '',
-        think: false,
+        // String default keeps thinking levels out of the Boolean coercion in special commands.
+        think: 'false',
         format_json: false
     },
     openai_comp: {

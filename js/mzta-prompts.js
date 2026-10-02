@@ -95,6 +95,7 @@
 */
 
 import { integration_options_config } from "../options/mzta-options-default.js";
+import { normalizeOllamaThink } from './api/ollama.js';
 
 // The five boolean-ish prompt flags documented above. Canonical representation
 // is the string "0"/"1" -- that is what the definitions below declare, and what
@@ -559,6 +560,11 @@ export function isPromptFlagOn(value) {
 // corrupted override falls back to what the prompt ships with, rather than to a
 // blanket "0" which would silently disable prompts built with the flag on.
 export function normalizePromptFlags(prompt, fallbacks = {}) {
+    // Normalize legacy Ollama checkbox values at the same read/import boundary.
+    // Missing means inherit; an explicitly empty value means Off.
+    if (prompt.ollama_think !== undefined) {
+        prompt.ollama_think = String(normalizeOllamaThink(prompt.ollama_think));
+    }
     promptBooleanFlags.forEach((flag) => {
         const value = prompt[flag];
         if (value === 0 || value === "0") {

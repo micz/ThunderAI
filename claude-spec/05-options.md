@@ -15,6 +15,8 @@ Extension preferences are stored in `browser.storage.sync` (not `.local`) — de
 
 ## Settings Structure
 
+`ollama_think` has a string default to preserve Boolean and named thinking values through special-command initialization. The shared connection UI loads the selected Ollama model’s `thinking.values` and `thinking.default` through `/api/show`, builds its options dynamically and refreshes on model/host changes. Model default is stored as `'null'` and omits `think` in requests. Off remains selected across model/host changes and discovery failures and always sends `think: false`; other unsupported stored values visibly fall back to model default; missing prompt values inherit the global setting, while legacy empty values mean Off. Global/prefixed Boolean preferences are migrated to strings; a failed migration write is logged and never blocks UI construction, because control restoration also normalizes values in memory. Custom prompts and feature pages use the same UI and prompt normalization. The connection test remains the existing model-list check and sends no inference request.
+
 ### Global Integration Settings
 
 Stored flat in `prefs_default` with `{provider}_{key}` naming:

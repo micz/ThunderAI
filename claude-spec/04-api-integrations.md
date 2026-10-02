@@ -147,6 +147,8 @@ Per-prompt ChatGPT Web overrides are a separate, unrelated mechanism: the custom
 - Module: `js/api/ollama.js`
 - Worker: `js/workers/model-worker-ollama.js`
 - Settings keys: `ollama_host`, `ollama_model`, `ollama_num_ctx`, `ollama_temperature`, `ollama_think`, `ollama_format_json`
+- `Ollama.fetchModelInfo()` posts `{ model }` to `/api/show` on the configured host. The shared UI builds thinking options from its top-level `thinking.values` (Boolean or model-defined string values) and shows `thinking.default` next to Model default. It refreshes after model/host changes and discards stale responses. A selected Off remains Off even if the new model does not advertise `false`; other unsupported stored values visibly fall back to model default. No named thinking levels are hard-coded. See [Ollama thinking controls](https://docs.ollama.com/capabilities/thinking).
+- `normalizeOllamaThink()` preserves named strings exactly and supports old Boolean/string settings (legacy empty/`off` means `false`). Model default is stored as `'null'`; `true` means On, not model default. Off always sends `think: false`, including when thinking metadata is absent or discovery fails. Other explicit values are checked against `/api/show`; supported values retain their API types. Other unsupported values, missing thinking metadata, and discovery errors omit `think` to use the model default. The UI disables the control when no thinking controls are reported or `values` only contains `false`. Both streaming chat and special commands use this request builder. The existing connection test still calls `fetchModels()`; no inference test is added.
 - Requires CORS to be configured on the Ollama server
 
 ### OpenAI-Compatible (`openai_comp_api`)

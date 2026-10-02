@@ -29,6 +29,7 @@ import {
 } from "../../js/mzta-prompts.js";
 import {
     injectConnectionUI,
+    updateOllamaThinkingUI,
     showConnectionOptions,
     updateWarnings,
     checkJsonFieldsByPrefix,
@@ -43,6 +44,7 @@ import {
     revealPromptInMenuOrder
 } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
+import { normalizeOllamaThink } from '../../js/api/ollama.js';
 import {
     getPlaceholders,
     placeholdersUtils,
@@ -78,6 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let storedPrefs = await browser.storage.sync.get(null);
     prefs = { ...prefs_default, ...storedPrefs };
+    prefs.ollama_think = String(normalizeOllamaThink(prefs.ollama_think));
     taLog = new taLogger("mzta-custom-prompts", prefs.do_debug);
     
     setStorageSpace();
@@ -204,6 +207,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Same reason as in populateConnectionUI: these assignments fire no input
     // event, so a malformed extra_body inherited from the global prefs would
     // sit unflagged in the add form.
+    await updateOllamaThinkingUI(NEW_PROMPT_PREFIX, prefs.ollama_think, taLog);
     checkJsonFieldsByPrefix(NEW_PROMPT_PREFIX);
 
     i18n.updateDocument();
@@ -799,7 +803,7 @@ function resetApiSettings(selectId, id = null) {
                 if (inputEl.type === 'checkbox') {
                     inputEl.checked = false;
                 } else {
-                    inputEl.value = '';
+                    inputEl.value = propName === 'ollama_think' ? 'null' : '';
                 }
             }
         }
@@ -813,13 +817,14 @@ function resetApiSettings(selectId, id = null) {
         for (const [integration, options] of Object.entries(integration_options_config)) {
             for (const key of Object.keys(options)) {
                 const propName = `${integration}_${key}`;
-                newValues[propName] = '';
+                newValues[propName] = propName === 'ollama_think' ? 'null' : '';
             }
         }
         item.values(newValues);
     }
     // Clearing the fields does not fire input either, so a red border left from
     // a malformed value would survive the reset on a now-empty (valid) field.
+    updateOllamaThinkingUI(prefix, 'null', taLog);
     checkJsonFieldsByPrefix(prefix);
     setSomethingChanged();
 }
@@ -872,6 +877,7 @@ function populateConnectionUI(tr, id, prefix, selectId) {
     // the live .check-json validation never runs on restore: a previously saved
     // malformed extra_body would show no red border or error until touched.
     // Scoped to this form's prefix so it cannot repaint another open editor.
+    updateOllamaThinkingUI(prefix, itemValues.ollama_think ?? prefs.ollama_think, taLog);
     checkJsonFieldsByPrefix(prefix);
     i18n.updateDocument();
 }
@@ -1324,7 +1330,7 @@ function handleCopyClick(e) {
                 const inputEl = document.getElementById(NEW_PROMPT_PREFIX + propName);
                 if (inputEl) {
                     let val = itemValues[propName];
-                    if (val === undefined) val = '';
+                    if (val === undefined) val = propName === 'ollama_think' ? prefs[propName] : '';
                     
                     if (inputEl.type === 'checkbox') {
                         inputEl.checked = (val === true || val === 'true');
@@ -1340,6 +1346,7 @@ function handleCopyClick(e) {
             }
         }
         // Copied values are assigned directly too: validate what we just wrote.
+        updateOllamaThinkingUI(NEW_PROMPT_PREFIX, itemValues.ollama_think ?? prefs.ollama_think, taLog);
         checkJsonFieldsByPrefix(NEW_PROMPT_PREFIX);
 
         // Reveal what was copied: a collapsed panel would hide the fact that the

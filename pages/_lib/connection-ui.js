@@ -22,7 +22,7 @@ import {
   integration_options_config
 } from '../../options/mzta-options-default.js';
 import { OpenAI } from '../../js/api/openai_responses.js';
-import { Ollama } from '../../js/api/ollama.js';
+import { Ollama, normalizeOllamaThink, getOllamaThinkingValues, resolveOllamaThink } from '../../js/api/ollama.js';
 import { OpenAIComp } from '../../js/api/openai_comp.js'
 import { GoogleGemini } from '../../js/api/google_gemini.js';
 import { Anthropic } from '../../js/api/anthropic.js';
@@ -49,6 +49,24 @@ export const varConnectionUI = {
   permission_all_urls: false,
   permission_ollama_host: false,
   permission_openai_comp_host: false
+}
+
+// Idempotent migration; a failed write must not prevent the connection UI from loading.
+async function migrateOllamaThinkPreferences(taLog = console) {
+  const prefs = await browser.storage.sync.get(null);
+  const updates = {};
+  for (const [key, value] of Object.entries(prefs)) {
+    if (key !== 'ollama_think' && !key.endsWith('_ollama_think')) continue;
+    const normalized = String(normalizeOllamaThink(value));
+    if (value !== normalized) updates[key] = normalized;
+  }
+  if (Object.keys(updates).length > 0) {
+    try {
+      await browser.storage.sync.set(updates);
+    } catch (error) {
+      taLog.warn(`Failed to migrate Ollama thinking preferences: ${error}`);
+    }
+  }
 }
 
 // Selects that ship their own option for the empty value, either a disabled
@@ -95,6 +113,58 @@ export function getConnectionTypeLabel(value = '') {
   return browser.i18n.getMessage(opt.msgKey) || value;
 }
 
+export async function updateOllamaThinkingUI(modelId_prefix = '', savedValue, taLog = console) {
+  const select = document.getElementById(`${modelId_prefix}ollama_think`);
+  const model = document.getElementById(`${modelId_prefix}ollama_model`);
+  const host = document.getElementById(`${modelId_prefix}ollama_host`);
+  const status = document.getElementById(`${modelId_prefix}ollama_think_status`);
+  if (!select || !model || !host) return;
+
+  const requested = normalizeOllamaThink(savedValue === undefined ? select._ollamaThinkingPendingValue ?? select.value : savedValue);
+  select._ollamaThinkingPendingValue = requested;
+  const revision = (select._ollamaThinkingRevision || 0) + 1;
+  select._ollamaThinkingRevision = revision;
+  const label = value => typeof value === 'boolean'
+      ? browser.i18n.getMessage(value ? 'prefs_ollama_think_on' : 'prefs_ollama_think_off')
+      : value.charAt(0).toUpperCase() + value.slice(1);
+  const defaultLabel = browser.i18n.getMessage('prefs_ollama_think_default');
+  select.replaceChildren(new Option(defaultLabel, 'null'));
+  if (requested === false) select.add(new Option(label(false), 'false'));
+  select.value = requested === false ? 'false' : 'null';
+  select.disabled = true;
+  if (status) status.textContent = browser.i18n.getMessage('prefs_ollama_think_unavailable');
+  if (!model.value || !host.value) {
+    delete select._ollamaThinkingPendingValue;
+    if (savedValue === undefined) select.dispatchEvent(new Event('change', { bubbles: true }));
+    return;
+  }
+
+  const requestHost = host.value;
+  const requestModel = model.value;
+  const client = new Ollama({ host: requestHost, model: requestModel });
+  if (status) status.textContent = browser.i18n.getMessage('Loading');
+  const info = await client.fetchModelInfo();
+  if (revision !== select._ollamaThinkingRevision || host.value !== requestHost || model.value !== requestModel) return;
+  delete select._ollamaThinkingPendingValue;
+  const thinking = info.response?.thinking;
+  const values = getOllamaThinkingValues(thinking);
+  const modelDefault = values.includes(thinking?.default) ? ` (${label(thinking.default)})` : '';
+  select.replaceChildren(new Option(defaultLabel + modelDefault, 'null'));
+  for (const value of values) select.add(new Option(label(value), String(value)));
+  if (requested === false && !values.includes(false)) select.add(new Option(label(false), 'false'));
+  select.value = String(resolveOllamaThink(requested, thinking));
+  select.disabled = !values.some(value => value !== false);
+  if (!info.ok) taLog.warn(`Failed to load Ollama thinking controls: ${info.error}`);
+  if (status) {
+    status.textContent = select.disabled ? browser.i18n.getMessage('prefs_ollama_think_unavailable')
+        : requested !== null && select.value === 'null'
+          ? browser.i18n.getMessage('prefs_ollama_think_fallback', label(requested)) : '';
+  }
+  // A model/host edit may have saved the temporary default while discovery ran.
+  // Persist the final selection through the page's existing change handler.
+  if (savedValue === undefined) select.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
 export async function injectConnectionUI({
     afterTrId = '',
     selectId = '',
@@ -112,6 +182,8 @@ export async function injectConnectionUI({
     console.error(`[ThuderAI | injectConnectionUI] Can't find tr#${afterTrId}`);
     return null;
   }
+
+  await migrateOllamaThinkPreferences(taLog);
 
   // Inject CSS if not present
   if (!document.getElementById('mzta-connection-ui-style')) {
@@ -473,8 +545,11 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" class="option-input"/>
-        __MSG_prefs_ollama_think_Info__
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" class="option-input" disabled>
+          <option value="null">__MSG_prefs_ollama_think_default__</option>
+        </select>
+        <br>__MSG_prefs_ollama_think_levels_Info__
+        <span id="${modelId_prefix}ollama_think_status" class="anthropic_caps_note"></span>
       </label>
     </td>
   </tr>
@@ -995,6 +1070,8 @@ export async function injectConnectionUI({
   select_ollama_model.appendChild(ollama_option);
   select_ollama_model.value = prefs.ollama_model;
   select_ollama_model.addEventListener("change", () => warn_Ollama_HostEmpty(modelId_prefix));
+  select_ollama_model.addEventListener("change", () => updateOllamaThinkingUI(modelId_prefix, undefined, taLog));
+  document.getElementById(getPrefixedId('ollama_host')).addEventListener("change", () => updateOllamaThinkingUI(modelId_prefix, undefined, taLog));
 
   document.getElementById(getPrefixedId('btnUpdateOllamaModels')).addEventListener('click', async () => {
     document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'inline';
@@ -1038,7 +1115,9 @@ export async function injectConnectionUI({
         }
       });
       syncTomSelect(select_ollama_model);
+      const previousModel = select_ollama_model.value;
       autoSelectSingleModel(select_ollama_model);
+      if (select_ollama_model.value === previousModel) await updateOllamaThinkingUI(modelId_prefix, undefined, taLog);
       document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
     } catch (error) {
       document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
@@ -1195,6 +1274,7 @@ export async function injectConnectionUI({
           varConnectionUI.permission_ollama_host = await messenger.permissions.request({ origins: [prepareOriginURL(ollama_host)] });
         }
         updateCORSWarnings(modelId_prefix);
+        await updateOllamaThinkingUI(modelId_prefix, undefined, taLog);
       }
     });
   
@@ -1312,6 +1392,10 @@ export async function initializeSpecificIntegrationUI({
   if (restoreOptionsCallback) {
       await restoreOptionsCallback();
   }
+
+  const prompt = await loadPrompt(promptId);
+  const prefs = await browser.storage.sync.get({ ollama_think: prefs_default.ollama_think });
+  await updateOllamaThinkingUI(model_prefix, prompt?.ollama_think ?? prefs.ollama_think, taLog);
 
   // Flag any malformed JSON already stored: the fields are filled now.
   checkJsonFields();

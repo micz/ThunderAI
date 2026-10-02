@@ -49,6 +49,15 @@ definition**, so a corrupted override reverts to what the prompt ships with inst
 forced off (which would silently disable `prompt_reply_custom_command`, whose built-in is
 `"1"`).
 
+The same read/import boundary also normalizes a defined `ollama_think` through
+`normalizeOllamaThink()` to stored strings, preserving model-defined named values
+exactly. Historical booleans and empty/`off` values remain compatible; `'null'`
+selects model default. Available values are checked against the selected model's
+`/api/show` thinking metadata in the shared UI and before inference. A missing
+key stays missing so it can inherit the global setting; an explicit empty value
+means Off. Off remains Off across model changes and discovery failures, sending
+`think: false`. Other unsupported values fall back to model default, with a notice in the UI.
+
 It is applied in the **three producers**, not in `getPrompts()`. That placement is deliberate:
 `getSpecialPrompts()` is exported and called *directly* — by `buildSummaryPrompt()` /
 `buildTranslationPrompt()` in `js/mzta-utils-prompt.js` and by the six feature pages — so it

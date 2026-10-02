@@ -18,9 +18,11 @@
 
 import { prefs_default } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
+import { normalizeOllamaThink } from '../../js/api/ollama.js';
 import { setTomSelectBorder, hasNoConnectionSelected } from '../../js/mzta-utils.js';
 import {
   injectConnectionUI,
+  updateOllamaThinkingUI,
   varConnectionUI,
   showConnectionOptions
 } from '../_lib/connection-ui.js';
@@ -133,7 +135,9 @@ async function restoreOptions() {
     });
   }
   let getting = await browser.storage.sync.get(prefs_default);
+  getting.ollama_think = String(normalizeOllamaThink(getting.ollama_think));
   setCurrentChoice(getting);
+  await updateOllamaThinkingUI('', getting.ollama_think, taLog);
 }
 
 // ---- Connection test status strip (mirrors options page) -----------------

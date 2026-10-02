@@ -17,6 +17,29 @@
  */
 
 
+// Accept legacy checkbox values and the string values saved by the select.
+export function normalizeOllamaThink(value) {
+    if (value === null || value === 'null') return null;
+    if (value === true || value === 1) return true;
+    if (typeof value !== 'string') return false;
+    if (value === '' || value === 'false' || value === 'off') return false;
+    if (value === 'true') return true;
+    return value;
+}
+
+export function getOllamaThinkingValues(thinking) {
+    return Array.isArray(thinking?.values)
+        ? [...new Set(thinking.values.filter(value => typeof value === 'boolean' || (typeof value === 'string' && value !== '')))]
+        : [];
+}
+
+export function resolveOllamaThink(value, thinking) {
+    const think = normalizeOllamaThink(value);
+    // An explicit Off must not become the model's potentially enabled default.
+    if (think === false) return false;
+    return getOllamaThinkingValues(thinking).includes(think) ? think : null;
+}
+
 export class Ollama {
     host = '';
     model = '';
@@ -40,7 +63,7 @@ export class Ollama {
       this.stream = stream;
       this.num_ctx = num_ctx;
       this.temperature = temperature;
-      this.think = think;
+      this.think = normalizeOllamaThink(think);
       this.format_json = format_json;
     }
 
@@ -82,8 +105,32 @@ export class Ollama {
     }
 
     
+    fetchModelInfo = async () => {
+      try {
+        const response = await fetch(this.host + "/api/show", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model: this.model }),
+          signal: AbortSignal.timeout(10000),
+        });
+        if (!response.ok) return { ok: false, error: `${response.status} ${await response.text()}` };
+        const data = await response.json();
+        if (data?.error) return { ok: false, error: String(data.error) };
+        return { ok: true, response: data };
+      } catch (error) {
+        console.error("[ThunderAI] Ollama model information request failed: " + error);
+        return { ok: false, is_exception: true, error: String(error) };
+      }
+    }
+
     fetchResponse = async (messages) => {
       try {
+        // Validate stored settings too, including prompts used without opening their UI.
+        let think = this.think === false ? false : null;
+        if (this.think !== null && this.think !== false) {
+          const info = await this.fetchModelInfo();
+          if (info.ok) think = resolveOllamaThink(this.think, info.response?.thinking);
+        }
         const tempFloat = parseFloat(this.temperature);
         //console.log(">>>>>>>>>>  messages: " +JSON.stringify(messages));
         const response = await fetch(this.host + "/api/chat", {
@@ -95,7 +142,7 @@ export class Ollama {
                 model: this.model, 
                 messages: messages,
                 stream: this.stream,
-                think: this.think,
+                ...(think !== null ? { think } : {}),
                 ...(this.format_json ? { format: "json" } : {}),
                 ...(this.num_ctx > 0 ? { options: { num_ctx: parseInt(this.num_ctx) } } : {}),
                 ...(this.temperature != '' && !Number.isNaN(tempFloat) ? { options: { temperature: tempFloat } } : {}),
