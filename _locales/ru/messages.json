@@ -17,9 +17,6 @@
     "chatgpt_user_not_logged_in": {
         "message": "Вы не вошли в ChatGPT. Пожалуйста, войдите в систему, используя свои учетные данные, закройте окно ChatGPT, а затем повторите предпринятое вами действие. После этого вы останетесь в системе."
     },
-    "customPrompts_import_completed": {
-        "message": "Импорт пользовательских промтов завершен! Вам нужно нажать кнопку «Сохранить все», чтобы сохранить изменения."
-    },
     "importPrompts_invalidPrompts": {
         "message": "Файл, который вы пытаетесь импортировать, не содержит допустимых промтов."
     },
@@ -239,17 +236,8 @@
     "customPrompts_reindexing_list": {
         "message": "Переиндексация списка..."
     },
-    "customPrompts_filtering_prompts": {
-        "message": "Фильтрация промтов..."
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "Сохранение пользовательских промтов..."
-    },
     "customPrompts_saved": {
         "message": "Промт сохранен!"
-    },
-    "customPrompts_reloading_menus": {
-        "message": "Перезагрузка меню..."
     },
     "customPrompts_form_label_need_signature": {
         "message": "Всегда добавлять подпись"
@@ -325,9 +313,6 @@
     },
     "Ollama_Models": {
         "message": "Модели Ollama"
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "Сохранение системных промтов..."
     },
     "customPrompts_unsaved_changes": {
         "message": "Есть не сохраненные изменения!"

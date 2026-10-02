@@ -14,14 +14,8 @@
     "customPrompts_form_label_Text": {
         "message": "提示文字"
     },
-    "customPrompts_filtering_prompts": {
-        "message": "过滤提示词..."
-    },
     "customPrompts_btnAddNewCommit": {
         "message": "添加提示词"
-    },
-    "customPrompts_reloading_menus": {
-        "message": "正在重新加载菜单..."
     },
     "customPrompts_form_label_ID": {
         "message": "ID"
@@ -146,9 +140,6 @@
     "customPrompts_form_label_ID_rules": {
         "message": "必须是唯一的、小写且没有空格"
     },
-    "customPrompts_saving_default_prompts": {
-        "message": "正在保存默认提示词..."
-    },
     "customPrompts_reindexing_list": {
         "message": "重新索引列表..."
     },
@@ -163,9 +154,6 @@
     },
     "customPrompts_btnEdit": {
         "message": "编辑"
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "正在保存自定义提示词..."
     },
     "customPrompts_saved": {
         "message": "提示词已保存！"
@@ -409,9 +397,6 @@
     },
     "customPrompts_start_import": {
         "message": "开始导入自定义提示词..."
-    },
-    "customPrompts_import_completed": {
-        "message": "自定义提示词导入完成！您需要点击“全部保存”按钮来保存您的更改。"
     },
     "prefs_Connection_type": {
         "message": "连接类型"

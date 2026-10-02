@@ -57,18 +57,6 @@
     "customPrompts_reindexing_list": {
         "message": "Ponowne indeksowanie listy..."
     },
-    "customPrompts_filtering_prompts": {
-        "message": "Filtrowanie poleceń..."
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "Zapisywanie domyślnych poleceń..."
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "Zapisywanie własnych poleceń..."
-    },
-    "customPrompts_reloading_menus": {
-        "message": "Odświeżanie menu..."
-    },
     "customPrompts_saved": {
         "message": "Polecenia zapisane!"
     },
@@ -275,9 +263,6 @@
     },
     "customPrompts_start_import": {
         "message": "Rozpoczynanie importu własnych poleceń..."
-    },
-    "customPrompts_import_completed": {
-        "message": "Import własnych poleceń zakończony! Musisz kliknąć przycisk 'Zapisz wszystko', aby zapisać zmiany."
     },
     "importPrompts_invalidFile": {
         "message": "Plik, który próbujesz zaimportować, nie jest prawidłowym plikiem poleceń."

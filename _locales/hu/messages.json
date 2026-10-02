@@ -59,18 +59,6 @@
     "customPrompts_reindexing_list": {
         "message": "Lista újraindexelése..."
     },
-    "customPrompts_filtering_prompts": {
-        "message": "Utasítások szűrése..."
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "Alapértelmezett utasítások mentése..."
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "Egyedi utasítások mentése..."
-    },
-    "customPrompts_reloading_menus": {
-        "message": "Menük újratöltése..."
-    },
     "customPrompts_saved": {
         "message": "Utasítások elmentve!"
     },
@@ -321,9 +309,6 @@
     },
     "customPrompts_start_import": {
         "message": "Egyedi utasítások importálásának indítása..."
-    },
-    "customPrompts_import_completed": {
-        "message": "Egyedi utasítások importálása befejeződött! A módosítások mentéséhez kattintson az 'Összes mentése' gombra."
     },
     "importPrompts_invalidFile": {
         "message": "Az importálni kívánt fájl nem érvényes egyedi utasításfájl."

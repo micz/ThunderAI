@@ -56,18 +56,6 @@
     "customPrompts_reindexing_list": {
         "message": "Επαναδημιουργία ευρετηρίου λίστας..."
     },
-    "customPrompts_filtering_prompts": {
-        "message": "Φιλτράρισμα μηνυμάτων…"
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "Αποθήκευση προεπιλεγμένων μηνυμάτων..."
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "Αποθήκευση προσαρμοσμένων μηνυμάτων..."
-    },
-    "customPrompts_reloading_menus": {
-        "message": "Επαναφόρτωση μενού..."
-    },
     "customPrompts_saved": {
         "message": "Τα μηνύματα αποθηκεύτηκαν!"
     },
@@ -286,9 +274,6 @@
     },
     "customPrompts_start_import": {
         "message": "Έναρξη εισαγωγής προσαρμοσμένων μηνυμάτων προτροπής..."
-    },
-    "customPrompts_import_completed": {
-        "message": "Η εισαγωγή προσαρμοσμένων μηνυμάτων ολοκληρώθηκε! Πρέπει να κάνετε κλικ στο κουμπί «Αποθήκευση όλων» για να αποθηκεύσετε τις αλλαγές σας."
     },
     "importPrompts_invalidFile": {
         "message": "Το αρχείο που προσπαθείτε να εισαγάγετε δεν είναι έγκυρο αρχείο προσαρμοσμένων μηνυμάτων."

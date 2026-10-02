@@ -56,18 +56,6 @@
     "customPrompts_reindexing_list": {
         "message": "Преиндексиране на списъка..."
     },
-    "customPrompts_filtering_prompts": {
-        "message": "Филтриране на подканите..."
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "Запазване на подкани по подразбиране..."
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "Запазване на персонализирани подкани..."
-    },
-    "customPrompts_reloading_menus": {
-        "message": "Презареждане на менюта..."
-    },
     "customPrompts_saved": {
         "message": "Подканите са запазени!"
     },

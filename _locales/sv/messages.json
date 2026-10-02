@@ -80,9 +80,6 @@
     "prompt_classify": {
         "message": "Klassificera"
     },
-    "customPrompts_reloading_menus": {
-        "message": "Laddar om menyer..."
-    },
     "customPrompts_form_required_fields": {
         "message": "Obligatoriska fält"
     },
@@ -205,15 +202,6 @@
     },
     "customPrompts_reindexing_list": {
         "message": "Omindexerar listan..."
-    },
-    "customPrompts_filtering_prompts": {
-        "message": "Filtrerar promptar..."
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "Sparar standardpromptar..."
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "Sparar anpassade promptar..."
     },
     "customPrompts_saved": {
         "message": "Promptar sparade!"
@@ -370,9 +358,6 @@
     },
     "customPrompts_start_import": {
         "message": "Startar import av anpassade promptar..."
-    },
-    "customPrompts_import_completed": {
-        "message": "Import av anpassade promptar är klar! Du måste klicka på knappen \"Spara alla\" för att spara dina ändringar."
     },
     "importPrompts_invalidFile": {
         "message": "Filen du försöker importera är inte en giltig fil med anpassade promptar."
