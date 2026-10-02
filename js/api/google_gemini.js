@@ -19,7 +19,10 @@
 
 import { parseExtraBody } from './api-utils.js';
 import { fetchWithRetry } from './api-retry.js';
-import { createUsageData, toUsageNumber } from './mzta-api-usage.js';
+import {
+  createUsageData,
+  toUsageNumber
+} from './mzta-api-usage.js';
 
 // The Gemini API reports token usage on every response.
 export const supportsUsageData = true;

@@ -755,12 +755,12 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     white-space: nowrap;
 }
 .conn_test_link:hover { text-decoration: underline; }
-/* State variants driven by data-state on #mzta_conn_test */
-#mzta_conn_test[data-state="ok"] .conn_test_dot { background: var(--success); }
-#mzta_conn_test[data-state="error"] .conn_test_dot { background: #d93025; }
-#mzta_conn_test[data-state="error"] .conn_test_text { color: #d93025; }
+/* State variants driven by data-state on the strip */
+.conn_test_strip[data-state="ok"] .conn_test_dot { background: var(--success); }
+.conn_test_strip[data-state="error"] .conn_test_dot { background: #d93025; }
+.conn_test_strip[data-state="error"] .conn_test_text { color: #d93025; }
 /* Loading: turn the dot into a spinner (reuses the mztaspin keyframe). */
-#mzta_conn_test[data-state="loading"] .conn_test_dot {
+.conn_test_strip[data-state="loading"] .conn_test_dot {
     background: transparent;
     border: 2px solid var(--fieldLine);
     border-top-color: var(--accent);

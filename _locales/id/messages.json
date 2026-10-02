@@ -1061,10 +1061,10 @@
         "message": "Daftar lewati alamat email"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "Email dari alamat-alamat ini tidak akan dikirim ke AI untuk penyaringan spam."
+        "message": "Email dari alamat atau domain ini tidak akan dikirim ke AI untuk penyaringan spam."
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "Tambahkan satu alamat email per baris, atau pisahkan dengan koma."
+        "message": "Tambahkan satu entri per baris, atau pisahkan dengan koma. Entri dapat berupa alamat email lengkap (user@domain.com) atau seluruh domain (@domain.com)."
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "Pengirim ada dalam daftar lewati alamat email antispam."

@@ -30,7 +30,7 @@
 
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { openPage, assertHarnessClean } from './dom-page.mjs';
+import { openPage, assertHarnessClean, msg } from './dom-page.mjs';
 import { FEATURE_PAGES, prefixOfPage } from './feature-pages.mjs';
 
 const POLICY_HOST = 'https://gateway.org.example';
@@ -164,8 +164,17 @@ export async function connectionScenario(page, mode) {
             assert.equal(ctx.$(id('openai_comp_model')).value, 'comp-org-enforced');
         });
 
-        test('the page has no connection test that could be handed the marker', () => {
-            assert.deepEqual(ctx.$$('[id^="mzta_conn_test"]'), []);
+        test('the connection test refuses the marker: an error, and no request', async () => {
+            const strip = ctx.$('#mzta_conn_test');
+            assert.ok(strip, 'no connection test strip');
+            const before = ctx.fetchCalls.length;
+            await ctx.click(strip.querySelector('.conn_test_link'));
+            assert.equal(strip.dataset.state, 'error');
+            assert.ok(strip.querySelector('.conn_test_text').textContent
+                .includes(msg('connTest_managed_api_key')), 'not the managed-key message');
+            assert.deepEqual(ctx.fetchCalls.slice(before), []);
+            assert.equal(JSON.stringify(ctx.fetchCalls).includes(MANAGED_SECRET_MARKER), false,
+                'a request carried the marker');
         });
 
         test('write attempts on locked controls re-enabled by hand write nothing', async () => {

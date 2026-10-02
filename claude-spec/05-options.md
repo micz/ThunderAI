@@ -237,7 +237,8 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `spamfilter_threshold` | `70` | Spam confidence threshold (%) |
 | `spamfilter_enabled_accounts` | `[]` | Accounts where the automatic spam filter is active: account ids, per profile, so **not** policy-settable. `[]` = all accounts. Replaced at read time — never overwritten — by the ids resolved from `spamfilter_enabled_accounts_match` when a policy sets it. |
 | `spamfilter_enabled_accounts_match` | `[]` | **Policy-only**, same as `add_tags_enabled_accounts_match`, for the automatic spam filter. |
-| `spamfilter_skip_addresses` | `[]` | Senders never sent to the AI for spam filtering. **Exact addresses only** — unlike `summarize_auto_senders_list` it has no domain-pattern support, because widening the match would silently change the meaning of lists users have already saved. Tested with `hasAddressListEntries()` (see the note below the table). |
+| `spamfilter_skip_addresses` | `[]` | Allow list: senders never sent to the AI for spam filtering (report with spamValue 0). Entries are exact addresses, `@domain.com` or `*@domain.com`, matched by `matchAddressListType()` like `summarize_auto_senders_list`. Lists saved before domain support hold exact addresses only, which match exactly as before. Tested with `hasAddressListEntries()` (see the note below the table). |
+| `spamfilter_block_addresses` | `[]` | Block list: senders always reported as spam (spamValue 100) without an AI call; in automatic mode (`autoMove`) the message is also marked junk and moved to the account's junk folder. Same entry syntax as `spamfilter_skip_addresses`. On a sender in both lists the more specific entry wins (exact beats domain), and on equal specificity the allow list wins. Both lists are checked before `spamfilter_skip_addressbook`. Saved by its own Save button through `normalizeStringList(value, 2)`. See [01-architecture.md](01-architecture.md#data-flow-spam-filter-sender-rules). |
 | `spamfilter_skip_addressbook` | `true` | Skip senders found in any address book (`browser.contacts.quickSearch`) |
 | `spamfilter_show_msg_panel` | `true` | Show info panel on spam detection |
 | `spamfilter_only_inbox` | `false` | Auto spam filter runs only on inbox messages |
@@ -258,7 +259,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 
 #### Address-list preferences and the empty-string trap
 
-The user-typed lists (`spamfilter_skip_addresses`, `summarize_auto_senders_list`,
+The user-typed lists (`spamfilter_skip_addresses`, `spamfilter_block_addresses`, `summarize_auto_senders_list`,
 `add_tags_exclusions`, `add_tags_auto_uselist_list`) all go through `normalizeStringList()`
 (`js/mzta-utils.js`), which splits on newlines **and** commas, trims, lowercases, dedupes,
 **drops the empty entries** and sorts. `returnType` selects the shape: `0` comma-separated
@@ -690,26 +691,51 @@ otherwise it hides and collapses it. The disclosure collapses on every connectio
 Because `_updateVisibility()` sets an inline `display:table-row`, `mzta-design.css` re-asserts
 `display:block !important` on `body.mzta_feature_page #connection_ui_adv_table tr[style*="table-row"]`,
 the same override each feature page CSS applies to `#connection_ui_table`.
+`setupFeatureConnAdv()` also builds the connection test strip right after
+`#connection_ui_adv_table` — see the next section.
 
 ### Connection Settings Panel — Connection Test Status Strip
 
 Below the advanced-options button, inside `#mzta_conn_panel`, a status strip
 (`#mzta_conn_test`, class `conn_test_strip`) offers a lightweight, **non-persistent**
-connectivity check for the selected provider. **Options page only** — the strip is
-static markup in `options/mzta-options.html`, not part of the shared connection UI, so
-it does not appear on the feature pages.
+connectivity check for the selected provider. It is static markup in
+`options/mzta-options.html` and in the setup wizard. The other hosts build it at runtime with
+`attachConnTestStrip({ afterEl, scopeEls, getConnType, idPrefix, id })` from
+`pages/_lib/connection-ui.js`. It inserts the strip after `afterEl`, resets it to idle on any
+`input`/`change` inside `scopeEls`, and makes its link call `runConnectionTest(type, idPrefix)`
+(and, after an Ollama success, `updateOllamaModelCapabilityUI(idPrefix)`).
+`setConnTestStripVisible(strip, connType, visible)` shows it only for a testable type and
+resets it to idle.
+- **Feature pages:** `setupFeatureConnAdv()` builds one strip with id `#mzta_conn_test` right
+  after `#connection_ui_adv_table`, scoped to both tables.
+- **Custom Prompts:** one strip **per form** (add form and each row in edit mode), without an
+  id, after that form's `.conn_adv_table` and scoped to that form only, so editors that are
+  open at the same time never share a result. `attachFormConnTest()` builds it right after
+  `relocateConnAdvRows()`, and `showAdvConnectionOptions()` toggles it with the provider. It
+  stays hidden while the prompt inherits the global connection (empty `api_type`). The page
+  does not link `mzta-design.css`, so `mzta-custom-prompts.css` restates the strip styles
+  with that page's tokens (`--panel2`, `--border2`, `--ok-text`, `--err-text`,
+  `--tint-accent`), plus its own `conn_test_spin` keyframe.
 
 **Visibility.** Shown only for connection types with a testable endpoint — every type
 except `chatgpt_web` (which has no API endpoint). `refreshConnTestVisibility()` toggles
 `display` on load and on every `connection_type` change.
 
-**States** (driven by `data-state` on `#mzta_conn_test`, styled in
+**States** (driven by `data-state` on the `.conn_test_strip`, styled in
 `pages/_lib/mzta-design.css`): `idle` (grey dot, "Connection not tested yet", link "Test
 now"), `loading` (dot becomes a spinner via the `mztaspin` keyframe, "Testing
 connection…", link hidden), `ok` (green dot, "Connected — <API> reachable", link
 "Re-test"), `error` (red dot + red text with the error detail, link "Retry").
-`setConnTestState(state, message)` updates dot/text/link; i18n keys are `connTest_*` in
+`setConnTestState(state, message, strip)`, exported by `js/mzta-connection-test.js` and
+shared by every host, updates dot/text/link of `strip` (found via `.conn_test_text` /
+`.conn_test_link`; it defaults to `#mzta_conn_test`); i18n keys are `connTest_*` in
 `_locales/en/messages.json`.
+
+**Feature pages.** `_updateVisibility()` in `initializeSpecificIntegrationUI()` shows the strip
+only when the specific integration is on **and** the selected type is testable (an empty
+"inherit" value is not), through `setConnTestStripVisible()`. When the specific
+integration is off there is nothing to test here: the global connection is tested on the
+options page.
 
 **Reset to idle** happens on `connection_type` change and on any `input`/`change` inside
 `#connection_ui_table` (editing key/host/model/version invalidates a prior result).
@@ -717,8 +743,10 @@ connection…", link hidden), `ok` (green dot, "Connected — <API> reachable", 
 **Test logic** lives in `js/mzta-connection-test.js` (shared helper). It **reuses the
 provider classes' existing methods** (the same calls the "Fetch models" buttons use)
 — no URL/header/auth logic is duplicated. `getTestableConnection(connType)` returns a
-registry entry (`makeClient` reading current form fields, `nameKey`, `requestPermission`,
-plus the two optional fields below); `runConnectionTest(connType)` requests the needed host
+registry entry (`makeClient` reading current form fields, `nameKey`, `requestPermission`
+— both callbacks receive the field-id prefix, `''` on the options page and in the wizard,
+`<feature>_` on the feature pages —
+plus the two optional fields below); `runConnectionTest(connType, idPrefix = '')` requests the needed host
 permission (mirroring the fetch-models / CORS buttons), calls the probe with a ~10s
 `Abort`-style timeout (`Promise.race`), and maps the `{ok, error, is_exception}` result to
 auth / network / timeout messages. It reads current (possibly unsaved) form values and

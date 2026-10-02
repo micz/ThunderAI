@@ -127,6 +127,7 @@
                 <p class="mzta_help">
                     __MSG_SpamFilter_skip_addresses_infoline__
                     <br>__MSG_SpamFilter_skip_addresses_infoline2__
+                    <br>__MSG_SpamFilter_address_lists_precedence__
                 </p>
                 <div class="mzta_field">
                     <textarea id="spamfilter_skip_addresses" rows="7" data-mzta-pref="spamfilter_skip_addresses"></textarea>
@@ -143,6 +144,22 @@
                         <input type="checkbox" id="spamfilter_skip_addressbook" name="spamfilter_skip_addressbook" data-mzta-pref="spamfilter_skip_addressbook" />
                         <span class="track"></span>
                     </label>
+                </div>
+            </div>
+
+            <!-- BLOCK ADDRESSES -->
+            <div class="mzta_section" id="spamfilter_block_addresses_container">
+                <div class="mzta_prompt_title">__MSG_SpamFilter_block_addresses_title__<span id="block_addresses_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                <p class="mzta_help">
+                    __MSG_SpamFilter_block_addresses_infoline__
+                    <br>__MSG_SpamFilter_skip_addresses_infoline2__
+                    <br>__MSG_SpamFilter_address_lists_precedence__
+                </p>
+                <div class="mzta_field">
+                    <textarea id="spamfilter_block_addresses" rows="7" data-mzta-pref="spamfilter_block_addresses"></textarea>
+                    <div class="btn_div">
+                        <button id="btn_save_block_addresses" class="btn_primary" disabled>__MSG_save__</button>
+                    </div>
                 </div>
             </div>
 

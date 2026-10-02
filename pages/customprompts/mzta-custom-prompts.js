@@ -52,7 +52,9 @@ import {
     updateOpenAIModelCapabilityUI,
     checkJsonFieldsByPrefix,
     ensureRestorableOption,
-    getConnectionTypeLabel
+    getConnectionTypeLabel,
+    attachConnTestStrip,
+    setConnTestStripVisible
 } from "../../pages/_lib/connection-ui.js";
 import {
     getLocalStorageUsedSpace,
@@ -204,6 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     const apiScope = document.getElementById('detail_api_panel');
     relocateConnAdvRows(apiScope);
+    attachFormConnTest(apiScope, DETAIL_PREFIX + 'api_type', DETAIL_PREFIX);
     const apiSelect = document.getElementById(DETAIL_PREFIX + 'api_type');
     if (apiSelect) {
         apiSelect.addEventListener('change', () => {
@@ -1385,6 +1388,21 @@ function relocateConnAdvRows(scopeEl) {
     btn.hidden = (advBody.children.length === 0);
 }
 
+// Add the detail editor's connection test strip below its advanced table. It tests the
+// editor's own prefixed fields (DETAIL_PREFIX). Shown/hidden per provider by
+// showAdvConnectionOptions().
+function attachFormConnTest(scopeEl, selectId, prefix) {
+    if (!scopeEl || scopeEl.querySelector('.conn_test_strip')) return;
+    const advTable = scopeEl.querySelector('.conn_adv_table');
+    if (!advTable) return;
+    attachConnTestStrip({
+        afterEl: advTable,
+        scopeEls: [scopeEl],
+        getConnType: () => document.getElementById(selectId)?.value,
+        idPrefix: prefix
+    });
+}
+
 // Collapse the advanced panel and reset the button state.
 function resetConnAdv(scopeEl) {
     if (!scopeEl) return;
@@ -1400,6 +1418,9 @@ function resetConnAdv(scopeEl) {
 // reaches them.
 function showAdvConnectionOptions(scopeEl, connType) {
     if (!scopeEl) return;
+    // The test strip follows the provider too: hidden when the prompt inherits the
+    // global connection (empty value), back to idle on every change.
+    setConnTestStripVisible(scopeEl.querySelector('.conn_test_strip'), connType);
     const advTable = scopeEl.querySelector('.conn_adv_table');
     if (!advTable) return;
     advTable.querySelectorAll('tr[class*="conntype_"]').forEach(tr => {

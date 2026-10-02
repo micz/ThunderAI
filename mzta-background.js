@@ -54,6 +54,7 @@ import {
     applyPromptConnection,
     hasNoConnectionSelected,
     matchAddressList,
+    matchAddressListType,
     hasAddressListEntries,
     resolveEnabledAccounts,
     extractEmail,
@@ -93,7 +94,11 @@ import {
 } from './js/mzta-addtags-exclusion-list.js';
 import { mztaPrefs } from './js/mzta-prefs.js';
 import { sanitizeBlockHtml } from './js/mzta-richtext.js';
-import { migratePrefsToLocal, isSyncDrained, migrateOllamaThinkLevel } from './js/mzta-prefs-migration.js';
+import {
+    migratePrefsToLocal,
+    isSyncDrained,
+    migrateOllamaThinkLevel
+} from './js/mzta-prefs-migration.js';
 import { mztaManaged, MANAGED_SECRET_MARKER } from './js/mzta-managed.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
@@ -1889,6 +1894,60 @@ function _spamOutcome(success, report, extra = {}) {
     return { status: success ? 'ok' : 'error', success: success, moved: false, data: { report: report }, ...extra };
 }
 
+// Marks a message as junk and moves it to its account's junk folder. Returns true on success.
+// Serialized through _enqueueJunkMove(): processEmails() analyzes several messages at once,
+// and concurrent moves into the junk folder (IMAP especially) were never exercised.
+// Never throws: a failed move (no junk folder, a message with no folder, an API error) is
+// logged and returns false, so the caller keeps the verdict and saves the report with
+// moved = false.
+async function _moveMessageToJunk(message, headerMessageId) {
+    taLog.log("Marking as spam [" + headerMessageId + "]");
+    try {
+        await _enqueueJunkMove(async () => {
+            const accountId = message.folder?.accountId;
+            if (!accountId) {
+                throw new Error("the message is not in an account folder");
+            }
+            await messenger.messages.update(message.id, { junk: true });
+            let spamFolder = await messenger.folders.query({ accountId: accountId, specialUse: ['junk'] });
+            if (!spamFolder || spamFolder.length === 0 || !spamFolder[0]?.id) {
+                throw new Error("no junk folder for account " + accountId);
+            }
+            await messenger.messages.move([message.id], spamFolder[0].id);
+        });
+        taLog.log("Marked as spam [" + headerMessageId + "]");
+        return true;
+    } catch (err) {
+        taLog.error("[ThunderAI | SpamFilter] Could not move the message to the junk folder [" + headerMessageId + "]: " + (err?.message || err));
+        return false;
+    }
+}
+
+// Saves and shows a report decided by a rule instead of the AI: the allow list, the block
+// list or the address book. verdict: { spamValue, explanation, isSpam }. isSpam is explicit
+// rather than derived from the threshold, so an allow-list report (spamValue 0) can never be
+// moved, even with a threshold of 0. A spam verdict is moved to junk on the same terms as an
+// AI one: autoMove, or an autoMove caller that joined this job (entry.wantsMove).
+async function _saveRuleSpamReport(entry, headerMessageId, message, message_metadata, prefs, options, verdict) {
+    let report_data = {};
+    report_data.report_date = new Date();
+    report_data.headerMessageId = headerMessageId;
+    report_data.spamValue = verdict.spamValue;
+    report_data.explanation = verdict.explanation;
+    report_data.subject = message_metadata.subject;
+    report_data.from = message_metadata.from;
+    report_data.message_date = message_metadata.message_date;
+    report_data.moved = false;
+    report_data.SpamThreshold = getSpamThreshold(prefs);
+    if (verdict.isSpam && (options.autoMove || entry.wantsMove)) {
+        report_data.moved = await _moveMessageToJunk(message, headerMessageId);
+    }
+    spamReport.saveReportData(report_data, headerMessageId);
+    await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
+    // moved: read by the processEmails() pipeline, a moved message gets no tags, summary or translation.
+    return _spamOutcome(true, report_data, { moved: report_data.moved });
+}
+
 async function _runSpamJob(entry, headerMessageId, options) {
     // Declared outside the try so the final catch can still attach whatever
     // metadata was captured before the failure.
@@ -1943,28 +2002,28 @@ async function _runSpamJob(entry, headerMessageId, options) {
         // Extract sender email for skip checks
         let senderEmail = extractEmail(message.author).toLowerCase();
 
-        // Check if sender is in the skip addresses list.
+        // Allow list (spamfilter_skip_addresses) and block list (spamfilter_block_addresses),
+        // both checked before the address book. Entries are exact addresses or whole domains
+        // ("@domain.com" / "*@domain.com"), see matchAddressListType(). When the sender is in
+        // both lists the more specific match wins (an exact address beats a domain entry), and
+        // on equal specificity the allow list wins.
         // hasAddressListEntries() is used instead of a plain length check because a list saved
         // by a previous version can still hold a stray '' (an emptied textarea was stored as
         // ['']), which would read as a configured list.
         let skip_addresses = options.skip_addresses || (await mztaPrefs.getPrefs(['spamfilter_skip_addresses'])).spamfilter_skip_addresses;
-        if (hasAddressListEntries(skip_addresses)) {
-            if (senderEmail && skip_addresses.includes(senderEmail)) {
-                taLog.log("Sender " + senderEmail + " is in the skip addresses list, skipping spam filter.");
-                let report_data = {};
-                report_data.report_date = new Date();
-                report_data.headerMessageId = headerMessageId;
-                report_data.spamValue = 0;
-                report_data.explanation = browser.i18n.getMessage('spamfilter_skip_addresses_explanation');
-                report_data.subject = message_metadata.subject;
-                report_data.from = message_metadata.from;
-                report_data.message_date = message_metadata.message_date;
-                report_data.moved = false;
-                report_data.SpamThreshold = getSpamThreshold(prefs);
-                spamReport.saveReportData(report_data, headerMessageId);
-                await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
-                return _spamOutcome(true, report_data);
-            }
+        let block_addresses = options.block_addresses || (await mztaPrefs.getPrefs(['spamfilter_block_addresses'])).spamfilter_block_addresses;
+        let allowMatch = hasAddressListEntries(skip_addresses) ? matchAddressListType(message.author, skip_addresses) : null;
+        let blockMatch = hasAddressListEntries(block_addresses) ? matchAddressListType(message.author, block_addresses) : null;
+        let blocked = (blockMatch !== null) && ((allowMatch === null) || (blockMatch === 'exact' && allowMatch === 'domain'));
+        if (allowMatch !== null && !blocked) {
+            taLog.log("Sender " + senderEmail + " is in the skip addresses list (" + allowMatch + " match), skipping spam filter.");
+            return await _saveRuleSpamReport(entry, headerMessageId, message, message_metadata, prefs, options,
+                { spamValue: 0, explanation: browser.i18n.getMessage('spamfilter_skip_addresses_explanation'), isSpam: false });
+        }
+        if (blocked) {
+            taLog.log("Sender " + senderEmail + " is in the block addresses list (" + blockMatch + " match), reporting as spam without the AI.");
+            return await _saveRuleSpamReport(entry, headerMessageId, message, message_metadata, prefs, options,
+                { spamValue: 100, explanation: browser.i18n.getMessage('spamfilter_block_addresses_explanation'), isSpam: true });
         }
 
         // Check if sender is in any address book
@@ -1983,19 +2042,8 @@ async function _runSpamJob(entry, headerMessageId, options) {
                     });
                     if (isInAddressBook) {
                         taLog.log("Sender " + senderEmail + " is in the address book, skipping spam filter.");
-                        let report_data = {};
-                        report_data.report_date = new Date();
-                        report_data.headerMessageId = headerMessageId;
-                        report_data.spamValue = 0;
-                        report_data.explanation = browser.i18n.getMessage('spamfilter_skip_addressbook_explanation');
-                        report_data.subject = message_metadata.subject;
-                        report_data.from = message_metadata.from;
-                        report_data.message_date = message_metadata.message_date;
-                        report_data.moved = false;
-                        report_data.SpamThreshold = getSpamThreshold(prefs);
-                        spamReport.saveReportData(report_data, headerMessageId);
-                        await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
-                        return _spamOutcome(true, report_data);
+                        return await _saveRuleSpamReport(entry, headerMessageId, message, message_metadata, prefs, options,
+                            { spamValue: 0, explanation: browser.i18n.getMessage('spamfilter_skip_addressbook_explanation'), isSpam: false });
                     }
                 }
             } catch (err) {
@@ -2086,25 +2134,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
 
         // entry.wantsMove: an autoMove caller joined this job (see _joinSpamJob()).
         if ((options.autoMove || entry.wantsMove) && jsonObj.spamValue >= report_data.SpamThreshold) {
-            taLog.log("Marking as spam [" + headerMessageId + "]");
-            // Serialized through _enqueueJunkMove(): processEmails() analyzes several
-            // messages at once, and concurrent moves into the junk folder (IMAP especially)
-            // were never exercised. A failed move keeps the verdict: the report is still saved,
-            // with moved = false.
-            try {
-                await _enqueueJunkMove(async () => {
-                    await messenger.messages.update(message.id, { junk: true });
-                    let spamFolder = await messenger.folders.query({ accountId: message.folder.accountId, specialUse: ['junk'] });
-                    if (!spamFolder || spamFolder.length === 0) {
-                        throw new Error("no junk folder for account " + message.folder.accountId);
-                    }
-                    await messenger.messages.move([message.id], spamFolder[0].id);
-                });
-                report_data.moved = true;
-                taLog.log("Marked as spam [" + headerMessageId + "]");
-            } catch (err) {
-                taLog.error("[ThunderAI | SpamFilter] Could not move the message to the junk folder [" + headerMessageId + "]: " + (err?.message || err));
-            }
+            report_data.moved = await _moveMessageToJunk(message, headerMessageId);
         }
 
         spamReport.saveReportData(report_data, headerMessageId);
@@ -2974,6 +3004,7 @@ async function processEmails(args) {
             'add_tags_auto_uselist_list',
             'spamfilter_enabled_accounts',
             'spamfilter_skip_addresses',
+            'spamfilter_block_addresses',
             'spamfilter_skip_addressbook',
             'spamfilter_only_inbox',
             'batch_max_concurrency',
@@ -2982,6 +3013,7 @@ async function processEmails(args) {
         ]);
         //  console.log(">>>>>>>>>>>>>>>> prefs_aats: " + JSON.stringify(prefs_aats));
         let spamfilter_skip_addresses = prefs_aats.spamfilter_skip_addresses;
+        let spamfilter_block_addresses = prefs_aats.spamfilter_block_addresses;
         let spamfilter_skip_addressbook = prefs_aats.spamfilter_skip_addressbook;
 
         // The accounts the automatic runs are limited to: the stored selection, or the one a
@@ -3356,6 +3388,7 @@ async function processEmails(args) {
                                 prefs: prefs_aats,
                                 autoMove: true,
                                 skip_addresses: spamfilter_skip_addresses,
+                                block_addresses: spamfilter_block_addresses,
                                 skip_addressbook: spamfilter_skip_addressbook
                             });
                         if (spamResult?.rateLimited) {

@@ -20,9 +20,16 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { OpenAIComp, extractUsage } from '../api/openai_comp.js';
+import {
+    OpenAIComp,
+    extractUsage
+} from '../api/openai_comp.js';
 import { taLogger } from '../mzta-logger.js';
-import { initUsageEmitter, nextUsageMessageId, postUsageData } from './usage-emitter.js';
+import {
+    initUsageEmitter,
+    nextUsageMessageId,
+    postUsageData
+} from './usage-emitter.js';
 
 let openai_comp = null;
 let stopStreaming = false;

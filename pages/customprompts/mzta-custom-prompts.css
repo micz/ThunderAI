@@ -38,7 +38,7 @@
     --menu-bg:#ffffff;  --menu-border:#d3d6dc;  --menu-divider:#e4e6ea;  --menu-hover:#eef0f4;
     --menu-shadow:0 12px 32px rgba(20,20,40,.18);
     /* Per-panel identity: ChatGPT Web (warm) vs API (cool). */
-    --cgw-bg:#ffe6d5;  --cgw-hover:#ffd6bd;  --api-bg:#e0efff;  --api-hover:#c9e2ff;
+    --cgw-bg:#ffe6d5;  --cgw-hover:#ffd6bd;  --cgw-text:#6b2f0c;  --api-bg:#e0efff;  --api-hover:#c9e2ff;
 
     --font-ui: 'Segoe UI', system-ui, -apple-system, sans-serif;
     --font-mono: ui-monospace, 'Cascadia Code', monospace;

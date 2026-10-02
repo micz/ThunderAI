@@ -199,6 +199,11 @@ export function installBrowserMock(opts = {}) {
                 const entry = messages[name];
                 if (!entry) return '';
                 let text = entry.message;
+                // Named placeholders ($NAME$, case-insensitive) first, as the real API does:
+                // each is replaced by its "content", which may itself be a $1-style reference.
+                for (const [pname, def] of Object.entries(entry.placeholders || {})) {
+                    text = text.replace(new RegExp('\\$' + pname + '\\$', 'gi'), () => def.content);
+                }
                 const subs = substitutions === undefined ? [] :
                     (Array.isArray(substitutions) ? substitutions : [substitutions]);
                 subs.forEach((s, i) => { text = text.split('$' + (i + 1)).join(String(s)); });

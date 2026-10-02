@@ -1043,7 +1043,7 @@
         "message": "如果选中此项，则无论在 ThunderAI 选项页面中选择哪个模型和 API，都将使用下面指定的模型和 API 向电子邮件添加标签。"
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "每行添加一个电子邮件地址，或用逗号分隔。"
+        "message": "每行添加一个条目，或用逗号分隔。条目可以是完整的电子邮件地址（user@domain.com）或整个域名（@domain.com）。"
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "发件人已在反垃圾邮件跳过列表中。"

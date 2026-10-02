@@ -1761,10 +1761,10 @@
         "message": "Liste d'exclusion d'adresses e-mail"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "Les e-mails provenant de ces adresses ne seront pas envoyés à l'IA pour le filtrage du spam."
+        "message": "Les e-mails provenant de ces adresses ou domaines ne seront pas envoyés à l'IA pour le filtrage du spam."
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "Ajoutez une adresse e-mail par ligne, ou séparez-les par une virgule."
+        "message": "Ajoutez une entrée par ligne, ou séparez-les par une virgule. Une entrée peut être une adresse e-mail complète (user@domain.com) ou un domaine entier (@domain.com)."
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "L'expéditeur figure dans la liste d'exclusion de l'antispam."

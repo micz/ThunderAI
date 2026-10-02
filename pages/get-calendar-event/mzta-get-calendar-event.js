@@ -25,9 +25,14 @@ import {
 } from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
-  mapPlaceholderToSuggestion, placeholdersUtils } from "../../js/mzta-placeholders.js";
+  mapPlaceholderToSuggestion,
+  placeholdersUtils
+} from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
-import { attachEditorHighlight, makeTokenStateResolver } from "../../js/mzta-editor-highlight.js";
+import {
+  attachEditorHighlight,
+  makeTokenStateResolver
+} from "../../js/mzta-editor-highlight.js";
 import {
   isAPIKeyValue,
   setTomSelectBorder

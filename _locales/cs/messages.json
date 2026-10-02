@@ -1234,10 +1234,10 @@
         "message": "Seznam ignorovaných e-mailových adres"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "E-maily z těchto adres nebudou odesílány umělé inteligenci k filtraci spamu."
+        "message": "E-maily z těchto adres nebo domén nebudou odesílány umělé inteligenci k filtraci spamu."
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "Přidejte jednu e-mailovou adresu na řádek nebo je oddělte čárkou."
+        "message": "Přidejte jednu položku na řádek nebo je oddělte čárkou. Položkou může být celá e-mailová adresa (user@domain.com) nebo celá doména (@domain.com)."
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "Odesílatel je na seznamu ignorovaných adres pro antispam."

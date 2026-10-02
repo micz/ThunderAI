@@ -25,9 +25,14 @@ import {
 } from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
-  mapPlaceholderToSuggestion, placeholdersUtils } from "../../js/mzta-placeholders.js";
+  mapPlaceholderToSuggestion,
+  placeholdersUtils
+} from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
-import { attachEditorHighlight, makeTokenStateResolver } from "../../js/mzta-editor-highlight.js";
+import {
+  attachEditorHighlight,
+  makeTokenStateResolver
+} from "../../js/mzta-editor-highlight.js";
 import { taSpamReport } from '../../js/mzta-spamreport.js';
 import {
   getAccountsList,
@@ -153,6 +158,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         skip_addresses_string = skip_array_new.join('\n');
         skip_addresses_textarea.value = skip_addresses_string;
         document.getElementById('skip_addresses_unsaved').classList.add('hidden');
+    });
+
+    // Block addresses list
+    let block_addresses_textarea = document.getElementById('spamfilter_block_addresses');
+    let block_addresses_save_btn = document.getElementById('btn_save_block_addresses');
+
+    let block_addresses_value = await spamfilter_getBlockAddresses();
+    let block_addresses_string = block_addresses_value.join('\n');
+
+    block_addresses_textarea.value = block_addresses_string;
+
+    // data-mzta-pref: applyManagedUI() above has already disabled and marked the textarea
+    // when the policy locks the list. Its Save button is ours to lock.
+    lockCompanions('spamfilter_block_addresses', [block_addresses_save_btn]);
+
+    block_addresses_textarea.addEventListener('input', (event) => {
+        setDisabledRespectingManaged(block_addresses_save_btn, (event.target.value === block_addresses_string));
+        if(block_addresses_save_btn.disabled){
+            document.getElementById('block_addresses_unsaved').classList.add('hidden');
+        } else {
+            document.getElementById('block_addresses_unsaved').classList.remove('hidden');
+        }
+    });
+
+    block_addresses_save_btn.addEventListener('click', () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isLockedKey('spamfilter_block_addresses')) return;
+        let block_array_new = normalizeStringList(block_addresses_textarea.value, 2);
+        spamfilter_setBlockAddresses(block_array_new);
+        block_addresses_save_btn.disabled = true;
+        block_addresses_string = block_array_new.join('\n');
+        block_addresses_textarea.value = block_addresses_string;
+        document.getElementById('block_addresses_unsaved').classList.add('hidden');
     });
 
     // Address book skip option
@@ -476,6 +514,16 @@ async function spamfilter_getSkipAddresses() {
 function spamfilter_setSkipAddresses(spamfilter_skip_addresses) {
     if (isLockedKey('spamfilter_skip_addresses')) return;
     mztaPrefs.setPref('spamfilter_skip_addresses', spamfilter_skip_addresses);
+}
+
+async function spamfilter_getBlockAddresses() {
+    let prefs = await mztaPrefs.getPrefs(['spamfilter_block_addresses']);
+    return prefs.spamfilter_block_addresses;
+}
+
+function spamfilter_setBlockAddresses(spamfilter_block_addresses) {
+    if (isLockedKey('spamfilter_block_addresses')) return;
+    mztaPrefs.setPref('spamfilter_block_addresses', spamfilter_block_addresses);
 }
 
 /**

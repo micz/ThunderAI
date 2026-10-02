@@ -176,9 +176,10 @@ API key fields follow [Policy-supplied API keys](08-managed-configuration.md#pol
   `MANAGED_SECRET_MARKER` except for `api_webchat/`, which runs a feature's connection itself.
   A content script gets `{}`.
 - **On a feature page:** the key field shows the marker, which the eye toggle, "Update", the
-  empty-key checks and the storage gates already refuse. The feature pages have no connection
-  test (only the options page and the setup wizard do), so the refusal of
-  `runConnectionTest()` has no site there.
+  empty-key checks and the storage gates already refuse. So does the connection test strip
+  (`#mzta_conn_test`, also on the feature pages and in the custom prompts detail editor since
+  5.1.0): `runConnectionTest(connType, idPrefix)` reads the key as `idPrefix + keyId`, finds the
+  marker and reports `connTest_managed_api_key` without a request.
 - **Never persisted, never exported:** `stripTransientFlags()` drops a marker key before the
   storage gate below. `preparePromptsForExport()` removes `api_type` and every override field
   from a prompt marked `_connection_by_policy`, whatever `include_api_settings` says. No

@@ -48,8 +48,9 @@ Selects, which `initTimezoneSelect()` does before `initializeSpecificIntegration
 
 Some preferences are edited by a control that must **not** be an `.option-input`, because
 `saveOptions()` / `restoreOptions()` would then handle it generically and break its own
-serialisation: `spamfilter_skip_addresses`, `summarize_auto_senders_list` and
-`add_tags_exclusions` (textareas saved as normalised lists by their Save buttons),
+serialisation: `spamfilter_skip_addresses`, `spamfilter_block_addresses`,
+`summarize_auto_senders_list` and `add_tags_exclusions` (textareas saved as normalised lists
+by their Save buttons),
 `calendar_reminder_rules` / `task_reminder_rules` (the shared `#reminder_rules` textarea of
 `pages/_lib/reminder-ui.js`, saved trimmed by its Save button), and
 `spamfilter_skip_addressbook` (a checkbox whose change handler requests the `addressBooks`

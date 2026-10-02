@@ -1758,15 +1758,31 @@
     "description": ""
   },
   "SpamFilter_skip_addresses_infoline": {
-    "message": "Emails from these addresses will not be sent to the AI for spam filtering.",
+    "message": "Emails from these addresses or domains will not be sent to the AI for spam filtering.",
     "description": ""
   },
   "SpamFilter_skip_addresses_infoline2": {
-    "message": "Add one email address per line, or separated by a comma.",
+    "message": "Add one entry per line, or separated by a comma. An entry can be a full email address (user@domain.com) or a whole domain (@domain.com).",
     "description": ""
   },
   "spamfilter_skip_addresses_explanation": {
     "message": "The sender is in the email address antispam skip list.",
+    "description": ""
+  },
+  "SpamFilter_block_addresses_title": {
+    "message": "Email address block list",
+    "description": ""
+  },
+  "SpamFilter_block_addresses_infoline": {
+    "message": "Emails from these addresses or domains will always be reported as spam, without sending them to the AI. When the spam filter runs automatically, they are moved to the junk folder.",
+    "description": ""
+  },
+  "SpamFilter_address_lists_precedence": {
+    "message": "If a sender is in both lists, the more specific entry wins (a full address beats a domain); if both entries are equally specific, the skip list wins. Both lists are checked before the address books.",
+    "description": ""
+  },
+  "spamfilter_block_addresses_explanation": {
+    "message": "The sender is in the email address antispam block list.",
     "description": ""
   },
   "prefs_OptionText_spamfilter_skip_addressbook": {
