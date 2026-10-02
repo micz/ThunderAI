@@ -2725,9 +2725,11 @@ function buildOllamaThinkOptions(thinkField, modelInfo) {
 
   const options = [
     { value: '', labelKey: 'prefs_ollama_think_default' },
-    { value: 'false', labelKey: 'prefs_level_off' },
-    { value: 'true', labelKey: 'prefs_level_on' }
+    { value: 'false', labelKey: 'prefs_level_off' }
   ];
+  if (!values || !values.some(v => typeof v === 'string') || current === 'true') {
+    options.push({ value: 'true', labelKey: 'prefs_level_on' });
+  }
   levels.forEach(level => options.push({
     value: level,
     labelKey: 'prefs_level_' + level,
@@ -2739,6 +2741,13 @@ function buildOllamaThinkOptions(thinkField, modelInfo) {
     const option = document.createElement('option');
     option.value = opt.value;
     option.text = browser.i18n.getMessage(opt.labelKey) || opt.fallbackLabel || opt.value;
+    const defaultValue = reported && reported.default;
+    if (opt.value === '' && (typeof defaultValue === 'boolean' ||
+        (typeof defaultValue === 'string' && defaultValue.trim() !== ''))) {
+      const defaultLabelKey = typeof defaultValue === 'boolean'
+        ? (defaultValue ? 'prefs_level_on' : 'prefs_level_off') : 'prefs_level_' + defaultValue;
+      option.text += ' (' + (browser.i18n.getMessage(defaultLabelKey) || String(defaultValue)) + ')';
+    }
     thinkField.appendChild(option);
   });
 

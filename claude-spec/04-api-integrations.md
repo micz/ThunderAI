@@ -155,9 +155,13 @@ Per-prompt ChatGPT Web overrides are a separate, unrelated mechanism: the custom
   null / absent                                          -> not reported
   ```
 
-  Only the **string** entries of `values` are levels; `false`/`true` describe the on/off pair the
-  fixed entries already cover. A missing or unusable `thinking` object means *"this server does
-  not report it"*, **not** *"no levels"* — several models carry `thinking` in `capabilities` while
+  The Model default label includes a usable `thinking.default` in parentheses, using the existing
+  localized On/Off or level label (falling back to the raw level). If no usable default is reported,
+  the label stays unchanged.
+  Only the **string** entries of `values` are levels; `false`/`true` describe the on/off controls.
+  On is shown when no string levels are reported or the current value is `'true'`, preserving its
+  normal localized label for migrated settings. A missing or unusable `thinking` object means
+  *"this server does not report it"*, **not** *"no levels"* — several models carry `thinking` in `capabilities` while
   leaving this `null` — so the full catalogue (`OLLAMA_THINK_LEVELS`) is offered instead of
   assuming a restriction. Sending a level to a model that only knows on/off is not an error
   anyway: Ollama treats it as "on", verified against a live server.
