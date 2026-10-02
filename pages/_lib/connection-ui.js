@@ -2736,17 +2736,25 @@ function buildOllamaThinkOptions(thinkField, modelInfo) {
     fallbackLabel: level
   }));
 
+  // What the model does when `think` is omitted, shown next to the "model default"
+  // entry; empty when the model does not report a usable default.
+  const defaultValue = reported ? reported.default : undefined;
+  let defaultSuffix = '';
+  if (typeof defaultValue === 'boolean') {
+    defaultSuffix = browser.i18n.getMessage(defaultValue ? 'prefs_level_on' : 'prefs_level_off') ||
+      String(defaultValue);
+  } else if (typeof defaultValue === 'string' && defaultValue.trim() !== '') {
+    const trimmed = defaultValue.trim();
+    defaultSuffix = browser.i18n.getMessage('prefs_level_' + trimmed) || trimmed;
+  }
+
   thinkField.textContent = '';
   options.forEach(opt => {
     const option = document.createElement('option');
     option.value = opt.value;
     option.text = browser.i18n.getMessage(opt.labelKey) || opt.fallbackLabel || opt.value;
-    const defaultValue = reported && reported.default;
-    if (opt.value === '' && (typeof defaultValue === 'boolean' ||
-        (typeof defaultValue === 'string' && defaultValue.trim() !== ''))) {
-      const defaultLabelKey = typeof defaultValue === 'boolean'
-        ? (defaultValue ? 'prefs_level_on' : 'prefs_level_off') : 'prefs_level_' + defaultValue;
-      option.text += ' (' + (browser.i18n.getMessage(defaultLabelKey) || String(defaultValue)) + ')';
+    if (opt.value === '' && defaultSuffix !== '') {
+      option.text += ' (' + defaultSuffix + ')';
     }
     thinkField.appendChild(option);
   });
