@@ -251,7 +251,12 @@ export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
         }
         const lastWord = match[0];
         let type = type_value;
-        if (type_value === -1) {
+        if (typeof type_value === 'function') {
+            // A getter: the page resolves the type itself, lazily, on every
+            // keystroke. Used by the Custom Prompts detail editor, which is not a
+            // table row and so has no closest('tr') to search.
+            type = type_value();
+        } else if (type_value === -1) {
             // Resolve the prompt type lazily from the row, so changing the
             // selector mid-edit takes effect immediately. Uses closest() rather
             // than a fixed parentNode chain: the editor markup nests the

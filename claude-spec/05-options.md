@@ -2,7 +2,7 @@
 
 ## Overview
 
-Extension preferences are stored in **`browser.storage.local`** — defaults and the full list of valid keys are defined in `options/mzta-options-default.js`. Every preference **read** goes through the accessor module `js/mzta-prefs.js` (see [Preference access](#preference-access-jsmzta-prefsjs) below); direct storage calls are no longer the norm. The large-payload keys (`_custom_prompt`, `_default_prompts_properties`, `_special_prompts`, `_custom_placeholder`, `add_tags_exclusions`) live in the same area.
+Extension preferences are stored in **`browser.storage.local`** — defaults and the full list of valid keys are defined in `options/mzta-options-default.js`. Every preference **read** goes through the accessor module `js/mzta-prefs.js` (see [Preference access](#preference-access-jsmzta-prefsjs) below); direct storage calls are no longer the norm. The large-payload keys (`_custom_prompt`, `_default_prompts_properties`, `_special_prompts`, `_custom_placeholder`) live in the same area. `add_tags_exclusions` used to be one of them, read and written directly; it is now a declared preference (see the Add Tags table), with the same storage key.
 
 **Preferences used to live in `browser.storage.sync`** and were moved for the same reason the prompt payloads were moved in [#129](https://github.com/micz/ThunderAI/issues/129): `storage.sync` has a narrow quota. The consequence is deliberate and is the one behavioural change of that move — **preferences no longer follow the user across profiles or devices.** The one-time copy is `migratePrefsToLocal()` (`js/mzta-prefs-migration.js`), which runs first at the top of `mzta-background.js`; it never overwrites a key already present in local and **deliberately leaves the `sync` copy in place**, so a downgrade to an older version still finds the user's settings. Once `storage.sync` holds nothing any migration still needs, it writes the marker **`_prefs_migrated_from_sync`** into `storage.local`; every later startup returns on that single read instead of enumerating both storage areas, and `isSyncDrained()` lets `mzta-background.js` skip the two #129 migrations, which would otherwise each pay a `storage.sync.get()` forever. The marker means *"sync is drained"*, not merely *"the preferences were copied"*: it is withheld while a #129 payload is still in sync (a pre-#129 profile), so those migrations are never skipped before they have run, and the marker is set on the following startup. It is deliberately **not** used to skip `migrateEnabledToShowIn()` or `migrateMenuOrderAlphabetic()`, which act on `storage.local` data and own their own flags. The marker is not a preference (no UI, no `prefs_default` entry, leading underscore), so it never surfaces in `getAllPrefs()` or `restoreOptions()`. On the run that copies, it is written **inside the same `set()`** as the preferences, so the whole migration lands atomically — a partial write would otherwise leave the one-shot flags behind and let `migrateMenuOrderAlphabetic()` destroy the user's custom menu ordering. See [01-architecture.md](01-architecture.md#storage).
 
@@ -76,7 +76,12 @@ string**: a new user is not given a provider they never chose. Instead the three
   `special_prompts_with_integration` and writes `false` for any flag that is `true` while its
   effective connection is **absent** (`hasNoConnectionSelected()`). Note this is deliberately
   narrower than `isApiUsableConnection()`: `chatgpt_web` is left alone, for the reason given under
-  "Feature Rows — Disabled vs. API-Needed". It runs at startup and at the head of
+  "Feature Rows — Disabled vs. API-Needed". A flag the enterprise policy enforces is skipped entirely: the repair works by writing
+  `false` to `storage.local`, which the write guard would refuse anyway, so without the
+  skip the only effect would be a warning logged on every startup. If a policy enables a
+  feature whose connection cannot drive it, the feature stays on and does nothing — a
+  misconfiguration for the administrator to fix, not something to override silently.
+  It runs at startup and at the head of
   the debounced `storage.onChanged` handler, so it covers the writers that have no feature UI of
   their own — the setup wizard (which writes `connection_type` through the generic `saveOptions()`
   and never touches the flags) and a prefs import. (A sync from another profile used to be a third writer; it no longer exists, since preferences moved to `storage.local`.) `disable_ApiFeature()`
@@ -151,9 +156,17 @@ mandatory case, where the box is forced on at load) — skipping empty values an
 Without it the panel shows a provider while the pref stays empty, and the options page's pill,
 which reads the pref, stays hidden on a feature that looks configured.
 
+That is why the `''` pre-fill must reach the DOM **as a blank select** on every page
+(`selectedIndex = -1` for a closed-catalogue connection select, `isClosedCatalogueSelect()`).
+In the mandatory case the box is forced on at load, so whatever the select shows is persisted
+there and then: a select falling back to its first option would store OpenAI API as the
+feature's connection, a choice the user never made, just by opening the page. `summarize` and
+`translate` did exactly that (`selectedIndex = 0`) until 5.1; their other selects, which always
+have a value, still fall back to their first option.
+
 **The same label rule applies to the per-feature panel pill** (`#mzta_conn_pill_name`, set by
-each page's local `updateConnPanelTint()`): all six feature pages import
-`getConnectionTypeLabel()` rather than reading the select's `<option>` text. Their selects are
+`bindConnPanelTint(prefix)` in `pages/_lib/feature-page.js`, which all six feature pages call):
+it uses `getConnectionTypeLabel()` rather than reading the select's `<option>` text. Their selects are
 per-prompt (`no_chatgpt_web: true`) and so carry no `value=""` placeholder, but the
 `replaceChildren()` hazard applies to them just as much. The options page's own
 `updateConnPanelTint()` is the one exception that still needs an explicit empty-state string:
@@ -197,6 +210,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `add_tags_max_messages` | `0` | Maximum number of messages tagged at once from the **context menu**. Above this limit `processEmails()` (`mzta-background.js`) blocks the run and shows the `add_tags_too_many_messages` warning. `0` = no limit. Automatic tagging of incoming mail is never capped. Exposed in the add tags settings page as a number input (`min="0"`, no reset button: the page's restore fallback for number inputs is already `0`). Meant for providers with a daily quota (#901), where a large selection cannot fit anyway. |
 | `add_tags_hide_exclusions` | `false` | Hide excluded tags from menu |
 | `add_tags_exclusions_exact_match` | `false` | Exact match for exclusions |
+| `add_tags_exclusions` | `[]` | Tags never assigned: array of strings, substring match unless `add_tags_exclusions_exact_match`. Read and written through `mztaPrefs` by `js/mzta-addtags-exclusion-list.js` (background and the Add Tags page) and, for the tag dialog in `js/mzta-compose-script.js`, through the `addtags_get_exclusion_prefs` / `addtags_set_exclusions` background commands. Entries are stored lowercase by both writers (the page via `normalizeStringList()`, the dialog's exclude icon by lowercasing), and the dialog adds and removes them case-insensitively. The storage key predates its declaration, so existing lists carry over with no migration. Policy-settable. |
 | `add_tags_first_uppercase` | `true` | Capitalize first letter of tags |
 | `add_tags_force_lang` | `true` | Force language for tags |
 | `add_tags_auto` | `false` | Auto-tag on message open |
@@ -205,13 +219,14 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `add_tags_auto_include_sent` | `false` | Also auto-tag sent messages (opts back into the `sent` folder, which the automatic processing skips by default) |
 | `add_tags_auto_uselist` | `false` | Use tag allow-list |
 | `add_tags_auto_uselist_list` | `''` | Tag allow-list content |
-| `add_tags_enabled_accounts` | `[]` | Accounts where auto-tag is active |
+| `add_tags_enabled_accounts` | `[]` | Accounts where auto-tag is active: account ids, per profile, so **not** policy-settable. `[]` = all accounts. Replaced at read time — never overwritten — by the ids resolved from `add_tags_enabled_accounts_match` when a policy sets it (`resolveEnabledAccounts()`, `js/mzta-utils.js`). |
+| `add_tags_enabled_accounts_match` | `[]` | **Policy-only**, no control of its own: account matchers (`user@domain`, `@domain` / `*@domain`, `local` for Local Folders) resolved to account ids on every automatic batch; the result replaces `add_tags_enabled_accounts`, and an empty result means **no** account. `[]` = not managed. Always enforced, validated entry by entry. See [08b-managed-connections.md](08b-managed-connections.md#account-lists-by-policy-_enabled_accounts_match). |
 | `get_calendar_event` | `true` | Enable calendar event extraction |
 | `get_calendar_event_from_clipboard` | `false` | Enable calendar from clipboard |
 | `get_task` | `true` | Enable task creation |
 | `calendar_enforce_timezone` | `false` | Force specific timezone |
 | `calendar_timezone` | `''` | IANA timezone id to enforce (see note below) |
-| `calendar_no_selection` | `false` | Skip selection prompt |
+| `calendar_no_selection` | `false` | Skip selection prompt. **The single source of truth**: `need_selected` of `prompt_get_calendar_event` is derived from it on every read by `applyCalendarNoSelection()` in `getSpecialPrompts()` (see [02-prompts.md](02-prompts.md)), never written from it. A change reloads the menus (`MENU_RELEVANT_KEYS`). `migrateCalendarNoSelection()` aligned it once to the stored `need_selected` on upgrade. |
 | `calendar_append_email_link` | `false` | Append a `mid:` link to the source email to the event description (added by code after the response, never sent to the AI — see [02-prompts.md](02-prompts.md#calendar-event--task-link-to-the-original-email)). Deliberately **not** prefixed `get_calendar_event_`, which is the per-feature integration prefix |
 | `task_append_email_link` | `false` | Same, for the task description. Deliberately **not** prefixed `get_task_` |
 | `calendar_reminder_enabled` | `false` | "Let the AI set a reminder" for events: ask for `reminderMinutes` and send `-1` (no reminder) when the AI returns none/invalid; Thunderbird's default when the AI answers `"default"` (no rules given at all). It is the **single switch**: when false, `reminderMinutes` is always dropped from the AI response (Thunderbird's default), even if the main prompt asks for it — see [02-prompts.md](02-prompts.md#calendar-event--task-reminder-887). Not prefixed `get_calendar_event_` (integration prefix) |
@@ -220,7 +235,8 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `task_reminder_rules` | `''` | Same as `calendar_reminder_rules`, for tasks |
 | `spamfilter` | `false` | Enable spam filter |
 | `spamfilter_threshold` | `70` | Spam confidence threshold (%) |
-| `spamfilter_enabled_accounts` | `[]` | Accounts where spam filter is active |
+| `spamfilter_enabled_accounts` | `[]` | Accounts where the automatic spam filter is active: account ids, per profile, so **not** policy-settable. `[]` = all accounts. Replaced at read time — never overwritten — by the ids resolved from `spamfilter_enabled_accounts_match` when a policy sets it. |
+| `spamfilter_enabled_accounts_match` | `[]` | **Policy-only**, same as `add_tags_enabled_accounts_match`, for the automatic spam filter. |
 | `spamfilter_skip_addresses` | `[]` | Allow list: senders never sent to the AI for spam filtering (report with spamValue 0). Entries are exact addresses, `@domain.com` or `*@domain.com`, matched by `matchAddressListType()` like `summarize_auto_senders_list`. Lists saved before domain support hold exact addresses only, which match exactly as before. Tested with `hasAddressListEntries()` (see the note below the table). |
 | `spamfilter_block_addresses` | `[]` | Block list: senders always reported as spam (spamValue 100) without an AI call; in automatic mode (`autoMove`) the message is also marked junk and moved to the account's junk folder. Same entry syntax as `spamfilter_skip_addresses`. On a sender in both lists the more specific entry wins (exact beats domain), and on equal specificity the allow list wins. Both lists are checked before `spamfilter_skip_addressbook`. Saved by its own Save button through `normalizeStringList(value, 2)`. See [01-architecture.md](01-architecture.md#data-flow-spam-filter-sender-rules). |
 | `spamfilter_skip_addressbook` | `true` | Skip senders found in any address book (`browser.contacts.quickSearch`) |
@@ -313,7 +329,7 @@ The timezone `<select>` shown on the Calendar Event (`pages/get-calendar-event/`
   plus input overflow the control, and `flex-wrap` drops the input — and the caret — onto a second row.
   The fix is `min-width: 0` **on the item** (plus `flex-wrap: nowrap` and an ellipsis), applied in both
   stylesheets that theme Tom Select: `pages/_lib/mzta-design.css` under `#mzta_card`, and
-  `pages/customprompts/mzta-custom-prompts.css` under `#formNew`/`.api_additional_info`.
+  `pages/customprompts/mzta-custom-prompts.css` under `.api_panel` (the detail editor's API section).
   Two traps worth remembering: `max-width` alone does nothing, because the automatic minimum wins over it in
   flex sizing; and the input must keep a non-zero basis (`flex: 1 1 4px`) or the caret collapses to zero width
   and becomes invisible. Note the vendored `min-width:7rem` on `.ts-control > input` is *not* the cause — it
@@ -350,7 +366,7 @@ The summarize settings page provides:
 3. **Display mode dropdown** (`summarize_display_mode`) — controls where summaries are shown:
    - `'inline'` — summary banner in the message pane (default)
    - `'webchat'` — opens the AI chat window
-   - Note: `summarize_auto = 2` always generates inline regardless of this setting. Context menu summarize with multiple messages always falls back to webchat.
+   - Note: `summarize_auto = 2` and `summarize_auto = 3` always generate inline regardless of this setting. Context menu summarize with multiple messages always falls back to webchat.
 4. **Max display length** (`summarize_max_display_length`) — number input, limits inline summary text to N characters. `0` = no limit. When truncated, a "See more"/"See less" toggle link is appended.
 5. **Max messages** (`summarize_max_messages`) — number input, caps how many messages can be summarized at once in webchat mode. Above the limit the operation is blocked with the `summarize_too_many_messages` warning. `0` = no limit.
 6. **Strip formatting** (`summarize_strip_formatting`) — checkbox, removes HTML/Markdown formatting from AI summary responses, displaying plain text only. Default: off.
@@ -365,54 +381,87 @@ The summarize settings page provides:
 
 ### Manage Custom Prompts Page (`pages/customprompts/`)
 
-The prompt CRUD screen: a single wide `<table class="prompts_list">` driven by List.js (columns ID, Name, Prompt Text, Menu, Properties, Actions), a hidden `#formNew` add-form, and Import/Export/Save All controls. Data model, storage routing, and the "Menu position" deep-link to the Menu Order page are documented in `claude-spec/02-prompts.md`.
+The prompt CRUD screen, **design "2a": one list, two views**. A single card (`#prompts_card`) holds a toolbar, one List.js list and a detail editor. Data model, storage routing, and the "Menu position" deep-link to the Menu Order page are documented in `claude-spec/02-prompts.md`.
 
-**Visual layout (design "1b")** is purely presentational and driven by CSS design tokens in `mzta-custom-prompts.css`:
+**Theme.** Colors are CSS custom properties on `:root` (light default) with a `@media (prefers-color-scheme: dark)` override; the dark values are the design's palette. No manual toggle. The page keeps its own private token block and does not use `pages/_lib/mzta-design.css`.
 
-- **Theme** follows the OS/Thunderbird theme (no manual toggle). Colors are CSS custom properties defined on `:root` (light default) with a `@media (prefers-color-scheme: dark)` override — a single source of truth replacing the old scattered hardcoded colors. The `showYesNoDialog` export dialog no longer sets colors inline; `dialog.export` reads the tokens.
-- **Shell**: a `.page_wrap` centered column (`max-width:1440px`) wraps the header (eyebrow "ThunderAI" + `.page_title` + description), the `#import_export` stack, `#formNew`, and the card.
-- **Card** (`#all_prompts`): rounded panel containing the sticky toolbar (`#command_palette` — Save All / search / status / Add New), the table, and a footer `#list_footer` showing `#prompts_count` (`customPrompts_promptsCount` i18n key, `$COUNT$` placeholder; `customPrompts_promptsCount_filtered` with `$SHOWN$`/`$TOTAL$` while a search is active). The `thead` sticks below the toolbar (`top: 54px`) — the search field is deliberately shorter than the toolbar buttons so the palette height stays 54px and that offset remains valid.
-- **Search** (`#prompts_search`, inside `#search_wrap`): filters the list by prompt **name or ID only** — never the prompt body, so searching a placeholder name yields nothing. It uses List.js's native search via `promptsList.search(str, ['name','id'], promptsSearch)` rather than a hand-rolled filter, wired in `setupPromptsSearch()`.
-  - The custom search function is **required, not a refinement**: built-in prompts store `name` as a raw `__MSG_prompt_reply__` token, localized only later by `i18n.updateDocument()`. List.js's default search compares the stored value, so it would match the token and never the label the user sees. `resolvePromptName()` unwraps the token first (same approach as `resolveName()` in `js/mzta-prompts.js`).
-  - The input carries class `prompts_search_input`, **not** List.js's default `searchClass` of `search`. It lives inside `#all_prompts`, so the default class would make List.js auto-bind its own plain-text search on top of the custom handler, giving two competing filters on the same field.
-  - Filtering is display-only and cannot lose data: `saveAll()` iterates `promptsList.items` and `checkFields()` uses `promptsList.get()`, both filter-independent. Sorting composes cleanly too (List.js tracks `sorted`/`searched` separately). No extra wiring is needed for chip decoration or the count — the existing `promptsList.on('updated')` handler covers every re-render, search included.
-  - Searching first calls `cancelOpenRowEditors()`, which clicks the Cancel button of any row in edit mode (identified by `.btnCancelItem` at `display:flex`, set by `handleEditClick()`). Otherwise a filtered-out row would keep unsaved edits alive in a hidden node, invisible and unreachable.
-  - Clearing the field (or the native `<input type="search">` clear button) resets the filter with no extra code: List.js's `search('')` takes the `search.reset()` path, which clears `item.found` and `searched`.
-  - **Add New clears the search first** (`clearPromptsSearch()`). After `promptsList.add()`, the add handler wires the new row's buttons through `document.querySelector('tr[data-idnum="…"] button…')`. A newly added prompt almost never matches an active filter, so List.js would not render its row and every one of those lookups would return `null` — throwing on the first `addEventListener`. Clearing the filter guarantees the row is in the DOM.
-  - **A toolbar badge (`#filter_badge`) states that the list is filtered** whenever a search is active, so a narrowed list can never be mistaken for the full one. It shows `customPrompts_filter_active` ("Filtered: $SHOWN$ of $TOTAL$"), switches to `customPrompts_filter_noMatches` plus the `.filter_badge_empty` warning palette when nothing matches, and carries a `#btnClearFilter` button that calls `cancelOpenRowEditors()` + `clearPromptsSearch()` and returns focus to the field. It is `role="status" aria-live="polite"`, so screen readers announce the change.
-    - **It is not routed through `#msgDisplay`.** That span is owned exclusively by `setSomethingChanged()` / `setNothingChanged()` / `setMessage()`, which overwrite its text and toggle its `display`. Sharing it would mean an unsaved-changes warning silently wipes the filter notice, and `setNothingChanged()` hides it — yet "filtered" and "unsaved changes" are independent states that must be able to show simultaneously.
-    - `updateFilterIndicator()` is called from the same three places as the highlight pass — the `input` handler, `clearPromptsSearch()`, and the `updated` event. The `updated` hook matters on its own: deleting a row while filtered changes both counts.
-    - `#filter_badge.hiddendata` is declared explicitly. The badge's own rule sets `display:inline-flex`, and the generic `.hiddendata { display:none }` lives *later* in the file; both are single-class selectors, so without the ID-specificity override the badge would be permanently hidden.
-    - `#prompts_search` is `flex: 0 1 320px` with a `min-width`, so the field yields space before the `flex: 0 0 auto` badge does — otherwise the badge is pushed out of the toolbar on narrow windows.
-  - **Matches are highlighted** in the visible Name and ID cells by `highlightSearchMatches()`, which wraps each occurrence in `<mark class="search_hit">`. Matching is case-insensitive while the original casing is preserved, and the text is HTML-escaped before being re-inserted.
-    - It runs on **every** `updated` event, not just on input. `item.values()` writes go through List.js's `templater.set()`, which resets `.name`/`.id` `innerHTML` from the stored value and silently drops the marks — the same hazard `data-phDecorated` guards against in `decoratePromptText()`. It is also called directly after `search()`, because narrowing a needle within an unchanged result set (`"re"` → `"rep"`) fires no `updated` yet still has to move the marks.
-    - It reads the existing text with **`textContent`, never `innerText`**: `showItemRowEditor()` sets these spans to `display:none`, and `innerText` returns `''` for a hidden element — which would blank the name/ID instead of re-marking it. Reading the text back also strips the previous pass's marks, making the function idempotent and preventing nested `<mark>`s.
-    - Only the read-mode `.name_show` / `.id_show` spans are touched, never the `_output` inputs. Those inputs are the single source of truth for every save/cancel/copy path (`handleConfirmClick`, `handleCancelClick`, `handleCopyClick` all read `.name_output` / `.id_output`), so highlight markup cannot reach storage. This matters because List.js's `templater.get()` *does* read `elm.innerHTML` back into the data model — it only ever runs when parsing pre-existing DOM, which this page never does since rows come from a JS template, but marking the `_output` values would have been corrupting.
-    - `mark.search_hit` gets both `background` and `color` from dedicated `--hit-bg` / `--hit-text` tokens defined in the light **and** dark blocks. The browser default for `<mark>` is a hardcoded yellow with near-black text, unreadable in the dark theme. The rule is metric-neutral (no padding or border) so highlighting cannot reflow the two narrow `w08` columns.
-  - **`setupPromptsSearch()` is called from `loadPromptsList()`, which runs again after an import** (`promptsList.clear()` then a brand-new `List` instance). The `input` listener is therefore guarded by a `promptsSearchBound` module flag so it is attached exactly once — re-binding on the same surviving input element would stack duplicate handlers on every import. The handler reads `promptsList` through the module-level variable, so it always targets the current instance. The field's value *is* reset on every call, since a stale filter string must not be left displayed over a freshly rebuilt list.
-- **Prompt Text** cell: `{%placeholder%}` tokens are highlighted in **both** read and edit mode.
-  - **Read mode**: tokens in the read-only `.text_show` spans are wrapped in `<span class="ph_chip">` by `decoratePromptText()`, which runs after the initial render, on every List.js `updated` event, **at the end of `handleConfirmClick()`**, and **once more after `activePlaceholders` has loaded** (see below). Invalid tokens additionally get `.ph_chip_invalid_read`, in the **same two tiers as edit mode**: a missing id also gets `.ph_chip_error_read` (red) + an `editor_placeholder_missing` `title`, an id that exists but is not available for the row's type stays amber + `editor_placeholder_wrong_type`. Both are resolved with the **same** `placeholdersUtils.findPlaceholder(inner, activePlaceholders, type)` predicate the edit-mode resolver uses — called twice, type-less then type-filtered, since it returns `null` for both cases (see [03-placeholders.md](03-placeholders.md) → *Invalid placeholder feedback*) — so read and edit mode cannot disagree on validity either, only on presentation. The row's type comes from `.type_output`, the very element `attachHighlightWithValidation()` reads (falling back to the `.type` span, then to no type filtering). An unterminated `{%` has no read-mode rendering: `PLACEHOLDER_RE` matches only complete tokens. The chip wrapper is stripped by `sanitizeHtml()` on the cancel-restore path, so saved text stays clean.
-  - **Validity is not available on the first pass.** `loadPromptsList()` calls `decoratePromptText()` synchronously, but `activePlaceholders = await getPlaceholders(true)` resolves *later* in the same `DOMContentLoaded` handler. With an empty list `findPlaceholder()` resolves nothing, so classifying then would paint **every** token on the page as invalid. `decoratePromptText()` therefore skips the validity pass while `activePlaceholders` is empty and emits plain `.ph_chip`s, and the handler re-runs it right after the await. The re-run is only effective because `data-phDecorated` holds the decorated HTML: the second pass produces different markup, so the guard self-invalidates. A boolean flag would have swallowed it.
-  - **Newlines reach `.text_show` in two forms.** Stored prompts use `<br>` (the row template converts them back to `\n` for the textarea, and the cancel path converts them forward again), but `handleConfirmClick()` writes the textarea value with raw `\n`. `.text_show` is therefore `white-space: pre-wrap`, which renders the raw `\n` and leaves `<br>` alone — the two cannot double up, since the stored format substitutes one for the other rather than emitting both. Without this, line breaks disappeared from the list after save or cancel and only reappeared on the next page load.
-  - Idempotence uses `data-phDecorated` holding the **decorated HTML itself**, not a boolean. Saving a row calls `promptsList.get(…)[0].values(…)`, which makes List.js rewrite that one `.text_show` from the stored value — stripping the chips **without** firing `updated`. A boolean flag would stay stale and the row would render unhighlighted until the next full re-render; comparing against the content makes the guard self-invalidating.
-  - **Edit mode**: the `<textarea>` remains the source of truth (native undo/redo, IME, spellcheck and the `textarea.value` save/read logic are untouched). Highlighting is painted on a **backdrop mirror** behind a transparent textarea by `attachEditorHighlight()` in `js/mzta-editor-highlight.js`. Markup is `.autocomplete-container.editor-wrap > .editor-backdrop > .editor-highlights` + the textarea + `.autocomplete-list`, present in both the `#formNew` add-form and the List.js row template. Edit-mode chips use `.ph_chip_live`, plus `.ph_chip_invalid` for a token that will not resolve — with `.ph_chip_error` (red: unknown id, or unterminated) or `.ph_chip_warn` (amber: exists, wrong prompt type) marking which tier.
-  - **Alignment is load-bearing**: the textarea and `.editor-highlights` must agree on every metric affecting glyph position (`font-family`, `font-size`, `line-height`, `letter-spacing`, `padding`, `border-width`, `white-space: pre-wrap`, `overflow-wrap`). These are declared once in a shared selector list in `pages/_lib/editor-highlight.css` — the single copy of the mirror's structure, shared with the Data Placeholders page and the six settings pages. This page contributes only the `--ed-*` values (7px 10px, `var(--font-mono)`, 1.55) and the `.editor-active` gating; never set a metric on one of the two elements alone. `.ph_chip_live` is deliberately **metric-neutral** (background/color/radius only, with `padding: 0 .2em` offset by `margin: 0 -.2em`) — unlike the read-mode `.ph_chip`, which can afford real padding. Prompt text is `var(--font-mono)` at 13px/1.55 in **both** modes so the two look identical.
-  - **Three painting layers, in order.** The field surface is painted by `.editor-wrap.editor-active` (bottom, `var(--panel)` — white in the light theme), the glyphs and chips by `.editor-highlights` inside the backdrop (middle), and the border, caret and selection by the textarea itself (top, `z-index:1`). The textarea must stay `background: transparent` — an opaque background there would hide the mirror — and the backdrop must stay transparent too, because it is inset inside the textarea's *border box* and so cannot paint the 1px border ring or the rounded corners.
-  - **`editor-active` gates the mirror _and_ `display:block`.** `attachEditorHighlight()` adds the class to the wrapper, `destroy()` removes it, and both `.editor-backdrop` and the textarea's block display hang off it. `display:block` must **not** be declared on `.editor-wrap .editor`: that selector has two classes, so it would beat the row template's `.hiddendata { display:none }` and leave every row's textarea visible beneath its read-mode text at page load. Gating the backdrop matters for the mirror side of the same bug — leaving edit mode sets `display:none` on the *textarea* only, so an always-on backdrop would keep painting a second copy of the prompt text under `.text_show`.
-  - The load-time loop over `document.querySelectorAll('.editor')` attaches the mirror **only** to the add-form textarea, identified by its `.input_new` class; row textareas start in read mode and get theirs from `showItemRowEditor()`. `closest('tr')` cannot be used to tell them apart — the add-form is itself laid out as a table.
-  - `showItemRowEditor()` sets the textarea to `display:block` (not `inline`) so it aligns with the absolutely-positioned backdrop, and calls `attachEditorHighlight()`; `hideItemRowEditor()` calls the handle's `destroy()`. Both attach paths are idempotent (guarded by `textarea._mztaHighlight`), so re-entering edit mode cannot stack mirrors or listeners.
-  - The token pattern lives in **one** place: `PLACEHOLDER_RE` exported from `js/mzta-editor-highlight.js`, imported by `decoratePromptText()`. Read and edit mode therefore cannot drift on what counts as a token. It carries `/g`, so `lastIndex` must be reset before each use. It also matches values containing `%` (e.g. `{%additional_text:50%%}`), which the previous `/\{%[^%]+%\}/g` did not.
-  - **Programmatic writes to a highlighted textarea must go through `setEditorValue(textarea, value)`.** The mirror only repaints on the textarea's `input` event, which a `.value =` assignment does **not** fire — a direct write leaves the *previous* prompt's text and chips painted behind the new content, and they survive into the next time the add-form is opened. `setEditorValue()` writes the value and calls the handle's `refresh()`. Used by `clearFields()` (called after both Save All and Add New) and `handleCopyClick()`. `handleCancelClick()` deliberately does **not** use it: it writes `.text_output.value` and then `hideItemRowEditor()` destroys the mirror outright, so there is nothing left to repaint. In `handleCopyClick()` the **type select is assigned before the text**, because validity depends on the type and `setEditorValue()` repaints immediately — and `selectTypeNew.value = …` fires no `change`, so the `refresh()` listener on that select does not cover it.
-  - Colors for invalid tokens come in two triples, one per severity tier: amber `--warn-text` / `--warn-bg` / `--warn-border` ("exists, wrong prompt type") and red `--err-text` / `--err-bg` / `--err-border` ("does not exist, or unterminated"), both defined in the light and dark `:root` blocks. Neither is `--del-*`, which means the "delete" action. Each triple is consumed twice: mapped into `--ed-warn-*` / `--ed-err-*` on `.editor-wrap` for the edit-mode `.ph_chip_invalid` / `.ph_chip_error`, and directly by the read-mode `.ph_chip.ph_chip_invalid_read` (two classes, so it beats `.ph_chip` regardless of source order) and `.ph_chip.ph_chip_invalid_read.ph_chip_error_read` (three, so it beats the amber rule). The read-mode chip can afford a real 1px border (offset by reduced padding to keep the same box) where the metric-neutral live chip is limited to an inset `box-shadow`.
-- **Properties** checkboxes (`.need_selected`, `.need_signature`, `.need_custom_text`, `.define_response_lang`, `.use_diff_viewer`) are styled as toggle switches via `appearance:none` + `::after` knob — **CSS only**; the checkbox classes, disabled logic, and `handleCheckboxChange` are unchanged. The same switch styling applies to the five property checkboxes in the `#formNew` add-form, which carry these same classes (the two placeholder-linked ones also keep their `_new` class, so the `.need_custom_text || .need_custom_text_new` lookups in `checkPromptsConfigForPlaceholders()` still resolve).
-  - In **read-only list rows** a `disabled` flag is repainted as a static check/dash status icon. Those rules stay scoped to `table.prompts_list td`: in `#formNew`, `disabled` means "not applicable" (`use_diff_viewer` while the action isn't "substitute text"), so the flag stays a dimmed switch.
-  - **Placeholder validation** (`checkPromptsConfigForPlaceholders()`): when the prompt text uses `{%additional_text%}` or `{%selected_text%}`/`{%selected_html%}` but the matching flag is off, the function toggles an `.invalid_flag` class on the checkbox, which draws a `var(--del-text)` outline around the switch. It no longer writes an inline border on the `.need_custom_text_span` / `.need_selected_span` wrappers; those spans remain only as the checkbox+text grouping.
+**Layout.**
+- Header (eyebrow, title, description, Custom Data PH button) with the `#import_export` stack on the right, then the two managed-restriction notes, then the card.
+- The card fills the viewport height (`calc(100vh - 48px)`, min 520px), so the list and the detail pane scroll on their own.
+- **Toolbar** (`#command_palette`): search, `#prompts_count` (`customPrompts_promptsCount` / `customPrompts_promptsCount_filtered`), `#filter_badge`, `#msgDisplay`, the view switch (`#view_switch`, a segmented control of `aria-pressed` buttons) and `#btnNew` ("New prompt"). There is **no Save All**: every change is written to storage as soon as it is made (see *Saving* below), and the page header says so (`customPrompts_autosave_info`).
+- The detail inputs are styled under `#detail_body .detail_input`: `connection-ui.css` (linked after this stylesheet) sets `input[type="text"] { padding: 2px }`, which would otherwise outrank a bare class.
+- `#card_body` is a grid: `340px | 1fr` in split view (list + `#detail_pane`), a single column in table view (the pane is `display:none`).
+
+**One list, two views.**
+- There is exactly **one** List.js instance, `new List('prompts_card', …)`, on `<div class="list" id="prompts_list">`. The card's class, `view-split` or `view-table`, only changes how the *same* row DOM is laid out with CSS grid. Search, count and selection therefore carry across a switch with no List.js work. `setView()` also closes the row menu.
+- The choice is persisted in the `custom_prompts_view` pref (`'split'` default | `'table'`), read at load and written with `mztaPrefs.setPref()`.
+- **Split view**: a 3-line master row — padlock icon (read-only prompts, inline SVG in `currentColor`) + name + type badge / id (mono) / 1-line text preview. Click or Enter selects; ArrowUp/Down move focus. The selected row has `--sel-bg` and a 3px `--sel-bar` left border. The menu/action value is intentionally not shown here.
+- **Table view**: `#table_head` plus the rows on a shared 5-column grid (Prompt · Text · Menu · Options · Actions). *Options* shows read-only chips: every active flag plus the first inactive one (`● Label` on `--ok-*`, `○ Label` muted), with the full flag label as `title`. Below 1200px the grid switches to narrower minimums with a shrinkable text column: `#table_head` sits outside the scrolling list, so horizontal scrolling would misalign it. *Actions* is "Edit" ("Open" on read-only prompts), which calls `openInDetail()` — select it and switch to split view — and a ⋯ button.
+- **Row menu (⋯)**: one shared popover appended to the card on open (`openRowMenu()`), with a transparent full-screen overlay catching the outside click. It is right-aligned under the button, opens **upward** for the last two visible rows (when more than three are visible), and closes on overlay click, Esc, list scroll, window resize, search input and view switch. Items: personal prompts get Duplicate · Export · divider · Delete (danger, confirmed); read-only prompts (built-ins included) get Duplicate and edit only. No shortcut hints and no "Copy ID", by design.
+
+**Rows are painted by `refreshRow(item)`, not by List.js.** `valueNames` is only `[{ data: ['idnum'] }]`: List.js' templater owns nothing but `data-idnum`, which the delegated row handlers use to find an item. The item template (`rowTemplate()`) is a static skeleton, and `refreshRow()` writes every visible value with `textContent` / DOM nodes — resolved name, id, type badge, preview text with placeholder chips, menu/action labels, chips, button labels, selection and dim classes. This is why:
+- a built-in's `__MSG_` name survives an `item.values()` write (the templater used to reset `.name` to the raw token);
+- no prompt value is ever parsed as markup;
+- rows need no re-wiring after add, import or a List.js re-render — all row interaction goes through **delegated** listeners on `#prompts_list` (`bindListEvents()`, bound once).
+
+`refreshRow()` is called after the list is built, after every `values()` write, after `add()`, and for every row once `activePlaceholders` has loaded (`refreshAllRows()`).
+
+**Type badges and read-only state** come from `rowState(values)`:
+- **System** (`is_default`), **Personal**, or the organization badge (`is_org`, labelled with the policy's organization name, falling back to `customPrompts_org_badge`).
+- `locked` = built-in, org, shadowed, `_inert_by_policy` or `_default_inert_by_policy`. Shadowed and inert rows are also dimmed (`.is_dimmed`).
+
+**Search** (`#prompts_search`, class `prompts_search_input`): filters on prompt **name, ID and text**, through `promptsList.search(str, ['name','id','text'], promptsSearch)`.
+- The custom function is required, not a refinement: built-in names are `__MSG_` tokens, so `resolvePromptName()` unwraps them first, and the text is matched in its one-line preview form (`<br>` → space).
+- The input deliberately does **not** carry List.js' default `searchClass` of `search`: it lives inside the List container, so List.js would auto-bind a second, competing plain-text filter on the same field.
+- Filtering is display-only and cannot lose data: `writePrompts()` iterates `promptsList.items`. The detail pane keeps showing its prompt, pending edits included, even when the search filters that row out.
+- Matches in the visible name and id are wrapped in `<mark class="search_hit">` (`--hit-*` tokens; metric-neutral). `highlightSearchMatchesIn()` reads the text back with `textContent`, so it is idempotent and marks never nest. `refreshRow()` repaints its own row, and the input handler repaints all rows, because narrowing a needle within an unchanged result set fires no `updated`.
+- **`#filter_badge`** states that the list is filtered (`customPrompts_filter_active`, or `customPrompts_filter_noMatches` + `.filter_badge_empty`), with `#btnClearFilter`. It is `role="status" aria-live="polite"`. It is **not** routed through `#msgDisplay`, which is owned by `setMessage()` / `clearMessage()`: "filtered" and the save status are independent states that must be able to show at the same time. `#filter_badge.hiddendata` is declared explicitly, since the badge's own `display` would otherwise tie with `.hiddendata`.
+- `setupPromptsSearch()` runs again after an import (a new List instance), so its listener is guarded by `promptsSearchBound`; the field value is reset on every call.
+
+**Detail editor (`#detail_pane`).** A single static editor, never a List.js item. `detailMode` is `'none' | 'edit' | 'new'`, and `selectedIdnum` identifies the item in edit mode.
+- `loadDetail(item)` → `fillDetail(values)` + `applyDetailState(rowState(values))`.
+- **Header**: title + read-only badge + id on the left, the action buttons on the right, and the **Menu position** button (edit mode only) centred between them by two `.toolbar_spacer`s.
+- **Fields**: ID and Name inputs (one per row, full width, `.field_stack`), the highlighted prompt textarea, Add to menu / Action selects, and two disclosures for the per-prompt connection override:
+  - **[API]**: `injectConnectionUI()` runs **once**, with prefix `detail_prompt_`, into `#detail_api_panel`. Its `.conn_adv` rows are relocated behind `.conn_adv_btn` by `relocateConnAdvRows()` and kept in sync by `showAdvConnectionOptions()`. `populateConnectionUI()` falls back to the global pref for an unset value, restores TomSelect values, and re-runs `updateWarnings()` / `checkJsonFieldsByPrefix()` because `.value` writes fire no `input`. The Reset button (`resetApiSettings()`) only clears the pane, as a pending edit.
+  - **[ChatGPT Web]**: model / project / custom GPT, shown only while the global connection is `chatgpt_web`, the prompt sets no `api_type` and the prompt is editable (`updateChatGPTWebVisibility()`, re-run on every api_type change). Both disclosures auto-open when the prompt already carries an override.
+- **Options** column: the five flags as 34×20 switches (`.flag_switch` in `.flag_row`).
+  - `use_diff_viewer` is only selectable when the action is "substitute text" (`updateDiffViewerState()`), with `#detail_diff_hint` explaining why.
+  - `checkPromptsConfigForPlaceholders()` rings (`.invalid_flag`) `need_custom_text` / `need_selected` when the text uses `{%additional_text%}` / `{%selected_text%}` / `{%selected_html%}` but the flag is off.
+- **Read-only prompts** (`locked`):
+  - The ID, name, selects and connection sections are disabled or hidden, and an existing override is summarized in `#detail_conn_readonly`.
+  - The textarea is `readOnly`, not disabled, so its text stays selectable. The `.editor-wrap.is_readonly` style is dashed and muted.
+  - The header shows a "Read-only" badge.
+  - `#detail_banner` explains why, most specific reason first: `customPrompts_shadowed_note` / `customPrompts_policy_inert_note` (amber, `.banner_warn`), `customPrompts_org_banner` (+ `customPrompts_org_shadowing_note`), `customPrompts_system_banner`, `customPrompts_policy_default_inert_note`.
+  - Flags follow the data model, not a "local preferences" idea: **on a built-in only `need_custom_text` stays editable**, because it is the only one of the five flags persisted in `_default_prompts_properties` (see [02-prompts.md](02-prompts.md)). The other four render as `.is_fixed` rows with the `customPrompts_flag_fixed_suffix` suffix. A built-in's `need_custom_text` toggle is applied straight to the item and marks the page unsaved; there is no Save on a read-only prompt.
+- **Header buttons**:
+
+  | Prompt | Buttons |
+  |---|---|
+  | Personal | Duplicate · Delete · Save (plus Cancel while dirty) |
+  | Built-in / org / shadowed / inert | Duplicate and edit |
+
+  Duplicate, Duplicate and edit, and Export are disabled whenever the management policy is on (see [08a-managed-prompts.md](08a-managed-prompts.md#_disable_prompt_management)).
+- **Save** (`commitDetail()`) validates the fields and applies them to the List.js item with `item.values()`, then calls `savePrompts()`. Validation: the id is non-empty, has no whitespace and is unique among the other prompts; name and text are required; errors show in `#detail_error` and as `.input_error` borders. Flags are written as numbers `1`/`0`, which `normalizePromptFlags()` collapses on the next read.
+- **New prompt** (`startNewPrompt()`) puts the pane in `'new'` mode, with empty fields and the global API defaults. Save creates the item with the same shape as before (`position_*Max + 1`, next `idnum`, `is_default: 0`, `show_in: 'popup'`), after clearing the search so the new row is visible, and selects it. Cancel returns to the previous selection.
+- **Duplicate / Duplicate and edit** (`duplicatePrompt()`) seed `'new'` mode from a copy. The id becomes `id_<copy_text>` and the name `<resolved name> (<copy_text>)`, API values included. Ownership and policy markers (`is_default`, `is_org`, `_shadowed_by_org`, …) are stripped from the seed.
+- **Delete** confirms (`customPrompts_btnDelete_confirmText`), removes the item and selects the next visible one.
+- **Export** (row menu) runs `exportPrompts([values])`, the same function as Export All, so a single-prompt file has the full format and re-imports like any backup.
+- **Dirty guard**: `detailDirty` is set by any user input in the pane, ignoring programmatic fills (`detailLoading`). Before the pane is repointed — selecting another prompt, Edit/Open from the table, New, Duplicate, Import — `confirmLeaveDetail()` shows `showChoiceDialog()` with Cancel / Discard / Apply. Apply runs `commitDetail()`, and a failed validation keeps the user in place. `beforeunload` also warns while `detailDirty` is set.
+- **Saving** is immediate. Every mutation of the list — Save in the pane, Delete, a built-in's `need_custom_text` toggle, Import — ends with `savePrompts()`, which chains `writePrompts()` on `saveQueue` so writes never interleave and the last one holds the latest list (each snapshots `promptsList.items` when its turn comes). `writePrompts()` splits the items (`is_default`/`is_org` → `setDefaultPromptsProperties()`, the rest → `setCustomPrompts()`), sends `reload_menus`, and reports in `#msgDisplay`: `customPrompts_start_saving`, then `customPrompts_saved` (cleared after 5 s) or `customPrompts_save_error` in red. `saveUnconfirmed` is set while a write is in flight and stays set after a failure, and `beforeunload` warns on it too. Import asks first (its confirmation includes `customPrompts_import_saved_now`), since it replaces the stored prompts with no way back; on success it shows `customPrompts_import_completed_saved`.
+- The table view's Edit button and the view switch do not discard pending edits: Edit goes through the dirty guard, and the switch keeps the pane's state intact.
+
+**Prompt text highlighting.**
+- **Edit mode**: the detail textarea is a `.autocomplete-container.editor-wrap` with a backdrop mirror (`attachEditorHighlight()`, `js/mzta-editor-highlight.js`), attached **once** after `activePlaceholders` has loaded. Its token resolver and `textareaAutocomplete()` both read the prompt type through a getter on `#detail_type`, and a `change` on that select calls the handle's `refresh()`.
+  - **Programmatic writes must go through `setEditorValue()`**: the mirror only repaints on `input`, which a `.value =` write does not fire.
+  - Type is written **before** text in `fillDetail()`, because validity depends on it.
+  - Metrics are the `--ed-*` properties on `.editor-wrap` (14px padding, `var(--font-mono)`, 1.65), and the structure is the shared `pages/_lib/editor-highlight.css`. Never set a metric on only one of textarea/mirror. `.editor-active` gates the mirror, as on the other pages.
+- **Preview in the list**: `renderPreviewText()` wraps `{%…%}` tokens in `.ph_chip`, with the same two invalid tiers as edit mode: red `.ph_chip_invalid_read.ph_chip_error_read` + `editor_placeholder_missing` for an unknown id, amber `.ph_chip_invalid_read` with `classifyPlaceholderType()`'s title for a wrong-type id. It uses the **same** `PLACEHOLDER_RE` and `placeholdersUtils.findPlaceholder()` as the editor and the runtime. Before `activePlaceholders` has loaded it emits plain chips (classifying against an empty list would flag everything), and `refreshAllRows()` repaints afterwards.
 
 ### Manage Data Placeholders Page (`pages/customdataplaceholders/`)
 
-The custom data placeholder CRUD screen — structurally the sibling of the Manage Custom Prompts page (List.js table, hidden `#formNew` add-form, Import/Export/Save All, placeholder autocomplete). Data model and storage (`browser.storage.local`, key `_custom_placeholder`) are documented in `claude-spec/03-placeholders.md`.
+The custom data placeholder CRUD screen — a List.js table with a hidden `#formNew` add-form, Import/Export/Save All and placeholder autocomplete. It is the structural sibling of the *previous* Manage Custom Prompts page, which has since moved to the list + detail design "2a". Data model and storage (`browser.storage.local`, key `_custom_placeholder`) are documented in `claude-spec/03-placeholders.md`.
 
-**It shares the same design "1b"** as the custom prompts page, with its own copy of the tokens in `mzta-custom-dataplaceholders.css` (the two pages deliberately keep private token blocks; neither uses `pages/_lib/mzta-design.css`):
+**It keeps the visual design "1b"** that the custom prompts page used before its "2a" redesign, with its own copy of the tokens in `mzta-custom-dataplaceholders.css` (the two pages deliberately keep private token blocks; neither uses `pages/_lib/mzta-design.css`):
 
 - Same `:root` token block + `@media (prefers-color-scheme: dark)` override, `.page_wrap` centered column, eyebrow + `.page_title` header, and `#import_export` flex-column stack.
 - Same card pattern on **`#all_custom_dataplaceholders`**: sticky `#command_palette` toolbar as the first child (rounded top corners), `thead` sticking at `top: 54px`, and a `#list_footer` with `#ph_count` (i18n key `customDataPH_placeholdersCount`, `$COUNT$` placeholder) rounding the bottom corners. No `overflow:hidden` on the card — it would break the sticky toolbar/header.
@@ -422,7 +471,7 @@ The custom data placeholder CRUD screen — structurally the sibling of the Mana
 - The **`enabled` checkbox** renders as the same **toggle switch** as the prompt properties (`appearance:none` track + `::after` knob, `--accent` when on) — **CSS only**, the `.enabled input_mod` classes and `handleInputChange` are unchanged. Unlike the prompts page there is **no read-only status-icon variant**: this checkbox is never disabled by the row editor, so it stays clickable straight from the row (no Edit/OK round-trip) and only the interactive switch look exists. Default rows (`is_default == 1`) keep the switch look but are dimmed and inert via `:disabled`.
 
 **What it deliberately does not share:** no Copy or "Menu position" row button, no ChatGPT Web / API provider panels, and no `<dialog>` — export/import confirmations still use `confirm()`/`alert()`.
-**Visual design.** The page uses the shared design system (see "Shared Design System CSS" below): it is wrapped in `#mzta_card` / `#mzta_body`, settings are `.mzta_field` / `.feature_row` blocks, the two checkboxes render as `.mzta_switch` toggles, and Save/Reset buttons use `.btn_primary` / `.btn_secondary`. Because the page opens in its own full-width browser tab, its `<body>` carries the opt-in **`mzta_feature_page`** class (see "Feature-Page Shell" below), which centers all content in a capped ~760px column on the light `--desk` background and renders each `.mzta_section` as a white rounded card with per-row dividers, a 3px blue section-header accent bar, larger label/help typography, blue focus rings on inputs/selects/textareas, and the two number inputs (`summarize_max_display_length`, `summarize_max_messages`) laid out as compact right-aligned controls (label/description left) via the `.mzta_field_num` wrapper. No form field id/name/value, listener, or persistence logic changes — the page still saves options on `change` and each prompt editor keeps its own Save/Reset buttons (there is no page-level save bar). The two number fields wrap their control in `.mzta_field_num_ctrl` (the max-messages one reuses `.mzta_inline_row` for the reset button + input group). The specific-integration connection UI is injected (via `initializeSpecificIntegrationUI()`) into a `<table id="connection_ui_table">` inside `#mzta_conn_panel`. A small `updateConnPanelTint()` helper in `mzta-summarize.js` (mirroring the options-page one, but scoped to the `summarize_` prefix) colours the panel to the selected provider (`tint_*` class + `#mzta_conn_pill_name`) and hides the whole panel (`display:none`) when `summarize_use_specific_integration` is off, so no empty bordered box shows; it runs on load and on `change` of `summarize_connection_type` / the checkbox. The connection-type select stays a native `<select>` (only the model selects become TomSelect), so the `change` listeners fire normally. Because `_updateVisibility()` sets an inline `display:table-row` on visible connection rows, `mzta-summarize.css` re-asserts `#connection_ui_table tr[style*="table-row"] { display:block !important; }` so those rows still render as stacked fields — no change to the shared `connection-ui.js` is needed.
+**Visual design.** The page uses the shared design system (see "Shared Design System CSS" below): it is wrapped in `#mzta_card` / `#mzta_body`, settings are `.mzta_field` / `.feature_row` blocks, the two checkboxes render as `.mzta_switch` toggles, and Save/Reset buttons use `.btn_primary` / `.btn_secondary`. Because the page opens in its own full-width browser tab, its `<body>` carries the opt-in **`mzta_feature_page`** class (see "Feature-Page Shell" below), which centers all content in a capped ~760px column on the light `--desk` background and renders each `.mzta_section` as a white rounded card with per-row dividers, a 3px blue section-header accent bar, larger label/help typography, blue focus rings on inputs/selects/textareas, and the two number inputs (`summarize_max_display_length`, `summarize_max_messages`) laid out as compact right-aligned controls (label/description left) via the `.mzta_field_num` wrapper. No form field id/name/value, listener, or persistence logic changes — the page still saves options on `change` and each prompt editor keeps its own Save/Reset buttons (there is no page-level save bar). The two number fields wrap their control in `.mzta_field_num_ctrl` (the max-messages one reuses `.mzta_inline_row` for the reset button + input group). The specific-integration connection UI is injected (via `initializeSpecificIntegrationUI()`) into a `<table id="connection_ui_table">` inside `#mzta_conn_panel`. `bindConnPanelTint('summarize')` (`pages/_lib/feature-page.js`, shared by the six feature pages; it mirrors the options-page `updateConnPanelTint()`, scoped to the prefix) colours the panel to the selected provider (`tint_*` class + `#mzta_conn_pill_name`) and hides the whole panel (`display:none`) when `summarize_use_specific_integration` is off, so no empty bordered box shows; it runs on load and on `change` of `summarize_connection_type` / the checkbox. The connection-type select stays a native `<select>` (only the model selects become TomSelect), so the `change` listeners fire normally. Because `_updateVisibility()` sets an inline `display:table-row` on visible connection rows, `mzta-summarize.css` re-asserts `#connection_ui_table tr[style*="table-row"] { display:block !important; }` so those rows still render as stacked fields — no change to the shared `connection-ui.js` is needed.
 
 **Automatic summary sender list card.** The sender allow-list lives in its own `.mzta_section` card (`#summarize_auto_senders_container`), placed **after** the settings card and **before** the prompts section. It needs to be a separate card because the first settings card deliberately has no heading, so the list could not be titled inside it; the markup mirrors the SKIP ADDRESSES section of `pages/spamfilter/mzta-spamfilter.html` — a `.mzta_prompt_title` carrying the `#auto_senders_unsaved` indicator, two `p.mzta_help` blocks (description, then a bold API-usage/cost warning, since generation is automatic), a `.feature_row` + `.mzta_switch` toggle, and a `.mzta_field` holding the `rows="7"` textarea plus a `.btn_div` with a `.btn_primary` Save button. `#summarize_auto_senders_disabled_note` closes the card and is unhidden when the card is inert. **No CSS was added**: the design system already covers every component, and `.unsaved` was already declared in `pages/summarize/mzta-summarize.css`.
 
@@ -436,7 +485,7 @@ The design-system tokens and reusable components ("variant 2a") live in `pages/_
 
 Feature settings pages open in their own full-width browser tab, where stretching controls edge-to-edge hurts readability. Adding `class="mzta_feature_page"` to a page's `<body>` opts into a **shell** whose rules all live at the end of `pages/_lib/mzta-design.css`, every one scoped under `body.mzta_feature_page`. The **main options page does not carry this class**, so it is intentionally excluded and keeps its full-width layout — the shell is reusable across feature pages without touching the options page.
 
-All six special-prompt feature pages now adopt the shell: `pages/summarize/`, `pages/addtags/`, `pages/spamfilter/`, `pages/translate/`, `pages/get-calendar-event/`, and `pages/get-task/`. Each links `../_lib/mzta-design.css` **first**, wraps its content in `#mzta_card` / `#mzta_top_links` (icon + `.mzta_page_title` + `.mzta_page_subtitle`) / `#mzta_body`, renders every settings group as a `.mzta_section` card headed by **`.mzta_prompt_title`** (see the typography note below) — every card title on these pages uses that one class, so "Current prompt text", "Exclusions list", "Accounts", "Skip addresses" and "Spam report" are all the same size. The only remaining `.mzta_eyebrow` on a feature page is the `<span>` inside `#mzta_conn_panel_header` (the "Connection settings" label next to the provider pill), which is a sub-header *inside* the connection panel rather than a section-card title and deliberately keeps the smaller 12px look. The **first (settings) card has no heading at all**. That first card's former `*_prompt_prefs_title` eyebrow ("Summarization Options", "Add Tags Options", …) was removed from all six pages: the page title already names the feature, so the heading was redundant, and at 12px it sat visually below the 15px `.mzta_prompt_title` further down the page. The six now-unused keys (`Summarize_prompt_prefs_title`, `AddTags_prompt_prefs_title`, `SpamFilter_prompt_prefs_title`, `Translate_prompt_prefs_title`, `get_calendar_event_prompt_prefs_title`, `get_task_prompt_prefs_title`) were deleted from `_locales/en/messages.json`; the other locale files are Weblate-managed and drop them on the next sync. Each page uses `.feature_row` + `.mzta_switch` toggles for checkboxes, `.mzta_field` (or `.mzta_field_num` for number inputs) for other controls, and `.btn_secondary`/`.btn_primary` for the per-editor Reset/Save buttons. The specific-integration connection UI is wrapped in `#mzta_conn_panel` / `<table id="connection_ui_table">` (preserving the `connection_ui_anchor` / `connection_ui_end` IDs required by `connection-ui.js`), and each page's JS gained a prefix-scoped `updateConnPanelTint()` (mirroring the summarize one) that tints the panel to the selected provider, sets `#mzta_conn_pill_name`, and hides the whole panel when the page's `<prefix>_use_specific_integration` checkbox is off. Each page's own CSS was slimmed to page-specific rules only (autocomplete dropdown, button row, one `#connection_ui_table tr[style*="table-row"]` override, plus genuinely unique bits such as spamfilter's `#report_data` grid / `#spamfilter_threshold_too_low`, addtags's account-selector and use-list styling). No element `id`/`name`/`.option-input` class changed, so all save-on-`change` and prompt persistence logic is intact.
+All six special-prompt feature pages now adopt the shell: `pages/summarize/`, `pages/addtags/`, `pages/spamfilter/`, `pages/translate/`, `pages/get-calendar-event/`, and `pages/get-task/`. Each links `../_lib/mzta-design.css` **first**, wraps its content in `#mzta_card` / `#mzta_top_links` (icon + `.mzta_page_title` + `.mzta_page_subtitle`) / `#mzta_body`, renders every settings group as a `.mzta_section` card headed by **`.mzta_prompt_title`** (see the typography note below) — every card title on these pages uses that one class, so "Current prompt text", "Exclusions list", "Accounts", "Skip addresses" and "Spam report" are all the same size. The only remaining `.mzta_eyebrow` on a feature page is the `<span>` inside `#mzta_conn_panel_header` (the "Connection settings" label next to the provider pill), which is a sub-header *inside* the connection panel rather than a section-card title and deliberately keeps the smaller 12px look. The **first (settings) card has no heading at all**. That first card's former `*_prompt_prefs_title` eyebrow ("Summarization Options", "Add Tags Options", …) was removed from all six pages: the page title already names the feature, so the heading was redundant, and at 12px it sat visually below the 15px `.mzta_prompt_title` further down the page. The six now-unused keys (`Summarize_prompt_prefs_title`, `AddTags_prompt_prefs_title`, `SpamFilter_prompt_prefs_title`, `Translate_prompt_prefs_title`, `get_calendar_event_prompt_prefs_title`, `get_task_prompt_prefs_title`) were deleted from `_locales/en/messages.json`; the other locale files are Weblate-managed and drop them on the next sync. Each page uses `.feature_row` + `.mzta_switch` toggles for checkboxes, `.mzta_field` (or `.mzta_field_num` for number inputs) for other controls, and `.btn_secondary`/`.btn_primary` for the per-editor Reset/Save buttons. The specific-integration connection UI is wrapped in `#mzta_conn_panel` / `<table id="connection_ui_table">` (preserving the `connection_ui_anchor` / `connection_ui_end` IDs required by `connection-ui.js`), and each page's JS calls the shared, prefix-scoped `bindConnPanelTint(prefix)` (`pages/_lib/feature-page.js`) that tints the panel to the selected provider, sets `#mzta_conn_pill_name`, and hides the whole panel when the page's `<prefix>_use_specific_integration` checkbox is off. Each page's own CSS was slimmed to page-specific rules only (autocomplete dropdown, button row, one `#connection_ui_table tr[style*="table-row"]` override, plus genuinely unique bits such as spamfilter's `#report_data` grid / `#spamfilter_threshold_too_low`, addtags's account-selector and use-list styling). No element `id`/`name`/`.option-input` class changed, so all save-on-`change` and prompt persistence logic is intact.
 
 **addtags auto-toggle change.** In the old table layout, `mzta-add-tags.js` revealed the auto-tagging sub-rows (`add_tags_auto_only_inbox_tr`, `add_tags_auto_include_sent_tr`, `add_tags_auto_uselist_tr`) with `style.display = 'table-row'`. Those rows are now `.feature_row` flex blocks inside a card, and they are hidden by default through an **ID-based rule in `mzta-add-tags.css`** (`display: none`) so nothing flashes before the JS runs, then toggled on when `add_tags_auto` is checked.
 
@@ -499,7 +548,7 @@ The translate settings page provides:
 4. **Target language** (`translate_lang`) — text input for the destination language. If empty, falls back to `default_chatgpt_lang`.
 5. **One editable prompt** — the translation instruction prompt (`prompt_translate_this`) with Save/Reset buttons and placeholder autocomplete. Default text comes from i18n string `prompt_translate_this_full_text`.
 
-Like the other feature pages, this page uses the shared design system + feature-page shell (see "Feature-Page Shell" above): two `.mzta_section` cards (settings + prompt), `.mzta_switch` toggle, `#mzta_conn_panel` connection UI with a `updateConnPanelTint()` helper, and `.mzta_field_num` for the max-display-length number input.
+Like the other feature pages, this page uses the shared design system + feature-page shell (see "Feature-Page Shell" above): two `.mzta_section` cards (settings + prompt), `.mzta_switch` toggle, `#mzta_conn_panel` connection UI tinted by `bindConnPanelTint()`, and `.mzta_field_num` for the max-display-length number input.
 
 ### Connection Settings Panel — Advanced Options Disclosure
 
@@ -519,24 +568,21 @@ fields in `#mzta_conn_panel`. Each provider's fields are tiered into **core** an
 Every page hosting the connection UI hides the `conn_adv` rows behind an "Advanced
 options" disclosure: options page and setup wizard (static markup, see below), the 6
 feature pages (built at runtime, see **Feature pages** below) and custom prompts.
-The **custom prompts page renders one
-per form** (`.conn_adv_btn` + `.conn_adv_table`, one pair in the add form and one per
-list row). The button carries the same markup as the options page one (gear + label,
-`.chev` chevron) and is restyled in `mzta-custom-prompts.css` with that page's own
-tokens (`--accent`, `--border2`), since the page does not link `mzta-design.css`.
-The same file also neutralises the saturated legacy `tr.conntype_*` row shading from
-`connection-ui.css`. Rows go transparent with thin separators, and the whole host
-(`#api_ui_container` / `.api_additional_info`) takes the soft options-page provider tint. That
-tint is selected with `:has(tr[id$="_tr"].conntype_<provider>)`, because the connection-type row
-is the only one whose class follows the select. Those rules also set `--tint-border` /
-`--tint-accent`, which the `.conn_adv_btn` uses for its border and text, as on the options page.
-With no provider selected it falls back to `--border2` / `--accent`. Because several editors can be open at once, its relocation helper
-`relocateConnAdvRows(scopeEl)` and `showAdvConnectionOptions(scopeEl, connType)` are
-**scoped to one form**, unlike the options page's document-wide
-`querySelectorAll('#connection_ui_table tr.conn_adv')` — a global query there would
-move every other open row's advanced rows into whichever form was touched last. The
-disclosure itself is one delegated `click` listener at module scope, since List.js
-re-renders rows on search/sort and per-button listeners would be lost. Rows that left
+The **custom prompts page renders one**, in its single detail editor (`.conn_adv_btn` +
+`.conn_adv_table` inside `#detail_api_panel`). The button carries the same markup as the
+options page one (gear + label, `.chev` chevron) and is restyled in `mzta-custom-prompts.css`
+with that page's own tokens (`--accent`, `--border2`), since the page does not link
+`mzta-design.css`. The same file also neutralises the saturated legacy `tr.conntype_*` row
+shading from `connection-ui.css`. Rows go transparent with thin separators, and the whole
+panel (`.api_panel`) takes the soft options-page provider tint. That tint is selected with
+`:has(tr[id$="_tr"].conntype_<provider>)`, because the connection-type row is the only one
+whose class follows the select. Those rules also set `--tint-border` / `--tint-accent`, which
+the `.conn_adv_btn` uses for its border and text, as on the options page. With no provider
+selected it falls back to `--border2` / `--accent`.
+Its relocation helper `relocateConnAdvRows(scopeEl)` and
+`showAdvConnectionOptions(scopeEl, connType)` stay **scoped** to that panel rather than
+using the options page's document-wide `querySelectorAll('#connection_ui_table tr.conn_adv')`,
+and the disclosure is one delegated `click` listener at module scope. Rows that left
 the main table are no longer reachable from `showConnectionOptions()` (which walks up
 from the select), hence the separate per-provider sync.
 Note that the ChatGPT Web `conn_adv` rows are not merely inert on those pages — they
@@ -562,12 +608,12 @@ present.
 ends by calling `updateCORSWarnings(modelId_prefix)`, and `modelId_prefix` defaults to
 `''`. Every call site on a prefixed page must therefore pass the prefix explicitly —
 omitting it does not fail loudly, it silently targets the *unprefixed* elements (on the
-custom prompts page that meant a row's provider change toggling the add-form's CORS
-warning and mutating the shared `varConnectionUI.permission_*` state from the wrong
-form's host values). The two calls inside `injectConnectionUI()` pass their own
-`modelId_prefix`; on pages that inject more than once (custom prompts: one add-form plus
-one per edited row) each injection must use a distinct prefix — `new_prompt_` for the
-add form, `prompt_<id>_` per row — so no two forms ever share an element id.
+custom prompts page's old per-row editors that meant a row's provider change toggling the
+add-form's CORS warning and mutating the shared `varConnectionUI.permission_*` state from
+the wrong form's host values). The two calls inside `injectConnectionUI()` pass their own
+`modelId_prefix`. The custom prompts page now injects exactly once, with `detail_prompt_`,
+and every call there passes that prefix; a page that injects more than once must give each
+injection a distinct prefix so no two forms ever share an element id.
 
 **JSON field validation on restore.** The `*_extra_body` textareas carry `.check-json`
 and are validated live by an `input` listener. Restoring a saved value assigns
@@ -618,8 +664,8 @@ rows moved into `#connection_ui_adv_table`. `showAdvConnectionOptions()` hides e
 `conntype_*` row in the advanced table and shows only the selected provider's; it is
 called at init (after `restoreOptions()` + `showConnectionOptions()`) and on every
 `connection_type` `change`. The shared `connection-ui.js` is intentionally left unchanged
-— widening its scope would break the Custom Prompts page, which hosts multiple connection
-blocks on one page.
+— widening its scope would break any page that hosts more than one connection block
+(and the feature pages' own panels).
 
 **JS wiring** (`options/mzta-options.js`): `resetConnAdv()` sets `aria-expanded="false"`
 and adds `.hidden` to `#connection_ui_adv_table`. It is called once after injection
@@ -1302,9 +1348,10 @@ value differs from the stored one, and the click handler disables it again after
 No change to those existing handlers is needed.
 
 The selector deliberately matches only the snake_case `btn_save*` ids used by the feature
-pages. The Custom Prompts, Data Placeholders and Menu Order pages use a single
-camelCase `btnSaveAll` button and keep their own `somethingChanged`-based `beforeunload`
-handler, so they are unaffected.
+pages. The Data Placeholders and Menu Order pages use a single camelCase `btnSaveAll`
+button and keep their own `somethingChanged`-based `beforeunload` handler, and the Custom
+Prompts page saves every change immediately with its own `beforeunload` handler, so they
+are unaffected.
 
 Each page calls `initUnsavedGuard()` as the first statement of its `DOMContentLoaded`
 handler, so the guard is armed even if later async setup fails.
@@ -1351,8 +1398,8 @@ rules is logged and the setup continues with an empty textarea: the listeners an
 
 ## Preference access (`js/mzta-prefs.js`)
 
-Every preference **read** goes through the single accessor module `js/mzta-prefs.js`, which
-exports the `mztaPrefs` singleton. It is adapted from
+Every preference **read and write** goes through the single accessor module
+`js/mzta-prefs.js`, which exports the `mztaPrefs` singleton. It is adapted from
 [Thunderbird Addon Options Manager](https://github.com/micz/Thunderbird-Addon-Options-Manager)
 (same author) and keeps that project's MPL-2.0 header; only the accessors were taken. It was
 introduced by [#163](https://github.com/micz/ThunderAI/issues/163) as a pure refactor, and is
@@ -1371,6 +1418,7 @@ const value = await mztaPrefs.getPref('my_pref');            // one value
 const prefs = await mztaPrefs.getPrefs(['a', 'b']);          // {a: ..., b: ...}
 const all   = await mztaPrefs.getAllPrefs();                 // every declared pref
 await mztaPrefs.setPref('my_pref', value);                   // single-key write
+await mztaPrefs.setPrefs({a: 1, b: 2});                      // multi-key write
 ```
 
 **Defaults come from `prefs_default` and from nowhere else.** A call site never passes its own
@@ -1390,12 +1438,45 @@ same rule `isAPIKeyValue()` applies in the options page. The `do_debug` flag is 
 lazily, and refreshed from `storage.onChanged`; it cannot be fetched through `getPref()`
 without recursing on every read.
 
+### The managed layer sits in front of the accessor
+
+An enterprise policy (`js/mzta-managed.js`, see
+[08-managed-configuration.md](08-managed-configuration.md)) resolves through this module,
+which is why the whole mechanism touches no call site. Every read resolves as:
+
+```
+locked policy value  >  user value in storage.local  >  unlocked policy value  >  prefs_default
+```
+
+implemented in two private helpers:
+
+- **`_defaultsFor()`** hands an *unlocked* policy value to `storage.get()` as that key's
+  default. That is exactly the "initial value the user may change" semantics: a stored
+  user value still wins, and the policy value is only what they see until they change it.
+- **`_applyLocked()`** runs *after* the read and overwrites every locked key. A default
+  cannot beat a stored value, and an enforced value must — including one written before
+  the policy was installed.
+
+**The write guard is the point of the whole design.** `setPref()` and `setPrefs()` skip a
+locked key, logging a warning. If an enforced value ever reached `storage.local` it would
+outlive the policy, so removing the policy would leave the user silently stuck with what
+it used to impose. `setPrefs()` skips per key rather than rejecting the whole object: its
+callers seed an entire provider block at once, and one locked key must not block the rest.
+
+With no policy installed every one of these checks is false and the behaviour is
+byte-for-byte what it was before — `storage.managed.get()` rejects, which is the normal
+case for nearly every user and is swallowed silently.
+
 ### What deliberately does *not* go through the accessor
 
-- **Multi-key writes** stay direct `browser.storage.local.set()` calls: the per-feature
+- **Multi-key writes go through `setPrefs(obj)`**, not a direct
+  `browser.storage.local.set()`. `setPref()` is single-key by design, and before
+  `setPrefs()` existed that forced eight writers to bypass the module: the per-feature
   integration seeding (`set(update_prefs)`) on the six feature pages,
   `_reconcileFeatureFlags()`'s `set(to_disable)`, and the
-  `{chatgpt_win_top, chatgpt_win_left}` pair. `setPref()` is single-key by design.
+  `{chatgpt_win_top, chatgpt_win_left}` pair. All of them now use `setPrefs()`, so the
+  module is the choke point for **writes** as well as reads — which is what lets a single
+  write guard cover every preference write.
 - **The options page keeps its own `saveOptions()` / `restoreOptions()`.** Only their
   `get`/`set` calls were migrated. The upstream project's versions were *not* ported: ThunderAI's
   handle password inputs, API key masking, TomSelect, `hasEmptyValueOption()` and the
@@ -1407,16 +1488,23 @@ without recursing on every read.
   `migratePrefsToLocal()` carries them across — see the `dynamic_menu_order_alphabet` row above
   for what breaks otherwise.
 - **`js/mzta-compose-script.js`** is registered as a *classic* content script, so it has no
-  module context and cannot import. Its defaults are hardcoded and must be kept in step with
-  `prefs_default` **and its area with `PREFS_AREA`** by hand — it reads two real preferences
-  (`add_tags_hide_exclusions`, `add_tags_exclusions_exact_match`), so a wrong area silently
-  yields the hardcoded defaults for every user.
+  module context and cannot import. It no longer reads storage at all: the tag dialog gets
+  `add_tags_exclusions`, `add_tags_hide_exclusions` and `add_tags_exclusions_exact_match`
+  from the `addtags_get_exclusion_prefs` background command, resolved by `mztaPrefs` (so the
+  enterprise policy applies), and writes the list with `addtags_set_exclusions` (so the write
+  guard applies). Any preference it needs in future must go the same way.
+- **`migrateCalendarNoSelection()`** in `js/mzta-prompts.js` reads the raw stored
+  `calendar_no_selection` and `_special_prompts` on purpose: it compares the user's own
+  stored values, before the policy is loaded.
 - **One read in `pages/_lib/connection-ui.js`** (`_persistSelectedConnection`) keeps a
   hardcoded `''` default, which differs from `prefs_default`'s `'chatgpt_api'` for
   `{prefix}_connection_type`. It is a no-op guard comparing the stored value against what the
   select shows; with the `prefs_default` value a first-time write of exactly `chatgpt_api`
   would compare equal to the substituted default and be skipped, leaving the pref unwritten.
-  Only the *default* is special: the area follows `PREFS_AREA` like everything else.
+  Only the *default* is special: the area follows `PREFS_AREA` like everything else. Because
+  that raw read cannot see the enterprise policy, the function returns early when the key has
+  a policy-supplied value: a locked one is refused by the write guard anyway, and an initial
+  one must not be stored as a user choice the user never made.
 - **The `storage.local` / `storage.session` record stores** (`taStorage`, `taSummaryStore`,
   `taTranslationStore`, `taSpamReport`, the custom prompt/placeholder payloads) are not
   preferences and are out of scope. They now share an area with the preferences, which is safe

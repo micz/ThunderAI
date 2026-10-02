@@ -17,7 +17,11 @@
  */
 
 import './tom-select.base.js';
-import { integration_options_config } from '../../options/mzta-options-default.js';
+import {
+  integration_options_config,
+  valid_connection_types,
+  OLLAMA_THINK_LEVELS
+} from '../../options/mzta-options-default.js';
 import { OpenAI } from '../../js/api/openai_responses.js';
 import { Ollama } from '../../js/api/ollama.js';
 import { OpenAIComp } from '../../js/api/openai_comp.js'
@@ -46,6 +50,8 @@ import {
   clearPromptAPI
 } from '../../js/mzta-prompts.js';
 import { mztaPrefs } from '../../js/mzta-prefs.js';
+import { mztaManaged } from '../../js/mzta-managed.js';
+import { isManagedSecret, setDisabledRespectingManaged, resolveSpecificIntegrationMode } from './managed-ui.js';
 import {
   isTestableConnection,
   runConnectionTest,
@@ -66,16 +72,25 @@ export const varConnectionUI = {
 const selects_with_empty_option_suffixes = ['chatgpt_reasoning_summary', 'chatgpt_reasoning_effort', 'ollama_think',
   'chatgpt_verbosity', 'chatgpt_text_format', 'chatgpt_truncation', 'chatgpt_service_tier'];
 
-// The reasoning levels offered when the server does not report which ones the selected
-// model accepts. Declared up here, not next to buildOllamaThinkOptions(): that function
-// is hoisted and is called from injectConnectionUI() to seed the select, so a `const`
-// sitting further down the file would still be in its temporal dead zone and throw.
-const OLLAMA_THINK_LEVELS = ['low', 'medium', 'high', 'max'];
-
 export function hasEmptyValueOption(elementId = '') {
   if (elementId === 'connection_type') return true;
   // The per-prompt pages prefix every field id with e.g. "summarize_", so match on the suffix.
   return selects_with_empty_option_suffixes.some((suffix) => elementId === suffix || elementId.endsWith(`_${suffix}`));
+}
+
+// The Ollama think select is an *open* catalogue too: a model may report levels the
+// default list lacks, and buildOllamaThinkOptions() keeps whatever value the select holds
+// when it rebuilds the options. A restore that assigns a level with no <option> yet would
+// leave the select at '' instead, which the rebuild then keeps: the page would show
+// "Default" over the stored (or policy-enforced) level. So the level gets an option first.
+// Call it right before assigning the restored value; a no-op for any other control.
+export function ensureRestorableOption(element, value) {
+  if (!element || element.tagName !== 'SELECT') return;
+  if (!(element.id === 'ollama_think' || element.id.endsWith('_ollama_think'))) return;
+  // String(): a per-prompt value may still be the legacy boolean (see normalizeThink()).
+  const v = (value === undefined || value === null) ? '' : String(value);
+  if (v === '' || Array.from(element.options).some(o => o.value === v)) return;
+  element.add(new Option(v, v));
 }
 
 // Connection-type selects have a *closed* catalogue: their options are built by
@@ -91,14 +106,28 @@ export function isClosedCatalogueSelect(elementId = '') {
 // The connection-type catalogue: single source of truth for both the <option>
 // list built by populateConnectionTypeOptions() and the label lookup below, so a
 // provider can never appear in one and not the other.
-const CONNECTION_TYPE_OPTIONS = [
-  { value: 'chatgpt_web',        msgKey: 'prefs_Connection_type_ChatGPT_Web' },
-  { value: 'chatgpt_api',        msgKey: 'prefs_Connection_type_ChatGPT_API' },
-  { value: 'google_gemini_api',  msgKey: 'prefs_Connection_type_Google_Gemini_API' },
-  { value: 'anthropic_api',      msgKey: 'prefs_Connection_type_Anthropic_API' },
-  { value: 'ollama_api',         msgKey: 'prefs_Connection_type_Ollama_API' },
-  { value: 'openai_comp_api',    msgKey: 'prefs_Connection_type_OpenAI_Comp_API' }
-];
+//
+// The values come from valid_connection_types in options/mzta-options-default.js, which
+// is also what the background page validates an enterprise policy against. Only the
+// i18n keys live here, so adding a provider there without a label fails loudly at
+// startup rather than silently rendering an unlabelled option.
+const CONNECTION_TYPE_MSG_KEYS = {
+  chatgpt_web:       'prefs_Connection_type_ChatGPT_Web',
+  chatgpt_api:       'prefs_Connection_type_ChatGPT_API',
+  google_gemini_api: 'prefs_Connection_type_Google_Gemini_API',
+  anthropic_api:     'prefs_Connection_type_Anthropic_API',
+  ollama_api:        'prefs_Connection_type_Ollama_API',
+  openai_comp_api:   'prefs_Connection_type_OpenAI_Comp_API'
+};
+
+const CONNECTION_TYPE_OPTIONS = valid_connection_types.map(value => {
+  const msgKey = CONNECTION_TYPE_MSG_KEYS[value];
+  if (!msgKey) {
+    console.error('[ThunderAI] No label for connection type "' + value +
+      '": add it to CONNECTION_TYPE_MSG_KEYS in pages/_lib/connection-ui.js.');
+  }
+  return { value, msgKey };
+});
 
 // Localized provider name for a connection type. Returns '' for an empty value
 // ("inherit the global connection"), and the raw value for anything unknown, so a
@@ -136,6 +165,7 @@ export async function injectConnectionUI({
       .api_key-container { position: relative; display: flex; align-items: center; }
       .toggle-icon { cursor: pointer; margin-left: 5px; }
       .toggle-icon img { width: 16px; height: 16px; vertical-align: middle; }
+      .toggle-icon.managed_secret { cursor: default; }
       .option-input { flex-grow: 1; }
     `;
     document.head.appendChild(style);
@@ -1133,6 +1163,8 @@ export async function injectConnectionUI({
   const icon_img_chatgpt_api_key = document.getElementById(getPrefixedId('pwd-icon_chatgpt_api_key'));
 
   toggleIcon_chatgpt_api_key.addEventListener('click', () => {
+      // A policy-supplied key is only a placeholder here: nothing to reveal.
+      if (isManagedSecret(passwordField_chatgpt_api_key.value) || toggleIcon_chatgpt_api_key.classList.contains('managed_secret')) return;
       const type = passwordField_chatgpt_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_chatgpt_api_key.setAttribute('type', type);
 
@@ -1144,6 +1176,8 @@ export async function injectConnectionUI({
   const icon_img_google_gemini_api_key = document.getElementById(getPrefixedId('pwd-icon_google_gemini_api_key'));
 
   toggleIcon_google_gemini_api_key.addEventListener('click', () => {
+      // A policy-supplied key is only a placeholder here: nothing to reveal.
+      if (isManagedSecret(passwordField_google_gemini_api_key.value) || toggleIcon_google_gemini_api_key.classList.contains('managed_secret')) return;
       const type = passwordField_google_gemini_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_google_gemini_api_key.setAttribute('type', type);
 
@@ -1155,6 +1189,8 @@ export async function injectConnectionUI({
   const icon_img_openai_comp_api_key = document.getElementById(getPrefixedId('pwd-icon_openai_comp_api_key'));
 
   toggleIcon_openai_comp_api_key.addEventListener('click', () => {
+      // A policy-supplied key is only a placeholder here: nothing to reveal.
+      if (isManagedSecret(passwordField_openai_comp_api_key.value) || toggleIcon_openai_comp_api_key.classList.contains('managed_secret')) return;
       const type = passwordField_openai_comp_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_openai_comp_api_key.setAttribute('type', type);
 
@@ -1166,6 +1202,8 @@ export async function injectConnectionUI({
   const icon_img_ollama_api_key = document.getElementById(getPrefixedId('pwd-icon_ollama_api_key'));
 
   toggleIcon_ollama_api_key.addEventListener('click', () => {
+      // A policy-supplied key is only a placeholder here: nothing to reveal.
+      if (isManagedSecret(passwordField_ollama_api_key.value) || toggleIcon_ollama_api_key.classList.contains('managed_secret')) return;
       const type = passwordField_ollama_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_ollama_api_key.setAttribute('type', type);
 
@@ -1177,10 +1215,33 @@ export async function injectConnectionUI({
   const icon_img_anthropic_api_key = document.getElementById(getPrefixedId('pwd-icon_anthropic_api_key'));
 
   toggleIcon_anthropic_api_key.addEventListener('click', () => {
+      // A policy-supplied key is only a placeholder here: nothing to reveal.
+      if (isManagedSecret(passwordField_anthropic_api_key.value) || toggleIcon_anthropic_api_key.classList.contains('managed_secret')) return;
       const type = passwordField_anthropic_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_anthropic_api_key.setAttribute('type', type);
 
       icon_img_anthropic_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
+  });
+
+  // Typing an own key over an unlocked policy key must bring the eye back; a lock applied
+  // later by applyManagedUI() must turn it into the padlock.
+  SECRET_TOGGLE_FIELDS.forEach(field => {
+    const input = document.getElementById(getPrefixedId(field));
+    input?.addEventListener('input', () => syncSecretToggle(field, modelId_prefix));
+    input?.addEventListener('mzta-managed', () => syncSecretToggle(field, modelId_prefix));
+  });
+  updateSecretToggles(modelId_prefix);
+
+  // applyManagedUI() locks a model select after the checks above ran: run them again so
+  // its "Update" button is disabled too (see isManagedModel()).
+  [
+    ['chatgpt_model', [warn_ChatGPT_APIKeyEmpty]],
+    ['google_gemini_model', [warn_GoogleGemini_APIKeyEmpty]],
+    ['ollama_model', [warn_Ollama_HostEmpty]],
+    ['openai_comp_model', [warn_OpenAIComp_HostEmpty]],
+    ['anthropic_model', [warn_Anthropic_APIKeyEmpty, warn_Anthropic_VersionEmpty]],
+  ].forEach(([model, checks]) => {
+    getModelEl(model, modelId_prefix)?.addEventListener('mzta-managed', () => checks.forEach(check => check(modelId_prefix)));
   });
 
   // Null when the ChatGPT Web rows were not injected (see chatgpt_web_rows).
@@ -1257,6 +1318,9 @@ export async function injectConnectionUI({
   // updateOpenAIModelCapabilityUI() themselves after their restore.
 
   document.getElementById(getPrefixedId('btnUpdateChatGPTModels')).addEventListener('click', async () => {
+    // The organization's key never reaches this page (MANAGED_SECRET_MARKER stands in for
+    // it), so the models cannot be fetched with it from here.
+    if (isManagedSecret(document.getElementById(getPrefixedId("chatgpt_api_key")).value)) return;
     const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateChatGPTModels', 'chatgpt');
     fetchUI.loading();
     let openai = new OpenAI({
@@ -1300,6 +1364,9 @@ export async function injectConnectionUI({
   select_google_gemini_model.addEventListener("change", () => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateGoogleGeminiModels')).addEventListener('click', async () => {
+    // The organization's key never reaches this page (MANAGED_SECRET_MARKER stands in for
+    // it), so the models cannot be fetched with it from here.
+    if (isManagedSecret(document.getElementById(getPrefixedId("google_gemini_api_key")).value)) return;
     const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateGoogleGeminiModels', 'google_gemini');
     fetchUI.loading();
     let google_gemini = new GoogleGemini({
@@ -1352,6 +1419,9 @@ export async function injectConnectionUI({
   // pages call updateOllamaModelCapabilityUI() themselves after the restore.
 
   document.getElementById(getPrefixedId('btnUpdateOllamaModels')).addEventListener('click', async () => {
+    // The organization's key never reaches this page (MANAGED_SECRET_MARKER stands in for
+    // it), so the models cannot be fetched with it from here.
+    if (isManagedSecret(document.getElementById(getPrefixedId("ollama_api_key")).value)) return;
     const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateOllamaModels', 'ollama');
     fetchUI.loading();
     let ollama = new Ollama({
@@ -1400,6 +1470,9 @@ export async function injectConnectionUI({
   select_openai_comp_model.addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateOpenAICompModels')).addEventListener('click', async () => {
+    // The organization's key never reaches this page (MANAGED_SECRET_MARKER stands in for
+    // it), so the models cannot be fetched with it from here.
+    if (isManagedSecret(document.getElementById(getPrefixedId("openai_comp_api_key")).value)) return;
     const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateOpenAICompModels', 'openai_comp');
     fetchUI.loading();
     let openai_comp = new OpenAIComp({
@@ -1438,12 +1511,20 @@ export async function injectConnectionUI({
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_APIKeyEmpty(modelId_prefix));
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_VersionEmpty(modelId_prefix));
   select_anthropic_model.addEventListener("change", () => updateAnthropicModelCapabilityUI(modelId_prefix));
+  // The effort select gets every level now, before restoreOptions() runs: with no <option>
+  // yet, the restore would find nothing to select and the stored (or enforced) value would
+  // be lost - updateAnthropicModelCapabilityUI() later narrows the list and keeps whatever
+  // is selected by then.
+  fillAnthropicEffortOptions(document.getElementById(getPrefixedId('anthropic_effort')), ANTHROPIC_EFFORT_LEVELS);
   // No initial call here: this runs before restoreOptions() has written the saved
   // model into the select, so the capabilities would be computed from an empty
   // model ID. The page calls updateAnthropicModelCapabilityUI() itself after the
   // restore, next to showConnectionOptions().
 
   document.getElementById(getPrefixedId('btnUpdateAnthropicModels')).addEventListener('click', async () => {
+    // The organization's key never reaches this page (MANAGED_SECRET_MARKER stands in for
+    // it), so the models cannot be fetched with it from here.
+    if (isManagedSecret(document.getElementById(getPrefixedId("anthropic_api_key")).value)) return;
     const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateAnthropicModels', 'anthropic');
     fetchUI.loading();
     let anthropic = new Anthropic({
@@ -1811,23 +1892,53 @@ export async function initializeSpecificIntegrationUI({
   const conntype_row = document.getElementById(conntype_select_id + '_tr');
   const conntype_end_el = document.getElementById('connection_ui_end');
 
+  // The panel's mode, decided once from the policy and the global connection (see
+  // resolveSpecificIntegrationMode() in managed-ui.js): every decision below reads `mode`.
+  // Hydrated by the preference reads above (restoreOptionsCallback), so the synchronous lock
+  // state it reads is reliable.
+  //  - locked_off: the prompt this page loads already has its provider override hidden
+  //    (applyLockedOffIntegrations() in js/mzta-prompts.js), and the stored one must survive
+  //    untouched until the policy is removed: the toggle stays off, is never forced on as
+  //    mandatory, and nothing here writes the prompt;
+  //  - policy: the prompt already carries the policy's connection (applyPolicyConnections()),
+  //    the switch and the type select are locked on by the preferences the entry implies, and
+  //    applyManagedUI() locks every enforced field. Nothing is written on page open, and a user
+  //    change writes only the fields the policy leaves unlocked;
+  //  - locked_on: the switch is the policy's, the connection the user's;
+  //  - mandatory / free: as without a policy.
+  let globalPrefs = await mztaPrefs.getPrefs(['connection_type']);
+  const mode = resolveSpecificIntegrationMode(prefix, globalPrefs.connection_type);
+  if (mode.switchValue !== null) use_specific_integration_el.checked = mode.switchValue;
+
   // Helper to update prompt.
   // Serialized through _updatePromptQueue so concurrent callers can't interleave
   // their load-modify-save and persist a stale/wrong value.
+  // `userField`: the prompt field ({integration}_{key}) whose control the user just changed, if
+  // any. Passed on as the transient _user_fields, so that setSpecialPrompts() saves it even when
+  // it equals the policy default of an unlocked field: the user chose it (spec 08, storage gate).
   let _updatePromptQueue = Promise.resolve();
-  const _updatePrompt = () => {
+  const _updatePrompt = (userField = '') => {
+      if (!mode.writesPrompt) return _updatePromptQueue;
       _updatePromptQueue = _updatePromptQueue.then(async () => {
           let conntype = conntype_el.value;
 
           let prompt = await loadPrompt(promptId);
           if(!prompt) return;
+          if (userField) prompt._user_fields = [userField];
 
-          prompt.api_type = conntype;
+          // A {prefix}_connection_type enforced by the policy is never written into the prompt:
+          // there it would outlive the policy (spec 08 "No seeding from policy values"). The
+          // stored api_type is left as it is; while the lock holds getConnectionType() reads
+          // the enforced preference before it anyway.
+          if (!mode.typeLocked) prompt.api_type = conntype;
 
           for (const [integration, options] of Object.entries(integration_options_config)) {
               for (const key of Object.keys(options)) {
                   let propName = `${integration}_${key}`;
                   let elementId = `${model_prefix}${propName}`;
+                  // A field the policy connection enforces keeps what the prompt holds (the
+                  // policy value, put back to the stored one by setSpecialPrompts()).
+                  if (mztaManaged.isEnforcedConnectionControl(elementId)) continue;
                   let element = document.getElementById(elementId);
                   if (element) {
                       prompt[propName] = (element.type === 'checkbox') ? element.checked : element.value;
@@ -1851,9 +1962,9 @@ export async function initializeSpecificIntegrationUI({
       if (connAdv) connAdv.setVisible(checked && !hasNoConnectionSelected(conntype_el.value));
       if (connAdv) connAdv.setTestVisible(checked);
   };
-  // Check global connection type: when the global connection cannot run this
-  // prompt (ChatGPT Web) or no connection has been chosen yet, a per-prompt
-  // specific integration is mandatory.
+
+  // Mandatory: the global connection cannot run this prompt (ChatGPT Web) or no connection has
+  // been chosen yet, so a per-prompt specific integration is required.
   //
   // The flag is only *forced in the UI* here, never persisted yet: it is worth
   // nothing on its own, since a specific integration without a connection type
@@ -1862,15 +1973,18 @@ export async function initializeSpecificIntegrationUI({
   // with the first usable connection the user picks — otherwise the feature would
   // read as enabled while still having nothing to run against, and would silently
   // disappear from the menus on the next reload.
-  let globalPrefs = await mztaPrefs.getPrefs(['connection_type']);
-  const mandatory_integration = (globalPrefs.connection_type === 'chatgpt_web')
-      || hasNoConnectionSelected(globalPrefs.connection_type);
-  if (mandatory_integration) {
+  //
+  // Never under a switch the policy holds (mode.mandatory is false then): forcing it would
+  // contradict a locked-off policy, and over a locked-on one the managed marker already says
+  // why, so the badge would be a second, wrong explanation. A policy that locks it off over an
+  // unusable global connection leaves the feature with nothing to run against - the
+  // administrator's misconfiguration to fix, as in _reconcileFeatureFlags() in mzta-background.js.
+  if (mode.mandatory) {
       use_specific_integration_el.checked = true;
       // Kept enabled: a disabled checkbox is excluded from the page's own
       // saveOptions() sweep, which is one of the reasons the flag never reached
       // storage. Making it read-only conveys "mandatory" without that side effect.
-      use_specific_integration_el.disabled = false;
+      setDisabledRespectingManaged(use_specific_integration_el, false);
       use_specific_integration_el.dataset.mandatory = 'true';
       // Read-only semantics for a checkbox: the `readonly` attribute does nothing,
       // so swallow the interaction instead.
@@ -1880,12 +1994,9 @@ export async function initializeSpecificIntegrationUI({
 
       // Make the locked state visible: without this the toggle looks like any
       // other switch while silently ignoring clicks. The badge and the note are
-      // inert markup on every feature page; the note text is picked here because
-      // it depends on which of the two unusable global connections we are in.
-      const _lockedMsgKey = (globalPrefs.connection_type === 'chatgpt_web')
-          ? 'specific_integration_mandatory_chatgpt_web'
-          : 'specific_integration_mandatory_no_connection';
-      const _lockedText = browser.i18n.getMessage(_lockedMsgKey);
+      // inert markup on every feature page; the note text depends on which of the
+      // two unusable global connections we are in.
+      const _lockedText = browser.i18n.getMessage(mode.mandatoryMsgKey);
       use_specific_integration_el.title = _lockedText;
       const _lockedBadge = document.getElementById('specific_integration_locked_badge');
       if (_lockedBadge) _lockedBadge.classList.add('shown');
@@ -1900,6 +2011,13 @@ export async function initializeSpecificIntegrationUI({
   // what the user sees. Only for a usable value: an empty one means "nothing chosen yet".
   const _persistSelectedConnection = async () => {
       if (hasNoConnectionSelected(conntype_el.value)) return;
+      // A policy-supplied value (locked or initial) is never persisted from here. The raw
+      // read below cannot see it, so it would find '' and write what the select shows: for
+      // a locked key the write guard refuses it, but an initial value would be stored as the
+      // user's own choice without the user ever touching the select. Reads resolve the
+      // policy value on their own, so nothing is lost by not writing. A real user change
+      // still reaches storage through the page's saveOptions().
+      if (mztaManaged.hasManagedValue(conntype_select_id)) return;
       // Deliberately NOT routed through mztaPrefs (issue #163): the default here must
       // stay '' and not prefs_default[conntype_select_id], which is 'chatgpt_api'. This is a
       // no-op guard comparing the stored value against what the select shows; with the
@@ -1916,7 +2034,7 @@ export async function initializeSpecificIntegrationUI({
   // Persist `use_specific_integration` only once the pair is actually meaningful,
   // i.e. once a usable connection type has been chosen.
   const _persistMandatoryIntegration = async () => {
-      if (!mandatory_integration) return;
+      if (!mode.mandatory) return;
       if (hasNoConnectionSelected(conntype_el.value)) return;
       const stored = await mztaPrefs.getPrefs([use_specific_integration_id]);
       if (stored[use_specific_integration_id]) return;
@@ -1926,6 +2044,15 @@ export async function initializeSpecificIntegrationUI({
 
   // Event Listener for Checkbox
   use_specific_integration_el.addEventListener('change', async (event) => {
+      // A switch the policy holds (off, or on with or without a policy connection) can only
+      // change if it was re-enabled from the developer tools: put it back and write nothing.
+      // Turning it off would otherwise reach clearPromptAPI() below, a prompt write no write
+      // guard covers, and wipe the user's stored override.
+      if (mode.switchValue !== null) {
+          event.target.checked = mode.switchValue;
+          _updateVisibility(mode.switchValue);
+          return;
+      }
       _updateVisibility(event.target.checked);
       if (!event.target.checked) {
           // Clear both halves of the state together. clearPromptAPI() empties the prompt's
@@ -1952,6 +2079,9 @@ export async function initializeSpecificIntegrationUI({
       // Reopen closed on every provider change, like the options page.
       if (connAdv) connAdv.reset();
       _updateVisibility(use_specific_integration_el.checked);
+      // A locked type select can only change if it was re-enabled by hand: nothing to save,
+      // and a save would only rewrite the prompt with what it already holds.
+      if (mode.typeLocked) return;
       if (use_specific_integration_el.checked) await _updatePrompt();
       // A usable connection may have just been chosen: the mandatory flag becomes
       // meaningful now, so persist it.
@@ -1965,13 +2095,18 @@ export async function initializeSpecificIntegrationUI({
   document.querySelectorAll(".specific_integration_sub .option-input").forEach(element => {
       if (element === conntype_el) return;
       element.addEventListener("change", async () => {
-          if (use_specific_integration_el.checked) await _updatePrompt();
+          // Same for a field the policy connection enforces, re-enabled by hand.
+          if (mztaManaged.isEnforcedConnectionControl(element.id)) return;
+          const field = element.id.startsWith(model_prefix) ? element.id.slice(model_prefix.length) : '';
+          if (use_specific_integration_el.checked) await _updatePrompt(field);
       });
   });
 
   // Initial State Apply
   _updateVisibility(use_specific_integration_el.checked);
-  if (use_specific_integration_el.checked) {
+  // Not with a policy connection (mode.seedsOnOpen): this page-open write exists to seed the
+  // prompt, and what the panel shows is then the policy's connection, not the user's to store.
+  if (use_specific_integration_el.checked && mode.seedsOnOpen) {
       await _updatePrompt();
       // Same reason as in the checkbox handler, for the flag that was already on when the
       // page opened (including the mandatory case, where it is forced on here): the select
@@ -1995,6 +2130,36 @@ export function updateWarnings(modelId_prefix = '') {
   warn_GoogleGemini_APIKeyEmpty(modelId_prefix);
   warn_Anthropic_APIKeyEmpty(modelId_prefix);
   warn_Anthropic_VersionEmpty(modelId_prefix);
+  updateSecretToggles(modelId_prefix);
+}
+
+// The API key fields with a show/hide eye toggle.
+const SECRET_TOGGLE_FIELDS = ['chatgpt_api_key', 'google_gemini_api_key', 'openai_comp_api_key', 'ollama_api_key', 'anthropic_api_key'];
+
+export function updateSecretToggles(modelId_prefix = '') {
+  SECRET_TOGGLE_FIELDS.forEach(field => syncSecretToggle(field, modelId_prefix));
+}
+
+/**
+ * While a key field is managed by the policy (it holds the policy key's placeholder, or it is
+ * locked) the eye has nothing to reveal: show a grey padlock with the default cursor instead.
+ */
+function syncSecretToggle(field, modelId_prefix = '') {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const input = document.getElementById(getPrefixedId(field));
+  const toggle = document.getElementById(getPrefixedId('toggle_' + field));
+  const img = document.getElementById(getPrefixedId('pwd-icon_' + field));
+  if (!input || !toggle || !img) return;
+  const managed = isManagedSecret(input.value) || input.dataset.mztaManaged === '1';
+  toggle.classList.toggle('managed_secret', managed);
+  if (managed) {
+    input.setAttribute('type', 'password');
+    img.src = "/images/pwd-locked.svg";
+    toggle.title = browser.i18n.getMessage('managed_marker_tooltip');
+  } else {
+    img.src = input.getAttribute('type') === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
+    toggle.removeAttribute('title');
+  }
 }
 
 export function changeConnTypeRowColor(conntype_row, conntype_select) {
@@ -2096,7 +2261,21 @@ function autoSelectSingleModel(element) {
   element.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
+// A model select the policy locked (applyManagedUI() marks it) stays disabled, whatever the
+// connection checks decide: fetching models for it would be pointless, and re-enabling it
+// would let the user pick a model the write guard then refuses to save.
+function isManagedModel(element) {
+  return !!element && element.dataset.mztaManaged === '1';
+}
+
 function toggleTomSelectDisabled(element, disabled) {
+  if (isManagedModel(element)) {
+    // Whatever the caller asks: never re-enabled, and disabled without clear(), so the
+    // enforced model stays visible (clear() would also fire a change that tries to save '').
+    element.disabled = true;
+    element.tomselect?.disable();
+    return;
+  }
   element.disabled = disabled;
   if (element.tomselect) {
     if (disabled) {
@@ -2373,11 +2552,13 @@ function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {
     apiKeyInput.style.border = '2px solid red';
     btnFetchChatGPTModels.disabled = true;
     toggleTomSelectDisabled(modelChatGPT, true);
-    modelChatGPT.selectedIndex = -1;
+    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
+    if (!isManagedModel(modelChatGPT)) modelChatGPT.selectedIndex = -1;
     modelChatGPT.style.border = '';
   }else{
     apiKeyInput.style.border = '';
-    btnFetchChatGPTModels.disabled = false;
+    // Not with a policy-supplied key: the page only holds its placeholder.
+    btnFetchChatGPTModels.disabled = isManagedSecret(apiKeyInput.value) || isManagedModel(modelChatGPT);
     toggleTomSelectDisabled(modelChatGPT, false);
     if((modelChatGPT.selectedIndex === -1)||(modelChatGPT.value === '')){
       modelChatGPT.style.border = '2px solid red';
@@ -2396,11 +2577,13 @@ function warn_GoogleGemini_APIKeyEmpty(modelId_prefix) {
     apiKeyInput.style.border = '2px solid red';
     btnFetchGoogleGeminiModels.disabled = true;
     toggleTomSelectDisabled(modelGoogleGemini, true);
-    modelGoogleGemini.selectedIndex = -1;
+    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
+    if (!isManagedModel(modelGoogleGemini)) modelGoogleGemini.selectedIndex = -1;
     modelGoogleGemini.style.border = '';
   }else{
     apiKeyInput.style.border = '';
-    btnFetchGoogleGeminiModels.disabled = false;
+    // Not with a policy-supplied key: the page only holds its placeholder.
+    btnFetchGoogleGeminiModels.disabled = isManagedSecret(apiKeyInput.value) || isManagedModel(modelGoogleGemini);
     toggleTomSelectDisabled(modelGoogleGemini, false);
     if((modelGoogleGemini.selectedIndex === -1)||(modelGoogleGemini.value === '')){
       modelGoogleGemini.style.border = '2px solid red';
@@ -2420,12 +2603,17 @@ function warn_Ollama_HostEmpty(modelId_prefix) {
     hostInput.style.border = '2px solid red';
     btnFetchOllamaModels.disabled = true;
     toggleTomSelectDisabled(modelOllama, true);
-    modelOllama.selectedIndex = -1;
+    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
+    if (!isManagedModel(modelOllama)) modelOllama.selectedIndex = -1;
     modelOllama.style.border = '';
     btnGiveAllUrlsPermission_ollama_api.disabled = true;
   }else{
     hostInput.style.border = '';
-    btnFetchOllamaModels.disabled = false;
+    // The API key is optional here, but a policy-supplied one is only a placeholder on this
+    // page: the models cannot be fetched with it.
+    const apiKeyOllama = document.getElementById(getPrefixedId('ollama_api_key'));
+    btnFetchOllamaModels.disabled = isManagedModel(modelOllama)
+        || (!!apiKeyOllama && isManagedSecret(apiKeyOllama.value));
     toggleTomSelectDisabled(modelOllama, false);
     if((modelOllama.selectedIndex === -1)||(modelOllama.value === '')){
       modelOllama.style.border = '2px solid red';
@@ -2446,12 +2634,17 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
     hostInput.style.border = '2px solid red';
     btnUpdateOpenAICompModels.disabled = true;
     toggleTomSelectDisabled(modelOpenAIComp, true);
-    modelOpenAIComp.selectedIndex = -1;
+    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
+    if (!isManagedModel(modelOpenAIComp)) modelOpenAIComp.selectedIndex = -1;
     modelOpenAIComp.style.border = '';
     btnGiveAllUrlsPermission_openai_comp_api.disabled = true;
   }else{
     hostInput.style.border = '';
-    btnUpdateOpenAICompModels.disabled = false;
+    // The API key is optional here, but a policy-supplied one is only a placeholder on this
+    // page: the models cannot be fetched with it.
+    const apiKeyOpenAIComp = document.getElementById(getPrefixedId('openai_comp_api_key'));
+    btnUpdateOpenAICompModels.disabled = isManagedModel(modelOpenAIComp)
+        || (!!apiKeyOpenAIComp && isManagedSecret(apiKeyOpenAIComp.value));
     toggleTomSelectDisabled(modelOpenAIComp, false);
     if((modelOpenAIComp.selectedIndex === -1)||(modelOpenAIComp.value === '')){
       modelOpenAIComp.style.border = '2px solid red';
@@ -2482,7 +2675,7 @@ export function updateOpenAIModelCapabilityUI(modelId_prefix = '') {
   const applyState = (fieldId, supported) => {
     const field = document.getElementById(getPrefixedId(fieldId));
     const note = document.getElementById(getPrefixedId(fieldId + '_unsupported'));
-    if(field) field.disabled = !supported;
+    if(field) setDisabledRespectingManaged(field, !supported);
     if(note) note.style.display = supported ? 'none' : '';
   };
 
@@ -2512,7 +2705,7 @@ export function updateOpenAITextFormatUI(modelId_prefix = '') {
   const needs_schema = formatEl.value === 'json_schema';
   ['chatgpt_text_format_schema_name', 'chatgpt_text_format_schema'].forEach((fieldId) => {
     const field = document.getElementById(getPrefixedId(fieldId));
-    if(field) field.disabled = !needs_schema;
+    if(field) setDisabledRespectingManaged(field, !needs_schema);
   });
 }
 
@@ -2531,7 +2724,9 @@ export function updateAnthropicModelCapabilityUI(modelId_prefix = '') {
   const applyState = (fieldId, supported) => {
     const field = document.getElementById(getPrefixedId(fieldId));
     const note = document.getElementById(getPrefixedId(fieldId + '_unsupported'));
-    if(field) field.disabled = !supported;
+    // Through the managed-aware setter: this runs on every model change, after
+    // applyManagedUI(), and a plain assignment would re-enable a locked field.
+    if(field) setDisabledRespectingManaged(field, !supported);
     if(note) note.style.display = supported ? 'none' : '';
   };
 
@@ -2552,10 +2747,14 @@ export function updateAnthropicModelCapabilityUI(modelId_prefix = '') {
   const effortSelect = document.getElementById(getPrefixedId('anthropic_effort'));
   if(!effortSelect) return;
 
-  // Keep whatever is stored selected even when this model does not offer it, so
-  // the value survives a round trip through a model that cannot use it.
+  fillAnthropicEffortOptions(effortSelect, caps.supportsEffort ? caps.effortLevels : ANTHROPIC_EFFORT_LEVELS);
+}
+
+// (Re)builds the effort <option> list. Keeps whatever is currently selected even when the
+// new list does not offer it, so the value survives a round trip through a model that
+// cannot use it.
+function fillAnthropicEffortOptions(effortSelect, levels) {
   const current = effortSelect.value;
-  const levels = caps.supportsEffort ? caps.effortLevels : ANTHROPIC_EFFORT_LEVELS;
   effortSelect.textContent = '';
 
   const emptyOption = document.createElement('option');
@@ -2607,7 +2806,9 @@ export async function updateOllamaModelCapabilityUI(modelId_prefix = '') {
   const model = (modelEl.value || '').trim();
 
   // Nothing to ask about yet: reset rather than leave a previous model's limits up.
-  if (host === '' || model === '') {
+  // A policy-supplied key is only a placeholder on this page and must never be sent to
+  // the server, so the model cannot be described from here either.
+  if (host === '' || model === '' || isManagedSecret(apiKey)) {
     _applyOllamaCaps(null, modelId_prefix);
     return;
   }
@@ -2658,7 +2859,7 @@ function _applyOllamaCaps(modelInfo, modelId_prefix = '') {
   // Nothing usable: restore the neutral state rather than reporting a limit we no
   // longer know to hold.
   if (!modelInfo) {
-    if (thinkField) thinkField.disabled = false;
+    if (thinkField) setDisabledRespectingManaged(thinkField, false);
     if (thinkNote) thinkNote.style.display = 'none';
     if (ctxNote) {
       ctxNote.textContent = '';
@@ -2675,7 +2876,7 @@ function _applyOllamaCaps(modelInfo, modelId_prefix = '') {
   // list that lacks "thinking" disables the control.
   const caps = Array.isArray(modelInfo.capabilities) ? modelInfo.capabilities : null;
   const supportsThinking = (caps === null) || caps.includes('thinking');
-  if (thinkField) thinkField.disabled = !supportsThinking;
+  if (thinkField) setDisabledRespectingManaged(thinkField, !supportsThinking);
   if (thinkNote) thinkNote.style.display = supportsThinking ? 'none' : '';
 
   buildOllamaThinkOptions(thinkField, modelInfo);
@@ -2790,11 +2991,13 @@ function warn_Anthropic_APIKeyEmpty(modelId_prefix) {
     apiKeyInput.style.border = '2px solid red';
     btnFetchAnthropicModels.disabled = true;
     toggleTomSelectDisabled(modelAnthropic, true);
-    modelAnthropic.selectedIndex = -1;
+    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
+    if (!isManagedModel(modelAnthropic)) modelAnthropic.selectedIndex = -1;
     modelAnthropic.style.border = '';
   }else{
     apiKeyInput.style.border = '';
-    btnFetchAnthropicModels.disabled = false;
+    // Not with a policy-supplied key: the page only holds its placeholder.
+    btnFetchAnthropicModels.disabled = isManagedSecret(apiKeyInput.value) || isManagedModel(modelAnthropic);
     toggleTomSelectDisabled(modelAnthropic, false);
     if((modelAnthropic.selectedIndex === -1)||(modelAnthropic.value === '')){
       modelAnthropic.style.border = '2px solid red';
@@ -2813,11 +3016,16 @@ function warn_Anthropic_VersionEmpty(modelId_prefix) {
     versionInput.style.border = '2px solid red';
     btnFetchAnthropicModels.disabled = true;
     toggleTomSelectDisabled(modelAnthropic, true);
-    modelAnthropic.selectedIndex = -1;
+    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
+    if (!isManagedModel(modelAnthropic)) modelAnthropic.selectedIndex = -1;
     modelAnthropic.style.border = '';
   }else{
     versionInput.style.border = '';
-    btnFetchAnthropicModels.disabled = false;
+    // Runs after warn_Anthropic_APIKeyEmpty(): repeat its key checks rather than undo them,
+    // or a missing or policy-supplied key would get the fetch button back.
+    const apiKeyAnthropic = document.getElementById(getPrefixedId('anthropic_api_key'));
+    btnFetchAnthropicModels.disabled = isManagedModel(modelAnthropic)
+        || !apiKeyAnthropic || apiKeyAnthropic.value === '' || isManagedSecret(apiKeyAnthropic.value);
     toggleTomSelectDisabled(modelAnthropic, false);
     if((modelAnthropic.selectedIndex === -1)||(modelAnthropic.value === '')){
       modelAnthropic.style.border = '2px solid red';

@@ -27,6 +27,7 @@ import { Anthropic } from './api/anthropic.js';
 import { Ollama } from './api/ollama.js';
 import { OpenAIComp } from './api/openai_comp.js';
 import { prepareOriginURL } from './mzta-utils.js';
+import { MANAGED_SECRET_MARKER } from './mzta-managed.js';
 
 const CONN_TEST_TIMEOUT_MS = 10000;
 
@@ -37,23 +38,27 @@ function _val(id) {
 
 // Provider registry: for each testable connection_type, how to build the client from the
 // current form fields (each callback gets the field-id prefix: '' on the options page and
-// in the wizard, e.g. 'summarize_' on the feature pages), its display-name i18n key, and how to obtain the needed host
+// in the wizard, e.g. 'summarize_' on the feature pages), its display-name i18n key, the id
+// of its API key field without the prefix (if any), and how to obtain the needed host
 // permission. chatgpt_web is intentionally absent (no testable endpoint).
 const TESTABLE = {
   chatgpt_api: {
     nameKey: 'prefs_Connection_type_ChatGPT_API',
+    keyId: 'chatgpt_api_key',
     makeClient: (p) => new OpenAI({ apiKey: _val(p + 'chatgpt_api_key') }),
     requestPermission: async () =>
       messenger.permissions.request({ origins: ['https://*.openai.com/*'] }),
   },
   google_gemini_api: {
     nameKey: 'prefs_Connection_type_Google_Gemini_API',
+    keyId: 'google_gemini_api_key',
     makeClient: (p) => new GoogleGemini({ apiKey: _val(p + 'google_gemini_api_key') }),
     requestPermission: async () =>
       messenger.permissions.request({ origins: ['https://generativelanguage.googleapis.com/*'] }),
   },
   anthropic_api: {
     nameKey: 'prefs_Connection_type_Anthropic_API',
+    keyId: 'anthropic_api_key',
     makeClient: (p) => new Anthropic({
       apiKey: _val(p + 'anthropic_api_key'),
       version: _val(p + 'anthropic_version'),
@@ -63,6 +68,7 @@ const TESTABLE = {
   },
   ollama_api: {
     nameKey: 'prefs_Connection_type_Ollama_API',
+    keyId: 'ollama_api_key',
     makeClient: (p) => new Ollama({
       host: _val(p + 'ollama_host'),
       api_key: _val(p + 'ollama_api_key'),
@@ -75,6 +81,7 @@ const TESTABLE = {
   },
   openai_comp_api: {
     nameKey: 'prefs_Connection_type_OpenAI_Comp_API',
+    keyId: 'openai_comp_api_key',
     makeClient: (p) => {
       const use_v1_el = document.getElementById(p + 'openai_comp_use_v1');
       return new OpenAIComp({
@@ -143,6 +150,12 @@ export async function runConnectionTest(connType, idPrefix = '') {
   }
 
   const apiName = browser.i18n.getMessage(entry.nameKey) || connType;
+
+  // A key supplied by the organization's policy never reaches this page: the field holds a
+  // placeholder, which must not be sent to the provider as if it were the key.
+  if (entry.keyId && _val(idPrefix + entry.keyId) === MANAGED_SECRET_MARKER) {
+    return { status: 'error', message: browser.i18n.getMessage('connTest_managed_api_key') };
+  }
 
   // Ensure we have the host permission the request needs (mirrors the fetch-models buttons).
   const granted = await entry.requestPermission(idPrefix);

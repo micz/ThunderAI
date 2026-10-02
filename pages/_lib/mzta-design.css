@@ -694,6 +694,7 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 .api_key-container { position: relative; display: flex; align-items: center; }
 .toggle-icon { cursor: pointer; margin-left: 5px; }
 .toggle-icon img { width: 16px; height: 16px; vertical-align: middle; }
+.toggle-icon.managed_secret { cursor: default; }
 
 /* Per-connection advanced toggle button — mirrors the app-level #mzta_adv_toggle
    (gear icon + "Advanced options" label, chevron on the right) but keeps the
@@ -848,6 +849,9 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 .mzta_switch input[type="checkbox"]:checked + .track { background: var(--accent); }
 .mzta_switch input[type="checkbox"]:checked + .track::after { transform: translateX(16px); }
 .mzta_switch input[type="checkbox"]:disabled + .track { opacity: .5; cursor: default; }
+/* A managed toggle is inert on purpose: no pointer affordance on the whole switch, so the
+   label reads as locked rather than as a control that ignores clicks. */
+.mzta_switch input[type="checkbox"][data-mzta-managed="1"] + .track { cursor: not-allowed; }
 /* "Locked on" toggle: forced checked and click-swallowed, but NOT `disabled` — a
    disabled checkbox is skipped by each page's saveOptions() sweep, so the pref
    would never be persisted (see connection-ui.js). Lighter than the :disabled
@@ -1113,6 +1117,152 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 }
 #no_connection_banner a:hover { text-decoration: underline; }
 
+/* Enterprise managed configuration active. Near-identical geometry to
+   #no_connection_banner above, but neutral rather than blue: it states a fact about who
+   controls these settings, it is neither a call to action nor a problem. The lock glyph
+   carries the meaning at a glance.
+   The one deliberate divergence is the wrapping - see the note on flex-wrap below. That
+   banner's two flex items are text and a LINK, which should drop to its own line when
+   cramped; this one's are a glyph and text, which must not come apart.
+   Shown by showManagedBanner() in pages/_lib/managed-ui.js. */
+#managed_config_banner {
+    display: none;              /* shown by JS only when a policy is active */
+    align-items: flex-start;
+    /* NOT flex-wrap: wrap. The padlock and the text are two separate flex items, so
+       wrapping drops the lock onto a line of its own as soon as the text does not fit
+       beside it - which is what happens in the narrow setup-wizard card. The text is a
+       single item that wraps internally instead. */
+    flex-wrap: nowrap;
+    gap: 10px;
+    margin: 20px 22px 0;
+    padding: 14px 18px;
+    border: 1px solid var(--line);
+    border-inline-start: 4px solid var(--dim);
+    border-radius: 10px;
+    background-color: var(--field);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+#managed_config_banner.shown { display: flex; }
+#managed_config_banner::before {
+    content: "🔒";          /* padlock */
+    font-size: 16px;
+    /* Never shrink the glyph and never let it wrap away from the text: it is the icon
+       for the message, not a word in it. The line-height matches the text's so it sits
+       on the first line's baseline rather than above it. */
+    flex: none;
+    line-height: 1.5;
+}
+/* The message itself takes the remaining width and wraps inside its own box, keeping
+   every line aligned under the first one instead of running back under the padlock. */
+#managed_config_banner .managed_banner_text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Marker appended next to every control a policy enforces, so a disabled field reads as
+   "your organization set this" instead of as a bug. */
+.managed_marker {
+    display: inline-flex;
+    align-items: baseline;
+    /* Padlock and text are two separate flex items, so NOT flex-wrap: wrap - same
+       reasoning as #managed_config_banner above. The badge is nowrap anyway. */
+    flex-wrap: nowrap;
+    gap: 4px;
+    margin-inline-start: 8px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--field);
+    border: 1px solid var(--line);
+    color: var(--dim);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.6;
+    white-space: nowrap;
+    vertical-align: middle;
+    cursor: help;
+}
+/* Same padlock the banner and the restriction note use, so every managed surface reads
+   the same way: the glyph says "locked", the text says by whom. It is the icon for the
+   badge, not a word in it, so it never shrinks and never wraps away from the label. */
+.managed_marker::before {
+    content: "\1F512";      /* padlock */
+    flex: none;
+    font-size: 10px;
+    line-height: 1.6;
+}
+
+/* In a feature row the marker is a direct flex child inserted before .mzta_switch, so it
+   needs the same top offset as the switch to line up with the toggle instead of hanging
+   from the row's flex-start baseline. */
+.feature_row > .managed_marker {
+    flex: none;
+    align-self: flex-start;
+    margin-top: 4px;
+    margin-inline-end: 4px;
+}
+
+/* A .mzta_field is a flex COLUMN, so a marker appended as its last child becomes a flex item
+   and `align-items: stretch` blows the chip out to the full field width - and
+   margin-inline-start, a horizontal offset, buys it no vertical separation from the help text
+   above. Shrink it back to its content and give it the row's own breathing room. Same fix as
+   .feature_row > .managed_marker above, for the column layout instead of the row one. */
+.mzta_field > .managed_marker,
+.mzta_field_num_text > .managed_marker {
+    flex: none;
+    align-self: flex-start;
+    margin-inline-start: 0;
+    margin-block: 2px;
+    padding: 3px 8px;
+}
+
+/* A special prompt text enforced by the policy (lockEnforcedPromptText() in managed-ui.js).
+   The editor is readOnly, not disabled, so the text can still be selected and copied - which
+   also means no :disabled styling applies. Drop the editing cues instead. Id-scoped like
+   `#mzta_card .editor-wrap .editor`, which sets caret-color and must lose to this. */
+#mzta_card .editor-wrap .editor[data-mzta-managed="1"] {
+    caret-color: transparent;
+    cursor: default;
+}
+
+/* A link a restriction took away. An <a> has no `disabled` the browser honours, so the
+   inert look is done here; managed-ui.js also strips the href so it cannot be followed. */
+a.managed_disabled {
+    color: var(--dim);
+    text-decoration: none;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Note shown in place of a control set a policy removed entirely (prompt import/export).
+   Quieter than the managed banner: the banner already names the organization at the top of
+   the page, this only explains one missing control. */
+.managed_restriction_note {
+    display: none;
+    /* Padlock and text are two separate flex items, so NOT flex-wrap: wrap - same
+       reasoning as #managed_config_banner above. The text wraps internally instead. */
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin: 10px 0;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--field);
+    color: var(--dim);
+    font-size: 13px;
+    line-height: 1.5;
+}
+.managed_restriction_note.shown { display: flex; }
+.managed_restriction_note::before {
+    content: "\1F512";      /* padlock */
+    font-size: 15px;
+    flex: none;
+    line-height: 1.5;
+}
+
 .warning {
     color: white;
     font-style: italic;
@@ -1165,7 +1315,7 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     #miczDescription.tint_openai_comp_api   { --tint-accent: rgb(195,163,226); }
 
     .lightbold { color: #f3f3f3; }
-    .api_key-container .toggle-icon img { filter: invert(1); }
+    .api_key-container .toggle-icon:not(.managed_secret) img { filter: invert(1); }
 }
 
 /* ===========================================================================

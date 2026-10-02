@@ -1,0 +1,27 @@
+{
+  "_org_name": "ACME",
+  "_special_prompts_connection": {
+    "spamfilter": {
+      "api_type": "openai_comp_api",
+      "openai_comp_host": "https://ai-gateway.example.org",
+      "openai_comp_api_key": "sk-org-SECRET-spam",
+      "openai_comp_temperature": "0.2",
+      "openai_comp_model": "gpt-4o-mini",
+      "openai_comp_model:locked": false
+    },
+    "summarize": {
+      "api_type": "anthropic_api",
+      "anthropic_api_key": "sk-ant-org-SECRET-sum",
+      "anthropic_model": "claude-org-sum",
+      "anthropic_version": "2023-06-01",
+      "anthropic_max_tokens": 2048
+    },
+    "get_calendar_event": {
+      "api_type": "ollama_api",
+      "ollama_host": "http://ollama.example.org:11434",
+      "ollama_model": "llama-org",
+      "ollama_model:locked": false,
+      "ollama_think": "true"
+    }
+  }
+}

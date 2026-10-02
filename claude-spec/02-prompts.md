@@ -2,10 +2,79 @@
 
 ## Overview
 
-Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI instruction and how it behaves. There are two kinds:
+Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI instruction and how it behaves. There are four kinds:
 
 - **Built-in prompts** — defined in `js/mzta-prompts.js`
 - **Custom prompts** — created by the user and stored in `browser.storage.local`
+- **Special prompts** — feature-driven (tagging, spam filter, summarize, translate, calendar, tasks), stored under `_special_prompts`
+- **Organization prompts** — supplied by an enterprise policy, see below
+
+### Organization prompts (the fourth set)
+
+Delivered by the enterprise managed configuration through `_org_prompts` (see
+[08a-managed-prompts.md](08a-managed-prompts.md#organization-prompts)). They differ from the other
+three sets in one fundamental way: **they are never stored.** The policy is the only source
+of truth, read once at Thunderbird startup, so a prompt added, changed or removed in the
+policy is reflected at the next start and nothing of the user's is ever touched.
+
+- **Read-only**, but with **Copy** enabled: a user can always derive an ordinary, fully
+  editable personal prompt from one. Marked `is_org: "1"`, `is_default: "0"`,
+  `is_special: "0"`.
+- **Ids are composed, not taken verbatim**: `org_<_org_id>_<id>`. `_org_id` is restricted to
+  `[a-z0-9-]+` (no underscore, or `org_acme_foo_bar` would be ambiguous). This makes a
+  collision with a built-in, or between two organizations, structurally impossible.
+- **A colliding custom prompt is shadowed, not rejected.** If the user owns a prompt with
+  an org prompt's id, the org prompt wins everywhere a prompt can be invoked. Otherwise a
+  user could disable an organization prompt just by creating one with its id, and neither
+  they nor the administrator would see why it vanished. The user's prompt is **not**
+  deleted: it stays in `_custom_prompt`, is still saved, and returns the moment the policy
+  stops supplying that id. `isShadowedByOrgPrompt()` implements this.
+- **Local display preferences belong to the user.** Menu position and visibility ride in
+  `_default_prompts_properties`, exactly as for a built-in, so org prompts participate in
+  `pages/menu_order/` like any other prompt. This does not break read-only: that store
+  holds only the nine display keys, never the prompt text.
+
+**Three getters, deliberately.** All three are thin views over `buildPromptSet()`, which
+merges the four sets once and **marks** the three reasons a prompt can be inactive —
+`_shadowed_by_org` (an org prompt took its id), `_inert_by_policy`
+(`_disable_prompt_management` is on and this is the user's own prompt) and
+`_default_inert_by_policy` (`_disable_default_prompts` is on and this is a built-in
+prompt) — rather than dropping them. Only the invocation view drops anything:
+
+| | Inactive prompts | Special prompts | Used by |
+|---|---|---|---|
+| `getPrompts()` | hidden | per arguments | popup, menus, `loadPrompt()` |
+| `getPromptsForManagement()` | listed, flagged | no | `pages/customprompts/`, import, export |
+| `getPromptsForMenuOrder()` | listed, flagged | yes | `pages/menu_order/`, `migrateMenuOrderAlphabetic()` |
+
+The administration pages must list an inactive prompt or a prompt of the user's would
+appear to have vanished; they show it disabled, dimmed, with an explanation. `pages/menu_order/`
+needs its own view purely because it also lists and rewrites the **special** prompts, which
+`getPromptsForManagement()` omits.
+
+The three flags describe the current policy state, not the prompt, so they are stripped in
+`setCustomPrompts()`, `setSpecialPrompts()` and `preparePromptsForExport()` — a stored or
+exported `_inert_by_policy` would outlive the policy that set it. `TRANSIENT_PROMPT_FLAGS`
+also holds `_text_by_policy`, set on a special prompt whose text the policy enforces, and
+`_connection_by_policy`, set on one whose connection the policy supplies, and `_user_fields`,
+set by the connection panel on the field the user just changed (see Special Prompt
+Visibility Dependencies below).
+
+The same two storage gates also drop `idnum` (`VIEW_PROMPT_FIELDS`). It is the row number each of
+the three views above gives its entries, renumbered on every read, which the pages' List.js rows
+are keyed by; it is not a property of the prompt. A prompt handed back from a view (`loadPrompt()`
+goes through `getPrompts()`, and the connection panel's `_updatePrompt()` saves what it returns)
+used to store a stale one, which nothing ever read back. `preparePromptsForExport()` already left it
+out.
+
+**Both** pages that persist prompts
+rewrite a whole store from what they list (`setCustomPrompts()` replaces `_custom_prompt`
+entirely), so their filters must exclude `is_org` from the custom-prompt save and include
+it in the default-properties save. Getting this wrong either copies org prompts into the
+user's storage or deletes the user's shadowed prompt for real. The same split applies to
+`migrateMenuOrderAlphabetic()`, which rewrites the same stores from `getPromptsForMenuOrder()`
+at startup. `setCustomPrompts()` also drops any `is_org: "1"` entry it is handed, so a writer
+that forgets the filter still cannot store an org prompt.
 
 ## Prompt Properties
 
@@ -18,7 +87,7 @@ Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI
 | `text` | string | The prompt template text — usually an i18n key (e.g. `prompt_reply_full_text`); may contain `{%placeholder%}` tokens |
 | `type` | string | `"0"` = always visible, `"1"` = reading email only, `"2"` = composing only |
 | `action` | string | `"0"` = close, `"1"` = reply (open compose), `"2"` = substitute text in-place |
-| `need_selected` | string | `"0"` = use full message body, `"1"` = requires text selection |
+| `need_selected` | string | `"0"` = use full message body, `"1"` = requires text selection. For `prompt_get_calendar_event` it is **derived**, see below |
 | `need_signature` | string | `"0"` = no signature, `"1"` = include signature |
 | `need_custom_text` | string | `"0"` = no custom input, `"1"` = show custom text input field |
 | `define_response_lang` | string | `"0"` = no language hint, `"1"` = append response language instruction |
@@ -138,7 +207,7 @@ Each prompt can override the global API connection. These mirror the keys in `in
 
 | Property | Description |
 |----------|-------------|
-| `api_type` | Override API type for this prompt. **Note the name:** on the *prompt object* the property is `api_type`; `connection_type` is the *pref* name (global `connection_type` and the per-feature `{prefix}_connection_type`). `getConnectionType()` reads `prompt.api_type`. In the custom prompts list the value is displayed **localized** via `getConnectionTypeLabel()` (exported from `pages/_lib/connection-ui.js`, backed by the same `CONNECTION_TYPE_OPTIONS` catalogue that builds the `<option>` list). The raw value stays machine-readable in the hidden `.api_type` span — the one List.js owns through `valueNames` — mirrored onto `data-api-type`; **every conditional must read it through `getRowApiType(tr)`**, never by comparing the visible text, which is translated. |
+| `api_type` | Override API type for this prompt. **Note the name:** on the *prompt object* the property is `api_type`; `connection_type` is the *pref* name (global `connection_type` and the per-feature `{prefix}_connection_type`). `getConnectionType()` reads `prompt.api_type`. On the Custom Prompts page a read-only prompt's override is displayed **localized** via `getConnectionTypeLabel()` (exported from `pages/_lib/connection-ui.js`, backed by the same `CONNECTION_TYPE_OPTIONS` catalogue that builds the `<option>` list); every conditional reads the raw `api_type` from the List.js item's values, never the visible text, which is translated. |
 | `chatgpt_web_model` | Override ChatGPT Web model |
 | `chatgpt_web_project` | Override ChatGPT Web project |
 | `chatgpt_web_custom_gpt` | Override custom GPT |
@@ -223,6 +292,23 @@ The response is still filtered afterwards as a safety net: `checkIfTagLabelExist
 
 The Add Tags settings page (`updateAdditionalPromptStatements()` in `pages/addtags/mzta-add-tags.js`) previews the same statements with the same rules, and must be kept in sync with `finalizePrompt_add_tags()`.
 
+### The text carries the response format
+
+The output format a feature parses is written **in the prompt text itself** (e.g.
+`prompt_spamfilter_full_text` asks for `{"explanation", "spamValue"}`, `prompt_add_tags_full_text`
+for `{"tags": [...]}`); code appends only extras (`finalizePrompt_add_tags()`). So editing a
+special prompt's text can break its feature. `SPECIAL_PROMPT_TEXT_CONTRACT` in
+`js/mzta-prompts.js` records, per special prompt id, the JSON keys the parser reads and the
+placeholders that carry the message; `checkSpecialPromptText(id, text)` checks a text against
+it. It is used for texts enforced by an enterprise policy, which the user cannot fix (see
+[08a-managed-prompts.md](08a-managed-prompts.md#output-format-safety-the-response-contract));
+the feature pages do not apply it to the user's own edits. **A change to a shipped text's
+output format, or to a parser, must update that table**, or valid policies start being
+rejected.
+
+When the policy enforces a text, the feature page shows it read-only (`lockEnforcedPromptText()`
+in `pages/_lib/managed-ui.js`) with the managed marker, and its Save/Reset buttons are inert.
+
 ### Missing special prompts
 
 The lookup helpers in `js/mzta-prompts.js` (`getSpamFilterPrompt()`, `getAddTagsPrompt()`, `getSummarizePrompt()`, …) are `Array.find()` over `_special_prompts` and return `undefined` when the user has removed or corrupted the entry. Every caller must guard before using the result, and `taPromptUtils.getDefaultLang()` uses optional chaining so a missing prompt yields `''` (no forced language) instead of throwing (issue #855).
@@ -304,7 +390,7 @@ Both sections are draggable and act as drop targets; the section the row lands i
 
 **Cross-tab reload** — the page listens on `browser.storage.onChanged` for changes to `_default_prompts_properties`, `_custom_prompt`, or `_special_prompts`. When one of those keys changes (e.g. user saves from the Custom Prompts page in another tab), the page reloads its data with a 200ms debounce. Any unsaved local changes are discarded to avoid overwriting the other page's work; the reloader calls `markSaved()` so the page also drops its dirty state and does not warn about changes it just threw away.
 
-**Unsaved-changes tracking** — every mutating interaction (drag, icon pick, Reset all) funnels through `markUnsaved()`, which sets the module-level `somethingChanged` flag, enables `#btnSaveAll` and shows the red `customPrompts_unsaved_changes` banner in `#msgDisplay`. `markSaved()` is the inverse (flag cleared, button disabled, banner hidden). A `beforeunload` listener calls `event.preventDefault()` while `somethingChanged` is set, so closing the tab or navigating away with a pending Save All raises Thunderbird's native confirmation dialog — the same mechanism as the Custom Prompts and Custom Data Placeholders pages (Thunderbird 128+ only; the extension supplies no text for that dialog). Note `saveAll()` clears the flag **after** its `await`s complete, so a failed write leaves the warning armed.
+**Unsaved-changes tracking** — every mutating interaction (drag, icon pick, Reset all) funnels through `markUnsaved()`, which sets the module-level `somethingChanged` flag, enables `#btnSaveAll` and shows the red `customPrompts_unsaved_changes` banner in `#msgDisplay`. `markSaved()` is the inverse (flag cleared, button disabled, banner hidden). A `beforeunload` listener calls `event.preventDefault()` while `somethingChanged` is set, so closing the tab or navigating away with a pending Save All raises Thunderbird's native confirmation dialog — the same mechanism as the Custom Data Placeholders page (Thunderbird 128+ only; the extension supplies no text for that dialog). Note `saveAll()` clears the flag **after** its `await`s complete, so a failed write leaves the warning armed.
 
 **Reset all** — a `#btnResetAll` button in the command palette (next to Save All, always enabled) restores the factory state of everything this page customizes, via `resetAll()`:
 - **Order**: prompts are re-sorted with special prompts first (alphabetically by resolved display name), then all the others alphabetically, and get sequential positions assigned to `position_display` = `position_compose` = `position_context`. This is the same factory ordering `migrateMenuOrderAlphabetic()` produces for a fresh install.
@@ -318,7 +404,7 @@ The reset is **in-memory only**: it closes any open icon popover, clears the dee
 2. Split by `is_default` / `is_special` and call `setDefaultPromptsProperties()`, `setCustomPrompts()`, `setSpecialPrompts()`
 3. Send `reload_menus` to the background to rebuild both menus
 
-**"Menu position" deep-link** — the Custom Prompts editor (see [05-options.md](05-options.md)) has a per-row **Menu position** button (`revealPromptInMenuOrder(promptId)` in `js/mzta-utils.js`), located in the row's "Add to menu" cell (pinned to the bottom of the cell, below the Type/Action selectors, via a `.menu_cell_inner` flex column), that opens/focuses the Menu Order page and highlights every instance of that prompt. If the tab is already open, a `menu_order_highlight` runtime message tells the page to reload then highlight (sequencing the reload before the highlight, and cancelling the pending `storage.onChanged` debounce so it does not wipe the highlight). If the tab is not open, the target id is stashed in `browser.storage.session` under `menu_order_highlight_target` and picked up (read-and-deleted) after the page's initial load. The highlight (blue outline) is applied via `highlightPrompt()` / module-state `highlightTargetId` and re-applied on every render so it survives sub-tab switches and re-renders. It **persists** until another `highlightPrompt()` targets a different prompt or a drag starts (`clearHighlight()` on `dragstart`) — it does not time out. A background pulse plays briefly on entry as a visual cue.
+**"Menu position" deep-link** — the Custom Prompts editor (see [05-options.md](05-options.md)) has a **Menu position** button (`revealPromptInMenuOrder(promptId)` in `js/mzta-utils.js`) in the detail editor's header, centred between the prompt title and the action buttons, shown only for a prompt that already exists, that opens/focuses the Menu Order page and highlights every instance of that prompt. If the tab is already open, a `menu_order_highlight` runtime message tells the page to reload then highlight (sequencing the reload before the highlight, and cancelling the pending `storage.onChanged` debounce so it does not wipe the highlight). If the tab is not open, the target id is stashed in `browser.storage.session` under `menu_order_highlight_target` and picked up (read-and-deleted) after the page's initial load. The highlight (blue outline) is applied via `highlightPrompt()` / module-state `highlightTargetId` and re-applied on every render so it survives sub-tab switches and re-renders. It **persists** until another `highlightPrompt()` targets a different prompt or a drag starts (`clearHighlight()` on `dragstart`) — it does not time out. A background pulse plays briefly on entry as a visual cue.
 
 **Sub-tab awareness of the deep-link** — only one popup sub-tab is in the DOM at a time, so the highlight target may live in the inactive one. `promptInPopupView(prompt, view)` is the single source of truth for "does this prompt appear in this view" (reading → types `0`+`1`, composing → types `0`+`2`) and is used both by `renderPopupList()` and by the deep-link logic:
 
@@ -330,7 +416,7 @@ The reset is **in-memory only**: it closes any open icon popover, clears the dee
 The `dynamic_menu_order_alphabet` preference (previously a user-facing option) has been retired and removed from the UI, but the key still exists in storage as a one-shot migration flag. At every background startup, `migrateMenuOrderAlphabetic()` in `js/mzta-prompts.js` runs:
 
 1. Reads `dynamic_menu_order_alphabet` (defaults to `true` if unset)
-2. If `true`: sorts all visible prompts with special prompts first (alphabetically), then the rest (alphabetically), and assigns sequential `position_display` = `position_compose` = `position_context` numbers. Hidden special prompts are preserved untouched.
+2. If `true`: sorts all visible prompts with special prompts first (alphabetically), then the rest (alphabetically), and assigns sequential `position_display` = `position_compose` = `position_context` numbers. Hidden special prompts are preserved untouched. Organization prompts get a position too, saved in `_default_prompts_properties`, and are never written to `_custom_prompt` (see Organization prompts above).
 3. Persists the new positions via `setDefaultPromptsProperties` / `setCustomPrompts` / `setSpecialPrompts`
 4. Sets `dynamic_menu_order_alphabet = false` in sync storage so the migration does not run again
 
@@ -355,6 +441,37 @@ The preference read feeding it **must** include `getDynamicSettingsDefaults(['us
 
 Notable dependency:
 
+- `need_selected` of `prompt_get_calendar_event` is **derived from the `calendar_no_selection`
+  preference** on every read, by `applyCalendarNoSelection()` at the end of
+  `getSpecialPrompts()` — the narrowest point every consumer (menus, popup, `loadPrompt()`,
+  the feature pages, `buildSummaryPrompt()`/`buildTranslationPrompt()`) goes through. The
+  preference is policy-settable, and a value derived from a policy must never be written to
+  storage. The overlaid value does reach storage when a feature page writes the whole
+  `_special_prompts` array back, which is harmless: no reader trusts the stored value, every
+  read overwrites it again. `prompt_get_calendar_event_from_clipboard` is not overlaid: its
+  `need_selected` is always `"0"`, since the clipboard replaces both selection and body.
+- The **provider override** (`api_type` + `{integration}_{key}`) of a feature's special
+  prompts is hidden on every read by `applyLockedOffIntegrations()`, also at the end of
+  `getSpecialPrompts()`, when the policy locks `{prefix}_use_specific_integration` to
+  `false`. Unlike `need_selected`, this overlay must **not** reach storage — it would erase
+  the user's override — so `setSpecialPrompts()` restores the stored override fields of
+  those prompts before writing. See [04-api-integrations.md](04-api-integrations.md#when-a-policy-locks-the-override-off).
+- The provider override can also be **supplied** by the policy (`_special_prompts_connection`):
+  `applyPolicyConnections()`, the third overlay, puts the administrator's `api_type` and fields
+  on the feature's prompts (enforced fields always, unlocked ones only where the prompt has no
+  value) and sets the transient `_connection_by_policy` marker. It must **not** reach storage
+  either: `setSpecialPrompts()` puts back the stored `api_type` and enforced fields, and keeps an
+  unlocked field that still holds the policy value out unless the writer marked it as the
+  user's own choice (`_user_fields`), with `keepStoredConnections()`. It can
+  never apply to the same prompt as the locked-off overlay. See
+  [08b-managed-connections.md](08b-managed-connections.md#enforced-per-feature-connections-_special_prompts_connection).
+- The **text** of any special prompt can be enforced by the policy (`_special_prompts_text`),
+  and is overlaid by `applyEnforcedTexts()`, the fourth and last overlay at the end of
+  `getSpecialPrompts()`, which also sets the transient `_text_by_policy` marker. Like the
+  provider override it must **not** reach storage: `setSpecialPrompts()` puts back the stored
+  (or shipped) text of every enforced id with `keepStoredTexts()`, so the user's text
+  returns exactly when the policy is removed. See
+  [08a-managed-prompts.md](08a-managed-prompts.md#enforced-special-prompt-texts-_special_prompts_text).
 - `prompt_get_calendar_event_from_clipboard` is emitted only if **both** `get_calendar_event` and `get_calendar_event_from_clipboard` are active. If `get_calendar_event` is off, neither calendar prompt is shown regardless of the clipboard pref. Both share the `get_calendar_event` prefix for the connection check.
 
 ### Summarize: Dual-Mode Prompt System

@@ -51,10 +51,12 @@ import {
     cleanupNewlines,
     convertNewlinesToParagraphs,
     getConnectionType,
+    applyPromptConnection,
     hasNoConnectionSelected,
     matchAddressList,
     matchAddressListType,
     hasAddressListEntries,
+    resolveEnabledAccounts,
     extractEmail,
     messageFolderHasSpecialUse,
     isMessageInAutoSkippedFolder,
@@ -69,9 +71,15 @@ import {
     getSpamFilterPrompt,
     getAddTagsPrompt,
     getSummarizePrompt,
+    getSpecialPromptPrefix,
     getTranslatePrompt,
     migrateMenuOrderAlphabetic,
-    migrateEnabledToShowIn
+    migrateEnabledToShowIn,
+    migrateCalendarNoSelection,
+    getSpecialPrompts,
+    getIgnoredProviderOverrides,
+    getReplacedProviderOverrides,
+    getEnforcedTextPlaceholderProblems
 } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taSummaryStore } from './js/mzta-summarystore.js';
@@ -81,6 +89,7 @@ import { taBatchController } from './js/mzta-batch-controller.js';
 import { taJobRegistry } from './js/mzta-job-registry.js';
 import {
     addTags_getExclusionList,
+    addTags_setExclusionList,
     checkExcludedTag
 } from './js/mzta-addtags-exclusion-list.js';
 import { mztaPrefs } from './js/mzta-prefs.js';
@@ -90,6 +99,7 @@ import {
     isSyncDrained,
     migrateOllamaThinkLevel
 } from './js/mzta-prefs-migration.js';
+import { mztaManaged, MANAGED_SECRET_MARKER } from './js/mzta-managed.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -100,6 +110,69 @@ browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
        ) {
         browser.tabs.create({ url: "/pages/onboarding/onboarding.html" });
     }
+});
+
+// The enterprise policy for every other extension context (see managedReady() in
+// js/mzta-managed.js): the one channel a page gets it through - values and locks, enforced
+// texts and connections, organization prompts, restrictions, banner state. Registered here,
+// before the first startup await, rather than in the main onMessage listener further down:
+// that one only exists after every startup await, and a page opened during startup would
+// otherwise hydrate empty and run unmanaged. It answers only once loadManaged() (below, after
+// the migrations) has settled: whenLoaded() waits for it without starting it. The main
+// listener's default branch returns false for this command, so the two never compete.
+browser.runtime.onMessage.addListener((message, sender) => {
+    if (!message || message.command !== 'get_managed_values') return false;
+    const empty = {
+        values: {}, lockedKeys: [], specialPromptsText: {}, specialPromptsConnection: {},
+        orgPrompts: [], orgName: '', active: false,
+        disablePromptManagement: false, disableDefaultPrompts: false, disableSetupWizard: false,
+    };
+    // Extension pages only. Content scripts (compose and message display) share this
+    // channel but never import js/mzta-prefs.js, so they have no use for the values.
+    const ext_root = browser.runtime.getURL('');
+    if (!sender || typeof sender.url !== 'string' || !sender.url.startsWith(ext_root)) {
+        return Promise.resolve(empty);
+    }
+    return mztaManaged.whenLoaded().then(() => {
+        // A policy-supplied API key goes ONLY to the API chat window, which needs it to call
+        // the provider. Every settings page gets MANAGED_SECRET_MARKER instead, so the key can
+        // neither be revealed with the password eye toggle nor copied into a prompt.
+        // Matched on the page, not the folder: index.html is the only page in api_webchat/, and
+        // the webext linter reads a getURL() folder argument as a missing packaged file.
+        const is_webchat = sender.url.startsWith(browser.runtime.getURL('api_webchat/index.html'));
+        const values = {};
+        for (const key of Object.keys(prefs_default)) {
+            if (!mztaManaged.hasManagedValue(key)) continue;
+            values[key] = (key.endsWith('_api_key') && !is_webchat)
+                ? MANAGED_SECRET_MARKER
+                : mztaManaged.getManagedValue(key);
+        }
+        // The per-feature connections are overlaid by getSpecialPrompts() in every context too.
+        // Their API keys follow the same rule as the global ones: the real key for the API chat
+        // window (it runs a feature's connection itself, via loadPrompt()), the marker elsewhere.
+        const connections = mztaManaged.getSpecialPromptsConnection();
+        if (!is_webchat) {
+            for (const entry of Object.values(connections)) {
+                for (const [name, field] of Object.entries(entry.fields)) {
+                    if (name.endsWith('_api_key')) field.value = MANAGED_SECRET_MARKER;
+                }
+            }
+        }
+        // The enforced special prompt texts: getSpecialPrompts() overlays them in every context,
+        // and the feature pages show them read-only. No secret in them, nor in the org prompts.
+        return {
+            values: values,
+            lockedKeys: mztaManaged.getLockedKeys(),
+            specialPromptsText: mztaManaged.getSpecialPromptsText(),
+            specialPromptsConnection: connections,
+            orgPrompts: mztaManaged.getOrgPrompts(),
+            orgName: mztaManaged.getOrgName(),
+            active: mztaManaged.isManagedActive(),
+            disablePromptManagement: mztaManaged.isPromptManagementDisabled(),
+            disableDefaultPrompts: mztaManaged.areDefaultPromptsDisabled(),
+            disableSetupWizard: mztaManaged.isSetupWizardDisabled(),
+        };
+    });
 });
 
 // Must run FIRST, before anything reads a preference. It also carries the one-shot
@@ -119,6 +192,9 @@ if (!await isSyncDrained()) {
     await migrateDefaultPromptsPropStorage();
 }
 if (_prefs_migration_ok) await migrateEnabledToShowIn();
+// Reads the user's stored calendar_no_selection, so it needs the sync copy to be in place
+// for the same reason as the migration above.
+if (_prefs_migration_ok) await migrateCalendarNoSelection();
 // Converts the global ollama_think from the old boolean checkbox to the level format.
 // Guarded by _prefs_migration_ok for the same reason as the line above: its own one-shot
 // flag lives in storage.local, and reading it before the copy succeeded would find the
@@ -166,10 +242,26 @@ const PREFS_INIT_KEYS = {
 const MENU_RELEVANT_KEYS = [
     'add_tags', 'get_calendar_event', 'get_calendar_event_from_clipboard', 'get_task',
     'spamfilter', 'summarize', 'translate', 'connection_type',
+    // Not a gating key, but the menus hold the prompt objects taken at the last rebuild, and
+    // need_selected of the calendar prompt is derived from this preference on read
+    // (applyCalendarNoSelection() in js/mzta-prompts.js): without a rebuild a change would
+    // only take effect at the next restart.
+    'calendar_no_selection',
     ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
 ];
 
 let prefs_init = {};
+
+// The enterprise policy must be in place before the FIRST preference read, because
+// js/mzta-prefs.js resolves every read against it. This is the only place it is loaded:
+// browser.storage.managed is read in the background page and nowhere else, and every
+// other context hydrates it over runtime.sendMessage ("get_managed_values", above).
+//
+// It runs after the migration block above, which is documented as having to come first,
+// and before _reconcileFeatureFlags() below, which is the first thing to read a
+// preference. With no policy installed this resolves silently and changes nothing.
+await mztaManaged.loadManaged();
+
 // Repair any feature flag left enabled on an unusable connection before anything derives
 // from it: this is where a wizard run or a prefs import from a previous session gets
 // healed, since no options page needs to be opened for it to happen.
@@ -177,6 +269,90 @@ await _reconcileFeatureFlags(await _readFeatureConnPrefs());
 await reload_pref_init();
 
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
+
+// calendar_no_selection sends the whole message body instead of a selection, which only
+// works if the calendar prompt reads the body. The settings page refuses to enable it
+// otherwise, but a policy can set it without passing through that page - so say so here,
+// with warn() because it is not gated on do_debug and an administrator must see it.
+await (async () => {
+    try {
+        if (await mztaPrefs.getPref('calendar_no_selection') !== true) return;
+        const calendar_prompt = (await getSpecialPrompts()).find(p => p.id === 'prompt_get_calendar_event');
+        const text = (calendar_prompt && typeof calendar_prompt.text === 'string') ? calendar_prompt.text : '';
+        if (!text.includes('{%mail_text_body_or_selected%}') && !text.includes('{%mail_html_body_or_selected%}')) {
+            taLog.warn('calendar_no_selection is enabled' +
+                (mztaManaged.hasManagedValue('calendar_no_selection') ? ' by the managed configuration' : '') +
+                ', but the calendar event prompt contains neither {%mail_text_body_or_selected%} nor ' +
+                '{%mail_html_body_or_selected%}: the message body will not be sent to the AI.');
+        }
+    } catch (e) {
+        taLog.error('Could not check the calendar prompt placeholders: ' + e);
+    }
+})();
+
+// A policy account list ({feature}_enabled_accounts_match) that matches no account in this
+// profile turns the automatic feature off here, which is easy to miss - resolve it once now
+// so resolveEnabledAccounts() warns at startup rather than only at the first new mail. It
+// warns once, and again only after the list has matched something in between.
+await (async () => {
+    try {
+        for (const feature of ['spamfilter', 'add_tags']) {
+            if (mztaManaged.hasManagedValue(feature + '_enabled_accounts_match')) {
+                await resolveEnabledAccounts(feature, []);
+            }
+        }
+    } catch (e) {
+        taLog.error('Could not resolve the policy account lists: ' + e);
+    }
+})();
+
+// A per-feature provider override stored in a special prompt is hidden on read while the
+// policy locks {prefix}_use_specific_integration to false (applyLockedOffIntegrations() in
+// js/mzta-prompts.js). Nothing on the settings page shows it any more, so tell the
+// administrator it exists and is being ignored - warn(), not gated on do_debug.
+await (async () => {
+    try {
+        for (const prefix of await getIgnoredProviderOverrides()) {
+            taLog.warn(`${prefix}_use_specific_integration is locked to false by the managed ` +
+                `configuration: the provider override stored in the ${prefix} special prompt is ` +
+                'ignored, and the feature uses the global connection. It is kept, and applies ' +
+                'again if the policy stops locking the preference.');
+        }
+    } catch (e) {
+        taLog.error('Could not check the per-feature provider overrides: ' + e);
+    }
+})();
+
+// The reverse case: a connection enforced by the policy (_special_prompts_connection) replaces
+// a provider override the user stored for that feature. The stored one is kept and comes back
+// when the policy is removed, but it no longer runs - say so, naming the feature and the field
+// and never the value.
+await (async () => {
+    try {
+        for (const { prefix, field } of await getReplacedProviderOverrides()) {
+            taLog.warn(`The ${prefix} connection is enforced by the managed configuration: its ` +
+                `${field} replaces the one stored in the ${prefix} special prompt, which is kept ` +
+                'and applies again if the policy stops enforcing it.');
+        }
+    } catch (e) {
+        taLog.error('Could not check the per-feature connections enforced by policy: ' + e);
+    }
+})();
+
+// A special prompt text enforced by the policy cannot be fixed by the user, and the feature
+// pages' placeholder checks never see it. Its response format was checked when the policy
+// was read (a text failing that is not enforced at all); here the placeholders are - warn(),
+// not gated on do_debug, so the administrator sees it.
+await (async () => {
+    try {
+        for (const { id, problem } of await getEnforcedTextPlaceholderProblems()) {
+            taLog.warn(`The text of the ${id} special prompt is enforced by the managed ` +
+                `configuration, but ${problem}.`);
+        }
+    } catch (e) {
+        taLog.error('Could not check the placeholders of the enforced special prompt texts: ' + e);
+    }
+})();
 taWorkingStatus.taLog = taLog;
 taBatchController.taLog = taLog;
 taJobRegistry.taLog = taLog;
@@ -294,6 +470,15 @@ async function _reconcileFeatureFlags(prefs) {
     let to_disable = {};
     for (const prefix of special_prompts_with_integration) {
         if (!prefs[prefix]) continue;
+        // A flag the enterprise policy enforces is the administrator's decision, not a
+        // stale value to heal. Skipping it here is not merely cosmetic: this repair works
+        // by WRITING false to storage.local, and the write guard in js/mzta-prefs.js would
+        // refuse it anyway — so without this the only effect would be a warning logged on
+        // every startup and on every preference change, forever. If the policy enables a
+        // feature whose connection cannot drive it, the feature stays on and does nothing:
+        // that is a misconfiguration for the administrator to fix, and silently overriding
+        // it would hide the mistake rather than surface it.
+        if (mztaManaged.isManagedLocked(prefix)) continue;
         // A feature that has opted into its own integration is left alone even when that
         // integration is not usable yet. Its connection does not depend on the global one,
         // so an unusable value there means "still being configured", not "cannot run" —
@@ -320,9 +505,7 @@ async function _reconcileFeatureFlags(prefs) {
     if (Object.keys(to_disable).length > 0) {
         // console.log and not taLog: this also runs at startup, before taLog is built.
         console.log("[ThunderAI] Disabling features with an unusable connection: " + Object.keys(to_disable).join(', '));
-        // Multi-key write, so it stays a direct set() rather than going through
-        // mztaPrefs.setPref() — but it must target the preferences area (storage.local).
-        await browser.storage.local.set(to_disable);
+        await mztaPrefs.setPrefs(to_disable);
     }
     return prefs;
 }
@@ -740,8 +923,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         if(prefs_close.chatgpt_win_save_position){
                             try {
                                 let winInfo = await browser.windows.get(window_id);
-                                // Multi-key write: stays a direct set(), on the preferences area.
-                                await browser.storage.local.set({chatgpt_win_top: winInfo.top, chatgpt_win_left: winInfo.left});
+                                await mztaPrefs.setPrefs({chatgpt_win_top: winInfo.top, chatgpt_win_left: winInfo.left});
                                 taLog.log("Window position saved: top=" + winInfo.top + ", left=" + winInfo.left);
                             } catch(e) {
                                 taLog.error("Error saving window position: " + e);
@@ -898,6 +1080,29 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     return _assign_tags(message,true, prefs_assign_tags.add_tags_exclusions_exact_match);
                 }
                 return _do_assign_tags(message);
+                break;
+            // The tag dialog in js/mzta-compose-script.js, a classic content script, cannot
+            // import js/mzta-prefs.js. These two give it the tag exclusion preferences
+            // resolved against the enterprise policy, and a write that goes through the
+            // write guard.
+            case 'addtags_get_exclusion_prefs':
+                async function _addtags_get_exclusion_prefs() {
+                    let prefs_excl = await mztaPrefs.getPrefs([
+                        'add_tags_exclusions',
+                        'add_tags_hide_exclusions',
+                        'add_tags_exclusions_exact_match'
+                    ]);
+                    prefs_excl.exclusions_locked = mztaManaged.isManagedLocked('add_tags_exclusions');
+                    return prefs_excl;
+                }
+                return _addtags_get_exclusion_prefs();
+                break;
+            case 'addtags_set_exclusions':
+                if (!Array.isArray(message.list) || !message.list.every(el => typeof el === 'string')) {
+                    taLog.warn('addtags_set_exclusions: the list must be an array of strings, ignored.');
+                    return Promise.resolve(false);
+                }
+                return addTags_setExclusionList(message.list).then(() => true);
                 break;
             case 'api_send_custom_text':
                 sendTabMessageSafe(message.tabId, { command: "api_send_custom_text", custom_text: message.custom_text });
@@ -2002,7 +2207,15 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     //console.log(">>>>>>>>>>>>>>>> prefs: " + JSON.stringify(prefs));
     // console.log(">>>>>>>>>>>>>>>> prompt_info: " + JSON.stringify(prompt_info));
 
-    prefs.connection_type = getConnectionType(prefs, prompt_info);
+    // A special prompt (the summary opened in the chat window) resolves its connection with its
+    // feature prefix, exactly as the caller's usability check did: without it the
+    // {prefix}_use_specific_integration / {prefix}_connection_type pair is ignored, and the window
+    // could open on a connection other than the one checked. null for any other prompt.
+    prefs.connection_type = getConnectionType(prefs, prompt_info, getSpecialPromptPrefix(prompt_info.id));
+    // The configuration checks below must judge what the window will run: the prompt's own
+    // provider override on top of the global values, by the rule api_webchat/controller.js
+    // applies. Only those checks read `prefs` for provider fields; the window loads its own.
+    prefs = applyPromptConnection(prefs, prompt_info);
 
     taLog.log("Prompt length: " + promptText.length);
     let _max_prompt_length = prefs.max_prompt_length;
@@ -2453,7 +2666,15 @@ function setupStorageChangeListener() {
         // prefs_init goes stale while the menus never rebuild on a settings change.
         if (areaName !== 'local') return;
 
-        const changed_keys = Object.keys(changes);
+        // A key the enterprise policy enforces cannot have meaningfully changed: whatever
+        // landed in storage.local for it is shadowed on every read by the policy value, so
+        // reacting would rebuild the menus and re-read prefs_init to arrive at exactly the
+        // values already in use. Filtered rather than ignored downstream so a burst that
+        // touches only locked keys costs nothing at all.
+        // Note there is nothing to listen for on the managed area itself: Thunderbird
+        // fires no change events for it, which is why a policy edit needs a restart.
+        const changed_keys = Object.keys(changes).filter(key => !mztaManaged.isManagedLocked(key));
+        if (changed_keys.length === 0) return;
         _prefsInitStale = _prefsInitStale || changed_keys.some(key => key in PREFS_INIT_KEYS);
         _menusStale = _menusStale || changed_keys.some(key => MENU_RELEVANT_KEYS.includes(key));
         if (!_prefsInitStale && !_menusStale) return;
@@ -2795,6 +3016,17 @@ async function processEmails(args) {
         let spamfilter_block_addresses = prefs_aats.spamfilter_block_addresses;
         let spamfilter_skip_addressbook = prefs_aats.spamfilter_skip_addressbook;
 
+        // The accounts the automatic runs are limited to: the stored selection, or the one a
+        // policy resolves from {feature}_enabled_accounts_match, which replaces it. Resolved
+        // once per batch, so an account added since the last batch is already covered.
+        // `restricted` false means every account; true with an empty list means none.
+        let addtags_accounts = (isAutoMode && addTagsAuto)
+            ? await resolveEnabledAccounts('add_tags', prefs_aats.add_tags_enabled_accounts)
+            : { restricted: false, accountIds: [] };
+        let spamfilter_accounts = (isAutoMode && spamFilter)
+            ? await resolveEnabledAccounts('spamfilter', prefs_aats.spamfilter_enabled_accounts)
+            : { restricted: false, accountIds: [] };
+
         // Process in small chunks, yielding to the event loop between chunks so the
         // garbage collector can reclaim memory and the UI stays responsive on large selections.
         const CHUNK_SIZE = 5;
@@ -2911,9 +3143,9 @@ async function processEmails(args) {
                     taLog.log("Message in a folder excluded from the automatic processing, skipping add_tags...");
                     skipAddTags = true;
                 }
-                if(!skipAddTags && isAutoMode && prefs_aats.add_tags_enabled_accounts.length > 0){
+                if(!skipAddTags && isAutoMode && addtags_accounts.restricted){
                     let accountId = message.folder.accountId;
-                    if(!prefs_aats.add_tags_enabled_accounts.includes(accountId)){
+                    if(!addtags_accounts.accountIds.includes(accountId)){
                         taLog.log("Account " + accountId + " not enabled for add_tags, skipping...");
                         skipAddTags = true;
                     }
@@ -2940,9 +3172,9 @@ async function processEmails(args) {
                     taLog.log("Message in a folder excluded from the automatic processing, skipping spamfilter...");
                     skipSpamFilter = true;
                 }
-                if(!skipSpamFilter && isAutoMode && prefs_aats.spamfilter_enabled_accounts.length > 0){
+                if(!skipSpamFilter && isAutoMode && spamfilter_accounts.restricted){
                     let accountId = message.folder.accountId;
-                    if(!prefs_aats.spamfilter_enabled_accounts.includes(accountId)){
+                    if(!spamfilter_accounts.accountIds.includes(accountId)){
                         taLog.log("Account " + accountId + " not enabled for spamfilter, skipping...");
                         skipSpamFilter = true;
                     }

@@ -16,15 +16,9 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {
-  prefs_default,
-  integration_options_config
-} from '../../options/mzta-options-default.js';
+import { prefs_default } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
-import {
-  getSpecialPrompts,
-  setSpecialPrompts
-} from "../../js/mzta-prompts.js";
+import { getSpecialPrompts } from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
   mapPlaceholderToSuggestion,
@@ -37,18 +31,23 @@ import {
 } from "../../js/mzta-editor-highlight.js";
 import {
   isAPIKeyValue,
-  setTomSelectBorder,
-  isApiUsableConnection
+  setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import {
   initializeSpecificIntegrationUI,
-  isClosedCatalogueSelect,
-  getConnectionTypeLabel
+  isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
 import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { initReminderUI } from "../_lib/reminder-ui.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
+import { applyManagedUI } from '../_lib/managed-ui.js';
+import {
+    persistPromptConnectionToPrefs,
+    resolveFeatureConnectionPrefs,
+    bindConnPanelTint,
+    bindSpecialPromptEditor
+} from '../_lib/feature-page.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -62,34 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let specialPrompts = await getSpecialPrompts();
     let get_task_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_get_task');
 
-    if (get_task_prompt && get_task_prompt.api_type && get_task_prompt.api_type !== '') {
-        let update_prefs = {};
-        update_prefs['get_task_connection_type'] = get_task_prompt.api_type;
-        // getConnectionType() reads the prefixed connection type only when this flag is on,
-        // so writing the pair one half at a time leaves the value inert. It matters for the
-        // call sites that pass prompt = null (the menu gating in mzta-background.js and the
-        // feature row in mzta-options.js): they have no prompt to fall back on, so the pref
-        // pair is the only way they can see the per-feature connection.
-        // Only for a usable api_type: chatgpt_web has no <option> in the per-prompt select and
-        // isApiUsableConnection() rejects it, so the pair would read as "on" while the feature
-        // stayed hidden from the menus.
-        if (isApiUsableConnection(get_task_prompt.api_type)) {
-            update_prefs['get_task_use_specific_integration'] = true;
-        }
-        
-        let integration = get_task_prompt.api_type.replace('_api', '');
-        if (integration_options_config && integration_options_config[integration]) {
-             for (const key of Object.keys(integration_options_config[integration])) {
-                 const propName = `${integration}_${key}`;
-                 if (get_task_prompt[propName] !== undefined) {
-                     update_prefs[`get_task_${propName}`] = get_task_prompt[propName];
-                 }
-             }
-        }
-        // Multi-key write: stays a direct set(), but on the preferences area
-        // (storage.local) — see PREFS_AREA in js/mzta-prefs.js.
-        await browser.storage.local.set(update_prefs);
-    }
+    await persistPromptConnectionToPrefs('get_task', get_task_prompt);
 
     // Must run before restoreOptions(), which is called by initializeSpecificIntegrationUI()
     initTimezoneSelect(document.getElementById('calendar_timezone'));
@@ -103,54 +75,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     i18n.updateDocument();
 
+    // Disable and mark every control the enterprise policy enforces. Runs after the
+    // connection panel has been injected above, so its provider rows are covered too.
+    await applyManagedUI(document, taLog.do_debug);
+
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
       });
 
     let get_task_textarea = document.getElementById('get_task_prompt_text');
-    let get_task_save_btn = document.getElementById('btn_save_prompt');
-    let get_task_reset_btn = document.getElementById('btn_reset_prompt');
-    let get_task_use_specific_integration = document.getElementById('get_task_use_specific_integration');
 
-    get_task_textarea.addEventListener('input', (event) => {
-        get_task_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_get_task_full_text'));
-        get_task_save_btn.disabled = (event.target.value === get_task_prompt.text);
-        if(get_task_save_btn.disabled){
-            document.getElementById('get_task_prompt_unsaved').classList.add('hidden');
-        } else {
-            document.getElementById('get_task_prompt_unsaved').classList.remove('hidden');
-        }
+    bindConnPanelTint('get_task');
+
+    await bindSpecialPromptEditor({
+        textarea: get_task_textarea,
+        saveBtn: document.getElementById('btn_save_prompt'),
+        resetBtn: document.getElementById('btn_reset_prompt'),
+        unsavedEl: document.getElementById('get_task_prompt_unsaved'),
+        specialPrompts: specialPrompts,
+        promptIds: ['prompt_get_task'],
+        defaultMsgKey: 'prompt_get_task_full_text',
+        do_debug: taLog.do_debug,
     });
-
-    // Colour the connection panel to match the selected provider, and hide the
-    // whole panel when "use specific integration" is off (no empty bordered box).
-    let get_task_conntype_el = document.getElementById('get_task_connection_type');
-    if (get_task_conntype_el) {
-        get_task_conntype_el.addEventListener('change', updateConnPanelTint);
-    }
-    get_task_use_specific_integration.addEventListener('change', updateConnPanelTint);
-    updateConnPanelTint();
-
-    get_task_reset_btn.addEventListener('click', () => {
-        get_task_textarea.value = browser.i18n.getMessage('prompt_get_task_full_text');
-        get_task_reset_btn.disabled = true;
-        let event = new Event('input', { bubbles: true, cancelable: true });
-        get_task_textarea.dispatchEvent(event);
-    });
-
-    get_task_save_btn.addEventListener('click', () => {
-        specialPrompts.find(prompt => prompt.id === 'prompt_get_task').text = get_task_textarea.value;
-        setSpecialPrompts(specialPrompts);
-        get_task_save_btn.disabled = true;
-        document.getElementById('get_task_prompt_unsaved').classList.add('hidden');
-        browser.runtime.sendMessage({command: "reload_menus"});
-    });
-
-    if(get_task_prompt.text === 'prompt_get_task_full_text'){
-        get_task_prompt.text = browser.i18n.getMessage(get_task_prompt.text);
-    }
-    get_task_textarea.value = get_task_prompt.text;
-    get_task_reset_btn.disabled = (get_task_textarea.value === browser.i18n.getMessage('prompt_get_task_full_text'));
 
     // "Let the AI set a reminder" section [#887]. After restoreOptions() (checkbox
     // state) and after the prompt text is loaded (warning and preview read it).
@@ -179,32 +125,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 // Methods to manage options, derived from: /options/mzta-options.js
-
-const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
-
-// Tint the connection panel to match the selected connection type, set the
-// provider pill name, and hide the whole panel when "use specific integration"
-// is off. Scoped to the get_task prefix.
-function updateConnPanelTint() {
-  let conntype_select = document.getElementById("get_task_connection_type");
-  let panel = document.getElementById("mzta_conn_panel");
-  let use_specific = document.getElementById("get_task_use_specific_integration");
-  if (!panel) return;
-
-  panel.style.display = (use_specific && use_specific.checked) ? "" : "none";
-
-  if (!conntype_select) return;
-  let conntype = conntype_select.value;
-  for (let t of CONN_TYPES) {
-    panel.classList.toggle("tint_" + t, conntype === t);
-  }
-  let pillName = document.getElementById("mzta_conn_pill_name");
-  if (pillName) {
-    // Resolved from the shared catalogue, not by scraping the select: populateConnectionTypeOptions()
-    // rebuilds the <option> list with replaceChildren(), so a DOM lookup can transiently miss.
-    pillName.textContent = getConnectionTypeLabel(conntype);
-  }
-}
 
 function saveOptions(e) {
   e.preventDefault();
@@ -293,30 +213,8 @@ async function restoreOptions() {
   let getting = await mztaPrefs.getAllPrefs();
 
   let specialPrompts = await getSpecialPrompts();
-  let get_task_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_get_task');
-
-  if (get_task_prompt) {
-      if (get_task_prompt.api_type && get_task_prompt.api_type !== '') {
-          getting['get_task_connection_type'] = get_task_prompt.api_type;
-      } else {
-          // Inherit the global connection only when this select can actually offer it:
-          // chatgpt_web has no <option> here (it has no API), so inheriting it would show
-          // a value the control cannot represent. Leave it blank instead.
-          getting['get_task_connection_type'] = isApiUsableConnection(getting['connection_type'])
-              ? getting['connection_type']
-              : '';
-      }
-      for (const [integration, options] of Object.entries(integration_options_config)) {
-          for (const key of Object.keys(options)) {
-              const propName = `${integration}_${key}`;
-              if (get_task_prompt[propName] !== undefined && get_task_prompt[propName] !== '') {
-                  getting[`get_task_${propName}`] = get_task_prompt[propName];
-              } else {
-                  getting[`get_task_${propName}`] = getting[propName];
-              }
-          }
-      }
-  }
+  resolveFeatureConnectionPrefs(getting,
+      specialPrompts.find(prompt => prompt.id === 'prompt_get_task'), 'get_task');
 
   setCurrentChoice(getting);
 }

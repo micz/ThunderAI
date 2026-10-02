@@ -18,6 +18,28 @@
 
 export const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize', 'get_calendar_event', 'get_task', 'translate'];
 
+// The Ollama reasoning levels offered when the server does not report which ones the
+// selected model accepts (buildOllamaThinkOptions() in pages/_lib/connection-ui.js), also
+// named by the policy validation's warning (js/mzta-managed.js). Here, not in
+// connection-ui.js, for the same reason as valid_connection_types below.
+export const OLLAMA_THINK_LEVELS = ['low', 'medium', 'high', 'max'];
+
+// Every valid value of connection_type / {prefix}_connection_type / prompt.api_type.
+// Lives here rather than in pages/_lib/connection-ui.js because the background page also
+// needs it (enterprise policy validation) and cannot import that module: it pulls in
+// TomSelect and every API client. connection-ui.js builds its <option> catalogue from
+// this list, so the two can never drift.
+// An empty string is NOT in this list: it is the separate "not selected yet" / "inherit
+// the global connection" state.
+export const valid_connection_types = [
+    'chatgpt_web',
+    'chatgpt_api',
+    'google_gemini_api',
+    'anthropic_api',
+    'ollama_api',
+    'openai_comp_api'
+];
+
 export const integration_options_config = {
     chatgpt: {
         api_key: '',
@@ -143,6 +165,9 @@ export const prefs_default = {
     chatgpt_win_top: '',
     chatgpt_win_left: '',
     chatgpt_win_save_position: false,
+    // Last view chosen on the Manage Custom Prompts page: 'split' (list + detail editor)
+    // or 'table' (dense overview). UI state only, never read outside that page.
+    custom_prompts_view: 'split',
     default_chatgpt_lang: '',
     default_sign_name: '',
     reply_type: 'reply_all',
@@ -174,6 +199,9 @@ export const prefs_default = {
     add_tags_max_messages: 0,   // max messages tagged at once from the context menu (0 = no limit); above this the user is warned and the operation is blocked. Automatic tagging is not capped
     add_tags_hide_exclusions: false,
     add_tags_exclusions_exact_match: false,
+    // Tags never assigned (substring match unless add_tags_exclusions_exact_match). Array of
+    // strings; the storage key predates its declaration here, so existing lists carry over.
+    add_tags_exclusions: [],
     add_tags_first_uppercase: true,
     add_tags_force_lang: true,
     add_tags_auto: false,
@@ -183,6 +211,9 @@ export const prefs_default = {
     add_tags_auto_uselist: false,
     add_tags_auto_uselist_list: '',
     add_tags_enabled_accounts: [],
+    // Policy-only: profile-independent matchers ("user@x", "@x", "*@x", "local") that replace
+    // add_tags_enabled_accounts while a policy supplies them. See resolveEnabledAccounts().
+    add_tags_enabled_accounts_match: [],
     get_calendar_event: true,
     get_calendar_event_from_clipboard: false,  // Enable calendar event from clipboard menu item
     get_task: true,
@@ -198,6 +229,8 @@ export const prefs_default = {
     spamfilter: false,
     spamfilter_threshold: 70,
     spamfilter_enabled_accounts: [],
+    // Policy-only, same as add_tags_enabled_accounts_match above.
+    spamfilter_enabled_accounts_match: [],
     spamfilter_skip_addresses: [],
     spamfilter_block_addresses: [],   // Senders always reported as spam (score 100) without asking the AI
     spamfilter_skip_addressbook: true,

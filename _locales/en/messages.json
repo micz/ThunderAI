@@ -79,21 +79,21 @@
     "message": "Reindexing list...",
     "description": ""
   },
-  "customPrompts_filtering_prompts": {
-    "message": "Filtering prompts...",
+  "customPrompts_autosave_info": {
+    "message": "Every change is saved immediately.",
+    "description": "Note on the Custom Prompts page: there is no Save All button"
+  },
+  "customPrompts_import_saved_now": {
+    "message": "The imported prompts will be saved immediately.",
+    "description": "Line of the confirmation shown before importing custom prompts"
+  },
+  "customPrompts_import_completed_saved": {
+    "message": "Custom prompts imported and saved!",
     "description": ""
   },
-  "customPrompts_saving_default_prompts": {
-    "message": "Saving default prompts...",
-    "description": ""
-  },
-  "customPrompts_saving_custom_prompts": {
-    "message": "Saving custom prompts...",
-    "description": ""
-  },
-  "customPrompts_reloading_menus": {
-    "message": "Reloading menus...",
-    "description": ""
+  "customPrompts_save_error": {
+    "message": "Error while saving the prompts:",
+    "description": "Followed by the error message"
   },
   "customPrompts_saved": {
     "message": "Prompts saved!",
@@ -462,8 +462,8 @@
     }
   },
   "customPrompts_search_placeholder": {
-    "message": "Search by name or ID",
-    "description": "Placeholder for the search field that filters the prompts list by name or ID"
+    "message": "Search by name, ID or text…",
+    "description": "Placeholder for the search field that filters the prompts list by name, ID or prompt text"
   },
   "customPrompts_filter_active": {
     "message": "Filtered: $SHOWN$ of $TOTAL$",
@@ -485,16 +485,160 @@
     "message": "Clear filter",
     "description": "Button in the toolbar badge that clears the search filter and shows all prompts"
   },
+  "customPrompts_view_detail": {
+    "message": "Detail",
+    "description": "View switch button: list on the left, editor on the right"
+  },
+  "customPrompts_view_table": {
+    "message": "Table",
+    "description": "View switch button: dense table of all prompts"
+  },
+  "customPrompts_view_switch": {
+    "message": "View",
+    "description": "Accessible label of the Detail/Table view switch"
+  },
+  "customPrompts_new_prompt": {
+    "message": "+ New prompt",
+    "description": "Toolbar button that starts a new prompt in the editor"
+  },
+  "customPrompts_badge_system": {
+    "message": "System",
+    "description": "Badge on a built-in prompt"
+  },
+  "customPrompts_badge_personal": {
+    "message": "Personal",
+    "description": "Badge on a prompt created by the user"
+  },
+  "customPrompts_badge_readonly": {
+    "message": "Read-only",
+    "description": "Badge in the editor header of a prompt whose text cannot be changed"
+  },
+  "customPrompts_system_tooltip": {
+    "message": "System prompt, read-only",
+    "description": "Tooltip of the lock glyph shown on read-only prompts in the list"
+  },
+  "customPrompts_system_banner": {
+    "message": "System prompt: its text cannot be changed. Duplicate it to create your own version.",
+    "description": "Banner in the editor for a built-in prompt"
+  },
+  "customPrompts_org_banner": {
+    "message": "Organization prompt: it is managed by your organization's configuration policy and cannot be changed. Duplicate it to create your own version.",
+    "description": "Banner in the editor for a prompt supplied by the enterprise policy"
+  },
+  "customPrompts_btnDuplicate": {
+    "message": "Duplicate",
+    "description": "Button that creates a copy of the selected prompt"
+  },
+  "customPrompts_btnDuplicateEdit": {
+    "message": "Duplicate and edit",
+    "description": "Button that creates an editable personal copy of a read-only prompt"
+  },
+  "customPrompts_btnSavePrompt": {
+    "message": "Save",
+    "description": "Button in the editor that saves the edits to the selected prompt"
+  },
+  "customPrompts_btnExport": {
+    "message": "Export",
+    "description": "Row menu item that exports a single prompt to a file"
+  },
+  "customPrompts_btnOpen": {
+    "message": "Open",
+    "description": "Table row button that opens a read-only prompt in the detail view"
+  },
+  "customPrompts_more_actions": {
+    "message": "More actions",
+    "description": "Tooltip of the row menu button in the table view"
+  },
+  "customPrompts_col_prompt": {
+    "message": "Prompt",
+    "description": "Table view column header"
+  },
+  "customPrompts_col_text": {
+    "message": "Text",
+    "description": "Table view column header"
+  },
+  "customPrompts_col_menu": {
+    "message": "Menu",
+    "description": "Table view column header"
+  },
+  "customPrompts_col_options": {
+    "message": "Options",
+    "description": "Table view column header"
+  },
+  "customPrompts_col_actions": {
+    "message": "Actions",
+    "description": "Table view column header"
+  },
+  "customPrompts_label_text": {
+    "message": "Prompt text",
+    "description": "Label of the prompt text field in the editor"
+  },
+  "customPrompts_label_options": {
+    "message": "Options",
+    "description": "Label of the options column in the editor"
+  },
+  "customPrompts_label_connection": {
+    "message": "Connection",
+    "description": "Label of the per-prompt connection override section in the editor"
+  },
+  "customPrompts_chip_need_selected": {
+    "message": "Selection",
+    "description": "Short label of the 'Text selection needed' option chip"
+  },
+  "customPrompts_chip_need_signature": {
+    "message": "Signature",
+    "description": "Short label of the 'Always add the signature' option chip"
+  },
+  "customPrompts_chip_need_custom_text": {
+    "message": "Extra text",
+    "description": "Short label of the 'Ask for additional text' option chip"
+  },
+  "customPrompts_chip_define_response_lang": {
+    "message": "Language",
+    "description": "Short label of the 'Define the response language' option chip"
+  },
+  "customPrompts_chip_use_diff_viewer": {
+    "message": "Compare",
+    "description": "Short label of the 'Enable the text comparison viewer' option chip"
+  },
+  "customPrompts_flag_fixed_suffix": {
+    "message": "fixed by the prompt",
+    "description": "Suffix after an option that cannot be changed on a read-only prompt"
+  },
+  "customPrompts_new_prompt_title": {
+    "message": "New prompt",
+    "description": "Editor header while creating a prompt"
+  },
+  "customPrompts_no_selection": {
+    "message": "Select a prompt from the list, or create a new one.",
+    "description": "Editor placeholder when no prompt is selected"
+  },
+  "customPrompts_dirty_confirm": {
+    "message": "The prompt you are editing has changes that have not been applied. What do you want to do?",
+    "description": "Dialog shown when leaving a prompt with unapplied edits"
+  },
+  "customPrompts_dirty_apply": {
+    "message": "Apply changes",
+    "description": "Dialog button: apply the pending edits and continue"
+  },
+  "customPrompts_dirty_discard": {
+    "message": "Discard changes",
+    "description": "Dialog button: throw away the pending edits and continue"
+  },
+  "customPrompts_error_id": {
+    "message": "The ID is required, cannot contain spaces and must be unique.",
+    "description": "Validation message for the prompt ID"
+  },
+  "customPrompts_error_required": {
+    "message": "Name and prompt text are required.",
+    "description": "Validation message for the name and text fields"
+  },
   "importPrompts_confirmText": {
     "message": "You are about to import new prompts.",
     "description": ""
   },
   "customPrompts_start_import": {
     "message": "Starting custom prompts import...",
-    "description": ""
-  },
-  "customPrompts_import_completed": {
-    "message": "Custom prompts import completed! You need to click on the 'Save All' button to save your changes.",
     "description": ""
   },
   "importPrompts_invalidFile": {
@@ -2161,6 +2305,14 @@
     "message": "Choose the accounts where the automatic spam filter is enabled",
     "description": ""
   },
+  "AccountSelector_managed_note": {
+    "message": "The accounts are selected by your organization's configuration policy and cannot be changed here.",
+    "description": "Note above the account checkboxes (Spam Filter and Add Tags settings pages) when an enterprise policy decides which accounts the automatic feature runs on"
+  },
+  "AccountSelector_managed_none": {
+    "message": "Your organization's configuration policy limits this feature to accounts that do not exist in this profile, so it does not run automatically on any account.",
+    "description": "Note above the account checkboxes (Spam Filter and Add Tags settings pages) when the enterprise policy's account list matches no account of the user"
+  },
   "prefs_OptionText_chatgpt_web_project": {
     "message": "ChatGPT Web Project",
     "description": ""
@@ -2920,9 +3072,101 @@
     "message": "The prompt must contain the placeholder {%mail_text_body_or_selected%} or {%mail_html_body_or_selected%} to enable this option. Please add one of these placeholders to the prompt or reset it to the default.",
     "description": ""
   },
+  "prefs_OptionText_calendar_no_selection_save_missing_placeholder": {
+    "message": "The option \"Do not ask to select text\" is enabled, so the prompt must contain the placeholder {%mail_text_body_or_selected%} or {%mail_html_body_or_selected%}. Please add one of these placeholders to the prompt or reset it to the default.",
+    "description": "Alert shown when saving the calendar event prompt without the body placeholder while the 'Do not ask to select text' option is enabled; the prompt is not saved"
+  },
+  "prefs_OptionText_calendar_no_selection_policy_missing_placeholder": {
+    "message": "Your organization has enabled this option, but the prompt contains neither {%mail_text_body_or_selected%} nor {%mail_html_body_or_selected%}, so the message body is not sent to the AI. Add one of these placeholders to the prompt or reset it to the default.",
+    "description": "Note next to the calendar 'Do not ask to select text' switch when the enterprise policy locks it on and the calendar prompt lacks the body placeholder"
+  },
   "customPrompts_btnCopy": {
     "message": "Copy",
     "description": ""
+  },
+  "managed_banner": {
+    "message": "Some settings are managed by your organization and cannot be changed.",
+    "description": "Banner shown when an enterprise policy is active but sets no organization name"
+  },
+  "managed_banner_org": {
+    "message": "Some settings are managed by $ORG$ and cannot be changed.",
+    "description": "Banner shown when an enterprise policy is active, naming the organization",
+    "placeholders": {
+      "org": {
+        "content": "$1",
+        "example": "ACME Corp"
+      }
+    }
+  },
+  "managed_marker": {
+    "message": "Managed",
+    "description": "Marker next to a setting enforced by the enterprise policy"
+  },
+  "managed_marker_org": {
+    "message": "Managed by $ORG$",
+    "description": "Marker next to a setting enforced by the enterprise policy, naming the organization",
+    "placeholders": {
+      "org": {
+        "content": "$1",
+        "example": "ACME Corp"
+      }
+    }
+  },
+  "managed_marker_tooltip": {
+    "message": "This setting is set by your organization's configuration policy and cannot be changed here.",
+    "description": "Tooltip on the managed marker"
+  },
+  "managed_prompt_text_tooltip": {
+    "message": "This prompt text is set by your organization's configuration policy and cannot be changed here. You can still select and copy it.",
+    "description": "Tooltip on a special prompt text editor (Spam Filter, Add Tags, Summarize, Translate, Calendar Event, Task settings pages) whose text is enforced by an enterprise policy"
+  },
+  "managed_restriction_tooltip": {
+    "message": "This action is disabled by your organization's configuration policy.",
+    "description": "Tooltip on a button or link disabled by an enterprise policy restriction"
+  },
+  "managed_restriction_prompts": {
+    "message": "Prompt management is disabled by your organization's configuration policy. Prompts cannot be created, copied, imported or exported, and your own existing prompts are read-only and are not available in the menus.",
+    "description": "Note shown on the custom prompts page when the policy disables prompt management"
+  },
+  "customPrompts_policy_inert_note": {
+    "message": "Read-only and not available in the menus: your organization's configuration policy disables prompt management. Your prompt is not deleted.",
+    "description": "Note on a custom prompt row made read-only by the prompt management policy"
+  },
+  "managed_restriction_default_prompts": {
+    "message": "The built-in prompts are disabled by your organization's configuration policy. They are still listed here, but they are not available in the menus.",
+    "description": "Note shown on the custom prompts page when the policy disables the built-in prompts"
+  },
+  "customPrompts_policy_default_inert_note": {
+    "message": "Not available in the menus: your organization's configuration policy disables the built-in prompts.",
+    "description": "Note on a built-in prompt row taken out of the menus by the policy"
+  },
+  "menu_order_badge_policy_inactive": {
+    "message": "Disabled by policy",
+    "description": "Badge on a prompt that an enterprise policy has made unavailable"
+  },
+  "menu_order_badge_shadowed": {
+    "message": "Disabled: duplicate ID",
+    "description": "Badge on a custom prompt hidden by an organization prompt with the same ID"
+  },
+  "managed_restriction_wizard": {
+    "message": "The setup wizard is disabled by your organization's configuration policy. Your AI connection is configured centrally.",
+    "description": "Shown in place of the setup wizard, and instead of the wizard link in the popup, when the policy disables it"
+  },
+  "managed_restriction_wizard_title": {
+    "message": "Setup wizard unavailable",
+    "description": "Title shown in place of the setup wizard when the policy disables it"
+  },
+  "customPrompts_org_badge": {
+    "message": "Organization",
+    "description": "Badge on a prompt supplied by the enterprise policy, when no organization name is configured"
+  },
+  "customPrompts_org_shadowing_note": {
+    "message": "One of your prompts uses this same ID and is disabled while this organization prompt is active.",
+    "description": "Shown under an organization prompt that is hiding a custom prompt with the same ID"
+  },
+  "customPrompts_shadowed_note": {
+    "message": "Disabled: an organization prompt uses this same ID. Your prompt is kept and will work again if the organization prompt is removed.",
+    "description": "Shown under a custom prompt hidden by an organization prompt with the same ID"
   },
   "copy_text": {
     "message": "copy",
@@ -3412,6 +3656,10 @@
     "message": "Custom",
     "description": "Badge label for custom prompts"
   },
+  "menu_order_badge_org": {
+    "message": "Organization",
+    "description": "Badge on a prompt supplied by the enterprise policy, in the menu order page"
+  },
   "menu_order_type_reading": {
     "message": "Reading",
     "description": "Badge label for reading-only prompts"
@@ -3562,6 +3810,10 @@
   "connTest_error_timeout": {
     "message": "Timed out — no response from the endpoint",
     "description": "Connection test status strip: error message when the request exceeds the timeout"
+  },
+  "connTest_managed_api_key": {
+    "message": "The API key is set by your organization and cannot be tested from here",
+    "description": "Connection test status strip: shown instead of running the test when the API key is supplied by the enterprise policy, which never passes the real key to the settings page"
   },
   "connTest_link_test": {
     "message": "Test now",

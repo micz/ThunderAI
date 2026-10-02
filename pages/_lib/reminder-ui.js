@@ -32,6 +32,9 @@
 //   ignored until the option is checked.
 // - A failure loading the saved rules is logged and does not stop the setup: the
 //   listeners and the first refresh() always run, so the block never stays hidden.
+// - The textarea carries data-mzta-pref (the page's own rules pref), so the page's
+//   applyManagedUI() has already disabled and marked it when the policy locks the
+//   rules; its Save button is locked here. Must run after applyManagedUI().
 
 import {
     REMINDER_FEATURES,
@@ -39,6 +42,11 @@ import {
 } from '../../js/mzta-utils-prompt.js';
 import { mztaPrefs } from '../../js/mzta-prefs.js';
 import { taLogger } from '../../js/mzta-logger.js';
+import {
+    isLockedKey,
+    lockCompanions,
+    setDisabledRespectingManaged
+} from './managed-ui.js';
 
 const taLog = new taLogger("mzta-reminder-ui", true);
 
@@ -63,6 +71,7 @@ export async function initReminderUI({ feature, promptTextarea, statementsEl }) 
         taLog.error("initReminderUI(" + feature + "): cannot load " + config.rulesPref + ": " + e);
     }
     rules_textarea.value = saved_rules;
+    lockCompanions(config.rulesPref, [save_btn]);
 
     function refresh() {
         rules_block.style.display = checkbox.checked ? 'block' : 'none';
@@ -104,12 +113,14 @@ export async function initReminderUI({ feature, promptTextarea, statementsEl }) 
     promptTextarea.addEventListener('input', refresh);
 
     rules_textarea.addEventListener('input', () => {
-        save_btn.disabled = (rules_textarea.value === saved_rules);
+        setDisabledRespectingManaged(save_btn, (rules_textarea.value === saved_rules));
         unsaved.classList.toggle('hidden', save_btn.disabled);
         refresh();
     });
 
     save_btn.addEventListener('click', async () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isLockedKey(config.rulesPref)) return;
         const new_rules = rules_textarea.value.trim();
         try {
             await mztaPrefs.setPref(config.rulesPref, new_rules);

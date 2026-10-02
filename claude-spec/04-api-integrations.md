@@ -197,6 +197,18 @@ Per-prompt ChatGPT Web overrides are a separate, unrelated mechanism: the custom
     unsupported, model not pulled) it clears the notes and leaves every control enabled. A failed
     probe must never block the user.
   - **Stored values are never rewritten**, exactly like the Claude panel: the user may switch model.
+  - **The think select is an open catalogue.** `buildOllamaThinkOptions()` keeps the value the
+    select holds as a trailing option when the model does not offer it. A page restore assigns
+    the stored value *before* any model was probed, when the select still has only the default
+    levels, so every restore (options page, setup wizard, custom prompts) calls
+    `ensureRestorableOption(element, value)` first, which adds the missing option. Without it
+    the assignment would leave the select at `''`, which the rebuild then keeps: a stored or
+    policy-enforced level such as `"xhigh"` would show as "Default". The feature pages already
+    synthesize missing options in their own restore.
+  - **A policy-supplied `ollama_api_key` is never sent.** On a settings page it is only
+    `MANAGED_SECRET_MARKER`, so the probe treats it like a missing host or model (reset, no
+    request). "Update" and the connection test refuse it the same way as for the other
+    providers (spec 08b).
   - **The request side is not gated.** `think` is still sent as stored: Ollama ignores it on a
     non-thinking model, and gating it would mean threading capability data into the Web Worker,
     which knows nothing about `/api/show`.
@@ -335,6 +347,15 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
     default, thinking may consume part of `max_tokens`.
   - **The table must be updated as new models ship.** The 400 retry below is a safety net, not a
     substitute.
+- **Settings UI** (`updateAnthropicModelCapabilityUI()` in `pages/_lib/connection-ui.js`): the
+  options the selected model rejects stay visible and populated but disabled, with a note, and
+  the `anthropic_effort` list is narrowed to the model's `effortLevels` while keeping the
+  selected value (a stale level is kept as an extra option). `injectConnectionUI()` fills that
+  select with every level of `ANTHROPIC_EFFORT_LEVELS` right away, before the page's
+  `restoreOptions()` runs: with no `<option>` yet, the restore would have nothing to select and
+  the stored value would be lost on every page (options, setup wizard, feature pages). The
+  disabled state goes through `setDisabledRespectingManaged()`, so a field locked by policy is
+  never re-enabled by a model change.
 - **Request body construction** is entirely driven by that table, and every field is opt-in:
   - **The thinking decision is made first** (budget checks, then `thinking` enabled / disabled /
     omitted, see below), and the sampling params are gated on it. `thinkingActive` is true when
@@ -605,15 +626,43 @@ Feature-specific routing of `isConfigError`:
 - `summarize` / `translate` / `spamfilter`: the error is shown in their dedicated panel (summary / translation / spam panel) and **not** persisted to storage.
 - `add_tags`: it has **no dedicated panel**, so the error is routed to the **generic error panel** via `showGenericError(errMsg, source)` in `mzta-background.js`, which broadcasts a `showGenericError` message to all tabs. The content script `js/mzta-compose-script.js` renders it as `#mzta-generic-error` inside `#mzta-container`. The panel is dismissible and reusable by any future feature without its own UI.
 
-For regular prompts (`openChatGPT()`), validation still happens inside the listener callback after the API webchat window is created (unchanged behavior).
+For regular prompts (`openChatGPT()`), validation still happens inside the listener callback after the API webchat window is created. It checks the settings the window will run: `applyPromptConnection(prefs, prompt_info)` (`js/mzta-utils.js`) puts the prompt's own `{integration}_{key}` fields over the global values when `prompt_info.api_type` is the resolved connection. That is the rule `api_webchat/controller.js` applies, so a prompt with its own key no longer fails with "empty API key" because the global one is empty, nor passes because the global one is set. The connection itself is resolved with the prompt's feature prefix, when it is a special prompt (`getSpecialPromptPrefix()` in `js/mzta-prompts.js`, e.g. the summary opened in the chat window). So the `{prefix}_use_specific_integration` / `{prefix}_connection_type` pair counts there exactly as in the caller's usability check.
 
 ## Per-feature provider override (specific integration)
 
-Features in `special_prompts_with_integration` (`add_tags`, `spamfilter`, `summarize`, `get_calendar_event`, `get_task`, `translate`) can use a different provider than the global default. The override is **stored inside the feature's special prompt object** (not in standalone `{feature}_*` prefs): the settings UI (`_updatePrompt()` in `pages/_lib/connection-ui.js`) writes `prompt.api_type` plus prefixed config keys (e.g. `prompt.openai_comp_host`, `prompt.openai_comp_model`) and calls `savePrompt()`.
+Features in `special_prompts_with_integration` (`add_tags`, `spamfilter`, `summarize`, `get_calendar_event`, `get_task`, `translate`) can use a different provider than the global default. The override is **stored inside the feature's special prompt object** (not in standalone `{feature}_*` prefs): the settings UI (`_updatePrompt()` in `pages/_lib/connection-ui.js`) writes `prompt.api_type` plus prefixed config keys (e.g. `prompt.openai_comp_host`, `prompt.openai_comp_model`) and calls `savePrompt()`. The page's text Save must not undo those writes: it saves the text alone with `saveSpecialPromptTexts({id: text})` (`js/mzta-prompts.js`), a load-modify-save on a fresh read. It used to write back the whole array the page loaded at page open, which reverted every connection change saved since. An enterprise policy can hide it ([below](#when-a-policy-locks-the-override-off)) or supply one of its own ([`_special_prompts_connection`](#when-a-policy-supplies-the-override)), both as read-time overlays in `getSpecialPrompts()`.
 
 For the override to take effect at runtime, the caller **must load that prompt object and pass it as `config`** to `mzta_specialCommand` — and pass the same prompt to `getConnectionType(prefs, prompt, '<feature>')`. `initWorker()` only sets `use_specific_api = true` (and therefore reads the prefixed host/model/etc. from `config`) when `config.api_type` is non-empty; otherwise it falls back to the **global** provider prefs. Passing `config: {}` silently ignores the override even when the connection *type* matches.
 
 Helpers: `getAddTagsPrompt()`, `getSpamFilterPrompt()`, `getSummarizePrompt()`, `getTranslatePrompt()` in `js/mzta-prompts.js` (or `loadPrompt(id)`). The execution paths in `mzta-background.js` (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, add_tags) follow this pattern. Special-prompt execution paths must read their prompt object from these helpers (which go through `getSpecialPrompts()`), never from `menus.allPrompts` — that array is filtered by `getActiveSpecialPromptsIDs()` and can omit a feature's prompt (e.g. when no global connection is set or the global connection is ChatGPT Web without a per-feature API override) even while the feature's auto-processing is enabled, which would yield `curr_prompt === undefined`.
+
+### When a policy locks the override off
+
+Because the override is a prompt property and not a preference, the preference write guard cannot stop it: a user override saved *before* a policy locked `{prefix}_use_specific_integration` to `false` would still run — `getConnectionType()` falls through to `prompt.api_type` when the preference is false, and `initWorker()` switches to the specific API whenever `config.api_type` is set.
+
+It is therefore hidden **at read time**, like the derived `need_selected` of the calendar prompt ([02-prompts.md](02-prompts.md)): `applyLockedOffIntegrations()` runs at the end of both branches of `getSpecialPrompts()` and, for every prefix whose `{prefix}_use_specific_integration` is **managed-locked to `false`**, returns that feature's prompts with `api_type: ''` and every `{integration}_{key}` override field removed (the key list is derived from `integration_options_config`). Every runtime path listed above, `menus.allPrompts` (built from `getPrompts()`), `loadPrompt()`, the API chat window and the feature pages all read through `getSpecialPrompts()`, so none of them can see the override.
+
+The prompts per prefix come from `getActiveSpecialPromptsIDs()` in `js/mzta-utils.js` (every feature on, only that prefix usable), the one existing encoding of prefix → prompt ids, rather than a second table. For `summarize` that is `prompt_summarize` alone: the email template and separator prompts are text fragments, never passed as a command's `config` and never edited by the connection panel. For `get_calendar_event` it includes `prompt_get_calendar_event_from_clipboard`, which runs with the same prefix.
+
+**Why read-time only, and why it is restored on write.** The override is the user's own configuration, not something the policy imposed, and it has to come back untouched when the policy is removed. Unlike `need_selected`, persisting the overlay is **not** harmless: every write rewrites the whole `_special_prompts` array from an overlaid read - `savePrompt()`, `clearPromptAPI()` and the feature pages' text Save (`saveSpecialPromptTexts()`) do a load-modify-save, the menu order page writes back the list it loaded - so an overlaid `api_type: ''` reaching storage would erase the override for good. `setSpecialPrompts()`, the single gate into that store, therefore runs `keepStoredOverrides()`: for the locked-off prompts it puts back exactly the override fields storage already holds (and drops any it does not), so every other edit to those prompts is saved while the override cannot be changed or cleared as long as the policy holds.
+
+The gate tests the lock **synchronously** (`mztaManaged.isManagedLocked()` + `getManagedValue()`): the migration block in `mzta-background.js` calls `setSpecialPrompts()` before `loadManaged()`, where awaiting `managedReady()` would make the background message itself. That is safe because an overlaid prompt can only exist in a context where `getSpecialPrompts()` has already awaited `managedReady()`.
+
+**Unmanaged behaviour is unchanged.** Only the locked-off case is overlaid. A legacy profile with `prompt.api_type` set while the preference is `false`, and no policy, still runs its override exactly as before, and `getConnectionType()` itself is untouched.
+
+On the feature page, `initializeSpecificIntegrationUI()` computes `locked_off` the same way: the toggle is kept off, never forced on as mandatory (even over a ChatGPT Web or empty global connection — an administrator misconfiguration to fix, not to override), and `_updatePrompt()` and the toggle's `clearPromptAPI()` path are no-ops. At background startup, `getIgnoredProviderOverrides()` reads the raw store and `taLogger.warn()`s once per locked-off feature that still has a stored `api_type`, so the administrator can see the override exists and is being ignored.
+
+### When a policy supplies the override
+
+The reverse case: the policy key `_special_prompts_connection` enforces (or pre-sets) a feature's connection, `{<prefix>: {api_type, <integration>_<key>: value, "<field>:locked": false}}`. The field names are exactly the prompt properties above, derived from `integration_options_config`, so no translation layer exists. Full treatment in [08b-managed-connections.md](08b-managed-connections.md#enforced-per-feature-connections-_special_prompts_connection). What matters for the runtime paths:
+
+- `applyPolicyConnections()` runs in both branches of `getSpecialPrompts()`, right after `applyLockedOffIntegrations()`. It sets `api_type`, puts every enforced field on the prompt and fills an unlocked field only where the prompt has no value (absent or `''`), and marks the prompt `_connection_by_policy`. The prompts per prefix are the same as for the locked-off overlay (`prompt_summarize` alone; both calendar prompts). So every path listed above — `initWorker()`, `menus.allPrompts`, `loadPrompt()`, the API chat window, the feature pages — sees the policy connection. `initWorker()` gets the real key, because the background holds it; a field neither the policy nor the user sets falls back to the global preference as before.
+- An accepted entry also **implies** `{prefix}_use_specific_integration = true` and `{prefix}_connection_type = api_type`, both locked. `getConnectionType()` reads that pair before `prompt.api_type`, and the callers that pass `prompt = null` (the menu gating, the options feature row) read only the pair. Without it the prompt overlay alone would not be what runs.
+- The overlay is never persisted: `setSpecialPrompts()` runs `keepStoredConnections()` after `keepStoredOverrides()`. Removing the policy restores the user's own override, field by field.
+- On the feature page `initializeSpecificIntegrationUI()` computes `policy_connected`:
+  - there is no page-open seeding or persisting, and no "mandatory" forcing;
+  - enforced fields and a locked type select never trigger `_updatePrompt()`, and it never copies them from the DOM;
+  - a switch re-enabled by hand is forced back on without calling `clearPromptAPI()`.
 
 ## Web Worker Pattern
 

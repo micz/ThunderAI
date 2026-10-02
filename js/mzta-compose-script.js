@@ -723,17 +723,16 @@ switch (message.command) {
   case "getTags":
     // console.log(">>>>>>>>>>>>>> getTags: " + JSON.stringify(message.tags));
 
-    // ===== These methods are also defined in the file /js/mzta-addtags-exclusion-list.js
-    async function addTags_getExclusionList() {
-      let prefs_excluded_tags = await browser.storage.local.get({add_tags_exclusions: []});
-      // console.log(">>>>>>>>>>>>>>> addTags_getExclusionList prefs_excluded_tags: " + JSON.stringify(prefs_excluded_tags));
-      return prefs_excluded_tags.add_tags_exclusions;
-    }
-
+    // The exclusion list and the two preferences that go with it are read and written
+    // through the background, NOT storage.local: this is a classic content script and cannot
+    // import js/mzta-prefs.js (issue #163), and a direct read would ignore the enterprise
+    // policy while a direct write would bypass its write guard. The background resolves them
+    // through mztaPrefs, so the tag dialog sees exactly what auto-tagging uses.
     function addTags_setExclusionList(add_tags_exclusions) {
-      browser.storage.local.set({add_tags_exclusions: add_tags_exclusions});
+      browser.runtime.sendMessage({ command: "addtags_set_exclusions", list: add_tags_exclusions });
     }
 
+    // ===== This method is also defined in the file /js/mzta-addtags-exclusion-list.js
     function checkExcludedTag(tag, excluded_word, exact_match = false) {
         // Check if the tag is in the exclusion list
         if (excluded_word === '') {
@@ -872,13 +871,23 @@ switch (message.command) {
         no_submit = true;
       }
 
-      // Cannot use js/mzta-prefs.js (issue #163): this file is registered as a CLASSIC
-      // content script (see the note above), so it has no module context and cannot import.
-      // The defaults are therefore hardcoded here and must be kept in step with prefs_default,
-      // and the area with PREFS_AREA — these are real preferences, so reading them from
-      // storage.sync would silently return the hardcoded defaults for every user.
-      let prefs_tags = await browser.storage.local.get({add_tags_hide_exclusions: false, add_tags_exclusions_exact_match: false});
-      let add_tags_exclusions_list = await addTags_getExclusionList();
+      // Resolved by the background through js/mzta-prefs.js - see addTags_setExclusionList()
+      // above. Should the round trip fail, fall back to the prefs_default values, which is
+      // what an unmanaged profile with no stored value would get anyway.
+      let prefs_tags = null;
+      try {
+        prefs_tags = await browser.runtime.sendMessage({ command: "addtags_get_exclusion_prefs" });
+      } catch (e) {
+        console.error("[ThunderAI] Could not read the tag exclusion preferences: " + e);
+      }
+      if (!prefs_tags || typeof prefs_tags !== 'object') prefs_tags = {};
+      let add_tags_exclusions_list = Array.isArray(prefs_tags.add_tags_exclusions) ? prefs_tags.add_tags_exclusions : [];
+      prefs_tags.add_tags_hide_exclusions = prefs_tags.add_tags_hide_exclusions === true;
+      prefs_tags.add_tags_exclusions_exact_match = prefs_tags.add_tags_exclusions_exact_match === true;
+      // Locked by the enterprise policy: the list cannot be changed from here, so the
+      // per-tag "exclude" action is not offered at all (the background would refuse the
+      // write anyway).
+      const exclusions_locked = prefs_tags.exclusions_locked === true;
 
       // console.log(">>>>>>>>>>>>> add_tags_exclusions_list: " + JSON.stringify(add_tags_exclusions_list));
 
@@ -915,25 +924,29 @@ switch (message.command) {
         img.alt = browser.i18n.getMessage("addtags_exclude_tag");
         img.title = browser.i18n.getMessage("addtags_exclude_tag");
         img.className = 'exclude-tag-icon';
-        img.addEventListener('click', () => {
+        if (!exclusions_locked) img.addEventListener('click', () => {
+          // Stored lowercase, like the Add Tags settings page does (normalizeStringList()),
+          // and compared case-insensitively: the match itself ignores case, so "Foo" and
+          // "foo" are the same exclusion, and a stored "foo" must be removable from "Foo".
+          const tag_lc = word.tag.toLowerCase();
           if (!label.classList.contains('tag_excluded')) {
             label.classList.add('tag_excluded');
-            if (!add_tags_exclusions_list.includes(word.tag)) {
-              add_tags_exclusions_list.push(word.tag);
+            if (!add_tags_exclusions_list.some(ex => ex.toLowerCase() === tag_lc)) {
+              add_tags_exclusions_list.push(tag_lc);
               addTags_setExclusionList(add_tags_exclusions_list);
             }
           } else {
             label.classList.remove('tag_excluded');
-            const idx = add_tags_exclusions_list.indexOf(word.tag);
-            if (idx > -1) {
-              add_tags_exclusions_list.splice(idx, 1);
+            const new_list = add_tags_exclusions_list.filter(ex => ex.toLowerCase() !== tag_lc);
+            if (new_list.length !== add_tags_exclusions_list.length) {
+              add_tags_exclusions_list = new_list;
               addTags_setExclusionList(add_tags_exclusions_list);
             }
           }
         });
 
         label.appendChild(checkbox);
-        label.appendChild(img);
+        if (!exclusions_locked) label.appendChild(img);
         label.appendChild(document.createTextNode(` ${word.tag}`));
         if(!word.excluded || (word.excluded && !prefs_tags.add_tags_hide_exclusions)){
           tags_shown++;

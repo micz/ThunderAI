@@ -149,6 +149,14 @@ body {
     text-decoration: underline;
     cursor: pointer;
   }
+  /* The policy forbids the wizard: the link becomes the explanation, so it must not look
+     or behave like something to click. This page does not load pages/_lib/mzta-design.css,
+     hence the local copy of the rule. */
+  #setup_wizard_prompt a.managed_disabled{
+    font-weight: normal;
+    text-decoration: none;
+    cursor: default;
+  }
 
   @media (prefers-color-scheme: dark) {
 

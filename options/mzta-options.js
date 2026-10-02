@@ -44,6 +44,7 @@ import {
   showConnectionOptions,
   updateWarnings,
   hasEmptyValueOption,
+  ensureRestorableOption,
   checkJsonFields,
   getConnectionTypeLabel
 } from '../pages/_lib/connection-ui.js';
@@ -53,6 +54,14 @@ import {
   setConnTestState
 } from '../js/mzta-connection-test.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
+import {
+  applyManagedUI,
+  showManagedBanner,
+  isLockedKey,
+  setDisabledRespectingManaged,
+  isSetupWizardDisabled,
+  disableForManagedRestriction
+} from '../pages/_lib/managed-ui.js';
 
 let taLog = new taLogger("mzta-options",true);
 
@@ -128,6 +137,7 @@ async function restoreOptions() {
           if(element.id == 'diff_granularity') default_select_value = prefs_default.diff_granularity;
           // No fallback for connection_type: an empty value means "no connection
           // selected yet" and must stay empty, so the placeholder option shows.
+          ensureRestorableOption(element, result[element.id]);
           element.value = result[element.id] || default_select_value;
           // connection_type and the ChatGPT reasoning selects have a dedicated option
           // for the empty value, so let the assignment above select it; every other
@@ -212,9 +222,12 @@ function disable_MaxPromptLength(){
   let maxPromptLength = document.getElementById('max_prompt_length');
   let conntype_select = document.getElementById("connection_type");
   // API-only setting: irrelevant for ChatGPT Web and until a connection is chosen.
-  maxPromptLength.disabled = (conntype_select.value === "chatgpt_web") || hasNoConnectionSelected(conntype_select.value);
+  const irrelevant = (conntype_select.value === "chatgpt_web") || hasNoConnectionSelected(conntype_select.value);
+  setDisabledRespectingManaged(maxPromptLength, irrelevant);
   let maxPromptLength_tr = document.getElementById('max_prompt_length_tr');
-  maxPromptLength_tr.style.display = (maxPromptLength.disabled) ? 'none' : '';
+  // Follow relevance, not the input's disabled flag: a policy lock also disables the
+  // field, and that must grey it out rather than hide the row it explains.
+  maxPromptLength_tr.style.display = irrelevant ? 'none' : '';
 }
 
 // Show the "Show usage data in chat" row only when at least one integration that
@@ -308,10 +321,15 @@ function disable_ApiFeature(prefs_opt, prefix, manageBtnId){
   // is on their way to configuring a per-feature API, and that page is behind this very
   // toggle — clearing it here used to strand them: the feature switched itself back off
   // between enabling it and finishing the setup.
-  checkbox.checked = state.disabled ? false : checkbox.checked;
+  // Never for a policy-locked flag: a policy-enabled feature with an unusable connection
+  // stays on (see _reconcileFeatureFlags() in mzta-background.js), so the page must keep
+  // showing the enforced value rather than a switch-off the write guard would refuse anyway.
+  if (!isLockedKey(prefix)) {
+    checkbox.checked = state.disabled ? false : checkbox.checked;
+  }
   // With no connection selected the toggle is greyed out: there is nothing to
-  // enable the feature against yet.
-  checkbox.disabled = state.no_connection;
+  // enable the feature against yet. A policy-locked toggle stays disabled regardless.
+  setDisabledRespectingManaged(checkbox, state.no_connection);
 
   setFeatureManageVisibility(document.getElementById(manageBtnId), checkbox.checked);
   setApiWarnVisibility(prefix, state.show_api_warning);
@@ -357,15 +375,19 @@ async function disable_GetCalendarEvent(prefs_opt){
   setApiWarnVisibility('get_calendar_event', cal_state.show_api_warning);
   setApiWarnVisibility('get_task', task_state.show_api_warning);
   // Sparks presence is an orthogonal requirement: both features live in that add-on.
-  get_calendar_event.disabled = cal_unusable || !(is_spark_present == 1);
-  get_task.disabled = task_unusable || !(is_spark_present == 1);
+  const cal_hidden = cal_unusable || !(is_spark_present == 1);
+  const task_hidden = task_unusable || !(is_spark_present == 1);
+  setDisabledRespectingManaged(get_calendar_event, cal_hidden);
+  setDisabledRespectingManaged(get_task, task_hidden);
+  // Row visibility follows usability, not the input's disabled flag: a policy lock also
+  // disables the control, and that must grey the row out rather than remove it.
   let get_calendar_event_tr_elements = document.querySelectorAll('.get_calendar_event_tr');
   get_calendar_event_tr_elements.forEach(get_calendar_event_tr => {
-    get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : '';
+    get_calendar_event_tr.style.display = cal_hidden ? 'none' : '';
   });
   let get_task_tr_elements = document.querySelectorAll('.get_task_tr');
   get_task_tr_elements.forEach(get_task_tr => {
-    get_task_tr.style.display = get_task.disabled ? 'none' : '';
+    get_task_tr.style.display = task_hidden ? 'none' : '';
   });
   // The "Sparks missing" notice is only worth showing when at least one of the two
   // features could actually run: if both are unusable on their connection anyway,
@@ -467,6 +489,9 @@ function updateConnPanelTint(){
 }
 
 async function openSetupWizard(){
+  // Belt and braces: the links are disabled below, but a restriction must not depend on a
+  // control staying disabled - the wizard page refuses to render as well.
+  if(isSetupWizardDisabled()) return;
   await browser.tabs.create({ url: "../pages/setup-wizard/mzta-setup-wizard.html" });
 }
 
@@ -535,12 +560,15 @@ function refreshConnTestVisibility(){
 }
 
 function resetMaxPromptLength(){
+  // The button being disabled is not the same as the action being unavailable.
+  if (isLockedKey('max_prompt_length')) return;
   let maxPromptLength = document.getElementById('max_prompt_length');
   maxPromptLength.value = prefs_default.max_prompt_length;
   mztaPrefs.setPref('max_prompt_length', prefs_default.max_prompt_length);
 }
 
 function resetSpecialCommandTimeout(){
+  if (isLockedKey('special_command_timeout')) return;
   let specialCommandTimeout = document.getElementById('special_command_timeout');
   specialCommandTimeout.value = prefs_default.special_command_timeout;
   mztaPrefs.setPref('special_command_timeout', prefs_default.special_command_timeout);
@@ -587,6 +615,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('link_doc_guides').href = getMiczItUrl('thunderbird-addon-thunderai/guides/');
   document.getElementById('link_doc_tutorial').href = getMiczItUrl('thunderbird-addon-thunderai/tutorial/');
+
+  // After i18n and restoreOptions(): the inputs must already hold their resolved values
+  // (js/mzta-prefs.js has folded in the policy) before they are disabled and marked.
+  // This is presentation only - the write guard in js/mzta-prefs.js is what actually
+  // prevents a locked preference being written.
+  // true, like this page's own taLogger above: these two only ever log a failure to
+  // reach the background page, which is worth seeing whenever it happens.
+  await showManagedBanner('managed_config_banner', true);
+  await applyManagedUI(document, true);
 
   document.querySelectorAll(".option-input").forEach(element => {
     element.addEventListener("change", saveOptions);
@@ -737,8 +774,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   browser.storage.onChanged.addListener(async (changes, area) => {
     // Preferences live in storage.local — see js/mzta-prefs.js.
     if (area !== 'local') return;
+    // A policy-enforced key cannot have meaningfully changed: whatever was written to
+    // storage.local for it is shadowed on every read by the policy value, so reacting
+    // would recompute the indicators to land on the values already displayed.
     const hasRelevantChange = Object.keys(changes).some(key =>
-      key.endsWith('_use_specific_integration') || key.endsWith('_connection_type')
+      !isLockedKey(key) &&
+      (key.endsWith('_use_specific_integration') || key.endsWith('_connection_type'))
     );
     if (hasRelevantChange) {
       prefs_opt = await mztaPrefs.getPrefs(
@@ -821,6 +862,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   document.getElementById('btn_setup_wizard').addEventListener('click', openSetupWizard);
+
+  // A policy may forbid the setup wizard: the connection is configured centrally, so the
+  // guided setup would only offer to overwrite what the policy already enforces.
+  if(isSetupWizardDisabled()){
+      disableForManagedRestriction(document.getElementById('btn_setup_wizard'));
+      disableForManagedRestriction(document.getElementById('btn_options_setup_wizard'));
+  }
 
   // "No connection selected" banner: shown until a provider is chosen.
   updateNoConnectionBanner();

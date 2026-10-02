@@ -26,6 +26,7 @@ import {
   injectConnectionUI,
   varConnectionUI,
   showConnectionOptions,
+  ensureRestorableOption,
   updateAnthropicModelCapabilityUI,
   updateOllamaModelCapabilityUI,
   updateOpenAIModelCapabilityUI
@@ -36,6 +37,13 @@ import {
   setConnTestState
 } from '../../js/mzta-connection-test.js';
 import { mztaPrefs } from '../../js/mzta-prefs.js';
+import {
+  applyManagedUI,
+  showManagedBanner,
+  isLockedKey,
+  getManagedState,
+  isSetupWizardDisabled
+} from '../_lib/managed-ui.js';
 
 let taLog = console;
 
@@ -127,6 +135,7 @@ async function restoreOptions() {
         case 'select-one':
           let default_select_value = '';
           if (element.id === 'connection_type') default_select_value = state.provider;
+          ensureRestorableOption(element, result[element.id]);
           element.value = result[element.id] || default_select_value;
           // Nothing chosen yet (fresh install): leave the select unset. It is
           // hidden anyway, and restoring must never persist a provider.
@@ -178,6 +187,14 @@ function showAdvConnectionOptions() {
 // ---- Provider selection --------------------------------------------------
 
 function selectProvider(id) {
+  // A policy-supplied connection_type is enforced: the provider cards are plain
+  // <button>s, not .option-input controls, so applyManagedUI() cannot reach them and
+  // this is where the lock has to be honoured. Without it a card click would dispatch a
+  // 'change' on the hidden select and drive the whole wizard onto a provider the policy
+  // does not allow - the write guard in js/mzta-prefs.js would refuse to persist it, so
+  // the user would configure a provider that silently reverts on the next read.
+  if (isLockedKey('connection_type') && id !== state.provider) return;
+
   state.provider = id;
 
   // Drive the hidden connection-type <select> so the shared connection UI
@@ -253,6 +270,13 @@ function buildProviderCards() {
     card.appendChild(info);
     card.appendChild(radio);
     card.addEventListener('click', () => selectProvider(p.id));
+    // Under a locked connection_type no card is selectable. They are greyed out rather
+    // than hidden, so the choice the policy made stays visible; the CSS keeps the
+    // selected one at full opacity so it still reads as the enforced provider.
+    if (isLockedKey('connection_type')) {
+      card.disabled = true;
+      card.classList.add('wiz_provider_card_managed');
+    }
     list.appendChild(card);
   });
 }
@@ -337,6 +361,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Empty when nothing has been chosen yet: no provider card is preselected.
   state.provider = prefs.connection_type;
 
+  // The policy may forbid the wizard. Every link to it is disabled, so reaching this point
+  // means the page was opened by its direct URL. Check before anything is built: the
+  // wizard writes connection preferences as the user steps through it, and the write guard
+  // in js/mzta-prefs.js only covers the keys the policy actually locks.
+  await getManagedState(prefs.do_debug);
+  if (isSetupWizardDisabled()) {
+    await showManagedBanner('managed_config_banner', true);
+    document.getElementById('wiz_blocked').classList.remove('hidden');
+    document.querySelector('.wiz_step_body').classList.add('hidden');
+    document.getElementById('wiz_steps').classList.add('hidden');
+    document.getElementById('wiz_nav').classList.add('hidden');
+    i18n.updateDocument();
+    return;
+  }
+
   await injectConnectionUI({
     afterTrId: 'connection_ui_anchor',
     selectId: 'connection_type',
@@ -364,6 +403,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   varConnectionUI.permission_all_urls = await messenger.permissions.contains({ origins: ['<all_urls>'] });
 
   i18n.updateDocument();
+
+  // After injectConnectionUI() and restoreOptions(): the connection rows must already
+  // exist and the inputs must already hold their resolved values (js/mzta-prefs.js has
+  // folded in the policy) before they are disabled and marked. Same ordering as the
+  // options page. Presentation only - the write guard in js/mzta-prefs.js is what
+  // actually refuses a write to a locked preference.
+  // true, like the options page: these only ever log a failure to reach the background.
+  await showManagedBanner('managed_config_banner', true);
+  await applyManagedUI(document, true);
 
   buildProviderCards();
 

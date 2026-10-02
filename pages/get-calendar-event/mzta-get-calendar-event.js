@@ -17,13 +17,11 @@
  */
 
 import {
-  prefs_default,
-  integration_options_config
+  prefs_default
 } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
 import {
-  getSpecialPrompts,
-  setSpecialPrompts
+  getSpecialPrompts
 } from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
@@ -37,18 +35,26 @@ import {
 } from "../../js/mzta-editor-highlight.js";
 import {
   isAPIKeyValue,
-  setTomSelectBorder,
-  isApiUsableConnection
+  setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import {
   initializeSpecificIntegrationUI,
-  isClosedCatalogueSelect,
-  getConnectionTypeLabel
+  isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
 import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { initReminderUI } from "../_lib/reminder-ui.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
+import {
+    applyManagedUI,
+    isLockedKey
+} from '../_lib/managed-ui.js';
+import {
+    persistPromptConnectionToPrefs,
+    resolveFeatureConnectionPrefs,
+    bindConnPanelTint,
+    bindSpecialPromptEditor
+} from '../_lib/feature-page.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -62,34 +68,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let specialPrompts = await getSpecialPrompts();
     let get_calendar_event_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event');
 
-    if (get_calendar_event_prompt && get_calendar_event_prompt.api_type && get_calendar_event_prompt.api_type !== '') {
-        let update_prefs = {};
-        update_prefs['get_calendar_event_connection_type'] = get_calendar_event_prompt.api_type;
-        // getConnectionType() reads the prefixed connection type only when this flag is on,
-        // so writing the pair one half at a time leaves the value inert. It matters for the
-        // call sites that pass prompt = null (the menu gating in mzta-background.js and the
-        // feature row in mzta-options.js): they have no prompt to fall back on, so the pref
-        // pair is the only way they can see the per-feature connection.
-        // Only for a usable api_type: chatgpt_web has no <option> in the per-prompt select and
-        // isApiUsableConnection() rejects it, so the pair would read as "on" while the feature
-        // stayed hidden from the menus.
-        if (isApiUsableConnection(get_calendar_event_prompt.api_type)) {
-            update_prefs['get_calendar_event_use_specific_integration'] = true;
-        }
-        
-        let integration = get_calendar_event_prompt.api_type.replace('_api', '');
-        if (integration_options_config && integration_options_config[integration]) {
-             for (const key of Object.keys(integration_options_config[integration])) {
-                 const propName = `${integration}_${key}`;
-                 if (get_calendar_event_prompt[propName] !== undefined) {
-                     update_prefs[`get_calendar_event_${propName}`] = get_calendar_event_prompt[propName];
-                 }
-             }
-        }
-        // Multi-key write: stays a direct set(), but on the preferences area
-        // (storage.local) — see PREFS_AREA in js/mzta-prefs.js.
-        await browser.storage.local.set(update_prefs);
-    }
+    await persistPromptConnectionToPrefs('get_calendar_event', get_calendar_event_prompt);
 
     // Must run before restoreOptions(), which is called by initializeSpecificIntegrationUI()
     initTimezoneSelect(document.getElementById('calendar_timezone'));
@@ -103,50 +82,50 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     i18n.updateDocument();
 
+    // Disable and mark every control the enterprise policy enforces. Runs after the
+    // connection panel has been injected above, so its provider rows are covered too.
+    await applyManagedUI(document, taLog.do_debug);
+
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
       });
 
     let get_calendar_event_textarea = document.getElementById('get_calendar_event_prompt_text');
-    let get_calendar_event_save_btn = document.getElementById('btn_save_prompt');
-    let get_calendar_event_reset_btn = document.getElementById('btn_reset_prompt');
-    let get_calendar_event_use_specific_integration = document.getElementById('get_calendar_event_use_specific_integration');
     let get_calendar_event_no_selection = document.getElementById('calendar_no_selection');
     let get_calendar_event_from_clipboard = document.getElementById('get_calendar_event_from_clipboard');
 
-    get_calendar_event_textarea.addEventListener('input', (event) => {
-        get_calendar_event_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_get_calendar_event_full_text'));
-        get_calendar_event_save_btn.disabled = (event.target.value === get_calendar_event_prompt.text);
-        if(get_calendar_event_save_btn.disabled){
-            document.getElementById('get_calendar_event_prompt_unsaved').classList.add('hidden');
-        } else {
-            document.getElementById('get_calendar_event_prompt_unsaved').classList.remove('hidden');
-        }
-    });
+    bindConnPanelTint('get_calendar_event');
 
-    // Colour the connection panel to match the selected provider, and hide the
-    // whole panel when "use specific integration" is off (no empty bordered box).
-    let get_calendar_event_conntype_el = document.getElementById('get_calendar_event_connection_type');
-    if (get_calendar_event_conntype_el) {
-        get_calendar_event_conntype_el.addEventListener('change', updateConnPanelTint);
-    }
-    get_calendar_event_use_specific_integration.addEventListener('change', updateConnPanelTint);
-    updateConnPanelTint();
-
+    // calendar_no_selection is the single source of truth: need_selected of the calendar
+    // prompt is derived from it on every read (applyCalendarNoSelection() in
+    // js/mzta-prompts.js), so this handler no longer writes the prompt. The preference itself
+    // is stored by saveOptions(), registered above and therefore run first; the background
+    // rebuilds the menus from storage.onChanged, and the explicit reload_menus below only
+    // makes it immediate.
     get_calendar_event_no_selection.addEventListener('change', async (event) => {
         if (event.target.checked) {
             const currentPromptText = get_calendar_event_textarea.value;
-            const hasBodyOrSelected = currentPromptText.includes('{%mail_text_body_or_selected%}') || currentPromptText.includes('{%mail_html_body_or_selected%}');
-            if (!hasBodyOrSelected) {
+            if (!hasBodyPlaceholder(currentPromptText)) {
                 alert(browser.i18n.getMessage('prefs_OptionText_calendar_no_selection_missing_placeholder'));
                 event.target.checked = false;
-                return;
+                // saveOptions() has already stored true: roll the preference back too, or the
+                // switch would come back on at the next visit with the prompt unchanged.
+                await mztaPrefs.setPref('calendar_no_selection', false);
             }
         }
-        specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event').need_selected = event.target.checked ? '0' : '1';
-        await setSpecialPrompts(specialPrompts);
         browser.runtime.sendMessage({command: "reload_menus"});
     });
+
+    // A policy can lock the option on without passing through the check above. Say so next
+    // to the switch when the saved prompt cannot work with it (the background also warns).
+    const updateNoSelectionPolicyNote = () => {
+        const note = document.getElementById('calendar_no_selection_policy_note');
+        if (!note) return;
+        const show = isLockedKey('calendar_no_selection') && get_calendar_event_no_selection.checked &&
+            !hasBodyPlaceholder(get_calendar_event_prompt.text);
+        note.textContent = show ? browser.i18n.getMessage('prefs_OptionText_calendar_no_selection_policy_missing_placeholder') : '';
+        note.classList.toggle('shown', show);
+    };
 
     get_calendar_event_from_clipboard.addEventListener('change', async (event) => {
         if (event.target.checked) {
@@ -177,27 +156,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    get_calendar_event_reset_btn.addEventListener('click', () => {
-        get_calendar_event_textarea.value = browser.i18n.getMessage('prompt_get_calendar_event_full_text');
-        get_calendar_event_reset_btn.disabled = true;
-        let event = new Event('input', { bubbles: true, cancelable: true });
-        get_calendar_event_textarea.dispatchEvent(event);
+    // This textarea saves both calendar prompts, so either one being enforced locks it. The
+    // policy validation gives the clipboard prompt the same text unless it names it too.
+    await bindSpecialPromptEditor({
+        textarea: get_calendar_event_textarea,
+        saveBtn: document.getElementById('btn_save_prompt'),
+        resetBtn: document.getElementById('btn_reset_prompt'),
+        unsavedEl: document.getElementById('get_calendar_event_prompt_unsaved'),
+        specialPrompts: specialPrompts,
+        promptIds: ['prompt_get_calendar_event', 'prompt_get_calendar_event_from_clipboard'],
+        defaultMsgKey: 'prompt_get_calendar_event_full_text',
+        // The same rule the switch enforces when it is turned on, applied from the other
+        // side: with "Do not ask to select text" on, a prompt that does not read the body
+        // would be sent with no message text at all. Reset needs no check of its own - it
+        // only refills the textarea with the default text, which has the placeholder, and
+        // saving goes through here.
+        beforeSave: (text) => {
+            if (get_calendar_event_no_selection.checked && !hasBodyPlaceholder(text)) {
+                alert(browser.i18n.getMessage('prefs_OptionText_calendar_no_selection_save_missing_placeholder'));
+                return false;
+            }
+            return true;
+        },
+        afterSave: updateNoSelectionPolicyNote,
+        do_debug: taLog.do_debug,
     });
-
-    get_calendar_event_save_btn.addEventListener('click', async () => {
-        specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event').text = get_calendar_event_textarea.value;
-        specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event_from_clipboard').text = get_calendar_event_textarea.value;
-        await setSpecialPrompts(specialPrompts);
-        get_calendar_event_save_btn.disabled = true;
-        document.getElementById('get_calendar_event_prompt_unsaved').classList.add('hidden');
-        browser.runtime.sendMessage({command: "reload_menus"});
-    });
-
-    if(get_calendar_event_prompt.text === 'prompt_get_calendar_event_full_text'){
-        get_calendar_event_prompt.text = browser.i18n.getMessage(get_calendar_event_prompt.text);
-    }
-    get_calendar_event_textarea.value = get_calendar_event_prompt.text;
-    get_calendar_event_reset_btn.disabled = (get_calendar_event_textarea.value === browser.i18n.getMessage('prompt_get_calendar_event_full_text'));
+    updateNoSelectionPolicyNote();
 
     // "Let the AI set a reminder" section [#887]. After restoreOptions() (checkbox
     // state) and after the prompt text is loaded (warning and preview read it).
@@ -225,33 +209,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-// Methods to manage options, derived from: /options/mzta-options.js
-
-const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
-
-// Tint the connection panel to match the selected connection type, set the
-// provider pill name, and hide the whole panel when "use specific integration"
-// is off. Scoped to the get_calendar_event prefix.
-function updateConnPanelTint() {
-  let conntype_select = document.getElementById("get_calendar_event_connection_type");
-  let panel = document.getElementById("mzta_conn_panel");
-  let use_specific = document.getElementById("get_calendar_event_use_specific_integration");
-  if (!panel) return;
-
-  panel.style.display = (use_specific && use_specific.checked) ? "" : "none";
-
-  if (!conntype_select) return;
-  let conntype = conntype_select.value;
-  for (let t of CONN_TYPES) {
-    panel.classList.toggle("tint_" + t, conntype === t);
-  }
-  let pillName = document.getElementById("mzta_conn_pill_name");
-  if (pillName) {
-    // Resolved from the shared catalogue, not by scraping the select: populateConnectionTypeOptions()
-    // rebuilds the <option> list with replaceChildren(), so a DOM lookup can transiently miss.
-    pillName.textContent = getConnectionTypeLabel(conntype);
-  }
+// The calendar_no_selection option sends the whole message body, which only works if the
+// prompt reads it through one of these two placeholders.
+function hasBodyPlaceholder(text) {
+  return (typeof text === 'string') &&
+    (text.includes('{%mail_text_body_or_selected%}') || text.includes('{%mail_html_body_or_selected%}'));
 }
+
+// Methods to manage options, derived from: /options/mzta-options.js
 
 function saveOptions(e) {
   e.preventDefault();
@@ -342,28 +307,7 @@ async function restoreOptions() {
   let specialPrompts = await getSpecialPrompts();
   let get_calendar_event_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event');
 
-  if (get_calendar_event_prompt) {
-      if (get_calendar_event_prompt.api_type && get_calendar_event_prompt.api_type !== '') {
-          getting['get_calendar_event_connection_type'] = get_calendar_event_prompt.api_type;
-      } else {
-          // Inherit the global connection only when this select can actually offer it:
-          // chatgpt_web has no <option> here (it has no API), so inheriting it would show
-          // a value the control cannot represent. Leave it blank instead.
-          getting['get_calendar_event_connection_type'] = isApiUsableConnection(getting['connection_type'])
-              ? getting['connection_type']
-              : '';
-      }
-      for (const [integration, options] of Object.entries(integration_options_config)) {
-          for (const key of Object.keys(options)) {
-              const propName = `${integration}_${key}`;
-              if (get_calendar_event_prompt[propName] !== undefined && get_calendar_event_prompt[propName] !== '') {
-                  getting[`get_calendar_event_${propName}`] = get_calendar_event_prompt[propName];
-              } else {
-                  getting[`get_calendar_event_${propName}`] = getting[propName];
-              }
-          }
-      }
-  }
+  resolveFeatureConnectionPrefs(getting, get_calendar_event_prompt, 'get_calendar_event');
 
   setCurrentChoice(getting);
 }

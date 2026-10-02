@@ -17,13 +17,11 @@
  */
 
 import {
-  prefs_default,
-  integration_options_config
+  prefs_default
 } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
 import {
-  getSpecialPrompts,
-  setSpecialPrompts
+  getSpecialPrompts
 } from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
@@ -40,16 +38,27 @@ import {
   getAccountsList,
   isAPIKeyValue,
   normalizeStringList,
-  setTomSelectBorder,
-  isApiUsableConnection
+  setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import {
   initializeSpecificIntegrationUI,
-  isClosedCatalogueSelect,
-  getConnectionTypeLabel
+  isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
+import {
+    applyManagedUI,
+    isLockedKey,
+    lockCompanions,
+    setDisabledRespectingManaged,
+    lockAccountSelector
+} from '../_lib/managed-ui.js';
+import {
+    persistPromptConnectionToPrefs,
+    resolveFeatureConnectionPrefs,
+    bindConnPanelTint,
+    bindSpecialPromptEditor
+} from '../_lib/feature-page.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -68,34 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let specialPrompts = await getSpecialPrompts();
     let spamfilter_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter');
 
-    if (spamfilter_prompt && spamfilter_prompt.api_type && spamfilter_prompt.api_type !== '') {
-        let update_prefs = {};
-        update_prefs['spamfilter_connection_type'] = spamfilter_prompt.api_type;
-        // getConnectionType() reads the prefixed connection type only when this flag is on,
-        // so writing the pair one half at a time leaves the value inert. It matters for the
-        // call sites that pass prompt = null (the menu gating in mzta-background.js and the
-        // feature row in mzta-options.js): they have no prompt to fall back on, so the pref
-        // pair is the only way they can see the per-feature connection.
-        // Only for a usable api_type: chatgpt_web has no <option> in the per-prompt select and
-        // isApiUsableConnection() rejects it, so the pair would read as "on" while the feature
-        // stayed hidden from the menus.
-        if (isApiUsableConnection(spamfilter_prompt.api_type)) {
-            update_prefs['spamfilter_use_specific_integration'] = true;
-        }
-
-        let integration = spamfilter_prompt.api_type.replace('_api', '');
-        if (integration_options_config && integration_options_config[integration]) {
-             for (const key of Object.keys(integration_options_config[integration])) {
-                 const propName = `${integration}_${key}`;
-                 if (spamfilter_prompt[propName] !== undefined) {
-                     update_prefs[`spamfilter_${propName}`] = spamfilter_prompt[propName];
-                 }
-             }
-        }
-        // Multi-key write: stays a direct set(), but on the preferences area
-        // (storage.local) — see PREFS_AREA in js/mzta-prefs.js.
-        await browser.storage.local.set(update_prefs);
-    }
+    await persistPromptConnectionToPrefs('spamfilter', spamfilter_prompt);
 
     await initializeSpecificIntegrationUI({
       prefix: 'spamfilter',
@@ -106,6 +88,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     i18n.updateDocument();
 
+    // Disable and mark every control the enterprise policy enforces. Runs after the
+    // connection panel has been injected above, so its provider rows are covered too.
+    await applyManagedUI(document, taLog.do_debug);
+
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
       });
@@ -115,49 +101,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     let spamfilter_textarea = document.getElementById('spamfilter_prompt_text');
-    let spamfilter_save_btn = document.getElementById('btn_save_prompt');
-    let spamfilter_reset_btn = document.getElementById('btn_reset_prompt');
-    let spamfilter_use_specific_integration = document.getElementById('spamfilter_use_specific_integration');
 
-    spamfilter_textarea.addEventListener('input', (event) => {
-        spamfilter_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_spamfilter_full_text'));
-        spamfilter_save_btn.disabled = (event.target.value === spamfilter_prompt.text);
-        if(spamfilter_save_btn.disabled){
-            document.getElementById('spamfilter_prompt_unsaved').classList.add('hidden');
-        } else {
-            document.getElementById('spamfilter_prompt_unsaved').classList.remove('hidden');
-        }
+    bindConnPanelTint('spamfilter');
+
+    await bindSpecialPromptEditor({
+        textarea: spamfilter_textarea,
+        saveBtn: document.getElementById('btn_save_prompt'),
+        resetBtn: document.getElementById('btn_reset_prompt'),
+        unsavedEl: document.getElementById('spamfilter_prompt_unsaved'),
+        specialPrompts: specialPrompts,
+        promptIds: ['prompt_spamfilter'],
+        defaultMsgKey: 'prompt_spamfilter_full_text',
+        do_debug: taLog.do_debug,
     });
-
-    // Colour the connection panel to match the selected provider, and hide the
-    // whole panel when "use specific integration" is off (no empty bordered box).
-    let spamfilter_conntype_el = document.getElementById('spamfilter_connection_type');
-    if (spamfilter_conntype_el) {
-        spamfilter_conntype_el.addEventListener('change', updateConnPanelTint);
-    }
-    spamfilter_use_specific_integration.addEventListener('change', updateConnPanelTint);
-    updateConnPanelTint();
-
-    spamfilter_reset_btn.addEventListener('click', () => {
-        spamfilter_textarea.value = browser.i18n.getMessage('prompt_spamfilter_full_text');
-        spamfilter_reset_btn.disabled = true;
-        let event = new Event('input', { bubbles: true, cancelable: true });
-        spamfilter_textarea.dispatchEvent(event);
-    });
-
-    spamfilter_save_btn.addEventListener('click', () => {
-        specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter').text = spamfilter_textarea.value;
-        setSpecialPrompts(specialPrompts);
-        spamfilter_save_btn.disabled = true;
-        document.getElementById('spamfilter_prompt_unsaved').classList.add('hidden');
-        browser.runtime.sendMessage({command: "reload_menus"});
-    });
-
-    if(spamfilter_prompt.text === 'prompt_spamfilter_full_text'){
-        spamfilter_prompt.text = browser.i18n.getMessage(spamfilter_prompt.text);
-    }
-    spamfilter_textarea.value = spamfilter_prompt.text;
-    spamfilter_reset_btn.disabled = (spamfilter_textarea.value === browser.i18n.getMessage('prompt_spamfilter_full_text'));
 
     // Full list, kept for token validation. Deliberately NOT filtered like the
     // suggestions: {%additional_text%} is a real placeholder that this page simply
@@ -180,8 +136,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     skip_addresses_textarea.value = skip_addresses_string;
 
+    // data-mzta-pref: applyManagedUI() above has already disabled and marked the textarea
+    // when the policy locks the list. Its Save button is ours to lock.
+    lockCompanions('spamfilter_skip_addresses', [skip_addresses_save_btn]);
+
     skip_addresses_textarea.addEventListener('input', (event) => {
-        skip_addresses_save_btn.disabled = (event.target.value === skip_addresses_string);
+        setDisabledRespectingManaged(skip_addresses_save_btn, (event.target.value === skip_addresses_string));
         if(skip_addresses_save_btn.disabled){
             document.getElementById('skip_addresses_unsaved').classList.add('hidden');
         } else {
@@ -190,6 +150,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     skip_addresses_save_btn.addEventListener('click', () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isLockedKey('spamfilter_skip_addresses')) return;
         let skip_array_new = normalizeStringList(skip_addresses_textarea.value, 2);
         spamfilter_setSkipAddresses(skip_array_new);
         skip_addresses_save_btn.disabled = true;
@@ -207,8 +169,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     block_addresses_textarea.value = block_addresses_string;
 
+    // data-mzta-pref: applyManagedUI() above has already disabled and marked the textarea
+    // when the policy locks the list. Its Save button is ours to lock.
+    lockCompanions('spamfilter_block_addresses', [block_addresses_save_btn]);
+
     block_addresses_textarea.addEventListener('input', (event) => {
-        block_addresses_save_btn.disabled = (event.target.value === block_addresses_string);
+        setDisabledRespectingManaged(block_addresses_save_btn, (event.target.value === block_addresses_string));
         if(block_addresses_save_btn.disabled){
             document.getElementById('block_addresses_unsaved').classList.add('hidden');
         } else {
@@ -217,6 +183,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     block_addresses_save_btn.addEventListener('click', () => {
+        // The button being disabled is not the same as the action being unavailable.
+        if (isLockedKey('spamfilter_block_addresses')) return;
         let block_array_new = normalizeStringList(block_addresses_textarea.value, 2);
         spamfilter_setBlockAddresses(block_array_new);
         block_addresses_save_btn.disabled = true;
@@ -231,6 +199,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     skip_addressbook_checkbox.checked = prefs_skip_ab.spamfilter_skip_addressbook;
 
     skip_addressbook_checkbox.addEventListener('change', async (event) => {
+        // Locked: no permission prompt and no write, even if the checkbox was re-enabled
+        // from the developer tools. Put back the enforced state the change just flipped.
+        if (isLockedKey('spamfilter_skip_addressbook')) {
+            event.target.checked = !event.target.checked;
+            return;
+        }
         if (event.target.checked) {
             try {
                 const granted = await browser.permissions.request({ permissions: ["addressBooks"] });
@@ -275,9 +249,16 @@ document.addEventListener('DOMContentLoaded', async () => {
          checkbox.checked = false;
        }
      });
- 
+
+     // A policy spamfilter_enabled_accounts_match replaces the stored selection: show the
+     // accounts it resolves to, read-only, and never write spamfilter_enabled_accounts.
+     const accounts_managed = await lockAccountSelector('spamfilter', accountsContainer,
+         [document.getElementById('accounts_select_all'), document.getElementById('accounts_deselect_all')],
+         taLog.do_debug);
+
      document.querySelectorAll('.accountCheckbox').forEach(checkbox => {
        checkbox.addEventListener('change', () => {
+       if (accounts_managed) return;
        let selectedAccounts = Array.from(document.querySelectorAll('.accountCheckbox:checked')).map(checkbox => checkbox.value);
        if (selectedAccounts.length === 0) {
           checkbox.checked = true; // Prevent deselecting the last selected checkbox
@@ -295,11 +276,13 @@ document.addEventListener('DOMContentLoaded', async () => {
      });
  
      document.getElementById('accounts_select_all').addEventListener('click', () => {
+       if (accounts_managed) return;
        let checkboxes = document.querySelectorAll('.accountCheckbox');
        checkboxes.forEach(checkbox => checkbox.checked = true);
      });
-     
+
      document.getElementById('accounts_deselect_all').addEventListener('click', () => {
+       if (accounts_managed) return;
        let checkboxes = document.querySelectorAll('.accountCheckbox');
        checkboxes.forEach(checkbox => checkbox.checked = false);
      });
@@ -311,31 +294,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     attachReportFullscreen();
 });
 
-const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
-
-// Tint the connection panel to match the selected connection type, set the
-// provider pill name, and hide the whole panel when "use specific integration"
-// is off. Scoped to the spamfilter prefix.
-function updateConnPanelTint() {
-  let conntype_select = document.getElementById("spamfilter_connection_type");
-  let panel = document.getElementById("mzta_conn_panel");
-  let use_specific = document.getElementById("spamfilter_use_specific_integration");
-  if (!panel) return;
-
-  panel.style.display = (use_specific && use_specific.checked) ? "" : "none";
-
-  if (!conntype_select) return;
-  let conntype = conntype_select.value;
-  for (let t of CONN_TYPES) {
-    panel.classList.toggle("tint_" + t, conntype === t);
-  }
-  let pillName = document.getElementById("mzta_conn_pill_name");
-  if (pillName) {
-    // Resolved from the shared catalogue, not by scraping the select: populateConnectionTypeOptions()
-    // rebuilds the <option> list with replaceChildren(), so a DOM lookup can transiently miss.
-    pillName.textContent = getConnectionTypeLabel(conntype);
-  }
-}
 
 function check_spamfilter_threshold(event) {
   let spamfilter_threshold_too_low = document.getElementById("spamfilter_threshold_too_low");
@@ -543,28 +501,7 @@ async function restoreOptions() {
   let specialPrompts = await getSpecialPrompts();
   let spamfilter_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter');
 
-  if (spamfilter_prompt) {
-      if (spamfilter_prompt.api_type && spamfilter_prompt.api_type !== '') {
-          getting['spamfilter_connection_type'] = spamfilter_prompt.api_type;
-      } else {
-          // Inherit the global connection only when this select can actually offer it:
-          // chatgpt_web has no <option> here (it has no API), so inheriting it would show
-          // a value the control cannot represent. Leave it blank instead.
-          getting['spamfilter_connection_type'] = isApiUsableConnection(getting['connection_type'])
-              ? getting['connection_type']
-              : '';
-      }
-      for (const [integration, options] of Object.entries(integration_options_config)) {
-          for (const key of Object.keys(options)) {
-              const propName = `${integration}_${key}`;
-              if (spamfilter_prompt[propName] !== undefined && spamfilter_prompt[propName] !== '') {
-                  getting[`spamfilter_${propName}`] = spamfilter_prompt[propName];
-              } else {
-                  getting[`spamfilter_${propName}`] = getting[propName];
-              }
-          }
-      }
-  }
+  resolveFeatureConnectionPrefs(getting, spamfilter_prompt, 'spamfilter');
 
   setCurrentChoice(getting);
 }
@@ -575,6 +512,7 @@ async function spamfilter_getSkipAddresses() {
 }
 
 function spamfilter_setSkipAddresses(spamfilter_skip_addresses) {
+    if (isLockedKey('spamfilter_skip_addresses')) return;
     mztaPrefs.setPref('spamfilter_skip_addresses', spamfilter_skip_addresses);
 }
 
@@ -584,6 +522,7 @@ async function spamfilter_getBlockAddresses() {
 }
 
 function spamfilter_setBlockAddresses(spamfilter_block_addresses) {
+    if (isLockedKey('spamfilter_block_addresses')) return;
     mztaPrefs.setPref('spamfilter_block_addresses', spamfilter_block_addresses);
 }
 

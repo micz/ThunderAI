@@ -112,9 +112,15 @@ input.option-input[type="text"]{
 #connection_ui_table .api_key-container input.option-input,
 #connection_ui_adv_table .api_key-container input.option-input,
 #formNew .api_key-container input.option-input,
-.api_additional_info .api_key-container input.option-input[type] {
+.api_additional_info .api_key-container input.option-input[type],
+.api_panel .api_key-container input.option-input[type] {
     margin-right: 0;
     padding-right: 36px;
+}
+
+/* Policy-managed key: grey padlock in place of the eye, nothing to click. */
+.api_key-container .toggle-icon.managed_secret {
+    cursor: default;
 }
 
 .conntype_chatgpt_web_option{
@@ -324,7 +330,7 @@ span.opt_title{
         background-color: rgb(83, 0, 35) !important;
     }
 
-    .api_key-container .toggle-icon img {
+    .api_key-container .toggle-icon:not(.managed_secret) img {
         filter: invert(1);
     }
 

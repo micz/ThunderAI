@@ -16,16 +16,22 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { mztaPrefs } from './mzta-prefs.js';
 
-
-// These methods are also defined in the file /js/mzta-compose-script.js
+// add_tags_exclusions is a declared preference (prefs_default), so it is read and written
+// through js/mzta-prefs.js like every other one: that is what applies the enterprise policy
+// (locked > stored > unlocked > default) and the write guard. The same storage key as
+// before, so existing lists are picked up unchanged.
+//
+// js/mzta-compose-script.js cannot import this module (it is a classic content script): it
+// goes through the "addtags_get_exclusion_prefs" / "addtags_set_exclusions" background
+// commands instead, which call these two.
 export async function addTags_getExclusionList() {
-    let prefs_excluded_tags = await browser.storage.local.get({add_tags_exclusions: []});
-    return prefs_excluded_tags.add_tags_exclusions;
+    return await mztaPrefs.getPref('add_tags_exclusions');
 }
 
 export function addTags_setExclusionList(add_tags_exclusions) {
-    browser.storage.local.set({add_tags_exclusions: add_tags_exclusions});
+    return mztaPrefs.setPref('add_tags_exclusions', add_tags_exclusions);
 }
 
 export function checkExcludedTag(tag, excluded_word, exact_match = false) {

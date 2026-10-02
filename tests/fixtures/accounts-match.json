@@ -1,0 +1,5 @@
+{
+  "spamfilter_enabled_accounts_match": ["  User@ACME.example ", "*@partner.example", "LOCAL", "not an entry", 42, "user+tag@acme.example", "@acme"],
+  "spamfilter_enabled_accounts_match:locked": false,
+  "add_tags_enabled_accounts_match": ["@nomatch.example"]
+}

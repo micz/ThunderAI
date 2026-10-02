@@ -1,0 +1,17 @@
+{
+  "name": "thunderai-dev-tooling",
+  "private": true,
+  "description": "Development tooling only (the test suite). Never packaged: no shipped code may import anything from node_modules.",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
+  "scripts": {
+    "test": "node --test --test-timeout=120000 \"tests/**/*.test.mjs\" \"tests/**/*.dom.mjs\"",
+    "test:dom": "node --test --test-timeout=120000 \"tests/**/*.dom.mjs\""
+  },
+  "devDependencies": {
+    "jsdom": "30.1.1"
+  }
+}

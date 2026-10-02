@@ -16,9 +16,15 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { getDynamicSettingValue } from '../options/mzta-options-default.js';
+import {
+  getDynamicSettingValue,
+  integration_options_config
+} from '../options/mzta-options-default.js';
+
 import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js'
 import { mztaPrefs } from './mzta-prefs.js';
+import { mztaManaged, managedReady, ACCOUNT_MATCH_LOCAL } from './mzta-managed.js';
+import { taLogger } from './mzta-logger.js';
 
 const sparks_min = '3.1.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
 const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
@@ -916,6 +922,71 @@ export function matchAddressListType(author, list) {
   return domainMatch ? 'domain' : null;
 }
 
+// Keys resolveEnabledAccounts() has already warned about resolving to no account, so the
+// warning is printed once per transition rather than on every batch of new mail.
+const _accountMatchWarned = new Set();
+
+/* The accounts an automatic feature ('spamfilter' or 'add_tags') may run on.
+
+   Returns { restricted, accountIds, managed }:
+    - restricted false: every account (the stored "empty list = all accounts");
+    - restricted true: only accountIds, which may be EMPTY and then means NO account.
+
+   Without a policy it is exactly the stored {feature}_enabled_accounts, passed in by the
+   caller, which has already read it through mztaPrefs. When the policy supplies
+   {feature}_enabled_accounts_match, the ids are resolved here from browser.accounts and the
+   matchers, and REPLACE the stored list:
+    - an account matches when any of its identities matches an address or domain entry
+      (matchAddressList(), the helper summarize_auto_senders_list uses);
+    - Local Folders (type "none") has no identity and matches only ACCOUNT_MATCH_LOCAL;
+    - any other identity-less account (RSS feeds) is never matched: it has no stable name
+      to put in a fleet-wide policy, and the spam filter has no business on feed items.
+
+   The matchers are read from mztaManaged, not through mztaPrefs: they are policy-only, and
+   a value that somehow reached storage.local must not limit anything without a policy.
+   Resolved on every call, never cached and never written to {feature}_enabled_accounts:
+   accounts added, removed or re-addressed are picked up at the next call without listening
+   to accounts.onCreated/onUpdated/onDeleted, and removing the policy restores the user's
+   own selection. */
+export async function resolveEnabledAccounts(feature, storedList, { warnIfNone = true } = {}) {
+  const stored = Array.isArray(storedList) ? storedList : [];
+  const unmanaged = { restricted: stored.length > 0, accountIds: stored, managed: false };
+  const matchKey = feature + '_enabled_accounts_match';
+  await managedReady();
+  if (!mztaManaged.hasManagedValue(matchKey)) return unmanaged;
+  const matchers = mztaManaged.getManagedValue(matchKey);
+  if (!Array.isArray(matchers)) return unmanaged;
+
+  const matchLocal = matchers.includes(ACCOUNT_MATCH_LOCAL);
+  const addressMatchers = matchers.filter(entry => entry !== ACCOUNT_MATCH_LOCAL);
+  let accounts = [];
+  try {
+    accounts = await browser.accounts.list(false);
+  } catch (e) {
+    // Fail closed: the policy asked to limit the accounts, so an unreadable account list
+    // must not turn into "all accounts".
+    new taLogger('mzta-utils', false).warn('resolveEnabledAccounts: could not list the accounts for "' +
+      matchKey + '": ' + e);
+  }
+  const accountIds = accounts.filter(account => {
+    if (account.type === 'none') return matchLocal;
+    return (account.identities || []).some(identity =>
+      matchAddressList(identity.email, addressMatchers));
+  }).map(account => account.id);
+
+  if (accountIds.length === 0) {
+    if (warnIfNone && !_accountMatchWarned.has(matchKey)) {
+      _accountMatchWarned.add(matchKey);
+      new taLogger('mzta-utils', false).warn('Policy: "' + matchKey + '" ' +
+        JSON.stringify(matchers) + ' matches no account in this profile: the automatic ' +
+        feature + ' runs on no account.');
+    }
+  } else {
+    _accountMatchWarned.delete(matchKey);
+  }
+  return { restricted: true, accountIds: accountIds, managed: true };
+}
+
 export function prepareOriginURL(url) {
   return url.endsWith('/') ? `${url}*` : `${url}/*`;
 }
@@ -1181,6 +1252,25 @@ export function getConnectionType(prefs, prompt, prefix = null) {
         if (prompt.api_type && prompt.api_type !== '') return prompt.api_type;
     }
     return defaultType;
+}
+
+// The provider settings a call with `prefs.connection_type` actually uses: `prefs` (the
+// global values) with the prompt's own {integration}_{key} fields on top, when the prompt
+// carries a provider override of exactly that type. The same rule the API chat window applies
+// in api_webchat/controller.js (prompt.api_type === llm, fields that are not undefined), so a
+// check made here on the result judges the configuration the window will really run.
+// Returns a new object; `prefs` is not modified.
+export function applyPromptConnection(prefs, prompt) {
+    const out = { ...prefs };
+    if (!prompt || !prompt.api_type || prompt.api_type !== prefs.connection_type) return out;
+    const integration = prompt.api_type.replace(/_api$/, '');
+    const options = integration_options_config[integration];
+    if (!options) return out;
+    for (const key of Object.keys(options)) {
+        const prefKey = `${integration}_${key}`;
+        if (prompt[prefKey] !== undefined) out[prefKey] = prompt[prefKey];
+    }
+    return out;
 }
 
 export async function checkSparksPresence() {
