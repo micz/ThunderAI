@@ -17,6 +17,59 @@
  */
 
 
+import { parseExtraBody } from './api-utils.js';
+import { fetchWithRetry } from './api-retry.js';
+import { createUsageData, toUsageNumber } from './mzta-api-usage.js';
+
+// The Gemini API reports token usage on every response.
+export const supportsUsageData = true;
+
+/**
+ * Normalize the usage the Gemini API reports.
+ *
+ * The counters live in `usageMetadata`, at the top level of a full response or of
+ * a streamed chunk. In a stream the object may appear on several chunks and is
+ * cumulative, not per-chunk, so the caller keeps the last non-empty one rather
+ * than adding them up.
+ *
+ * Never throws: every access is guarded, because a partial or unexpected payload
+ * must not break the stream it is being read from.
+ *
+ * @param {object} raw a streamed chunk or a full response body
+ * @returns {object|null} the normalized usage, or null when there is none
+ */
+export function extractUsage(raw) {
+  try{
+    if(raw === null || typeof raw !== 'object') return null;
+
+    const usage = raw.usageMetadata;
+    if(usage === null || typeof usage !== 'object') return null;
+
+    // Gemini counts the thoughts SEPARATELY from candidatesTokenCount (the total is
+    // prompt + candidates + thoughts + tool use), while the normalized contract is
+    // "reasoning_tokens is a subset of output_tokens", as it already is for OpenAI
+    // and Ollama. So the output is candidates + thoughts. cachedContentTokenCount
+    // needs no such fix: promptTokenCount is documented as including it.
+    const thoughts = toUsageNumber(usage.thoughtsTokenCount);
+    let output_tokens = toUsageNumber(usage.candidatesTokenCount);
+    if(output_tokens !== null && thoughts !== null){
+      output_tokens += thoughts;
+    }
+
+    return createUsageData({
+      provider: 'google_gemini',
+      model: raw.modelVersion,
+      input_tokens: usage.promptTokenCount,
+      output_tokens: output_tokens,
+      total_tokens: usage.totalTokenCount,
+      cached_input_tokens: usage.cachedContentTokenCount,
+      reasoning_tokens: usage.thoughtsTokenCount,
+    });
+  }catch(error){
+    console.warn("[ThunderAI] Google Gemini usage data could not be read, ignoring it: " + error);
+    return null;
+  }
+}
 
 export class GoogleGemini {
 
@@ -26,6 +79,12 @@ export class GoogleGemini {
   stream = false;
   thinking_budget = ''; // Model default
   temperature = ''; // no temperature defined
+  max_output_tokens = 0; // 0 means unset: let the model decide
+  // Kept as strings, not numbers: an empty pref must stay distinguishable from a
+  // legitimate 0, which is a valid value for both.
+  top_p = '';
+  top_k = '';
+  extra_body = '';
 
   constructor({
     apiKey = '',
@@ -34,6 +93,10 @@ export class GoogleGemini {
     stream = false,
     thinking_budget = '',
     temperature = '',
+    max_output_tokens = 0,
+    top_p = '',
+    top_k = '',
+    extra_body = '',
   } = {}) {
     this.apiKey = apiKey;
     this.model = model;
@@ -41,6 +104,10 @@ export class GoogleGemini {
     this.stream = stream;
     this.thinking_budget = String(thinking_budget ?? '').trim();
     this.temperature = String(temperature ?? '').trim();
+    this.max_output_tokens = max_output_tokens;
+    this.top_p = String(top_p ?? '').trim();
+    this.top_k = String(top_k ?? '').trim();
+    this.extra_body = extra_body;
     /* Info from: https://ai.google.dev/gemini-api/docs/thinking?#set-budget
       # Turn on thinking with a specific token limit: "thinking_budget": 1024
       # Thinking off: "thinking_budget": 0
@@ -53,14 +120,15 @@ export class GoogleGemini {
   }
 
 
-  fetchModels = async () => {
+  fetchModels = async (retryConfig = {}) => {
     try{
-      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models?key=" + this.apiKey, {
+      // The API key travels in the query string: fetchWithRetry() never logs the URL.
+      const response = await fetchWithRetry("https://generativelanguage.googleapis.com/v1beta/models?key=" + this.apiKey, {
           method: "GET",
           headers: {
               "Content-Type": "application/json"
           },
-      });
+      }, { label: 'Google Gemini', ...retryConfig });
 
       if (!response.ok) {
           const errorDetail = await response.text();
@@ -89,12 +157,64 @@ export class GoogleGemini {
     }
   }
   
-  fetchResponse = async (messages) => {
+  /**
+   * GET models/{model} -- one model's metadata, notably inputTokenLimit (the
+   * context window). Same result contract as fetchModels(), with the Model
+   * resource as the response.
+   */
+  fetchModelInfo = async (model) => {
+    try{
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + "?key=" + this.apiKey, {
+          method: "GET",
+          headers: {
+              "Content-Type": "application/json"
+          },
+      });
+
+      if (!response.ok) {
+          const errorDetail = await response.text();
+          // No URL in the log: it carries the API key.
+          console.error("[ThunderAI] Google Gemini API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
+          let output = {};
+          output.ok = false;
+          output.error = errorDetail;
+          return output;
+      }
+
+      let output = {};
+      output.ok = true;
+      output.response = await response.json();
+      return output;
+    }catch (error) {
+      console.error("[ThunderAI] Google Gemini API request failed: " + error);
+      let output = {};
+      output.is_exception = true;
+      output.ok = false;
+      output.error = "Google Gemini API request failed: " + error;
+      return output;
+    }
+  }
+
+  fetchResponse = async (messages, retryConfig = {}) => {
     try {
 
+      // Two-level merge: the parameters ThunderAI manages live inside the nested
+      // generationConfig object, so a single root-level spread would let a user's
+      // generationConfig silently wipe out thinkingConfig and temperature (or the
+      // reverse). The extra body is therefore spread at the root AND, separately,
+      // inside generationConfig, with the managed keys applied last at both levels
+      // so they always win. A user can add root keys such as safetySettings or
+      // tools, but can never override contents or system_instruction.
+      const parsedExtraBody = parseExtraBody(this.extra_body);
+      const extraGenerationConfig = (parsedExtraBody.generationConfig !== null
+        && typeof parsedExtraBody.generationConfig === 'object'
+        && !Array.isArray(parsedExtraBody.generationConfig))
+          ? parsedExtraBody.generationConfig : {};
+
       let google_gemini_body = {
+        ...parsedExtraBody,
         contents: messages,
-        generationConfig: {},
+        generationConfig: { ...extraGenerationConfig },
       };
 
       // console.log("[ThunderAI] Google Gemini API system_instruction: " + JSON.stringify(this.system_instruction));
@@ -111,10 +231,14 @@ export class GoogleGemini {
       // much the model reasons, the second whether that reasoning is returned at
       // all. Without includeThoughts the API bills the thinking tokens
       // (usageMetadata.thoughtsTokenCount) but emits no part flagged
-      // thought: true, so the webchat has nothing to show. Requested unless the
-      // budget explicitly turns thinking off, which includes the '' case: a
-      // thinking-capable model reasoning on its model default must still show its
-      // thinking block.
+      // thought: true, so the webchat has nothing to show.
+      // The whole thinkingConfig is omitted unless the user expressed a
+      // preference: models with no thinking support (the Gemini 2.0 family)
+      // reject the key outright with an HTTP 400, so an empty budget must leave
+      // the request untouched and let the model decide. The trade-off is that a
+      // thinking-capable model reasoning on its own default is no longer asked
+      // for includeThoughts, so its thinking block is not shown in the webchat
+      // unless a budget is set -- preferable to breaking non-thinking models.
       const thinkingBudget = parseInt(this.thinking_budget);
       const hasBudget = this.thinking_budget !== '' && !Number.isNaN(thinkingBudget);
 
@@ -128,7 +252,9 @@ export class GoogleGemini {
       if(!hasBudget || thinkingBudget !== 0) {
         thinkingConfig.includeThoughts = true;
       }
-      google_gemini_body.generationConfig.thinkingConfig = thinkingConfig;
+      if(hasBudget && Object.keys(thinkingConfig).length > 0) {
+        google_gemini_body.generationConfig.thinkingConfig = thinkingConfig;
+      }
 
       const tempFloat = parseFloat(this.temperature);
 
@@ -136,20 +262,39 @@ export class GoogleGemini {
         google_gemini_body.generationConfig.temperature = tempFloat;
       }
 
+      const maxOutputTokensInt = parseInt(this.max_output_tokens);
+
+      if(!Number.isNaN(maxOutputTokensInt) && maxOutputTokensInt > 0) {
+        google_gemini_body.generationConfig.maxOutputTokens = maxOutputTokensInt;
+      }
+
+      const topPFloat = parseFloat(this.top_p);
+
+      if(this.top_p !== '' && !Number.isNaN(topPFloat)) {
+        google_gemini_body.generationConfig.topP = topPFloat;
+      }
+
+      const topKInt = parseInt(this.top_k);
+
+      if(this.top_k !== '' && !Number.isNaN(topKInt)) {
+        google_gemini_body.generationConfig.topK = topKInt;
+      }
+
       //  console.log(">>>>>>>>>>>>>>>>> [ThunderAI] Google Gemini API request: " + JSON.stringify(google_gemini_body));
 
-      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + this.model + ":" + (this.stream ? 'streamGenerateContent?alt=sse&' : 'generateContent?') + "key=" + this.apiKey, {
+      const response = await fetchWithRetry("https://generativelanguage.googleapis.com/v1beta/models/" + this.model + ":" + (this.stream ? 'streamGenerateContent?alt=sse&' : 'generateContent?') + "key=" + this.apiKey, {
           method: "POST",
           headers: { 
               "Content-Type": "application/json"
           },
           body: JSON.stringify(google_gemini_body),
-      });
+      }, { label: 'Google Gemini', ...retryConfig });
       return response;
     }catch (error) {
         console.error("[ThunderAI] Google Gemini API request failed: " + error);
         let output = {};
         output.is_exception = true;
+        output.is_aborted = retryConfig.signal?.aborted === true;
         output.ok = false;
         output.error = "Google Gemini API request failed: " + error;
         return output;

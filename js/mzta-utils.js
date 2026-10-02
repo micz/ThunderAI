@@ -26,7 +26,7 @@ import { mztaPrefs } from './mzta-prefs.js';
 import { mztaManaged, managedReady, ACCOUNT_MATCH_LOCAL } from './mzta-managed.js';
 import { taLogger } from './mzta-logger.js';
 
-const sparks_min = '3.0.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
+const sparks_min = '3.1.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
 const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
 
 export const getMenuContextCompose = () => 'compose_action_menu';
@@ -113,6 +113,31 @@ export function getLanguageDisplayName(languageCode) {
    return lang_string.charAt(0).toUpperCase() + lang_string.slice(1);
 }
 
+// Human-readable duration for the UI ("1 h", "1 h, 30 min", "45 s"), localized through
+// Intl.DurationFormat. Only the two largest units are kept, and seconds are dropped from an
+// hour up: a wait of hours does not need them.
+export function formatDuration(ms, lang = browser.i18n.getUILanguage()) {
+  let rest = Math.max(1, Math.ceil(ms / 1000));
+  const units = [['days', 86400], ['hours', 3600], ['minutes', 60], ['seconds', 1]];
+  const parts = {};
+  for (const [unit, size] of units) {
+    const n = Math.floor(rest / size);
+    rest -= n * size;
+    if (n > 0) parts[unit] = n;
+  }
+  if (parts.days || parts.hours) delete parts.seconds;
+  const kept = Object.keys(parts).slice(0, 2);
+  const duration = Object.fromEntries(kept.map(unit => [unit, parts[unit]]));
+  try {
+    return new Intl.DurationFormat(lang, { style: 'short' }).format(duration);
+  } catch (e) {
+    const unitName = { days: 'day', hours: 'hour', minutes: 'minute', seconds: 'second' };
+    const pieces = kept.map(unit =>
+      new Intl.NumberFormat(lang, { style: 'unit', unit: unitName[unit], unitDisplay: 'short' }).format(duration[unit]));
+    return new Intl.ListFormat(lang, { type: 'unit', style: 'short' }).format(pieces);
+  }
+}
+
 export function getMiczItUrl(path) {
   const lang = browser.i18n.getUILanguage().split('-')[0];
   const prefix = MICZ_IT_LOCALIZED_LANGS.includes(lang) ? `${lang}/` : '';
@@ -191,16 +216,38 @@ export async function getCurrentIdentity(msgHeader, getFull = false) {
 }
 
 
-// Extracts the first email address found in a string, '' if there is none.
-// Accepts a raw header value like 'Name <addr@domain.com>'.
+// Local part: RFC 5322 atext (so "user+tag" and "o'brien" are kept whole) plus
+// Unicode letters/digits; domain: dot-separated Unicode labels.
+const EMAIL_REGEX = /[\p{L}\p{N}.!#$%&'*+\/=?^_`{|}~-]+@[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)+/u;
+
+// Extracts the first email address found in a string, '' if there is none
+// (or if the value is not a string).
+// Accepts a raw header value like 'Name <addr@domain.com>': the address inside
+// the angle brackets wins over anything address-like in the display name.
 // The case is preserved: getIdentityForMessage() compares the result with the
 // identity addresses as they were configured, so callers that need a
 // case-insensitive match have to lowercase it themselves.
 export function extractEmail(text) {
-  if((text=='')||(text==undefined)) return '';
-  const emailRegex = /[\w.-]+@[\w.-]+\.\w+/;
-  const match = text.match(emailRegex);
-  return match ? match[0] : '';
+  if (typeof text !== 'string' || text === '') return '';
+  const bracketed = text.match(/<([^<>]*)>/);
+  const match = (bracketed && bracketed[1].match(EMAIL_REGEX)) || text.match(EMAIL_REGEX);
+  // Leading quotes/dots are delimiters, not part of the address ('john@x.com').
+  return match ? match[0].replace(/^['.]+/, '') : '';
+}
+
+// tabs.sendMessage() guarded against Thunderbird's crash on tabs with no reachable
+// message browser [#901]. In a 3-pane "mail" tab with the message pane hidden (F8),
+// nothing displayed, or a multi-message view, Thunderbird's ExtensionParent routes
+// the send through a tab object that has no getAttribute() and the promise rejects
+// with "TypeError: (intermediate value).getAttribute is not a function" - every
+// un-awaited call site then dies as an uncaught rejection, killing the whole action
+// with nothing shown to the user. Sending through this helper turns any failure
+// (unreachable pane, closed tab, no listener) into a plain false: the same quiet
+// drop the .catch(() => {}) idiom already gives showGenericError()/showGenericInfo().
+// Resolves true when the message was delivered, so a caller can also use it as a
+// probe - see the summarize context-menu flow in mzta-background.js.
+export function sendTabMessageSafe(tabId, message) {
+  return browser.tabs.sendMessage(tabId, message).then(() => true, () => false);
 }
 
 export async function getMailSubject(tab){
@@ -677,6 +724,22 @@ export function checkIfTagLabelExists(tag_label, tags_list) {
   return Object.values(tags_list).some(label => label.tag.toLowerCase() === lowerTagLabel);
 }
 
+// Returns the tags of uselist_list that also exist in existing_tags_list (both comma separated
+// strings), compared case-insensitively and written as the existing tag is, joined by ", ".
+// Empty string when none match.
+export function intersectTagsLists(uselist_list, existing_tags_list) {
+  const splitList = (list) => String(list || '').split(',').map(t => t.trim()).filter(t => t !== '');
+  const existing = splitList(existing_tags_list);
+  const result = [];
+  for (const tag of splitList(uselist_list)) {
+    const match = existing.find(e => e.toLowerCase() === tag.toLowerCase());
+    if (match && !result.includes(match)) {
+      result.push(match);
+    }
+  }
+  return result.join(', ');
+}
+
 // export async function assignTagsToMessage(messageId, tags) {
 //   console.log(">>>>>>>>>>> assignTagsToMessage messageId: tags: " + JSON.stringify(tags));
 //   tags = tags.map(tag => `$ta-${sanitizeString(tag)}`);
@@ -1042,6 +1105,25 @@ export function isApiUsableConnection(connection_type){
   return !hasNoConnectionSelected(connection_type) && (connection_type !== 'chatgpt_web');
 }
 
+// Which connection types report token usage, so the UI can ask without importing
+// every provider module (each one also exports its own `supportsUsageData`, and
+// the two must stay in agreement). The web interfaces -- ChatGPT Web and any
+// other non-API integration -- have no API to report it, hence false.
+const USAGE_DATA_SUPPORT = {
+  chatgpt_web: false,
+  chatgpt_api: true,
+  google_gemini_api: true,
+  anthropic_api: true,
+  ollama_api: true,
+  openai_comp_api: true,
+};
+
+// True when the given connection type can report token usage. An unknown or unset
+// type answers false: nothing can be shown for a provider we know nothing about.
+export function supportsUsageData(connection_type){
+  return USAGE_DATA_SUPPORT[connection_type] === true;
+}
+
 export function extractJsonObject(inputString) {
   try {
     const jsonMatch = inputString.match(/\{[\s\S]*\}/);
@@ -1069,6 +1151,68 @@ export function normalizeDateTimeString(str) {
   if (!match) return null;
   const [, y, mo, d, h, mi, s, z] = match;
   return `${y}${mo}${d}T${h}${mi}${s}${z}`;
+}
+
+// RFC 2392 mid: URI for a MessageHeader.headerMessageId, '' when unusable.
+// The id is NOT percent-encoded, on purpose: Thunderbird builds its own links as
+// `mid:${messageId}` (msgHdrView.js copyMessageLink, bug 1968470) and opens them
+// with openMessageForMessageId(href.slice(4)) - an exact match, no decoding
+// (MailLinkParent / calApplicationUtils.js, bug 264270). An encoded id such as
+// "a%2Bb@x" would never be found. Brackets are stripped defensively only.
+export function buildMessageMidLink(headerMessageId) {
+  if (typeof headerMessageId !== 'string') return '';
+  const id = headerMessageId.trim().replace(/^</, '').replace(/>$/, '').trim();
+  return id === '' ? '' : 'mid:' + id;
+}
+
+// Appends "label link" to data_obj.description (calendar event / task objects),
+// AFTER the AI response has been parsed: the link is never sent to the AI.
+// Returns false, leaving the description untouched, when no link can be built.
+export function appendMessageLinkToDescription(data_obj, message, label) {
+  const link = buildMessageMidLink(message?.headerMessageId);
+  if (link === '') return false;
+  const link_line = label + ' ' + link;
+  const desc = (typeof data_obj.description === 'string') ? data_obj.description.trim() : '';
+  data_obj.description = (desc !== '') ? desc + '\n\n' + link_line : link_line;
+  return true;
+}
+
+// Upper bound for reminderMinutes (4 weeks). Larger values are treated as invalid.
+export const REMINDER_MINUTES_MAX = 40320;
+
+// Normalizes data_obj.reminderMinutes (calendar event / task objects) before the
+// hand-off to Sparks, which reads it as: absent = Thunderbird default reminder,
+// -1 = no reminder, >= 0 = minutes before the event start / task due date.
+// The feature's reminder checkbox is the single switch:
+// - off: the field is ALWAYS removed, whatever the AI returned (even if the main
+//   prompt asks for "reminderMinutes"), so Thunderbird's defaults apply.
+// - on: a valid value is kept. Valid = a non-negative integer, or a string holding
+//   one, up to REMINDER_MINUTES_MAX. The string "default" (what the format
+//   instruction asks for when NO reminder rules are given at all, neither in the
+//   rules option nor in the main prompt) removes the field, so Thunderbird's
+//   defaults apply. null ("rules given, none applies"), a missing field or an
+//   invalid value becomes -1 (no reminder).
+export function normalizeReminderMinutes(data_obj, reminder_enabled, logger = null) {
+  const raw = data_obj.reminderMinutes;
+  if (!reminder_enabled) {
+    delete data_obj.reminderMinutes;
+    logger?.log("reminderMinutes: raw = " + JSON.stringify(raw) + ", final = " + JSON.stringify(data_obj.reminderMinutes) + " (reminder option off)");
+    return;
+  }
+  let value = null;
+  if (typeof raw === 'number' && Number.isInteger(raw)) {
+    value = raw;
+  } else if (typeof raw === 'string' && /^\s*\d+\s*$/.test(raw)) {
+    value = parseInt(raw.trim(), 10);
+  }
+  if (typeof raw === 'string' && raw.trim().toLowerCase() === 'default') {
+    delete data_obj.reminderMinutes;
+  } else if (value !== null && value >= 0 && value <= REMINDER_MINUTES_MAX) {
+    data_obj.reminderMinutes = value;
+  } else {
+    data_obj.reminderMinutes = -1;
+  }
+  logger?.log("reminderMinutes: raw = " + JSON.stringify(raw) + ", final = " + JSON.stringify(data_obj.reminderMinutes));
 }
 
 export function isAPIKeyValue(id){
@@ -1345,7 +1489,15 @@ export async function* getMessages(list) {
   }
 
   while (page.id) {
-    page = await messenger.messages.continueList(page.id);
+    // A MessageList id expires (and becomes invalid once the list is exhausted elsewhere):
+    // log it and stop here, keeping what was already yielded, instead of throwing into an
+    // unhandled rejection in the middle of the caller's for-await loop.
+    try {
+      page = await messenger.messages.continueList(page.id);
+    } catch (e) {
+      console.error("[ThunderAI] getMessages: continueList(" + page.id + ") failed, the message list is truncated: ", e);
+      return;
+    }
     for (let message of page.messages) {
       yield message;
     }

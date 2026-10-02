@@ -34,6 +34,7 @@ import {
 } from "../_lib/connection-ui.js";
 import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
+import { initReminderUI } from "../_lib/reminder-ui.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
 import { applyManagedUI } from '../_lib/managed-ui.js';
 import {
@@ -90,6 +91,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         promptIds: ['prompt_get_task'],
         defaultMsgKey: 'prompt_get_task_full_text',
         do_debug: taLog.do_debug,
+    });
+
+    // "Let the AI set a reminder" section [#887]. After restoreOptions() (checkbox
+    // state) and after the prompt text is loaded (warning and preview read it).
+    // Kept before the editor decoration below, so a failure there cannot leave it
+    // uninitialized.
+    await initReminderUI({
+        feature: 'task',
+        promptTextarea: get_task_textarea,
+        statementsEl: document.getElementById('get_task_info_additional_statements')
     });
 
     // Full list, kept for token validation. Deliberately NOT filtered like the

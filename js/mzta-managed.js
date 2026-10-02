@@ -52,7 +52,8 @@ import {
     prefs_default,
     valid_connection_types,
     integration_options_config,
-    special_prompts_with_integration
+    special_prompts_with_integration,
+    OLLAMA_THINK_LEVELS
 } from '../options/mzta-options-default.js';
 import { taLogger } from './mzta-logger.js';
 
@@ -404,6 +405,14 @@ export const mztaManaged = {
                     this.logger.warn('Policy: unknown preference "' + key + '", ignored.');
                 }
                 continue;
+            }
+            const integration = integrationOfField(key);
+            if (integration !== '') {
+                value = normalizeLegacyConnectionValue(integration, key.slice(integration.length + 1), value);
+                if (value !== raw_value) {
+                    this.logger.warn('Policy: "' + key + '" is ' + JSON.stringify(raw_value) +
+                        ', the format before 5.1.0: read as ' + JSON.stringify(value) + '.');
+                }
             }
             const expected = typeof prefs_default[key];
             const actual = typeof value;
@@ -959,22 +968,33 @@ function isHttpUrl(value) {
 }
 
 /**
- * What is wrong with a connection field value, or '' when it is valid. `key` is the
- * integration_options_config key (host, model, temperature...), `defaultValue` its default:
- * the type must be the default's, never coerced - the same rule as for a preference. On top,
- * the content rules the request builders depend on. The settings UI checks none of them (it
- * saves whatever is typed), but a value typed by a user only breaks that user's feature, while
- * a policy value breaks it for the whole fleet with nothing the user can do about it.
+ * What is wrong with a connection field value, or '' when it is valid. `integration` and `key`
+ * name the integration_options_config entry (ollama + host, chatgpt + verbosity...),
+ * `defaultValue` is its default: the type must be the default's, never coerced - the same rule
+ * as for a preference (normalizeLegacyConnectionValue() is the one documented exception, applied
+ * before this). On top, the content rules the request builders depend on. The settings UI checks
+ * none of them (it saves whatever is typed), but a value typed by a user only breaks that user's
+ * feature, while a policy value breaks it for the whole fleet with nothing the user can do about it.
  */
-function connectionFieldProblem(key, value, defaultValue) {
+function connectionFieldProblem(integration, key, value, defaultValue) {
     const expected = typeof defaultValue;
     if (typeof value !== expected) return 'must be of type ' + expected + ', got ' + typeof value;
     if (expected === 'number') {
         if (!Number.isInteger(value) || value < 0) return 'must be a non-negative integer';
         if (key === 'max_tokens' && value < 1) return 'must be at least 1';
+        // 0 is "not set" (the parameter is not sent); the settings input starts at 16, the
+        // smallest value the Responses API accepts.
+        if (integration === 'chatgpt' && key === 'max_output_tokens' && value !== 0 && value < 16) {
+            return 'must be 0 (not set) or at least 16';
+        }
         return '';
     }
     if (expected !== 'string') return '';
+    const allowed = CONNECTION_FIELD_ENUMS[integration + '_' + key];
+    if (allowed) {
+        return allowed.includes(value) ? ''
+            : 'must be one of ' + allowed.map(v => JSON.stringify(v)).join(', ');
+    }
     switch (key) {
         case 'host':
             return isHttpUrl(value) ? '' : 'must be an http:// or https:// URL';
@@ -985,21 +1005,76 @@ function connectionFieldProblem(key, value, defaultValue) {
             const n = Number(value);
             return (Number.isFinite(n) && n >= 0) ? '' : 'must be empty or a number not below 0';
         }
+        case 'top_p': {
+            if (value.trim() === '') return '';
+            const n = Number(value);
+            return (Number.isFinite(n) && n >= 0 && n <= 1) ? '' : 'must be empty or a number from 0 to 1';
+        }
+        case 'top_k':
+            return (value.trim() === '' || /^\d+$/.test(value.trim()))
+                ? '' : 'must be empty or a non-negative integer';
         case 'thinking_budget':
             return (value.trim() === '' || /^-?\d+$/.test(value.trim()))
                 ? '' : 'must be empty or an integer';
-        case 'extra_body': {
+        case 'think':
+            // Ollama only (no other integration has the key). '' (server default), 'false',
+            // 'true', or a level: OLLAMA_THINK_LEVELS are the defaults, but a model may report
+            // its own, so any lowercase word is accepted - a typo such as "High" or "hi gh" is not.
+            return (value === '' || value === 'false' || value === 'true' || /^[a-z]+$/.test(value))
+                ? '' : 'must be "", "false", "true" or a level such as ' +
+                    OLLAMA_THINK_LEVELS.map(v => JSON.stringify(v)).join(', ');
+        case 'keep_alive':
+            // What Ollama parses: a whole number of seconds (-1 = keep loaded) or a Go
+            // duration such as "5m" or "1h30m".
+            return (value.trim() === '' || /^-?\d+$/.test(value.trim()) || GO_DURATION.test(value.trim()))
+                ? '' : 'must be empty, a number of seconds or a duration such as "5m"';
+        case 'extra_body':
+        case 'extra_options':
             // The contract of parseExtraBody() in js/api/api-utils.js, which would otherwise
             // silently send nothing.
-            if (value.trim() === '') return '';
-            try {
-                return isPlainObject(JSON.parse(value)) ? '' : 'must be a JSON object';
-            } catch (e) {
-                return 'must be a JSON object (' + e.message + ')';
-            }
-        }
+            return jsonObjectProblem(value);
+        case 'text_format_schema':
+            // _parseTextFormatSchema() in js/api/openai_responses.js drops a schema that is not
+            // a JSON object, and with it the whole json_schema format.
+            return jsonObjectProblem(value);
     }
     return '';
+}
+
+function jsonObjectProblem(value) {
+    if (value.trim() === '') return '';
+    try {
+        return isPlainObject(JSON.parse(value)) ? '' : 'must be a JSON object';
+    } catch (e) {
+        return 'must be a JSON object (' + e.message + ')';
+    }
+}
+
+// Go's time.ParseDuration grammar, which Ollama applies to a keep_alive string.
+const GO_DURATION = /^-?((\d+(\.\d*)?|\.\d+)(ns|us|µs|μs|ms|s|m|h))+$/;
+
+// The connection fields rendered as a fixed <select> in the connection panel: a policy value
+// must be one of its <option>s, or the page shows a blank select over the enforced value.
+// ollama_think is not one: its options depend on the model (see the 'think' rule above, and
+// ensureRestorableOption() in pages/_lib/connection-ui.js, which shows any level it holds).
+const CONNECTION_FIELD_ENUMS = {
+    chatgpt_verbosity: ['', 'low', 'medium', 'high'],
+    chatgpt_text_format: ['', 'json_object', 'json_schema'],
+    chatgpt_truncation: ['', 'auto', 'disabled'],
+    chatgpt_service_tier: ['', 'auto', 'default', 'flex', 'priority'],
+};
+
+/**
+ * The one exception to "never coerced": a value in a connection field's former format, which
+ * a policy written for an older version may still carry. ollama_think was a checkbox until
+ * 5.1.0, so true/false become 'true'/'false' - the conversion migrateOllamaThinkLevel() applies
+ * to the user's stored preference. Anything else is returned unchanged.
+ */
+function normalizeLegacyConnectionValue(integration, key, value) {
+    if (integration === 'ollama' && key === 'think' && typeof value === 'boolean') {
+        return value ? 'true' : 'false';
+    }
+    return value;
 }
 
 // The preferences whose type alone does not make a value usable, beyond the per-provider
@@ -1023,6 +1098,7 @@ const PREF_NUMBER_RANGES = {
     summarize_max_messages: { min: 1 },
     add_tags_maxnum: { min: 1 },
     max_prompt_length: { min: 1 },
+    batch_max_concurrency: { min: 1 },
 };
 
 // A time zone the calendar pages' select offers: it is built from
@@ -1061,7 +1137,7 @@ function prefValueProblem(key, value) {
     const integration = integrationOfField(key);
     if (integration !== '') {
         const option = key.slice(integration.length + 1);
-        return connectionFieldProblem(option, value, integration_options_config[integration][option]);
+        return connectionFieldProblem(integration, option, value, integration_options_config[integration][option]);
     }
     if (hasOwn(PREF_ENUMS, key)) {
         const allowed = PREF_ENUMS[key]();
@@ -1151,7 +1227,7 @@ function validateSpecialPromptsConnection(raw, values, locked, logger) {
         const integration = api_type.replace(/_api$/, '');
         const options = integration_options_config[integration];
         const fields = {};
-        for (const [name, value] of Object.entries(entry)) {
+        for (let [name, value] of Object.entries(entry)) {
             if (name === 'api_type' || name.endsWith(LOCK_SUFFIX)) continue;
             const fwhere = where + '["' + name + '"]';
             const key = name.startsWith(integration + '_') ? name.slice(integration.length + 1) : null;
@@ -1163,7 +1239,13 @@ function validateSpecialPromptsConnection(raw, values, locked, logger) {
                     '": ' + Object.keys(options).map(k => integration + '_' + k).join(', ') + '.');
                 continue;
             }
-            const problem = connectionFieldProblem(key, value, options[key]);
+            const legacy = value;
+            value = normalizeLegacyConnectionValue(integration, key, value);
+            if (value !== legacy) {
+                logger.warn('Policy: ' + fwhere + ' is ' + JSON.stringify(legacy) + ', the format ' +
+                    'before 5.1.0: read as ' + JSON.stringify(value) + '.');
+            }
+            const problem = connectionFieldProblem(integration, key, value, options[key]);
             if (problem !== '') {
                 logger.warn('Policy: ' + fwhere + ' ' + problem + ', skipped.');
                 continue;

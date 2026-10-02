@@ -20,18 +20,44 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { OpenAIComp } from '../api/openai_comp.js';
+import { OpenAIComp, extractUsage } from '../api/openai_comp.js';
 import { taLogger } from '../mzta-logger.js';
+import { initUsageEmitter, nextUsageMessageId, postUsageData } from './usage-emitter.js';
 
 let openai_comp = null;
 let stopStreaming = false;
 let i18nStrings = null;
 let do_debug = false;
 let taLog = null;
+// Set only while waiting for the response headers (including the retry
+// backoff): Stop aborts the request then. Once streaming has started the
+// stopStreaming flag takes over, so a pending reader.read() is never rejected.
+let requestAbort = null;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
 let thinkingAccumulator = '';
+let usageData = null;
+
+// The id the window binds this response's usage badge to. Assigned when the
+// request goes out, so the 'usage' message and the answer it belongs to agree.
+let usageMessageId = null;
+
+// The usage captured for the last completed request. Accumulated here and nowhere
+// else: it is deliberately NOT posted anywhere yet, NOT appended to the response
+// text, and NOT pushed into conversationHistory -- the text the callers receive
+// must stay byte-identical to what it was before this layer existed.
+export function getUsageData() {
+    return usageData;
+}
+
+// Only the provider, the model and the token counts. Never the request URL or the
+// headers: Gemini and some OpenAI-compatible endpoints carry the API key in the
+// query string, and a header map carries it outright.
+function logUsageData(usage) {
+    if (!taLog || !taLog.do_debug || usage === null) return;
+    taLog.log("usage data captured: " + JSON.stringify(usage));
+}
 
 // Reasoning field names used by the various OpenAI-compatible servers, in priority
 // order: reasoning_content (DeepSeek, vLLM, SGLang), reasoning (OpenRouter, which
@@ -68,11 +94,30 @@ self.onmessage = async function(event) {
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-openai_comp', do_debug);
+        initUsageEmitter(event.data);
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', content: event.data.message });
+        usageData = null;
+        usageMessageId = nextUsageMessageId();
 
-    const response = await openai_comp.fetchResponse(conversationHistory); //4096);
+        requestAbort = new AbortController();
+        const response = await openai_comp.fetchResponse(conversationHistory, 0, {
+            signal: requestAbort.signal,
+            logger: taLog,
+            onRetry: (info) => postMessage({ type: 'newRetryAttempt', payload: info }),
+        });
+        requestAbort = null;
         postMessage({ type: 'messageSent' });
+
+        if (response.is_aborted === true) {
+            // Stopped before any answer arrived: drop the unanswered message, so
+            // the next turn does not send it twice.
+            stopStreaming = false;
+            conversationHistory.pop();
+            taLog.log("Request aborted by the user before the response arrived");
+            postMessage({ type: 'requestAborted' });
+            return;
+        }
 
         if (!response.ok) {
             let error_message = '';
@@ -94,7 +139,11 @@ self.onmessage = async function(event) {
                 taLog.log("error_message: " + JSON.stringify(error_message));
                 error_text = i18nStrings["OpenAIComp_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
             }
-            postMessage({ type: 'error', payload: error_text });
+            // rateLimited: a 429 still failing after the retries (rate limit or used-up quota),
+            // or a server asking to wait longer than fetchWithRetry() accepts (retryAfterMs,
+            // shown to the user): processEmails() stops the whole batch. False on an is_exception.
+            const retryAfterMs = Number.isFinite(response.retryAfterMs) ? response.retryAfterMs : null;
+            postMessage({ type: 'error', payload: error_text, rateLimited: response.status === 429 || retryAfterMs !== null, retryAfterMs: retryAfterMs });
             throw new Error("[ThunderAI] OpenAI Comp API request failed: " + error_text);
         }
 
@@ -110,6 +159,8 @@ self.onmessage = async function(event) {
                 taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                 assistantResponseAccumulator = '';
+                // Separate from tokensDone and free of any response text: see usage-emitter.js.
+                postUsageData(usageData, usageMessageId);
                 postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
                 thinkingAccumulator = '';
                 break;
@@ -120,6 +171,8 @@ self.onmessage = async function(event) {
                 taLog.log("AI full response: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                 assistantResponseAccumulator = '';
+                // Separate from tokensDone and free of any response text: see usage-emitter.js.
+                postUsageData(usageData, usageMessageId);
                 postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
                 thinkingAccumulator = '';
                 break;
@@ -158,6 +211,15 @@ self.onmessage = async function(event) {
             }
     
             for (const parsedLine of parsedLines) {
+                // Read before the `choices` guard below, not after: the frame that
+                // carries the usage is precisely a frame with an empty choices array,
+                // which that guard skips. Absent on the many servers that ignore
+                // stream_options.include_usage, and that is fine.
+                const usage = extractUsage(parsedLine);
+                if (usage !== null) {
+                    usageData = usage;
+                    logUsageData(usageData);
+                }
                 const { choices } = parsedLine;
                 if (!choices || choices.length === 0) {
                     // Debug-gated, unlike most warn() calls: a frame without choices is
@@ -187,5 +249,6 @@ self.onmessage = async function(event) {
         }
     } else if (event.data.type === 'stop') {
         stopStreaming = true;
+        if (requestAbort) requestAbort.abort();
     }
 };

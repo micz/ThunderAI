@@ -67,7 +67,15 @@ const TESTABLE = {
   },
   ollama_api: {
     nameKey: 'prefs_Connection_type_Ollama_API',
-    makeClient: () => new Ollama({ host: _val('ollama_host') }),
+    keyId: 'ollama_api_key',
+    makeClient: () => new Ollama({
+      host: _val('ollama_host'),
+      api_key: _val('ollama_api_key'),
+    }),
+    // /api/version rather than the default fetchModels() (/api/tags): it answers
+    // whatever is installed, so it separates "server unreachable / CORS not
+    // configured" from "reachable but no models pulled", which /api/tags conflates.
+    testMethod: 'fetchVersion',
     requestPermission: async () => _requestHostPermission(_val('ollama_host')),
   },
   openai_comp_api: {
@@ -158,10 +166,18 @@ export async function runConnectionTest(connType) {
   const timeout = new Promise((resolve) =>
     setTimeout(() => resolve({ __timeout: true }), CONN_TEST_TIMEOUT_MS));
 
+  // Most providers probe with fetchModels(); an entry may name a cheaper or more
+  // precise endpoint instead (Ollama uses fetchVersion()). Every such method shares
+  // the same {ok, error, is_exception} result contract.
+  const probe = entry.testMethod || 'fetchModels';
+
   let data;
   try {
-    // fetchModels() resolves with {ok, error, is_exception}; OpenAIComp may throw on network error.
-    data = await Promise.race([client.fetchModels(), timeout]);
+    // The probe resolves with {ok, error, is_exception}; the catch is a safety net for an unexpected throw.
+    // No automatic retry: the test must report the current state of the
+    // connection right away, well within CONN_TEST_TIMEOUT_MS. fetchVersion()
+    // ignores the argument.
+    data = await Promise.race([client[probe]({ maxRetries: 0, timeoutMs: CONN_TEST_TIMEOUT_MS }), timeout]);
   } catch (error) {
     return { status: 'error', message: browser.i18n.getMessage('connTest_error_network') };
   }

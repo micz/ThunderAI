@@ -21,6 +21,8 @@ import { taLogger } from './mzta-logger.js';
 
 export class taTranslationStore {
 
+    // In-flight state lives in taJobRegistry (js/mzta-job-registry.js). The prefix is kept
+    // only so clear*() still sweeps keys written to storage.session by older versions.
     _processing_prefix = 'mzta-translation-processing-';
     _max_translations = 100;
     _storage = null;
@@ -31,26 +33,10 @@ export class taTranslationStore {
         this.taLog = new taLogger('mzta-translationstore', do_debug);
     }
 
-    async setProcessing(data_id) {
-        this.taLog.log("[setProcessing] data_id: " + data_id);
-        const key = this._processing_prefix + data_id;
-        await browser.storage.session.set({ [key]: true });
-    }
-
-    async isProcessing(data_id) {
-        this.taLog.log("[isProcessing] data_id: " + data_id);
-        const key = this._processing_prefix + data_id;
-        let output = await browser.storage.session.get(key);
-        let result = output[key] || false;
-        this.taLog.log("[isProcessing] result: " + result);
-        return result;
-    }
-
     async saveTranslation(data, data_id) {
         this.taLog.log("[saveTranslation] data_id: " + data_id);
         try {
             await this._storage.writeTranslation(data_id, data, true);
-            await browser.storage.session.remove(this._processing_prefix + data_id);
         } catch (e) {
             this.taLog.error("[saveTranslation] error: " + e);
             throw e;
@@ -93,7 +79,6 @@ export class taTranslationStore {
     async removeTranslation(data_id) {
         this.taLog.log("[removeTranslation] data_id: " + data_id);
         await this._storage.deleteTranslationField(data_id);
-        await browser.storage.session.remove(this._processing_prefix + data_id);
     }
 
     async getAllTranslations() {

@@ -228,6 +228,70 @@ Some prompts trigger additional Thunderbird actions beyond just sending text to 
 
 These special prompts can have their own dedicated API integration settings (configured in the Options page). The list of these special prompts is in `options/mzta-options-default.js` as `special_prompts_with_integration`.
 
+### Calendar event / task: link to the original email
+
+With `calendar_append_email_link` (events) or `task_append_email_link` (tasks) on, `js/mzta-menus.js` appends a link to the source email to the `description` of the parsed object (`calendar_event_data_obj` / `task_data_obj`), after date normalization and the timezone block, just before `JSON.stringify` and the hand-off to Sparks. It is done **by code, after the response**: the link is never sent to the AI, the prompt texts (`prompt_get_calendar_event_full_text`, `prompt_get_task_full_text`) do not mention it, and the AI JSON contract is unchanged.
+
+Both features use `appendMessageLinkToDescription(data_obj, message, label)` in `js/mzta-utils.js` (label = `calendar_email_link_label`, shared). Composition rule:
+- description a string, non-empty after trim → `description.trim() + "\n\n" + label + " " + link`;
+- description missing, empty or not a string (e.g. a custom prompt that asks for none) → `label + " " + link`;
+- no link can be built → description left exactly as the AI returned it (the helper returns `false`).
+
+Link format (`buildMessageMidLink()`): `"mid:" + headerMessageId`, angle brackets stripped defensively, **no percent-encoding**. This matches Thunderbird itself: "Copy Message Link" (bug 1968470, `msgHdrView.js` `copyMessageLink()`) writes `` `mid:${messageId}` ``, and the `mid:` handler (bug 264270: `MailLinkParent._handleMidLink`, `calApplicationUtils.js` `launchBrowser`) opens `openMessageForMessageId(href.slice(4))`, an exact Message-ID match with no decoding — an encoded id (`%2B`, `%3D`, …) would never be found.
+
+Skipped silently (logged via `this.logger.log`, no alert):
+- `prompt_get_calendar_event_from_clipboard` — no source message; it shares the case block with `prompt_get_calendar_event`, so `curr_prompt.id` is checked explicitly;
+- `messageCompose` tabs — `curr_message` is compose details, not a `MessageHeader`;
+- `curr_message` null (e.g. empty selection in a mail tab) or `headerMessageId` missing/empty.
+
+The description is plain text (`descriptionText` in Sparks); Thunderbird linkifies the `mid:` scheme in the event summary, but HTML descriptions are out of scope.
+
+### Calendar event / task: reminder (#887)
+
+**Sparks contract** (Sparks ≥ 3.1.0, hence `sparks_min = '3.1.0'` in `js/mzta-utils.js`): an optional integer `reminderMinutes` in the JSON of both `openCalendarEventDialog` and `openTaskDialog`:
+- absent → Thunderbird's default reminder settings apply;
+- `-1` → explicitly no reminder;
+- `>= 0` → one reminder that many minutes before the event start (events) / the due date (tasks; the initial date if there is no due date; ignored by Sparks if the task has no dates).
+
+Identical for the two features, each with its own prefs (`calendar_reminder_enabled` / `calendar_reminder_rules`, `task_reminder_enabled` / `task_reminder_rules`), implemented once and parameterized by the `REMINDER_FEATURES` map in `js/mzta-utils-prompt.js` (`calendar` / `task` → prefs + format message id).
+
+**The `*_reminder_enabled` checkbox is the single switch** for both asking for the value (prompt side, `taPromptUtils.getReminderPromptStatements()`) and accepting it (response side, `normalizeReminderMinutes()` in `js/mzta-utils.js`). Checkbox off → nothing is appended to the prompt **and** `reminderMinutes` is always removed from the AI response, whatever the main prompt says, so Thunderbird's default reminder applies. An option labeled "Let the AI set a reminder" that still let the AI set one when off would be contradictory.
+
+The rules can live in the optional rules textarea **or** directly in the main prompt (which users customize, possibly adding `reminderMinutes` to its JSON format); in both cases the checkbox must be on. Rules written only in the main prompt = checkbox on, rules textarea empty.
+
+**Asking (prompt side).** `finalizePrompt_get_calendar_event(fullPrompt, promptTemplate, enabled, rules)` (after its `{%cc_list%}`/`{%recipients%}` stripping) and `finalizePrompt_get_task(...)` both go through `appendReminderStatements()` → `getReminderPromptStatements(feature, promptTemplate, enabled, rules)`. Checkbox off → nothing appended. Checkbox on, in this order, joined with `" \n"`:
+1. the format instruction (`prompt_calendar_reminder_format` / `prompt_task_reminder_format` — they differ only in the reference date), **unless** the template already contains the case-sensitive string `reminderMinutes`. It is worded ("in addition to the fields described above, add to the JSON object…") to work whatever JSON format the main prompt describes, and describes the field as having one of three values: an integer (minutes before the reference date), `null` when rules are given but none applies, or the string `"default"` when no reminder rules are given at all (neither in the rules option nor in the main prompt — only the AI can tell, since the main-prompt rules are natural language);
+2. if the rules trimmed are non-empty: `prompt_reminder_rules_intro` + `"\n"` + rules — **also** when (1) was skipped.
+
+The `reminderMinutes` check runs on the **template** (`curr_prompt.text`), not on the resolved `fullPrompt`: an email body that happens to contain the word must not suppress the instruction, and the settings-page warning checks the same live text. The default prompt texts (`prompt_get_calendar_event_full_text`, `prompt_get_task_full_text`) are unchanged. `prompt_get_calendar_event_from_clipboard` shares the calendar case block, so it is covered. The rules are appended **after** placeholder resolution, so `{%…%}` in them is sent verbatim — which is why the rules textarea has no placeholder highlighting/autocomplete.
+
+**Accepting (response side).** In `js/mzta-menus.js`, after `extractJsonObject()` and the date normalization (inside the same `try` for tasks), `normalizeReminderMinutes(data_obj, enabled, this.logger)`:
+- checkbox **off** → field **deleted**, whatever its value (Thunderbird defaults); nothing else is checked;
+- checkbox **on**:
+  - valid = a non-negative integer, or a string of digits (converted), `<= REMINDER_MINUTES_MAX` (40320, 4 weeks); `1.5`, `"-5"`, `40321`, `true`, `"abc"` are invalid;
+  - valid → kept (as a number);
+  - `"default"` (trimmed, case-insensitive) → field **deleted**: no rules anywhere, so the user gets Thunderbird's standard reminder, not "no reminder";
+  - `null` (rules given, none applies), missing or invalid → `-1` (the user asked for "no rule → no reminder");
+- raw and final values are logged in both cases.
+
+Resulting meaning of the value sent to Sparks: absent = Thunderbird default (checkbox off, or `"default"`), `-1` = no reminder, `>= 0` = the AI's reminder.
+
+Consequence worth knowing: since Sparks 3.1.0, an event/task without `reminderMinutes` gets Thunderbird's default reminder (when enabled in Thunderbird) — previously none was set.
+
+### Add tags: extra prompt statements
+
+`taPromptUtils.finalizePrompt_add_tags()` (`js/mzta-utils-prompt.js`) appends statements to the prepared prompt, each on its own line (`" \n"`). It is called from both flows: the manual action (`js/mzta-menus.js`, with no use list) and the automatic/batch flow (`runAddTags` in `mzta-background.js`).
+- `add_tags_maxnum > 0` → `prompt_add_tags_maxnum N.`
+- `add_tags_force_lang` + `default_chatgpt_lang` → `prompt_add_tags_force_lang LANG.`. **Suppressed when `add_tags_auto_force_existing` is on**, because the existing tags dictate the language.
+- `add_tags_auto_force_existing` **off**: use list active → `prompt_add_tags_use_list: LIST.`
+- `add_tags_auto_force_existing` **on** (issue #926): the existing tags are sent to the model, which otherwise invented names that were then all filtered out.
+  - With an active use list → `prompt_add_tags_force_existing: X.`, where X = `intersectTagsLists(uselist, existing)` (`js/mzta-utils.js`: case-insensitive, written as the existing tag is). This replaces the use-list statement. An empty intersection → `console.warn` and no list statement.
+  - Without a use list → `prompt_add_tags_force_existing: <tags_full_list[0]>.`. It is skipped when the raw prompt text already contains `{%tags_full_list%}` or when no tags exist.
+
+The response is still filtered afterwards as a safety net: `checkIfTagLabelExists()` in the manual flow, and `_assign_tags_now()` in the automatic flow, which skips non-existing tags ("Skipping non-existing tag") when `create_new_tags` is false.
+
+The Add Tags settings page (`updateAdditionalPromptStatements()` in `pages/addtags/mzta-add-tags.js`) previews the same statements with the same rules, and must be kept in sync with `finalizePrompt_add_tags()`.
+
 ### The text carries the response format
 
 The output format a feature parses is written **in the prompt text itself** (e.g.
@@ -436,6 +500,10 @@ The summarize feature uses two distinct prompt pathways:
 - All summary paths (inline, webchat single, webchat multi) use this single method
 - Accepts an array of `{ message, fullMessage }` entries
 - Returns `{ promptText, promptInfo }` where `promptInfo` is the `prompt_summarize` prompt object
+- Language: `taPromptUtils.getSummaryLang(prompt_summarize)` returns `{ chatgpt_lang, force_lang_statement }`.
+  - `chatgpt_lang` is passed to every `preparePrompt()` call (main prompt, separator, each email block), as before. With `summarize_force_lang` off it is `getDefaultLang(prompt_summarize)` (normally `''`, since `define_response_lang` is `"0"`), so the prompt is byte-identical to the pre-option one. With the flag on it is `''`, so it can't contradict the forced language.
+  - `force_lang_statement` is `prompt_summarize_force_lang + " " + (summarize_lang || default_chatgpt_lang) + "."` when the flag is on, `''` otherwise or when both languages are empty (never `reply_same_lang`). It is appended **once**, at the very end of the whole prompt after the last email, preceded by `\n\n`. Deliberately **not** after each email: `preparePrompt()` joins `chatgpt_lang` to the email body with a single space, so there it reads as part of the email text.
+  - The default prompt texts are not touched (they are localised and frozen in `_special_prompts`).
 
 ### Translate: Inline-Only Prompt System
 

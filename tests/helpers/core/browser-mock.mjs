@@ -125,6 +125,7 @@ function loadEnMessages() {
  *   local       - initial storage.local content
  *   sync        - initial storage.sync content
  *   accounts    - what accounts.list() resolves to (MailAccount-like objects)
+ *   tags        - what messages.tags.list() resolves to (MessageTag-like objects)
  *   remote      - (message, sender) => reply: the OTHER end of runtime.sendMessage, i.e. the
  *                 background as seen from a page. May return a value, a promise, or throw.
  *                 Without it, sendMessage rejects like a message with no receiving end.
@@ -136,6 +137,7 @@ function loadEnMessages() {
 export function installBrowserMock(opts = {}) {
     let policy = opts.policy ?? null;
     let accounts = clone(opts.accounts ?? []);
+    const tags = clone(opts.tags ?? []);
     let accountsError = null;
     const calls = [];          // every storage operation, in order
     const sent = [];           // every runtime.sendMessage, in order
@@ -213,6 +215,15 @@ export function installBrowserMock(opts = {}) {
             onCreated: makeEvent(),
             onUpdated: makeEvent(),
             onDeleted: makeEvent(),
+        },
+        // The tag list only: the Add Tags page previews its prompt statements from it.
+        messages: {
+            tags: {
+                async list() {
+                    calls.push({ area: 'messages.tags', op: 'list' });
+                    return clone(tags);
+                },
+            },
         },
     };
 

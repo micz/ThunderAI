@@ -18,6 +18,12 @@
 
 export const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize', 'get_calendar_event', 'get_task', 'translate'];
 
+// The Ollama reasoning levels offered when the server does not report which ones the
+// selected model accepts (buildOllamaThinkOptions() in pages/_lib/connection-ui.js), also
+// named by the policy validation's warning (js/mzta-managed.js). Here, not in
+// connection-ui.js, for the same reason as valid_connection_types below.
+export const OLLAMA_THINK_LEVELS = ['low', 'medium', 'high', 'max'];
+
 // Every valid value of connection_type / {prefix}_connection_type / prompt.api_type.
 // Lives here rather than in pages/_lib/connection-ui.js because the background page also
 // needs it (enterprise policy validation) and cannot import that module: it pulls in
@@ -43,15 +49,36 @@ export const integration_options_config = {
         store: false,
         reasoning_summary: '',
         reasoning_effort: '',
-        extra_body: ''
+        extra_body: '',
+        max_output_tokens: 0,
+        verbosity: '',
+        text_format: '',
+        text_format_schema_name: '',
+        text_format_schema: '',
+        // Kept as a string, not a number: an empty pref must stay distinguishable
+        // from a legitimate 0, which is a valid value.
+        top_p: '',
+        truncation: '',
+        prompt_cache_key: '',
+        service_tier: '',
+        safety_identifier: '',
+        include_encrypted_reasoning: false
     },
     ollama: {
         host: '',
+        api_key: '',
         model: '',
         num_ctx: 0,
         temperature: '',
-        think: false,
-        format_json: false
+        // A level, not a flag: '' (off), 'true' (plain boolean true, for models that
+        // take no level), or 'low'|'medium'|'high'|'max'. Declared as a string on
+        // purpose — the boolean branch in mzta-special-commands.js would otherwise
+        // coerce a per-prompt level back to true/false.
+        think: '',
+        format_json: false,
+        keep_alive: '',
+        system_prompt: '',
+        extra_options: ''
     },
     openai_comp: {
         host: '',
@@ -67,7 +94,13 @@ export const integration_options_config = {
         model: '',
         system_instruction: '',
         thinking_budget: '',
-        temperature: ''
+        temperature: '',
+        max_output_tokens: 0,
+        // Kept as strings, not numbers: an empty pref must stay distinguishable
+        // from a legitimate 0, which is a valid value for both.
+        top_p: '',
+        top_k: '',
+        extra_body: ''
     },
     anthropic: {
         api_key: '',
@@ -76,6 +109,13 @@ export const integration_options_config = {
         max_tokens: 4096,
         system_prompt: '',
         temperature: '',
+        // Kept as strings, not numbers: an empty pref must stay distinguishable
+        // from a legitimate 0, which is a valid value for both.
+        top_p: '',
+        top_k: '',
+        // One stop sequence per line. Empty lines are dropped at request-build
+        // time, never at save time.
+        stop_sequences: '',
         extended_thinking_budget: 0,
         effort: ''
     }
@@ -141,9 +181,14 @@ export const prefs_default = {
     chatgpt_web_custom_gpt: '',
     chatgpt_web_load_wait_time: 1000,
     special_command_timeout: 120000,   // ms before a hung special command (API worker) is aborted
+    batch_max_concurrency: 1,   // max messages processed at once by one processEmails() batch (auto add tags / spam filter / summarize / translate, on receive or from the context menu); each message runs its features in series
     dynamic_menu_force_enter: false,
     placeholders_use_default_value: false,
     hide_thinking: true,
+    // Show the token counts the API reports under each answer in the chat, plus a
+    // session total in the header. Off by default: it is extra chrome most users do
+    // not want, and the web-only integrations cannot report it at all.
+    chat_show_usage_data: true,
     api_webchat_font_scale: 1.0,   // font zoom factor for the API webchat (1.0 = 100%)
     // Default comparison unit of the proofreading change picker: 'words' or
     // 'sentences'. A prompt can override it; '' on a prompt means "inherit this".
@@ -151,6 +196,7 @@ export const prefs_default = {
     max_prompt_length: 30000,   // max string length for prompt
     add_tags: false,
     add_tags_maxnum: 3,
+    add_tags_max_messages: 0,   // max messages tagged at once from the context menu (0 = no limit); above this the user is warned and the operation is blocked. Automatic tagging is not capped
     add_tags_hide_exclusions: false,
     add_tags_exclusions_exact_match: false,
     // Tags never assigned (substring match unless add_tags_exclusions_exact_match). Array of
@@ -174,6 +220,12 @@ export const prefs_default = {
     calendar_enforce_timezone: false,
     calendar_timezone: '',
     calendar_no_selection: false,   // If true do not ask for selection, but use the full prompt
+    calendar_append_email_link: false,  // Append a mid: link to the source email to the event description (added by code, never sent to the AI)
+    task_append_email_link: false,      // Same, for the task description
+    calendar_reminder_enabled: false,   // Ask the AI for a reminder (reminderMinutes) and send "no reminder" when it returns none. If false, reminderMinutes is always dropped (Thunderbird default reminder)
+    calendar_reminder_rules: '',        // Optional natural-language reminder rules appended to the prompt when calendar_reminder_enabled is true
+    task_reminder_enabled: false,       // Same, for tasks
+    task_reminder_rules: '',            // Same, for tasks
     spamfilter: false,
     spamfilter_threshold: 70,
     spamfilter_enabled_accounts: [],
@@ -189,6 +241,8 @@ export const prefs_default = {
     summarize_max_messages: 20,          // max number of messages summarized at once (webchat mode); above this the user is warned and the operation is blocked
     summarize_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
     summarize_strip_formatting: false,   // strip HTML/markdown formatting from AI summary
+    summarize_force_lang: false,         // always write the summary in summarize_lang (or default_chatgpt_lang)
+    summarize_lang: '',                  // summary language when summarize_force_lang is on, fallback on default_chatgpt_lang
     summarize_auto_senders: false,       // auto-summarize emails coming from the addresses in the list below
     summarize_auto_senders_list: [],     // sender addresses or domain patterns ("@domain.com", "*@domain.com")
     translate: true,

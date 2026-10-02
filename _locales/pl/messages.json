@@ -1,4 +1,7 @@
 {
+    "prefs_api_extra_body": {
+        "message": "Dodatkowe dane treści"
+    },
     "extensionDescription": {
         "message": "Używaj ChatGPT, Goolge Gemini, Claude lub Ollama do ulepszania swoich e-maili!",
         "description": "Description of the extension."
@@ -483,9 +486,6 @@
     "prefs_extra_body_error_not_object": {
         "message": "Wartość musi być obiektem JSON, ujętym w nawiasy klamrowe."
     },
-    "prefs_OptionText_openai_comp_extra_body": {
-        "message": "Dodatkowe dane treści"
-    },
     "prefs_OptionText_openai_comp_extra_body_info": {
         "message": "Dodatkowe parametry wysyłane przy każdym wywołaniu API, jako obiekt JSON. Przydatne dla opcji, które ta usługa obsługuje, ale których ThunderAI nie udostępnia, na przykład wyłączenie trybu myślenia: {\"chat_template_kwargs\": {\"thinking\": false}} lub {\"top_p\": 0.9}. Parametrów zarządzanych przez ThunderAI (model, messages, streaming, temperature) nie można tutaj nadpisać. Nieprawidłowa wartość jest ignorowana."
     },
@@ -620,9 +620,6 @@
     },
     "prefs_SurveyLinkText2": {
         "message": "Podziel się swoją opinią"
-    },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Ręcznie wprowadź model"
     },
     "OpenAIComp_force_model_ask": {
         "message": "Wprowadź tutaj nazwę modelu, którego chcesz użyć."
@@ -1640,9 +1637,6 @@
     "prefs_OptionText_chatgpt_reasoning_effort": {
         "message": "Wysiłek wnioskowania"
     },
-    "prefs_OptionText_chatgpt_extra_body": {
-        "message": "Dodatkowe dane treści"
-    },
     "prefs_OptionText_chatgpt_extra_body_info": {
         "message": "Dodatkowe parametry wysyłane przy każdym wywołaniu API, jako obiekt JSON, na przykład {\"top_p\": 0.9}. Przydatne dla opcji, które API OpenAI obsługuje, ale których ThunderAI nie udostępnia. Parametrów zarządzanych przez ThunderAI (model, input, streaming, temperature, reasoning, instructions) nie można tutaj nadpisać. Nieprawidłowa wartość jest ignorowana."
     },
@@ -1653,7 +1647,7 @@
         "message": "Wyłączone",
         "description": "Option for the reasoning summary dropdown, meaning no summary is requested."
     },
-    "prefs_OptionText_chatgpt_reasoning_api_default": {
+    "prefs_reasoning_api_default ": {
         "message": "Wartość domyślna API",
         "description": "Option for the reasoning effort dropdown, meaning the value is not sent and the API default applies."
     },
@@ -1665,21 +1659,23 @@
         "message": "Szczegółowo",
         "description": "Option for the reasoning summary dropdown: request a more detailed summary."
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
-        "message": "Minimalny",
-        "description": "Option for the reasoning effort dropdown: the lowest amount of reasoning."
+    "prefs_level_minimal": {
+        "message": "Minimalny"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_low": {
-        "message": "Niski",
-        "description": "Option for the reasoning effort dropdown."
+    "prefs_level_low": {
+        "message": "Niski"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
-        "message": "Średni",
-        "description": "Option for the reasoning effort dropdown."
+    "prefs_level_medium": {
+        "message": "Średni"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_high": {
-        "message": "Wysoki",
-        "description": "Option for the reasoning effort dropdown: the highest amount of reasoning."
+    "prefs_level_high": {
+        "message": "Wysoki"
+    },
+    "prefs_level_xhigh": {
+        "message": "Bardzo wysoki"
+    },
+    "prefs_level_max": {
+        "message": "Maksymalny"
     },
     "prefs_ollama_temperature_Info": {
         "message": "Temperatura modelu. Zwiększenie temperatury sprawia, że model odpowiada bardziej kreatywnie. Wartość domyślna to 0,8. Zaleca się używanie wartości od 0 do 1."
@@ -1764,9 +1760,6 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Zwróć uwagę, że wszystkie znaczniki <br> w odpowiedzi AI zostaną zastąpione podziałami wierszy."
-    },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Wyczyść listę modeli"
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Czy na pewno chcesz wyczyścić listę modeli? Tej czynności nie można cofnąć."
@@ -1887,8 +1880,8 @@
     "prefs_OptionText_summarize_max_display_length_Info": {
         "message": "Maksymalna liczba znaków wyświetlanych w podsumowaniu wewnątrz wiersza. Ustaw 0, aby brak limitu."
     },
-    "prefs_OptionText_summarize_max_messages": {
-        "message": "Maks. liczba wiadomości"
+    "prefs_OptionText_max_messages": {
+        "message": "Maks. wiadomości"
     },
     "prefs_OptionText_summarize_max_messages_Info": {
         "message": "Maksymalna liczba wiadomości, które można jednocześnie podsumować w trybie webchat. Powyżej tego limitu operacja jest blokowana z ostrzeżeniem. Ustaw 0, aby brak limitu."
@@ -2688,21 +2681,6 @@
     },
     "anthropic_effort_default": {
         "message": "Domyślnie (decyduje API)"
-    },
-    "Anthropic_Effort_Level_low": {
-        "message": "Niski"
-    },
-    "Anthropic_Effort_Level_medium": {
-        "message": "Średni"
-    },
-    "Anthropic_Effort_Level_high": {
-        "message": "Wysoki"
-    },
-    "Anthropic_Effort_Level_xhigh": {
-        "message": "Bardzo wysoki"
-    },
-    "Anthropic_Effort_Level_max": {
-        "message": "Maksymalny"
     },
     "anthropic_note_temperature_unsupported": {
         "message": "Wybrany model nie przyjmuje wartości Temperatury i ignoruje to pole. Użyj zamiast niego ustawienia Wysiłek. Wartość jest zachowywana na wypadek powrotu do starszego modelu."

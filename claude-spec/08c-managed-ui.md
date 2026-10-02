@@ -49,13 +49,15 @@ Selects, which `initTimezoneSelect()` does before `initializeSpecificIntegration
 Some preferences are edited by a control that must **not** be an `.option-input`, because
 `saveOptions()` / `restoreOptions()` would then handle it generically and break its own
 serialisation: `spamfilter_skip_addresses`, `summarize_auto_senders_list` and
-`add_tags_exclusions` (textareas saved as normalised lists by their Save buttons), and
+`add_tags_exclusions` (textareas saved as normalised lists by their Save buttons),
+`calendar_reminder_rules` / `task_reminder_rules` (the shared `#reminder_rules` textarea of
+`pages/_lib/reminder-ui.js`, saved trimmed by its Save button), and
 `spamfilter_skip_addressbook` (a checkbox whose change handler requests the `addressBooks`
 permission). They opt in explicitly with `data-mzta-pref="<preference key>"`.
 `applyManagedUI()` walks `.option-input, [data-mzta-pref]` in the same single pass against the
 same `Set`, taking the key from `data-mzta-pref` when present and from the `id` otherwise, and
-gives the match exactly the `.option-input` treatment. `addtags_excl_list` is the one whose id
-is not the key.
+gives the match exactly the `.option-input` treatment. Two ids are not the key:
+`addtags_excl_list`, and `reminder_rules` (one id on both pages, each carrying its own pref).
 
 Their companion controls are the page's: `lockCompanions(key, elements)` marks each one
 `data-mzta-managed="1"`, disables it and titles it `managed_marker_tooltip` when the key is
@@ -180,8 +182,10 @@ A feature toggle is an `<input type="checkbox">` visually hidden **inside**
     page logic. Call sites that previously read back `.disabled` to decide **row
     visibility** were changed to test their own condition instead: a lock must grey a row
     out, never hide it. Every page-logic assignment that can run after `applyManagedUI()`
-    goes through it, including `updateAnthropicModelCapabilityUI()` (the fields the selected
-    model does not support), `updateDisplayModeConstraint()` on the summarize page and the
+    goes through it, including `updateAnthropicModelCapabilityUI()`,
+    `updateOpenAIModelCapabilityUI()` / `updateOpenAITextFormatUI()` and `_applyOllamaCaps()`
+    (the fields the selected model, or output format, does not support),
+    `updateDisplayModeConstraint()` on the summarize page and the
     `add_tags_auto_uselist` toggle on the Add Tags page. `disable_ApiFeature()` also leaves a
     locked flag's `checked` alone: a policy-enabled feature with an unusable connection stays
     on (see [Interaction points](08-managed-configuration.md#interaction-points)), so the toggle keeps showing it.

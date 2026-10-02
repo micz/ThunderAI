@@ -1,4 +1,7 @@
 {
+    "prefs_api_extra_body": {
+        "message": "Dados extras do corpo"
+    },
     "extensionDescription": {
         "message": "Use o ChatGPT, Google Gemini, Claude ou o Ollama para aprimorar seus e-mails!",
         "description": "Description of the extension."
@@ -638,9 +641,6 @@
     "prefs_extra_body_error_not_object": {
         "message": "O valor deve ser um objeto JSON, entre chaves."
     },
-    "prefs_OptionText_openai_comp_extra_body": {
-        "message": "Dados extras do corpo"
-    },
     "prefs_OptionText_openai_comp_extra_body_info": {
         "message": "Parâmetros adicionais a serem enviados em cada chamada da API, como um objeto JSON. Útil para opções que este serviço suporta, mas que o ThunderAI não expõe, como desativar o modo de raciocínio: {\"chat_template_kwargs\": {\"thinking\": false}} ou {\"top_p\": 0.9}. Os parâmetros gerenciados pelo ThunderAI (model, messages, streaming, temperature) não podem ser substituídos aqui. Um valor inválido é ignorado."
     },
@@ -802,9 +802,6 @@
     },
     "prefs_doc_open_welcome": {
         "message": "Abrir a página de boas-vindas"
-    },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Insira manualmente o modelo"
     },
     "OpenAIComp_force_model_ask": {
         "message": "Insira aqui o nome do modelo que você deseja usar."
@@ -1499,9 +1496,6 @@
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Observe que quaisquer tags <br> na resposta da IA serão substituídas por quebras de linha."
     },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Limpar lista de modelos"
-    },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Tem certeza de que deseja limpar a lista de modelos? Esta ação não pode ser desfeita."
     },
@@ -1615,7 +1609,7 @@
     "prefs_OptionText_summarize_max_display_length_Info": {
         "message": "Número máximo de caracteres a serem exibidos no resumo embutido. Defina como 0 para sem limite."
     },
-    "prefs_OptionText_summarize_max_messages": {
+    "prefs_OptionText_max_messages": {
         "message": "Máximo de mensagens"
     },
     "prefs_OptionText_summarize_max_messages_Info": {
@@ -2415,9 +2409,6 @@
     "prefs_OptionText_chatgpt_reasoning_effort": {
         "message": "Esforço de raciocínio"
     },
-    "prefs_OptionText_chatgpt_extra_body": {
-        "message": "Dados extras do corpo"
-    },
     "prefs_OptionText_chatgpt_extra_body_info": {
         "message": "Parâmetros adicionais a serem enviados em cada chamada da API, como um objeto JSON, por exemplo {\"top_p\": 0.9}. Útil para opções que a API da OpenAI suporta, mas que o ThunderAI não expõe. Os parâmetros gerenciados pelo ThunderAI (model, input, streaming, temperature, reasoning, instructions) não podem ser substituídos aqui. Um valor inválido é ignorado."
     },
@@ -2427,7 +2418,7 @@
     "prefs_OptionText_chatgpt_reasoning_disabled": {
         "message": "Desabilitado"
     },
-    "prefs_OptionText_chatgpt_reasoning_api_default": {
+    "prefs_reasoning_api_default ": {
         "message": "API padrão"
     },
     "prefs_OptionText_chatgpt_reasoning_summary_auto": {
@@ -2436,17 +2427,23 @@
     "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
         "message": "Detalhado"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
+    "prefs_level_minimal": {
         "message": "Mínimo"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_low": {
+    "prefs_level_low": {
         "message": "Baixo"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
+    "prefs_level_medium": {
         "message": "Médio"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_high": {
+    "prefs_level_high": {
         "message": "Alto"
+    },
+    "prefs_level_xhigh": {
+        "message": "Muito alto"
+    },
+    "prefs_level_max": {
+        "message": "Máximo"
     },
     "menu_order_reset_all": {
         "message": "Resetar tudo"
@@ -2498,21 +2495,6 @@
     },
     "anthropic_effort_default": {
         "message": "Padrão (decidido pela API)"
-    },
-    "Anthropic_Effort_Level_low": {
-        "message": "Baixo"
-    },
-    "Anthropic_Effort_Level_medium": {
-        "message": "Médio"
-    },
-    "Anthropic_Effort_Level_high": {
-        "message": "Alto"
-    },
-    "Anthropic_Effort_Level_xhigh": {
-        "message": "Muito alto"
-    },
-    "Anthropic_Effort_Level_max": {
-        "message": "Máximo"
     },
     "anthropic_note_temperature_unsupported": {
         "message": "O modelo selecionado não aceita um valor de Temperatura e ignora este campo. Use a configuração Esforço em seu lugar. O valor é mantido caso você volte para um modelo mais antigo."

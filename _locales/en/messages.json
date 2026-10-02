@@ -733,6 +733,10 @@
     "message": "Error trying to fetch Ollama models",
     "description": ""
   },
+  "Models_Fetch_Done": {
+    "message": "Models list loaded",
+    "description": "Confirmation shown in green under the models select after the 'Update list' button has fetched the models list successfully. It fades out after a few seconds."
+  },
   "API_Models_Error_NoModels": {
     "message": "No models found",
     "description": ""
@@ -937,6 +941,18 @@
     "message": "Controls the initial state of the thinking block shown above the answer. If checked, the block is collapsed by default and can be opened with a click. If unchecked, the block is open by default and can be collapsed with a click. The thinking content is always preserved.",
     "description": ""
   },
+  "prefs_OptionText_chat_show_usage_data": {
+    "message": "Show usage data in chat",
+    "description": ""
+  },
+  "prefs_OptionText_chat_show_usage_data_info": {
+    "message": "The token counts reported by the API are shown next to the buttons of each response. A click opens the details, including how much of the model context the conversation uses and the total of the whole chat session.",
+    "description": ""
+  },
+  "prefs_OptionText_chat_show_usage_data_openai_comp_note": {
+    "message": "With an OpenAI Compatible API, availability depends on the specific server implementation: some servers never report token usage.",
+    "description": ""
+  },
   "prefs_OptionText_thinking_summary": {
     "message": "Thinking",
     "description": ""
@@ -955,6 +971,14 @@
   },
   "prefs_OptionText_special_command_timeout_Info" : {
     "message": "Time in milliseconds before a hung AI request (auto add-tags, spam filter, summarize, translate) is aborted. Increase it if you use slow local models. This applies only to API-based connections, not to the ChatGPT Web Interface.",
+    "description": ""
+  },
+  "prefs_OptionText_batch_max_concurrency": {
+    "message": "Emails processed in parallel",
+    "description": "Label of the option limiting how many emails the automatic features (add tags, spam filter, summarize, translate) process at the same time"
+  },
+  "prefs_OptionText_batch_max_concurrency_Info": {
+    "message": "Maximum number of emails processed at the same time when several emails are handled together, for example when new mail arrives or several emails are selected. Each email goes through its features (spam filter, add tags, summarize, translate) one after the other, so this is also the maximum number of AI requests sent at once. Higher values are faster, but can hit the rate limits of your AI provider or overload a local model such as Ollama.",
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_model": {
@@ -999,10 +1023,6 @@
   },
   "prefs_extra_body_error_not_object": {
     "message": "The value must be a JSON object, enclosed in curly braces.",
-    "description": ""
-  },
-  "prefs_OptionText_openai_comp_extra_body" : {
-    "message": "Extra body data",
     "description": ""
   },
   "prefs_OptionText_openai_comp_extra_body_info": {
@@ -1107,6 +1127,10 @@
   },
   "prefs_OptionText_add_tags_maxnum_Info": {
     "message": "The maximum number of tags proposed by the AI. Set to 0 if you don't want to limit the number of tags.",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_max_messages_Info": {
+    "message": "The maximum number of selected messages that can be tagged at once from the context menu. Useful with AI providers that have a daily request quota. Automatic tagging of incoming messages is not limited. Set to 0 for no limit.",
     "description": ""
   },
   "prompt_add_tags_maxnum": {
@@ -1219,10 +1243,6 @@
   },
   "prefs_doc_open_welcome": {
     "message": "Open the Welcome Page",
-    "description": ""
-  },
-  "prefs_OpenAIComp_ForceModel": {
-    "message": "Manually insert model",
     "description": ""
   },
   "OpenAIComp_force_model_ask": {
@@ -1393,6 +1413,66 @@
     "message": "If checked, the specified timezone will be enforced for the calendar events and the tasks.",
     "description": ""
   },
+  "prefs_OptionText_append_email_link": {
+    "message": "Append a link to the original email",
+    "description": ""
+  },
+  "prefs_OptionText_calendar_append_email_link_Info": {
+    "message": "If checked, a link to the original email is added at the end of the event description. If the AI returns no description, the description will contain only the link. Not available when the event is created from the clipboard.",
+    "description": ""
+  },
+  "prefs_OptionText_task_append_email_link_Info": {
+    "message": "If checked, a link to the original email is added at the end of the task description. If the AI returns no description, the description will contain only the link.",
+    "description": ""
+  },
+  "calendar_email_link_label": {
+    "message": "Original email:",
+    "description": "Label written before the link to the original email in the description of the calendar events and the tasks."
+  },
+  "prompt_calendar_reminder_format": {
+    "message": "In addition to the fields described above, add to the JSON object a field \"reminderMinutes\", which must have one of these three values: an integer, the number of minutes before the event start at which the reminder must be set, following the reminder rules given in this prompt; null, if reminder rules are given but none of them applies; the string \"default\", if no reminder rules are given at all.",
+    "description": "Appended to the calendar event prompt sent to the AI when the reminder option is enabled. Do not translate \"reminderMinutes\", \"null\" and \"default\"."
+  },
+  "prompt_task_reminder_format": {
+    "message": "In addition to the fields described above, add to the JSON object a field \"reminderMinutes\", which must have one of these three values: an integer, the number of minutes before the task due date (or before its initial date, if there is no due date) at which the reminder must be set, following the reminder rules given in this prompt; null, if reminder rules are given but none of them applies; the string \"default\", if no reminder rules are given at all.",
+    "description": "Appended to the task prompt sent to the AI when the reminder option is enabled. Do not translate \"reminderMinutes\", \"null\" and \"default\"."
+  },
+  "prompt_reminder_rules_intro": {
+    "message": "Reminder rules:",
+    "description": "Sent to the AI before the reminder rules written by the user."
+  },
+  "prefs_OptionText_reminder_enabled": {
+    "message": "Let the AI set a reminder",
+    "description": ""
+  },
+  "prefs_OptionText_calendar_reminder_enabled_Info": {
+    "message": "If checked, the AI is asked to set a reminder, relative to the event start, following the reminder rules. The rules can be written in the field below or directly in the main prompt: in both cases this option must be checked. If no rule applies, the event is created with no reminder. If no rules are written, neither below nor in the main prompt, Thunderbird's default reminder settings apply. If not checked, Thunderbird's default reminder settings always apply.",
+    "description": ""
+  },
+  "prefs_OptionText_task_reminder_enabled_Info": {
+    "message": "If checked, the AI is asked to set a reminder, relative to the task due date (or to its initial date, if there is no due date), following the reminder rules. The rules can be written in the field below or directly in the main prompt: in both cases this option must be checked. If no rule applies, the task is created with no reminder. If no rules are written, neither below nor in the main prompt, Thunderbird's default reminder settings apply. If not checked, Thunderbird's default reminder settings always apply.",
+    "description": ""
+  },
+  "prefs_OptionText_reminder_rules_title": {
+    "message": "Reminder rules",
+    "description": ""
+  },
+  "prefs_OptionText_reminder_rules_Info": {
+    "message": "Write the rules in natural language. This field is optional: if it is empty, the rules are taken from the main prompt above.",
+    "description": ""
+  },
+  "prefs_OptionText_calendar_reminder_rules_example": {
+    "message": "Example: \"If the event is in the morning in building A or B, set the reminder 45 minutes before. If it's in the afternoon, 15 minutes before. Otherwise, no reminder.\"",
+    "description": ""
+  },
+  "prefs_OptionText_task_reminder_rules_example": {
+    "message": "Example: \"If the task is about a payment, set the reminder one day before the due date. If it's about a report, two hours before. Otherwise, no reminder.\"",
+    "description": ""
+  },
+  "reminder_prompt_warning": {
+    "message": "The main prompt contains \"reminderMinutes\", but \"Let the AI set a reminder\" is not checked: the reminder instructions in the main prompt are ignored, and Thunderbird's default reminder applies, until the option is checked.",
+    "description": "Do not translate \"reminderMinutes\"."
+  },
   "prefs_OptionText_btnManageCalendarEventInfo": {
     "message": "Manage calendar events settings",
     "description": ""
@@ -1515,6 +1595,10 @@
   },
   "prompt_add_tags_use_list": {
     "message": "Use only the tags in this comma separated list",
+    "description": ""
+  },
+  "prompt_add_tags_force_existing": {
+    "message": "Choose the tags ONLY from this comma separated list of existing tags, using them exactly as written, and do not invent new ones",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_only_inbox": {
@@ -1955,6 +2039,58 @@
     "message": "Stopping",
     "description": ""
   },
+  "apiwebchat_retrying": {
+    "message": "Server not available ($REASON$), retrying in $SECONDS$ s (attempt $ATTEMPT$ of $MAX$)",
+    "description": "API webchat status bar while a failed request is retried automatically; $REASON$ is e.g. 'HTTP 503' or 'network error'",
+    "placeholders": {
+      "reason": {
+        "content": "$1",
+        "example": "HTTP 503"
+      },
+      "seconds": {
+        "content": "$2",
+        "example": "2"
+      },
+      "attempt": {
+        "content": "$3",
+        "example": "1"
+      },
+      "max": {
+        "content": "$4",
+        "example": "3"
+      }
+    }
+  },
+  "apiwebchat_retrying_rate_limit": {
+    "message": "Rate limit reached, retrying in $SECONDS$ s (attempt $ATTEMPT$ of $MAX$)",
+    "description": "API webchat status bar while a request refused with HTTP 429 (too many requests: the provider's rate limit) is retried automatically",
+    "placeholders": {
+      "seconds": {
+        "content": "$1",
+        "example": "10"
+      },
+      "attempt": {
+        "content": "$2",
+        "example": "2"
+      },
+      "max": {
+        "content": "$3",
+        "example": "5"
+      }
+    }
+  },
+  "apiwebchat_retry_reason_network": {
+    "message": "network error",
+    "description": "Reason shown in apiwebchat_retrying when the server could not be reached"
+  },
+  "apiwebchat_retry_reason_timeout": {
+    "message": "timeout",
+    "description": "Reason shown in apiwebchat_retrying when the server did not answer in time"
+  },
+  "apiwebchat_request_cancelled": {
+    "message": "Request cancelled.",
+    "description": "API webchat notice shown when the user stops a request before any answer arrived"
+  },
   "apiwebchat_receiving_data": {
     "message": "Receiving data",
     "description": ""
@@ -1986,6 +2122,92 @@
   "apiwebchat_turn_tools": {
     "message": "Answer actions",
     "description": "Accessible label for the small toolbar shown on each answer in the AI chat window"
+  },
+  "apiwebchat_usage_label": {
+    "message": "Token usage",
+    "description": "Accessible label of the token usage details popover opened from the chip next to an answer in the AI chat window"
+  },
+  "apiwebchat_usage_input": {
+    "message": "Input",
+    "description": "Row label of the usage details popover in the AI chat window: tokens sent to the model"
+  },
+  "apiwebchat_usage_output": {
+    "message": "Output",
+    "description": "Row label of the usage details popover in the AI chat window: tokens generated by the model"
+  },
+  "apiwebchat_usage_total": {
+    "message": "Total",
+    "description": "Row label of the usage details popover in the AI chat window: total tokens"
+  },
+  "apiwebchat_usage_chip_tokens": {
+    "message": "$COUNT$ tokens",
+    "description": "Usage chip next to an answer in the AI chat window: total tokens of that answer",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_usage_chip_output_tokens": {
+    "message": "$COUNT$ output tokens",
+    "description": "Usage chip next to an answer in the AI chat window, when the provider reports only the generated tokens",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_usage_of_which_cached": {
+    "message": "of which cached",
+    "description": "Indented row of the usage details popover in the AI chat window: part of the input tokens read from the provider cache"
+  },
+  "apiwebchat_usage_of_which_cache_write": {
+    "message": "of which written to cache",
+    "description": "Indented row of the usage details popover in the AI chat window: part of the input tokens written to the provider cache"
+  },
+  "apiwebchat_usage_of_which_reasoning": {
+    "message": "of which reasoning",
+    "description": "Indented row of the usage details popover in the AI chat window: part of the output tokens spent on reasoning/thinking"
+  },
+  "apiwebchat_usage_duration": {
+    "message": "Duration",
+    "description": "Row label of the usage details popover in the AI chat window: time from sending the request to the end of the answer"
+  },
+  "apiwebchat_usage_speed": {
+    "message": "$RATE$ tok/s",
+    "description": "Generation speed in the usage details popover of the AI chat window (tokens per second)",
+    "placeholders": {
+      "rate": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_usage_context": {
+    "message": "Context",
+    "description": "Row label of the usage details popover in the AI chat window: tokens the conversation occupies in the model context after this answer"
+  },
+  "apiwebchat_usage_context_value": {
+    "message": "$USED$ / $MAX$ · $PCT$%",
+    "description": "Value of the Context row of the usage details popover in the AI chat window: tokens used / model context window · percentage",
+    "placeholders": {
+      "used": {
+        "content": "$1"
+      },
+      "max": {
+        "content": "$2"
+      },
+      "pct": {
+        "content": "$3"
+      }
+    }
+  },
+  "apiwebchat_usage_context_warn": {
+    "message": "consider starting a new chat",
+    "description": "Note under the Context row of the usage details popover in the AI chat window, shown when the context is at least 80% full"
+  },
+  "apiwebchat_usage_session_total": {
+    "message": "Session total",
+    "description": "Row label of the usage details popover in the AI chat window: sum of the tokens of every answer in the chat so far"
   },
   "apiwebchat_scroll_to_latest": {
     "message": "Scroll to latest",
@@ -2155,6 +2377,40 @@
     "message": "The maximum number of tokens to generate in the completion. The token count of your prompt plus max_tokens cannot exceed the model's context length.",
     "description": ""
   },
+  "prefs_OptionText_anthropic_top_p_Info": {
+    "message": "Nucleus sampling: the model considers only the tokens whose cumulative probability reaches this value. Ranges from 0.0 to 1.0. Leave empty to use the model default. Anthropic recommends adjusting either Temperature or Top P, but not both. Newer Claude models do not accept this setting at all and use the Effort setting instead: when one of them is selected this field is disabled and its value is not sent.",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_top_k_Info": {
+    "message": "Only sample from the top K options for each subsequent token, removing long tail low probability responses. Leave empty to use the model default. Newer Claude models do not accept this setting at all and use the Effort setting instead: when one of them is selected this field is disabled and its value is not sent.",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_stop_sequences": {
+    "message": "Stop sequences",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_stop_sequences_Info": {
+    "message": "Custom text sequences that will cause the model to stop generating. Enter one sequence per line; empty lines are ignored. Leave empty to disable. This setting is accepted by all Claude models.",
+    "description": ""
+  },
+  "anthropic_warn_thinking_budget_min": {
+    "message": "The extended thinking budget must be at least $MIN$ tokens. The current value will not be sent and extended thinking will not be requested.",
+    "description": "Inline advisory warning shown under the Claude extended thinking budget field when the value is below the API minimum. The value is still saved.",
+    "placeholders": {
+      "min": {
+        "content": "$1"
+      }
+    }
+  },
+  "anthropic_warn_thinking_budget_max": {
+    "message": "The extended thinking budget must be lower than Max Tokens ($MAX$). The current value will not be sent and extended thinking will not be requested.",
+    "description": "Inline advisory warning shown under the Claude extended thinking budget field when the value is not lower than the Max Tokens field. The value is still saved.",
+    "placeholders": {
+      "max": {
+        "content": "$1"
+      }
+    }
+  },
   "prefs_OptionText_anthropic_extended_thinking_budget": {
     "message": "Extended thinking budget (tokens)",
     "description": ""
@@ -2181,19 +2437,39 @@
   },
   "anthropic_err_hint_temperature": {
     "message": "The selected Claude model ($MODEL$) does not accept the Temperature setting. Clear the Temperature field, or use the Effort setting instead.",
-    "description": ""
+    "description": "$MODEL$ is the Claude model ID",
+    "placeholders": {
+      "model": {
+        "content": "$1"
+      }
+    }
   },
   "anthropic_err_hint_budget_tokens": {
     "message": "The selected Claude model ($MODEL$) does not accept a manual extended thinking budget. Set the Extended thinking budget to 0 and use the Effort setting instead.",
-    "description": ""
+    "description": "$MODEL$ is the Claude model ID",
+    "placeholders": {
+      "model": {
+        "content": "$1"
+      }
+    }
   },
   "anthropic_err_hint_thinking_type": {
     "message": "The selected Claude model ($MODEL$) does not accept this thinking configuration. Check the Extended thinking budget and Effort settings.",
-    "description": ""
+    "description": "$MODEL$ is the Claude model ID",
+    "placeholders": {
+      "model": {
+        "content": "$1"
+      }
+    }
   },
   "anthropic_err_hint_effort": {
     "message": "The selected Claude model ($MODEL$) does not accept this Effort level. Choose a different level in the options page.",
-    "description": ""
+    "description": "$MODEL$ is the Claude model ID",
+    "placeholders": {
+      "model": {
+        "content": "$1"
+      }
+    }
   },
   "prefs_OptionText_anthropic_effort": {
     "message": "Effort",
@@ -2207,25 +2483,41 @@
     "message": "Default (decided by the API)",
     "description": "Empty option of the Claude effort selector, meaning no effort value is sent."
   },
-  "Anthropic_Effort_Level_low": {
+  "prefs_level_off": {
+    "message": "Off",
+    "description": "Shared reasoning/thinking level label: reasoning explicitly turned off."
+  },
+  "prefs_level_none": {
+    "message": "None",
+    "description": "Shared reasoning/thinking level label: no reasoning, requested explicitly rather than by leaving the setting empty."
+  },
+  "prefs_level_on": {
+    "message": "On",
+    "description": "Shared reasoning/thinking level label: reasoning explicitly turned on."
+  },
+  "prefs_level_minimal": {
+    "message": "Minimal",
+    "description": "Shared reasoning/thinking level label: the lowest amount of reasoning."
+  },
+  "prefs_level_low": {
     "message": "Low",
-    "description": ""
+    "description": "Shared reasoning/thinking level label."
   },
-  "Anthropic_Effort_Level_medium": {
+  "prefs_level_medium": {
     "message": "Medium",
-    "description": ""
+    "description": "Shared reasoning/thinking level label."
   },
-  "Anthropic_Effort_Level_high": {
+  "prefs_level_high": {
     "message": "High",
-    "description": ""
+    "description": "Shared reasoning/thinking level label."
   },
-  "Anthropic_Effort_Level_xhigh": {
+  "prefs_level_xhigh": {
     "message": "Extra high",
-    "description": ""
+    "description": "Shared reasoning/thinking level label: above high."
   },
-  "Anthropic_Effort_Level_max": {
-    "message": "Maximum",
-    "description": ""
+  "prefs_level_max": {
+    "message": "Max",
+    "description": "Shared reasoning/thinking level label: the highest amount of reasoning."
   },
   "anthropic_note_temperature_unsupported": {
     "message": "The selected model does not accept a Temperature value and ignores this field. Use the Effort setting instead. The value is kept in case you switch back to an older model.",
@@ -2309,10 +2601,6 @@
     "message": "Reasoning effort",
     "description": ""
   },
-  "prefs_OptionText_chatgpt_extra_body": {
-    "message": "Extra body data",
-    "description": ""
-  },
   "prefs_OptionText_chatgpt_extra_body_info": {
     "message": "Additional parameters to send with every API call, as a JSON object, like {\"top_p\": 0.9}. Useful for options the OpenAI API supports but ThunderAI doesn't expose. The parameters managed by ThunderAI (model, input, streaming, temperature, reasoning, instructions) can't be overridden here. An invalid value is ignored.",
     "description": ""
@@ -2325,9 +2613,9 @@
     "message": "Disabled",
     "description": "Option for the reasoning summary dropdown, meaning no summary is requested."
   },
-  "prefs_OptionText_chatgpt_reasoning_api_default": {
+  "prefs_reasoning_api_default ": {
     "message": "API default",
-    "description": "Option for the reasoning effort dropdown, meaning the value is not sent and the API default applies."
+    "description": "Shared empty option for the OpenAI dropdowns (reasoning effort, verbosity, text format, truncation, service tier), meaning the value is not sent and the API default applies."
   },
   "prefs_OptionText_chatgpt_reasoning_summary_auto": {
     "message": "Auto",
@@ -2337,21 +2625,129 @@
     "message": "Detailed",
     "description": "Option for the reasoning summary dropdown: request a more detailed summary."
   },
-  "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
-    "message": "Minimal",
-    "description": "Option for the reasoning effort dropdown: the lowest amount of reasoning."
+  "prefs_OptionText_chatgpt_max_output_tokens_Info": {
+    "message": "An upper bound on the number of tokens the model can generate for a response, including the reasoning tokens on reasoning models. The minimum accepted value is 16. Leave it empty or at 0 to let the API decide.",
+    "description": ""
   },
-  "prefs_OptionText_chatgpt_reasoning_effort_low": {
-    "message": "Low",
-    "description": "Option for the reasoning effort dropdown."
+  "prefs_OptionText_chatgpt_verbosity": {
+    "message": "Verbosity",
+    "description": ""
   },
-  "prefs_OptionText_chatgpt_reasoning_effort_medium": {
-    "message": "Medium",
-    "description": "Option for the reasoning effort dropdown."
+  "prefs_OptionText_chatgpt_verbosity_Info": {
+    "message": "How long and detailed the answer should be, without changing the prompt. Only the gpt-5 family supports it: with any other model this field is disabled and its value is not sent.",
+    "description": ""
   },
-  "prefs_OptionText_chatgpt_reasoning_effort_high": {
-    "message": "High",
-    "description": "Option for the reasoning effort dropdown: the highest amount of reasoning."
+  "prefs_OptionText_chatgpt_text_format": {
+    "message": "Output format",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_text_format_Info": {
+    "message": "Force the model to answer with valid JSON. \"JSON object\" only guarantees that the answer is valid JSON, so the prompt must still describe the structure you want, while \"JSON schema\" also makes the answer follow the schema below. Note that this changes the answer shown in the chat window into raw JSON.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_text_format_json_object": {
+    "message": "JSON object",
+    "description": "Option for the OpenAI output format dropdown: any valid JSON object."
+  },
+  "prefs_OptionText_chatgpt_text_format_json_schema": {
+    "message": "JSON schema",
+    "description": "Option for the OpenAI output format dropdown: JSON following the schema given below."
+  },
+  "prefs_OptionText_chatgpt_text_format_schema_name": {
+    "message": "JSON schema name",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_text_format_schema_name_Info": {
+    "message": "A name for the schema below, which the API requires. Use letters, numbers, underscores and dashes only. The output format is not sent at all when this is empty.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_text_format_schema": {
+    "message": "JSON schema",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_text_format_schema_Info": {
+    "message": "The JSON Schema the answer must follow, as a JSON object. Only used when the output format above is set to \"JSON schema\". An invalid value is ignored, and the output format is not sent.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_top_p_Info": {
+    "message": "Nucleus sampling: the model considers only the tokens whose cumulative probability reaches this value. Ranges from 0.0 to 1.0. Leave empty to use the model default. OpenAI recommends adjusting either Temperature or Top P, but not both. Reasoning models do not accept this setting: when one of them is selected this field is disabled and its value is not sent.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_truncation": {
+    "message": "Truncation",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_truncation_Info": {
+    "message": "What to do when a conversation grows past the model's context window. \"Auto\" drops messages from the middle of the conversation to make it fit, while \"Disabled\" makes the request fail with an error instead.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_truncation_auto": {
+    "message": "Auto",
+    "description": "Option for the OpenAI truncation dropdown: drop messages from the middle of the conversation to fit the context window."
+  },
+  "prefs_OptionText_chatgpt_truncation_disabled": {
+    "message": "Disabled",
+    "description": "Option for the OpenAI truncation dropdown: fail with an error instead of truncating."
+  },
+  "prefs_OptionText_chatgpt_prompt_cache_key": {
+    "message": "Prompt cache key",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_prompt_cache_key_Info": {
+    "message": "Requests sharing the same key can reuse OpenAI's prompt cache, which lowers the cost and the latency of repeated prompts. Any string you choose works: use the same one across the requests that begin with the same text.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_service_tier": {
+    "message": "Service tier",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_service_tier_Info": {
+    "message": "Which processing tier to use for the request. \"Flex\" and \"Priority\" are only available on some plans and models, and the API falls back to the default tier when the chosen one cannot be used.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_service_tier_auto": {
+    "message": "Auto",
+    "description": "Option for the OpenAI service tier dropdown: let the API choose the tier."
+  },
+  "prefs_OptionText_chatgpt_service_tier_default": {
+    "message": "Default",
+    "description": "Option for the OpenAI service tier dropdown: the standard tier."
+  },
+  "prefs_OptionText_chatgpt_service_tier_flex": {
+    "message": "Flex",
+    "description": "Option for the OpenAI service tier dropdown: cheaper and slower processing."
+  },
+  "prefs_OptionText_chatgpt_service_tier_priority": {
+    "message": "Priority",
+    "description": "Option for the OpenAI service tier dropdown: faster and more expensive processing."
+  },
+  "prefs_OptionText_chatgpt_safety_identifier": {
+    "message": "Safety identifier",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_safety_identifier_Info": {
+    "message": "A stable identifier for the end user, which helps OpenAI detect abuse coming from a single user. Do not use an email address or any other personal data: hash it, or use any other string that stays the same across your requests. This replaces the deprecated \"user\" parameter.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_include_encrypted_reasoning": {
+    "message": "Include encrypted reasoning",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_include_encrypted_reasoning_Info": {
+    "message": "Ask the API to return the model's reasoning in encrypted form, so it can be reused across requests without being stored by OpenAI. Only meaningful when \"Use storage\" above is off, and only on reasoning models.",
+    "description": ""
+  },
+  "chatgpt_note_sampling_unsupported": {
+    "message": "The selected model does not accept this setting and ignores this field. Use the Reasoning effort setting instead. The value is kept in case you switch back to another model.",
+    "description": "Shown next to the OpenAI Temperature and Top P fields when a reasoning model is selected."
+  },
+  "chatgpt_note_reasoning_unsupported": {
+    "message": "The selected model has no reasoning support, so this setting is not sent. The value is kept in case you switch back to a reasoning model.",
+    "description": "Shown next to the OpenAI Reasoning summary and Reasoning effort fields when a non-reasoning model is selected."
+  },
+  "chatgpt_note_verbosity_unsupported": {
+    "message": "The selected model does not support the Verbosity setting, so it is not sent. The value is kept in case you switch back to a model that supports it.",
+    "description": "Shown next to the OpenAI Verbosity field when a model without verbosity support is selected."
   },
   "prefs_ollama_temperature_Info": {
     "message": "The temperature of the model. Increasing the temperature will make the model answer more creatively. The default value is 0.8. It is recommended to use values between 0 and 1.",
@@ -2362,7 +2758,52 @@
     "description": ""
   },
   "prefs_ollama_think_Info": {
-    "message": "If checked, the Model will think before answering. This option works only with models that support the 'think' feature.",
+    "message": "Make the model reason before answering. \"Model default\" sends nothing and lets the model decide, which on some models means it reasons anyway: choose \"Off\" to turn the reasoning off explicitly. The available reasoning levels depend on the selected model, and are listed after a model is chosen.",
+    "description": ""
+  },
+  "prefs_ollama_think_default": {
+    "message": "Model default",
+    "description": "Ollama thinking option: send no 'think' field and let the model do whatever it does by default"
+  },
+  "ollama_note_thinking_unsupported": {
+    "message": "The selected model doesn't report support for thinking, so this setting is ignored.",
+    "description": ""
+  },
+  "ollama_num_ctx_max_info": {
+    "message": "This model supports up to $MAX$ context tokens.",
+    "description": "Hint next to the Ollama context size field, after a connection test; $MAX$ is the maximum the model reports",
+    "placeholders": { "max": { "content": "$1", "example": "131072" } }
+  },
+  "prefs_Ollama_API_Key": {
+    "message": "Ollama API Key",
+    "description": ""
+  },
+  "prefs_Ollama_API_Key_Info": {
+    "message": "Only needed for the hosted API at ollama.com, or for a self-hosted server behind a proxy that requires authentication. Leave empty for a standard local Ollama installation.",
+    "description": ""
+  },
+  "prefs_ollama_keep_alive": {
+    "message": "Keep model loaded",
+    "description": ""
+  },
+  "prefs_ollama_keep_alive_Info": {
+    "message": "How long Ollama keeps the model in memory after a request: a duration like 5m or 30m, -1 to keep it loaded indefinitely, or 0 to unload it immediately. Leave empty to use the server default (5 minutes). Raising it is useful when auto-tagging, the spam filter or auto-summarize run on incoming mail, because the model would otherwise be reloaded for every message.",
+    "description": ""
+  },
+  "Ollama_System_Prompt": {
+    "message": "System Prompt",
+    "description": ""
+  },
+  "Ollama_System_Prompt_Info": {
+    "message": "Sent as a system message at the start of every conversation, to give the model a role or standing instructions.",
+    "description": ""
+  },
+  "prefs_OptionText_ollama_extra_options": {
+    "message": "Extra options",
+    "description": ""
+  },
+  "prefs_OptionText_ollama_extra_options_info": {
+    "message": "Additional parameters to send inside the Ollama 'options' object, as a JSON object. Useful for options ThunderAI doesn't expose, like {\"top_p\": 0.9, \"seed\": 42} or {\"num_predict\": 512}. The parameters managed by ThunderAI (number of context tokens, temperature) can't be overridden here. An invalid value is ignored.",
     "description": ""
   },
   "prefs_ollama_format_json": {
@@ -2462,9 +2903,13 @@
     "message": "Please note that any <br> tags in the AI's response will be replaced with line breaks.",
     "description": ""
   },
-  "prefs_OpenAIComp_ClearModelsList": {
-    "message": "Clear Models List",
-    "description": ""
+  "prefs_OpenAIComp_AddManually": {
+    "message": "Add manually",
+    "description": "Small button next to the OpenAI Compatible API models label: asks for a model name and adds it to the list. It is preceded by a plus icon."
+  },
+  "prefs_OpenAIComp_ClearList": {
+    "message": "Clear list",
+    "description": "Small button next to the OpenAI Compatible API models label: removes all the models from the list, after a confirmation."
   },
   "OpenAIComp_ClearModelsList_Confirm": {
     "message": "Are you sure you want to clear the Models List? This action cannot be undone.",
@@ -2513,6 +2958,38 @@
   },
   "prefs_google_gemini_thinking_budget_Info": {
     "message": "Define the number of tokens to be used for thinking. Leave this field blank if the selected model does not support thinking or if you want to use the default method. Enter 0 to disable thinking, or -1 to enable dynamic thinking.",
+    "description": ""
+  },
+  "prefs_api_max_output_tokens": {
+    "message": "Max output tokens",
+    "description": ""
+  },
+  "prefs_api_top_p": {
+    "message": "Top P",
+    "description": ""
+  },
+  "prefs_api_top_k": {
+    "message": "Top K",
+    "description": ""
+  },
+  "prefs_api_extra_body": {
+    "message": "Extra body data",
+    "description": ""
+  },
+  "prefs_google_gemini_max_output_tokens_Info": {
+    "message": "The maximum number of tokens that can be generated in the response. Leave it empty or at 0 to let the model decide.",
+    "description": ""
+  },
+  "prefs_google_gemini_top_p_Info": {
+    "message": "Nucleus sampling: the model considers only the tokens whose cumulative probability reaches this value. The accepted range and the default value vary depending on the model. Leave it empty to avoid setting the parameter in the API call.",
+    "description": ""
+  },
+  "prefs_google_gemini_top_k_Info": {
+    "message": "Only sample from the top K options for each subsequent token, removing long tail low probability responses. Not every model supports this parameter. Leave it empty to avoid setting the parameter in the API call.",
+    "description": ""
+  },
+  "prefs_google_gemini_extra_body_Info": {
+    "message": "Additional parameters to send with every API call, as a JSON object. Useful for options the Gemini API supports but ThunderAI doesn't expose, like {\"safetySettings\": []} or {\"generationConfig\": {\"seed\": 42}}. Keys inside \"generationConfig\" are merged into the ones ThunderAI builds. The parameters managed by ThunderAI (contents, system instruction, thinking, temperature, max output tokens, top P, top K) can't be overridden here. An invalid value is ignored.",
     "description": ""
   },
   "prefs_google_gemini_temperature_Info": {
@@ -2707,9 +3184,9 @@
       "message": "Maximum number of characters to display in the inline summary. Set to 0 for no limit.",
       "description": ""
   },
-  "prefs_OptionText_summarize_max_messages": {
+  "prefs_OptionText_max_messages": {
       "message": "Max messages",
-      "description": ""
+      "description": "Label of the option limiting how many messages can be processed at once (shared by the summarize and add tags settings pages)"
   },
   "prefs_OptionText_summarize_max_messages_Info": {
       "message": "Maximum number of messages that can be summarized at once in webchat mode. Above this limit the operation is blocked with a warning. Set to 0 for no limit.",
@@ -2721,6 +3198,26 @@
   },
   "prefs_OptionText_summarize_strip_formatting_Info": {
       "message": "Remove HTML and Markdown formatting from the AI-generated summary, showing plain text only.",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_force_lang": {
+      "message": "Force summary language",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_force_lang_Info": {
+      "message": "If checked, the summary is always written in the selected language, regardless of the language of the emails. The summaries already generated are not updated: use \"Refresh summary\" to generate them again.",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_lang_Info": {
+      "message": "Language of the summary. Leave it empty to use the default language set in the ThunderAI options. If both are empty, no language is forced.",
+      "description": ""
+  },
+  "prompt_summarize_force_lang": {
+      "message": "The summary must be written in",
+      "description": ""
+  },
+  "summarize_info_additional_statements": {
+      "message": "This statement will be added at the end of the prompt:",
       "description": ""
   },
   "Summarize_auto_senders_title": {
@@ -2820,6 +3317,48 @@
   "batch_stop_source": {
       "message": "Batch stop",
       "description": "Source label shown as the prefix of the notice displayed when the user stops the running email processing jobs"
+  },
+  "batch_stopped_rate_limit": {
+      "message": "Email processing stopped after $COUNT$ messages: the AI provider's rate limit or quota was exceeded. Try again later.",
+      "description": "Error shown when the running email processing jobs were stopped automatically because the AI provider refused further requests (HTTP 429: rate limit or daily quota exhausted), reporting how many messages were processed before stopping",
+      "placeholders": {
+          "count": {
+              "content": "$1"
+          }
+      }
+  },
+  "batch_stopped_retry_after": {
+      "message": "Email processing stopped after $COUNT$ messages: the AI provider is not accepting requests and asks to retry in $WAIT$.",
+      "description": "Error shown when the running email processing jobs were stopped automatically because the AI provider asked to wait longer than ThunderAI waits on its own. $WAIT$ is a localized duration such as '1 h' or '1 h, 30 min'",
+      "placeholders": {
+          "count": {
+              "content": "$1"
+          },
+          "wait": {
+              "content": "$2"
+          }
+      }
+  },
+  "api_retry_after_hint": {
+      "message": "The AI provider asks to retry in $WAIT$.",
+      "description": "Shown under an API error in the chat window when the provider asked to wait longer than ThunderAI waits on its own. $WAIT$ is a localized duration such as '1 h' or '1 h, 30 min'",
+      "placeholders": {
+          "wait": {
+              "content": "$1"
+          }
+      }
+  },
+  "add_tags_too_many_messages": {
+      "message": "You selected $SELECTED$ messages, but at most $MAX$ can be tagged at once. Please select fewer messages.",
+      "description": "Shown when the user tries to add tags to more messages than the configured limit",
+      "placeholders": {
+          "selected": {
+              "content": "$1"
+          },
+          "max": {
+              "content": "$2"
+          }
+      }
   },
   "summarize_collapse": {
       "message": "Collapse summary",

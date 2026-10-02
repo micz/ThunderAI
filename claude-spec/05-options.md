@@ -22,18 +22,18 @@ Extension preferences are stored in **`browser.storage.local`** — defaults and
 Stored flat in `prefs_default` with `{provider}_{key}` naming:
 
 ```
-chatgpt_api_key, chatgpt_model, chatgpt_developer_messages, chatgpt_temperature, chatgpt_store, chatgpt_extra_body
-ollama_host, ollama_model, ollama_num_ctx, ollama_temperature, ollama_think, ollama_format_json
+chatgpt_api_key, chatgpt_model, chatgpt_developer_messages, chatgpt_temperature, chatgpt_store, chatgpt_reasoning_summary, chatgpt_reasoning_effort, chatgpt_extra_body, chatgpt_max_output_tokens, chatgpt_verbosity, chatgpt_text_format, chatgpt_text_format_schema_name, chatgpt_text_format_schema, chatgpt_top_p, chatgpt_truncation, chatgpt_prompt_cache_key, chatgpt_service_tier, chatgpt_safety_identifier, chatgpt_include_encrypted_reasoning
+ollama_host, ollama_api_key, ollama_model, ollama_num_ctx, ollama_temperature, ollama_think, ollama_format_json, ollama_keep_alive, ollama_system_prompt, ollama_extra_options
 openai_comp_host, openai_comp_model, openai_comp_api_key, openai_comp_use_v1, openai_comp_chat_name, openai_comp_temperature, openai_comp_extra_body
-google_gemini_api_key, google_gemini_model, google_gemini_system_instruction, google_gemini_thinking_budget, google_gemini_temperature
-anthropic_api_key, anthropic_model, anthropic_version, anthropic_max_tokens, anthropic_system_prompt, anthropic_temperature, anthropic_extended_thinking_budget, anthropic_effort
+google_gemini_api_key, google_gemini_model, google_gemini_system_instruction, google_gemini_thinking_budget, google_gemini_temperature, google_gemini_max_output_tokens, google_gemini_top_p, google_gemini_top_k, google_gemini_extra_body
+anthropic_api_key, anthropic_model, anthropic_version, anthropic_max_tokens, anthropic_system_prompt, anthropic_temperature, anthropic_top_p, anthropic_top_k, anthropic_stop_sequences, anthropic_extended_thinking_budget, anthropic_effort
 ```
 
-**`*_extra_body` holds raw JSON.** These two prefs are the only ones storing a JSON string in a
+**`*_extra_body` and `ollama_extra_options` hold raw JSON.** These three prefs are the only ones storing a JSON string in a
 free-text field. The UI validates advisorily (`warn_InvalidJson` → red border) but `saveOptions`
 persists the value regardless, so the consumer must tolerate malformed input: `parseExtraBody()`
 (`js/api/api-utils.js`) falls back to `{}`. See
-[Extra body data](04-api-integrations.md#extra-body-data-chatgpt_extra_body--openai_comp_extra_body).
+[Extra body data](04-api-integrations.md#extra-body-data).
 
 Plus the global connection selector:
 ```
@@ -195,9 +195,11 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `dynamic_menu_order_alphabet` | `true` | Internal migration flag only; no UI. **Not declared in `prefs_default`** — unlike every other preference, its default (`true`) is hardcoded in the `browser.storage.local.get()` call in `js/mzta-prompts.js`, not in `options/mzta-options-default.js`. **Because that default means "not yet run", the flag has to be carried across by `migratePrefsToLocal()`** — reading it from an area the migration did not populate would re-run `migrateMenuOrderAlphabetic()` and overwrite the user's custom menu ordering. Set to `false` by `migrateMenuOrderAlphabetic()` on first boot after upgrade to bootstrap position-based ordering. It is therefore also one of the two deliberate **bypasses** of `js/mzta-prefs.js` — see [Preference access](#preference-access-jsmzta-prefsjs). See `claude-spec/02-prompts.md` for details. |
 | `placeholders_use_default_value` | `false` | Use placeholder defaults when empty |
 | `hide_thinking` | `true` | Controls the initial state of the thinking `<details>` block prepended above the answer: `true` = collapsed by default, `false` = open by default. The user can always toggle with a click; thinking content is never discarded. |
+| `chat_show_usage_data` | `true` | Show the token counts the API reports as a chip in each answer's action bar in the chat window, whose detail popover also shows the context used and the session total. **Row visibility is conditional**: `disable_ChatShowUsageData()` in `options/mzta-options.js` hides `#chat_show_usage_data_tr` unless at least one *currently configured* integration reports usage — the global `connection_type` or any `special_prompts_with_integration` prefix resolved through `getConnectionType()`, tested with `supportsUsageData()` from `js/mzta-utils.js`. A web-only setup never sees the row. The nested `#chat_show_usage_data_openai_comp_note` is shown only when one of those types is `openai_comp_api`, because availability then depends on the specific server. Both are `display:none` in the markup so there is no flash before the function runs, and the function is called at load, on every `connection_type` change, and from the `storage.onChanged` handler that also refreshes the feature rows. |
 | `diff_granularity` | `'words'` | Comparison unit the proofreading change picker **opens with**: `'words'` or `'sentences'`. The picker's own toolbar toggle changes it for the current review; there is no per-prompt override — see [07-diff-picker.md](07-diff-picker.md). Rendered as a `<select>` in the advanced section; needs an explicit entry in `restoreOptions()`'s `select-one` branch, since a select restoring to `''` would render blank. |
 | `max_prompt_length` | `30000` | Max prompt string length |
 | `special_command_timeout` | `120000` | Timeout (ms) before a hung special-command API worker is aborted (`js/mzta-special-commands.js`). Exposed in the main options page as a number input; **always shown** (not hidden for ChatGPT Web), because a single special prompt may use a specific API even when the global `connection_type` is `chatgpt_web`. Has no effect on ChatGPT Web connections, which use no API worker. |
+| `batch_max_concurrency` | `1` | Maximum messages processed at once by one `processEmails()` call (auto add tags, spam filter, summarize and translate — on receive and from the context menu). Each message runs its features in series (spam, add_tags, summary, translate), so this is also the maximum number of AI requests in flight. There are no per-feature caps. Overlapping calls (several accounts) can exceed it. A value that is not a finite number ≥ 1 (a cleared field is saved as `NaN`) falls back to the default. Number input (`min="1"`) in the advanced section of the main options page, with its default wired into `restoreOptions()`. Does not affect the context-menu summarize flow. See [01-architecture.md](01-architecture.md#per-message-pipelines-in-processemails). |
 
 ### Feature Flags
 
@@ -205,13 +207,14 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 |-----|---------|-------------|
 | `add_tags` | `false` | Enable auto-tagging feature |
 | `add_tags_maxnum` | `3` | Max tags to apply |
+| `add_tags_max_messages` | `0` | Maximum number of messages tagged at once from the **context menu**. Above this limit `processEmails()` (`mzta-background.js`) blocks the run and shows the `add_tags_too_many_messages` warning. `0` = no limit. Automatic tagging of incoming mail is never capped. Exposed in the add tags settings page as a number input (`min="0"`, no reset button: the page's restore fallback for number inputs is already `0`). Meant for providers with a daily quota (#901), where a large selection cannot fit anyway. |
 | `add_tags_hide_exclusions` | `false` | Hide excluded tags from menu |
 | `add_tags_exclusions_exact_match` | `false` | Exact match for exclusions |
 | `add_tags_exclusions` | `[]` | Tags never assigned: array of strings, substring match unless `add_tags_exclusions_exact_match`. Read and written through `mztaPrefs` by `js/mzta-addtags-exclusion-list.js` (background and the Add Tags page) and, for the tag dialog in `js/mzta-compose-script.js`, through the `addtags_get_exclusion_prefs` / `addtags_set_exclusions` background commands. Entries are stored lowercase by both writers (the page via `normalizeStringList()`, the dialog's exclude icon by lowercasing), and the dialog adds and removes them case-insensitively. The storage key predates its declaration, so existing lists carry over with no migration. Policy-settable. |
 | `add_tags_first_uppercase` | `true` | Capitalize first letter of tags |
 | `add_tags_force_lang` | `true` | Force language for tags |
 | `add_tags_auto` | `false` | Auto-tag on message open |
-| `add_tags_auto_force_existing` | `false` | Only use existing tags |
+| `add_tags_auto_force_existing` | `false` | Only use existing tags. The prompt gets the existing tags list (or its intersection with the use list), and force_lang is not appended. Non-existing tags in the response are dropped. See [02-prompts.md](02-prompts.md#add-tags-extra-prompt-statements) |
 | `add_tags_auto_only_inbox` | `true` | Auto-tag only inbox messages |
 | `add_tags_auto_include_sent` | `false` | Also auto-tag sent messages (opts back into the `sent` folder, which the automatic processing skips by default) |
 | `add_tags_auto_uselist` | `false` | Use tag allow-list |
@@ -224,6 +227,12 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `calendar_enforce_timezone` | `false` | Force specific timezone |
 | `calendar_timezone` | `''` | IANA timezone id to enforce (see note below) |
 | `calendar_no_selection` | `false` | Skip selection prompt. **The single source of truth**: `need_selected` of `prompt_get_calendar_event` is derived from it on every read by `applyCalendarNoSelection()` in `getSpecialPrompts()` (see [02-prompts.md](02-prompts.md)), never written from it. A change reloads the menus (`MENU_RELEVANT_KEYS`). `migrateCalendarNoSelection()` aligned it once to the stored `need_selected` on upgrade. |
+| `calendar_append_email_link` | `false` | Append a `mid:` link to the source email to the event description (added by code after the response, never sent to the AI — see [02-prompts.md](02-prompts.md#calendar-event--task-link-to-the-original-email)). Deliberately **not** prefixed `get_calendar_event_`, which is the per-feature integration prefix |
+| `task_append_email_link` | `false` | Same, for the task description. Deliberately **not** prefixed `get_task_` |
+| `calendar_reminder_enabled` | `false` | "Let the AI set a reminder" for events: ask for `reminderMinutes` and send `-1` (no reminder) when the AI returns none/invalid; Thunderbird's default when the AI answers `"default"` (no rules given at all). It is the **single switch**: when false, `reminderMinutes` is always dropped from the AI response (Thunderbird's default), even if the main prompt asks for it — see [02-prompts.md](02-prompts.md#calendar-event--task-reminder-887). Not prefixed `get_calendar_event_` (integration prefix) |
+| `calendar_reminder_rules` | `''` | Optional natural-language reminder rules, appended to the event prompt (after `prompt_reminder_rules_intro`) only when `calendar_reminder_enabled` is true |
+| `task_reminder_enabled` | `false` | Same as `calendar_reminder_enabled`, for tasks (reference: due date, or initial date) |
+| `task_reminder_rules` | `''` | Same as `calendar_reminder_rules`, for tasks |
 | `spamfilter` | `false` | Enable spam filter |
 | `spamfilter_threshold` | `70` | Spam confidence threshold (%) |
 | `spamfilter_enabled_accounts` | `[]` | Accounts where the automatic spam filter is active: account ids, per profile, so **not** policy-settable. `[]` = all accounts. Replaced at read time — never overwritten — by the ids resolved from `spamfilter_enabled_accounts_match` when a policy sets it. |
@@ -238,6 +247,8 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `summarize_max_display_length` | `0` | Maximum characters shown in inline summary before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
 | `summarize_max_messages` | `20` | Maximum number of messages summarized at once in webchat mode. Above this limit `processEmails()` (`mzta-background.js`) blocks the operation and shows the `summarize_too_many_messages` warning. `0` = no limit. Only applies to the webchat/multi-message flow; inline single-message summaries are unaffected. Exposed in the summarize settings page. |
 | `summarize_strip_formatting` | `false` | Strip HTML and Markdown formatting from AI-generated summaries, showing plain text only. |
+| `summarize_force_lang` | `false` | Force the summary language. When on, `buildSummaryPrompt()` appends `prompt_summarize_force_lang + " " + lang + "."` once, on its own line, at the end of the whole prompt (see [02-prompts.md](02-prompts.md)). Off = exactly the previous behaviour (`getDefaultLang(prompt_summarize)`). Cached summaries are not regenerated. |
+| `summarize_lang` | `''` | Summary language used when `summarize_force_lang` is on. Falls back to `default_chatgpt_lang`; if both are empty nothing is appended (the `reply_same_lang` fallback of `getDefaultLang()` is never used). Plain `type="text"` input, not a textarea, so `saveOptions()` does not run `normalizeStringList()` on it. |
 | `summarize_auto_senders` | `false` | Auto-summarize emails whose sender matches `summarize_auto_senders_list`. **Independent of `summarize_auto`** — it works even when `summarize_auto = 0`. See [01-architecture.md](01-architecture.md#data-flow-auto-summarize-by-sender-address-list) for the two triggers. |
 | `summarize_auto_senders_list` | `[]` | Sender addresses / domain patterns matched by `matchAddressList()` (`js/mzta-utils.js`): exact address, `@domain.com`, or `*@domain.com`. Stored as an array via `normalizeStringList(value, 2)`; tested with `hasAddressListEntries()` (see the note below the table). |
 | `translate` | `true` | Enable email translation |
@@ -358,6 +369,7 @@ The summarize settings page provides:
 4. **Max display length** (`summarize_max_display_length`) — number input, limits inline summary text to N characters. `0` = no limit. When truncated, a "See more"/"See less" toggle link is appended.
 5. **Max messages** (`summarize_max_messages`) — number input, caps how many messages can be summarized at once in webchat mode. Above the limit the operation is blocked with the `summarize_too_many_messages` warning. `0` = no limit.
 6. **Strip formatting** (`summarize_strip_formatting`) — checkbox, removes HTML/Markdown formatting from AI summary responses, displaying plain text only. Default: off.
+   - **Force summary language** (`summarize_force_lang`) — checkbox, followed by the `summarize_lang` text field inside `#summarize_lang_container`, which `updateForceLangState()` hides while the toggle is off (on load, on toggle change, at the end of `restoreOptions()`). Below the main prompt editor, `#summarize_info_additional_statements` previews the statement that will be appended, computed by the same `taPromptUtils.getSummaryLang()` used by `buildSummaryPrompt()`, and is hidden when nothing is appended. It is refreshed from `browser.storage.onChanged` (keys `summarize_force_lang`, `summarize_lang`, `default_chatgpt_lang`), not from the controls' `change` event, because `saveOptions()` does not await `setPref()`. The two other `.summarize_info_additional_statements` divs (email template, separator) are unused.
 7. **Automatic summary sender list** — its own `.mzta_section` card (see the visual-design note below), holding the `summarize_auto_senders` toggle and the `summarize_auto_senders_list` textarea. The textarea carries **no** `.option-input` class: like the spamfilter skip list it is saved explicitly by its own Save button through `normalizeStringList(value, 2)`, with the `#auto_senders_unsaved` indicator handled exactly as in `pages/spamfilter/mzta-spamfilter.js`. `updateAutoSendersState()` disables the textarea and its Save button when the toggle is off, and disables the **whole card** (plus showing an explanatory note) when `summarize_auto === 3`, since that mode already summarizes every incoming message; it is called on load, on every toggle change, and from `updateDisplayModeConstraint()`.
 8. **Three editable prompts** (used by context menu summarize and webchat mode):
    - Summarize instruction prompt (`prompt_summarize`)
@@ -552,9 +564,20 @@ fields in `#mzta_conn_panel`. Each provider's fields are tiered into **core** an
 **Field tiering.** In the shared template inside `injectConnectionUI()`
 (`pages/_lib/connection-ui.js`), every advanced field row carries the marker class
 `conn_adv` in addition to its `conntype_<provider>` class. Core rows carry no marker.
-The `conn_adv` class is inert on the 6 feature pages (they render no toggle button),
-so there every advanced field shows flat. The **custom prompts page renders one**, in
-its single detail editor (`.conn_adv_btn` + `.conn_adv_table` inside `#detail_api_panel`).
+Every page hosting the connection UI hides the `conn_adv` rows behind an "Advanced
+options" disclosure: options page and setup wizard (static markup, see below), the 6
+feature pages (built at runtime, see **Feature pages** below) and custom prompts.
+The **custom prompts page renders one**, in its single detail editor (`.conn_adv_btn` +
+`.conn_adv_table` inside `#detail_api_panel`). The button carries the same markup as the
+options page one (gear + label, `.chev` chevron) and is restyled in `mzta-custom-prompts.css`
+with that page's own tokens (`--accent`, `--border2`), since the page does not link
+`mzta-design.css`. The same file also neutralises the saturated legacy `tr.conntype_*` row
+shading from `connection-ui.css`. Rows go transparent with thin separators, and the whole
+panel (`.api_panel`) takes the soft options-page provider tint. That tint is selected with
+`:has(tr[id$="_tr"].conntype_<provider>)`, because the connection-type row is the only one
+whose class follows the select. Those rules also set `--tint-border` / `--tint-accent`, which
+the `.conn_adv_btn` uses for its border and text, as on the options page. With no provider
+selected it falls back to `--border2` / `--accent`.
 Its relocation helper `relocateConnAdvRows(scopeEl)` and
 `showAdvConnectionOptions(scopeEl, connType)` stay **scoped** to that panel rather than
 using the options page's document-wide `querySelectorAll('#connection_ui_table tr.conn_adv')`,
@@ -622,8 +645,9 @@ per-provider `--tint-border` / `--tint-accent`, falling back to `--fieldLine` /
 `--accent`); its chevron rotates 180° when expanded via the `[aria-expanded="true"]`
 attribute.
 
-**Show/hide mechanism.** The advanced rows are **moved at runtime** (options page only,
-right after `injectConnectionUI()` in `options/mzta-options.js`) out of
+**Show/hide mechanism.** The advanced rows are **moved at runtime** (on the options page
+right after `injectConnectionUI()` in `options/mzta-options.js`; the wizard and feature pages
+do the same, see their sections) out of
 `#connection_ui_table` and into a second table `#connection_ui_adv_table` that sits
 **below** the button. Because that table follows the button in the DOM, expanding it
 opens the advanced fields *below* the button (the button stays fixed) — exactly like the
@@ -651,6 +675,22 @@ UI** — no preference is persisted, so reopening the options page always starts
 The connection-test "back to idle" `input`/`change` listeners are bound to **both** tables
 so editing an advanced field also invalidates a prior test result.
 
+**Feature pages.** The 6 feature pages (addtags, spamfilter, summarize, translate,
+get-calendar-event, get-task) carry no disclosure markup. `initializeSpecificIntegrationUI()`
+(`pages/_lib/connection-ui.js`) calls `setupFeatureConnAdv()` right after
+`injectConnectionUI()`. That helper builds `#mzta_conn_adv_btn` (same gear/chevron SVGs,
+parsed with `DOMParser`, label from `prefs_advanced_options`) and `#connection_ui_adv_table`
+right after `#connection_ui_table`, reusing them if the page already has them. It then moves the
+`tr.conn_adv` rows there; a document-wide query is safe because a feature page hosts a single
+form. No separate per-provider sync is needed: the moved rows keep `.specific_integration_sub`
++ `conntype_*`, so `_updateVisibility()` (document-wide) still shows/hides them. The same holds
+for the document-wide `.specific_integration_sub .option-input` save listeners. `_updateVisibility()`
+also shows the button only when the specific integration is on **and** a provider is selected;
+otherwise it hides and collapses it. The disclosure collapses on every connection type change.
+Because `_updateVisibility()` sets an inline `display:table-row`, `mzta-design.css` re-asserts
+`display:block !important` on `body.mzta_feature_page #connection_ui_adv_table tr[style*="table-row"]`,
+the same override each feature page CSS applies to `#connection_ui_table`.
+
 ### Connection Settings Panel — Connection Test Status Strip
 
 Below the advanced-options button, inside `#mzta_conn_panel`, a status strip
@@ -674,14 +714,87 @@ connection…", link hidden), `ok` (green dot, "Connected — <API> reachable", 
 **Reset to idle** happens on `connection_type` change and on any `input`/`change` inside
 `#connection_ui_table` (editing key/host/model/version invalidates a prior result).
 
-**Test logic** lives in `js/mzta-connection-test.js` (shared helper). It **reuses each
-provider class' existing `fetchModels()`** (the same call the "Fetch models" buttons use)
+**Test logic** lives in `js/mzta-connection-test.js` (shared helper). It **reuses the
+provider classes' existing methods** (the same calls the "Fetch models" buttons use)
 — no URL/header/auth logic is duplicated. `getTestableConnection(connType)` returns a
-registry entry (`makeClient` reading current form fields, `nameKey`, `requestPermission`);
-`runConnectionTest(connType)` requests the needed host permission (mirroring the
-fetch-models / CORS buttons), calls `fetchModels()` with a ~10s `Abort` -style timeout
-(`Promise.race`), and maps the `{ok, error, is_exception}` result to auth / network /
-timeout messages. It reads current (possibly unsaved) form values and **saves nothing**.
+registry entry (`makeClient` reading current form fields, `nameKey`, `requestPermission`,
+plus the two optional fields below); `runConnectionTest(connType)` requests the needed host
+permission (mirroring the fetch-models / CORS buttons), calls the probe with a ~10s
+`Abort`-style timeout (`Promise.race`), and maps the `{ok, error, is_exception}` result to
+auth / network / timeout messages. It reads current (possibly unsaved) form values and
+**saves nothing**.
+
+One optional registry field keeps a provider quirk out of the shared runner:
+
+- **`testMethod`** names the probe, defaulting to `'fetchModels'`. Every such method shares
+  the same `{ok, error, is_exception}` contract. **Ollama sets it to `'fetchVersion'`**
+  (`GET /api/version`) because `/api/tags` conflates *"server unreachable / CORS not
+  configured"* with *"reachable but no models pulled"* — it answers with an empty list in
+  the second case and not at all in the first. `/api/version` answers whatever is installed,
+  so a success means exactly "reachable and speaking Ollama". `fetchModels()` still uses
+  `/api/tags`: it is what populates the model dropdown.
+
+A successful Ollama test also re-runs `updateOllamaModelCapabilityUI()`, because granting the
+host permission through the test is often what makes `/api/show` reachable in the first place
+— see [04-api-integrations.md](04-api-integrations.md#ollama-ollama_api).
+
+### Connection Settings Panel — "Update list" Model Fetch Buttons
+
+Each API provider's model row in `injectConnectionUI()` (`.models_fetch_row`) holds the model
+select, the `btnUpdate<Provider>Models` button (refresh icon `MODELS_REFRESH_SVG` + text in a
+`<span>`) and a `<provider>_model_fetch_loading` span (class `.models_fetch_loading`); below the
+row sits a `<provider>_model_fetch_status` box. All ids carry the `modelId_prefix`.
+
+The status box (`.models_fetch_status`) is a `role="status"` / `aria-live="polite"` region, hidden
+when empty. It is right-aligned text in plain inline flow (not flex: with flex the wrapped text
+becomes one full-width item and the icon ends up far left), so it sits under the button and wraps
+naturally. The leading `::before` is an inline-block icon drawn as a CSS mask filled with
+`currentColor` (alert-circle, or check-circle with `.is_ok`), so it stays next to the first word
+of the text and follows the red/green state colour.
+
+**OpenAI Comp label row.** The label cell of the OpenAI Comp models field is a
+`.models_label_row` flex row: the label on the left and, in `.models_label_actions`, two small
+ghost buttons separated by a `.models_action_divider`, "+ Add manually"
+(`btnOpenAICompForceModel`, `.models_action_add`, accent colour, prompts for a model name) and
+"Clear list" (`btnOpenAICompClearModelsList`, `.models_action_clear`, muted, turning to the
+error colour on hover, asks for a native `confirm()` first). On narrow widths the actions wrap
+below the label, still right-aligned. Their colours come from the provider tint
+(`--tint-accent` / `--tint-border`, set on `#mzta_conn_panel.tint_<provider>` or by the Custom
+Prompts page) with the base tokens of either design system as fallback; the base rules are in
+`connection-ui.css`, and `mzta-design.css` undoes the bordered `#connection_ui_table button`
+style for them.
+
+The click handlers drive the row through `modelsFetchUI(modelId_prefix, btnId, provider)`:
+
+- **loading** — the button is hidden (`display:none`) and the loading label takes its place, so
+  it cannot be clicked twice; any previous status message is cleared. (`setStatus()` unhides the
+  box before writing its text, so the live region announces the change.) The label holds the same
+  `MODELS_REFRESH_SVG` icon as the button, spinning (`models_fetch_spin`, off under
+  `prefers-reduced-motion`), and is shown as `inline-flex`. Just before hiding the button, its
+  `offsetWidth` and computed `font` / `letter-spacing` / `color` are copied onto the label
+  (centred, not italic), so the label looks like the button text and the row does not shift.
+  This is read at runtime because every host page styles its buttons differently.
+- **done** (success) — the list is merged into the select, the button comes back and the status
+  box shows `Models_Fetch_Done` in green (`.is_ok`). After `MODELS_FETCH_OK_VISIBLE_MS` (30 s)
+  `.is_fading` fades it out (1 s opacity transition, `MODELS_FETCH_OK_FADE_MS`) and it is then
+  hidden. The timers are stored on the status element, because `modelsFetchUI()` builds a new
+  object per click: a new click cancels the pending fade.
+- **error** — the button comes back immediately and the reason is written in red in the status
+  box, with no timer: it stays until the next click. This replaces the old `alert()`s and
+  covers HTTP errors, a denied optional host permission (ChatGPT, Claude), Ollama's "no
+  models" and network exceptions.
+
+The fetch goes through `fetchModelsWithTimeout(client)`, the same `Promise.race` as the
+connection test. The providers go through `fetchWithRetry()`, which has its own per-attempt
+timeout and retries; this call passes `{ maxRetries: 0, timeoutMs: MODELS_FETCH_TIMEOUT_MS }` on
+purpose, because the user is waiting on the button, so after `MODELS_FETCH_TIMEOUT_MS` (20 s)
+the row reports `connTest_error_timeout` and no retry keeps running in the background. It always resolves
+to an `{ok, error|response}` result, also when `fetchModels()` throws. Every implementation,
+OpenAIComp included, catches its own network errors and resolves `{ok:false, is_exception:true,
+error}`, so the `catch` there is only a safety net. OpenAIComp also accepts a bare-array
+`/models` answer besides `{data:[...]}`, and turns any other shape into an empty list.
+`parseModelsFetchError()` extracts `error.message` from a JSON error body. The `warn_*()` helpers
+still manage the button's `disabled` state, independently of its visibility.
 
 ### Setup Wizard (`pages/setup-wizard/`)
 
@@ -899,7 +1012,11 @@ via `getFeatureConnState(prefs_opt, 'get_calendar_event')` and `…, 'get_task')
 in `special_prompts_with_integration`, so they take specific integrations like the other four. It
 previously read the global select directly, which made the UI *more* restrictive than the execution
 path (`mzta-menus.js` already honoured the override). Sparks presence (`checkSparksPresence()`)
-stays an orthogonal, additional requirement. The "Sparks missing" notice (`#no_sparks`) is hidden
+stays an orthogonal, additional requirement. `sparks_min` is `'3.1.0'` since v5.1.0, because the
+payloads may carry `reminderMinutes` (#887); an older Sparks returns `0` from `checkSparksPresence()`,
+so both rows (and with them the "Manage" buttons opening the two settings pages) are hidden, the
+`wrong_sparks_text` banner is shown and `doGetSparkFeature()` drops the menu entries — an old Sparks
+never receives the new field. The "Sparks missing" notice (`#no_sparks`) is hidden
 when **both** features are unusable on their own connection — with a per-feature judgement, keying
 it on a single global flag would hide a genuinely missing add-on.
 
@@ -990,7 +1107,7 @@ Three details keep that agreement holding in the background:
 **Execution guards are the backstop** for the window between a connection change and the
 reconciliation, and for callers that bypass the menus. `isApiUsableConnection()` is checked in
 `_generateSpamReportForMessage()` (which had no check at all — the resolved type flowed straight
-into `mzta_specialCommand`), in the `addTagsAuto` branch of `processEmails()` (the menu-path guard
+into `mzta_specialCommand`), in `resolveAddTagsSetup()`, the once-per-batch add_tags setup of `processEmails()` (the menu-path guard
 in `mzta-menus.js` does not cover auto/batch), and in `_generateSummaryForMessage()`,
 `_generateTranslationForMessage()` and `_openSummaryWebchat()` — the latter three previously tested
 `connectionType === 'chatgpt_web'`, which let an *empty* connection through. Each guard reports
@@ -1000,7 +1117,7 @@ through the channel its caller already owns (`spamReport` / `summaryStore` / `tr
 `_summarizeConnectionMissing()` applies the same predicate **ahead** of those guards, for the two
 automatic summarize triggers (the sender-list branch of `initSummary` and the summarize-on-receive
 branch of `processEmails()`). It is not redundant with the guard inside
-`_generateSummaryForMessage()`: that one runs after `setProcessing()` and persists the error into
+`_generateSummaryForMessage()`: that one runs inside the summary job and persists the error into
 `summaryStore`, which is the right behaviour for a user-initiated run but wrong for an automatic
 one. The pre-check keeps automatic triggers silent. It used `hasNoConnectionSelected()` until it
 was aligned here, so `chatgpt_web` slipped past it and produced exactly that spurious cached error.
@@ -1017,6 +1134,14 @@ message-display script injection** (the content script fires `initSummary` / `in
 top level); there is no `onMessageDisplayed` listener and no `storage.onChanged` in the content
 script, so a message already open does not pick up a settings change until it is reopened.
 
+**Deleting a result redraws its button.** The "Delete" entry of the summary / translation banner
+menu sends `removeSummary` / `removeTranslation`; after clearing the stored field the background
+calls `_restoreSummaryButton()` / `_restoreTranslationButton()`, which send `showSummaryButton` /
+`showTranslationButton` again under the same gates (`summarize` / `translate` enabled, `*_auto`
+not `0`, `isApiUsableConnection()`). Without this the banner vanished and the only way back was the
+menu. Auto mode (`2`) also gets the button, not a regeneration: re-running the automatic branch
+would immediately undo the delete.
+
 **`summarize_auto` / `translate_auto` must never be stored as `null`.** Their `saveOptions()` cases
 run `parseInt(element.value, 10)`, and an empty select (`selectedIndex === -1`, which
 `restoreOptions()` can produce) parses to `NaN` — storage serializes that as `null`. A stored
@@ -1032,7 +1157,7 @@ with `Number.isInteger()` before comparing, which also repairs profiles that alr
 legitimate **0** ("flag everything") along with the genuinely missing values and silently applies
 the default 70 instead. `getSpamThreshold()` in `mzta-background.js` now guards with
 `Number.isFinite()`, so only an absent or non-numeric value — including the `null` an emptied
-number input stores — falls back. The other numeric prefs (`add_tags_maxnum`,
+number input stores — falls back. The other numeric prefs (`add_tags_maxnum`, `add_tags_max_messages`,
 `summarize_max_messages`, `summarize_max_display_length`, `translate_max_display_length`) are
 already safe at their consumers, either via `Number.isFinite()` or because `|| 0` / `> 0` is the
 intended behaviour for them; their `saveOptions()` cases are deliberately left untouched.
@@ -1202,6 +1327,37 @@ are unaffected.
 
 Each page calls `initUnsavedGuard()` as the first statement of its `DOMContentLoaded`
 handler, so the guard is armed even if later async setup fails.
+
+### Reminder Section (Calendar Event / Task pages, `pages/_lib/reminder-ui.js`)
+
+Both pages carry the same "Let the AI set a reminder" section (#887), placed **after** the prompt
+section (its help text refers to "the main prompt above"), with the same ids on both pages except the
+checkbox, whose id is the pref (`calendar_reminder_enabled` / `task_reminder_enabled`).
+`initReminderUI({feature, promptTextarea, statementsEl})` is called right after the prompt text is
+loaded (so after `restoreOptions()`, which sets the checkbox state), and **before** the editor
+decoration (placeholders, highlight, autocomplete), so a failure there cannot leave the section
+uninitialized. A missing page element is logged and the setup is skipped. A failure loading the saved
+rules is logged and the setup continues with an empty textarea: the listeners and the first
+`refresh()` always run. A failed save is logged and leaves the Save button enabled. It does the following:
+- The checkbox is a plain `.option-input`, saved by the page's `saveOptions()`. It shows or hides
+  `#reminder_rules_block`, which is hidden by default in the page CSS.
+- The rules textarea `#reminder_rules` uses the **explicit Save** pattern (`#btn_save_reminder_rules`,
+  `#reminder_rules_unsaved`), the same one as `summarize_auto_senders_list`, so the unsaved-changes guard
+  above covers it. The value is stored trimmed. It is a **plain** textarea without placeholder
+  highlighting, because the rules are appended after placeholder resolution (see
+  [02-prompts.md](02-prompts.md#calendar-event--task-reminder-887)).
+- The non-blocking warning `#reminder_prompt_warning` (`.feature_warn_note`, amber, shared in
+  `mzta-design.css`) is shown while the **live** prompt text contains `reminderMinutes` and the
+  checkbox is off. In that case the main prompt's reminder instructions are ignored (the AI value is
+  discarded, Thunderbird's default applies) until the option is checked.
+  It is refreshed on the prompt textarea's `input` and on the checkbox's `change`.
+- The existing `#{prefix}_info_additional_statements` div previews exactly what `finalizePrompt_*()`
+  will append, from `taPromptUtils.getReminderPromptParts()` on the live values (the same pieces
+  `getReminderPromptStatements()` joins for the real prompt), with the
+  `addtags_info_additional_statements` label. No quotes: the text sits in a boxed
+  `.reminder_statements_box` (shared in `mzta-design.css`), with the fixed format instruction dimmed
+  (`.reminder_statements_format`) and the user's rules, with their bold intro, set apart by an
+  accent left border (`.reminder_statements_rules`). Built through the DOM, since the rules are user text.
 
 ## Adding a New Preference
 

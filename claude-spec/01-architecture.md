@@ -52,8 +52,8 @@ the summary is displayed. The `summarize_auto` preference controls when it is tr
   - `'inline'` → button click triggers inline generation
   - `'webchat'` → button click opens the AI chat window via `_openSummaryWebchat()`
 - Context menu summarize also respects `summarize_display_mode`:
-  - `'inline'` with a single message → generates inline via `_generateSummaryForMessage()`
-  - `'webchat'` or multiple messages → opens the AI chat window via `openChatGPT()`
+  - `'inline'` with a single message and a reachable message pane → generates inline via `_generateSummaryForMessage()`
+  - `'webchat'`, multiple messages, or an unreachable message pane (the indicator send doubles as the probe — see [Unreachable message pane](#unreachable-message-pane-sendtabmessagesafe-901)) → opens the AI chat window via `openChatGPT()`
 
 ```
 User opens/selects a message in Thunderbird
@@ -71,13 +71,15 @@ mzta-background.js      (checks summarize_auto + summarize_display_mode prefs)
   │ summarize_auto = 3 → cache hit (pre-cached on receive)   │
   └──────────────────────────────────────────────────────────┘
        ↓  (if generating inline)
-  taSummaryStore         (check cache / set processing)
+  taJobRegistry          (join a running summary job, or register a new one)
+       ↓
+  taSummaryStore         (check cache)
        ↓  (cache miss)
   mzta-special-commands  (via Web Worker, NOT chatgpt_web)
        ↓
   taSummaryStore         (save result via taStorage)
        ↓
-  mzta-compose-script.js (render summary banner in message body)
+  mzta-compose-script.js (render summary banner in every tab displaying the message)
 ```
 
 ### Data Flow: Inline Translation on Message Display
@@ -100,13 +102,15 @@ mzta-background.js      (checks translate + translate_auto prefs)
   │ translate_auto = 2 → generate immediately                │
   └──────────────────────────────────────────────────────────┘
        ↓
-  taTranslationStore     (check cache / set processing)
+  taJobRegistry          (join a running translation job, or register a new one)
+       ↓
+  taTranslationStore     (check cache)
        ↓  (cache miss)
   mzta-special-commands  (via Web Worker, NOT chatgpt_web)
        ↓
   taTranslationStore     (save result via taStorage)
        ↓
-  mzta-compose-script.js (render translation banner in message body)
+  mzta-compose-script.js (render translation banner in every tab displaying the message)
 ```
 ### Data Flow: Background Summary on Email Receive (summarize_auto = 3)
 
@@ -120,13 +124,18 @@ browser.messages.onNewMailReceived
 newEmailListener  (checks _process_incoming, which includes summarize_auto === 3)
        ↓
 processEmails({ summarizeOnReceive: true })
-       ↓  (single loop — shared with addTagsAuto / spamFilter / translateOnReceive)
+       ↓  (single loop — shared with addTagsAuto / spamFilter / translateOnReceive;
+       ↓   the loop only gates the message and sets target.summarize)
+per-message pipeline: spam → add_tags (those in the same batch) → summary
+       ↓  (up to batch_max_concurrency messages at once)
 _generateSummaryForMessage(headerMessageId, null, { messageData })
-  ← tabId is null → no UI messages sent, silent pre-cache
+  ← tabId is null: no tab of its own, but the job broadcasts its generating panel and
+    its result to every tab already displaying the message (_sendToTabsDisplaying)
        ↓
 taSummaryStore.saveSummary()
        ↓
 [later] user opens the message → initSummary → cache hit → showSummary instantly
+[meanwhile] user opens it while the job runs → initSummary joins the job → spinner → result
 ```
 
 ### Data Flow: Auto-Summarize by Sender Address List
@@ -150,12 +159,12 @@ subscribed IMAP folders that are not checked for new mail, and messages moved by
    processEmails({ summarizeSenders: [...] })
         ↓  (per message, inside the shared loop)
    summarizeOnReceive || matchAddressList(message.author, summarizeSenders)
-        ↓
+        ↓  (sets target.summarize, run by the message's pipeline)
    _generateSummaryForMessage(headerMessageId, null, { messageData })   ← silent pre-cache
 
 2. On message open, if reception did not catch it
    initSummary handler
-        ↓  (after the cache check and the isProcessing() check,
+        ↓  (after the running-job check and the cache check,
         ↓   before the `summarize_auto === 0` return)
    matchAddressList(message.author, prefs.summarize_auto_senders_list)
         ↓
@@ -165,11 +174,116 @@ subscribed IMAP folders that are not checked for new mail, and messages moved by
 There is deliberately **no periodic scan**: no `setInterval`, no `browser.alarms`, no
 `browser.messages.query()` sweep, no recursive folder walk.
 
-**Idempotency** comes from `taSummaryStore` (cache + `isProcessing()`), which
-`_generateSummaryForMessage()` already consults, so a message caught by *both* triggers costs
-exactly one API call. In the `initSummary` handler the sender check is deliberately placed
-**after** the cached-summary and `isProcessing()` early returns for the same reason, and
-**before** the `summarize_auto === 0` return because the list must work with auto-summarize
+### Per-message pipelines in `processEmails()`
+
+No feature of the shared loop awaits its AI call inside the `for await` message loop: a burst of
+incoming mail (or a large context-menu selection) would otherwise become one long serial chain
+(20 messages × ~8 s ≈ 2.5 min for the last one). The loop keeps all the per-message gating —
+account enable lists, `isMessageInAutoSkippedFolder()`, the only-inbox options, the sender list,
+`_summarizeConnectionMissing()`, the add_tags prompt/connection check — and builds **one target per
+message**, `{ message, spam, addTags, summarize, bySender, translate }`, with a flag for each
+feature that message needs. After the loop, still inside the outer `try`, up to
+`batch_max_concurrency` messages run at once, and **each message goes through its features in
+series: spam, add_tags, summary, translate** (`runPipeline()`).
+
+```
+for await (message of batch)        ← gating only, no fetch and no AI call
+    targets.push({ message, spam, addTags, summarize, translate })
+        ↓
+runWithConcurrency(targets, batch_max_concurrency, runPipeline, batchStopped)
+
+runPipeline(target)                 ← one message, features in series
+    spam       getFull + _loadMessageBody → _generateSpamReportForMessage({ autoMove: true })
+               moved to junk → stop here (no tags, summary, translation)
+               otherwise messages.get(id) again (a filter may have moved it) → gone → stop
+    add_tags   (same fullMessage/body) → prompt → sendPrompt → await _assign_tags()
+               (force existing: non-existing tags skipped, see 02-prompts.md)
+    summary    → _generateSummaryForMessage()
+    translate  → _generateTranslationForMessage(…, translateTabId)
+    (batchStopped() checked between features)
+```
+
+Why per message and not per feature (the previous design ran one "drain" per feature, each over
+the whole batch, one after the other): every message is **done as soon as possible** — the first
+incoming mail has its tags, summary and translation after its own four calls, not after the whole
+batch went through the spam filter, then tagging, then summaries — and the message is fetched
+once for all its features.
+
+- **`runWithConcurrency(items, limit, fn, shouldStop)`** (`mzta-background.js`): `limit` pull-based
+  workers (capped at `items.length`, at least 1) over a shared index. `shouldStop()` is checked
+  before each item is taken; `batchStopped` is `() => taBatchController.isCancelled()`. A throwing
+  `fn` is logged and never stops the others.
+- **One cap: `batch_max_concurrency`** (default 1, i.e. serial as before). Each pipeline has one AI
+  call in flight at a time, so the cap is also the maximum number of AI requests in flight. There
+  are no per-feature caps: with N > 1, N messages can be in their spam step together, i.e. N
+  requests to the spam filter's connection (relevant for a local Ollama). A cleared field is saved
+  as `NaN`, so `_concurrencyCap()` falls back to the default. The cap applies per
+  `processEmails()` call: overlapping calls (several accounts receiving at once, each firing
+  `onNewMailReceived`) can exceed it. There is no global budget.
+- **Spam first, per message.** A spam verdict can move the message to the junk folder, which makes
+  its tags, summary and translation pointless, so the pipeline stops there: a message the spam
+  filter moved is **not tagged** (on `main`, add_tags ran before the spam filter and tagged it).
+  `_generateSpamReportForMessage()` returns `{ moved }` for this, and the junk move is awaited
+  before it returns.
+- **Re-read after the spam step.** The analysis takes a while, and a filter or the user may move or
+  delete the message meanwhile: after the spam step the header is re-read with
+  `browser.messages.get(message.id)` (a moved message gets a new id, so this fails) and the
+  pipeline stops quietly when it is gone. Each later feature also skips, in auto mode, a header now
+  in an auto-skipped folder (`add_tags_auto_include_sent` for add_tags). Nothing is written to
+  `taSummaryStore` / `translationStore` for a skipped message, so the cache is not poisoned.
+- **Targets hold only the MessageHeader.** The full message and the body are fetched by the
+  pipeline (`ensureFull()` / `ensureBody()`, per pipeline and lazy), once for all its features, so
+  memory is bounded by the cap, not by the batch size. A fetch failure skips only the feature that
+  needed it, with a log line; the next feature retries the fetch once.
+- **De-duplication.** Summary and translation stores are keyed on `headerMessageId`, so the loop
+  sets `summarize` / `translate` only on the first target with a given id. Across callers (another
+  batch, a panel button, the context menu), every feature goes through `taJobRegistry`: a pipeline
+  that reaches a feature already running on its message joins it — see
+  [In-flight jobs](#in-flight-jobs-tajobregistry).
+- **add_tags setup once per batch.** `getAddTagsPrompt()` and `getConnectionType(…, 'add_tags')`
+  are the same for every message, so `resolveAddTagsSetup()` resolves them once (memoized promise
+  that never rejects), the first time a message passes the add_tags gating. A missing prompt or an
+  unusable connection is logged once and skips add_tags for the whole batch.
+- **Serialized tag assignment.** `_assign_tags()` goes through `_enqueueTagAssign()`, a module-level
+  promise chain, and re-reads `getTagsList()` inside it. `createTag()` gives each new tag a random
+  key, so two parallel pipelines that both found the same label missing would otherwise create two
+  tags with that label. The queue also covers the context-menu/popup path, which can overlap with
+  an automatic batch. The pipeline awaits `_assign_tags()`. The tag list embedded in the *prompt*
+  is still read per message, so parallel pipelines do not see each other's new tags there; only
+  exact-label duplicates are prevented.
+- **Translate tab.** The manual action (`translate: true`) resolves its UI tab once, before the
+  pipelines start (`sourceTabId`, else `tabs.query({active, currentWindow})`), and gets the outcome
+  delivered there (only for the message that tab displays). On receive the tab is `null`. Either
+  way every tab displaying a message follows its job through the job's own broadcast.
+- **Delayed junk move.** The spam step runs after the whole loop, so spam sits in its folder
+  slightly longer than when the analysis ran inside the loop.
+- **Serialized junk moves.** Several analyses run at once, but the moves into the junk folder go
+  through `_enqueueJunkMove()`, a module-level promise chain, so only one
+  `messages.update({junk})` + `messages.move()` is in flight at a time (concurrent moves over IMAP
+  were never exercised). The move is awaited: a failure — including an account with no junk folder —
+  is logged and leaves `report_data.moved = false`, and the verdict is still saved.
+- **Stop and rate limit.** `batchStopped()` is checked before each message is taken and between the
+  features of a message: after a Stop or a rate-limit stop, queued messages do not start and
+  in-flight ones stop after their current call (bounded by `special_command_timeout`).
+- **Progress counter.** A message with a target is not `tick()`ed by the loop: its pipeline ticks
+  it in its `finally`, also when it stopped early (moved to junk, gone, batch stopped between
+  features). Targets that never start because of a cancel are not counted.
+- **Working indicator.** `taWorkingStatus.WorkingLevel` is 1 for the batch itself
+  (`processEmails()` start/`finally`) plus 1 per AI call in flight: every feature — spam
+  (`_generateSpamReportForMessage()`), add_tags (`runAddTags()`), summary, translate — brackets its
+  own `initWorker()` + `sendPrompt()` with `startWorking()` / `stopWorking()` in a `finally`, so
+  the level drops back on every return path. Early exits before the AI call (cache hit, skip
+  address, missing prompt) are not counted.
+- **Error paths.** Parallel calls hit the error paths far more often than the serial loop did.
+  Anything the pipeline's `finally` (or a `catch` in the `_generate*` functions) reads is declared
+  above its `try` with a value it can tolerate — the same rule `message_metadata` already follows
+  in `_generateSpamReportForMessage()`.
+
+**Idempotency** comes from `taJobRegistry` (one summary job per message in flight, joined by any
+later caller) plus the `taSummaryStore` cache, which the job consults first, so a message caught by
+*both* triggers costs exactly one API call. In the `initSummary` handler the sender check is
+deliberately placed **after** the running-job and cached-summary early returns for the same reason,
+and **before** the `summarize_auto === 0` return because the list must work with auto-summarize
 otherwise disabled.
 
 **Shared guards** in both triggers (`mzta-background.js`):
@@ -205,7 +319,7 @@ otherwise disabled.
   every other feature: `chatgpt_web` has no API and cannot produce a summary, so it counts as
   unusable here exactly as an empty connection does. It used to test `hasNoConnectionSelected()`
   instead, which let `chatgpt_web` through — the run then reached
-  `_generateSummaryForMessage()`, which rejects it only **after** `setProcessing()` and
+  `_generateSummaryForMessage()`, which rejects it only **inside its job** and
   persists the error into `summaryStore`. That is why the pre-check exists at all and why it
   must use the strict predicate: an automatic trigger would otherwise write an error record
   for a message the user never asked to summarize. On an unusable connection the trigger logs
@@ -241,27 +355,26 @@ only-inbox guards use `messageFolderHasSpecialUse()` and are authoritative: they
 thing keeping the automatic processing in the Inbox. `_process_incoming` in `newEmailListener`
 remains the cheap gate that avoids waking the whole pipeline when no automatic feature is enabled.
 
-**Lazy per-message body fetch.** In the `processEmails()` loop, `browser.messages.getFull()` and
-the body conversion are deferred to two per-iteration helpers, `ensureFullMessage()` and
-`ensureBodyText()`, each idempotent. Every feature awaits the one it needs only after all of its
-own skip checks have passed. A message discarded by the guards is therefore never fetched or
-converted at all, which matters now that the listener reports every folder.
+**No fetch in the loop.** The `processEmails()` loop reads only the `MessageHeader` it is handed:
+`browser.messages.getFull()` and the body conversion happen in the per-message pipeline, after all of the
+feature's skip checks have passed (see [Per-message pipelines](#per-message-pipelines-in-processemails)).
+A message discarded by the guards is therefore never fetched or converted at all, which matters now
+that the listener reports every folder. The per-iteration helpers `ensureFullMessage()` /
+`ensureBodyText()` became `ensureFull()` / `ensureBody()` inside `runPipeline()`: lazy and cached
+per pipeline, so a message handled by several features is fetched once for all of them.
+The full message and the body are **independent** fetches — the body comes from
+`getMailInlineTextParts(message.id)`, which needs only the message id — and each feature awaits both
+when it needs both (add_tags: `fullMessage.headers.subject` and the body for the prompt).
 
-**The two helpers are INDEPENDENT.** `ensureBodyText()` used to begin with `await
-ensureFullMessage()`, because the body was extracted from the MIME tree that call returned. It no
-longer does: the body now comes from `getMailInlineTextParts(message.id)`, which needs only the
-message id. Every feature therefore awaits *each* helper it actually uses — add-tags and the spam
-filter await **both** (`ensureFullMessage()` for `headers.subject` and the report metadata,
-`ensureBodyText()` for the prompt), summarize and translate await `ensureFullMessage()`. As it
-happens all four still need the full message for its headers, so this saves no `getFull()` today;
-what it buys is that a future body-only consumer would pay for no MIME fetch, and that neither
-helper silently drags the other in. Dropping the implicit call without adding the two explicit ones
-would have left `curr_fullMessage` null under `headers.subject` — the trap to watch for here.
+**Fetch failures are feature-local.** `messages.onNewMailReceived` fires after message filters
+have run, and a filter running after junk classification may still move or delete the message,
+so `getFull()` can throw because the message is no longer where it was reported. The pipeline
+catches each fetch failure and skips *only that feature for that message* (the next feature retries
+the fetch); the re-read after the spam step turns most of them into a quiet skip. The loop's outer
+`catch`+`continue` stays as the last resort for genuine per-message errors in the gating.
 
-`ensureBodyText()` prefers the HTML body converted with
-`htmlBodyToPlainText()` and falls back to the whitespace-collapsed plain text part when the HTML
-body is empty. The `finally` block still nulls `curr_fullMessage` / `msg_text` / `body_text` after
-each message.
+`_loadMessageBody()` prefers the HTML body converted with `htmlBodyToPlainText()` and falls back
+to the whitespace-collapsed plain text part when the HTML body is empty.
 
 ### Data Flow: Background Translation on Email Receive (translate_auto = 3)
 
@@ -275,9 +388,12 @@ browser.messages.onNewMailReceived
 newEmailListener  (checks _process_incoming, which includes translate_auto === 3)
        ↓
 processEmails({ translateOnReceive: true })
-       ↓  (single loop — shared with addTagsAuto / spamFilter / summarizeOnReceive)
+       ↓  (single loop — shared with addTagsAuto / spamFilter / summarizeOnReceive;
+       ↓   the loop only gates the message and sets target.translate)
+per-message pipeline: spam → add_tags → summary (those in the same batch) → translate
+       ↓  (up to batch_max_concurrency messages at once)
 _generateTranslationForMessage(headerMessageId, null, { messageData })
-  ← tabId is null → no UI messages sent, silent pre-cache
+  ← tabId is null: the job still broadcasts to every tab displaying the message
        ↓
 taTranslationStore.saveTranslation()
        ↓
@@ -314,9 +430,18 @@ message: ids are per-folder and can be reused after a delete + compaction. (a) r
 the same reason: a caller that resolved the message earlier may now hold a stale reference.
 A mismatch falls through to the next route rather than returning the wrong message.
 
+**A falsy `headerMessageId` returns `null` at once**, before route (a). Handed to (d) it would be
+worse than slow: the schema drops an `undefined` / empty property, so `query()` runs with *no
+filter*, matches every message of every account, and `messages[0]` is an arbitrary message from
+an arbitrary folder — summarized in place of the real one. Reaching (d) at all is logged with
+`taLog.warn()`, since no normal user-facing path should get there. The three generators
+(`_generateSummaryForMessage`, `_generateTranslationForMessage`, `_generateSpamReportForMessage`)
+also bail out on a falsy id **before** registering a job or calling `saveError()`, so no store
+(and no registry entry) is ever keyed on `undefined`.
+
 The generators keep their own "Message not found" handling: `_resolveMessage()` returns `null`
-and the caller runs its existing `saveError()` / `_sendIfCurrent()` / `taWorkingStatus.stopWorking()`
-bookkeeping unchanged.
+and the job stores and broadcasts the error through `_endSummaryJob()` / `_endTranslationJob()`
+(`saveError()` for spam); `taWorkingStatus.stopWorking()` runs in the job's `finally`.
 
 **Passing the resolution is the caller's job.** A handler that already holds a message object
 (the `initSummary` / `initTranslation` auto-display paths, which fetched it via
@@ -343,10 +468,213 @@ already-saved cache is unaffected, so revisiting the message later shows the cor
 on cache hit. This generalizes the same displayed-message check already used by
 `updateSpamPanel()`.
 
-The transient *loading* indicators (`showSummaryGenerating`, `showTranslationGenerating`,
-`showSpamCheckInProgress`) are intentionally **not** guarded — they are not keyed to a
-specific result, are idempotent in the content script, and are quickly replaced; guarding
-them would add latency without preventing wrong-content display.
+**The summary/translation loading indicators are message-aware too.** They used to be sent
+unguarded, on the theory that they are transient and quickly replaced by the result. They are
+not when the result is dropped: a `showSummaryGenerating` drawn on a tab displaying message X
+while message Y is being generated is never replaced, because the final `showSummary` for Y is
+correctly discarded by `_sendIfCurrent()` — the spinner spins forever. So:
+
+- `showSummaryGenerating` / `showTranslationGenerating` always carry `headerMessageId`.
+- A running job sends them through **`_sendToTabsDisplaying()`** (see
+  [In-flight jobs](#in-flight-jobs-tajobregistry)), which checks each tab's displayed message.
+  A caller that joins a running job sends one to its own tab through
+  **`_sendGeneratingIfCurrent(tabId, headerMessageId, payload)`**, which returns
+  `{ current, delivered }` (the context-menu #901 probe below uses it too). When the tab
+  displays another message the panel is skipped and generation **continues**: the result lands
+  in the cache and renders if the user comes back to the message.
+- The trigger/refresh handlers (`triggerSummaryGeneration`, `refreshSummary`,
+  `triggerTranslationGeneration`, `refreshTranslation`) keep a direct send, before any await:
+  the id comes from that very tab's content script.
+- The content script checks every generating command against **its own** message: at load it
+  asks the background once (`getDisplayedMessageId` → `getDisplayedMessage(sender.tab.id)`),
+  and draws the panel only when the supplied id is non-empty and matches (or its own id is
+  unknown, e.g. in a compose window). Because that check is asynchronous, each result command
+  (`showSummary`, `showSummaryButton`, `showTranslation`, `showTranslationButton`) bumps a
+  per-feature counter, and a generating command that sees the counter moved does nothing — a
+  result can never be painted over by a late spinner.
+- `hideSummaryGenerating` / `hideTranslationGenerating` remove a panel (message-aware when an id
+  is given, unconditional otherwise). The jobs broadcast them from their `catch` blocks and when
+  an invalidated job lands; `_clearGeneratingPanels()` sends them to one tab, from a joiner whose
+  job was skipped and from `_handleTaskError()`, the `.catch()` attached to every
+  fire-and-forget task in the `runtime.onMessage` listener.
+- `showSummaryButton` / `showTranslationButton` also remove the generating panel: the button is
+  what an invalidated job leaves behind.
+- A message change replaces the document, so panels never outlive their message; the one
+  surviving document — an already-open tab re-injected on extension reload — gets both
+  generating panels removed when the script loads.
+
+**Panel HTML sanitization.** The two send helpers are the sanitization gates: both
+`_sendIfCurrent()` (one tab) and `_sendToTabsDisplaying()` (every tab displaying the message)
+pass the payload through `_sanitizePanelPayload(payload)` before sending. Fresh results of the
+shared summary / translation jobs are broadcast through `_sendToTabsDisplaying()`, which
+sanitizes once before the per-tab loop; cached results and the webchat save go through
+`_sendIfCurrent()`. `_sanitizePanelPayload()` returns every other command (spam panel, buttons,
+generating / hide panels, error payloads) unchanged. The summary / translation text is model output about a possibly crafted email, and the content
+script inserts it into the message pane, so a `<style>` or similar markup could restyle the
+message or hide ThunderAI's own panels.
+- `showSummary`: `data.summary_html` is passed through `sanitizeBlockHtml()` (`js/mzta-richtext.js`,
+  the ONE sanitizer).
+- `showTranslation`: `data.translated_text` is sanitized **only when it looks like HTML**, using the
+  same `/<[a-z][^>]*>/i` test as the content script's `_isHtml()`. Plain text is left untouched,
+  because a DOMParser round trip would encode `<` / `&` and the plain branch shows them literally.
+  HTML left with no tag after sanitizing is handed on as its decoded text.
+- The payload is copied, and the stored object is never modified. Because the gates sit on the
+  send and not on the save, **cached results** (including entries written by older versions)
+  cross them exactly like fresh ones, in both `summarize_display_mode`s (the webchat save,
+  `chatgpt_saveSummary`, sends through `_sendIfCurrent()` too).
+- Everything else in these panels (plain `summary`, `translated_subject`, error messages, the spam
+  report, `showGeneric*`) is rendered through `textContent` and needs no sanitizing.
+- Defense in depth in the content script: `_renderSafeHtml()` in `js/mzta-compose-script.js`, used
+  by **both** the summary and the translation panel, removes `script, img, style, link, iframe,
+  frame, frameset, object, embed, form, meta, base, svg, math, template, noscript`, every `on*` and
+  `style` attribute, and `javascript:` / `vbscript:` / `data:` URLs.
+
+`showSpamCheckInProgress` carries no id: `updateSpamPanel()` broadcasts it through
+`_sendToTabsDisplaying()`, which checks every tab's displayed message, and a joiner sends it to its
+own tab through `_sendIfCurrent()`. That is the *staleness* question; *delivery* is a separate
+concern — see the next section.
+
+### In-flight jobs (`taJobRegistry`)
+
+The batch (`processEmails()`) and the manual paths — panel buttons, auto display, context menu,
+Refresh, the popup's Add tags — can reach the same message at any moment: before the batch gets
+to it, while it works on it, or after. `js/mzta-job-registry.js` (`taJobRegistry`, a singleton
+like `taBatchController`, logging through the background's `taLogger`) makes sure a feature
+never runs twice on a message at the same time.
+
+- **One entry per `${kind}:${headerMessageId}`**, `kind` ∈ `summary | translation | spam |
+  add_tags`, holding the job's promise. It is the only authority for "in progress": the old
+  `storage.session` processing flags (`setProcessing` / `isProcessing` in the three stores) are
+  gone. They were checked and set across several awaits, so two callers could both pass, and
+  they were cleared only on the save path, so a config error left the message "processing" for
+  the whole session (eternal spinner, every retry refused). The background page is persistent
+  (MV2), so an in-memory Map has the same lifetime.
+- **Check and registration are synchronous and back to back** (`get()` then `start()`, no await
+  in between), in the generator wrappers `_generateSummaryForMessage()`,
+  `_generateTranslationForMessage()`, `_generateSpamReportForMessage()`, in `runAddTags()`
+  (`processEmails`) and in the Add tags dialog path of `act()` (`js/mzta-menus.js`). The guards
+  that must not create a job run before it: the empty-id guard, and the missing translate
+  language (which needs a prefs read, so the translation wrapper awaits it first and only then
+  does the synchronous lookup). `_summarizeConnectionMissing()` stays in the automatic callers.
+- **The promise never rejects**: it resolves to an outcome `{ status: 'ok' | 'error' | 'skipped' |
+  'cancelled', data, errorMessage, rateLimited, retryAfterMs }` (spam adds `success`, `moved` and
+  `data.report`; add_tags `data.tags` / `data.assigned`). The entry is removed when the job
+  settles, in every path.
+- **Joining.** A caller that finds an entry awaits it (`_joinSummaryJob()`,
+  `_joinTranslationJob()`, `_joinSpamJob()`): no `taWorkingStatus.startWorking()`, no store
+  write, no API call. With a tab of its own it sends the generating panel there, then delivers
+  the outcome there (result, error banner, restored button for `cancelled`, hidden spinner for
+  `skipped`). It delivers even though the job broadcasts too: the joiner's own spinner — or the
+  direct one the trigger handlers send before any await — can reach its tab after the job's
+  result broadcast, and only the joiner's final send is guaranteed to come after it. The batch
+  only reads the outcome (`rateLimited`, `moved`).
+- **Broadcast.** The job itself updates every tab displaying the message
+  (`_sendToTabsDisplaying(headerMessageId, payload)`: `mail` and `messageDisplay` tabs,
+  `getDisplayedMessage()` checked per tab, sent through `sendTabMessageSafe()` [#901]): the
+  generating panel when it really starts (after the cache check), the result or the error when
+  it ends. The job awaits each broadcast, so a tab gets generating before the result. A cache hit
+  is not broadcast (the other tabs show it already); it goes to the job's own tab and into the
+  outcome for joiners. `updateSpamPanel()` broadcasts the same way, still gated by
+  `spamfilter_show_msg_panel` (it used to reach only the active tab of the current window).
+- **Working indicator.** Exactly one `startWorking()` / `stopWorking()` pair per job that gets
+  past the cache (`finally`), none for joiners. `taBatchController.tick()` counts are unchanged
+  (the pipeline ticks its message whether its features ran or joined).
+- **Queued messages.** A message only collected in a batch's `targets` shows the manual button.
+  A click starts the job at once; when the pipeline reaches that feature it joins it, or starts a
+  job that hits the cache. When the batch starts the feature, its generating broadcast replaces
+  the button (the generating panels remove the toolbar button), then the result replaces it.
+- **Refresh** (`options.refresh`) goes through the same wrapper: with a job running it joins it;
+  otherwise the job itself drops the stored result and skips the cache. The handler no longer
+  removes anything before calling it, so there is never a second generation next to a running
+  one.
+- **Remove / invalidate.** `removeSummary` / `removeTranslation` call
+  `taJobRegistry.invalidate()` synchronously, before removing the stored result. The entry
+  object is the job's token: an invalidated job lands without saving or showing its result,
+  broadcasts `hide…Generating` and restores the manual button in every displaying tab
+  (`_restoreSummaryButton(null, …)`), and resolves `cancelled`. An explicit manual trigger
+  (`options.manual`: panel button, Refresh, context menu) on an invalidated job **revives** it
+  and joins it, so delete-then-generate-again is still one API call; the auto display and the
+  batch never revive. The spam report delete does not invalidate (a spam job is also a junk
+  move).
+- **Config errors** are broadcast and not stored (a later attempt runs again). Nothing stays
+  "in progress": the entry is dropped when the job settles, so a retry in the same session works.
+- **Spam.** Only the job owning the entry can reach `_enqueueJunkMove()`; a joiner never moves.
+  An `autoMove` joiner (the batch joining a manual Refresh) sets `entry.wantsMove`, which the job
+  reads at its verdict, so the message is still moved, once. A joiner arriving after that point
+  gets the outcome without a move. `checkSpamReport` and `refreshSpamReport` join a running
+  analysis.
+- **add_tags.** The batch / context menu (`runAddTags()`) and the popup dialog (`act()`) share
+  the `add_tags` entry. A batch joiner assigns nothing (the job did, or the user is confirming in
+  the dialog: `data.assigned = false`). The dialog path joining a running job shows the job's
+  tags in the confirmation dialog without an AI call; if that job produced no tags it runs its
+  own. `_assign_tags()` stays serialized through `_enqueueTagAssign()`.
+- **Logs** (`do_debug`): `[taJobs] start|join|invalidate|revive|end <status> <kind>:<id>`.
+
+### Context-menu actions: one source for messages and UI tab
+
+`browser.menus.onClicked` reads the selection from the **clicked tab**
+(`mailTabs.getSelectedMessages(tab.id)`, falling back to `info.selectedMessages` only when that
+fails) and passes `tab.id` to `processEmails()` as `sourceTabId`; the summarize and translate
+branches use it as their UI tab and fall back to `tabs.query({active, currentWindow})` only when
+it is absent. `info.selectedMessages` is not bound to the clicked tab (several mail
+tabs/windows, a right-click that does not move the selection) and the active-tab query resolves
+to the last focused window, so the two could disagree — the generating panel ended up on the
+displayed message while another message, from another folder, was sent to the AI. The
+`shortcut_do_prompt` path passes its `tabId` the same way. The handler awaits
+`processEmails()`; a rejection is logged and clears any generating panel.
+
+With `do_debug` on, each click logs one entry with `tab.id/windowId/type` and, for
+`info.selectedMessages`, `mailTabs.getSelectedMessages()` and `getDisplayedMessage()`, the
+`id`, `headerMessageId` and `folder.path` of each message, prefixed `MISMATCH` when they
+disagree. The generators also log the `headerMessageId` and `folder.path` actually used right
+before the prompt is built. `getMessages()` (`js/mzta-utils.js`) logs and stops, keeping what it
+already yielded, when `continueList()` fails on an expired MessageList id.
+
+### Unreachable message pane (`sendTabMessageSafe`, [#901](https://github.com/micz/ThunderAI/issues/901))
+
+In a 3-pane `mail` tab with the message pane hidden (F8), nothing displayed, or a
+multi-message view, the tab has **no reachable message browser**. Thunderbird's own
+`tabs.sendMessage()` routing then crashes: `ExtensionParent.sys.mjs` calls
+`getAttribute()` on a tab info object that has none, the promise rejects with
+`TypeError: (intermediate value).getAttribute is not a function`, and at every
+un-awaited call site that surfaces as an uncaught rejection which kills the whole
+action with nothing shown to the user. `browser.messageDisplay.getDisplayedMessage()`
+still reports the selected message in that state, so it **cannot** be used to detect
+the problem — the send itself is the only reliable probe.
+
+**`sendTabMessageSafe(tabId, message)`** (`js/mzta-utils.js`) wraps the send and
+resolves `true` on delivery, `false` on any failure (unreachable pane, closed tab, no
+listener) — the same quiet drop the `.catch(() => {})` idiom already gives
+`showGenericError()` / `showGenericInfo()`. Every fire-and-forget tab send goes
+through it: the loading indicators, `_sendIfCurrent()` (whose displayed-message check
+cannot tell a hidden pane from a shown one), `updateSpamPanel()`, the `sendAlert`s of
+`mzta-background.js` and of `act()` in `js/mzta-menus.js`, and the `getTags` hand-off.
+A dropped result is not lost: summaries/translations/spam reports are written to their
+stores independently of the send and render on the next visit.
+
+Two deliberate behaviours on top of the plain drop:
+
+- **The context-menu summarize flow uses the indicator send as a probe.** In `'inline'`
+  mode with a single message, `processEmails()` awaits the `showSummaryGenerating`
+  send (through `_sendGeneratingIfCurrent()`); when the pane cannot receive it
+  (`current && !delivered`), it falls back to the webchat flow — the same fallback already
+  used for inline mode with multiple messages — so the action still produces something
+  visible instead of dying. When the tab displays another message (`!current`) the panel is
+  not drawn and the summary is generated inline anyway, silently, into the cache.
+- **`act()` bails out cleanly when the body cannot be scraped.** `getMailBody()` talks
+  to the content script; when the first send rejects, the action logs, calls
+  `taWorkingStatus.stopWorking()` and returns `{ok:'0'}` — previously the rejection
+  escaped `act()` and left the working spinner stuck. The add-tags hand-off is special:
+  the `getTags` dialog is the **user's confirmation step**, so when the pane is
+  unreachable it bails **without assigning** — tags are never applied silently.
+
+**Not guarded, deliberately:** sends to `sender.tab` (the content script that just
+messaged us is alive by construction, so its tab has a browser), awaited sends whose
+rejection the caller observes (e.g. `chatgpt_replaceSelectedText`), and the chat tabs
+the background itself created. `showGenericError()` / `showGenericInfo()` keep their
+own `.catch(() => {})`, which is the same quiet drop. (The generating-panel sends of the
+trigger/refresh handlers go to `sender.tab` but use `sendTabMessageSafe()` anyway: they are
+not awaited, so a rejection would otherwise surface as unhandled.)
 
 ### Batch cancellation (`taBatchController`)
 
@@ -354,30 +682,67 @@ Batch email processing (`processEmails` — auto add-tags, spam filter, summariz
 run both on-receive and from the context menu) can iterate over a large selection and run for
 a long time. `js/mzta-batch-controller.js` provides a cooperative way for the user to stop it.
 
-It is a singleton mirroring `taWorkingStatus`, exposing a **single global "cancel all" flag**
-plus a **progress counter**:
+It is a singleton mirroring `taWorkingStatus`, exposing a **per-batch cancel token** plus a
+global **progress counter**:
 
-- `beginBatch()` / `endBatch()` — called at the start of `processEmails` and in its `finally`.
-  A `_activeBatches` counter allows overlapping batches; the cancel flag and `processed`
-  counter are reset only when the **last** active batch exits, so a single cancel request is
-  honored by every overlapping batch and never leaks into a future one.
-- `requestCancel()` / `isCancelled()` — set/read the global flag.
+- `beginBatch()` / `endBatch(batch)` — called at the start of `processEmails` and in its
+  `finally`. `beginBatch()` returns the batch's token `{ cancelled }`, kept in a `Set` of active
+  batches. The notice state and the `processed` counter are reset only when the **last** active
+  batch exits, so one "stopped" notice covers all overlapping batches.
+- `requestCancel(reason = 'user', retryAfterMs = null)` — flags **every batch active at that
+  moment**; `isCancelled(batch)` reads one batch's flag. A batch begun after the request is not
+  affected: with the old single global flag, reset only on the last exit, a manual context-menu
+  Summarize/Translate started while an automatic batch was still winding down after a Stop or a
+  rate limit was silently skipped. `retryAfterMs` is the wait the provider asked for, the longest
+  one kept. `reason` is `'user'` (Stop button) or `'rate_limit'` (set by `processEmails` itself,
+  see below); a `'rate_limit'` reason is never overwritten by a later `'user'` one.
 - `tick()` / `processed` — increments the "N processed" counter shown in the popup.
-- `isWorking()` / `getStatus()` — report `{ working, processed, cancelRequested }`.
+- `isWorking()` / `getStatus()` — report `{ working, processed, cancelRequested, cancelReason }`;
+  `cancelRequested` is true only when every active batch is cancelled.
+- `endBatch()` returns `{ lastExit, cancelled, processed, reason, retryAfterMs }`, a snapshot taken before the
+  reset, which picks the notice shown by the `finally` of `processEmails`.
 
-**Scope decision:** `isWorking()` tracks its own `_activeBatches` counter, **not**
+**Automatic stop on a rate limit (#901).** When a message fails with `err.rateLimited` (a 429
+that outlived the per-request retries, or that `fetchWithRetry` returned at once because the
+body reports a used-up quota or spend limit, see
+[04-api-integrations.md](04-api-integrations.md#batch-stop-on-rate-limit)), every following
+message would fail the same way. The failing pipeline calls the local `stopForRateLimit()`,
+which calls `requestCancel('rate_limit')` and stops that pipeline; `batchStopped()` then keeps
+the queued messages from starting, and the in-flight ones stop before their next feature (see
+[Per-message pipelines](#per-message-pipelines-in-processemails)). The
+`finally` then shows the red `batch_stopped_rate_limit` panel
+("stopped after N messages: … rate limit or quota was exceeded") instead of the blue
+`batch_stopped_notice`; when the provider asked for a wait too long to retry, it is
+`batch_stopped_retry_after` instead, with the wait formatted by `formatDuration()` ("1 h").
+Checked after each feature of the pipeline: add tags (the
+`sendPrompt` catch; tags are not assigned), spam filter (`_generateSpamReportForMessage`
+returns `{success: false, rateLimited}`), summarize on receive and translate
+(`_generateSummaryForMessage` / `_generateTranslationForMessage` return `{rateLimited}` from
+their catch; other callers ignore it). The context-menu summarize block makes no per-message
+API call and is unaffected. Only the current batch stops: in auto mode each incoming mail
+starts a new batch, which may hit the 429 again.
+
+**Add tags selection cap.** On the context-menu path (`addTagsAuto && !isAutoMode`), a
+`add_tags_max_messages` > 0 makes the loop collect the selection into an array first (the
+paged list can be read only once) and abort with `add_tags_too_many_messages` when it is
+larger. Automatic tagging of incoming mail is never capped.
+
+**Scope decision:** `isWorking()` tracks its own set of active batches, **not**
 `taWorkingStatus.WorkingLevel`. Standalone operations (e.g. a single inline summary via
 `_generateSummaryForMessage`) also drive `WorkingLevel` but are not cancellable batches — so
 the popup's "Stop processing" button must not appear for them.
 
 **Cooperative check points** in `processEmails`: at the top of the `for await` message loop
-(before the heavy `getFull`), after the between-chunks `setTimeout(0)` yield, and inside the
+(before the heavy `getFull`), after the between-chunks `setTimeout(0)` yield, after a
+rate-limited failure (see above), before each queued message (`runWithConcurrency`'s
+`shouldStop()`), between the features of a message, and inside the
 separate `summarize` block (before each `getFull` and before opening the webchat). All
 `break`/`return` paths fall through to the existing `finally`, so `stopWorking()` +
-`endBatch()` always run.
+`endBatch(batch)` always run. Every check point reads the batch's own token. The panel-button
+triggers are not batches and are never gated by a cancel.
 
-**Abort latency (v1):** cancellation is checked *between* messages, so the message currently
-in flight finishes first — bounded by `special_command_timeout` (default 120s). There is no
+**Abort latency (v1):** cancellation is checked *between* messages (and between the features of a message),
+so the AI calls currently in flight — up to `batch_max_concurrency` — finish first — bounded by `special_command_timeout` (default 120s). There is no
 mid-request worker termination in v1.
 
 The UI trigger lives in the toolbar popup (`popup/mzta-popup.html/.js/.css`); see
@@ -395,7 +760,7 @@ Worker. No framework, no build step; plain ES6 modules under the strict default 
 
 ```
 index.html
-  ├── #appHeader                           — logo, product name, static model chip (light DOM)
+  ├── #appHeader                           — logo, product name, static model chip, session token total (light DOM)
   ├── <messages-area>   (messagesArea.js)  — renders the conversation transcript
   ├── <message-input>   (messageInput.js)  — input field, send/stop buttons, status pill
   └── controller.js                        — DI / worker wiring (see below)
@@ -415,6 +780,7 @@ Worker → controller.js → components
   messageSent      → messageInput.handleMessageSent()
   newToken         → messagesArea.handleNewToken(token)          (feeds StreamingMessage + fading span)
   newThinkingToken → messagesArea.handleNewThinkingToken(token)  (feeds StreamingMessage + live "Thinking…" indicator)
+  usage            → messagesArea.handleUsageData(messageId, payload)  (token-usage chip; optional, see below)
   tokensDone       → messagesArea.handleTokensDone(promptData)   (flush → action buttons)
   error            → messagesArea.appendBotMessage(payload,'error') + messageInput.showErrorStatus()
 
@@ -423,6 +789,12 @@ background → controller.js (browser.runtime commands)
   api_send_custom_text → merge custom text into the prompt, then send
   api_error            → render an error bot message
 ```
+
+The `usage` message is **separate from `tokensDone` and carries no response text**, and is only
+emitted when `chat_show_usage_data` is on and the integration reports usage. It is posted *before*
+`tokensDone` so it lands while the turn it belongs to is still open. See
+[04-api-integrations.md](04-api-integrations.md#emitting-to-the-chat-window) for the worker side and
+the DOM-extraction invariants.
 
 Per bot response a fresh `StreamingMessage` accumulates raw + thinking tokens and, on flush,
 returns an **immutable HTML snapshot**; `<messages-area>` renders it and hands the thinking
@@ -804,7 +1176,8 @@ classic-script constraint:
   (default collapses `\n{2,}` for the body contract, `{keepParagraphs}` caps at `\n\n` for insertion,
   `{keepColumns}` is verbatim for `{%mail_plain_text_part%}`).
 - **`js/mzta-richtext.js`** — an **ES module** hosting the ONE **sanitizer** + **tag taxonomy** (see
-  the render section above and [07-diff-picker.md](07-diff-picker.md)), plus **`globalThis`
+  the render section above and [07-diff-picker.md](07-diff-picker.md); the background also uses it
+  for the summary/translation panel payloads, see *Panel HTML sanitization*), plus **`globalThis`
   re-exports** of the projection above (`htmlToLines`/`linesToHtml`/`normalizePlain`/
   `hasLineStructure`) so module-world callers get a clean `import`. The re-exports resolve the global
   at CALL time, so the module loads fine even where the classic script is absent as long as they are
@@ -956,7 +1329,10 @@ Two invariants in `MessagesArea`, both easy to break:
   Degrading therefore *replaces* the bar with the toolbar. The toolbar is built at that
   moment, but from the arguments stashed on the turn (`_mztaToolsArgs`) when the bar was
   created, so it stays bound to that answer's own text rather than to whatever is on screen
-  later.
+  later. An error turn (`appendBotMessage(..., 'error')`) also takes the full-bar slot: it
+  degrades the previous bar and gets a Close-only `.action-bar` (built by
+  `_buildCloseButton()`, shared with `addActionButtons()`), with no `_mztaToolsArgs`, so the
+  next degrade just removes it and builds no toolbar.
 
 **Self-closing `chatgpt_close` must be fire-and-forget.** Every button that finishes an
 action (reply / replace / save-summary / plain close) ends by sending
@@ -1135,7 +1511,7 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 | `js/mzta-menus.js` | Context menu creation and management |
 | `js/mzta-prompts.js` | Prompt definitions (built-in) and custom prompt loading |
 | `js/mzta-placeholders.js` | Placeholder definitions and resolution logic |
-| `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.). Shared message-inspection helpers used by the auto-processing features: `extractEmail()` (the single copy of the address regex — **case-preserving**, since `getIdentityForMessage()` compares against the configured identities), `matchAddressList()` / `hasAddressListEntries()`, `messageFolderHasSpecialUse()` / `isMessageInAutoSkippedFolder()` (+ the `AUTO_SKIP_SPECIAL_USE` list) |
+| `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.). Shared message-inspection helpers used by the auto-processing features: `extractEmail()` (the single copy of the address regex — **case-preserving**, since `getIdentityForMessage()` compares against the configured identities; prefers the `<...>` part of the header, keeps RFC 5322 local parts such as `user+tag` / `o'brien` and Unicode addresses whole, returns `''` for non-string input), `matchAddressList()` / `hasAddressListEntries()`, `messageFolderHasSpecialUse()` / `isMessageInAutoSkippedFolder()` (+ the `AUTO_SKIP_SPECIAL_USE` list); `sendTabMessageSafe()` (tabs.sendMessage guarded against tabs with no reachable message browser — see [Unreachable message pane](#unreachable-message-pane-sendtabmessagesafe-901)) |
 | `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection, `buildSummaryPrompt()` for unified summary prompt assembly, `buildTranslationPrompt()` for translation prompt assembly) |
 | `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders unified toolbar (spam badge, summary/translation trigger buttons) and content panels (generic error, spam explanation, summary, translation) in message display via `#mzta-container` |
 | `js/mzta-chatgpt.js` | ChatGPT Web integration (opens browser window, reads DOM) |
@@ -1145,8 +1521,9 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 | `js/mzta-logger.js` | Debug logging (`taLogger`). `log()` gates only the `console.log`, **not its argument** — the message string is always built. On a hot path (per SSE chunk / per line in the workers) guard the call site with `if (taLog.do_debug)`, or do not log there at all. `warn()`/`error()` are never gated. |
 | `js/mzta-store.js` | Storage abstraction helpers |
 | `js/mzta-storage.js` | Unified per-message storage layer (`taStorage` class) for summary, spam, and translation data |
-| `js/mzta-summarystore.js` | Summary-specific storage wrapper (`taSummaryStore` class) with caching, truncation, and processing-state tracking |
-| `js/mzta-translationstore.js` | Translation-specific storage wrapper (`taTranslationStore` class) with caching, truncation, and processing-state tracking |
+| `js/mzta-summarystore.js` | Summary-specific storage wrapper (`taSummaryStore` class) with caching and truncation |
+| `js/mzta-translationstore.js` | Translation-specific storage wrapper (`taTranslationStore` class) with caching and truncation |
+| `js/mzta-job-registry.js` | In-flight job registry (`taJobRegistry`): one summary / translation / spam / add_tags job per message, joined by later callers |
 | `js/mzta-working-status.js` | Visual status indicator during AI processing (ref-counted toolbar loading icon) |
 | `js/mzta-batch-controller.js` | Cooperative cancellation controller + progress counter for batch email processing (`processEmails`) |
 | `js/mzta-addtags-exclusion-list.js` | Tag exclusion list management |
@@ -1165,6 +1542,8 @@ Each file handles HTTP communication for one provider:
 | `openai_comp.js` | OpenAI-compatible APIs |
 | `openai_comp_configs.js` | Pre-configured providers (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity) |
 | `openai_responses.js` | OpenAI Responses API |
+| `api-utils.js` | Shared worker-safe helpers (`parseExtraBody()`) |
+| `api-retry.js` | `fetchWithRetry()`: automatic retry with backoff, see [04-api-integrations.md](04-api-integrations.md#automatic-retry-handling) |
 
 ## Web Workers (`js/workers/`)
 
@@ -1221,6 +1600,6 @@ Separately, `loadShortcutMenu()` builds into a local array and swaps it in at th
 
 Per-message data (summaries, spam reports, translations) is stored via `js/mzta-storage.js` (`taStorage` class). Each record is keyed by `msg:<headerMessageId>` in `messenger.storage.local` and follows schema version 1. Records contain optional fields: `summary`, `spam`, `translation`, plus metadata (`v`, `ts`). The `taStorage` class provides typed read/write/delete methods per field, automatic record cleanup when all fields are removed, and age-based cleanup.
 
-`js/mzta-summarystore.js` (`taSummaryStore` class) wraps `taStorage` for summary-specific operations: load/save/remove summaries, track in-flight generation state via `browser.storage.session`, enforce a 100-entry cache limit with oldest-first truncation, and store error states.
+`js/mzta-summarystore.js` (`taSummaryStore` class) wraps `taStorage` for summary-specific operations: load/save/remove summaries, enforce a 100-entry cache limit with oldest-first truncation, and store error states.
 
-`js/mzta-translationstore.js` (`taTranslationStore` class) wraps `taStorage` for translation-specific operations: load/save/remove translations, track in-flight generation state via `browser.storage.session`, enforce a 100-entry cache limit with oldest-first truncation, and store error states. Each translation record stores `translated_text`, `lang`, and optional error information.
+`js/mzta-translationstore.js` (`taTranslationStore` class) wraps `taStorage` for translation-specific operations: load/save/remove translations, enforce a 100-entry cache limit with oldest-first truncation, and store error states. Each translation record stores `translated_text`, `lang`, and optional error information.

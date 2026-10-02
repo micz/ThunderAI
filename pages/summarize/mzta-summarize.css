@@ -40,6 +40,13 @@
     display: block !important;
 }
 
+/* Language statement preview under the main prompt, shown by JS
+   (updateAdditionalPromptStatements). Hidden by default so nothing flashes
+   before the JS runs. */
+#summarize_info_additional_statements {
+    display: none;
+}
+
 /* Save / reset button row under each prompt editor */
 .btn_div {
     display: flex;

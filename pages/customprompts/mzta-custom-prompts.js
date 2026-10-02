@@ -47,7 +47,11 @@ import {
     injectConnectionUI,
     showConnectionOptions,
     updateWarnings,
+    updateAnthropicModelCapabilityUI,
+    updateOllamaModelCapabilityUI,
+    updateOpenAIModelCapabilityUI,
     checkJsonFieldsByPrefix,
+    ensureRestorableOption,
     getConnectionTypeLabel
 } from "../../pages/_lib/connection-ui.js";
 import {
@@ -193,7 +197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         modelId_prefix: DETAIL_PREFIX,
         no_chatgpt_web: true,
         taLog: taLog,
-        customButtonLabel: browser.i18n.getMessage("Reset"),
+        customButtonLabel: browser.i18n.getMessage("reset"),
         customButtonCallback: () => {
             resetApiSettings();
         }
@@ -1458,6 +1462,8 @@ function resetApiSettings() {
             }
         }
     }
+    // The model selects were just emptied without a change event.
+    updateModelCapabilityUIs();
     // Clearing the fields fires no input, so a red border left from a malformed value
     // would survive the reset on a now-empty (valid) field.
     checkJsonFieldsByPrefix(DETAIL_PREFIX);
@@ -1499,6 +1505,7 @@ function populateConnectionUI(itemValues) {
                 inputEl.tomselect.setValue(restoreValue, true);
                 setTomSelectBorder(inputEl.tomselect);
             } else {
+                ensureRestorableOption(inputEl, val);
                 inputEl.value = val || '';
             }
         }
@@ -1507,9 +1514,19 @@ function populateConnectionUI(itemValues) {
     resetConnAdv(scopeEl);
     showAdvConnectionOptions(scopeEl, selectEl ? selectEl.value : '');
     updateWarnings(DETAIL_PREFIX);
+    // The model is in the selects now, so the per-model option availability can be
+    // computed (the selects fire no change on restore). Each is a no-op for the
+    // providers it does not cover.
+    updateModelCapabilityUIs();
     // Values are assigned with .value / .checked, which fire no input event, so the
     // live .check-json validation never runs on restore: validate what we just wrote.
     checkJsonFieldsByPrefix(DETAIL_PREFIX);
+}
+
+function updateModelCapabilityUIs() {
+    updateAnthropicModelCapabilityUI(DETAIL_PREFIX);
+    updateOllamaModelCapabilityUI(DETAIL_PREFIX);
+    updateOpenAIModelCapabilityUI(DETAIL_PREFIX);
 }
 
 // `prefix` is mandatory: every injected connection field on this page is prefixed. An

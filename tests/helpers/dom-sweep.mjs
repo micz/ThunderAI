@@ -75,9 +75,11 @@ export function sweepValues(c, key = c.key) {
     }
     if (c.tag === 'input' && c.type === 'number') {
         const step = Number(c.step) > 0 ? Number(c.step) : 1;
-        const base = typeof d === 'number' ? d : (Number(d) || 0);
         const min = c.min !== null && c.min !== '' ? Number(c.min) : -Infinity;
         const max = c.max !== null && c.max !== '' ? Number(c.max) : Infinity;
+        // A default below the input's min is the "unset" sentinel (e.g. 0 for
+        // chatgpt_max_output_tokens, min 16): sweep from the first valid value.
+        const base = Math.max(typeof d === 'number' ? d : (Number(d) || 0), min);
         let U = base + step;
         let P = base + 2 * step;
         if (P > max) { U = base - step; P = base - 2 * step; }
@@ -86,7 +88,10 @@ export function sweepValues(c, key = c.key) {
         return { P: cast(P), U: cast(U) };
     }
     if (typeof d === 'string') {
-        if (/_extra_body$/.test(key)) return { P: '{"policy": 1}', U: '{"user": 1}' };
+        if (/_extra_body$|_extra_options$|_text_format_schema$/.test(key)) return { P: '{"policy": 1}', U: '{"user": 1}' };
+        if (/_top_p$/.test(key)) return { P: '0.3', U: '0.7' };
+        if (/_top_k$/.test(key)) return { P: '20', U: '40' };
+        if (/_keep_alive$/.test(key)) return { P: '30m', U: '5m' };
         if (/_host$/.test(key)) return { P: 'http://policy.example:11434', U: 'http://user.example:11434' };
         if (isSecret(key)) return { P: 'sk-policy-' + key, U: 'sk-user-' + key };
         if (/temperature$/.test(key)) return { P: '0.3', U: '0.7' };

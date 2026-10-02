@@ -21,7 +21,7 @@
       "ollama_host": "http://ollama.example.org:11434",
       "ollama_model": "llama-org",
       "ollama_model:locked": false,
-      "ollama_think": true
+      "ollama_think": "true"
     }
   }
 }

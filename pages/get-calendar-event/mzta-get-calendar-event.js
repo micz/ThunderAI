@@ -38,6 +38,7 @@ import {
 } from "../_lib/connection-ui.js";
 import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
+import { initReminderUI } from "../_lib/reminder-ui.js";
 import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
     applyManagedUI,
@@ -176,6 +177,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         do_debug: taLog.do_debug,
     });
     updateNoSelectionPolicyNote();
+
+    // "Let the AI set a reminder" section [#887]. After restoreOptions() (checkbox
+    // state) and after the prompt text is loaded (warning and preview read it).
+    // Kept before the editor decoration below, so a failure there cannot leave it
+    // uninitialized.
+    await initReminderUI({
+        feature: 'calendar',
+        promptTextarea: get_calendar_event_textarea,
+        statementsEl: document.getElementById('get_calendar_event_info_additional_statements')
+    });
 
     // Full list, kept for token validation. Deliberately NOT filtered like the
     // suggestions: {%additional_text%} is a real placeholder that this page simply

@@ -1,4 +1,7 @@
 {
+    "prefs_api_extra_body": {
+        "message": "追加のボディデータ"
+    },
     "extensionDescription": {
         "message": "ChatGPT、Google Gemini、Claude、Ollama を使ってメールを強化しましょう!"
     },
@@ -646,9 +649,6 @@
     "prefs_extra_body_error_not_object": {
         "message": "値は中括弧で囲まれたJSONオブジェクトである必要があります。"
     },
-    "prefs_OptionText_openai_comp_extra_body": {
-        "message": "追加のボディデータ"
-    },
     "prefs_OptionText_openai_comp_extra_body_info": {
         "message": "すべてのAPI呼び出しで送信する追加パラメーターをJSONオブジェクトで指定します。このサービスは対応しているがThunderAIが公開していないオプション、たとえば思考モードの無効化などに便利です: {\"chat_template_kwargs\": {\"thinking\": false}} または {\"top_p\": 0.9}。ThunderAIが管理するパラメーター（model、messages、streaming、temperature）はここで上書きできません。無効な値は無視されます。"
     },
@@ -798,9 +798,6 @@
     },
     "prefs_SurveyLinkText2": {
         "message": "フィードバックをお寄せください"
-    },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "モデルを手動で入力"
     },
     "OpenAIComp_force_model_ask": {
         "message": "使用するモデル名をここに入力してください。"
@@ -1580,9 +1577,6 @@
     "prefs_OptionText_chatgpt_reasoning_effort": {
         "message": "推論の強度"
     },
-    "prefs_OptionText_chatgpt_extra_body": {
-        "message": "追加のボディデータ"
-    },
     "prefs_OptionText_chatgpt_extra_body_info": {
         "message": "すべてのAPI呼び出しで送信する追加パラメーターをJSONオブジェクトで指定します（例: {\"top_p\": 0.9}）。OpenAI APIは対応しているがThunderAIが公開していないオプションに便利です。ThunderAIが管理するパラメーター（model、input、streaming、temperature、reasoning、instructions）はここで上書きできません。無効な値は無視されます。"
     },
@@ -1592,7 +1586,7 @@
     "prefs_OptionText_chatgpt_reasoning_disabled": {
         "message": "無効"
     },
-    "prefs_OptionText_chatgpt_reasoning_api_default": {
+    "prefs_reasoning_api_default ": {
         "message": "APIのデフォルト"
     },
     "prefs_OptionText_chatgpt_reasoning_summary_auto": {
@@ -1601,17 +1595,23 @@
     "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
         "message": "詳細"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
+    "prefs_level_minimal": {
         "message": "最小"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_low": {
+    "prefs_level_low": {
         "message": "低"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
+    "prefs_level_medium": {
         "message": "中"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_high": {
+    "prefs_level_high": {
         "message": "高"
+    },
+    "prefs_level_xhigh": {
+        "message": "非常に高"
+    },
+    "prefs_level_max": {
+        "message": "最大"
     },
     "prefs_ollama_temperature_Info": {
         "message": "モデルの温度。温度を上げると、モデルはより創造的に回答します。デフォルト値は0.8です。0から1の間の値を使用することをお勧めします。"
@@ -1695,9 +1695,6 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "AIの応答に含まれる<br>タグは改行に置換されます。"
-    },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "モデルリストをクリア"
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "モデルリストをクリアしてもよろしいですか？この操作は元に戻せません。"
@@ -1812,7 +1809,7 @@
     "prefs_OptionText_summarize_max_display_length_Info": {
         "message": "インライン要約で表示する最大文字数です。0に設定すると制限なしになります。"
     },
-    "prefs_OptionText_summarize_max_messages": {
+    "prefs_OptionText_max_messages": {
         "message": "最大メッセージ数"
     },
     "prefs_OptionText_summarize_max_messages_Info": {
@@ -2497,21 +2494,6 @@
     },
     "anthropic_effort_default": {
         "message": "デフォルト（APIが判断）"
-    },
-    "Anthropic_Effort_Level_low": {
-        "message": "低"
-    },
-    "Anthropic_Effort_Level_medium": {
-        "message": "中"
-    },
-    "Anthropic_Effort_Level_high": {
-        "message": "高"
-    },
-    "Anthropic_Effort_Level_xhigh": {
-        "message": "非常に高"
-    },
-    "Anthropic_Effort_Level_max": {
-        "message": "最大"
     },
     "anthropic_note_temperature_unsupported": {
         "message": "選択したモデルは温度の値を受け付けず、このフィールドを無視します。代わりにEffort（労力）設定を使用してください。古いモデルに戻す場合に備えて、値は保持されます。"

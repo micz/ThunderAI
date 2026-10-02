@@ -20,11 +20,20 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { prefs_default, integration_options_config } from '../options/mzta-options-default.js';
+import {
+    prefs_default,
+    integration_options_config
+} from '../options/mzta-options-default.js';
 import { placeholdersUtils } from '../js/mzta-placeholders.js';
-import { getAPIsInitMessageString, convertNewlinesToBr } from '../js/mzta-utils.js';
+import {
+    getAPIsInitMessageString,
+    convertNewlinesToBr,
+    formatDuration,
+    supportsUsageData
+} from '../js/mzta-utils.js';
 import { loadPrompt } from '../js/mzta-prompts.js';
 import { buildChatBubbleIcon } from './svgIcons.js';
+import { resolveContextWindow } from './contextWindow.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
 
 // Get the LLM to be used
@@ -37,6 +46,11 @@ const prompt_name = urlParams.get('prompt_name');
 
 // Data received from the user
 let promptData = null;
+// Looks up the model's context window for the usage popover. Set at init only when
+// the usage UI is on, and consumed by the first completed answer: run once, after
+// a response, so a local Ollama model is already loaded and /api/ps can report
+// the context it actually runs with.
+let contextWindowLookup = null;
 
 const messageInput = document.querySelector('message-input');
 const messagesArea = document.querySelector('messages-area');
@@ -117,7 +131,11 @@ if (worker) {
         const integration_prefix = integration;
         const options_config = integration_options_config[integration];
         
-        let prefsToGet = { do_debug: prefs_default.do_debug, hide_thinking: prefs_default.hide_thinking };
+        let prefsToGet = {
+            do_debug: prefs_default.do_debug,
+            hide_thinking: prefs_default.hide_thinking,
+            chat_show_usage_data: prefs_default.chat_show_usage_data,
+        };
         for (const key in options_config) {
             prefsToGet[`${integration_prefix}_${key}`] = prefs_default[`${integration_prefix}_${key}`];
         }
@@ -147,6 +165,13 @@ if (worker) {
         const i18n_msg_key = integration === 'openai_comp' ? 'OpenAIComp_api_request_failed' : `${integration}_api_request_failed`;
         i18nStrings[i18n_msg_key] = browser.i18n.getMessage(i18n_msg_key);
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
+        if (integration === 'anthropic') {
+            // 400 hints for describeAnthropicError(). The literal "$MODEL$" is passed
+            // as the substitution so the worker can fill in the model it actually sent.
+            for (const key of ['anthropic_err_hint_temperature', 'anthropic_err_hint_budget_tokens', 'anthropic_err_hint_thinking_type', 'anthropic_err_hint_effort']) {
+                i18nStrings[key] = browser.i18n.getMessage(key, ['$MODEL$']);
+            }
+        }
 
         messageInput.setModel(prefs_api[`${integration_prefix}_model`]);
         
@@ -160,6 +185,14 @@ if (worker) {
         }
         messagesArea.setLLMName(llmName);
         messagesArea.setHideThinking(!!prefs_api.hide_thinking);
+        // Only integrations that can report token counts get the usage UI at all:
+        // the option row is hidden for the web-only setups, but a stale "on" value
+        // from a previous provider must not resurrect an empty session counter here.
+        const show_usage = !!prefs_api.chat_show_usage_data && supportsUsageData(llm);
+        messagesArea.setShowUsageData(show_usage);
+        if (show_usage) {
+            contextWindowLookup = () => resolveContextWindow(integration, prefs_api);
+        }
 
         // Shared by the header chip and the startup info message below.
         const api_strings = {
@@ -196,6 +229,9 @@ if (worker) {
             type: 'init',
             do_debug: prefs_api.do_debug,
             i18nStrings: i18nStrings,
+            // Gates the 'usage' message at the source: with this false the worker
+            // still extracts and debug-logs the usage, but emits nothing.
+            chat_show_usage_data: show_usage,
         };
 
         for (const key in options_config) {
@@ -212,26 +248,49 @@ if (worker) {
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
                 { key: 'reasoning_summary', labelKey: 'prefs_OptionText_chatgpt_reasoning_summary', type: 'string' },
                 { key: 'reasoning_effort', labelKey: 'prefs_OptionText_chatgpt_reasoning_effort', type: 'string' },
-                { key: 'extra_body', labelKey: 'prefs_OptionText_chatgpt_extra_body', type: 'string' }
+                { key: 'max_output_tokens', labelKey: 'prefs_api_max_output_tokens', type: 'number_gt_zero' },
+                { key: 'top_p', labelKey: 'prefs_api_top_p', type: 'string' },
+                { key: 'verbosity', labelKey: 'prefs_OptionText_chatgpt_verbosity', type: 'string' },
+                { key: 'text_format', labelKey: 'prefs_OptionText_chatgpt_text_format', type: 'string' },
+                { key: 'text_format_schema_name', labelKey: 'prefs_OptionText_chatgpt_text_format_schema_name', type: 'string' },
+                { key: 'text_format_schema', labelKey: 'prefs_OptionText_chatgpt_text_format_schema', type: 'string' },
+                { key: 'truncation', labelKey: 'prefs_OptionText_chatgpt_truncation', type: 'string' },
+                { key: 'prompt_cache_key', labelKey: 'prefs_OptionText_chatgpt_prompt_cache_key', type: 'string' },
+                { key: 'service_tier', labelKey: 'prefs_OptionText_chatgpt_service_tier', type: 'string' },
+                { key: 'safety_identifier', labelKey: 'prefs_OptionText_chatgpt_safety_identifier', type: 'string' },
+                { key: 'include_encrypted_reasoning', labelKey: 'prefs_OptionText_chatgpt_include_encrypted_reasoning', type: 'boolean' },
+                { key: 'extra_body', labelKey: 'prefs_api_extra_body', type: 'string' }
             ],
             google_gemini: [
                 { key: 'system_instruction', labelKey: 'GoogleGemini_SystemInstruction', type: 'string' },
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
-                { key: 'thinking_budget', labelKey: 'prefs_google_gemini_thinking_budget', type: 'string' }
+                { key: 'thinking_budget', labelKey: 'prefs_google_gemini_thinking_budget', type: 'string' },
+                { key: 'max_output_tokens', labelKey: 'prefs_api_max_output_tokens', type: 'number_gt_zero' },
+                { key: 'top_p', labelKey: 'prefs_api_top_p', type: 'string' },
+                { key: 'top_k', labelKey: 'prefs_api_top_k', type: 'string' },
+                { key: 'extra_body', labelKey: 'prefs_api_extra_body', type: 'string' }
             ],
             ollama: [
-                { key: 'think', labelKey: 'prefs_ollama_think', type: 'boolean' },
+                // A level now ('' | 'true' | low | medium | high | max), not a flag:
+                // 'string' both shows the chosen level and hides the row when off.
+                { key: 'think', labelKey: 'prefs_ollama_think', type: 'string' },
+                { key: 'system_prompt', labelKey: 'Ollama_System_Prompt', type: 'string' },
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
-                { key: 'num_ctx', labelKey: 'prefs_ollama_num_ctx', type: 'number_gt_zero' }
+                { key: 'num_ctx', labelKey: 'prefs_ollama_num_ctx', type: 'number_gt_zero' },
+                { key: 'keep_alive', labelKey: 'prefs_ollama_keep_alive', type: 'string' },
+                { key: 'extra_options', labelKey: 'prefs_OptionText_ollama_extra_options', type: 'string' }
             ],
             openai_comp: [
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
-                { key: 'extra_body', labelKey: 'prefs_OptionText_openai_comp_extra_body', type: 'string' }
+                { key: 'extra_body', labelKey: 'prefs_api_extra_body', type: 'string' }
             ],
             anthropic: [
                 { key: 'system_prompt', labelKey: 'Anthropic_System_Prompt', type: 'string' },
                 { key: 'max_tokens', labelKey: 'prefs_OptionText_anthropic_max_tokens', type: 'number_gt_zero' },
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
+                { key: 'top_p', labelKey: 'prefs_api_top_p', type: 'string' },
+                { key: 'top_k', labelKey: 'prefs_api_top_k', type: 'string' },
+                { key: 'stop_sequences', labelKey: 'prefs_OptionText_anthropic_stop_sequences', type: 'string' },
                 { key: 'extended_thinking_budget', labelKey: 'prefs_OptionText_anthropic_extended_thinking_budget', type: 'number_gt_zero' }
             ]
         };
@@ -305,6 +364,16 @@ worker.onmessage = async function(event) {
         case 'messageSent':
             messageInput.handleMessageSent();
             break;
+        case 'newRetryAttempt':
+            // A transient failure is being retried: say so, instead of leaving a
+            // frozen spinner. The Stop button stays available meanwhile.
+            messageInput.showRetryStatus(payload);
+            break;
+        case 'requestAborted':
+            // Stopped before any answer arrived (e.g. during the retry backoff).
+            messagesArea.appendUserMessage(browser.i18n.getMessage('apiwebchat_request_cancelled'), 'info');
+            messageInput.enableInput(false);
+            break;
         case 'newToken':
             messagesArea.handleNewToken(payload.token);
             messageInput.showStreamingStatus();
@@ -313,12 +382,30 @@ worker.onmessage = async function(event) {
             messagesArea.handleNewThinkingToken(payload.token);
             messageInput.showStreamingStatus();
             break;
+        case 'usage':
+            // A message of its own, carrying no response text. Handled BEFORE the
+            // turn is closed by 'tokensDone', which the worker guarantees by posting
+            // this first.
+            messagesArea.handleUsageData(event.data.messageId, payload);
+            break;
         case 'tokensDone':
             await messagesArea.handleTokensDone(promptData);
             messageInput.enableInput();
+            if (contextWindowLookup !== null) {
+                const lookup = contextWindowLookup;
+                contextWindowLookup = null;
+                // Not awaited: the usage popovers read the window when they are
+                // opened, so they pick it up whenever it arrives.
+                lookup().then((tokens) => {
+                    if (tokens !== null) messagesArea.setContextWindow(tokens);
+                });
+            }
             break;
         case 'error':
-            messagesArea.appendBotMessage(payload,'error');
+            // The provider asked to wait longer than fetchWithRetry() accepts: say when to retry.
+            messagesArea.appendBotMessage(payload, 'error', Number.isFinite(event.data.retryAfterMs)
+                ? browser.i18n.getMessage('api_retry_after_hint', [formatDuration(event.data.retryAfterMs)])
+                : '');
             messageInput.enableInput(false);
             messageInput.showErrorStatus();
             break;

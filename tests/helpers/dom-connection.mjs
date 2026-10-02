@@ -154,8 +154,13 @@ export async function connectionScenario(page, mode) {
         test('"Update", re-enabled by hand, never sends the marker anywhere', async () => {
             const btn = ctx.$(id('btnUpdateOpenAICompModels'));
             btn.disabled = false;
+            // Calls made before the click are the page's own (e.g. the Ollama capability
+            // probe for the user's own Ollama model): only the click must add none.
+            const before = ctx.fetchCalls.length;
             await ctx.click(btn);
-            assert.deepEqual(ctx.fetchCalls, []);
+            assert.deepEqual(ctx.fetchCalls.slice(before), []);
+            assert.equal(JSON.stringify(ctx.fetchCalls).includes(MANAGED_SECRET_MARKER), false,
+                'a request carried the marker');
             assert.equal(ctx.$(id('openai_comp_model')).value, 'comp-org-enforced');
         });
 

@@ -31,11 +31,14 @@ import {
     getTagsList,
     extractJsonObject,
     normalizeDateTimeString,
+    appendMessageLinkToDescription,
+    normalizeReminderMinutes,
     normalizeHtmlSourceNewlines,
     checkIfTagLabelExists,
     getConnectionType,
     isApiUsableConnection,
     getContextMenuIcon,
+    sendTabMessageSafe,
     // NOT the local getMailBody() defined below, which is a different thing
     // entirely: that one scrapes the rendered DOM through the content script,
     // this one reads the message's inline text parts from the API. The names no
@@ -54,6 +57,7 @@ import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
 import { mzta_specialCommand } from './mzta-special-commands.js';
 import { taWorkingStatus } from './mzta-working-status.js';
+import { taJobRegistry } from './mzta-job-registry.js';
 import { mztaPrefs } from './mzta-prefs.js';
  
 export class mzta_Menus {
@@ -207,13 +211,28 @@ export class mzta_Menus {
         curr_menu_entry.act = async () => {
             taWorkingStatus.startWorking();
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-            const msg_text = await getMailBody(tabs, placeholdersUtils.hasPlaceholder(curr_prompt.text,'mail_typed_text'));
+            // The body is scraped through the content script, so it can only be read
+            // from a tab that can receive tab messages. A 3-pane "mail" tab with the
+            // message pane hidden (F8), nothing displayed or a multi-message view has
+            // no reachable message browser: the first sendMessage inside getMailBody()
+            // then rejects with Thunderbird's getAttribute TypeError and the whole
+            // action dies as an uncaught rejection, leaving the working spinner stuck
+            // [#901]. Bail out cleanly instead - see sendTabMessageSafe in
+            // js/mzta-utils.js.
+            let msg_text = null;
+            try {
+                msg_text = await getMailBody(tabs, placeholdersUtils.hasPlaceholder(curr_prompt.text,'mail_typed_text'));
+            } catch (err) {
+                this.logger.error("Menu action [" + curr_prompt.id + "] aborted: the current tab cannot receive tab messages: " + err);
+                taWorkingStatus.stopWorking();
+                return {ok:'0'};
+            }
 
             if (curr_prompt.id === 'prompt_get_calendar_event_from_clipboard') {
                 try {
                    const clipboardText = await navigator.clipboard.readText();
                    if (!clipboardText) {
-                        browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('clipboard_empty_error') });
+                        sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('clipboard_empty_error') });
                         taWorkingStatus.stopWorking();
                         return {ok:'0'};
                    }
@@ -221,7 +240,7 @@ export class mzta_Menus {
                    msg_text.text = clipboardText;
                 } catch (e) {
                    console.error("Clipboard read error:", e);
-                   browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('clipboard_read_error') });
+                   sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('clipboard_read_error') });
                    taWorkingStatus.stopWorking();
                    return {ok:'0'};
                 }
@@ -232,7 +251,7 @@ export class mzta_Menus {
             if(String(curr_prompt.need_selected) == "1" && (msg_text.selection==='')){
                 //A selection is needed, but nothing is selected!
                 //alert(browser.i18n.getMessage('prompt_selection_needed'));
-                browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message : browser.i18n.getMessage('prompt_selection_needed') });
+                sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message : browser.i18n.getMessage('prompt_selection_needed') });
                 taWorkingStatus.stopWorking();
                 return {ok:'0'};
             }
@@ -397,7 +416,7 @@ export class mzta_Menus {
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
-                        fullPrompt = taPromptUtils.finalizePrompt_add_tags(fullPrompt, prefs_at.add_tags_maxnum, prefs_at.add_tags_force_lang, prefs_at.default_chatgpt_lang);
+                        fullPrompt = taPromptUtils.finalizePrompt_add_tags(fullPrompt, prefs_at.add_tags_maxnum, prefs_at.add_tags_force_lang, prefs_at.default_chatgpt_lang, false, '', prefs_at.add_tags_auto_force_existing, tags_full_list[0], curr_prompt.text);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let create_new_tags = !prefs_at.add_tags_auto_force_existing;
                         let all_tags_list = tags_full_list[1];
@@ -413,9 +432,43 @@ export class mzta_Menus {
                             do_debug: prefs_at.do_debug,
                             config: curr_prompt
                         });
-                        await cmd_addTags.initWorker();
+                        // One add_tags job per message (taJobRegistry): the automatic batch, the
+                        // context menu and this dialog path can reach the same message at once.
+                        // A job already running is JOINED - its tags feed the dialog below and
+                        // no second AI call is made. Only when it did not produce tags (error,
+                        // skipped) does this path run its own call. get() and start() are
+                        // synchronous and back to back, so two callers cannot both start.
+                        const tags_job_id = curr_message?.headerMessageId || '';
+                        let tags_outcome = null;
+                        let tags_running = tags_job_id ? taJobRegistry.get('add_tags', tags_job_id) : null;
+                        while (tags_running) {
+                            taJobRegistry.logJoin(tags_running);
+                            const joined = await tags_running.promise;
+                            if (joined.status === 'ok' && Array.isArray(joined.data?.tags)) {
+                                tags_outcome = joined;
+                                break;
+                            }
+                            tags_running = taJobRegistry.get('add_tags', tags_job_id);
+                        }
+                        if (!tags_outcome) {
+                            // assigned: false - a batch joining this job must not assign the
+                            // tags itself, the user confirms them in the dialog.
+                            const run_tags = async () => {
+                                try {
+                                    await cmd_addTags.initWorker();
+                                    const tags = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt());
+                                    return { status: 'ok', data: { tags: tags, assigned: false } };
+                                } catch (err) {
+                                    return { status: 'error', error: err, errorMessage: err?.message || String(err), rateLimited: !!err?.rateLimited, retryAfterMs: err?.retryAfterMs ?? null };
+                                }
+                            };
+                            tags_outcome = tags_job_id
+                                ? await taJobRegistry.start('add_tags', tags_job_id, run_tags).promise
+                                : await run_tags();
+                        }
                         try{
-                            tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt());
+                            if (tags_outcome.status !== 'ok') throw (tags_outcome.error || new Error(tags_outcome.errorMessage));
+                            tags_current_email = tags_outcome.data.tags;
                             if(!create_new_tags){
                                     this.logger.log("Not creating new tags, only showing existing ones...");
                                 }
@@ -430,13 +483,21 @@ export class mzta_Menus {
                             // console.log(">>>>>>>>>>> tags_current_email: " + tags_current_email);
                         }catch(err){
                             console.error("[ThunderAI] Error getting tags: ", err);
-                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: "Error getting tags: " + err });
+                            sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: "Error getting tags: " + err });
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
                         this.logger.log("tags_current_email_final: " + JSON.stringify(tags_current_email_final));
                         this.logger.log("tags_full_list: " + JSON.stringify(tags_full_list));
-                        browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: tags_current_email_final, messageId: curr_message.id});
+                        // The tag dialog is the user's confirmation step and is rendered by
+                        // the content script: when the pane is unreachable it never appears,
+                        // so bail WITHOUT assigning - tags are never applied silently [#901].
+                        const tags_dialog_delivered = await sendTabMessageSafe(tabs[0].id, {command: "getTags", tags: tags_current_email_final, messageId: curr_message.id});
+                        if (!tags_dialog_delivered) {
+                            this.logger.error("Add tags: the current tab cannot display the tag confirmation dialog, no tags assigned.");
+                            taWorkingStatus.stopWorking();
+                            return {ok:'0'};
+                        }
                         taWorkingStatus.stopWorking();
                         return {ok:'1'};
                         break;  // Add tags to the email - END
@@ -448,6 +509,9 @@ export class mzta_Menus {
                             'connection_type',
                             'calendar_enforce_timezone',
                             'calendar_timezone',
+                            'calendar_append_email_link',
+                            'calendar_reminder_enabled',
+                            'calendar_reminder_rules',
                             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
                         ]);
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_calendar_event');
@@ -465,8 +529,9 @@ export class mzta_Menus {
                         *   "location": "YourLocation",
                         *   "attendees": [attendee1@example.com,attendee2@example.com,attendee3@example.com]
                         *  } 
+                        *  plus an optional "reminderMinutes", only with the reminder option on (see normalizeReminderMinutes()) [#887]
                         */
-                        fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt);
+                        fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt, curr_prompt.text, prefs_at.calendar_reminder_enabled, prefs_at.calendar_reminder_rules);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_GetCalendarEvent = new mzta_specialCommand({
                             prompt: fullPrompt,
@@ -480,7 +545,7 @@ export class mzta_Menus {
                             // console.log(">>>>>>>>>>> calendar_event_data: " + calendar_event_data);
                         }catch(err){
                             console.error("[ThunderAI] Error getting calendar event data: ", err.message);
-                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_getting_data_error") + ": " + err.message });
+                            sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_getting_data_error") + ": " + err.message });
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
@@ -489,7 +554,7 @@ export class mzta_Menus {
                             calendar_event_data_obj = extractJsonObject(calendar_event_data);
                         }catch(err){
                             console.error("[ThunderAI] Error extracting JSON object from calendar event data: ", err.message);
-                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_getting_data_error") + ": " + err.message });
+                            sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_getting_data_error") + ": " + err.message });
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
@@ -500,11 +565,22 @@ export class mzta_Menus {
                         if (calendar_event_data_obj.endDate) {
                             calendar_event_data_obj.endDate = normalizeDateTimeString(calendar_event_data_obj.endDate);
                         }
+                        // Reminder: the checkbox is the single switch (off = field always removed) [#887]
+                        normalizeReminderMinutes(calendar_event_data_obj, prefs_at.calendar_reminder_enabled, this.logger);
                         // Timezone management
                         calendar_event_data_obj.use_timezone = false;
                         if(prefs_at.calendar_enforce_timezone){
                             calendar_event_data_obj.use_timezone = true;
                             calendar_event_data_obj.timezone = prefs_at.calendar_timezone;
+                        }
+                        // Link to the original email, added by code after the response:
+                        // it never reaches the AI. No source message from the clipboard
+                        // or a compose tab (compose details have no headerMessageId).
+                        if (prefs_at.calendar_append_email_link) {
+                            const link_source = (curr_prompt.id === 'prompt_get_calendar_event_from_clipboard' || tabs[0].type === 'messageCompose') ? null : curr_message;
+                            if (!appendMessageLinkToDescription(calendar_event_data_obj, link_source, browser.i18n.getMessage('calendar_email_link_label'))) {
+                                this.logger.log("calendar_append_email_link: no source message, link not added.");
+                            }
                         }
                         let calendar_event_data_str = JSON.stringify(calendar_event_data_obj);
                         // Timezone management - END
@@ -520,13 +596,13 @@ export class mzta_Menus {
                                 if (err && typeof err === 'string' && err.startsWith('|>>')) {
                                     result_openCalendarEventDialog.error = browser.i18n.getMessage(result_openCalendarEventDialog.error.substring(3));
                                 }
-                                browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + result_openCalendarEventDialog.error });
+                                sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + result_openCalendarEventDialog.error });
                                 taWorkingStatus.stopWorking();
                                 return {ok:'0'};
                             }
                         }catch(err){
                             console.error("[ThunderAI] Error opening calendar event dialog: ", err);
-                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + browser.i18n.getMessage("no_valid_data_received") });
+                            sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + browser.i18n.getMessage("no_valid_data_received") });
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
@@ -538,6 +614,9 @@ export class mzta_Menus {
                             'connection_type',
                             'calendar_enforce_timezone',
                             'calendar_timezone',
+                            'task_append_email_link',
+                            'task_reminder_enabled',
+                            'task_reminder_rules',
                             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))]);
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_task');
                         if(!isApiUsableConnection(def_conntype)){
@@ -553,7 +632,9 @@ export class mzta_Menus {
                         *   "description": "Detailed task description including action items, and relevant notes from the email.",
                         *   "location": "YourLocation"
                         *  } 
+                        *  plus an optional "reminderMinutes", only with the reminder option on (see normalizeReminderMinutes()) [#887]
                         */
+                        fullPrompt = taPromptUtils.finalizePrompt_get_task(fullPrompt, curr_prompt.text, prefs_at.task_reminder_enabled, prefs_at.task_reminder_rules);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_GetTask = new mzta_specialCommand({
                             prompt: fullPrompt,
@@ -567,7 +648,7 @@ export class mzta_Menus {
                             // console.log(">>>>>>>>>>> task_data: " + task_data);
                         }catch(err){
                             console.error("[ThunderAI] Error getting task data: ", err.message);
-                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_getting_data_error") + ": " + err.message });
+                            sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_getting_data_error") + ": " + err.message });
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
@@ -587,9 +668,11 @@ export class mzta_Menus {
                             if (!task_data_obj.initialDate) {
                                 delete task_data_obj.initialDate;
                             }
+                            // Reminder: the checkbox is the single switch (off = field always removed) [#887]
+                            normalizeReminderMinutes(task_data_obj, prefs_at.task_reminder_enabled, this.logger);
                         }catch(err){
                             console.error("[ThunderAI] Error extracting JSON object from task data: ", err.message);
-                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_getting_data_error") + ": " + err.message });
+                            sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_getting_data_error") + ": " + err.message });
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
@@ -598,6 +681,14 @@ export class mzta_Menus {
                         if(prefs_at.calendar_enforce_timezone){
                             task_data_obj.use_timezone = true;
                             task_data_obj.timezone = prefs_at.calendar_timezone;
+                        }
+                        // Link to the original email, added by code after the response:
+                        // it never reaches the AI. No source message in a compose tab.
+                        if (prefs_at.task_append_email_link) {
+                            const link_source = (tabs[0].type === 'messageCompose') ? null : curr_message;
+                            if (!appendMessageLinkToDescription(task_data_obj, link_source, browser.i18n.getMessage('calendar_email_link_label'))) {
+                                this.logger.log("task_append_email_link: no source message, link not added.");
+                            }
                         }
                         let task_data_str = JSON.stringify(task_data_obj);
                         // Timezone management - END
@@ -613,13 +704,13 @@ export class mzta_Menus {
                                 if (err && typeof err === 'string' && err.startsWith('|>>')) {
                                     result_openTaskDialog.error = browser.i18n.getMessage(result_openTaskDialog.error.substring(3));
                                 }
-                                browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_opening_dialog_error") + ": " + result_openTaskDialog.error });
+                                sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_opening_dialog_error") + ": " + result_openTaskDialog.error });
                                 taWorkingStatus.stopWorking();
                                 return {ok:'0'};
                             }
                         }catch(err){
                             console.error("[ThunderAI] Error opening task dialog: ", err);
-                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_opening_dialog_error") + ": " + browser.i18n.getMessage("no_valid_data_received") });
+                            sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_opening_dialog_error") + ": " + browser.i18n.getMessage("no_valid_data_received") });
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }

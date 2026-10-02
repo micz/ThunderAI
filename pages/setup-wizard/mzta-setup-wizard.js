@@ -18,11 +18,18 @@
 
 import { prefs_default } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
-import { setTomSelectBorder, hasNoConnectionSelected } from '../../js/mzta-utils.js';
+import {
+  setTomSelectBorder,
+  hasNoConnectionSelected
+} from '../../js/mzta-utils.js';
 import {
   injectConnectionUI,
   varConnectionUI,
-  showConnectionOptions
+  showConnectionOptions,
+  ensureRestorableOption,
+  updateAnthropicModelCapabilityUI,
+  updateOllamaModelCapabilityUI,
+  updateOpenAIModelCapabilityUI
 } from '../_lib/connection-ui.js';
 import {
   isTestableConnection,
@@ -127,6 +134,7 @@ async function restoreOptions() {
         case 'select-one':
           let default_select_value = '';
           if (element.id === 'connection_type') default_select_value = state.provider;
+          ensureRestorableOption(element, result[element.id]);
           element.value = result[element.id] || default_select_value;
           // Nothing chosen yet (fresh install): leave the select unset. It is
           // hidden anyway, and restoring must never persist a provider.
@@ -412,6 +420,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await restoreOptions();
 
+  // The saved model is in the selects now, so the per-model option availability can
+  // finally be computed (before the restore they would read an empty model).
+  // The Claude one is not optional here: anthropic_effort ships as an EMPTY <select>
+  // and this call is what fills it, so without it the wizard shows a blank control
+  // until the model is touched.
+  updateAnthropicModelCapabilityUI();
+  updateOllamaModelCapabilityUI();
+  updateOpenAIModelCapabilityUI();
+
   varConnectionUI.permission_all_urls = await messenger.permissions.contains({ origins: ['<all_urls>'] });
 
   i18n.updateDocument();
@@ -459,6 +476,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       setConnTestState('ok', result.apiName);
     } else {
       setConnTestState('error', result.message);
+    }
+    // Same as the options page: a successful test may be what granted the host
+    // permission, so re-probe the model capabilities now that /api/show is reachable.
+    if (state.provider === 'ollama_api' && result.status === 'ok') {
+      updateOllamaModelCapabilityUI();
     }
   });
 

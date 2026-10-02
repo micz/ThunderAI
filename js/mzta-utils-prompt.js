@@ -21,10 +21,26 @@ import {
     extractJsonObject,
     getMailInlineTextParts,
     htmlBodyToPlainText,
-    cleanupNewlines
+    cleanupNewlines,
+    intersectTagsLists
 } from './mzta-utils.js';
 import { getSpecialPrompts } from './mzta-prompts.js';
 import { mztaPrefs } from './mzta-prefs.js';
+
+// Per-feature settings of the AI reminder [#887]: same logic for calendar events
+// and tasks, only the prefs and the format instruction (reference date) differ.
+export const REMINDER_FEATURES = {
+    calendar: {
+        enabledPref: 'calendar_reminder_enabled',
+        rulesPref: 'calendar_reminder_rules',
+        formatMsgId: 'prompt_calendar_reminder_format'
+    },
+    task: {
+        enabledPref: 'task_reminder_enabled',
+        rulesPref: 'task_reminder_rules',
+        formatMsgId: 'prompt_task_reminder_format'
+    }
+};
 
 export const taPromptUtils = {
 
@@ -96,26 +112,86 @@ export const taPromptUtils = {
         return fullPrompt;
     },
 
-    finalizePrompt_add_tags(fullPrompt, add_tags_maxnum, add_tags_force_lang, default_chatgpt_lang, add_tags_auto_uselist = false, add_tags_auto_uselist_list = ''){
+    finalizePrompt_add_tags(fullPrompt, add_tags_maxnum, add_tags_force_lang, default_chatgpt_lang, add_tags_auto_uselist = false, add_tags_auto_uselist_list = '', add_tags_force_existing = false, existing_tags_list = '', prompt_text_raw = ''){
         if(add_tags_maxnum > 0){
             fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + add_tags_maxnum +".";
         }
-        if(add_tags_force_lang && default_chatgpt_lang !== ''){
+        // With force existing the language is dictated by the existing tags [#926]
+        if(!add_tags_force_existing && add_tags_force_lang && default_chatgpt_lang !== ''){
             fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + default_chatgpt_lang + ".";
         }
-        if(add_tags_auto_uselist && add_tags_auto_uselist_list && add_tags_auto_uselist_list.length > 0){
+        let uselist_active = add_tags_auto_uselist && add_tags_auto_uselist_list && add_tags_auto_uselist_list.length > 0;
+        if(add_tags_force_existing){
+            // The model must see the existing tags, otherwise it invents new ones that
+            // are then all filtered out [#926]
+            if(uselist_active){
+                let tags_intersection = intersectTagsLists(add_tags_auto_uselist_list, existing_tags_list);
+                if(tags_intersection !== ''){
+                    fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_force_existing") + ": " + tags_intersection + ".";
+                }else{
+                    console.warn("[ThunderAI] Add tags: none of the tags in the use list exists, and force existing tags is active. No tags list sent to the AI.");
+                }
+            }else if(existing_tags_list && existing_tags_list.length > 0 && !String(prompt_text_raw || '').includes("{%tags_full_list%}")){
+                fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_force_existing") + ": " + existing_tags_list + ".";
+            }
+        }else if(uselist_active){
             fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_use_list") + ": " + add_tags_auto_uselist_list + ".";
         }
 
         return fullPrompt;
     },
 
-    finalizePrompt_get_calendar_event(fullPrompt){
+    finalizePrompt_get_calendar_event(fullPrompt, promptTemplate = '', reminder_enabled = false, reminder_rules = ''){
         fullPrompt = fullPrompt.replace("{%cc_list%}", "");
         fullPrompt = fullPrompt.replace("{%recipients%}", "");
 
+        return taPromptUtils.appendReminderStatements(fullPrompt, 'calendar', promptTemplate, reminder_enabled, reminder_rules);
+    },
+
+    finalizePrompt_get_task(fullPrompt, promptTemplate = '', reminder_enabled = false, reminder_rules = ''){
+        return taPromptUtils.appendReminderStatements(fullPrompt, 'task', promptTemplate, reminder_enabled, reminder_rules);
+    },
+
+    // Text appended to the calendar event / task prompt to ASK the AI for a
+    // reminderMinutes value; '' when the feature's reminder checkbox is off. The
+    // same checkbox gates accepting the value: with it off, normalizeReminderMinutes()
+    // in mzta-utils.js always drops it. Also used by the settings pages for the live preview.
+    // promptTemplate is the prompt text as saved (curr_prompt.text), NOT the
+    // resolved prompt: an email body mentioning "reminderMinutes" must not
+    // suppress the format instruction, and the settings page checks the same text.
+    // The rules are appended after placeholder resolution, so they are sent verbatim.
+    getReminderPromptStatements(feature, promptTemplate, reminder_enabled, reminder_rules){
+        const parts = taPromptUtils.getReminderPromptParts(feature, promptTemplate, reminder_enabled, reminder_rules);
+        let statements = [];
+        if(parts.format !== '') statements.push(parts.format);
+        if(parts.rules !== '') statements.push(parts.rulesIntro + "\n" + parts.rules);
+        return statements.join(" \n");
+    },
+
+    // The pieces getReminderPromptStatements() joins, kept apart so the settings
+    // pages can render the fixed instruction and the user's rules differently.
+    // Each field is '' when that piece is not appended.
+    getReminderPromptParts(feature, promptTemplate, reminder_enabled, reminder_rules){
+        let parts = { format: '', rulesIntro: '', rules: '' };
+        if(!reminder_enabled) return parts;
+        if(!String(promptTemplate ?? '').includes('reminderMinutes')){
+            parts.format = browser.i18n.getMessage(REMINDER_FEATURES[feature].formatMsgId);
+        }
+        let rules = String(reminder_rules ?? '').trim();
+        if(rules !== ''){
+            parts.rulesIntro = browser.i18n.getMessage("prompt_reminder_rules_intro");
+            parts.rules = rules;
+        }
+        return parts;
+    },
+
+    appendReminderStatements(fullPrompt, feature, promptTemplate, reminder_enabled, reminder_rules){
+        let statements = taPromptUtils.getReminderPromptStatements(feature, promptTemplate, reminder_enabled, reminder_rules);
+        if(statements !== ''){
+            fullPrompt += " \n" + statements;
+        }
         return fullPrompt;
-    },   
+    },
 
     async getDefaultLang(curr_prompt){
         let chatgpt_lang = '';
@@ -132,14 +208,36 @@ export const taPromptUtils = {
         return chatgpt_lang;
     },
 
-    
+    // Language statements for the summary prompt:
+    // - chatgpt_lang: passed to every preparePrompt() call, as it has always been.
+    //   With summarize_force_lang off it is exactly getDefaultLang(prompt), so a
+    //   define_response_lang set on prompt_summarize is still honoured; with it on
+    //   it is '', so it can't contradict the forced language.
+    // - force_lang_statement: appended ONCE at the very end of the whole prompt,
+    //   on its own line. Not after each email: preparePrompt() glues chatgpt_lang to
+    //   the email body with a space, where it reads as part of the email.
+    //   The language is summarize_lang, falling back on default_chatgpt_lang; if
+    //   both are empty nothing is forced. getDefaultLang() is deliberately not used
+    //   here: its reply_same_lang fallback is the opposite of forcing a language.
+    async getSummaryLang(curr_prompt){
+        let prefs = await mztaPrefs.getPrefs(['summarize_force_lang', 'summarize_lang', 'default_chatgpt_lang']);
+        if(!prefs.summarize_force_lang){
+            return { chatgpt_lang: await taPromptUtils.getDefaultLang(curr_prompt), force_lang_statement: '' };
+        }
+        let lang = String(prefs.summarize_lang ?? '').trim() || String(prefs.default_chatgpt_lang ?? '').trim();
+        if(lang === ''){
+            return { chatgpt_lang: '', force_lang_statement: '' };
+        }
+        return { chatgpt_lang: '', force_lang_statement: browser.i18n.getMessage("prompt_summarize_force_lang") + " " + lang + "." };
+    },
+
     async buildSummaryPrompt(messageDataArray) {
         const specialPrompts = await getSpecialPrompts();
         const prompt = specialPrompts.find(p => p.id === 'prompt_summarize');
         const prompt_email = specialPrompts.find(p => p.id === 'prompt_summarize_email_template');
         const prompt_email_separator = specialPrompts.find(p => p.id === 'prompt_summarize_email_separator');
 
-        const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
+        const { chatgpt_lang, force_lang_statement } = await taPromptUtils.getSummaryLang(prompt);
 
         const prompt_string = await taPromptUtils.preparePrompt({
             curr_prompt: prompt,
@@ -181,7 +279,10 @@ export const taPromptUtils = {
         }
 
         const messages_string = messages_list.join(prompt_email_separator_string);
-        const promptText = prompt_string + prompt_email_separator_string + messages_string;
+        let promptText = prompt_string + prompt_email_separator_string + messages_string;
+        if (force_lang_statement !== '') {
+            promptText += "\n\n" + force_lang_statement;
+        }
 
         return { promptText, promptInfo: prompt };
     },

@@ -17,41 +17,241 @@
  */
 
 
+import { parseExtraBody } from './api-utils.js';
+import { fetchWithRetry } from './api-retry.js';
+import { createUsageData } from './mzta-api-usage.js';
+
+// Loading a model into memory happens before Ollama sends the response
+// headers, so the per-attempt timeout of a chat request must be long enough to
+// cover a cold start of a large model.
+const OLLAMA_CHAT_TIMEOUT_MS = 300000;
+
+// /api/chat reports its counters on the final chunk.
+export const supportsUsageData = true;
+
+/**
+ * Normalize the usage Ollama reports on the final chunk of /api/chat.
+ *
+ * Only the chunk flagged `done: true` carries the counters, so anything else
+ * returns null. Ollama gives no total, hence the computed one, and no rate: the
+ * tokens per second are derived from eval_count over eval_duration, which the
+ * server reports in nanoseconds.
+ *
+ * Never throws: every access is guarded, because a partial or unexpected payload
+ * must not break the stream it is being read from.
+ *
+ * @param {object} raw a streamed chunk or a full response body
+ * @returns {object|null} the normalized usage, or null when there is none
+ */
+export function extractUsage(raw) {
+  try{
+    if(raw === null || typeof raw !== 'object') return null;
+    if(raw.done !== true) return null;
+
+    const eval_count = raw.eval_count;
+    const eval_duration = raw.eval_duration;
+
+    // Guarded on both operands: a missing or zero duration would yield Infinity or
+    // NaN, and "not measurable" is exactly what null is for.
+    let tokens_per_second = null;
+    if(typeof eval_count === 'number' && Number.isFinite(eval_count)
+       && typeof eval_duration === 'number' && Number.isFinite(eval_duration) && eval_duration > 0){
+      tokens_per_second = Math.round((eval_count / (eval_duration / 1e9)) * 10) / 10;
+    }
+
+    return createUsageData({
+      provider: 'ollama',
+      model: raw.model,
+      input_tokens: raw.prompt_eval_count,
+      output_tokens: eval_count,
+      tokens_per_second: tokens_per_second,
+    });
+  }catch(error){
+    console.warn("[ThunderAI] Ollama usage data could not be read, ignoring it: " + error);
+    return null;
+  }
+}
+
+
 export class Ollama {
     host = '';
+    apiKey = '';
     model = '';
     stream = false;
     num_ctx = 0;
     temperature = '';
-    think = false;
+    think = '';
     format_json = false;
+    keep_alive = '';
+    system_prompt = '';
+    extra_options = '';
 
     constructor({
       host = '',
+      api_key = '',
       model = '',
       stream = false,
       num_ctx = 0,
       temperature = '',
-      think = false,
+      think = '',
       format_json = false,
+      keep_alive = '',
+      system_prompt = '',
+      extra_options = '',
     } = {}) {
       this.host = (host || '').trim().replace(/\/+$/, "");
+      this.apiKey = (api_key || '').trim();
       this.model = model;
       this.stream = stream;
       this.num_ctx = num_ctx;
       this.temperature = temperature;
-      this.think = think;
+      this.think = normalizeThink(think);
       this.format_json = format_json;
+      this.keep_alive = (keep_alive || '').trim();
+      // Not used when building the body: the worker prepends it as a system
+      // message. Declared here so the generic `ollama_` config sweep in
+      // model-worker-ollama.js does not drop it.
+      this.system_prompt = system_prompt;
+      this.extra_options = extra_options;
     }
 
-    fetchModels = async () => {
+    // Headers shared by every endpoint. The key is optional: it covers both the
+    // hosted API at ollama.com and a self-hosted server behind a reverse proxy
+    // that adds authentication.
+    _headers = () => {
+      const headers = { "Content-Type": "application/json" };
+      if (this.apiKey !== '') headers["Authorization"] = "Bearer " + this.apiKey;
+      return headers;
+    }
+
+    /**
+     * GET /api/version -- the connectivity probe used by the connection test.
+     *
+     * Deliberately not /api/tags: that endpoint answers with an empty list both
+     * when the server is reachable but has no models pulled and, after a CORS
+     * rejection, not at all -- conflating "no models" with "unreachable".
+     * /api/version answers regardless of what is installed, so a success here
+     * means exactly "the server is reachable and speaking Ollama".
+     *
+     * Same result contract as fetchModels(): {ok, response} or {ok:false, error}
+     * plus is_exception on a network-level failure.
+     */
+    fetchVersion = async () => {
       try{
-        const response = await fetch(this.host + "/api/tags", {
+        const response = await fetch(this.host + "/api/version", {
             method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: this._headers(),
         });
+
+        if (!response.ok) {
+            const errorDetail = await response.text();
+            console.error("[ThunderAI] Ollama API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
+            let output = {};
+            output.ok = false;
+            output.error = errorDetail;
+            return output;
+        }
+
+        let output = {};
+        output.ok = true;
+        output.response = await response.json();
+        return output;
+      }catch (error) {
+        console.error("[ThunderAI] Ollama API request failed: " + error);
+        let output = {};
+        output.is_exception = true;
+        output.ok = false;
+        output.error = "Ollama API request failed: " + error;
+        return output;
+      }
+    }
+
+    /**
+     * POST /api/show -- what the server knows about one model.
+     *
+     * The interesting parts of the response are `capabilities` (e.g.
+     * ["completion","vision","thinking","tools"]) and the context length, which
+     * lives in model_info under an architecture-prefixed key such as
+     * "llama.context_length" or "qwen3.context_length".
+     *
+     * Same result contract as fetchModels().
+     *
+     * @param {string} model the model ID to describe
+     */
+    fetchModelInfo = async (model) => {
+      try{
+        const response = await fetch(this.host + "/api/show", {
+            method: "POST",
+            headers: this._headers(),
+            body: JSON.stringify({ model: model }),
+        });
+
+        if (!response.ok) {
+            const errorDetail = await response.text();
+            console.error("[ThunderAI] Ollama API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
+            let output = {};
+            output.ok = false;
+            output.error = errorDetail;
+            return output;
+        }
+
+        let output = {};
+        output.ok = true;
+        output.response = await response.json();
+        return output;
+      }catch (error) {
+        console.error("[ThunderAI] Ollama API request failed: " + error);
+        let output = {};
+        output.is_exception = true;
+        output.ok = false;
+        output.error = "Ollama API request failed: " + error;
+        return output;
+      }
+    }
+
+    /**
+     * GET /api/ps -- the models currently loaded in memory. Each entry carries
+     * `context_length`, the context the server actually runs the model with,
+     * which can be smaller than the model's maximum reported by /api/show.
+     *
+     * Same result contract as fetchModels().
+     */
+    fetchRunningModels = async () => {
+      try{
+        const response = await fetch(this.host + "/api/ps", {
+            method: "GET",
+            headers: this._headers(),
+        });
+
+        if (!response.ok) {
+            const errorDetail = await response.text();
+            console.error("[ThunderAI] Ollama API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
+            let output = {};
+            output.ok = false;
+            output.error = errorDetail;
+            return output;
+        }
+
+        let output = {};
+        output.ok = true;
+        output.response = await response.json();
+        return output;
+      }catch (error) {
+        console.error("[ThunderAI] Ollama API request failed: " + error);
+        let output = {};
+        output.is_exception = true;
+        output.ok = false;
+        output.error = "Ollama API request failed: " + error;
+        return output;
+      }
+    }
+
+    fetchModels = async (retryConfig = {}) => {
+      try{
+        const response = await fetchWithRetry(this.host + "/api/tags", {
+            method: "GET",
+            headers: this._headers(),
+        }, { label: 'Ollama', ...retryConfig });
 
         if (!response.ok) {
             const errorDetail = await response.text();
@@ -82,34 +282,95 @@ export class Ollama {
     }
 
     
-    fetchResponse = async (messages) => {
+    fetchResponse = async (messages, retryConfig = {}) => {
       try {
         const tempFloat = parseFloat(this.temperature);
+
+        // Both num_ctx and temperature live under the same "options" key: they must be
+        // merged into a single object, otherwise one silently overwrites the other.
+        //
+        // The user-supplied extra options are spread FIRST, so num_ctx and temperature
+        // -- the two ThunderAI manages -- always win over a conflicting raw entry.
+        // Unlike chatgpt_extra_body and openai_comp_extra_body, this one belongs inside
+        // `options` rather than at the top level of the body: that is where Ollama takes
+        // top_p, top_k, min_p, seed, num_predict, repeat_penalty, stop and num_keep.
+        const options_obj = {
+            ...parseExtraBody(this.extra_options),
+            ...(this.num_ctx > 0 ? { num_ctx: parseInt(this.num_ctx) } : {}),
+            ...(this.temperature != '' && !Number.isNaN(tempFloat) ? { temperature: tempFloat } : {}),
+        };
+
         //console.log(">>>>>>>>>>  messages: " +JSON.stringify(messages));
-        const response = await fetch(this.host + "/api/chat", {
+        const response = await fetchWithRetry(this.host + "/api/chat", {
             method: "POST",
-            headers: { 
-                "Content-Type": "application/json", 
-            },
-            body: JSON.stringify({ 
-                model: this.model, 
+            headers: this._headers(),
+            body: JSON.stringify({
+                model: this.model,
                 messages: messages,
                 stream: this.stream,
-                think: this.think,
+                // Three distinct states, and the difference between the last two is
+                // not cosmetic: on a model whose /api/show reports
+                // "thinking": {"default": true} the model reasons when `think` is
+                // ABSENT, so "off" has to be sent as an explicit `false` to actually
+                // suppress it. '' therefore means "use the model default" and is the
+                // only value that omits the field.
+                //   ''      -> omitted      (whatever the model does by default)
+                //   'false' -> think: false (explicitly off)
+                //   'true'  -> think: true  (explicitly on, no level)
+                //   level   -> think: "<level>"
+                ...(this.think !== '' ? { think: parseThinkValue(this.think) } : {}),
                 ...(this.format_json ? { format: "json" } : {}),
-                ...(this.num_ctx > 0 ? { options: { num_ctx: parseInt(this.num_ctx) } } : {}),
-                ...(this.temperature != '' && !Number.isNaN(tempFloat) ? { options: { temperature: tempFloat } } : {}),
+                ...(this.keep_alive !== '' ? { keep_alive: this.keep_alive } : {}),
+                ...(Object.keys(options_obj).length > 0 ? { options: options_obj } : {}),
             }),
-        });
+        }, { label: 'Ollama', timeoutMs: OLLAMA_CHAT_TIMEOUT_MS, ...retryConfig });
         return response;
       }catch (error) {
           console.error("[ThunderAI] Ollama API request failed: " + error);
           let output = {};
           output.is_exception = true;
+          output.is_aborted = retryConfig.signal?.aborted === true;
           output.ok = false;
           output.error = "Ollama API request failed: " + error;
           return output;
       }
     }
 
+}
+
+/**
+ * Coerce a stored `think` value to the current string format.
+ *
+ * `ollama_think` used to be a boolean checkbox: `true` meant "think", `false`
+ * meant "don't". The pref is now a string ('' | 'false' | 'true' | a level), and
+ * a one-shot migration rewrites the global pref -- but a legacy boolean can still
+ * arrive here from a per-prompt override, because the config default is a string
+ * now and mzta-special-commands.js therefore no longer coerces that key.
+ * Normalizing at construction covers every caller.
+ *
+ * A legacy `false` maps to 'false' (explicitly off), NOT to '' (model default):
+ * the user had unticked the box, which meant "do not think", and on a model that
+ * reasons by default only an explicit `false` still delivers that.
+ *
+ * @param {*} think the stored value, possibly a legacy boolean
+ * @returns {string} '' to use the model default, otherwise the chosen value
+ */
+function normalizeThink(think) {
+  if (think === true) return 'true';
+  if (think === false) return 'false';
+  if (think === null || think === undefined) return '';
+  return String(think);
+}
+
+/**
+ * The JSON value to send for a non-empty `think` preference: a real boolean for
+ * the on/off entries, the bare string for a reasoning level.
+ *
+ * @param {string} think a non-empty normalized preference value
+ * @returns {boolean|string}
+ */
+function parseThinkValue(think) {
+  if (think === 'true') return true;
+  if (think === 'false') return false;
+  return think;
 }

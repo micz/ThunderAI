@@ -100,7 +100,7 @@ test('an unlocked field fills a prompt value that is empty; the calendar pair is
         assert.equal(p.api_type, 'ollama_api', id);
         assert.equal(p.ollama_host, 'http://ollama.example.org:11434', id);
         assert.equal(p.ollama_model, 'llama-org', id);
-        assert.equal(p.ollama_think, true, id);
+        assert.equal(p.ollama_think, 'true', id);
         assert.equal(p._connection_by_policy, true, id);
     }
 });

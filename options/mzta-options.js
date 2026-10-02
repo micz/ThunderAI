@@ -31,16 +31,20 @@ import {
   hasNoConnectionSelected,
   setTomSelectBorder,
   getMiczItUrl,
-  getCacheStorageUsedSpace
+  getCacheStorageUsedSpace,
+  supportsUsageData
 } from '../js/mzta-utils.js';
 import { taStorage } from '../js/mzta-storage.js';
 import {
   injectConnectionUI,
   updateAnthropicModelCapabilityUI,
+  updateOllamaModelCapabilityUI,
+  updateOpenAIModelCapabilityUI,
   varConnectionUI,
   showConnectionOptions,
   updateWarnings,
   hasEmptyValueOption,
+  ensureRestorableOption,
   checkJsonFields,
   getConnectionTypeLabel
 } from '../pages/_lib/connection-ui.js';
@@ -115,6 +119,7 @@ async function restoreOptions() {
           if(element.id == 'chatgpt_win_height') default_number_value = prefs_default.chatgpt_win_height;
           if(element.id == 'chatgpt_win_width') default_number_value = prefs_default.chatgpt_win_width;
           if(element.id == 'special_command_timeout') default_number_value = prefs_default.special_command_timeout;
+          if(element.id == 'batch_max_concurrency') default_number_value = prefs_default.batch_max_concurrency;
           element.value = result[element.id] ?? default_number_value;
           break;
         case 'text':
@@ -131,6 +136,7 @@ async function restoreOptions() {
           if(element.id == 'diff_granularity') default_select_value = prefs_default.diff_granularity;
           // No fallback for connection_type: an empty value means "no connection
           // selected yet" and must stay empty, so the placeholder option shows.
+          ensureRestorableOption(element, result[element.id]);
           element.value = result[element.id] || default_select_value;
           // connection_type and the ChatGPT reasoning selects have a dedicated option
           // for the empty value, so let the assignment above select it; every other
@@ -221,6 +227,40 @@ function disable_MaxPromptLength(){
   // Follow relevance, not the input's disabled flag: a policy lock also disables the
   // field, and that must grey it out rather than hide the row it explains.
   maxPromptLength_tr.style.display = irrelevant ? 'none' : '';
+}
+
+// Show the "Show usage data in chat" row only when at least one integration that
+// could actually report those counts is configured: the global connection, or any
+// per-feature specific integration. A web-only setup (ChatGPT Web and nothing else)
+// never sees the row, because no web interface exposes token counts.
+//
+// The per-feature integrations are included even though they drive the automatic
+// features, which have no chat UI: a feature integration is still a "currently
+// configured integration", and hiding the row while one is set would be arbitrary.
+// prefs_opt is the same snapshot the feature rows read; the live select value wins
+// over its stored connection_type, since this runs in reaction to that select.
+function disable_ChatShowUsageData(prefs_opt){
+  let row = document.getElementById('chat_show_usage_data_tr');
+  if(!row) return;
+  let conntype_select = document.getElementById('connection_type');
+  const global_type = conntype_select ? conntype_select.value : '';
+
+  // Every connection type in play: the global one plus each feature that opted out
+  // of it. getConnectionType() falls back to the global type on its own, so a feature
+  // without a specific integration simply repeats it -- harmless for an "any of" test.
+  const tempPrefs = { ...prefs_opt, connection_type: global_type };
+  const types = [global_type];
+  for(const prefix of special_prompts_with_integration){
+    types.push(getConnectionType(tempPrefs, null, prefix));
+  }
+
+  const visible = types.some(t => supportsUsageData(t));
+  row.style.display = visible ? '' : 'none';
+
+  // The note about server-dependent availability belongs to the OpenAI Compatible
+  // endpoints alone, so it follows the types actually in use rather than the row.
+  let note = document.getElementById('chat_show_usage_data_openai_comp_note');
+  if(note) note.style.display = types.includes('openai_comp_api') ? '' : 'none';
 }
 
 // Show the "Manage settings" link for a feature only when its flag is enabled;
@@ -740,12 +780,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", () => disable_Summarize(prefs_opt));
   conntype_select.addEventListener("change", () => disable_Translate(prefs_opt));
   conntype_select.addEventListener("change", () => disable_GetCalendarEvent(prefs_opt));
+  conntype_select.addEventListener("change", () => disable_ChatShowUsageData(prefs_opt));
   conntype_select.addEventListener("change", updateDescription);
   conntype_select.addEventListener("change", updateConnPanelTint);
 
   showConnectionOptions(conntype_select);
   showAdvConnectionOptions();
   updateAnthropicModelCapabilityUI();
+  updateOllamaModelCapabilityUI();
+  updateOpenAIModelCapabilityUI();
   checkJsonFields();
   updateDescription();
   updateConnPanelTint();
@@ -756,6 +799,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   disable_Summarize(prefs_opt);
   disable_Translate(prefs_opt);
   disable_GetCalendarEvent(prefs_opt);
+  disable_ChatShowUsageData(prefs_opt);
   updateSpecificApiIndicators(prefs_opt);
 
   browser.storage.onChanged.addListener(async (changes, area) => {
@@ -782,6 +826,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       disable_Summarize(prefs_opt);
       disable_Translate(prefs_opt);
       await disable_GetCalendarEvent(prefs_opt);
+      disable_ChatShowUsageData(prefs_opt);
     }
   });
 
@@ -835,6 +880,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       setConnTestState('ok', result.apiName);
     }else{
       setConnTestState('error', result.message);
+    }
+    // A successful test may have been the moment the host permission was granted,
+    // so re-probe the model capabilities now that /api/show can actually be reached.
+    if(connType === 'ollama_api' && result.status === 'ok'){
+      updateOllamaModelCapabilityUI();
     }
   });
 

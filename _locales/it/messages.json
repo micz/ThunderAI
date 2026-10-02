@@ -1,4 +1,7 @@
 {
+    "prefs_api_extra_body": {
+        "message": "Dati aggiuntivi"
+    },
     "extensionDescription": {
         "message": "Usa ChatGPT, Google Gemini, Claude oppure Ollama per migliorare le tue email!",
         "description": "Description of the extension."
@@ -537,9 +540,6 @@
     "prefs_extra_body_error_not_object": {
         "message": "Il valore deve essere un oggetto JSON, racchiuso tra parentesi graffe."
     },
-    "prefs_OptionText_openai_comp_extra_body": {
-        "message": "Dati aggiuntivi del corpo"
-    },
     "prefs_OptionText_openai_comp_extra_body_info": {
         "message": "Parametri aggiuntivi da inviare a ogni chiamata API, come oggetto JSON. Utile per le opzioni supportate da questo servizio ma non esposte da ThunderAI, come disattivare la modalità di ragionamento: {\"chat_template_kwargs\": {\"thinking\": false}} oppure {\"top_p\": 0.9}. I parametri gestiti da ThunderAI (model, messages, streaming, temperature) non possono essere sovrascritti qui. Un valore non valido viene ignorato."
     },
@@ -674,9 +674,6 @@
     },
     "prefs_SurveyLinkText2": {
         "message": "Condividi il tuo feedback"
-    },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Inserisci manualmente il modello"
     },
     "OpenAIComp_force_model_ask": {
         "message": "Inserisci qui il nome del modello che vuoi utilizzare."
@@ -1368,9 +1365,6 @@
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Ricorda che eventuali tag <br> nella risposta dell'IA verranno sostituiti con interruzioni di riga."
     },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Svuota l'elenco dei modelli"
-    },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Sei sicuro di voler cancellare l’elenco dei modelli? Questa azione non può essere annullata."
     },
@@ -1444,10 +1438,7 @@
         "message": "Richiede all'API un riassunto del ragionamento del modello, mostrato nella chat come blocco richiudibile. Lo supportano solo i modelli di ragionamento recenti, come gpt-5, o3 e o4-mini: quelli più vecchi come o1-pro e o3-mini ragionano internamente ma non espongono mai un riassunto, quindi il blocco resta nascosto. Lascia disattivato per i modelli senza supporto al ragionamento."
     },
     "prefs_OptionText_chatgpt_reasoning_effort": {
-        "message": "Intensità del ragionamento"
-    },
-    "prefs_OptionText_chatgpt_extra_body": {
-        "message": "Dati aggiuntivi"
+        "message": "Livello di ragionamento"
     },
     "prefs_OptionText_chatgpt_extra_body_info": {
         "message": "Parametri aggiuntivi da inviare a ogni chiamata API, come oggetto JSON, ad esempio {\"top_p\": 0.9}. Utile per le opzioni supportate dall'API di OpenAI ma non esposte da ThunderAI. I parametri gestiti da ThunderAI (model, input, streaming, temperature, reasoning, instructions) non possono essere sovrascritti qui. Un valore non valido viene ignorato."
@@ -1458,7 +1449,7 @@
     "prefs_OptionText_chatgpt_reasoning_disabled": {
         "message": "Disattivato"
     },
-    "prefs_OptionText_chatgpt_reasoning_api_default": {
+    "prefs_reasoning_api_default ": {
         "message": "Predefinito"
     },
     "prefs_OptionText_chatgpt_reasoning_summary_auto": {
@@ -1467,17 +1458,23 @@
     "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
         "message": "Dettagliato"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
-        "message": "Minima"
+    "prefs_level_minimal": {
+        "message": "Minimo"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_low": {
-        "message": "Bassa"
+    "prefs_level_low": {
+        "message": "Basso"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
-        "message": "Media"
+    "prefs_level_medium": {
+        "message": "Medio"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_high": {
-        "message": "Alta"
+    "prefs_level_high": {
+        "message": "Alto"
+    },
+    "prefs_level_xhigh": {
+        "message": "Molto alto"
+    },
+    "prefs_level_max": {
+        "message": "Massimo"
     },
     "prefs_ollama_temperature_Info": {
         "message": "La temperatura del modello. Aumentare la temperatura farà sì che il modello risponda in modo più creativo. Il valore predefinito è 0,8. Si consiglia di utilizzare valori compresi tra 0 e 1."
@@ -2299,8 +2296,8 @@
     "prefs_OptionText_special_command_timeout_Info": {
         "message": "Tempo in millisecondi prima che una richiesta AI bloccata (aggiunta automatica di tag, filtro spam, riassunto, traduzione) venga interrotta. Aumenta questo valore se utilizzi modelli locali lenti. Si applica solo alle connessioni basate su API, non all'interfaccia web di ChatGPT."
     },
-    "prefs_OptionText_summarize_max_messages": {
-        "message": "Massimo numeri di messaggi"
+    "prefs_OptionText_max_messages": {
+        "message": "Max messaggi"
     },
     "prefs_OptionText_summarize_max_messages_Info": {
         "message": "Numero massimo di messaggi che possono essere riassunti contemporaneamente nella modalità webchat. Al di sopra di questo limite l'operazione viene bloccata con un messaggio di avviso. Imposta a 0 per nessun limite."
@@ -2504,21 +2501,6 @@
     },
     "anthropic_effort_default": {
         "message": "Predefinito (deciso dall'API)"
-    },
-    "Anthropic_Effort_Level_low": {
-        "message": "Basso"
-    },
-    "Anthropic_Effort_Level_medium": {
-        "message": "Medio"
-    },
-    "Anthropic_Effort_Level_high": {
-        "message": "Alto"
-    },
-    "Anthropic_Effort_Level_xhigh": {
-        "message": "Molto alto"
-    },
-    "Anthropic_Effort_Level_max": {
-        "message": "Massimo"
     },
     "anthropic_note_temperature_unsupported": {
         "message": "Il modello selezionato non accetta un valore di Temperatura e ignora questo campo. Usa invece l'impostazione Effort. Il valore viene conservato nel caso in cui tornassi a un modello più vecchio."
