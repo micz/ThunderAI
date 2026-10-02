@@ -47,9 +47,6 @@
     "customPrompts_reindexing_list": {
         "message": "A redefinir os índices da lista..."
     },
-    "customPrompts_reloading_menus": {
-        "message": "A recarregar menus..."
-    },
     "customPrompts_form_label_ID": {
         "message": "ID"
     },
@@ -133,15 +130,6 @@
     },
     "customPrompts_start_saving": {
         "message": "A guardar prompts..."
-    },
-    "customPrompts_filtering_prompts": {
-        "message": "A filtrar prompts..."
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "A guardar prompts padrão..."
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "A guardar prompts personalizados..."
     },
     "customPrompts_saved": {
         "message": "Prompts guardados!"
@@ -286,9 +274,6 @@
     },
     "customPrompts_start_import": {
         "message": "A iniciar a importação de prompts personalizados..."
-    },
-    "customPrompts_import_completed": {
-        "message": "Importação de prompts personalizados concluída! Precisa clicar no botão 'Gravar tudo' para gravar as suas alterações."
     },
     "importPrompts_invalidFile": {
         "message": "O ficheiro que tenta importar não é um ficheiro de prompts personalizados válido."

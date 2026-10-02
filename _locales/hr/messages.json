@@ -54,18 +54,6 @@
     "customPrompts_reindexing_list": {
         "message": "Ponovno indeksiranje popisa..."
     },
-    "customPrompts_filtering_prompts": {
-        "message": "Filtriranje upita..."
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "Spremanje zadanih upita..."
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "Spremanje prilagođenih upita..."
-    },
-    "customPrompts_reloading_menus": {
-        "message": "Ponovno učitavanje izbornika..."
-    },
     "customPrompts_saved": {
         "message": "Upiti su spremljeni!"
     },
@@ -272,9 +260,6 @@
     },
     "customPrompts_start_import": {
         "message": "Pokretanje uvoza prilagođenih upita..."
-    },
-    "customPrompts_import_completed": {
-        "message": "Uvoz prilagođenih upita dovršen! Morate pritisnuti gumb 'Spremi sve' da biste spremili svoje promjene."
     },
     "importPrompts_invalidFile": {
         "message": "Datoteka koju pokušavate uvesti nije važeća datoteka prilagođenih upita."

@@ -8,9 +8,6 @@
     "prompt_translate_this": {
         "message": "翻譯這段"
     },
-    "customPrompts_saving_custom_prompts": {
-        "message": "正在儲存自訂提示..."
-    },
     "customPrompts_managePrompts_info_default": {
         "message": "預設的提示無法編輯。你可以先停用它們，然後複製提示內容，再貼到新的提示中，就能製作出修改版本。"
     },
@@ -52,15 +49,6 @@
     },
     "customPrompts_reindexing_list": {
         "message": "正在重新建立索引清單..."
-    },
-    "customPrompts_filtering_prompts": {
-        "message": "正在篩選提示..."
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "正在儲存預設提示..."
-    },
-    "customPrompts_reloading_menus": {
-        "message": "正在重新載入選單..."
     },
     "customPrompts_saved": {
         "message": "提示已儲存！"
@@ -965,9 +953,6 @@
     },
     "Anthropic_Version_Info": {
         "message": "必需。除非您清楚自己在做什麼，否則請勿變更此值。更多資訊請見："
-    },
-    "customPrompts_import_completed": {
-        "message": "自訂提示滙入完成！您需要點擊「儲存全部」按鈕來儲存變更。"
     },
     "prefs_OptionText_calendar_enforce_timezone_Info": {
         "message": "如果勾選，則日曆事件和任務將強制使用指定的時區。"

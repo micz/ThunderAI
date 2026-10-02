@@ -1,12 +1,6 @@
 {
-    "customPrompts_saving_custom_prompts": {
-        "message": "Ukládání vlastních dotazů…"
-    },
     "prompt_rewrite_formal": {
         "message": "Přepsat formálně"
-    },
-    "customPrompts_reloading_menus": {
-        "message": "Načítání nabídek…"
     },
     "customPrompts_form_label_Action": {
         "message": "Akce"
@@ -49,12 +43,6 @@
     },
     "customPrompts_reindexing_list": {
         "message": "Indexování seznamu…"
-    },
-    "customPrompts_filtering_prompts": {
-        "message": "Filtrování dotazů…"
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "Ukládání výchozích dotazů…"
     },
     "prompt_translate_this": {
         "message": "Přeložit"
@@ -259,9 +247,6 @@
     },
     "importPrompts_confirmText": {
         "message": "Chystáte se importovat nové příkazy."
-    },
-    "customPrompts_import_completed": {
-        "message": "Import vlastních příkazů dokončen! Pro uložení změn musíte kliknout na tlačítko 'Uložit vše'."
     },
     "importPrompts_invalidPrompts": {
         "message": "Soubor, který se snažíte importovat, neobsahuje žádné platné příkazy."

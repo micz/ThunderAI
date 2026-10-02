@@ -57,18 +57,6 @@
     "customPrompts_reindexing_list": {
         "message": "Indicizzazione lista..."
     },
-    "customPrompts_filtering_prompts": {
-        "message": "Applicazione filtro in corso..."
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "Salvataggio prompt di base..."
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "Salvataggio prompt personalizzati..."
-    },
-    "customPrompts_reloading_menus": {
-        "message": "Caricamento menu aggiornati..."
-    },
     "customPrompts_saved": {
         "message": "Prompt salvati!"
     },
@@ -314,9 +302,6 @@
     },
     "customPrompts_start_import": {
         "message": "Inizio importazione dei prompt personalizzati..."
-    },
-    "customPrompts_import_completed": {
-        "message": "Importazione dei prompt personalizzati completata! È necessario fare clic sul pulsante 'Salva Tutto' per salvare le modifiche."
     },
     "importPrompts_invalidFile": {
         "message": "Il file che stai cercando di importare non è un file valido di prompt personalizzati."

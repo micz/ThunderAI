@@ -62,18 +62,6 @@
     "customPrompts_reindexing_list": {
         "message": "Mengindeks ulang daftar..."
     },
-    "customPrompts_filtering_prompts": {
-        "message": "Memfilter prompt..."
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "Menyimpan prompt bawaan..."
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "Menyimpan prompt kustom..."
-    },
-    "customPrompts_reloading_menus": {
-        "message": "Memuat ulang menu..."
-    },
     "customPrompts_saved": {
         "message": "Prompt berhasil disimpan!"
     },
@@ -324,9 +312,6 @@
     },
     "customPrompts_start_import": {
         "message": "Memulai impor prompt kustom..."
-    },
-    "customPrompts_import_completed": {
-        "message": "Impor prompt kustom selesai! Anda perlu mengeklik tombol 'Save All' untuk menyimpan perubahan Anda."
     },
     "importPrompts_invalidFile": {
         "message": "File yang Anda coba impor bukan file prompt kustom yang valid."
