@@ -111,10 +111,6 @@
     "message": "Name",
     "description": ""
   },
-  "customPrompts_form_label_Text": {
-    "message": "Prompt Text",
-    "description": ""
-  },
   "customPrompts_form_label_Action": {
     "message": "Action",
     "description": ""
@@ -177,10 +173,6 @@
   },
   "btnNew_string": {
     "message": "Add New",
-    "description": ""
-  },
-  "customPrompts_btnAddNewCommit": {
-    "message": "Add the Prompt",
     "description": ""
   },
   "customPrompts_add_to_menu": {
@@ -356,10 +348,6 @@
       }
     }
   },
-  "prefsInfoTitle": {
-    "message": "Important Information",
-    "description": ""
-  },
   "prefsInfoDesc_1": {
     "message": "It could happen that the ChatGPT web interface changes in a way that breaks how the addon works. Check the \"Service Status\" page linked at the bottom of this page. Also, remember that the first time you use ThunderAI, you need to log in to ChatGPT.",
     "description": ""
@@ -374,14 +362,6 @@
   },
   "prefsInfoDesc_4": {
     "message": "To use this integration, you need to set up a local server compatible with the OpenAI API, like LM Studio. Once the server is running, enter its address in the designated field within the application. To ensure proper communication between ThunderAI and the local server remember to set the CORS settings correctly.",
-    "description": ""
-  },
-  "prefsInfoDesc_5": {
-    "message": "Remember that you can open the ThunderAI menu using the keyboard shortcut CTRL+ALT+A.",
-    "description": ""
-  },
-  "prefsInfoDesc_6": {
-    "message": "You can change the shortcut clicking on the cogwheel icon at the top right of this page and choosing \"Manage Extension Shortcut\".",
     "description": ""
   },
   "prefsInfoDesc_7": {
@@ -412,24 +392,8 @@
     "message": "Make a donation",
     "description": "Footer link at the bottom of the options page, opening the donation page."
   },
-  "prefsDonation_1": {
-    "message": "Do you like this addon?",
-    "description": ""
-  },
-  "prefsDonation_2": {
-    "message": "Consider to make a donation!",
-    "description": ""
-  },
   "backToOptionsText": {
     "message": "Options",
-    "description": ""
-  },
-  "TranslateText": {
-    "message": "Do you want to help translate this addon?",
-    "description": ""
-  },
-  "TranslateLink": {
-    "message": "Find out how!",
     "description": ""
   },
   "customPrompts_ExportAll": {
@@ -1007,10 +971,6 @@
   },
   "chatgpt_btn_model": {
     "message": "Use the current model",
-    "description": ""
-  },
-  "AllowedValues": {
-    "message": "Allowed values",
     "description": ""
   },
   "prefs_OptionText_btnManagePrompts_infoline": {
@@ -1857,10 +1817,6 @@
     "message": "No",
     "description": ""
   },
-  "noActiveCalendar": {
-    "message": "No editable calendar found!",
-    "description": ""
-  },
   "btn_show_differences": {
     "message": "Show differences",
     "description": ""
@@ -1930,10 +1886,6 @@
         "content": "$1"
       }
     }
-  },
-  "apiwebchat_picker_progress": {
-    "message": "Accepted changes",
-    "description": "Accessible label of the change picker's progress bar"
   },
   "apiwebchat_picker_more_actions": {
     "message": "More actions",
@@ -2034,10 +1986,6 @@
   "apiwebchat_picker_side_empty_inactive": {
     "message": "No text here. Activate to leave this part out.",
     "description": "Accessible label of the empty side of a change, when it is not the one in use"
-  },
-  "apiwebchat_you": {
-    "message": "You",
-    "description": ""
   },
   "apiwebchat_info": {
     "message": "Information",
@@ -2349,10 +2297,6 @@
     "message": "Hide additional properties",
     "description": ""
   },
-  "customPrompts_show_additional_info_show": {
-    "message": "Additional properties",
-    "description": ""
-  },
   "prefs_OptionText_CustomGPT_Warn": {
     "message": "If a Project is specified in the options or in a prompt, it will override the Custom GPT setting.",
     "description": ""
@@ -2629,7 +2573,7 @@
     "message": "Disabled",
     "description": "Option for the reasoning summary dropdown, meaning no summary is requested."
   },
-  "prefs_reasoning_api_default ": {
+  "prefs_reasoning_api_default": {
     "message": "API default",
     "description": "Shared empty option for the OpenAI dropdowns (reasoning effort, verbosity, text format, truncation, service tier), meaning the value is not sent and the API default applies."
   },
@@ -3036,25 +2980,9 @@
     "message": "You have denied the optional permission needed to fetch models for this integration.",
     "description": ""
   },
-  "prefs_OptionText_auto_summary": {
-    "message": "Enable automatic AI summarization for message previews",
-    "description": "Label for the option to enable automatic AI summarization of email messages"
-  },
   "prefs_OptionText_auto_summary_Info": {
       "message": "If checked, ThunderAI will automatically generate and display AI summaries above email messages when they are opened. Note that this means all messages you preview will immediately be sent to the configured AI service.",
       "description": "Tooltip/info text explaining the automatic AI summarization option and its privacy implications"
-  },
-  "auto_summary_title": {
-      "message": "ThunderAI Summary",
-      "description": "Title heading shown above the automatically generated AI summary in the message pane"
-  },
-  "auto_summary_generating": {
-      "message": "Generating AI summary...",
-      "description": "Status message shown while the AI summary is being generated"
-  },
-  "auto_summary_failed": {
-      "message": "Failed to generate AI summary. Please confirm your settings and try again.",
-      "description": "Error message shown when the automatic AI summary generation fails"
   },
   "customPrompts_export_include_api_settings": {
     "message": "Do you want to include the API settings in the export? Be aware that also the API Key will be saved in the file!",
@@ -3079,10 +3007,6 @@
   "prefs_OptionText_calendar_no_selection_policy_missing_placeholder": {
     "message": "Your organization has enabled this option, but the prompt contains neither {%mail_text_body_or_selected%} nor {%mail_html_body_or_selected%}, so the message body is not sent to the AI. Add one of these placeholders to the prompt or reset it to the default.",
     "description": "Note next to the calendar 'Do not ask to select text' switch when the enterprise policy locks it on and the calendar prompt lacks the body placeholder"
-  },
-  "customPrompts_btnCopy": {
-    "message": "Copy",
-    "description": ""
   },
   "managed_banner": {
     "message": "Some settings are managed by your organization and cannot be changed.",
@@ -3248,10 +3172,6 @@
       "message": "Add one email address per line, or separated by a comma. Use \"@domain.com\" to match every sender of a whole domain.",
       "description": ""
   },
-  "Summarize_auto_senders_api_warning": {
-      "message": "Warning: these summaries are generated automatically, so every email from these senders consumes API tokens and may increase the cost of your AI subscription. Keep the list as short as possible.",
-      "description": ""
-  },
   "Summarize_auto_senders_notice": {
       "message": "Auto-summarize is disabled, but the summary is still generated automatically for the senders in the list below.",
       "description": ""
@@ -3375,10 +3295,6 @@
               "content": "$2"
           }
       }
-  },
-  "summarize_collapse": {
-      "message": "Collapse summary",
-      "description": ""
   },
   "summarize_generating": {
       "message": "Generating summary...",
@@ -3735,14 +3651,6 @@
   "menu_order_legend_source_custom": {
     "message": "Prompt you created",
     "description": "Legend description for the 'Custom' source badge"
-  },
-  "prefs_settings_subtitle": {
-    "message": "Settings",
-    "description": "Subtitle shown under the ThunderAI name in the options page header"
-  },
-  "prefs_disclaimer": {
-    "message": "LLM models can generate incorrect information, and your data may be used by the provider to train new models. Use at your own risk.",
-    "description": "Disclaimer note shown at the top of the options page body"
   },
   "prefs_ConnectionSettingsTitle": {
     "message": "Connection Settings",

@@ -2241,7 +2241,7 @@
     "prefs_OptionText_chatgpt_reasoning_disabled": {
         "message": "Inaktiverad"
     },
-    "prefs_reasoning_api_default ": {
+    "prefs_reasoning_api_default": {
         "message": "API standard"
     },
     "prefs_OptionText_chatgpt_reasoning_summary_auto": {

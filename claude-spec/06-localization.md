@@ -69,6 +69,13 @@ Example:
 }
 ```
 
+## Removing a String
+
+A key no longer referenced from the code is **removed from `_locales/en/messages.json`**, not left
+behind: Weblate keeps asking translators for every key `en` has. The other locales follow when
+Weblate syncs from `en`. The `dead-key` check of `tests/static/02-locales-references` reports an
+`en` key that is referenced nowhere (see `tests/static/README.md` for what counts as a reference).
+
 ## Supported Languages
 
 **Two different lists, and they are not meant to agree.** `_locales/` is every language Weblate has opened a translation for; `LANG.md` at the repo root is the subset complete enough to be packaged into a release, maintained by hand. A locale present in `_locales/` but absent from `LANG.md` is deliberately excluded, not an oversight — do not reconcile them.

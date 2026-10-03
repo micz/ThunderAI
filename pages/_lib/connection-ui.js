@@ -363,7 +363,7 @@ export async function injectConnectionUI({
     <td>
       <label>
         <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_effort" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_effort" class="option-input">
-          <option value="">__MSG_prefs_reasoning_api_default __</option>
+          <option value="">__MSG_prefs_reasoning_api_default__</option>
           <option value="none">__MSG_prefs_level_none__</option>
           <option value="minimal">__MSG_prefs_level_minimal__</option>
           <option value="low">__MSG_prefs_level_low__</option>
@@ -440,7 +440,7 @@ export async function injectConnectionUI({
     <td>
       <label>
         <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_verbosity" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_verbosity" class="option-input">
-          <option value="">__MSG_prefs_reasoning_api_default __</option>
+          <option value="">__MSG_prefs_reasoning_api_default__</option>
           <option value="low">__MSG_prefs_level_low__</option>
           <option value="medium">__MSG_prefs_level_medium__</option>
           <option value="high">__MSG_prefs_level_high__</option>
@@ -459,7 +459,7 @@ export async function injectConnectionUI({
     <td>
       <label>
         <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_text_format" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_text_format" class="option-input">
-          <option value="">__MSG_prefs_reasoning_api_default __</option>
+          <option value="">__MSG_prefs_reasoning_api_default__</option>
           <option value="json_object">__MSG_prefs_OptionText_chatgpt_text_format_json_object__</option>
           <option value="json_schema">__MSG_prefs_OptionText_chatgpt_text_format_json_schema__</option>
         </select>
@@ -503,7 +503,7 @@ export async function injectConnectionUI({
     <td>
       <label>
         <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_truncation" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_truncation" class="option-input">
-          <option value="">__MSG_prefs_reasoning_api_default __</option>
+          <option value="">__MSG_prefs_reasoning_api_default__</option>
           <option value="auto">__MSG_prefs_OptionText_chatgpt_truncation_auto__</option>
           <option value="disabled">__MSG_prefs_OptionText_chatgpt_truncation_disabled__</option>
         </select>
@@ -520,7 +520,7 @@ export async function injectConnectionUI({
     <td>
       <label>
         <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_service_tier" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_service_tier" class="option-input">
-          <option value="">__MSG_prefs_reasoning_api_default __</option>
+          <option value="">__MSG_prefs_reasoning_api_default__</option>
           <option value="auto">__MSG_prefs_OptionText_chatgpt_service_tier_auto__</option>
           <option value="default">__MSG_prefs_OptionText_chatgpt_service_tier_default__</option>
           <option value="flex">__MSG_prefs_OptionText_chatgpt_service_tier_flex__</option>

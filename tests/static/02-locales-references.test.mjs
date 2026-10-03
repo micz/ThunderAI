@@ -5,8 +5,8 @@
 // A key built at run time (a variable, a concatenation, a template with ${...}) cannot be checked
 // statically: it is listed by the "unresolvable" test, never failed.
 //
-// Spec 06 "Adding a New String" (a string is added to be used, step 4): no key of en is referenced
-// nowhere. "Referenced" is deliberately generous here, so the check under-reports rather than
+// Spec 06 "Removing a String": a key no longer referenced from the code is removed from en, so no
+// key of en is referenced nowhere. "Referenced" is deliberately generous here, so the check under-reports rather than
 // cries wolf: a key counts as used when any static string in the scanned code equals it, or when
 // it starts with a prefix ('prompt_' + id, `prompt_${id}`) or ends with a suffix (id + '_info')
 // the code builds keys from.
