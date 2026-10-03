@@ -21,6 +21,14 @@
 // Using a full string to inject it in the ChatGPT page to avoid any security error
 
 export const mzta_script = `
+// page timing (issue #924), ms since navigation start; logged only in debug mode
+let script_start_ms = performance.now();
+// injected at document_start, so the document can still be loading here (issue #924)
+let ready_state_at_inject = document.readyState;
+let custom_text_start_ms = null;
+let custom_text_ms = null;
+let send_button_wait_ms = null;
+let page_timing_logged = false;
 let force_go = false;
 let do_force_completion = false;
 let current_message = null;
@@ -33,68 +41,119 @@ let delay_wait_completion = 7000; // milliseconds
 let _customTextArray = [];
 let _currentCustomTextIndex = 0;
 let lastSelectedHtml = "";
+// composer the user clicked into when no selector matched, reused on retry
+let user_selected_composer = null;
+// composer used for the last send, needed by the completion diagnostics
+let current_composer_el = null;
+// debug only: message counts taken just before sending, for the completion diagnostics
+let send_baseline = null;
+let last_send_button_strategy = null;
+// ancestor padded so the composer clears the ThunderAI bar, with its original inline style
+let overlap_fix = null;
+// layout for which no ancestor resolved the overlap, so it is not retried on every mutation
+let overlap_failed_key = null;
+let overlap_watch_installed = false;
+let overlap_throttle_timer = null;
+let overlap_last_run = 0;
+// layout watch: the ResizeObserver, the elements it observes, and the bar and form the interval check compares
+let overlap_resize_observer = null;
+let overlap_observed = new Set();
+let overlap_watched_bar = null;
+let overlap_watched_form = null;
+// true while run() waits for the page, so a second chatgpt_send does not start a second run
+let run_pending = false;
+// set right before the prompt flow starts: doProceed()/showCustomTextField() run once per script instance
+let prompt_flow_started = false;
+let not_logged_in_alerted = false;
+// the nodes addCustomDiv() inserts into the page: ChatGPT's re-render can detach them, the same nodes are re-inserted
+let mzta_ui_bar = null;
+let mzta_ui_style = null;
+let ui_watch_installed = false;
+let ui_body_observer = null;
+let ui_observed_body = null;
+// debug only: how many times the UI was re-attached
+let ui_reattached_count = 0;
 
-// Composer selectors, in priority order (see #890, #920: some users get a different composer)
-const MZTA_PROMPT_SELECTORS = [
+// Composer lookup, in priority order. ChatGPT rolls out different composers
+// (A/B tests), so a single id lookup is not enough (issues #890, #920, #924).
+const PROMPT_INPUT_SELECTORS = [
     '#prompt-textarea',
+    'div.ProseMirror[contenteditable="true"][data-composer-markdown]',
+    '[contenteditable="true"][role="textbox"][data-virtualkeyboard]',
     'div.ProseMirror[contenteditable="true"]',
     'form [contenteditable="true"]',
     'textarea[name="prompt-textarea"]',
     'form textarea',
     'main [contenteditable="true"]'
 ];
-const MZTA_SHADOW_MAX_NODES = 5000;    // bound for the shadow roots walk
-const MZTA_SHADOW_MAX_ROOTS = 50;
+const SHADOW_WALK_MAX_NODES = 5000;
+const SHADOW_WALK_MAX_DEPTH = 5;
+
+// null when visible, otherwise why the element is considered invisible
+function getHiddenReason(el) {
+    if (!el || !el.isConnected) return 'disconnected';
+    if (el.hidden) return 'hidden-attr';
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none') return 'display-none';
+    if (style.visibility === 'hidden') return 'visibility-hidden';
+    const rect = el.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return 'zero-size';
+    return null;
+}
 
 function isElementVisible(el) {
-    if (!el || !el.isConnected || el.hidden) return false;
-    const style = window.getComputedStyle(el);
-    if (!style || style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse') return false;
-    const rect = el.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0;
+    return getHiddenReason(el) === null;
 }
 
+// Our own injected UI (e.g. the custom text textarea) must never be taken for the composer
 function isOwnUiElement(el) {
-    return !!(el.closest && el.closest('.mzta-header-fixed'));
+    return el.closest('.mzta-header-fixed, [id^="mzta-"]') !== null;
 }
 
-// Walks the open shadow roots, descending into nested ones, visiting at most MZTA_SHADOW_MAX_NODES elements
-function collectOpenShadowRoots() {
+// Bounded recursive walk collecting the open shadow roots of the page
+function getOpenShadowRoots() {
     const roots = [];
-    const queue = [document];
-    let visited = 0;
-    while (queue.length > 0 && visited < MZTA_SHADOW_MAX_NODES && roots.length < MZTA_SHADOW_MAX_ROOTS) {
-        const all = queue.shift().querySelectorAll('*');
-        for (let i = 0; i < all.length && visited < MZTA_SHADOW_MAX_NODES && roots.length < MZTA_SHADOW_MAX_ROOTS; i++) {
-            visited++;
-            const sr = all[i].shadowRoot;
-            if (sr) {
-                roots.push(sr);
-                queue.push(sr);
+    const budget = { left: SHADOW_WALK_MAX_NODES };
+    const walk = (root, depth) => {
+        if (depth > SHADOW_WALK_MAX_DEPTH) return;
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+        let node = walker.nextNode();
+        while (node && budget.left > 0) {
+            budget.left--;
+            if (node.shadowRoot) {
+                roots.push(node.shadowRoot);
+                walk(node.shadowRoot, depth + 1);
             }
+            node = walker.nextNode();
         }
-    }
+    };
+    walk(document.documentElement, 0);
+    // true when the walk stopped early, so some shadow roots may be missing
+    roots.truncated = budget.left <= 0;
     return roots;
 }
 
-function locatePromptInput(includeShadow) {
-    for (const selector of MZTA_PROMPT_SELECTORS) {
-        for (const el of document.querySelectorAll(selector)) {
-            if (!isOwnUiElement(el) && isElementVisible(el)) {
-                doLog("findPromptInput matched selector: " + selector);
-                return el;
+// Per selector: how many elements match, how many are visible, how many are our own UI
+function getSelectorStats(roots) {
+    return PROMPT_INPUT_SELECTORS.map(selector => {
+        const stat = { selector: selector, matches: 0, visible: 0, ownUi: 0 };
+        for (const root of roots) {
+            for (const el of root.querySelectorAll(selector)) {
+                stat.matches++;
+                if (isOwnUiElement(el)) stat.ownUi++;
+                else if (isElementVisible(el)) stat.visible++;
             }
         }
-    }
-    if (!includeShadow) return null;
-    const shadowRoots = collectOpenShadowRoots();
-    if (shadowRoots.length === 0) return null;
-    for (const selector of MZTA_PROMPT_SELECTORS) {
-        for (const root of shadowRoots) {
+        return stat;
+    });
+}
+
+function queryPromptInput(roots) {
+    for (const selector of PROMPT_INPUT_SELECTORS) {
+        for (const root of roots) {
             for (const el of root.querySelectorAll(selector)) {
-                if (isElementVisible(el)) {
-                    doLog("findPromptInput matched selector in shadow root: " + selector);
-                    return el;
+                if (!isOwnUiElement(el) && isElementVisible(el)) {
+                    return { el: el, selector: selector, inShadow: root !== document };
                 }
             }
         }
@@ -102,114 +161,737 @@ function locatePromptInput(includeShadow) {
     return null;
 }
 
-async function findPromptInput(timeoutMs) {     // returns the composer element or null
-    const immediate = locatePromptInput(true);
-    if (immediate) return immediate;
+// Resolves with the composer element as soon as it appears, or null after timeoutMs
+async function findPromptInput(timeoutMs) {
     return new Promise(resolve => {
         let done = false;
         let observer = null;
         let pollId = null;
         let timeoutId = null;
-        const finish = (el) => {
+        let progressId = null;
+        const startTime = Date.now();
+        doLog("findPromptInput start, timeout " + timeoutMs + " ms, readyState " + document.readyState);
+        const finish = (found) => {
             if (done) return;
             done = true;
             if (observer) observer.disconnect();
             clearInterval(pollId);
+            clearInterval(progressId);
             clearTimeout(timeoutId);
-            resolve(el);
+            if (found) {
+                doLog("Prompt input found after " + (Date.now() - startTime) + " ms with selector: " + found.selector + (found.inShadow ? " (shadow DOM)" : ""));
+                // the focus and timeout outcomes emit their own line in any mode
+                if (mztaDoDebug == 1) logComposerDiagnostics('found', found.el, found.selector);
+                resolve(found.el);
+            } else {
+                doLog("Prompt input not found after " + timeoutMs + " ms");
+                resolve(null);
+            }
         };
-        const check = (includeShadow) => {
+        // the shadow DOM walk is the costly part, so it runs only on the polling tick
+        const check = (withShadow) => {
             if (done) return;
-            const el = locatePromptInput(includeShadow);
-            if (el) finish(el);
+            try {
+                const roots = withShadow ? [document].concat(getOpenShadowRoots()) : [document];
+                const found = queryPromptInput(roots);
+                if (found) finish(found);
+            } catch (err) {
+                console.error('[ThunderAI] findPromptInput: ', err);
+            }
         };
-        // the shadow roots walk is heavier, so it runs only on the polling ticks
+        check(true);
+        if (done) return;
         observer = new MutationObserver(() => check(false));
-        observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'hidden', 'contenteditable'] });
+        observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'contenteditable'] });
         pollId = setInterval(() => check(true), 250);
-        timeoutId = setTimeout(() => {
-            // last resort: the legacy lookup, even if the element does not look visible
-            const legacy = document.getElementById('prompt-textarea');
-            if (legacy) doLog("findPromptInput timeout, falling back to the non-visible #prompt-textarea");
-            finish(legacy);
-        }, timeoutMs);
+        timeoutId = setTimeout(() => finish(null), timeoutMs);
+        if (mztaDoDebug == 1) {
+            // shows whether the composer never appears or appears and disappears
+            progressId = setInterval(() => {
+                try {
+                    const stats = getSelectorStats([document].concat(getOpenShadowRoots()));
+                    doLog("findPromptInput still waiting after " + (Date.now() - startTime) + " ms, readyState " + document.readyState + ", selectors: " + JSON.stringify(stats.map(s => s.matches + "/" + s.visible + "/" + s.ownUi)) + " (matches/visible/ownUi)");
+                } catch (err) {
+                    console.error('[ThunderAI] findPromptInput progress: ', err);
+                }
+            }, 3000);
+        }
     });
 }
 
-// Diagnostics for #890 and #920. Users paste these logs on GitHub: never log page text or the prompt.
-function logComposerDiagnostics() {
-    const diag = {};
+function getElementClass(el) {
+    return typeof el.className === 'string' ? el.className : (el.getAttribute('class') || '');
+}
+
+// "tag#id.firstClass" for up to 3 ancestors, closest first
+function describeAncestors(el) {
+    const parts = [];
+    let node = el.parentElement;
+    while (node && parts.length < 3) {
+        const firstClass = getElementClass(node).trim().split(' ')[0];
+        parts.push(node.tagName.toLowerCase() + (node.id ? '#' + node.id : '') + (firstClass ? '.' + firstClass.substring(0, 40) : ''));
+        node = node.parentElement;
+    }
+    return parts.join(' < ');
+}
+
+// Runs one diagnostics section, so a failure there does not lose the whole log line
+function diagSection(fn) {
     try {
-        diag.url = location.origin + location.pathname;
-        diag.title = (document.title || '').slice(0, 100);
-        diag.readyState = document.readyState;
-        diag.contenteditable = document.querySelectorAll('[contenteditable]').length;
-        diag.textarea = document.querySelectorAll('textarea').length;
-        diag.iframe = document.querySelectorAll('iframe').length;
-        diag.shadowRoots = collectOpenShadowRoots().length;
-        const candidates = [];
-        for (const el of document.querySelectorAll('textarea, [contenteditable], ' + MZTA_PROMPT_SELECTORS.join(', '))) {
-            if (isOwnUiElement(el)) continue;
-            candidates.push({
+        return fn();
+    } catch (err) {
+        return 'error: ' + (err && err.message ? err.message : String(err));
+    }
+}
+
+// Logs page structure only: never page text or the prompt, users paste these logs on GitHub
+function logPromptInputDiagnostics() {
+    try {
+        const shadowRoots = getOpenShadowRoots();
+        const allRoots = [document].concat(shadowRoots);
+        const queryAll = (selector) => allRoots.reduce((list, root) => list.concat(Array.from(root.querySelectorAll(selector))), []).filter(el => !isOwnUiElement(el));
+        const countAll = (selector) => queryAll(selector).length;
+        const countVisible = (selector) => queryAll(selector).filter(el => isElementVisible(el)).length;
+        const candidates = diagSection(() => {
+            const list = [];
+            for (const root of allRoots) {
+                for (const el of root.querySelectorAll('textarea, [contenteditable], input[type="text"]')) {
+                    if (list.length >= 10) break;
+                    if (isOwnUiElement(el)) continue;
+                    const rect = el.getBoundingClientRect();
+                    list.push({
+                        tag: el.tagName.toLowerCase(),
+                        id: el.id || '',
+                        name: el.getAttribute('name') || '',
+                        class: getElementClass(el).substring(0, 100),
+                        role: el.getAttribute('role') || '',
+                        testid: el.getAttribute('data-testid') || '',
+                        ariaLabel: (el.getAttribute('aria-label') || '').substring(0, 60),
+                        contenteditable: el.getAttribute('contenteditable'),
+                        visible: isElementVisible(el),
+                        hiddenReason: getHiddenReason(el),
+                        w: Math.round(rect.width),
+                        h: Math.round(rect.height),
+                        inForm: el.closest('form') !== null,
+                        inShadow: root !== document,
+                        parents: describeAncestors(el)
+                    });
+                }
+                if (list.length >= 10) break;
+            }
+            return list;
+        });
+        const title = document.title || '';
+        const diag = {
+            extVersion: diagSection(() => browser.runtime.getManifest().version),
+            url: location.origin + location.pathname,
+            authUrl: location.pathname.startsWith('/auth'),
+            title: title,
+            readyState: document.readyState,
+            visibilityState: document.visibilityState,
+            hasFocus: diagSection(() => document.hasFocus()),
+            msSinceLoad: Math.round(performance.now()),
+            viewport: window.innerWidth + 'x' + window.innerHeight,
+            lang: document.documentElement.lang || '',
+            navigatorLang: navigator.language,
+            selectors: diagSection(() => getSelectorStats(allRoots)),
+            contenteditable: countAll('[contenteditable]'),
+            textarea: countAll('textarea'),
+            form: countAll('form'),
+            main: countAll('main'),
+            sendButton: countAll('[data-testid="send-button"]'),
+            dialogs: diagSection(() => countVisible('[role="dialog"], [aria-modal="true"]')),
+            alerts: diagSection(() => countVisible('[role="alert"]')),
+            iframe: countAll('iframe'),
+            iframeOrigins: diagSection(() => queryAll('iframe').slice(0, 5).map(f => {
+                try { return new URL(f.src, location.href).origin; } catch (e) { return ''; }
+            })),
+            openShadowRoots: shadowRoots.length,
+            shadowWalkTruncated: shadowRoots.truncated,
+            // a composer inside a closed shadow root is visible only as its custom element
+            customTags: diagSection(() => {
+                const tags = new Set();
+                for (const el of document.querySelectorAll('*')) {
+                    if (tags.size >= 10) break;
+                    if (el.tagName.includes('-')) tags.add(el.tagName.toLowerCase());
+                }
+                return Array.from(tags);
+            }),
+            candidates: candidates,
+            loginButton: document.querySelector('button[data-testid*=login]') !== null,
+            cloudflare: document.querySelector('#challenge-form, #challenge-running, [id^="cf-"], iframe[src*="challenges.cloudflare.com"]') !== null || title.toLowerCase().includes('just a moment'),
+            userAgent: navigator.userAgent
+        };
+        console.log("[ThunderAI] Diagnostics: " + JSON.stringify(diag));
+    } catch (err) {
+        console.warn("[ThunderAI] Diagnostics failed: ", err);
+    }
+}
+
+// The composer's form, or without a form the closest ancestor (max 6 levels) holding a button
+function getComposerContainer(el) {
+    if (!el) return null;
+    const form = el.closest('form');
+    if (form) return form;
+    let node = el.parentElement;
+    for (let i = 0; node && i < 6; i++, node = node.parentElement) {
+        if (node.querySelector('button')) return node;
+    }
+    return null;
+}
+
+// Button structure for diagnostics. aria-labels are localized: logged here, never matched.
+function describeButtons(container, max, extended) {
+    if (!container) return [];
+    return Array.from(container.querySelectorAll('button')).filter(b => !isOwnUiElement(b)).slice(0, max).map((b, index) => {
+        const use = b.querySelector('use');
+        const path = b.querySelector('path');
+        const desc = {
+            index: index,
+            type: b.getAttribute('type') || '',
+            id: b.id || '',
+            testid: b.getAttribute('data-testid') || '',
+            disabled: b.hasAttribute('disabled'),
+            ariaLabel: (b.getAttribute('aria-label') || '').substring(0, 40),
+            dataState: b.getAttribute('data-state') || '',
+            useHref: use ? (use.getAttribute('href') || use.getAttribute('xlink:href') || '') : '',
+            pathD: path ? (path.getAttribute('d') || '').substring(0, 30) : '',
+            visible: isElementVisible(b)
+        };
+        // completion diagnostics only, the send button diagnostics keep their format
+        if (extended) {
+            desc.ariaHaspopup = b.getAttribute('aria-haspopup') || '';
+            desc.class = getElementClass(b).substring(0, 60);
+        }
+        return desc;
+    });
+}
+
+// Same rules as logPromptInputDiagnostics: structure only, no page text.
+// attempt: { strategy, method, verified } of the send attempt, fields null when not known yet
+function logSendButtonDiagnostics(composerEl, attempt) {
+    try {
+        const buttons = Array.from(document.querySelectorAll('form button, [data-testid$="-button"]')).filter(el => !isOwnUiElement(el));
+        const diag = {
+            strategy: attempt ? attempt.strategy : null,
+            method: attempt ? attempt.method : null,
+            verified: attempt ? attempt.verified : null,
+            composerEmpty: diagSection(() => composerEl && composerEl.isConnected ? isComposerEmpty(composerEl) : null),
+            buttons: buttons.length,
+            formButtons: document.querySelectorAll('form button').length,
+            testids: Array.from(new Set(buttons.map(b => b.getAttribute('data-testid')).filter(Boolean))).slice(0, 15),
+            ariaLabels: Array.from(new Set(buttons.map(b => (b.getAttribute('aria-label') || '').substring(0, 40)).filter(Boolean))).slice(0, 15),
+            composerInForm: diagSection(() => composerEl ? composerEl.closest('form') !== null : false),
+            composerButtons: diagSection(() => describeButtons(getComposerContainer(composerEl), 12))
+        };
+        console.log("[ThunderAI] Send button diagnostics: " + JSON.stringify(diag));
+    } catch (err) {
+        console.warn("[ThunderAI] Send button diagnostics failed: ", err);
+    }
+}
+
+function firstUsableButton(list) {
+    for (const b of list) {
+        if (b && !isOwnUiElement(b) && isElementVisible(b)) return b;
+    }
+    return null;
+}
+
+// Send button lookup, existing selectors first so the old UI keeps working.
+// The newer composer has no data-testid on its buttons (issue #920).
+function findSendButton(composerEl) {
+    const strategies = [
+        ['existing', () => [].concat(
+            Array.from(document.querySelectorAll('[data-testid="send-button"]')),   // pre-GPT-4o
+            Array.from(document.querySelectorAll('path[d*="M15.1918 8.90615C15.6381"]')).map(p => p.parentNode?.parentNode),   // from sept-2024
+            Array.from(document.querySelectorAll('path[d*="M15.192 8.906a1.143"]')).map(p => p.parentNode?.parentNode))],   // post-GPT-4o
+        ['composer-submit-button', () => [document.getElementById('composer-submit-button')]],
+        ['form-submit', () => {
+            const form = composerEl ? composerEl.closest('form') : null;
+            return form ? Array.from(form.querySelectorAll('button[type="submit"]')) : [];
+        }],
+        ['composer-size-token-submit', () => {
+            const form = composerEl ? composerEl.closest('form') : null;
+            return form ? Array.from(form.querySelectorAll('button.size-token-button-composer[type="submit"]')) : [];
+        }],
+        ['ancestor-submit', () => {
+            if (!composerEl || composerEl.closest('form')) return [];
+            let node = composerEl.parentElement;
+            for (let i = 0; node && i < 6; i++, node = node.parentElement) {
+                const b = firstUsableButton(node.querySelectorAll('button[type="submit"]'));
+                if (b) return [b];
+            }
+            return [];
+        }]
+    ];
+    for (const [name, getCandidates] of strategies) {
+        let button = null;
+        try {
+            button = firstUsableButton(getCandidates());
+        } catch (err) {
+            console.error('[ThunderAI] findSendButton ' + name + ': ', err);
+        }
+        if (button) {
+            // logged only on change, this runs every 25 ms while the button is disabled
+            if (last_send_button_strategy !== name) {
+                last_send_button_strategy = name;
+                doLog("Send button found with strategy: " + name);
+            }
+            return button;
+        }
+    }
+    return null;
+}
+
+function getDeepActiveElement() {
+    let el = document.activeElement;
+    while (el && el.shadowRoot && el.shadowRoot.activeElement) el = el.shadowRoot.activeElement;
+    return el;
+}
+
+// From a focus target up to the element the user types into, crossing open shadow boundaries
+function findEditableHost(el) {
+    let node = el;
+    for (let i = 0; node && i < 12; i++) {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            if (node.isContentEditable) {
+                // the editing host is the topmost element that is still editable
+                while (node.parentElement && node.parentElement.isContentEditable) node = node.parentElement;
+                return node;
+            }
+            if (node.tagName === 'TEXTAREA' || node.getAttribute('role') === 'textbox') return node;
+        }
+        const root = node.getRootNode ? node.getRootNode() : null;
+        node = node.parentElement || (root instanceof ShadowRoot ? root.host : null);
+    }
+    return null;
+}
+
+// "tag#id" or "tag:nth-of-type(n)" parts up to the nearest id, form or body
+function getSelectorPath(el) {
+    const parts = [];
+    let node = el;
+    while (node && node.nodeType === Node.ELEMENT_NODE && parts.length < 12) {
+        const tag = node.tagName.toLowerCase();
+        if (node.id) {
+            parts.unshift(tag + '#' + CSS.escape(node.id));
+            break;
+        }
+        if (tag === 'body') {
+            parts.unshift(tag);
+            break;
+        }
+        let index = 1;
+        for (let sibling = node.previousElementSibling; sibling; sibling = sibling.previousElementSibling) {
+            if (sibling.tagName === node.tagName) index++;
+        }
+        parts.unshift(tag + ':nth-of-type(' + index + ')');
+        if (tag === 'form') break;
+        node = node.parentElement;
+    }
+    return parts.join(' > ');
+}
+
+// Same rules as logPromptInputDiagnostics: structure only, never the composer's content,
+// aria-label or placeholder. selector: the PROMPT_INPUT_SELECTORS entry that matched, if any
+function logComposerDiagnostics(source, el, selector) {
+    try {
+        const element = !el ? null : diagSection(() => {
+            const root = el.getRootNode ? el.getRootNode() : null;
+            const inShadow = root instanceof ShadowRoot;
+            const ancestors = [];
+            let node = el.parentElement;
+            while (node && ancestors.length < 8) {
+                ancestors.push({
+                    tag: node.tagName.toLowerCase(),
+                    id: node.id || '',
+                    role: node.getAttribute('role') || '',
+                    class: getElementClass(node).substring(0, 60)
+                });
+                if (node.tagName === 'FORM') break;
+                node = node.parentElement;
+            }
+            return {
                 tag: el.tagName.toLowerCase(),
                 id: el.id || '',
                 name: el.getAttribute('name') || '',
-                class: (el.getAttribute('class') || '').slice(0, 100),
-                visible: isElementVisible(el)
-            });
-            if (candidates.length >= 5) break;
-        }
-        diag.candidates = candidates;
-        diag.loginButton = document.querySelector('button[data-testid*=login]') !== null;
-        diag.authPage = location.pathname.startsWith('/auth/');
-        diag.cloudflare = document.querySelector('#challenge-form, #challenge-running, #challenge-stage, [id^="cf-"], iframe[src*="challenges.cloudflare.com"], script[src*="challenges.cloudflare.com"]') !== null
-            || (document.title || '').toLowerCase().indexOf('just a moment') !== -1;
-        diag.userAgent = navigator.userAgent;
+                role: el.getAttribute('role') || '',
+                contenteditable: el.getAttribute('contenteditable'),
+                ariaMultiline: el.getAttribute('aria-multiline'),
+                dataAttributes: Array.from(el.attributes).map(a => a.name).filter(n => n.startsWith('data-')).slice(0, 20),
+                class: getElementClass(el).substring(0, 150),
+                shadowRoot: inShadow ? root.mode : '',
+                // focus inside a closed shadow root is retargeted to its host
+                possibleClosedShadowHost: !inShadow && el.tagName.includes('-') && !el.shadowRoot && !el.isContentEditable,
+                // focus inside an iframe never reaches our listener, the iframe itself is the active element
+                inIframe: el.tagName === 'IFRAME' || window.self !== window.top,
+                ancestors: ancestors,
+                selectorPath: getSelectorPath(el)
+            };
+        });
+        const countOwnFree = (selector) => Array.from(document.querySelectorAll(selector)).filter(e => !isOwnUiElement(e)).length;
+        const title = document.title || '';
+        const diag = {
+            source: source,
+            selector: selector || null,
+            element: element,
+            path: location.pathname,
+            title: title,
+            readyState: document.readyState,
+            forms: diagSection(() => {
+                const forms = Array.from(document.querySelectorAll('form')).filter(f => !isOwnUiElement(f));
+                return {
+                    count: forms.length,
+                    details: forms.slice(0, 3).map(f => ({
+                        buttons: f.querySelectorAll('button').length,
+                        editables: f.querySelectorAll('[contenteditable="true"], textarea, [role="textbox"]').length
+                    }))
+                };
+            }),
+            contenteditable: countOwnFree('[contenteditable]'),
+            textarea: countOwnFree('textarea'),
+            textbox: countOwnFree('[role="textbox"]'),
+            iframes: diagSection(() => {
+                const frames = Array.from(document.querySelectorAll('iframe'));
+                return {
+                    count: frames.length,
+                    origins: frames.slice(0, 5).map(f => {
+                        try { return new URL(f.src, location.href).origin; } catch (e) { return ''; }
+                    })
+                };
+            }),
+            shadowHosts: diagSection(() => {
+                const shadowRoots = getOpenShadowRoots();
+                return {
+                    count: shadowRoots.length,
+                    truncated: shadowRoots.truncated,
+                    tags: Array.from(new Set(shadowRoots.map(r => r.host.tagName.toLowerCase()))).slice(0, 10)
+                };
+            }),
+            openDialogs: diagSection(() => Array.from(document.querySelectorAll('[role="dialog"], dialog[open]'))
+                .filter(d => !isOwnUiElement(d) && isElementVisible(d)).slice(0, 5)
+                .map(d => ({ id: d.id || '', labelledby: d.getAttribute('aria-labelledby') || '' }))),
+            loginButton: document.querySelector('button[data-testid*=login]') !== null,
+            cloudflare: document.querySelector('#challenge-form, #challenge-running, [id^="cf-"], iframe[src*="challenges.cloudflare.com"]') !== null || title.toLowerCase().includes('just a moment'),
+            userAgent: navigator.userAgent
+        };
+        console.log("[ThunderAI] Composer diagnostics: " + JSON.stringify(diag));
     } catch (err) {
-        diag.error = String(err);
+        console.warn("[ThunderAI] Composer diagnostics failed: ", err);
     }
-    console.warn("[ThunderAI] Diagnostics: " + JSON.stringify(diag));
 }
 
-// Converts the HTML prompt (one <p> per line) to plain text for a real <textarea>
+// Last resort when no selector matches: the user shows us the composer by clicking into it.
+// Resolves with the editable element, or null after timeoutMs.
+function waitForUserComposerFocus(timeoutMs) {
+    return new Promise(resolve => {
+        const curr_msg = document.getElementById('mzta-curr_msg');
+        const loading = document.getElementById('mzta-loading');
+        let lastIgnored = null;
+        let timeoutId = null;
+        const accept = (target) => {
+            if (!target || target.nodeType !== Node.ELEMENT_NODE || isOwnUiElement(target)) return null;
+            const host = findEditableHost(target);
+            if (!host || isOwnUiElement(host)) {
+                lastIgnored = target;
+                return null;
+            }
+            return host;
+        };
+        const onFocusIn = (event) => {
+            const path = event.composedPath ? event.composedPath() : [];
+            const el = accept(path[0] || event.target);
+            if (el) finish(el);
+        };
+        const finish = (el) => {
+            document.removeEventListener('focusin', onFocusIn, true);
+            clearTimeout(timeoutId);
+            if (el) {
+                doLog("Composer selected by user focus: " + el.tagName.toLowerCase());
+                if (curr_msg) curr_msg.textContent = browser.i18n.getMessage("chatgpt_win_working");
+                if (loading) loading.style.display = 'inline-block';
+                logComposerDiagnostics('focus', el);
+            } else {
+                doLog("No composer selected by the user after " + timeoutMs + " ms");
+                logComposerDiagnostics('timeout', lastIgnored || getDeepActiveElement());
+            }
+            resolve(el);
+        };
+        if (curr_msg) {
+            curr_msg.textContent = browser.i18n.getMessage("chatgpt_composer_click_to_continue");
+            curr_msg.style.display = 'block';
+        }
+        if (loading) loading.style.display = 'none';
+        // clicking into an element that already has focus fires no focusin
+        const alreadyFocused = accept(getDeepActiveElement());
+        lastIgnored = null;
+        if (alreadyFocused) {
+            finish(alreadyFocused);
+            return;
+        }
+        document.addEventListener('focusin', onFocusIn, true);
+        timeoutId = setTimeout(() => finish(null), timeoutMs);
+    });
+}
+
+// Plain text for a real <textarea>: one line per block element (the prompt arrives as one <p> per line)
 function htmlToPlainText(html) {
-    const blockTags = ['P', 'DIV', 'LI', 'UL', 'OL', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'PRE', 'TR', 'TABLE', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER'];
     const doc = new DOMParser().parseFromString(html, 'text/html');
+    const blockTags = ['P', 'DIV', 'LI', 'UL', 'OL', 'BLOCKQUOTE', 'PRE', 'TR', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'];
     let out = '';
     const walk = (node) => {
-        if (node.nodeType === Node.TEXT_NODE) {
-            out += node.nodeValue;
-            return;
+        for (const child of node.childNodes) {
+            if (child.nodeType === Node.TEXT_NODE) {
+                out += child.nodeValue;
+            } else if (child.nodeType === Node.ELEMENT_NODE) {
+                if (child.tagName === 'BR') {
+                    out += '\\n';
+                    continue;
+                }
+                const isBlock = blockTags.includes(child.tagName);
+                if (isBlock && out !== '' && !out.endsWith('\\n')) out += '\\n';
+                walk(child);
+                if (isBlock) out += '\\n';
+            }
         }
-        if (node.nodeType !== Node.ELEMENT_NODE) return;
-        if (node.tagName === 'BR') {
-            out += '\\n';
-            return;
-        }
-        const isBlock = blockTags.includes(node.tagName);
-        if (isBlock && out !== '' && !out.endsWith('\\n')) out += '\\n';
-        const startLen = out.length;
-        node.childNodes.forEach(walk);
-        // an empty block is an empty line; a block ending with a nested block already ended its line
-        if (isBlock && (out.length === startLen || !out.endsWith('\\n'))) out += '\\n';
     };
-    doc.body.childNodes.forEach(walk);
-    if (out.endsWith('\\n')) out = out.slice(0, -1);
-    return out;
+    walk(doc.body);
+    return out.endsWith('\\n') ? out.slice(0, -1) : out;
 }
 
-async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button not found, -2 textarea not found
-    let textArea = await findPromptInput(15000);
+function waitMs(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Resolves once document.head and document.body exist: the script can be injected
+// while the document is still loading (issue #924)
+function waitForHeadAndBody() {
+    return new Promise(resolve => {
+        if (document.head && document.body) {
+            resolve();
+            return;
+        }
+        let observer = null;
+        const check = () => {
+            if (!document.head || !document.body) return;
+            if (observer) observer.disconnect();
+            document.removeEventListener('DOMContentLoaded', check);
+            resolve();
+        };
+        observer = new MutationObserver(check);
+        observer.observe(document.documentElement || document, { childList: true, subtree: true });
+        document.addEventListener('DOMContentLoaded', check);
+    });
+}
+
+function countElements(selector) {
+    return document.querySelectorAll(selector).length;
+}
+
+// Candidate turn selectors for UIs without role attributes or articles (issue #920).
+// They are guesses, tried after the existing ones: harmless if absent.
+const FALLBACK_TURN_SELECTORS = [
+    { kind: 'messageId', selector: '[data-message-id]' },
+    { kind: 'turn', selector: '[data-turn]' }
+];
+
+function takeSendBaseline() {
+    return {
+        assistant: countElements('[data-message-author-role="assistant"]'),
+        user: countElements('[data-message-author-role="user"]'),
+        article: countElements('main article'),
+        messageId: countElements('[data-message-id]'),
+        turn: countElements('[data-turn]')
+    };
+}
+
+function getLastAssistantMessage() {
+    const messages = document.querySelectorAll('[data-message-author-role="assistant"]');
+    if (messages.length > 0) return { el: messages[messages.length - 1], count: messages.length, kind: 'assistant' };
+    const articles = document.querySelectorAll('main article');
+    if (articles.length > 0) return { el: articles[articles.length - 1], count: articles.length, kind: 'article' };
+    for (const candidate of FALLBACK_TURN_SELECTORS) {
+        const turns = document.querySelectorAll(candidate.selector);
+        if (turns.length > 0) return { el: turns[turns.length - 1], count: turns.length, kind: candidate.kind };
+    }
+    return null;
+}
+
+// The first fallback turn selector with matches, null if none
+function getFallbackTurnCandidate() {
+    return FALLBACK_TURN_SELECTORS.find(candidate => document.querySelector(candidate.selector) !== null) || null;
+}
+
+// Which turn selector the turn lookups use now, '' if none matches
+function getMatchedTurnSelector() {
+    if (document.querySelector('[data-message-author-role="assistant"]')) return '[data-message-author-role="assistant"]';
+    if (document.querySelector('main article')) return 'main article';
+    const candidate = getFallbackTurnCandidate();
+    return candidate ? candidate.selector : '';
+}
+
+// The last assistant message, only if it appeared after the send. Without the role attribute
+// every turn is an article, so the new user turn and the answer make at least 2 more.
+function getNewAssistantMessage() {
+    const last = getLastAssistantMessage();
+    if (!last || !send_baseline) return last;
+    // fallback turn selectors may match user turns too, like articles
+    if (last.kind !== 'assistant' && last.kind !== 'article') return last.count >= send_baseline[last.kind] + 2 ? last : null;
+    const minCount = last.kind === 'assistant' ? send_baseline.assistant + 1 : send_baseline.article + 2;
+    return last.count >= minCount ? last : null;
+}
+
+function getMessageTurn(el) {
+    return el.closest('article') || el.parentElement || el;
+}
+
+// Language-neutral signals that ChatGPT is still generating, any one of them is enough:
+// - stopButton: the old UI's stop button, which replaces the send button while streaming
+// - ariaBusy: aria-busy="true" on the last turn or inside it
+// - streamingClass: a class containing "streaming" in the last turn (ChatGPT has used
+//   result-streaming and streaming-animation on the answer being written)
+// None of them is guaranteed in the newer UI. chatgpt_isGenerating() uses only the two stop buttons:
+// streamingClass stays true after completion in the old UI.
+function getGenerationSignals(turn) {
+    return {
+        stopButton: document.querySelector('[data-testid="stop-button"]') !== null,
+        ariaBusy: turn ? (turn.getAttribute('aria-busy') === 'true' || turn.querySelector('[aria-busy="true"]') !== null) : false,
+        streamingClass: turn ? (getElementClass(turn).includes('streaming') || turn.querySelector('[class*="streaming"]') !== null) : false
+    };
+}
+
+function isComposerEmpty(el) {
+    if (el.tagName === 'TEXTAREA') return el.value.trim() === '';
+    return (el.textContent || '').trim() === '';
+}
+
+// Sent when the composer was cleared or re-rendered away, or the stop button (old or new UI) appeared
+function isSendVerified(el) {
+    if (!el.isConnected || isComposerEmpty(el)) return true;
+    return chatgpt_isGenerating();
+}
+
+// Checks isSendVerified() every 100 ms: resolves true as soon as it holds, false after maxMs
+function waitForSendVerified(el, maxMs) {
+    return new Promise(resolve => {
+        const startTime = Date.now();
+        const check = () => {
+            try {
+                if (isSendVerified(el)) {
+                    resolve(true);
+                    return;
+                }
+            } catch (err) {
+                console.error('[ThunderAI] waitForSendVerified: ', err);
+            }
+            if (Date.now() - startTime >= maxMs) {
+                resolve(false);
+                return;
+            }
+            setTimeout(check, 100);
+        };
+        check();
+    });
+}
+
+// Waits at least 150 ms after the input event, then checks findSendButton() every 100 ms:
+// resolves with the first enabled button, or after maxMs with whatever the lookup returns (even null or disabled)
+function waitForSendButtonReady(composerEl, maxMs) {
+    return new Promise(resolve => {
+        const startTime = Date.now();
+        const check = () => {
+            let btn = null;
+            try {
+                btn = findSendButton(composerEl);
+                if (btn && !btn.disabled && btn.getAttribute('aria-disabled') !== 'true') {
+                    resolve(btn);
+                    return;
+                }
+            } catch (err) {
+                console.error('[ThunderAI] waitForSendButtonReady: ', err);
+            }
+            if (Date.now() - startTime >= maxMs) {
+                resolve(btn);
+                return;
+            }
+            setTimeout(check, 100);
+        };
+        setTimeout(check, Math.min(150, maxMs));
+    });
+}
+
+function dispatchEnter(el) {
+    try { el.focus(); } catch (err) { /* the keydown below does not depend on it */ }
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
+}
+
+// Waits for the button to be enabled, then sends. Resolves 'sent', or 'timeout' after 10 s.
+function sendWithButton(sendButton, composerEl, method) {
+    return new Promise(resolve => {
+        const startTime = Date.now();
+        const delaySend = setInterval(() => {
+            try {
+                if (sendButton && sendButton.isConnected && !sendButton.hasAttribute('disabled')) { // send msg
+                    clearInterval(delaySend);
+                    method.toLowerCase() == 'click' ? sendButton.click() : dispatchEnter(composerEl);
+                    resolve('sent');
+                } else if (Date.now() - startTime > 10000) {
+                    clearInterval(delaySend);
+                    resolve('timeout');
+                } else {
+                    // the button can be re-rendered while disabled, keep the old one if the lookup fails
+                    sendButton = findSendButton(composerEl) || sendButton;
+                }
+            } catch (err) {
+                clearInterval(delaySend);
+                console.error('[ThunderAI] sendWithButton: ', err);
+                resolve('error');
+            }
+        }, 25);
+    });
+}
+
+// A form without a page submit handler would navigate the popup and drop this script,
+// so the submit is cancelled if the page did not cancel it itself
+function requestSubmitGuarded(form) {
+    const guard = (event) => {
+        if (!event.defaultPrevented) event.preventDefault();
+    };
+    window.addEventListener('submit', guard);
+    try {
+        form.requestSubmit();
+    } finally {
+        window.removeEventListener('submit', guard);
+    }
+}
+
+async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not sent, -2 textarea not found
+    let textArea = null;
+    if (user_selected_composer && isElementVisible(user_selected_composer)) {
+        doLog("Reusing the composer selected by the user");
+        textArea = user_selected_composer;
+        if (mztaDoDebug == 1) logComposerDiagnostics('reused', textArea);
+    } else {
+        textArea = await findPromptInput(15000);
+    }
     //check if the textarea has been found
     if(!textArea) {
         console.error("[ThunderAI] Textarea not found!");
-        logComposerDiagnostics();
-        return -2;
+        logPromptInputDiagnostics();
+        textArea = await waitForUserComposerFocus(60000);
+        if (!textArea) return -2;
+        user_selected_composer = textArea;
+    } else if (mztaDoDebug == 1) {
+        // the failure path above already logged it
+        logPromptInputDiagnostics();
     }
+    current_composer_el = textArea;
+    mztaFixComposerOverlap('composer-found');
+    // counting turns is only needed by the completion diagnostics
+    send_baseline = mztaDoDebug == 1 ? takeSendBaseline() : null;
     if (textArea.tagName === 'TEXTAREA') {
-        // a real textarea: set the value with the native setter so React notices the change
-        const nativeSetter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
-        nativeSetter.call(textArea, htmlToPlainText(msg));
+        // native setter, so React's value tracking notices the change
+        Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(textArea, htmlToPlainText(msg));
     } else {
         // from sept 2024
         // Remove existing content
@@ -224,39 +906,379 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button
         });
     }
     textArea.dispatchEvent(new Event('input', { bubbles: true }));
-    //wait for the button to change from the audio button to the send button (from nov-2024)
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    let sendButton = document.querySelector('[data-testid="send-button"]') // pre-GPT-4o
-        || document.querySelector('path[d*="M15.1918 8.90615C15.6381"]')?.parentNode.parentNode  // from sept-2024;
-        || document.querySelector('path[d*="M15.192 8.906a1.143"]')?.parentNode.parentNode;  // post-GPT-4o;
-    //check if the sendbutton has been found
-    if (!sendButton) {
-        console.error("[ThunderAI] Send button not found!");
-        return -1;
-    }
-    const delaySend = setInterval(() => {
-        //console.log(">>>>>>>>>> sendButton disabled: " + sendButton?.hasAttribute('disabled'));
-        if (!sendButton?.hasAttribute('disabled')) { // send msg
-            method.toLowerCase() == 'click' ? sendButton.click()
-                : textArea.dispatchEvent(new KeyboardEvent('keydown', { keyCode: 13, bubbles: true }));
-            clearInterval(delaySend);
-        }else{
-            //console.error(">>>>>>>>>> The sendButton seems to be disabled! Trying again...");
-         sendButton = document.querySelector('path[d*="M15.192 8.906a1.143"]')?.parentNode.parentNode  // post-GPT-4o;
-            || document.querySelector('[data-testid="send-button"]');
+    // lengths only, never the prompt itself
+    doLog("Prompt input filled: tag " + textArea.tagName.toLowerCase() + ", content length " + (textArea.tagName === 'TEXTAREA' ? textArea.value.length : (textArea.textContent || '').length) + " (prompt length " + msg.length + ")");
+    //wait for the button to change from the audio button to the send button (from nov-2024),
+    //the newer composer renders its submit button only once there is text
+    const sendButtonWaitStart = Date.now();
+    const sendButton = await waitForSendButtonReady(textArea, 1000);
+    send_button_wait_ms = Date.now() - sendButtonWaitStart;
+    doLog("Send button wait: " + send_button_wait_ms + " ms, button " + (sendButton ? ((!sendButton.disabled && sendButton.getAttribute('aria-disabled') !== 'true') ? "enabled" : "disabled") : "not found"));
+    let diagLogged = false;
+    // for the send button diagnostics: the last method used, verified once the outcome is known
+    const attempt = { strategy: null, method: null, verified: null };
+    if (sendButton) {
+        const outcome = await sendWithButton(sendButton, textArea, method);
+        // sendWithButton re-queries the button, so the strategy is read after it
+        attempt.strategy = last_send_button_strategy;
+        if (outcome === 'sent') {
+            attempt.method = method.toLowerCase() == 'click' ? 'click' : 'enter';
+        } else {
+            doLog("Send button not usable (" + outcome + "), sending Enter");
+            dispatchEnter(textArea);
+            attempt.method = 'enter';
         }
-    }, 25);
+    } else {
+        console.error("[ThunderAI] Send button not found, sending Enter");
+        attempt.method = 'enter';
+        logSendButtonDiagnostics(textArea, attempt);
+        diagLogged = true;
+        dispatchEnter(textArea);
+    }
+    if (!(await waitForSendVerified(textArea, 1500))) {
+        const form = textArea.closest('form');
+        if (form && typeof form.requestSubmit === 'function') {
+            doLog("Send not verified, trying form.requestSubmit()");
+            attempt.method = 'requestSubmit';
+            try {
+                requestSubmitGuarded(form);
+            } catch (err) {
+                console.error('[ThunderAI] requestSubmit: ', err);
+            }
+            await waitForSendVerified(textArea, 1500);
+        }
+        if (!isSendVerified(textArea)) {
+            console.error("[ThunderAI] The prompt could not be sent!");
+            attempt.verified = false;
+            if (!diagLogged) logSendButtonDiagnostics(textArea, attempt);
+            return -1;
+        }
+    }
+    doLog("Send verified");
+    attempt.verified = true;
+    if (mztaDoDebug == 1 && !diagLogged) logSendButtonDiagnostics(textArea, attempt);
     return 0;   //everything is ok
+}
+
+// Buttons of the last answer turn (copy, thumbs, regenerate...), outside the composer
+function getTurnButtonsContainer(el) {
+    let node = el.closest('article') || el;
+    for (let i = 0; node && i < 4; i++, node = node.parentElement) {
+        if (node.querySelector('button') && !node.contains(current_composer_el)) return node;
+    }
+    return null;
+}
+
+// Same rules as logPromptInputDiagnostics: structure and lengths only, never the answer
+function logCompletionDiagnostics(last, length, stableMs, waitingMs, state) {
+    try {
+        const turn = last ? getMessageTurn(last.el) : null;
+        const composer = current_composer_el && current_composer_el.isConnected ? current_composer_el : queryPromptInput([document])?.el;
+        const diag = {
+            waitingMs: waitingMs,
+            kind: last ? last.kind : '',
+            assistant: countElements('[data-message-author-role="assistant"]'),
+            user: countElements('[data-message-author-role="user"]'),
+            article: countElements('main article'),
+            baseline: send_baseline,
+            length: length,
+            stableMs: stableMs,
+            signals: diagSection(() => getGenerationSignals(turn)),
+            turnButtons: diagSection(() => last ? describeButtons(getTurnButtonsContainer(last.el), 12, true) : []),
+            composerButtons: diagSection(() => describeButtons(getComposerContainer(composer), 12, true)),
+            generationObserved: state ? state.generationObserved : null,
+            isGeneratingNow: state ? state.isGeneratingNow : null,
+            assistantAtStart: state ? state.assistantAtStart : null,
+            assistantNow: countElements('[data-message-author-role="assistant"]'),
+            minTurnIndex: state ? state.minTurnIndex : null,
+            messageId: countElements('[data-message-id]'),
+            turn: countElements('[data-turn]'),
+            turnSelector: diagSection(() => getMatchedTurnSelector()),
+            fallbackTurn: state ? state.fallbackTurn : null,
+            composerIsIdle: diagSection(() => chatgpt_composerIsIdle()),
+            actionButtons: {
+                baseline: state ? state.actionButtonsAtStart : null,
+                now: diagSection(() => chatgpt_countActionButtons())
+            },
+            regenerateButtons: {
+                baseline: state ? state.regenerateButtonsAtStart : null,
+                atCompletion: diagSection(() => chatgpt_countRegenerateButtons()),
+                firstAboveBaselineAtMs: state ? state.regenerateButtonsAboveAtMs : null
+            },
+            pathButtons: diagSection(() => {
+                const counts = {};
+                for (const name of Object.keys(NEW_UI_BUTTON_PATHS)) {
+                    counts[name] = getButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS[name])).length;
+                }
+                return counts;
+            }),
+            copyAncestors: diagSection(() => {
+                const copyButtons = getButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS.copy));
+                const buttons = copyButtons.length > 0 ? copyButtons : getButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS.regenerate));
+                return buttons.length > 0 ? describeAncestorChain(buttons[buttons.length - 1], 15) : [];
+            })
+        };
+        console.log("[ThunderAI] Completion diagnostics: " + JSON.stringify(diag));
+    } catch (err) {
+        console.warn("[ThunderAI] Completion diagnostics failed: ", err);
+    }
 }
 
 async function chatgpt_isIdle() {
     return new Promise(resolve => {
-        const intervalId = setInterval(() => {
-              if (chatgpt_getRegenerateButton() || do_force_completion) {
-                 clearInterval(intervalId); resolve(true);
-              }
-            }, 100);});}
+        const startTime = Date.now();
+        let diagLogged = false;
+        // per-call state, isIdle can run more than once in the same page (custom texts)
+        // turn-independent: new-UI action buttons already in the page when this call starts
+        const actionButtonsAtStart = chatgpt_countActionButtons();
+        // the same for the regenerate buttons alone, the copy button of the new user turn does not change it
+        const regenerateButtonsAtStart = chatgpt_countRegenerateButtons();
+        // debug only, for the completion diagnostics: they count turns and never decide completion
+        let assistantAtStart = null;
+        let minTurnIndex = null;
+        let fallbackTurn = null;
+        if (mztaDoDebug == 1) {
+            assistantAtStart = countElements('[data-message-author-role="assistant"]');
+            // the new turn usually exists already when this starts (after the send verification)
+            minTurnIndex = send_baseline ? send_baseline.assistant : assistantAtStart;
+            // without role attributes: a candidate turn selector, the answer comes after the new user turn
+            const fallbackCandidate = assistantAtStart === 0 ? getFallbackTurnCandidate() : null;
+            fallbackTurn = fallbackCandidate ? {
+                selector: fallbackCandidate.selector,
+                minIndex: send_baseline ? send_baseline[fallbackCandidate.kind] + 1 : countElements(fallbackCandidate.selector)
+            } : null;
+        }
+        let generationObserved = false;
+        let lastGeneratingAt = 0;
+        // timings for the completion summary only (debug mode), they never decide completion
+        let firstGeneratingAt = 0;
+        let lastGeneratingSignals = null;
+        let composerIdleAfterGenAt = 0;
+        let actionButtonsAboveAt = 0;
+        let regenerateButtonsAboveAt = 0;
+        let intervalId = null;
+        const diagState = (generatingNow) => ({
+            generationObserved: generationObserved,
+            isGeneratingNow: generatingNow,
+            assistantAtStart: assistantAtStart,
+            minTurnIndex: minTurnIndex,
+            fallbackTurn: fallbackTurn,
+            actionButtonsAtStart: actionButtonsAtStart,
+            regenerateButtonsAtStart: regenerateButtonsAtStart,
+            regenerateButtonsAboveAtMs: sinceStart(regenerateButtonsAboveAt)
+        });
+        // ms from the call start, null if it never happened
+        const sinceStart = (time) => time ? time - startTime : null;
+        // debug only: the turn lookups and the answer length are computed here, never on every tick.
+        // stableMs is no longer tracked, so it is logged as null
+        const logDiagnosticsNow = (generatingNow) => {
+            const last = getNewAssistantMessage();
+            const length = last ? (last.el.textContent || '').trim().length : -1;
+            logCompletionDiagnostics(last, length, null, Date.now() - startTime, diagState(generatingNow));
+        };
+        // actionButtonsReason: which sub-condition fired 'actionButtons' ("regenerate" or "total")
+        const finish = (condition, actionButtonsReason) => {
+            clearInterval(intervalId);
+            const now = Date.now();
+            try {
+                if (mztaDoDebug == 1) {
+                    logDiagnosticsNow(chatgpt_isGenerating());
+                    // debug only: timings and signal names only, never page text
+                    const summary = {
+                        condition: condition,
+                        actionButtonsReason: actionButtonsReason || null,
+                        totalMs: now - startTime,
+                        generationObserved: generationObserved,
+                        firstGeneratingAtMs: sinceStart(firstGeneratingAt),
+                        lastGeneratingAtMs: sinceStart(lastGeneratingAt),
+                        sinceGenerationStoppedMs: lastGeneratingAt ? now - lastGeneratingAt : null,
+                        generatingSignals: lastGeneratingSignals,
+                        composerIsIdle: diagSection(() => chatgpt_composerIsIdle()),
+                        composerIdleAfterGenerationAtMs: sinceStart(composerIdleAfterGenAt),
+                        actionButtons: {
+                            baseline: actionButtonsAtStart,
+                            atCompletion: diagSection(() => chatgpt_countActionButtons()),
+                            firstAboveBaselineAtMs: sinceStart(actionButtonsAboveAt)
+                        },
+                        regenerateButtons: {
+                            baseline: regenerateButtonsAtStart,
+                            atCompletion: diagSection(() => chatgpt_countRegenerateButtons()),
+                            firstAboveBaselineAtMs: sinceStart(regenerateButtonsAboveAt)
+                        },
+                        uiReattached: ui_reattached_count
+                    };
+                    console.warn("[ThunderAI] Completion summary: " + JSON.stringify(summary));
+                }
+            } catch (err) {
+                console.warn("[ThunderAI] Completion summary failed: ", err);
+            } finally {
+                resolve(true);
+            }
+        };
+        intervalId = setInterval(() => {
+            if (do_force_completion) {
+                doLog("Completion forced by the user");
+                finish('force');
+                return;
+            }
+            try {
+                if (chatgpt_getRegenerateButton()) {
+                    doLog("Completion detected by the regenerate button");
+                    finish('oldRegen');
+                    return;
+                }
+                // Without the old regenerate markers: completion follows the stop button
+                // (chatgpt_isGenerating), seen during this call and then gone
+                const generatingNow = chatgpt_isGenerating();
+                if (generatingNow) {
+                    if (mztaDoDebug == 1) {
+                        if (!firstGeneratingAt) firstGeneratingAt = Date.now();
+                        // generation resumed: the idle composer must be seen again after it stops
+                        composerIdleAfterGenAt = 0;
+                        if (!actionButtonsAboveAt && chatgpt_countActionButtons() > actionButtonsAtStart) actionButtonsAboveAt = Date.now();
+                        if (!regenerateButtonsAboveAt && chatgpt_countRegenerateButtons() > regenerateButtonsAtStart) regenerateButtonsAboveAt = Date.now();
+                        // stopPath (new UI) and stopButton (old UI) are what chatgpt_isGenerating checks,
+                        // ariaBusy and streamingClass are sampled alongside
+                        const signals = getGenerationSignals(null);
+                        lastGeneratingSignals = { stopPath: chatgpt_hasNewUiStopPath(), stopButton: chatgpt_hasOldUiStopButton(), ariaBusy: signals.ariaBusy, streamingClass: signals.streamingClass };
+                    }
+                    generationObserved = true;
+                    lastGeneratingAt = Date.now();
+                } else if (generationObserved && Date.now() - lastGeneratingAt >= 4000) {
+                    // Stop gone for 1 s, then 3 s more without a new UI action button: covers icon changes
+                    doLog("Completion detected by the end of generation (stop button gone for " + (Date.now() - lastGeneratingAt) + " ms)");
+                    finish('safetyNet');
+                    return;
+                }
+                if (!generatingNow) {
+                    // the counts decide completion only after the stop button was seen,
+                    // before that they are needed by the debug timings only
+                    let actionButtons = null;
+                    let regenerateButtons = null;
+                    if (generationObserved || mztaDoDebug == 1) {
+                        actionButtons = chatgpt_countActionButtons();
+                        regenerateButtons = chatgpt_countRegenerateButtons();
+                    }
+                    // chatgpt_composerIsIdle runs at most once per tick, and only when a check needs it
+                    let composerIdle = null;
+                    const composerIsIdle = () => {
+                        if (composerIdle === null) composerIdle = !!chatgpt_composerIsIdle();
+                        return composerIdle;
+                    };
+                    if (mztaDoDebug == 1) {
+                        if (!actionButtonsAboveAt && actionButtons > actionButtonsAtStart) actionButtonsAboveAt = Date.now();
+                        if (!regenerateButtonsAboveAt && regenerateButtons > regenerateButtonsAtStart) regenerateButtonsAboveAt = Date.now();
+                        if (generationObserved && !composerIdleAfterGenAt && composerIsIdle()) composerIdleAfterGenAt = Date.now();
+                    }
+                    // The copy button of the new user turn raises the total count right after sending:
+                    // a new regenerate button (answers only), or the user copy button plus at least
+                    // one answer button (in case the regenerate icon changes)
+                    if (generationObserved) {
+                        const actionButtonsReason = regenerateButtons > regenerateButtonsAtStart ? 'regenerate'
+                            : (actionButtons >= actionButtonsAtStart + 2 ? 'total' : null);
+                        if (actionButtonsReason) {
+                            doLog("Completion detected by new action buttons (" + actionButtonsReason + " count; regenerate " + regenerateButtonsAtStart + " at start, " + regenerateButtons + " now; total " + actionButtonsAtStart + " at start, " + actionButtons + " now; stop button seen and gone)");
+                            finish('actionButtons', actionButtonsReason);
+                            return;
+                        }
+                    }
+                    if (generationObserved && Date.now() - lastGeneratingAt >= 1000 && composerIsIdle()) {
+                        doLog("Completion detected by the idle composer (stop button gone for " + (Date.now() - lastGeneratingAt) + " ms)");
+                        finish('stopGoneComposerIdle');
+                        return;
+                    }
+                }
+                if (mztaDoDebug == 1 && !diagLogged && Date.now() - startTime > 60000) {
+                    diagLogged = true;
+                    logDiagnosticsNow(generatingNow);
+                }
+            } catch (err) {
+                console.error('[ThunderAI] chatgpt_isIdle: ', err);
+            }
+        }, 100);
+    });
+}
 
+// Regenerate and copy icons of the newer UI (issue #920): cursor-interaction, inline paths, no testid
+const NEW_UI_ACTION_PATHS = 'path[d^="M14.0219 8.22363"], path[d^="M13.468 11.1216"]';
+
+// Path prefixes of the newer UI buttons (issue #920). The composer primary button
+// (button.size-token-button-composer) is send (type=submit), stop or voice chat (idle).
+const NEW_UI_BUTTON_PATHS = {
+    regenerate: 'M14.0219 8.22363',
+    copy: 'M13.468 11.1216',
+    rate: 'M15.3702 10.3242',
+    share: 'M16.6663 10.1681',
+    stop: 'M4.5 5.75C4.5 5.05964',
+    voice: 'M8.22266 2.45825'
+};
+
+function newUiPathSelector(prefix) {
+    return 'path[d^="' + prefix + '"]';
+}
+
+// Buttons of the page (not our own UI) containing a path matching the selector, in document order
+function getButtonsWithPath(pathSelector) {
+    const buttons = new Set();
+    for (const path of document.querySelectorAll(pathSelector)) {
+        const button = path.closest('button');
+        if (button && !isOwnUiElement(button)) buttons.add(button);
+    }
+    return Array.from(buttons);
+}
+
+// Regenerate and copy buttons in the whole page, whatever turn they belong to
+function chatgpt_countActionButtons() {
+    return getButtonsWithPath(NEW_UI_ACTION_PATHS).length;
+}
+
+// Regenerate buttons in the whole page: only completed answers have one, the user turns never do
+function chatgpt_countRegenerateButtons() {
+    return getButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS.regenerate)).length;
+}
+
+// Stop button of the newer UI (issue #920), matched by icon only, never by label.
+// The composer primary button is not enough: in the idle state it is the voice chat button.
+function chatgpt_hasNewUiStopPath() {
+    const stopPath = document.querySelector('button path[d^="M4.5 5.75C4.5 5.05964"]');
+    return !!stopPath && !isOwnUiElement(stopPath);
+}
+
+// Stop button of the old UI: data-testid="stop-button", with a sprite icon instead of an inline path
+function chatgpt_hasOldUiStopButton() {
+    return Array.from(document.querySelectorAll('[data-testid="stop-button"]')).some(b => !isOwnUiElement(b));
+}
+
+// Either stop button, old or new UI
+function chatgpt_isGenerating() {
+    return chatgpt_hasNewUiStopPath() || chatgpt_hasOldUiStopButton();
+}
+
+// The composer primary button is in the send or voice chat state, and no Stop button exists
+function chatgpt_composerIsIdle() {
+    if (getButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS.stop)).length > 0) return false;
+    const sendButton = Array.from(document.querySelectorAll('button.size-token-button-composer[type="submit"]')).some(b => !isOwnUiElement(b));
+    return sendButton || getButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS.voice)).length > 0;
+}
+
+// Ancestor chain for diagnostics, up to main or maxLevels: structure only, data-* names without values
+function describeAncestorChain(el, maxLevels) {
+    const chain = [];
+    let node = el ? el.parentElement : null;
+    for (let i = 0; node && i < maxLevels; i++, node = node.parentElement) {
+        chain.push({
+            tag: node.tagName.toLowerCase(),
+            id: node.id || '',
+            role: node.getAttribute('role') || '',
+            data: Array.from(node.attributes).map(a => a.name).filter(name => name.startsWith('data-')),
+            class: getElementClass(node).substring(0, 60)
+        });
+        if (node.tagName === 'MAIN') break;
+    }
+    return chain;
+}
+
+// Old UI only: the newer UI action buttons are counted by chatgpt_countActionButtons()
 function chatgpt_getRegenerateButton() {
     let first_try = [...document.querySelectorAll('use')]
                         .find(u => u.getAttribute('href')?.includes('#' + 'ec66f0'))
@@ -274,6 +1296,7 @@ function chatgpt_getRegenerateButton() {
             return mainSVG.parentNode.parentNode;
         }
     }
+    return null;
 }
 
 function chatpgt_scrollToBottom () {
@@ -285,8 +1308,14 @@ function chatpgt_scrollToBottom () {
 }
 
 function addCustomDiv(prompt_action,tabId,mailMessageId) {
+    // already created: never duplicate the UI, only re-attach it
+    if (mzta_ui_bar || mzta_ui_style) {
+        mztaEnsureUiAttached('addCustomDiv-again');
+        return;
+    }
     // Create <style> element for the CSS
     var style = document.createElement('style');
+    mzta_ui_style = style;
     style.textContent = ".mzta-header-fixed {position:fixed;bottom:0;left: 0;height:100px;width:100%;background-color: #333;color: white;text-align: center;padding: 10px 0;z-index: 1000;border-top: 3px solid white;}"
     style.textContent += "body {padding-bottom: 100px !important;} [id^='headlessui-dialog-panel-:r']{padding-bottom: 100px !important;} [data-testid='screen-thread']{padding-bottom: 100px !important;} [slot='content']{padding-bottom: 100px !important;}";
     style.textContent += ".mzta-btn {background-color: #007bff;border: none;color: white;padding: 8px 15px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;margin: 4px 2px;transition-duration: 0.4s;cursor: pointer;border-radius: 5px;}";
@@ -328,6 +1357,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
 
     // Fixed div
     var fixedDiv = document.createElement('div');
+    mzta_ui_bar = fixedDiv;
     fixedDiv.classList.add('mzta-header-fixed');
     fixedDiv.textContent = '';
 
@@ -610,7 +1640,245 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
 
     fixedDiv.appendChild(forcecompletionHint_div);
 
-    document.body.insertBefore(fixedDiv, document.body.firstChild);
+    // appended, not inserted as first child: ChatGPT's re-render of the start of body removed it (issue #924)
+    document.body.appendChild(fixedDiv);
+    installUiAttachWatch();
+    installComposerOverlapWatch();
+    mztaFixComposerOverlap('bar-shown');
+}
+
+// Re-inserts the SAME bar and style nodes if the page detached them, so every element
+// reference, listener and state held by the script stays valid
+function mztaEnsureUiAttached(reason) {
+    try {
+        const reattached = [];
+        if (mzta_ui_style && !mzta_ui_style.isConnected) {
+            const styleParent = document.head || document.documentElement;
+            if (styleParent) {
+                styleParent.appendChild(mzta_ui_style);
+                reattached.push('style');
+            }
+        }
+        if (mzta_ui_bar && !mzta_ui_bar.isConnected && document.body) {
+            document.body.appendChild(mzta_ui_bar);
+            reattached.push('bar');
+        }
+        // body itself may have been replaced
+        watchUiBody();
+        if (reattached.length > 0) {
+            if (mztaDoDebug == 1) ui_reattached_count++;
+            doLog("UI re-attached (" + reason + "): " + reattached.join(', '));
+            scheduleComposerOverlapFix('ui-reattached');
+        }
+    } catch (err) {
+        console.error('[ThunderAI] mztaEnsureUiAttached: ', err);
+    }
+}
+
+// Observes the current body (direct children only), moving to the new one when body is replaced
+function watchUiBody() {
+    if (!ui_body_observer || !document.body || ui_observed_body === document.body) return;
+    ui_body_observer.disconnect();
+    ui_body_observer.observe(document.body, { childList: true });
+    ui_observed_body = document.body;
+}
+
+// documentElement children catch body or head being replaced, body children catch the bar being removed
+function installUiAttachWatch() {
+    if (ui_watch_installed) return;
+    ui_watch_installed = true;
+    const rootObserver = new MutationObserver(() => mztaEnsureUiAttached('root-mutation'));
+    rootObserver.observe(document.documentElement, { childList: true });
+    ui_body_observer = new MutationObserver(() => mztaEnsureUiAttached('body-mutation'));
+    watchUiBody();
+}
+
+// The composer used for the last send, or the same lookup findPromptInput() does (light DOM only)
+function getComposerForLayout() {
+    for (const el of [current_composer_el, user_selected_composer]) {
+        if (el && isElementVisible(el)) return el;
+    }
+    const found = queryPromptInput([document]);
+    return found ? found.el : null;
+}
+
+// Parent element, crossing a shadow root boundary to its host
+function getLayoutParent(node) {
+    if (node.parentElement) return node.parentElement;
+    const root = node.parentNode;
+    return (root && root.host) ? root.host : null;
+}
+
+function describeLayoutElement(el, depth) {
+    return { tag: el.tagName.toLowerCase(), id: el.id || '', class: getElementClass(el).substring(0, 60), depth: depth };
+}
+
+function revertOverlapFix() {
+    if (!overlap_fix) return;
+    const el = overlap_fix.el;
+    el.style.setProperty('padding-bottom', overlap_fix.padding, overlap_fix.paddingPriority);
+    el.style.setProperty('box-sizing', overlap_fix.boxSizing, overlap_fix.boxSizingPriority);
+    overlap_fix = null;
+}
+
+// The new ChatGPT layout is a full-height app with the composer anchored at the bottom,
+// so padding on body does not move it: pad the closest ancestor that actually lifts it above the bar
+function mztaFixComposerOverlap(reason) {
+    try {
+        const bar = document.querySelector('.mzta-header-fixed');
+        if (!bar || !bar.isConnected) return;
+        const barHeight = Math.ceil(bar.getBoundingClientRect().height);
+        const composer = getComposerForLayout();
+        if (!composer) return;
+        const form = composer.closest('form') || composer;
+        const overlaps = () => form.getBoundingClientRect().bottom > bar.getBoundingClientRect().top + 4;
+
+        let changed = false;
+        if (overlap_fix) {
+            // still in place and still enough for the current bar height
+            if (overlap_fix.el.isConnected && overlap_fix.barHeight === barHeight && !overlaps()) return;
+            revertOverlapFix();
+            changed = true;
+        }
+        const formBefore = form.getBoundingClientRect();
+        if (!overlaps()) {
+            overlap_failed_key = null;
+            if (changed) {
+                doLog("Composer overlap fix reverted, no longer needed (" + reason + ")");
+                logLayoutDiagnostics(reason, barHeight, formBefore, formBefore, null, []);
+            }
+            return;
+        }
+        const failedKey = [barHeight, window.innerWidth, window.innerHeight, Math.round(formBefore.bottom)].join('|');
+        if (!changed && overlap_failed_key === failedKey) return;
+
+        const examined = [];
+        let node = getLayoutParent(form);
+        let depth = 1;
+        while (node && node !== document.body && node !== document.documentElement && depth <= 12) {
+            const cs = window.getComputedStyle(node);
+            examined.push({ depth: depth, tag: node.tagName.toLowerCase(), position: cs.position, display: cs.display, height: cs.height, overflowY: cs.overflowY });
+            const saved = {
+                el: node,
+                depth: depth,
+                barHeight: barHeight,
+                padding: node.style.getPropertyValue('padding-bottom'),
+                paddingPriority: node.style.getPropertyPriority('padding-bottom'),
+                boxSizing: node.style.getPropertyValue('box-sizing'),
+                boxSizingPriority: node.style.getPropertyPriority('box-sizing')
+            };
+            node.style.setProperty('padding-bottom', barHeight + 'px', 'important');
+            node.style.setProperty('box-sizing', 'border-box', 'important');
+            overlap_fix = saved;
+            if (!overlaps()) break;
+            revertOverlapFix();
+            node = getLayoutParent(node);
+            depth++;
+        }
+        const formAfter = form.getBoundingClientRect();
+        if (overlap_fix) {
+            overlap_failed_key = null;
+            const chosen = describeLayoutElement(overlap_fix.el, overlap_fix.depth);
+            doLog("Composer overlap fixed (" + reason + "): padding-bottom " + barHeight + "px on " + JSON.stringify(chosen));
+            logLayoutDiagnostics(reason, barHeight, formBefore, formAfter, chosen, examined);
+        } else {
+            overlap_failed_key = failedKey;
+            doLog("Composer overlap not fixed (" + reason + "): no ancestor lifted the composer above the bar, " + examined.length + " examined");
+            logLayoutDiagnostics(reason, barHeight, formBefore, formAfter, null, examined);
+        }
+    } catch (err) {
+        console.error('[ThunderAI] mztaFixComposerOverlap: ', err);
+    } finally {
+        // the form or the padded ancestor may have changed with this run
+        syncComposerOverlapWatch();
+    }
+}
+
+// Layout measurements only, never page text
+function logLayoutDiagnostics(reason, barHeight, formBefore, formAfter, chosen, examined) {
+    if (mztaDoDebug != 1) return;
+    console.warn("[ThunderAI] Layout diagnostics: " + JSON.stringify({
+        reason: reason,
+        innerWidth: window.innerWidth,
+        innerHeight: window.innerHeight,
+        barHeight: barHeight,
+        formBefore: { top: Math.round(formBefore.top), bottom: Math.round(formBefore.bottom) },
+        formAfter: { top: Math.round(formAfter.top), bottom: Math.round(formAfter.bottom) },
+        chosen: chosen,
+        ancestors: examined
+    }));
+}
+
+// At most one run every 500 ms, with a trailing run so the last change is always handled
+function scheduleComposerOverlapFix(reason) {
+    if (overlap_throttle_timer) return;
+    const wait = Math.max(0, 500 - (Date.now() - overlap_last_run));
+    overlap_throttle_timer = setTimeout(() => {
+        overlap_throttle_timer = null;
+        overlap_last_run = Date.now();
+        mztaFixComposerOverlap(reason);
+    }, wait);
+}
+
+// Observes the bar, the composer form and the padded ancestor. ChatGPT can replace the form
+// after sending: elements that are disconnected or no longer current are unobserved
+function syncComposerOverlapWatch() {
+    if (!overlap_resize_observer) return;
+    try {
+        const bar = document.querySelector('.mzta-header-fixed');
+        const composer = getComposerForLayout();
+        const form = composer ? composer.closest('form') : null;
+        const targets = [bar, form, overlap_fix && overlap_fix.el.isConnected ? overlap_fix.el : null].filter(Boolean);
+        for (const el of Array.from(overlap_observed)) {
+            if (!el.isConnected || !targets.includes(el)) {
+                overlap_resize_observer.unobserve(el);
+                overlap_observed.delete(el);
+            }
+        }
+        for (const el of targets) {
+            if (!overlap_observed.has(el)) {
+                overlap_resize_observer.observe(el);
+                overlap_observed.add(el);
+            }
+        }
+        overlap_watched_bar = bar;
+        overlap_watched_form = form;
+    } catch (err) {
+        console.error('[ThunderAI] syncComposerOverlapWatch: ', err);
+    }
+}
+
+// ChatGPT re-renders and can replace the padded element: re-check on resize of the window or of the watched elements
+function installComposerOverlapWatch() {
+    if (overlap_watch_installed) return;
+    overlap_watch_installed = true;
+    window.addEventListener('resize', () => scheduleComposerOverlapFix('resize'));
+    // a removed observed element triggers one last notification (zero size), the fix run then re-syncs
+    overlap_resize_observer = new ResizeObserver(() => scheduleComposerOverlapFix('resize-observer'));
+    syncComposerOverlapWatch();
+    // safety net for position changes that resize no observed element: two rects, nothing else
+    setInterval(() => {
+        try {
+            // safety net for detachments the observers miss (e.g. the style removed from inside head)
+            mztaEnsureUiAttached('interval');
+            if (overlap_fix && !overlap_fix.el.isConnected) {
+                scheduleComposerOverlapFix('interval');
+                return;
+            }
+            const bar = overlap_watched_bar;
+            const form = overlap_watched_form;
+            // ChatGPT can replace the form (or the bar) after sending: re-sync on the new one
+            if ((form && !form.isConnected) || (bar && !bar.isConnected)) {
+                scheduleComposerOverlapFix('interval');
+                return;
+            }
+            if (bar && form && bar.isConnected && form.isConnected && form.getBoundingClientRect().bottom > bar.getBoundingClientRect().top + 4) {
+                scheduleComposerOverlapFix('interval');
+            }
+        } catch (err) {
+            console.error('[ThunderAI] composer overlap check: ', err);
+        }
+    }, 2000);
 }
 
 // Create SVG icons as functions
@@ -693,6 +1961,7 @@ function customTextBtnClick(args) {
         args.customBtn.classList.add('disabled');
         args.customLoading.style.display = 'inline-block';
         args.customLoading.style.display = 'none';
+        if (custom_text_start_ms !== null && custom_text_ms === null) custom_text_ms = performance.now() - custom_text_start_ms;
         doProceed(current_message, _customTextArray);
         args.customDiv.style.display = 'none';
         
@@ -764,11 +2033,20 @@ function operation_done(){
     document.getElementById('mzta-loading').style.display = 'none';
     document.getElementById('mzta-force-completion').style.display = 'none';
     document.getElementById('mzta-forcecomp-hint').style.display = 'none';
+    mztaFixComposerOverlap('completed');
     chatpgt_scrollToBottom();
 }
 
-function checkLoggedIn(){
-    return !window.location.href.startsWith('https://chatgpt.com/auth/') && document.querySelector('button[data-testid*=login]') === null;
+// While the document is still loading the login button may not be rendered yet:
+// the decision waits for the composer, or for findPromptInput() to give up (issue #924)
+async function checkLoggedIn(){
+    if (window.location.href.startsWith('https://chatgpt.com/auth/')) return false;
+    if (document.readyState !== 'complete' && !queryPromptInput([document])) {
+        doLog("checkLoggedIn: page still loading (" + document.readyState + "), waiting for the composer");
+        const composer = await findPromptInput(15000);
+        doLog("checkLoggedIn: composer " + (composer ? "found" : "not found") + ", readyState " + document.readyState);
+    }
+    return document.querySelector('button[data-testid*=login]') === null;
 }
 
 function showCustomTextField(){
@@ -778,11 +2056,16 @@ function showCustomTextField(){
             _customTextArray.push({ placeholder: "{%additional_text%}", info: "" });
     }
     _currentCustomTextIndex = 0;
+    if (custom_text_start_ms === null) custom_text_start_ms = performance.now();
     document.getElementById('mzta-custom_text').style.display = 'block';
     renderCustomTextStep();
 }
 
 async function doProceed(message, customText = ''){
+    if (!message) {
+        console.error("[ThunderAI] doProceed: no message, nothing to send.");
+        return;
+    }
     let _gpt_model = mztaGPTModel;
     doLog("doProceed _gpt_model: " + JSON.stringify(_gpt_model));
     if(_gpt_model != ''){
@@ -818,12 +2101,14 @@ async function doProceed(message, customText = ''){
     }
 
     let send_result = await chatgpt_sendMsg(final_prompt,'click');
+    if (mztaDoDebug == 1) logPageTiming(performance.now());
     //console.log(">>>>>>>>>>> send_result: " + send_result);
     switch(send_result){
-        case -1:        // send button not found
+        case -1:        // prompt not sent, it is still in the composer
             let curr_msg = document.getElementById('mzta-curr_msg');
             curr_msg.style.display = 'block';
             curr_msg.textContent = browser.i18n.getMessage("chatgpt_sendbutton_not_found_error");
+            // no return: the user is asked to click Send, then the idle wait below catches the answer
             break;
         case -2:    // textarea not found
             let curr_model_warn = document.getElementById('mzta-model_warn');
@@ -842,27 +2127,27 @@ async function doProceed(message, customText = ''){
                 doRetry();
             });
             curr_model_warn.insertAdjacentElement('afterend', btn_retry);
-            // nothing was sent: wait for the retry instead of stacking another idle-wait loop
+            // nothing was sent: stop here, the retry runs its own idle wait
             return;
     }
-    let forcecompletionHintTimeout;
     if(send_result == 0){
-            forcecompletionHintTimeout = setTimeout(() => {
-            document.getElementById('mzta-forcecomp-hint').style.display = 'block';
-        }, delay_wait_completion);
-    }
-    await chatgpt_isIdle();
-    if(send_result == 0){
-        clearTimeout(forcecompletionHintTimeout);
+        await showForceCompletionHint();
+    } else {
+        await chatgpt_isIdle();
     }
     operation_done();
 }
 
-function doRetry(){
+async function doRetry(){
     document.getElementById('mzta-model_warn').style.display = 'none';
     document.getElementById('mzta-btn_retry')?.remove();
     document.getElementById('mzta-loading').style.display = 'inline-block';
-    document.getElementById('mzta-curr_msg').textContent = browser.i18n.getMessage("chatgpt_win_working");
+    let curr_msg = document.getElementById('mzta-curr_msg');
+    curr_msg.textContent = browser.i18n.getMessage("chatgpt_win_retrying");
+    curr_msg.style.display = 'block';
+    // visible feedback, so a retry that fails again does not look like a dead button
+    await waitMs(800);
+    curr_msg.textContent = browser.i18n.getMessage("chatgpt_win_working");
     if (_customTextArray.length > 0) {
         doProceed(current_message, _customTextArray);
     } else {
@@ -870,12 +2155,29 @@ function doRetry(){
     }
 }
 
+// Waits for completion, showing the force completion hint after delay_wait_completion ms
+// without generation. The countdown restarts while ChatGPT is generating; if generation
+// is never seen, the hint appears delay_wait_completion ms after the start, as before.
 async function showForceCompletionHint(){
-    const forcecompletionHintTimeout = setTimeout(() => {
-        document.getElementById('mzta-forcecomp-hint').style.display = 'block';
-    }, delay_wait_completion);
-    await chatgpt_isIdle();
-    clearTimeout(forcecompletionHintTimeout);
+    const hint = document.getElementById('mzta-forcecomp-hint');
+    let countdownStart = Date.now();
+    const forcecompletionHintInterval = setInterval(() => {
+        try {
+            if (chatgpt_isGenerating()) {
+                countdownStart = Date.now();
+                hint.style.display = 'none';
+            } else if (Date.now() - countdownStart >= delay_wait_completion) {
+                hint.style.display = 'block';
+            }
+        } catch (err) {
+            console.error('[ThunderAI] showForceCompletionHint: ', err);
+        }
+    }, 250);
+    try {
+        await chatgpt_isIdle();
+    } finally {
+        clearInterval(forcecompletionHintInterval);
+    }
 }
 
 function removeTagsAndReturnHTML(rootElement, removeTags, preserveTags) {
@@ -971,6 +2273,10 @@ document.addEventListener("selectionchange", function() {
      if(current_action === '0'){
          return;
      }
+     // ThunderAI's bar does not exist yet
+     if(!mzta_ui_bar){
+         return;
+     }
      // Set a timeout to delay the execution of the callback
      selectionChangeTimeout = setTimeout(function() {
         let btn_ok = document.getElementById('mzta-btn_ok');
@@ -1006,11 +2312,13 @@ document.addEventListener("selectionchange", function() {
 });
 
 function enableButton(btn){
+    if (!btn) return;
     btn.disabled = false;
     btn.classList.remove('btn_disabled');
 }
 
 function disableButton(btn){
+    if (!btn) return;
     btn.disabled = true;
     btn.classList.add('btn_disabled');
 }
@@ -1079,25 +2387,74 @@ function selectContentOnClick(event) {
     }
 }
 
+function logPageTiming(sendDoneMs){
+    if (page_timing_logged) return;
+    page_timing_logged = true;
+    try {
+        const nav = performance.getEntriesByType('navigation')[0];
+        const r = (v) => (typeof v === 'number' ? Math.round(v) : null);
+        console.warn("[ThunderAI] Page timing: " + JSON.stringify({
+            responseStart: nav ? r(nav.responseStart) : null,
+            domInteractive: nav ? r(nav.domInteractive) : null,
+            domContentLoadedEventEnd: nav ? r(nav.domContentLoadedEventEnd) : null,
+            loadEventEnd: nav ? r(nav.loadEventEnd) : null,
+            scriptStartMs: r(script_start_ms),
+            sendDoneMs: r(sendDoneMs),
+            customTextMs: r(custom_text_ms),
+            loadWaitMs: (typeof mztaLoadWaitMs === 'number') ? r(mztaLoadWaitMs) : null,
+            sendButtonWaitMs: r(send_button_wait_ms),
+            readyReason: mztaReadyReason,
+            readyStateAtSend: mztaReadyStateAtSend,
+            readyStateAtInject: ready_state_at_inject
+        }));
+    } catch (err) {
+        console.warn("[ThunderAI] Page timing failed: ", err);
+    }
+}
+
 function doLog(msg){
     if(mztaDoDebug == 1){
         console.log("[ThunderAI | ChatGPT Web] " + msg);
     }
 }
 
-function run(checkTab = null) {
-    if(!checkLoggedIn()){
+async function run() {
+    if (prompt_flow_started) {
+        doLog("run: prompt flow already started, duplicate start skipped.");
+        mztaEnsureUiAttached('run-again');
+        return;
+    }
+    if (run_pending) {
+        doLog("run: already waiting for the page, duplicate start skipped.");
+        return;
+    }
+    if (!current_message) {
+        doLog("run: no message yet, prompt flow not started.");
+        return;
+    }
+    run_pending = true;
+    let loggedIn = false;
+    try {
+        await waitForHeadAndBody();
+        loggedIn = await checkLoggedIn();
+    } finally {
+        run_pending = false;
+    }
+    if(!loggedIn){
         // User not logged in
-        if(checkTab){
-            clearInterval(checkTab);
+        if(!not_logged_in_alerted){
+            not_logged_in_alerted = true;
+            doLog("User not logged in, showing warning message.");
+            alert(browser.i18n.getMessage("chatgpt_user_not_logged_in"));
+        }else{
+            doLog("User not logged in, warning message already shown.");
         }
-        doLog("User not logged in, showing warning message.");
-        alert(browser.i18n.getMessage("chatgpt_user_not_logged_in"));
         // we are not closing the window, because the user could try to log in
         // doLog("User not logged in, closing window.");
         // browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
     }else{
         addCustomDiv(current_action,current_tabId,current_mailMessageId);
+        prompt_flow_started = true;
         (async () => {
             if(mztaDoCustomText === "1"){
                 showCustomTextField();
@@ -1124,21 +2481,12 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if((current_mailMessageId == -1) && (current_action == '1')) {    // we are using the reply from the compose window!
                 current_action = '2'; // replace text
             }
-            run(checkTab);
+            run();
             break;
         case "chatgpt_alive":
             sendResponse({isAlive: true});
             break;
     }
 });
-
-let checkTab = setInterval(() => {
-    let customDiv = document.getElementById('mzta-custom_text');
-    if(customDiv){
-        clearInterval(checkTab);
-    }else{
-        run(checkTab);
-    }
-}, 1000);
 
 `
