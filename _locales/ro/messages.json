@@ -53,9 +53,6 @@
     "msg_prompt_too_long": {
         "message": "Textul pe care l-ai furnizat este pre lung. Este necesară reducerea lui."
     },
-    "prefsDonation_2": {
-        "message": "Consideră o donație!"
-    },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Poți importa și exporta prompturile. Prompturile existente cu același ID vor fi suprascrise. Prompturile cu ID-uri noi vor fi adăugate."
     },
@@ -67,9 +64,6 @@
     },
     "customPrompts_form_label_Name": {
         "message": "Nume"
-    },
-    "customPrompts_form_label_Text": {
-        "message": "Traducere"
     },
     "customPrompts_form_label_need_selected": {
         "message": "Este necesară selecția unui text"
@@ -100,9 +94,6 @@
     },
     "btnNew_string": {
         "message": "Adaugă"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Adaugă Promptul"
     },
     "customPrompts_add_to_menu": {
         "message": "Adaugă la meniu"
@@ -220,9 +211,6 @@
     },
     "prefs_OptionText_reply_type_Info": {
         "message": "Acesta este tipul de răspuns implicit care va fi utilizat atunci când răspundeți la un e-mail. Puteți alege celălalt tip ulterior în fereastra de răspuns."
-    },
-    "prefsInfoTitle": {
-        "message": "Informații Importante"
     },
     "prefsInfoDesc_1": {
         "message": "S-ar putea ca interfața web ChatGPT să se modifice într-un mod care să perturbe funcționarea addon-ului. Verificați pagina \"Starea serviciului\" accesibilă prin legătura din partea de jos a acestei pagini. De asemenea, rețineți că prima dată când utilizați ThunderAI, trebuie să vă conectați la ChatGPT."

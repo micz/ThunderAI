@@ -74,9 +74,6 @@
     "customPrompts_form_label_Name": {
         "message": "Nama"
     },
-    "customPrompts_form_label_Text": {
-        "message": "Teks Prompt"
-    },
     "customPrompts_form_label_Action": {
         "message": "Tindakan"
     },
@@ -124,9 +121,6 @@
     },
     "btnNew_string": {
         "message": "Tambah Baru"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Tambahkan Prompt"
     },
     "customPrompts_add_to_menu": {
         "message": "Tambahkan ke menu"
@@ -259,9 +253,6 @@
             }
         }
     },
-    "prefsInfoTitle": {
-        "message": "Informasi Penting"
-    },
     "prefsInfoDesc_1": {
         "message": "Antarmuka web ChatGPT dapat saja berubah dengan cara yang menyebabkan add-on ini tidak berfungsi. Periksa halaman \"Status Layanan\" yang ditautkan di bagian bawah halaman ini. Selain itu, ingat bahwa saat pertama kali menggunakan ThunderAI, Anda perlu masuk ke ChatGPT."
     },
@@ -274,32 +265,14 @@
     "prefsInfoDesc_4": {
         "message": "Untuk menggunakan integrasi ini, Anda perlu menyiapkan server lokal yang kompatibel dengan OpenAI API, seperti LM Studio. Setelah server berjalan, masukkan alamatnya pada kolom yang disediakan di dalam aplikasi. Agar komunikasi antara ThunderAI dan server lokal berjalan dengan benar, ingat untuk mengatur pengaturan CORS dengan tepat."
     },
-    "prefsInfoDesc_5": {
-        "message": "Ingat bahwa Anda dapat membuka menu ThunderAI menggunakan pintasan keyboard CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Anda dapat mengubah pintasan dengan mengeklik ikon roda gigi di kanan atas halaman ini dan memilih \"Manage Extension Shortcut\"."
-    },
     "prefsInfoDesc_7": {
         "message": "Untuk menggunakan Google Gemini API, Anda memerlukan API Key Google Gemini dan harus memilih model."
     },
     "prefsInfoDesc_8": {
         "message": "Untuk menggunakan Claude API, Anda memerlukan API Key Anthropic Claude dan harus memilih model."
     },
-    "prefsDonation_1": {
-        "message": "Apakah Anda menyukai add-on ini?"
-    },
-    "prefsDonation_2": {
-        "message": "Pertimbangkan untuk memberikan donasi!"
-    },
     "backToOptionsText": {
         "message": "Opsi"
-    },
-    "TranslateText": {
-        "message": "Apakah Anda ingin membantu menerjemahkan add-on ini?"
-    },
-    "TranslateLink": {
-        "message": "Cari tahu caranya!"
     },
     "customPrompts_ExportAll": {
         "message": "Ekspor semua prompt"
@@ -549,9 +522,6 @@
     },
     "chatgpt_btn_model": {
         "message": "Gunakan model saat ini"
-    },
-    "AllowedValues": {
-        "message": "Nilai yang diizinkan"
     },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Anda dapat menggunakan placeholder data tambahan."
@@ -1105,17 +1075,11 @@
     "no_string": {
         "message": "Tidak"
     },
-    "noActiveCalendar": {
-        "message": "Tidak ditemukan kalender yang dapat diedit!"
-    },
     "btn_show_differences": {
         "message": "Tampilkan perbedaan"
     },
     "chatgpt_win_diff_title": {
         "message": "Perbedaan antara teks asli dan teks yang dimodifikasi"
-    },
-    "apiwebchat_you": {
-        "message": "Anda"
     },
     "apiwebchat_info": {
         "message": "Informasi"
@@ -1218,9 +1182,6 @@
     },
     "customPrompts_hide_additional_info": {
         "message": "Sembunyikan properti tambahan"
-    },
-    "customPrompts_show_additional_info_show": {
-        "message": "Properti tambahan"
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Jika Project ditentukan di opsi atau di prompt, pengaturan Custom GPT akan diabaikan."
@@ -1441,20 +1402,8 @@
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Anda telah menolak izin opsional yang diperlukan untuk mengambil model bagi integrasi ini."
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Aktifkan peringkasan AI otomatis untuk pratinjau pesan"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Jika dicentang, ThunderAI akan secara otomatis membuat dan menampilkan ringkasan AI di atas pesan email saat dibuka. Perlu diketahui bahwa ini berarti semua pesan yang Anda pratinjau akan langsung dikirim ke layanan AI yang dikonfigurasi."
-    },
-    "auto_summary_title": {
-        "message": "Ringkasan ThunderAI"
-    },
-    "auto_summary_generating": {
-        "message": "Membuat ringkasan AI..."
-    },
-    "auto_summary_failed": {
-        "message": "Gagal membuat ringkasan AI. Silakan periksa pengaturan Anda dan coba lagi."
     },
     "customPrompts_export_include_api_settings": {
         "message": "Apakah Anda ingin menyertakan pengaturan API dalam ekspor? Perlu diketahui bahwa API Key juga akan disimpan di file!"
@@ -1467,9 +1416,6 @@
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "Prompt harus berisi placeholder {%mail_text_body_or_selected%} atau {%mail_html_body_or_selected%} untuk mengaktifkan opsi ini. Silakan tambahkan salah satu placeholder tersebut ke prompt atau reset ke bawaan."
-    },
-    "customPrompts_btnCopy": {
-        "message": "Salin"
     },
     "copy_text": {
         "message": "salin"
@@ -1512,9 +1458,6 @@
     },
     "get_ai_summary": {
         "message": "Ringkasan AI"
-    },
-    "summarize_collapse": {
-        "message": "Ciutkan ringkasan"
     },
     "summarize_generating": {
         "message": "Membuat ringkasan..."
@@ -2010,9 +1953,6 @@
             }
         }
     },
-    "apiwebchat_picker_progress": {
-        "message": "Perubahan yang diterima"
-    },
     "apiwebchat_picker_more_actions": {
         "message": "Tindakan lainnya"
     },
@@ -2202,12 +2142,6 @@
     },
     "menu_order_legend_source_custom": {
         "message": "Prompt yang Anda buat"
-    },
-    "prefs_settings_subtitle": {
-        "message": "Pengaturan"
-    },
-    "prefs_disclaimer": {
-        "message": "Model LLM dapat menghasilkan informasi yang salah, dan data Anda mungkin digunakan oleh penyedia untuk melatih model baru. Gunakan dengan risiko Anda sendiri."
     },
     "prefs_ConnectionSettingsTitle": {
         "message": "Pengaturan Koneksi"
@@ -2431,9 +2365,6 @@
     },
     "Summarize_auto_senders_infoline2": {
         "message": "Tambahkan satu alamat email per baris, atau dipisahkan dengan koma. Gunakan \"@domain.com\" untuk mencocokkan semua pengirim dari satu domain."
-    },
-    "Summarize_auto_senders_api_warning": {
-        "message": "Peringatan: ringkasan ini dibuat secara otomatis, sehingga setiap email dari pengirim tersebut menggunakan token API dan dapat meningkatkan biaya langganan AI Anda. Usahakan daftar ini sesingkat mungkin."
     },
     "Summarize_auto_senders_notice": {
         "message": "Peringkasan otomatis dinonaktifkan, tetapi ringkasan tetap dibuat secara otomatis untuk pengirim dalam daftar di bawah ini."

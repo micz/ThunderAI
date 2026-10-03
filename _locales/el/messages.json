@@ -68,9 +68,6 @@
     "customPrompts_form_label_Name": {
         "message": "Όνομα"
     },
-    "customPrompts_form_label_Text": {
-        "message": "Κείμενο μηνύματος"
-    },
     "customPrompts_form_label_Action": {
         "message": "Δράση"
     },
@@ -118,9 +115,6 @@
     },
     "btnNew_string": {
         "message": "Προσθήκη νέας"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Πρόσθεσε το μήνυμα"
     },
     "customPrompts_add_to_menu": {
         "message": "Προσθήκη σε μενού"
@@ -227,9 +221,6 @@
     "prefs_OptionText_btnManageCustomDataPH": {
         "message": "Διαχειριστείτε τα placeholder δεδομένων σας"
     },
-    "prefsInfoTitle": {
-        "message": "Σημαντικές πληροφορίες"
-    },
     "prefsInfoDesc_1": {
         "message": "Μπορεί να συμβεί η διεπαφή ιστού του ChatGPT να αλλάξει με τρόπο που να διαταράσσει τον τρόπο λειτουργίας του πρόσθετου. Ελέγξτε τη σελίδα \"Κατάσταση υπηρεσίας\" που βρίσκεται στο κάτω μέρος αυτής της σελίδας. Επίσης, να θυμάστε ότι την πρώτη φορά που θα χρησιμοποιήσετε το ThunderAI, πρέπει να συνδεθείτε στο ChatGPT."
     },
@@ -242,26 +233,8 @@
     "prefsInfoDesc_4": {
         "message": "Για να χρησιμοποιήσετε αυτήν την ενσωμάτωση, πρέπει να ρυθμίσετε έναν τοπικό διακομιστή συμβατό με το OpenAI API, όπως το LM Studio. Μόλις ο διακομιστής εκτελεστεί, εισαγάγετε τη διεύθυνσή του στο καθορισμένο πεδίο μέσα στην εφαρμογή. Για να διασφαλίσετε την σωστή επικοινωνία μεταξύ του ThunderAI και του τοπικού διακομιστή, θυμηθείτε να ορίσετε σωστά τις ρυθμίσεις CORS."
     },
-    "prefsInfoDesc_5": {
-        "message": "Να θυμάστε ότι μπορείτε να ανοίξετε το μενού ThunderAI χρησιμοποιώντας τη συντόμευση πληκτρολογίου CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Μπορείτε να αλλάξετε τη συντόμευση κάνοντας κλικ στο εικονίδιο του γραναζιού επάνω δεξιά σε αυτήν τη σελίδα και επιλέγοντας \"Διαχείριση συντόμευσης επέκτασης\"."
-    },
-    "prefsDonation_1": {
-        "message": "Σας αρέσει αυτό το πρόσθετο;"
-    },
-    "prefsDonation_2": {
-        "message": "Σκεφτείτε να κάνετε μια δωρεά!"
-    },
     "backToOptionsText": {
         "message": "Επιλογές"
-    },
-    "TranslateText": {
-        "message": "Θέλετε να βοηθήσετε στη μετάφραση αυτού του πρόσθετου;"
-    },
-    "TranslateLink": {
-        "message": "Μάθετε πώς!"
     },
     "customPrompts_ExportAll": {
         "message": "Εξαγωγή όλων των προτροπών"
@@ -478,9 +451,6 @@
     },
     "chatgpt_btn_model": {
         "message": "Χρησιμοποιήστε το τρέχον μοντέλο"
-    },
-    "AllowedValues": {
-        "message": "Επιτρεπόμενες τιμές"
     },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Μπορείτε να χρησιμοποιήσετε πρόσθετα placeholders δεδομένων."
@@ -731,17 +701,11 @@
     "no_string": {
         "message": "Οχι"
     },
-    "noActiveCalendar": {
-        "message": "Δεν βρέθηκε επεξεργάσιμο ημερολόγιο!"
-    },
     "btn_show_differences": {
         "message": "Εμφάνιση διαφορών"
     },
     "chatgpt_win_diff_title": {
         "message": "Διαφορές μεταξύ του αρχικού και του τροποποιημένου κειμένου"
-    },
-    "apiwebchat_you": {
-        "message": "Εσύ"
     },
     "apiwebchat_info": {
         "message": "Πληροφορίες"
@@ -832,9 +796,6 @@
     },
     "customPrompts_hide_additional_info": {
         "message": "Απόκρυψη πρόσθετων ιδιοτήτων"
-    },
-    "customPrompts_show_additional_info_show": {
-        "message": "Πρόσθετες ιδιότητες"
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Εάν ένα Έργο έχει καθοριστεί στις επιλογές ή σε μια προτροπή, θα παρακάμψει τη ρύθμιση του Προσαρμοσμένου GPT."
@@ -1320,9 +1281,6 @@
     "prefs_OptionText_calendar_no_selection_Info": {
         "message": "Εάν είναι επιλεγμένο, δεν χρειάζεται να επιλέξετε κάποιο κείμενο. Το πλήρες σώμα του μηνύματος θα χρησιμοποιηθεί για τη λήψη του συμβάντος ημερολογίου."
     },
-    "customPrompts_btnCopy": {
-        "message": "Αντιγραφή"
-    },
     "copy_text": {
         "message": "αντιγραφή"
     },
@@ -1444,20 +1402,8 @@
             }
         }
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Ενεργοποίηση αυτόματης σύνοψης με τεχνητή νοημοσύνη για προεπισκοπήσεις μηνυμάτων"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Εάν είναι επιλεγμένο, το ThunderAI θα δημιουργεί και θα εμφανίζει αυτόματα περιλήψεις AI πάνω από τα μηνύματα email όταν αυτά ανοίγονται. Σημειώστε ότι αυτό σημαίνει ότι όλα τα μηνύματα που βλέπετε σε προεπισκόπηση θα αποστέλλονται αμέσως στην διαμορφωμένη υπηρεσία AI."
-    },
-    "auto_summary_title": {
-        "message": "Σύνοψη ThunderAI"
-    },
-    "auto_summary_generating": {
-        "message": "Δημιουργία σύνοψης τεχνητής νοημοσύνης..."
-    },
-    "auto_summary_failed": {
-        "message": "Η δημιουργία σύνοψης τεχνητής νοημοσύνης απέτυχε. Επιβεβαιώστε τις ρυθμίσεις σας και δοκιμάστε ξανά."
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "Η προτροπή πρέπει να περιέχει το σύμβολο κράτησης θέσης {%mail_text_body_or_selected%} ή {%mail_html_body_or_selected%} για να ενεργοποιηθεί αυτή η επιλογή. Προσθέστε ένα από αυτά τα σύμβολα κράτησης θέσης στην προτροπή ή επαναφέρετέ το στην προεπιλεγμένη τιμή."
@@ -1500,9 +1446,6 @@
     },
     "get_ai_summary": {
         "message": "Σύνοψη Τεχνητής Νοημοσύνης"
-    },
-    "summarize_collapse": {
-        "message": "Σύμπτυξη σύνοψης"
     },
     "summarize_generating": {
         "message": "Δημιουργία σύνοψης..."

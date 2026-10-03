@@ -74,9 +74,6 @@
     "customPrompts_form_label_Name": {
         "message": "Имя"
     },
-    "customPrompts_form_label_Text": {
-        "message": "Текст промта"
-    },
     "customPrompts_form_label_Action": {
         "message": "Действие"
     },
@@ -109,9 +106,6 @@
     },
     "btnNew_string": {
         "message": "Добавить новый"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Добавить промт"
     },
     "customPrompts_add_to_menu": {
         "message": "Добавить меню"
@@ -173,17 +167,8 @@
     "prefs_OptionText_btnManagePrompts": {
         "message": "Менеджер ваших промтов"
     },
-    "prefsInfoTitle": {
-        "message": "Важная информация"
-    },
     "prefsInfoDesc_1": {
         "message": "Может случиться так, что веб-интерфейс ChatGPT изменится таким образом, что это нарушит работу расширения. Проверьте страницу «Состояние службы», ссылка на которую находится внизу этой страницы. Также помните, что при первом использовании ThunderAI вам необходимо войти в ChatGPT."
-    },
-    "prefsInfoDesc_5": {
-        "message": "Помните, что вы можете открыть меню ThunderAI с помощью сочетания клавиш CTRL+ALT+A."
-    },
-    "prefsDonation_1": {
-        "message": "Вам нравится это расширение?"
     },
     "backToOptionsText": {
         "message": "Параметры"
@@ -287,20 +272,8 @@
     "prefsInfoDesc_4": {
         "message": "Чтобы использовать эту интеграцию, вам необходимо настроить локальный сервер, совместимый с API OpenAI, например LM Studio. После запуска сервера введите его адрес в указанное поле в приложении. Чтобы обеспечить надлежащую связь между ThunderAI и локальным сервером, не забудьте правильно настроить параметры CORS."
     },
-    "prefsInfoDesc_6": {
-        "message": "Вы можете изменить сочетание клавиш, нажав на значок шестеренки в правом верхнем углу этой страницы и выбрав «Управление сочетанием клавиш расширения»."
-    },
-    "TranslateLink": {
-        "message": "Узнайте как!"
-    },
-    "prefsDonation_2": {
-        "message": "Рассмотрите возможность сделать пожертвование!"
-    },
     "chagpt_api_send_button": {
         "message": "Текущая модель"
-    },
-    "TranslateText": {
-        "message": "Хотите помочь перевести это дополнение?"
     },
     "chatgpt_empty_apikey": {
         "message": "Вы не добавили API-ключ для API ChatGPT. Пожалуйста, введите его на странице параметров."
@@ -478,9 +451,6 @@
     },
     "chatgpt_btn_model": {
         "message": "Использовать текущую модель"
-    },
-    "AllowedValues": {
-        "message": "Разрешенные значения"
     },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Вы можете использовать доп. держатели данных."
@@ -866,17 +836,11 @@
     "no_string": {
         "message": "Нет"
     },
-    "noActiveCalendar": {
-        "message": "Редактируемый календарь не найден!"
-    },
     "btn_show_differences": {
         "message": "Показать различия"
     },
     "chatgpt_win_diff_title": {
         "message": "Различия между оригинальным и измененным текстом"
-    },
-    "apiwebchat_you": {
-        "message": "Вы"
     },
     "apiwebchat_info": {
         "message": "Информация"
@@ -964,9 +928,6 @@
     },
     "customPrompts_hide_additional_info": {
         "message": "Скрыть доп. свойства"
-    },
-    "customPrompts_show_additional_info_show": {
-        "message": "Доп. свойства"
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Если в параметрах или в подсказке указан проект, он отменяет настройку Custom GPT."

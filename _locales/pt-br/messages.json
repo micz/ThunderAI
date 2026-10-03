@@ -75,9 +75,6 @@
     "customPrompts_form_label_Name": {
         "message": "Nome"
     },
-    "customPrompts_form_label_Text": {
-        "message": "Texto do Prompt"
-    },
     "customPrompts_form_label_Action": {
         "message": "Ação"
     },
@@ -125,9 +122,6 @@
     },
     "btnNew_string": {
         "message": "Adicionar Novo"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Adicionar o Prompt"
     },
     "customPrompts_add_to_menu": {
         "message": "Adicionar ao menu"
@@ -260,9 +254,6 @@
             }
         }
     },
-    "prefsInfoTitle": {
-        "message": "Informações importantes"
-    },
     "prefsInfoDesc_1": {
         "message": "Pode acontecer que a interface web do ChatGPT mude de uma forma que quebre o funcionamento do complemento. Verifique a página de \"Status do Serviço\" vinculada na parte inferior desta página. Além disso, lembre-se de que, na primeira vez que você usar o ThunderAI, precisará fazer login no ChatGPT."
     },
@@ -274,12 +265,6 @@
     },
     "prefsInfoDesc_4": {
         "message": "Para usar esta integração, você precisa configurar um servidor local compatível com a API do OpenAI, como o LM Studio. Assim que o servidor estiver em funcionamento, insira seu endereço no campo designado dentro do aplicativo. Para garantir a comunicação adequada entre o ThunderAI e o servidor local, lembre-se de configurar corretamente as definições de CORS."
-    },
-    "prefsInfoDesc_5": {
-        "message": "Lembre-se de que você pode abrir o menu do ThunderAI usando o atalho de teclado CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Você pode alterar o atalho clicando no ícone de engrenagem no canto superior direito desta página e escolhendo \"Gerenciar Atalho da Extensão\"."
     },
     "prefsInfoDesc_7": {
         "message": "Para usar a API do Google Gemini, você precisa de uma chave de API do Google Gemini e deve escolher um modelo."
@@ -302,20 +287,8 @@
     "prefs_footer_donate": {
         "message": "Fazer uma doação"
     },
-    "prefsDonation_1": {
-        "message": "Você gosta deste complemento?"
-    },
-    "prefsDonation_2": {
-        "message": "Considere fazer uma doação!"
-    },
     "backToOptionsText": {
         "message": "Opções"
-    },
-    "TranslateText": {
-        "message": "Você quer ajudar a traduzir este complemento?"
-    },
-    "TranslateLink": {
-        "message": "Descubra como!"
     },
     "customPrompts_ExportAll": {
         "message": "Exportar todos os prompts"
@@ -613,9 +586,6 @@
     },
     "chatgpt_btn_model": {
         "message": "Usar o modelo atual"
-    },
-    "AllowedValues": {
-        "message": "Valores permitidos"
     },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Você pode usar espaços reservados para dados adicionais."
@@ -1187,17 +1157,11 @@
     "no_string": {
         "message": "Não"
     },
-    "noActiveCalendar": {
-        "message": "Nenhum calendário editável encontrado!"
-    },
     "btn_show_differences": {
         "message": "Mostrar diferenças"
     },
     "chatgpt_win_diff_title": {
         "message": "Diferenças entre o texto original e o modificado"
-    },
-    "apiwebchat_you": {
-        "message": "Você"
     },
     "apiwebchat_info": {
         "message": "Informações"
@@ -1300,9 +1264,6 @@
     },
     "customPrompts_hide_additional_info": {
         "message": "Ocultar propriedades adicionais"
-    },
-    "customPrompts_show_additional_info_show": {
-        "message": "Propriedades adicionais"
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Se um Projeto for especificado nas opções ou em um prompt, ele substituirá a configuração do Custom GPT."
@@ -1540,20 +1501,8 @@
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Você negou a permissão opcional necessária para buscar modelos para esta integração."
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Ativar resumização automática por IA para visualizações de mensagens"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Se marcado, o ThunderAI gerará e exibirá automaticamente resumos de IA acima das mensagens de e-mail quando elas forem abertas. Observe que isso significa que todas as mensagens que você visualizar serão enviadas imediatamente ao serviço de IA configurado."
-    },
-    "auto_summary_title": {
-        "message": "Resumo do ThunderAI"
-    },
-    "auto_summary_generating": {
-        "message": "Gerando resumo da IA..."
-    },
-    "auto_summary_failed": {
-        "message": "Falha ao gerar o resumo da IA. Confirme suas configurações e tente novamente."
     },
     "customPrompts_export_include_api_settings": {
         "message": "Deseja incluir as configurações de API na exportação? Esteja ciente de que a chave de API também será salva no arquivo!"
@@ -1566,9 +1515,6 @@
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "O prompt deve conter o espaço reservado {%mail_text_body_or_selected%} ou {%mail_html_body_or_selected%} para ativar esta opção. Adicione um desses espaços reservados ao prompt ou redefina-o para o padrão."
-    },
-    "customPrompts_btnCopy": {
-        "message": "Copiar"
     },
     "copy_text": {
         "message": "copiar"
@@ -1614,9 +1560,6 @@
     },
     "Summarize_auto_senders_infoline2": {
         "message": "Adicione um endereço de e-mail por linha, ou separados por vírgula. Use \"@dominio.com\" para corresponder a todos os remetentes de um domínio inteiro."
-    },
-    "Summarize_auto_senders_api_warning": {
-        "message": "Atenção: estes resumos são gerados automaticamente, portanto cada e-mail destes remetentes consome tokens da API e pode aumentar o custo da sua assinatura de IA. Mantenha a lista o mais curta possível."
     },
     "Summarize_auto_senders_notice": {
         "message": "O resumo automático está desativado, mas o resumo continua sendo gerado automaticamente para os remetentes da lista abaixo."
@@ -1683,9 +1626,6 @@
     },
     "batch_stop_source": {
         "message": "Interrupção em lote"
-    },
-    "summarize_collapse": {
-        "message": "Recolher resumo"
     },
     "summarize_generating": {
         "message": "Gerando resumo..."
@@ -1932,12 +1872,6 @@
     },
     "menu_order_legend_source_custom": {
         "message": "Prompt que você criou"
-    },
-    "prefs_settings_subtitle": {
-        "message": "Configurações"
-    },
-    "prefs_disclaimer": {
-        "message": "Modelos de LLM podem gerar informações incorretas, e seus dados podem ser usados pelo provedor para treinar novos modelos. Use por sua conta e risco."
     },
     "prefs_ConnectionSettingsTitle": {
         "message": "Configurações de conexão"
@@ -2280,9 +2214,6 @@
                 "content": "$1"
             }
         }
-    },
-    "apiwebchat_picker_progress": {
-        "message": "Alterações aceitas"
     },
     "apiwebchat_picker_more_actions": {
         "message": "Mais ações"

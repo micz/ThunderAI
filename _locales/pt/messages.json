@@ -134,9 +134,6 @@
     "customPrompts_saved": {
         "message": "Prompts guardados!"
     },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Adicionar o prompt"
-    },
     "customPrompts_do_reply": {
         "message": "Responder"
     },
@@ -160,9 +157,6 @@
     },
     "prompt_this": {
         "message": "Prompt isto"
-    },
-    "customPrompts_form_label_Text": {
-        "message": "Texto do Prompt"
     },
     "chatgpt_textarea_not_found_error": {
         "message": "Parece que a página do ChatGPT está a demorar muito para carregar. Se terminar de carregar, clique no botão à direita. Se o problema persistir, por favor, verifique o estado do serviço."
@@ -227,9 +221,6 @@
     "prefs_storage_clear_button": {
         "message": "Limpar armazenamento"
     },
-    "prefsInfoTitle": {
-        "message": "Informações importantes"
-    },
     "prefsInfoDesc_1": {
         "message": "Pode acontecer que a interface web do ChatGPT mude de uma forma que quebre o funcionamento do complemento. Verifique a página de \"Estado do Serviço\" vinculada na parte inferior desta página. Além disso, lembre-se de que, na primeira vez que usar o ThunderAI, precisará fazer login no ChatGPT."
     },
@@ -242,26 +233,8 @@
     "prefsInfoDesc_4": {
         "message": "Para usar esta integração, precisa configurar um servidor local compatível com a API do OpenAI, como o LM Studio. Assim que o servidor estiver em funcionamento, insira o seu endereço no campo designado dentro da aplicação. Para garantir a comunicação adequada entre o ThunderAI e o servidor local, lembre-se de configurar corretamente as definições de CORS."
     },
-    "prefsInfoDesc_5": {
-        "message": "Lembre-se que pode abrir o menu do ThunderAI usando o atalho de teclado CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Pode alterar o atalho a clicar no ícone de engrenagem no canto superior direito desta página e escolher \"Gerir Atalho da Extensão\"."
-    },
-    "prefsDonation_1": {
-        "message": "Gosta deste complemento?"
-    },
-    "prefsDonation_2": {
-        "message": "Considere fazer uma doação!"
-    },
     "backToOptionsText": {
         "message": "Opções"
-    },
-    "TranslateText": {
-        "message": "Quer ajudar a traduzir este complemento?"
-    },
-    "TranslateLink": {
-        "message": "Descubra como!"
     },
     "customPrompts_ExportAll": {
         "message": "Exportar todos os prompts"
@@ -463,9 +436,6 @@
     },
     "chatgpt_btn_model": {
         "message": "Usar o modelo atual"
-    },
-    "AllowedValues": {
-        "message": "Valores permitidos"
     },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Pode usar espaços reservados para dados adicionais."

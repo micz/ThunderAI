@@ -74,9 +74,6 @@
     "customPrompts_form_label_Name": {
         "message": "名前"
     },
-    "customPrompts_form_label_Text": {
-        "message": "プロンプトテキスト"
-    },
     "customPrompts_form_label_Action": {
         "message": "アクション"
     },
@@ -124,9 +121,6 @@
     },
     "btnNew_string": {
         "message": "新規追加"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "プロンプトを追加"
     },
     "customPrompts_add_to_menu": {
         "message": "メニューに追加"
@@ -259,9 +253,6 @@
             }
         }
     },
-    "prefsInfoTitle": {
-        "message": "重要な情報"
-    },
     "prefsInfoDesc_1": {
         "message": "ChatGPTのWebインターフェースが変更され、アドオンが動作しなくなる可能性があります。このページの下部にある「サービス状態」ページを確認してください。また、ThunderAIを初めて使用する際はChatGPTへのログインが必要です。"
     },
@@ -273,12 +264,6 @@
     },
     "prefsInfoDesc_4": {
         "message": "この連携を使用するには、LM StudioなどのOpenAI API互換のローカルサーバーを設定する必要があります。サーバーが起動したら、アプリケーション内の指定フィールドにアドレスを入力してください。ThunderAIとローカルサーバー間の適切な通信を確保するため、CORS設定を正しく行ってください。"
-    },
-    "prefsInfoDesc_5": {
-        "message": "キーボードショートカットCTRL+ALT+AでThunderAIメニューを開けることを覚えておいてください。"
-    },
-    "prefsInfoDesc_6": {
-        "message": "このページの右上にある歯車アイコンをクリックし、「拡張機能のショートカットを管理」を選択してショートカットを変更できます。"
     },
     "prefsInfoDesc_7": {
         "message": "Google Gemini APIを使用するには、Google Gemini APIキーとモデルの選択が必要です。"
@@ -298,20 +283,8 @@
     "prefs_footer_translate": {
         "message": "アドオンを翻訳する"
     },
-    "prefsDonation_1": {
-        "message": "このアドオンは気に入りましたか？"
-    },
-    "prefsDonation_2": {
-        "message": "寄付をご検討ください！"
-    },
     "backToOptionsText": {
         "message": "オプション"
-    },
-    "TranslateText": {
-        "message": "このアドオンの翻訳を手伝いませんか？"
-    },
-    "TranslateLink": {
-        "message": "方法を確認！"
     },
     "customPrompts_ExportAll": {
         "message": "すべてのプロンプトをエクスポート"
@@ -621,9 +594,6 @@
     },
     "chatgpt_btn_model": {
         "message": "現在のモデルを使用"
-    },
-    "AllowedValues": {
-        "message": "許可される値"
     },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "追加のデータプレースホルダーを使用できます。"
@@ -1183,9 +1153,6 @@
     "no_string": {
         "message": "いいえ"
     },
-    "noActiveCalendar": {
-        "message": "編集可能なカレンダーが見つかりません！"
-    },
     "btn_show_differences": {
         "message": "差分を表示"
     },
@@ -1246,9 +1213,6 @@
                 "content": "$1"
             }
         }
-    },
-    "apiwebchat_picker_progress": {
-        "message": "採用した変更"
     },
     "apiwebchat_picker_more_actions": {
         "message": "その他の操作"
@@ -1329,9 +1293,6 @@
     },
     "apiwebchat_picker_side_empty_inactive": {
         "message": "ここにテキストはありません。有効にするとこの部分を除外します。"
-    },
-    "apiwebchat_you": {
-        "message": "あなた"
     },
     "apiwebchat_info": {
         "message": "情報"
@@ -1455,9 +1416,6 @@
     },
     "customPrompts_hide_additional_info": {
         "message": "追加プロパティを非表示"
-    },
-    "customPrompts_show_additional_info_show": {
-        "message": "追加プロパティ"
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "オプションまたはプロンプトでプロジェクトが指定されている場合、カスタムGPT設定が上書きされます。"
@@ -1740,20 +1698,8 @@
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "この連携のモデルを取得するために必要なオプション権限が拒否されました。"
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "メッセージのプレビューでAIによる自動要約を有効にする"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "チェックすると、ThunderAIはメールを開いたときにAIによる要約を自動的に生成し、メッセージの上に表示します。これは、プレビューしたすべてのメッセージが設定済みのAIサービスへ直ちに送信されることを意味しますのでご注意ください。"
-    },
-    "auto_summary_title": {
-        "message": "ThunderAIの要約"
-    },
-    "auto_summary_generating": {
-        "message": "AIによる要約を生成中..."
-    },
-    "auto_summary_failed": {
-        "message": "AIによる要約の生成に失敗しました。設定を確認して、もう一度お試しください。"
     },
     "customPrompts_export_include_api_settings": {
         "message": "エクスポートにAPI設定を含めますか？APIキーもファイルに保存されますのでご注意ください！"
@@ -1766,9 +1712,6 @@
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "このオプションを有効にするには、プロンプトにプレースホルダー {%mail_text_body_or_selected%} または {%mail_html_body_or_selected%} が含まれている必要があります。これらのいずれかのプレースホルダーをプロンプトに追加するか、プロンプトをデフォルトに戻してください。"
-    },
-    "customPrompts_btnCopy": {
-        "message": "コピー"
     },
     "copy_text": {
         "message": "コピー"
@@ -1814,9 +1757,6 @@
     },
     "Summarize_auto_senders_infoline2": {
         "message": "1行に1つのメールアドレスを追加するか、カンマで区切ってください。ドメイン全体のすべての差出人を対象にするには「@domain.com」を使用します。"
-    },
-    "Summarize_auto_senders_api_warning": {
-        "message": "注意: これらの要約は自動的に生成されるため、これらの差出人からのメール1通ごとにAPIトークンを消費し、AIサブスクリプションの費用が増加する可能性があります。リストはできるだけ短く保ってください。"
     },
     "Summarize_auto_senders_notice": {
         "message": "自動要約は無効になっていますが、以下のリストにある差出人については引き続き要約が自動生成されます。"
@@ -1883,9 +1823,6 @@
     },
     "batch_stop_source": {
         "message": "一括停止"
-    },
-    "summarize_collapse": {
-        "message": "要約を折りたたむ"
     },
     "summarize_generating": {
         "message": "要約を生成中..."
@@ -2144,12 +2081,6 @@
     },
     "menu_order_legend_source_custom": {
         "message": "自分で作成したプロンプト"
-    },
-    "prefs_settings_subtitle": {
-        "message": "設定"
-    },
-    "prefs_disclaimer": {
-        "message": "LLMモデルは誤った情報を生成する可能性があり、入力したデータが新しいモデルの学習に使用される場合があります。ご自身の責任でご利用ください。"
     },
     "prefs_ConnectionSettingsTitle": {
         "message": "接続設定"

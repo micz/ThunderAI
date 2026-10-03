@@ -53,9 +53,6 @@
     "menu_title": {
         "message": "ThunderAI"
     },
-    "customPrompts_form_label_Text": {
-        "message": "Teksto de instrukcio"
-    },
     "prompt_reply": {
         "message": "Respondu al ĉi tiu retpoŝta mesaĝo"
     },
@@ -121,9 +118,6 @@
     },
     "yes_string": {
         "message": "Jes"
-    },
-    "apiwebchat_you": {
-        "message": "Vi"
     },
     "apiwebchat_info": {
         "message": "Informoj"

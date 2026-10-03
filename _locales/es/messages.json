@@ -68,9 +68,6 @@
     "customPrompts_form_label_Name": {
         "message": "Nombre"
     },
-    "customPrompts_form_label_Text": {
-        "message": "Texto del prompt"
-    },
     "customPrompts_form_label_Action": {
         "message": "Acción"
     },
@@ -118,9 +115,6 @@
     },
     "btnNew_string": {
         "message": "Añadir nuevo"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Añadir el prompt"
     },
     "customPrompts_add_to_menu": {
         "message": "Añadir al menú"
@@ -224,9 +218,6 @@
     "prefs_OptionText_btnManageCustomDataPH": {
         "message": "Administrar los marcadores de posición de datos"
     },
-    "prefsInfoTitle": {
-        "message": "Información importante"
-    },
     "prefsInfoDesc_1": {
         "message": "Podría suceder que la interfaz web de ChatGPT cambie de una manera que interrumpa el funcionamiento del complemento. Consulta la página de \"Estado del servicio\" vinculada al final de esta página. Además, recuerda que la primera vez que uses ThunderAI, debes iniciar sesión en ChatGPT."
     },
@@ -239,26 +230,8 @@
     "prefsInfoDesc_4": {
         "message": "Para usar esta integración, necesitas configurar un servidor local compatible con la API de OpenAI, como LM Studio. Una vez que el servidor esté en funcionamiento, ingresa su dirección en el campo designado dentro de la aplicación. Para garantizar una comunicación adecuada entre ThunderAI y el servidor local, recuerda configurar correctamente los ajustes CORS."
     },
-    "prefsInfoDesc_5": {
-        "message": "Recuerda que puedes abrir el menú de ThunderAI usando el atajo de teclado CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Puedes cambiar el atajo haciendo clic en el ícono de engranaje en la parte superior derecha de esta página y seleccionando \"Administrar atajo de la extensión\"."
-    },
-    "prefsDonation_1": {
-        "message": "¿Te gusta este complemento?"
-    },
-    "prefsDonation_2": {
-        "message": "¡Considera hacer una donación!"
-    },
     "backToOptionsText": {
         "message": "Opciones"
-    },
-    "TranslateText": {
-        "message": "¿Quieres ayudar a traducir este complemento?"
-    },
-    "TranslateLink": {
-        "message": "¡Descubre cómo!"
     },
     "customPrompts_ExportAll": {
         "message": "Exportar todos los prompts"
@@ -484,9 +457,6 @@
     },
     "chatgpt_btn_model": {
         "message": "Usar el modelo actual"
-    },
-    "AllowedValues": {
-        "message": "Valores permitidos"
     },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Puedes usar marcadores de posición de datos adicionales."
@@ -902,17 +872,11 @@
     "no_string": {
         "message": "No"
     },
-    "noActiveCalendar": {
-        "message": "¡No se encontró un calendario editable!"
-    },
     "btn_show_differences": {
         "message": "Mostrar diferencias"
     },
     "chatgpt_win_diff_title": {
         "message": "Diferencias entre el texto original y el modificado"
-    },
-    "apiwebchat_you": {
-        "message": "Tu"
     },
     "apiwebchat_info": {
         "message": "Información"
@@ -1003,9 +967,6 @@
     },
     "customPrompts_hide_additional_info": {
         "message": "Ocultar propiedades adicionales"
-    },
-    "customPrompts_show_additional_info_show": {
-        "message": "Propiedades adicionales"
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Si se especifica un proyecto en las opciones o en un prompt, sobrescribirá la configuración del GPT personalizado."
@@ -1414,20 +1375,8 @@
             }
         }
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Habilitar el resumen automático de IA para previsualizaciones de mensajes"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Si está marcado, ThunderAI generará y mostrará automáticamente resúmenes de IA encima de los mensajes de correo electrónico cuando se abran. Tenga en cuenta que esto significa que todos los mensajes que vea en vista previa se enviarán inmediatamente al servicio de IA configurado."
-    },
-    "auto_summary_title": {
-        "message": "Resumen de ThunderAI"
-    },
-    "auto_summary_generating": {
-        "message": "Generando resumen de IA..."
-    },
-    "auto_summary_failed": {
-        "message": "No se pudo generar el resumen de IA. Por favor, confirme su configuración e inténtelo de nuevo."
     },
     "customPrompts_export_include_api_settings": {
         "message": "¿Desea incluir la configuración de la API en la exportación? ¡Tenga en cuenta que también se guardará la clave de API en el archivo!"
@@ -1440,9 +1389,6 @@
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "El prompt debe contener el marcador de posición {%mail_text_body_or_selected%} o {%mail_html_body_or_selected%} para habilitar esta opción. Por favor, añada uno de estos marcadores de posición al prompt o restablezca a la configuración predeterminada."
-    },
-    "customPrompts_btnCopy": {
-        "message": "Copiar"
     },
     "copy_text": {
         "message": "Copiar"
@@ -1485,9 +1431,6 @@
     },
     "get_ai_summary": {
         "message": "Resumen de IA"
-    },
-    "summarize_collapse": {
-        "message": "Colapsar resumen"
     },
     "summarize_generating": {
         "message": "Generando resumen..."
