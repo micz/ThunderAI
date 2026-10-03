@@ -104,9 +104,6 @@
     "prefs_OptionText_release_notes": {
         "message": "Versionsinformation"
     },
-    "prefsInfoTitle": {
-        "message": "Viktig information"
-    },
     "placeholder_tags_current_email": {
         "message": "E-posttaggar"
     },
@@ -212,9 +209,6 @@
     "customPrompts_form_label_ID_rules": {
         "message": "Måste vara unikt, med gemener och utan mellanslag"
     },
-    "customPrompts_form_label_Text": {
-        "message": "Prompttext"
-    },
     "customPrompts_form_label_need_selected": {
         "message": "Textval behövs"
     },
@@ -229,9 +223,6 @@
     },
     "customPrompts_form_label_use_diff_viewer_title": {
         "message": "Tillgänglig när \"Åtgärd\" är \"Ersätt text\"."
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Lägg till prompten"
     },
     "customPrompts_add_to_menu": {
         "message": "Lägg till i meny"
@@ -326,26 +317,8 @@
     "prefsInfoDesc_4": {
         "message": "För att använda den här integrationen behöver du konfigurera en lokal server som är kompatibel med OpenAI API, som LM Studio. När servern är igång anger du dess adress i det angivna fältet i applikationen. För att säkerställa korrekt kommunikation mellan ThunderAI och den lokala servern, kom ihåg att ställa in CORS-inställningarna korrekt."
     },
-    "prefsInfoDesc_5": {
-        "message": "Kom ihåg att du kan öppna ThunderAI-menyn med kortkommandot CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Du kan ändra genvägen genom att klicka på kugghjulsikonen längst upp till höger på den här sidan och välja \"Hantera genväg för tillägg\"."
-    },
-    "prefsDonation_1": {
-        "message": "Gillar du det här tillägget?"
-    },
-    "prefsDonation_2": {
-        "message": "Överväg att göra en donation!"
-    },
     "backToOptionsText": {
         "message": "Alternativ"
-    },
-    "TranslateText": {
-        "message": "Vill du hjälpa till att översätta det här tillägget?"
-    },
-    "TranslateLink": {
-        "message": "Ta reda på hur!"
     },
     "customPrompts_ExportAll": {
         "message": "Exportera alla promptar"
@@ -563,9 +536,6 @@
     "chatgpt_btn_model": {
         "message": "Använd den nuvarande modellen"
     },
-    "AllowedValues": {
-        "message": "Tillåtna värden"
-    },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Du kan använda ytterligare dataplatshållare."
     },
@@ -755,17 +725,11 @@
     "no_string": {
         "message": "Nej"
     },
-    "noActiveCalendar": {
-        "message": "Ingen redigerbar kalender hittades!"
-    },
     "btn_show_differences": {
         "message": "Visa skillnader"
     },
     "chatgpt_win_diff_title": {
         "message": "Skillnader mellan originaltexten och den modifierade texten"
-    },
-    "apiwebchat_you": {
-        "message": "Du"
     },
     "apiwebchat_info": {
         "message": "Information"
@@ -802,9 +766,6 @@
     },
     "customPrompts_hide_additional_info": {
         "message": "Dölj ytterligare egenskaper"
-    },
-    "customPrompts_show_additional_info_show": {
-        "message": "Ytterligare egenskaper"
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Om ett projekt anges i alternativen eller i en prompt kommer det att åsidosätta inställningen för anpassad GPT."
@@ -1305,9 +1266,6 @@
     "prefs_OptionText_calendar_no_selection_Info": {
         "message": "Om markerad behöver du inte markera någon text. Hela meddelandets innehåll kommer att användas för att hämta kalenderhändelsen."
     },
-    "customPrompts_btnCopy": {
-        "message": "Kopiera"
-    },
     "copy_text": {
         "message": "kopiera"
     },
@@ -1400,20 +1358,8 @@
             }
         }
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Aktivera automatisk AI-sammanfattning för förhandsgranskningar av meddelanden"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Om markerat kommer ThunderAI automatiskt att generera och visa AI-sammanfattningar ovanför e-postmeddelanden när de öppnas. Observera att detta innebär att alla meddelanden du förhandsgranskar omedelbart skickas till den konfigurerade AI-tjänsten."
-    },
-    "auto_summary_title": {
-        "message": "ThunderAI sammanfattning"
-    },
-    "auto_summary_generating": {
-        "message": "Genererar AI-sammanfattning..."
-    },
-    "auto_summary_failed": {
-        "message": "Misslyckades att generera AI-sammanfattning. Bekräfta dina inställningar och försök igen."
     },
     "prefs_OptionText_summarize_auto": {
         "message": "Sammanfatta meddelanden automatiskt"
@@ -1444,9 +1390,6 @@
     },
     "get_ai_summary": {
         "message": "AI sammanfattning"
-    },
-    "summarize_collapse": {
-        "message": "Fäll in sammanfattning"
     },
     "summarize_generating": {
         "message": "Genererar sammanfattning..."
@@ -2074,9 +2017,6 @@
             }
         }
     },
-    "apiwebchat_picker_progress": {
-        "message": "Accepterade ändringar"
-    },
     "apiwebchat_picker_more_actions": {
         "message": "Fler åtgärder"
     },
@@ -2267,9 +2207,6 @@
     "Summarize_auto_senders_infoline2": {
         "message": "Lägg till en e-postadress per rad, eller separerad med ett kommatecken. Använd \"@domain.com\" för att matcha alla avsändare för en hel domän."
     },
-    "Summarize_auto_senders_api_warning": {
-        "message": "Varning: dessa sammanfattningar genereras automatiskt, så varje e-postmeddelande från dessa avsändare förbrukar API-tokens och kan öka kostnaden för din AI-prenumeration. Håll listan så kort som möjligt."
-    },
     "menu_order_icon_default": {
         "message": "Standardikon"
     },
@@ -2317,12 +2254,6 @@
     },
     "menu_order_legend_source_custom": {
         "message": "Prompt du skapade"
-    },
-    "prefs_settings_subtitle": {
-        "message": "Inställningar"
-    },
-    "prefs_disclaimer": {
-        "message": "LLM-modeller kan generera felaktig information, och dina data kan användas av leverantören för att träna nya modeller. Användning sker på egen risk."
     },
     "prefs_ConnectionSettingsTitle": {
         "message": "Anslutningsinställningar"

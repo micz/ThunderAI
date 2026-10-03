@@ -69,9 +69,6 @@
     "customPrompts_form_label_Name": {
         "message": "Name"
     },
-    "customPrompts_form_label_Text": {
-        "message": "Eingabeaufforderungstext"
-    },
     "customPrompts_form_label_Action": {
         "message": "Aktion"
     },
@@ -113,9 +110,6 @@
     },
     "btnNew_string": {
         "message": "Neu hinzufügen"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Eingabeaufforderung hinzufügen"
     },
     "customPrompts_add_to_menu": {
         "message": "Zum Menü hinzufügen"
@@ -216,9 +210,6 @@
     "prefs_OptionText_btnManagePrompts": {
         "message": "Verwalten Sie Ihre Eingabeaufforderungen"
     },
-    "prefsInfoTitle": {
-        "message": "Wichtige Informationen"
-    },
     "prefsInfoDesc_1": {
         "message": "Es könnte passieren, dass sich die Weboberfläche von ChatGPT ändert und dadurch die Funktionsweise des Add-ons beeinträchtigt wird. Überprüfen Sie die Seite \"Service Status\", die unten auf dieser Seite verlinkt ist. Denken Sie auch daran, dass Sie sich beim ersten Mal, wenn Sie ThunderAI verwenden, bei ChatGPT anmelden müssen."
     },
@@ -231,26 +222,8 @@
     "prefsInfoDesc_4": {
         "message": "Um diese Integration zu nutzen, müssen Sie einen lokalen Server einrichten, der mit der OpenAI-API kompatibel ist, wie z.B. LM Studio. Sobald der Server läuft, geben Sie dessen Adresse in das dafür vorgesehene Feld innerhalb der Anwendung ein. Um eine ordnungsgemäße Kommunikation zwischen ThunderAI und dem lokalen Server sicherzustellen, denken Sie daran, die CORS-Einstellungen korrekt zu konfigurieren."
     },
-    "prefsInfoDesc_5": {
-        "message": "Denken Sie daran, dass Sie das ThunderAI-Menü mit der Tastenkombination STRG+ALT+A öffnen können."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Sie können die Tastenkombination ändern, indem Sie auf das Zahnradsymbol oben rechts auf dieser Seite klicken und \"Erweiterungskürzel verwalten\" auswählen."
-    },
-    "prefsDonation_1": {
-        "message": "Gefällt Ihnen dieses Addon?"
-    },
-    "prefsDonation_2": {
-        "message": "Überlegen Sie, eine Spende zu machen!"
-    },
     "backToOptionsText": {
         "message": "Optionen"
-    },
-    "TranslateText": {
-        "message": "Möchtest du helfen, dieses Add-on zu übersetzen?"
-    },
-    "TranslateLink": {
-        "message": "Finde es heraus!"
     },
     "customPrompts_ExportAll": {
         "message": "Alle Prompts exportieren"
@@ -458,9 +431,6 @@
     },
     "chatgpt_btn_model": {
         "message": "Aktuelles Modell verwenden"
-    },
-    "AllowedValues": {
-        "message": "Erlaubte Werte"
     },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Sie können zusätzliche Datenplatzhalter verwenden."
@@ -807,17 +777,11 @@
     "prefs_OptionText_calendar_enforce_timezone": {
         "message": "Erzwinge die angegebene Zeitzone"
     },
-    "noActiveCalendar": {
-        "message": "Kein bearbeitbarer Kalender gefunden!"
-    },
     "Select_your_timezone": {
         "message": "Wähle deine Zeitzone"
     },
     "prefs_OptionText_calendar_enforce_timezone_Info": {
         "message": "Wenn aktiviert, wird die angegebene Zeitzone für die Kalendereinträge und Aufgaben erzwungen."
-    },
-    "apiwebchat_you": {
-        "message": "Du"
     },
     "apiwebchat_info": {
         "message": "Information"
@@ -974,9 +938,6 @@
     },
     "customPrompts_hide_additional_info": {
         "message": "Zusätzliche Eigenschaften ausblenden"
-    },
-    "customPrompts_show_additional_info_show": {
-        "message": "Zusätzliche Eigenschaften"
     },
     "prompt_get_task_full_text": {
         "message": "Extrahiere alle relevanten Details, die erforderlich sind, um eine Aufgabe aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes umfassen:\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Fälligkeitsdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Aufgabenbeschreibung\n- Beschreibung der Aufgabe (eine kurze Zusammenfassung des E-Mail-Kontexts, der Hauptthemen und Aktionspunkte)\n- Ort (falls erwähnt, spezifisches Gebäude, Raum oder online mit Link)\nStelle sicher, dass die Daten klar und einheitlich formatiert sind, sodass sie direkt zur Erstellung einer Aufgabe verwendet werden können.\nWenn relative Zeitangaben vorhanden sind, beachte, dass das Datum und die Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechne das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechne das Startdatum und die Startzeit erneut unter Verwendung von \"{%current_datetime%}\" als Ausgangspunkt.\nWenn du eine oder mehrere der erforderlichen Informationen nicht erhalten kannst, gib bitte einen leeren String zurück.\nErzeuge eine Antwort ausschließlich im JSON-Format. Füge keinen zusätzlichen Text oder Erklärungen hinzu – liefere nur das JSON. Verwende folgendes Format:\n{\n\"initialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Aufgabenbeschreibung hier\",\n\"description\": \"Detaillierte Beschreibung der Aufgabe einschließlich Aktionspunkten und relevanter Notizen aus der E-Mail.\",\n\"location\": \"Ort oder URL hier\"\n}\nWenn keine Informationen über die Daten vorhanden sind, lasse sie weg.\nHier ist der Text: \"{%selected_text%}\""
@@ -1348,9 +1309,6 @@
     "prefs_OptionText_calendar_no_selection_Info": {
         "message": "Wenn aktiviert, ist keine Textauswahl erforderlich. Der gesamte Nachrichtentext wird verwendet, um das Kalenderereignis zu erstellen."
     },
-    "customPrompts_btnCopy": {
-        "message": "Kopieren"
-    },
     "copy_text": {
         "message": "kopie"
     },
@@ -1505,20 +1463,8 @@
             }
         }
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Automatische KI-Zusammenfassung für Nachrichtenvorschauen aktivieren"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Falls aktiviert, erstellt und zeigt ThunderAI automatisch KI-Zusammenfassungen oberhalb von E-Mails an, sobald diese geöffnet werden. Beachten Sie, dass hierbei alle von Ihnen aufgerufenen Nachrichten sofort an den konfigurierten KI-Dienst gesendet werden."
-    },
-    "auto_summary_title": {
-        "message": "ThunderAI Zusammenfassung"
-    },
-    "auto_summary_generating": {
-        "message": "KI-Zusammenfassung wird generiert..."
-    },
-    "auto_summary_failed": {
-        "message": "KI-Zusammenfassung konnte nicht generiert werden. Bitte Einstellungen prüfen."
     },
     "prefs_OptionText_summarize_auto": {
         "message": "Nachrichten automatisch zusammenfassen"
@@ -1553,9 +1499,6 @@
     "Summarize_auto_senders_infoline2": {
         "message": "Fügen Sie eine E-Mail-Adresse pro Zeile hinzu oder trennen Sie sie durch Kommas. Verwenden Sie \"@domain.com\", um alle Absender einer gesamten Domain zu erfassen."
     },
-    "Summarize_auto_senders_api_warning": {
-        "message": "Achtung: Diese Zusammenfassungen werden automatisch erstellt, daher verbraucht jede E-Mail von diesen Absendern API-Tokens und kann die Kosten Ihres KI-Abonnements erhöhen. Halten Sie die Liste so kurz wie möglich."
-    },
     "Summarize_auto_senders_notice": {
         "message": "Die automatische Zusammenfassung ist deaktiviert, aber für die Absender in der Liste unten wird die Zusammenfassung trotzdem automatisch erstellt."
     },
@@ -1582,9 +1525,6 @@
     },
     "get_ai_summary": {
         "message": "KI-Zusammenfassung"
-    },
-    "summarize_collapse": {
-        "message": "Zusammenfassung einklappen"
     },
     "summarize_generating": {
         "message": "Zusammenfassung wird generiert..."
@@ -2107,10 +2047,6 @@
             }
         }
     },
-    "apiwebchat_picker_progress": {
-        "message": "Übernommene Änderungen",
-        "description": "Accessible label of the change picker's progress bar"
-    },
     "apiwebchat_picker_more_actions": {
         "message": "Weitere Aktionen",
         "description": "Accessible label of the change picker's overflow menu button"
@@ -2344,14 +2280,6 @@
     "menu_order_legend_source_custom": {
         "message": "Selbst erstellter Prompt",
         "description": "Legend description for the 'Custom' source badge"
-    },
-    "prefs_settings_subtitle": {
-        "message": "Einstellungen",
-        "description": "Subtitle shown under the ThunderAI name in the options page header"
-    },
-    "prefs_disclaimer": {
-        "message": "LLM-Modelle können fehlerhafte Informationen erzeugen, und Ihre Daten können vom Anbieter zum Training neuer Modelle verwendet werden. Verwendung auf eigenes Risiko.",
-        "description": "Disclaimer note shown at the top of the options page body"
     },
     "prefs_ConnectionSettingsTitle": {
         "message": "Verbindungseinstellungen",

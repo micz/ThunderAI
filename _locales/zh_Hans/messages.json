@@ -11,12 +11,6 @@
     "prompt_reply_advanced": {
         "message": "回复此主题"
     },
-    "customPrompts_form_label_Text": {
-        "message": "提示文字"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "添加提示词"
-    },
     "customPrompts_form_label_ID": {
         "message": "ID"
     },
@@ -97,9 +91,6 @@
     },
     "chatgpt_btn_model": {
         "message": "使用当前模型"
-    },
-    "AllowedValues": {
-        "message": "允许的值"
     },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "您可以使用额外的数据占位符。"
@@ -257,9 +248,6 @@
     "prefs_OptionText_reply_all": {
         "message": "回复全部"
     },
-    "prefsInfoDesc_6": {
-        "message": "您可以通过单击此页面右上角的齿轮图标并选择“管理扩展快捷方式”来更改快捷方式。"
-    },
     "chatgpt_win_model_warning": {
         "message": "由于某种原因，无法验证是否加载了正确的模型。现在，你可以点击蓝色按钮继续。"
     },
@@ -308,20 +296,11 @@
     "chatgpt_force_completion_title": {
         "message": "如果ChatGPT已完成处理但按钮未显示，请点击此处启用“使用最后答案”按钮。"
     },
-    "prefsInfoTitle": {
-        "message": "重要信息"
-    },
     "prefs_ChatGPT_API_Key": {
         "message": "ChatGPT API 密钥"
     },
     "prefs_OptionText_release_notes": {
         "message": "发行说明"
-    },
-    "prefsDonation_1": {
-        "message": "你喜欢这个插件吗？"
-    },
-    "prefsDonation_2": {
-        "message": "考虑捐款！"
     },
     "WaitingServerResponse": {
         "message": "正在等待服务器响应"
@@ -362,9 +341,6 @@
     "prefs_OptionText_btnManagePrompts": {
         "message": "管理您的提示词"
     },
-    "prefsInfoDesc_5": {
-        "message": "请记住，您可以使用键盘快捷键 CTRL+ALT+A 打开 ThunderAI 菜单。"
-    },
     "importPrompts_invalidFile": {
         "message": "您尝试导入的文件不是有效的自定义提示文件。"
     },
@@ -389,9 +365,6 @@
     "prefsInfoDesc_2": {
         "message": "要使用 ChatGPT API，您需要一个 OpenAI ChatGPT API 密钥并且必须选择一个模型。"
     },
-    "TranslateText": {
-        "message": "你想帮助翻译这个插件吗？"
-    },
     "importPrompts_confirmText": {
         "message": "您即将导入新的提示。"
     },
@@ -406,9 +379,6 @@
     },
     "msg_prompt_too_long": {
         "message": "您提供的文本太长。您需要缩短它。"
-    },
-    "TranslateLink": {
-        "message": "了解详情！"
     },
     "Loading": {
         "message": "加载中..."
@@ -779,9 +749,6 @@
     "Report_Date": {
         "message": "报告日期"
     },
-    "noActiveCalendar": {
-        "message": "未找到可编辑的日历！"
-    },
     "customPrompts_form_label_use_diff_viewer": {
         "message": "启用文本差异查看器"
     },
@@ -799,9 +766,6 @@
     },
     "chatgpt_win_diff_title": {
         "message": "原始文本与修改文本之间的差异"
-    },
-    "apiwebchat_you": {
-        "message": "您"
     },
     "apiwebchat_info": {
         "message": "信息"

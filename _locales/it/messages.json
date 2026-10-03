@@ -69,9 +69,6 @@
     "customPrompts_form_label_Name": {
         "message": "Nome"
     },
-    "customPrompts_form_label_Text": {
-        "message": "Testo del prompt"
-    },
     "customPrompts_form_label_Action": {
         "message": "Azione"
     },
@@ -113,9 +110,6 @@
     },
     "btnNew_string": {
         "message": "Aggiungi Nuovo"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Aggiungi il Prompt"
     },
     "customPrompts_add_to_menu": {
         "message": "Aggiungi al menu"
@@ -216,9 +210,6 @@
     "prefs_OptionText_btnManagePrompts": {
         "message": "Gestisci i tuoi prompts"
     },
-    "prefsInfoTitle": {
-        "message": "Informazioni Importanti"
-    },
     "prefsInfoDesc_1": {
         "message": "È possibile che l'interfaccia web di ChatGPT cambi in modo tale da compromettere il funzionamento dell'addon. Controlla la pagina \"Stato del servizio\" collegata in fondo a questa pagina. Ricorda inoltre che la prima volta che utilizzi ThunderAI, devi effettuare l'accesso a ChatGPT."
     },
@@ -231,26 +222,8 @@
     "prefsInfoDesc_4": {
         "message": "Per utilizzare questa integrazione, è necessario configurare un server locale compatibile con l'API di OpenAI, come LM Studio. Una volta avviato il server, inserisci il suo indirizzo nella pagina delle opzioni. Per garantire una corretta comunicazione tra ThunderAI e il server locale, ricorda di configurare correttamente le impostazioni CORS."
     },
-    "prefsInfoDesc_5": {
-        "message": "Ricorda che puoi aprire il menu di ThunderAI utilizzando la combinazione di tasti CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Puoi modificare la scorciatoia cliccando sull'icona a forma di ingranaggio in alto a destra di questa pagina e scegliendo \"Gestisci scorciatoie da tastiera\"."
-    },
-    "prefsDonation_1": {
-        "message": "Ti piace questo componente aggiuntivo?"
-    },
-    "prefsDonation_2": {
-        "message": "Considera di fare una donazione!"
-    },
     "backToOptionsText": {
         "message": "Opzioni"
-    },
-    "TranslateText": {
-        "message": "Vuoi aiutare a tradurre questo addon?"
-    },
-    "TranslateLink": {
-        "message": "Scopri come!"
     },
     "customPrompts_ExportAll": {
         "message": "Esporta tutti i prompt"
@@ -512,9 +485,6 @@
     },
     "chatgpt_btn_model": {
         "message": "Usa il modello corrente"
-    },
-    "AllowedValues": {
-        "message": "Valori consentiti"
     },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Puoi utilizzare segnaposto per dati aggiuntivi."
@@ -867,17 +837,11 @@
     "placeholder_account_email_address": {
         "message": "Indirizzo email dell'account"
     },
-    "noActiveCalendar": {
-        "message": "Non è stato trovato alcun calendario modificabile!"
-    },
     "btn_show_differences": {
         "message": "Mostra le differenze"
     },
     "apiwebchat_error": {
         "message": "Errore"
-    },
-    "apiwebchat_you": {
-        "message": "Tu"
     },
     "chatgpt_win_diff_title": {
         "message": "Differenze tra il testo originale e quello modificato"
@@ -936,9 +900,6 @@
                 "content": "$1"
             }
         }
-    },
-    "apiwebchat_picker_progress": {
-        "message": "Modifiche accettate"
     },
     "apiwebchat_picker_more_actions": {
         "message": "Altre azioni"
@@ -1160,9 +1121,6 @@
     },
     "customPrompts_hide_additional_info": {
         "message": "Nascondi proprietà aggiuntive"
-    },
-    "customPrompts_show_additional_info_show": {
-        "message": "Proprietà aggiuntive"
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Se un Progetto è specificato nelle opzioni o in un prompt, sostituirà l'impostazione del GPT personalizzato."
@@ -1593,9 +1551,6 @@
     "prefs_OptionText_calendar_no_selection_Info": {
         "message": "Se questa opzione viene attivata, non sarà necessario selezionare del testo. Verrà utilizzato l'intero corpo del messaggio per creare l'evento di calendario."
     },
-    "customPrompts_btnCopy": {
-        "message": "Copia"
-    },
     "copy_text": {
         "message": "copia"
     },
@@ -1792,20 +1747,8 @@
             }
         }
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Abilita riassunto IA automatico per l'anteprima messaggi"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Se selezionato, ThunderAI genererà e visualizzerà automaticamente dei riassunti IA sopra i messaggi quando vengono aperti. Nota: questo comporterà l'invio immediato di ogni messaggio visualizzato al servizio IA configurato."
-    },
-    "auto_summary_title": {
-        "message": "Riassunto ThunderAI"
-    },
-    "auto_summary_generating": {
-        "message": "Generazione riassunto IA..."
-    },
-    "auto_summary_failed": {
-        "message": "Impossibile generare il riassunto IA. Verifica le impostazioni e riprova."
     },
     "prefs_OptionText_summarize_auto": {
         "message": "Riassumi messaggi automaticamente"
@@ -1840,9 +1783,6 @@
     "Summarize_auto_senders_infoline2": {
         "message": "Aggiungi un indirizzo email per riga, oppure separati da una virgola. Usa \"@dominio.com\" per includere tutti i mittenti di un intero dominio."
     },
-    "Summarize_auto_senders_api_warning": {
-        "message": "Attenzione: questi riassunti vengono generati automaticamente, quindi ogni email da questi mittenti consuma token API e può aumentare il costo del tuo abbonamento IA. Mantieni l'elenco più corto possibile."
-    },
     "Summarize_auto_senders_notice": {
         "message": "Il riassunto automatico è disattivato, ma per i mittenti nell'elenco qui sotto il riassunto viene comunque generato automaticamente."
     },
@@ -1869,9 +1809,6 @@
     },
     "get_ai_summary": {
         "message": "Riassunto IA"
-    },
-    "summarize_collapse": {
-        "message": "Comprimi riassunto"
     },
     "summarize_generating": {
         "message": "Generazione riassunto..."
@@ -2106,12 +2043,6 @@
     },
     "menu_order_legend_source_custom": {
         "message": "Prompt creato da te"
-    },
-    "prefs_settings_subtitle": {
-        "message": "Impostazioni"
-    },
-    "prefs_disclaimer": {
-        "message": "I modelli LLM possono generare informazioni errate e i tuoi dati potrebbero essere usati dal fornitore per addestrare nuovi modelli. Usali a tuo rischio."
     },
     "prefs_ConnectionSettingsTitle": {
         "message": "Impostazioni di connessione"

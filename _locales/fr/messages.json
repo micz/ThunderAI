@@ -69,9 +69,6 @@
     "customPrompts_form_label_Name": {
         "message": "Nom"
     },
-    "customPrompts_form_label_Text": {
-        "message": "Texte de la proposition"
-    },
     "customPrompts_form_label_Action": {
         "message": "Action"
     },
@@ -113,9 +110,6 @@
     },
     "btnNew_string": {
         "message": "Ajouter nouveau"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Ajouter la proposition"
     },
     "customPrompts_add_to_menu": {
         "message": "Ajouter au menu"
@@ -216,9 +210,6 @@
     "prefs_OptionText_btnManagePrompts": {
         "message": "Gérer vos prompts"
     },
-    "prefsInfoTitle": {
-        "message": "Informations importantes"
-    },
     "prefsInfoDesc_1": {
         "message": "Il est possible que l'interface web de ChatGPT change de manière à perturber le fonctionnement de l'addon. Consultez la page \"État du service\" située en bas de cette page. N'oubliez pas non plus que la première fois que vous utilisez ThunderAI, vous devez vous connecter à ChatGPT."
     },
@@ -231,26 +222,8 @@
     "prefsInfoDesc_4": {
         "message": "Pour utiliser cette intégration, vous devez configurer un serveur local compatible avec l'API OpenAI, tel que LM Studio. Une fois le serveur lancé, entrez son adresse dans le champ prévu à cet effet dans l'application. Pour assurer une communication correcte entre ThunderAI et le serveur local, n'oubliez pas de configurer correctement les paramètres CORS."
     },
-    "prefsInfoDesc_5": {
-        "message": "N'oubliez pas que vous pouvez ouvrir le menu ThunderAI en utilisant le raccourci clavier CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Vous pouvez changer le raccourci en cliquant sur l'icône de l'engrenage en haut à droite de cette page et en choisissant \"Gérer le raccourci de l'extension\"."
-    },
-    "prefsDonation_1": {
-        "message": "Aimez-vous cette extension ?"
-    },
-    "prefsDonation_2": {
-        "message": "Envisagez de faire un don !"
-    },
     "backToOptionsText": {
         "message": "Options"
-    },
-    "TranslateText": {
-        "message": "Voulez-vous aider à traduire cette extension ?"
-    },
-    "TranslateLink": {
-        "message": "Découvrez comment !"
     },
     "customPrompts_ExportAll": {
         "message": "Exporter toutes les prompts"
@@ -458,9 +431,6 @@
     },
     "chatgpt_btn_model": {
         "message": "Utiliser le modèle actuel"
-    },
-    "AllowedValues": {
-        "message": "Valeurs autorisées"
     },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Vous pouvez utiliser des espaces réservés pour des données supplémentaires."
@@ -804,12 +774,6 @@
     "prompt_spamfilter_full_text": {
         "message": "Analysez l'e-mail suivant et déterminez s'il s'agit d'un spam ou non. Prenez en compte des facteurs tels que des mots-clés suspects, un langage promotionnel excessif, des lignes d'objet trompeuses, des demandes d'informations personnelles et des adresses d'expéditeurs inhabituelles.\nFournissez une valeur de 0 (non spam) à 100 (spam) et une explication de 10 mots maximum.\nEn cas de données de message manquantes, définissez la valeur à 0 (non spam) et indiquez la raison.\nGénérez une réponse uniquement au format JSON. N'incluez aucun texte ou explication supplémentaire ; fournissez uniquement le JSON. Voici le format à utiliser :\n{\n\"explanation\" : \"Brève explication de votre raisonnement\",\n\"spamValue\" : <entier de 0 à 100>\n}\nVoici les informations de l'e-mail :\nExpéditeur : \"{%author%}\"\nObjet : \"{%mail_subject%}\"\nCorps HTML : \"{%mail_html_body%}\""
     },
-    "noActiveCalendar": {
-        "message": "Aucun calendrier modifiable trouvé !"
-    },
-    "apiwebchat_you": {
-        "message": "Vous"
-    },
     "prefs_OptionText_calendar_enforce_timezone_Info": {
         "message": "Si cette option est cochée, le fuseau horaire spécifié sera appliqué aux événements du calendrier et aux tâches."
     },
@@ -971,9 +935,6 @@
     },
     "customPrompts_hide_additional_info": {
         "message": "Masquer les propriétés supplémentaires"
-    },
-    "customPrompts_show_additional_info_show": {
-        "message": "Propriétés supplémentaires"
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Si un projet est spécifié dans les options ou dans une invite, il remplacera le paramètre de GPT personnalisé."
@@ -1351,9 +1312,6 @@
     "spam_check_in_progress": {
         "message": "Analyse antispam en cours..."
     },
-    "customPrompts_btnCopy": {
-        "message": "Copier"
-    },
     "copy_text": {
         "message": "copie"
     },
@@ -1443,20 +1401,8 @@
             }
         }
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Activer le résumé IA automatique pour l'aperçu des messages"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Si sélectionné, ThunderAI générera et affichera automatiquement des résumés IA au-dessus des messages lors de leur ouverture. Remarque : cela enverra immédiatement chaque message consulté au service IA configuré."
-    },
-    "auto_summary_title": {
-        "message": "Résumé ThunderAI"
-    },
-    "auto_summary_generating": {
-        "message": "Génération du résumé IA..."
-    },
-    "auto_summary_failed": {
-        "message": "Échec de la génération du résumé IA. Vérifiez vos paramètres et réessayez."
     },
     "prefs_OptionText_summarize_auto": {
         "message": "Résumer les messages automatiquement"
@@ -1493,9 +1439,6 @@
     },
     "get_ai_summary": {
         "message": "Résumé IA"
-    },
-    "summarize_collapse": {
-        "message": "Réduire le résumé"
     },
     "summarize_generating": {
         "message": "Génération du résumé..."
@@ -2080,10 +2023,6 @@
             }
         }
     },
-    "apiwebchat_picker_progress": {
-        "message": "Modifications acceptées",
-        "description": "Libellé accessible de la barre de progression du sélecteur de modifications"
-    },
     "apiwebchat_picker_more_actions": {
         "message": "Plus d'actions",
         "description": "Libellé accessible du bouton de menu de débordement du sélecteur de modifications"
@@ -2318,14 +2257,6 @@
         "message": "Prompt que vous avez créé",
         "description": "Description de la légende pour le badge de source « Personnalisé »"
     },
-    "prefs_settings_subtitle": {
-        "message": "Paramètres",
-        "description": "Sous-titre affiché sous le nom ThunderAI dans l'en-tête de la page d'options"
-    },
-    "prefs_disclaimer": {
-        "message": "Les modèles LLM peuvent générer des informations incorrectes, et vos données peuvent être utilisées par le fournisseur pour entraîner de nouveaux modèles. À utiliser à vos risques et périls.",
-        "description": "Note d'avertissement affichée en haut du corps de la page d'options"
-    },
     "prefs_ConnectionSettingsTitle": {
         "message": "Paramètres de connexion",
         "description": "Sur-titre de section du panneau des paramètres de connexion sur la page d'options"
@@ -2551,9 +2482,6 @@
     },
     "Summarize_auto_senders_infoline2": {
         "message": "Ajoutez une adresse e-mail par ligne, ou séparez-les par une virgule. Utilisez « @domaine.com » pour inclure tous les expéditeurs d'un domaine entier."
-    },
-    "Summarize_auto_senders_api_warning": {
-        "message": "Attention : ces résumés étant générés automatiquement, chaque e-mail provenant de ces expéditeurs consomme des jetons d'API et peut augmenter le coût de votre abonnement IA. Conservez une liste aussi courte que possible."
     },
     "Summarize_auto_senders_notice": {
         "message": "Le résumé automatique est désactivé, mais les résumés restent générés automatiquement pour les expéditeurs de la liste ci-dessous."

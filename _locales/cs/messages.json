@@ -77,9 +77,6 @@
     "customPrompts_close_button": {
         "message": "Tlačítko pro zavření"
     },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Přidat dotaz"
-    },
     "customPrompts_add_to_menu_always": {
         "message": "Vždy"
     },
@@ -88,9 +85,6 @@
     },
     "customPrompts_form_label_need_custom_text": {
         "message": "Zeptat se na dodatečný text"
-    },
-    "customPrompts_form_label_Text": {
-        "message": "Text dotazu"
     },
     "customPrompts_add_to_menu_reading": {
         "message": "Čtení e-mailu"
@@ -209,9 +203,6 @@
     "prefs_OptionText_btnManagePrompts": {
         "message": "Spravovat vaše příkazy"
     },
-    "prefsInfoTitle": {
-        "message": "Důležité informace"
-    },
     "prefs_OptionText_reply_type": {
         "message": "Typ odpovědi"
     },
@@ -221,23 +212,8 @@
     "prefsInfoDesc_3": {
         "message": "Pro použití integrace s Ollama je nutné nastavit místní server Ollama. Jakmile server běží, zadejte jeho adresu do určeného pole v aplikaci. Pro zajištění správné komunikace mezi ThunderAI a serverem Ollama nezapomeňte nastavit proměnnou OLLAMA_ORIGINS=moz-extension://*."
     },
-    "prefsInfoDesc_5": {
-        "message": "Pamatujte, že nabídku ThunderAI můžete otevřít pomocí klávesové zkratky CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Zkratku můžete změnit kliknutím na ikonu ozubeného kola v pravém horním rohu této stránky a výběrem možnosti „Spravovat zkratku rozšíření“."
-    },
-    "prefsDonation_1": {
-        "message": "Líbí se vám tento doplněk?"
-    },
-    "prefsDonation_2": {
-        "message": "Zvažte dar!"
-    },
     "backToOptionsText": {
         "message": "Možnosti"
-    },
-    "TranslateText": {
-        "message": "Chcete pomoci s překladem tohoto doplňku?"
     },
     "customPrompts_ExportAll": {
         "message": "Exportovat všechny příkazy"
@@ -458,9 +434,6 @@
     "prefs_OptionText_add_tags_first_uppercase": {
         "message": "První písmeno velké"
     },
-    "TranslateLink": {
-        "message": "Zjistěte, jak na to!"
-    },
     "prefsInfoDesc_1": {
         "message": "Může se stát, že se webové rozhraní ChatGPT změní způsobem, který naruší funkčnost doplňku. Zkontrolujte stránku „Stav služby“, která je odkazovaná ve spodní části této stránky. Také si pamatujte, že při prvním použití ThunderAI se musíte přihlásit do ChatGPT."
     },
@@ -653,9 +626,6 @@
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "Dočasný chat ChatGPT Web"
     },
-    "AllowedValues": {
-        "message": "Povolené hodnoty"
-    },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Můžete použít další zástupné symboly dat."
     },
@@ -800,9 +770,6 @@
     "prefs_OptionText_calendar_enforce_timezone_Info": {
         "message": "Pokud je zaškrtnuto, bude pro události kalendáře vynuceno zvolené časové pásmo."
     },
-    "noActiveCalendar": {
-        "message": "Nenalezen žádný upravitelný kalendář!"
-    },
     "customPrompts_form_label_use_diff_viewer": {
         "message": "Povolit náhled změn"
     },
@@ -814,9 +781,6 @@
     },
     "apiwebchat_error": {
         "message": "Chyba"
-    },
-    "apiwebchat_you": {
-        "message": "Ty"
     },
     "apiwebchat_info": {
         "message": "Informace"
@@ -856,9 +820,6 @@
     },
     "customPrompts_hide_additional_info": {
         "message": "Skrýt další vlastnosti"
-    },
-    "customPrompts_show_additional_info_show": {
-        "message": "Další vlastnosti"
     },
     "prefs_OptionText_Project_No_temporary_chat_warn": {
         "message": "Pokud je v možnostech nebo v dotazu specifikován projekt, nebude použit dočasný chat."
@@ -1394,20 +1355,8 @@
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Odmítli jste volitelné oprávnění potřebné pro načtení modelů pro tuto integraci."
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Povolit automatické shrnutí pomocí AI pro náhledy zpráv"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Pokud je zaškrtnuto, ThunderAI po otevření e-mailu automaticky vygeneruje a zobrazí shrnutí pomocí AI. Upozorňujeme, že to znamená okamžité odeslání všech zpráv, které si prohlížíte, nakonfigurované AI službě."
-    },
-    "auto_summary_title": {
-        "message": "ThunderAI Shrnutí"
-    },
-    "auto_summary_generating": {
-        "message": "Generování shrnutí pomocí AI..."
-    },
-    "auto_summary_failed": {
-        "message": "Nepodařilo se vygenerovat shrnutí pomocí AI. Zkontrolujte prosím nastavení a zkuste to znovu."
     },
     "customPrompts_export_include_api_settings": {
         "message": "Chcete do exportu zahrnout i nastavení API? Uvědomte si, že do souboru bude uložen i váš API klíč!"
@@ -1420,9 +1369,6 @@
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "Aby bylo možné tuto možnost povolit, musí prompt obsahovat zástupný symbol {%mail_text_body_or_selected%} nebo {%mail_html_body_or_selected%}. Přidejte prosím jeden z těchto symbolů do promptu nebo jej resetujte na výchozí hodnotu."
-    },
-    "customPrompts_btnCopy": {
-        "message": "Kopírovat"
     },
     "copy_text": {
         "message": "kopírovat"
@@ -1465,9 +1411,6 @@
     },
     "get_ai_summary": {
         "message": "AI Shrnutí"
-    },
-    "summarize_collapse": {
-        "message": "Sbalit shrnutí"
     },
     "summarize_generating": {
         "message": "Generování shrnutí..."

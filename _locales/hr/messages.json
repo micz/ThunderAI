@@ -66,9 +66,6 @@
     "customPrompts_form_label_Name": {
         "message": "Ime"
     },
-    "customPrompts_form_label_Text": {
-        "message": "Tekst upita"
-    },
     "customPrompts_form_label_Action": {
         "message": "Radnja"
     },
@@ -110,9 +107,6 @@
     },
     "btnNew_string": {
         "message": "Dodaj novo"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Dodaj upit"
     },
     "customPrompts_add_to_menu": {
         "message": "Dodaj u izbornik"
@@ -213,9 +207,6 @@
     "prefs_OptionText_btnManagePrompts": {
         "message": "Upravljaj svojim upitima"
     },
-    "prefsInfoTitle": {
-        "message": "Važne informacije"
-    },
     "prefsInfoDesc_1": {
         "message": "Može se dogoditi da se ChatGPT web sučelje promijeni na način koji pokvari rad dodatka. Provjerite stranicu \"Status usluge\" povezanu na dnu ove stranice. Također, zapamtite da kada prvi put koristite ThunderAI, morate se prijaviti na ChatGPT."
     },
@@ -228,26 +219,8 @@
     "prefsInfoDesc_4": {
         "message": "Za korištenje ove integracije morate postaviti lokalni poslužitelj kompatibilan s OpenAI API-jem, poput LM Studio. Nakon što je poslužitelj pokrenut, unesite njegovu adresu u predviđeno polje unutar aplikacije. Kako biste osigurali ispravnu komunikaciju između ThunderAI i lokalnog poslužitelja, ne zaboravite pravilno postaviti CORS postavke."
     },
-    "prefsInfoDesc_5": {
-        "message": "Ne zaboravite da možete otvoriti izbornik ThunderAI pomoću tipkovničke prečice CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Prečac možete promijeniti pritiskom ikone zupčanika u gornjem desnom kutu ove stranice i odabirom \"Upravljaj tipkovničkim prečacima dodatka\"."
-    },
-    "prefsDonation_1": {
-        "message": "Sviđa li vam se ovaj dodatak?"
-    },
-    "prefsDonation_2": {
-        "message": "Razmislite o davanju donacije!"
-    },
     "backToOptionsText": {
         "message": "Mogućnosti"
-    },
-    "TranslateText": {
-        "message": "Želite li pomoći u prijevodu ovog dodatka?"
-    },
-    "TranslateLink": {
-        "message": "Saznajte kako!"
     },
     "customPrompts_ExportAll": {
         "message": "Izvezi sve upite"
@@ -452,9 +425,6 @@
     },
     "chatgpt_btn_model": {
         "message": "Koristi trenutni model"
-    },
-    "AllowedValues": {
-        "message": "Dopuštene vrijednosti"
     },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Možete koristiti dodatna rezervirana mjesta za podatke."

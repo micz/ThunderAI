@@ -71,9 +71,6 @@
     "customPrompts_form_label_Name": {
         "message": "Név"
     },
-    "customPrompts_form_label_Text": {
-        "message": "Utasítás szövege"
-    },
     "customPrompts_form_label_Action": {
         "message": "Művelet"
     },
@@ -121,9 +118,6 @@
     },
     "btnNew_string": {
         "message": "Új hozzáadása"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Utasítás hozzáadása"
     },
     "customPrompts_add_to_menu": {
         "message": "Hozzáadás a menühöz"
@@ -256,9 +250,6 @@
             }
         }
     },
-    "prefsInfoTitle": {
-        "message": "Fontos információ"
-    },
     "prefsInfoDesc_1": {
         "message": "Előfordulhat, hogy a ChatGPT webes felülete úgy változik, ami megszakítja a kiegészítő működését. Ellenőrizze az oldal alján található \"Szolgáltatás állapota\" linket. Ne feledje, hogy a ThunderAI első használatakor be kell jelentkeznie a ChatGPT-be."
     },
@@ -271,32 +262,14 @@
     "prefsInfoDesc_4": {
         "message": "Az integráció használatához be kell állítania egy OpenAI API-kompatibilis helyi szervert, mint például az LM Studio. Ha a szerver fut, adja meg a címét a kijelölt mezőben. A ThunderAI és a helyi szerver közötti megfelelő kommunikáció érdekében ügyeljen a CORS-beállítások helyes konfigurálására."
     },
-    "prefsInfoDesc_5": {
-        "message": "Ne feledje, hogy a ThunderAI menüt a CTRL+ALT+A billentyűkombinációval is megnyithatja."
-    },
-    "prefsInfoDesc_6": {
-        "message": "A billentyűkombinációt módosíthatja, ha az oldal jobb felső sarkában lévő fogaskerék ikonra kattint, majd a \"Bővítmény billentyűparancsainak kezelése\" lehetőséget választja."
-    },
     "prefsInfoDesc_7": {
         "message": "A Google Gemini API használatához egy Google Gemini API-kulcsra van szükség, valamint ki kell választania egy modellt."
     },
     "prefsInfoDesc_8": {
         "message": "A Claude API használatához egy Anthropic Claude API-kulcsra van szükség, valamint ki kell választania egy modellt."
     },
-    "prefsDonation_1": {
-        "message": "Tetszik ez a kiegészítő?"
-    },
-    "prefsDonation_2": {
-        "message": "Fontolja meg a támogatását egy adománnyal!"
-    },
     "backToOptionsText": {
         "message": "Beállítások"
-    },
-    "TranslateText": {
-        "message": "Szeretne segíteni a kiegészítő lefordításában?"
-    },
-    "TranslateLink": {
-        "message": "Tudja meg, hogyan!"
     },
     "customPrompts_ExportAll": {
         "message": "Összes utasítás exportálása"
@@ -543,9 +516,6 @@
     },
     "chatgpt_btn_model": {
         "message": "Aktuális modell használata"
-    },
-    "AllowedValues": {
-        "message": "Megengedett értékek"
     },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "További adat-helyőrzőket is használhat."
@@ -1093,17 +1063,11 @@
     "no_string": {
         "message": "Nem"
     },
-    "noActiveCalendar": {
-        "message": "Nem található szerkeszthető naptár!"
-    },
     "btn_show_differences": {
         "message": "Eltérések mutatása"
     },
     "chatgpt_win_diff_title": {
         "message": "Különbségek az eredeti és a módosított szöveg között"
-    },
-    "apiwebchat_you": {
-        "message": "Ön"
     },
     "apiwebchat_info": {
         "message": "Információ"
@@ -1206,9 +1170,6 @@
     },
     "customPrompts_hide_additional_info": {
         "message": "További tulajdonságok elrejtése"
-    },
-    "customPrompts_show_additional_info_show": {
-        "message": "Kiegészítő tulajdonságok"
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Ha egy projekt (Project) van megadva a beállításokban vagy egy promptban, az felülírja a Custom GPT beállítást."
@@ -1429,20 +1390,8 @@
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Megtagadta a modellek lekéréséhez szükséges opcionális jogosultságot ehhez az integrációhoz."
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Automatikus AI-összefoglalás engedélyezése az üzenet-előnézeteknél"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Ha be van jelölve, a ThunderAI automatikusan generálja és megjeleníti az AI-összefoglalókat az e-mailek felett, amikor megnyitja őket. Vegye figyelembe, hogy ez azt jelenti, hogy minden megtekintett üzenet azonnal elküldésre kerül a beállított AI szolgáltatásnak."
-    },
-    "auto_summary_title": {
-        "message": "ThunderAI Összefoglaló"
-    },
-    "auto_summary_generating": {
-        "message": "AI-összefoglaló generálása..."
-    },
-    "auto_summary_failed": {
-        "message": "Nem sikerült az AI-összefoglaló generálása. Kérjük, ellenőrizze a beállításokat, majd próbálja újra."
     },
     "customPrompts_export_include_api_settings": {
         "message": "Szeretné az API-beállításokat is belefoglalni az exportálásba? Vegye figyelembe, hogy az API-kulcs is mentésre kerül a fájlban!"
@@ -1455,9 +1404,6 @@
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "Az utasításnak tartalmaznia kell a {%mail_text_body_or_selected%} vagy a {%mail_html_body_or_selected%} helyőrzőt a funkció engedélyezéséhez. Kérjük, adja hozzá az egyik helyőrzőt a promthoz, vagy állítsa vissza az alapértelmezettre."
-    },
-    "customPrompts_btnCopy": {
-        "message": "Másolás"
     },
     "copy_text": {
         "message": "másolás"
@@ -1500,9 +1446,6 @@
     },
     "get_ai_summary": {
         "message": "AI Összefoglaló"
-    },
-    "summarize_collapse": {
-        "message": "Összefoglaló összecsukása"
     },
     "summarize_generating": {
         "message": "Összefoglaló generálása..."

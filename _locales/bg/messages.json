@@ -68,9 +68,6 @@
     "customPrompts_form_label_Name": {
         "message": "Име"
     },
-    "customPrompts_form_label_Text": {
-        "message": "Текст на подкана"
-    },
     "customPrompts_form_label_Action": {
         "message": "Действие"
     },
@@ -118,9 +115,6 @@
     },
     "btnNew_string": {
         "message": "Добави нов"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Добави подканата"
     },
     "customPrompts_add_to_menu": {
         "message": "Добави към меню"
