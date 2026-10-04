@@ -716,6 +716,10 @@ export async function getPromptsForMenuOrder(){
     return output;
 }
 
+// The per-prompt ChatGPT Web overrides. Not part of integration_options_config (ChatGPT Web is
+// not an API integration), so they are named here for the export filter.
+const CHATGPT_WEB_PROMPT_FIELDS = ['chatgpt_web_model', 'chatgpt_web_project', 'chatgpt_web_custom_gpt'];
+
 export function preparePromptsForExport(prompts, include_api_settings = false){
     let output = JSON.parse(JSON.stringify(prompts));
     output.forEach(prompt => {
@@ -734,6 +738,9 @@ export function preparePromptsForExport(prompts, include_api_settings = false){
 
         if(!include_api_settings){
             delete prompt.api_type;
+            // The ChatGPT Web overrides are per-prompt API settings too (claude-spec/02-prompts.md,
+            // "Per-Prompt API Override Properties"), but they are not in integration_options_config.
+            CHATGPT_WEB_PROMPT_FIELDS.forEach(field => delete prompt[field]);
             for (const [integration, options] of Object.entries(integration_options_config)) {
                 for (const key of Object.keys(options)) {
                     delete prompt[`${integration}_${key}`];
@@ -761,7 +768,7 @@ export function preparePromptsForExport(prompts, include_api_settings = false){
         if(prompt.is_default == 1){
             let allowedKeys = ['id', 'position_compose', 'position_display', 'position_context', 'need_custom_text', 'show_in', 'custom_icon'];
             if(include_api_settings){
-                allowedKeys.push('api_type');
+                allowedKeys.push('api_type', ...CHATGPT_WEB_PROMPT_FIELDS);
                 for (const [integration, options] of Object.entries(integration_options_config)) {
                     for (const key of Object.keys(options)) {
                         allowedKeys.push(`${integration}_${key}`);

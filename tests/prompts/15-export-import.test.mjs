@@ -87,6 +87,23 @@ k.test('no-api-settings-chatgpt-web', 'no ChatGPT Web override (model, project, 
     }
 });
 
+k.test('api-settings-chatgpt-web', 'with the API settings on, every prompt exports its three ChatGPT Web overrides', async () => {
+    const out = await exportAll(true);
+    const mine = byId(out, 'prompt_user');
+    assert.deepEqual([mine.chatgpt_web_model, mine.chatgpt_web_project, mine.chatgpt_web_custom_gpt],
+        [API.chatgpt_web_model, API.chatgpt_web_project, API.chatgpt_web_custom_gpt]);
+    const reply = byId(out, 'prompt_reply');
+    assert.deepEqual([reply.chatgpt_web_model, reply.chatgpt_web_project, reply.chatgpt_web_custom_gpt], ['gpt-web', 'p', 'g']);
+    assert.equal(reply.api_type, 'ollama_api');
+});
+
+k.test('api-settings-chatgpt-web-import', 'a built-in prompt imported with them gets them back in its stored properties', async () => {
+    const imported = await p.preparePromptsForImport(await exportAll(true));
+    await p.setDefaultPromptsProperties(imported.filter(x => x.is_default === '1'));
+    const stored = ctx.ctl.localData()._default_prompts_properties.prompt_reply;
+    assert.deepEqual([stored.chatgpt_web_model, stored.chatgpt_web_project, stored.chatgpt_web_custom_gpt], ['gpt-web', 'p', 'g']);
+});
+
 k.test('default-argument', 'include_api_settings defaults to false', async () => {
     const list = await p.getPromptsForManagement();
     assert.deepEqual(JSON.parse(JSON.stringify(p.preparePromptsForExport(list))), await exportAll(false));

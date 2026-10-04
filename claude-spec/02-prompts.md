@@ -206,6 +206,16 @@ Each prompt can override the global API connection. These mirror the keys in `in
 | `chatgpt_web_custom_gpt` | Override custom GPT |
 | All `chatgpt_*`, `ollama_*`, `openai_comp_*`, `google_gemini_*`, `anthropic_*` keys | Override specific API settings |
 
+**On export.** `preparePromptsForExport(prompts, include_api_settings = false)` with the flag off
+removes **every** property of this table from every prompt: `api_type`, the three `chatgpt_web_*`
+overrides (named in `CHATGPT_WEB_PROMPT_FIELDS`, since ChatGPT Web is not in
+`integration_options_config`) and every `{integration}_{key}` of `integration_options_config`,
+credentials included. A shared prompt file must never carry a key, a host or a model choice the user
+did not opt in to export. With the flag **on**, the three `chatgpt_web_*` overrides are exported for
+every prompt, built-in ones included (they are in its `allowedKeys`, as they are among the properties
+`setDefaultPromptsProperties()` stores), together with `api_type` and the settings of the active
+integration.
+
 ## Special Prompts
 
 Some prompts trigger additional Thunderbird actions beyond just sending text to the AI. They are identified by their `id`:

@@ -44,11 +44,6 @@ export const REASONS = {
         'spec 02 "Enabled-to-show_in Migration" says "`enabled` is never emitted on export". ' +
         'preparePromptsForExport() drops it for a built-in prompt (allowedKeys) but copies it ' +
         'unchanged for a custom prompt',
-    exportChatgptWebOverride:
-        'spec 02 "Per-Prompt API Override Properties" lists chatgpt_web_model, chatgpt_web_project and ' +
-        'chatgpt_web_custom_gpt as per-prompt API overrides. preparePromptsForExport(prompts, false) ' +
-        'strips only api_type and the integration_options_config keys, so a custom prompt still ' +
-        'exports these three',
     calendarStripFirstOnly:
         'spec 03 "The address placeholders in the compose window" ("Not visible in the calendar-event ' +
         'flow") says finalizePrompt_get_calendar_event() strips {%cc_list%} and {%recipients%} out of ' +
@@ -59,7 +54,6 @@ export const REASONS = {
 /** The known issues, by test file and case id. */
 export const KNOWN = {
     '15-export-import': {
-        'no-api-settings-chatgpt-web': REASONS.exportChatgptWebOverride,
         'enabled-never-exported': REASONS.exportEmitsEnabled,
     },
     '12-prompt-storage': {
