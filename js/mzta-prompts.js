@@ -824,10 +824,10 @@ export async function preparePromptsForImport(prompts){
 }
 
 // Backward-compat helper: the prompt `enabled` flag has been removed in favour of
-// show_in being the single source of truth. Map a legacy enabled == 0 to
+// show_in being the single source of truth. Map a legacy enabled 0 / "0" / false to
 // show_in = 'none' (the "off" state), then drop the field entirely.
 export function normalizeEnabledToShowIn(prompt) {
-    if (prompt.enabled === 0 || prompt.enabled === "0") {
+    if (prompt.enabled === 0 || prompt.enabled === "0" || prompt.enabled === false) {
         prompt.show_in = 'none';
     }
     delete prompt.enabled;
@@ -849,13 +849,15 @@ export function isPromptFlagOn(value) {
 // without caring where the prompt came from.
 //
 // `fallbacks` supplies the value to use when the stored one is out of domain
-// (neither 0/1 nor "0"/"1"). Default prompts pass their built-in value here so a
+// (neither 0/1, "0"/"1" nor true/false). Default prompts pass their built-in value here so a
 // corrupted override falls back to what the prompt ships with, rather than to a
 // blanket "0" which would silently disable prompts built with the flag on.
 export function normalizePromptFlags(prompt, fallbacks = {}) {
     promptBooleanFlags.forEach((flag) => {
         const value = prompt[flag];
-        if (value === 0 || value === "0") {
+        // false is "off" in its own right, like true is "on": never out of domain, so a
+        // built-in "1" fallback can never turn it on.
+        if (value === 0 || value === "0" || value === false) {
             prompt[flag] = "0";
         } else if (isPromptFlagOn(value)) {
             prompt[flag] = "1";

@@ -169,9 +169,7 @@ they are input for improving spec 02/03:
 1. *(resolved: spec 02 "How the final prompt is built" now fixes the no-placeholder shape - text,
    "content", signature, language, one space - and that the selection wins over the body.)*
 2. *(resolved: spec 02 "How the final prompt is built" now gives the exact signature and language statements, the trimming, and the same-language rule of the rewrite and proofread prompts.)*
-3. **`false` as a flag value.** `normalizePromptFlags()` lists `true` as "on" but not `false` as
-   "off". The code treats `false` as out of domain, so it takes the fallback, and a built-in "1" turns
-   it on. `normalizeEnabledToShowIn()` likewise only names `0` / `"0"` as "off".
+3. *(resolved: `false` is "off" in `normalizePromptFlags()` and `normalizeEnabledToShowIn()`, never out of domain, so a built-in "1" fallback cannot turn it on.)*
 4. *(resolved: spec 02 "Missing special prompts" now documents that `getSpecialPrompts()` restores a removed entry and writes the store back once; `11` tests it.)*
 5. *(resolved: spec 02 now places both migration flags in `browser.storage.local`, the `PREFS_AREA`, as spec 05 does.)*
 6. **"Visible prompts" in the alphabetic migration.** The spec contrasts them with the *hidden special*

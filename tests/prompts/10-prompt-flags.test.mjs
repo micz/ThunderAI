@@ -47,8 +47,8 @@ k.test('normalize-on', '1 / "1" / true become "1"', () => {
     }
 });
 
-k.test('normalize-off', '0 / "0" become "0", whatever the fallback says', () => {
-    for (const v of [0, '0']) {
+k.test('normalize-off', '0 / "0" / false become "0", whatever the fallback says', () => {
+    for (const v of [0, '0', false]) {
         const prompt = Object.fromEntries(FLAGS.map(f => [f, v]));
         p.normalizePromptFlags(prompt, Object.fromEntries(FLAGS.map(f => [f, '1'])));
         for (const f of FLAGS) assert.equal(prompt[f], '0', `${f} = ${JSON.stringify(v)}`);
@@ -124,8 +124,8 @@ k.test('fields-no-fallback', 'a custom prompt has no built-in: an out-of-domain 
 
 // --- normalizeEnabledToShowIn() ---------------------------------------------------------------
 
-k.test('enabled-off-to-none', 'enabled 0 / "0" sets show_in "none" (the previous one discarded) and drops enabled', () => {
-    for (const enabled of [0, '0']) {
+k.test('enabled-off-to-none', 'enabled 0 / "0" / false sets show_in "none" (the previous one discarded) and drops enabled', () => {
+    for (const enabled of [0, '0', false]) {
         for (const show_in of ['both', 'context', 'popup', undefined]) {
             const prompt = { id: 'x', enabled, show_in };
             p.normalizeEnabledToShowIn(prompt);
@@ -164,6 +164,15 @@ k.test('special-none-stored-not-written', 'with no special prompt stored, a read
     assert.equal(list.length, 9);
     assert.equal(JSON.stringify(await local.get(null)), before);
     assert.equal((await local.get('_special_prompts'))._special_prompts, undefined);
+});
+
+k.test('stored-false-stays-off', 'a special prompt stored with false reads "0", even where the built-in is "1"', async () => {
+    await globalThis.browser.storage.local.set({ _special_prompts: [
+        { id: 'prompt_get_task', name: '__MSG_prompt_get_task__', text: 'Task {%selected_text%} summary', type: '1', action: '0',
+          is_default: '1', is_special: '1', show_in: 'popup', need_selected: false },
+    ] });
+    const task = (await p.getSpecialPrompts()).find(x => x.id === 'prompt_get_task');
+    assert.equal(task.need_selected, '0', 'the built-in need_selected of prompt_get_task is "1"');
 });
 
 k.coverage();

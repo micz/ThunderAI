@@ -114,12 +114,15 @@ asks *"is it `"1"`?"* and read the very same value as **off**. A default prompt 
 show "Ask for additional text" enabled and not ask for it.
 
 `normalizePromptFlags(prompt, fallbacks)` collapses all of this: `1`/`"1"`/`true` → `"1"`,
-everything else → `"0"`, with every key guaranteed present. It is mutating, idempotent and
-single-prompt, mirroring `normalizeEnabledToShowIn()`. The `fallbacks` argument supplies the
-value for an out-of-domain input — default and special prompts pass their **built-in
-definition**, so a corrupted override reverts to what the prompt ships with instead of being
-forced off (which would silently disable `prompt_reply_custom_command`, whose built-in is
-`"1"`).
+`0`/`"0"`/`false` → `"0"`, with every key guaranteed present. It is mutating, idempotent and
+single-prompt, mirroring `normalizeEnabledToShowIn()`. Any other value (`""`, `undefined`,
+`null`, `"undefined"`, …) is **out of domain**, and the `fallbacks` argument supplies its value —
+default and special prompts pass their **built-in definition**, so a corrupted override reverts to
+what the prompt ships with instead of being forced off (which would silently disable
+`prompt_reply_custom_command`, whose built-in is `"1"`); with no fallback it is `"0"`. `false` is in
+the domain, never out of it: a built-in `"1"` fallback must not turn an explicit `false` on (no
+writer emits booleans, but a policy's organization prompts, a backup file or a hand-edited store
+can).
 
 It is applied in the **three producers**, not in `getPrompts()`. That placement is deliberate:
 `getSpecialPrompts()` is exported and called *directly* — by `buildSummaryPrompt()` /
@@ -491,7 +494,7 @@ This ensures existing users upgrading from the previous alphabetical-default beh
 
 The `enabled` prompt flag was removed (`show_in` is now the single source of truth). `migrateEnabledToShowIn()` in `js/mzta-prompts.js` runs once at background startup (after the sync→local storage-relocation migrations), guarded by the one-shot flag `_migrated_enabled_to_showin` in `browser.storage.local` (the `PREFS_AREA`, like `dynamic_menu_order_alphabet` above). Across all three stores (`_default_prompts_properties`, `_custom_prompt`, `_special_prompts`) it applies `normalizeEnabledToShowIn()` to every prompt:
 
-- if `enabled` is `0`/`"0"` → set `show_in = "none"` (the previous `show_in`, if any, is intentionally discarded — "off" collapses to "none"), then delete `enabled`
+- if `enabled` is `0`/`"0"`/`false` → set `show_in = "none"` (the previous `show_in`, if any, is intentionally discarded — "off" collapses to "none"), then delete `enabled`
 - otherwise (`1`/`"1"`/absent) → just delete `enabled`
 
 It is idempotent: the flag short-circuits reruns, and after it runs no `enabled` keys remain. The same `normalizeEnabledToShowIn()` is also applied by `preparePromptsForImport()` so legacy backups carrying `enabled === 0` import as `show_in === "none"`; `enabled` is never emitted on export.
