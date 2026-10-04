@@ -142,7 +142,21 @@
                                         </select>
                                     </div>
                                 </div>
+                            </div>
 
+                            <div class="detail_side">
+                                <span class="field_label">__MSG_customPrompts_label_options__</span>
+                                <label class="flag_row"><input type="checkbox" id="detail_need_selected" class="flag_switch need_selected" data-flag="need_selected"><span class="flag_text"><span class="flag_label">__MSG_customPrompts_form_label_need_selected__</span><span class="flag_fixed"> — __MSG_customPrompts_flag_fixed_suffix__</span></span></label>
+                                <label class="flag_row"><input type="checkbox" id="detail_need_signature" class="flag_switch need_signature" data-flag="need_signature"><span class="flag_text"><span class="flag_label">__MSG_customPrompts_form_label_need_signature__</span><span class="flag_fixed"> — __MSG_customPrompts_flag_fixed_suffix__</span></span></label>
+                                <label class="flag_row"><input type="checkbox" id="detail_need_custom_text" class="flag_switch need_custom_text" data-flag="need_custom_text"><span class="flag_text"><span class="flag_label">__MSG_customPrompts_form_label_need_custom_text__</span><span class="flag_fixed"> — __MSG_customPrompts_flag_fixed_suffix__</span></span></label>
+                                <label class="flag_row"><input type="checkbox" id="detail_define_response_lang" class="flag_switch define_response_lang" data-flag="define_response_lang"><span class="flag_text"><span class="flag_label">__MSG_customprompts_form_label_define_response_lang__</span><span class="flag_fixed"> — __MSG_customPrompts_flag_fixed_suffix__</span></span></label>
+                                <label class="flag_row" title="__MSG_customPrompts_form_label_use_diff_viewer_title__"><input type="checkbox" id="detail_use_diff_viewer" class="flag_switch use_diff_viewer" data-flag="use_diff_viewer"><span class="flag_text"><span class="flag_label">__MSG_customPrompts_form_label_use_diff_viewer__</span><span class="flag_fixed"> — __MSG_customPrompts_flag_fixed_suffix__</span></span></label>
+                                <span id="detail_diff_hint" class="small_label">__MSG_customPrompts_form_label_use_diff_viewer_title__</span>
+                            </div>
+
+                            <!-- After the options in the DOM so that Tab goes Action -> toggles
+                                 -> connection; the grid still shows it under the main column. -->
+                            <div class="detail_conn">
                                 <!-- Read-only summary of the connection override, for prompts
                                      whose override cannot be edited here. -->
                                 <div id="detail_conn_readonly" class="conn_readonly hiddendata">
@@ -186,16 +200,6 @@
                                         </table>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="detail_side">
-                                <span class="field_label">__MSG_customPrompts_label_options__</span>
-                                <label class="flag_row"><input type="checkbox" id="detail_need_selected" class="flag_switch need_selected" data-flag="need_selected"><span class="flag_text"><span class="flag_label">__MSG_customPrompts_form_label_need_selected__</span><span class="flag_fixed"> — __MSG_customPrompts_flag_fixed_suffix__</span></span></label>
-                                <label class="flag_row"><input type="checkbox" id="detail_need_signature" class="flag_switch need_signature" data-flag="need_signature"><span class="flag_text"><span class="flag_label">__MSG_customPrompts_form_label_need_signature__</span><span class="flag_fixed"> — __MSG_customPrompts_flag_fixed_suffix__</span></span></label>
-                                <label class="flag_row"><input type="checkbox" id="detail_need_custom_text" class="flag_switch need_custom_text" data-flag="need_custom_text"><span class="flag_text"><span class="flag_label">__MSG_customPrompts_form_label_need_custom_text__</span><span class="flag_fixed"> — __MSG_customPrompts_flag_fixed_suffix__</span></span></label>
-                                <label class="flag_row"><input type="checkbox" id="detail_define_response_lang" class="flag_switch define_response_lang" data-flag="define_response_lang"><span class="flag_text"><span class="flag_label">__MSG_customprompts_form_label_define_response_lang__</span><span class="flag_fixed"> — __MSG_customPrompts_flag_fixed_suffix__</span></span></label>
-                                <label class="flag_row" title="__MSG_customPrompts_form_label_use_diff_viewer_title__"><input type="checkbox" id="detail_use_diff_viewer" class="flag_switch use_diff_viewer" data-flag="use_diff_viewer"><span class="flag_text"><span class="flag_label">__MSG_customPrompts_form_label_use_diff_viewer__</span><span class="flag_fixed"> — __MSG_customPrompts_flag_fixed_suffix__</span></span></label>
-                                <span id="detail_diff_hint" class="small_label">__MSG_customPrompts_form_label_use_diff_viewer_title__</span>
                             </div>
                         </div>
                     </div>

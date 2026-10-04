@@ -783,15 +783,27 @@ mark.search_hit {
 .detail_grid {
     display: grid;
     grid-template-columns: minmax(360px, 1fr) 260px;
-    gap: 22px;
+    grid-template-rows: auto 1fr;
+    column-gap: 22px;
+    row-gap: 8px;
     padding: 18px;
 }
 
+/* .detail_conn follows .detail_side in the DOM (tab order: Action, options,
+   connection) but sits under .detail_main, with the options spanning both rows. */
+.detail_main { grid-column: 1; grid-row: 1; }
+.detail_conn { grid-column: 1; grid-row: 2; }
+.detail_side { grid-column: 2; grid-row: 1 / span 2; }
+
 @media (max-width: 1100px) {
-    .detail_grid { grid-template-columns: minmax(0, 1fr); }
+    .detail_grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; row-gap: 22px; }
+    .detail_main,
+    .detail_conn,
+    .detail_side { grid-column: auto; grid-row: auto; }
 }
 
-.detail_main {
+.detail_main,
+.detail_conn {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -802,6 +814,7 @@ mark.search_hit {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    align-self: start;
 }
 
 .field_label {
