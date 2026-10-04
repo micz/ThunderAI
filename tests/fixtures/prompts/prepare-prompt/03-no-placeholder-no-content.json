@@ -1,6 +1,6 @@
 {
   "description": "A prompt with no placeholder, no content, no language, no signature: the text alone",
-  "spec": ["spec 02 \"The picker prompts send HTML\": the content is appended - with none, nothing is"],
+  "spec": ["spec 02 \"How the final prompt is built (`preparePrompt()`)\": the empty parts are dropped; with neither selection nor body nothing is appended"],
   "args": {
     "curr_prompt": { "id": "prompt_user", "text": "Tell me a joke.", "need_signature": "0" }
   },

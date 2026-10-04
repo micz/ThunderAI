@@ -109,7 +109,7 @@ produced by running the code and saving the output. A saved output pins today's 
 included, and the test then proves nothing. Where the spec determines the whole output (a
 placeholder replaced by its value, the language joined "with a single space", a custom placeholder
 expanded before the built-ins) the fixture has `expected`. Where it determines only part of it
-("the content is appended in quotes": appended, quoted, but after which separator?) the fixture has
+(the signature: it is there, once, but in which words?) the fixture has
 `expect` with just that part, and says in `underSpecified` what it leaves out. The same rule holds
 for every other file. Expected strings that contain a shipped message (the add-tags statements, the
 reminder format) are assembled from that message in the en locale, as the spec describes, never read
@@ -166,9 +166,8 @@ Today: one known issue, listed with their reasons in `helpers/known-issues/promp
 Spec sections too vague to test, or that disagree with each other. They were not asserted, and
 they are input for improving spec 02/03:
 
-1. **`preparePrompt()` without a placeholder.** "The content is appended in quotes", but not after
-   which separator, where the language and signature statements go relative to it, or which content
-   is appended when there are both a selection and a body (the code prefers the selection).
+1. *(resolved: spec 02 "How the final prompt is built" now fixes the no-placeholder shape - text,
+   "content", signature, language, one space - and that the selection wins over the body.)*
 2. **The signature and language statements.** `getDefaultSignature()`'s wording, and
    `getDefaultLang()`'s format and its fallback when no language is set (`reply_same_lang` is only
    implied, by spec 02 saying the summary's forced statement "never" uses it).

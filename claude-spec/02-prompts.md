@@ -185,6 +185,33 @@ side is the `only_typed_html` twin that `getMailBody()` reads off the autoselect
 > quotes; with one, the placeholder supplies it. That is why `prompt_rewrite_polite` needed a
 > placeholder added rather than just a reworded sentence.
 
+### How the final prompt is built (`preparePrompt()`)
+
+`taPromptUtils.preparePrompt()` (`js/mzta-utils-prompt.js`) has two branches, chosen by whether the
+prompt text holds any `{%…%}` token (`hasPlaceholder()`). Both **end with the instructions**: the
+signature statement, then the language statement.
+
+- **No placeholder** — the parts `text`, `"content"`, `signature`, `language`, the empty ones dropped,
+  joined with **one space**. Nothing is trimmed, so a text that is only whitespace (the summarize
+  separator) reaches the result intact.
+  - `content` is `selection_text` when it is non-empty, otherwise `body_text`, for **every** prompt,
+    `need_selected: "0"` ones included: the menus always pass the user's selection, so a prompt run
+    with text selected works on the selection (`prompt_reply` then replies to the selected part).
+    With neither, nothing is appended.
+  - The content is wrapped in double quotes; quotes inside it are **not** escaped. It is the last
+    part before the instructions, so an unbalanced quote does not hide where it ends, and escaping
+    would alter the user's text (a model tends to copy `\"` back into its answer).
+- **With placeholders** — custom placeholders are expanded first, a bare `{%additional_text%}` is
+  numbered, the tokens are resolved and substituted (spec 03), then `" " + signature` (when asked)
+  and `" " + language` are appended and the whole result is **trimmed**.
+
+`signature` is `getDefaultSignature()` when `need_signature` is `"1"` (empty when no
+`default_sign_name` is set); `language` is the `chatgpt_lang` the caller passes (normally
+`getDefaultLang()`).
+
+Shipped prompts on the no-placeholder branch: `prompt_reply`, `prompt_classify`, `prompt_this`, and
+the summarize header and separator (which are passed no content).
+
 > **Reachability:** The popup and context menus are the only ways to invoke a prompt (the keyboard shortcut just opens the popup, which re-filters by `show_in`). Reachability is therefore fully determined by `show_in`: a prompt with `show_in === "none"` is in no menu and cannot be invoked. The old `enabled` (0/1) flag was removed — it was redundant with `show_in === "none"`. `getPrompts(onlyReachable = true, ...)` filters out prompts with `show_in === "none"`. See the `migrateEnabledToShowIn()` migration below for the one-time conversion of legacy data.
 
 ### User Properties (stored per-prompt in storage)

@@ -71,10 +71,12 @@ export const taPromptUtils = {
         let fullPrompt = '';
         
         if(!placeholdersUtils.hasPlaceholder(curr_prompt.text)){
-            // no placeholders, do as usual
+            // no placeholders: the content (the selection if any, else the body) is appended in
+            // quotes, and the signature and language statements come last, as in the placeholder
+            // branch below - the prompt always ends with the instructions (claude-spec/02-prompts.md)
             const signature = String(curr_prompt.need_signature) === "1" ? await taPromptUtils.getDefaultSignature() : "";
             const content = selection_text || body_text;
-            fullPrompt = [curr_prompt.text, signature, chatgpt_lang, content ? `"${content}"` : ""].filter(Boolean).join(" ");
+            fullPrompt = [curr_prompt.text, content ? `"${content}"` : "", signature, chatgpt_lang].filter(Boolean).join(" ");
         }else{
             // we have at least a placeholder, do the magic!
             // check if we have custom placeholders

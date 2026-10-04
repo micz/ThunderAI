@@ -1,13 +1,9 @@
 {
   "description": "A prompt with no placeholder and only a selection: the selection is the content appended",
-  "spec": ["spec 02 \"The picker prompts send HTML\": without a placeholder, the content is appended in quotes"],
+  "spec": ["spec 02 \"How the final prompt is built (`preparePrompt()`)\": content is selection_text when non-empty"],
   "args": {
     "curr_prompt": { "id": "prompt_user", "text": "Rewrite this politely.", "need_signature": "0" },
     "selection_text": "send me the file now"
   },
-  "expect": {
-    "startsWith": "Rewrite this politely.",
-    "endsWith": "\"send me the file now\""
-  },
-  "underSpecified": "which content is appended when both a selection and a body are given"
+  "expected": "Rewrite this politely. \"send me the file now\""
 }

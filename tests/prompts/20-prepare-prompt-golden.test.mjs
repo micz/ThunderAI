@@ -2,7 +2,7 @@
 // model. Golden tests: one fixture per case in tests/fixtures/prompts/prepare-prompt/, each holding
 // the arguments and the expected output, WRITTEN BY HAND from the spec sections it names (never
 // produced by running the code). A case whose exact output the spec does not determine (the
-// separator before appended content, the signature wording) asserts only what the spec does say
+// signature wording) asserts only what the spec does say
 // (`expect`) and names the rest in `underSpecified`; see tests/prompts/README.md.
 //
 // Fixture shape:
@@ -15,6 +15,7 @@
 //   args            the preparePrompt() arguments (curr_prompt unless prompt_from)
 //   expected        the exact output, or
 //   expect          {startsWith, endsWith, includes[], excludes[], occurrences{text: n},
+//                    inOrder[] (each found after the previous one),
 //                    promptTextIncludes (on the prompt's own text, before the call)}
 //   underSpecified  optional: what the spec leaves open, and so is not asserted
 //
@@ -63,7 +64,7 @@ test('the golden fixtures are well formed', () => {
         assert.ok(('expected' in f) !== ('expect' in f), file + ': exactly one of expected / expect');
         assert.ok(f.prompt_from || f.args?.curr_prompt, file + ': a prompt');
         if (f.expect) {
-            const allowed = ['startsWith', 'endsWith', 'includes', 'excludes', 'occurrences', 'promptTextIncludes'];
+            const allowed = ['startsWith', 'endsWith', 'includes', 'excludes', 'occurrences', 'inOrder', 'promptTextIncludes'];
             for (const key of Object.keys(f.expect)) assert.ok(allowed.includes(key), `${file}: expect.${key}`);
         }
     }
@@ -94,6 +95,12 @@ for (const file of FIXTURES) {
         if (e.endsWith !== undefined) assert.ok(out.endsWith(e.endsWith), `ends with ${JSON.stringify(e.endsWith)}: ${JSON.stringify(out)}`);
         for (const part of e.includes || []) assert.ok(out.includes(part), `includes ${JSON.stringify(part)}: ${JSON.stringify(out)}`);
         for (const part of e.excludes || []) assert.ok(!out.includes(part), `excludes ${JSON.stringify(part)}: ${JSON.stringify(out)}`);
+        let from = 0;
+        for (const part of e.inOrder || []) {
+            const at = out.indexOf(part, from);
+            assert.ok(at >= 0, `${JSON.stringify(part)} after position ${from}: ${JSON.stringify(out)}`);
+            from = at + part.length;
+        }
         for (const [part, n] of Object.entries(e.occurrences || {})) {
             assert.equal(count(out, part), n, `${JSON.stringify(part)} occurs ${n} time(s): ${JSON.stringify(out)}`);
         }

@@ -1,17 +1,12 @@
 {
-  "description": "A prompt with no placeholder: the message body is appended, in quotes",
+  "description": "A prompt with no placeholder: the message body is appended, in quotes, after one space",
   "spec": [
-    "spec 02 \"The picker prompts send HTML\": without a placeholder, the content is appended in quotes",
+    "spec 02 \"How the final prompt is built (`preparePrompt()`)\": no placeholder - text, \"content\", joined with one space",
     "spec 08a \"Output-format safety\", note 2: preparePrompt() appends the message itself to a text with no placeholder"
   ],
   "args": {
     "curr_prompt": { "id": "prompt_user", "text": "Summarize this email.", "need_signature": "0" },
     "body_text": "Hello Bob,\nthe meeting is moved to Friday."
   },
-  "expect": {
-    "startsWith": "Summarize this email.",
-    "endsWith": "\"Hello Bob,\nthe meeting is moved to Friday.\"",
-    "occurrences": { "Hello Bob,\nthe meeting is moved to Friday.": 1 }
-  },
-  "underSpecified": "the separator between the text and the quoted content"
+  "expected": "Summarize this email. \"Hello Bob,\nthe meeting is moved to Friday.\""
 }
