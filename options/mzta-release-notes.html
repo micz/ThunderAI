@@ -52,6 +52,8 @@
         <li>Fix: spaces around the <i>Default signature name</i> and the <i>Default language for the responses</i> are now ignored, and a full stop is no longer doubled when the value already ends with one.</li>
         <li>Fix: a custom data placeholder that is disabled in the Data Placeholders page is no longer replaced with its text in the prompts. Its placeholder is left as written, as for a placeholder that does not exist.</li>
         <li>Fix: a prompt using the <i>{%tags_current_email%}</i> placeholder no longer fails while composing or in the translate prompt, where the <i>{%tags_full_list%}</i> placeholder now also contains the list of the tags [<a href="https://github.com/micz/ThunderAI/issues/911">#911</a>].</li>
+        <li>Fix: a placeholder with a parameter written with spaces around the colon, like <i>{%mail_headers: x-spam-score%}</i>, now works like <i>{%mail_headers:x-spam-score%}</i>. Previously the prompt editor showed it as valid, but the placeholder itself was sent to the AI.</li>
+        <li>Fix: an additional text field left empty in the AI chat window is now sent as an empty text. Previously, with the <i>Placeholders: use default value</i> option disabled, the placeholder itself was sent to the AI.</li>
         <li>Many improvements.</li>
         <li>Minor bugs fixed.</li>
         <li>...</li>

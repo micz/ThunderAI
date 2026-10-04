@@ -307,12 +307,14 @@ Dynamic placeholders use a colon separator to pass a parameter:
 
 The `is_dynamic: "1"` property signals this behavior in the placeholder definition.
 
-**Token syntax.** The parameter follows the colon **immediately**, with no space on either side of
-it: `{%id:value%}`. Spaces are allowed only at the edges of the token (`{% id:value %}`). A space
-before the colon (`{%id :value%}`) is not a dynamic token: the editor flags it red, it is not
-resolved, it reaches the prompt as written. A space after the colon (`{%id: value%}`) is not resolved
-either — the value is looked up under `id:value` while the token is keyed `id: value` — **but the
-editor does not flag it** (`findPlaceholder()` only checks the `id:` prefix): a known inconsistency.
+**Token syntax.** `{%id:value%}`. Spaces are allowed at the edges of the token and **around the
+colon**: `{% id:value %}`, `{%id: value%}`, `{%id :value%}` and `{% id : value %}` are all the same
+token. Every function that matches a token works on its canonical key, `normalizeTokenKey()` (inner
+text trimmed, the spaces around the **first** colon removed): `findPlaceholder()` — and so the editor
+—, `replacePlaceholders()` (for the token and for the keys of the values it is handed),
+`hasPlaceholder()` and `getPlaceholdersAdditionalTextArray()`. The editor and the runtime therefore
+always agree on whether a token resolves. A fixed placeholder still takes no parameter:
+`{%mail_subject : x%}` matches nothing.
 
 ### `additional_text`: the user's input, filled late
 
@@ -327,17 +329,18 @@ prepared, in the chat window. They are the deferred half of `skip_additional_tex
 2. **The menus** (`js/mzta-menus.js`) build `custom_text_array` from the renumbered text with
    `getPlaceholdersAdditionalTextArray()`: one entry `{placeholder, info}` per **distinct** label, in
    order of first appearance — `placeholder` is the token as written, `info` the trimmed label (`"#1"`
-   for a bare token). The label is compared after trimming, but the late fill keys the text by the
-   token as written, so the same label spelled with and without a space after the colon is one field
-   and only the first spelling is filled (the inconsistency above).
+   for a bare token). The same label spelled with different spaces around the colon is one field,
+   and every spelling is filled: the late fill keys the answer by the token as written, and
+   `replacePlaceholders()` normalizes both sides.
 3. **The chat window** (`api_webchat/messageInput.js`), when the prompt has `need_custom_text: "1"`,
    asks one step per entry, showing the label as `[ID: <info>]` and a `n/total` counter when there is
    more than one. A prompt with `need_custom_text: "1"` and no `additional_text` token asks a single
    text, which is **appended** to the prompt after a space.
 4. **The late fill** (`api_webchat/controller.js`) replaces each token with its text through
-   `replacePlaceholders()`, keyed by the token's inner text (`additional_text:tone`), with
-   `placeholders_use_default_value` deciding what an empty answer becomes (the `||` chain of
-   *Placeholder Resolution Order*).
+   `replacePlaceholders()`, keyed by the token's inner text (`additional_text:tone`). An answer the
+   user **gave** is used as it is, an **empty** one included: it becomes `""`, never the literal
+   token, whatever `placeholders_use_default_value` says (the user saw the field and left it blank).
+   Only a token with no answer at all follows the `||` chain of *Placeholder Resolution Order*.
 
 The tokens are shown only when `need_custom_text` is `"1"`: the Custom Prompts editor flags
 `need_custom_text` when the text has an `additional_text` token but the flag is off (see

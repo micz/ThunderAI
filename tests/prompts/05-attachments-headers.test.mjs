@@ -92,6 +92,12 @@ k.test('header-dynamic', '{%mail_headers:x-spam-score%} is the X-Spam-Score head
     assert.equal(await resolve('{%mail_headers:X-Spam-Score%}', { curr_message: { id: 7 } }), '4.2');
 });
 
+k.test('header-spaced-colon', 'spaces around the colon resolve the header like {%mail_headers:x%}', async () => {
+    for (const text of ['{%mail_headers: x-spam-score%}', '{%mail_headers :x-spam-score%}', '{% mail_headers : x-spam-score %}']) {
+        assert.equal(await resolve(text, { curr_message: { id: 7 } }), '4.2', text);
+    }
+});
+
 k.test('header-two-dynamic', 'two mail_headers tokens get one value each', async () => {
     assert.equal(await resolve('{%mail_headers:subject%} / {%mail_headers:x-spam-score%}', { curr_message: { id: 7 } }),
         'Quarterly report / 4.2');

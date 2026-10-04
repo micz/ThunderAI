@@ -179,7 +179,7 @@ they are input for improving spec 02/03:
 8. *(resolved: spec 03 "Custom Placeholders" now says a disabled custom placeholder is treated as nonexistent and is not expanded; `03` and fixture 29 test it.)*
 9. *(resolved: spec 03 "Custom Placeholders" now documents the `thunderai_custom_` prefix: stored on the id, shown without it, added once by `setCustomPlaceholders()`.)*
 10. *(resolved: spec 03 "Value formats" now gives the attachments, headers, tags and date formats and the `<` / `>` escaping; `04` and `05` test them exactly.)*
-11. *(resolved: spec 03 "Dynamic Placeholders" now gives the token syntax and the whole `additional_text` flow. Still open: a space after the colon is accepted by the editor but not resolved.)*
+11. *(resolved: spec 03 "Dynamic Placeholders" now gives the token syntax, spaces around the colon included (`normalizeTokenKey()` everywhere), and the whole `additional_text` flow, an empty answer becoming empty.)*
 12. *(resolved: `{%empty%}` always resolves to nothing, and `buildTranslationPrompt()` always uses the default values, so an empty exclusion list or subject is sent empty.)*
 13. **`preparePrompt()` mutates its prompt.** It rewrites `curr_prompt.text` in place (custom
     expansion, the `additional_text` renumbering). The spec says nothing about it. A caller that

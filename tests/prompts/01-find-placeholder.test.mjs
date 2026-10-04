@@ -88,8 +88,17 @@ k.test('fixed-takes-no-parameter', 'a fixed placeholder (is_dynamic "0") does no
     assert.equal(find('reading:x', '1'), null);
 });
 
-k.test('dynamic-space-before-colon', 'a space before the colon is not a dynamic token', () => {
-    assert.equal(find('dyn_reading :x'), null);
+k.test('dynamic-spaces-around-colon', 'spaces around the colon are the same dynamic token', () => {
+    for (const inner of ['dyn_reading :x', 'dyn_reading: x', 'dyn_reading : x', ' dyn_reading  :  x ']) {
+        assert.equal(find(inner), 'dyn_reading', JSON.stringify(inner));
+    }
+    assert.equal(find('always : x'), null, 'a fixed placeholder still takes no parameter');
+});
+
+k.test('normalize-token-key', 'normalizeTokenKey(): trimmed, no spaces around the first colon', () => {
+    assert.equal(ph.normalizeTokenKey(' mail_headers : X-Spam '), 'mail_headers:X-Spam');
+    assert.equal(ph.normalizeTokenKey('additional_text:a : b'), 'additional_text:a : b', 'only the first colon');
+    assert.equal(ph.normalizeTokenKey(' mail_subject '), 'mail_subject');
 });
 
 k.test('dynamic-needs-colon', 'a dynamic id is matched as id:..., never as a prefix of a longer id', () => {

@@ -164,6 +164,38 @@ k.test('additional-text-renumbered', 'the bare tokens renumbered by preparePromp
     assert.deepEqual(fields.map(f => f.info), ['#1', '#2', 'tone']);
 });
 
+k.test('spaced-colon-replaced', 'a dynamic token with spaces around the colon gets the value keyed id:value', () => {
+    assert.equal(replace('{%mail_headers : X-A%}|{%mail_headers: X-A%}', { 'mail_headers:X-A': 'one' }), 'one|one');
+});
+
+k.test('has-specific-spaced-colon', 'hasPlaceholder() finds a dynamic token with spaces around the colon', () => {
+    assert.equal(ph.hasPlaceholder('{%additional_text : tone%}', 'additional_text'), true);
+});
+
+// The chat window's late fill (api_webchat/controller.js) keys each answer by the token as written.
+const lateFill = (text, answers, use_default_value = false) => {
+    const fields = ph.getPlaceholdersAdditionalTextArray(text);
+    const subs = Object.fromEntries(fields.map((f, i) => [f.placeholder.replace(/^{%|%}$/g, '').trim(), answers[i]]));
+    return replace(text, subs, { use_default_value });
+};
+
+k.test('late-fill-spellings', 'one label spelled with and without spaces is one field, and every spelling is filled', () => {
+    const text = 'A {%additional_text: tone %} B {%additional_text:tone%} C {%additional_text :tone%}';
+    assert.equal(ph.getPlaceholdersAdditionalTextArray(text).length, 1);
+    assert.equal(lateFill(text, ['formal']), 'A formal B formal C formal');
+});
+
+k.test('late-fill-empty-answer', 'an empty answer becomes empty, never the literal token, whatever the default values say', () => {
+    for (const use_default_value of [false, true]) {
+        assert.equal(lateFill('A [{%additional_text:tone%}] B', ['']), 'A [] B', String(use_default_value));
+    }
+});
+
+k.test('late-fill-unanswered', 'a token with no answer at all still follows the || chain', () => {
+    assert.equal(replace('[{%additional_text:tone%}]', {}), '[{%additional_text:tone%}]');
+    assert.equal(replace('[{%additional_text:tone%}]', {}, { use_default_value: true }), '[]');
+});
+
 k.test('additional-text-none', 'no additional_text token, no field', () => {
     assert.deepEqual(ph.getPlaceholdersAdditionalTextArray('{%mail_subject%}'), []);
 });

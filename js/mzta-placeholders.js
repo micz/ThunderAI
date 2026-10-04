@@ -471,9 +471,20 @@ export const placeholdersUtils = {
      *             ones there (a known quirk, left as is) -- but replicating that
      *             strictness here would flag perfectly valid text as an error.
      */
+    /*
+     *  The canonical key of a token's inner text: trimmed, and with the spaces around the first
+     *  colon removed, so {% id : value %}, {%id: value%} and {%id:value%} are the same token.
+     *  Used by every function that matches a token (findPlaceholder, replacePlaceholders - for
+     *  the token and for the keys of the values it is handed -, hasPlaceholder, the
+     *  additional_text field list), so the editor and the runtime always agree.
+     */
+    normalizeTokenKey(inner) {
+        return String(inner ?? '').trim().replace(/^([^:]*?)\s*:\s*/, '$1:');
+    },
+
     findPlaceholder(inner, activePHs, type = null) {
         if (!inner || !Array.isArray(activePHs)) return null;
-        const id = String(inner).trim();
+        const id = placeholdersUtils.normalizeTokenKey(inner);
         const found = activePHs.find(ph => ph.id === id
             || (ph.is_dynamic == 1 && id.startsWith(ph.id + ':')));
         if (!found) return null;
@@ -532,15 +543,22 @@ export const placeholdersUtils = {
             skip_additional_text = false
         } = args || {};
         // console.log(">>>>>>>>>> replacePlaceholders replacements: " + JSON.stringify(replacements));
+        // The values keyed like the tokens: a caller may key one by the token as written
+        // ("additional_text: tone", the chat window's late fill).
+        const subs = {};
+        for (const [key, value] of Object.entries(replacements || {})) {
+            subs[placeholdersUtils.normalizeTokenKey(key)] = value;
+        }
         // Regular expression to match patterns like {%...%}
         return text.replace(/{%\s*(.*?)\s*%}/g, function(match, p1) {
             // console.log(">>>>>>>>>> replacePlaceholders match: " + JSON.stringify(match));
             // console.log(">>>>>>>>>> replacePlaceholders p1: " + JSON.stringify(p1));
             // p1 contains the key inside {% %}
-            if (skip_additional_text && ((p1 === 'additional_text') || (p1.startsWith('additional_text:')))) {
+            const key = placeholdersUtils.normalizeTokenKey(p1);
+            if (skip_additional_text && ((key === 'additional_text') || (key.startsWith('additional_text:')))) {
                 return match;
             }
-            const currPlaceholder = defaultPlaceholders.find(ph => (ph.id === p1) || (ph.is_dynamic == 1 && p1.startsWith(ph.id + ':')));
+            const currPlaceholder = defaultPlaceholders.find(ph => (ph.id === key) || (ph.is_dynamic == 1 && key.startsWith(ph.id + ':')));
             // console.log(">>>>>>>>>> replacePlaceholders currPlaceholder: " + JSON.stringify(currPlaceholder));
             if (!currPlaceholder) {
                 return match;
@@ -550,8 +568,13 @@ export const placeholdersUtils = {
             if (currPlaceholder.id === 'empty') {
                 return '';
             }
+            // An answer the user gave to an additional_text field is used as it is, an empty one
+            // included: the user saw the field and left it blank, which means "nothing here".
+            if (currPlaceholder.id === 'additional_text' && Object.prototype.hasOwnProperty.call(subs, key)) {
+                return String(subs[key] ?? '');
+            }
             // Replace if found, otherwise keep the original or substitute with default value
-            return replacements[p1] || replacements[currPlaceholder.id] || (use_default_value ? currPlaceholder.default_value : match);
+            return subs[key] || subs[currPlaceholder.id] || (use_default_value ? currPlaceholder.default_value : match);
         });
     },
 
@@ -580,7 +603,9 @@ export const placeholdersUtils = {
           // eaten and the pattern would read {%s*<id> — matching {%id%} only by
           // accident (zero "s") and missing the spaced form {% id %} entirely,
           // which replacePlaceholders() does accept.
-          regex = new RegExp(`{%\\s*${placeholder}(:.*?)?\\s*%}`);
+          // (\\s*:...)? and not (:...)?: spaces around the colon are the same token
+          // (normalizeTokenKey()).
+          regex = new RegExp(`{%\\s*${placeholder}(\\s*:.*?)?\\s*%}`);
         } else {
           // Otherwise, we search for any placeholder in the format {% ... %}
           regex = /{%\s*(.*?)\s*%}/;
@@ -608,7 +633,8 @@ export const placeholdersUtils = {
     },
 
     getPlaceholdersAdditionalTextArray(prompt_text){
-        const regex = /{%\s*additional_text(?::(.*?))?\s*%}/g;
+        // A space before the colon is the same token (normalizeTokenKey()).
+        const regex = /{%\s*additional_text(?:\s*:(.*?))?\s*%}/g;
         let matches = [];
         let match;
         let foundIds = new Set();
