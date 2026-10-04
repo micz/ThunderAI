@@ -1,0 +1,14 @@
+{
+  "description": "{%mail_text_body%} is the body, even with a selection; nothing else is appended",
+  "spec": [
+    "spec 03 \"Built-in Placeholders\": mail_text_body = full plain text of the email",
+    "spec 03 \"Newline contract of the body placeholders\": the extracted lines reach the prompt",
+    "spec 02 \"The picker prompts send HTML - except one\": with a placeholder, the placeholder supplies the content"
+  ],
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Summarize: {%mail_text_body%}", "need_signature": "0" },
+    "body_text": "Line 1\nLine 2",
+    "selection_text": "a selected part"
+  },
+  "expected": "Summarize: Line 1\nLine 2"
+}

@@ -1,0 +1,10 @@
+{
+  "description": "With a placeholder, the language statement follows the text, joined with a single space",
+  "spec": ["spec 02 \"Summarize: Dual-Mode Prompt System\": preparePrompt() joins chatgpt_lang to the email body with a single space"],
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Reply to this email: {%mail_text_body%}", "need_signature": "0" },
+    "chatgpt_lang": "Reply in Italian.",
+    "body_text": "Can we meet on Monday?"
+  },
+  "expected": "Reply to this email: Can we meet on Monday? Reply in Italian."
+}

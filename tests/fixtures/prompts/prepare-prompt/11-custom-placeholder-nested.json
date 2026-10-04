@@ -1,0 +1,14 @@
+{
+  "description": "A custom placeholder is expanded first, so a built-in placeholder in its text is resolved too",
+  "spec": ["spec 03 \"Placeholder Resolution Order\": custom placeholders are expanded first (step 2), the built-ins substituted after (step 4)"],
+  "storage": {
+    "_custom_placeholder": [
+      { "id": "thunderai_custom_about", "name": "About", "text": "the email titled \"{%mail_subject%}\"", "type": "0", "is_default": "0", "is_dynamic": "0", "enabled": 1 }
+    ]
+  },
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Comment on {%thunderai_custom_about%}.", "need_signature": "0" },
+    "subject_text": "Q3 results"
+  },
+  "expected": "Comment on the email titled \"Q3 results\"."
+}

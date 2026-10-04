@@ -1,0 +1,222 @@
+# Tests: prompts and placeholders
+
+Level-1 tests of the prompt system and the placeholder system: how the prompts are stored, merged,
+normalised and migrated, and what text actually reaches the model. The contract is the spec, as
+everywhere in the suite:
+
+- **prompts**: [`claude-spec/02-prompts.md`](../../claude-spec/02-prompts.md);
+- **placeholders**: [`claude-spec/03-placeholders.md`](../../claude-spec/03-placeholders.md).
+
+The modules under test are `js/mzta-prompts.js`, `js/mzta-placeholders.js` and
+`js/mzta-utils-prompt.js` (`taPromptUtils`), plus the few pure helpers of `js/mzta-utils.js` and
+`js/mzta-editor-highlight.js` the spec ties to them. Each test file names the spec sections it
+covers in its opening comment. How to run the suite, the two levels, the mock and the known-issue
+mechanism are in the general [`tests/README.md`](../README.md). Paths below are relative to `tests/`.
+
+Everything here runs with **no managed policy**. Organization prompts, enforced special-prompt
+texts, restrictions, provider overrides and per-feature connections are spec 08a/08b, covered by
+the managed area ([`managed/README.md`](../managed/README.md)). Where a function has a managed
+branch, only its unmanaged branch is tested here.
+
+## Running
+
+```sh
+node --test "tests/prompts/*.test.mjs"     # this area only, from the repository root
+```
+
+Level 1 only: nothing to install, no jsdom. The area imports only `helpers/core/` and its own
+`helpers/known-issues/prompts.mjs`, and has **no plugin**.
+
+## Layout
+
+```
+tests/
+├── helpers/known-issues/prompts.mjs   the known issues, their shape (validateKnown()), and
+│                                      caseTests(), the one way a test of the area is declared
+├── fixtures/prompts/prepare-prompt/   the golden cases of preparePrompt(), one JSON per case
+└── prompts/
+    ├── 01-find-placeholder.test.mjs       spec 03 "Invalid placeholder feedback", "Dynamic Placeholders"
+    ├── 02-replace-placeholders.test.mjs   spec 03 "Placeholder Resolution Order" (4-5), "Adding a New
+    │                                      Built-in Placeholder", "mail_text_body vs mail_plain_text_part"
+    ├── 03-custom-placeholders.test.mjs    spec 03 "Custom Placeholders", "Built-in Placeholders",
+    │                                      "Placeholder Resolution Order" (2); spec 05 the id prefix
+    ├── 04-placeholder-values.test.mjs     spec 03 "Placeholder Resolution Order" (3), the two newline
+    │                                      contracts, "Selection twins", "mail_text_body vs
+    │                                      mail_plain_text_part", "The address placeholders..."
+    ├── 05-attachments-headers.test.mjs    spec 03 "Built-in Placeholders", "Dynamic Placeholders"
+    ├── 10-prompt-flags.test.mjs           spec 02 "The five boolean flags are normalized on read",
+    │                                      normalizePromptFields(), normalizeEnabledToShowIn()
+    ├── 11-prompt-views.test.mjs           spec 02 the three getters, "Reachability", "User Properties",
+    │                                      "Special Prompts", "Special Prompt Visibility Dependencies"
+    ├── 12-prompt-storage.test.mjs         spec 02 the storage writers, saveSpecialPromptTexts()
+    ├── 13a-migration-menu-order.test.mjs  spec 02 "Alphabetic-to-Position Migration" (it runs)
+    ├── 13b-migration-menu-order-done.test.mjs   ... (it has run: nothing written)
+    ├── 14-migration-enabled.test.mjs      spec 02 "Enabled-to-show_in Migration"
+    ├── 15-export-import.test.mjs          spec 02 "Per-Prompt API Override Properties", export / import
+    ├── 20-prepare-prompt-golden.test.mjs  spec 02 + 03: preparePrompt(), from the golden fixtures
+    ├── 21-finalize-prompts.test.mjs       spec 02 "Add tags: extra prompt statements", "Calendar event /
+    │                                      task: reminder (#887)"; spec 03 the calendar address strip
+    ├── 22-response-tags.test.mjs          spec 02 "The text carries the response format": getTagsFromResponse()
+    ├── 23-translation-summary.test.mjs    spec 02 "Translate", "Summarize" (getSummaryLang()),
+    │                                      "Missing special prompts"; spec 03 "Who supplies the values"
+    └── 99-harness-known-issues.test.mjs   the known-issue shape
+```
+
+## Contexts and the mock
+
+One test file is one extension context, as everywhere in the suite. Most files start a
+**background** context with `startBackground({policy: null, local})`; the managed plugin, when the
+branch has it, runs `loadManaged()` there, which with no policy only proves the unmanaged path. A
+test that changes a preference or a store mid-file does what a user does (a setting changed, a page
+saved): it never resets a module to fake a second context.
+
+Three placeholder sources need APIs the core mock does not model: `messages.listAttachments`
+(`{%mail_attachments_info%}`), `messages.getFull` (`{%mail_headers:…%}`, `{%mail_full_headers%}`)
+and `messages.listInlineTextParts` (the translation body). They are **not** added by a plugin. A
+plugin is loaded into every context the suite starts, the managed area's strict DOM pages included,
+where an API the proxy did not know about would quietly change what those tests detect. Instead the
+three files that need them (`05`, `20`, `23`) start a **page** context with
+`startPage({decorate})`, the core entry point that takes a caller's decoration, and add the API for
+that file alone. A page is also where the popup and the menus run these placeholders.
+
+`js/lib/mzta-html-lines.js` is a classic script that the background page loads before its module
+entry point (`mzta-background.html`). `normalizePlainTextPart()` and `getMailInlineTextParts()` read
+its globals. The files that need it (`04`, `20`, `23`) run it with `vm.runInThisContext()`, as the
+DOM harness does for a page's classic scripts. Nothing else of it is used: its HTML projection needs
+a DOM.
+
+## The golden fixtures
+
+`20-prepare-prompt-golden` runs `taPromptUtils.preparePrompt()` on every file of
+`fixtures/prompts/prepare-prompt/` and compares the result with the fixture's expected output.
+
+```jsonc
+{
+  "description": "what the case shows",
+  "spec": ["spec 03 \"…\": the sentence the expected value follows from"],
+  "storage": { "placeholders_use_default_value": true },   // optional, on top of the BASE the runner sets
+  "prompt_from": "prompt_rewrite_formal",                  // optional: a built-in prompt, its shipped text
+  "args": { "curr_prompt": {…}, "body_text": "…", "selection_text": "…", "msg_text": {…}, … },
+  "expected": "the exact output",                          // or:
+  "expect": { "startsWith": "…", "endsWith": "…", "includes": […], "excludes": […],
+              "occurrences": { "text": 1 }, "promptTextIncludes": "{%…%}" },
+  "underSpecified": "what the spec leaves open, so is not asserted"
+}
+```
+
+**Every expected value is written by hand, from the spec sections the fixture names.** None was
+produced by running the code and saving the output. A saved output pins today's behaviour, bugs
+included, and the test then proves nothing. Where the spec determines the whole output (a
+placeholder replaced by its value, the language joined "with a single space", a custom placeholder
+expanded before the built-ins) the fixture has `expected`. Where it determines only part of it
+("the content is appended in quotes": appended, quoted, but after which separator?) the fixture has
+`expect` with just that part, and says in `underSpecified` what it leaves out. The same rule holds
+for every other file. Expected strings that contain a shipped message (the add-tags statements, the
+reminder format) are assembled from that message in the en locale, as the spec describes, never read
+back from the function.
+
+Each case starts from the same `BASE` storage (default values off, no signature, no language, no
+custom placeholder), so a case never depends on the one before it. To add a case, add a file. The
+runner picks it up, and the first test checks its shape.
+
+## Known issues: TODO tests
+
+The general rule is in [`tests/README.md`](../README.md#known-issues-todo-tests). Every test of the
+area is declared with `caseTests(file).test(caseId, name, fn)`, so it has a **case id**, unique in
+its file. A known issue names exactly one test, as "a file × a case id":
+
+```js
+KNOWN = { '<file stem>': { '<case id>': REASONS.<name> } }
+```
+
+`validateKnown()` (run by `99-harness-known-issues`) refuses a file that is not in `tests/prompts/`,
+a case id that is not a plain slug (`*` or a pattern would hide a whole file), a reason that names no
+spec section (`spec 02 "<section>"` / `spec 03 "<section>"`), and a reason that is not one of
+`REASONS`. An unused reason fails too. Each file ends with `k.coverage()`: an entry naming a case id
+the file does not declare fails it, so an entry cannot outlive a renamed or removed test.
+
+Today: eight known issues, listed with their reasons in `helpers/known-issues/prompts.mjs`:
+
+| File × case | Spec section | What the code does |
+|---|---|---|
+| `12 × default-props-nine-keys` | 02 "Organization prompts (the fourth set)" | `_default_prompts_properties` holds ten keys per prompt, not nine |
+| `15 × no-api-settings-chatgpt-web` | 02 "Per-Prompt API Override Properties" | a custom prompt exports `chatgpt_web_model` / `_project` / `_custom_gpt` with `include_api_settings = false` |
+| `15 × enabled-never-exported` | 02 "Enabled-to-show_in Migration" | a custom prompt's `enabled` is exported |
+| `20 × 21-picker-polite-selection`, `22-picker-polite-body` | 02 "The picker prompts send HTML - except one" | `prompt_rewrite_polite` uses `{%selected_html%}`, not `{%mail_html_body_or_selected%}`: with no selection the body is never sent |
+| `20 × 23-picker-proofread` | same | `prompt_proofread_this` uses `"{%selected_html%}"` (HTML), not `{%mail_typed_text%}` (plain text) |
+| `21 × calendar-strips-addresses-entirely` | 03 "The address placeholders in the compose window" | only the first `{%cc_list%}` / `{%recipients%}` is stripped |
+| `23 × translate-lang-fallback` | 02 "Translate: Inline-Only Prompt System" | with `translate_lang` empty the literal `{%thunderai_translate_lang%}` is sent, not the `default_chatgpt_lang` fallback |
+
+## What is not covered
+
+- **The managed branches** (constraint of the area): organization prompts and shadowing, the
+  `_disable_*` restrictions, enforced texts, the locked-off and policy-supplied provider overrides,
+  the transient policy flags at the storage gates and on export, the policy-supplied API key
+  marker. Spec 08a/08b, in `tests/managed/`. So is `checkSpecialPromptText()`: its contract table is
+  spec 08a's, tested row by row in `managed/06c`, as is `idnum` at the storage gates (`managed/11`).
+- **The Menu System** (spec 02 "Menu System"): menu construction in `js/mzta-menus.js` and the
+  `menus` API, and the icon resolution (`getBuiltInPromptIcon()` / `getContextMenuIcon()`).
+- **The Menu Order page** and the **Placeholder Autocomplete** and **highlight mirror** UI: DOM. The
+  level-1 half of "Invalid placeholder feedback" (the two tiers, the highlight matrix) is in `01`.
+- **The extraction side of the newline contracts**: `getMailBody()`, `selectionTwin()`, the compose
+  DOM walk (`js/mzta-compose-script.js`), `htmlBodyToPlainText()` and `mztaHtmlToLines()` all need a
+  DOM. Level 1 sees only that the value the caller extracted reaches the prompt unchanged (`04`, `20`).
+- **`buildSummaryPrompt()`**: it always converts the HTML body to text, which needs `DOMParser`.
+  `getSummaryLang()`, the part that decides the language statements, is in `23`.
+- **The response side** of the special features (`normalizeReminderMinutes()`,
+  `appendMessageLinkToDescription()`, the spam report), and `savePrompt()` / `clearPromptAPI()`
+  beyond their use in `12`.
+
+## Under-specified
+
+Spec sections too vague to test, or that disagree with each other. They were not asserted, and
+they are input for improving spec 02/03:
+
+1. **`preparePrompt()` without a placeholder.** "The content is appended in quotes", but not after
+   which separator, where the language and signature statements go relative to it, or which content
+   is appended when there are both a selection and a body (the code prefers the selection).
+2. **The signature and language statements.** `getDefaultSignature()`'s wording, and
+   `getDefaultLang()`'s format and its fallback when no language is set (`reply_same_lang` is only
+   implied, by spec 02 saying the summary's forced statement "never" uses it).
+3. **`false` as a flag value.** `normalizePromptFlags()` lists `true` as "on" but not `false` as
+   "off". The code treats `false` as out of domain, so it takes the fallback, and a built-in "1" turns
+   it on. `normalizeEnabledToShowIn()` likewise only names `0` / `"0"` as "off".
+4. **"Missing special prompts" vs `getSpecialPrompts()`.** The spec says the lookups return
+   `undefined` when the user has removed an entry. But `getSpecialPrompts()` re-adds every missing
+   shipped special prompt (and writes the store back), which no spec section documents. So a removed
+   entry cannot yield `undefined`, and only `getDefaultLang(undefined)` is tested.
+5. **The migration flags' storage area.** Spec 02 says `dynamic_menu_order_alphabet` is set "in sync
+   storage" and calls `_migrated_enabled_to_showin` a "sync flag". Spec 05 says both sit in the
+   `PREFS_AREA`, `storage.local`, and the code agrees. The tests follow spec 05. Spec 02 should be
+   brought in line.
+6. **"Visible prompts" in the alphabetic migration.** The spec contrasts them with the *hidden special*
+   prompts, so `13a` reads them as "every prompt but those two". Whether a custom or built-in prompt
+   with `show_in: "none"` should get a position is not stated (the code gives it one).
+7. **"Nine display keys".** Spec 02 does not list them, so the known issue above can only count.
+   Listing the keys would also tell which one is extra.
+8. **A disabled custom placeholder** (`enabled: 0`). Spec 03 defines the property but not what
+   "disabled" does. `getPlaceholders(true)` hides it, but `replaceCustomPlaceholders()` still expands
+   it in a prompt.
+9. **The `thunderai_custom_` prefix.** Only spec 05 mentions it, as a UI detail.
+   `validateCustomDataPH_ID()` / `stripCustomDataPH_ID_Prefix()` are tested for what any prefix rule
+   implies (added once, round trips).
+10. **Value formats.** `{%mail_attachments_info%}` ("information about the attachments"), the
+    separator of `{%tags_current_email%}`, and whether header and address values are HTML-escaped
+    (the code turns `<` / `>` into `&lt;` / `&gt;` in `author`, `recipients`, `cc_list` and the header
+    placeholders). The tests use values that do not depend on it.
+11. **`additional_text`.** The shape of `getPlaceholdersAdditionalTextArray()`, and the renumbering of
+    a bare `{%additional_text%}` into `{%additional_text:#N%}` by `preparePrompt()`. Neither is in the
+    spec, and whether `{% id : value %}` (spaces around the colon) is a valid dynamic token is not
+    stated either.
+12. **`{%empty%}`.** The built-in table says it "resolves to nothing", but with
+    `placeholders_use_default_value` off the `||` chain the spec documents leaves it as the literal
+    token. The same chain makes `buildTranslationPrompt()`, which always passes
+    `use_default_value: false`, send an empty `translate_exclude_lang` as the literal
+    `{%thunderai_translate_exclude_lang%}`.
+13. **`preparePrompt()` mutates its prompt.** It rewrites `curr_prompt.text` in place (custom
+    expansion, the `additional_text` renumbering). The spec says nothing about it. A caller that
+    reuses the object gets the custom placeholders frozen at their first expansion.
+14. **The allow-list of `getTagsFromResponse()`.** Whether it is case-sensitive (the code: no), the
+    comma-split fallback for a non-JSON answer, and an answer wrapped in a code fence.
+15. **`getSpecialPromptPrefix()` of the summarize template and separator** (the code: `null`), and the
+    positions of the built-in prompts when nothing is stored.

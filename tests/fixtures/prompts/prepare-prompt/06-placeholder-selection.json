@@ -1,0 +1,10 @@
+{
+  "description": "{%selected_text%} is the selection, not the body",
+  "spec": ["spec 03 \"Built-in Placeholders\": selected_text = only the selected text"],
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Fix the grammar of: {%selected_text%}", "need_signature": "0" },
+    "body_text": "The whole body",
+    "selection_text": "he go to school"
+  },
+  "expected": "Fix the grammar of: he go to school"
+}

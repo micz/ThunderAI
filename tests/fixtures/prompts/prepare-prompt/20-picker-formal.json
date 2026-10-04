@@ -1,0 +1,16 @@
+{
+  "description": "prompt_rewrite_formal sends the selection as HTML ({%selected_html%})",
+  "spec": ["spec 02 \"The picker prompts send HTML - except one\""],
+  "prompt_from": "prompt_rewrite_formal",
+  "args": {
+    "selection_text": "hey bob send me the report",
+    "selection_html": "<p>hey <b>bob</b> send me the report</p>",
+    "body_text": "Whole body text",
+    "msg_text": { "html": "<div>Whole body html</div>" }
+  },
+  "expect": {
+    "promptTextIncludes": "{%selected_html%}",
+    "includes": ["<p>hey <b>bob</b> send me the report</p>"],
+    "excludes": ["{%", "Whole body"]
+  }
+}

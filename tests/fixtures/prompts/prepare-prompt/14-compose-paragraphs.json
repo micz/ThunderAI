@@ -1,0 +1,9 @@
+{
+  "description": "{%mail_typed_text%} keeps the blank line between paragraphs",
+  "spec": ["spec 03 \"Newline contract of the compose placeholders\": one \\n between lines, one blank line between paragraphs"],
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Proofread:\n{%mail_typed_text%}", "need_signature": "0" },
+    "only_typed_text": "Hi Anna,\nthanks for the call.\n\nBest,\nMic"
+  },
+  "expected": "Proofread:\nHi Anna,\nthanks for the call.\n\nBest,\nMic"
+}

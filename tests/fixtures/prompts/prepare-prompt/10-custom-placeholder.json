@@ -1,0 +1,16 @@
+{
+  "description": "A custom data placeholder is replaced by its text",
+  "spec": [
+    "spec 03 \"Custom Placeholders\": a text property containing the replacement value",
+    "spec 03 \"Placeholder Resolution Order\", step 2"
+  ],
+  "storage": {
+    "_custom_placeholder": [
+      { "id": "thunderai_custom_sig", "name": "Signature", "text": "Kind regards, Mic", "type": "0", "is_default": "0", "is_dynamic": "0", "enabled": 1 }
+    ]
+  },
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Write a short reply and end it with: {%thunderai_custom_sig%}", "need_signature": "0" }
+  },
+  "expected": "Write a short reply and end it with: Kind regards, Mic"
+}

@@ -1,0 +1,9 @@
+{
+  "description": "{%mail_text_body_or_selected%} is the body when nothing is selected",
+  "spec": ["spec 03 \"Built-in Placeholders\": mail_text_body_or_selected = plain text body, or selected text if any"],
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Translate: {%mail_text_body_or_selected%}", "need_signature": "0" },
+    "body_text": "The whole body"
+  },
+  "expected": "Translate: The whole body"
+}

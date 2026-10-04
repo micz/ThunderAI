@@ -1,0 +1,13 @@
+{
+  "description": "prompt_rewrite_polite with no selection sends the HTML body",
+  "spec": ["spec 02 \"The picker prompts send HTML - except one\""],
+  "prompt_from": "prompt_rewrite_polite",
+  "args": {
+    "body_text": "Whole body text",
+    "msg_text": { "html": "<div>Whole <b>body</b> html</div>" }
+  },
+  "expect": {
+    "includes": ["<div>Whole <b>body</b> html</div>"],
+    "excludes": ["{%", "Whole body text"]
+  }
+}

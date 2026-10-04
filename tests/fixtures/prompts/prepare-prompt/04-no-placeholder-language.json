@@ -1,0 +1,15 @@
+{
+  "description": "A prompt with no placeholder: the language statement is part of the prompt, once",
+  "spec": ["spec 02 \"Base Properties\": define_response_lang 1 = append response language instruction"],
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Summarize this email.", "need_signature": "0" },
+    "chatgpt_lang": "Reply in Italian.",
+    "body_text": "Body text"
+  },
+  "expect": {
+    "startsWith": "Summarize this email.",
+    "includes": ["Reply in Italian.", "\"Body text\""],
+    "occurrences": { "Reply in Italian.": 1 }
+  },
+  "underSpecified": "where the language statement goes relative to the quoted content"
+}

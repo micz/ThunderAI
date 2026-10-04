@@ -1,0 +1,16 @@
+{
+  "description": "prompt_proofread_this sends plain text ({%mail_typed_text%}), its lines kept, never HTML",
+  "spec": ["spec 02 \"The picker prompts send HTML - except one\"", "spec 03 \"Newline contract of the compose placeholders\""],
+  "prompt_from": "prompt_proofread_this",
+  "args": {
+    "only_typed_text": "Dear Anna,\nI has finished.\n\nRegards",
+    "selection_text": "Dear Anna,\nI has finished.\n\nRegards",
+    "selection_html": "<p>Dear Anna,<br>I has finished.</p><p>Regards</p>",
+    "msg_text": { "html": "<p>Dear Anna,<br>I has finished.</p><p>Regards</p>" }
+  },
+  "expect": {
+    "promptTextIncludes": "{%mail_typed_text%}",
+    "includes": ["Dear Anna,\nI has finished.\n\nRegards"],
+    "excludes": ["{%", "<p>", "<br>"]
+  }
+}

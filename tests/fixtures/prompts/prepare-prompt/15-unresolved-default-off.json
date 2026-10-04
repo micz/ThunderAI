@@ -1,0 +1,10 @@
+{
+  "description": "An absent text/plain part with placeholders_use_default_value off: the literal token survives",
+  "spec": ["spec 03 \"`mail_text_body` vs `mail_plain_text_part`\": What an absent part actually looks like in the prompt"],
+  "storage": { "placeholders_use_default_value": false },
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Extract the table: {%mail_plain_text_part%}", "need_signature": "0" },
+    "msg_text": { "plain_part": "", "text": "DOM scrape", "html": "<p>DOM scrape</p>" }
+  },
+  "expected": "Extract the table: {%mail_plain_text_part%}"
+}

@@ -1,8 +1,9 @@
 # Tests
 
 Automated tests for ThunderAI. Today they cover the enterprise managed configuration
-([`managed/README.md`](managed/README.md)) and the static consistency of the locales and the
-preferences ([`static/README.md`](static/README.md)); the infrastructure is built to extend to the whole
+([`managed/README.md`](managed/README.md)), the static consistency of the locales and the
+preferences ([`static/README.md`](static/README.md)), and the prompt and placeholder systems
+([`prompts/README.md`](prompts/README.md)); the infrastructure is built to extend to the whole
 add-on, one **area** at a time. Each area adds its own files - tests, fixtures, a plugin, its
 known issues - and never edits the shared ones.
 
@@ -13,7 +14,7 @@ There are two levels:
 
 | Level | Where | What it loads | Needs |
 |---|---|---|---|
-| **1** | `tests/<area>/*.test.mjs` (today `tests/managed/`, `tests/static/`) | the shipped modules, imported as they are | Node 22+, **nothing to install** |
+| **1** | `tests/<area>/*.test.mjs` (today `tests/managed/`, `tests/static/`, `tests/prompts/`) | the shipped modules, imported as they are | Node 22+, **nothing to install** |
 | **DOM** | `tests/dom/<page>/*.dom.mjs` | each page's real HTML and script, in [jsdom](https://github.com/jsdom/jsdom) | Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`, `npm ci` |
 
 Both use only Node's built-in runner (`node:test`, `node:assert/strict`). jsdom is the
@@ -93,7 +94,7 @@ tests/
 │   │                           (the only core file that imports jsdom)
 │   ├── plugins/<area>.mjs      an area's hooks into the core (today: managed.mjs)
 │   ├── known-issues/<area>.mjs an area's known issues and their shape (today: managed.mjs,
-│   │                           static.mjs)
+│   │                           static.mjs, prompts.mjs)
 │   │
 │   └── *.mjs                   the managed layer: load.mjs, dom-page.mjs, browser-mock.mjs,
 │                               dom-known-issues.mjs re-export the core with the managed
@@ -101,6 +102,7 @@ tests/
 ├── fixtures/                   managed fixtures; another area's go in fixtures/<area>/
 ├── managed/                    level 1 of the managed configuration, and its README
 ├── static/                     level 1 of the static consistency checks, and its README
+├── prompts/                    level 1 of the prompt and placeholder systems, and its README
 ├── <area>/                     level 1 of another area
 └── dom/<page>/                 DOM: one file per page × scenario, shared by every area
 ```
@@ -316,4 +318,5 @@ rules are in [`managed/README.md`](managed/README.md#potential-bugs-todo-tests).
   inserted, not what it looks like.
 - Everything outside the areas listed above is still tested by hand in Thunderbird. What the
   managed configuration leaves out is in [`managed/README.md`](managed/README.md#what-is-not-covered),
-  what the static checks leave out in [`static/README.md`](static/README.md#what-is-not-covered).
+  what the static checks leave out in [`static/README.md`](static/README.md#what-is-not-covered),
+  what the prompts area leaves out in [`prompts/README.md`](prompts/README.md#what-is-not-covered).

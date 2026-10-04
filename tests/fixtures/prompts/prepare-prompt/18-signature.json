@@ -1,0 +1,15 @@
+{
+  "description": "need_signature 1: the signature is part of the prompt, after the resolved text",
+  "spec": ["spec 02 \"Base Properties\": need_signature 1 = include signature (the default_sign_name pref)"],
+  "storage": { "default_sign_name": "Mic Zelco" },
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Reply to: {%mail_text_body%}", "need_signature": "1" },
+    "body_text": "Are you coming?"
+  },
+  "expect": {
+    "startsWith": "Reply to: Are you coming?",
+    "includes": ["Mic Zelco"],
+    "occurrences": { "Mic Zelco": 1 }
+  },
+  "underSpecified": "the wording and position of the signature statement"
+}

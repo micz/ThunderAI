@@ -1,0 +1,8 @@
+{
+  "description": "A prompt with no placeholder, no content, no language, no signature: the text alone",
+  "spec": ["spec 02 \"The picker prompts send HTML - except one\": the content is appended - with none, nothing is"],
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Tell me a joke.", "need_signature": "0" }
+  },
+  "expected": "Tell me a joke."
+}
