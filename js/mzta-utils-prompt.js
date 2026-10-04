@@ -142,8 +142,8 @@ export const taPromptUtils = {
     },
 
     finalizePrompt_get_calendar_event(fullPrompt, promptTemplate = '', reminder_enabled = false, reminder_rules = ''){
-        fullPrompt = fullPrompt.replace("{%cc_list%}", "");
-        fullPrompt = fullPrompt.replace("{%recipients%}", "");
+        // Every occurrence, in the spaced form {% id %} too, like the placeholder regex itself.
+        fullPrompt = fullPrompt.replace(/{%\s*(cc_list|recipients)\s*%}/g, "");
 
         return taPromptUtils.appendReminderStatements(fullPrompt, 'calendar', promptTemplate, reminder_enabled, reminder_rules);
     },

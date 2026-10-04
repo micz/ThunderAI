@@ -39,20 +39,12 @@ export const REASONS = {
         'spec 02 "Enabled-to-show_in Migration" says "`enabled` is never emitted on export". ' +
         'preparePromptsForExport() drops it for a built-in prompt (allowedKeys) but copies it ' +
         'unchanged for a custom prompt',
-    calendarStripFirstOnly:
-        'spec 03 "The address placeholders in the compose window" ("Not visible in the calendar-event ' +
-        'flow") says finalizePrompt_get_calendar_event() strips {%cc_list%} and {%recipients%} out of ' +
-        'the prompt entirely. It calls String.replace() with a string, so only the FIRST occurrence of ' +
-        'each is stripped; a second unresolved token reaches the AI',
 };
 
 /** The known issues, by test file and case id. */
 export const KNOWN = {
     '15-export-import': {
         'enabled-never-exported': REASONS.exportEmitsEnabled,
-    },
-    '21-finalize-prompts': {
-        'calendar-strips-addresses-entirely': REASONS.calendarStripFirstOnly,
     },
 };
 

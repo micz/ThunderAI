@@ -135,12 +135,11 @@ spec section (`spec 02 "<section>"` / `spec 03 "<section>"`), and a reason that 
 `REASONS`. An unused reason fails too. Each file ends with `k.coverage()`: an entry naming a case id
 the file does not declare fails it, so an entry cannot outlive a renamed or removed test.
 
-Today: two known issues, listed with their reasons in `helpers/known-issues/prompts.mjs`:
+Today: one known issue, listed with their reasons in `helpers/known-issues/prompts.mjs`:
 
 | File × case | Spec section | What the code does |
 |---|---|---|
 | `15 × enabled-never-exported` | 02 "Enabled-to-show_in Migration" | a custom prompt's `enabled` is exported |
-| `21 × calendar-strips-addresses-entirely` | 03 "The address placeholders in the compose window" | only the first `{%cc_list%}` / `{%recipients%}` is stripped |
 
 ## What is not covered
 

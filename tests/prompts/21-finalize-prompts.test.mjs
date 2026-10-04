@@ -163,6 +163,15 @@ k.test('calendar-strips-addresses-entirely', 'every occurrence is stripped, not 
     assert.equal(out, ' a  b  c ');
 });
 
+k.test('calendar-strips-addresses-spaced', 'the spaced form {% id %} is stripped too', () => {
+    assert.equal(u.finalizePrompt_get_calendar_event('a {% cc_list %} b {%  recipients%} c', TEMPLATE, false, ''), 'a  b  c');
+});
+
+k.test('calendar-strips-only-addresses', 'other tokens are left alone', () => {
+    const text = '{%cc_list_more%} {%mail_subject%} {%additional_text:tone%}';
+    assert.equal(u.finalizePrompt_get_calendar_event(text, TEMPLATE, false, ''), text);
+});
+
 // --- Task -------------------------------------------------------------------------------------
 
 const TASK = 'Extract the task. JSON: summary. Email: "Send the report".';
