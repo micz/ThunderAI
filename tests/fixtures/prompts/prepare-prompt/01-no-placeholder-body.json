@@ -1,7 +1,7 @@
 {
   "description": "A prompt with no placeholder: the message body is appended, in quotes",
   "spec": [
-    "spec 02 \"The picker prompts send HTML - except one\": without a placeholder, the content is appended in quotes",
+    "spec 02 \"The picker prompts send HTML\": without a placeholder, the content is appended in quotes",
     "spec 08a \"Output-format safety\", note 2: preparePrompt() appends the message itself to a text with no placeholder"
   ],
   "args": {

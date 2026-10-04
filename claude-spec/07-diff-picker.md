@@ -182,18 +182,20 @@ never reaches the text diff**. The related cost is likewise gone, since the bloc
 `fullTextHTMLAtAssignment` — the snapshot the picker diffs — is produced by
 `StreamingMessage.flush()`, and **which pipeline produced it depends on the prompt**:
 
-- **Prompts that send HTML** (`prompt_rewrite_formal`, `prompt_rewrite_polite`) get an HTML answer
-  back. It skips markdown-it and is sanitized with `sanitizeBlockHtml()` instead — see
-  [01-architecture.md](01-architecture.md) → *When the answer is HTML*. This is the case the block
-  model exists for: real markup on both sides.
-- **`prompt_proofread_this` still sends plain text**, so its answer is ordinary markdown rendered by
-  markdown-it, and the ORIGINAL side has no `_html` twin to resolve to.
+- **Prompts that send HTML** — all three shipped picker prompts (`prompt_rewrite_formal`,
+  `prompt_rewrite_polite`, `prompt_proofread_this`) send `{%selected_html%}` and need a selection —
+  get an HTML answer back, sanitized with `sanitizeBlockHtml()`. This is the case the block model
+  exists for: real markup on both sides, the original being the prompt's `selection_html`.
+- **A prompt that sends plain text** — a custom prompt using `{%mail_typed_text%}` or
+  `{%selected_text%}` — gets an ordinary markdown answer, and its ORIGINAL side may carry no
+  structured `_html` twin.
 
-**The `textToBlockHtml()` fallback is therefore not hypothetical — it is proofread's live path.**
-`_buildDiffButton` resolves the original on the text fields, finds no matching HTML field, and wraps
-each line in a `<p>` so the segmenter has blocks to work with. Both shapes are in use at the same
-time and both must keep working; see [02-prompts.md](02-prompts.md) for why the third prompt was left
-on text.
+**The `textToBlockHtml()` fallback is the backstop for that second shape.** `_buildDiffButton`
+resolves the original on the text fields, takes the matching HTML twin, and when that twin has no
+block structure wraps each line of the text in a `<p>` so the segmenter has blocks to work with.
+Both shapes must keep working; see [02-prompts.md](02-prompts.md) → *The picker prompts send HTML*.
+(`prompt_proofread_this` sent `{%mail_typed_text%}` until 3507e368, which made this fallback its live
+path; it no longer is.)
 
 ### Where the original's HTML comes from
 
@@ -260,7 +262,8 @@ on any twin that does carry structure, so the HTML compose path is byte-for-byte
 
 This also means the picker's guard is normally satisfied *before* it is reached: the payload now
 arrives with `<br>`-separated lines, and `hasBlockStructure()` accepts it. The picker-side rebuild
-remains as the backstop for producers that fill only a text field (e.g. `prompt_proofread_this`).
+remains as the backstop for producers that fill only a text field (e.g. a custom prompt on
+`{%mail_typed_text%}` whose twin carries no structure).
 
 No locale file changed — the prompt **wording** is untouched, only the substituted value.
 

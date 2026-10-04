@@ -1,6 +1,6 @@
 {
   "description": "A prompt with no placeholder and only a selection: the selection is the content appended",
-  "spec": ["spec 02 \"The picker prompts send HTML - except one\": without a placeholder, the content is appended in quotes"],
+  "spec": ["spec 02 \"The picker prompts send HTML\": without a placeholder, the content is appended in quotes"],
   "args": {
     "curr_prompt": { "id": "prompt_user", "text": "Rewrite this politely.", "need_signature": "0" },
     "selection_text": "send me the file now"

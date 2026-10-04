@@ -1,16 +1,17 @@
 {
-  "description": "prompt_proofread_this sends plain text ({%mail_typed_text%}), its lines kept, never HTML",
-  "spec": ["spec 02 \"The picker prompts send HTML - except one\"", "spec 03 \"Newline contract of the compose placeholders\""],
+  "description": "prompt_proofread_this sends the selection as HTML (\"{%selected_html%}\"), like the two rewrite prompts",
+  "spec": ["spec 02 \"The picker prompts send HTML\""],
   "prompt_from": "prompt_proofread_this",
   "args": {
-    "only_typed_text": "Dear Anna,\nI has finished.\n\nRegards",
+    "only_typed_text": "Typed only, not selected",
     "selection_text": "Dear Anna,\nI has finished.\n\nRegards",
     "selection_html": "<p>Dear Anna,<br>I has finished.</p><p>Regards</p>",
-    "msg_text": { "html": "<p>Dear Anna,<br>I has finished.</p><p>Regards</p>" }
+    "body_text": "Whole body text",
+    "msg_text": { "html": "<div>Whole body html</div>" }
   },
   "expect": {
-    "promptTextIncludes": "{%mail_typed_text%}",
-    "includes": ["Dear Anna,\nI has finished.\n\nRegards"],
-    "excludes": ["{%", "<p>", "<br>"]
+    "promptTextIncludes": "\"{%selected_html%}\"",
+    "includes": ["\"<p>Dear Anna,<br>I has finished.</p><p>Regards</p>\""],
+    "excludes": ["{%", "Typed only", "Whole body"]
   }
 }

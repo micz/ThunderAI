@@ -3,7 +3,7 @@
   "spec": [
     "spec 03 \"Built-in Placeholders\": mail_text_body = full plain text of the email",
     "spec 03 \"Newline contract of the body placeholders\": the extracted lines reach the prompt",
-    "spec 02 \"The picker prompts send HTML - except one\": with a placeholder, the placeholder supplies the content"
+    "spec 02 \"The picker prompts send HTML\": with a placeholder, the placeholder supplies the content"
   ],
   "args": {
     "curr_prompt": { "id": "prompt_user", "text": "Summarize: {%mail_text_body%}", "need_signature": "0" },

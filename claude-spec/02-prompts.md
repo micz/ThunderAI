@@ -150,42 +150,32 @@ to `===` without the normalization in place would have silently broken it.
 > `setDefaultPromptsProperties()`. The other four always come from the built-in array, which is
 > why the corruption above could only ever affect `need_custom_text`.
 
-### The picker prompts send HTML — except one
+### The picker prompts send HTML
 
-The three prompts with `use_diff_viewer: "1"` are **not uniform**, and the difference is deliberate:
+The three prompts with `use_diff_viewer: "1"` are **uniform**: all three need a selection
+(`need_selected: "1"`) and send it as HTML.
 
 | prompt | placeholder | sends |
 |---|---|---|
 | `prompt_rewrite_formal` | `{%selected_html%}` | HTML |
 | `prompt_rewrite_polite` (`prompt_rewrite_full_text`) | `{%selected_html%}` | HTML |
-| `prompt_proofread_this` | `{%mail_typed_text%}` | **plain text** |
+| `prompt_proofread_this` | `"{%selected_html%}"` | HTML |
 
-Both rewrite prompts have `need_selected: "1"`: they cannot run without a selection, so
-`{%selected_html%}` always has a value and no body fallback (`{%mail_html_body_or_selected%}`) is needed.
+Because they cannot run without a selection, `{%selected_html%}` always has a value and no body
+fallback (`{%mail_html_body_or_selected%}`) is needed.
 
-Sending HTML is what lets the picker preserve formatting: the model answers in HTML, the answer
-skips markdown-it and is sanitized instead (see [01-architecture.md](01-architecture.md) → *When the
-answer is HTML*), and the picker diffs markup against markup.
+Sending HTML is what lets the picker preserve formatting: the model answers in HTML, the answer is
+sanitized as block HTML (`sanitizeBlockHtml()`), and the picker diffs markup against markup — the
+original side is the prompt's `selection_html`, the twin of the `selection_text` that
+`_buildDiffButton` resolves first (see [07-diff-picker.md](07-diff-picker.md)).
 
-**`prompt_proofread_this` stays on plain text** because there is no `mail_typed_html`
-*placeholder*: `getOnlyTypedText` (`js/mzta-compose-script.js`) returns text, not markup, so what
-reaches the **model** is text. That text is no longer *flat* — since [#829] the walk preserves
-line structure (`<br>` → `\n`, block boundaries → `\n\n`; see
-[01-architecture.md](01-architecture.md) → *The compose-extraction newline contract*), so the
-picker's original side is genuine multi-line text rather than one run-together line. What the
-*prompt* still lacks is inline markup. Adding it would mean a `getOnlyTypedHtml` handler — same
-walk, same `moz-cite-prefix`/`moz-forward-container` breaks — plus a `mail_typed_html`
-placeholder. Not done; the cost is recorded here so the asymmetry does not read as an oversight.
-
-> **The picker's original side is no longer part of that gap.** `getMailBody()` now returns an
-> `only_typed_html` field, read back off the range `do_autoselect` already creates, so a prompt
-> substituting `mail_typed_text` into `selection_text` gets a matching `selection_html`. See
-> [07-diff-picker.md](07-diff-picker.md) → *The `mail_typed_text` substitution must carry its
-> twin*. That closes the diff-picker half of the asymmetry; the placeholder half above is still
-> open.
-
-The consequence is that **both shapes are live at once**, and the picker handles both: with
-proofread the original side arrives as text and `_buildDiffButton` falls back to `textToBlockHtml()`.
+`prompt_proofread_this` used to send `{%mail_typed_text%}`, plain text, because there is no
+`mail_typed_html` placeholder (`getOnlyTypedText` in `js/mzta-compose-script.js` returns text, not
+markup). It was moved to `{%selected_html%}` with `need_selected: "1"` (3507e368), like the two rewrite
+prompts. A **custom** prompt that uses `{%mail_typed_text%}` still sends text; its picker original
+side is the `only_typed_html` twin that `getMailBody()` reads off the autoselect range (see
+[07-diff-picker.md](07-diff-picker.md) → *The `mail_typed_text` substitution must carry its twin*).
+`textToBlockHtml()` remains the backstop for an HTML twin with no block structure.
 
 > Changing a prompt from no-placeholder to a placeholder also changes which branch of
 > `preparePrompt()` (`js/mzta-utils-prompt.js`) builds it: without one, the content is appended in

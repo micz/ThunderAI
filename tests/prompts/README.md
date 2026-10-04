@@ -135,14 +135,13 @@ spec section (`spec 02 "<section>"` / `spec 03 "<section>"`), and a reason that 
 `REASONS`. An unused reason fails too. Each file ends with `k.coverage()`: an entry naming a case id
 the file does not declare fails it, so an entry cannot outlive a renamed or removed test.
 
-Today: five known issues, listed with their reasons in `helpers/known-issues/prompts.mjs`:
+Today: four known issues, listed with their reasons in `helpers/known-issues/prompts.mjs`:
 
 | File × case | Spec section | What the code does |
 |---|---|---|
 | `12 × default-props-nine-keys` | 02 "Organization prompts (the fourth set)" | `_default_prompts_properties` holds ten keys per prompt, not nine |
 | `15 × no-api-settings-chatgpt-web` | 02 "Per-Prompt API Override Properties" | a custom prompt exports `chatgpt_web_model` / `_project` / `_custom_gpt` with `include_api_settings = false` |
 | `15 × enabled-never-exported` | 02 "Enabled-to-show_in Migration" | a custom prompt's `enabled` is exported |
-| `20 × 23-picker-proofread` | 02 "The picker prompts send HTML - except one" | `prompt_proofread_this` uses `"{%selected_html%}"` (HTML), not `{%mail_typed_text%}` (plain text) |
 | `21 × calendar-strips-addresses-entirely` | 03 "The address placeholders in the compose window" | only the first `{%cc_list%}` / `{%recipients%}` is stripped |
 
 ## What is not covered

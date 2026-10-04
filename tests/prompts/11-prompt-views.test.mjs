@@ -151,9 +151,10 @@ k.test('default-flags-canonical', 'every flag of every built-in prompt reads as 
     }
 });
 
-k.test('rewrite-need-selection', 'the two rewrite picker prompts always need a selection (they use {%selected_html%})', async () => {
+k.test('picker-need-selection', 'the three picker prompts always need a selection (they use {%selected_html%})', async () => {
     const list = await p.getPrompts();
-    for (const id of ['prompt_rewrite_polite', 'prompt_rewrite_formal']) {
+    for (const id of ['prompt_rewrite_polite', 'prompt_rewrite_formal', 'prompt_proofread_this']) {
+        assert.equal(byId(list, id).use_diff_viewer, '1', id);
         assert.equal(byId(list, id).need_selected, '1', id);
         assert.ok(byId(list, id).text.includes('{%selected_html%}'), id);
     }

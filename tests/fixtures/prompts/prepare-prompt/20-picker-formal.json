@@ -1,6 +1,6 @@
 {
   "description": "prompt_rewrite_formal sends the selection as HTML ({%selected_html%})",
-  "spec": ["spec 02 \"The picker prompts send HTML - except one\""],
+  "spec": ["spec 02 \"The picker prompts send HTML\""],
   "prompt_from": "prompt_rewrite_formal",
   "args": {
     "selection_text": "hey bob send me the report",

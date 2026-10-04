@@ -49,11 +49,6 @@ export const REASONS = {
         'chatgpt_web_custom_gpt as per-prompt API overrides. preparePromptsForExport(prompts, false) ' +
         'strips only api_type and the integration_options_config keys, so a custom prompt still ' +
         'exports these three',
-    pickerProofreadSelectedHtml:
-        'spec 02 "The picker prompts send HTML - except one" says prompt_proofread_this uses ' +
-        '{%mail_typed_text%} and sends plain text, by design. The shipped text ' +
-        '(prompt_proofread_this_full_text, changed in 3507e368) uses "{%selected_html%}": it sends ' +
-        'the selection as HTML, and the typed text not at all',
     calendarStripFirstOnly:
         'spec 03 "The address placeholders in the compose window" ("Not visible in the calendar-event ' +
         'flow") says finalizePrompt_get_calendar_event() strips {%cc_list%} and {%recipients%} out of ' +
@@ -69,9 +64,6 @@ export const KNOWN = {
     },
     '12-prompt-storage': {
         'default-props-nine-keys': REASONS.defaultPropsNineKeys,
-    },
-    '20-prepare-prompt-golden': {
-        '23-picker-proofread': REASONS.pickerProofreadSelectedHtml,
     },
     '21-finalize-prompts': {
         'calendar-strips-addresses-entirely': REASONS.calendarStripFirstOnly,
