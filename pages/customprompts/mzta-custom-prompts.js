@@ -899,6 +899,15 @@ function bindDetailEvents() {
         cb.addEventListener('change', handleFlagChange);
     });
 
+    // While the ID is linked to the name (it was empty), it follows the name as it is
+    // typed. Typing in the ID breaks the link; emptying it restores it.
+    detailEl('detail_name').addEventListener('input', () => {
+        if (detailIdAuto) detailEl('detail_id').value = promptIdFromName(detailEl('detail_name').value);
+    });
+    detailEl('detail_id').addEventListener('input', () => {
+        detailIdAuto = detailEl('detail_id').value.trim() === '';
+    });
+
     detailEl('detail_text').addEventListener('input', () => checkPromptsConfigForPlaceholders());
     detailEl('detail_action').addEventListener('change', () => updateDiffViewerState());
     detailEl('detail_type').addEventListener('change', () => {
@@ -1026,6 +1035,7 @@ function fillDetail(v, isNew) {
         clearDetailError();
 
         detailEl('detail_id').value = cleanString(v.id);
+        detailIdAuto = detailEl('detail_id').value.trim() === '';
         detailEl('detail_name').value = isNew ? cleanString(v.name) : resolvePromptName(v.name);
         // Type before text: token validity depends on it and setEditorValue() repaints
         // immediately, so writing the text first would paint one frame validated
@@ -1134,6 +1144,8 @@ function applyDetailState(st) {
 
 // Cached for the handlers that re-evaluate part of the state (action change, dirty).
 let detailEditable = false;
+// True while the ID is derived from the name: set by fillDetail() when the ID is empty.
+let detailIdAuto = false;
 let detailFlagState = rowState({});
 
 function updateDetailButtons() {
@@ -1240,6 +1252,22 @@ function validateDetail(values) {
     detailEl('detail_text').classList.toggle('input_error', textBad);
     if (!error && (nameBad || textBad)) error = 'customPrompts_error_required';
     return error;
+}
+
+// Derive a valid ID from a name: accents dropped, lowercased, every run of characters
+// other than a-z and 0-9 collapsed into "_", made unique among the other prompts with a
+// _2, _3, ... suffix. A name with no Latin letters or digits gives ''.
+function promptIdFromName(name) {
+    const base = String(name).normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    if (base === '') return '';
+    const self = currentItem();
+    const taken = new Set(promptsList.items
+        .filter(it => it !== self)
+        .map(it => String(it.values().id).toLowerCase()));
+    let id = base;
+    for (let n = 2; taken.has(id); n++) id = base + '_' + n;
+    return id;
 }
 
 function clearDetailError() {
