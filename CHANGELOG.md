@@ -28,6 +28,7 @@
         <li>Fix: after deleting a summary or a translation, the button to generate it again is shown, when the related option is enabled [<a href="https://github.com/micz/ThunderAI/issues/916">#916</a>].</li>
         <li>Fix: the HTML of the inline summary and translation panels is now sanitized before being shown in the message pane, so a crafted email can no longer inject styles or other markup through its summary or translation, also for the already saved results.</li>
         <li>Fix: the <i>Display summary in</i> option of the Summarize settings can now be changed also when auto-summarize is disabled, since it applies to the summaries requested manually too.</li>
+        <li>Fix: when the <i>Translation target language</i> of the Translate settings is empty, the default language set in the ThunderAI options is now used also in the prompt sent to the AI. Previously the translation was started, but the prompt contained the <i>{%thunderai_translate_lang%}</i> placeholder instead of a language.</li>
         <li>Many improvements.</li>
         <li>Minor bugs fixed.</li>
         <li>Redesigned the Custom Prompts page: a list of the prompts next to a detail editor, plus a table view that shows all the prompts and their options at a glance. The last view chosen is remembered. The search now also looks in the prompt text [<a href="https://github.com/micz/ThunderAI/issues/904">#904</a>].</li>

@@ -35,12 +35,6 @@ const AREA_DIR = new URL('../../prompts/', import.meta.url);
 
 /** The reasons of KNOWN, one per spec contradiction. */
 export const REASONS = {
-    translateLangFallback:
-        'spec 02 "Translate: Inline-Only Prompt System" says the target language is translate_lang, ' +
-        'falling back to default_chatgpt_lang. The background goes ahead with a translation on that ' +
-        'fallback, but {%thunderai_translate_lang%} resolves to translate_lang alone. With translate_lang ' +
-        'empty, buildTranslationPrompt() (use_default_value false) sends the literal token to the AI, ' +
-        'not the fallback language',
     defaultPropsNineKeys:
         'spec 02 "Organization prompts (the fourth set)" says _default_prompts_properties "holds only ' +
         'the nine display keys". setDefaultPromptsProperties() writes ten per prompt: position_display/' +
@@ -88,9 +82,6 @@ export const KNOWN = {
     },
     '21-finalize-prompts': {
         'calendar-strips-addresses-entirely': REASONS.calendarStripFirstOnly,
-    },
-    '23-translation-summary': {
-        'translate-lang-fallback': REASONS.translateLangFallback,
     },
 };
 

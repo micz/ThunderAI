@@ -730,8 +730,11 @@ export const placeholdersUtils = {
                     finalSubs['thunderai_def_lang'] = placeholdersUtils.failSafePlaceholders(prefs_def_lang.default_chatgpt_lang);
                     break;
                 case 'thunderai_translate_lang':
-                    let prefs_translate_lang = await mztaPrefs.getPrefs(['translate_lang']);
-                    finalSubs['thunderai_translate_lang'] = placeholdersUtils.failSafePlaceholders(prefs_translate_lang.translate_lang);
+                    // The target language falls back on default_chatgpt_lang, as the background
+                    // does when it decides whether to translate at all: otherwise an empty
+                    // translate_lang would send the literal token to the AI.
+                    let prefs_translate_lang = await mztaPrefs.getPrefs(['translate_lang', 'default_chatgpt_lang']);
+                    finalSubs['thunderai_translate_lang'] = placeholdersUtils.failSafePlaceholders(prefs_translate_lang.translate_lang || prefs_translate_lang.default_chatgpt_lang);
                     break;
                 case 'thunderai_translate_exclude_lang':
                     let prefs_translate_exclude_lang = await mztaPrefs.getPrefs(['translate_exclude_lang']);

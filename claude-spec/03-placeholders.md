@@ -52,7 +52,7 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`).
 | `tags_full_list` | All available tags in Thunderbird | 0 | |
 | `thunderai_def_sign` | Default signature name (`default_sign_name` pref) | 0 | |
 | `thunderai_def_lang` | Default response language (`default_chatgpt_lang` pref) | 0 | |
-| `thunderai_translate_lang` | Target translation language (`translate_lang` pref) | 0 | |
+| `thunderai_translate_lang` | Target translation language (`translate_lang` pref, falling back on `default_chatgpt_lang`, the same rule the background uses to decide whether to translate) | 0 | |
 | `thunderai_translate_exclude_lang` | Language to exclude from translation | 0 | |
 | `empty` | Empty string (placeholder that resolves to nothing) | 0 | |
 | `mail_attachments_info` | Information about the email's attachments | 1 | |

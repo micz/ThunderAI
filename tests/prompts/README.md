@@ -135,7 +135,7 @@ spec section (`spec 02 "<section>"` / `spec 03 "<section>"`), and a reason that 
 `REASONS`. An unused reason fails too. Each file ends with `k.coverage()`: an entry naming a case id
 the file does not declare fails it, so an entry cannot outlive a renamed or removed test.
 
-Today: eight known issues, listed with their reasons in `helpers/known-issues/prompts.mjs`:
+Today: seven known issues, listed with their reasons in `helpers/known-issues/prompts.mjs`:
 
 | File × case | Spec section | What the code does |
 |---|---|---|
@@ -145,7 +145,6 @@ Today: eight known issues, listed with their reasons in `helpers/known-issues/pr
 | `20 × 21-picker-polite-selection`, `22-picker-polite-body` | 02 "The picker prompts send HTML - except one" | `prompt_rewrite_polite` uses `{%selected_html%}`, not `{%mail_html_body_or_selected%}`: with no selection the body is never sent |
 | `20 × 23-picker-proofread` | same | `prompt_proofread_this` uses `"{%selected_html%}"` (HTML), not `{%mail_typed_text%}` (plain text) |
 | `21 × calendar-strips-addresses-entirely` | 03 "The address placeholders in the compose window" | only the first `{%cc_list%}` / `{%recipients%}` is stripped |
-| `23 × translate-lang-fallback` | 02 "Translate: Inline-Only Prompt System" | with `translate_lang` empty the literal `{%thunderai_translate_lang%}` is sent, not the `default_chatgpt_lang` fallback |
 
 ## What is not covered
 

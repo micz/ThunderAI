@@ -123,6 +123,15 @@ k.test('prefs-placeholders', 'the four preference placeholders are their prefere
         'Mic|Italian|German|English');
 });
 
+k.test('translate-lang-fallback', '{%thunderai_translate_lang%} falls back on default_chatgpt_lang', async () => {
+    await ctx.mztaPrefs.setPref('translate_lang', '');
+    try {
+        assert.equal(await resolve('{%thunderai_translate_lang%}'), 'Italian');
+    } finally {
+        await ctx.mztaPrefs.setPref('translate_lang', 'German');
+    }
+});
+
 k.test('tags-full-list', '{%tags_full_list%} is the tag list the caller supplies', async () => {
     assert.equal(await resolve('{%tags_full_list%}', { tags_full_list: ['Important, Work', {}] }), 'Important, Work');
 });
