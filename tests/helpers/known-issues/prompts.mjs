@@ -49,11 +49,6 @@ export const REASONS = {
         'chatgpt_web_custom_gpt as per-prompt API overrides. preparePromptsForExport(prompts, false) ' +
         'strips only api_type and the integration_options_config keys, so a custom prompt still ' +
         'exports these three',
-    pickerPoliteSelectedHtml:
-        'spec 02 "The picker prompts send HTML - except one" says prompt_rewrite_polite ' +
-        '(prompt_rewrite_full_text) uses {%mail_html_body_or_selected%}, so with no selection it sends ' +
-        'the HTML body. The shipped text uses {%selected_html%}: with no selection the token stays ' +
-        'unresolved (literal, or empty with the default values on) and the body is never sent',
     pickerProofreadSelectedHtml:
         'spec 02 "The picker prompts send HTML - except one" says prompt_proofread_this uses ' +
         '{%mail_typed_text%} and sends plain text, by design. The shipped text ' +
@@ -76,8 +71,6 @@ export const KNOWN = {
         'default-props-nine-keys': REASONS.defaultPropsNineKeys,
     },
     '20-prepare-prompt-golden': {
-        '21-picker-polite-selection': REASONS.pickerPoliteSelectedHtml,
-        '22-picker-polite-body': REASONS.pickerPoliteSelectedHtml,
         '23-picker-proofread': REASONS.pickerProofreadSelectedHtml,
     },
     '21-finalize-prompts': {

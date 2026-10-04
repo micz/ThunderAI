@@ -1,5 +1,5 @@
 {
-  "description": "prompt_rewrite_polite sends HTML ({%mail_html_body_or_selected%}): the selection when there is one",
+  "description": "prompt_rewrite_polite sends the selection as HTML ({%selected_html%}); it always has one (need_selected 1)",
   "spec": ["spec 02 \"The picker prompts send HTML - except one\""],
   "prompt_from": "prompt_rewrite_polite",
   "args": {
@@ -9,7 +9,7 @@
     "msg_text": { "html": "<div>Whole body html</div>" }
   },
   "expect": {
-    "promptTextIncludes": "{%mail_html_body_or_selected%}",
+    "promptTextIncludes": "{%selected_html%}",
     "includes": ["<p>give it <i>back</i></p>"],
     "excludes": ["{%", "Whole body"]
   }

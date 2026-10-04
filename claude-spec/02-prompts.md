@@ -157,8 +157,11 @@ The three prompts with `use_diff_viewer: "1"` are **not uniform**, and the diffe
 | prompt | placeholder | sends |
 |---|---|---|
 | `prompt_rewrite_formal` | `{%selected_html%}` | HTML |
-| `prompt_rewrite_polite` (`prompt_rewrite_full_text`) | `{%mail_html_body_or_selected%}` | HTML |
+| `prompt_rewrite_polite` (`prompt_rewrite_full_text`) | `{%selected_html%}` | HTML |
 | `prompt_proofread_this` | `{%mail_typed_text%}` | **plain text** |
+
+Both rewrite prompts have `need_selected: "1"`: they cannot run without a selection, so
+`{%selected_html%}` always has a value and no body fallback (`{%mail_html_body_or_selected%}`) is needed.
 
 Sending HTML is what lets the picker preserve formatting: the model answers in HTML, the answer
 skips markdown-it and is sanitized instead (see [01-architecture.md](01-architecture.md) → *When the
