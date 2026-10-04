@@ -2,8 +2,10 @@
 // (an object of entries, each an object with a string `message`), and every entry of the source
 // file, _locales/en/messages.json, also has a `description` for the Weblate translators.
 // Spec 06 "Golden Rule": the translations are Weblate's copies of en, so a translated entry carries
-// the same $PLACEHOLDERS$ as en's (else the runtime string silently loses a substitution) and no
-// key en no longer has.
+// the same $PLACEHOLDERS$ as en's (else the runtime string silently loses a substitution).
+// Spec 06 "Removing a String": a key removed from en leaves the translations when Weblate syncs
+// from en, so a translated key en no longer has is a state the spec expects for a while: it is
+// reported (stale-key, informational), never failed.
 // Spec 06 "Supported Languages" and CLAUDE.md rule 2: LANG.md, the release allowlist, names only
 // locales that exist under _locales/. The other direction (a locale absent from LANG.md) is
 // deliberate and never reported.
@@ -14,7 +16,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { repoPath } from '../helpers/core/load.mjs';
-import { declareCheck } from '../helpers/known-issues/static.mjs';
+import {
+    declareCheck,
+    reportCheck
+} from '../helpers/known-issues/static.mjs';
 
 const NAME = /^[A-Za-z0-9_@]+$/;   // the characters a WebExtension message name may use
 
@@ -75,7 +80,7 @@ for (const [loc, data] of Object.entries(locales)) {
     if (loc === 'en') continue;
     for (const [key, entry] of Object.entries(data)) {
         const enKey = enLower.get(key.toLowerCase());
-        if (enKey === undefined) { stale.set(loc + ':' + key, 'not in _locales/en/messages.json'); continue; }
+        if (enKey === undefined) { stale.set(loc + ':' + key, ''); continue; }
         if (!entry || typeof entry.message !== 'string') continue;   // reported by locale-shape
         const want = placeholdersOf(en[enKey].message).join(', ');
         const got = placeholdersOf(entry.message).join(', ');
@@ -96,5 +101,5 @@ test('the source locale exists and the scan found the locales', () => {
 declareCheck('locale-shape', 'every messages.json parses and every entry has the WebExtension shape', shape);
 declareCheck('en-description', 'every en entry has a non-empty description', noDescription);
 declareCheck('placeholders', 'a translated entry uses the same $placeholders$ as en', placeholders);
-declareCheck('stale-key', 'a translated locale defines no key en no longer has', stale);
+reportCheck('stale-key', 'translated keys en no longer has, until Weblate syncs from en', stale);
 declareCheck('lang-md', 'LANG.md lists only locales that exist under _locales/', langMissing);

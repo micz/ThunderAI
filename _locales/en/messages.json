@@ -5,79 +5,79 @@
   },
   "menu_title": {
     "message": "ThunderAI",
-    "description": ""
+    "description": "Tooltip of the ThunderAI toolbar button in the message display and compose windows; the add-on name, usually left untranslated."
   },
   "prompt_lang": {
     "message": "Reply in",
-    "description": ""
+    "description": "Sent to the AI model: put before the configured default language name to form 'Reply in <language>.'; keep it short and grammatical before a language name."
   },
   "prompt_reply": {
     "message": "Reply to this email",
-    "description": ""
+    "description": "Name of the built-in prompt 'Reply to this email', shown in the popup and context menus; short menu item label."
   },
   "prompt_reply_advanced": {
     "message": "Reply to this thread",
-    "description": ""
+    "description": "Name of the built-in prompt that replies taking the whole email thread into account, shown in the popup and context menus; short menu item label."
   },
   "prompt_reply_custom_command": {
     "message": "Reply with command...",
-    "description": ""
+    "description": "Name of the built-in prompt that replies following an extra instruction typed by the user, shown in the popup and context menus; short menu item label ending with an ellipsis."
   },
   "prompt_rewrite_polite": {
     "message": "Rewrite polite",
-    "description": ""
+    "description": "Name of the built-in prompt that rewrites the selected text in a polite tone, shown in the popup and context menus; short menu item label."
   },
   "prompt_rewrite_formal": {
     "message": "Rewrite formal",
-    "description": ""
+    "description": "Name of the built-in prompt that rewrites the selected text in a formal tone, shown in the popup and context menus; short menu item label."
   },
   "prompt_classify": {
     "message": "Classify",
-    "description": ""
+    "description": "Name of the built-in prompt that classifies the email, shown in the popup and context menus; short menu item label, 'Classify' is a verb."
   },
   "prompt_translate_this": {
     "message": "Translate",
-    "description": ""
+    "description": "Name of the built-in prompt that translates the email or selected text, shown in the popup and context menus; short menu item label, a verb."
   },
   "prompt_this": {
     "message": "Prompt this",
-    "description": ""
+    "description": "Name of the built-in prompt that sends the selected text itself as the prompt to the AI, shown in the popup and context menus; short menu item label."
   },
   "prompt_selection_needed": {
     "message": "To proceed, you need to select some text!",
-    "description": ""
+    "description": "Alert shown in the mail window when the chosen prompt requires selected text but nothing is selected."
   },
   "customPrompts_managePrompts": {
     "message": "Manage Prompts",
-    "description": ""
+    "description": "Custom prompts page: page title and main heading."
   },
   "more_info_string": {
     "message": "More info",
-    "description": ""
+    "description": "Link text that opens the online documentation, used on several pages after a help sentence; keep it short."
   },
   "prompt_string":{
     "message": "Prompt",
-    "description": ""
+    "description": "AI chat window (api_webchat): label shown in the info area before the ID and name of the prompt being used; a noun."
   },
   "customPrompts_managePrompts_info_default": {
     "message": "The default prompts are not editable. You can disable them, then copy the prompt text and paste it into a new one to create a modified version.",
-    "description": ""
+    "description": "Custom prompts page: help text under the heading explaining that built-in prompts cannot be edited but can be disabled and copied."
   },
   "customPrompts_managePrompts_info_default_2": {
     "message": "You can import and export the prompts. Existing prompts with the same ID will be overwritten. Prompts with new IDs will be added.",
-    "description": ""
+    "description": "Custom prompts page: help text under the heading, also shown in the import confirmation dialog, explaining how importing handles existing and new prompt IDs."
   },
   "customPrompts_managePrompts_info_default_3": {
     "message": "If everything is correct, after the import click on the 'Save All' button.",
-    "description": ""
+    "description": "Custom data placeholders page: last line of the import confirmation dialog; 'Save All' must match the translation of the Save All button label."
   },
   "customPrompts_start_saving": {
     "message": "Saving prompts...",
-    "description": ""
+    "description": "Custom prompts page: status message shown while the prompts are being saved."
   },
   "customPrompts_reindexing_list": {
     "message": "Reindexing list...",
-    "description": ""
+    "description": "Custom data placeholders page: status message shown while the list is being reindexed after a change."
   },
   "customPrompts_autosave_info": {
     "message": "Every change is saved immediately.",
@@ -89,7 +89,7 @@
   },
   "customPrompts_import_completed_saved": {
     "message": "Custom prompts imported and saved!",
-    "description": ""
+    "description": "Custom prompts page: success status message shown after prompts have been imported from a file and saved."
   },
   "customPrompts_save_error": {
     "message": "Error while saving the prompts:",
@@ -97,131 +97,131 @@
   },
   "customPrompts_saved": {
     "message": "Prompts saved!",
-    "description": ""
+    "description": "Custom prompts page: success status message shown after the prompts are saved."
   },
   "customPrompts_form_label_ID": {
     "message": "ID",
-    "description": ""
+    "description": "Label of the ID field and column on the Custom prompts and Custom data placeholders pages, also in the ChatGPT Web window info line; keep it very short."
   },
   "customPrompts_form_label_ID_rules": {
     "message": "Must be unique, lowercase and without spaces",
-    "description": ""
+    "description": "Custom prompts and Custom data placeholders pages: small hint under the ID field listing the rules an ID must follow."
   },
   "customPrompts_form_label_Name": {
     "message": "Name",
-    "description": ""
+    "description": "Label of the Name field and column on the Custom prompts and Custom data placeholders pages; a noun, keep it short."
   },
   "customPrompts_form_label_Action": {
     "message": "Action",
-    "description": ""
+    "description": "Custom prompts page: label of the dropdown choosing what the AI window does with the answer; a noun, keep it short."
   },
   "customPrompts_form_label_need_selected": {
     "message": "Text selection needed",
-    "description": ""
+    "description": "Custom prompts page: label of the option switch that makes the prompt require selected text in the email."
   },
   "customPrompts_form_label_need_signature": {
     "message": "Always add the signature",
-    "description": ""
+    "description": "Custom prompts page: label of the option switch that always appends the user's signature to the prompt."
   },
   "customPrompts_form_label_need_custom_text": {
     "message": "Ask for additional text",
-    "description": ""
+    "description": "Custom prompts page: label of the option switch that makes the AI window ask the user for extra text to add to the prompt."
   },
   "customPrompts_form_label_enabled": {
     "message": "Enabled",
-    "description": ""
+    "description": "Custom data placeholders page: label of the checkbox in each row that enables the placeholder; an adjective."
   },
   "customPrompts_form_label_use_diff_viewer": {
     "message": "Enable the text comparison viewer",
-    "description": ""
+    "description": "Custom prompts page: label of the option switch that shows a comparison between the original and the AI-rewritten text."
   },
   "customPrompts_form_label_use_diff_viewer_title": {
     "message": "Available when the \"Action\" is \"Substitute text\".",
-    "description": ""
+    "description": "Custom prompts page: tooltip and hint of the text comparison viewer option; the quoted 'Action' and 'Substitute text' must match their translations on the page."
   },
   "customPrompts_form_required_fields": {
     "message": "Required fields",
-    "description": ""
+    "description": "Custom data placeholders page: legend next to an asterisk explaining that marked fields are required."
   },
   "customPrompts_btnEdit": {
     "message": "Edit",
-    "description": ""
+    "description": "Button label to edit an item on the Custom prompts and Custom data placeholders pages; a verb, keep it short."
   },
   "customPrompts_btnCancel": {
     "message": "Cancel",
-    "description": ""
+    "description": "Button label to cancel editing on the Custom prompts and Custom data placeholders pages, also used in the unsaved-changes dialog; keep it short."
   },
   "customPrompts_btnOK": {
     "message": "OK",
-    "description": ""
+    "description": "Custom data placeholders page: button label that confirms the edits made to a row; keep it very short."
   },
   "customPrompts_btnDelete": {
     "message": "Delete",
-    "description": ""
+    "description": "Button and menu item label to delete an item on the Custom prompts and Custom data placeholders pages; a verb, keep it short."
   },
   "customPrompts_btnDelete_confirmText": {
     "message": "Are you sure you want to delete this item?",
-    "description": ""
+    "description": "Confirmation dialog shown on the Custom prompts and Custom data placeholders pages before deleting an item."
   },
   "customPrompts_unsaved_changes": {
     "message": "There are unsaved changes!",
-    "description": ""
+    "description": "Warning shown next to a section title or in the message area of several settings pages when there are changes not yet saved."
   },
   "btnSaveAll_string": {
     "message": "Save All",
-    "description": ""
+    "description": "Button label on the Custom data placeholders and Menu order pages that saves all changes; keep it short."
   },
   "btnNew_string": {
     "message": "Add New",
-    "description": ""
+    "description": "Custom data placeholders page: button label that adds a new placeholder; keep it short."
   },
   "customPrompts_add_to_menu": {
     "message": "Add to menu",
-    "description": ""
+    "description": "Label of the dropdown choosing in which context the prompt or placeholder is shown in the menus (always, reading, composing); keep it short."
   },
   "customPrompts_add_to_menu_always": {
     "message": "Always",
-    "description": ""
+    "description": "Option of the 'Add to menu' dropdown on the Custom prompts and Custom data placeholders pages: shown in every context."
   },
   "customPrompts_add_to_menu_reading": {
     "message": "Reading an email",
-    "description": ""
+    "description": "Option of the 'Add to menu' dropdown on the Custom prompts and Custom data placeholders pages: shown only when reading an email."
   },
   "customPrompts_add_to_menu_composing": {
     "message": "Composing an email",
-    "description": ""
+    "description": "Option of the 'Add to menu' dropdown on the Custom prompts and Custom data placeholders pages: shown only when composing an email."
   },
   "customPrompts_close_button": {
     "message": "Close button",
-    "description": ""
+    "description": "Custom prompts page: option of the Action dropdown meaning the AI window only shows a Close button after the answer; short option label."
   },
   "customPrompts_do_reply": {
     "message": "Do reply",
-    "description": ""
+    "description": "Custom prompts page: option of the Action dropdown meaning the answer is used to create a reply to the email; short option label."
   },
   "customPrompts_substitute_text": {
     "message": "Substitute text",
-    "description": ""
+    "description": "Custom prompts page: option of the Action dropdown meaning the answer replaces the selected text in the compose window; short option label."
   },
   "chatgpt_win_working": {
     "message": "Work in progress...",
-    "description": ""
+    "description": "ChatGPT Web window: status message shown while the AI is generating the answer."
   },
   "chatgpt_win_job_completed": {
     "message": "Completed!",
-    "description": ""
+    "description": "ChatGPT Web window: status message shown when the AI has finished answering; keep it short."
   },
   "chatgpt_win_job_completed_select": {
     "message": "Select the text you want to use and click the button.",
-    "description": ""
+    "description": "ChatGPT Web window: instruction appended to the completion status, asking the user to select the answer text and click the action button."
   },
   "chatgpt_win_get_answer": {
     "message": "Use the selected answer",
-    "description": ""
+    "description": "ChatGPT Web window: label of the action button that uses the selected answer (for a reply or to replace text); keep it short."
   },
   "chatgpt_win_close": {
     "message": "Close",
-    "description": ""
+    "description": "Label of the Close button in the ChatGPT Web window and the AI chat window; a verb, keep it short."
   },
   "webchat_save_as_summary": {
     "message": "Save as Summary",
@@ -229,11 +229,11 @@
   },
   "chatgpt_textarea_not_found_error": {
     "message": "It seems that the ChatGPT page is taking too long to load. If it finishes loading, click the button on the right. If the problem persists, please check the service status.",
-    "description": ""
+    "description": "ChatGPT Web window: warning shown when the ChatGPT page input box cannot be found, pointing to the Retry button on the right."
   },
   "chatgpt_btn_retry": {
     "message": "Retry",
-    "description": ""
+    "description": "ChatGPT Web window: label of the button that retries sending the prompt to the ChatGPT page; a verb, keep it short."
   },
   "chatgpt_win_retrying": {
     "message": "Retrying…",
@@ -245,87 +245,87 @@
   },
   "chatgpt_sendbutton_not_found_error": {
     "message": "Click the send button to submit the prompt.",
-    "description": ""
+    "description": "ChatGPT Web window: status message asking the user to click the ChatGPT send button manually because it could not be clicked automatically."
   },
   "chatgpt_user_not_logged_in": {
     "message": "You are not logged in to ChatGPT. Please log in with your credentials, close the ChatGPT window, and then repeat the action you attempted. You will remain logged in afterwards.",
-    "description": ""
+    "description": "ChatGPT Web window: alert shown when the user is not logged in to ChatGPT, explaining how to log in and retry."
   },
   "chatgpt_win_model_warning": {
     "message": "For some reason, it's not possible to verify whether the correct model is loaded. For now, you can press the blue button to continue.",
-    "description": ""
+    "description": "ChatGPT Web window: warning shown when the add-on cannot verify which ChatGPT model is loaded; 'blue button' refers to the action button."
   },
   "chatgpt_win_custom_text": {
     "message": "Insert here the additional text for the prompt.",
-    "description": ""
+    "description": "ChatGPT Web window and AI chat window: instruction above the text box where the user types additional text to add to the prompt."
   },
   "chatgpt_win_send": {
     "message": "Send",
-    "description": ""
+    "description": "ChatGPT Web window and AI chat window: label of the button that sends the additional prompt text; a verb, keep it short."
   },
   "chatgpt_force_completion": {
     "message": "force completion",
-    "description": ""
+    "description": "ChatGPT Web window: lowercase link-like text in the toolbar that forces the action button to appear; keep it short and lowercase."
   },
   "chatgpt_force_completion_title": {
     "message": "Click here to display the 'Use last answer' button if ChatGPT has finished its work but the button has not appeared.",
-    "description": ""
+    "description": "ChatGPT Web window: tooltip of the 'force completion' link; 'Use last answer' refers to the action button label."
   },
   "msg_prompt_too_long": {
     "message": "The text you provided is too long. You need to reduce it.",
-    "description": ""
+    "description": "Alert shown in the mail window when the text to send to the AI is too long for the model."
   },
   "prefs_OptionText_release_notes": {
     "message": "Release Notes",
-    "description": ""
+    "description": "Options page: footer link that opens the release notes page; keep it short."
   },
   "prefs_status_page": {
     "message": "service status",
-    "description": ""
+    "description": "ChatGPT Web window: lowercase link text that opens the online ChatGPT Web service status page; keep it short."
   },
   "prefs_OptionText_chatgpt_win_text": {
     "message": "AI chat window dimensions",
-    "description": ""
+    "description": "Options page: title of the setting for the width and height of the AI chat window."
   },
   "prefs_OptionText_chatgpt_win_height": {
     "message": "Height",
-    "description": ""
+    "description": "Options page: label of the AI chat window height field; keep it very short."
   },
   "prefs_OptionText_chatgpt_win_width": {
     "message": "Width",
-    "description": ""
+    "description": "Options page: label of the AI chat window width field; keep it very short."
   },
   "prefs_OptionText_default_sign_name": {
     "message": "Default signature name",
-    "description": ""
+    "description": "Options page: label of the text field for the name used to sign replies generated by the AI."
   },
   "prefs_OptionText_default_chatgpt_lang": {
     "message": "Default language for the responses",
-    "description": ""
+    "description": "Options page: label of the text field for the language the AI should answer in by default."
   },
   "prefs_OptionText_reply_all": {
     "message": "Reply to all",
-    "description": ""
+    "description": "Option of the Reply type dropdown on the Options page, also shown on the reply button of the ChatGPT Web window; keep it short."
   },
   "prefs_OptionText_reply_sender": {
     "message": "Reply to sender",
-    "description": ""
+    "description": "Option of the Reply type dropdown on the Options page, also shown on the reply button of the ChatGPT Web window; keep it short."
   },
   "prefs_OptionText_reply_type": {
     "message": "Reply type",
-    "description": ""
+    "description": "Options page: label of the dropdown choosing whether replies go to the sender or to all recipients; keep it short."
   },
   "prefs_OptionText_reply_type_Info": {
     "message": "This is the default reply type that will be used when replying to an email. You can choose the other later in the reply dialog.",
-    "description": ""
+    "description": "Options page: help text under the Reply type dropdown explaining it is only the default and can be switched in the reply window."
   },
   "prefs_OptionText_btnManagePrompts": {
     "message": "Manage your prompts",
-    "description": ""
+    "description": "Options page: label of the button that opens the Custom prompts page."
   },
   "prefs_OptionText_btnManageCustomDataPH": {
     "message": "Manage your data placeholders",
-    "description": ""
+    "description": "Label of the button that opens the Custom data placeholders page, shown on the Options page and the Custom prompts page."
   },
   "prefs_storage_title": {
     "message": "Storage",
@@ -358,27 +358,27 @@
   },
   "prefsInfoDesc_1": {
     "message": "It could happen that the ChatGPT web interface changes in a way that breaks how the addon works. Check the \"Service Status\" page linked at the bottom of this page. Also, remember that the first time you use ThunderAI, you need to log in to ChatGPT.",
-    "description": ""
+    "description": "Options page: description shown when the ChatGPT Web connection is selected; 'Service Status' refers to the link at the bottom of the page."
   },
   "prefsInfoDesc_2": {
     "message": "To use the ChatGPT API, you need an OpenAI ChatGPT API Key and must choose a model.",
-    "description": ""
+    "description": "Options page: description shown when the ChatGPT OpenAI API connection is selected."
   },
   "prefsInfoDesc_3": {
     "message": "To use the integration with Ollama, you need to set up a local Ollama server. Once the server is running, enter its address in the designated field within the application. To ensure proper communication between ThunderAI and the Ollama server remember to set OLLAMA_ORIGINS=moz-extension://*.",
-    "description": ""
+    "description": "Options page: description shown when the Ollama connection is selected; keep OLLAMA_ORIGINS=moz-extension://* unchanged."
   },
   "prefsInfoDesc_4": {
     "message": "To use this integration, you need to set up a local server compatible with the OpenAI API, like LM Studio. Once the server is running, enter its address in the designated field within the application. To ensure proper communication between ThunderAI and the local server remember to set the CORS settings correctly.",
-    "description": ""
+    "description": "Options page: description shown when the OpenAI-compatible API connection is selected; LM Studio is a product name."
   },
   "prefsInfoDesc_7": {
     "message": "To use the Google Gemini API, you need a Google Gemini API Key and must choose a model.",
-    "description": ""
+    "description": "Options page: description shown when the Google Gemini API connection is selected."
   },
   "prefsInfoDesc_8": {
     "message": "To use the Claude API, you need an Anthropic Claude API Key and must choose a model.",
-    "description": ""
+    "description": "Options page: description shown when the Claude (Anthropic) API connection is selected."
   },
   "prefs_full_guide": {
     "message": "Full guide",
@@ -402,15 +402,15 @@
   },
   "backToOptionsText": {
     "message": "Options",
-    "description": ""
+    "description": "Release notes page: link at the top that returns to the Options page; keep it short."
   },
   "customPrompts_ExportAll": {
     "message": "Export all prompts",
-    "description": ""
+    "description": "Custom prompts page: label of the button that exports all prompts to a file."
   },
   "customPrompts_Import": {
     "message": "Import new prompts",
-    "description": ""
+    "description": "Custom prompts page: label of the button that imports prompts from a file."
   },
   "customPrompts_promptsCount": {
     "message": "$COUNT$ prompts",
@@ -607,95 +607,95 @@
   },
   "importPrompts_confirmText": {
     "message": "You are about to import new prompts.",
-    "description": ""
+    "description": "Custom prompts page: first line of the confirmation dialog shown before importing prompts from a file."
   },
   "customPrompts_start_import": {
     "message": "Starting custom prompts import...",
-    "description": ""
+    "description": "Custom prompts page: status message shown when the import of prompts from a file starts."
   },
   "importPrompts_invalidFile": {
     "message": "The file you're trying to import is not a valid custom prompts file.",
-    "description": ""
+    "description": "Custom prompts page: error alert and status message shown when the chosen file is not a valid ThunderAI prompts export."
   },
   "importPrompts_invalidPrompts": {
     "message": "The file you're trying to import does not contain any valid prompts.",
-    "description": ""
+    "description": "Custom prompts page: error alert and status message shown when the imported file contains no valid prompts list."
   },
   "currently_used_prompt": {
     "message": "Currently used prompt name",
-    "description": ""
+    "description": "ChatGPT Web window: tooltip of the area showing the name of the prompt in use."
   },
   "customprompts_form_label_define_response_lang": {
     "message": "Define the response language in the prompt",
-    "description": ""
+    "description": "Custom prompts page: label of the option switch that adds the response language instruction to the prompt."
   },
   "prefs_Connection_type": {
     "message": "Connection Type",
-    "description": ""
+    "description": "Label of the connection type (AI provider) selector in the connection panel, also on the Custom prompts page; keep it short."
   },
   "prefs_Connection_type_ChatGPT_Web": {
     "message": "ChatGPT Web Interface",
-    "description": ""
+    "description": "Name of the ChatGPT Web connection type (using the ChatGPT website), shown in the connection panel and the setup wizard."
   },
   "prefs_Connection_type_ChatGPT_API": {
     "message": "ChatGPT OpenAI API",
-    "description": ""
+    "description": "Name of the OpenAI ChatGPT API connection type, shown in the connection panel, the setup wizard and connection test messages."
   },
   "prefs_ChatGPT_API_Key": {
     "message": "ChatGPT API Key",
-    "description": ""
+    "description": "Connection panel: label of the field for the OpenAI ChatGPT API key."
   },
   "ChatGPT_Models": {
     "message": "ChatGPT Models",
-    "description": ""
+    "description": "Connection panel: label of the ChatGPT API model selector."
   },
   "ChatGPT_Models_Error_fetching": {
     "message": "Error trying to fetch ChatGPT models",
-    "description": ""
+    "description": "Connection panel: error shown when the list of ChatGPT models cannot be downloaded; the technical error follows after a colon."
   },
   "Loading": {
     "message": "Loading...",
-    "description": ""
+    "description": "Short loading indicator text, used in the connection panel while fetching models and as a tooltip in the popup menu; keep it short."
   },
   "error": {
     "message": "ThunderAI Error!",
-    "description": ""
+    "description": "Generic error title naming the add-on; keep 'ThunderAI' unchanged."
   },
   "chatgpt_empty_apikey": {
     "message": "You've not added an API Key for the ChatGPT API. Please insert one in the options page.",
-    "description": ""
+    "description": "Error shown in the AI chat window when the ChatGPT API is used but no API key has been set in the options."
   },
   "chatgpt_empty_model": {
     "message": "You've not chosen a model for the ChatGPT API. Please choose one in the options page.",
-    "description": ""
+    "description": "Error shown in the AI chat window when the ChatGPT API is used but no model has been chosen in the options."
   },
   "chagpt_api_send_button": {
     "message": "Using model",
-    "description": ""
+    "description": "AI chat window: tooltip of the Send and Stop buttons, followed by a colon and the model name; keep it short."
   },
   "Debug": {
     "message": "Debug",
-    "description": ""
+    "description": "Options page, advanced section: title of the debug setting; usually left as is or a short equivalent."
   },
   "prefs_OptionText_do_debug_info": {
     "message": "Activate the debug system",
-    "description": ""
+    "description": "Options page, advanced section: description of the setting that enables debug logging."
   },
   "prefs_Connection_type_Ollama_API": {
     "message": "Ollama API (Local LLM)",
-    "description": ""
+    "description": "Name of the Ollama connection type (local AI models), shown in the connection panel, the setup wizard and connection test messages."
   },
   "prefs_Connection_type_OpenAI_Comp_API": {
     "message": "OpenAI Compatible API",
-    "description": ""
+    "description": "Name of the 'OpenAI Compatible API' connection type, shown in the connection type selector, the setup wizard provider list and connection test messages. Means any server exposing an OpenAI-style API."
   },
   "prefs_API_Host": {
     "message": "Host Address",
-    "description": ""
+    "description": "Connection panel: label of the text field for the server host address (URL) of the Ollama or OpenAI Compatible API connection."
   },
   "Ollama_Models": {
     "message": "Ollama Models",
-    "description": ""
+    "description": "Connection panel: label of the selector listing the models available on the Ollama server."
   },
   "Models_Fetch": {
     "message": "Update list",
@@ -703,7 +703,7 @@
   },
   "Ollama_Models_Error_fetching": {
     "message": "Error trying to fetch Ollama models",
-    "description": ""
+    "description": "Connection panel: error shown when the list of models cannot be retrieved from the Ollama server; may be followed by a colon and the error detail."
   },
   "Models_Fetch_Done": {
     "message": "Models list loaded",
@@ -711,183 +711,183 @@
   },
   "API_Models_Error_NoModels": {
     "message": "No models found",
-    "description": ""
+    "description": "Connection panel: error detail appended after a colon to the model-fetch error when the server returns an empty model list."
   },
   "ollama_empty_host": {
     "message": "You've not added an Host Address for the Ollama API. Please insert one in the options page.",
-    "description": ""
+    "description": "Error shown in the AI chat window or for automatic features when the Ollama connection has no host address configured."
   },
   "ollama_empty_model": {
     "message": "You've not chosen a model for the Ollama API. Please choose one in the options page.",
-    "description": ""
+    "description": "Error shown in the AI chat window or for automatic features when no model has been chosen for the Ollama connection."
   },
   "error_connection_interrupted": {
     "message": "The connection to the server was unexpectedly interrupted",
-    "description": ""
+    "description": "Error shown in the AI chat window when the streaming connection to the AI server drops unexpectedly; followed by a colon and the technical error message."
   },
   "ollama_api_request_failed": {
     "message": "Ollama API request failed",
-    "description": ""
+    "description": "Error shown in the AI chat window when a request to the Ollama API fails; followed by a colon and the HTTP status or error detail."
   },
   "chatgpt_api_request_failed": {
     "message": "OpenAI ChatGPT API request failed",
-    "description": ""
+    "description": "Error shown in the AI chat window when a request to the OpenAI ChatGPT API fails; followed by a colon and the HTTP status or error detail."
   },
   "WaitingServerResponse": {
     "message": "Waiting for the server response",
-    "description": ""
+    "description": "AI chat window: status message shown below the input while waiting for the first reply from the server; three dots are appended automatically."
   },
   "prefs_API_Host_Info": {
     "message": "Something like",
-    "description": ""
+    "description": "Connection panel: small hint under the host address label, immediately followed by an example URL (e.g. 'Something like http://127.0.0.1:11434')."
   },
   "OpenAIComp_Models": {
     "message": "OpenAI Compatible API Models",
-    "description": ""
+    "description": "Connection panel: label of the selector listing the models available on the OpenAI Compatible API server."
   },
   "OpenAIComp_Models_Error_fetching": {
     "message": "Error trying to fetch OpenAI Compatible API models",
-    "description": ""
+    "description": "Connection panel: error shown when the list of models cannot be retrieved from the OpenAI Compatible API server; followed by a colon and the error detail."
   },
   "OpenAIComp_empty_host": {
     "message": "You've not added an Host Address for the OpenAI Compatible API. Please insert one in the options page.",
-    "description": ""
+    "description": "Error shown in the AI chat window or for automatic features when the OpenAI Compatible API connection has no host address configured."
   },
   "OpenAIComp_empty_model": {
     "message": "You've not chosen a model for the OpenAI Compatible API. Please choose one in the options page.",
-    "description": ""
+    "description": "Error shown in the AI chat window or for automatic features when no model has been chosen for the OpenAI Compatible API connection."
   },
   "OpenAIComp_api_request_failed": {
     "message": "OpenAI Comp API request failed",
-    "description": ""
+    "description": "Error shown in the AI chat window when a request to the OpenAI Compatible API fails; followed by a colon and the HTTP status or error detail."
   },
   "prefs_OpenAIComp_ChatName": {
     "message": "Chat Name",
-    "description": ""
+    "description": "Connection panel (OpenAI Compatible API, advanced): label of the text field for the name shown for the AI in the chat window."
   },
   "prefs_OpenAIComp_ChatName_Info": {
     "message": "This is the name that will be used in the AI chat.",
-    "description": ""
+    "description": "Connection panel: help text under the Chat Name field, explaining that the name is displayed for the AI in the AI chat window."
   },
   "StorageSpace": {
     "message": "Total storage space occupied",
-    "description": ""
+    "description": "Custom prompts and Custom data placeholders pages: label in the footer, followed by a colon and the storage size used by the add-on."
   },
   "SearchPrompt": {
     "message": "Search prompts",
-    "description": ""
+    "description": "Popup menu: placeholder text inside the search box used to filter the list of prompts. Keep it short."
   },
   "prefs_OptionText_dynamic_menu_force_enter": {
     "message": "Menu: immediate prompt send",
-    "description": ""
+    "description": "Options page, advanced section: name of the option that makes the keyboard-shortcut prompt menu send the highlighted prompt immediately."
   },
   "prefs_OptionText_dynamic_menu_force_enter_info": {
     "message": "If checked, using the keyboard shortcut CTRL+ALT+A will automatically send the highlighted prompt from the menu. Otherwise, the prompt name will be displayed to the user, requiring another press of the Enter key to send it.",
-    "description": ""
+    "description": "Options page, advanced section: description of the immediate prompt send option for the CTRL+ALT+A prompt menu. Keep the key combination unchanged."
   },
   "prefs_OptionText_chatgpt_win_dims_info": {
     "message": "Set to 0 if you don't want to specify the window size.",
-    "description": ""
+    "description": "Options page: help text under the ChatGPT window width and height fields, explaining that 0 leaves the window size unspecified."
   },
   "prefs_OpenAIComp_API_Key": {
     "message": "OpenAI Comp API Key",
-    "description": ""
+    "description": "Connection panel: label of the API key field for the OpenAI Compatible API connection ('Comp' is short for Compatible)."
   },
   "Optional": {
     "message": "Optional",
-    "description": ""
+    "description": "Connection panel: small note under the API key label (Ollama and OpenAI Compatible API) indicating the field may be left empty. Single adjective, keep it short."
   },
   "OpenChatGPTTab": {
     "message": "Open ChatGPT Tab",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web): button label that opens ChatGPT in a new Thunderbird tab, used to log in."
   },
   "OpenChatGPTTab_Info": {
     "message": "In case of login issues in the ThunderAI window, open ChatGPT in a new tab using the button on the right, log in, then close the tab and continue using ThunderAI.",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web): explanation shown above the 'Open ChatGPT Tab' button, describing how to work around login problems."
   },
   "OpenChatGPTTab_Info2": {
     "message": "Opening ChatGPT Web from here will apply any configured settings for the model, project, and Custom GPT.",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web): note below the 'Open ChatGPT Tab' button saying that the configured model, project and Custom GPT are applied."
   },
   "placeholder_mail_text_body": {
     "message": "Mail body",
-    "description": ""
+    "description": "Display name of the {%mail_text_body%} data placeholder (plain text body of the email), shown in placeholder suggestions while editing prompts."
   },
   "placeholder_mail_html_body": {
     "message": "HTML mail body",
-    "description": ""
+    "description": "Display name of the {%mail_html_body%} data placeholder (HTML body of the email), shown in placeholder suggestions while editing prompts."
   },
   "placeholder_mail_subject": {
     "message": "Mail subject",
-    "description": ""
+    "description": "Display name of the {%mail_subject%} data placeholder (subject of the email), shown in placeholder suggestions while editing prompts."
   },
   "placeholder_folder_name": {
     "message": "Folder name",
-    "description": ""
+    "description": "Display name of the {%mail_folder_name%} data placeholder (name of the mail folder containing the email), shown in placeholder suggestions while editing prompts."
   },
   "placeholder_folder_path": {
     "message": "Folder path",
-    "description": ""
+    "description": "Display name of the {%mail_folder_path%} data placeholder (full path of the mail folder containing the email), shown in placeholder suggestions while editing prompts."
   },
   "placeholder_mail_headers": {
     "message": "Mail headers",
-    "description": ""
+    "description": "Display name of the {%mail_headers%} data placeholder (main headers of the email), shown in placeholder suggestions while editing prompts."
   },
   "placeholder_mail_full_headers": {
     "message": "All mail headers",
-    "description": ""
+    "description": "Display name of the {%mail_full_headers%} data placeholder (all headers of the email), shown in placeholder suggestions while editing prompts."
   },
   "placeholder_selected_text": {
     "message": "Selected text",
-    "description": ""
+    "description": "Display name of the {%selected_text%} data placeholder (text the user has selected, as plain text), shown in placeholder suggestions while editing prompts."
   },
   "placeholder_selected_html": {
     "message": "Selected HTML",
-    "description": ""
+    "description": "Display name of the {%selected_html%} data placeholder (user's selection with its HTML formatting), shown in placeholder suggestions while editing prompts."
   },
   "placeholder_additional_text": {
     "message": "Additional text",
-    "description": ""
+    "description": "Display name of the {%additional_text%} data placeholder (extra text typed by the user when running the prompt), shown in placeholder suggestions while editing prompts."
   },
   "placeholder_junk_score": {
     "message": "Junk score",
-    "description": ""
+    "description": "Display name of the {%junk_score%} data placeholder (Thunderbird's junk/spam score of the email), shown in placeholder suggestions while editing prompts."
   },
   "placeholder_recipients": {
     "message": "Recipients",
-    "description": ""
+    "description": "Display name of the {%recipients%} data placeholder (the email's To recipients), shown in placeholder suggestions while editing prompts. Plural noun."
   },
   "placeholder_cc_list": {
     "message": "CC list",
-    "description": ""
+    "description": "Display name of the {%cc_list%} data placeholder (the email's CC recipients), shown in placeholder suggestions while editing prompts."
   },
   "placeholder_author": {
     "message": "Author",
-    "description": ""
+    "description": "Display name of the {%author%} data placeholder (the sender of the email), shown in placeholder suggestions while editing prompts. Noun."
   },
   "placeholder_account_email_address": {
     "message": "Account email address",
-    "description": ""
+    "description": "Display name of the {%account_email_address%} data placeholder (email address of the current Thunderbird account), shown in placeholder suggestions while editing prompts."
   },
   "placeholder_mail_text_body_or_selected": {
     "message": "Mail body or selected text",
-    "description": ""
+    "description": "Display name of the {%mail_text_body_or_selected%} data placeholder (selected text if any, otherwise the plain text body), shown in placeholder suggestions while editing prompts."
   },
   "placeholder_mail_html_body_or_selected": {
     "message": "Mail body or selected HTML",
-    "description": ""
+    "description": "Display name of the {%mail_html_body_or_selected%} data placeholder (selected HTML if any, otherwise the HTML body), shown in placeholder suggestions while editing prompts."
   },
   "placeholder_mail_plain_text_part": {
     "message": "Original plain text part of the mail, without any conversion from the HTML part (best for business and automated mail; may be empty or a stub on newsletters)",
-    "description": ""
+    "description": "Display name and explanation of the {%mail_plain_text_part%} data placeholder, shown in placeholder suggestions while editing prompts; 'plain text part' refers to the email's MIME part."
   },
   "prefs_OptionText_placeholders_use_default_value": {
     "message": "Placeholders: use default value",
-    "description": ""
+    "description": "Options page, advanced section: name of the option that fills empty data placeholders with their default values."
   },
   "prefs_OptionText_placeholders_use_default_value_info": {
     "message": "If checked, the placeholders will be filled with the default values when no value is provided. Otherwise, the placeholders will be kept in place.",
-    "description": ""
+    "description": "Options page, advanced section: description of the option that fills data placeholders with default values instead of leaving them unchanged."
   },
   "prefs_OptionText_diff_granularity": {
     "message": "Compare changes by",
@@ -895,7 +895,7 @@
   },
   "prefs_OptionText_diff_granularity_info": {
     "message": "How the change picker compares the original text with the answer. \"Words\" suits fixing spelling and grammar; \"Sentences\" is easier to read when the answer rewrites whole sentences. Note that on a text made of a single sentence, \"Sentences\" shows the whole text as one change. You can also switch between the two while reviewing the changes.",
-    "description": ""
+    "description": "Options page, advanced section: description of the change picker comparison setting. 'Words' and 'Sentences' are the option values; translate them as in their own labels."
   },
   "prefs_OptionText_diff_granularity_words": {
     "message": "Words",
@@ -907,43 +907,43 @@
   },
   "prefs_OptionText_hide_thinking": {
     "message": "Collapse thinking block by default",
-    "description": ""
+    "description": "Options page, advanced section: name of the option that collapses the AI model's reasoning ('thinking') block in the chat by default."
   },
   "prefs_OptionText_hide_thinking_info": {
     "message": "Controls the initial state of the thinking block shown above the answer. If checked, the block is collapsed by default and can be opened with a click. If unchecked, the block is open by default and can be collapsed with a click. The thinking content is always preserved.",
-    "description": ""
+    "description": "Options page, advanced section: description of the option controlling whether the AI model's thinking block in the chat starts collapsed or open."
   },
   "prefs_OptionText_chat_show_usage_data": {
     "message": "Show usage data in chat",
-    "description": ""
+    "description": "Options page, advanced section: name of the option that shows token usage data in the AI chat window."
   },
   "prefs_OptionText_chat_show_usage_data_info": {
     "message": "The token counts reported by the API are shown next to the buttons of each response. A click opens the details, including how much of the model context the conversation uses and the total of the whole chat session.",
-    "description": ""
+    "description": "Options page, advanced section: description of the option showing token counts next to each AI response in the chat window."
   },
   "prefs_OptionText_chat_show_usage_data_openai_comp_note": {
     "message": "With an OpenAI Compatible API, availability depends on the specific server implementation: some servers never report token usage.",
-    "description": ""
+    "description": "Options page, advanced section: note appended to the usage data option description when the OpenAI Compatible API is in use."
   },
   "prefs_OptionText_thinking_summary": {
     "message": "Thinking",
-    "description": ""
+    "description": "AI chat window: title of the collapsible block showing the AI model's reasoning, also shown with '...' while the model is thinking. Keep it short; noun or gerund."
   },
   "prefs_OptionText_max_prompt_length" : {
     "message": "Max prompt length",
-    "description": ""
+    "description": "Options page: label of the number field setting the maximum allowed prompt length in characters."
   },
   "prefs_OptionText_max_prompt_length_Info" : {
     "message": "This is the maximum number of characters that can be used in a prompt. Otherwise, an error message will be displayed. The value is not editable for the ChatGPT Web Interface. Set it to zero to disable the check.",
-    "description": ""
+    "description": "Options page: help text under the maximum prompt length field."
   },
   "prefs_OptionText_special_command_timeout" : {
     "message": "Special command timeout (ms)",
-    "description": ""
+    "description": "Options page: label of the number field for the timeout, in milliseconds, of automatic AI requests. Keep '(ms)' as the milliseconds unit."
   },
   "prefs_OptionText_special_command_timeout_Info" : {
     "message": "Time in milliseconds before a hung AI request (auto add-tags, spam filter, summarize, translate) is aborted. Increase it if you use slow local models. This applies only to API-based connections, not to the ChatGPT Web Interface.",
-    "description": ""
+    "description": "Options page: help text under the special command timeout field, explaining when automatic AI requests are aborted."
   },
   "prefs_OptionText_batch_max_concurrency": {
     "message": "Emails processed in parallel",
@@ -951,39 +951,39 @@
   },
   "prefs_OptionText_batch_max_concurrency_Info": {
     "message": "Maximum number of emails processed at the same time when several emails are handled together, for example when new mail arrives or several emails are selected. Each email goes through its features (spam filter, add tags, summarize, translate) one after the other, so this is also the maximum number of AI requests sent at once. Higher values are faster, but can hit the rate limits of your AI provider or overload a local model such as Ollama.",
-    "description": ""
+    "description": "Options page: help text under the field setting how many emails are processed by AI features in parallel."
   },
   "prefs_OptionText_chatgpt_web_model": {
     "message": "ChatGPT Web Model",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web, advanced) and Custom prompts page: label of the text field for the ChatGPT model to use."
   },
   "prefs_OptionText_chatgpt_web_model_info": {
     "message": "This is the Model that will be enforced for the ChatGPT Web Interface. If none is specified or an incorrect one is provided, the default model will be set by ChatGPT on the webpage. This setting will not work with a ChatGPT free account.",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web): help text under the model field, explaining how the model is enforced on the ChatGPT web page."
   },
   "prefs_OptionText_chatgpt_web_tempchat": {
     "message": "ChatGPT Web temporary chat",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web, advanced): label of the toggle that uses ChatGPT's temporary chat mode."
   },
   "prefs_OptionText_chatgpt_web_tempchat_info": {
     "message": "If checked, the temporary chat will be used in the ChatGPT Web Interface.",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web): text next to the temporary chat toggle. 'Temporary chat' is a ChatGPT feature name; use ChatGPT's localized term if one exists."
   },
   "prefs_OptionText_chatgpt_web_load_wait_time": {
     "message": "Wait time for page load",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web, advanced): label of the number field for how long to wait for the ChatGPT page to load."
   },
   "prefs_OptionText_chatgpt_web_load_wait_time_info": {
     "message": "Time in milliseconds to wait for the ChatGPT page to load before loading the additional content. Default is 1000ms. If a Custom GPT or Project is defined, additional 1000ms will be added to this value.",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web): help text under the page load wait time field, in milliseconds."
   },
   "chatgpt_btn_model": {
     "message": "Use the current model",
-    "description": ""
+    "description": "ChatGPT Web window: button in the model warning box that dismisses the warning and continues with the model currently selected on the page."
   },
   "prefs_OptionText_btnManagePrompts_infoline": {
     "message": "You can use additional data placeholders.",
-    "description": ""
+    "description": "Prompt editing pages (Custom prompts, Add tags, Get calendar event, etc.): help line followed by a 'more info' link about data placeholders."
   },
   "prefs_extra_body_error_invalid": {
     "message": "Invalid JSON:",
@@ -991,407 +991,407 @@
   },
   "prefs_extra_body_error_not_object": {
     "message": "The value must be a JSON object, enclosed in curly braces.",
-    "description": ""
+    "description": "Connection panel: validation error shown under the extra body JSON field when the value is valid JSON but not an object."
   },
   "prefs_OptionText_openai_comp_extra_body_info": {
     "message": "Additional parameters to send with every API call, as a JSON object. Useful for options this service supports but ThunderAI doesn't expose, like disabling the thinking mode: {\"chat_template_kwargs\": {\"thinking\": false}} or {\"top_p\": 0.9}. The parameters managed by ThunderAI (model, messages, streaming, temperature) can't be overridden here. An invalid value is ignored.",
-    "description": ""
+    "description": "Connection panel (OpenAI Compatible API): help text under the extra body JSON field. Keep the JSON examples and parameter names unchanged."
   },
   "prefs_OptionText_openai_comp_use_v1" : {
     "message": "Keep the \"v1\" compatibility",
-    "description": ""
+    "description": "Connection panel (OpenAI Compatible API, advanced): label of the checkbox that keeps the 'v1' segment in API URLs. Keep 'v1' unchanged."
   },
   "prefs_OptionText_openai_comp_use_v1_info": {
     "message": "If checked, the \"v1\" segment in the path of API calls will be kept, like \"http://localhost:1234/v1/chat/completions\".",
-    "description": ""
+    "description": "Connection panel (OpenAI Compatible API): text next to the 'v1' compatibility checkbox. Keep 'v1' and the example URL unchanged."
   },
   "prefs_OptionText_openai_comp_info_remote": {
     "message": "Here you can insert also a remote server address.",
-    "description": ""
+    "description": "Connection panel (OpenAI Compatible API): help text under the host address field, saying a remote server address can also be entered."
   },
   "prefs_OptionText_owl_warning": {
     "message": "It appears that at least one of your accounts is using the Owl for Exchange add-on. There is a known issue between Thunderbird and Owl, which is currently being addressed. At this time, you can use ThunderAI while composing emails, but not when reading them.",
-    "description": ""
+    "description": "Options page: warning banner shown when an account uses the Owl for Exchange add-on; followed by a 'more info' link. Keep 'Owl for Exchange' unchanged."
   },
   "prompt_reply_full_text": {
     "message": "Reply to the following email. Reply with only the needed text and with no extra comments or other text.",
-    "description": ""
+    "description": "Instruction sent to the AI model as the prompt of the built-in 'Reply' action; the email text is appended to it."
   },
   "prompt_reply_additional_text": {
     "message": "Do not add the subject line to the response.",
-    "description": ""
+    "description": "Instruction appended to the prompt sent to the AI model by the built-in 'Reply' action, telling it not to include a subject line."
   },
   "reply_same_lang": {
     "message": "Reply in the same language.",
-    "description": ""
+    "description": "Instruction appended to prompts sent to the AI model when no default language is set, asking it to answer in the language of the email."
   },
   "sign_msg_as": {
     "message": "Sign the message as",
-    "description": ""
+    "description": "Instruction appended to prompts sent to the AI model, followed by the user's configured signature name and a period."
   },
   "prompt_reply_advanced_full_text": {
     "message": "Reply to the following email \"{%selected_text%}\", considering this is the full thread of emails \"{%mail_html_body%}\". Reply with only the needed text and with no extra comments or other text.",
-    "description": ""
+    "description": "Instruction sent to the AI model as the prompt of the built-in advanced 'Reply' action; keep the {%selected_text%} and {%mail_html_body%} tokens unchanged."
   },
   "prompt_reply_custom_command_full_text": {
     "message": "Reply to the following email \"{%mail_text_body%}\". {%additional_text%}. Reply with only the needed text and with no extra comments or other text.",
-    "description": ""
+    "description": "Instruction sent to the AI model as the prompt of the built-in 'Reply with custom instructions' action; keep the {%mail_text_body%} and {%additional_text%} tokens unchanged."
   },
   "prompt_rewrite_full_text": {
     "message": "Rewrite the following text to be more polite. Reply with only the re-written text and with no extra comments or other text. {%selected_html%}",
-    "description": ""
+    "description": "Instruction sent to the AI model as the prompt of the built-in 'Rewrite polite' action; keep the {%selected_html%} token unchanged."
   },
   "prompt_rewrite_formal_full_text": {
     "message": "Rewrite the following text to be more formal. Reply with only the re-written text and with no extra comments or other text. {%selected_html%}",
-    "description": ""
+    "description": "Instruction sent to the AI model as the prompt of the built-in 'Rewrite formal' action; keep the {%selected_html%} token unchanged."
   },
   "prompt_classify_full_text": {
     "message": "Classify the following text in terms of Politeness, Warmth, Formality, Assertiveness, Offensiveness giving a percentage for each category. Reply with only the category and score with no extra comments or other text.",
-    "description": ""
+    "description": "Instruction sent to the AI model as the prompt of the built-in 'Classify' action; the email text is appended to it."
   },
   "prompt_translate_this_full_text": {
     "message": "Translate the email below into {%thunderai_translate_lang%}.\n\nRules:\n- Translate both the subject and the body.\n- Return the result as a JSON object with three fields: \"subject\", \"body\" and \"status\".\n- If the translation has been done the status is equal to 1.\n- If the email is written in one of these languages \"{%thunderai_translate_exclude_lang%}\" or in the {%thunderai_translate_lang%} language, return an empty string for the body and the subject and set the status to -1.\n- Do not add explanations, notes, or any text outside the JSON.\n\nMail subject: {%mail_subject%}\n\nMail body: {%mail_html_body%}\n\nGenerate a response in JSON format only. The output should be only a JSON object. Here is an example of the JSON format to be used:\n{\n\"subject\": \"subject translation\",\n\"body\": \"body translation\",\n\"status\": \"status result\"\n}",
-    "description": ""
+    "description": "Instruction sent to the AI model as the prompt of the built-in 'Translate' action; keep all {%placeholder%} tokens, line breaks, the JSON field names and the JSON example structure unchanged."
   },
   "prompt_this_full_text": {
     "message": "Reply with only the needed text and with no extra comments or other text.",
-    "description": ""
+    "description": "Instruction sent to the AI model as the prompt of the built-in 'Prompt this' action, which sends the selected text as the prompt itself."
   },
   "prefs_OptionText_add_tags": {
     "message": "Add tags to emails",
-    "description": ""
+    "description": "Options page and Setup wizard features list: name of the feature that adds AI-generated tags to emails."
   },
   "prefs_OptionText_add_tags_Info": {
     "message": "If checked, an item will be included in the menu to apply tags to emails.",
-    "description": ""
+    "description": "Options page and Setup wizard: description under the 'Add tags to emails' feature toggle."
   },
   "prompt_add_tags": {
     "message": "Add tags",
-    "description": ""
+    "description": "Name of the built-in 'Add tags' action, shown as a menu item in the context and popup menus and on settings pages. 'Add' is a verb; keep it short."
   },
   "prompt_add_tags_full_text": {
     "message": "Analyze the following email text and generate a JSON array of tags that summarize its content. Use themes, key topics, and relevant descriptors as tags. Ensure the tags are concise and relevant to the email's content.\nEmail text: {%mail_text_body%}\nConsider the following details for context:\n- Sender: {%author%}\n- Recipients: {%recipients%}\n- CC list: {%cc_list%}\n- Email subject: {%mail_subject%}\nPlease base your tags on the email's text and context, ignoring unnecessary information or trivial details.\nGenerate a response in JSON format only. The output should be only a JSON array of tags without any additional comment or text. Here is an example of the JSON format to be used:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}",
-    "description": ""
+    "description": "Instruction sent to the AI model as the prompt of the built-in 'Add tags' action; keep all {%placeholder%} tokens, line breaks and the JSON example structure and field name unchanged."
   },
   "prompt_proofread_this": {
     "message": "Proofread this email",
-    "description": ""
+    "description": "Name of the built-in 'Proofread' action, shown as a menu item in the context and popup menus. Imperative verb phrase; keep it short."
   },
   "prompt_proofread_this_full_text": {
     "message": "Proofread the following email and also correct any spelling or grammar mistakes. Reply with only the corrected text and with no extra comments or other text.\n\n\"{%selected_html%}\"",
-    "description": ""
+    "description": "Instruction sent to the AI model as the prompt of the built-in 'Proofread this email' action; keep the {%selected_html%} token and the line breaks unchanged."
   },
   "placeholder_tags_current_email": {
     "message": "Mail tags",
-    "description": ""
+    "description": "Display name of the {%tags_current_email%} data placeholder (tags already assigned to the email), shown in placeholder suggestions while editing prompts."
   },
   "placeholder_tags_full_list": {
     "message": "Existing tags",
-    "description": ""
+    "description": "Display name of the {%tags_full_list%} data placeholder (all tags defined in Thunderbird), shown in placeholder suggestions while editing prompts."
   },
   "prefs_OptionText_add_tags_maxnum": {
     "message": "Maximum number of tags",
-    "description": ""
+    "description": "Add tags page: label of the number field setting the maximum number of tags the AI may propose."
   },
   "prefs_OptionText_add_tags_maxnum_Info": {
     "message": "The maximum number of tags proposed by the AI. Set to 0 if you don't want to limit the number of tags.",
-    "description": ""
+    "description": "Add tags page: help text under the maximum number of tags field."
   },
   "prefs_OptionText_add_tags_max_messages_Info": {
     "message": "The maximum number of selected messages that can be tagged at once from the context menu. Useful with AI providers that have a daily request quota. Automatic tagging of incoming messages is not limited. Set to 0 for no limit.",
-    "description": ""
+    "description": "Add tags page: help text under the field limiting how many selected messages can be tagged at once from the context menu."
   },
   "prompt_add_tags_maxnum": {
     "message": "Limit the number of tags to",
-    "description": "" 
+    "description": "Instruction appended to the 'Add tags' prompt sent to the AI model, followed by a number and a period; also previewed on the Add tags page."
   },
   "prefs_OptionText_add_tags_hide_exclusions": {
     "message": "Hide excluded tags",
-    "description": ""
+    "description": "Add tags page: name of the option that hides tags on the exclusion list in the tag confirmation dialog."
   },
   "prefs_OptionText_add_tags_hide_exclusions_Info": {
     "message": "If checked, the tags that are present in the exclusion list will be hidden in the confirm dialog.",
-    "description": ""
+    "description": "Add tags page: description of the option hiding excluded tags in the tag confirmation dialog."
   },
   "prefs_OptionText_btnManageTagsInfo": {
     "message": "Manage tags settings",
-    "description": ""
+    "description": "Options page: button label under the 'Add tags to emails' feature that opens the Add tags settings page."
   },
   "AddTags_PageTitle": {
     "message": "Manage Tags Settings",
-    "description": ""
+    "description": "Add tags page: page title, shown in the header and the window title after 'ThunderAI - '."
   },
   "AddTags_info_default": {
     "message": "In this page you can modify the default prompt used to add tags to emails and manage the exclusion list.",
-    "description": ""
+    "description": "Add tags page: introductory subtitle under the page title."
   },
   "AddTags_prompt_text_title": {
     "message": "Current prompt text",
-    "description": ""
+    "description": "Add tags page: heading of the section showing the editable prompt text used to generate tags."
   },
   "AddTags_excl_list_title": {
     "message": "Exclusion list",
-    "description": ""
+    "description": "Add tags page: heading of the section where the user edits the list of tags that must never be added."
   },
   "AddTags_excl_list_infoline": {
     "message": "This is a list of tags that are not allowed to be added to emails.",
-    "description": ""
+    "description": "Add tags page: help text under the 'Exclusion list' heading explaining what the list is for."
   },
   "save": {
     "message": "Save",
-    "description": ""
+    "description": "Generic 'Save' button label used on many settings pages (prompt editors, lists, rules); a verb, keep it short."
   },
   "addtags_info_additional_statements": {
     "message": "This statement will be added at the end of the prompt:",
-    "description": ""
+    "description": "Add tags page: introduces, under the prompt editor, the extra instructions that will be appended to the prompt sent to the AI; followed by the quoted statements."
   },
   "reset_default": {
     "message": "Reset to default",
-    "description": ""
+    "description": "Button label on settings pages that restores a field or prompt to its default value; keep it short."
   },
   "reset": {
     "message": "Reset",
-    "description": ""
+    "description": "Custom prompts page: short button label in the per-prompt connection panel that resets the prompt's API settings; a verb, keep it short."
   },
   "addtags_excl_list_infoline2": {
     "message": "Add a word per line, or separated by a comma.",
-    "description": ""
+    "description": "Add tags page: help text under the exclusion list explaining how to enter the words (one per line or comma-separated)."
   },
   "addtags_dialog_title": {
     "message": "Add tags to the email",
-    "description": ""
+    "description": "Heading of the dialog shown in the message window that lists the tags suggested by the AI for the email."
   },
   "addtags_exclude_tag": {
     "message": "Exclude tag",
-    "description": ""
+    "description": "Add tags dialog: tooltip and alt text of the icon next to each suggested tag that adds it to the exclusion list; 'Exclude' is a verb."
   },
   "addtags_no_tags_received": {
     "message": "No tags received from the AI.",
-    "description": ""
+    "description": "Add tags dialog: message shown when the AI response contained no tags."
   },
   "addtags_no_valid_tags": {
     "message": "No valid tags found, after filtering with the exclusion list.",
-    "description": ""
+    "description": "Add tags dialog: message shown when all tags suggested by the AI were removed by the user's exclusion list."
   },
   "thunderai_error_title": {
     "message": "ThunderAI Error",
-    "description": ""
+    "description": "Heading of the in-page dialog shown in the message window when ThunderAI reports an error; 'ThunderAI' is the product name, do not translate it."
   },
   "thunderai_warning_title": {
     "message": "ThunderAI Warning",
-    "description": ""
+    "description": "Heading of the in-page dialog shown in the message window when ThunderAI reports a warning; 'ThunderAI' is the product name, do not translate it."
   },
   "prefs_OptionText_add_tags_first_uppercase": {
     "message": "First letter uppercase",
-    "description": ""
+    "description": "Add tags page: label of the option that capitalizes only the first letter of each tag; keep it short."
   },
   "prefs_OptionText_add_tags_first_uppercase_Info": {
     "message": "If checked, the tags label will be set to lowercase letters with only the first letter uppercase.",
-    "description": ""
+    "description": "Add tags page: help text under the 'First letter uppercase' option explaining how the tag label is capitalized."
   },
   "prefs_SurveyLinkText": {
     "message": "Enjoying ThunderAI?",
-    "description": ""
+    "description": "Options page header: short question shown before the feedback survey link ('Share your feedback')."
   },
   "prefs_SurveyLinkText2": {
     "message": "Share your feedback",
-    "description": ""
+    "description": "Options page header: text of the link to the feedback survey, shown after 'Enjoying ThunderAI?'; keep it short."
   },
   "prefs_doc_title": {
     "message": "Documentation",
-    "description": ""
+    "description": "Options page and Onboarding page: small heading of the panel with links to the online documentation; a noun."
   },
   "prefs_doc_setup_guide": {
     "message": "Setup Guides",
-    "description": ""
+    "description": "Options page and Onboarding page: label of the link to the online setup guides in the documentation panel; keep it short."
   },
   "prefs_doc_custom_prompt_tutorial": {
     "message": "Custom Prompt Tutorial",
-    "description": ""
+    "description": "Options page and Onboarding page: label of the link to the online tutorial on writing custom prompts; keep it short."
   },
   "prefs_doc_open_welcome": {
     "message": "Open the Welcome Page",
-    "description": ""
+    "description": "Options page documentation panel: label of the link that opens the ThunderAI welcome (onboarding) page; keep it short."
   },
   "OpenAIComp_force_model_ask": {
     "message": "Insert here the model name you want to use.",
-    "description": ""
+    "description": "Connection panel (OpenAI-compatible API): text of the prompt dialog asking the user to type a model name manually."
   },
   "prefs_OptionText_add_tags_force_lang": {
     "message": "Force language",
-    "description": ""
+    "description": "Add tags page: label of the option that forces the tags to be written in the configured language; keep it short."
   },
   "prefs_OptionText_add_tags_force_lang_Info": {
     "message": "If checked, the tags language will be forced to match the language defined on the ThunderAI options page, if specified.",
-    "description": ""
+    "description": "Add tags page: help text under the 'Force language' option; refers to the language set on the ThunderAI Options page."
   },
   "prompt_add_tags_force_lang": {
     "message": "The tags must be written in",
-    "description": ""
+    "description": "Instruction sent to the AI model, appended to the Add tags prompt and followed by a language name and a period (e.g. '... written in Italian.'); also previewed on the Add tags page."
   },
   "prefs_Connection_type_Google_Gemini_API": {
     "message": "Google Gemini API",
-    "description": ""
+    "description": "Name of the Google Gemini API connection type, shown in the connection selector, Setup wizard and connection test; a product name, usually left untranslated."
   },
   "prefs_GoogleGemini_API_Key": {
     "message": "API Key",
-    "description": ""
+    "description": "Connection panel (Google Gemini API): label of the field where the user enters the API key; keep it short."
   },
   "GoogleGemini_Models": {
     "message": "Google Gemini API Models",
-    "description": ""
+    "description": "Connection panel (Google Gemini API): label of the model selection field."
   },
   "GoogleGemini_Models_Error_fetching": {
     "message": "Error trying to fetch Google Gemini models",
-    "description": ""
+    "description": "Connection panel (Google Gemini API): error shown when the list of models cannot be fetched; followed by a colon and the error detail."
   },
   "google_gemini_api_request_failed": {
     "message": "Google Gemini API request failed",
-    "description": ""
+    "description": "Error shown in the AI chat window when a request to the Google Gemini API fails; followed by the HTTP status and error details."
   },
   "google_gemini_empty_apikey": {
     "message": "You've not added an API Key for the Google Gemini API. Please insert one in the options page.",
-    "description": ""
+    "description": "Error shown when the Google Gemini API is used but no API key has been set in the ThunderAI options."
   },
   "google_gemini_empty_model": {
     "message": "You've not chosen a model for the Google Gemini API. Please choose one in the options page.",
-    "description": ""
+    "description": "Error shown when the Google Gemini API is used but no model has been chosen in the ThunderAI options."
   },
   "GoogleGemini_SystemInstruction": {
     "message": "System Instruction",
-    "description": ""
+    "description": "Connection panel and AI chat window settings (Google Gemini API): label of the 'system instruction' text field; a technical term of the Gemini API."
   },
   "GoogleGemini_SystemInstruction_Info": {
     "message": "When you set a system instruction, you give the model additional context to understand the task, provide more customized responses, and adhere to specific guidelines over the prompt that will be sent.",
-    "description": ""
+    "description": "Connection panel (Google Gemini API): help text under the System Instruction field explaining its purpose."
   },
   "ChatGPT_Developer_Messages": {
     "message": "Developer Messages",
-    "description": ""
+    "description": "Connection panel and AI chat window settings (OpenAI API): label of the 'developer messages' text field; a technical term of the OpenAI API."
   },
   "ChatGPT_Developer_Messages_Info": {
     "message": "When you set the developer messages, you give the model additional context to understand the task, provide more customized responses, and adhere to specific guidelines over the prompt that will be sent.",
-    "description": ""
+    "description": "Connection panel (OpenAI API): help text under the Developer Messages field explaining its purpose."
   },
   "prefs_OptionText_btnManagePrompts_infoline3": {
     "message": "You can use the {%tags_full_list%} data placeholder in the prompt to list the available tags. With an appropriate prompt, you could then force the tags to be chosen only from the list of those already existing.",
-    "description": ""
+    "description": "Add tags page: help text above the prompt editor; keep the {%tags_full_list%} placeholder token unchanged."
   },
   "placeholder_mail_typed_text": {
     "message": "Typed text before the quoted mail body",
-    "description": ""
+    "description": "Description of the {%mail_typed_text%} data placeholder, shown in the placeholder lists and autocomplete of the prompt editors."
   },
   "placeholder_mail_quoted_text": {
     "message": "Quoted text in the mail body",
-    "description": ""
+    "description": "Description of the {%mail_quoted_text%} data placeholder, shown in the placeholder lists and autocomplete of the prompt editors."
   },
   "prompt_get_calendar_event": {
     "message": "Add a new calendar event",
-    "description": ""
+    "description": "Name of the built-in action, shown as a menu item, that creates a calendar event from the email with the AI; keep it short."
   },
   "prompt_get_calendar_event_full_text": {
     "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Event Description (a concise summary of the email context, key topics/agenda, action items, and any video call links or access details)\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Location (if mentioned, specific building, room, or online with link)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf the event is a full day event, endDate must be one day after startDate with time set to \"T000000\".\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"description\": \"Detailed event description including agenda, action items and relevant notes from the email.\",\n\"forceAllDay\": false,\n\"location\": \"Location or URL here\",\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%mail_text_body_or_selected%}\"",
-    "description": ""
+    "description": "Instruction sent to the AI model as the prompt of the built-in 'Add a new calendar event' action; keep all {%placeholder%} tokens, JSON keys and the date format unchanged."
   },
   "prompt_get_calendar_event_from_clipboard": {
     "message": "Add calendar event from clipboard",
-    "description": ""
+    "description": "Name of the built-in action, shown as a menu item, that creates a calendar event from the text in the clipboard; keep it short."
   },
   "clipboard_read_error": {
     "message": "Could not read clipboard. Please check permissions.",
-    "description": ""
+    "description": "Alert shown when ThunderAI cannot read the clipboard for the 'Add calendar event from clipboard' action."
   },
   "clipboard_empty_error": {
     "message": "Clipboard is empty. Please copy some text first.",
-    "description": ""
+    "description": "Alert shown when the 'Add calendar event from clipboard' action is used but the clipboard contains no text."
   },
   "clipboard_permission_denied": {
     "message": "Clipboard permission was denied. Please enable the feature again in settings to grant permission.",
-    "description": ""
+    "description": "Get calendar event page: alert shown when the user denies the clipboard permission while enabling the 'from clipboard' option."
   },
   "clipboard_permission_error": {
     "message": "Error requesting clipboard permission. Please try again.",
-    "description": ""
+    "description": "Get calendar event page: alert shown when requesting the clipboard permission fails."
   },
   "prefs_OptionText_get_calendar_event_from_clipboard": {
     "message": "Get calendar event from clipboard",
-    "description": ""
+    "description": "Get calendar event page: label of the option that adds a menu item to create events from clipboard text; keep it short."
   },
   "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
     "message": "Show an additional menu item to create calendar events from clipboard text content.",
-    "description": ""
+    "description": "Get calendar event page: help text under the 'Get calendar event from clipboard' option."
   },
   "prompt_summarize": {
     "message": "Summarize",
-    "description": ""
+    "description": "Name of the built-in Summarize action, shown as a menu item; a verb, keep it short."
   },
   "prompt_summarize_full_text": {
     "message": "Provide a concise summary of the following email message(s). The summary should be 3-5 sentences maximum and capture the main points. Write in plain paragraphs without bullet points, lists, or markdown formatting:\n\n",
-    "description": ""
+    "description": "Instruction sent to the AI model as the main prompt of the built-in 'Summarize' action; the emails are appended after it, so keep the trailing line breaks."
   },
   "prompt_summarize_email_template": {
     "message": "Summarize email template",
-    "description": ""
+    "description": "Name of the Summarize action's per-email template, shown as a field label on the Summarize page."
   },
   "prompt_summarize_email_template_full_text": {
     "message": "From: {%author%}\nTo: {%recipients%}\nCC: {%cc_list%}\nSubject: {%mail_subject%}\nDate: {%mail_datetime%}\nAttachments:\n{%mail_attachments_info%}\n\nBody:\n{%mail_text_body%}",
-    "description": ""
+    "description": "Template sent to the AI model for each email in the Summarize action; translate only the field labels (From, To, Subject...) and keep all {%placeholder%} tokens unchanged."
   },
   "prompt_summarize_email_separator": {
     "message": "Email separator",
-    "description": ""
+    "description": "Name of the Summarize action's separator text placed between emails, shown on the Summarize page."
   },
   "prompt_summarize_email_separator_full_text": {
     "message": "\n\n---------- NEXT EMAIL ----------\n\n",
-    "description": ""
+    "description": "Separator sent to the AI model between emails in the Summarize action; keep the dashes and line breaks, translate only 'NEXT EMAIL'."
   },
   "prompt_get_task": {
     "message": "Add a new task",
-    "description": ""
+    "description": "Name of the built-in action, shown as a menu item, that creates a task from the selected text with the AI; keep it short."
   },
   "prompt_get_task_full_text": {
     "message": "Extract all relevant details required to generate a task from the following text. The extracted information should include:\n- Initial Date and Time (including timezone, if specified)\n- Due Date and Time (including timezone, if specified)\n- Task summary\n- Task Description (a concise summary of the email context, key topics and action items)\n- Location (if mentioned, specific building, room, or online with link)\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a task.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"initialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Task summary here\",\n\"description\": \"Detailed task description including action items and relevant notes from the email.\",\n\"location\": \"Location or URL here\"\n}\nIf there are no information about the dates, remove them.\nHere's the text:\"{%selected_text%}\"",
-    "description": ""
+    "description": "Instruction sent to the AI model as the prompt of the built-in 'Add a new task' action; keep all {%placeholder%} tokens, JSON keys and the date format unchanged."
   },
   "prefs_OptionText_get_calendar_event": {
     "message": "Add a new calendar event from selected text",
-    "description": ""
+    "description": "Options page: label of the checkbox that enables the menu item to create a calendar event from selected text."
   },
   "prefs_OptionText_get_calendar_event_Info": {
     "message": "If checked, an item will be included in the menu to get calendar event information from selected text.",
-    "description": ""
+    "description": "Options page: help text under the 'Add a new calendar event from selected text' option."
   },
   "prefs_OptionText_get_task": {
     "message": "Add a new task from selected text",
-    "description": ""
+    "description": "Options page: label of the checkbox that enables the menu item to create a task from selected text."
   },
   "prefs_OptionText_get_task_Info": {
     "message": "If checked, an item will be included in the menu to get task information from selected text.",
-    "description": ""
+    "description": "Options page: help text under the 'Add a new task from selected text' option."
   },
   "Select_your_timezone": {
     "message": "Select your timezone",
-    "description": ""
+    "description": "Get calendar event page and Get task page: label of the timezone drop-down (a colon is added after it)."
   },
   "prefs_OptionText_calendar_enforce_timezone": {
     "message": "Force the specified timezone",
-    "description": ""
+    "description": "Get calendar event page and Get task page: label of the option that forces the selected timezone; keep it short."
   },
   "prefs_OptionText_calendar_enforce_timezone_Info": {
     "message": "If checked, the specified timezone will be enforced for the calendar events and the tasks.",
-    "description": ""
+    "description": "Get calendar event page and Get task page: help text under the 'Force the specified timezone' option."
   },
   "prefs_OptionText_append_email_link": {
     "message": "Append a link to the original email",
-    "description": ""
+    "description": "Get calendar event page and Get task page: label of the option that appends a link to the original email to the description."
   },
   "prefs_OptionText_calendar_append_email_link_Info": {
     "message": "If checked, a link to the original email is added at the end of the event description. If the AI returns no description, the description will contain only the link. Not available when the event is created from the clipboard.",
-    "description": ""
+    "description": "Get calendar event page: help text under the 'Append a link to the original email' option."
   },
   "prefs_OptionText_task_append_email_link_Info": {
     "message": "If checked, a link to the original email is added at the end of the task description. If the AI returns no description, the description will contain only the link.",
-    "description": ""
+    "description": "Get task page: help text under the 'Append a link to the original email' option."
   },
   "calendar_email_link_label": {
     "message": "Original email:",
@@ -1411,31 +1411,31 @@
   },
   "prefs_OptionText_reminder_enabled": {
     "message": "Let the AI set a reminder",
-    "description": ""
+    "description": "Get calendar event page and Get task page: label of the option that lets the AI set a reminder; keep it short."
   },
   "prefs_OptionText_calendar_reminder_enabled_Info": {
     "message": "If checked, the AI is asked to set a reminder, relative to the event start, following the reminder rules. The rules can be written in the field below or directly in the main prompt: in both cases this option must be checked. If no rule applies, the event is created with no reminder. If no rules are written, neither below nor in the main prompt, Thunderbird's default reminder settings apply. If not checked, Thunderbird's default reminder settings always apply.",
-    "description": ""
+    "description": "Get calendar event page: help text under the 'Let the AI set a reminder' option explaining how reminder rules work."
   },
   "prefs_OptionText_task_reminder_enabled_Info": {
     "message": "If checked, the AI is asked to set a reminder, relative to the task due date (or to its initial date, if there is no due date), following the reminder rules. The rules can be written in the field below or directly in the main prompt: in both cases this option must be checked. If no rule applies, the task is created with no reminder. If no rules are written, neither below nor in the main prompt, Thunderbird's default reminder settings apply. If not checked, Thunderbird's default reminder settings always apply.",
-    "description": ""
+    "description": "Get task page: help text under the 'Let the AI set a reminder' option explaining how reminder rules work."
   },
   "prefs_OptionText_reminder_rules_title": {
     "message": "Reminder rules",
-    "description": ""
+    "description": "Get calendar event page and Get task page: heading of the text field where the user writes reminder rules."
   },
   "prefs_OptionText_reminder_rules_Info": {
     "message": "Write the rules in natural language. This field is optional: if it is empty, the rules are taken from the main prompt above.",
-    "description": ""
+    "description": "Get calendar event page and Get task page: help text under the 'Reminder rules' heading."
   },
   "prefs_OptionText_calendar_reminder_rules_example": {
     "message": "Example: \"If the event is in the morning in building A or B, set the reminder 45 minutes before. If it's in the afternoon, 15 minutes before. Otherwise, no reminder.\"",
-    "description": ""
+    "description": "Get calendar event page: example of reminder rules shown under the 'Reminder rules' field; translate the quoted example naturally."
   },
   "prefs_OptionText_task_reminder_rules_example": {
     "message": "Example: \"If the task is about a payment, set the reminder one day before the due date. If it's about a report, two hours before. Otherwise, no reminder.\"",
-    "description": ""
+    "description": "Get task page: example of reminder rules shown under the 'Reminder rules' field; translate the quoted example naturally."
   },
   "reminder_prompt_warning": {
     "message": "The main prompt contains \"reminderMinutes\", but \"Let the AI set a reminder\" is not checked: the reminder instructions in the main prompt are ignored, and Thunderbird's default reminder applies, until the option is checked.",
@@ -1443,395 +1443,395 @@
   },
   "prefs_OptionText_btnManageCalendarEventInfo": {
     "message": "Manage calendar events settings",
-    "description": ""
+    "description": "Options page: label of the small button that opens the Get calendar event settings page; keep it short."
   },
   "GetCalendarEvent_PageTitle": {
     "message": "Manage Calendar Events Settings",
-    "description": ""
+    "description": "Get calendar event page: page title and heading."
   },
   "GetCalendarEvent_info_default": {
     "message": "In this page you can modify the default prompt used to get a calendar event from selected text.",
-    "description": ""
+    "description": "Get calendar event page: subtitle under the heading describing what the page is for."
   },
   "GetCalendarEvent_prompt_text_title": {
     "message": "Current prompt text",
-    "description": ""
+    "description": "Get calendar event page and Get task page: heading of the prompt editor section."
   },
   "prefs_OptionText_AdvancedPromptResponse_infoline2": {
     "message": "You can change the prompt as you wish, but the response received from the AI must be in JSON format as specified in the default prompt!",
-    "description": ""
+    "description": "Add tags, Get calendar event and Get task pages: bold warning above the prompt editor that the AI response must stay in JSON format."
   },
   "prefs_OptionText_Summarize_infoline2": {
     "message": "You can change the prompt as you wish, the first field is the main prompt, the second field is the template for a single mail. The list of emails will be appended to the main prompt. Emails will be separated by the separator specified in the third field.",
-    "description": ""
+    "description": "Summarize page: bold help text above the three prompt fields explaining the main prompt, email template and separator."
   },
   "prefs_OptionText_Summarize_main_prompt": {
     "message": "The main prompt describing the task to be performed on all selected emails:",
-    "description": ""
+    "description": "Summarize page: label above the first field, the main prompt."
   },
   "prefs_OptionText_Summarize_email_template": {
      "message": "The template for a single email:",
-     "description": ""
+     "description": "Summarize page: label above the second field, the per-email template."
   },
   "prefs_OptionText_Summarize_email_separator": {
      "message": "The separator between emails:",
-     "description": ""
+     "description": "Summarize page: label above the third field, the separator between emails."
   },
   "prefs_OptionText_get_calendar_event_Sparks_not_present": {
     "message": "To use the calendar event and task features, please install the ThunderAI Sparks addon.",
-    "description": ""
+    "description": "Options page: notice shown when the ThunderAI Sparks add-on, required for calendar events and tasks, is not installed; 'ThunderAI Sparks' is a product name."
   },
   "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
     "message": "To use the calendar event and task features, please install an updated version of ThunderAI Sparks addon.",
-    "description": ""
+    "description": "Options page: notice shown when the installed ThunderAI Sparks add-on is too old; 'ThunderAI Sparks' is a product name."
   },
   "GetTask_PageTitle": {
     "message": "Manage Tasks Settings",
-    "description": ""
+    "description": "Get task page: page title and heading."
   },
   "GetTask_info_default": {
     "message": "In this page you can modify the default prompt used to get a task from selected text.",
-    "description": ""
+    "description": "Get task page: subtitle under the heading describing what the page is for."
   },
   "prefs_OptionText_btnManageTaskInfo": {
     "message": "Manage tasks settings",
-    "description": ""
+    "description": "Options page: label of the small button that opens the Get task settings page; keep it short."
   },
   "prefs_OptionText_download_now": {
     "message": "Download ThunderAI Sparks now!",
-    "description": ""
+    "description": "Options page: link to download the ThunderAI Sparks add-on, shown under the missing or outdated Sparks notice; 'ThunderAI Sparks' is a product name."
   },
   "placeholder_mail_datetime": {
     "message": "The date and time of the email",
-    "description": ""
+    "description": "Description of the {%mail_datetime%} data placeholder, shown in the placeholder lists and autocomplete of the prompt editors."
   },
   "placeholder_current_datetime": {
     "message": "The current date and time",
-    "description": ""
+    "description": "Description of the {%current_datetime%} data placeholder, shown in the placeholder lists and autocomplete of the prompt editors."
   },
   "calendar_getting_data_error": {
     "message": "Error getting calendar event data",
-    "description": ""
+    "description": "Alert shown when the AI response for a calendar event cannot be read or parsed; followed by a colon and the error detail."
   },
   "calendar_opening_dialog_error": {
     "message": "Error opening the calendar event dialog",
-    "description": ""
+    "description": "Alert shown when Thunderbird's new calendar event dialog cannot be opened; followed by a colon and the error detail."
   },
   "task_getting_data_error": {
     "message": "Error getting task data",
-    "description": ""
+    "description": "Alert shown when the AI response for a task cannot be read or parsed; followed by a colon and the error detail."
   },
   "task_opening_dialog_error": {
     "message": "Error opening the task dialog",
-    "description": ""
+    "description": "Alert shown when Thunderbird's new task dialog cannot be opened; followed by a colon and the error detail."
   },
   "no_valid_data_received": {
     "message": "No valid data received from the AI.",
-    "description": ""
+    "description": "Error detail appended to the calendar event or task dialog error alert when the AI returned no usable data."
   },
   "prefs_OptionText_add_tags_auto": {
     "message": "Add tags automatically",
-    "description": ""
+    "description": "Add tags page: label of the option that tags newly received emails automatically; keep it short."
   },
   "prefs_OptionText_add_tags_auto_Info": {
     "message": "If checked, the AI will automatically add tags to newly received emails.",
-    "description": ""
+    "description": "Add tags page: help text under the 'Add tags automatically' option."
   },
   "prefs_OptionText_add_tags_auto_Info2": {
     "message": "Choose which account to activate this feature for at the bottom of this page.",
-    "description": ""
+    "description": "Add tags page: extra help line under the 'Add tags automatically' option pointing to the account selection at the bottom of the page."
   },
   "prefs_OptionText_add_tags_auto_force_existing": {
     "message": "Force existing tags",
-    "description": ""
+    "description": "Add tags page: label of the option that restricts the AI to tags that already exist in Thunderbird; keep it short."
   },
   "prefs_OptionText_add_tags_auto_force_existing_Info": {
     "message": "If checked, the AI will add only existing tags and won't create new tags.",
-    "description": ""
+    "description": "Add tags page: help text under the 'Force existing tags' option."
   },
   "prefs_OptionText_add_tags_auto_uselist": {
     "message": "Use only these tags",
-    "description": ""
+    "description": "Add tags page: label of the option that restricts the AI to a user-defined list of tags; keep it short."
   },
   "prefs_OptionText_add_tags_auto_uselist_Info": {
     "message": "If checked, the AI will add only tags from the list below.",
-    "description": ""
+    "description": "Add tags page: help text under the 'Use only these tags' option."
   },
   "prefs_OptionText_add_tags_auto_uselist_list_Info": {
     "message": "The list must contain at least one tag. Add a tag per line, or separated by a comma.",
-    "description": ""
+    "description": "Add tags page: help line under the 'Use only these tags' option explaining how to enter the list."
   },
   "prompt_add_tags_use_list": {
     "message": "Use only the tags in this comma separated list",
-    "description": ""
+    "description": "Instruction sent to the AI model, appended to the Add tags prompt and followed by a colon and the list of allowed tags; also previewed on the Add tags page."
   },
   "prompt_add_tags_force_existing": {
     "message": "Choose the tags ONLY from this comma separated list of existing tags, using them exactly as written, and do not invent new ones",
-    "description": ""
+    "description": "Instruction sent to the AI model in the Add tags prompt, followed by a colon and the list of existing tags; also previewed on the Add tags page."
   },
   "prefs_OptionText_add_tags_auto_only_inbox": {
     "message": "Only add tags to emails in the inbox",
-    "description": ""
+    "description": "Add tags page: label of the option that restricts automatic tagging to emails in the inbox."
   },
   "prefs_OptionText_add_tags_auto_only_inbox_Info": {
     "message": "If checked, the AI will only add tags to emails received in the inbox folder.",
-    "description": ""
+    "description": "Add tags page: help text under the option that restricts automatic tagging to the inbox folder."
   },
   "prefs_OptionText_add_tags_auto_include_sent": {
     "message": "Also add tags to sent emails",
-    "description": ""
+    "description": "Add tags page: label of the option that also applies automatic tagging to sent emails."
   },
   "prefs_OptionText_add_tags_auto_include_sent_Info": {
     "message": "The automatic processing never runs on the drafts, templates, outbox, junk and trash folders, and it skips the sent folder too. If checked, the AI will also add tags to the emails you send.",
-    "description": ""
+    "description": "Add tags page: help text under the option that extends automatic tagging to sent emails; lists the folders that are always skipped."
   },
   "prefs_OptionText_add_tags_use_specific_integration_Info": {
     "message": "If checked, the Model and API specified below will be used for adding tags to emails, regardless the one choosen in the ThunderAI options page.",
-    "description": ""
+    "description": "Add tags page: help text under the 'Use specific Model and API' option, explaining that the connection below overrides the global one for tagging."
   },
   "prefs_OptionText_get_calendar_event_use_specific_integration_Info": {
     "message": "If checked, the Model and API specified below will be used for creating calendar events, regardless the one choosen in the ThunderAI options page.",
-    "description": ""
+    "description": "Get calendar event page and Get task page: help text under the 'Use specific Model and API' option, explaining the connection below overrides the global one."
   },
   "placeholder_thunderai_def_sign": {
     "message": "Default signature as defined in ThunderAI options.",
-    "description": ""
+    "description": "Description of the {%thunderai_def_sign%} placeholder, shown next to it in the placeholder list and autocomplete of the prompt editors."
   },
   "placeholder_thunderai_def_lang": {
     "message": "Default language as defined in ThunderAI options.",
-    "description": ""
+    "description": "Description of the {%thunderai_def_lang%} placeholder, shown next to it in the placeholder list and autocomplete of the prompt editors."
   },
   "placeholder_thunderai_translate_lang": {
     "message": "The language to be used in the mail translations.",
-    "description": ""
+    "description": "Description of the {%thunderai_translate_lang%} placeholder (the target language of translations), shown in the placeholder list and autocomplete."
   },
   "placeholder_thunderai_translate_exclude_lang": {
     "message": "The languages code to do not translate when found.",
-    "description": ""
+    "description": "Description of the {%thunderai_translate_exclude_lang%} placeholder (language codes that must not be translated), shown in the placeholder list and autocomplete."
   },
   "placeholder_mail_attachments_info": {
     "message": "Information about the attachments in the email",
-    "description": ""
+    "description": "Description of the {%mail_attachments_info%} placeholder, shown next to it in the placeholder list and autocomplete of the prompt editors."
   },
   "placeholder_empty": {
     "message": "This placeholder doesn't add any text, but it prevents the email body from being automatically appended at the end of the prompt.",
-    "description": ""
+    "description": "Description of the {%empty%} placeholder, shown in the placeholder list and autocomplete: it inserts nothing but stops the email body being appended to the prompt."
   },
   "prefs_OptionText_spamfilter": {
     "message": "Automatic Spam Filter",
-    "description": ""
+    "description": "Options page and Setup wizard: name of the Automatic Spam Filter feature, shown as the label of its on/off switch."
   },
   "prefs_OptionText_spamfilter_Info": {
     "message": "If checked, ThunderAI will automatically move spam emails to the spam folder.",
-    "description": ""
+    "description": "Options page and Setup wizard: help text under the Automatic Spam Filter feature switch."
   },
   "prefs_OptionText_btnManageSpamFilterInfo": {
     "message": "Manage spam filter settings",
-    "description": ""
+    "description": "Options page: label of the button that opens the Spam filter page; a '>' arrow follows it."
   },
   "prefs_OptionText_summarize": {
     "message": "Summarize email",
-    "description": ""
+    "description": "Options page and Setup wizard: name of the Summarize email feature, shown as the label of its on/off switch."
   },
   "prefs_OptionText_summarize_use_specific_integration_Info": {
     "message": "If checked, the Model and API specified below will be used for summarizing email(s), regardless the one choosen in the ThunderAI options page.",
-    "description": ""
+    "description": "Summarize page: help text under the 'Use specific Model and API' option, explaining that the connection below overrides the global one for summaries."
   },
   "prefs_OptionText_summarize_Info": {
     "message": "If checked, adds an option to context menu to summarize email(s).",
-    "description": ""
+    "description": "Options page and Setup wizard: help text under the Summarize email feature switch, which adds a context menu entry."
   },
   "prefs_OptionText_btnManageSummarizeInfo": {
     "message": "Manage summarize settings",
-    "description": ""
+    "description": "Options page: label of the button that opens the Summarize page; a '>' arrow follows it."
   },
   "SpamFilter_PageTitle": {
     "message": "Manage Spam Filter Settings",
-    "description": ""
+    "description": "Spam filter page: page title, shown in the header and in the window title after 'ThunderAI - '."
   },
   "SpamFilter_info_default": {
     "message": "In this page you can modify the default prompt used to detect spam emails.",
-    "description": ""
+    "description": "Spam filter page: subtitle under the page title describing what the page is for."
   },
   "SpamFilter_prompt_text_title": {
     "message": "Current prompt text",
-    "description": ""
+    "description": "Spam filter page: heading of the section with the editable spam detection prompt text."
   },
   "prompt_spamfilter" : {
     "message" : "Analyze for spam",
-    "description" : ""
+    "description": "Name of the built-in special prompt that analyzes an email for spam, shown in prompt lists; keep it short."
   },
   "prompt_spamfilter_full_text" : {
     "message" : "Analyze the following email and determine if it is spam or not. Consider factors such as suspicious keywords, excessive promotional language, misleading subject lines, requests for personal information, and unusual sender addresses.\nProvide a value from 0 (not spam) to 100 (spam) and an explanation of no more than 10 words.\nIn case of missing message data, set the value to 0 (not spam), and give the reason.\nGenerate a response in JSON format only. Do not include any additional text or explanation; provide only the JSON. Here is the format to be used:\n{\n\"explanation\": \"Brief explanation of your reasoning\",\n\"spamValue\": <integer from 0 to 100>\n}\nHere there are the mail information:\nSender: \"{%author%}\"\nSubject: \"{%mail_subject%}\"\nHtml body: \"{%mail_html_body%}\"",
-    "description" : ""
+    "description": "Instruction sent to the AI model as the prompt of the built-in spam filter; keep the {%placeholder%} tokens and the JSON keys \"explanation\" and \"spamValue\" unchanged."
   },
   "Summarize_PageTitle": {
     "message": "Manage Summarize Settings",
-    "description": ""
+    "description": "Summarize page: page title, shown in the header and in the window title after 'ThunderAI - '."
   },
   "Summarize_info_default": {
     "message": "In this page you can modify the default prompt used to summarize emails.",
-    "description": ""
+    "description": "Summarize page: subtitle under the page title describing what the page is for."
   },
   "Summarize_prompt_text_title": {
     "message": "Current prompt text",
-    "description": ""
+    "description": "Summarize page: heading of the section with the editable summarize prompt text."
   },
   "prefs_OptionText_use_specific_integration": {
     "message": "Use specific Model and API",
-    "description": ""
+    "description": "Feature settings pages (Add tags, Spam filter, Summarize, Get calendar event, Get task...): label of the option to use a dedicated AI connection for that feature."
   },
   "prefs_OptionText_spamfilter_use_specific_integration_Info": {
     "message": "If checked, the Model and API specified below will be used for the spam filter, regardless the one chosen in the ThunderAI options page.",
-    "description": ""
+    "description": "Spam filter page: help text under the 'Use specific Model and API' option, explaining that the connection below overrides the global one for spam filtering."
   },
   "prefs_OptionText_spamfilter_threshold": {
     "message": "Spam threshold",
-    "description": ""
+    "description": "Spam filter page: label of the numeric field for the spam score threshold (0-100); 'threshold' is a noun."
   },
   "prefs_OptionText_spamfilter_threshold_Info": {
     "message": "If the value returned by the AI is above this threshold, the email will be moved to the spam folder.",
-    "description": ""
+    "description": "Spam filter page: help text under the spam threshold field."
   },
   "prefs_OptionText_spamfilter_show_msg_panel": {
     "message": "Show spam report panel",
-    "description": ""
+    "description": "Spam filter page: label of the option that shows the spam report panel above the message."
   },
   "prefs_OptionText_spamfilter_show_msg_panel_Info": {
     "message": "If checked, a panel with the spam report will be shown on top of the message.",
-    "description": ""
+    "description": "Spam filter page: help text under the option that shows the spam report panel above the message."
   },
   "prefs_OptionText_spamfilter_only_inbox": {
     "message": "Run only on the inbox",
-    "description": ""
+    "description": "Spam filter page: label of the option that limits the automatic spam filter to the inbox."
   },
   "prefs_OptionText_spamfilter_only_inbox_Info": {
     "message": "When enabled, the automatic spam filter only checks messages received in the inbox folder and ignores mail delivered to other folders.",
-    "description": ""
+    "description": "Spam filter page: help text under the option that limits the automatic spam filter to the inbox."
   },
   "spamfilter_threshold_too_low": {
     "message": "The spam threshold is too low! You will likely mark too much mails as spam!",
-    "description": ""
+    "description": "Spam filter page: warning shown next to the spam threshold field when the value is below 50."
   },
   "spamfilter_threshold_zero": {
     "message": "The spam threshold is zero! You will mark all mails as spam!",
-    "description": ""
+    "description": "Spam filter page: warning shown next to the spam threshold field when the value is set to 0."
   },
   "spamfilter_no_reports": {
     "message": "No messages have screened for spam yet. Here you'll find a list of the last 100 spam reports.",
-    "description": ""
+    "description": "Spam filter page: text shown in the empty spam reports table before any message has been checked."
   },
   "SpamFilter_skip_addresses_title": {
     "message": "Email address skip list",
-    "description": ""
+    "description": "Spam filter page: heading of the section listing sender addresses or domains never sent to the AI (skip list / allow list)."
   },
   "SpamFilter_skip_addresses_infoline": {
     "message": "Emails from these addresses or domains will not be sent to the AI for spam filtering.",
-    "description": ""
+    "description": "Spam filter page: help text under the skip list heading."
   },
   "SpamFilter_skip_addresses_infoline2": {
     "message": "Add one entry per line, or separated by a comma. An entry can be a full email address (user@domain.com) or a whole domain (@domain.com).",
-    "description": ""
+    "description": "Spam filter page: help text under both the skip list and block list explaining the entry format; keep the example addresses unchanged."
   },
   "spamfilter_skip_addresses_explanation": {
     "message": "The sender is in the email address antispam skip list.",
-    "description": ""
+    "description": "Explanation stored in the spam report (and shown in the message spam panel) when the sender matched the skip list, so the AI was not called."
   },
   "SpamFilter_block_addresses_title": {
     "message": "Email address block list",
-    "description": ""
+    "description": "Spam filter page: heading of the section listing sender addresses or domains always reported as spam (block list)."
   },
   "SpamFilter_block_addresses_infoline": {
     "message": "Emails from these addresses or domains will always be reported as spam, without sending them to the AI. When the spam filter runs automatically, they are moved to the junk folder.",
-    "description": ""
+    "description": "Spam filter page: help text under the block list heading."
   },
   "SpamFilter_address_lists_precedence": {
     "message": "If a sender is in both lists, the more specific entry wins (a full address beats a domain); if both entries are equally specific, the skip list wins. Both lists are checked before the address books.",
-    "description": ""
+    "description": "Spam filter page: help text under the skip and block lists explaining which list wins when a sender matches both."
   },
   "spamfilter_block_addresses_explanation": {
     "message": "The sender is in the email address antispam block list.",
-    "description": ""
+    "description": "Explanation stored in the spam report (and shown in the message spam panel) when the sender matched the block list, so the email was marked spam without the AI."
   },
   "prefs_OptionText_spamfilter_skip_addressbook": {
     "message": "Skip address books addresses",
-    "description": ""
+    "description": "Spam filter page: label of the option that skips spam checks for senders found in the address books."
   },
   "prefs_OptionText_spamfilter_skip_addressbook_Info": {
     "message": "If checked, emails from senders in your address books will not be sent to the AI for spam filtering.",
-    "description": ""
+    "description": "Spam filter page: help text under the option that skips spam checks for senders found in the address books."
   },
   "spamfilter_skip_addressbook_explanation": {
     "message": "The sender is a contact in the address book.",
-    "description": ""
+    "description": "Explanation stored in the spam report (and shown in the message spam panel) when the sender is an address book contact, so the AI was not called."
   },
   "spamfilter_prompt_missing_explanation": {
     "message": "The Spam Filter special prompt is missing. If you modified the special prompts, try restoring the default Spam Filter prompt.",
-    "description": ""
+    "description": "Error stored in the spam report (and shown in the message spam panel) when the spam filter special prompt cannot be found."
   },
   "addressbook_permission_denied": {
     "message": "Address book permission was denied. Please enable the feature again to grant permission.",
-    "description": ""
+    "description": "Spam filter page: alert shown when the user refuses the address book permission needed by the skip-address-book option."
   },
   "addressbook_permission_error": {
     "message": "Error requesting address book permission. Please try again.",
-    "description": ""
+    "description": "Spam filter page: alert shown when requesting the address book permission fails with an error."
   },
   "SpamReport_Title": {
     "message": "Spam Filter Reports",
-    "description": ""
+    "description": "Spam filter page: heading of the table listing the latest spam filter reports."
   },
   "Date": {
     "message": "Date",
-    "description": ""
+    "description": "Spam filter page: column header of the reports table for the date of the email; keep it short."
   },
   "From": {
     "message": "From",
-    "description": ""
+    "description": "Spam filter page: column header of the reports table for the email sender; keep it short."
   },
   "Subject": {
     "message": "Subject",
-    "description": ""
+    "description": "Spam filter page: column header of the reports table for the email subject; keep it short."
   },
   "Spam_Value": {
     "message": "Spam Value",
-    "description": ""
+    "description": "Spam filter page: column header of the reports table for the spam score (0-100) returned by the AI; keep it short."
   },
   "Spam": {
     "message": "Spam",
-    "description": ""
+    "description": "Spam report panel above a message: short verdict label shown with a warning icon when the email is judged spam; 'Spam' is an adjective/noun here."
   },
   "Valid": {
     "message": "Valid",
-    "description": ""
+    "description": "Spam report panel above a message: short verdict label shown with a shield icon when the email is judged not spam (legitimate); keep it short."
   },
   "Moved_to_Spam": {
     "message": "Moved to Spam",
-    "description": ""
+    "description": "Spam filter page: column header of the reports table telling whether the email was moved to the spam folder (Yes/No); keep it short."
   },
   "Explanation": {
     "message": "Explanation",
-    "description": ""
+    "description": "Spam filter page reports table column header, and label before the AI's reason in the spam report panel above a message (followed by a colon)."
   },
   "Report_Date": {
     "message": "Report Date",
-    "description": ""
+    "description": "Spam filter page: column header of the reports table for the date the spam report was created; keep it short."
   },
   "yes_string": {
     "message": "Yes",
-    "description": ""
+    "description": "Generic 'Yes' answer: button in the custom prompts export dialog and value in the 'Moved to Spam' column of the spam reports table."
   },
   "no_string": {
     "message": "No",
-    "description": ""
+    "description": "Generic 'No' answer: button in the custom prompts export dialog and value in the 'Moved to Spam' column of the spam reports table."
   },
   "btn_show_differences": {
     "message": "Show differences",
-    "description": ""
+    "description": "ChatGPT Web window and AI chat window: label of the button that shows the differences between the original and the AI-modified text; 'Show' is a verb."
   },
   "chatgpt_win_diff_title": {
     "message": "Differences between the original and the modified text",
-    "description": ""
+    "description": "ChatGPT Web window: heading of the panel showing the differences between the original and the AI-modified text."
   },
   "apiwebchat_picker_title": {
     "message": "Review the changes",
@@ -1929,19 +1929,19 @@
   },
   "apiwebchat_picker_accept_all": {
     "message": "Accept all",
-    "description": ""
+    "description": "AI chat window, change picker: menu item that accepts all the proposed changes; 'Accept' is a verb, keep it short."
   },
   "apiwebchat_picker_reject_all": {
     "message": "Reject all",
-    "description": ""
+    "description": "AI chat window, change picker: toolbar button and menu item that rejects all the proposed changes; 'Reject' is a verb, keep it short."
   },
   "apiwebchat_picker_prev": {
     "message": "Previous change",
-    "description": ""
+    "description": "AI chat window, change picker: tooltip of the icon button that moves to the previous proposed change."
   },
   "apiwebchat_picker_next": {
     "message": "Next change",
-    "description": ""
+    "description": "AI chat window, change picker: tooltip of the icon button that moves to the next proposed change."
   },
   "apiwebchat_picker_no_changes": {
     "message": "The answer is identical to the original text: there is nothing to review.",
@@ -1997,19 +1997,19 @@
   },
   "apiwebchat_info": {
     "message": "Information",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web): label of the row showing information about the ChatGPT Web integration; 'Information' is a noun."
   },
   "apiwebchat_error": {
     "message": "Error",
-    "description": ""
+    "description": "Short 'Error' label: appended to the AI name on an error reply in the AI chat window, and shown as score in the spam report panel when the check failed."
   },
   "apiwebchat_use_this_answer": {
     "message": "Use this answer",
-    "description": ""
+    "description": "AI chat window: label and tooltip of the button that inserts the AI reply into the email; keep it short."
   },
   "apiwebchat_stopping": {
     "message": "Stopping",
-    "description": ""
+    "description": "AI chat window: tooltip of the Stop button while generation is being stopped; '...' is appended by the code."
   },
   "apiwebchat_retrying": {
     "message": "Server not available ($REASON$), retrying in $SECONDS$ s (attempt $ATTEMPT$ of $MAX$)",
@@ -2065,11 +2065,11 @@
   },
   "apiwebchat_receiving_data": {
     "message": "Receiving data",
-    "description": ""
+    "description": "AI chat window: status message under the input field while the AI response is streaming in; '...' is appended by the code."
   },
   "apiwebchat_done": {
     "message": "Done!",
-    "description": ""
+    "description": "AI chat window: status message under the input field when the AI response is complete."
   },
   "apiwebchat_copy": {
     "message": "Copy",
@@ -2187,79 +2187,79 @@
   },
   "hyprland_warning": {
     "message": "If you're having trouble opening the AI chat window, try setting the height and width values to 0. This issue can occur on linux in certain environments, for example, when using Hyprland.",
-    "description": ""
+    "description": "Options page: warning shown on Linux when the AI chat window size is not 0, about window opening problems in environments such as Hyprland."
   },
   "remember_CORS": {
     "message": "Remember, you need to set up the CORS settings on the server!",
-    "description": ""
+    "description": "Connection panel (Ollama API): warning that CORS must be configured on the Ollama server; a 'More info' link follows it."
   },
   "maybe_CORS_openai_comp": {
     "message": "Using OpenAI Compatible API may require setting up CORS settings on the server.",
-    "description": ""
+    "description": "Connection panel (OpenAI Compatible API): note that the server may need CORS configured; a 'More info' link follows it."
   },
   "CORS_alternative_1": {
     "message": "Problems setting CORS?",
-    "description": ""
+    "description": "Connection panel (Ollama and OpenAI Compatible API): bold short question introducing the host-permission alternative to configuring CORS."
   },
   "CORS_alternative_2_new": {
     "message": "Press the button below to give the permission to the current host to avoid any CORS problem.",
-    "description": ""
+    "description": "Connection panel (Ollama and OpenAI Compatible API): text explaining that the button below grants host permission to avoid CORS problems."
   },
   "CORS_give_host_perm": {
     "message": "Give permission to the current host",
-    "description": ""
+    "description": "Connection panel (Ollama and OpenAI Compatible API): label of the button that grants the add-on permission to access the configured server host."
   },
   "CORS_localhost_warn": {
     "message": "If you are using localhost or 127.0.0.1 because the AI server is hosted on your PC, the <all_urls> permission is required.",
-    "description": ""
+    "description": "Connection panel (Ollama and OpenAI Compatible API): note under the host permission button; keep '<all_urls>' unchanged, it is a permission name, not HTML."
   },
   "Replace_No_Selected_Text": {
     "message": "No text selected, would you like to insert the AI's response at the beginning of the email?",
-    "description": ""
+    "description": "Compose window: confirmation dialog shown when replacing the selected text but nothing is selected, asking to insert the AI response at the start instead."
   },
   "prefs_ollama_num_ctx": {
     "message": "Number of context tokens",
-    "description": ""
+    "description": "Connection panel (Ollama API) and AI chat window settings: label of the field for the number of context tokens (num_ctx)."
   },
   "prefs_ollama_num_ctx_Info": {
     "message": "The number of context tokens to use for the Ollama API. Set to 0 if you don't want to pass it as a parameter to the server.",
-    "description": ""
+    "description": "Connection panel (Ollama API): help text under the number of context tokens field; 0 means the parameter is not sent."
   },
   "ask_chatgptweb_permission_1": {
     "message": "To use the ChatGPT Web integration, you need to grant the required permission.",
-    "description": ""
+    "description": "Onboarding page and Popup menu: message shown when the ChatGPT Web integration still lacks the permission it needs."
   },
   "ask_anthropic_api_permission_1": {
     "message": "To use the Claude API integration, you need to grant the required permission.",
-    "description": ""
+    "description": "Onboarding page and Popup menu: message shown when the Claude API integration still lacks the permission it needs."
   },
   "ask_openai_api_permission_1": {
     "message": "To use the OpenAI API integration, you need to grant the required permission.",
-    "description": ""
+    "description": "Onboarding page and Popup menu: message shown when the OpenAI API integration still lacks the permission it needs."
   },
   "ask_integration_permission_2_popup": {
     "message": "Click here to open a new tab and follow the instructions.",
-    "description": ""
+    "description": "Popup menu: clickable text after a missing-permission message, opening a new tab with instructions to grant it."
   },
   "ask_integration_permission_2": {
     "message": "Click here to proceed.",
-    "description": ""
+    "description": "Onboarding page: clickable text after a missing-permission message that starts the permission request."
   },
   "ask_integration_permission_ok": {
     "message": "Permission granted. You can click here to close this tab and return to the main window.",
-    "description": ""
+    "description": "Onboarding page: confirmation shown after the permission is granted; clicking it closes the tab."
   },
   "AccountSelector_AutoTags": {
     "message": "Choose the accounts where auto-tagging is enabled",
-    "description": ""
+    "description": "Add tags page: heading of the section with one checkbox per mail account where automatic tagging is enabled."
   },
   "AccountSelector_AutoTags_infoline": {
     "message": "Each change is saved immediately.",
-    "description": ""
+    "description": "Add tags page and Spam filter page: help text under the account selector heading, saying changes are saved at once."
   },
   "AccountSelector_Spamfilter": {
     "message": "Choose the accounts where the automatic spam filter is enabled",
-    "description": ""
+    "description": "Spam filter page: heading of the section with one checkbox per mail account where the automatic spam filter is enabled."
   },
   "AccountSelector_managed_note": {
     "message": "The accounts are selected by your organization's configuration policy and cannot be changed here.",
@@ -2271,95 +2271,95 @@
   },
   "prefs_OptionText_chatgpt_web_project": {
     "message": "ChatGPT Web Project",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web) and Custom prompts page: label of the field for the ChatGPT Project to use; 'Project' is a ChatGPT feature name."
   },
   "prefs_OptionText_chatgpt_web_project_info": {
     "message": "This is the Project that will be enforced for the ChatGPT Web Interface.",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web): help text under the ChatGPT Project field."
   },
   "prefs_OptionText_chatgpt_web_custom_gpt": {
     "message": "ChatGPT Web Custom GPT",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web) and Custom prompts page: label of the field for the Custom GPT to use; 'Custom GPT' is a ChatGPT feature name."
   },
   "prefs_OptionText_chatgpt_web_custom_gpt_info": {
     "message": "This is the Custom GPT that will be enforced for the ChatGPT Web Interface.",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web): help text under the Custom GPT field."
   },
   "prefs_OptionText_chatgpt_web_custom_data_info": {
     "message": "This must be in the following form:",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web) and Custom prompts page: text introducing the required URL path format, which is shown right after it in bold."
   },
   "prefs_OptionText_chatgpt_web_custom_data_info2": {
     "message": "You can find the correct value in the browser URL field when you open the related ChatGPT page.",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web) and Custom prompts page: hint under the Project and Custom GPT fields on where to find their value."
   },
   "customPrompts_Properties": {
     "message": "Properties",
-    "description": ""
+    "description": "Custom data placeholders page: column header of the placeholders table for the properties of each placeholder; 'Properties' is a noun."
   },
   "customPrompts_show_additional_info": {
     "message": "Show additional properties",
-    "description": ""
+    "description": "Custom prompts page: label of the toggle that reveals the additional properties of a prompt; paired with 'Hide additional properties'."
   },
   "customPrompts_hide_additional_info": {
     "message": "Hide additional properties",
-    "description": ""
+    "description": "Custom prompts page: label of the toggle that hides the additional (advanced) properties of a prompt; counterpart of 'Show additional properties'."
   },
   "prefs_OptionText_CustomGPT_Warn": {
     "message": "If a Project is specified in the options or in a prompt, it will override the Custom GPT setting.",
-    "description": ""
+    "description": "Connection panel and Custom prompts page (ChatGPT Web): warning under the Custom GPT field that a ChatGPT Project overrides the Custom GPT setting. Keep 'Project' and 'Custom GPT' as ChatGPT feature names."
   },
   "prefs_OptionText_Project_No_temporary_chat_warn": {
     "message": "If a Project is specified in the options or in a prompt, the temporary chat will not be used.",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web): warning under the temporary chat option that a ChatGPT Project disables the temporary chat. 'Project' is a ChatGPT feature name."
   },
   "prefs_Anthropic_API_Key": {
     "message": "Claude API Key",
-    "description": ""
+    "description": "Connection panel: label of the field for the Claude (Anthropic) API key; keep 'Claude' and 'API' unchanged, keep short."
   },
   "prefs_Connection_type_Anthropic_API": {
     "message": "Claude API",
-    "description": ""
+    "description": "Name of the Claude (Anthropic) API connection type, shown in the provider selector of the connection panel, the setup wizard and the connection test. Keep short; 'Claude' is a product name."
   },
   "Anthropic_Models": {
     "message": "Claude Models",
-    "description": ""
+    "description": "Connection panel: label of the selector listing the available Claude models; keep short."
   },
   "Anthropic_Models_Error_fetching": {
     "message": "Error trying to fetch Claude models",
-    "description": ""
+    "description": "Connection panel: error shown when the list of Claude models cannot be downloaded; followed by ': ' and the technical error detail."
   },
   "Anthropic_Version": {
     "message": "Claude API Version",
-    "description": ""
+    "description": "Connection panel: label of the field for the Claude API version string (a date such as 2023-06-01); also used in the connection details. Keep short."
   },
   "Anthropic_Version_Info": {
     "message": "REQUIRED. Do not change this value unless you know what you're doing. More info at:",
-    "description": ""
+    "description": "Connection panel: help text under the Claude API Version field, followed by a link to the Anthropic versioning documentation; keep 'REQUIRED' emphasized."
   },
   "prefs_OptionText_anthropic_max_tokens": {
     "message": "Max Tokens",
-    "description": ""
+    "description": "Connection panel (Claude API, advanced) and AI chat window settings summary: label of the maximum number of tokens setting; 'tokens' is a technical AI term. Keep short."
   },
   "prefs_OptionText_anthropic_max_tokens_Info": {
     "message": "The maximum number of tokens to generate in the completion. The token count of your prompt plus max_tokens cannot exceed the model's context length.",
-    "description": ""
+    "description": "Connection panel (Claude API): help text under the Max Tokens field explaining the limit on generated tokens. 'max_tokens' is a technical parameter name."
   },
   "prefs_OptionText_anthropic_top_p_Info": {
     "message": "Nucleus sampling: the model considers only the tokens whose cumulative probability reaches this value. Ranges from 0.0 to 1.0. Leave empty to use the model default. Anthropic recommends adjusting either Temperature or Top P, but not both. Newer Claude models do not accept this setting at all and use the Effort setting instead: when one of them is selected this field is disabled and its value is not sent.",
-    "description": ""
+    "description": "Connection panel (Claude API, advanced): help text under the Top P field, explaining nucleus sampling and that newer models disable the field. 'Temperature', 'Top P' and 'Effort' are names of other fields."
   },
   "prefs_OptionText_anthropic_top_k_Info": {
     "message": "Only sample from the top K options for each subsequent token, removing long tail low probability responses. Leave empty to use the model default. Newer Claude models do not accept this setting at all and use the Effort setting instead: when one of them is selected this field is disabled and its value is not sent.",
-    "description": ""
+    "description": "Connection panel (Claude API, advanced): help text under the Top K field, explaining the setting and that newer models disable it. 'Effort' is the name of another field."
   },
   "prefs_OptionText_anthropic_stop_sequences": {
     "message": "Stop sequences",
-    "description": ""
+    "description": "Connection panel (Claude API, advanced) and AI chat window settings summary: label of the stop sequences setting (texts that make the model stop generating). Keep short."
   },
   "prefs_OptionText_anthropic_stop_sequences_Info": {
     "message": "Custom text sequences that will cause the model to stop generating. Enter one sequence per line; empty lines are ignored. Leave empty to disable. This setting is accepted by all Claude models.",
-    "description": ""
+    "description": "Connection panel (Claude API, advanced): help text under the stop sequences text area, explaining one sequence per line."
   },
   "anthropic_warn_thinking_budget_min": {
     "message": "The extended thinking budget must be at least $MIN$ tokens. The current value will not be sent and extended thinking will not be requested.",
@@ -2381,27 +2381,27 @@
   },
   "prefs_OptionText_anthropic_extended_thinking_budget": {
     "message": "Extended thinking budget (tokens)",
-    "description": ""
+    "description": "Connection panel (Claude API, advanced) and AI chat window settings summary: label of the maximum tokens the model may spend on extended thinking. Keep short."
   },
   "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
     "message": "Maximum tokens the model may spend on extended thinking. Set to 0 to disable extended thinking. Must be lower than Max Tokens. Newer Claude models do not accept a manual budget and use the Effort setting instead: when one of them is selected this field is disabled and its value is not sent.",
-    "description": ""
+    "description": "Connection panel (Claude API, advanced): help text under the extended thinking budget field. 'Max Tokens' and 'Effort' are the names of other fields."
   },
   "anthropic_empty_apikey": {
     "message": "You've not added an API Key for the Claude API. Please insert one in the options page.",
-    "description": ""
+    "description": "Error shown in the chat window or for a special command when the Claude API is selected but no API key has been entered in the options."
   },
   "anthropic_empty_model": {
     "message": "You've not chosen a model for the Claude API. Please choose one in the options page.",
-    "description": ""
+    "description": "Error shown in the chat window or for a special command when the Claude API is selected but no model has been chosen in the options."
   },
   "anthropic_empty_version": {
     "message": "You've not added a version string for the Claude API. Please insert one in the options page.",
-    "description": ""
+    "description": "Error shown in the chat window or for a special command when the Claude API is selected but the API version field is empty in the options."
   },
   "anthropic_api_request_failed": {
     "message": "Claude API request failed",
-    "description": ""
+    "description": "Error shown in the AI chat window when a request to the Claude API fails; followed by ': ', the HTTP status and the error details."
   },
   "anthropic_err_hint_temperature": {
     "message": "The selected Claude model ($MODEL$) does not accept the Temperature setting. Clear the Temperature field, or use the Effort setting instead.",
@@ -2441,11 +2441,11 @@
   },
   "prefs_OptionText_anthropic_effort": {
     "message": "Effort",
-    "description": ""
+    "description": "Connection panel (Claude API, advanced): label of the selector for the reasoning effort level; 'Effort' is a noun. Keep short."
   },
   "prefs_OptionText_anthropic_effort_Info": {
     "message": "How much reasoning effort the model should spend on a request. Higher levels give better answers on complex tasks but cost more tokens and take longer. Leave it on the default to let the Claude API decide. Older Claude models do not support this setting.",
-    "description": ""
+    "description": "Connection panel (Claude API, advanced): help text under the Effort selector, explaining reasoning effort levels and their cost."
   },
   "anthropic_effort_default": {
     "message": "Default (decided by the API)",
@@ -2489,19 +2489,19 @@
   },
   "anthropic_note_temperature_unsupported": {
     "message": "The selected model does not accept a Temperature value and ignores this field. Use the Effort setting instead. The value is kept in case you switch back to an older model.",
-    "description": ""
+    "description": "Connection panel (Claude API): note shown next to the Temperature, Top P and Top K fields when the selected model does not accept them. 'Temperature' and 'Effort' are field names."
   },
   "anthropic_note_budget_tokens_unsupported": {
     "message": "The selected model does not accept a manual extended thinking budget and ignores this field. Use the Effort setting instead. The value is kept in case you switch back to an older model.",
-    "description": ""
+    "description": "Connection panel (Claude API): note shown next to the extended thinking budget field when the selected model does not accept a manual budget. 'Effort' is a field name."
   },
   "anthropic_note_effort_unsupported": {
     "message": "The selected model does not support the Effort setting. Use the Extended thinking budget instead.",
-    "description": ""
+    "description": "Connection panel (Claude API): note shown next to the Effort selector when the selected model does not support it. 'Extended thinking budget' is another field name."
   },
   "_api_connecting": {
     "message": "Attempting to connect to $api_string$ using the following configuration...",
-    "description": "",
+    "description": "AI chat window: first line of the connection info shown when a chat starts, followed by the configuration details. $api_string$ is the name of the AI provider/API.",
     "placeholders": {
         "api_string": {
             "content": "$1"
@@ -2510,31 +2510,31 @@
   },
   "_api_connecting_model": {
     "message": "Model",
-    "description": ""
+    "description": "AI chat window: label in the connection info block, followed by ': ' and the model name; noun, keep short."
   },
   "_api_connecting_host": {
     "message": "Host",
-    "description": ""
+    "description": "AI chat window: label in the connection info block, followed by ': ' and the server address; noun, keep short."
   },
   "_api_connecting_version": {
     "message": "Version",
-    "description": ""
+    "description": "AI chat window: label in the connection info block, followed by ': ' and the API version; noun, keep short."
   },
   "prefs_OpenAIComp_AvailableServices": {
     "message": "Available Services",
-    "description": ""
+    "description": "Connection panel (OpenAI Compatible API): label of the selector of predefined services (DeepSeek, Grok, ...). Keep short."
   },
   "prefs_OpenAIComp_AvailableServices_Info": {
     "message": "Choose one of the services available for the OpenAI Compatible API or insert one manually.",
-    "description": ""
+    "description": "Connection panel (OpenAI Compatible API): help text under the available services selector."
   },
   "Custom": {
     "message": "Custom",
-    "description": ""
+    "description": "Connection panel (OpenAI Compatible API): name of the 'Custom' entry in the available services selector, meaning a service configured manually. Adjective, keep short."
   },
   "OpenAIComp_Configs_ConfirmApply": {
     "message": "Are you sure you want to apply the configuration \"$config_name$\"?",
-    "description": "",
+    "description": "Connection panel (OpenAI Compatible API): confirmation dialog shown before applying a predefined service configuration. $config_name$ is the service name, e.g. 'DeepSeek API'.",
     "placeholders": {
         "config_name": {
             "content": "$1"
@@ -2543,39 +2543,39 @@
   },
   "apiwebchat_selection_info": {
     "message": "If you select some text, only that portion will be considered.",
-    "description": ""
+    "description": "AI chat window: hint shown below a message explaining that selecting part of the text limits the action to that selection."
   },
   "ChatGPT_chatgpt_api_store": {
     "message": "Use storage",
-    "description": ""
+    "description": "Connection panel (OpenAI API) and AI chat window settings summary: label of the toggle that lets OpenAI store the chats. Keep short."
   },
   "ChatGPT_chatgpt_api_store_info": {
     "message": "If checked, your chats will be stored by OpenAI.",
-    "description": ""
+    "description": "Connection panel (OpenAI API): help text next to the 'Use storage' toggle."
   },
   "prefs_chatgpt_api_temperature_Info": {
     "message": "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.",
-    "description": ""
+    "description": "Connection panel (OpenAI API): help text under the Temperature field explaining sampling temperature values."
   },
   "prefs_OptionText_chatgpt_reasoning_summary": {
     "message": "Reasoning summary",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the selector for the reasoning summary option. Keep short."
   },
   "prefs_OptionText_chatgpt_reasoning_summary_Info": {
     "message": "Ask the API for a summary of the model's reasoning, shown in the chat as a collapsible block. Only recent reasoning models support it, such as gpt-5, o3 and o4-mini: older ones like o1-pro and o3-mini reason internally but never expose a summary, so the block stays hidden. Leave disabled for models without reasoning support.",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced): help text under the reasoning summary selector, followed by a 'More info' link. Keep model names (gpt-5, o3, o4-mini, o1-pro, o3-mini) unchanged."
   },
   "prefs_OptionText_chatgpt_reasoning_effort": {
     "message": "Reasoning effort",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the reasoning effort selector; 'effort' is a noun. Keep short."
   },
   "prefs_OptionText_chatgpt_extra_body_info": {
     "message": "Additional parameters to send with every API call, as a JSON object, like {\"top_p\": 0.9}. Useful for options the OpenAI API supports but ThunderAI doesn't expose. The parameters managed by ThunderAI (model, input, streaming, temperature, reasoning, instructions) can't be overridden here. An invalid value is ignored.",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced): help text under the extra parameters JSON text area. Keep the JSON example and the parameter names unchanged."
   },
   "prefs_OptionText_chatgpt_reasoning_effort_Info": {
     "message": "How much effort the model spends on reasoning before answering. Lower values give faster and cheaper replies, higher values give more thorough ones. Leave on the API default to let OpenAI decide. Ignored by models without reasoning support.",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced): help text under the reasoning effort selector."
   },
   "prefs_OptionText_chatgpt_reasoning_disabled": {
     "message": "Disabled",
@@ -2595,23 +2595,23 @@
   },
   "prefs_OptionText_chatgpt_max_output_tokens_Info": {
     "message": "An upper bound on the number of tokens the model can generate for a response, including the reasoning tokens on reasoning models. The minimum accepted value is 16. Leave it empty or at 0 to let the API decide.",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced): help text under the maximum output tokens field."
   },
   "prefs_OptionText_chatgpt_verbosity": {
     "message": "Verbosity",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the selector for answer length/detail. Noun, keep short."
   },
   "prefs_OptionText_chatgpt_verbosity_Info": {
     "message": "How long and detailed the answer should be, without changing the prompt. Only the gpt-5 family supports it: with any other model this field is disabled and its value is not sent.",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced): help text under the Verbosity selector; keep 'gpt-5' unchanged."
   },
   "prefs_OptionText_chatgpt_text_format": {
     "message": "Output format",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the selector for the answer output format (text, JSON object, JSON schema). Keep short."
   },
   "prefs_OptionText_chatgpt_text_format_Info": {
     "message": "Force the model to answer with valid JSON. \"JSON object\" only guarantees that the answer is valid JSON, so the prompt must still describe the structure you want, while \"JSON schema\" also makes the answer follow the schema below. Note that this changes the answer shown in the chat window into raw JSON.",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced): help text under the output format selector. \"JSON object\" and \"JSON schema\" are option names of the selector; translate them as in those options."
   },
   "prefs_OptionText_chatgpt_text_format_json_object": {
     "message": "JSON object",
@@ -2623,31 +2623,31 @@
   },
   "prefs_OptionText_chatgpt_text_format_schema_name": {
     "message": "JSON schema name",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the field for the JSON schema name. Keep short."
   },
   "prefs_OptionText_chatgpt_text_format_schema_name_Info": {
     "message": "A name for the schema below, which the API requires. Use letters, numbers, underscores and dashes only. The output format is not sent at all when this is empty.",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced): help text under the JSON schema name field, explaining the allowed characters."
   },
   "prefs_OptionText_chatgpt_text_format_schema": {
     "message": "JSON schema",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the text area for the JSON schema. Keep short."
   },
   "prefs_OptionText_chatgpt_text_format_schema_Info": {
     "message": "The JSON Schema the answer must follow, as a JSON object. Only used when the output format above is set to \"JSON schema\". An invalid value is ignored, and the output format is not sent.",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced): help text under the JSON schema text area. \"JSON schema\" is an option name of the output format selector."
   },
   "prefs_OptionText_chatgpt_top_p_Info": {
     "message": "Nucleus sampling: the model considers only the tokens whose cumulative probability reaches this value. Ranges from 0.0 to 1.0. Leave empty to use the model default. OpenAI recommends adjusting either Temperature or Top P, but not both. Reasoning models do not accept this setting: when one of them is selected this field is disabled and its value is not sent.",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced): help text under the Top P field explaining nucleus sampling. 'Temperature' and 'Top P' are field names."
   },
   "prefs_OptionText_chatgpt_truncation": {
     "message": "Truncation",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the selector for how long conversations are truncated. Noun, keep short."
   },
   "prefs_OptionText_chatgpt_truncation_Info": {
     "message": "What to do when a conversation grows past the model's context window. \"Auto\" drops messages from the middle of the conversation to make it fit, while \"Disabled\" makes the request fail with an error instead.",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced): help text under the Truncation selector. \"Auto\" and \"Disabled\" are option names of the selector; translate them as in those options."
   },
   "prefs_OptionText_chatgpt_truncation_auto": {
     "message": "Auto",
@@ -2659,19 +2659,19 @@
   },
   "prefs_OptionText_chatgpt_prompt_cache_key": {
     "message": "Prompt cache key",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the field for the prompt cache key. Keep short."
   },
   "prefs_OptionText_chatgpt_prompt_cache_key_Info": {
     "message": "Requests sharing the same key can reuse OpenAI's prompt cache, which lowers the cost and the latency of repeated prompts. Any string you choose works: use the same one across the requests that begin with the same text.",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced): help text under the prompt cache key field."
   },
   "prefs_OptionText_chatgpt_service_tier": {
     "message": "Service tier",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the selector for the OpenAI processing tier. Keep short."
   },
   "prefs_OptionText_chatgpt_service_tier_Info": {
     "message": "Which processing tier to use for the request. \"Flex\" and \"Priority\" are only available on some plans and models, and the API falls back to the default tier when the chosen one cannot be used.",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced): help text under the service tier selector. \"Flex\" and \"Priority\" are option names of the selector."
   },
   "prefs_OptionText_chatgpt_service_tier_auto": {
     "message": "Auto",
@@ -2691,19 +2691,19 @@
   },
   "prefs_OptionText_chatgpt_safety_identifier": {
     "message": "Safety identifier",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the field for the end-user safety identifier. Keep short."
   },
   "prefs_OptionText_chatgpt_safety_identifier_Info": {
     "message": "A stable identifier for the end user, which helps OpenAI detect abuse coming from a single user. Do not use an email address or any other personal data: hash it, or use any other string that stays the same across your requests. This replaces the deprecated \"user\" parameter.",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced): help text under the safety identifier field. Keep \"user\" unchanged: it is an API parameter name."
   },
   "prefs_OptionText_chatgpt_include_encrypted_reasoning": {
     "message": "Include encrypted reasoning",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the option to receive the model's reasoning in encrypted form. Keep short."
   },
   "prefs_OptionText_chatgpt_include_encrypted_reasoning_Info": {
     "message": "Ask the API to return the model's reasoning in encrypted form, so it can be reused across requests without being stored by OpenAI. Only meaningful when \"Use storage\" above is off, and only on reasoning models.",
-    "description": ""
+    "description": "Connection panel (OpenAI API, advanced): text next to the encrypted reasoning checkbox. \"Use storage\" is the label of another option; translate it as there."
   },
   "chatgpt_note_sampling_unsupported": {
     "message": "The selected model does not accept this setting and ignores this field. Use the Reasoning effort setting instead. The value is kept in case you switch back to another model.",
@@ -2719,15 +2719,15 @@
   },
   "prefs_ollama_temperature_Info": {
     "message": "The temperature of the model. Increasing the temperature will make the model answer more creatively. The default value is 0.8. It is recommended to use values between 0 and 1.",
-    "description": ""
+    "description": "Connection panel (Ollama API): help text under the Temperature field explaining the value range."
   },
   "prefs_ollama_think": {
     "message": "Enable thinking",
-    "description": ""
+    "description": "Connection panel (Ollama API, advanced) and AI chat window settings summary: label of the selector that enables model thinking/reasoning and its level. Keep short."
   },
   "prefs_ollama_think_Info": {
     "message": "Make the model reason before answering. \"Model default\" sends nothing and lets the model decide, which on some models means it reasons anyway: choose \"Off\" to turn the reasoning off explicitly. The available reasoning levels depend on the selected model, and are listed after a model is chosen.",
-    "description": ""
+    "description": "Connection panel (Ollama API, advanced): help text under the thinking selector. \"Model default\" and \"Off\" are option names of the selector."
   },
   "prefs_ollama_think_default": {
     "message": "Model default",
@@ -2735,7 +2735,7 @@
   },
   "ollama_note_thinking_unsupported": {
     "message": "The selected model doesn't report support for thinking, so this setting is ignored.",
-    "description": ""
+    "description": "Connection panel (Ollama API): note shown next to the thinking selector when the selected model does not report thinking support."
   },
   "ollama_num_ctx_max_info": {
     "message": "This model supports up to $MAX$ context tokens.",
@@ -2744,59 +2744,59 @@
   },
   "prefs_Ollama_API_Key": {
     "message": "Ollama API Key",
-    "description": ""
+    "description": "Connection panel (Ollama API): label of the optional API key field; keep 'Ollama' and 'API' unchanged, keep short."
   },
   "prefs_Ollama_API_Key_Info": {
     "message": "Only needed for the hosted API at ollama.com, or for a self-hosted server behind a proxy that requires authentication. Leave empty for a standard local Ollama installation.",
-    "description": ""
+    "description": "Connection panel (Ollama API): help text under the API key field explaining when a key is needed; keep 'ollama.com' unchanged."
   },
   "prefs_ollama_keep_alive": {
     "message": "Keep model loaded",
-    "description": ""
+    "description": "Connection panel (Ollama API, advanced) and AI chat window settings summary: label of the setting for how long the model stays loaded in memory, followed by the parameter name [keep_alive]. Keep short."
   },
   "prefs_ollama_keep_alive_Info": {
     "message": "How long Ollama keeps the model in memory after a request: a duration like 5m or 30m, -1 to keep it loaded indefinitely, or 0 to unload it immediately. Leave empty to use the server default (5 minutes). Raising it is useful when auto-tagging, the spam filter or auto-summarize run on incoming mail, because the model would otherwise be reloaded for every message.",
-    "description": ""
+    "description": "Connection panel (Ollama API, advanced): help text under the keep-alive field. Keep the values 5m, 30m, -1 and 0 unchanged."
   },
   "Ollama_System_Prompt": {
     "message": "System Prompt",
-    "description": ""
+    "description": "Connection panel (Ollama API, advanced) and AI chat window settings summary: label of the system prompt text area. Keep short."
   },
   "Ollama_System_Prompt_Info": {
     "message": "Sent as a system message at the start of every conversation, to give the model a role or standing instructions.",
-    "description": ""
+    "description": "Connection panel (Ollama API, advanced): help text under the System Prompt text area."
   },
   "prefs_OptionText_ollama_extra_options": {
     "message": "Extra options",
-    "description": ""
+    "description": "Connection panel (Ollama API, advanced) and AI chat window settings summary: label of the extra options JSON field, followed by the parameter name [options]. Keep short."
   },
   "prefs_OptionText_ollama_extra_options_info": {
     "message": "Additional parameters to send inside the Ollama 'options' object, as a JSON object. Useful for options ThunderAI doesn't expose, like {\"top_p\": 0.9, \"seed\": 42} or {\"num_predict\": 512}. The parameters managed by ThunderAI (number of context tokens, temperature) can't be overridden here. An invalid value is ignored.",
-    "description": ""
+    "description": "Connection panel (Ollama API, advanced): help text under the extra options JSON text area. Keep 'options' and the JSON examples unchanged."
   },
   "prefs_ollama_format_json": {
     "message": "Force JSON output",
-    "description": ""
+    "description": "Connection panel (Ollama API, advanced): label of the toggle that forces JSON responses. Keep short."
   },
   "prefs_ollama_format_json_Info": {
     "message": "If checked, Ollama will be forced to return a valid JSON response. This option works only with models that support structured output.",
-    "description": ""
+    "description": "Connection panel (Ollama API, advanced): help text next to the Force JSON output toggle."
   },
   "chatgpt_win_change_reply_type": {
     "message": "Click to change the reply type",
-    "description": ""
+    "description": "ChatGPT Web window: tooltip of the icon button that switches the reply between 'reply to all' and 'reply to sender only'."
   },
   "prefs_OptionText_add_tags_exclusions_exact_match": {
     "message": "Exclusions exact match",
-    "description": ""
+    "description": "Add tags page: name of the option that makes tag exclusion words match exactly. Keep short."
   },
   "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
     "message": "If checked, the words in the exclusion list will be matched exactly with the tags. Otherwise, they will also match if included within the tag.",
-    "description": ""
+    "description": "Add tags page: description under the 'Exclusions exact match' option."
   },
   "customDataPH_manageDataPH": {
     "message": "Manage Data Placeholders",
-    "description": ""
+    "description": "Custom data placeholders page: page title and main heading."
   },
   "customDataPH_placeholdersCount": {
     "message": "$COUNT$ data placeholders",
@@ -2809,67 +2809,67 @@
   },
   "customDataPH_manageDataPH_info_default_3": {
     "message": "You can also use the default data placeholders with autocomplete, just like when writing custom prompts.",
-    "description": ""
+    "description": "Custom data placeholders page: intro text below the heading, followed by a 'More info' link."
   },
   "customDataPH_manageDataPH_info_default": {
     "message": "On this page, it is possible to define custom data placeholders to be used in your custom prompts.",
-    "description": ""
+    "description": "Custom data placeholders page: first line of the intro text below the heading."
   },
   "customDataPH_manageDataPH_info_default_2": {
     "message": "Existing data placeholders with the same ID will be overwritten. Placeholders with new IDs will be added.",
-    "description": ""
+    "description": "Custom data placeholders page: part of the confirmation dialog shown before importing data placeholders from a file."
   },
   "customDataPH_ExportAll": {
     "message": "Export all custom data placeholders",
-    "description": ""
+    "description": "Custom data placeholders page: label of the button that exports all custom data placeholders to a file."
   },
   "customDataPH_Import": {
     "message": "Import new data placeholders",
-    "description": ""
+    "description": "Custom data placeholders page: label of the button that imports data placeholders from a file."
   },
   "customDataPH_form_label_Text": {
     "message": "Data Placeholder Text",
-    "description": ""
+    "description": "Custom data placeholders page: label of the text field of a data placeholder in the add form, and column header in the list. Keep short."
   },
   "customDataPH_saving_custom": {
     "message": "Saving custom data placeholders...",
-    "description": ""
+    "description": "Custom data placeholders page: status message shown while saving the data placeholders."
   },
   "customDataPH_saved": {
     "message": "Custom data placeholders saved!",
-    "description": ""
+    "description": "Custom data placeholders page: status message shown after the data placeholders are saved."
   },
   "customDataPH_btnAddNewCommit": {
     "message": "Add the Data Placeholder",
-    "description": ""
+    "description": "Custom data placeholders page: label of the button that adds the new data placeholder from the form."
   },
   "importCustomDataPH_confirmText": {
     "message": "You are about to import new custom data placeholders.",
-    "description": ""
+    "description": "Custom data placeholders page: first line of the confirmation dialog shown before importing data placeholders from a file."
   },
   "importCustomDataPH_start_import": {
     "message": "Starting custom data placeholders import...",
-    "description": ""
+    "description": "Custom data placeholders page: status message shown when the import of data placeholders starts."
   },
   "importCustomDataPH_import_completed": {
     "message": "Custom data placeholders import completed! You need to click on the 'Save All' button to save your changes.",
-    "description": ""
+    "description": "Custom data placeholders page: status message after an import; 'Save All' is the label of the save button, translate it as there."
   },
   "importCustomDataPH_invalidFile": {
     "message": "The file you're trying to import is not a valid custom data placeholders file.",
-    "description": ""
+    "description": "Custom data placeholders page: error alert and status message shown when the imported file is not a valid data placeholders file."
   },
   "importCustomDataPH_invalidDataPHs": {
     "message": "The file you're trying to import does not contain any valid custom data placeholders.",
-    "description": ""
+    "description": "Custom data placeholders page: error alert and status message shown when the imported file contains no valid data placeholders."
   },
   "customDataPH_add_to_menu": {
     "message": "Usable in prompts added to menu",
-    "description": ""
+    "description": "Custom data placeholders page: label of the selector choosing in which prompts added to the menu the data placeholder can be used. Followed by a colon."
   },
   "prefs_OptionText_chatgpt_web_br_replace_info": {
     "message": "Please note that any <br> tags in the AI's response will be replaced with line breaks.",
-    "description": ""
+    "description": "Connection panel (ChatGPT Web): note that <br> tags in the AI answer are replaced with line breaks. Keep '<br>' unchanged."
   },
   "prefs_OpenAIComp_AddManually": {
     "message": "Add manually",
@@ -2881,23 +2881,23 @@
   },
   "OpenAIComp_ClearModelsList_Confirm": {
     "message": "Are you sure you want to clear the Models List? This action cannot be undone.",
-    "description": ""
+    "description": "Connection panel (OpenAI Compatible API): confirmation dialog shown before clearing the saved list of models."
   },
   "prefs_api_temperature": {
     "message": "Temperature",
-    "description": ""
+    "description": "Connection panel and AI chat window settings summary: label of the Temperature field (AI sampling parameter) for several providers. Keep short."
   },
   "prefs_openai_comp_temperature_Info": {
     "message": "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.",
-    "description": ""
+    "description": "Connection panel (OpenAI Compatible API): help text under the Temperature field explaining sampling temperature values."
   },
   "chatgpt_click_force_completion": {
     "message": "It seems that it's not possible to get if ChatGPT has finished. Click here to force the completion of the job.",
-    "description": ""
+    "description": "ChatGPT Web window: clickable hint shown when the add-on cannot detect that ChatGPT has finished answering; clicking it forces completion."
   },
   "warn_API_needed": {
     "message": "To use this feature, you need an API integration rather than the ChatGPT Web Integration. You can define a specific API in the feature settings page by first checking the checkbox above and then clicking the button on the left.",
-    "description": ""
+    "description": "Options page: warning shown under a feature (e.g. add tags, spam filter, summarize) that requires an API connection instead of the ChatGPT Web integration."
   },
   "specific_integration_mandatory_badge": {
     "message": "Required",
@@ -2922,71 +2922,71 @@
   },
   "prefs_google_gemini_thinking_budget": {
     "message": "Thinking Budget",
-    "description": ""
+    "description": "Connection panel (Google Gemini API) and AI chat window settings summary: label of the thinking budget field (tokens used for thinking). Keep short."
   },
   "prefs_google_gemini_thinking_budget_Info": {
     "message": "Define the number of tokens to be used for thinking. Leave this field blank if the selected model does not support thinking or if you want to use the default method. Enter 0 to disable thinking, or -1 to enable dynamic thinking.",
-    "description": ""
+    "description": "Connection panel (Google Gemini API): help text under the Thinking Budget field, followed by a 'More info' link. Keep the values 0 and -1 unchanged."
   },
   "prefs_api_max_output_tokens": {
     "message": "Max output tokens",
-    "description": ""
+    "description": "Connection panel: label of the field for the maximum number of tokens the model may generate; also used as a parameter label in the AI chat window's settings summary. Technical API term."
   },
   "prefs_api_top_p": {
     "message": "Top P",
-    "description": ""
+    "description": "Connection panel: label of the Top P sampling parameter field; also used as a parameter label in the AI chat window's settings summary. Technical API term, usually kept as is."
   },
   "prefs_api_top_k": {
     "message": "Top K",
-    "description": ""
+    "description": "Connection panel: label of the Top K sampling parameter field; also used as a parameter label in the AI chat window's settings summary. Technical API term, usually kept as is."
   },
   "prefs_api_extra_body": {
     "message": "Extra body data",
-    "description": ""
+    "description": "Connection panel: label of the field for additional JSON parameters added to every API request body; also used as a parameter label in the AI chat window's settings summary."
   },
   "prefs_google_gemini_max_output_tokens_Info": {
     "message": "The maximum number of tokens that can be generated in the response. Leave it empty or at 0 to let the model decide.",
-    "description": ""
+    "description": "Connection panel (Google Gemini): help text under the Max output tokens field."
   },
   "prefs_google_gemini_top_p_Info": {
     "message": "Nucleus sampling: the model considers only the tokens whose cumulative probability reaches this value. The accepted range and the default value vary depending on the model. Leave it empty to avoid setting the parameter in the API call.",
-    "description": ""
+    "description": "Connection panel (Google Gemini): help text under the Top P field, explaining nucleus sampling."
   },
   "prefs_google_gemini_top_k_Info": {
     "message": "Only sample from the top K options for each subsequent token, removing long tail low probability responses. Not every model supports this parameter. Leave it empty to avoid setting the parameter in the API call.",
-    "description": ""
+    "description": "Connection panel (Google Gemini): help text under the Top K field."
   },
   "prefs_google_gemini_extra_body_Info": {
     "message": "Additional parameters to send with every API call, as a JSON object. Useful for options the Gemini API supports but ThunderAI doesn't expose, like {\"safetySettings\": []} or {\"generationConfig\": {\"seed\": 42}}. Keys inside \"generationConfig\" are merged into the ones ThunderAI builds. The parameters managed by ThunderAI (contents, system instruction, thinking, temperature, max output tokens, top P, top K) can't be overridden here. An invalid value is ignored.",
-    "description": ""
+    "description": "Connection panel (Google Gemini): help text under the Extra body data field. Keep the JSON examples and key names (safetySettings, generationConfig, seed) unchanged."
   },
   "prefs_google_gemini_temperature_Info": {
     "message": "This parameter must be a number between 0.0 and 2.0. It controls the randomness of the output. The default value varies depending on the model. Leave it empty to avoid setting the parameter in the API call.",
-    "description": ""
+    "description": "Connection panel (Google Gemini): help text under the Temperature field."
   },
   "SelectAll": {
     "message": "Select All",
-    "description": ""
+    "description": "Add tags page and Spam filter page: small button that checks all accounts in the account selector. Verb phrase; keep it short."
   },
   "DeselectAll": {
     "message": "Deselect All",
-    "description": ""
+    "description": "Add tags page and Spam filter page: small button that unchecks all accounts in the account selector. Verb phrase; keep it short."
   },
   "Anthropic_System_Prompt": {
     "message": "System Prompt",
-    "description": ""
+    "description": "Connection panel (Claude API): label of the system prompt text field; also used as a parameter label in the AI chat window's settings summary."
   },
   "Anthropic_System_Prompt_Info": {
     "message": "You can improve Claude performance by using a System Prompt to give it a role. This technique, known as role prompting, is the most powerful way to use system prompts with Claude. The right role can turn Claude from a general assistant into your virtual domain expert.",
-    "description": ""
+    "description": "Connection panel (Claude API): help text under the System Prompt field, explaining role prompting."
   },
   "prefs_anthropic_temperature_Info": {
     "message": "Amount of randomness injected into the response. Ranges from 0.0 to 1.0, and defaults to 1.0 when left empty. Newer Claude models do not accept this setting at all and use the Effort setting instead: when one of them is selected this field is disabled and its value is not sent.",
-    "description": ""
+    "description": "Connection panel (Claude API): help text under the Temperature field; Effort is the name of another setting on the same panel."
   },
   "Optional_Permission_Denied_Model_Fetching": {
     "message": "You have denied the optional permission needed to fetch models for this integration.",
-    "description": ""
+    "description": "Connection panel and connection test: error shown when the user denies the optional permission needed to fetch the model list from the provider."
   },
   "prefs_OptionText_auto_summary_Info": {
       "message": "If checked, ThunderAI will automatically generate and display AI summaries above email messages when they are opened. Note that this means all messages you preview will immediately be sent to the configured AI service.",
@@ -2994,19 +2994,19 @@
   },
   "customPrompts_export_include_api_settings": {
     "message": "Do you want to include the API settings in the export? Be aware that also the API Key will be saved in the file!",
-    "description": ""
+    "description": "Custom prompts page: question in the dialog shown when exporting prompts, asking whether to include the API settings (including the API key) in the file."
   },
   "prefs_OptionText_calendar_no_selection": {
     "message": "Do not ask to select text",
-    "description": ""
+    "description": "Get calendar event page: name of the option that lets the action run without selecting text first."
   },
   "prefs_OptionText_calendar_no_selection_Info": {
     "message": "If checked there is no need to select some text. The full message body will be used to get the calendar event.",
-    "description": ""
+    "description": "Get calendar event page: description under the 'Do not ask to select text' option."
   },
   "prefs_OptionText_calendar_no_selection_missing_placeholder": {
     "message": "The prompt must contain the placeholder {%mail_text_body_or_selected%} or {%mail_html_body_or_selected%} to enable this option. Please add one of these placeholders to the prompt or reset it to the default.",
-    "description": ""
+    "description": "Get calendar event page: alert shown when enabling 'Do not ask to select text' while the prompt lacks the required body placeholder. Keep the {%...%} tokens unchanged."
   },
   "prefs_OptionText_calendar_no_selection_save_missing_placeholder": {
     "message": "The option \"Do not ask to select text\" is enabled, so the prompt must contain the placeholder {%mail_text_body_or_selected%} or {%mail_html_body_or_selected%}. Please add one of these placeholders to the prompt or reset it to the default.",
@@ -3102,35 +3102,35 @@
   },
   "copy_text": {
     "message": "copy",
-    "description": ""
+    "description": "Custom prompts page: word appended to the name and ID of a duplicated prompt, e.g. 'My prompt (copy)'. Lowercase noun; keep it a single short word, as it is also used inside the prompt ID."
   },
    "spam_check_in_progress": {
       "message": "Spam check in progress...",
-      "description": ""
+      "description": "Spam report banner in the message pane: status text shown while the AI spam check is running."
   },
   "prefs_OptionText_summarize_auto": {
       "message": "Auto-summarize messages",
-      "description": ""
+      "description": "Summarize page: label of the drop-down that chooses when message summaries are generated automatically."
   },
   "prefs_OptionText_summarize_auto_Info": {
       "message": "Choose whether to automatically generate summaries when viewing messages. Requires an API-based connection (not ChatGPT Web).",
-      "description": ""
+      "description": "Summarize page: help text under the Auto-summarize messages drop-down. ChatGPT Web is a product name."
   },
   "prefs_OptionText_summarize_display_mode": {
       "message": "Display summary in",
-      "description": ""
+      "description": "Summarize page: label of the drop-down choosing where the summary is shown (message pane or chat window); followed by the selected option."
   },
   "prefs_OptionText_summarize_display_mode_Info": {
       "message": "Choose where the summary result is displayed. Inline mode shows a summary banner directly in the message pane. Chat window mode opens the AI chat window.",
-      "description": ""
+      "description": "Summarize page: help text under the 'Display summary in' drop-down, explaining the inline and chat window modes."
   },
   "prefs_OptionText_summarize_max_display_length": {
       "message": "Max display length",
-      "description": ""
+      "description": "Summarize page: label of the numeric field setting the maximum number of characters shown in the inline summary."
   },
   "prefs_OptionText_summarize_max_display_length_Info": {
       "message": "Maximum number of characters to display in the inline summary. Set to 0 for no limit.",
-      "description": ""
+      "description": "Summarize page: help text next to the Max display length field."
   },
   "prefs_OptionText_max_messages": {
       "message": "Max messages",
@@ -3138,79 +3138,79 @@
   },
   "prefs_OptionText_summarize_max_messages_Info": {
       "message": "Maximum number of messages that can be summarized at once in webchat mode. Above this limit the operation is blocked with a warning. Set to 0 for no limit.",
-      "description": ""
+      "description": "Summarize page: help text next to the maximum number of messages field, for summarizing several messages at once in the chat window."
   },
   "prefs_OptionText_summarize_strip_formatting": {
       "message": "Strip formatting",
-      "description": ""
+      "description": "Summarize page: name of the option that removes HTML and Markdown formatting from the summary. Keep it short."
   },
   "prefs_OptionText_summarize_strip_formatting_Info": {
       "message": "Remove HTML and Markdown formatting from the AI-generated summary, showing plain text only.",
-      "description": ""
+      "description": "Summarize page: description under the 'Strip formatting' option."
   },
   "prefs_OptionText_summarize_force_lang": {
       "message": "Force summary language",
-      "description": ""
+      "description": "Summarize page: name of the option that forces summaries to be written in a chosen language."
   },
   "prefs_OptionText_summarize_force_lang_Info": {
       "message": "If checked, the summary is always written in the selected language, regardless of the language of the emails. The summaries already generated are not updated: use \"Refresh summary\" to generate them again.",
-      "description": ""
+      "description": "Summarize page: description under the 'Force summary language' option; 'Refresh summary' must match the translation of the summary banner's refresh action."
   },
   "prefs_OptionText_summarize_lang_Info": {
       "message": "Language of the summary. Leave it empty to use the default language set in the ThunderAI options. If both are empty, no language is forced.",
-      "description": ""
+      "description": "Summarize page: help text under the summary language text field, shown when 'Force summary language' is checked."
   },
   "prompt_summarize_force_lang": {
       "message": "The summary must be written in",
-      "description": ""
+      "description": "Instruction sent to the AI model, appended to the summarize prompt and followed by a space, the language name and a period (e.g. 'The summary must be written in Italian.')."
   },
   "summarize_info_additional_statements": {
       "message": "This statement will be added at the end of the prompt:",
-      "description": ""
+      "description": "Summarize page: note under the prompt text, followed by the quoted language instruction that is appended to the prompt sent to the AI."
   },
   "Summarize_auto_senders_title": {
       "message": "Automatic summary sender list",
-      "description": ""
+      "description": "Summarize page: heading of the section listing senders whose emails are always summarized automatically."
   },
   "Summarize_auto_senders_infoline": {
       "message": "Emails coming from these senders are summarized automatically, without any click. The summary is generated when the email is received, or when you open it if it was not caught on reception.",
-      "description": ""
+      "description": "Summarize page: first help line under the automatic summary sender list heading."
   },
   "Summarize_auto_senders_infoline2": {
       "message": "Add one email address per line, or separated by a comma. Use \"@domain.com\" to match every sender of a whole domain.",
-      "description": ""
+      "description": "Summarize page: second help line under the automatic summary sender list heading, explaining the list format. Keep \"@domain.com\" unchanged."
   },
   "Summarize_auto_senders_notice": {
       "message": "Auto-summarize is disabled, but the summary is still generated automatically for the senders in the list below.",
-      "description": ""
+      "description": "Summarize page: notice under the Auto-summarize drop-down, shown when auto-summarize is disabled but the sender list is active."
   },
   "Summarize_auto_senders_disabled_note": {
       "message": "Not available when auto-summarize is set to generate the summary on email receive: in that mode every incoming email is already summarized.",
-      "description": ""
+      "description": "Summarize page: note shown in the sender list section when auto-summarize is set to 'When the email is received', making the list unnecessary."
   },
   "prefs_OptionText_summarize_auto_senders": {
       "message": "Summarize these senders automatically",
-      "description": ""
+      "description": "Summarize page: name of the toggle that enables automatic summaries for the listed senders."
   },
   "prefs_OptionText_summarize_auto_senders_Info": {
       "message": "If enabled, emails coming from the senders listed below are summarized automatically, even when auto-summarize is disabled above.",
-      "description": ""
+      "description": "Summarize page: description under the 'Summarize these senders automatically' toggle."
   },
   "prefs_OptionText_summarize_auto_senders_list_Info": {
       "message": "Sender addresses to summarize automatically:",
-      "description": ""
+      "description": "Summarize page: label above the text area where the sender addresses are entered."
   },
   "summarize_see_more": {
       "message": "See more",
-      "description": ""
+      "description": "Summary banner in the message pane: link that expands a truncated summary. Keep it short."
   },
   "summarize_see_less": {
       "message": "See less",
-      "description": ""
+      "description": "Summary banner in the message pane: link that collapses an expanded summary. Keep it short."
   },
   "summarize_title": {
       "message": "ThunderAI Overview",
-      "description": ""
+      "description": "Title of the error dialog shown when too many messages are selected for summarizing. ThunderAI is the add-on name."
   },
   "summarize_too_many_messages": {
       "message": "You selected $SELECTED$ messages, but at most $MAX$ can be summarized at once. Please select fewer messages.",
@@ -3226,7 +3226,7 @@
   },
   "get_ai_summary": {
       "message": "AI Summary",
-      "description": ""
+      "description": "Message pane: label of the small button that generates an AI summary of the email. Keep it short."
   },
   "batch_stop_processing": {
       "message": "Stop processing",
@@ -3306,11 +3306,11 @@
   },
   "summarize_generating": {
       "message": "Generating summary...",
-      "description": ""
+      "description": "Summary banner in the message pane: status title shown while the summary is being generated."
   },
   "summarize_error": {
       "message": "Failed to generate summary",
-      "description": ""
+      "description": "Summary banner in the message pane: error text shown when the summary could not be generated."
   },
   "summarize_error_no_message_id": {
       "message": "Could not read the message: the summary would have been generated from the subject only.",
@@ -3318,27 +3318,27 @@
   },
   "summarize_click_to_generate": {
       "message": "Click here to generate a summary",
-      "description": ""
+      "description": "Message pane: tooltip of the 'AI Summary' button."
   },
    "summarize_chatgpt_web_not_supported": {
        "message": "Auto-summary requires an API-based connection. Please configure an API connection in ThunderAI settings.",
-       "description": ""
+       "description": "Error shown in the summary banner when automatic summary is attempted without an API-based connection (e.g. with ChatGPT Web)."
    },
    "summarize_refresh": {
        "message": "Refresh summary",
-       "description": ""
+       "description": "Summary banner in the message pane: menu action that generates the summary again. Verb phrase."
    },
    "spamfilter_refresh": {
        "message": "Refresh spam report",
-       "description": ""
+       "description": "Spam report banner in the message pane: menu action that runs the spam check again. Verb phrase."
    },
    "spamfilter_delete": {
        "message": "Delete spam report",
-       "description": ""
+       "description": "Spam report banner in the message pane: menu action that deletes the stored spam report. Verb phrase."
    },
    "summarize_delete": {
        "message": "Delete summary",
-       "description": ""
+       "description": "Summary banner in the message pane: menu action that deletes the stored summary. Verb phrase."
    },
    "generic_error_dismiss": {
        "message": "Dismiss",
@@ -3346,127 +3346,127 @@
    },
   "prefs_OptionText_translate": {
     "message": "Translate email",
-    "description": ""
+    "description": "Options page and Setup wizard: name of the feature toggle that enables the translate button in the message body."
   },
   "prefs_OptionText_translate_use_specific_integration_Info": {
     "message": "If checked, the Model and API specified below will be used for translating email(s), regardless the one chosen in the ThunderAI options page.",
-    "description": ""
+    "description": "Translate page: description under the option to use a specific AI connection for translations."
   },
   "prefs_OptionText_translate_Info": {
     "message": "If checked, adds a translate button in the message body.",
-    "description": ""
+    "description": "Options page and Setup wizard: description under the 'Translate email' feature toggle."
   },
   "prefs_OptionText_btnManageTranslateInfo": {
     "message": "Manage translate settings",
-    "description": ""
+    "description": "Options page: small button under the 'Translate email' feature that opens the Translate page."
   },
   "Translate_PageTitle": {
     "message": "Manage Translation Settings",
-    "description": ""
+    "description": "Translate page: page title, also used in the browser tab title after 'ThunderAI - '."
   },
   "Translate_info_default": {
     "message": "In this page you can modify the default prompt used to translate emails.",
-    "description": ""
+    "description": "Translate page: subtitle under the page title."
   },
   "Translate_prompt_text_title": {
     "message": "Current prompt text",
-    "description": ""
+    "description": "Translate page: heading of the section with the translation prompt text."
   },
   "prefs_OptionText_translate_auto": {
     "message": "Auto-translate messages",
-    "description": ""
+    "description": "Translate page: label of the drop-down that chooses when messages are translated automatically."
   },
   "prefs_OptionText_action_auto_disabled": {
     "message": "Disabled",
-    "description": ""
+    "description": "Summarize page and Translate page: option of the auto-summarize / auto-translate drop-down that turns the automatic action off. Keep it short."
   },
   "prefs_OptionText_action_auto_manual": {
     "message": "Manual button only",
-    "description": ""
+    "description": "Summarize page and Translate page: option of the auto-summarize / auto-translate drop-down where the action runs only when the user clicks the button in the message."
   },
   "prefs_OptionText_action_auto_automatic": {
     "message": "When the email is opened",
-    "description": ""
+    "description": "Summarize page and Translate page: option of the auto-summarize / auto-translate drop-down where the action runs when the email is opened."
   },
   "prefs_OptionText_translate_auto_Info": {
     "message": "Choose when to translate messages: disabled, only when clicking the button, or automatically when opening a message.",
-    "description": ""
+    "description": "Translate page: help text under the Auto-translate messages drop-down."
   },
   "prefs_OptionText_display_mode_inline": {
     "message": "Message pane (inline)",
-    "description": ""
+    "description": "Summarize page: option of the 'Display summary in' drop-down that shows the summary as a banner in the message pane."
   },
   "prefs_OptionText_display_mode_webchat": {
     "message": "Chat window",
-    "description": ""
+    "description": "Summarize page: option of the 'Display summary in' drop-down that shows the summary in the AI chat window."
   },
   "prefs_OptionText_translate_max_display_length": {
     "message": "Maximum length of displayed translation",
-    "description": ""
+    "description": "Translate page: label of the numeric field setting the maximum number of characters shown in the inline translation."
   },
   "prefs_OptionText_translate_max_display_length_Info": {
     "message": "Maximum number of characters shown in the inline translation. 0 = no limit. When set, longer text is truncated with a \"See more\" toggle.",
-    "description": ""
+    "description": "Translate page: help text next to the maximum translation length field; \"See more\" must match the translation of the banner's expand link."
   },
   "translate_see_more": {
     "message": "See more",
-    "description": ""
+    "description": "Translation banner in the message pane: link that expands a truncated translation. Keep it short."
   },
   "translate_see_less": {
     "message": "See less",
-    "description": ""
+    "description": "Translation banner in the message pane: link that collapses an expanded translation. Keep it short."
   },
   "prefs_OptionText_translate_lang": {
     "message": "Translation target language",
-    "description": ""
+    "description": "Translate page: label of the text field for the language emails are translated into."
   },
   "prefs_OptionText_translate_lang_Info": {
     "message": "Language to translate emails into. If empty, uses the default language setting.",
-    "description": ""
+    "description": "Translate page: help text under the translation target language field."
   },
   "prefs_OptionText_translate_exclude_lang": {
     "message": "Exclude languages",
-    "description": ""
+    "description": "Translate page: label of the text field listing languages that are not translated. 'Exclude' is a verb."
   },
   "prefs_OptionText_translate_exclude_lang_Info": {
     "message": "Comma-separated list of language codes (e.g., en, fr, it) to skip for automatic translation. If the email is in one of these languages, it won't be translated automatically or the manual button won't be shown.",
-    "description": ""
+    "description": "Translate page: help text under the Exclude languages field. Keep the language codes (en, fr, it) unchanged."
   },
   "prefs_OptionText_Translate_main_prompt": {
     "message": "The prompt describing the translation task:",
-    "description": ""
+    "description": "Translate page: bold label introducing the text area with the translation prompt."
   },
   "translate_generating": {
     "message": "Translating...",
-    "description": ""
+    "description": "Translation banner in the message pane: status title shown while the translation is being generated."
   },
   "translate_click_to_generate": {
     "message": "Click here to translate this email",
-    "description": ""
+    "description": "Message pane: tooltip of the 'AI Translation' button."
   },
   "get_ai_translation": {
     "message": "AI Translation",
-    "description": ""
+    "description": "Message pane: label of the small button that generates an AI translation of the email. Keep it short."
   },
   "translate_chatgpt_web_not_supported": {
     "message": "Auto-translation requires an API-based connection. Please configure an API connection in ThunderAI settings.",
-    "description": ""
+    "description": "Error shown in the translation banner when automatic translation is attempted without an API-based connection (e.g. with ChatGPT Web)."
   },
   "translate_refresh": {
     "message": "Refresh translation",
-    "description": ""
+    "description": "Translation banner in the message pane: menu action that generates the translation again. Verb phrase."
   },
   "translate_delete": {
     "message": "Delete translation",
-    "description": ""
+    "description": "Translation banner in the message pane: menu action that deletes the stored translation. Verb phrase."
   },
   "translate_banner_title": {
     "message": "AI Translation",
-    "description": ""
+    "description": "Translation banner in the message pane: title of the banner showing the AI translation. Keep it short."
   },
   "translate_error": {
     "message": "Translation failed.",
-    "description": ""
+    "description": "Translation banner in the message pane: error text shown when the translation could not be generated."
   },
   "translate_error_no_message_id": {
     "message": "Could not read the message: the translation would have been generated from the subject only.",
@@ -3474,7 +3474,7 @@
   },
   "translate_no_language_configured": {
     "message": "Translation language is not configured. Please set a language in the Translation settings or set a default language in the General settings.",
-    "description": ""
+    "description": "Alert shown when translating an email while no target or default language is set; refers to the Translate page and the Options page."
   },
   "translate_skipped": {
     "message": "Translation skipped: Language excluded or identical to target.",
@@ -3482,7 +3482,7 @@
   },
   "antispam_by": {
     "message": "Antispam by",
-    "description": ""
+    "description": "Spam report banner in the message pane: small branding text, followed by a space and 'ThunderAI' (e.g. 'Antispam by ThunderAI')."
   },
   "spam_badge_tooltip": {
     "message": "Spam score — Click to see the explanation",
@@ -3490,47 +3490,47 @@
   },
   "summary_by": {
     "message": "Summary by",
-    "description": ""
+    "description": "Summary banner in the message pane: small branding text, followed by a space and 'ThunderAI' (e.g. 'Summary by ThunderAI')."
   },
   "translate_by": {
     "message": "Translation by",
-    "description": ""
+    "description": "Translation banner in the message pane: small branding text, followed by a space and 'ThunderAI' (e.g. 'Translation by ThunderAI')."
   },
   "prefs_THStats_1": {
     "message": "Do you want beautiful statistics about your emails?",
-    "description": ""
+    "description": "Options page: first part of the promotional banner for the ThunderStats add-on, followed by 'Try ThunderStats!'."
   },
   "prefs_THStats_2": {
     "message": "Try ThunderStats!",
-    "description": ""
+    "description": "Options page: call to action of the promotional banner, shown after 'Do you want beautiful statistics about your emails?'. ThunderStats is an add-on name."
   },
   "prefs_OptionText_chatgpt_win_pos_text":{
     "message": "AI chat window position",
-    "description": ""
+    "description": "Options page: label of the fields setting the screen position of the AI chat window."
   },
   "prefs_OptionText_chatgpt_win_top":{
     "message": "Top",
-    "description": ""
+    "description": "Options page: short label of the field for the AI chat window's distance from the top of the screen (position, not 'upper'). Keep it short."
   },
   "prefs_OptionText_chatgpt_win_left":{
     "message": "Left",
-    "description": ""
+    "description": "Options page: short label of the field for the AI chat window's distance from the left of the screen (position). Keep it short."
   },
   "prefs_chatgpt_win_save_position": {
     "message": "Automatically save the window position when using the close button.",
-    "description": ""
+    "description": "Options page: help text of the option that saves the AI chat window position when the window is closed with its close button."
   },
   "prefs_chatgpt_win_position_info":{
     "message": "Leave empty to use the default position.",
-    "description": ""
+    "description": "Options page: help text under the AI chat window position fields."
   },
   "prefs_OptionText_action_auto_batch": {
     "message": "When the email is received",
-    "description": ""
+    "description": "Summarize page and Translate page: option of the auto-summarize / auto-translate drop-down where the action runs as soon as the email is received."
   },
   "placeholder_string": {
     "message": "Placeholder",
-    "description": ""
+    "description": "Translate page: label before the {%...%} placeholder name that can be used in prompts for the setting above, followed by a colon. Noun; means a prompt placeholder, not an input hint."
   },
   "menu_order_title": {
     "message": "Menu Order",
@@ -3685,7 +3685,8 @@
     "description": "Label of the app-level advanced options disclosure on the options page"
   },
   "prefs_privacy_more_info":{
-    "message": "Click here for more info about privacy"
+    "message": "Click here for more info about privacy",
+    "description": "Options page: link text after the short privacy disclaimer, opening the privacy information web page."
   },
   "connTest_idle": {
     "message": "Connection not tested yet",

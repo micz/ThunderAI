@@ -34,7 +34,8 @@ the test file that reads it.
 ```
 tests/
 ├── helpers/known-issues/static.mjs  the known issues, their shape (validateKnown()), and
-│                                     declareCheck(), which turns a check into tests
+│                                     declareCheck() / reportCheck(), which turn a blocking /
+│                                     an informational check into tests
 └── static/
     ├── source-scan.mjs               the scan: the files, the token stream, argument and
     │                                 literal readers (a helper, not a test: no .test.mjs suffix)
@@ -56,7 +57,7 @@ violation: the thing a known issue names.
 | `locale-shape` | 01 | every `messages.json` parses; every entry is an object with a string `message`, a name of `[A-Za-z0-9_@]` only, no two names equal ignoring case, a string `description` and `placeholders.*.content` when present | 06 "Message File Format" | `locale` or `locale:key` |
 | `en-description` | 01 | every `en` entry has a non-empty `description` | 06 "Message File Format", "Adding a New String" | key |
 | `placeholders` | 01 | a translated entry uses the same `$name$` placeholders as `en` | 06 "Golden Rule" | `locale:key` |
-| `stale-key` | 01 | a translated locale has no key `en` no longer has | 06 "Golden Rule" | `locale:key` |
+| `stale-key` | 01 | **informational, never fails**: lists the keys a translated locale holds and `en` no longer has. Spec 06 "Removing a String" says the translations follow a key removed from `en` when Weblate syncs from `en`, so the interval is expected and its length depends on Weblate, not on this repository | 06 "Golden Rule", "Removing a String" | `locale:key` |
 | `lang-md` | 01 | every locale `LANG.md` lists exists under `_locales/` (that direction only) | 06 "Supported Languages", rule 2 | locale |
 | `missing-key` | 02 | every key referenced from the code exists in `en` | 06 "Using Strings in Code" | key |
 | `dead-key` | 02 | every `en` key is referenced from the code | 06 "Removing a String" | key |
@@ -68,8 +69,10 @@ violation: the thing a known issue names.
 | `secret-name` | 04 | a credential field or preference is named `api_key` / `*_api_key` | rule 7, 08 "Policy-supplied API keys" | key |
 | `secret-treatment` | 04 | every `*_api_key` is masked by `mztaManaged._logValue()` and `mztaPrefs._logValue()`, recognised by `isAPIKeyValue()`, and named by every hand-written list of API key fields | 05 "Preference access", 08 "Policy-supplied API keys" | `site:key` |
 
-Two tests per file are reports, not checks: the **unresolvable** keys (02 and 03), built at run
-time and listed with their `file:line` as a test diagnostic, never failed. And every file has a
+Some tests are reports, not checks: the **unresolvable** keys (02 and 03), built at run time and
+listed with their `file:line` as a test diagnostic, never failed; and the informational check
+`stale-key` (01), whose subjects are listed as diagnostics, one line each up to 20, then
+"and N more". And every file has a
 sanity test (the scan found the declarations, the reference forms, the accessor calls), so a
 scan that silently finds nothing fails instead of passing.
 
@@ -77,6 +80,12 @@ Message names are compared **ignoring case**, as the WebExtension i18n API does:
 spelled `AddTags_…` to a key `addtags_…` works at run time and is not reported.
 
 ## What the scan can see
+
+A message key is **referenced** in exactly the forms spec 06 "Using Strings in Code" lists, no
+more: `i18n.getMessage('key'[, substitutions])` on any receiver (`browser.`, and `messenger.` in
+`js/mzta-i18n.js`); `__MSG_key__` in an HTML page or `manifest.json`; and `__MSG_key__` inside a
+JavaScript string (a stored prompt or placeholder name, or markup a page hands to
+`i18n.updateDocument()`).
 
 `source-scan.mjs` scans `js/`, `options/`, `pages/`, `popup/`, `api_webchat/`,
 `mzta-background.js`, `mzta-background.html` and `manifest.json`; never `tests/`, and never the
@@ -129,7 +138,10 @@ object has already lost its duplicates.
 2. In the test file of its family (or a new `NN-<name>.test.mjs`, opening with the spec section
    it covers), build a `Map` of violations, `{subject: detail}`: the subject is what a known
    issue would name (a key, a locale, `locale:key`), the detail says where.
-3. Call `declareCheck('<check>', '<what the spec says>', violations)`.
+3. Call `declareCheck('<check>', '<what the spec says>', violations)`. Only when the spec itself
+   expects violations for a while, ended by something outside the repository, make it
+   informational instead: add it to `INFORMATIONAL` and call `reportCheck()` (it lists the
+   violations as diagnostics and never fails).
 4. If the scan needs a new reader, add it to `source-scan.mjs` with a case in
    `99-harness-source-scan`. Prefer a reader that under-reports: a noisy static test gets
    ignored.
@@ -155,8 +167,10 @@ KNOWN = { '<check>': [ { reason: REASONS.x, subjects: ['key_a', 'key_b'] } ] }
 
 `validateKnown()` (run by `99-harness-known-issues`) refuses a group without a reason, a reason
 naming no spec section (`spec NN` or `CLAUDE.md rule N`), a subject that is `'*'` or a pattern,
-and a subject listed twice. Today: the `en` entries without a description, and the keys removed
-from `en` as unused that the translations still hold until Weblate syncs them (`stale-key`).
+a subject listed twice, and any entry for an **informational** check (`INFORMATIONAL`, today
+`stale-key`): it never fails, so it has nothing to list, and an entry would bring back the
+TODO-then-stale maintenance it exists to avoid. Only the blocking checks (`declareCheck()`) take
+known issues. Today: none, every blocking check passes.
 
 ## What is not covered
 
@@ -177,9 +191,10 @@ from `en` as unused that the translations still hold until Weblate syncs them (`
   recognise one otherwise. `secret-name` uses a word list (token, secret, password, credential,
   bearer, auth, apikey); a bare `key` is not on it, or `chatgpt_prompt_cache_key` (a cache id)
   would be reported.
-- **`i18n('key')` and `data-i18n="key"`.** The scan reads both forms, but the code uses neither
-  (`js/mzta-i18n.js` is an object, `i18n.updateDocument()`, that substitutes `__MSG_…__`).
-  Spec 06 documents the forms the code does use; the scan keeps reading these two for robustness.
+- **Forms the code does not use.** The scan reads no `i18n('key')` call and no `data-i18n`
+  attribute: the code has neither (`js/mzta-i18n.js` is an object whose `updateDocument()`
+  substitutes `__MSG_…__`), and spec 06 does not list them. A new form goes into the spec first,
+  then into `02`.
 - **Number domains other than ranges.** `type-coherence` checks enumerations and the
   `PREF_NUMBER_RANGES` entries; the rules written as code in `prefValueProblem()` and
   `connectionFieldProblem()` (a URL, JSON, a time zone) are not reproduced here. Several defaults

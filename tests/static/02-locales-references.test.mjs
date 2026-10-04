@@ -1,8 +1,11 @@
-// Spec 06 "Using Strings in Code": a string reaches the UI as
-// browser.i18n.getMessage('key') in JavaScript, and __MSG_key__ in HTML, in manifest.json and
-// in JavaScript strings (the prompt and placeholder names, the HTML the
-// connection panel builds). The scan also reads the older i18n('key') and data-i18n="key"
-// forms, which the code no longer uses (see ./README.md, "What is not covered").
+// Spec 06 "Using Strings in Code": a string reaches the UI in exactly these forms, and the scan
+// reads exactly these:
+//  - browser.i18n.getMessage('key'[, substitutions]) in JavaScript (any receiver: the
+//    messenger. inside js/mzta-i18n.js too);
+//  - __MSG_key__ in an HTML page (text and attribute values, substituted by
+//    i18n.updateDocument()) and in manifest.json;
+//  - __MSG_key__ inside a JavaScript string: a stored name (prompts, placeholders) resolved by
+//    i18nConditionalGet() and its siblings, or markup handed to i18n.updateDocument().
 // Every key referenced that way exists in _locales/en/messages.json.
 // A key built at run time (a variable, a concatenation, a template with ${...}) cannot be checked
 // statically: it is listed by the "unresolvable" test, never failed.
@@ -61,7 +64,6 @@ for (const file of sourceFiles()) {
         const text = file.kind === 'html' ? file.text.replace(/<!--[\s\S]*?-->/g, c => c.replace(/[^\n]/g, ' ')) : file.text;
         const lineOf = lineCounter(text);
         for (const m of text.matchAll(MSG)) addRef(m[1], file.path + ':' + lineOf(m.index));
-        for (const m of text.matchAll(/\bdata-i18n\s*=\s*["']([^"']*)["']/g)) addRef(m[1], file.path + ':' + lineOf(m.index));
         for (const m of text.matchAll(/=\s*["']([^"'\s]+)["']/g)) mentioned.add(m[1].toLowerCase());
         continue;
     }
@@ -85,20 +87,13 @@ for (const file of sourceFiles()) {
             if (/^_[A-Za-z0-9_]{2,}$/.test(tail)) suffixes.add(tail.toLowerCase());
         }
     }
-    // i18n.getMessage(...) on any receiver (browser., messenger.), and a bare i18n(...) call.
-    const sites = [...calls(tokens, ['i18n', 'getMessage'], { anyReceiver: true })].map(i => ({ i, form: 'getMessage' }));
-    for (let i = 0; i + 1 < tokens.length; i++) {
-        const t = tokens[i];
-        if (t.t === 'id' && t.v === 'i18n' && tokens[i + 1].v === '(' && !(i > 0 && tokens[i - 1].v === '.')) {
-            sites.push({ i: i + 2, form: 'i18n' });
-        }
-    }
-    for (const { i, form } of sites) {
+    // i18n.getMessage(key[, substitutions]) on any receiver (browser., messenger.).
+    for (const i of calls(tokens, ['i18n', 'getMessage'], { anyReceiver: true })) {
         const arg = tokens[i];
         const after = tokens[i + 1];
         const site = file.path + ':' + (arg ? arg.line : '?');
         if (isStatic(arg) && after && (after.v === ',' || after.v === ')')) addRef(arg.v, site);
-        else unresolvable.push(site + ' ' + form + '(' + (arg ? (arg.t === 'str' ? '`...${}`' : arg.v) : '') + ' ...)');
+        else unresolvable.push(site + ' getMessage(' + (arg ? (arg.t === 'str' ? '`...${}`' : arg.v) : '') + ' ...)');
     }
 }
 
@@ -121,6 +116,7 @@ test('the scan sees every reference form in use', () => {
     assert.ok(refs.size > 100, 'found references at all (' + refs.size + ')');
     assert.ok(fromFile('manifest.json'), '__MSG_ in manifest.json');
     assert.ok(fromFile('options/mzta-options.html'), '__MSG_ in HTML');
+    assert.ok(fromFile('options/mzta-options.js'), 'getMessage() in a module');
     assert.ok(fromFile('js/mzta-chatgpt.js'), 'getMessage() inside the injected ChatGPT Web script');
     assert.ok(fromFile('js/mzta-prompts.js'), '__MSG_ inside JavaScript strings');
 });

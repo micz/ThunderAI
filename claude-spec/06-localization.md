@@ -21,22 +21,58 @@ The `description` field is important — it helps Weblate translators understand
 
 ## Using Strings in Code
 
+A string reaches the UI in one of three ways: `browser.i18n.getMessage()` in JavaScript, a
+`__MSG_key__` token in a page (substituted by `i18n.updateDocument()`), or a `__MSG_key__` token in
+`manifest.json` (substituted by Thunderbird). There is no `i18n('key')` function and no
+`data-i18n` attribute.
+
 ### In JavaScript
 ```javascript
 const text = browser.i18n.getMessage('key_name');
+// $1 / $name$ placeholders of the message are filled from the second argument:
+indicator.textContent = browser.i18n.getMessage('prefs_specific_api_indicator', [apiName]);
 ```
+
+This is the only way modules, the background script, the API web chat window (`api_webchat/`,
+whose page loads no `mzta-i18n.js`) and the injected ChatGPT Web script get a string. Write the
+key as a string literal where you can: a key computed at run time works, but the static tests
+cannot check that it exists.
+
+**Stored names.** Built-in prompts and placeholders store their display name as a whole
+`__MSG_key__` string (`name: "__MSG_prompt_reply__"` in `js/mzta-prompts.js`), so the name is
+localized when shown, not when stored. Code that needs the text resolves it with
+`i18nConditionalGet(str)` (`js/mzta-utils.js`), which returns the message when `str` is
+exactly `__MSG_…__` and `str` unchanged otherwise (a custom prompt's name); a few modules keep a
+local equivalent (`resolvePlaceholderName()` in `js/mzta-placeholders.js`, `resolvePromptName()`
+in `pages/customprompts/mzta-custom-prompts.js`). Only a whole-string token is resolved this way:
+text around it is not.
 
 ### In HTML
 ```html
-<span>__MSG_key_name__</span>
+<span class="opt_title">__MSG_key_name__</span>
+<button title="__MSG_key_name__">…</button>
 ```
 
-The `__MSG_key__` tokens in a page's text nodes and attribute values are substituted at load
-time by `js/mzta-i18n.js` — a classic script (not an ES module, loaded before the page's module
-script) that defines the global `i18n` object with `updateString()` and `updateDocument()`. Every
-page calls `i18n.updateDocument()` in its startup — and again whenever it injects markup
-dynamically that carries its own `__MSG_…__` tokens (e.g. the connection panels, see
-`pages/_lib/connection-ui.js`).
+Pages are localized by `js/mzta-i18n.js` (from Thunderbird's addon-developer-support), a
+classic script — not an ES module, so it runs before the page's deferred module script — that
+defines the global `i18n` object. Every page that uses tokens loads it and calls
+`i18n.updateDocument()` in its startup. `updateDocument()` walks the whole document and replaces
+every `__MSG_key__` (several per string, with text around them) in:
+
+- **every text node**, `<title>` included;
+- **every attribute value**, whatever the attribute: `title`, `placeholder`, `alt`, `aria-label`,
+  `value` all work.
+
+It does not touch:
+
+- **markup added after the call**: a page that injects markup carrying its own tokens calls
+  `i18n.updateDocument()` again (e.g. the connection panels, `pages/_lib/connection-ui.js`);
+- **a value set through a DOM property** rather than an attribute (`input.value = …`): set it
+  from `getMessage()` instead;
+- **HTML comments** and the content of `<template>` elements (not part of the document tree).
+
+A token whose key does not exist is left as it is, so a typo shows on the page as the raw
+`__MSG_…__`.
 
 ### In manifest.json
 ```json
