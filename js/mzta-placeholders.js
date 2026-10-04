@@ -390,7 +390,13 @@ export async function prepareCustomDataPHsForImport(placeholders){
     // console.log(">>>>>>>>>>> prepareCustomDataPHsForImport prompts: " + JSON.stringify(prompts));
     const output = await getCustomPlaceholders();
     // console.log(">>>>>>>>>>> prepareCustomDataPHsForImport output: " + JSON.stringify(output));
-    placeholders.forEach(placeholder => {
+    placeholders.forEach(imported => {
+        // An entry with no usable id cannot be listed or saved.
+        if(typeof imported?.id !== 'string' || imported.id.trim() === '') return;
+        // Stored ids always carry the thunderai_custom_ prefix: give it to the imported id BEFORE
+        // the match, or a file written by hand with "sig" would add a second thunderai_custom_sig
+        // next to the existing one instead of updating it (setCustomPlaceholders() prefixes both).
+        const placeholder = { ...imported, id: placeholdersUtils.validateCustomDataPH_ID(imported.id.trim()) };
         if(output.some(p => p.id == placeholder.id)){
             Object.keys(placeholder).forEach(key => {
                output.find(p => p.id == placeholder.id)[key] = placeholder[key];

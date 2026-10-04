@@ -631,7 +631,10 @@ Users can define their own placeholders via `pages/customdataplaceholders/`. Cus
   shows and edits the id **without** it (the prefix is a fixed label before the field,
   `stripCustomDataPH_ID_Prefix()`); `setCustomPlaceholders()`, the one writer, adds it with
   `validateCustomDataPH_ID()`, only when it is missing (idempotent: an id already prefixed is kept as
-  is), and forces `is_default` / `is_dynamic` to `"0"`. Only prefixed tokens are custom: they are what
+  is), and forces `is_default` / `is_dynamic` to `"0"`. `prepareCustomDataPHsForImport()` gives an
+  imported id the prefix **before** merging it with the stored ones, so a hand-written file with
+  `"id": "sig"` updates `thunderai_custom_sig` instead of adding a duplicate; an entry with no usable
+  id (missing, blank, not a string) is skipped. Only prefixed tokens are custom: they are what
   `hasCustomPlaceholder()` detects and `replaceCustomPlaceholders()` expands.
 - Have a `text` property containing the replacement value
 - Are stored in `browser.storage.local`
