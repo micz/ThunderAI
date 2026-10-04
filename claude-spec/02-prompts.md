@@ -367,6 +367,22 @@ Consequence worth knowing: since Sparks 3.1.0, an event/task without `reminderMi
 
 The response is still filtered afterwards as a safety net: `checkIfTagLabelExists()` in the manual flow, and `_assign_tags_now()` in the automatic flow, which skips non-existing tags ("Skipping non-existing tag") when `create_new_tags` is false.
 
+**Reading the answer: `taPromptUtils.getTagsFromResponse(response, filter_tags, filter_tags_list)`.**
+Both flows read the tags with it (the automatic one passes the use list as `filter_tags` /
+`filter_tags_list`, the manual one no filter).
+- **A JSON answer** — any answer holding `{` or `}` — is parsed with `extractJsonObject()`, so a code
+  fence or text around the object does not matter. `tags` is the array, or a comma separated
+  string split on the commas; any other shape gives no tag. A malformed object gives **no tag** (and
+  a `console.warn`): it is never split by commas, which would turn the raw JSON, or a whole
+  sentence, into a tag name — one the automatic flow would then create with `create_new_tags` on.
+- **A plain comma separated list** (no brace at all) is still accepted, for backwards
+  compatibility; an item spanning several lines is prose and is dropped.
+- **Every tag is cleaned:** only strings, trimmed, empty ones dropped, each kept once, ignoring case
+  (the first spelling wins). A number or `null` in the array is dropped, never an error.
+- **The allow-list** (`filter_tags` on, a non-empty list): a tag is kept when it matches an entry
+  of the list ignoring case, and is returned **as written in the list** — the user's spelling, as
+  with the force-existing statement — each once. An empty list filters nothing.
+
 The Add Tags settings page (`updateAdditionalPromptStatements()` in `pages/addtags/mzta-add-tags.js`) previews the same statements with the same rules, and must be kept in sync with `finalizePrompt_add_tags()`.
 
 ### The text carries the response format

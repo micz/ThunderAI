@@ -361,24 +361,48 @@ export const taPromptUtils = {
      */
     getTagsFromResponse(response_text, filter_tags = false, filter_tags_list = ''){
         let tags = [];
-        if(response_text && response_text.length > 0){
-            try {
-                // Try to parse the response text as JSON
-                let response_json = extractJsonObject(response_text.trim());
-                if(response_json && Array.isArray(response_json.tags)){
-                    tags = response_json.tags;
-                } else if(response_json && response_json.tags && typeof response_json.tags === 'string'){
-                    // If tags is a string, split it by commas
-                    tags = response_json.tags.split(/,\s*/).map(tag => tag.trim());
+        if(typeof response_text === 'string' && response_text.trim().length > 0){
+            if(/[{}]/.test(response_text)){
+                // A JSON answer. When it does not parse, there is no tag: splitting it by commas
+                // would turn the raw JSON, or a whole sentence, into a tag name.
+                try {
+                    let response_json = extractJsonObject(response_text.trim());
+                    if(response_json && Array.isArray(response_json.tags)){
+                        tags = response_json.tags;
+                    } else if(response_json && typeof response_json.tags === 'string'){
+                        // If tags is a string, split it by commas
+                        tags = response_json.tags.split(',');
+                    }
+                } catch (e) {
+                    console.warn("[ThunderAI] Add tags: the AI answer holds a malformed JSON object, no tag taken from it.");
+                    tags = [];
                 }
-            } catch (e) {
-                // If parsing fails, fallback to splitting by commas
-                tags = response_text.split(/,\s*/).map(tag => tag.trim());
+            } else {
+                // Backwards compatibility: a plain comma separated list. An item spanning
+                // several lines is prose, not a tag.
+                tags = response_text.split(',').filter(tag => !/[\r\n]/.test(tag.trim()));
             }
         }
+        // Only non-empty strings, trimmed, each once (ignoring case: the first spelling wins).
+        const seen = new Set();
+        tags = tags
+            .filter(tag => typeof tag === 'string')
+            .map(tag => tag.trim())
+            .filter(tag => {
+                if(tag === '' || seen.has(tag.toLowerCase())) return false;
+                seen.add(tag.toLowerCase());
+                return true;
+            });
         if(filter_tags && filter_tags_list && filter_tags_list.length > 0){
-            const allowedTags = filter_tags_list.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0);
-            tags = tags.filter(tag => allowedTags.includes(tag.toLowerCase()));
+            // Matched ignoring case, and returned as the user wrote it in the allow-list.
+            const allowedTags = new Map(String(filter_tags_list).split(',')
+                .map(tag => tag.trim()).filter(tag => tag.length > 0)
+                .map(tag => [tag.toLowerCase(), tag]));
+            const kept = new Set();
+            tags = tags
+                .filter(tag => allowedTags.has(tag.toLowerCase()))
+                .map(tag => allowedTags.get(tag.toLowerCase()))
+                .filter(tag => !kept.has(tag) && kept.add(tag));
         }
         return tags;
     }
