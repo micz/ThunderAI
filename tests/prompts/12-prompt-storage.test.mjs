@@ -87,6 +87,12 @@ k.test('default-props-read-back', 'what was stored is what the built-in prompt r
     assert.equal(classify.text, ctx.ctl.browser.i18n.getMessage('prompt_classify_full_text'), 'the text is still the shipped one');
 });
 
+k.test('position-context-fallback', 'an entry without position_context reads position_display for it (spec 02 "User Properties")', async () => {
+    await p.setDefaultPromptsProperties([{ id: 'prompt_this', position_display: 7, position_compose: 8 }]);
+    const prompt = byId(await p.getPrompts(), 'prompt_this');
+    assert.deepEqual([prompt.position_display, prompt.position_compose, prompt.position_context], [7, 8, 7]);
+});
+
 // --- setCustomPrompts() ---------------------------------------------------------------------
 
 k.test('custom-replaces-store', 'setCustomPrompts() replaces _custom_prompt entirely', async () => {

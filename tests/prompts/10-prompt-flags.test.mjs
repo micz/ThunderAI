@@ -166,6 +166,20 @@ k.test('special-none-stored-not-written', 'with no special prompt stored, a read
     assert.equal((await local.get('_special_prompts'))._special_prompts, undefined);
 });
 
+// Spec 02 "User Properties": the positions of a built-in prompt with nothing stored. This context
+// has no _default_prompts_properties at all.
+// The defaultPrompts array, in its order.
+const DEFAULT_ORDER = ['prompt_reply', 'prompt_reply_advanced', 'prompt_reply_custom_command', 'prompt_rewrite_polite',
+    'prompt_rewrite_formal', 'prompt_classify', 'prompt_proofread_this', 'prompt_this'];
+
+k.test('positions-nothing-stored', 'no stored properties: positions 1..8 in array order, the three equal', async () => {
+    const list = await p.getPrompts();
+    DEFAULT_ORDER.forEach((id, i) => {
+        const prompt = list.find(x => x.id === id);
+        assert.deepEqual([prompt.position_display, prompt.position_compose, prompt.position_context], [i + 1, i + 1, i + 1], id);
+    });
+});
+
 k.test('stored-false-stays-off', 'a special prompt stored with false reads "0", even where the built-in is "1"', async () => {
     await globalThis.browser.storage.local.set({ _special_prompts: [
         { id: 'prompt_get_task', name: '__MSG_prompt_get_task__', text: 'Task {%selected_text%} summary', type: '1', action: '0',

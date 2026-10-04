@@ -170,6 +170,21 @@ k.test('default-user-properties', 'show_in and custom_icon are the stored ones; 
     assert.equal(byId(list, 'prompt_reply_custom_command').show_in, 'both');
 });
 
+k.test('positions-missing-entry', 'a built-in prompt with no stored entry goes to the end: 1000, 1001... in array order', async () => {
+    // Stored: prompt_reply, prompt_reply_custom_command, prompt_classify. The others, in the order
+    // of the defaultPrompts array:
+    const missing = ['prompt_reply_advanced', 'prompt_rewrite_polite', 'prompt_rewrite_formal', 'prompt_proofread_this', 'prompt_this'];
+    const list = await p.getPrompts();
+    missing.forEach((id, i) => {
+        const prompt = byId(list, id);
+        assert.deepEqual([prompt.position_display, prompt.position_compose, prompt.position_context], [1000 + i, 1000 + i, 1000 + i], id);
+    });
+});
+
+k.test('summarize-fragments-no-prefix', 'getSpecialPromptPrefix(): the summarize template and separator give null', () => {
+    for (const id of HIDDEN_SPECIAL_IDS) assert.equal(p.getSpecialPromptPrefix(id), null, id);
+});
+
 k.test('default-show-in-default', 'a built-in prompt with no stored show_in shows in the popup', async () => {
     const list = await p.getPrompts();
     assert.equal(byId(list, 'prompt_classify').show_in, 'popup');

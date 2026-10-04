@@ -183,5 +183,4 @@ they are input for improving spec 02/03:
 12. *(resolved: `{%empty%}` always resolves to nothing, and `buildTranslationPrompt()` always uses the default values, so an empty exclusion list or subject is sent empty.)*
 13. *(resolved: spec 02 documents that `preparePrompt()` rewrites `curr_prompt.text`; organization prompts are copied per read (`managed/06a`); the menus expand the custom placeholders first and are rebuilt on any write of `_custom_placeholder`; the translation prompt expands them too (`23`).)*
 14. *(resolved: spec 02 "Reading the answer" now specifies `getTagsFromResponse()`: JSON and plain-list forms, a malformed object giving no tag, the cleaning, the allow-list ignoring case and returning its own spelling; `22` tests it.)*
-15. **`getSpecialPromptPrefix()` of the summarize template and separator** (the code: `null`), and the
-    positions of the built-in prompts when nothing is stored.
+15. *(resolved: spec 02 documents `getSpecialPromptPrefix()` of the summarize fragments (`null`) and the positions of a built-in prompt with nothing stored; `10`, `11` and `12` test them.)*

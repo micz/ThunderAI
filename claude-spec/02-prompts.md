@@ -268,6 +268,15 @@ the summarize header and separator (which are passed no content).
 | `show_in` | string | `"popup"` = popup only, `"context"` = context menu only, `"both"` = both, `"none"` = in no menu (unreachable). Default: `"popup"` for default/custom prompts, `"both"` for special prompts. **`show_in` is the single source of truth for reachability** — there is no separate enabled/disabled flag. |
 | `custom_icon` | string | Filename (with extension) of an icon in `images/context_menu/custom/`. A single shared value: the same icon is used in **both** the context menu and the popup menu. Empty string = fall back to the prompt's built-in icon (see Icon Resolution), which for most prompts is not "no icon". Used for **all** prompts, special ones included: a chosen `custom_icon` overrides even a special prompt's hard-coded icon. Selectable from the icon picker on the Menu Order page — in every list of both panels; that page is the only place icons are chosen. |
 
+**Positions of a built-in prompt with nothing stored** (`getDefaultPrompts_withProps()`):
+- no `_default_prompts_properties` at all: `1`, `2`, … in the order of the `defaultPrompts` array,
+  the three positions equal. On a real profile this lasts until the first startup, where the
+  alphabetic migration writes every position;
+- the store exists but has no entry for the prompt: `1000`, `1001`, … in array order among the
+  prompts without one. This is the case of a built-in prompt added by an update: it lands at the
+  **end** of the menus instead of among the prompts the user has ordered;
+- an entry without `position_context`: it takes `position_display`.
+
 ### Per-Prompt API Override Properties
 
 Each prompt can override the global API connection. These mirror the keys in `integration_options_config` and `prefs_default`:
@@ -304,6 +313,14 @@ Some prompts trigger additional Thunderbird actions beyond just sending text to 
 | `translate` | Translate email content into a target language |
 
 These special prompts can have their own dedicated API integration settings (configured in the Options page). The list of these special prompts is in `options/mzta-options-default.js` as `special_prompts_with_integration`.
+
+`getSpecialPromptPrefix(id)` (`js/mzta-prompts.js`) maps a special prompt id to the feature prefix
+whose connection it runs with — both calendar prompts to `get_calendar_event`, `prompt_translate_this`
+to `translate`, and so on — for `openChatGPT()` in `mzta-background.js`, the one caller, which
+resolves the connection of the prompt it runs. Any other id gives `null`, and so do
+`prompt_summarize_email_template` and `prompt_summarize_email_separator`: they are text fragments
+that `buildSummaryPrompt()` pastes into `prompt_summarize`, never run as prompts of their own, so
+they have no connection to resolve.
 
 ### Calendar event / task: link to the original email
 
