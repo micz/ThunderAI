@@ -65,9 +65,11 @@ k.test('empty-string-is-unresolved', 'an empty string value counts as unresolved
     assert.equal(replace('[{%mail_plain_text_part%}]', { mail_plain_text_part: '' }, { use_default_value: true }), '[]');
 });
 
-k.test('empty-placeholder', '{%empty%} resolves to nothing only through its default value', () => {
-    assert.equal(replace('[{%empty%}]', { empty: '' }, { use_default_value: true }), '[]');
-    assert.equal(replace('[{%empty%}]', { empty: '' }), '[{%empty%}]');
+k.test('empty-placeholder', '{%empty%} always resolves to nothing, whatever use_default_value says', () => {
+    for (const use_default_value of [true, false]) {
+        assert.equal(replace('[{%empty%}]', { empty: '' }, { use_default_value }), '[]', String(use_default_value));
+        assert.equal(replace('[{% empty %}]', {}, { use_default_value }), '[]', 'with no value supplied: ' + use_default_value);
+    }
 });
 
 k.test('dynamic-value-per-token', 'each dynamic token gets the value stored under id:value', () => {

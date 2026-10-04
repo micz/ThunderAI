@@ -195,10 +195,8 @@ they are input for improving spec 02/03:
     a bare `{%additional_text%}` into `{%additional_text:#N%}` by `preparePrompt()`. Neither is in the
     spec, and whether `{% id : value %}` (spaces around the colon) is a valid dynamic token is not
     stated either.
-12. **`{%empty%}`.** The built-in table says it "resolves to nothing", but with
-    `placeholders_use_default_value` off the `||` chain the spec documents leaves it as the literal
-    token. The same chain makes `buildTranslationPrompt()`, which always passes
-    `use_default_value: false`, send an empty `translate_exclude_lang` as the literal
+12. *(`{%empty%}` resolved: it always resolves to nothing.)* Still open (B11): `buildTranslationPrompt()`
+    always passes `use_default_value: false`, so an empty `translate_exclude_lang` is sent as the literal
     `{%thunderai_translate_exclude_lang%}`.
 13. **`preparePrompt()` mutates its prompt.** It rewrites `curr_prompt.text` in place (custom
     expansion, the `additional_text` renumbering). The spec says nothing about it. A caller that

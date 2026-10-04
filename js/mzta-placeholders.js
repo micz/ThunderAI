@@ -544,6 +544,11 @@ export const placeholdersUtils = {
             if (!currPlaceholder) {
                 return match;
             }
+            // {%empty%} exists to resolve to nothing, so it is never left as the literal token -
+            // which the || chain below would do with an empty value and the default values off.
+            if (currPlaceholder.id === 'empty') {
+                return '';
+            }
             // Replace if found, otherwise keep the original or substitute with default value
             return replacements[p1] || replacements[currPlaceholder.id] || (use_default_value ? currPlaceholder.default_value : match);
         });

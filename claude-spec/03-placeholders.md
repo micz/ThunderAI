@@ -54,7 +54,7 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`).
 | `thunderai_def_lang` | Default response language (`default_chatgpt_lang` pref) | 0 | |
 | `thunderai_translate_lang` | Target translation language (`translate_lang` pref, falling back on `default_chatgpt_lang`, the same rule the background uses to decide whether to translate) | 0 | |
 | `thunderai_translate_exclude_lang` | Language to exclude from translation | 0 | |
-| `empty` | Empty string (placeholder that resolves to nothing) | 0 | |
+| `empty` | Empty string: always resolves to nothing, whatever `placeholders_use_default_value` says (special-cased in `replacePlaceholders()`, never left as the literal token) | 0 | |
 | `mail_attachments_info` | Information about the email's attachments | 1 | |
 | `mail_text_body_or_selected` | Plain text body, or selected text if any | 0 | |
 | `mail_html_body_or_selected` | HTML body, or selected HTML if any | 0 | |
@@ -218,8 +218,9 @@ reason the output looks different. When the part is missing the value is the emp
 a `||` chain, so an empty string is indistinguishable from "unresolved": with
 `placeholders_use_default_value` on the token becomes `default_value` (`""`), and with it off the
 literal text `{%mail_plain_text_part%}` survives into the prompt. Not fixed deliberately — that
-chain is shared by all 30 built-ins and widening it would change `{%empty%}` and a `junk_score`
-of `0` at the same time.
+chain is shared by all 30 built-ins and widening it would change every one of them, a `junk_score`
+of `0` included, at the same time. `{%empty%}` is the one exception: `replacePlaceholders()` returns
+`''` for it before the chain, so it is never the literal token.
 
 **Known limitation — documented, not fixed.** The `text/plain` alternative is *not* reliable in
 general: newsletters often ship a stub ("view this message in your browser"), a URL-only body, an
@@ -614,7 +615,8 @@ Three things bite when adding one:
   *`mail_text_body` vs `mail_plain_text_part`*.
 
 - **An empty string cannot be expressed.** `replacePlaceholders()`' `||` chain treats `''` as
-  unresolved and falls through to `default_value` or the literal token.
+  unresolved and falls through to `default_value` or the literal token. Only `{%empty%}` is
+  special-cased to `''`; a new placeholder that must be able to resolve to nothing needs the same.
 - **Escape `\s` as `\\s` in the two template-string regexes.** `hasPlaceholder()` and
   `hasCustomPlaceholder()` build their pattern with `` new RegExp(`{%\\s*${placeholder}…`) ``. The
   doubled backslash is required: in a template string a single `\s` is eaten, leaving the pattern

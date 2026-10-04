@@ -144,8 +144,9 @@ k.test('tags-current-email', '{%tags_current_email%} names the tags on the email
     assert.equal(out, 'Important');
 });
 
-k.test('empty', '{%empty%} resolves to nothing', async () => {
+k.test('empty', '{%empty%} resolves to nothing, with the default values on or off', async () => {
     assert.equal(await resolve('[{%empty%}]'), '[]');
+    assert.equal(await resolve('[{%empty%}]', {}, false), '[]');
 });
 
 k.test('current-datetime', '{%current_datetime%} is a non-empty date', async () => {
