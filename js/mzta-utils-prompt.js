@@ -315,10 +315,14 @@ export const taPromptUtils = {
             mail_subject: mailSubject,
         });
 
+        // Always the default values (all "" for these placeholders), whatever
+        // placeholders_use_default_value says: this is a feature prompt with a fixed structure,
+        // where a literal token is never useful - with the default empty exclusion list it would
+        // send "{%thunderai_translate_exclude_lang%}" to the AI as if it were a language.
         const fullPrompt = placeholdersUtils.replacePlaceholders({
             text: promptText,
             replacements: finalSubs,
-            use_default_value: false,
+            use_default_value: true,
         });
 
         return { promptText: fullPrompt, promptInfo: prompt };

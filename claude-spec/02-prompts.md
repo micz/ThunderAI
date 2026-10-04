@@ -548,7 +548,12 @@ The translate feature uses a single special prompt (`prompt_translate_this`) for
   alongside `fullMessage` on **both** of its branches, and its `options.messageData` now requires
   `message` as well as `fullMessage`.
 - Retrieves the `prompt_translate_this` special prompt text
-- Resolves placeholders via `placeholdersUtils.getPlaceholdersValues()` + `replacePlaceholders()`
+- Resolves placeholders via `placeholdersUtils.getPlaceholdersValues()` + `replacePlaceholders()`,
+  **always with the default values** (`use_default_value: true`), whatever
+  `placeholders_use_default_value` says: an empty value becomes `""`, never the literal token. The
+  preference is for the prompts the user writes; in this fixed-structure feature prompt a literal
+  token is never useful, and with the default empty `translate_exclude_lang` it would reach the AI as
+  `"{%thunderai_translate_exclude_lang%}"`, as if it were a language
 - Returns `{ promptText, promptInfo }`
 
 ## Prompt Types Reference

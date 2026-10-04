@@ -66,6 +66,17 @@ k.test('translate-lang-fallback', 'translate_lang empty: the target language is 
     assert.equal(promptText.includes('{%thunderai_translate_lang%}'), false, 'no unresolved target language');
 });
 
+k.test('translate-empty-values', 'an empty exclusion list or subject is sent empty, never as the token, whatever the preference', async () => {
+    for (const placeholders_use_default_value of [false, true]) {
+        await setPrefs({ translate_lang: 'German', translate_exclude_lang: '', placeholders_use_default_value });
+        const { promptText } = await u.buildTranslationPrompt({ headers: { subject: [] } }, 42);
+        assert.equal(promptText.includes('{%'), false, `use_default_value ${placeholders_use_default_value}: ${promptText}`);
+        assert.ok(promptText.includes('one of these languages "" or in the German language'), promptText);
+        assert.ok(promptText.includes('Mail subject: \n'), promptText);
+    }
+    await setPrefs({ translate_exclude_lang: 'English', placeholders_use_default_value: false });
+});
+
 k.test('translate-no-body-text', 'the translation path supplies no body_text: {%mail_text_body%} gets no body', async () => {
     await setPrefs({ translate_lang: 'German' });
     await prompts.saveSpecialPromptTexts({ prompt_translate_this: 'Into {%thunderai_translate_lang%}: {%mail_subject%} / {%mail_text_body%} status subject body' });

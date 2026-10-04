@@ -195,9 +195,7 @@ they are input for improving spec 02/03:
     a bare `{%additional_text%}` into `{%additional_text:#N%}` by `preparePrompt()`. Neither is in the
     spec, and whether `{% id : value %}` (spaces around the colon) is a valid dynamic token is not
     stated either.
-12. *(`{%empty%}` resolved: it always resolves to nothing.)* Still open (B11): `buildTranslationPrompt()`
-    always passes `use_default_value: false`, so an empty `translate_exclude_lang` is sent as the literal
-    `{%thunderai_translate_exclude_lang%}`.
+12. *(resolved: `{%empty%}` always resolves to nothing, and `buildTranslationPrompt()` always uses the default values, so an empty exclusion list or subject is sent empty.)*
 13. **`preparePrompt()` mutates its prompt.** It rewrites `curr_prompt.text` in place (custom
     expansion, the `additional_text` renumbering). The spec says nothing about it. A caller that
     reuses the object gets the custom placeholders frozen at their first expansion.

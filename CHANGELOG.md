@@ -30,6 +30,7 @@
         <li>Fix: the <i>Display summary in</i> option of the Summarize settings can now be changed also when auto-summarize is disabled, since it applies to the summaries requested manually too.</li>
         <li>Fix: when the <i>Translation target language</i> of the Translate settings is empty, the default language set in the ThunderAI options is now used also in the prompt sent to the AI. Previously the translation was started, but the prompt contained the <i>{%thunderai_translate_lang%}</i> placeholder instead of a language.</li>
         <li>Fix: the <i>{%empty%}</i> placeholder now always resolves to an empty text. Previously, with the <i>Placeholders: use default value</i> option disabled, the placeholder itself was sent to the AI.</li>
+        <li>Fix: the prompt of the translation no longer sends the placeholders themselves to the AI when their value is empty, e.g. the list of the languages not to translate when it is left empty (the default) or a missing subject, whatever the <i>Placeholders: use default value</i> option says.</li>
         <li>Many improvements.</li>
         <li>Minor bugs fixed.</li>
         <li>Redesigned the Custom Prompts page: a list of the prompts next to a detail editor, plus a table view that shows all the prompts and their options at a glance. The last view chosen is remembered. The search now also looks in the prompt text [<a href="https://github.com/micz/ThunderAI/issues/904">#904</a>].</li>
