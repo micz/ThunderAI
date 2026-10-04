@@ -2299,11 +2299,11 @@
   },
   "customPrompts_show_additional_info": {
     "message": "Show additional properties",
-    "description": "Custom prompts page: label of the toggle that reveals the additional properties of a prompt; paired with 'Hide additional properties'."
+    "description": "Custom prompts page: tooltip of the closed [API] / [ChatGPT Web] disclosure buttons, which open the prompt's own connection settings; paired with 'Hide additional properties'."
   },
   "customPrompts_hide_additional_info": {
     "message": "Hide additional properties",
-    "description": "Custom prompts page: label of the toggle that hides the additional (advanced) properties of a prompt; counterpart of 'Show additional properties'."
+    "description": "Custom prompts page: tooltip of the open [API] / [ChatGPT Web] disclosure buttons, which close the prompt's own connection settings; counterpart of 'Show additional properties'."
   },
   "prefs_OptionText_CustomGPT_Warn": {
     "message": "If a Project is specified in the options or in a prompt, it will override the Custom GPT setting.",

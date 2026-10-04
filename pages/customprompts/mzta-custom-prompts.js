@@ -951,6 +951,7 @@ function bindDetailEvents() {
 function setDisclosure(toggleId, panelId, open) {
     detailEl(panelId).classList.toggle('hiddendata', !open);
     detailEl(toggleId).setAttribute('aria-expanded', open ? 'true' : 'false');
+    detailEl(toggleId).title = browser.i18n.getMessage(open ? 'customPrompts_hide_additional_info' : 'customPrompts_show_additional_info');
 }
 
 function setDetailDirty(dirty) {
@@ -1446,19 +1447,11 @@ document.addEventListener('click', (e) => {
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
 });
 
-// True when the prompt carries any per-prompt API override worth showing.
+// True when the prompt carries a per-prompt API override worth showing: an api_type.
+// The integration fields alone are not one: every save stores them all, seeded from the
+// global prefs by populateConnectionUI(), and without an api_type nothing reads them.
 function hasApiOverrideValues(itemValues) {
-    if (itemValues.api_type) return true;
-    for (const [integration, options] of Object.entries(integration_options_config)) {
-        for (const key of Object.keys(options)) {
-            const val = itemValues[`${integration}_${key}`];
-            // Checkboxes round-trip as either boolean or string, and an unchecked box
-            // is the default, not an override — so both falses are ignored.
-            if (val === undefined || val === '' || val === false || val === 'false') continue;
-            return true;
-        }
-    }
-    return false;
+    return cleanString(itemValues.api_type) !== '';
 }
 
 // Reset button of the injected connection UI: clears the override in the pane. It is
