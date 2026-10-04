@@ -184,6 +184,25 @@ k.test('import-merges', 'an import updates a placeholder by id and adds a new on
     assert.equal(imported.length, 4);
 });
 
+k.test('import-unprefixed-id', 'an imported id without the prefix updates the existing placeholder, never duplicates it', async () => {
+    const before = await m.getCustomPlaceholders();
+    const imported = await m.prepareCustomDataPHsForImport([
+        { id: 'sig', text: 'Ciao' },
+        { id: 'brand_new', name: 'N', text: 'n', is_default: '0', enabled: 1 },
+    ]);
+    assert.equal(imported.filter(p => p.id === 'thunderai_custom_sig').length, 1);
+    assert.equal(imported.find(p => p.id === 'thunderai_custom_sig').text, 'Ciao');
+    assert.ok(imported.some(p => p.id === 'thunderai_custom_brand_new'), 'a new one is prefixed too');
+    assert.equal(imported.some(p => p.id === 'sig' || p.id === 'brand_new'), false);
+    assert.equal(imported.length, before.length + 1);
+});
+
+k.test('import-no-id-skipped', 'an imported entry without a usable id is skipped, never an error', async () => {
+    const before = await m.getCustomPlaceholders();
+    const imported = await m.prepareCustomDataPHsForImport([{ text: 'no id' }, { id: '  ', text: 'blank' }, { id: 7, text: 'number' }, null]);
+    assert.equal(imported.length, before.length);
+});
+
 k.test('import-without-type-usable', 'an imported placeholder with no type is usable in every prompt type', async () => {
     const imported = await m.prepareCustomDataPHsForImport([
         { id: 'thunderai_custom_untyped', name: 'U', text: 'u', is_default: '0', enabled: 1 },

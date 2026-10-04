@@ -135,11 +135,8 @@ spec section (`spec 02 "<section>"` / `spec 03 "<section>"`), and a reason that 
 `REASONS`. An unused reason fails too. Each file ends with `k.coverage()`: an entry naming a case id
 the file does not declare fails it, so an entry cannot outlive a renamed or removed test.
 
-Today: one known issue, listed with their reasons in `helpers/known-issues/prompts.mjs`:
-
-| File × case | Spec section | What the code does |
-|---|---|---|
-| `15 × enabled-never-exported` | 02 "Enabled-to-show_in Migration" | a custom prompt's `enabled` is exported |
+Today: none. The eight known issues of the first run were all resolved: the code fixed, or the spec
+aligned with a behaviour the maintainer ruled correct.
 
 ## What is not covered
 
@@ -172,9 +169,7 @@ they are input for improving spec 02/03:
 3. *(resolved: `false` is "off" in `normalizePromptFlags()` and `normalizeEnabledToShowIn()`, never out of domain, so a built-in "1" fallback cannot turn it on.)*
 4. *(resolved: spec 02 "Missing special prompts" now documents that `getSpecialPrompts()` restores a removed entry and writes the store back once; `11` tests it.)*
 5. *(resolved: spec 02 now places both migration flags in `browser.storage.local`, the `PREFS_AREA`, as spec 05 does.)*
-6. **"Visible prompts" in the alphabetic migration.** The spec contrasts them with the *hidden special*
-   prompts, so `13a` reads them as "every prompt but those two". Whether a custom or built-in prompt
-   with `show_in: "none"` should get a position is not stated (the code gives it one).
+6. *(resolved: spec 02 "Alphabetic-to-Position Migration" now says every prompt but the two hidden special prompts gets a position, user-hidden prompts and inactive features included; `13a` tests it.)*
 7. *(resolved: spec 02 now lists the ten keys of `_default_prompts_properties`.)*
 8. *(resolved: spec 03 "Custom Placeholders" now says a disabled custom placeholder is treated as nonexistent and is not expanded; `03` and fixture 29 test it.)*
 9. *(resolved: spec 03 "Custom Placeholders" now documents the `thunderai_custom_` prefix: stored on the id, shown without it, added once by `setCustomPlaceholders()`.)*

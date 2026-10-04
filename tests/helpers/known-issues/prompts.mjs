@@ -35,17 +35,10 @@ const AREA_DIR = new URL('../../prompts/', import.meta.url);
 
 /** The reasons of KNOWN, one per spec contradiction. */
 export const REASONS = {
-    exportEmitsEnabled:
-        'spec 02 "Enabled-to-show_in Migration" says "`enabled` is never emitted on export". ' +
-        'preparePromptsForExport() drops it for a built-in prompt (allowedKeys) but copies it ' +
-        'unchanged for a custom prompt',
 };
 
 /** The known issues, by test file and case id. */
 export const KNOWN = {
-    '15-export-import': {
-        'enabled-never-exported': REASONS.exportEmitsEnabled,
-    },
 };
 
 /** The file stems of tests/prompts/ (the files a KNOWN entry may name). */

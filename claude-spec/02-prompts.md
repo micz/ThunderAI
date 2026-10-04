@@ -553,7 +553,7 @@ The `enabled` prompt flag was removed (`show_in` is now the single source of tru
 - if `enabled` is `0`/`"0"`/`false` → set `show_in = "none"` (the previous `show_in`, if any, is intentionally discarded — "off" collapses to "none"), then delete `enabled`
 - otherwise (`1`/`"1"`/absent) → just delete `enabled`
 
-It is idempotent: the flag short-circuits reruns, and after it runs no `enabled` keys remain. The same `normalizeEnabledToShowIn()` is also applied by `preparePromptsForImport()` so legacy backups carrying `enabled === 0` import as `show_in === "none"`; `enabled` is never emitted on export.
+It is idempotent: the flag short-circuits reruns, and after it runs no `enabled` keys remain. The same `normalizeEnabledToShowIn()` is also applied by `preparePromptsForImport()` so legacy backups carrying `enabled === 0` import as `show_in === "none"`. `preparePromptsForExport()` does not strip `enabled` from a custom prompt that still carries it (a built-in drops it through its `allowedKeys`): after the migration no stored prompt has it, and an export that does is harmless, since the import normalizes it away.
 
 ### Special Prompt Visibility Dependencies
 

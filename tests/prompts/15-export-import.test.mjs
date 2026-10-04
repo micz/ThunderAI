@@ -1,8 +1,8 @@
 // Spec 02 export / import: preparePromptsForExport(prompts, include_api_settings = false) must keep
 // every per-prompt API setting out of the file ("Per-Prompt API Override Properties": api_type,
 // chatgpt_web_model / _project / _custom_gpt, and every chatgpt_*, ollama_*, openai_comp_*,
-// google_gemini_*, anthropic_* key) - a credential in a shared export is a privacy bug; "enabled is
-// never emitted on export" ("Enabled-to-show_in Migration"); need_custom_text is exported for a
+// google_gemini_*, anthropic_* key) - a credential in a shared export is a privacy bug;
+// need_custom_text is exported for a
 // built-in prompt ("The five boolean flags are normalized on read"). preparePromptsForImport():
 // merges onto the complete management view, maps a legacy enabled 0 to show_in "none", and
 // normalizes the flags with no fallback ("a backup file carries whatever the writing version used").
@@ -129,14 +129,6 @@ k.test('default-need-custom-text', 'a built-in prompt is exported with need_cust
     assert.equal(reply.show_in, 'context');
     assert.deepEqual([reply.position_display, reply.position_compose, reply.position_context], [2, 3, 4]);
     assert.equal('text' in reply, false, 'never the prompt text');
-});
-
-k.test('enabled-never-exported', 'a legacy enabled flag is never exported', () => {
-    const out = p.preparePromptsForExport([
-        { ...structuredClone(CUSTOM), enabled: 1 },
-        { id: 'prompt_reply', is_default: '1', is_special: '0', enabled: 0, show_in: 'popup' },
-    ], false);
-    for (const prompt of out) assert.equal('enabled' in prompt, false, prompt.id);
 });
 
 // --- Import ---------------------------------------------------------------------------------------
