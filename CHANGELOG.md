@@ -35,6 +35,7 @@
         <li>The <i>Rewrite polite</i>, <i>Rewrite formal</i> and <i>Proofread this email</i> prompts now always ask the AI to reply in the same language as the text, also when a default language for the responses is set. Previously that language was requested, so the AI could translate the text instead of rewriting or correcting it.</li>
         <li>Fix: spaces around the <i>Default signature name</i> and the <i>Default language for the responses</i> are now ignored, and a full stop is no longer doubled when the value already ends with one.</li>
         <li>Fix: a custom data placeholder that is disabled in the Data Placeholders page is no longer replaced with its text in the prompts. Its placeholder is left as written, as for a placeholder that does not exist.</li>
+        <li>Fix: a prompt using the <i>{%tags_current_email%}</i> placeholder no longer fails while composing or in the translate prompt, where the <i>{%tags_full_list%}</i> placeholder now also contains the list of the tags [<a href="https://github.com/micz/ThunderAI/issues/911">#911</a>].</li>
         <li>Many improvements.</li>
         <li>Minor bugs fixed.</li>
         <li>Redesigned the Custom Prompts page: a list of the prompts next to a detail editor, plus a table view that shows all the prompts and their options at a glance. The last view chosen is remembered. The search now also looks in the prompt text [<a href="https://github.com/micz/ThunderAI/issues/904">#904</a>].</li>

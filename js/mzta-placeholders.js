@@ -54,6 +54,7 @@ import {
 
 import {
     transformTagsLabels,
+    getTagsList,
     getCurrentIdentity,
     normalizePlainTextPart
 } from './mzta-utils.js';
@@ -638,6 +639,25 @@ export const placeholdersUtils = {
             tags_full_list = ["", []]
         } = args || {};
         let currPHs = await placeholdersUtils.extractPlaceholders(prompt_text);
+        // The [names, {key: tag}] pair of getTagsList(). When the caller does not supply it
+        // (e.g. translation, compose) it is read here, once, and only when a tag placeholder is
+        // actually in the prompt.
+        let tagsPair = null;
+        const tagsList = async () => {
+            if (tagsPair) return tagsPair;
+            const supplied = Array.isArray(tags_full_list) && tags_full_list[1]
+                && typeof tags_full_list[1] === 'object' && !Array.isArray(tags_full_list[1]);
+            if (supplied) {
+                tagsPair = tags_full_list;
+            } else {
+                try {
+                    tagsPair = await getTagsList();
+                } catch (e) {
+                    tagsPair = ['', {}];
+                }
+            }
+            return tagsPair;
+        };
         // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
         // console.log(">>>>>>>>>> curr_message: " + JSON.stringify(curr_message));
         let finalSubs = {};
@@ -722,11 +742,14 @@ export const placeholdersUtils = {
                     finalSubs['account_email_address'] = placeholdersUtils.failSafePlaceholders(current_identity.email);
                     break;
                 case 'tags_current_email':
-                    let tags_current_email_array = await transformTagsLabels(curr_message.tags, tags_full_list[1]);
+                    // A ComposeDetails has no tags: nothing to name, and no list to read.
+                    let tags_current_email_array = Array.isArray(curr_message.tags) && curr_message.tags.length > 0
+                        ? await transformTagsLabels(curr_message.tags, (await tagsList())[1])
+                        : [];
                     finalSubs['tags_current_email'] = placeholdersUtils.failSafePlaceholders(tags_current_email_array.join(", "));
                     break;
                 case 'tags_full_list':
-                    finalSubs['tags_full_list'] = placeholdersUtils.failSafePlaceholders(tags_full_list[0]);
+                    finalSubs['tags_full_list'] = placeholdersUtils.failSafePlaceholders((await tagsList())[0]);
                     break;
                 case 'thunderai_def_sign':
                     let prefs_def_sign = await mztaPrefs.getPrefs(['default_sign_name']);

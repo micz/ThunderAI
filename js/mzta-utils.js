@@ -1004,9 +1004,23 @@ function generateHexColorForTag() {
 export async function transformTagsLabels(labels, tags_list) {
   // console.log(">>>>>>>>> transformTagsLabels labels: " + labels);
   // console.log(">>>>>>>>> transformTagsLabels tags_list: " + tags_list);
+  // Tolerant on purpose: a message can carry the key of a tag deleted from Thunderbird, a
+  // ComposeDetails has no tags at all, and a caller may have no tag list. Each of those used to
+  // throw, failing the whole prompt. An unresolved key is kept as it is rather than dropped: a
+  // key is still legible in a prompt, while a silent omission hides the tag entirely [#911].
   let output = [];
+  if(!Array.isArray(labels)) {
+      return output;
+  }
+  const has_list = tags_list && typeof tags_list === 'object';
   for(let label of labels) {
-      output.push(tags_list[label].tag);
+      const tag = has_list ? tags_list[label]?.tag : undefined;
+      if(typeof tag === 'string' && tag !== '') {
+          output.push(tag);
+      } else {
+          console.warn("[ThunderAI] transformTagsLabels: unresolved tag key '" + label + "', using the raw key as fallback.");
+          output.push(label);
+      }
   }
   return output;
 }

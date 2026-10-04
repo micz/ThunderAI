@@ -283,8 +283,8 @@ chain of `replacePlaceholders()` (see *Placeholder Resolution Order*).
 | `mail_attachments_info` | one line per attachment of `browser.messages.listAttachments(curr_message.id)`: `"<name>" [<contentType>] (<size> KB)`, the size in KB rounded to the nearest integer; lines joined with `\n`. No attachment: `""` |
 | `mail_headers:<name>` | the value of header `<name>` from `browser.messages.getFull()`, the name matched **case-insensitively**; a multi-valued header joined with `", "`. Header absent: `""` |
 | `mail_full_headers` | every header as `<name>: <value>` (multi-valued joined with `", "`), one per line (`\n`), names as Thunderbird returns them |
-| `tags_full_list` | the names of every Thunderbird tag joined with `", "` — the first element of the `getTagsList()` pair the caller supplies |
-| `tags_current_email` | the **names** (not the keys) of the tags on the email, looked up by key in the second element of that pair, joined with `", "` |
+| `tags_full_list` | the names of every Thunderbird tag joined with `", "` — the first element of the `getTagsList()` pair, the caller's when it supplies one, otherwise read by `getPlaceholdersValues()` itself |
+| `tags_current_email` | the **names** (not the keys) of the tags on the email, looked up by key in the second element of that pair, joined with `", "`. A key not in the list (a tag deleted from Thunderbird) is kept as its raw key (e.g. `$label5`), with a console warning — legible in the prompt, where a silent omission would hide the tag [#911]; an email with no tags, or a ComposeDetails (no `tags` field: the compose window), gives `""`. Never an error: a failure here would fail the whole prompt |
 | `mail_datetime` | `curr_message.date` converted to a string (for a `Date`, its `toString()`) |
 | `current_datetime` | `new Date().toString()` at resolution time |
 | `junk_score` | `curr_message.junkScore`, as a number (a score of `0` follows the `||` chain like an empty value) |
@@ -627,6 +627,12 @@ source field on the path in question:
 | Summarize, header + separator prompts | `js/mzta-utils-prompt.js` → `preparePrompt` | only `curr_prompt`/`chatgpt_lang` — every mail placeholder resolves empty |
 | Translation | `js/mzta-utils-prompt.js` → `getPlaceholdersValues` directly | `msg_text`, `mail_subject` — **no `body_text`**, so `{%mail_text_body%}` is empty there |
 | `additional_text` late fill | `api_webchat/controller.js` → `replacePlaceholders` | the deferred half of `skip_additional_text: true` |
+
+**The tag lists are the exception: no path leaves them empty.** When the caller supplies no
+`tags_full_list` pair, `getPlaceholdersValues()` reads it with `getTagsList()` — once per call, and
+only when `{%tags_full_list%}` or `{%tags_current_email%}` is in the prompt (`messagesTagsList` is a
+mandatory permission). A failed read leaves `{%tags_full_list%}` empty and `{%tags_current_email%}`
+with the raw keys.
 
 ## Adding a New Built-in Placeholder
 

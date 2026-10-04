@@ -30,6 +30,11 @@ before(async () => {
     ctx = await startBackground({
         policy: null,
         accounts: ACCOUNTS,
+        // What messages.tags.list() returns, for the paths that supply no tag list.
+        tags: [
+            { key: '$label1', tag: 'Important', color: '#ff0000', ordinal: '' },
+            { key: '$label4', tag: 'Later', color: '#0000ff', ordinal: '' },
+        ],
         local: {
             default_sign_name: 'Mic',
             default_chatgpt_lang: 'Italian',
@@ -152,6 +157,29 @@ k.test('tags-current-email-names', '{%tags_current_email%}: the tag names, joine
         tags_full_list: ['Important, Later', { $label1: { tag: 'Important' }, $label4: { tag: 'Later' } }],
     });
     assert.equal(out, 'Important, Later');
+});
+
+k.test('tags-unknown-key-raw', 'a tag key not in the list (deleted tag) is kept as its raw key, never an error', async () => {
+    const out = await resolve('[{%tags_current_email%}]', {
+        curr_message: { tags: ['$gone', '$label1'] },
+        tags_full_list: ['Important', { $label1: { tag: 'Important' } }],
+    });
+    assert.equal(out, '[$gone, Important]');
+});
+
+k.test('tags-no-tags-field', 'an email without tags, or a ComposeDetails (no tags field), gives an empty value', async () => {
+    assert.equal(await resolve('[{%tags_current_email%}]', { curr_message: { tags: [] } }), '[]');
+    assert.equal(await resolve('[{%tags_current_email%}]', { curr_message: { to: ['a@example.com'] } }), '[]');
+});
+
+k.test('tags-list-read-when-missing', 'with no tag list from the caller, the list is read from Thunderbird, once', async () => {
+    const reads = () => ctx.ctl.calls.filter(c => c.area === 'messages.tags' && c.op === 'list').length;
+    const before = reads();
+    const out = await resolve('{%tags_current_email%}|{%tags_full_list%}', { curr_message: { tags: ['$label1', '$gone'] } });
+    assert.equal(out, 'Important, $gone|Important, Later');
+    assert.equal(reads() - before, 1, 'one read for both placeholders');
+    await resolve('{%mail_subject%}', { mail_subject: 'S', curr_message: { tags: ['$label1'] } });
+    assert.equal(reads() - before, 1, 'no tag placeholder, no read');
 });
 
 k.test('address-escaped', 'author, recipients and cc_list have < and > escaped, and nothing else', async () => {
