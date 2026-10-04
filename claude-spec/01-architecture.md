@@ -1352,16 +1352,14 @@ and its buttons. There are no `<hr>` dividers; spacing separates the turns.
 
 Two invariants in `MessagesArea`, both easy to break:
 
-- **`_currentTurnEl` must survive a flush.** A single response flushes on every bare `\n`
-  token, and — only once the response is known to be HTML — on every token that *contains* a
-  `\n` (`handleNewToken()` tests `token === '\n' || (token.includes('\n') &&
-  streaming.isHtmlResponse === true)`, not just `token === '\n'` — providers tokenize
-  differently and plenty send `"foo\nbar"` as one token, which a strict equality test would
-  never flush). The embedded-newline trigger is gated to the HTML path because `flush()`
-  re-renders the whole accumulated raw text there, so splitting at an embedded newline costs
-  nothing; on the markdown path each flush renders only its own segment, so flushing at
-  `"foo\nbar"` would strand the text after the newline in a separate `<p>`. While the shape is
-  still undecided only a bare `\n` flushes. Clearing `_currentTurnEl` in
+- **`_currentTurnEl` must survive a flush.** A single response flushes on every token that
+  *contains* a `\n` (`handleNewToken()` tests `token.includes('\n')`, not just
+  `token === '\n'` — providers tokenize differently and plenty send `"foo\nbar"` as one
+  token, which a strict equality test would never flush). The trigger is ungated: there is
+  one render path now, and `flush()` re-renders the whole accumulated raw text every time,
+  so splitting at an embedded newline strands nothing — the `HTML_RENDER_CHUNK` threshold
+  inside `flush()` is what coalesces the re-renders, and a provider that never sends a `\n`
+  at all still renders everything at the final flush. Clearing `_currentTurnEl` in
   `flushAccumulatingMessage()` would therefore open a new wrapper — and render a second
   avatar — part-way through one answer. Only `appendUserMessage()`, `appendBotMessage()` and
   `handleTokensDone()` reset it. `appendDiffPicker()` can run against an older turn mid-session,

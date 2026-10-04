@@ -330,10 +330,11 @@ caret-position library. The list flips above the caret when there is not enough 
 horizontally into the viewport. It **closes** on `scroll`/`resize` rather than repositioning, since a
 fixed element's coordinates go stale as soon as any ancestor scrolls.
 
-**All 9 textareas have a mirror.** Every page that offers the autocomplete also attaches
-`attachEditorHighlight()`, so tokens are highlighted and the list is caret-anchored everywhere — the two
-table pages (add-form + row editor) plus the eight single textareas on the six settings pages (summarize
-has three). `caretRect()` still falls back to the bottom-left of the textarea when no mirror is present,
+**All 11 textareas have a mirror.** Every page that offers the autocomplete also attaches
+`attachEditorHighlight()`, so tokens are highlighted and the list is caret-anchored everywhere — the
+Custom Prompts detail editor, the two textareas on the Custom Data Placeholders page (add-form + row
+editor), and the eight single textareas on the six feature settings pages (summarize has three).
+`caretRect()` still falls back to the bottom-left of the textarea when no mirror is present,
 so a new page that forgets the attach degrades gracefully rather than breaking.
 
 **Lifecycle.** `textareaAutocomplete()` is idempotent, guarded by `textarea._mztaAutocomplete`, and
@@ -601,10 +602,11 @@ Three things bite when adding one:
 - **The array entry is mandatory.** `replacePlaceholders()` looks the id up in
   `defaultPlaceholders` and returns the raw token when it is absent — so a value produced by
   `getPlaceholdersValues()` with no matching entry is silently dropped.
-- **A value that is only in `getPlaceholdersValues()`' argument list is not enough.** That
-  function is fed by 6 call sites with *uneven* coverage (see the table under *Placeholder
-  Resolution Order*): only `js/mzta-menus.js` passes selection/typed/quoted/tags, and
-  `buildTranslationPrompt()` passes no `body_text` at all. Check the paths your placeholder needs.
+- **A value that is only in `getPlaceholdersValues()`' argument list is not enough.** The
+  function has two call sites, but one of them is `preparePrompt()`, whose own six callers
+  feed it with *uneven* coverage (see the table under *Placeholder Resolution Order*): only
+  `js/mzta-menus.js` passes selection/typed/quoted/tags, and `buildTranslationPrompt()` —
+  the direct call — passes no `body_text` at all. Check the paths your placeholder needs.
 - **`type: 1` means "reading", not "background".** The reader and the message list are reading
   contexts served by the content-script scraper in `js/mzta-menus.js`, which has no access to the
   message's parts. A placeholder that needs part or header data must fetch it there itself —

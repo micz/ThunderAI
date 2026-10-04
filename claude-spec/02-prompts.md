@@ -552,7 +552,7 @@ action 2  → replace selected text (or insert) in compose window
 1. Add the prompt object to the `defaultPrompts` array in `js/mzta-prompts.js`
 2. Add the `name` string key to `_locales/en/messages.json`
 3. If the prompt text needs a localized string, add it to `_locales/en/messages.json` as well
-4. Reference any needed placeholders using `{%placeholder_id%}` syntax in the `prompt` field
+4. Reference any needed placeholders using `{%placeholder_id%}` syntax in the `text` property (the prompt body)
 
 ## Custom Prompts
 

@@ -5,7 +5,7 @@
 ## ThunderAI-Specific Context
 
 - ThunderAI uses **Manifest Version 2** — do not suggest or apply any MV3 migration.
-- No build tools, no transpilation, no npm — plain ES6 modules loaded directly.
+- No build tools, no transpilation — plain ES6 modules loaded directly. npm is never used for shipped code; the only npm use is the development tooling (the jsdom-based test suite, see CLAUDE.md rule 3).
 - The manifest already uses `browser_specific_settings` (not `applications`).
 - All module imports use relative paths with `.js` extension.
 - The `mzta-` prefix is used for all core module filenames.

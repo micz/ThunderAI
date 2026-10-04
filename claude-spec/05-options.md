@@ -1307,14 +1307,14 @@ this page.
 **Retired i18n keys.** `prefsInfoTitle`, `prefs_status_page`, `prefsInfoDesc_5`,
 `prefsInfoDesc_6`, `prefs_disclaimer`, `TranslateText`, `TranslateLink`, `prefsDonation_1`,
 and `prefsDonation_2` are no longer referenced by this page but are **left in the locale
-files** — deleting them would churn all 16 Weblate-managed locales. New keys (English only,
+files** — deleting them would churn all the Weblate-managed locales. New keys (English only,
 per the localization rule): `prefs_full_guide`, `prefs_shortcut_label`,
 `prefs_disclaimer_short`, `prefs_footer_translate`, `prefs_footer_donate`.
 
 `prefs_info_pill` ("Important information") was also introduced here, but it was
 **deleted from `_locales/en/messages.json`** when the provider setup note moved into the
-connection panel and lost its heading. Only the English file was edited (the other 15
-locales are Weblate-managed and drop the key on the next sync) — note this differs from
+connection panel and lost its heading. Only the English file was edited (the other locales
+are Weblate-managed and drop the key on the next sync) — note this differs from
 the "leave retired keys in place" handling of the older keys above.
 
 ### Feature "Manage settings" Links — Hidden vs. Disabled

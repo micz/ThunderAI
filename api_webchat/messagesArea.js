@@ -468,9 +468,10 @@ class MessagesArea extends HTMLElement {
         // Live "Thinking..." placeholder element, while it is on screen.
         this.thinkingLiveEl = null;
         // Wrapper of the turn currently being built. It must survive every
-        // flush: a single response flushes on each '\n', so clearing it there
-        // would start a fresh wrapper (and a second avatar) mid-answer. Only
-        // appendUserMessage() and handleTokensDone() reset it.
+        // flush: a single response flushes on any token containing a newline,
+        // so clearing it there would start a fresh wrapper (and a second
+        // avatar) mid-answer. Only appendUserMessage(), appendBotMessage()
+        // and handleTokensDone() reset it.
         this._currentTurnEl = null;
         // Turn that currently owns the full action bar. When a newer answer
         // arrives its bar is removed, leaving only the light toolbar behind,
@@ -957,8 +958,8 @@ class MessagesArea extends HTMLElement {
         // and close the turn wrapper.
         this._streaming = null;
         this._currentTurnEl = null;
-        // A cumulative (HTML) response keeps its accumulating element alive
-        // across flushes, so unlike the markdown path it is still set here.
+        // Every response is cumulative (there is one render path now), so the
+        // accumulating element stays alive across flushes and is still set here.
         // Clearing it is what makes the NEXT response open an element of its own
         // instead of streaming into this answer.
         this.accumulatingMessageEl = null;

@@ -93,7 +93,7 @@ Drafts, templates, outbox and sent messages are skipped, so a draft is never pro
 The add-on itself has no build step and no dependencies: it is plain JavaScript loaded as it is by Thunderbird. The enterprise managed configuration has an automated test suite in [`tests/`](tests/), in two levels, both run from the repository root with Node's built-in test runner:
 
 ```sh
-# Level 1 - the modules. Node 21 or later, nothing to install
+# Level 1 - the modules. Node 22 or later, nothing to install
 node --test "tests/**/*.test.mjs"
 
 # Everything, including the DOM tests (the settings pages loaded in jsdom).
@@ -102,7 +102,7 @@ npm ci
 npm test
 ```
 
-`npm` is used for development tooling only: [jsdom](https://github.com/jsdom/jsdom) is the one development dependency, and nothing in `package.json` or `node_modules` is part of the add-on or ends up in the XPI. The tests run on every push and pull request. How they work, and how to add a scenario or a page, is explained in [`tests/README.md`](tests/README.md).
+`npm` is used for development tooling only: [jsdom](https://github.com/jsdom/jsdom) is the one development dependency, and nothing in `package.json` or `node_modules` is part of the add-on or ends up in the XPI. The tests run in CI on demand only — manually from the Actions tab, or by adding the `run-tests` label to a pull request — not on every commit. How they work, and how to add a scenario or a page, is explained in [`tests/README.md`](tests/README.md).
 
 ## Privacy and Permissions
 

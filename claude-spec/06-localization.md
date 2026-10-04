@@ -23,18 +23,20 @@ The `description` field is important — it helps Weblate translators understand
 
 ### In JavaScript
 ```javascript
-import { i18n } from './mzta-i18n.js';
-const text = i18n('key_name');
-// or directly:
 const text = browser.i18n.getMessage('key_name');
 ```
 
 ### In HTML
 ```html
-<span data-i18n="key_name"></span>
-<!-- or via manifest/attribute references: -->
-__MSG_key_name__
+<span>__MSG_key_name__</span>
 ```
+
+The `__MSG_key__` tokens in a page's text nodes and attribute values are substituted at load
+time by `js/mzta-i18n.js` — a classic script (not an ES module, loaded before the page's module
+script) that defines the global `i18n` object with `updateString()` and `updateDocument()`. Every
+page calls `i18n.updateDocument()` in its startup — and again whenever it injects markup
+dynamically that carries its own `__MSG_…__` tokens (e.g. the connection panels, see
+`pages/_lib/connection-ui.js`).
 
 ### In manifest.json
 ```json

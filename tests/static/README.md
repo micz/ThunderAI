@@ -177,9 +177,9 @@ from `en` as unused that the translations still hold until Weblate syncs them (`
   recognise one otherwise. `secret-name` uses a word list (token, secret, password, credential,
   bearer, auth, apikey); a bare `key` is not on it, or `chatgpt_prompt_cache_key` (a cache id)
   would be reported.
-- **Spec 06's `i18n('key')` and `data-i18n="key"`.** The scan reads both forms, but the code uses
-  neither today (`js/mzta-i18n.js` is an object, `i18n.updateDocument()`, that substitutes
-  `__MSG_…__`): spec 06 describes forms the code does not have.
+- **`i18n('key')` and `data-i18n="key"`.** The scan reads both forms, but the code uses neither
+  (`js/mzta-i18n.js` is an object, `i18n.updateDocument()`, that substitutes `__MSG_…__`).
+  Spec 06 documents the forms the code does use; the scan keeps reading these two for robustness.
 - **Number domains other than ranges.** `type-coherence` checks enumerations and the
   `PREF_NUMBER_RANGES` entries; the rules written as code in `prefValueProblem()` and
   `connectionFieldProblem()` (a URL, JSON, a time zone) are not reproduced here. Several defaults

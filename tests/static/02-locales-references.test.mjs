@@ -1,7 +1,9 @@
-// Spec 06 "Using Strings in Code": a string reaches the UI as i18n('key') or
-// browser.i18n.getMessage('key') in JavaScript, data-i18n="key" in HTML, and __MSG_key__ in HTML,
-// in manifest.json and in JavaScript strings (the prompt and placeholder names, the HTML the
-// connection panel builds). Every key referenced that way exists in _locales/en/messages.json.
+// Spec 06 "Using Strings in Code": a string reaches the UI as
+// browser.i18n.getMessage('key') in JavaScript, and __MSG_key__ in HTML, in manifest.json and
+// in JavaScript strings (the prompt and placeholder names, the HTML the
+// connection panel builds). The scan also reads the older i18n('key') and data-i18n="key"
+// forms, which the code no longer uses (see ./README.md, "What is not covered").
+// Every key referenced that way exists in _locales/en/messages.json.
 // A key built at run time (a variable, a concatenation, a template with ${...}) cannot be checked
 // statically: it is listed by the "unresolvable" test, never failed.
 //
