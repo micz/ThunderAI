@@ -135,11 +135,10 @@ spec section (`spec 02 "<section>"` / `spec 03 "<section>"`), and a reason that 
 `REASONS`. An unused reason fails too. Each file ends with `k.coverage()`: an entry naming a case id
 the file does not declare fails it, so an entry cannot outlive a renamed or removed test.
 
-Today: three known issues, listed with their reasons in `helpers/known-issues/prompts.mjs`:
+Today: two known issues, listed with their reasons in `helpers/known-issues/prompts.mjs`:
 
 | File × case | Spec section | What the code does |
 |---|---|---|
-| `12 × default-props-nine-keys` | 02 "Organization prompts (the fourth set)" | `_default_prompts_properties` holds ten keys per prompt, not nine |
 | `15 × enabled-never-exported` | 02 "Enabled-to-show_in Migration" | a custom prompt's `enabled` is exported |
 | `21 × calendar-strips-addresses-entirely` | 03 "The address placeholders in the compose window" | only the first `{%cc_list%}` / `{%recipients%}` is stripped |
 
@@ -188,8 +187,7 @@ they are input for improving spec 02/03:
 6. **"Visible prompts" in the alphabetic migration.** The spec contrasts them with the *hidden special*
    prompts, so `13a` reads them as "every prompt but those two". Whether a custom or built-in prompt
    with `show_in: "none"` should get a position is not stated (the code gives it one).
-7. **"Nine display keys".** Spec 02 does not list them, so the known issue above can only count.
-   Listing the keys would also tell which one is extra.
+7. *(resolved: spec 02 now lists the ten keys of `_default_prompts_properties`.)*
 8. **A disabled custom placeholder** (`enabled: 0`). Spec 03 defines the property but not what
    "disabled" does. `getPlaceholders(true)` hides it, but `replaceCustomPlaceholders()` still expands
    it in a prompt.

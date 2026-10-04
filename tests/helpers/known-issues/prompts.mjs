@@ -35,11 +35,6 @@ const AREA_DIR = new URL('../../prompts/', import.meta.url);
 
 /** The reasons of KNOWN, one per spec contradiction. */
 export const REASONS = {
-    defaultPropsNineKeys:
-        'spec 02 "Organization prompts (the fourth set)" says _default_prompts_properties "holds only ' +
-        'the nine display keys". setDefaultPromptsProperties() writes ten per prompt: position_display/' +
-        'compose/context, need_custom_text, chatgpt_web_model/project/custom_gpt, api_type, show_in, ' +
-        'custom_icon',
     exportEmitsEnabled:
         'spec 02 "Enabled-to-show_in Migration" says "`enabled` is never emitted on export". ' +
         'preparePromptsForExport() drops it for a built-in prompt (allowedKeys) but copies it ' +
@@ -55,9 +50,6 @@ export const REASONS = {
 export const KNOWN = {
     '15-export-import': {
         'enabled-never-exported': REASONS.exportEmitsEnabled,
-    },
-    '12-prompt-storage': {
-        'default-props-nine-keys': REASONS.defaultPropsNineKeys,
     },
     '21-finalize-prompts': {
         'calendar-strips-addresses-entirely': REASONS.calendarStripFirstOnly,

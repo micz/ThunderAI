@@ -32,7 +32,10 @@ policy is reflected at the next start and nothing of the user's is ever touched.
 - **Local display preferences belong to the user.** Menu position and visibility ride in
   `_default_prompts_properties`, exactly as for a built-in, so org prompts participate in
   `pages/menu_order/` like any other prompt. This does not break read-only: that store
-  holds only the nine display keys, never the prompt text.
+  holds only the ten per-prompt user properties `setDefaultPromptsProperties()` writes —
+  `position_display`, `position_compose`, `position_context`, `show_in`, `custom_icon`,
+  `need_custom_text`, `api_type`, `chatgpt_web_model`, `chatgpt_web_project`,
+  `chatgpt_web_custom_gpt` — never the prompt text.
 
 **Three getters, deliberately.** All three are thin views over `buildPromptSet()`, which
 merges the four sets once and **marks** the three reasons a prompt can be inactive —

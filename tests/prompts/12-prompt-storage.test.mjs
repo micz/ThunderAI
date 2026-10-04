@@ -1,6 +1,7 @@
 // Spec 02, the storage writers, read back through the mock: setDefaultPromptsProperties()
-// ("Organization prompts (the fourth set)": _default_prompts_properties holds only the nine display
-// keys, never the prompt text; "The five boolean flags are normalized on read": it never emits "",
+// ("Organization prompts (the fourth set)": _default_prompts_properties holds only the ten
+// per-prompt user properties listed there, never the prompt text; "The five boolean flags are
+// normalized on read": it never emits "",
 // and need_custom_text is the only one of the five it persists; "User Properties": show_in defaults
 // to "popup"), setCustomPrompts() (it replaces _custom_prompt entirely), setSpecialPrompts(), and
 // saveSpecialPromptTexts() (a load-modify-save on a FRESH read, texts only). No policy: the
@@ -46,9 +47,13 @@ k.test('default-props-keyed-no-text', 'one entry per prompt id, never the prompt
     }
 });
 
-k.test('default-props-nine-keys', 'each entry holds only the nine display keys', () => {
+// The ten keys listed by spec 02 "Organization prompts (the fourth set)".
+const STORED_KEYS = ['position_display', 'position_compose', 'position_context', 'show_in', 'custom_icon',
+    'need_custom_text', 'api_type', 'chatgpt_web_model', 'chatgpt_web_project', 'chatgpt_web_custom_gpt'];
+
+k.test('default-props-ten-keys', 'each entry holds exactly the ten per-prompt user properties', () => {
     for (const [id, entry] of Object.entries(local('_default_prompts_properties'))) {
-        assert.equal(Object.keys(entry).length, 9, `${id}: ${Object.keys(entry).join(', ')}`);
+        assert.deepEqual(Object.keys(entry).sort(), [...STORED_KEYS].sort(), id);
     }
 });
 
