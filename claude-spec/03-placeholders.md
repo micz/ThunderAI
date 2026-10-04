@@ -562,7 +562,14 @@ unsorted, so the dropdown is in declaration order rather than alphabetical.
 ## Custom Placeholders
 
 Users can define their own placeholders via `pages/customdataplaceholders/`. Custom placeholders:
-- Have `is_default: "0"`
+- Have `is_default: "0"` and `is_dynamic: "0"` (a custom placeholder never takes a parameter)
+- Have an `id` that always carries the **`thunderai_custom_` prefix** (`placeholdersUtils.customPrefix`),
+  so the token is `{%thunderai_custom_<name>%}` and can never collide with a built-in id. The page
+  shows and edits the id **without** it (the prefix is a fixed label before the field,
+  `stripCustomDataPH_ID_Prefix()`); `setCustomPlaceholders()`, the one writer, adds it with
+  `validateCustomDataPH_ID()`, only when it is missing (idempotent: an id already prefixed is kept as
+  is), and forces `is_default` / `is_dynamic` to `"0"`. Only prefixed tokens are custom: they are what
+  `hasCustomPlaceholder()` detects and `replaceCustomPlaceholders()` expands.
 - Have a `text` property containing the replacement value
 - Are stored in `browser.storage.local`
 - Are merged with default placeholders at runtime before prompt processing

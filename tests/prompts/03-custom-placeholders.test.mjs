@@ -97,7 +97,10 @@ k.test('set-stores', 'setCustomPlaceholders() stores under _custom_placeholder, 
     ]);
     const stored = ctx.ctl.localData()._custom_placeholder;
     assert.deepEqual(stored.map(p => p.id), ['thunderai_custom_sig', 'thunderai_custom_team']);
-    for (const p of stored) assert.equal(p.is_default, '0', p.id);
+    for (const p of stored) {
+        assert.equal(p.is_default, '0', p.id);
+        assert.equal(p.is_dynamic, '0', p.id + ': a custom placeholder takes no parameter');
+    }
     assert.equal(stored[0].text, 'Best, Mic');
     assert.equal(stored[1].type, '2', 'the type from the form is stored as it came');
 });
