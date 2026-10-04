@@ -1089,8 +1089,9 @@ for every provider, including an endpoint that reports no usage at all.
 **Flow.** `handleUsageData()` only stores the usage on the open turn (`turn._mztaUsage`, once per turn) and folds
 it into the session; it draws nothing. `handleTokensDone()` builds the chip from that usage plus the duration
 (`_buildUsageChipForTurn()`, stored as `turn._mztaUsageChip`) **before** `addActionButtons()`, which places it
-right after Copy. When the answer stops being the newest, `_buildTurnTools()` **moves** the same node into the
-compact toolbar, so earlier answers keep their figures. If `addActionButtons()` bails out early, the chip gets
+as the last action of the bar (after Copy, Save as Summary and Show differences; only Close, right-aligned,
+follows it). When the answer stops being the newest, `_buildTurnTools()` **moves** the same node into the
+compact toolbar, again as its last element, so earlier answers keep their figures. If `addActionButtons()` bails out early, the chip gets
 an `.action-bar` row of its own. Nothing is shown while streaming.
 
 **Chip text**, first applicable: total → `711 tokens`; output only → `611 output tokens`; no tokens → the

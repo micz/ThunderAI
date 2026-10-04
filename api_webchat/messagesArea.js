@@ -1312,11 +1312,6 @@ class MessagesArea extends HTMLElement {
         // copy button
         actionButtons.appendChild(this._buildCopyButton(fullTextHTMLAtAssignment, false, turn));
 
-        // token usage chip, right after Copy (built in handleTokensDone)
-        if(turn._mztaUsageChip) {
-            actionButtons.appendChild(turn._mztaUsageChip);
-        }
-
         // Save as Summary button (only shown for summary webchat sessions)
         const saveSummaryButton = this._buildSaveSummaryButton(promptData, fullTextHTMLAtAssignment);
         if(saveSummaryButton) {
@@ -1328,6 +1323,12 @@ class MessagesArea extends HTMLElement {
         const diffvButton = this._buildDiffButton(promptData, fullTextHTMLAtAssignment, turn, reply_type_pref.reply_type);
         if(diffvButton) {
             actionButtons.appendChild(diffvButton);
+        }
+
+        // token usage chip, always the last action (built in handleTokensDone);
+        // Close is not counted, it sits apart on the right
+        if(turn._mztaUsageChip) {
+            actionButtons.appendChild(turn._mztaUsageChip);
         }
 
         actionButtons.appendChild(closeButton);
@@ -1392,12 +1393,6 @@ class MessagesArea extends HTMLElement {
 
         tools.appendChild(this._buildCopyButton(fullTextHTMLAtAssignment, true, ownerTurn));
 
-        // The usage chip moves here from the full bar, so an earlier answer keeps
-        // its figures. Moved, not rebuilt: the node is about to leave with the bar.
-        if(ownerTurn?._mztaUsageChip) {
-            tools.appendChild(ownerTurn._mztaUsageChip);
-        }
-
         if(promptData.action != "0") {
             const useBtn = this._makeIconButton(
                 buildUseAnswerIcon(13),
@@ -1406,6 +1401,13 @@ class MessagesArea extends HTMLElement {
             useBtn.addEventListener('click',
                 this.handleUseThisAnswerButtonClick(promptData, replyType, fullTextHTMLAtAssignment, ownerTurn));
             tools.appendChild(useBtn);
+        }
+
+        // The usage chip moves here from the full bar, so an earlier answer keeps
+        // its figures. Moved, not rebuilt: the node is about to leave with the bar.
+        // Always the last element, as in the full bar.
+        if(ownerTurn?._mztaUsageChip) {
+            tools.appendChild(ownerTurn._mztaUsageChip);
         }
 
         return tools;
