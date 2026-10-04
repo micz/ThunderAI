@@ -205,9 +205,27 @@ signature statement, then the language statement.
   numbered, the tokens are resolved and substituted (spec 03), then `" " + signature` (when asked)
   and `" " + language` are appended and the whole result is **trimmed**.
 
-`signature` is `getDefaultSignature()` when `need_signature` is `"1"` (empty when no
-`default_sign_name` is set); `language` is the `chatgpt_lang` the caller passes (normally
-`getDefaultLang()`).
+`signature` is `getDefaultSignature()` when `need_signature` is `"1"`; `language` is the
+`chatgpt_lang` the caller passes, normally `getDefaultLang(prompt)`. Their exact text:
+
+| Statement | When | Text |
+|---|---|---|
+| signature | `default_sign_name` non-empty after trimming | `sign_msg_as` + `" "` + name, then `"."` |
+| | `default_sign_name` empty or whitespace only | nothing |
+| language | `define_response_lang` not `"1"`, or no prompt (#855) | nothing |
+| | `define_response_lang` `"1"`, prompt in `SAME_LANGUAGE_PROMPT_IDS` | `reply_same_lang` |
+| | `define_response_lang` `"1"`, `default_chatgpt_lang` non-empty after trimming | `prompt_lang` + `" "` + language, then `"."` |
+| | `define_response_lang` `"1"`, `default_chatgpt_lang` empty or whitespace only | `reply_same_lang` |
+
+The user value is trimmed, and the closing `"."` is not added when it already ends with `.`, `!`
+or `?` (`endSentence()`), so `"Mic."` gives `Sign the message as Mic.`, never `Mic..`.
+
+`SAME_LANGUAGE_PROMPT_IDS` (`js/mzta-utils-prompt.js`) holds the three built-in prompts that rewrite
+or proofread the user's own text: `prompt_rewrite_polite`, `prompt_rewrite_formal`,
+`prompt_proofread_this`. Their answer replaces that text, so it must be in **its** language: the
+default language would ask the AI to translate it. They always get "reply in the same language",
+whatever `default_chatgpt_lang` is. The list is by id: a custom prompt copied from one of them has its
+own id and follows the general rule.
 
 Shipped prompts on the no-placeholder branch: `prompt_reply`, `prompt_classify`, `prompt_this`, and
 the summarize header and separator (which are passed no content).

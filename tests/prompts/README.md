@@ -168,9 +168,7 @@ they are input for improving spec 02/03:
 
 1. *(resolved: spec 02 "How the final prompt is built" now fixes the no-placeholder shape - text,
    "content", signature, language, one space - and that the selection wins over the body.)*
-2. **The signature and language statements.** `getDefaultSignature()`'s wording, and
-   `getDefaultLang()`'s format and its fallback when no language is set (`reply_same_lang` is only
-   implied, by spec 02 saying the summary's forced statement "never" uses it).
+2. *(resolved: spec 02 "How the final prompt is built" now gives the exact signature and language statements, the trimming, and the same-language rule of the rewrite and proofread prompts.)*
 3. **`false` as a flag value.** `normalizePromptFlags()` lists `true` as "on" but not `false` as
    "off". The code treats `false` as out of domain, so it takes the fallback, and a built-in "1" turns
    it on. `normalizeEnabledToShowIn()` likewise only names `0` / `"0"` as "off".

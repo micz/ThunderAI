@@ -1,0 +1,10 @@
+{
+  "description": "The signature name is trimmed, and a name already ending with a full stop gets no second one",
+  "spec": ["spec 02 \"How the final prompt is built (`preparePrompt()`)\": the user value is trimmed, the closing \".\" not added after . ! ?"],
+  "storage": { "default_sign_name": "  Mic Z.  " },
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Write a reply.", "need_signature": "1" },
+    "body_text": "Hi"
+  },
+  "expected": "Write a reply. \"Hi\" Sign the message as Mic Z."
+}

@@ -102,10 +102,49 @@ k.test('default-lang-off', 'define_response_lang "0": no language statement', as
     assert.equal(await u.getDefaultLang({ define_response_lang: '0' }), '');
 });
 
-k.test('default-lang-on', 'define_response_lang "1": a statement naming default_chatgpt_lang', async () => {
+// Spec 02 "How the final prompt is built (`preparePrompt()`)", the statements table.
+
+k.test('default-lang-on', 'define_response_lang "1": "prompt_lang LANG."', async () => {
     await setPrefs({ default_chatgpt_lang: 'Italian' });
-    const lang = await u.getDefaultLang({ define_response_lang: '1' });
-    assert.ok(lang.includes('Italian'), lang);
+    assert.equal(await u.getDefaultLang({ id: 'prompt_user', define_response_lang: '1' }), msg('prompt_lang') + ' Italian.');
+});
+
+k.test('default-lang-trimmed', 'the language is trimmed, and never gets a second full stop', async () => {
+    await setPrefs({ default_chatgpt_lang: '  Italian.  ' });
+    assert.equal(await u.getDefaultLang({ id: 'prompt_user', define_response_lang: '1' }), msg('prompt_lang') + ' Italian.');
+    await setPrefs({ default_chatgpt_lang: 'Italian' });
+});
+
+k.test('default-lang-none', 'no default language, or only spaces: "reply in the same language"', async () => {
+    for (const default_chatgpt_lang of ['', '   ']) {
+        await setPrefs({ default_chatgpt_lang });
+        assert.equal(await u.getDefaultLang({ id: 'prompt_user', define_response_lang: '1' }), msg('reply_same_lang'), JSON.stringify(default_chatgpt_lang));
+    }
+    await setPrefs({ default_chatgpt_lang: 'Italian' });
+});
+
+k.test('default-lang-same-language-prompts', 'the rewrite and proofread prompts always answer in the language of the text', async () => {
+    await setPrefs({ default_chatgpt_lang: 'Italian' });
+    const { SAME_LANGUAGE_PROMPT_IDS } = await import(new URL('js/mzta-utils-prompt.js', REPO).href);
+    assert.deepEqual([...SAME_LANGUAGE_PROMPT_IDS].sort(), ['prompt_proofread_this', 'prompt_rewrite_formal', 'prompt_rewrite_polite']);
+    for (const id of SAME_LANGUAGE_PROMPT_IDS) {
+        const prompt = await prompts.loadPrompt(id);
+        assert.equal(prompt.define_response_lang, '1', id);
+        assert.equal(await u.getDefaultLang(prompt), msg('reply_same_lang'), id);
+    }
+    assert.equal(await u.getDefaultLang(await prompts.loadPrompt('prompt_reply')), msg('prompt_lang') + ' Italian.',
+        'the other prompts keep the default language');
+});
+
+k.test('default-signature', 'getDefaultSignature(): "sign_msg_as NAME.", trimmed, nothing when blank', async () => {
+    await setPrefs({ default_sign_name: ' Mic Zelco ' });
+    assert.equal(await u.getDefaultSignature(), msg('sign_msg_as') + ' Mic Zelco.');
+    await setPrefs({ default_sign_name: 'Mic!' });
+    assert.equal(await u.getDefaultSignature(), msg('sign_msg_as') + ' Mic!');
+    for (const default_sign_name of ['', '  ']) {
+        await setPrefs({ default_sign_name });
+        assert.equal(await u.getDefaultSignature(), '', JSON.stringify(default_sign_name));
+    }
 });
 
 // --- getSummaryLang() ---------------------------------------------------------------------------

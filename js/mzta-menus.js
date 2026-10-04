@@ -23,7 +23,6 @@ import {
     getDynamicSettingsDefaults
 } from '../options/mzta-options-default.js';
 import {
-    getLanguageDisplayName,
     getMenuContextCompose,
     getMenuContextDisplay,
     i18nConditionalGet,
@@ -377,15 +376,9 @@ export class mzta_Menus {
             }
             // console.log(">>>>>>>>>>>>>>>>>>> curr_prompt.custom_text_array: " + JSON.stringify(curr_prompt.custom_text_array));
             
+            // prompt_translate_this never reaches this point: the popup and the context menu both
+            // send it to processEmails() (specialContextMenuActions in mzta-background.js).
             switch(curr_prompt.id){
-                case 'prompt_translate_this':
-                    let prefs2 = await mztaPrefs.getPrefs(['default_chatgpt_lang', 'translate_lang']);
-                    let chatgpt_lang2 = prefs2.translate_lang || prefs2.default_chatgpt_lang;
-                    if(chatgpt_lang2 === ''){
-                        chatgpt_lang2 = getLanguageDisplayName(browser.i18n.getUILanguage());
-                    }
-                    fullPrompt = curr_prompt.text + " " + chatgpt_lang2 + ". \"" + body_text + "\" ";
-                    break;
                 case 'prompt_reply':
                     fullPrompt += browser.i18n.getMessage("prompt_reply_additional_text");
                     break;

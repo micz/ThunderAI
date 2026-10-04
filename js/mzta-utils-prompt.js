@@ -42,15 +42,24 @@ export const REMINDER_FEATURES = {
     }
 };
 
+// The built-in prompts that rewrite or proofread the user's own text: with define_response_lang
+// on they always get "reply in the same language", never the default language (claude-spec/02-prompts.md).
+export const SAME_LANGUAGE_PROMPT_IDS = ['prompt_rewrite_polite', 'prompt_rewrite_formal', 'prompt_proofread_this'];
+
+// A user value closing a statement: a full stop is added unless it already ends with one (or ! ?).
+function endSentence(value) {
+    return /[.!?]$/.test(value) ? value : value + ".";
+}
+
 export const taPromptUtils = {
 
     async getDefaultSignature(){
         let prefs = await mztaPrefs.getPrefs(['default_sign_name']);
-        if(prefs.default_sign_name===''){
+        const name = String(prefs.default_sign_name ?? '').trim();
+        if(name === ''){
             return '';
-        }else{
-            return browser.i18n.getMessage("sign_msg_as") + " " + prefs.default_sign_name + ".";
         }
+        return browser.i18n.getMessage("sign_msg_as") + " " + endSentence(name);
     },
 
     async preparePrompt(args){
@@ -196,18 +205,20 @@ export const taPromptUtils = {
     },
 
     async getDefaultLang(curr_prompt){
-        let chatgpt_lang = '';
-        if(String(curr_prompt?.define_response_lang) == "1"){
-            let prefs = await mztaPrefs.getPrefs(['default_chatgpt_lang']);
-            chatgpt_lang = prefs.default_chatgpt_lang;
-            if(chatgpt_lang === ''){
-                chatgpt_lang = browser.i18n.getMessage("reply_same_lang");
-            }else{
-                chatgpt_lang = browser.i18n.getMessage("prompt_lang") + " " + chatgpt_lang + ".";
-            }
+        if(String(curr_prompt?.define_response_lang) != "1"){
+            return '';
         }
-
-        return chatgpt_lang;
+        // A prompt that rewrites or proofreads the user's own text answers in the language of
+        // that text: the default language would ask the AI to translate it.
+        if(SAME_LANGUAGE_PROMPT_IDS.includes(curr_prompt.id)){
+            return browser.i18n.getMessage("reply_same_lang");
+        }
+        let prefs = await mztaPrefs.getPrefs(['default_chatgpt_lang']);
+        const lang = String(prefs.default_chatgpt_lang ?? '').trim();
+        if(lang === ''){
+            return browser.i18n.getMessage("reply_same_lang");
+        }
+        return browser.i18n.getMessage("prompt_lang") + " " + endSentence(lang);
     },
 
     // Language statements for the summary prompt:
