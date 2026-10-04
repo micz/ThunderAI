@@ -317,7 +317,21 @@ in `pages/_lib/managed-ui.js`) with the managed marker, and its Save/Reset butto
 
 ### Missing special prompts
 
-The lookup helpers in `js/mzta-prompts.js` (`getSpamFilterPrompt()`, `getAddTagsPrompt()`, `getSummarizePrompt()`, …) are `Array.find()` over `_special_prompts` and return `undefined` when the user has removed or corrupted the entry. Every caller must guard before using the result, and `taPromptUtils.getDefaultLang()` uses optional chaining so a missing prompt yields `''` (no forced language) instead of throwing (issue #855).
+**A removed entry is restored on read.** `getSpecialPrompts()` compares the stored `_special_prompts`
+array with the shipped `specialPrompts`: every shipped special prompt whose `id` is missing from the
+store is appended, as shipped — its i18n text, its shipped flags and `show_in`, `custom_icon: ""`.
+When it appended anything (the array length changed) it **writes the array back**, so the repair is
+persisted once; an array that is already complete is never rewritten by a read. Entries the store
+does have are kept as stored, with the read-time repairs only: a missing `show_in` becomes `"both"`, a
+missing `custom_icon` becomes `""`, and the five flags are normalised against the shipped definition.
+A store holding nothing at all (`null`) is not written: the shipped set is returned as is.
+
+So a lookup helper in `js/mzta-prompts.js` (`getSpamFilterPrompt()`, `getAddTagsPrompt()`,
+`getSummarizePrompt()`, …), an `Array.find()` over `getSpecialPrompts()`, finds every shipped id even
+after the user deleted its entry from storage. What it cannot repair is a **corrupted** entry: one
+that keeps its `id` but lost its `text` or other fields is returned as it is. Callers therefore still
+guard before using the result, and `taPromptUtils.getDefaultLang()` uses optional chaining so a
+missing prompt yields `''` (no forced language) instead of throwing (issue #855).
 
 Guarded callers, each reporting through the mechanism its feature already has:
 - Auto add-tags (`mzta-background.js`): logs an error and sets `skipAddTags = true`, leaving the rest of the message pipeline running.

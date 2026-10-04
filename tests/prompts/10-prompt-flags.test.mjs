@@ -3,7 +3,8 @@
 // present, mutating, idempotent, single-prompt; the fallbacks for an out-of-domain value),
 // isPromptFlagOn() (strict: a corrupted value never turns a behaviour on), normalizePromptFields()
 // (custom prompts: no built-in, so out of domain means off; show_in defaults to "popup",
-// custom_icon to ""), and "Enabled-to-show_in Migration" (normalizeEnabledToShowIn()).
+// custom_icon to ""), "Enabled-to-show_in Migration" (normalizeEnabledToShowIn()), and "Missing
+// special prompts" with nothing stored (the shipped set, nothing written).
 
 import { before } from 'node:test';
 import assert from 'node:assert/strict';
@@ -152,6 +153,17 @@ k.test('enabled-idempotent', 'a second run changes nothing', () => {
     p.normalizeEnabledToShowIn(prompt);
     p.normalizeEnabledToShowIn(prompt);
     assert.deepEqual(prompt, { id: 'x', show_in: 'none' });
+});
+
+// --- Spec 02 "Missing special prompts": nothing stored ------------------------------------------
+
+k.test('special-none-stored-not-written', 'with no special prompt stored, a read returns the shipped set and writes nothing', async () => {
+    const local = globalThis.browser.storage.local;
+    const before = JSON.stringify(await local.get(null));
+    const list = await p.getSpecialPrompts();
+    assert.equal(list.length, 9);
+    assert.equal(JSON.stringify(await local.get(null)), before);
+    assert.equal((await local.get('_special_prompts'))._special_prompts, undefined);
 });
 
 k.coverage();

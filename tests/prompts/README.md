@@ -175,10 +175,7 @@ they are input for improving spec 02/03:
 3. **`false` as a flag value.** `normalizePromptFlags()` lists `true` as "on" but not `false` as
    "off". The code treats `false` as out of domain, so it takes the fallback, and a built-in "1" turns
    it on. `normalizeEnabledToShowIn()` likewise only names `0` / `"0"` as "off".
-4. **"Missing special prompts" vs `getSpecialPrompts()`.** The spec says the lookups return
-   `undefined` when the user has removed an entry. But `getSpecialPrompts()` re-adds every missing
-   shipped special prompt (and writes the store back), which no spec section documents. So a removed
-   entry cannot yield `undefined`, and only `getDefaultLang(undefined)` is tested.
+4. *(resolved: spec 02 "Missing special prompts" now documents that `getSpecialPrompts()` restores a removed entry and writes the store back once; `11` tests it.)*
 5. *(resolved: spec 02 now places both migration flags in `browser.storage.local`, the `PREFS_AREA`, as spec 05 does.)*
 6. **"Visible prompts" in the alphabetic migration.** The spec contrasts them with the *hidden special*
    prompts, so `13a` reads them as "every prompt but those two". Whether a custom or built-in prompt

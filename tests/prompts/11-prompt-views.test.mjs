@@ -7,7 +7,8 @@
 // custom prompts, "both" for special ones; custom_icon); "Special Prompts" and "Special Prompt
 // Visibility Dependencies" (need_selected of prompt_get_calendar_event derived from
 // calendar_no_selection, the clipboard variant not overlaid, the shared get_calendar_event prefix);
-// "Reset all" (getFactoryShowIn()); "Exclusions from the UI" (getHiddenSpecialPromptIds()).
+// "Reset all" (getFactoryShowIn()); "Exclusions from the UI" (getHiddenSpecialPromptIds());
+// "Missing special prompts" (a removed entry restored, the store written back once).
 // No policy: the inactive-prompt flags and the overlays are spec 08a/08b, tested by the managed area.
 
 import { before } from 'node:test';
@@ -210,6 +211,33 @@ k.test('special-custom-icon-default', 'a special prompt saved with no custom_ico
 
 k.test('special-text-kept', 'the stored text of a special prompt is what getSpecialPrompts() returns', async () => {
     assert.equal(byId(await p.getSpecialPrompts(), 'prompt_spamfilter').text, 'Mine {%mail_text_body%} spamValue explanation');
+});
+
+// Spec "Missing special prompts": a shipped special prompt missing from the store is appended as
+// shipped and the store written back once; the entries the store has are kept.
+
+k.test('special-restored', 'the special prompts missing from the store are restored, as shipped', async () => {
+    await p.getSpecialPrompts();
+    const stored = ctx.ctl.localData()._special_prompts;
+    assert.deepEqual(stored.map(x => x.id).sort(), [...SPECIAL_IDS].sort());
+    const translate = byId(stored, 'prompt_translate_this');
+    assert.equal(translate.text, ctx.ctl.browser.i18n.getMessage('prompt_translate_this_full_text'));
+    assert.equal(translate.show_in, 'context');
+    assert.equal(byId(stored, 'prompt_spamfilter').text, 'Mine {%mail_text_body%} spamValue explanation', 'a stored entry is kept');
+});
+
+k.test('special-restore-written-once', 'a complete store is never rewritten by a read', async () => {
+    const writes = () => ctx.ctl.calls.filter(c => c.op === 'set' && c.items && '_special_prompts' in c.items).length;
+    const before = writes();
+    await p.getSpecialPrompts();
+    await p.getSpecialPrompts();
+    assert.equal(writes(), before);
+});
+
+k.test('special-lookup-after-removal', 'a lookup helper finds a special prompt the user removed from storage', async () => {
+    const translate = await p.getTranslatePrompt();
+    assert.equal(translate?.id, 'prompt_translate_this');
+    assert.equal(translate.text, ctx.ctl.browser.i18n.getMessage('prompt_translate_this_full_text'));
 });
 
 k.test('calendar-need-selected-pref-off', 'calendar_no_selection off: the calendar prompt needs a selection, whatever is stored', async () => {
