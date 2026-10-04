@@ -645,7 +645,13 @@ Users can define their own placeholders via `pages/customdataplaceholders/`. Cus
 ## Placeholder Resolution Order
 
 1. Built-in placeholders are defined in `js/mzta-placeholders.js`
-2. Custom placeholders are loaded from storage (expanded first, by `replaceCustomPlaceholders()`)
+2. Custom placeholders are loaded from storage (expanded first, by `replaceCustomPlaceholders()`).
+   Where depends on the path: a menu action expands them into the prompt it holds before any other
+   check (so a built-in token inside a custom placeholder's text is seen by those checks too);
+   `preparePrompt()` expands whatever is left for its other callers; `buildTranslationPrompt()`
+   expands them itself. Any write of `_custom_placeholder` rebuilds the menus (`MENU_RELEVANT_KEYS`),
+   so a changed text takes effect at once (see [02-prompts.md](02-prompts.md), *How the final
+   prompt is built*)
 3. At runtime the calling path gathers the email data and hands it to
    `getPlaceholdersValues()`, which is **demand-driven**: only tokens actually present in the
    prompt get resolved

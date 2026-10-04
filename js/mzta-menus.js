@@ -209,6 +209,14 @@ export class mzta_Menus {
     
         curr_menu_entry.act = async () => {
             taWorkingStatus.startWorking();
+            // Custom placeholders first, so every check below (the typed text, the plain text
+            // part, additional_text...) also sees a placeholder written inside a custom
+            // placeholder's text; preparePrompt() then finds none left to expand. This object
+            // lives until the next menu rebuild, which the Data Placeholders page triggers on
+            // save, so a changed placeholder text takes effect at once.
+            if(placeholdersUtils.hasCustomPlaceholder(curr_prompt.text)){
+                curr_prompt.text = await placeholdersUtils.replaceCustomPlaceholders(curr_prompt.text);
+            }
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             // The body is scraped through the content script, so it can only be read
             // from a tab that can receive tab messages. A 3-pane "mail" tab with the

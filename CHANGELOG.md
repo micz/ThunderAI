@@ -38,6 +38,8 @@
         <li>Fix: a prompt using the <i>{%tags_current_email%}</i> placeholder no longer fails while composing or in the translate prompt, where the <i>{%tags_full_list%}</i> placeholder now also contains the list of the tags [<a href="https://github.com/micz/ThunderAI/issues/911">#911</a>].</li>
         <li>Fix: a placeholder with a parameter written with spaces around the colon, like <i>{%mail_headers: x-spam-score%}</i>, now works like <i>{%mail_headers:x-spam-score%}</i>. Previously the prompt editor showed it as valid, but the placeholder itself was sent to the AI.</li>
         <li>Fix: an additional text field left empty in the AI chat window is now sent as an empty text. Previously, with the <i>Placeholders: use default value</i> option disabled, the placeholder itself was sent to the AI.</li>
+        <li>Fix: a change to a custom data placeholder now takes effect at once in the prompts started from the menus and the popup. Previously a prompt already used kept the old text until the menus were rebuilt or Thunderbird was restarted.</li>
+        <li>Fix: a placeholder written inside the text of a custom data placeholder, like <i>{%mail_typed_text%}</i> or <i>{%mail_plain_text_part%}</i>, now gets its data in the prompts started from the menus and the popup, and custom data placeholders now work also in the translate prompt.</li>
         <li>Many improvements.</li>
         <li>Minor bugs fixed.</li>
         <li>Redesigned the Custom Prompts page: a list of the prompts next to a detail editor, plus a table view that shows all the prompts and their options at a glance. The last view chosen is remembered. The search now also looks in the prompt text [<a href="https://github.com/micz/ThunderAI/issues/904">#904</a>].</li>

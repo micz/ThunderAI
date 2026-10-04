@@ -91,6 +91,15 @@ k.test('translate-user-text', 'a user text of prompt_translate_this is the one u
     assert.equal(promptText, 'To German: Ciao Bob,<br>grazie. subject body status');
 });
 
+k.test('translate-custom-placeholder', 'a custom data placeholder in the translate prompt is expanded, also one holding a built-in token', async () => {
+    await setPrefs({ translate_lang: 'German', _custom_placeholder: [
+        { id: 'thunderai_custom_rules', name: 'Rules', text: 'Keep the names. Subject: {%mail_subject%}', type: '0', is_default: '0', is_dynamic: '0', enabled: 1 },
+    ] });
+    await prompts.saveSpecialPromptTexts({ prompt_translate_this: 'To {%thunderai_translate_lang%}. {%thunderai_custom_rules%} subject body status' });
+    const { promptText } = await u.buildTranslationPrompt(FULL_MESSAGE, 42);
+    assert.equal(promptText, 'To German. Keep the names. Subject: Riunione di lunedi subject body status');
+});
+
 // --- getDefaultLang() ---------------------------------------------------------------------------
 
 k.test('default-lang-missing-prompt', 'a missing special prompt yields "" (no forced language), never a throw', async () => {

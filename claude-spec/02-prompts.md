@@ -216,10 +216,20 @@ signature statement, then the language statement.
   - The expansion and the numbering are written back into **`curr_prompt.text`**: the function
     mutates the prompt it is handed. `js/mzta-menus.js` relies on it — after the call it reads
     `curr_prompt.text` for the `additional_text` field list, the add-tags `{%tags_full_list%}` check
-    and the reminder `reminderMinutes` check. It is safe only because every prompt a run gets is a
-    fresh copy (organization prompts included, see above); a caller must never hand it a shared
-    object. The checks the menus make **before** the call read the unexpanded text, so they do not
-    see a placeholder written inside a custom placeholder's text (an open point).
+    and the reminder `reminderMinutes` check.
+  - **The menus hold their prompts across runs.** They load every prompt once per rebuild
+    (`initialize()` → `this.allPrompts`), and each menu action reuses the same object on every run
+    until the next rebuild. So a menu action expands the custom placeholders into `curr_prompt.text`
+    **itself, first** — before any of its checks, so the typed-text, plain-text-part and
+    `additional_text` checks also see a placeholder written inside a custom placeholder's text — and
+    `preparePrompt()` then finds none left. A changed placeholder text needs a rebuild to take
+    effect, which is why `_custom_placeholder` is in `MENU_RELEVANT_KEYS` (`mzta-background.js`): any
+    write of it rebuilds the menus, like `calendar_no_selection`. The `#N` numbering written into the
+    held object is harmless: it is idempotent. The fields the menus set on the prompt during a run
+    (`selection_text`, `body_text`, `custom_text_array`) are rewritten before use on every run.
+  - Every other caller (spam filter, auto add-tags, the summarize email blocks) hands it a prompt
+    read for that run, and relies on its own expansion. `buildTranslationPrompt()` does not go
+    through `preparePrompt()` and expands the custom placeholders itself.
 
 `signature` is `getDefaultSignature()` when `need_signature` is `"1"`; `language` is the
 `chatgpt_lang` the caller passes, normally `getDefaultLang(prompt)`. Their exact text:

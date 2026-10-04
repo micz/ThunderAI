@@ -249,6 +249,9 @@ const MENU_RELEVANT_KEYS = [
     // (applyCalendarNoSelection() in js/mzta-prompts.js): without a rebuild a change would
     // only take effect at the next restart.
     'calendar_no_selection',
+    // Same reason: a menu action expands the custom placeholders into the prompt text it holds
+    // (js/mzta-menus.js), so a changed placeholder text needs a rebuild to take effect.
+    '_custom_placeholder',
     ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
 ];
 

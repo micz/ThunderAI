@@ -310,6 +310,11 @@ export const taPromptUtils = {
         if (promptText === 'prompt_translate_this_full_text') {
             promptText = browser.i18n.getMessage('prompt_translate_this_full_text');
         }
+        // This prompt does not go through preparePrompt(), so its custom placeholders are
+        // expanded here, first, as everywhere else (claude-spec/03-placeholders.md).
+        if (placeholdersUtils.hasCustomPlaceholder(promptText)) {
+            promptText = await placeholdersUtils.replaceCustomPlaceholders(promptText);
+        }
 
         // No messageId means no body: getMailInlineTextParts() would throw on an
         // undefined id and swallow it in its own try/catch, returning {text:'',html:''}.
