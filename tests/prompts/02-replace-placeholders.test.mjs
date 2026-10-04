@@ -152,6 +152,18 @@ k.test('additional-text-fields', 'one input field per distinct additional_text l
     assert.deepEqual(fields.map(f => f.info), ['tone', 'length']);
 });
 
+k.test('additional-text-entry-shape', 'each field is {placeholder: the token as written, info: the trimmed label}', () => {
+    assert.deepEqual(ph.getPlaceholdersAdditionalTextArray('A {% additional_text:tone %} B {%additional_text:#1%}'), [
+        { placeholder: '{% additional_text:tone %}', info: 'tone' },
+        { placeholder: '{%additional_text:#1%}', info: '#1' },
+    ]);
+});
+
+k.test('additional-text-renumbered', 'the bare tokens renumbered by preparePrompt() are one field each', () => {
+    const fields = ph.getPlaceholdersAdditionalTextArray('A {%additional_text:#1%} B {%additional_text:#2%} C {%additional_text:tone%}');
+    assert.deepEqual(fields.map(f => f.info), ['#1', '#2', 'tone']);
+});
+
 k.test('additional-text-none', 'no additional_text token, no field', () => {
     assert.deepEqual(ph.getPlaceholdersAdditionalTextArray('{%mail_subject%}'), []);
 });

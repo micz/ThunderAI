@@ -88,6 +88,10 @@ k.test('fixed-takes-no-parameter', 'a fixed placeholder (is_dynamic "0") does no
     assert.equal(find('reading:x', '1'), null);
 });
 
+k.test('dynamic-space-before-colon', 'a space before the colon is not a dynamic token', () => {
+    assert.equal(find('dyn_reading :x'), null);
+});
+
 k.test('dynamic-needs-colon', 'a dynamic id is matched as id:..., never as a prefix of a longer id', () => {
     assert.equal(find('dyn_readingX'), null);
     assert.equal(find('dyn_reading_more:x'), null);

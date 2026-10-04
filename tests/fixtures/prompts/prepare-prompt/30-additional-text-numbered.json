@@ -1,0 +1,9 @@
+{
+  "description": "Each bare {%additional_text%} gets its own field, #1, #2 in order; a labelled one is left as written",
+  "spec": ["spec 03 \"`additional_text`: the user's input, filled late\": preparePrompt() rewrites each bare token to {%additional_text:#N%} and leaves every additional_text token in place"],
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Write about {%additional_text%} and {%additional_text%} in a {%additional_text:tone%} tone: {%mail_text_body%}", "need_signature": "0" },
+    "body_text": "Body"
+  },
+  "expected": "Write about {%additional_text:#1%} and {%additional_text:#2%} in a {%additional_text:tone%} tone: Body"
+}
