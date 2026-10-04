@@ -178,10 +178,7 @@ they are input for improving spec 02/03:
 7. *(resolved: spec 02 now lists the ten keys of `_default_prompts_properties`.)*
 8. *(resolved: spec 03 "Custom Placeholders" now says a disabled custom placeholder is treated as nonexistent and is not expanded; `03` and fixture 29 test it.)*
 9. *(resolved: spec 03 "Custom Placeholders" now documents the `thunderai_custom_` prefix: stored on the id, shown without it, added once by `setCustomPlaceholders()`.)*
-10. **Value formats.** `{%mail_attachments_info%}` ("information about the attachments"), the
-    separator of `{%tags_current_email%}`, and whether header and address values are HTML-escaped
-    (the code turns `<` / `>` into `&lt;` / `&gt;` in `author`, `recipients`, `cc_list` and the header
-    placeholders). The tests use values that do not depend on it.
+10. *(resolved: spec 03 "Value formats" now gives the attachments, headers, tags and date formats and the `<` / `>` escaping; `04` and `05` test them exactly.)*
 11. **`additional_text`.** The shape of `getPlaceholdersAdditionalTextArray()`, and the renumbering of
     a bare `{%additional_text%}` into `{%additional_text:#N%}` by `preparePrompt()`. Neither is in the
     spec, and whether `{% id : value %}` (spaces around the colon) is a valid dynamic token is not

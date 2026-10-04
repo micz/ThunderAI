@@ -26,6 +26,7 @@ const ATTACHMENTS = {
 };
 const HEADERS = {
     7: { 'X-Spam-Score': ['4.2'], subject: ['Quarterly report'], received: ['by a', 'by b'] },
+    9: { from: ['Mic <m@example.com> & "co"'] },
 };
 
 let ctx, ph;
@@ -65,6 +66,21 @@ k.test('attachments-named', '{%mail_attachments_info%} names every attachment of
     assert.ok(out.includes('photo.jpg'), out);
     assert.equal(callsOf('listAttachments'), 1);
     assert.deepEqual(apiCalls.at(-1), { api: 'listAttachments', id: 7 });
+});
+
+k.test('attachments-format', 'one line per attachment: "<name>" [<contentType>] (<KB, rounded> KB)', async () => {
+    assert.equal(await resolve('{%mail_attachments_info%}', { curr_message: { id: 7 } }),
+        '"invoice.pdf" [application/pdf] (200 KB)\n"photo.jpg" [image/jpeg] (50 KB)');
+});
+
+k.test('header-multi-value', 'a multi-valued header is joined with ", "; the full headers keep it on one line', async () => {
+    assert.equal(await resolve('{%mail_headers:received%}', { curr_message: { id: 7 } }), 'by a, by b');
+    const lines = (await resolve('{%mail_full_headers%}', { curr_message: { id: 7 } })).split('\n');
+    assert.ok(lines.includes('received: by a, by b'), lines.join(' | '));
+});
+
+k.test('header-escaped', 'header values have < and > escaped, and nothing else', async () => {
+    assert.equal(await resolve('{%mail_headers:from%}', { curr_message: { id: 9 } }), 'Mic &lt;m@example.com&gt; & "co"');
 });
 
 k.test('attachments-none', 'a message with no attachment gives an empty value', async () => {

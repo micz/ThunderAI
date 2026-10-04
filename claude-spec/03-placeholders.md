@@ -272,6 +272,30 @@ also appends the reminder instruction and the user's reminder rules (#887, see
 [02-prompts.md](02-prompts.md#calendar-event--task-reminder-887)) — **after** resolution, so
 placeholders written in the reminder rules are not resolved.
 
+### Value formats
+
+What `getPlaceholdersValues()` puts in the prompt for the placeholders whose value is built rather
+than copied from a single field. A value missing at the source is `""`, which then follows the `||`
+chain of `replacePlaceholders()` (see *Placeholder Resolution Order*).
+
+| Placeholder | Value |
+|---|---|
+| `mail_attachments_info` | one line per attachment of `browser.messages.listAttachments(curr_message.id)`: `"<name>" [<contentType>] (<size> KB)`, the size in KB rounded to the nearest integer; lines joined with `\n`. No attachment: `""` |
+| `mail_headers:<name>` | the value of header `<name>` from `browser.messages.getFull()`, the name matched **case-insensitively**; a multi-valued header joined with `", "`. Header absent: `""` |
+| `mail_full_headers` | every header as `<name>: <value>` (multi-valued joined with `", "`), one per line (`\n`), names as Thunderbird returns them |
+| `tags_full_list` | the names of every Thunderbird tag joined with `", "` — the first element of the `getTagsList()` pair the caller supplies |
+| `tags_current_email` | the **names** (not the keys) of the tags on the email, looked up by key in the second element of that pair, joined with `", "` |
+| `mail_datetime` | `curr_message.date` converted to a string (for a `Date`, its `toString()`) |
+| `current_datetime` | `new Date().toString()` at resolution time |
+| `junk_score` | `curr_message.junkScore`, as a number (a score of `0` follows the `||` chain like an empty value) |
+| `mail_folder_name` / `mail_folder_path` | `curr_message.folder.name` / `.path` |
+
+**HTML escaping of the address and header values.** `author`, `recipients`, `cc_list`,
+`mail_headers:<name>` and `mail_full_headers` go through `sanitizeMailHeaders()`, which replaces `<`
+with `&lt;` and `>` with `&gt;` — nothing else (`&` and quotes are left alone). So a sender
+`Mic <m@example.com>` reaches the prompt as `Mic &lt;m@example.com&gt;`. No other placeholder is
+escaped: body, selection, subject and HTML placeholders carry their value as it is.
+
 ## Dynamic Placeholders
 
 Dynamic placeholders use a colon separator to pass a parameter:

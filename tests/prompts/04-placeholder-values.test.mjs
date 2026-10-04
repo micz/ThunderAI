@@ -144,6 +144,33 @@ k.test('tags-current-email', '{%tags_current_email%} names the tags on the email
     assert.equal(out, 'Important');
 });
 
+// Spec 03 "Value formats".
+
+k.test('tags-current-email-names', '{%tags_current_email%}: the tag names, joined with ", "', async () => {
+    const out = await resolve('{%tags_current_email%}', {
+        curr_message: { tags: ['$label1', '$label4'] },
+        tags_full_list: ['Important, Later', { $label1: { tag: 'Important' }, $label4: { tag: 'Later' } }],
+    });
+    assert.equal(out, 'Important, Later');
+});
+
+k.test('address-escaped', 'author, recipients and cc_list have < and > escaped, and nothing else', async () => {
+    const curr_message = { author: 'Mic <m@example.com>', recipients: ['A & B <ab@example.com>'], ccList: ['"C" <c@example.com>'] };
+    assert.equal(await resolve('{%author%}|{%recipients%}|{%cc_list%}', { curr_message }),
+        'Mic &lt;m@example.com&gt;|A & B &lt;ab@example.com&gt;|"C" &lt;c@example.com&gt;');
+});
+
+k.test('not-escaped', 'the other placeholders carry their value unescaped', async () => {
+    const args = { mail_subject: 'Re: <draft> & more', body_text: 'a < b', selection_html: '<b>x</b>', msg_text: { html: '<p>y</p>' } };
+    assert.equal(await resolve('{%mail_subject%}|{%mail_text_body%}|{%selected_html%}|{%mail_html_body%}', args),
+        'Re: <draft> & more|a < b|<b>x</b>|<p>y</p>');
+});
+
+k.test('mail-datetime-date', '{%mail_datetime%}: a Date reaches the prompt as its toString()', async () => {
+    const date = new Date(2026, 9, 5, 10, 30);
+    assert.equal(await resolve('{%mail_datetime%}', { curr_message: { date } }), date.toString());
+});
+
 k.test('empty', '{%empty%} resolves to nothing, with the default values on or off', async () => {
     assert.equal(await resolve('[{%empty%}]'), '[]');
     assert.equal(await resolve('[{%empty%}]', {}, false), '[]');
