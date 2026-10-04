@@ -81,6 +81,21 @@ test('the user prompt is never deleted, and saving strips the transient flag', a
     assert.equal(stored.find(p => p.id === 'org_acme_reply').text, 'mine');
 });
 
+test('each read hands out its own copy of an org prompt: a mutation never reaches the next run', async () => {
+    const first = await ctx.prompts.loadPrompt('org_acme_reply');
+    assert.equal(first.text, 'Reply formally to {%mail_text_body%}');
+    // What a run does to the prompt it was handed: preparePrompt() rewrites its text, the menus
+    // set selection_text.
+    first.text = 'rewritten by a run';
+    first.selection_text = 'a selection';
+    const second = await ctx.prompts.loadPrompt('org_acme_reply');
+    assert.notEqual(second, first, 'not the same object');
+    assert.equal(second.text, 'Reply formally to {%mail_text_body%}');
+    assert.equal('selection_text' in second, false);
+    const [a, b] = [await ctx.prompts.getPrompts(), await ctx.prompts.getPrompts()];
+    assert.notEqual(a.find(p => p.id === 'org_acme_summary'), b.find(p => p.id === 'org_acme_summary'));
+});
+
 test('org prompts are never stored', () => {
     const raw = JSON.stringify(ctx.ctl.localData());
     assert.equal(raw.includes('ACME formal reply'), false);

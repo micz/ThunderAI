@@ -527,6 +527,15 @@ export function checkSpecialPromptText(id, text) {
 let _orgPromptsCache = null;
 
 async function getOrgPrompts() {
+    // A fresh copy on every call, like the other three sets (rebuilt from storage each time):
+    // a caller that mutates a prompt - preparePrompt() rewrites its text, js/mzta-menus.js sets
+    // selection_text and custom_text_array, buildPromptSet() sets the transient flags - would
+    // otherwise change the cached prompt for the rest of the session (a custom placeholder
+    // expanded once would stay frozen at that value until Thunderbird restarts).
+    return structuredClone(await loadOrgPrompts());
+}
+
+async function loadOrgPrompts() {
     if (_orgPromptsCache !== null) return _orgPromptsCache;
     let prompts = [];
     try {
@@ -537,8 +546,8 @@ async function getOrgPrompts() {
         // than break the menus. In a page managedReady() never throws (hydration fails open).
         prompts = [];
     }
-    // Deep-cloned and normalised on the way out, so a caller that mutates a prompt (as the
-    // menu code does when it localises names) cannot corrupt the policy-supplied originals.
+    // Deep-cloned and normalised once, so nothing can corrupt the policy-supplied originals;
+    // getOrgPrompts() hands out a copy of this cache, never the cache itself.
     _orgPromptsCache = JSON.parse(JSON.stringify(prompts))
         .map(prompt => normalizePromptFields(prompt));
     return _orgPromptsCache;

@@ -181,9 +181,7 @@ they are input for improving spec 02/03:
 10. *(resolved: spec 03 "Value formats" now gives the attachments, headers, tags and date formats and the `<` / `>` escaping; `04` and `05` test them exactly.)*
 11. *(resolved: spec 03 "Dynamic Placeholders" now gives the token syntax, spaces around the colon included (`normalizeTokenKey()` everywhere), and the whole `additional_text` flow, an empty answer becoming empty.)*
 12. *(resolved: `{%empty%}` always resolves to nothing, and `buildTranslationPrompt()` always uses the default values, so an empty exclusion list or subject is sent empty.)*
-13. **`preparePrompt()` mutates its prompt.** It rewrites `curr_prompt.text` in place (custom
-    expansion, the `additional_text` renumbering). The spec says nothing about it. A caller that
-    reuses the object gets the custom placeholders frozen at their first expansion.
+13. *(partly resolved: spec 02 documents that `preparePrompt()` rewrites `curr_prompt.text` and that every run gets a fresh copy, organization prompts included, `managed/06a`.)* Still open: the menus' checks before the call read the unexpanded text, so a placeholder inside a custom placeholder's text is not seen by them.
 14. **The allow-list of `getTagsFromResponse()`.** Whether it is case-sensitive (the code: no), the
     comma-split fallback for a non-JSON answer, and an answer wrapped in a code fence.
 15. **`getSpecialPromptPrefix()` of the summarize template and separator** (the code: `null`), and the

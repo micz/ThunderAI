@@ -29,6 +29,12 @@ policy is reflected at the next start and nothing of the user's is ever touched.
   they nor the administrator would see why it vanished. The user's prompt is **not**
   deleted: it stays in `_custom_prompt`, is still saved, and returns the moment the policy
   stops supplying that id. `isShadowedByOrgPrompt()` implements this.
+- **Every read gets its own copy.** The policy is read and normalised once (`loadOrgPrompts()`
+  caches it), but `getOrgPrompts()` hands out a fresh copy on every call, as the other three sets
+  are rebuilt from storage on every read. A run mutates the prompt it is handed —
+  `preparePrompt()` rewrites `text`, the menus set `selection_text` / `custom_text_array` — and with
+  the cached object itself that change would last the whole session: a custom placeholder expanded
+  once would stay frozen at that value until Thunderbird restarts.
 - **Local display preferences belong to the user.** Menu position and visibility ride in
   `_default_prompts_properties`, exactly as for a built-in, so org prompts participate in
   `pages/menu_order/` like any other prompt. This does not break read-only: that store
@@ -207,6 +213,13 @@ signature statement, then the language statement.
 - **With placeholders** — custom placeholders are expanded first, a bare `{%additional_text%}` is
   numbered, the tokens are resolved and substituted (spec 03), then `" " + signature` (when asked)
   and `" " + language` are appended and the whole result is **trimmed**.
+  - The expansion and the numbering are written back into **`curr_prompt.text`**: the function
+    mutates the prompt it is handed. `js/mzta-menus.js` relies on it — after the call it reads
+    `curr_prompt.text` for the `additional_text` field list, the add-tags `{%tags_full_list%}` check
+    and the reminder `reminderMinutes` check. It is safe only because every prompt a run gets is a
+    fresh copy (organization prompts included, see above); a caller must never hand it a shared
+    object. The checks the menus make **before** the call read the unexpanded text, so they do not
+    see a placeholder written inside a custom placeholder's text (an open point).
 
 `signature` is `getDefaultSignature()` when `need_signature` is `"1"`; `language` is the
 `chatgpt_lang` the caller passes, normally `getDefaultLang(prompt)`. Their exact text:
