@@ -350,6 +350,67 @@ Keys starting with `_` are structures and metadata, never preferences. **No key 
 | `_disable_prompt_management` | restriction: no prompt creation, copy, import or export; existing custom prompts read-only and inactive |
 | `_disable_default_prompts` | restriction: the built-in prompts are not available in the menus |
 | `_disable_setup_wizard` | restriction: the setup wizard cannot be opened |
+| `_lock_unlisted` | strict mode: every preference the policy does not set is enforced at its `prefs_default` value; on only for a literal `true`, see [Strict mode](#strict-mode-_lock_unlisted-_user_editable) |
+| `_user_editable` | strict mode: array of preference keys that stay the user's; only meaningful with `_lock_unlisted: true` |
+
+## Strict mode (`_lock_unlisted`, `_user_editable`)
+
+Without it, a preference the policy does not name is the user's — including every preference a
+later version adds, which becomes user-editable in an organization that had locked everything
+it knew about. With `"_lock_unlisted": true` those preferences are enforced at their
+`prefs_default` value instead, from the first start after the update.
+
+`applyLockUnlisted()` in `js/mzta-managed.js` resolves each **allowlisted** key, in this order:
+
+1. an excluded key (see [The allowlist](#the-allowlist)) is never touched — it is not in the
+   allowlist, and strict mode only walks the allowlist;
+2. a key the policy sets — locked, initial (`":locked": false`), or implied by
+   `_special_prompts_connection` — keeps the policy's value and lock, unchanged. Listed in
+   `_user_editable` as well, it gets a `taLogger.warn()` and the policy wins;
+3. a key listed in `_user_editable` stays the user's: stored value, else `prefs_default`;
+4. every other key goes into `_values` at a copy of its `prefs_default` value and into
+   `_locked` — exactly the state an explicit policy value has, so the write guard, the
+   read-time overlay, hydration and `applyManagedUI()` treat it identically, with no code of
+   their own. The keys filled are also kept in `_lockedByDefault` (`isLockedByDefault()`).
+   Storage is never touched: turning strict mode off brings every stored value back;
+5. with `_lock_unlisted` absent or not `true`, nothing of the above runs: the resolution is
+   exactly what it was before the key existed.
+
+It runs **last** in `_doLoad()`, after `validateSpecialPromptsConnection()`: a
+`{prefix}_use_specific_integration` filled with its default `false` before that check would make
+the feature's connection entry skip itself as "explicitly switched off".
+
+**Two exceptions**, both because the default would not mean "default" once held by the policy:
+
+- **`*_enabled_accounts_match` are never filled.** Their `prefs_default` `[]` means "not
+  managed", but a policy-held list — even an empty one — is a restriction, and `[]` means "no
+  account" (`resolveEnabledAccounts()`). Enforcing the default would stop the automatic spam
+  filter and Add Tags on every account. The features themselves (`spamfilter`, `add_tags`) are
+  locked at their default, off.
+- **An API key locked at its default reaches a page as `''`, not `MANAGED_SECRET_MARKER`.** The
+  `get_managed_values` handler skips the marker for `isLockedByDefault()` keys: the value is
+  `''` and secret-free, and the marker would make an empty key look configured
+  (`isConnectionConfigured()` in the popup). An explicit policy key, even `""`, gets the marker
+  as before.
+
+**Validation.** `_lock_unlisted` is read by `readRestriction()`: anything but a boolean is warned
+about and treated as off. `_user_editable` that is not an array is warned about and ignored,
+**and strict mode falls back to off** (fails toward the existing behaviour). Each entry that is
+not a string, names no preference, or names an excluded key (always user-editable, the entry
+has no effect) is warned about and skipped. `_user_editable` without `_lock_unlisted: true` is
+warned about as ignored.
+
+The startup log lists the explicit preferences as before and counts the keys locked at their
+default on one line, instead of listing a hundred-odd entries.
+
+**What it cannot cover**: anything that is not a preference. The prompt stores (custom prompts,
+menu order, custom placeholders, the per-feature connection override and the text of a special
+prompt) are covered by `_disable_prompt_management`, `_special_prompts_text` and
+`_special_prompts_connection`; a locked `{prefix}_use_specific_integration` at its default
+`false` does hide a stored override (`applyLockedOffIntegrations()`). Nor does it make the
+existing defaults conservative: several are on (`translate`, `get_calendar_event`, `get_task`,
+`chat_show_usage_data`, `hide_thinking`), and `connection_type` defaults to `''`, so a strict
+policy without a connection leaves the add-on unconfigured and the setup wizard unable to save.
 
 ## Interaction points
 
@@ -406,6 +467,12 @@ preference is accepted as a non-negative integer. These cases need a line of cod
 The only decision is whether it is genuinely *configuration*. If it is per-machine or
 per-profile state, add it to the exclusions in `js/mzta-managed.js` with a comment saying
 why.
+
+**Its default must be the conservative choice: feature off, nothing new sent anywhere.** Under
+[strict mode](#strict-mode-_lock_unlisted-_user_editable) a new preference is enforced at its
+default in every organization that opted in, from the first start after the update. A default
+that turns something on enables it for that whole fleet with no way to opt out; one that cannot
+be conservative has to be justified in the review. The same rule heads `prefs_default`.
 
 A new **per-provider connection field**, a key added to `integration_options_config`, is at
 once a global preference (above) and a field of [`_special_prompts_connection`](08b-managed-connections.md#enforced-per-feature-connections-_special_prompts_connection),
@@ -501,6 +568,7 @@ unmanaged baseline of a page, comes from a separate module instance or a worker 
 | Restrictions | `06f`-`06i` | `customprompts/10`, `customprompts/11`, `menu_order/10`, `<page>/10-disable-setup-wizard` (popup, onboarding, options, setup-wizard) |
 | Account lists by policy (and the account checkboxes) | `07a`, `07b` | `spamfilter/08`, `spamfilter/09`, `addtags/08`, `addtags/09` |
 | Interaction points: per-feature provider override | `08-provider-override-locked-off` | - |
+| Strict mode | `13a`-`13f` (all keys at default, exceptions, restore on removal, marker-free keys; explicit / initial / implied keys win; `_user_editable`; malformed keys; `false`) | `options/15-lock-unlisted`, `summarize/21-lock-unlisted` |
 | The connection mode | `12b-specific-integration-mode` | `<feature>/17-locked-on-switch` (generated from `tests/helpers/feature-pages.mjs`) |
 | UI: controls (a Tom Select disabled too), `data-mzta-pref`, marker placement and inertness | - | `02-sweep-locked`, `03-sweep-unlocked`, `<page>/04-respect-managed` |
 | The setup wizard | - | `setup-wizard/02`, `03`, `04-locked-provider`, `07`, `10` |

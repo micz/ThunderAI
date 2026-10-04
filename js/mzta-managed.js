@@ -80,6 +80,14 @@ const POLICY_DISABLE_PROMPT_MANAGEMENT = '_disable_prompt_management';
 const POLICY_DISABLE_DEFAULT_PROMPTS = '_disable_default_prompts';
 const POLICY_DISABLE_SETUP_WIZARD = '_disable_setup_wizard';
 
+// Strict mode: with _lock_unlisted true, every allowlisted preference the policy does not set
+// is enforced at its prefs_default value, so an option a later version adds is locked from the
+// first start instead of becoming user-editable. _user_editable names the keys that stay the
+// user's. Both are only switches on how the preferences resolve, so they are structural keys
+// too. See applyLockUnlisted().
+const POLICY_LOCK_UNLISTED = '_lock_unlisted';
+const POLICY_USER_EDITABLE = '_user_editable';
+
 // Every organization prompt id is composed as ORG_ID_PREFIX + <_org_id> + '_' + <id>, so
 // two organizations can never generate the same id and no shipped prompt id (they all
 // start with "prompt_") can ever collide with one.
@@ -193,6 +201,10 @@ export const mztaManaged = {
     _disablePromptManagement: false,
     _disableDefaultPrompts: false,
     _disableSetupWizard: false,
+    _lockUnlisted: false,
+    // The keys strict mode enforced at their default, a subset of _locked. Background only:
+    // a page receives them as ordinary values and locks (see isLockedByDefault()).
+    _lockedByDefault: new Set(),
     _allowlist: null,
     // The Promise returned by _doLoad(), NOT a function: _doLoad() is async, so calling
     // it starts the work and yields the Promise, which is stored here and awaited as-is.
@@ -384,6 +396,13 @@ export const mztaManaged = {
                         this._disableSetupWizard = readRestriction(
                             raw_key, value, this.logger);
                         break;
+                    case POLICY_LOCK_UNLISTED:
+                        // Same contract as a restriction: on only for a literal true.
+                        this._lockUnlisted = readRestriction(raw_key, value, this.logger);
+                        break;
+                    case POLICY_USER_EDITABLE:
+                        // Validated by applyLockUnlisted(), once every explicit value is known.
+                        break;
                     default:
                         this.logger.warn('Policy: unknown structural key "' + raw_key + '", ignored.');
                 }
@@ -514,6 +533,12 @@ export const mztaManaged = {
                 policy[POLICY_SPECIAL_PROMPTS_CONNECTION], this._values, this._locked, this.logger);
         }
 
+        // Strict mode. LAST, after every explicit and implied value: a default filled any earlier
+        // would count as set by the administrator - a {prefix}_use_specific_integration false
+        // filled before the check above would make that feature's connection entry skip itself.
+        this._lockedByDefault = applyLockUnlisted(policy, this._lockUnlisted,
+            this._values, this._locked, this._allowlist, this.logger);
+
         // A policy that only restricts - no preference, no prompt - is still a policy: the
         // banner and the disabled buttons must be explained, so it counts as active.
         this._active = (Object.keys(this._values).length > 0) ||
@@ -526,17 +551,23 @@ export const mztaManaged = {
         this._loaded = true;
 
         if (this._active) {
-            const summary = Object.keys(this._values)
+            // The keys strict mode filled are counted on their own line, not listed one by one.
+            const explicit = Object.keys(this._values).filter(k => !this._lockedByDefault.has(k));
+            const summary = explicit
                 .map(k => k + (this._locked.has(k) ? ' (locked)' : ' (initial)') +
                      ': ' + this._logValue(k, this._values[k]));
             this.logger.log('Managed configuration active' +
                 (this._orgName ? ' for "' + this._orgName + '"' : '') +
-                ', ' + Object.keys(this._values).length + ' preference(s), ' +
+                ', ' + explicit.length + ' preference(s), ' +
                 this._orgPrompts.length + ' organization prompt(s), ' +
                 Object.keys(this._specialPromptsText).length + ' enforced special prompt text(s)' +
                 (Object.keys(this._specialPromptsText).length > 0
                     ? ' (' + Object.keys(this._specialPromptsText).join(', ') + ')' : '') + '.');
             this.logger.log('Managed preferences: {' + summary.join(', ') + '}');
+            if (this._lockedByDefault.size > 0) {
+                this.logger.log('Strict mode (' + POLICY_LOCK_UNLISTED + '): ' +
+                    this._lockedByDefault.size + ' other preference(s) locked at their default.');
+            }
             for (const [prefix, entry] of Object.entries(this._specialPromptsConnection)) {
                 this.logger.log('Managed connection for "' + prefix + '": ' + entry.api_type + ', {' +
                     Object.entries(entry.fields).map(([name, f]) => name +
@@ -588,6 +619,15 @@ export const mztaManaged = {
     /** True when the policy enforces this key, so it must never be written to storage. */
     isManagedLocked(key) {
         return this._locked.has(key);
+    },
+
+    /**
+     * True when strict mode (_lock_unlisted) enforces this key at its prefs_default value, the
+     * policy not naming it. Meaningful in the background only: a hydrated page receives these
+     * keys as ordinary locked values, and has no use for the difference.
+     */
+    isLockedByDefault(key) {
+        return this._lockedByDefault.has(key);
     },
 
     /** True when the policy supplies a value for this key, enforced or not. */
@@ -727,6 +767,80 @@ function readRestriction(key, value, logger) {
         return false;
     }
     return value;
+}
+
+/**
+ * Strict mode: enforce every allowlisted preference the policy does not set at its prefs_default
+ * value, except the ones _user_editable names. Writes into `values` / `locked` and returns the
+ * Set of keys it filled. Precedence:
+ *
+ *  1. an excluded key (per-machine or per-profile state, see buildAllowlist()) is never touched:
+ *     it is not in the allowlist;
+ *  2. a key the policy sets - explicitly, locked or initial, or implied by
+ *     _special_prompts_connection - keeps the policy's value and lock; listed in _user_editable
+ *     as well, it is warned about and the policy wins;
+ *  3. a key _user_editable names stays the user's: stored value, else prefs_default;
+ *  4. every other key is enforced at prefs_default.
+ *
+ * The user's stored values are never touched, as for any locked key: turning strict mode off
+ * brings them straight back.
+ *
+ * The {feature}_enabled_accounts_match keys are not filled: their prefs_default [] means "not
+ * managed", whereas a policy-held [] means "no account" (resolveEnabledAccounts() in
+ * js/mzta-utils.js). Enforcing the default would stop the automatic features on every account.
+ *
+ * Fails toward today's behaviour: a _lock_unlisted that is not a literal true (already warned
+ * about by readRestriction()) or a _user_editable that is not an array turns strict mode off.
+ */
+function applyLockUnlisted(policy, lockUnlisted, values, locked, allowlist, logger) {
+    const filled = new Set();
+    const has_editable = hasOwn(policy, POLICY_USER_EDITABLE);
+    const raw_editable = policy[POLICY_USER_EDITABLE];
+    if (!lockUnlisted) {
+        if (has_editable) {
+            logger.warn('Policy: "' + POLICY_USER_EDITABLE + '" is only meaningful when "' +
+                POLICY_LOCK_UNLISTED + '" is true, ignored.');
+        }
+        return filled;
+    }
+    if (has_editable && !Array.isArray(raw_editable)) {
+        logger.warn('Policy: "' + POLICY_USER_EDITABLE + '" must be an array of preference ' +
+            'names, ignored: "' + POLICY_LOCK_UNLISTED + '" is not applied either.');
+        return filled;
+    }
+
+    const editable = new Set();
+    (has_editable ? raw_editable : []).forEach((key, index) => {
+        const where = '"' + POLICY_USER_EDITABLE + '"[' + index + ']';
+        if (typeof key !== 'string') {
+            logger.warn('Policy: ' + where + ' must be a preference name, got ' + typeof key + ', skipped.');
+            return;
+        }
+        if (!hasOwn(prefs_default, key)) {
+            logger.warn('Policy: ' + where + ' names an unknown preference "' + key + '", skipped.');
+            return;
+        }
+        if (!allowlist.has(key)) {
+            logger.warn('Policy: ' + where + ' "' + key + '" is per-machine or per-profile ' +
+                'state, always user-editable: the entry has no effect.');
+            return;
+        }
+        if (hasOwn(values, key)) {
+            logger.warn('Policy: ' + where + ' "' + key + '" is also set by the policy ' +
+                (locked.has(key) ? '(locked)' : '(initial)') + ': the policy value wins.');
+            return;
+        }
+        editable.add(key);
+    });
+
+    for (const key of allowlist) {
+        if (hasOwn(values, key) || editable.has(key) || ACCOUNT_MATCH_KEY_PATTERN.test(key)) continue;
+        // A copy, so nothing downstream can mutate prefs_default through an array value.
+        values[key] = structuredClone(prefs_default[key]);
+        locked.add(key);
+        filled.add(key);
+    }
+    return filled;
 }
 
 /**

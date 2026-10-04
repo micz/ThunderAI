@@ -1389,7 +1389,10 @@ rules is logged and the setup continues with an empty textarea: the listeners an
 
 ## Adding a New Preference
 
-1. Add the key and default value to `prefs_default` in `options/mzta-options-default.js`
+1. Add the key and default value to `prefs_default` in `options/mzta-options-default.js`.
+   **The default must be the conservative choice: feature off, nothing new sent anywhere.** An
+   organization in enterprise-policy strict mode gets the new key locked at that default (see
+   [08 "Strict mode"](08-managed-configuration.md#strict-mode-_lock_unlisted-_user_editable))
 2. Add UI control to `options/mzta-options.html`
 3. Add load/save logic to `options/mzta-options.js`
 4. Add i18n label to `_locales/en/messages.json`

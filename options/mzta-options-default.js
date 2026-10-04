@@ -157,6 +157,14 @@ export function getDynamicSettingValue(prefs, prefix, settingName) {
     return prefs[`${prefix}_${settingName}`];
 }
 
+// DEFAULTS MUST BE THE CONSERVATIVE CHOICE: feature off, nothing new sent anywhere.
+// An organization whose enterprise policy sets "_lock_unlisted": true gets every preference
+// its policy does not name locked at the value declared here - including every preference a
+// later version adds, from the first start after the update, before the administrator has
+// read the release notes. A default that turns something on, or sends data to a provider,
+// turns it on for that whole fleet with no way for the user to opt out. If a new default
+// cannot be conservative, say why in the review. See claude-spec/08-managed-configuration.md
+// "Strict mode".
 export const prefs_default = {
     ...global_integration_settings,
     do_debug: false,

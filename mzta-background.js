@@ -143,7 +143,9 @@ browser.runtime.onMessage.addListener((message, sender) => {
         const values = {};
         for (const key of Object.keys(prefs_default)) {
             if (!mztaManaged.hasManagedValue(key)) continue;
-            values[key] = (key.endsWith('_api_key') && !is_webchat)
+            // A key strict mode locked at its default ('') carries no secret, and the marker
+            // would make an empty key look configured (isConnectionConfigured() in the popup).
+            values[key] = (key.endsWith('_api_key') && !is_webchat && !mztaManaged.isLockedByDefault(key))
                 ? MANAGED_SECRET_MARKER
                 : mztaManaged.getManagedValue(key);
         }
