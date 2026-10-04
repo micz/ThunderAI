@@ -176,9 +176,7 @@ they are input for improving spec 02/03:
    prompts, so `13a` reads them as "every prompt but those two". Whether a custom or built-in prompt
    with `show_in: "none"` should get a position is not stated (the code gives it one).
 7. *(resolved: spec 02 now lists the ten keys of `_default_prompts_properties`.)*
-8. **A disabled custom placeholder** (`enabled: 0`). Spec 03 defines the property but not what
-   "disabled" does. `getPlaceholders(true)` hides it, but `replaceCustomPlaceholders()` still expands
-   it in a prompt.
+8. *(resolved: spec 03 "Custom Placeholders" now says a disabled custom placeholder is treated as nonexistent and is not expanded; `03` and fixture 29 test it.)*
 9. **The `thunderai_custom_` prefix.** Only spec 05 mentions it, as a UI detail.
    `validateCustomDataPH_ID()` / `stripCustomDataPH_ID_Prefix()` are tested for what any prefix rule
    implies (added once, round trips).

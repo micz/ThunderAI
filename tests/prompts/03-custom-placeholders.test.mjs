@@ -126,6 +126,20 @@ k.test('expand-custom', 'replaceCustomPlaceholders() puts the custom text in pla
     assert.equal(await ph.replaceCustomPlaceholders('{% thunderai_custom_sig %}'), 'Best, Mic');
 });
 
+k.test('expand-disabled-custom', 'a disabled custom placeholder is not expanded: its token stays as written', async () => {
+    // thunderai_custom_team was stored with enabled: 0 (set-stores above).
+    assert.equal(await ph.replaceCustomPlaceholders('Team: {%thunderai_custom_team%}'), 'Team: {%thunderai_custom_team%}');
+    assert.equal(await ph.replaceCustomPlaceholders('{%thunderai_custom_sig%} {%thunderai_custom_team%}'), 'Best, Mic {%thunderai_custom_team%}');
+});
+
+k.test('expand-enabled-missing', 'a custom placeholder with no enabled field counts as enabled', async () => {
+    const stored = await m.getCustomPlaceholders();
+    await ctx.ctl.browser.storage.local.set({ _custom_placeholder: [...stored,
+        { id: 'thunderai_custom_legacy', name: 'Legacy', text: 'L', type: '0', is_default: '0', is_dynamic: '0' }] });
+    assert.equal(await ph.replaceCustomPlaceholders('{%thunderai_custom_legacy%}'), 'L');
+    await ctx.ctl.browser.storage.local.set({ _custom_placeholder: stored });
+});
+
 k.test('expand-unknown-custom', 'an unknown custom token stays as it is', async () => {
     assert.equal(await ph.replaceCustomPlaceholders('{%thunderai_custom_nope%}'), '{%thunderai_custom_nope%}');
 });

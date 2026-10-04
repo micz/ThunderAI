@@ -566,6 +566,11 @@ Users can define their own placeholders via `pages/customdataplaceholders/`. Cus
 - Have a `text` property containing the replacement value
 - Are stored in `browser.storage.local`
 - Are merged with default placeholders at runtime before prompt processing
+- Can be **disabled** (`enabled: 0`, the page's checkbox). A disabled custom placeholder is treated
+  as if it did not exist: it is not offered by the autocomplete (`getPlaceholders(true)`), the editor
+  flags its token as missing, and `replaceCustomPlaceholders()` does **not** expand it — the token is
+  left in the prompt as written. Both use the same rule, `enabled != 0` (a missing `enabled` counts as
+  enabled).
 
 ## Placeholder Resolution Order
 

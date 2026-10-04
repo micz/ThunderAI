@@ -555,7 +555,9 @@ export const placeholdersUtils = {
     },
 
     async replaceCustomPlaceholders(text) {
-        let customPlaceholders = await getCustomPlaceholders(true);
+        // Only the enabled ones, by the same rule as getPlaceholders(true): a disabled custom
+        // placeholder is left as it is, like one that does not exist (the editor flags it so).
+        let customPlaceholders = (await getCustomPlaceholders()).filter(ph => ph.enabled != 0);
         // Regular expression to match patterns like {%thunderai_custom_...%}
         return text.replace(/{%\s*thunderai_custom_(.*?)\s*%}/g, function(match, p1) {
           // p1 contains the key inside {% %}
