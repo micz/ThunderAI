@@ -421,16 +421,16 @@ The reset is **in-memory only**: it closes any open icon popover, clears the dee
 
 The `dynamic_menu_order_alphabet` preference (previously a user-facing option) has been retired and removed from the UI, but the key still exists in storage as a one-shot migration flag. At every background startup, `migrateMenuOrderAlphabetic()` in `js/mzta-prompts.js` runs:
 
-1. Reads `dynamic_menu_order_alphabet` (defaults to `true` if unset)
+1. Reads `dynamic_menu_order_alphabet` from `browser.storage.local` (defaults to `true` if unset)
 2. If `true`: sorts all visible prompts with special prompts first (alphabetically), then the rest (alphabetically), and assigns sequential `position_display` = `position_compose` = `position_context` numbers. Hidden special prompts are preserved untouched. Organization prompts get a position too, saved in `_default_prompts_properties`, and are never written to `_custom_prompt` (see Organization prompts above).
 3. Persists the new positions via `setDefaultPromptsProperties` / `setCustomPrompts` / `setSpecialPrompts`
-4. Sets `dynamic_menu_order_alphabet = false` in sync storage so the migration does not run again
+4. Sets `dynamic_menu_order_alphabet = false` in `browser.storage.local` so the migration does not run again. The flag is read directly, not through `js/mzta-prefs.js` (it is not a preference), but it must sit in the same area as `PREFS_AREA`, and `migratePrefsToLocal()` carries it across from sync: since its default means "not yet run", reading it from an area the relocation did not fill would rerun the migration and overwrite the user's ordering (see [05-options.md](05-options.md))
 
 This ensures existing users upgrading from the previous alphabetical-default behaviour get the same visible ordering on first run, while subsequent launches keep whatever custom ordering the user has set.
 
 ### Enabled-to-show_in Migration
 
-The `enabled` prompt flag was removed (`show_in` is now the single source of truth). `migrateEnabledToShowIn()` in `js/mzta-prompts.js` runs once at background startup (after the sync→local storage-relocation migrations), guarded by the one-shot sync flag `_migrated_enabled_to_showin`. Across all three stores (`_default_prompts_properties`, `_custom_prompt`, `_special_prompts`) it applies `normalizeEnabledToShowIn()` to every prompt:
+The `enabled` prompt flag was removed (`show_in` is now the single source of truth). `migrateEnabledToShowIn()` in `js/mzta-prompts.js` runs once at background startup (after the sync→local storage-relocation migrations), guarded by the one-shot flag `_migrated_enabled_to_showin` in `browser.storage.local` (the `PREFS_AREA`, like `dynamic_menu_order_alphabet` above). Across all three stores (`_default_prompts_properties`, `_custom_prompt`, `_special_prompts`) it applies `normalizeEnabledToShowIn()` to every prompt:
 
 - if `enabled` is `0`/`"0"` → set `show_in = "none"` (the previous `show_in`, if any, is intentionally discarded — "off" collapses to "none"), then delete `enabled`
 - otherwise (`1`/`"1"`/absent) → just delete `enabled`

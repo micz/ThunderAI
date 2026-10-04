@@ -179,10 +179,7 @@ they are input for improving spec 02/03:
    `undefined` when the user has removed an entry. But `getSpecialPrompts()` re-adds every missing
    shipped special prompt (and writes the store back), which no spec section documents. So a removed
    entry cannot yield `undefined`, and only `getDefaultLang(undefined)` is tested.
-5. **The migration flags' storage area.** Spec 02 says `dynamic_menu_order_alphabet` is set "in sync
-   storage" and calls `_migrated_enabled_to_showin` a "sync flag". Spec 05 says both sit in the
-   `PREFS_AREA`, `storage.local`, and the code agrees. The tests follow spec 05. Spec 02 should be
-   brought in line.
+5. *(resolved: spec 02 now places both migration flags in `browser.storage.local`, the `PREFS_AREA`, as spec 05 does.)*
 6. **"Visible prompts" in the alphabetic migration.** The spec contrasts them with the *hidden special*
    prompts, so `13a` reads them as "every prompt but those two". Whether a custom or built-in prompt
    with `show_in: "none"` should get a position is not stated (the code gives it one).
