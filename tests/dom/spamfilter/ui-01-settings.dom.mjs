@@ -3,7 +3,8 @@
 //
 // Spec 05 "Feature Flags" (spamfilter_threshold, _show_msg_panel, _only_inbox, the allow and
 // block lists saved by their own Save buttons through normalizeStringList(value, 2),
-// spamfilter_skip_addressbook, spamfilter_enabled_accounts with [] = all accounts), "Address-list
+// spamfilter_skip_addressbook, spamfilter_enabled_accounts with [] = all accounts), "Account
+// selector (Spam Filter and Add Tags pages)", "Address-list
 // preferences and the empty-string trap", spec 01 "Data Flow: Spam filter sender rules" (as far as
 // the page goes: where the two lists come from), spec 02 "Missing special prompts" (the report
 // log: array headers joined, a record without date / sender / subject shows empty cells),
@@ -14,7 +15,7 @@ import {
     after,
 } from 'node:test';
 import assert from 'node:assert/strict';
-import { openPage, assertHarnessClean } from '../../helpers/core/dom-harness.mjs';
+import { openPage, assertHarnessClean, msg } from '../../helpers/core/dom-harness.mjs';
 import { uiTests } from '../../helpers/known-issues/ui.mjs';
 import {
     userSets,
@@ -50,7 +51,8 @@ const STORED = {
         ts: Date.UTC(2025, 5, 1), spamValue: 10, explanation: 'Fine.', moved: false, SpamThreshold: 70,
     } },
 };
-const ctx = await openPage('spamfilter', { local: STORED, accounts: ACCOUNTS });
+const permissions = {};       // .request swapped by a test (the harness reads it per call)
+const ctx = await openPage('spamfilter', { local: STORED, accounts: ACCOUNTS, permissions });
 after(() => ctx.close());
 const k = uiTests('spamfilter', '01');
 const $ = ctx.$;
@@ -58,6 +60,7 @@ const S_FLAGS = 'spec 05 "Feature Flags"';
 const S_LISTS = 'spec 05 "Address-list preferences and the empty-string trap"';
 const S_RULES = 'spec 01 "Data Flow: Spam filter sender rules"';
 const S_LOG = 'spec 02 "Missing special prompts"';
+const S_ACC = 'spec 05 "Account selector (Spam Filter and Add Tags pages)"';
 const hidden = id => $('#' + id).classList.contains('hidden');
 const accountBoxes = () => ctx.$$('#account_selector_checkboxes .accountCheckbox');
 
@@ -65,6 +68,7 @@ const accountBoxes = () => ctx.$$('#account_selector_checkboxes .accountCheckbox
 
 k.test('restore', S_FLAGS, 'the stored threshold and switches are shown', () => {
     assert.equal($('#spamfilter_threshold').valueAsNumber, 60);
+    assert.equal($('#spamfilter_threshold_too_low').style.display, 'none', 'warning at 60');
     assert.equal($('#spamfilter_show_msg_panel').checked, false);
     assert.equal($('#spamfilter_only_inbox').checked, true);
     assert.equal($('#spamfilter_skip_addressbook').checked, false);
@@ -80,7 +84,7 @@ k.test('lists-load', S_RULES, 'the allow and block lists are shown one entry per
     }
 });
 
-k.test('accounts-load', S_FLAGS, 'one checkbox per account, checked as stored', () => {
+k.test('accounts-load', S_ACC, 'one checkbox per account, checked as stored', () => {
     assert.deepEqual(accountBoxes().map(b => [b.value, b.checked]),
         [['account1', false], ['account2', true], ['account3', false]]);
 });
@@ -123,6 +127,22 @@ k.test('threshold-zero', S_FLAGS, 'a threshold of 0 ("flag everything") is store
     assert.strictEqual(writtenSince(ctx, since).spamfilter_threshold, 0);
 });
 
+k.test('threshold-warning', S_FLAGS, 'the warning: hidden from 50 up, "too low" below 50, its own message at 0', async () => {
+    const field = $('#spamfilter_threshold');
+    const warn = $('#spamfilter_threshold_too_low');
+    const typed = async v => { field.value = v; await ctx.fire(field, 'input'); };
+    await typed('50');
+    assert.equal(warn.style.display, 'none');
+    await typed('49');
+    assert.notEqual(warn.style.display, 'none');
+    assert.equal(warn.textContent, msg('spamfilter_threshold_too_low'));
+    await typed('0');
+    assert.notEqual(warn.style.display, 'none');
+    assert.equal(warn.textContent, msg('spamfilter_threshold_zero'));
+    await typed('70');
+    assert.equal(warn.style.display, 'none');
+});
+
 k.test('allow-dirty', S_GUARD, 'editing the allow list enables its Save and the unsaved mark, and leaving asks', async () => {
     const list = $('#spamfilter_skip_addresses');
     list.value = 'Friend@HOME.example, *@trusted.example\n\nfriend@home.example\n';
@@ -161,20 +181,61 @@ k.test('block-emptied', S_LISTS, 'an emptied list is stored as [], never [\'\']'
     assert.deepEqual(ctx.ctl.localData().spamfilter_block_addresses, []);
 });
 
-k.test('addressbook', S_FLAGS, 'the address-book switch is stored as a boolean', async () => {
+k.test('addressbook-on', S_FLAGS, 'switching the address-book check on asks for addressBooks, then stores true', async () => {
+    const asked = ctx.apiCalls('browser.permissions.request').length;
     await userSets(ctx, $('#spamfilter_skip_addressbook'), true);
+    const req = ctx.apiCalls('browser.permissions.request').slice(asked);
+    assert.deepEqual(req.map(c => c.args[0].permissions), [['addressBooks']]);
     assert.strictEqual(ctx.ctl.localData().spamfilter_skip_addressbook, true);
+});
+
+k.test('addressbook-off', S_FLAGS, 'switching it off stores false and asks nothing', async () => {
+    const asked = ctx.apiCalls('browser.permissions.request').length;
     await userSets(ctx, $('#spamfilter_skip_addressbook'), false);
+    assert.equal(ctx.apiCalls('browser.permissions.request').length, asked);
     assert.strictEqual(ctx.ctl.localData().spamfilter_skip_addressbook, false);
 });
 
-k.test('accounts-some', S_FLAGS, 'a partial selection is stored as the account ids', async () => {
+k.test('addressbook-denied', S_FLAGS, 'refused, the switch goes back off with an alert, and nothing is stored', async () => {
+    permissions.request = () => false;
+    try {
+        const since = ctx.ctl.calls.length;
+        const dialogs = ctx.dialogs.length;
+        await userSets(ctx, $('#spamfilter_skip_addressbook'), true);
+        assert.equal($('#spamfilter_skip_addressbook').checked, false);
+        assert.deepEqual(ctx.localWrites(since).filter(w => 'spamfilter_skip_addressbook' in w.items), []);
+        assert.deepEqual(ctx.dialogs.slice(dialogs), [{ kind: 'alert', args: [msg('addressbook_permission_denied')] }]);
+    } finally {
+        delete permissions.request;
+    }
+});
+
+k.test('accounts-some', S_ACC, 'a partial selection is stored as the account ids', async () => {
     await userSets(ctx, accountBoxes()[0], true);
     assert.deepEqual([...ctx.ctl.localData().spamfilter_enabled_accounts].sort(), ['account1', 'account2']);
 });
 
-k.test('accounts-all', S_FLAGS, 'all accounts selected is stored as []', async () => {
+k.test('accounts-all', S_ACC, 'all accounts selected is stored as []', async () => {
     await userSets(ctx, accountBoxes()[2], true);
+    assert.deepEqual(ctx.ctl.localData().spamfilter_enabled_accounts, []);
+});
+
+k.test('accounts-deselect-all', S_ACC, '"Deselect all" keeps only the first account and stores its id', async () => {
+    await ctx.click($('#accounts_deselect_all'));
+    assert.deepEqual(accountBoxes().map(b => b.checked), [true, false, false]);
+    assert.deepEqual(ctx.ctl.localData().spamfilter_enabled_accounts, ['account1']);
+});
+
+k.test('accounts-last-kept', S_ACC, 'the last checked account cannot be unchecked, and nothing is stored', async () => {
+    const since = ctx.ctl.calls.length;
+    await userSets(ctx, accountBoxes()[0], false);
+    assert.equal(accountBoxes()[0].checked, true);
+    assert.deepEqual(ctx.localWrites(since).filter(w => 'spamfilter_enabled_accounts' in w.items), []);
+});
+
+k.test('accounts-select-all', S_ACC, '"Select all" checks every account and stores []', async () => {
+    await ctx.click($('#accounts_select_all'));
+    assert.deepEqual(accountBoxes().map(b => b.checked), [true, true, true]);
     assert.deepEqual(ctx.ctl.localData().spamfilter_enabled_accounts, []);
 });
 

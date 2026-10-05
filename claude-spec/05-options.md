@@ -206,7 +206,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | Key | Default | Description |
 |-----|---------|-------------|
 | `add_tags` | `false` | Enable auto-tagging feature |
-| `add_tags_maxnum` | `3` | Max tags to apply |
+| `add_tags_maxnum` | `3` | Max tags to apply: asked of the model as `prompt_add_tags_maxnum N.` when `> 0` (see [02-prompts.md](02-prompts.md#add-tags-extra-prompt-statements)). `0` = no limit, no statement. Number input with `min="0"`. |
 | `add_tags_max_messages` | `0` | Maximum number of messages tagged at once from the **context menu**. Above this limit `processEmails()` (`mzta-background.js`) blocks the run and shows the `add_tags_too_many_messages` warning. `0` = no limit. Automatic tagging of incoming mail is never capped. Exposed in the add tags settings page as a number input (`min="0"`, no reset button: the page's restore fallback for number inputs is already `0`). Meant for providers with a daily quota (#901), where a large selection cannot fit anyway. |
 | `add_tags_hide_exclusions` | `false` | Hide excluded tags from menu |
 | `add_tags_exclusions_exact_match` | `false` | Exact match for exclusions |
@@ -222,11 +222,11 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `add_tags_enabled_accounts` | `[]` | Accounts where auto-tag is active: account ids, per profile, so **not** policy-settable. `[]` = all accounts. Replaced at read time — never overwritten — by the ids resolved from `add_tags_enabled_accounts_match` when a policy sets it (`resolveEnabledAccounts()`, `js/mzta-utils.js`). |
 | `add_tags_enabled_accounts_match` | `[]` | **Policy-only**, no control of its own: account matchers (`user@domain`, `@domain` / `*@domain`, `local` for Local Folders) resolved to account ids on every automatic batch; the result replaces `add_tags_enabled_accounts`, and an empty result means **no** account. `[]` = not managed. Always enforced, validated entry by entry. See [08b-managed-connections.md](08b-managed-connections.md#account-lists-by-policy-_enabled_accounts_match). |
 | `get_calendar_event` | `true` | Enable calendar event extraction |
-| `get_calendar_event_from_clipboard` | `false` | Enable calendar from clipboard |
+| `get_calendar_event_from_clipboard` | `false` | Enable calendar from clipboard (the clipboard prompt is shown only with `get_calendar_event` on too, see [02-prompts.md](02-prompts.md#special-prompt-visibility-dependencies)). On the Calendar Event page, switching it **on** first requests the optional `clipboardRead` permission: granted, `true` is stored and the menus are reloaded; refused, the switch goes back off, an `alert()` says why (`clipboard_permission_denied`, or `clipboard_permission_error` when the request throws) and the stored value is `false`, never a `true` the permission does not back. Switching it **off** stores `false`, requests nothing and reloads the menus. |
 | `get_task` | `true` | Enable task creation |
 | `calendar_enforce_timezone` | `false` | Force specific timezone |
 | `calendar_timezone` | `''` | IANA timezone id to enforce (see note below) |
-| `calendar_no_selection` | `false` | Skip selection prompt. **The single source of truth**: `need_selected` of `prompt_get_calendar_event` is derived from it on every read by `applyCalendarNoSelection()` in `getSpecialPrompts()` (see [02-prompts.md](02-prompts.md)), never written from it. A change reloads the menus (`MENU_RELEVANT_KEYS`). `migrateCalendarNoSelection()` aligned it once to the stored `need_selected` on upgrade. |
+| `calendar_no_selection` | `false` | Skip selection prompt. **The single source of truth**: `need_selected` of `prompt_get_calendar_event` is derived from it on every read by `applyCalendarNoSelection()` in `getSpecialPrompts()` (see [02-prompts.md](02-prompts.md)), never written from it. A change reloads the menus (`MENU_RELEVANT_KEYS`). `migrateCalendarNoSelection()` aligned it once to the stored `need_selected` on upgrade. On the Calendar Event page the option only makes sense with a prompt that reads the whole body, i.e. one holding `{%mail_text_body_or_selected%}` or `{%mail_html_body_or_selected%}`. Two guards keep it so: **switching it on** while the prompt text **in the editor** (saved or not) holds neither shows an `alert()` (`prefs_OptionText_calendar_no_selection_missing_placeholder`), turns the switch back off and stores `false` again (the page's `saveOptions()` has already stored `true`); and **while it is on, Save refuses** such a text with an `alert()` (`prefs_OptionText_calendar_no_selection_save_missing_placeholder`), storing nothing and leaving Save enabled. Reset needs no check: the shipped text has the placeholder. |
 | `calendar_append_email_link` | `false` | Append a `mid:` link to the source email to the event description (added by code after the response, never sent to the AI — see [02-prompts.md](02-prompts.md#calendar-event--task-link-to-the-original-email)). Deliberately **not** prefixed `get_calendar_event_`, which is the per-feature integration prefix |
 | `task_append_email_link` | `false` | Same, for the task description. Deliberately **not** prefixed `get_task_` |
 | `calendar_reminder_enabled` | `false` | "Let the AI set a reminder" for events: ask for `reminderMinutes` and send `-1` (no reminder) when the AI returns none/invalid; Thunderbird's default when the AI answers `"default"` (no rules given at all). It is the **single switch**: when false, `reminderMinutes` is always dropped from the AI response (Thunderbird's default), even if the main prompt asks for it — see [02-prompts.md](02-prompts.md#calendar-event--task-reminder-887). Not prefixed `get_calendar_event_` (integration prefix) |
@@ -234,12 +234,12 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `task_reminder_enabled` | `false` | Same as `calendar_reminder_enabled`, for tasks (reference: due date, or initial date) |
 | `task_reminder_rules` | `''` | Same as `calendar_reminder_rules`, for tasks |
 | `spamfilter` | `false` | Enable spam filter |
-| `spamfilter_threshold` | `70` | Spam confidence threshold (%) |
+| `spamfilter_threshold` | `70` | Spam confidence threshold (%). The settings page warns next to the field (`#spamfilter_threshold_too_low`): below 50 with `spamfilter_threshold_too_low`, at 0 with `spamfilter_threshold_zero` (larger), hidden from 50 up. Refreshed at load and on every `input`. A warning only: any value from 0 to 100 is stored, 0 included ("flag everything", see `getSpamThreshold()`). |
 | `spamfilter_enabled_accounts` | `[]` | Accounts where the automatic spam filter is active: account ids, per profile, so **not** policy-settable. `[]` = all accounts. Replaced at read time — never overwritten — by the ids resolved from `spamfilter_enabled_accounts_match` when a policy sets it. |
 | `spamfilter_enabled_accounts_match` | `[]` | **Policy-only**, same as `add_tags_enabled_accounts_match`, for the automatic spam filter. |
 | `spamfilter_skip_addresses` | `[]` | Allow list: senders never sent to the AI for spam filtering (report with spamValue 0). Entries are exact addresses, `@domain.com` or `*@domain.com`, matched by `matchAddressListType()` like `summarize_auto_senders_list`. Lists saved before domain support hold exact addresses only, which match exactly as before. Tested with `hasAddressListEntries()` (see the note below the table). |
 | `spamfilter_block_addresses` | `[]` | Block list: senders always reported as spam (spamValue 100) without an AI call; in automatic mode (`autoMove`) the message is also marked junk and moved to the account's junk folder. Same entry syntax as `spamfilter_skip_addresses`. On a sender in both lists the more specific entry wins (exact beats domain), and on equal specificity the allow list wins. Both lists are checked before `spamfilter_skip_addressbook`. Saved by its own Save button through `normalizeStringList(value, 2)`. See [01-architecture.md](01-architecture.md#data-flow-spam-filter-sender-rules). |
-| `spamfilter_skip_addressbook` | `true` | Skip senders found in any address book (`browser.contacts.quickSearch`) |
+| `spamfilter_skip_addressbook` | `true` | Skip senders found in any address book (`browser.contacts.quickSearch`). On the settings page the switch is saved by its own handler, not by the page's `saveOptions()`: switching it **on** first requests the optional `addressBooks` permission and stores `true` only once it is granted; refused, the switch goes back off, an `alert()` says why (`addressbook_permission_denied`, or `addressbook_permission_error` when the request throws) and nothing is stored. Switching it **off** stores `false` and requests nothing. |
 | `spamfilter_show_msg_panel` | `true` | Show info panel on spam detection |
 | `spamfilter_only_inbox` | `false` | Auto spam filter runs only on inbox messages |
 | `summarize` | `false` | Enable email summarization |
@@ -256,6 +256,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `translate_auto` | `0` | Auto-translate mode: `0` = disabled, `1` = manual (show button), `2` = automatic (translate on message open), `3` = generate on email receive (background pre-cache via `onNewMailReceived`, no UI during generation) |
 | `translate_max_display_length` | `0` | Maximum characters shown in inline translation before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
 | `translate_lang` | `''` | Target language for translation. Falls back to `default_chatgpt_lang` if empty. |
+| `translate_exclude_lang` | `''` | Languages the translation skips: free text, typically comma-separated language codes (`en, fr, it`), stored trimmed as typed (not normalized). **No code reads it**: it only fills `{%thunderai_translate_exclude_lang%}` in `prompt_translate_this`, whose shipped text asks the AI to answer `status: -1` when the email is in one of those languages (or already in the target one), which the banner shows as "skipped" (see [02-prompts.md](02-prompts.md#translate-inline-only-prompt-system)). So the decision is the AI's, after the request: the manual button is still shown, and an automatic translation still makes the call. Empty = no exclusion (the placeholder resolves to `""`). A user prompt without the placeholder ignores it. |
 
 #### Address-list preferences and the empty-string trap
 
@@ -283,6 +284,23 @@ possibly-blank entry already neutralized it: the spam filter's `['']` fell throu
 `.includes(senderEmail)` that an empty string can never satisfy, and `checkExcludedTag()`
 (`js/mzta-addtags-exclusion-list.js`) opens with an explicit `excluded_word === ''` → `false`
 guard, without which `''.includes('')` would have excluded *every* tag.
+
+#### Account selector (Spam Filter and Add Tags pages)
+
+`spamfilter_enabled_accounts` and `add_tags_enabled_accounts` are edited by the same selector on their
+pages: one checkbox per account (`accounts.list()`), checked as stored (`[]` checks them all).
+
+- **Every change is stored at once**, the selection the boxes show: `[]` when every account is
+  checked, the checked ids otherwise.
+- **At least one account stays selected.** Unchecking the last checked box is refused (the box comes
+  back on, nothing is stored).
+- **"Select all"** checks every box and stores `[]`. **"Deselect all"** keeps only the **first**
+  account checked and stores its id (or `[]` when it is the only account): a start from which to add
+  the others, never an empty selection. Both store what they show, like a single box: setting
+  `checked` from code fires no `change`, so the buttons save explicitly. Until 5.1 they only ticked the
+  boxes, and the selection shown was not the one stored until a box itself was clicked.
+- With a policy `*_enabled_accounts_match` the selector is read-only and nothing is stored (see
+  [08b-managed-connections.md](08b-managed-connections.md#account-lists-by-policy-_enabled_accounts_match)).
 
 ### Timezone Select (`pages/_lib/mzta-timezones.js`)
 
@@ -368,7 +386,7 @@ The summarize settings page provides:
    - `'webchat'` — opens the AI chat window
    - Note: `summarize_auto = 2` and `summarize_auto = 3` always generate inline regardless of this setting. Context menu summarize with multiple messages always falls back to webchat.
 4. **Max display length** (`summarize_max_display_length`) — number input, limits inline summary text to N characters. `0` = no limit. When truncated, a "See more"/"See less" toggle link is appended.
-5. **Max messages** (`summarize_max_messages`) — number input, caps how many messages can be summarized at once in webchat mode. Above the limit the operation is blocked with the `summarize_too_many_messages` warning. `0` = no limit.
+5. **Max messages** (`summarize_max_messages`) — number input (`min="0"`, so `0` can be picked as well as typed), caps how many messages can be summarized at once in webchat mode. Above the limit the operation is blocked with the `summarize_too_many_messages` warning. `0` = no limit. Its **Reset** button (`#reset_summarize_max_messages`, `data-mzta-companion-of` the field) puts the `prefs_default` value (20) back in the field and stores it with `setPref()`, as a number, firing no `change`; for a policy-locked key it does nothing (`isLockedKey()`), as the options page's Reset buttons.
 6. **Strip formatting** (`summarize_strip_formatting`) — checkbox, removes HTML/Markdown formatting from AI summary responses, displaying plain text only. Default: off.
    - **Force summary language** (`summarize_force_lang`) — checkbox, followed by the `summarize_lang` text field inside `#summarize_lang_container`, which `updateForceLangState()` hides while the toggle is off (on load, on toggle change, at the end of `restoreOptions()`). Below the main prompt editor, `#summarize_info_additional_statements` previews the statement that will be appended, computed by the same `taPromptUtils.getSummaryLang()` used by `buildSummaryPrompt()`, and is hidden when nothing is appended. It is refreshed from `browser.storage.onChanged` (keys `summarize_force_lang`, `summarize_lang`, `default_chatgpt_lang`), not from the controls' `change` event, because `saveOptions()` does not await `setPref()`. The two other `.summarize_info_additional_statements` divs (email template, separator) are unused.
 7. **Automatic summary sender list** — its own `.mzta_section` card (see the visual-design note below), holding the `summarize_auto_senders` toggle and the `summarize_auto_senders_list` textarea. The textarea carries **no** `.option-input` class: like the spamfilter skip list it is saved explicitly by its own Save button through `normalizeStringList(value, 2)`, with the `#auto_senders_unsaved` indicator handled exactly as in `pages/spamfilter/mzta-spamfilter.js`. `updateAutoSendersState()` disables the textarea and its Save button when the toggle is off, and disables the **whole card** (plus showing an explanatory note) when `summarize_auto === 3`, since that mode already summarizes every incoming message; it is called on load, on every toggle change, and from `updateDisplayModeConstraint()`.
@@ -547,7 +565,8 @@ The translate settings page provides:
    - `2` (Automatic) — generates translation immediately when message is opened
 3. **Max display length** (`translate_max_display_length`) — number input, limits inline translation text to N characters. `0` = no limit. When truncated, a "See more"/"See less" toggle link is appended.
 4. **Target language** (`translate_lang`) — text input for the destination language. If empty, falls back to `default_chatgpt_lang`.
-5. **One editable prompt** — the translation instruction prompt (`prompt_translate_this`) with Save/Reset buttons and placeholder autocomplete. Default text comes from i18n string `prompt_translate_this_full_text`.
+5. **Exclude languages** (`translate_exclude_lang`) — text input, stored trimmed: the languages the prompt asks the AI to skip (see its row in "Feature Flags").
+6. **One editable prompt** — the translation instruction prompt (`prompt_translate_this`) with Save/Reset buttons and placeholder autocomplete. Default text comes from i18n string `prompt_translate_this_full_text`.
 
 Like the other feature pages, this page uses the shared design system + feature-page shell (see "Feature-Page Shell" above): two `.mzta_section` cards (settings + prompt), `.mzta_switch` toggle, `#mzta_conn_panel` connection UI tinted by `bindConnPanelTint()`, and `.mzta_field_num` for the max-display-length number input.
 

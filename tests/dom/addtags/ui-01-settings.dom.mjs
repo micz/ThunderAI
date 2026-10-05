@@ -2,7 +2,8 @@
 // settings, no policy.
 //
 // Spec 05 "Feature Flags" (the add_tags_* settings, add_tags_max_messages, the exclusion list
-// saved lowercase, add_tags_enabled_accounts with [] = all accounts), "Address-list preferences
+// saved lowercase, add_tags_enabled_accounts with [] = all accounts), "Account selector (Spam
+// Filter and Add Tags pages)", "Address-list preferences
 // and the empty-string trap" (the allow-list string), "Feature-Page Shell" (the auto-tagging
 // sub-rows revealed with an explicit display), spec 02 "Add tags: extra prompt statements" (the
 // page's preview follows the same rules as finalizePrompt_add_tags()), "Unsaved-Changes Guard",
@@ -61,6 +62,7 @@ const S_FLAGS = 'spec 05 "Feature Flags"';
 const S_LISTS = 'spec 05 "Address-list preferences and the empty-string trap"';
 const S_SHELL = 'spec 05 "Feature-Page Shell (opt-in `body.mzta_feature_page`)"';
 const S_STMT = 'spec 02 "Add tags: extra prompt statements"';
+const S_ACC = 'spec 05 "Account selector (Spam Filter and Add Tags pages)"';
 const hidden = id => $('#' + id).classList.contains('hidden');
 const preview = () => $('#addtags_info_additional_statements');
 const previewText = () => preview().style.display === 'none' ? '' : preview().textContent;
@@ -111,6 +113,16 @@ k.test('write-numbers', S_FLAGS, 'the tag limit and the context-menu message cap
 });
 
 k.test('preview-maxnum', S_STMT, 'the preview follows a new tag limit', async () => {
+    await previewSays(t => t.includes(MAXNUM(5)), MAXNUM(5));
+});
+
+k.test('maxnum-zero', S_FLAGS, 'a tag limit of 0 (no limit) is accepted, stored as 0, and drops the statement', async () => {
+    assert.equal($('#add_tags_maxnum').min, '0');
+    const since = ctx.ctl.calls.length;
+    await userSets(ctx, $('#add_tags_maxnum'), '0');
+    assert.strictEqual(writtenSince(ctx, since).add_tags_maxnum, 0);
+    await previewSays(t => !t.includes(msg('prompt_add_tags_maxnum')), 'no tag limit');
+    await userSets(ctx, $('#add_tags_maxnum'), '5');
     await previewSays(t => t.includes(MAXNUM(5)), MAXNUM(5));
 });
 
@@ -188,13 +200,25 @@ k.test('excl-dirty-baseline', S_GUARD, 'after a Save, typing the saved list back
     assert.equal(leaveBlocked(ctx), false);
 });
 
-k.test('accounts-all-checked', S_FLAGS, 'with [] stored every account is checked', () => {
+k.test('accounts-all-checked', S_ACC, 'with [] stored every account is checked', () => {
     assert.deepEqual(ctx.$$('#account_selector_checkboxes .accountCheckbox').map(b => b.checked), [true, true]);
 });
 
-k.test('accounts-one', S_FLAGS, 'unchecking one stores the others\' ids', async () => {
+k.test('accounts-one', S_ACC, 'unchecking one stores the others\' ids', async () => {
     await userSets(ctx, ctx.$$('#account_selector_checkboxes .accountCheckbox')[0], false);
     assert.deepEqual(ctx.ctl.localData().add_tags_enabled_accounts, ['account2']);
+});
+
+k.test('accounts-select-all', S_ACC, '"Select all" checks every account and stores []', async () => {
+    await ctx.click($('#accounts_select_all'));
+    assert.deepEqual(ctx.$$('#account_selector_checkboxes .accountCheckbox').map(b => b.checked), [true, true]);
+    assert.deepEqual(ctx.ctl.localData().add_tags_enabled_accounts, []);
+});
+
+k.test('accounts-deselect-all', S_ACC, '"Deselect all" keeps only the first account and stores its id', async () => {
+    await ctx.click($('#accounts_deselect_all'));
+    assert.deepEqual(ctx.$$('#account_selector_checkboxes .accountCheckbox').map(b => b.checked), [true, false]);
+    assert.deepEqual(ctx.ctl.localData().add_tags_enabled_accounts, ['account1']);
 });
 
 // ---- connection panel and the editor -----------------------------------------------------

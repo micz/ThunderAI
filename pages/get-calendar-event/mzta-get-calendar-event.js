@@ -127,6 +127,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         note.classList.toggle('shown', show);
     };
 
+    // Switched off without the permission: saveOptions(), registered above and therefore run
+    // first, has already stored true, so the preference is rolled back too - or the clipboard
+    // prompt would reach the menus with no permission to read the clipboard.
+    const clipboardRefused = async (event, msgKey) => {
+        event.target.checked = false;
+        await mztaPrefs.setPref('get_calendar_event_from_clipboard', false);
+        browser.runtime.sendMessage({command: "reload_menus"});
+        alert(browser.i18n.getMessage(msgKey));
+    };
+
     get_calendar_event_from_clipboard.addEventListener('change', async (event) => {
         if (event.target.checked) {
             // Request clipboardRead permission when enabling the feature
@@ -140,14 +150,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     await mztaPrefs.setPref('get_calendar_event_from_clipboard', true);
                     browser.runtime.sendMessage({command: "reload_menus"});
                 } else {
-                    // Permission denied, uncheck the checkbox
-                    event.target.checked = false;
-                    alert(browser.i18n.getMessage("clipboard_permission_denied"));
+                    await clipboardRefused(event, "clipboard_permission_denied");
                 }
             } catch (err) {
                 taLog.error("Error requesting clipboard permission:", err);
-                event.target.checked = false;
-                alert(browser.i18n.getMessage("clipboard_permission_error"));
+                await clipboardRefused(event, "clipboard_permission_error");
             }
         } else {
             // Disabling the feature

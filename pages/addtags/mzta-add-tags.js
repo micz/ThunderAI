@@ -250,16 +250,28 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     });
 
+    // The two buttons store the selection they show, like a click on a single box: setting
+    // `checked` fires no change event. At least one account stays selected, as for a single
+    // box, so "Deselect all" keeps the first one: a start from which to add the others.
+    const saveShownAccounts = () => {
+      let checkboxes = Array.from(document.querySelectorAll('.accountCheckbox'));
+      let selectedAccounts = checkboxes.filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);
+      mztaPrefs.setPref('add_tags_enabled_accounts', selectedAccounts.length === checkboxes.length ? [] : selectedAccounts);
+    };
+
     document.getElementById('accounts_select_all').addEventListener('click', () => {
       if (accounts_managed) return;
       let checkboxes = document.querySelectorAll('.accountCheckbox');
       checkboxes.forEach(checkbox => checkbox.checked = true);
+      saveShownAccounts();
     });
 
     document.getElementById('accounts_deselect_all').addEventListener('click', () => {
       if (accounts_managed) return;
       let checkboxes = document.querySelectorAll('.accountCheckbox');
-      checkboxes.forEach(checkbox => checkbox.checked = false);
+      if (checkboxes.length === 0) return;
+      checkboxes.forEach((checkbox, index) => checkbox.checked = (index === 0));
+      saveShownAccounts();
     });
 });
 

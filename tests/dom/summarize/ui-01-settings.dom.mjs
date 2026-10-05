@@ -111,6 +111,21 @@ k.test('write-settings', S_PAGE, 'each setting is stored with its type', async (
     assert.strictEqual(w.summarize_strip_formatting, false);
 });
 
+k.test('max-messages-zero', S_PAGE, 'the max messages field accepts 0 (no limit), stored as 0', async () => {
+    assert.equal($('#summarize_max_messages').min, '0');
+    const since = ctx.ctl.calls.length;
+    await userSets(ctx, $('#summarize_max_messages'), '0');
+    assert.strictEqual(writtenSince(ctx, since).summarize_max_messages, 0);
+});
+
+k.test('max-messages-reset', S_PAGE, 'Reset puts the default back in the field and stores it as a number', async () => {
+    const since = ctx.ctl.calls.length;
+    await ctx.click($('#reset_summarize_max_messages'));
+    const d = ctx.mods.prefs_default.summarize_max_messages;
+    assert.equal($('#summarize_max_messages').valueAsNumber, d);
+    assert.strictEqual(writtenSince(ctx, since).summarize_max_messages, d);
+});
+
 k.test('auto-never-null', S_MAND, 'an empty mode select stores the default, never null', async () => {
     const sel = $('#summarize_auto');
     sel.selectedIndex = -1;

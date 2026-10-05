@@ -19,7 +19,7 @@
   "anthropic_max_tokens": 0,
   "ollama_num_ctx": 8192,
   "spamfilter_threshold": 150,
-  "add_tags_maxnum": 0,
+  "add_tags_maxnum": -2,
   "summarize_max_messages": 2.5,
   "special_command_timeout": 0,
   "max_prompt_length": 50000,

@@ -3429,7 +3429,7 @@
     "description": "Translate page: label of the text field listing languages that are not translated. 'Exclude' is a verb."
   },
   "prefs_OptionText_translate_exclude_lang_Info": {
-    "message": "Comma-separated list of language codes (e.g., en, fr, it) to skip for automatic translation. If the email is in one of these languages, it won't be translated automatically or the manual button won't be shown.",
+    "message": "Comma-separated list of language codes (e.g., en, fr, it) that must not be translated. If the email is in one of these languages, the AI skips the translation and reports it as skipped.",
     "description": "Translate page: help text under the Exclude languages field. Keep the language codes (en, fr, it) unchanged."
   },
   "prefs_OptionText_Translate_main_prompt": {

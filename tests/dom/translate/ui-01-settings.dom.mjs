@@ -29,6 +29,7 @@ const STORED = {
     translate_auto: 2,
     translate_max_display_length: 300,
     translate_lang: 'Italian',
+    translate_exclude_lang: 'en, fr',
 };
 const ctx = await openPage('translate', { local: STORED });
 after(() => ctx.close());
@@ -37,10 +38,11 @@ const $ = ctx.$;
 const S_PAGE = 'spec 05 "Translate Settings Page (`pages/translate/`)"';
 const S_MAND = 'spec 05 "Mandatory Specific Integration (feature settings pages)"';
 
-k.test('restore', S_PAGE, 'the stored mode, max display length and target language are shown', () => {
+k.test('restore', S_PAGE, 'the stored mode, max display length, target and excluded languages are shown', () => {
     assert.equal($('#translate_auto').value, '2');
     assert.equal($('#translate_max_display_length').valueAsNumber, 300);
     assert.equal($('#translate_lang').value, 'Italian');
+    assert.equal($('#translate_exclude_lang').value, 'en, fr');
 });
 
 k.test('auto-modes', S_PAGE, 'the auto-translate select offers the modes 0..3', () => {
@@ -74,6 +76,12 @@ k.test('write-lang', S_PAGE, 'the target language is stored trimmed', async () =
     const since = ctx.ctl.calls.length;
     await userSets(ctx, $('#translate_lang'), '  French ');
     assert.strictEqual(writtenSince(ctx, since).translate_lang, 'French');
+});
+
+k.test('write-exclude-lang', S_PAGE, 'the excluded languages are stored trimmed, as typed', async () => {
+    const since = ctx.ctl.calls.length;
+    await userSets(ctx, $('#translate_exclude_lang'), '  de,  IT ');
+    assert.strictEqual(writtenSince(ctx, since).translate_exclude_lang, 'de,  IT');
 });
 
 inheritedIntegrationTests(ctx, k, { prefix: 'translate', promptId: 'prompt_translate_this' });

@@ -1209,8 +1209,6 @@ const PREF_ENUMS = {
 // these have a tighter range.
 const PREF_NUMBER_RANGES = {
     spamfilter_threshold: { min: 0, max: 100 },
-    summarize_max_messages: { min: 1 },
-    add_tags_maxnum: { min: 1 },
     max_prompt_length: { min: 1 },
     batch_max_concurrency: { min: 1 },
 };

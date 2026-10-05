@@ -281,7 +281,7 @@ key, with an API key masked) and not applied, exactly like a type mismatch, neve
 | `connection_type` | one of `valid_connection_types` (`''`, "no connection yet", is not a value to enforce) |
 | `{prefix}_connection_type` | one of `featureConnectionTypes()`: never `chatgpt_web`, which the feature panels do not offer |
 | `reply_type`, `diff_granularity`, `summarize_display_mode`, `summarize_auto`, `translate_auto` | one of the values its settings select offers (`PREF_ENUMS`) |
-| any other number | a non-negative integer; tighter ranges in `PREF_NUMBER_RANGES`, from the inputs' `min`/`max`: `spamfilter_threshold` 0–100, `summarize_max_messages`, `add_tags_maxnum`, `max_prompt_length`, `batch_max_concurrency` ≥ 1 (`special_command_timeout` has the general rule: 0 is accepted) |
+| any other number | a non-negative integer; tighter ranges in `PREF_NUMBER_RANGES`, from the inputs' `min`/`max`: `spamfilter_threshold` 0–100, `max_prompt_length`, `batch_max_concurrency` ≥ 1 (`special_command_timeout`, `summarize_max_messages` and `add_tags_maxnum` have the general rule: 0 is accepted, and means "no limit" for the last two, as on their pages) |
 | `calendar_timezone` | `''` (no zone enforced, the select's empty option) or a zone of `Intl.supportedValuesOf('timeZone')`, the list the calendar pages' select is built from, so the page can always show it (a lowercased id or an alias `Intl.DateTimeFormat` would accept is refused); without `supportedValuesOf()`, any id the engine accepts |
 
 Free-text preferences (languages, sign name, prompts' extra instructions…) have no rule: any
