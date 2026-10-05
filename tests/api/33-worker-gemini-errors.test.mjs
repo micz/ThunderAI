@@ -39,10 +39,11 @@ const w = await loadWorker('model-worker-google_gemini');
 
 const FX = apiFixture('google_gemini.json');
 const FAILED = 'Google Gemini API request failed';
+const INTERRUPTED = 'The connection to the server was unexpectedly interrupted';
 const isStream = c => c.url.includes(':streamGenerateContent');
 
 await w.send(initMessage({ google_gemini_api_key: 'FAKE-KEY', google_gemini_model: 'gemini-2.5-flash' },
-    { chat_show_usage_data: false, i18nStrings: { google_gemini_api_request_failed: FAILED } }));
+    { chat_show_usage_data: false, i18nStrings: { google_gemini_api_request_failed: FAILED, error_connection_interrupted: INTERRUPTED } }));
 
 const errorOf = t => t.posted().filter(m => m.type === 'error');
 
@@ -129,6 +130,29 @@ k.test('network', 'a network failure after the retries: the exception text as is
     assert.equal(err.payload.split('request failed').length - 1, 1);
     assert.equal(err.rateLimited, false);
     assert.equal(err.retryAfterMs, null);
+});
+
+k.test('stream-cut', 'a connection cut mid-stream: one error, connection interrupted, no tokensDone', async () => {
+    const [c0, c1] = FX.stream_thoughts.chunks;
+    net.expect(isStream, () => streamResponse([sse(c0) + sse(c1)], { errorAfter: 1 }));
+    const t = startTurn(w, 'q');
+    await t.done;
+    const errs = errorOf(t);
+    assert.equal(errs.length, 1);
+    assert.equal(errs[0].payload, INTERRUPTED + ': Error in input stream');
+    assert.notEqual(errs[0].rateLimited, true);
+    assert.equal(t.posted().some(m => m.type === 'tokensDone'), false);
+});
+
+k.test('history-after-errors', 'failed turns leave nothing in the history: no failed question, no partial answer', async () => {
+    net.expect(isStream, () => streamResponse(FX.stream_thoughts.chunks.map(c => sse(c))));
+    const t = startTurn(w, 'After the errors');
+    await t.done;
+    const contents = net.calls[0].json().contents;
+    assert.deepEqual(contents.at(-1), { role: 'user', parts: [{ text: 'After the errors' }] });
+    assert.equal(contents.filter(c => c.role === 'user' && c.parts[0].text === 'q').length, 0, 'no failed question resent');
+    assert.equal(contents.some(c => c.role === 'model' && c.parts[0].text === 'Hello'), false, 'no partial answer');
+    contents.forEach((c, i) => assert.equal(c.role, i % 2 === 0 ? 'user' : 'model', 'roles alternate at ' + i));
 });
 
 k.test('no-browser', 'no browser global was needed', () => {

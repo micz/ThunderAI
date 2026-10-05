@@ -145,10 +145,25 @@ import { mztaPrefs } from './mzta-prefs.js';
             }
         }
 
+        // The strings the worker builds its error texts from: a Web Worker has no
+        // browser.i18n. Same set as api_webchat/controller.js; without it an HTTP error
+        // would read "undefined: 429 ...".
+        const i18n_msg_key = integration === 'openai_comp' ? 'OpenAIComp_api_request_failed' : `${integration}_api_request_failed`;
+        const i18nStrings = {
+            [i18n_msg_key]: browser.i18n.getMessage(i18n_msg_key),
+            error_connection_interrupted: browser.i18n.getMessage('error_connection_interrupted'),
+        };
+        if (integration === 'anthropic') {
+            // describeAnthropicError() replaces the literal $MODEL$ with the model actually sent.
+            for (const key of ['anthropic_err_hint_temperature', 'anthropic_err_hint_budget_tokens', 'anthropic_err_hint_thinking_type', 'anthropic_err_hint_effort']) {
+                i18nStrings[key] = browser.i18n.getMessage(key, ['$MODEL$']);
+            }
+        }
+
         let workerInitMessage = {
             type: 'init',
             do_debug: this.do_debug,
-            i18nStrings: ''
+            i18nStrings: i18nStrings
         };
 
         for (const key of configKeys) {

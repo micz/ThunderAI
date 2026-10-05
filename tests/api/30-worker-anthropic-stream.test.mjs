@@ -36,6 +36,7 @@ import {
     cutAt,
     jsonResponse,
     sse,
+    splitInsideChar,
     streamResponse
 } from './wire.mjs';
 
@@ -126,6 +127,16 @@ k.test('retry-forwarded', 'a retried 529 is forwarded as newRetryAttempt before 
     assert.ok(types.indexOf('newRetryAttempt') < types.indexOf('newToken'));
     assert.equal(turn.posted().find(m => m.type === 'usage').messageId, 'msg_3');
     assert.equal(consoleText(con).includes(KEY), false);
+});
+
+k.test('utf8-split', 'a multi-byte character split across two chunks arrives whole ("Reading the stream")', async () => {
+    const text = 'Formalità: 95%';
+    const ev = { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } };
+    net.expect({ method: 'POST', url: MSG_URL }, () => streamResponse([...splitInsideChar(sse(ev, 'content_block_delta'), 'à'),
+        sse({ type: 'message_stop' }, 'message_stop')]));
+    const t = startTurn(w, 'utf8');
+    await t.done;
+    assert.deepEqual(t.posted().filter(m => m.type === 'newToken').map(m => m.payload.token), [text]);
 });
 
 k.test('no-browser', 'the worker ran three turns with no browser global', () => {

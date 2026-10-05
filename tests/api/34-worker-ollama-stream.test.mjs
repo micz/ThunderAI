@@ -30,6 +30,7 @@ import {
     capturedLines,
     cutAt,
     ndjson,
+    splitInsideChar,
     streamResponse
 } from './wire.mjs';
 
@@ -105,6 +106,15 @@ k.test('turn2-history', 'turn 2: exactly one system message, then the whole hist
     // 282 / 4.535599 s = 62.17... -> 62.2
     assert.deepEqual(usageTokens(t.posted().find(m => m.type === 'usage').payload), { input: 26, output: 282, total: 308, tps: 62.2 });
     assert.equal(consoleText(con).includes(KEY), false);
+});
+
+k.test('utf8-split', 'a multi-byte character split across two chunks arrives whole ("Reading the stream")', async () => {
+    const text = 'Formalità: 95%';
+    const line = { model: 'llama3.2', created_at: '2026-10-06T08:29:22.171151497Z', message: { role: 'assistant', content: text }, done: false };
+    net.expect({ method: 'POST', url: HOST + '/api/chat' }, () => streamResponse(splitInsideChar(ndjson(line), 'à'), { contentType: 'application/x-ndjson' }));
+    const t = startTurn(w, 'utf8');
+    await t.done;
+    assert.deepEqual(t.posted().filter(m => m.type === 'newToken').map(m => m.payload.token), [text]);
 });
 
 k.test('no-browser', 'no browser global was needed', () => {

@@ -10,7 +10,8 @@
 //  - validation is skipped when use_specific_api is true (config.api_type non-empty: the
 //    credentials come from the prompt config, not the global prefs);
 //  - one module Web Worker per provider: js/workers/model-worker-<provider>.js, created in
-//    initWorker() once the configuration has passed ("Worker Lifecycle & Timeout").
+//    initWorker() once the configuration has passed ("Worker Lifecycle & Timeout"), which also
+//    sends it the i18nStrings its error texts are built from ("Strings").
 //
 // Reached at level 1 without touching shipped code: a background context (the module reads the
 // preferences through mztaPrefs, so the core browser mock is installed - this is not a worker
@@ -80,6 +81,24 @@ for (const [llm, fields] of Object.entries(REQUIRED)) {
         const init = cmd.worker.posted[0];
         assert.equal(init.type, 'init');
         for (const f of fields) assert.equal(init[f], VALUE[f] ?? 'some-model', f);
+    });
+
+    k.test(`strings-${llm.replace(/_/g, '-')}`, `${llm}: the init message carries the i18n strings the worker builds its errors from`, async () => {
+        await setPrefs();
+        const cmd = new mzta_specialCommand({ llm, config: {} });
+        await cmd.initWorker();
+        const strings = cmd.worker.posted[0].i18nStrings;
+        const integration = llm.replace('_api', '');
+        const key = integration === 'openai_comp' ? 'OpenAIComp_api_request_failed' : integration + '_api_request_failed';
+        assert.equal(typeof strings, 'object');
+        assert.equal(strings[key], browser.i18n.getMessage(key));
+        assert.notEqual(strings[key], '');
+        assert.equal(strings.error_connection_interrupted, browser.i18n.getMessage('error_connection_interrupted'));
+        if (integration === 'anthropic') {
+            for (const hint of ['anthropic_err_hint_temperature', 'anthropic_err_hint_budget_tokens', 'anthropic_err_hint_thinking_type', 'anthropic_err_hint_effort']) {
+                assert.ok(typeof strings[hint] === 'string' && strings[hint].includes('$MODEL$'), hint + ' with the literal $MODEL$');
+            }
+        }
     });
 
     k.test(`worker-${llm.replace(/_/g, '-')}`, `${llm}: one module worker, js/workers/${FILE[llm]}, created by initWorker()`, async () => {

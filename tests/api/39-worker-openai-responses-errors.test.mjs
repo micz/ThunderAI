@@ -37,10 +37,11 @@ const w = await loadWorker('model-worker-openai_responses');
 const URL_ = 'https://api.openai.com/v1/responses';
 const FX = apiFixture('openai_responses.json');
 const FAILED = 'OpenAI ChatGPT API request failed';
+const INTERRUPTED = 'The connection to the server was unexpectedly interrupted';
 const wire = events => events.map(e => sse(e, e.type)).join('');
 
 await w.send(initMessage({ chatgpt_api_key: 'sk-FAKE-0000', chatgpt_model: 'gpt-4.1-nano', chatgpt_store: false },
-    { chat_show_usage_data: false, i18nStrings: { chatgpt_api_request_failed: FAILED } }));
+    { chat_show_usage_data: false, i18nStrings: { chatgpt_api_request_failed: FAILED, error_connection_interrupted: INTERRUPTED } }));
 
 const errorOf = t => t.posted().filter(m => m.type === 'error');
 
@@ -99,9 +100,9 @@ k.test('response-failed', 'response.failed mid-stream: an error carrying the pro
     await t.done;
     const errs = errorOf(t);
     assert.equal(errs.length, 1);
-    assert.ok(errs[0].payload.startsWith(FAILED), errs[0].payload);
-    assert.ok(errs[0].payload.includes('The model failed to generate a response.'));
+    assert.equal(errs[0].payload, FAILED + ': The model failed to generate a response.');
     assert.notEqual(errs[0].rateLimited, true);
+    assert.equal(t.posted().some(m => m.type === 'tokensDone'), false);
 });
 
 k.test('rate-limit-429', 'a rate_limit_exceeded 429 still failing after the retries: rateLimited', async (t) => {
@@ -135,6 +136,29 @@ k.test('network', 'a network failure after the retries: the exception text as is
     assert.equal(err.payload.split('request failed').length - 1, 1);
     assert.equal(err.rateLimited, false);
     assert.equal(err.retryAfterMs, null);
+});
+
+k.test('stream-cut', 'a connection cut mid-stream: one error, connection interrupted, no tokensDone', async () => {
+    net.expect(URL_, () => streamResponse([wire(FX.failed_stream.events.slice(0, 2))], { errorAfter: 1 }));
+    const t = startTurn(w, 'q');
+    await t.done;
+    const errs = errorOf(t);
+    assert.equal(errs.length, 1);
+    assert.equal(errs[0].payload, INTERRUPTED + ': Error in input stream');
+    assert.notEqual(errs[0].rateLimited, true);
+    assert.equal(t.posted().some(m => m.type === 'tokensDone'), false);
+});
+
+k.test('history-after-errors', 'failed turns leave nothing in the history: no failed question, no partial answer', async () => {
+    net.expect(URL_, () => streamResponse([wire(FX.reasoning_item_only.events)]));
+    const t = startTurn(w, 'After the errors');
+    await t.done;
+    const input = net.calls[0].json().input;
+    const texts = input.map(m => m.content.map(c => c.text).join(''));
+    assert.equal(texts.at(-1), 'After the errors');
+    assert.equal(input.filter((m, i) => m.role === 'user' && texts[i] === 'q').length, 0, 'no failed question resent');
+    assert.equal(texts.includes('Partial'), false, 'no partial answer (response.failed, cut stream)');
+    input.forEach((m, i) => assert.equal(m.role, i % 2 === 0 ? 'user' : 'assistant', 'roles alternate at ' + i));
 });
 
 k.test('no-browser', 'no browser global was needed', () => {

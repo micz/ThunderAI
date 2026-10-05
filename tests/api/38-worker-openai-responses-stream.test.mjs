@@ -32,6 +32,7 @@ import {
     capturedLines,
     cutAt,
     sse,
+    splitInsideChar,
     streamResponse
 } from './wire.mjs';
 
@@ -116,6 +117,15 @@ k.test('turn3-item-fallback', 'turn 3: a summary delivered only in the reasoning
         ['tokensDone', 'First part. Second part.'],
     ]);
     assert.equal(JSON.stringify(t.posted()).includes('gAAAA'), false, 'the opaque reasoning never reaches the window');
+});
+
+k.test('utf8-split', 'a multi-byte character split across two chunks arrives whole ("Reading the stream")', async () => {
+    const text = 'Formalità: 95%';
+    const ev = { type: 'response.output_text.delta', sequence_number: 1, item_id: 'msg_utf8', output_index: 0, content_index: 0, delta: text };
+    net.expect({ method: 'POST', url: URL_ }, () => streamResponse(splitInsideChar(sse(ev, ev.type), 'à')));
+    const t = startTurn(w, 'utf8');
+    await t.done;
+    assert.deepEqual(t.posted().filter(m => m.type === 'newToken').map(m => m.payload.token), [text]);
 });
 
 k.test('no-browser', 'no browser global was needed', () => {

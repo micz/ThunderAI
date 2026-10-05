@@ -41,14 +41,18 @@ const HOST = 'http://localhost:11434';
 const CHAT = HOST + '/api/chat';
 const FX = apiFixture('ollama.json');
 const FAILED = 'Ollama API request failed';
+const INTERRUPTED = 'The connection to the server was unexpectedly interrupted';
 
 await w.send(initMessage({ ollama_host: HOST, ollama_model: 'llama3.2', ollama_system_prompt: '' }, {
     chat_show_usage_data: false,
-    i18nStrings: { ollama_api_request_failed: FAILED, error_connection_interrupted: 'The connection to the server was unexpectedly interrupted' },
+    i18nStrings: { ollama_api_request_failed: FAILED, error_connection_interrupted: INTERRUPTED },
 }));
 
 const errorOf = t => t.posted().filter(m => m.type === 'error');
 const content = objs => streamResponse([objs.map(ndjson).join('')], { contentType: 'application/x-ndjson' });
+// A content line of the documented shape with a text no successful turn produces, so a partial
+// answer left in the history would be recognisable.
+const PARTIAL = { ...FX.content_chunks.chunks[0], message: { role: 'assistant', content: 'PARTIAL' } };
 
 k.test('abort-before-response', 'Stop before any answer: requestAborted, no error', async () => {
     net.expect(CHAT, NET.hang);
@@ -94,21 +98,26 @@ k.test('http-404-string-error', "an HTTP error with Ollama's documented body: th
     assert.equal(err.rateLimited, false);
 });
 
-k.test('mid-stream-error', 'an error line mid-stream: an error is posted, not flagged rateLimited', async () => {
-    net.expect(CHAT, () => content([FX.content_chunks.chunks[0], FX.stream_error_line.chunk]));
+k.test('mid-stream-error', "an error line mid-stream: one error with the server's message, no tokensDone, not rateLimited", async () => {
+    net.expect(CHAT, () => content([PARTIAL, FX.stream_error_line.chunk]));
     const t = startTurn(w, 'q');
     await t.done;
     const errs = errorOf(t);
     assert.equal(errs.length, 1);
+    assert.equal(errs[0].payload, FAILED + ': ' + FX.stream_error_line.chunk.error);
     assert.notEqual(errs[0].rateLimited, true);
+    assert.equal(t.posted().some(m => m.type === 'tokensDone'), false);
 });
 
-k.test('stream-cut', 'a connection cut mid-stream: an error is posted', async () => {
-    net.expect(CHAT, () => streamResponse([ndjson(FX.content_chunks.chunks[0])], { errorAfter: 1, contentType: 'application/x-ndjson' }));
+k.test('stream-cut', 'a connection cut mid-stream: one error, connection interrupted, no tokensDone', async () => {
+    net.expect(CHAT, () => streamResponse([ndjson(PARTIAL)], { errorAfter: 1, contentType: 'application/x-ndjson' }));
     const t = startTurn(w, 'q');
     await t.done;
-    assert.equal(errorOf(t).length, 1);
-    assert.notEqual(errorOf(t)[0].rateLimited, true);
+    const errs = errorOf(t);
+    assert.equal(errs.length, 1);
+    assert.equal(errs[0].payload, INTERRUPTED + ': Error in input stream');
+    assert.notEqual(errs[0].rateLimited, true);
+    assert.equal(t.posted().some(m => m.type === 'tokensDone'), false);
 });
 
 k.test('network', 'a network failure after the retries: the exception text as is, not rateLimited', async (t) => {
@@ -123,6 +132,17 @@ k.test('network', 'a network failure after the retries: the exception text as is
     assert.equal(err.payload.split('request failed').length - 1, 1);
     assert.equal(err.rateLimited, false);
     assert.equal(err.retryAfterMs, null);
+});
+
+k.test('history-after-errors', 'failed turns leave nothing in the history: no failed question, no partial answer', async () => {
+    net.expect(CHAT, () => content([...FX.content_chunks.chunks, FX.final_chunk_with_durations.chunk]));
+    const t = startTurn(w, 'After the errors');
+    await t.done;
+    const msgs = net.calls[0].json().messages;
+    assert.deepEqual(msgs.at(-1), { role: 'user', content: 'After the errors' });
+    assert.equal(msgs.filter(m => m.role === 'user' && m.content === 'q').length, 0, 'no failed question resent');
+    assert.equal(msgs.some(m => m.content === 'PARTIAL'), false, 'no partial answer');
+    msgs.forEach((m, i) => assert.equal(m.role, i % 2 === 0 ? 'user' : 'assistant', 'roles alternate at ' + i));
 });
 
 k.test('no-browser', 'no browser global was needed', () => {

@@ -28,6 +28,7 @@ import {
     apiFixture,
     cutAt,
     sse,
+    splitInsideChar,
     streamResponse
 } from './wire.mjs';
 
@@ -122,6 +123,15 @@ k.test('turn4-field-priority', 'reasoning_content before reasoning before thinki
         ['newToken', 'ok'],
         ['tokensDone', 'AXT'],
     ]);
+});
+
+k.test('utf8-split', 'a multi-byte character split across two chunks arrives whole ("Reading the stream")', async () => {
+    const text = 'Formalità: 95%';
+    const chunk = { id: 'x', object: 'chat.completion.chunk', created: 1, model: 'deepseek-reasoner', choices: [{ index: 0, delta: { content: text }, finish_reason: null }] };
+    net.expect({ method: 'POST', url: CHAT }, () => streamResponse([...splitInsideChar(sse(chunk), 'à'), DONE]));
+    const t = startTurn(w, 'utf8');
+    await t.done;
+    assert.deepEqual(t.posted().filter(m => m.type === 'newToken').map(m => m.payload.token), [text]);
 });
 
 k.test('no-browser', 'no browser global was needed', () => {

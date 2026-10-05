@@ -67,6 +67,24 @@ function logUsageData(usage) {
     taLog.log("usage data captured: " + JSON.stringify(usage));
 }
 
+// A turn that fails once the question was sent (an HTTP or network error, a cut
+// connection in the middle of the stream): the partial answer is dropped and the
+// unanswered question leaves the history, as after an abort, so the next turn does
+// not send it twice.
+function abandonTurn() {
+    conversationHistory.pop();
+    assistantResponseAccumulator = '';
+    thinkingAccumulator = '';
+}
+
+// The text of an error thrown while reading the stream.
+function streamErrorText(error) {
+    if (error instanceof TypeError && String(error.message).includes('Error in input stream')) {
+        return i18nStrings['error_connection_interrupted'] + ": " + error.message;
+    }
+    return i18nStrings["google_gemini_api_request_failed"] + ": " + (error && error.message ? error.message : String(error));
+}
+
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
         let config = { stream: true };
@@ -130,6 +148,7 @@ self.onmessage = async function(event) {
             // or a server asking to wait longer than fetchWithRetry() accepts (retryAfterMs,
             // shown to the user): processEmails() stops the whole batch. False on an is_exception.
             const retryAfterMs = Number.isFinite(response.retryAfterMs) ? response.retryAfterMs : null;
+            abandonTurn();
             postMessage({ type: 'error', payload: error_text, rateLimited: response.status === 429 || retryAfterMs !== null, retryAfterMs: retryAfterMs });
             throw new Error("[ThunderAI] Google Gemini API request failed: " + error_text);
         }
@@ -137,114 +156,123 @@ self.onmessage = async function(event) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let buffer = '';
+
+        try {
+            while (true) {
+                if (stopStreaming) {
+                    stopStreaming = false;
+                    reader.cancel();
+                    taLog.log("AI full reasoning [STOPPED]: " + thinkingAccumulator);
+                    taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
+                    conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
+                    assistantResponseAccumulator = '';
+                    // Separate from tokensDone and free of any response text: see usage-emitter.js.
+                    postUsageData(usageData, usageMessageId);
+                    postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                    thinkingAccumulator = '';
+                    break;
+                }
+                const { done, value } = await reader.read();
+                if (done) {
+                    taLog.log("AI full reasoning: " + thinkingAccumulator);
+                    taLog.log("AI full response: " + assistantResponseAccumulator);
+                    conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
+                    assistantResponseAccumulator = '';
+                    // Separate from tokensDone and free of any response text: see usage-emitter.js.
+                    postUsageData(usageData, usageMessageId);
+                    postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                    thinkingAccumulator = '';
+                    break;
+                }
+                // lots of low-level Google Gemini response parsing stuff
+                // stream: true keeps a multi-byte character split across two chunks
+                // for the next call instead of replacing it with U+FFFD.
+                const chunk = decoder.decode(value, { stream: true });
+                buffer += chunk;
+                // No per-chunk dump of `buffer`: taLog.log() only gates the console call,
+                // so the whole unconsumed buffer would be re-concatenated on every SSE
+                // chunk even with debug off. The per-line log below covers it, guarded.
+                const lines = buffer.split("\n");
+                buffer = lines.pop();
+                let parsedLines = [];
+                try{
+                    parsedLines = lines
+                        .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
+                        .filter((line) => line !== "" ) // Remove empty lines
+                        // .map((line) => JSON.parse(line)); // Parse the JSON string
+                        .map((line) => {
+                             try {
+                                // Guarded at the call site: taLog.log() gates only the console
+                                // call, so an unguarded JSON.stringify() would run per SSE line
+                                // even with debug off.
+                                if (taLog.do_debug) taLog.log("line: " + JSON.stringify(line));
+                                return JSON.parse(line);
+                            } catch (e) {
+                                taLog.warn("JSON parse warning, skipped line: " + line + " - " + e.message);
+                                return null;
+                            }
+                        })
+                        .filter((parsed) => parsed !== null);
+                }catch(e){
+                    taLog.error("Error parsing lines: " + e);
+                }
     
-        while (true) {
-            if (stopStreaming) {
-                stopStreaming = false;
-                reader.cancel();
-                taLog.log("AI full reasoning [STOPPED]: " + thinkingAccumulator);
-                taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
-                conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
-                assistantResponseAccumulator = '';
-                // Separate from tokensDone and free of any response text: see usage-emitter.js.
-                postUsageData(usageData, usageMessageId);
-                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
-                thinkingAccumulator = '';
-                break;
-            }
-            const { done, value } = await reader.read();
-            if (done) {
-                taLog.log("AI full reasoning: " + thinkingAccumulator);
-                taLog.log("AI full response: " + assistantResponseAccumulator);
-                conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
-                assistantResponseAccumulator = '';
-                // Separate from tokensDone and free of any response text: see usage-emitter.js.
-                postUsageData(usageData, usageMessageId);
-                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
-                thinkingAccumulator = '';
-                break;
-            }
-            // lots of low-level Google Gemini response parsing stuff
-            const chunk = decoder.decode(value);
-            buffer += chunk;
-            // No per-chunk dump of `buffer`: taLog.log() only gates the console call,
-            // so the whole unconsumed buffer would be re-concatenated on every SSE
-            // chunk even with debug off. The per-line log below covers it, guarded.
-            const lines = buffer.split("\n");
-            buffer = lines.pop();
-            let parsedLines = [];
-            try{
-                parsedLines = lines
-                    .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
-                    .filter((line) => line !== "" ) // Remove empty lines
-                    // .map((line) => JSON.parse(line)); // Parse the JSON string
-                    .map((line) => {
-                         try {
-                            // Guarded at the call site: taLog.log() gates only the console
-                            // call, so an unguarded JSON.stringify() would run per SSE line
-                            // even with debug off.
-                            if (taLog.do_debug) taLog.log("line: " + JSON.stringify(line));
-                            return JSON.parse(line);
-                        } catch (e) {
-                            taLog.warn("JSON parse warning, skipped line: " + line + " - " + e.message);
-                            return null;
+                for (const parsedLine of parsedLines) {
+                    // Read before the candidates guard below, not after: usageMetadata can
+                    // ride on a chunk that carries no candidates at all, and that guard
+                    // skips the whole chunk. The metadata is cumulative rather than
+                    // per-chunk, so the last non-empty one simply replaces the previous.
+                    const usage = extractUsage(parsedLine);
+                    if (usage !== null && !isUsageDataEmpty(usage)) {
+                        usageData = usage;
+                        logUsageData(usageData);
+                    }
+
+                    const { candidates } = parsedLine;
+
+                    if (!Array.isArray(candidates) || candidates.length === 0) {
+                        taLog.warn('[ThunderAI] Gemini stream skipped: candidates is not a non-empty array');
+                        continue;
+                    }
+
+                    const { content } = candidates[0];
+                    if (!content || typeof content !== 'object') {
+                        taLog.warn('[ThunderAI] Gemini stream skipped: missing candidate content');
+                        continue;
+                    }
+
+                    const { parts } = content;
+                    if (!Array.isArray(parts) || parts.length === 0) {
+                        taLog.warn('[ThunderAI] Gemini stream skipped: parts is not a non-empty array. [finishReason: ' + candidates[0].finishReason + ']');
+                        continue;
+                    }
+
+                    // Every part must be examined, not just parts[0]: when the model
+                    // reasons, the reasoning arrives as additional parts flagged with
+                    // thought: true, and a thought part can come first. Detection relies
+                    // only on that flag, so a model that reasons without
+                    // google_gemini_thinking_budget being set is handled too.
+                    for (const part of parts) {
+                        if (!part || typeof part.text !== 'string' || part.text === '') {
+                            continue;
                         }
-                    })
-                    .filter((parsed) => parsed !== null);
-            }catch(e){
-                taLog.error("Error parsing lines: " + e);
-            }
-    
-            for (const parsedLine of parsedLines) {
-                // Read before the candidates guard below, not after: usageMetadata can
-                // ride on a chunk that carries no candidates at all, and that guard
-                // skips the whole chunk. The metadata is cumulative rather than
-                // per-chunk, so the last non-empty one simply replaces the previous.
-                const usage = extractUsage(parsedLine);
-                if (usage !== null && !isUsageDataEmpty(usage)) {
-                    usageData = usage;
-                    logUsageData(usageData);
-                }
-
-                const { candidates } = parsedLine;
-
-                if (!Array.isArray(candidates) || candidates.length === 0) {
-                    taLog.warn('[ThunderAI] Gemini stream skipped: candidates is not a non-empty array');
-                    continue;
-                }
-
-                const { content } = candidates[0];
-                if (!content || typeof content !== 'object') {
-                    taLog.warn('[ThunderAI] Gemini stream skipped: missing candidate content');
-                    continue;
-                }
-
-                const { parts } = content;
-                if (!Array.isArray(parts) || parts.length === 0) {
-                    taLog.warn('[ThunderAI] Gemini stream skipped: parts is not a non-empty array. [finishReason: ' + candidates[0].finishReason + ']');
-                    continue;
-                }
-
-                // Every part must be examined, not just parts[0]: when the model
-                // reasons, the reasoning arrives as additional parts flagged with
-                // thought: true, and a thought part can come first. Detection relies
-                // only on that flag, so a model that reasons without
-                // google_gemini_thinking_budget being set is handled too.
-                for (const part of parts) {
-                    if (!part || typeof part.text !== 'string' || part.text === '') {
-                        continue;
+                        // Update the UI with the new thinking content
+                        if (part.thought === true) {
+                            thinkingAccumulator += part.text;
+                            postMessage({ type: 'newThinkingToken', payload: { token: part.text } });
+                            continue;
+                        }
+                        // Update the UI with the new content
+                        assistantResponseAccumulator += part.text;
+                        postMessage({ type: 'newToken', payload: { token: part.text } });
                     }
-                    // Update the UI with the new thinking content
-                    if (part.thought === true) {
-                        thinkingAccumulator += part.text;
-                        postMessage({ type: 'newThinkingToken', payload: { token: part.text } });
-                        continue;
-                    }
-                    // Update the UI with the new content
-                    assistantResponseAccumulator += part.text;
-                    postMessage({ type: 'newToken', payload: { token: part.text } });
                 }
             }
+        } catch (error) {
+            // The connection broke while reading: report it, never end the turn silently.
+            console.error('[ThunderAI] Google Gemini stream interrupted:', error);
+            abandonTurn();
+            postMessage({ type: 'error', payload: streamErrorText(error) });
         }
     } else if (event.data.type === 'stop') {
         stopStreaming = true;

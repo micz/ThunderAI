@@ -40,10 +40,11 @@ const CHAT = HOST + '/v1/chat/completions';
 const FX = apiFixture('openai_comp.json');
 const OA = apiFixture('openai_responses.json');
 const FAILED = 'OpenAI Comp API request failed';
+const INTERRUPTED = 'The connection to the server was unexpectedly interrupted';
 const DONE = 'data: [DONE]\n\n';
 
 await w.send(initMessage({ openai_comp_host: HOST, openai_comp_model: 'local-model', openai_comp_api_key: '', openai_comp_use_v1: true },
-    { chat_show_usage_data: false, i18nStrings: { OpenAIComp_api_request_failed: FAILED } }));
+    { chat_show_usage_data: false, i18nStrings: { OpenAIComp_api_request_failed: FAILED, error_connection_interrupted: INTERRUPTED } }));
 
 const errorOf = t => t.posted().filter(m => m.type === 'error');
 
@@ -112,6 +113,29 @@ k.test('network', 'a network failure after the retries: the exception text as is
     assert.equal(err.payload.split('request failed').length - 1, 1);
     assert.equal(err.rateLimited, false);
     assert.equal(err.retryAfterMs, null);
+});
+
+k.test('stream-cut', 'a connection cut mid-stream: one error, connection interrupted, no tokensDone', async () => {
+    const partial = FX.deepseek_reasoner_stream.chunks.slice(0, 4);      // reasoning, then the content "Hi"
+    net.expect(CHAT, () => streamResponse([partial.map(c => sse(c)).join('')], { errorAfter: 1 }));
+    const t = startTurn(w, 'q');
+    await t.done;
+    const errs = errorOf(t);
+    assert.equal(errs.length, 1);
+    assert.equal(errs[0].payload, INTERRUPTED + ': Error in input stream');
+    assert.notEqual(errs[0].rateLimited, true);
+    assert.equal(t.posted().some(m => m.type === 'tokensDone'), false);
+});
+
+k.test('history-after-errors', 'failed turns leave nothing in the history: no failed question, no partial answer', async () => {
+    net.expect(CHAT, () => streamResponse([FX.plain_stream_no_usage.chunks.map(c => sse(c)).join('') + DONE]));
+    const t = startTurn(w, 'After the errors');
+    await t.done;
+    const msgs = net.calls[0].json().messages;
+    assert.deepEqual(msgs.at(-1), { role: 'user', content: 'After the errors' });
+    assert.equal(msgs.filter(m => m.role === 'user' && m.content === 'q').length, 0, 'no failed question resent');
+    assert.equal(msgs.some(m => m.role === 'assistant' && m.content === 'Hi'), false, 'no partial answer');
+    msgs.forEach((m, i) => assert.equal(m.role, i % 2 === 0 ? 'user' : 'assistant', 'roles alternate at ' + i));
 });
 
 k.test('no-browser', 'no browser global was needed', () => {

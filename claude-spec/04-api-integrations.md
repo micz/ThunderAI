@@ -781,12 +781,24 @@ mzta-background.js
 
 This keeps API calls off the main thread and avoids blocking the Thunderbird UI.
 
+**Reading the stream.** Each worker reads the body with one `TextDecoder` per response and calls
+`decode(chunk, { stream: true })`, so a multi-byte UTF-8 character split across two network chunks
+is kept whole (without it the two halves each become U+FFFD, at positions that depend on the
+provider's chunking). Lines are split on `
+` and the incomplete tail stays in a buffer for the next
+chunk, so an event split across two chunks and a chunk holding several events are both read as
+sent.
+
 ### Worker Lifecycle & Timeout (`mzta_specialCommand`)
 
 `mzta_specialCommand` (`js/mzta-special-commands.js`) creates one Worker per instance, in `initWorker()`, only once the configuration has passed the [validation](#configuration-validation): the constructor merely checks the connection type and picks the worker file, so a configuration error leaves no Worker behind (`sendPrompt()`, whose `finally` disposes of it, is never reached in that case). Callers (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, auto add-tags in `mzta-background.js`) create a **fresh instance per prompt** — instances are never reused.
 
 - **Termination:** `sendPrompt()` always calls `dispose()` (via `Promise.finally`) once the prompt settles — on success, error, or timeout. `dispose()` calls `worker.terminate()` and nulls the reference. This prevents Worker leaks during batch processing, where one Worker would otherwise be created per message and never freed (a cause of out-of-memory hangs on large selections).
 - **Timeout:** `sendPrompt()` aborts the request if the worker never replies (no `tokensDone`/`error`). The duration comes from the `special_command_timeout` pref (default `120000` ms), with a hardcoded `SPECIAL_COMMAND_TIMEOUT_DEFAULT` fallback. The pref is configurable in the main options page (always shown — see `claude-spec/05-options.md`). On timeout the promise rejects with a clear error and the worker is terminated by the same `finally`.
+- **Strings:** `initWorker()` sends the worker the same `i18nStrings` as the chat window
+  (`<integration>_api_request_failed`, `error_connection_interrupted`, and for Claude the four
+  `anthropic_err_hint_*` with the literal `$MODEL$`): a Web Worker has no `browser.i18n`, and the
+  worker builds every error text from them.
 
 `processEmails()` wraps its whole body in `try/finally` so `taWorkingStatus.stopWorking()` always runs, and wraps each message in `try/catch`+`continue` so one failing message does not abort the batch. The loop itself only gates messages; the AI work runs in one pipeline per message (spam, add_tags, summary, translate in series), which catches each feature's failures (e.g. `getFull()` on a message a filter just moved) and `runWithConcurrency()` catches and logs anything left, so one failing feature does not skip the others for that message (see [01-architecture.md](01-architecture.md#per-message-pipelines-in-processemails)).
 
@@ -817,7 +829,21 @@ throw new Error("[ThunderAI] <Provider> API request failed: " + error_text);
 
 The `postMessage` payload and the `throw` reuse the same `error_text` so the UI panel and the console message cannot drift apart.
 
-`rateLimited` and `retryAfterMs` are siblings of `payload` (which stays a string, so the connection test is unaffected). `retryAfterMs` is set when `fetchWithRetry` gave up because the server asked to wait longer than `retryAfterCapMs` (see [Automatic Retry Handling](#automatic-retry-handling)); such a response is always `rateLimited`, whatever its status. Otherwise `rateLimited` is `true` only for an HTTP 429 returned after the retries are used up or classified as terminal: Gemini `RESOURCE_EXHAUSTED`, OpenAI `rate_limit_exceeded` / `insufficient_quota` and Anthropic `rate_limit_error` are all 429. It is `false` on an `is_exception` (no `status`). 503/529 (overloaded) are deliberately not flagged: they mean no capacity, not no quota. The mid-stream error posts (OpenAI Responses `response.failed`, Ollama stream errors) do not set it.
+`rateLimited` and `retryAfterMs` are siblings of `payload` (which stays a string, so the connection test is unaffected). `retryAfterMs` is set when `fetchWithRetry` gave up because the server asked to wait longer than `retryAfterCapMs` (see [Automatic Retry Handling](#automatic-retry-handling)); such a response is always `rateLimited`, whatever its status. Otherwise `rateLimited` is `true` only for an HTTP 429 returned after the retries are used up or classified as terminal: Gemini `RESOURCE_EXHAUSTED`, OpenAI `rate_limit_exceeded` / `insufficient_quota` and Anthropic `rate_limit_error` are all 429. It is `false` on an `is_exception` (no `status`). 503/529 (overloaded) are deliberately not flagged: they mean no capacity, not no quota. The mid-stream error posts (below) do not set it.
+
+**Failures in the middle of the stream.** Once streaming has started a failure is not retried, but it
+is never silent either: the worker cancels the reader and posts exactly one `error` (and no
+`tokensDone`), whose payload is `i18nStrings["<provider>_api_request_failed"] + ": " + <message>`:
+
+| Provider | Signal | `<message>` |
+|---|---|---|
+| Anthropic | an `event: error` SSE event (e.g. `overloaded_error`) | `error.message` |
+| Ollama | an NDJSON line `{"error": "<message>"}` | the server's string |
+| OpenAI Responses | `response.failed` | `response.error.message` |
+| any | the connection breaks while reading (`reader.read()` rejects) | the error's message; Firefox's `TypeError` "Error in input stream" uses `error_connection_interrupted` instead of the provider string |
+
+The partial answer is dropped and the turn is abandoned like an HTTP error (see
+[Workers and UI](#automatic-retry-handling)).
 
 ### Batch cancellation (user-triggered stop)
 
@@ -936,6 +962,12 @@ API key in the query string.
   `reader.read()` is never rejected.
 - An aborted request (`is_aborted`) removes the unanswered user message from `conversationHistory`
   (so the next turn does not send it twice) and posts `requestAborted`.
+- A failed request does the same before posting its `error`: an HTTP error, a network error once
+  the retries are used up, and every failure in the middle of the stream (see the
+  [Error contract](#error-contract-between-jsapi-and-workers)). The partial answer, if any, is
+  dropped, not added to the history. The OpenAI Responses worker also goes back to the
+  `previous_response_id` of the last response that completed, so a turn never chains to one that
+  failed.
 - Webchat (`api_webchat/controller.js`): `newRetryAttempt` -> `messageInput.showRetryStatus()`
   ("Server not available (HTTP 503), retrying in 10 s (attempt 2 of 5)...", or, for a 429,
   `apiwebchat_retrying_rate_limit`: "Rate limit reached, retrying in 10 s (attempt 2 of 5)..."

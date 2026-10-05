@@ -214,24 +214,19 @@ are not asserted (or only the part the spec fixes is), and they are input for sp
 4. **The cut of `extractErrorMessage()`**: "cut at 500 characters". The code appends `...`.
 5. **The joint of `describeAnthropicError()`** (hint, space, detail) and the form of `errorDetail` in the
    worker's error text (the code puts `JSON.stringify(body)`).
-6. **Mid-stream errors other than the two named.** Spec 04 names OpenAI Responses `response.failed` and
-   "Ollama stream errors" only. Claude's documented `event: error` SSE event is ignored by the worker:
-   the turn ends with `tokensDone` and a partial answer. A connection cut mid-body in the Anthropic,
-   Gemini, OpenAI-compatible and Responses workers rejects the handler, and the window gets nothing after
-   the last token: no `error`, no `tokensDone` (both verified on the Anthropic worker with a probe).
-7. **What an Ollama stream error shows.** The worker destructures `message` from the error line, which
-   has none, so the window gets the JavaScript `TypeError` text, not the server's message.
-8. **The history after a failure**: only an abort removes the unanswered user message. After an HTTP or
-   network error it stays, and the next turn sends it again.
+6. *(resolved: spec 04 "Failures in the middle of the stream" now covers Claude's `event: error`, the Ollama
+   error line, `response.failed` and a connection cut while reading, for every worker: one `error`, no
+   `tokensDone`; the `-errors` files test them.)*
+7. *(resolved: the Ollama error line now gives the server's message, spec 04 "Failures in the middle of
+   the stream"; `35` tests it.)*
+8. *(resolved: spec 04 "Workers and UI" now says a failed request removes the unanswered message and
+   drops the partial answer, like an abort; `history-after-errors` in every `-errors` file, and `40`
+   for the Responses chain.)*
 9. **Tokens after Stop**: the chunk whose read was pending when Stop arrived is still processed (its
    tokens are posted) before the turn closes.
-10. **A multi-byte character split across two chunks.** All five workers call `TextDecoder.decode(value)`
-    without `{stream: true}`, so the character is replaced: a probe with `"Formalità"` split inside
-    `à` gives `"Formalit��"`. This depends on the provider's chunking, so it would look intermittent.
-    Not asserted (no spec sentence), but very likely a bug.
-11. **The i18n strings of a special command**: `mzta_specialCommand.initWorker()` sends
-    `i18nStrings: ''`, so an HTTP error in a special command builds its text as `"undefined: 429 …"`.
-    Spec 04 gives the error template but not what a special command passes.
+10. *(resolved: spec 04 "Reading the stream" now requires `decode(chunk, { stream: true })`; `utf8-split`
+    in every `-stream` file.)*
+11. *(resolved: spec 04 "Worker Lifecycle & Timeout" now says what `initWorker()` sends; `27` tests it.)*
 12. **Debug logging beyond URLs, headers and `config`**: with debug on the workers log every stream line
     and the full answer and reasoning. Spec 04 only forbids the URL, headers and `config`, which the
     tests check (no key, no Gemini URL in the console).

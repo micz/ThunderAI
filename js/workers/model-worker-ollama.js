@@ -66,6 +66,16 @@ function logUsageData(usage) {
     taLog.log("usage data captured: " + JSON.stringify(usage));
 }
 
+// A turn that fails once the question was sent (an HTTP or network error, an error
+// line or a cut connection in the middle of the stream): the partial answer is
+// dropped and the unanswered question leaves the history, as after an abort, so the
+// next turn does not send it twice. The system prompt, first in the history, stays.
+function abandonTurn() {
+    conversationHistory.pop();
+    assistantResponseAccumulator = '';
+    thinkingAccumulator = '';
+}
+
 self.onmessage = async function(event) {
     switch (event.data.type) {
         case 'init':
@@ -145,6 +155,7 @@ self.onmessage = async function(event) {
                 // or a server asking to wait longer than fetchWithRetry() accepts (retryAfterMs,
                 // shown to the user): processEmails() stops the whole batch. False on an is_exception.
                 const retryAfterMs = Number.isFinite(response.retryAfterMs) ? response.retryAfterMs : null;
+                abandonTurn();
                 postMessage({ type: 'error', payload: error_text, rateLimited: response.status === 429 || retryAfterMs !== null, retryAfterMs: retryAfterMs });
                 throw new Error("[ThunderAI] Ollama API request failed: " + error_text);
             }
@@ -182,7 +193,9 @@ self.onmessage = async function(event) {
                         break;
                     }
                     // lots of low-level Ollama response parsing stuff
-                    const chunk = decoder.decode(value);
+                    // stream: true keeps a multi-byte character split across two chunks
+                    // for the next call instead of replacing it with U+FFFD.
+                    const chunk = decoder.decode(value, { stream: true });
                     buffer += chunk;
                     // No per-chunk dump of `buffer`: taLog.log() only gates the console
                     // call, so the whole unconsumed buffer would be re-concatenated on
@@ -221,7 +234,23 @@ self.onmessage = async function(event) {
                             logUsageData(usageData);
                         }
 
+                        // An error in the middle of the stream comes as a line of its own,
+                        // {"error": "<message>"}: the answer is incomplete, so the turn fails
+                        // with the server's message.
+                        if (parsedLine.error) {
+                            const serverError = typeof parsedLine.error === 'string' ? parsedLine.error
+                                : (parsedLine.error.message || JSON.stringify(parsedLine.error));
+                            taLog.error("stream error line: " + serverError);
+                            reader.cancel();
+                            abandonTurn();
+                            postMessage({ type: 'error', payload: i18nStrings["ollama_api_request_failed"] + ": " + serverError });
+                            return;
+                        }
+
                         const { message } = parsedLine;
+                        if (!message || typeof message !== 'object') {
+                            continue;
+                        }
                         const { content, thinking } = message;
                         // Update the UI with the new thinking content
                         if (thinking) {
@@ -236,6 +265,7 @@ self.onmessage = async function(event) {
                     }
                 }
             } catch (error) {
+                abandonTurn();
                 if (error instanceof TypeError && error.message.includes('Error in input stream')) {
                     console.error('[ThudenderAI] The connection to the server was unexpectedly interrupted:', error);
                     postMessage({ type: 'error', payload: i18nStrings['error_connection_interrupted'] + ": " + error.message });

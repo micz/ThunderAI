@@ -43,6 +43,7 @@ const w = await loadWorker('model-worker-anthropic');
 const MSG_URL = 'https://api.anthropic.com/v1/messages';
 const FX = apiFixture('anthropic.json');
 const FAILED = 'Claude API request failed';
+const INTERRUPTED = 'The connection to the server was unexpectedly interrupted';
 const wire = events => events.map(e => sse(e.data, e.event)).join('');
 
 await w.send(initMessage({
@@ -55,6 +56,7 @@ await w.send(initMessage({
     chat_show_usage_data: false,
     i18nStrings: {
         anthropic_api_request_failed: FAILED,
+        error_connection_interrupted: INTERRUPTED,
         anthropic_err_hint_temperature: 'HINT-SAMPLING for $MODEL$.',
         anthropic_err_hint_budget_tokens: 'HINT-BUDGET for $MODEL$.',
         anthropic_err_hint_thinking_type: 'HINT-THINKING for $MODEL$.',
@@ -175,6 +177,41 @@ k.test('network', 'a network failure after the retries: the exception text as is
     assert.equal(err.payload.split('request failed').length - 1, 1, 'the provider prefix appears once, not re-prefixed');
     assert.equal(err.rateLimited, false);
     assert.equal(err.retryAfterMs, null);
+});
+
+k.test('stream-error-event', 'an error event mid-stream: one error with its message, no tokensDone, not rateLimited', async () => {
+    const ev = FX.stream_text.events;
+    net.expect(MSG_URL, () => streamResponse([wire([ev[0], ev[3]]) + sse(FX.stream_error_event.event.data, 'error')]));
+    const t = startTurn(w, 'q');
+    await t.done;
+    const errs = errorOf(t);
+    assert.equal(errs.length, 1);
+    assert.equal(errs[0].payload, FAILED + ': Overloaded');
+    assert.notEqual(errs[0].rateLimited, true);
+    assert.equal(t.posted().some(m => m.type === 'tokensDone'), false);
+});
+
+k.test('stream-cut', 'a connection cut mid-stream: one error, connection interrupted, no tokensDone', async () => {
+    const ev = FX.stream_text.events;
+    net.expect(MSG_URL, () => streamResponse([wire([ev[0], ev[3]])], { errorAfter: 1 }));
+    const t = startTurn(w, 'q');
+    await t.done;
+    const errs = errorOf(t);
+    assert.equal(errs.length, 1);
+    assert.equal(errs[0].payload, INTERRUPTED + ': Error in input stream');
+    assert.notEqual(errs[0].rateLimited, true);
+    assert.equal(t.posted().some(m => m.type === 'tokensDone'), false);
+});
+
+k.test('history-after-errors', 'failed turns leave nothing in the history: no failed question, no partial answer', async () => {
+    net.expect(MSG_URL, () => streamResponse([wire(FX.stream_text.events)]));
+    const t = startTurn(w, 'After the errors');
+    await t.done;
+    const msgs = net.calls[0].json().messages;
+    assert.deepEqual(msgs.at(-1), { role: 'user', content: 'After the errors' });
+    assert.equal(msgs.filter(m => m.role === 'user' && m.content === 'q').length, 0, 'no failed question resent');
+    assert.equal(msgs.some(m => m.role === 'assistant' && m.content === 'Hello'), false, 'no partial answer');
+    msgs.forEach((m, i) => assert.equal(m.role, i % 2 === 0 ? 'user' : 'assistant', 'roles alternate at ' + i));
 });
 
 k.test('no-browser', 'no browser global was needed', () => {

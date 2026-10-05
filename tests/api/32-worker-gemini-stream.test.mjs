@@ -35,6 +35,7 @@ import {
     cutAt,
     jsonResponse,
     sse,
+    splitInsideChar,
     streamResponse
 } from './wire.mjs';
 
@@ -123,6 +124,15 @@ k.test('turn2-thoughts', 'turn 2: thought parts first, a thought and an answer p
     assert.ok(logs.length > 0, 'debug is on');
     assert.equal(logs.includes(KEY), false, 'no key in the console');
     assert.equal(logs.includes('generativelanguage.googleapis.com'), false, 'no request URL in the console');
+});
+
+k.test('utf8-split', 'a multi-byte character split across two chunks arrives whole ("Reading the stream")', async () => {
+    const text = 'Formalità: 95%';
+    const chunk = { candidates: [{ content: { parts: [{ text }], role: 'model' }, index: 0 }], modelVersion: 'gemini-2.5-flash' };
+    net.expect(isStream, () => streamResponse(splitInsideChar(crlf(chunk), 'à')));
+    const t = startTurn(w, 'utf8');
+    await t.done;
+    assert.deepEqual(t.posted().filter(m => m.type === 'newToken').map(m => m.payload.token), [text]);
 });
 
 k.test('no-browser', 'no browser global was needed', () => {

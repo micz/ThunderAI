@@ -97,6 +97,17 @@ export function cutAt(text, ...offsets) {
     return out.filter(c => c !== '');
 }
 
+/**
+ * Encode a text and cut the bytes INSIDE the first occurrence of a multi-byte character, so the
+ * two chunks are each invalid UTF-8 on their own (a network chunk boundary falls anywhere).
+ */
+export function splitInsideChar(text, char) {
+    const bytes = enc.encode(text);
+    const at = enc.encode(text.slice(0, text.indexOf(char))).length + 1;
+    if (text.indexOf(char) < 0 || enc.encode(char).length < 2) throw new Error('splitInsideChar: needs a multi-byte character of the text');
+    return [bytes.slice(0, at), bytes.slice(at)];
+}
+
 /** A fixture of tests/fixtures/api/ (a JSON file of named entries, each with its `source`). */
 export function apiFixture(name) {
     return loadFixture(name, 'api');

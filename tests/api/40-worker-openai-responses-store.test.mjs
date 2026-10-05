@@ -14,6 +14,7 @@ import {
     startTurn
 } from './worker-realm.mjs';
 import {
+    apiFixture,
     capturedLines,
     sse,
     streamResponse
@@ -48,6 +49,17 @@ k.test('turn2-chained', 'turn 2: only the new message, with the id of response.c
     const sent = JSON.stringify(body.input);
     assert.ok(sent.includes('Explain the scores'));
     assert.equal(sent.includes('Classify this text'), false, 'the earlier turn is on the server, not resent');
+});
+
+k.test('failed-turn-unchained', 'a turn that fails (response.failed) is not chained: the next one refers to the last completed response', async () => {
+    const failed = apiFixture('openai_responses.json').failed_stream.events;
+    net.expect(URL_, () => streamResponse([failed.map(e => sse(e, e.type)).join('')]));
+    await startTurn(w, 'This one fails').done;
+    net.expect(URL_, stream);
+    await startTurn(w, 'And now?').done;
+    const body = net.calls[1].json();
+    assert.equal(body.previous_response_id, RESPONSE_ID, 'not ' + failed[0].response.id);
+    assert.equal(JSON.stringify(body.input).includes('This one fails'), false);
 });
 
 k.test('no-browser', 'no browser global was needed', () => {
