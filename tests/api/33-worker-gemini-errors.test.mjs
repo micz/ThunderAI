@@ -3,6 +3,9 @@
 //  - "Workers and UI": Stop before the answer (also during the body read of a retried 429: no
 //    newRetryAttempt) -> requestAborted, the unanswered message removed
 //    from the history; Stop once streaming -> the stopStreaming loop closes the turn;
+//  - "Error contract between js/api/* and workers", reading the body of an HTTP error: within 5 s
+//    (a body that never arrives: the error with the statusText as detail), and while Stop can
+//    abort it (Stop then: requestAborted, no error);
 //  - "Error contract between js/api/* and workers": the error_text forms, rateLimited (a 429 -
 //    Gemini RESOURCE_EXHAUSTED - true; 503 after the retries false; is_exception false),
 //    retryAfterMs, the same text posted and thrown;
@@ -163,6 +166,44 @@ k.test('stream-cut', 'a connection cut mid-stream: one error, connection interru
     assert.equal(errs[0].payload, INTERRUPTED + ': Error in input stream');
     assert.notEqual(errs[0].rateLimited, true);
     assert.equal(t.posted().some(m => m.type === 'tokensDone'), false);
+});
+
+/** An HTTP error whose body has started but never ends (until cancelled or errored). */
+function stalledError() {
+    const s = manualStream({ status: 401, statusText: 'Unauthorized', contentType: 'application/json' });
+    s.push('{"error": {"message": "never fini');
+    return s;
+}
+
+k.test('error-body-stalled', 'an HTTP error whose body never arrives: after 5 s the error with its status, the body cancelled', async (t) => {
+    const timers = fakeTime(t);
+    const s = stalledError();
+    net.expect(isStream, () => s.response);
+    const t0 = Date.now();
+    const turn = startTurn(w, 'q');
+    await assert.rejects(drive(turn.done, timers));
+    assert.equal(Date.now() - t0, 5000, 'the read gave up after 5 s');
+    assert.equal(s.cancelled, true, 'the body was cancelled');
+    const errs = errorOf(turn);
+    assert.equal(errs.length, 1);
+    assert.equal(errs[0].payload, FAILED + ': 401 Unauthorized, Detail: Unauthorized', 'the statusText stands in for the detail');
+    assert.equal(errs[0].rateLimited, false);
+    assert.equal(turn.posted().some(m => m.type === 'requestAborted'), false);
+});
+
+k.test('stop-during-error-body', 'Stop while the body of an HTTP error is read: requestAborted, no error', async (t) => {
+    fakeTime(t);   // no timer ever fires: the turn must end on the Stop alone
+    const s = stalledError();
+    net.expect(isStream, () => s.response);
+    const turn = startTurn(w, 'q');
+    await until(() => net.calls.length === 1, 'the request');
+    await flush();   // the response is in, its body being read
+    await w.send({ type: 'stop' });
+    await turn.done;
+    assert.ok(turn.posted().some(m => m.type === 'requestAborted'));
+    assert.deepEqual(errorOf(turn), []);
+    assert.equal(s.cancelled, true, 'the body was cancelled');
+    // history-after-errors, at the end of the file, checks that 'q' left the history.
 });
 
 k.test('history-after-errors', 'failed turns leave nothing in the history: no failed question, no partial answer', async () => {

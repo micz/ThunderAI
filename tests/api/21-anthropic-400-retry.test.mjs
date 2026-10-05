@@ -7,6 +7,9 @@
 //    first entry whose needle matches AND whose fields are in the body wins; none: no retry.
 //    Only 400. The error body is read from a clone: the original response is returned as-is
 //    (unread) when there is nothing to drop, when the retry fails, or when the retry throws.
+//    The clone is read within readResponseBody()'s 5 s: a body that never arrives is returned
+//    unretried, its original cancelled too (the worker's read then ends at once); a user abort
+//    during that read gives the is_aborted object (error contract).
 //  - "400 error hints": describeAnthropicError(detail, model, i18nStrings) prepends a localized
 //    hint when the message names budget_tokens / thinking.type / temperature / top_p / top_k /
 //    effort / output_config / thinking (in that order, first match wins), the $MODEL$ literal
@@ -21,11 +24,13 @@ import {
 import { NET } from './fetch-model.mjs';
 import {
     apiFixture,
-    jsonResponse
+    jsonResponse,
+    manualStream
 } from './wire.mjs';
 
 const { k, net, con } = areaFile('21-anthropic-400-retry');
 const { Anthropic, describeAnthropicError } = await import('../../js/api/anthropic.js');
+const { readResponseBody } = await import('../../js/api/api-retry.js');
 
 const MSG_URL = 'https://api.anthropic.com/v1/messages';
 const FX = apiFixture('anthropic.json');
@@ -117,6 +122,43 @@ k.test('only-400', 'another 4xx naming a parameter is not retried', async () => 
     const r = await client(SAMPLING).fetchResponse(MESSAGES, { maxRetries: 0 });
     assert.equal(r.status, 422);
     assert.equal(net.calls.length, 1);
+});
+
+/** A 400 whose body has started but never ends (until cancelled or errored). */
+function stalled400() {
+    const s = manualStream({ status: 400, statusText: 'Bad Request', contentType: 'application/json' });
+    s.push('{"type": "error", "error": {"message": "temperat');
+    return s;
+}
+
+k.test('body-stalled', 'a 400 whose body never arrives: after 5 s returned unretried, the original cancelled so the worker does not wait again', async (t) => {
+    const timers = fakeTime(t);
+    const s = stalled400();
+    net.expect(MSG_URL, () => s.response);
+    const t0 = Date.now();
+    const r = await drive(client(SAMPLING).fetchResponse(MESSAGES, { maxRetries: 0 }), timers);
+    assert.equal(Date.now() - t0, 5000, 'the clone read gave up after 5 s');
+    assert.equal(r.status, 400);
+    assert.equal(net.calls.length, 1, 'nothing to drop is known: no retry');
+    assert.equal(s.cancelled, true, 'the body was cancelled (the clone and the original)');
+    assert.equal(await readResponseBody(r), '', 'the read of the original by the worker ends at once, no timer fired');
+    assert.equal(Date.now() - t0, 5000);
+});
+
+k.test('abort-during-read', 'a user abort while the 400 body is read: the is_aborted object, no retry', async (t) => {
+    fakeTime(t);   // no timer ever fires: the request must end on the abort alone
+    const s = stalled400();
+    net.expect(MSG_URL, () => s.response);
+    const ctrl = new AbortController();
+    const p = client(SAMPLING).fetchResponse(MESSAGES, { maxRetries: 0, signal: ctrl.signal });
+    for (let i = 0; i < 30; i++) await new Promise(r => setImmediate(r));
+    assert.equal(net.calls.length, 1);
+    ctrl.abort(new DOMException('stopped by the user', 'AbortError'));
+    const out = await p;
+    assert.equal(out.is_exception, true);
+    assert.equal(out.is_aborted, true);
+    assert.equal(out.ok, false);
+    assert.equal(net.calls.length, 1, 'no retry');
 });
 
 k.test('transient-retry-too', 'the one-shot retry also gets the transient retry (_postMessages goes through fetchWithRetry)', async (t) => {

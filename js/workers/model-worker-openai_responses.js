@@ -24,6 +24,7 @@ import {
     OpenAI,
     extractUsage
 } from '../api/openai_responses.js';
+import { readResponseBody } from '../api/api-retry.js';
 import { taLogger } from '../mzta-logger.js';
 import {
     initUsageEmitter,
@@ -142,12 +143,22 @@ self.onmessage = async function(event) {
             logger: taLog,
             onRetry: (info) => postMessage({ type: 'newRetryAttempt', payload: info }),
         });
-        requestAbort = null;
         postMessage({ type: 'messageSent' });
 
-        if (response.is_aborted === true) {
-            // Stopped before any answer arrived: drop the unanswered message, so
-            // the next turn does not send it twice.
+        // The body of an HTTP error is read while Stop can still abort it (an abort
+        // errors the body), within the time limit of readResponseBody(): a body that
+        // never arrives must not leave the turn hanging.
+        let errorBodyText = '';
+        if (!response.ok && response.is_exception !== true) {
+            errorBodyText = await readResponseBody(response);
+        }
+        const aborted = response.is_aborted === true || requestAbort.signal.aborted;
+        requestAbort = null;
+
+        if (aborted) {
+            // Stopped before any answer arrived, also while the body of an HTTP
+            // error was read: drop the unanswered message, so the next turn does
+            // not send it twice.
             stopStreaming = false;
             conversationHistory.pop();
             taLog.log("Request aborted by the user before the response arrived");
@@ -166,7 +177,7 @@ self.onmessage = async function(event) {
                 error_text = error_message;
             }else{
                 try{
-                    const errorJSON = await response.json();
+                    const errorJSON = JSON.parse(errorBodyText);
                     errorDetail = JSON.stringify(errorJSON);
                     error_message = errorJSON.error.message;
                 }catch(e){

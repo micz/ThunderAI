@@ -23,7 +23,10 @@ import {
   ANTHROPIC_EFFORT_LEVELS,
   ANTHROPIC_DEFAULT_EFFORT
 } from './anthropic_model_capabilities.js';
-import { fetchWithRetry } from './api-retry.js';
+import {
+    fetchWithRetry,
+    readResponseBody
+} from './api-retry.js';
 import {
   createUsageData,
   isUsageDataEmpty,
@@ -371,10 +374,21 @@ export class Anthropic {
       // error body is read from a clone, so when there is nothing to drop -- or
       // the retry fails as well -- the original response is returned unread and
       // the worker reports it with the describeAnthropicError() hint as before.
+      // The clone is read within the time limit of readResponseBody(). When it gave
+      // nothing (a body that never arrives, unreadable, or a user abort), the original
+      // is cancelled too: the worker's own read then ends at once instead of waiting
+      // for the same body again.
+      const errorText = await readResponseBody(response.clone());
+      // A user abort errors the body: it ends the request (the catch below), it is
+      // not an unreadable body.
+      if (retryConfig.signal?.aborted) throw retryConfig.signal.reason;
+      if (errorText === '') {
+        response.body?.cancel().catch(() => {});
+        return response;
+      }
       let errorMessage = '';
       try {
-        const errorJSON = await response.clone().json();
-        errorMessage = errorJSON?.error?.message ?? '';
+        errorMessage = JSON.parse(errorText)?.error?.message ?? '';
       } catch(e) {
         return response;
       }

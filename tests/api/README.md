@@ -54,7 +54,7 @@ Helper modules have no `.test.mjs` suffix, so the level-1 glob never runs them.
 | `07-retry-helpers` | "Automatic Retry Handling": constants, `parseRetryAfter()`, `classifyRateLimitBody()`; "Logging": `extractErrorMessage()` |
 | `10-fetch-with-retry` | "Automatic Retry Handling": `fetchWithRetry()` whole (the retried body read only with debug on, the 5 s limit of that read and of the 429 inspection, a user abort during a body read), "Logging" |
 | `20-anthropic-request` | "Anthropic / Claude": request body construction |
-| `21-anthropic-400-retry` | "Anthropic / Claude": one-shot retry on a 400, 400 error hints |
+| `21-anthropic-400-retry` | "Anthropic / Claude": one-shot retry on a 400 (its clone read within 5 s, a user abort during it), 400 error hints |
 | `22-gemini-request` | "Google Gemini", "Extra body data" (two-level merge), includeThoughts |
 | `23-ollama-request` | "Ollama": think levels, keep_alive, options, Bearer on every endpoint; 300 s timeout |
 | `24-openai-comp-request` | "OpenAI-Compatible", "Extra body data", stream_options; 300 s timeout |
@@ -75,7 +75,9 @@ with debug **on** and the usage display **on** (and checks the key never reaches
 runs the failure paths with the usage display **off** (and checks nothing is emitted then). Every `-errors`
 file also stops a turn while the body of a retried 429 is being read (`abort-during-body-read`): the
 worker posts `requestAborted` and no `newRetryAttempt`, and the next turn (`after-abort`) does not resend
-the message.
+the message. It also reads an HTTP error whose body never arrives (`error-body-stalled`: the error
+after 5 s, with the `statusText` as detail) and stops a turn during that read (`stop-during-error-body`:
+`requestAborted`, no `error`).
 
 ## The fetch model
 
@@ -110,8 +112,9 @@ because of a timeout racing it.
 
 Responses are built with Node's own `Response`, `Headers`, `ReadableStream` and `TextEncoder`
 (`api/wire.mjs`): `jsonResponse()`, `textResponse()`, `streamResponse(chunks, {errorAfter})` (the
-chunks exactly as they should arrive, `errorAfter` to cut the connection), `manualStream()` (the test
-pushes chunks and decides when a `reader.read()` resolves: a user stop, a slow body), `sse()`,
+chunks exactly as they should arrive, `errorAfter` to cut the connection), `manualStream({status, statusText})`
+(the test pushes chunks and decides when a `reader.read()` resolves: a user stop, a slow body, a body
+that never ends), `sse()`,
 `ndjson()`, `cutAt()`.
 
 ## Time

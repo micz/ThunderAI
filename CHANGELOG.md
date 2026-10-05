@@ -40,6 +40,7 @@
         <li>Fix: an additional text field left empty in the AI chat window is now sent as an empty text. Previously, with the <i>Placeholders: use default value</i> option disabled, the placeholder itself was sent to the AI.</li>
         <li>Fix: a change to a custom data placeholder now takes effect at once in the prompts started from the menus and the popup. Previously a prompt already used kept the old text until the menus were rebuilt or Thunderbird was restarted.</li>
         <li>Fix: a placeholder written inside the text of a custom data placeholder, like <i>{%mail_typed_text%}</i> or <i>{%mail_plain_text_part%}</i>, now gets its data in the prompts started from the menus and the popup, and custom data placeholders now work also in the translate prompt.</li>
+        <li><i>[All APIs]</i> Fix: when the AI server returned an error and then stopped sending data, the AI chat window could stay stuck, and the Stop button had no effect. The error is now shown within a few seconds, and Stop cancels the request at once.</li>
         <li>Many improvements.</li>
         <li>Minor bugs fixed.</li>
         <li>Redesigned the Custom Prompts page: a list of the prompts next to a detail editor, plus a table view that shows all the prompts and their options at a glance. The last view chosen is remembered. The search now also looks in the prompt text [<a href="https://github.com/micz/ThunderAI/issues/904">#904</a>].</li>

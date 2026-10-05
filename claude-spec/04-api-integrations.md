@@ -554,7 +554,13 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
   are in the body wins; if none qualifies, there is no retry. Only status 400 is retried. The error
   body is read from `response.clone()`, so the original response stays unread: it is returned as-is
   when there is nothing to drop, when the retry fails for any reason, or when the retry throws, and
-  the worker then reports the **original** error with the `describeAnthropicError()` hint. The 400
+  the worker then reports the **original** error with the `describeAnthropicError()` hint. The clone
+  is read by `readResponseBody()` (`js/api/api-retry.js`), within its 5 s limit. A clone that gives
+  nothing (a body that never arrives, an unreadable one) means nothing to drop: the original is
+  cancelled too, so the worker's own read of it ends at once instead of waiting 5 s more, and the
+  worker reports the status with the `statusText` as the detail. A user abort during that read
+  ends the request like any abort: the `is_aborted` object (see the
+  [Error contract](#error-contract-between-jsapi-and-workers)). The 400
   arrives before any stream data, so this works identically for streaming and non-streaming
   requests. Stored prefs are never touched — the next request rebuilds the full body and may earn
   the same 400 + retry again, which is why the table still has to be kept current.
@@ -817,7 +823,8 @@ if(response.is_exception === true){
     error_message = response.error;
     error_text = error_message;              // already prefixed; no status/statusText exist
 }else{
-    // …extract error_message / errorDetail from the JSON body…
+    // …extract error_message / errorDetail from the JSON body (errorBodyText, read
+    // before, see below; unparsable or empty → response.statusText)…
     // (error.message; Ollama's documented body is {"error": "<message>"}, the string itself)
     error_text = i18nStrings["<provider>_api_request_failed"] + ": " + response.status + " " + response.statusText
         + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
@@ -828,6 +835,20 @@ throw new Error("[ThunderAI] <Provider> API request failed: " + error_text);
 ```
 
 The `postMessage` payload and the `throw` reuse the same `error_text` so the UI panel and the console message cannot drift apart.
+
+**Reading the body of an HTTP error.** Before that branch, a worker that got an HTTP error reads
+its body with `readResponseBody()` (`js/api/api-retry.js`, the same helper as the retry logs), into
+`errorBodyText`:
+- **within 5 s:** a body that never arrives, or cannot be read, is cancelled and gives `''`, so the
+  error is still posted, with its status and `statusText` as the detail. A turn never hangs on an
+  error body: without the limit the chat window waited for ever, and a special command until
+  `special_command_timeout`. `rateLimited` and `retryAfterMs` do not depend on the body (the status,
+  and the value `fetchWithRetry()` set), so a batch still stops on a rate limit.
+- **while Stop can abort it:** `requestAbort` is cleared only after that read (see
+  [Workers and UI](#automatic-retry-handling)). An abort errors the body; the worker then checks
+  `requestAbort.signal.aborted` and, if set, takes the `is_aborted` path instead (the message leaves
+  the history, `stopStreaming` is reset, `requestAborted` is posted, no `error`), even though the
+  status is already known.
 
 `rateLimited` and `retryAfterMs` are siblings of `payload` (which stays a string, so the connection test is unaffected). `retryAfterMs` is set when `fetchWithRetry` gave up because the server asked to wait longer than `retryAfterCapMs` (see [Automatic Retry Handling](#automatic-retry-handling)); such a response is always `rateLimited`, whatever its status. Otherwise `rateLimited` is `true` only for an HTTP 429 returned after the retries are used up or classified as terminal: Gemini `RESOURCE_EXHAUSTED`, OpenAI `rate_limit_exceeded` / `insufficient_quota` and Anthropic `rate_limit_error` are all 429. It is `false` on an `is_exception` (no `status`). 503/529 (overloaded) are deliberately not flagged: they mean no capacity, not no quota. The mid-stream error posts (below) do not set it.
 
@@ -973,14 +994,17 @@ API key in the query string.
 - Each worker creates an `AbortController` per `chatMessage`, kept in `requestAbort` only while
   waiting for the response: the whole `fetchResponse()` call, so the headers, the body reads of a
   retried response inside `fetchWithRetry()` (the 429 inspection, the log read with debug on) and
-  the backoff. It passes `{signal, logger: taLog, onRetry}` to `fetchResponse()`.
+  the backoff, and after it the read of an HTTP error's body (see the
+  [Error contract](#error-contract-between-jsapi-and-workers)). It is cleared before the stream is
+  read. It passes `{signal, logger: taLog, onRetry}` to `fetchResponse()`.
 - `onRetry` posts `{type: 'newRetryAttempt', payload: {attempt, maxRetries, delayMs, status, reason}}`
   (`reason`: `'http'`, `'network'` or `'timeout'`; `status` is `null` for the last two).
 - On `stop`, the worker aborts `requestAbort` if it is still set. Once streaming has started,
   `requestAbort` is `null` and the existing `stopStreaming` loop handles Stop, so a pending
   `reader.read()` is never rejected.
-- An aborted request (`is_aborted`) removes the unanswered user message from `conversationHistory`
-  (so the next turn does not send it twice) and posts `requestAborted`.
+- An aborted request (`is_aborted`, or Stop while an HTTP error's body was read) removes the
+  unanswered user message from `conversationHistory` (so the next turn does not send it twice) and
+  posts `requestAborted`.
 - A failed request does the same before posting its `error`: an HTTP error, a network error once
   the retries are used up, and every failure in the middle of the stream (see the
   [Error contract](#error-contract-between-jsapi-and-workers)). The partial answer, if any, is

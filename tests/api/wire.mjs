@@ -58,7 +58,7 @@ export function streamResponse(chunks, { status = 200, statusText = '', headers 
  * A streamed response fed by the test: push() a chunk, close() or error() it. The body waits
  * for the test, so the test decides when a reader.read() resolves (a user stop, a slow stream).
  */
-export function manualStream({ status = 200, headers = {}, contentType = 'text/event-stream' } = {}) {
+export function manualStream({ status = 200, statusText = '', headers = {}, contentType = 'text/event-stream' } = {}) {
     let ctrl;
     let cancelled = false;
     const stream = new ReadableStream({
@@ -66,7 +66,7 @@ export function manualStream({ status = 200, headers = {}, contentType = 'text/e
         cancel() { cancelled = true; },
     });
     return {
-        response: new Response(stream, { status, headers: { 'Content-Type': contentType, ...headers } }),
+        response: new Response(stream, { status, statusText, headers: { 'Content-Type': contentType, ...headers } }),
         push(s) { ctrl.enqueue(typeof s === 'string' ? enc.encode(s) : s); },
         close() { ctrl.close(); },
         error(e) { ctrl.error(e || new TypeError('Error in input stream')); },

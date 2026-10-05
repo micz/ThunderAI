@@ -212,13 +212,15 @@ const SERVER_MESSAGE_MAX_LENGTH = 500;
 const SERVER_BODY_READ_TIMEOUT_MS = 5000;
 
 /**
- * Read the body of a response that is about to be retried, for the log lines.
+ * Read a response body as text within SERVER_BODY_READ_TIMEOUT_MS: the body of a
+ * response that is about to be retried (for the log lines, the 429 inspection),
+ * and, in the workers, the body of an HTTP error before it is reported.
  * Never throws: an unreadable body, or one that does not arrive within
  * SERVER_BODY_READ_TIMEOUT_MS, gives '' (and its stream is cancelled).
  * Read through its own reader rather than response.text(): text() locks the
  * stream, and a locked stream cannot be cancelled from outside.
  */
-async function readResponseBody(response) {
+export async function readResponseBody(response) {
     if (!response.body) return '';
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
