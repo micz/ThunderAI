@@ -9,7 +9,8 @@
 //      anthropic_api      anthropic_api_key, anthropic_model, anthropic_version
 //  - validation is skipped when use_specific_api is true (config.api_type non-empty: the
 //    credentials come from the prompt config, not the global prefs);
-//  - one module Web Worker per provider: js/workers/model-worker-<provider>.js.
+//  - one module Web Worker per provider: js/workers/model-worker-<provider>.js, created in
+//    initWorker() once the configuration has passed ("Worker Lifecycle & Timeout").
 //
 // Reached at level 1 without touching shipped code: a background context (the module reads the
 // preferences through mztaPrefs, so the core browser mock is installed - this is not a worker
@@ -68,7 +69,7 @@ for (const [llm, fields] of Object.entries(REQUIRED)) {
             await setPrefs({ [field]: '' });
             const cmd = new mzta_specialCommand({ llm, config: {} });
             await assert.rejects(cmd.initWorker(), e => e instanceof Error && e.isConfigError === true);
-            assert.deepEqual(cmd.worker.posted, [], 'nothing reached the worker');
+            assert.equal(cmd.worker, null, 'no worker, so nothing was posted to one');
         });
     }
 
@@ -81,11 +82,15 @@ for (const [llm, fields] of Object.entries(REQUIRED)) {
         for (const f of fields) assert.equal(init[f], VALUE[f] ?? 'some-model', f);
     });
 
-    k.test(`worker-${llm.replace(/_/g, '-')}`, `${llm}: one module worker, js/workers/${FILE[llm]}`, () => {
+    k.test(`worker-${llm.replace(/_/g, '-')}`, `${llm}: one module worker, js/workers/${FILE[llm]}, created by initWorker()`, async () => {
+        await setPrefs();
         const before = created.length;
-        new mzta_specialCommand({ llm, config: {} });
+        const cmd = new mzta_specialCommand({ llm, config: {} });
+        assert.equal(created.length, before, 'not in the constructor');
+        await cmd.initWorker();
         assert.equal(created.length, before + 1);
         const w = created.at(-1);
+        assert.equal(cmd.worker, w);
         assert.ok(w.url.endsWith('/js/workers/' + FILE[llm]), w.url);
         assert.equal(w.options?.type, 'module');
     });

@@ -60,6 +60,7 @@ import { mztaPrefs } from './mzta-prefs.js';
     
     prompt = "";
     worker = null;
+    worker_path = "";
     llm = "";
     full_message = "";
     thinking_message = "";
@@ -89,9 +90,11 @@ import { mztaPrefs } from './mzta-prefs.js';
             anthropic_api: './workers/model-worker-anthropic.js',
         };
 
+        // The Worker itself is created only by initWorker(), once the configuration
+        // is known to be usable: a configuration error then leaves nothing to terminate.
         const worker_path = worker_path_map[this.llm];
         if (worker_path) {
-            this.worker = new Worker(new URL(worker_path, import.meta.url), { type: 'module' });
+            this.worker_path = worker_path;
         } else {
             this.logger.log("Invalid LLM type: " + this.llm);
             throw new Error("Invalid LLM type: " + this.llm);
@@ -167,6 +170,7 @@ import { mztaPrefs } from './mzta-prefs.js';
             workerInitMessage[prefKey] = value;
         }
 
+        this.worker = new Worker(new URL(this.worker_path, import.meta.url), { type: 'module' });
         this.worker.postMessage(workerInitMessage);
     }
 

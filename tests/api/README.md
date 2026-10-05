@@ -65,7 +65,8 @@ Helper modules have no `.test.mjs` suffix, so the level-1 glob never runs them.
 | `32`/`33-worker-gemini-*` | the same, Gemini (turn 1 replays the capture) |
 | `34`/`35-worker-ollama-*` | the same, Ollama (system prompt once; turn 1 replays the capture) |
 | `36`/`37-worker-openai-comp-*` | the same, OpenAI-compatible (reasoning field priority, no-usage servers) |
-| `38`/`39-worker-openai-responses-*` | the same, OpenAI Responses (turn 1 replays the capture; reasoning item fallback) |
+| `38`/`39-worker-openai-responses-*` | the same, OpenAI Responses (turn 1 replays the capture; reasoning item fallback; store off: the whole history) |
+| `40-worker-openai-responses-store` | "OpenAI API", "Chaining turns (`chatgpt_store`)": store on, previous_response_id |
 | `99-harness-known-issues` | the known-issue shape |
 | `99-harness-fetch-model` | the fetch model and the realm themselves |
 
@@ -167,13 +168,17 @@ KNOWN = { '<file stem>': { '<case id>': REASONS.<name> } }
 that is not in `tests/api/`, a case id that is not a plain slug, a malformed reason, an unknown provider
 and a reason not in `REASONS`; an unused reason fails too. Each file ends with `k.coverage()`.
 
-Today, three:
+Today: none. The three known issues of the first run were fixed in the code, and spec 04 was
+aligned where it contradicted itself:
 
-| Test | Spec 04 | What the code does |
-|---|---|---|
-| `27-config-validation` `before-worker-created` | "Configuration Validation" [shared]: validated *before* the worker is created | the Worker is created in the constructor; after the config error it is never terminated |
-| `35-worker-ollama-errors` `http-404-string-error` | "Error contract…" [ollama] | Ollama's `{"error": "<string>"}` body gives `Detail: undefined {...}` |
-| `38-worker-openai-responses-stream` `turn2-history` | "Rendering in the chat window" [openai_responses]: the workers resend the whole history | with `chatgpt_store` off (the default) turn 2 sends only the last message, and no `previous_response_id` |
+- `27-config-validation` `before-worker-created`: `mzta_specialCommand` now creates its Worker in
+  `initWorker()`, after the validation (spec 04 "Worker Lifecycle & Timeout" said "in its
+  constructor", against "Configuration Validation");
+- `35-worker-ollama-errors` `http-404-string-error`: the Ollama worker reads the string `error` of
+  Ollama's error body;
+- `38-worker-openai-responses-stream` `turn2-history`: with `chatgpt_store` off the Responses worker
+  sends the whole history (spec 04 "Chaining turns (`chatgpt_store`)", tested on both sides by `38`
+  and `40`).
 
 ## What is not covered
 
@@ -230,6 +235,6 @@ are not asserted (or only the part the spec fixes is), and they are input for sp
 12. **Debug logging beyond URLs, headers and `config`**: with debug on the workers log every stream line
     and the full answer and reasoning. Spec 04 only forbids the URL, headers and `config`, which the
     tests check (no key, no Gemini URL in the console).
-13. **`chatgpt_store` and `previous_response_id`**: spec 04 does not describe how the Responses worker
-    chains turns. The third known issue is stated against the one sentence that does exist.
+13. *(resolved: spec 04 "OpenAI API" now describes how the Responses worker chains turns, "Chaining
+    turns (`chatgpt_store`)"; `38` and `40` test both cases.)*
 14. **Configuration Validation**: the message of the thrown error.

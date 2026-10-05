@@ -129,7 +129,12 @@ self.onmessage = async function(event) {
                     try{
                         const errorJSON = await response.json();
                         errorDetail = JSON.stringify(errorJSON);
-                        error_message = errorJSON.error.message;
+                        // Ollama's documented error body is {"error": "<message>"}: the
+                        // string itself is the message. An OpenAI-style object (a proxy in
+                        // front of the server) still carries it under error.message.
+                        const errorField = errorJSON.error;
+                        error_message = (typeof errorField === 'string') ? errorField
+                            : (typeof errorField?.message === 'string' ? errorField.message : response.statusText);
                     }catch(e){
                         error_message = response.statusText;
                     }

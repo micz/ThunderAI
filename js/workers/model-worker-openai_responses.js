@@ -100,8 +100,12 @@ self.onmessage = async function(event) {
         usageData = null;
         usageMessageId = nextUsageMessageId();
 
+        // Only a stored response can be referenced: with chatgpt_store off the API
+        // keeps nothing, so previous_response_id is never sent (see fetchResponse())
+        // and the whole history must go with every request, or the model would see
+        // the new message alone.
         let messagesToSend = conversationHistory;
-        if (previous_response_id) {
+        if (previous_response_id && openai.store) {
             messagesToSend = [conversationHistory[conversationHistory.length - 1]];
             taLog.log("previous_response_id: " + previous_response_id);
         } else {

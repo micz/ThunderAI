@@ -182,6 +182,12 @@ Per-prompt ChatGPT Web overrides are a separate, unrelated mechanism: the custom
 - **`chatgpt_truncation`, `chatgpt_prompt_cache_key`, `chatgpt_service_tier` and
   `chatgpt_safety_identifier`** are plain pass-through values, sent whenever non-empty and not
   capability-gated. `safety_identifier` replaces the deprecated `user` parameter.
+- **Chaining turns (`chatgpt_store`)**: the worker keeps the `id` of `response.created` as
+  `previous_response_id`, but uses it only when `chatgpt_store` is on: then it sends just the new
+  user message and `fetchResponse()` adds `previous_response_id`, the earlier turns being stored on
+  the server. With `chatgpt_store` off (the default) nothing is stored, so nothing can be referenced:
+  `fetchResponse()` never sends `previous_response_id` and the worker sends the whole
+  `conversationHistory` with every request, like the other workers.
 - **`chatgpt_include_encrypted_reasoning`** adds `include: ['reasoning.encrypted_content']`
   **only when the checkbox is on** — an empty `include` array is not a valid request. It is
   only meaningful when `chatgpt_store` is off.
@@ -777,7 +783,7 @@ This keeps API calls off the main thread and avoids blocking the Thunderbird UI.
 
 ### Worker Lifecycle & Timeout (`mzta_specialCommand`)
 
-`mzta_specialCommand` (`js/mzta-special-commands.js`) creates one Worker per instance in its constructor. Callers (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, auto add-tags in `mzta-background.js`) create a **fresh instance per prompt** — instances are never reused.
+`mzta_specialCommand` (`js/mzta-special-commands.js`) creates one Worker per instance, in `initWorker()`, only once the configuration has passed the [validation](#configuration-validation): the constructor merely checks the connection type and picks the worker file, so a configuration error leaves no Worker behind (`sendPrompt()`, whose `finally` disposes of it, is never reached in that case). Callers (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, auto add-tags in `mzta-background.js`) create a **fresh instance per prompt** — instances are never reused.
 
 - **Termination:** `sendPrompt()` always calls `dispose()` (via `Promise.finally`) once the prompt settles — on success, error, or timeout. `dispose()` calls `worker.terminate()` and nulls the reference. This prevents Worker leaks during batch processing, where one Worker would otherwise be created per message and never freed (a cause of out-of-memory hangs on large selections).
 - **Timeout:** `sendPrompt()` aborts the request if the worker never replies (no `tokensDone`/`error`). The duration comes from the `special_command_timeout` pref (default `120000` ms), with a hardcoded `SPECIAL_COMMAND_TIMEOUT_DEFAULT` fallback. The pref is configurable in the main options page (always shown — see `claude-spec/05-options.md`). On timeout the promise rejects with a clear error and the worker is terminated by the same `finally`.
@@ -800,6 +806,7 @@ if(response.is_exception === true){
     error_text = error_message;              // already prefixed; no status/statusText exist
 }else{
     // …extract error_message / errorDetail from the JSON body…
+    // (error.message; Ollama's documented body is {"error": "<message>"}, the string itself)
     error_text = i18nStrings["<provider>_api_request_failed"] + ": " + response.status + " " + response.statusText
         + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
 }

@@ -40,31 +40,10 @@ const REASON_RE = /^spec 04 "[^"]+" \[([a-z_]+)\]: \S/;
 
 /** The reasons of KNOWN, one per spec contradiction. */
 export const REASONS = {
-    workerBeforeValidation: 'spec 04 "Configuration Validation" [shared]: required fields are validated in initWorker() '
-        + 'before the worker is created; mzta_specialCommand creates the Worker in its constructor, so it already exists '
-        + 'when initWorker() throws the isConfigError - and since sendPrompt() (whose finally calls dispose()) is never '
-        + 'reached, that Worker is never terminated.',
-    ollamaStringError: 'spec 04 "Error contract between js/api/* and workers" [ollama]: error_message is extracted from '
-        + 'the JSON body, and the contract exists so that no literal "undefined" reaches the user; Ollama\'s documented error '
-        + 'body is {"error": "<message>"} (a string), but the worker reads errorJSON.error.message, so the window shows '
-        + '"Ollama API request failed: 404 Not Found, Detail: undefined {...}".',
-    responsesHistoryLost: 'spec 04 "Rendering in the chat window" [openai_responses]: the workers resend the whole history '
-        + 'on the next request; with chatgpt_store off (the default) the OpenAI Responses worker, once response.created gave '
-        + 'it a previous_response_id, sends only the last user message, and fetchResponse() drops previous_response_id '
-        + 'because store is off - so from turn 2 on the model sees neither the earlier questions nor its answers.',
 };
 
 /** The known issues, by test file and case id. */
 export const KNOWN = {
-    '27-config-validation': {
-        'before-worker-created': REASONS.workerBeforeValidation,
-    },
-    '35-worker-ollama-errors': {
-        'http-404-string-error': REASONS.ollamaStringError,
-    },
-    '38-worker-openai-responses-stream': {
-        'turn2-history': REASONS.responsesHistoryLost,
-    },
 };
 
 /** The file stems of tests/api/ (the files a KNOWN entry may name). */
