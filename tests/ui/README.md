@@ -142,6 +142,9 @@ sections, and an empty reason; `ui/99-harness-known-issues` runs it.
   change the answer. The file checks that the chips are rebuilt from the API, not the fallback cases.
 - **The Hyprland warning** (Linux only): the harness's platform is fixed to Windows. Not a group A
   section.
+- **The plain links of the options page**, deliberately left out of the spec: the documentation
+  cards and the welcome card (`#link_doc_guides`, `#link_doc_tutorial`, `#btn_welcome`), the survey
+  link and the ThunderStats card. They only open a page and carry no state.
 
 ## Under-specified
 
@@ -152,5 +155,3 @@ what a page happens to do.
 
 - **`chatgpt_win_top` / `chatgpt_win_left`**: default `''` but rendered as `type="number"` inputs, so a
   change stores a number (or `NaN` when cleared); the spec's table gives the default only.
-- **The documentation cards and the welcome card** (`#link_doc_guides`, `#link_doc_tutorial`,
-  `#btn_welcome`) and the survey link: no spec section.
