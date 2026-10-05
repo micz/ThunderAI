@@ -11,7 +11,10 @@ import {
     UnscriptedFetchError
 } from './fetch-model.mjs';
 import { assertNoBrowser } from './worker-realm.mjs';
-import { jsonResponse } from './wire.mjs';
+import {
+    jsonResponse,
+    manualStream
+} from './wire.mjs';
 
 const net = installFetchModel();
 test.after(() => net.restore());
@@ -71,6 +74,29 @@ test('an already aborted signal rejects with its reason; a hang rejects on abort
     const p = fetch('https://a.test/', { signal: c2.signal });
     c2.abort(new Error('r2'));
     await assert.rejects(p, /r2/);
+    net.reset();
+});
+
+test('an abort after the Response errors its body with the reason; a body read to the end is unaffected', async () => {
+    net.reset();
+    const c = new AbortController();
+    const s = manualStream({ status: 503, headers: { 'Retry-After': '7' } });
+    net.expect('https://a.test/', () => s.response);
+    const r = await fetch('https://a.test/', { signal: c.signal });
+    assert.equal(r.status, 503);
+    assert.equal(r.headers.get('retry-after'), '7', 'the headers are kept');
+    s.push('partial');
+    const reading = r.text();
+    c.abort(new Error('r3'));
+    await assert.rejects(reading, /r3/, 'a pending text() rejects with the reason');
+    assert.equal(s.cancelled, true, 'the scripted stream is cancelled, like a cut connection');
+
+    const c2 = new AbortController();
+    net.expect('https://a.test/', () => jsonResponse({ done: true }));
+    const r2 = await fetch('https://a.test/', { signal: c2.signal });
+    assert.deepEqual(await r2.json(), { done: true });
+    c2.abort(new Error('late'));
+    assert.equal(r2.bodyUsed, true);
     net.reset();
 });
 

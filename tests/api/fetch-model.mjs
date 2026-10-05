@@ -27,8 +27,11 @@
  *
  *  Like the real fetch, a call whose signal is already aborted rejects with the signal's reason,
  *  and an answer still pending (NET.hang, a deferred) rejects with the reason when the signal
- *  aborts. Once a Response is returned, the signal no longer matters here (the body is the
- *  test's own stream).
+ *  aborts. Also like the real fetch, the signal still matters once a Response is returned: an
+ *  abort then errors its body stream with the signal's reason, so a pending `response.text()` or
+ *  `reader.read()` rejects (a body already read to the end is unaffected). The scripted Response
+ *  is handed over with its body piped through a stream the signal can error, keeping its status,
+ *  statusText and headers.
  */
 
 export class UnscriptedFetchError extends Error {
@@ -70,6 +73,20 @@ function describeMatcher(m) {
     if (typeof m === 'string' || m instanceof RegExp) return String(m);
     if (m && typeof m === 'object') return (m.method ? m.method + ' ' : '') + String(m.url ?? '*');
     return 'a predicate';
+}
+
+/**
+ * The Response as the real fetch hands it over: its body errors with the signal's reason when
+ * the signal aborts. pipeThrough() with a signal aborts the writable side on abort, which errors
+ * the readable side with the reason (and cancels the scripted stream, as a cut connection would).
+ */
+function abortableBody(r, signal) {
+    if (r.body === null) return r;
+    return new Response(r.body.pipeThrough(new TransformStream(), { signal }), {
+        status: r.status,
+        statusText: r.statusText,
+        headers: r.headers,
+    });
 }
 
 export function installFetchModel() {
@@ -132,7 +149,7 @@ export function installFetchModel() {
                         violate(err);
                         settle(reject, err);
                     } else {
-                        settle(resolve, r);
+                        settle(resolve, signal ? abortableBody(r, signal) : r);
                     }
                 },
                 e => settle(reject, e),

@@ -937,9 +937,25 @@ each class).
   the backoff wait (an abortable sleep).
 - **Only before the body is consumed.** A failure in the middle of an SSE stream is not retried
   (out of scope).
-- The body of a retried response is read to the end (which also frees the connection) by
-  `readResponseBody()`, for the log lines only; a body that does not arrive within 5 s, or cannot
-  be read, is cancelled and gives no message.
+- The body of a retried response is needed only for the log lines (below), so it is read only
+  when the logger has debug on (`logger.do_debug === true`). With debug off it is cancelled at
+  once (which frees the connection) and the retry waits exactly its delay, except for a 429, whose
+  body the inspection below reads first.
+  With debug on `readResponseBody()` reads it to the end (which also frees the connection); a body
+  that does not arrive within 5 s (`SERVER_BODY_READ_TIMEOUT_MS`), or cannot be read, is cancelled
+  and gives no message. **That read comes before the wait and adds to it:** `onRetry` is called
+  once the read is over, its `delayMs` is the backoff (or `Retry-After`) alone, and the next attempt
+  starts up to 5 s later than `delayMs`.
+- The 429 inspection above does not depend on debug: `inspectRateLimitBody()` reads its clone
+  whatever the logger, so a terminal 429 and Gemini's `RetryInfo` act the same with debug on and
+  off. It reads it through `readResponseBody()`, with the same 5 s limit: a 429 body that does not
+  arrive in time is cancelled and gives no information, so the 429 is retried with the backoff
+  (and that wait adds to the delay, with debug off too). The text it read is reused for the log
+  lines and the original body is cancelled, so a 429 waits for the limit at most once.
+- **A user abort during a body read** (the 429 inspection or the log read) ends the request with
+  the signal's reason: no retry log line, no `onRetry`, no further attempt. An abort errors the
+  body, and both reads would otherwise take the error for an unreadable body. A body that is merely
+  unreadable or slow, without an abort, is still retried.
 
 **Logging:** each retry is logged through `taLogger.log()`, so it only shows with the debug pref on.
 For a retried HTTP status the line ends with the server's own explanation, ` - server message: ...`
@@ -948,6 +964,8 @@ For a retried HTTP status the line ends with the server's own explanation, ` - s
 top-level `message`, otherwise the raw text (a proxy's HTML page), whitespace collapsed, cut at
 500 characters. A second line, `<label> response body: ...`, follows with the whole body as
 received (not cut, not reformatted), for every provider that goes through `fetchWithRetry()`.
+Both come from the body, which is read only with debug on: with debug off neither the suffix nor
+the second line is produced, and a body that gave nothing (5 s limit, unreadable) gives neither.
 **The request URL is never logged**: Google Gemini (and some OpenAI-compatible endpoints) carry the
 API key in the query string.
 

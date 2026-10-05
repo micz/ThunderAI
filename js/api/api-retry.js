@@ -109,9 +109,12 @@ export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
             if (!RETRYABLE_STATUSES.includes(response.status) || attempt === maxRetries) {
                 return response;
             }
-            let bodyInfo = { terminal: false, reason: '', retryAfterMs: null };
+            let bodyInfo = { terminal: false, reason: '', retryAfterMs: null, text: null };
             if (response.status === 429) {
                 bodyInfo = await inspectRateLimitBody(response);
+                // A user abort errors the body, which the inspection reads as "no
+                // information": it must end the request, not be reported as a retry.
+                if (signal?.aborted) throw signal.reason;
                 if (bodyInfo.terminal) {
                     logger.log(label + " request failed (HTTP 429, " + bodyInfo.reason + "), not retrying: waiting cannot help");
                     return response;
@@ -128,11 +131,21 @@ export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
                 response.retryAfterMs = retryAfterMs;
                 return response;
             }
-            // The caller never sees this response, so its body is read here for the
-            // log lines: the server's own explanation ("The model is overloaded")
-            // and the whole body.
-            // Reading it to the end also releases the connection.
-            serverBody = await readResponseBody(response);
+            // The caller never sees this response. With debug on its body is read for
+            // the log lines: the server's own explanation ("The model is overloaded")
+            // and the whole body; reading it to the end also releases the connection.
+            // With debug off nothing would show them, so it is cancelled at once.
+            // A 429 body was already read through its clone: that text is reused,
+            // so a stalled 429 waits for the read limit once, not twice.
+            if (bodyInfo.text !== null) {
+                response.body?.cancel().catch(() => {});
+                if (logger.do_debug === true) serverBody = bodyInfo.text;
+            } else if (logger.do_debug === true) {
+                serverBody = await readResponseBody(response);
+                if (signal?.aborted) throw signal.reason;
+            } else {
+                response.body?.cancel().catch(() => {});
+            }
             serverMessage = extractErrorMessage(serverBody);
         }
 
@@ -178,15 +191,20 @@ function backoffDelay(attempt, cfg) {
 
 /**
  * Read a 429 body through a clone, so the Response itself stays unread for the
- * worker's error formatting. Any read or parse failure means "no information":
- * the 429 is then retried as before.
+ * worker's error formatting. The read has the same limit as the log read
+ * (readResponseBody()). Any read or parse failure, or a body that does not
+ * arrive in time, means "no information": the 429 is then retried as before.
+ * `text` is the body read ('' when it gave nothing), reused for the log lines.
  */
 async function inspectRateLimitBody(response) {
+    const text = await readResponseBody(response.clone());
+    let info = { terminal: false, reason: '', retryAfterMs: null };
     try {
-        return classifyRateLimitBody(JSON.parse(await response.clone().text()));
+        info = classifyRateLimitBody(JSON.parse(text));
     } catch (e) {
-        return { terminal: false, reason: '', retryAfterMs: null };
+        // Not JSON, or nothing read: no information.
     }
+    return { ...info, text };
 }
 
 // Longest server message put in a retry log line, and longest wait for its body.
@@ -197,18 +215,31 @@ const SERVER_BODY_READ_TIMEOUT_MS = 5000;
  * Read the body of a response that is about to be retried, for the log lines.
  * Never throws: an unreadable body, or one that does not arrive within
  * SERVER_BODY_READ_TIMEOUT_MS, gives '' (and its stream is cancelled).
+ * Read through its own reader rather than response.text(): text() locks the
+ * stream, and a locked stream cannot be cancelled from outside.
  */
 async function readResponseBody(response) {
+    if (!response.body) return '';
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    const readAll = async () => {
+        let text = '';
+        for (;;) {
+            const { done, value } = await reader.read();
+            if (done) return text + decoder.decode();
+            text += decoder.decode(value, { stream: true });
+        }
+    };
     let timer;
     try {
         return await Promise.race([
-            response.text(),
+            readAll(),
             new Promise((_, reject) => {
                 timer = setTimeout(() => reject(new Error('timeout')), SERVER_BODY_READ_TIMEOUT_MS);
             }),
         ]);
     } catch (e) {
-        response.body?.cancel().catch(() => {});
+        reader.cancel().catch(() => {});
         return '';
     } finally {
         clearTimeout(timer);

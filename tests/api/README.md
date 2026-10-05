@@ -52,7 +52,7 @@ Helper modules have no `.test.mjs` suffix, so the level-1 glob never runs them.
 | `05-usage-data` | "Token usage data", "Per-provider support" (every `extractUsage()`) |
 | `06-usage-support-by-type` | "Per-provider support": `supportsUsageData(connection_type)` agrees with the modules |
 | `07-retry-helpers` | "Automatic Retry Handling": constants, `parseRetryAfter()`, `classifyRateLimitBody()`; "Logging": `extractErrorMessage()` |
-| `10-fetch-with-retry` | "Automatic Retry Handling": `fetchWithRetry()` whole, "Logging" |
+| `10-fetch-with-retry` | "Automatic Retry Handling": `fetchWithRetry()` whole (the retried body read only with debug on, the 5 s limit of that read and of the 429 inspection, a user abort during a body read), "Logging" |
 | `20-anthropic-request` | "Anthropic / Claude": request body construction |
 | `21-anthropic-400-retry` | "Anthropic / Claude": one-shot retry on a 400, 400 error hints |
 | `22-gemini-request` | "Google Gemini", "Extra body data" (two-level merge), includeThoughts |
@@ -68,7 +68,7 @@ Helper modules have no `.test.mjs` suffix, so the level-1 glob never runs them.
 | `38`/`39-worker-openai-responses-*` | the same, OpenAI Responses (turn 1 replays the capture; reasoning item fallback; store off: the whole history) |
 | `40-worker-openai-responses-store` | "OpenAI API", "Chaining turns (`chatgpt_store`)": store on, previous_response_id |
 | `99-harness-known-issues` | the known-issue shape |
-| `99-harness-fetch-model` | the fetch model and the realm themselves |
+| `99-harness-fetch-model` | the fetch model (including an abort after the `Response`) and the realm themselves |
 
 Each worker has two files, because a worker module is a singleton: `-stream` runs the successful turns
 with debug **on** and the usage display **on** (and checks the key never reaches the console); `-errors`
@@ -98,7 +98,12 @@ violation, then rejected with an `UnscriptedFetchError` naming the URL.** Record
 the clients catch fetch failures, and `fetchWithRetry()` even retries them after a backoff. Every
 `k.test()` runs inside `net.guard()`, which fails the test **at once** on a violation (it does not wait
 for a retry) and, at the end, if a violation was swallowed or a scripted answer was never consumed. Like
-the real fetch, an already aborted signal rejects with its reason.
+the real fetch, an already aborted signal rejects with its reason, and **an abort after the `Response`
+was returned errors its body** with the reason: a pending `text()` or `reader.read()` rejects, and the
+scripted stream is cancelled (a body already read to the end is unaffected). The model hands the
+scripted `Response` over with its body piped through a stream the signal can error, same status,
+statusText and headers. So a test of an abort during a body read passes because of the abort, never
+because of a timeout racing it.
 
 Responses are built with Node's own `Response`, `Headers`, `ReadableStream` and `TextEncoder`
 (`api/wire.mjs`): `jsonResponse()`, `textResponse()`, `streamResponse(chunks, {errorAfter})` (the
@@ -115,7 +120,9 @@ repeats until the promise settles. `setImmediate` stays real, so `drive()`, `unt
 turn the event loop. Level 1 has no harness of its own counting pending timers (that is the DOM
 harness's `settle()`), and node:test's own per-test timeout is unaffected by `t.mock.timers`. A test
 that does not call `fakeTime()` never reaches a backoff: it scripts no retryable failure, or passes
-`maxRetries: 0`.
+`maxRetries: 0`. The abort tests of `10` (`abort-during-*`) put the test on mock timers but never fire one: they
+turn the event loop, abort, and the request must settle on the abort alone. The 5 s body read limit
+is reached only where a test fires it on purpose (`debug-on-body-timeout`, `429-body-timeout-*`).
 
 ## The worker realm
 

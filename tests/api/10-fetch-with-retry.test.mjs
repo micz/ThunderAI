@@ -11,7 +11,12 @@
 //  - 429s that retrying cannot fix (classifyRateLimitBody) are returned at once, body unread.
 //  - The per-attempt timeout covers the headers only: cleared as soon as fetch() resolves, so a
 //    slow stream is not a timeout.
-//  - A user abort is never retried, also during the backoff wait.
+//  - A user abort is never retried, also during the backoff wait, and during a body read (the
+//    429 inspection, the log read): the abort's reason, no retry log line, no onRetry.
+//  - The body of a retried response is read for the logs only with debug on (5 s limit, then
+//    cancelled; that read adds to the delay); with debug off it is cancelled at once and the
+//    retry waits exactly its delay. The 429 inspection works the same with debug on and off,
+//    with the same 5 s limit; its text is reused for the logs, so a stalled 429 waits once.
 //  - onRetry(info) gets {attempt, maxRetries, delayMs, status, reason}, reason 'http' | 'network'
 //    | 'timeout', status null for the last two.
 //  - "Logging": each retry through taLogger.log(); a retried HTTP status ends with
@@ -384,5 +389,140 @@ k.test('log-debug-only', 'with debug off the retries log nothing through console
     await drive(fetchWithRetry(URL_, {}, { logger: new taLogger('x', false) }), timers);
     assert.deepEqual(con.entries.filter(e => e.level === 'log'), []);
 });
+
+// ---- the body of a retried response (read for the logs only with debug on) ------------------
+
+/** A taLogger that also records every log() call, whether debug lets it reach the console or not. */
+class RecordingLogger extends taLogger {
+    lines = [];
+    log(msg, do_debug) {
+        this.lines.push(msg);
+        super.log(msg, do_debug);
+    }
+}
+
+/** A retried response whose body has started but never ends (until cancelled or errored). */
+function stalledBody(statusCode) {
+    const s = manualStream({ status: statusCode, contentType: 'application/json' });
+    s.push('{"error": {"message": "never fini');
+    return s;
+}
+
+/** Turn the event loop until `cond()` holds (no timer fires: they are mocked). */
+async function until(cond, max = 50) {
+    for (let i = 0; i < max && !cond(); i++) await new Promise(r => setImmediate(r));
+}
+
+k.test('debug-off-body-cancelled', 'debug off: the retried body is cancelled at once, not read, and the retry waits exactly the backoff', async (t) => {
+    const timers = fakeTime(t);
+    const s = stalledBody(503);
+    net.expect(URL_, () => s.response).expect(URL_, OK);
+    const logger = new RecordingLogger('x', false);
+    const { retries, result } = run(timers, { logger });
+    assert.equal((await result).status, 200);
+    assert.equal(s.cancelled, true, 'the body is cancelled');
+    assert.equal(retries.length, 1);
+    assert.equal(retries[0].at, net.calls[0].t, 'onRetry right after the response: no read wait');
+    assert.deepEqual(gaps(), [retries[0].delayMs], 'the next attempt after exactly the backoff, no 5 s read wait added');
+    assert.equal(logger.lines.some(l => l.includes('response body')), false, 'no "response body" line');
+    assert.equal(logger.lines.some(l => l.includes(' - server message:')), false, 'no server message');
+});
+
+k.test('debug-off-terminal-429', 'debug off: a terminal 429 (daily quota) is still returned at once, its body unread', async (t) => {
+    const timers = fakeTime(t);
+    const body = apiFixture('google_gemini.json').error_429_daily.body;
+    net.expect(URL_, status(429, body));
+    const { retries, result } = run(timers, { logger: new taLogger('x', false) });
+    const r = await result;
+    assert.equal(r.status, 429);
+    assert.equal(retries.length, 0);
+    assert.equal(net.calls.length, 1);
+    assert.deepEqual(await r.json(), body);
+});
+
+k.test('debug-off-body-hint', "debug off: a 429 with Gemini's RetryInfo still waits the hinted delay", async (t) => {
+    const timers = fakeTime(t);
+    const body = apiFixture('google_gemini.json').error_429_minute.body;
+    net.expect(URL_, status(429, body)).expect(URL_, OK);
+    const { retries, result } = run(timers, { logger: new taLogger('x', false) });
+    assert.equal((await result).status, 200);
+    assert.equal(retries[0].delayMs, 34000);
+    assert.deepEqual(gaps(), [34000]);
+});
+
+k.test('debug-on-body-timeout', 'debug on: a body that never arrives is cancelled after 5 s, no message, no body line; the 5 s add to the delay', async (t) => {
+    const timers = fakeTime(t);
+    const s = stalledBody(503);
+    net.expect(URL_, () => s.response).expect(URL_, OK);
+    const logger = new RecordingLogger('x', true);
+    const { retries, result } = run(timers, { logger, label: 'Test' });
+    assert.equal((await result).status, 200);
+    assert.equal(s.cancelled, true, 'the body is cancelled');
+    const line = logger.lines.find(l => l.startsWith('Test request failed (HTTP 503)'));
+    assert.ok(line, logger.lines.join('\n'));
+    assert.equal(line.includes(' - server message:'), false, line);
+    assert.equal(logger.lines.some(l => l.includes('response body')), false, 'no "response body" line');
+    assert.equal(retries.length, 1, 'the retry proceeds');
+    assert.equal(retries[0].at - net.calls[0].t, 5000, 'onRetry once the 5 s read limit has passed');
+    assert.deepEqual(gaps(), [5000 + retries[0].delayMs], 'the read wait comes before the backoff and adds to it');
+});
+
+for (const debug of [false, true]) {
+    k.test('429-body-timeout-debug-' + (debug ? 'on' : 'off'), `debug ${debug ? 'on' : 'off'}: a 429 body that never arrives ends the inspection after 5 s, once: cancelled, retried with the backoff`, async (t) => {
+        const timers = fakeTime(t);
+        const s = stalledBody(429);
+        net.expect(URL_, () => s.response).expect(URL_, OK);
+        const logger = new RecordingLogger('x', debug);
+        const { retries, result } = run(timers, { logger, label: 'Test' });
+        assert.equal((await result).status, 200);
+        assert.equal(s.cancelled, true, 'the body is cancelled (the clone and the original)');
+        assert.equal(retries.length, 1, 'no information: retried');
+        assert.equal(retries[0].at - net.calls[0].t, 5000, 'onRetry once the 5 s read limit has passed');
+        assert.deepEqual(gaps(), [5000 + retries[0].delayMs], 'one 5 s read wait (not two), before the backoff');
+        const line = logger.lines.find(l => l.startsWith('Test request failed (HTTP 429)'));
+        assert.ok(line, logger.lines.join('\n'));
+        assert.equal(line.includes('(asked by the server)'), false, 'no hint was read: the backoff');
+        assert.equal(line.includes(' - server message:'), false, line);
+        assert.equal(logger.lines.some(l => l.includes('response body')), false, 'no "response body" line');
+    });
+}
+
+k.test('log-429-body', 'debug on: a retried 429 logs its server message and its whole body', async (t) => {
+    const timers = fakeTime(t);
+    const body = apiFixture('google_gemini.json').error_429_minute.body;
+    net.expect(URL_, status(429, body)).expect(URL_, OK);
+    const logger = new RecordingLogger('x', true);
+    await drive(fetchWithRetry(URL_, {}, { logger, label: 'Test' }), timers);
+    const i = logger.lines.findIndex(l => l.startsWith('Test request failed (HTTP 429)'));
+    assert.ok(i >= 0, logger.lines.join('\n'));
+    assert.ok(logger.lines[i].endsWith(' - server message: ' + body.error.message), logger.lines[i]);
+    assert.equal(logger.lines[i + 1], 'Test response body: ' + JSON.stringify(body));
+});
+
+// The 429 also runs with debug off: no log body is read then, only inspectRateLimitBody()'s clone.
+for (const [id, code, debug] of [
+    ['abort-during-body-read', 503, true],
+    ['abort-during-429-inspection', 429, true],
+    ['abort-during-429-inspection-debug-off', 429, false],
+]) {
+    k.test(id, `debug ${debug ? 'on' : 'off'}: a user abort while the body of a retried ${code} is read ends the request with its reason: no retry log, no onRetry`, async (t) => {
+        fakeTime(t);
+        const ctrl = new AbortController();
+        const reason = new DOMException('stopped by the user', 'AbortError');
+        const s = stalledBody(code);
+        net.expect(URL_, () => s.response);
+        const logger = new RecordingLogger('x', debug);
+        const retries = [];
+        const p = fetchWithRetry(URL_, {}, { signal: ctrl.signal, logger, onRetry: i => retries.push(i) });
+        const settled = p.then(() => 'resolved', e => e);
+        await until(() => net.calls.length === 1);
+        await until(() => false, 10);   // the response is in, its body being read
+        ctrl.abort(reason);
+        assert.equal(await settled, reason, 'rejected with the reason, the 5 s timer never advanced');
+        assert.equal(net.calls.length, 1, 'no further attempt');
+        assert.equal(retries.length, 0, 'onRetry never called');
+        assert.equal(logger.lines.some(l => l.includes('retry')), false, 'no retry log line:\n' + logger.lines.join('\n'));
+    });
+}
 
 k.coverage();
