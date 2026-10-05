@@ -2268,19 +2268,17 @@ function isManagedModel(element) {
   return !!element && element.dataset.mztaManaged === '1';
 }
 
+// Disables or enables a model select, never changing its value. A missing credential only
+// disables it: the selected model stays shown and stored, so emptying a key or host and typing
+// it back never loses the model. Never clear() here: Tom Select fires a change, and the page's
+// save-on-change listener would store '' - a model erased just by opening the page with an
+// empty credential. A policy-locked model is never re-enabled, whatever the caller asks.
 function toggleTomSelectDisabled(element, disabled) {
-  if (isManagedModel(element)) {
-    // Whatever the caller asks: never re-enabled, and disabled without clear(), so the
-    // enforced model stays visible (clear() would also fire a change that tries to save '').
-    element.disabled = true;
-    element.tomselect?.disable();
-    return;
-  }
-  element.disabled = disabled;
+  const off = disabled || isManagedModel(element);
+  element.disabled = off;
   if (element.tomselect) {
-    if (disabled) {
+    if (off) {
       element.tomselect.disable();
-      element.tomselect.clear();
     } else {
       element.tomselect.enable();
     }
@@ -2552,8 +2550,6 @@ function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {
     apiKeyInput.style.border = '2px solid red';
     btnFetchChatGPTModels.disabled = true;
     toggleTomSelectDisabled(modelChatGPT, true);
-    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
-    if (!isManagedModel(modelChatGPT)) modelChatGPT.selectedIndex = -1;
     modelChatGPT.style.border = '';
   }else{
     apiKeyInput.style.border = '';
@@ -2577,8 +2573,6 @@ function warn_GoogleGemini_APIKeyEmpty(modelId_prefix) {
     apiKeyInput.style.border = '2px solid red';
     btnFetchGoogleGeminiModels.disabled = true;
     toggleTomSelectDisabled(modelGoogleGemini, true);
-    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
-    if (!isManagedModel(modelGoogleGemini)) modelGoogleGemini.selectedIndex = -1;
     modelGoogleGemini.style.border = '';
   }else{
     apiKeyInput.style.border = '';
@@ -2603,8 +2597,6 @@ function warn_Ollama_HostEmpty(modelId_prefix) {
     hostInput.style.border = '2px solid red';
     btnFetchOllamaModels.disabled = true;
     toggleTomSelectDisabled(modelOllama, true);
-    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
-    if (!isManagedModel(modelOllama)) modelOllama.selectedIndex = -1;
     modelOllama.style.border = '';
     btnGiveAllUrlsPermission_ollama_api.disabled = true;
   }else{
@@ -2634,8 +2626,6 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
     hostInput.style.border = '2px solid red';
     btnUpdateOpenAICompModels.disabled = true;
     toggleTomSelectDisabled(modelOpenAIComp, true);
-    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
-    if (!isManagedModel(modelOpenAIComp)) modelOpenAIComp.selectedIndex = -1;
     modelOpenAIComp.style.border = '';
     btnGiveAllUrlsPermission_openai_comp_api.disabled = true;
   }else{
@@ -2991,8 +2981,6 @@ function warn_Anthropic_APIKeyEmpty(modelId_prefix) {
     apiKeyInput.style.border = '2px solid red';
     btnFetchAnthropicModels.disabled = true;
     toggleTomSelectDisabled(modelAnthropic, true);
-    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
-    if (!isManagedModel(modelAnthropic)) modelAnthropic.selectedIndex = -1;
     modelAnthropic.style.border = '';
   }else{
     apiKeyInput.style.border = '';
@@ -3016,8 +3004,6 @@ function warn_Anthropic_VersionEmpty(modelId_prefix) {
     versionInput.style.border = '2px solid red';
     btnFetchAnthropicModels.disabled = true;
     toggleTomSelectDisabled(modelAnthropic, true);
-    // A policy-enforced model stays selected (see toggleTomSelectDisabled()).
-    if (!isManagedModel(modelAnthropic)) modelAnthropic.selectedIndex = -1;
     modelAnthropic.style.border = '';
   }else{
     versionInput.style.border = '';

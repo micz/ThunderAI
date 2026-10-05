@@ -58,7 +58,7 @@ A new file only for a genuinely different initial state.
 | File | Page | Spec section(s) |
 |---|---|---|
 | `dom/options/ui-01-no-connection` | options | spec 05 "Global Integration Settings" (no connection selected: placeholder, banner, nothing persisted, picking a provider), "Special Prompt Integration Overrides" (the panel pill, the "Using \<provider\>" pill), "UI & Feature Preferences" (defaults shown; text / select / number / switch written with their type; the usage-data row), "Feature Flags", "Feature Rows — Disabled vs. API-Needed" (nothing selected: unchecked, greyed, cleared; own integration; ChatGPT Web hint; Sparks missing), "Feature 'Manage settings' Links — Hidden vs. Disabled" (including a denied permission), "Connection Settings Panel — Advanced Options Disclosure", "… — Connection Test Status Strip" (visibility per provider), "… — Provider Setup Note (`#miczDescription`)" (per-provider text, tint, the sparse guide link), "Options Page Bottom Block (`#mzta_bottom`)" |
-| `dom/options/ui-02-api-configured` | options | spec 05 "Global Integration Settings", "UI & Feature Preferences" (stored values shown), "Special Prompt Integration Overrides" (pill at load and from `storage.onChanged`), "Feature 'Manage settings' Links", "… — Advanced Options Disclosure" (JSON validation on restore, advisory only), "… — Connection Test Status Strip" (ok / auth / network / permission denied, unsaved values, idle reset from both tables, Ollama's `/api/version` and the capability re-read), "… — 'Update list' Model Fetch Buttons" (success merge, HTTP error, no retry, denied permission, network error, Ollama with no models) |
+| `dom/options/ui-02-api-configured` | options | spec 05 "Global Integration Settings", "UI & Feature Preferences" (stored values shown), "Special Prompt Integration Overrides" (pill at load and from `storage.onChanged`), "Feature 'Manage settings' Links", "… — Advanced Options Disclosure" (JSON validation on restore, advisory only), "… — Connection Test Status Strip" (ok / auth / network / permission denied, unsaved values, idle reset from both tables, Ollama's `/api/version` and the capability re-read), "… — 'Update list' Model Fetch Buttons" (success merge, HTTP error, no retry, denied permission, network error, Ollama with no models; a missing credential disables, never clears: nothing written at load with a stored model and an empty host, a key emptied and typed back keeps the model) |
 | `dom/options/ui-03-chatgpt-web` | options | spec 05 "Feature Rows — Disabled vs. API-Needed" (ChatGPT Web keeps the flags; Calendar / Task rows with Sparks missing, present, too old; rows recomputed from `storage.onChanged`), "Feature 'Manage settings' Links", "Global Integration Settings" (`max_prompt_length`), "UI & Feature Preferences" (usage-data row for a web-only setup, the OpenAI Comp note), "Special Prompt Integration Overrides" |
 | `dom/options/ui-04-provider-fields` | options | spec 05 "Global Integration Settings": every `{provider}_{key}` of `integration_options_config` (fixture `ui/provider-fields.json`) shown at load, not changed by opening the page, and stored under its key with its default's type on change |
 | `ui/99-harness-known-issues` | — | the known-issue shape (level 1) |
@@ -147,15 +147,6 @@ what a page happens to do.
 
 ### options
 
-- **Whether opening the page may write to storage.** Observed: with a stored model and an empty
-  credential (e.g. `ollama_model` set, `ollama_host` empty), the empty-credential check
-  (`warn_Ollama_HostEmpty()` and its siblings) disables the model select through
-  `toggleTomSelectDisabled()`, whose Tom Select `clear()` fires a `change`, and the page's
-  `saveOptions()` then stores `ollama_model: ''` - the stored model is erased just by opening the page.
-  Spec 08b says this `clear()` "would also fire a change that tries to save ''" and avoids it for a
-  policy-locked model only; spec 05 does not say whether an unmanaged stored model must survive. (The
-  feature pages have the explicit rule "a choice the user never made, just by opening the page", spec 05
-  "Special Prompt Integration Overrides".)
 - **The two "Reset to default" buttons** (`max_prompt_length`, `special_command_timeout`): no spec
   section describes them (what they write, whether they fire `change`).
 - **The app-level "Advanced options" disclosure** (`#mzta_adv_toggle` / `#mzta_adv_panel`): the spec only

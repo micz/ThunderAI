@@ -825,6 +825,16 @@ error}`, so the `catch` there is only a safety net. OpenAIComp also accepts a ba
 `parseModelsFetchError()` extracts `error.message` from a JSON error body. The `warn_*()` helpers
 still manage the button's `disabled` state, independently of its visibility.
 
+**A missing credential disables, never clears.** While a provider's key (or host, for Ollama and
+OpenAI Comp; or the Anthropic version) is empty, its `warn_*Empty()` check disables the "Update list"
+button and the model select (`toggleTomSelectDisabled()`), but leaves the selected model as it is:
+shown in the select and untouched in storage. So emptying a key and typing it back never loses the
+model, and opening a page with an empty credential writes nothing. `toggleTomSelectDisabled()` must
+never call Tom Select's `clear()` (nor set `selectedIndex = -1`): `clear()` fires a `change`, and the
+page's save-on-change listener would store `''`, erasing the user's model just by opening the page.
+That is what happened from the Tom Select migration (#603) until 5.1. The select gets its red
+"missing model" border only once the credential is there again and no model is selected.
+
 ### Setup Wizard (`pages/setup-wizard/`)
 
 A guided **first-run flow** that walks a new user through the minimum needed to get

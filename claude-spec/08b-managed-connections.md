@@ -14,10 +14,9 @@ list the user cannot pick from is pointless. In `pages/_lib/connection-ui.js`,
 
 - the connection checks (`warn_*Empty()`) never enable the fetch button while it is set;
 - `toggleTomSelectDisabled()` never re-enables the select (or its Tom Select) while it is set,
-  whatever the caller asks, and disables it without `clear()`, so the enforced model stays
-  shown - `clear()` would also fire a `change` that tries to save `''`. The empty-credential
-  branches of the `warn_*Empty()` checks leave its `selectedIndex` alone for the same reason,
-  so emptying a key or host and typing it back never loses the enforced model;
+  whatever the caller asks. It never clears a model select, locked or not (spec 05, "A missing
+  credential disables, never clears"), so the enforced model stays shown and emptying a key or
+  host and typing it back never loses it;
 - the model select's `mzta-managed` event re-runs its provider's checks, because
   `applyManagedUI()` runs after the connection panel has been built and checked.
 

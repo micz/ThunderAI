@@ -5,7 +5,8 @@
 // storage.onChanged), "Feature 'Manage settings' Links — Hidden vs. Disabled", "Connection
 // Settings Panel — Advanced Options Disclosure" (JSON field validation on restore, the idle
 // reset bound to both tables), "Connection Settings Panel — Connection Test Status Strip" and
-// "Connection Settings Panel — 'Update list' Model Fetch Buttons", with the network scripted
+// "Connection Settings Panel — 'Update list' Model Fetch Buttons" (a missing credential
+// disables, never clears), with the network scripted
 // in this file (tests/ui/dom-helpers.mjs, scriptFetch()).
 
 import {
@@ -28,7 +29,7 @@ const STORED = {
     chatgpt_api_key: 'sk-stored-1',
     chatgpt_model: 'gpt-4o',
     chatgpt_extra_body: '{"a": 1,',
-    ollama_host: 'http://ollama-old.example:11434',
+    // a model kept with no host: the empty credential must not erase it
     ollama_model: 'llama3:8b',
     default_sign_name: 'Ann',
     default_chatgpt_lang: 'German',
@@ -114,6 +115,18 @@ k.test('restore-flags', S_MANAGE, 'stored-on features show checked with their Ma
         assert.notEqual($('#' + btn).style.display, 'none', btn);
         assert.equal($('#' + btn).disabled, false, btn);
     }
+});
+
+k.test('nothing-written-at-load', S_FETCH, 'opening the page with an empty credential writes nothing', () => {
+    assert.deepEqual(ctx.localWrites(0), []);
+    assert.equal(ctx.ctl.localData().ollama_model, 'llama3:8b');
+});
+
+k.test('empty-credential-keeps-model', S_FETCH, 'an empty host disables the model select but keeps its model', () => {
+    const sel = $('#ollama_model');
+    assert.equal(sel.disabled, true);
+    assert.equal($('#btnUpdateOllamaModels').disabled, true);
+    assert.equal(sel.value, 'llama3:8b');
 });
 
 k.test('usage-row', S_UI, 'with an API that reports usage the usage-data row is shown, without the OpenAI Comp note', () => {
@@ -283,6 +296,22 @@ k.test('fetch-network', S_FETCH, 'a network exception is reported in the status 
     assert.notEqual(btn().style.display, 'none');
 });
 
+k.test('key-emptied-and-retyped', S_FETCH, 'emptying the key and typing it back never loses the model', async () => {
+    const key = $('#chatgpt_api_key');
+    const model = $('#chatgpt_model');
+    const typed = key.value;
+    const since = ctx.ctl.calls.length;
+    await userSets(ctx, key, '');
+    assert.equal(model.disabled, true, 'the model select stays enabled with no key');
+    assert.equal(btn().disabled, true, 'Update list stays enabled with no key');
+    assert.equal(model.value, 'gpt-4o', 'the model was cleared');
+    await userSets(ctx, key, typed);
+    assert.equal(model.disabled, false);
+    assert.equal(model.value, 'gpt-4o');
+    const models = ctx.localWrites(since).filter(w => 'chatgpt_model' in w.items);
+    assert.deepEqual(models, [], 'the model was rewritten');
+});
+
 // ---- Ollama ------------------------------------------------------------------------------
 
 k.test('ollama-test-version', S_TEST, 'the Ollama test probes /api/version, then re-reads the model capabilities', async () => {
@@ -306,6 +335,9 @@ k.test('ollama-test-version', S_TEST, 'the Ollama test probes /api/version, then
 });
 
 k.test('ollama-fetch-empty', S_FETCH, 'Ollama with no model pulled: "no models" in red', async () => {
+    await ctx.fire($('#ollama_host'), 'change');    // the user leaves the host field
+    assert.equal($('#btnUpdateOllamaModels').disabled, false);
+    assert.equal($('#ollama_model').value, 'llama3:8b', 'the model kept through the empty host');
     net.answer(OLLAMA + '/api/tags', () => json({ models: [] }));
     await ctx.click($('#btnUpdateOllamaModels'));
     const st = $('#ollama_model_fetch_status');
