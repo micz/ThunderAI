@@ -23,8 +23,8 @@ The DOM files are spread across `tests/dom/<page>/`, so the area alone is:
 node --test --test-timeout=120000 "tests/ui/*.test.mjs" "tests/dom/*/ui-*.dom.mjs"
 ```
 
-from the repository root, after `npm ci` (jsdom). `tests/ui/99-harness-known-issues.test.mjs` is level
-1 and needs nothing installed; `node --test "tests/**/*.test.mjs"` runs it with the rest of level 1.
+from the repository root, after `npm ci` (jsdom). The area's `tests/ui/*.test.mjs` files are level 1
+and need nothing installed; `node --test "tests/**/*.test.mjs"` runs them with the rest of level 1.
 
 The area adds about **10 s per DOM file** to the DOM run (each file opens its page once, in its own
 process; `node --test` runs files in parallel, so the wall-clock cost on the whole suite is lower).
@@ -38,6 +38,7 @@ tests/
 ├── ui/
 │   ├── README.md                 this file
 │   ├── dom-helpers.mjs           scriptFetch(), json(), until(), shown(), userSets(), writtenSince()
+│   ├── 01-window-position.test.mjs        level 1: a page rule that lives in a shared module
 │   └── 99-harness-known-issues.test.mjs   level 1: the known-issue shape
 └── dom/<page>/ui-NN-<scenario>.dom.mjs     the tests, one file per initial state of a page
 ```
@@ -58,9 +59,10 @@ A new file only for a genuinely different initial state.
 | File | Page | Spec section(s) |
 |---|---|---|
 | `dom/options/ui-01-no-connection` | options | spec 05 "Global Integration Settings" (no connection selected: placeholder, banner, nothing persisted, picking a provider), "Special Prompt Integration Overrides" (the panel pill, the "Using \<provider\>" pill), "UI & Feature Preferences" (defaults shown; text / select / number / switch written with their type; the usage-data row), "Feature Flags", "Feature Rows — Disabled vs. API-Needed" (nothing selected: unchecked, greyed, cleared; own integration; ChatGPT Web hint; Sparks missing), "Feature 'Manage settings' Links — Hidden vs. Disabled" (including a denied permission), "Connection Settings Panel — Advanced Options Disclosure", "… — Connection Test Status Strip" (visibility per provider), "… — Provider Setup Note (`#miczDescription`)" (per-provider text, tint, the sparse guide link), "Options Page Bottom Block (`#mzta_bottom`)", "Options Page Advanced Section (`#mzta_adv_panel`)" (collapsed, nothing persisted; `max_prompt_length` row per connection; the Reset buttons; the cache size and its clearing, confirmed and cancelled), "Owl for Exchange Warning (`#owl_warning`)" (no Owl account) |
-| `dom/options/ui-02-api-configured` | options | spec 05 "Global Integration Settings", "UI & Feature Preferences" (stored values shown), "Special Prompt Integration Overrides" (pill at load and from `storage.onChanged`), "Feature 'Manage settings' Links", "… — Advanced Options Disclosure" (JSON validation on restore, advisory only), "… — Connection Test Status Strip" (ok / auth / network / permission denied, unsaved values, idle reset from both tables, Ollama's `/api/version` and the capability re-read), "… — 'Update list' Model Fetch Buttons" (success merge, HTTP error, no retry, denied permission, network error, Ollama with no models; a missing credential disables, never clears: nothing written at load with a stored model and an empty host, a key emptied and typed back keeps the model) |
+| `dom/options/ui-02-api-configured` | options | spec 05 "Global Integration Settings", "UI & Feature Preferences" (stored values shown; a window position of 0 shown as 0, one that is not a number shown empty), "Special Prompt Integration Overrides" (pill at load and from `storage.onChanged`), "Feature 'Manage settings' Links", "… — Advanced Options Disclosure" (JSON validation on restore, advisory only), "… — Connection Test Status Strip" (ok / auth / network / permission denied, unsaved values, idle reset from both tables, Ollama's `/api/version` and the capability re-read), "… — 'Update list' Model Fetch Buttons" (success merge, HTTP error, no retry, denied permission, network error, Ollama with no models; a missing credential disables, never clears: nothing written at load with a stored model and an empty host, a key emptied and typed back keeps the model) |
 | `dom/options/ui-03-chatgpt-web` | options | spec 05 "Feature Rows — Disabled vs. API-Needed" (ChatGPT Web keeps the flags; Calendar / Task rows with Sparks missing, present, too old; rows recomputed from `storage.onChanged`), "Feature 'Manage settings' Links", "Global Integration Settings" (`max_prompt_length`), "UI & Feature Preferences" (usage-data row for a web-only setup, the OpenAI Comp note), "Special Prompt Integration Overrides", "Owl for Exchange Warning (`#owl_warning`)" (an Owl account) |
 | `dom/options/ui-04-provider-fields` | options | spec 05 "Global Integration Settings": every `{provider}_{key}` of `integration_options_config` (fixture `ui/provider-fields.json`) shown at load, not changed by opening the page, and stored under its key with its default's type on change |
+| `ui/01-window-position` | — (level 1) | spec 05 "UI & Feature Preferences", rows `chatgpt_win_top` / `chatgpt_win_left`: `toWindowCoordinate()` / `getSavedWindowPosition()` (0 and negatives are positions, `''` / `null` / `NaN` are not, both coordinates needed), and the background's `applyWindowPositionAndSize()` reading through them (checked in the source: `mzta-background.js` cannot be imported) |
 | `ui/99-harness-known-issues` | — | the known-issue shape (level 1) |
 
 The other groups of the area (the feature settings pages; the prompt management pages; the setup
@@ -153,5 +155,4 @@ what a page happens to do.
 
 ### options
 
-- **`chatgpt_win_top` / `chatgpt_win_left`**: default `''` but rendered as `type="number"` inputs, so a
-  change stores a number (or `NaN` when cleared); the spec's table gives the default only.
+None today: every behaviour of the options page the area found is now in spec 05.

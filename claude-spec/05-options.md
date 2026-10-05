@@ -180,8 +180,8 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `do_debug` | `false` | Enable debug logging |
 | `chatgpt_win_height` | `800` | ChatGPT window height |
 | `chatgpt_win_width` | `700` | ChatGPT window width |
-| `chatgpt_win_top` | `''` | Window top position |
-| `chatgpt_win_left` | `''` | Window left position |
+| `chatgpt_win_top` | `''` | Window top position. `''` means no saved position. Written as a number by the options page (`type="number"` input) and by the background when the chat window closes with `chatgpt_win_save_position` on. **Any finite number is a position, 0 and negatives included** (the screen edge, a monitor left of the primary one); anything else (`''`, the `null` Thunderbird stores for a cleared number input) means "not saved". Read through `toWindowCoordinate()` / `getSavedWindowPosition()` (`js/mzta-utils.js`): the position is applied to a new chat window only when **both** coordinates are set. A loose `!= ''` test must not be used, as it reads 0 as empty (a window closed at the screen edge then came back elsewhere, until 5.1). The options page shows a value that is not a coordinate as an empty field, never as `0`. |
+| `chatgpt_win_left` | `''` | Window left position: same rules as `chatgpt_win_top`. |
 | `chatgpt_win_save_position` | `false` | Remember window position |
 | `default_chatgpt_lang` | `''` | Force response language |
 | `default_sign_name` | `''` | Default signature name |

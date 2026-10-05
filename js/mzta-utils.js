@@ -1120,6 +1120,26 @@ export function hasNoConnectionSelected(connection_type){
   return (connection_type == null) || (String(connection_type).trim() === '');
 }
 
+// One coordinate of the saved AI chat window position (chatgpt_win_top / chatgpt_win_left), as
+// a number, or null when there is none. Any finite number is a position, 0 and negatives
+// included (the screen edge, a monitor left of the primary one); a numeric string is accepted
+// too. Anything else means "not saved": the '' default, and the null Thunderbird stores for a
+// cleared number input (NaN). A loose `!= ''` test must not be used: it reads 0 as empty.
+export function toWindowCoordinate(value){
+  if (typeof value === 'string') {
+    if (value.trim() === '') return null;
+    value = Number(value);
+  }
+  return (typeof value === 'number' && Number.isFinite(value)) ? value : null;
+}
+
+// The saved AI chat window position as {top, left}, or null unless both coordinates are set.
+export function getSavedWindowPosition(prefs){
+  const top = toWindowCoordinate(prefs?.chatgpt_win_top);
+  const left = toWindowCoordinate(prefs?.chatgpt_win_left);
+  return (top === null || left === null) ? null : { top, left };
+}
+
 export function hasSpecificIntegration(use, conntype){
   return use && (conntype != null) && (conntype !== '');
 }

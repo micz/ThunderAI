@@ -37,6 +37,10 @@ const STORED = {
     diff_granularity: 'sentences',
     chatgpt_win_height: 600,
     chatgpt_win_width: 500,
+    // a window closed at the screen's top edge; a left field the user cleared (Thunderbird
+    // stores the NaN of a cleared number input as null)
+    chatgpt_win_top: 0,
+    chatgpt_win_left: null,
     max_prompt_length: 12345,
     special_command_timeout: 30000,
     batch_max_concurrency: 4,
@@ -107,6 +111,11 @@ k.test('restore-ui', S_UI, 'every stored preference is shown at load', () => {
     for (const id of ['do_debug', 'hide_thinking', 'chat_show_usage_data', 'dynamic_menu_force_enter', 'placeholders_use_default_value', 'chatgpt_win_save_position']) {
         assert.equal($('#' + id).checked, STORED[id], id);
     }
+});
+
+k.test('restore-win-position', S_UI, 'a saved 0 shows as 0; a coordinate that is not a number shows empty, not 0', () => {
+    assert.equal($('#chatgpt_win_top').value, '0');
+    assert.equal($('#chatgpt_win_left').value, '');
 });
 
 k.test('restore-flags', S_MANAGE, 'stored-on features show checked with their Manage button', () => {

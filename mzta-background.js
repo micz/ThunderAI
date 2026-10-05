@@ -64,6 +64,7 @@ import {
     hasSpecificIntegration,
     sendTabMessageSafe,
     formatDuration,
+    getSavedWindowPosition,
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
@@ -2621,10 +2622,12 @@ function applyWindowPositionAndSize(win_options, prefs){
         win_options.height = prefs.chatgpt_win_height;
         taLog.log("Applying saved window dimensions: width=" + prefs.chatgpt_win_width + ", height=" + prefs.chatgpt_win_height);
     }
-    if((prefs.chatgpt_win_top != '') && (prefs.chatgpt_win_left != '')){
-        win_options.top = prefs.chatgpt_win_top;
-        win_options.left = prefs.chatgpt_win_left;
-        taLog.log("Applying saved window position: top=" + prefs.chatgpt_win_top + ", left=" + prefs.chatgpt_win_left);
+    // 0 is a position (the screen edge): see getSavedWindowPosition().
+    const position = getSavedWindowPosition(prefs);
+    if(position){
+        win_options.top = position.top;
+        win_options.left = position.left;
+        taLog.log("Applying saved window position: top=" + position.top + ", left=" + position.left);
     }
     return win_options;
 }

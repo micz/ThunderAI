@@ -26,6 +26,7 @@ import { taLogger } from '../js/mzta-logger.js';
 import {
   checkSparksPresence,
   openTab,
+  toWindowCoordinate,
   isAPIKeyValue,
   getConnectionType,
   hasNoConnectionSelected,
@@ -116,6 +117,12 @@ async function restoreOptions() {
           element.checked = result[element.id] || false;
           break;
         case 'number':
+          // The window position has no default: anything that is not a saved coordinate
+          // (the '' default, the null of a cleared field) shows as an empty field, not 0.
+          if(element.id == 'chatgpt_win_top' || element.id == 'chatgpt_win_left'){
+            element.value = toWindowCoordinate(result[element.id]) ?? '';
+            break;
+          }
           let default_number_value = 0;
           if(element.id == 'chatgpt_win_height') default_number_value = prefs_default.chatgpt_win_height;
           if(element.id == 'chatgpt_win_width') default_number_value = prefs_default.chatgpt_win_width;
