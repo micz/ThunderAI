@@ -5,10 +5,11 @@
 // "Feature Rows — Disabled vs. API-Needed", "Feature 'Manage settings' Links — Hidden vs.
 // Disabled", "Connection Settings Panel — Advanced Options Disclosure", "Connection Settings
 // Panel — Connection Test Status Strip", "Connection Settings Panel — Provider Setup Note
-// (`#miczDescription`)", "Options Page Bottom Block (`#mzta_bottom`)".
+// (`#miczDescription`)", "Options Page Bottom Block (`#mzta_bottom`)", "Options Page Advanced
+// Section (`#mzta_adv_panel`)", "Owl for Exchange Warning (`#owl_warning`)" (no Owl account).
 //
-// Stored state: no connection_type, two feature flags left on (add_tags, spamfilter), and
-// Summarize on with its own integration (OpenAI API). Then the user picks providers in turn,
+// Stored state: no connection_type, two feature flags left on (add_tags, spamfilter),
+// Summarize on with its own integration (OpenAI API), two per-message cache records. Then the user picks providers in turn,
 // toggles features and edits preferences on the same page.
 
 import {
@@ -24,6 +25,10 @@ import {
     writtenSince,
 } from '../../ui/dom-helpers.mjs';
 
+const CACHE = {
+    'msg:<a@example.com>': { v: 1, ts: 1, summary: { text: 'A summary.' } },
+    'msg:<b@example.com>': { v: 1, ts: 2, spam: { value: 80 } },
+};
 const permissions = {};       // .request swapped by a test (the harness reads it per call)
 const ctx = await openPage('options', {
     local: {
@@ -32,6 +37,7 @@ const ctx = await openPage('options', {
         summarize: true,
         summarize_use_specific_integration: true,
         summarize_connection_type: 'chatgpt_api',
+        ...CACHE,
     },
     permissions,
 });
@@ -61,6 +67,9 @@ const S_ADV = 'spec 05 "Connection Settings Panel — Advanced Options Disclosur
 const S_TEST = 'spec 05 "Connection Settings Panel — Connection Test Status Strip"';
 const S_NOTE = 'spec 05 "Connection Settings Panel — Provider Setup Note (`#miczDescription`)"';
 const S_BOTTOM = 'spec 05 "Options Page Bottom Block (`#mzta_bottom`)"';
+const S_ADVSEC = 'spec 05 "Options Page Advanced Section (`#mzta_adv_panel`)"';
+const S_OWL = 'spec 05 "Owl for Exchange Warning (`#owl_warning`)"';
+const maxRowShown = () => $('#max_prompt_length_tr').style.display !== 'none';
 
 const API_ROWS = ['add_tags', 'spamfilter', 'summarize', 'translate'];
 const MANAGE = {
@@ -187,8 +196,42 @@ k.test('ui-defaults', S_UI, 'with nothing stored each preference shows its defau
     assert.equal($('#default_chatgpt_lang').value, d.default_chatgpt_lang);
 });
 
-k.test('max-prompt-length-irrelevant', S_GLOBAL, 'max_prompt_length is not offered with nothing selected', () => {
+k.test('max-prompt-length-irrelevant', S_ADVSEC, 'with nothing selected max_prompt_length is disabled and its row hidden', () => {
     assert.equal($('#max_prompt_length').disabled, true);
+    assert.equal(maxRowShown(), false);
+});
+
+k.test('timeout-always-shown', S_ADVSEC, 'special_command_timeout is offered even with nothing selected', () => {
+    assert.equal($('#special_command_timeout').disabled, false);
+    assert.notEqual($('#special_command_timeout').closest('.mzta_field').style.display, 'none');
+});
+
+k.test('adv-section-collapsed', S_ADVSEC, 'the app-level disclosure opens collapsed', () => {
+    assert.equal($('#mzta_adv_toggle').getAttribute('aria-expanded'), 'false');
+    assert.equal($('#mzta_adv_panel').classList.contains('hidden'), true);
+});
+
+k.test('adv-section-toggle', S_ADVSEC, 'a click opens it, another closes it, and nothing is persisted', async () => {
+    const since = ctx.ctl.calls.length;
+    const btn = $('#mzta_adv_toggle');
+    await ctx.click(btn);
+    assert.equal(btn.getAttribute('aria-expanded'), 'true');
+    assert.equal($('#mzta_adv_panel').classList.contains('hidden'), false);
+    await ctx.click(btn);
+    assert.equal(btn.getAttribute('aria-expanded'), 'false');
+    assert.equal($('#mzta_adv_panel').classList.contains('hidden'), true);
+    assert.deepEqual(ctx.localWrites(since), []);
+});
+
+k.test('cache-size', S_ADVSEC, 'the cache size counts the msg: records', () => {
+    const text = $('#cache_storage_size').textContent;
+    assert.match(text, /^\d+(\.\d+)? (Bytes|KB)$/, text);
+    assert.notEqual(text, '0 Bytes');
+});
+
+k.test('owl-hidden', S_OWL, 'with no Owl account the warning stays hidden', () => {
+    assert.notEqual($('#owl_warning').style.display, 'block');
+    assert.equal(ctx.apiCalls('browser.accounts.list').length >= 1, true, 'the accounts were not listed');
 });
 
 k.test('usage-row-feature-integration', S_UI, 'the usage-data row shows when a feature\'s own integration reports usage', () => {
@@ -232,6 +275,11 @@ k.test('pick-api', S_GLOBAL, 'picking a provider stores it and drops the empty-s
     assert.equal($('#no_connection_banner').classList.contains('shown'), false);
     assert.equal($('#mzta_conn_pill_name').textContent, label('chatgpt_api'));
     assert.equal($('#max_prompt_length').disabled, false);
+});
+
+k.test('pick-api-max-prompt', S_ADVSEC, 'with an API max_prompt_length is enabled and its row shown', () => {
+    assert.equal($('#max_prompt_length').disabled, false);
+    assert.equal(maxRowShown(), true);
 });
 
 k.test('pick-api-rows', S_ROWS, 'with an API the rows are enabled, not re-checked, and show no hint', () => {
@@ -282,8 +330,9 @@ k.test('pick-web-strip', S_TEST, 'ChatGPT Web has no endpoint: the strip is hidd
     assert.equal(shown($('#mzta_conn_test')), false);
 });
 
-k.test('pick-web-max-prompt', S_GLOBAL, 'max_prompt_length is not offered with ChatGPT Web', () => {
+k.test('pick-web-max-prompt', S_ADVSEC, 'with ChatGPT Web max_prompt_length is disabled and its row hidden', () => {
     assert.equal($('#max_prompt_length').disabled, true);
+    assert.equal(maxRowShown(), false);
 });
 
 k.test('pick-web-guide', S_NOTE, 'ChatGPT Web gets the status-page guide link, inline in its own text', () => {
@@ -445,6 +494,43 @@ k.test('adv-no-pref', S_ADV, 'expanding and collapsing the disclosure persists n
     await ctx.click(btn);
     assert.equal($('#connection_ui_adv_table').classList.contains('hidden'), true);
     assert.deepEqual(ctx.localWrites(since), []);
+});
+
+k.test('reset-defaults', S_ADVSEC, 'each Reset button puts the default back in its field and stores it as a number', async () => {
+    const d = ctx.mods.prefs_default;
+    for (const id of ['max_prompt_length', 'special_command_timeout']) {
+        await userSets(ctx, $('#' + id), '4321');
+        assert.strictEqual(ctx.ctl.localData()[id], 4321, id + ' set up');
+        const since = ctx.ctl.calls.length;
+        await ctx.click($('#reset_' + id));
+        assert.equal($('#' + id).valueAsNumber, d[id], id + ' field');
+        assert.strictEqual(writtenSince(ctx, since)[id], d[id], id + ' stored');
+    }
+});
+
+k.test('cache-clear-cancelled', S_ADVSEC, 'a cancelled confirm() removes nothing', async () => {
+    const real = globalThis.confirm;
+    globalThis.confirm = (...args) => { ctx.dialogs.push({ kind: 'confirm', args }); return false; };
+    try {
+        await ctx.click($('#btnClearCache'));
+    } finally {
+        globalThis.confirm = real;
+    }
+    assert.deepEqual(ctx.dialogs.at(-1), { kind: 'confirm', args: [msg('prefs_storage_clear_confirm')] });
+    for (const key of Object.keys(CACHE)) assert.ok(key in ctx.ctl.localData(), key);
+});
+
+k.test('cache-clear', S_ADVSEC, 'confirmed, every msg: record and nothing else is removed, the count reported, the size re-read', async () => {
+    const before = Object.keys(ctx.ctl.localData()).filter(key => !key.startsWith('msg:'));
+    const dialogs = ctx.dialogs.length;
+    await ctx.click($('#btnClearCache'));
+    const after = Object.keys(ctx.ctl.localData());
+    assert.deepEqual(after.filter(key => key.startsWith('msg:')), []);
+    assert.deepEqual(after.sort(), before.sort(), 'other keys were removed');
+    const shownDialogs = ctx.dialogs.slice(dialogs).map(d => d.kind);
+    assert.deepEqual(shownDialogs, ['confirm', 'alert']);
+    assert.deepEqual(ctx.dialogs.at(-1).args, [msg('prefs_storage_clear_done', [String(Object.keys(CACHE).length)])]);
+    assert.equal($('#cache_storage_size').textContent, '0 Bytes');
 });
 
 k.coverage();

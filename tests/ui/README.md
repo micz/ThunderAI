@@ -57,9 +57,9 @@ A new file only for a genuinely different initial state.
 
 | File | Page | Spec section(s) |
 |---|---|---|
-| `dom/options/ui-01-no-connection` | options | spec 05 "Global Integration Settings" (no connection selected: placeholder, banner, nothing persisted, picking a provider), "Special Prompt Integration Overrides" (the panel pill, the "Using \<provider\>" pill), "UI & Feature Preferences" (defaults shown; text / select / number / switch written with their type; the usage-data row), "Feature Flags", "Feature Rows — Disabled vs. API-Needed" (nothing selected: unchecked, greyed, cleared; own integration; ChatGPT Web hint; Sparks missing), "Feature 'Manage settings' Links — Hidden vs. Disabled" (including a denied permission), "Connection Settings Panel — Advanced Options Disclosure", "… — Connection Test Status Strip" (visibility per provider), "… — Provider Setup Note (`#miczDescription`)" (per-provider text, tint, the sparse guide link), "Options Page Bottom Block (`#mzta_bottom`)" |
+| `dom/options/ui-01-no-connection` | options | spec 05 "Global Integration Settings" (no connection selected: placeholder, banner, nothing persisted, picking a provider), "Special Prompt Integration Overrides" (the panel pill, the "Using \<provider\>" pill), "UI & Feature Preferences" (defaults shown; text / select / number / switch written with their type; the usage-data row), "Feature Flags", "Feature Rows — Disabled vs. API-Needed" (nothing selected: unchecked, greyed, cleared; own integration; ChatGPT Web hint; Sparks missing), "Feature 'Manage settings' Links — Hidden vs. Disabled" (including a denied permission), "Connection Settings Panel — Advanced Options Disclosure", "… — Connection Test Status Strip" (visibility per provider), "… — Provider Setup Note (`#miczDescription`)" (per-provider text, tint, the sparse guide link), "Options Page Bottom Block (`#mzta_bottom`)", "Options Page Advanced Section (`#mzta_adv_panel`)" (collapsed, nothing persisted; `max_prompt_length` row per connection; the Reset buttons; the cache size and its clearing, confirmed and cancelled), "Owl for Exchange Warning (`#owl_warning`)" (no Owl account) |
 | `dom/options/ui-02-api-configured` | options | spec 05 "Global Integration Settings", "UI & Feature Preferences" (stored values shown), "Special Prompt Integration Overrides" (pill at load and from `storage.onChanged`), "Feature 'Manage settings' Links", "… — Advanced Options Disclosure" (JSON validation on restore, advisory only), "… — Connection Test Status Strip" (ok / auth / network / permission denied, unsaved values, idle reset from both tables, Ollama's `/api/version` and the capability re-read), "… — 'Update list' Model Fetch Buttons" (success merge, HTTP error, no retry, denied permission, network error, Ollama with no models; a missing credential disables, never clears: nothing written at load with a stored model and an empty host, a key emptied and typed back keeps the model) |
-| `dom/options/ui-03-chatgpt-web` | options | spec 05 "Feature Rows — Disabled vs. API-Needed" (ChatGPT Web keeps the flags; Calendar / Task rows with Sparks missing, present, too old; rows recomputed from `storage.onChanged`), "Feature 'Manage settings' Links", "Global Integration Settings" (`max_prompt_length`), "UI & Feature Preferences" (usage-data row for a web-only setup, the OpenAI Comp note), "Special Prompt Integration Overrides" |
+| `dom/options/ui-03-chatgpt-web` | options | spec 05 "Feature Rows — Disabled vs. API-Needed" (ChatGPT Web keeps the flags; Calendar / Task rows with Sparks missing, present, too old; rows recomputed from `storage.onChanged`), "Feature 'Manage settings' Links", "Global Integration Settings" (`max_prompt_length`), "UI & Feature Preferences" (usage-data row for a web-only setup, the OpenAI Comp note), "Special Prompt Integration Overrides", "Owl for Exchange Warning (`#owl_warning`)" (an Owl account) |
 | `dom/options/ui-04-provider-fields` | options | spec 05 "Global Integration Settings": every `{provider}_{key}` of `integration_options_config` (fixture `ui/provider-fields.json`) shown at load, not changed by opening the page, and stored under its key with its default's type on change |
 | `ui/99-harness-known-issues` | — | the known-issue shape (level 1) |
 
@@ -94,6 +94,9 @@ without touching the core or adding a plugin:
   Node's own (`json()`).
 - **Granting or denying a permission** mid-file: pass `openPage(page, { permissions })` an object and
   set or delete its `request` later; the harness reads it on every call.
+- **A cancelled `confirm()`**: the harness's `confirm` answers what `openPage({ confirm })` said, for
+  the whole file. Page modules call the bare `confirm`, a global, so a test replaces
+  `globalThis.confirm` for one click (recording in `ctx.dialogs` like the stub) and puts it back.
 - **Another add-on's answer** (Sparks, `ui-03`): the harness answers the two-argument
   `runtime.sendMessage('thunderai-sparks@micz.it', …)` with `null`. The options page asks again
   whenever its feature rows are recomputed, so the file wraps the mock's `ctx.ctl.browser.runtime.sendMessage`
@@ -147,18 +150,6 @@ what a page happens to do.
 
 ### options
 
-- **The two "Reset to default" buttons** (`max_prompt_length`, `special_command_timeout`): no spec
-  section describes them (what they write, whether they fire `change`).
-- **The app-level "Advanced options" disclosure** (`#mzta_adv_toggle` / `#mzta_adv_panel`): the spec only
-  names it as what the connection disclosure mirrors; whether it starts collapsed and persists nothing is
-  not stated for it.
-- **The cache block** (`#cache_storage_size`, `#btnClearCache` with its `confirm()` / `alert()`): no spec
-  section.
-- **The Owl warning** (`#owl_warning`, shown for an account whose type contains "owl"): named in spec 05
-  only as a CSS rule.
-- **`max_prompt_length` with ChatGPT Web or no connection**: spec 05 says `disable_MaxPromptLength()`
-  applies the "ChatGPT Web or nothing selected" rule; the page also hides the field's row. The tests
-  assert only the field is not offered (disabled), not how.
 - **`chatgpt_win_top` / `chatgpt_win_left`**: default `''` but rendered as `type="number"` inputs, so a
   change stores a number (or `NaN` when cleared); the spec's table gives the default only.
 - **The documentation cards and the welcome card** (`#link_doc_guides`, `#link_doc_tutorial`,

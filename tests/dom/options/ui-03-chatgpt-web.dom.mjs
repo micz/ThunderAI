@@ -5,7 +5,8 @@
 // Calendar / Task rows and the Sparks gate, the rows recomputed from storage.onChanged),
 // "Feature 'Manage settings' Links — Hidden vs. Disabled", "Global Integration Settings"
 // (max_prompt_length), "UI & Feature Preferences" (the usage-data row and its OpenAI Comp note),
-// "Special Prompt Integration Overrides".
+// "Special Prompt Integration Overrides", "Owl for Exchange Warning (`#owl_warning`)" (one of
+// the accounts is an Owl one).
 //
 // The harness answers the Sparks presence check with null (not installed). The page asks again
 // whenever its feature rows are recomputed, so this file replaces the mock's
@@ -23,6 +24,10 @@ import { userSets } from '../../ui/dom-helpers.mjs';
 const FLAGS = ['add_tags', 'spamfilter', 'summarize', 'translate', 'get_calendar_event', 'get_task'];
 const ctx = await openPage('options', {
     local: { connection_type: 'chatgpt_web', ...Object.fromEntries(FLAGS.map(f => [f, true])) },
+    accounts: [
+        { id: 'account1', name: 'Work', type: 'imap', identities: [{ id: 'id1', email: 'me@work.example' }] },
+        { id: 'account2', name: 'Exchange', type: 'Owl-EWS', identities: [{ id: 'id2', email: 'me@corp.example' }] },
+    ],
 });
 after(() => ctx.close());
 const k = uiTests('options', '03');
@@ -33,6 +38,8 @@ const S_UI = 'spec 05 "UI & Feature Preferences"';
 const S_OVERRIDES = 'spec 05 "Special Prompt Integration Overrides"';
 const S_ROWS = 'spec 05 "Feature Rows — Disabled vs. API-Needed"';
 const S_MANAGE = 'spec 05 "Feature \'Manage settings\' Links — Hidden vs. Disabled"';
+
+const S_OWL = 'spec 05 "Owl for Exchange Warning (`#owl_warning`)"';
 
 const MANAGE = {
     add_tags: 'btnManageTagsInfo', spamfilter: 'btnManageSpamFilterInfo',
@@ -102,6 +109,12 @@ k.test('web-max-prompt', S_GLOBAL, 'max_prompt_length is not offered with ChatGP
 
 k.test('web-usage-row', S_UI, 'a web-only setup never sees the usage-data row', () => {
     assert.equal($('#chat_show_usage_data_tr').style.display, 'none');
+});
+
+k.test('owl-shown', S_OWL, 'an Owl account (type matched case-insensitively) shows the warning, disabling nothing', () => {
+    assert.equal($('#owl_warning').style.display, 'block');
+    assert.match($('#owl_warning').textContent, /Owl for Exchange/);
+    for (const p of ['add_tags', 'spamfilter', 'summarize', 'translate']) assert.equal($('#' + p).disabled, false, p);
 });
 
 // ---- Sparks ------------------------------------------------------------------------------

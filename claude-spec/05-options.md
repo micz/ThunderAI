@@ -1328,6 +1328,41 @@ connection panel and lost its heading. Only the English file was edited (the oth
 are Weblate-managed and drop the key on the next sync) — note this differs from
 the "leave retired keys in place" handling of the older keys above.
 
+### Options Page Advanced Section (`#mzta_adv_panel`)
+
+The app-level "Advanced options" disclosure is the `#mzta_adv_toggle` button and the
+`#mzta_adv_panel` it opens below itself (the connection panel's own disclosure mirrors it, see
+"Connection Settings Panel — Advanced Options Disclosure"). The panel holds the chat window size and
+position, `max_prompt_length`, `special_command_timeout`, `batch_max_concurrency`, the behaviour
+switches, `diff_granularity`, `do_debug` and the cache block below.
+
+- **Collapsed on every open.** The page opens with `aria-expanded="false"` and `.hidden` on the
+  panel; a click flips both. The state is purely local UI: **no preference is persisted**.
+- **`max_prompt_length` follows the connection.** `disable_MaxPromptLength()` disables the field and
+  hides its row (`#max_prompt_length_tr`) while the global select holds `chatgpt_web` or nothing,
+  and shows and enables it for any API; it runs at load and on every `connection_type` change. The
+  row follows *relevance*, not the field's `disabled` flag: a policy lock disables the field too, and
+  that must grey it out, never hide the row it explains. `special_command_timeout` is always shown
+  (see its row in "UI & Feature Preferences").
+- **Reset buttons.** `#reset_max_prompt_length` and `#reset_special_command_timeout` (each marked
+  `data-mzta-companion-of` its field) put the `prefs_default` value back in the field and store it
+  with `setPref()`, as a number. They fire no `change`. For a policy-locked key they do nothing
+  (`isLockedKey()`), without relying on the button being disabled. `batch_max_concurrency` has none.
+- **Cache block.** `#cache_storage_size` shows the space taken by the per-message records (the
+  `msg:` keys of `storage.local`, see [01-architecture.md](01-architecture.md#per-message-data-storage)),
+  as computed by `getCacheStorageUsedSpace()` (`js/mzta-utils.js`) and read once at load.
+  `#btnClearCache` asks a native `confirm()` (`prefs_storage_clear_confirm`): cancelled, nothing
+  happens; confirmed, `taStorage.clearAllRecords()` removes every `msg:` record - never a preference
+  or any other key - then an `alert()` reports the count (`prefs_storage_clear_done`) and the size is
+  read again.
+
+### Owl for Exchange Warning (`#owl_warning`)
+
+At load the options page lists the accounts (`accounts.list(false)`) and, when any account's type
+contains `owl` (case-insensitive: the Owl for Exchange add-on), shows `#owl_warning`
+(`prefs_OptionText_owl_warning`) with `display: block`; `options/mzta-options.css` keeps it hidden
+otherwise. It is informational only: nothing on the page is disabled because of it.
+
 ### Feature "Manage settings" Links — Hidden vs. Disabled
 
 Each feature block on the main options page (Add Tags, Spam Filter, Summarize,
