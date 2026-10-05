@@ -1,6 +1,7 @@
 // Spec 04, the Google Gemini model worker on its failure paths, one instance for the file, usage
 // display OFF:
-//  - "Workers and UI": Stop before the answer -> requestAborted, the unanswered message removed
+//  - "Workers and UI": Stop before the answer (also during the body read of a retried 429: no
+//    newRetryAttempt) -> requestAborted, the unanswered message removed
 //    from the history; Stop once streaming -> the stopStreaming loop closes the turn;
 //  - "Error contract between js/api/* and workers": the error_text forms, rateLimited (a 429 -
 //    Gemini RESOURCE_EXHAUSTED - true; 503 after the retries false; is_exception false),
@@ -18,6 +19,7 @@ import {
 import { NET } from './fetch-model.mjs';
 import {
     assertNoBrowser,
+    flush,
     initMessage,
     loadWorker,
     shape,
@@ -55,6 +57,25 @@ k.test('abort-before-response', 'Stop before any answer: requestAborted, no erro
     await t.done;
     assert.ok(t.posted().some(m => m.type === 'requestAborted'));
     assert.deepEqual(errorOf(t), []);
+});
+
+k.test('abort-during-body-read', 'Stop while the body of a retried 429 is read (the 429 inspection): requestAborted, no newRetryAttempt, no error', async (t) => {
+    fakeTime(t);   // no timer ever fires: the turn must end on the Stop alone
+    const s = manualStream({ status: 429, contentType: 'application/json' });
+    s.push('{"error": {"message": "never fini');
+    net.expect(isStream, () => s.response);
+    const turn = startTurn(w, 'LOST DURING THE BODY READ');
+    await until(() => net.calls.length === 1, 'the request');
+    await flush();   // the response is in, its body being read
+    await w.send({ type: 'stop' });
+    await turn.done;
+    const types = turn.posted().map(m => m.type);
+    assert.ok(types.includes('requestAborted'));
+    assert.equal(types.includes('newRetryAttempt'), false, 'no retry announced after Stop');
+    assert.deepEqual(errorOf(turn), []);
+    assert.equal(net.calls.length, 1, 'no further attempt');
+    assert.equal(s.cancelled, true, 'the body was cancelled');
+    // after-abort, next, checks that this message left the history too.
 });
 
 k.test('after-abort', 'the next turn does not resend the aborted message; with the option off no usage is posted', async () => {

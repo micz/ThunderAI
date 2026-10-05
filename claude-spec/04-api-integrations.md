@@ -971,8 +971,9 @@ API key in the query string.
 
 **Workers and UI:**
 - Each worker creates an `AbortController` per `chatMessage`, kept in `requestAbort` only while
-  waiting for the response (headers + backoff). It passes `{signal, logger: taLog, onRetry}` to
-  `fetchResponse()`.
+  waiting for the response: the whole `fetchResponse()` call, so the headers, the body reads of a
+  retried response inside `fetchWithRetry()` (the 429 inspection, the log read with debug on) and
+  the backoff. It passes `{signal, logger: taLog, onRetry}` to `fetchResponse()`.
 - `onRetry` posts `{type: 'newRetryAttempt', payload: {attempt, maxRetries, delayMs, status, reason}}`
   (`reason`: `'http'`, `'network'` or `'timeout'`; `status` is `null` for the last two).
 - On `stop`, the worker aborts `requestAbort` if it is still set. Once streaming has started,

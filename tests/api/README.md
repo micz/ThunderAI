@@ -72,7 +72,10 @@ Helper modules have no `.test.mjs` suffix, so the level-1 glob never runs them.
 
 Each worker has two files, because a worker module is a singleton: `-stream` runs the successful turns
 with debug **on** and the usage display **on** (and checks the key never reaches the console); `-errors`
-runs the failure paths with the usage display **off** (and checks nothing is emitted then).
+runs the failure paths with the usage display **off** (and checks nothing is emitted then). Every `-errors`
+file also stops a turn while the body of a retried 429 is being read (`abort-during-body-read`): the
+worker posts `requestAborted` and no `newRetryAttempt`, and the next turn (`after-abort`) does not resend
+the message.
 
 ## The fetch model
 

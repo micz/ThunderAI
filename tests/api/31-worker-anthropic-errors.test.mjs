@@ -1,6 +1,7 @@
 // Spec 04, the Anthropic model worker on its failure paths, one instance for the file, usage
 // display OFF (chat_show_usage_data false):
-//  - "Workers and UI": Stop while waiting for the response aborts the request; an aborted request
+//  - "Workers and UI": Stop while waiting for the response aborts the request (also during the
+//    body read of a retried 429: no newRetryAttempt); an aborted request
 //    (is_aborted) removes the unanswered user message from conversationHistory and posts
 //    requestAborted (not error); once streaming has started the stopStreaming loop handles Stop;
 //  - "Error contract between js/api/* and workers": error_text is the exception's own `error`
@@ -22,6 +23,7 @@ import {
 import { NET } from './fetch-model.mjs';
 import {
     assertNoBrowser,
+    flush,
     initMessage,
     loadWorker,
     shape,
@@ -75,6 +77,25 @@ k.test('abort-before-response', 'Stop before any answer: requestAborted, no erro
     assert.ok(t.posted().some(m => m.type === 'requestAborted'));
     assert.deepEqual(errorOf(t), []);
     assert.equal(net.calls[0].signal.aborted, true, 'the request itself was aborted');
+});
+
+k.test('abort-during-body-read', 'Stop while the body of a retried 429 is read (the 429 inspection): requestAborted, no newRetryAttempt, no error', async (t) => {
+    fakeTime(t);   // no timer ever fires: the turn must end on the Stop alone
+    const s = manualStream({ status: 429, contentType: 'application/json' });
+    s.push('{"error": {"message": "never fini');
+    net.expect(MSG_URL, () => s.response);
+    const turn = startTurn(w, 'LOST DURING THE BODY READ');
+    await until(() => net.calls.length === 1, 'the request');
+    await flush();   // the response is in, its body being read
+    await w.send({ type: 'stop' });
+    await turn.done;
+    const types = turn.posted().map(m => m.type);
+    assert.ok(types.includes('requestAborted'));
+    assert.equal(types.includes('newRetryAttempt'), false, 'no retry announced after Stop');
+    assert.deepEqual(errorOf(turn), []);
+    assert.equal(net.calls.length, 1, 'no further attempt');
+    assert.equal(s.cancelled, true, 'the body was cancelled');
+    // after-abort, next, checks that this message left the history too.
 });
 
 k.test('after-abort', 'the next turn does not resend the aborted message; with the option off no usage is posted', async () => {

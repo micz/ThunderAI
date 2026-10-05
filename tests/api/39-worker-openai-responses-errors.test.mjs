@@ -1,6 +1,7 @@
 // Spec 04, the OpenAI Responses model worker on its failure paths, one instance for the file,
 // usage display OFF:
-//  - "Workers and UI": Stop before the answer -> requestAborted, the message removed from the
+//  - "Workers and UI": Stop before the answer (also during the body read of a retried 429: no
+//    newRetryAttempt) -> requestAborted, the message removed from the
 //    history; Stop once streaming -> the stopStreaming loop closes the turn;
 //  - "Error contract between js/api/* and workers": the error_text forms, rateLimited (OpenAI
 //    rate_limit_exceeded / insufficient_quota are 429s: true; is_exception: false), the same text
@@ -16,6 +17,7 @@ import {
 import { NET } from './fetch-model.mjs';
 import {
     assertNoBrowser,
+    flush,
     initMessage,
     loadWorker,
     shape,
@@ -55,6 +57,25 @@ k.test('abort-before-response', 'Stop before any answer: requestAborted, no erro
     assert.deepEqual(errorOf(t), []);
 });
 
+k.test('abort-during-body-read', 'Stop while the body of a retried 429 is read (the 429 inspection): requestAborted, no newRetryAttempt, no error', async (t) => {
+    fakeTime(t);   // no timer ever fires: the turn must end on the Stop alone
+    const s = manualStream({ status: 429, contentType: 'application/json' });
+    s.push('{"error": {"message": "never fini');
+    net.expect(URL_, () => s.response);
+    const turn = startTurn(w, 'LOST DURING THE BODY READ');
+    await until(() => net.calls.length === 1, 'the request');
+    await flush();   // the response is in, its body being read
+    await w.send({ type: 'stop' });
+    await turn.done;
+    const types = turn.posted().map(m => m.type);
+    assert.ok(types.includes('requestAborted'));
+    assert.equal(types.includes('newRetryAttempt'), false, 'no retry announced after Stop');
+    assert.deepEqual(errorOf(turn), []);
+    assert.equal(net.calls.length, 1, 'no further attempt');
+    assert.equal(s.cancelled, true, 'the body was cancelled');
+    // after-abort, next, checks that this message left the history too.
+});
+
 k.test('after-abort', 'the next turn does not resend the aborted message; with the option off no usage is posted', async () => {
     net.expect(URL_, () => streamResponse([wire(FX.reasoning_item_only.events)]));
     const t = startTurn(w, 'Second question');
@@ -62,6 +83,7 @@ k.test('after-abort', 'the next turn does not resend the aborted message; with t
     const sent = JSON.stringify(net.calls[0].json().input);
     assert.ok(sent.includes('Second question'));
     assert.equal(sent.includes('LOST QUESTION'), false);
+    assert.equal(sent.includes('LOST DURING THE BODY READ'), false);
     assert.equal(t.posted().some(m => m.type === 'usage'), false);
     assert.equal(shape(t.posted()).at(-1)[0], 'tokensDone');
 });
