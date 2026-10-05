@@ -103,6 +103,8 @@ export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
         }
 
         let retryAfterMs = null;
+        let serverBody = '';
+        let serverMessage = '';
         if (response !== null) {
             if (!RETRYABLE_STATUSES.includes(response.status) || attempt === maxRetries) {
                 return response;
@@ -126,8 +128,12 @@ export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
                 response.retryAfterMs = retryAfterMs;
                 return response;
             }
-            // Release the connection: this response will never be read.
-            response.body?.cancel().catch(() => {});
+            // The caller never sees this response, so its body is read here for the
+            // log lines: the server's own explanation ("The model is overloaded")
+            // and the whole body.
+            // Reading it to the end also releases the connection.
+            serverBody = await readResponseBody(response);
+            serverMessage = extractErrorMessage(serverBody);
         }
 
         const delayMs = retryAfterMs !== null ? retryAfterMs : backoffDelay(attempt, cfg);
@@ -136,7 +142,11 @@ export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
         logger.log(label + " request failed (" + (status !== null ? "HTTP " + status : reason)
             + (lastError && response === null ? ": " + lastError : "")
             + "), retry " + (attempt + 1) + " of " + maxRetries + " in " + delayMs + " ms"
-            + (retryAfterMs !== null ? " (asked by the server)" : ""));
+            + (retryAfterMs !== null ? " (asked by the server)" : "")
+            + (serverMessage ? " - server message: " + serverMessage : ""));
+        if (serverBody) {
+            logger.log(label + " response body: " + serverBody);
+        }
 
         if (typeof onRetry === 'function') {
             try {
@@ -177,6 +187,60 @@ async function inspectRateLimitBody(response) {
     } catch (e) {
         return { terminal: false, reason: '', retryAfterMs: null };
     }
+}
+
+// Longest server message put in a retry log line, and longest wait for its body.
+const SERVER_MESSAGE_MAX_LENGTH = 500;
+const SERVER_BODY_READ_TIMEOUT_MS = 5000;
+
+/**
+ * Read the body of a response that is about to be retried, for the log lines.
+ * Never throws: an unreadable body, or one that does not arrive within
+ * SERVER_BODY_READ_TIMEOUT_MS, gives '' (and its stream is cancelled).
+ */
+async function readResponseBody(response) {
+    let timer;
+    try {
+        return await Promise.race([
+            response.text(),
+            new Promise((_, reject) => {
+                timer = setTimeout(() => reject(new Error('timeout')), SERVER_BODY_READ_TIMEOUT_MS);
+            }),
+        ]);
+    } catch (e) {
+        response.body?.cancel().catch(() => {});
+        return '';
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+/**
+ * The human-readable part of an error body: error.message (OpenAI, Anthropic,
+ * Gemini, also array-wrapped), a string error (Ollama), a top-level message,
+ * otherwise the raw text (an HTML page from a proxy, plain text), with the
+ * whitespace collapsed and cut at SERVER_MESSAGE_MAX_LENGTH.
+ */
+export function extractErrorMessage(text) {
+    let message = String(text ?? '');
+    try {
+        const parsed = JSON.parse(message);
+        const body = Array.isArray(parsed) ? parsed[0] : parsed;
+        const error = body?.error;
+        if (typeof error === 'string') {
+            message = error;
+        } else if (typeof error?.message === 'string') {
+            message = error.message;
+        } else if (typeof body?.message === 'string') {
+            message = body.message;
+        }
+    } catch (e) {
+        // Not JSON: the raw text is used.
+    }
+    message = message.replace(/\s+/g, ' ').trim();
+    return message.length > SERVER_MESSAGE_MAX_LENGTH
+        ? message.slice(0, SERVER_MESSAGE_MAX_LENGTH) + '...'
+        : message;
 }
 
 /**

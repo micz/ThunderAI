@@ -904,9 +904,17 @@ each class).
   the backoff wait (an abortable sleep).
 - **Only before the body is consumed.** A failure in the middle of an SSE stream is not retried
   (out of scope).
-- The discarded body of a retried response is cancelled to free the connection.
+- The body of a retried response is read to the end (which also frees the connection) by
+  `readResponseBody()`, for the log lines only; a body that does not arrive within 5 s, or cannot
+  be read, is cancelled and gives no message.
 
 **Logging:** each retry is logged through `taLogger.log()`, so it only shows with the debug pref on.
+For a retried HTTP status the line ends with the server's own explanation, ` - server message: ...`
+(e.g. Gemini's "The model is overloaded. Please try again later."), taken by
+`extractErrorMessage()`: `error.message` (also array-wrapped), a string `error` (Ollama), a
+top-level `message`, otherwise the raw text (a proxy's HTML page), whitespace collapsed, cut at
+500 characters. A second line, `<label> response body: ...`, follows with the whole body as
+received (not cut, not reformatted), for every provider that goes through `fetchWithRetry()`.
 **The request URL is never logged**: Google Gemini (and some OpenAI-compatible endpoints) carry the
 API key in the query string.
 
