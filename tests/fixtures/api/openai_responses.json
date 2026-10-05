@@ -1,0 +1,51 @@
+{
+  "_about": "Inputs as the OpenAI Responses API sends them. A streamed answer without reasoning is CAPTURED (captured/openai-responses-stream.txt, read by capturedLines()); the entries below follow the streaming events reference (https://platform.openai.com/docs/api-reference/responses-streaming). Values are illustrative; no expected value lives here.",
+
+  "reasoning_stream": {
+    "source": "Responses streaming events: response.created, response.output_item.added/done (reasoning item with summary and encrypted_content), response.reasoning_summary_text.delta, response.output_text.delta, response.completed with usage (https://platform.openai.com/docs/api-reference/responses-streaming)",
+    "events": [
+      { "type": "response.created", "sequence_number": 0, "response": { "id": "resp_fake_reasoning_1", "object": "response", "status": "in_progress", "model": "o4-mini-2025-04-16", "output": [], "usage": null } },
+      { "type": "response.output_item.added", "sequence_number": 1, "output_index": 0, "item": { "id": "rs_fake_1", "type": "reasoning", "summary": [] } },
+      { "type": "response.reasoning_summary_part.added", "sequence_number": 2, "item_id": "rs_fake_1", "output_index": 0, "summary_index": 0, "part": { "type": "summary_text", "text": "" } },
+      { "type": "response.reasoning_summary_text.delta", "sequence_number": 3, "item_id": "rs_fake_1", "output_index": 0, "summary_index": 0, "delta": "**Greeting** The user says hi." },
+      { "type": "response.reasoning_summary_text.delta", "sequence_number": 4, "item_id": "rs_fake_1", "output_index": 0, "summary_index": 0, "delta": " I will greet back." },
+      { "type": "response.reasoning_summary_text.done", "sequence_number": 5, "item_id": "rs_fake_1", "output_index": 0, "summary_index": 0, "text": "**Greeting** The user says hi. I will greet back." },
+      { "type": "response.output_item.done", "sequence_number": 6, "output_index": 0, "item": { "id": "rs_fake_1", "type": "reasoning", "summary": [ { "type": "summary_text", "text": "**Greeting** The user says hi. I will greet back." } ], "encrypted_content": "gAAAAABfakeOPAQUE==" } },
+      { "type": "response.output_text.delta", "sequence_number": 7, "item_id": "msg_fake_1", "output_index": 1, "content_index": 0, "delta": "Hi" },
+      { "type": "response.output_text.delta", "sequence_number": 8, "item_id": "msg_fake_1", "output_index": 1, "content_index": 0, "delta": "!" },
+      { "type": "response.completed", "sequence_number": 9, "response": { "id": "resp_fake_reasoning_1", "object": "response", "status": "completed", "model": "o4-mini-2025-04-16", "usage": { "input_tokens": 20, "input_tokens_details": { "cached_tokens": 8 }, "output_tokens": 120, "output_tokens_details": { "reasoning_tokens": 100 }, "total_tokens": 140 } } }
+    ]
+  },
+
+  "reasoning_item_only": {
+    "source": "a reasoning summary delivered only inside response.output_item.done (no reasoning deltas), the case spec 04 'Thinking output in the webchat UI' describes for models that deliver it in one piece; event shape from the streaming reference",
+    "events": [
+      { "type": "response.created", "sequence_number": 0, "response": { "id": "resp_fake_reasoning_2", "object": "response", "status": "in_progress", "model": "o3-2025-04-16", "output": [] } },
+      { "type": "response.output_item.done", "sequence_number": 1, "output_index": 0, "item": { "id": "rs_fake_2", "type": "reasoning", "summary": [ { "type": "summary_text", "text": "First part." }, { "type": "summary_text", "text": " Second part." } ], "encrypted_content": "gAAAAABfakeOPAQUE2==" } },
+      { "type": "response.output_text.delta", "sequence_number": 2, "item_id": "msg_fake_2", "output_index": 1, "content_index": 0, "delta": "Done." },
+      { "type": "response.completed", "sequence_number": 3, "response": { "id": "resp_fake_reasoning_2", "object": "response", "status": "completed", "model": "o3-2025-04-16", "usage": { "input_tokens": 5, "output_tokens": 9, "total_tokens": 14 } } }
+    ]
+  },
+
+  "failed_stream": {
+    "source": "response.failed event (https://platform.openai.com/docs/api-reference/responses-streaming/response/failed)",
+    "events": [
+      { "type": "response.created", "sequence_number": 0, "response": { "id": "resp_fake_failed", "object": "response", "status": "in_progress", "model": "gpt-4.1-nano", "output": [] } },
+      { "type": "response.output_text.delta", "sequence_number": 1, "item_id": "msg_fake_3", "output_index": 0, "content_index": 0, "delta": "Partial" },
+      { "type": "response.failed", "sequence_number": 2, "response": { "id": "resp_fake_failed", "object": "response", "status": "failed", "model": "gpt-4.1-nano", "error": { "code": "server_error", "message": "The model failed to generate a response." } } }
+    ]
+  },
+
+  "error_401": {
+    "source": "https://platform.openai.com/docs/guides/error-codes (401 invalid_api_key)",
+    "body": { "error": { "message": "Incorrect API key provided: sk-fake***********1234.", "type": "invalid_request_error", "param": null, "code": "invalid_api_key" } }
+  },
+  "error_429_insufficient_quota": {
+    "source": "https://platform.openai.com/docs/guides/error-codes (429 'You exceeded your current quota')",
+    "body": { "error": { "message": "You exceeded your current quota, please check your plan and billing details.", "type": "insufficient_quota", "param": null, "code": "insufficient_quota" } }
+  },
+  "error_429_rate_limit": {
+    "source": "https://platform.openai.com/docs/guides/error-codes (429 'Rate limit reached for requests')",
+    "body": { "error": { "message": "Rate limit reached for gpt-4.1-nano in organization org-fake on requests per min (RPM): Limit 3, Used 3, Requested 1.", "type": "requests", "param": null, "code": "rate_limit_exceeded" } }
+  }
+}
