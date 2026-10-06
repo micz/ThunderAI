@@ -3,7 +3,7 @@
 Automated tests for ThunderAI. Today they cover the enterprise managed configuration
 ([`managed/README.md`](managed/README.md)), the static consistency of the locales and the
 preferences ([`static/README.md`](static/README.md)), the prompt and placeholder systems
-([`prompts/README.md`](prompts/README.md)), the API integrations ([`api/README.md`](api/README.md)), and what the settings pages do with no policy ([`ui/README.md`](ui/README.md), the options page and the six feature settings pages so far); the infrastructure is built to extend to the whole
+([`prompts/README.md`](prompts/README.md)), the API integrations ([`api/README.md`](api/README.md)), and what the settings pages do with no policy ([`ui/README.md`](ui/README.md), the options page, the six feature settings pages and the three prompt management pages so far); the infrastructure is built to extend to the whole
 add-on, one **area** at a time. Each area adds its own files - tests, fixtures, a plugin, its
 known issues - and never edits the shared ones.
 
