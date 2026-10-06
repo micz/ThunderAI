@@ -567,10 +567,21 @@ function setPromptShowIn(prompt, newShowIn) {
 // item can cross between them: dropping into the active list makes the prompt
 // visible in that menu, dropping into the hidden list removes it from that menu
 // (and disables the prompt if it becomes hidden everywhere).
+//
+// Called on every render, but the listeners are added only the first time: the four lists
+// are static elements, and wiring them again on each render stacked one more set of drag
+// handlers per render. A later call only updates the position key, which in the popup
+// panel follows the sub-tab (position_display / position_compose).
+const panelDragState = {};
 function initPanelDragAndDrop(menuType, activeList, hiddenList, positionKey) {
-    const state = { draggedItem: null, afterElement: null };
-    wireDragList(activeList, true, menuType, positionKey, state);
-    wireDragList(hiddenList, false, menuType, positionKey, state);
+    if (panelDragState[menuType]) {
+        panelDragState[menuType].positionKey = positionKey;
+        return;
+    }
+    const state = { draggedItem: null, afterElement: null, positionKey };
+    panelDragState[menuType] = state;
+    wireDragList(activeList, true, menuType, state);
+    wireDragList(hiddenList, false, menuType, state);
 }
 
 // Remove any insertion indicators (top line / bottom-of-list line) from a list.
@@ -580,7 +591,7 @@ function clearDropIndicators(listEl) {
     });
 }
 
-function wireDragList(listEl, isActiveList, menuType, positionKey, state) {
+function wireDragList(listEl, isActiveList, menuType, state) {
     listEl.addEventListener('dragstart', (e) => {
         const li = e.target.closest('.sortable_item');
         if (!li) return;
@@ -653,7 +664,7 @@ function wireDragList(listEl, isActiveList, menuType, positionKey, state) {
             // Stayed within the same list: pure reorder. Positions are only
             // meaningful for the active list.
             if (droppedInActive) {
-                updatePositionsFromDOM(li.parentElement, positionKey);
+                updatePositionsFromDOM(li.parentElement, state.positionKey);
             }
             markUnsaved();
             return;
@@ -668,7 +679,7 @@ function wireDragList(listEl, isActiveList, menuType, positionKey, state) {
         // If it landed in the active list, capture the drop position so the item
         // keeps where the user dropped it (positions drive active-list order).
         if (droppedInActive) {
-            updatePositionsFromDOM(li.parentElement, positionKey);
+            updatePositionsFromDOM(li.parentElement, state.positionKey);
         }
         markUnsaved();
         // Re-render so badges/positions and the item's section settle.

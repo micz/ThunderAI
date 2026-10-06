@@ -142,22 +142,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         let newItem = customDataPHsList.add(toListValues(newItemData));
         idnumMax++;
-        let curr_idnum = newItem[0].values().idnum;
-        let checkboxes = document.querySelectorAll(`tr[data-idnum="${curr_idnum}"] input[type="checkbox"]`);
-        checkSelectedBoxes(checkboxes);
-        let editBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnEditItem`);
-        //console.log(`>>>>>>>>>>>> tr[data-idnum="${curr_idnum}"] button.btnEditItem`);
-        editBtn.addEventListener('click', handleEditClick);
-        //console.log('>>>>>>>>>>>>> editBtn: ' + JSON.stringify(editBtn));
-        let deleteBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnDeleteItem`);
-        //console.log(`>>>>>>>>>>>> tr[data-idnum="${curr_idnum}"] button.btnDeleteItem`);
-        deleteBtn.addEventListener('click', handleDeleteClick);
-        let okBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnConfirmItem`);
-        okBtn.addEventListener('click', handleConfirmClick);
-        let cancelBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnCancelItem`);
-        cancelBtn.addEventListener('click', handleCancelClick);
+        // Wired on the row just created, not looked up by its idnum: a row number is not
+        // guaranteed unique, and a lookup would wire another row's buttons twice and leave
+        // this one's dead.
+        const tr = newItem[0].elm;
+        checkSelectedBoxes(tr.querySelectorAll('input[type="checkbox"]'));
+        tr.querySelector('button.btnEditItem').addEventListener('click', handleEditClick);
+        tr.querySelector('button.btnDeleteItem').addEventListener('click', handleDeleteClick);
+        tr.querySelector('button.btnConfirmItem').addEventListener('click', handleConfirmClick);
+        tr.querySelector('button.btnCancelItem').addEventListener('click', handleCancelClick);
         // The enabled switch is clickable straight from the row, a new one included.
-        document.querySelectorAll(`tr[data-idnum="${curr_idnum}"] .input_mod`).forEach(element => {
+        tr.querySelectorAll('.input_mod').forEach(element => {
             element.addEventListener('change', handleInputChange);
         });
         // console.log('>>>>>>>>>>>>> deleteBtn: ' + JSON.stringify(deleteBtn));
@@ -564,7 +559,7 @@ function loadCustomDataPHsList(values){
                </td>
             </tr>`;
             //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
-            idnumMax = Math.max(idnumMax, values.idnum);
+            idnumMax = Math.max(idnumMax, Number(values.idnum) || 0);
             return output;
         }
     };
@@ -572,7 +567,15 @@ function loadCustomDataPHsList(values){
     // console.log('>>>>>>>>>>>>> options: ' + JSON.stringify(options));
     // console.log('>>>>>>>>>>>>> values: ' + JSON.stringify(values));
 
-    customDataPHsList = new List('all_custom_dataplaceholders', options, values.map(toListValues));
+    // Every row gets a numeric idnum: a placeholder imported from a file has none (the export
+    // drops it), and a missing one turned idnumMax into NaN, and every later row's into NaN too.
+    let nextIdnum = Math.max(0, ...values.map(v => Number(v.idnum) || 0));
+    const listValues = values.map(v => {
+        const lv = toListValues(v);
+        if (!(Number(lv.idnum) > 0)) lv.idnum = ++nextIdnum;
+        return lv;
+    });
+    customDataPHsList = new List('all_custom_dataplaceholders', options, listValues);
 
     decoratePlaceholderText();
     updatePlaceholdersCount();

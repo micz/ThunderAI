@@ -139,5 +139,28 @@ k.test('import-literally', S_PAGE, 'an imported placeholder is shown literally, 
     assert.equal(r.querySelector('.text_output').value, '</textarea><b>x</b>');
 });
 
+k.test('add-after-import', S_PAGE, 'rows added after importing a placeholder with no row number each get working buttons', async () => {
+    for (const id of ['one', 'two']) {
+        await ctx.click($('#btnNew'));
+        await typeIn(form.id(), id);
+        await typeIn(form.name(), 'N');
+        await typeIn(form.text(), 'T');
+        await ctx.click($('#btnAddNew'));
+    }
+    const nums = rows().map(r => r.getAttribute('data-idnum'));
+    assert.equal(new Set(nums).size, nums.length, 'duplicate row numbers: ' + nums.join());
+    for (const n of nums) assert.ok(Number(n) > 0, 'a row number that is not a number: ' + n);
+    for (const id of ['one', 'two']) {
+        const r = rowOf(id);
+        await ctx.click(btn(r, 'btnEditItem'));
+        assert.equal(btn(r, 'btnConfirmItem').style.display, 'flex', id + ': Edit does nothing');
+        await ctx.click(btn(r, 'btnCancelItem'));
+    }
+    const dialogs = ctx.dialogs.length;
+    await ctx.click(btn(rowOf('one'), 'btnDeleteItem'));
+    assert.equal(ctx.dialogs.length - dialogs, 1, 'Delete asked more than once');
+    assert.equal(rowOf('one'), undefined);
+});
+
 k.coverage();
 test('the page ran on modelled APIs only', () => assertHarnessClean(ctx));

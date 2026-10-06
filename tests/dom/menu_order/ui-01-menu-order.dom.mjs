@@ -527,5 +527,35 @@ k.test('drag-clears-highlight', S_MO, 'a drag start ends the deep-link highlight
     assert.deepEqual(highlighted(), []);
 });
 
+k.test('drag-wired-once', S_MO, 're-rendering the lists adds no further drag listeners', async () => {
+    const lists = LISTS.map(id => $('#' + id));
+    let added = 0;
+    const real = ctx.window.EventTarget.prototype.addEventListener;
+    ctx.window.EventTarget.prototype.addEventListener = function (type, ...rest) {
+        if (lists.includes(this) && type.startsWith('drag') || lists.includes(this) && type === 'drop') added++;
+        return real.call(this, type, ...rest);
+    };
+    try {
+        await ctx.click(subTab('display'));
+        await ctx.click(subTab('compose'));
+        await ctx.click($('#btnResetAll'));
+    } finally {
+        ctx.window.EventTarget.prototype.addEventListener = real;
+    }
+    assert.equal(added, 0);
+    await ctx.click($('#btnSaveAll'));     // the next test starts from a saved state
+});
+
+k.test('compose-reorder-key', S_MO, 'in the Composing sub-tab a reorder renumbers position_compose, not position_display', async () => {
+    assert.ok(subTab('compose').classList.contains('active'));
+    const before = Object.fromEntries((ctx.ctl.localData()._custom_prompt || []).map(p => [p.id, p]));
+    await drag('popup_list', 'c_compose', 'popup_list', 'end');
+    const n = idsIn('popup_list').length;
+    await ctx.click($('#btnSaveAll'));
+    const c = ctx.ctl.localData()._custom_prompt.find(p => p.id === 'c_compose');
+    assert.equal(Number(c.position_compose), n);
+    assert.equal(c.position_display, before.c_compose.position_display);
+});
+
 k.coverage();
 test('the page ran on modelled APIs only', () => assertHarnessClean(ctx));
