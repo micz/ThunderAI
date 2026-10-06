@@ -969,6 +969,8 @@ the options page, so they persist via the shared save-on-`change`.
 **Persistence:** the wizard writes the **same** storage keys as the options page
 (`connection_type`, the per-provider `*` fields, and the four feature flags) via
 `saveOptions`/`restoreOptions` copied from `options/mzta-options.js`. **No new preference.**
+Every value is saved on its own `change`; there is no final save, so navigating ("Continue",
+"Finish setup", Back, "Run again") writes nothing.
 
 **Entry points:**
 - **Onboarding banner** — a `#wizard_banner` at the top of `pages/onboarding/onboarding.html`

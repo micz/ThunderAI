@@ -3,7 +3,7 @@
 //
 // Spec 02 "Popup Menu" (filtered by `show_in` and by the reading types 0 + 1, ordered by
 // `position_display`, special prompts styled like the others, the icon slot always rendered and
-// blank without an icon; the search, the number prefixes, the keyboard and selecting vs.
+// blank without an icon; no `show_in` counting as `popup`; labels decoded as text; the search, the number prefixes, the keyboard and selecting vs.
 // running with `dynamic_menu_force_enter` off; the red banner in place of the search box and
 // its click). Spec 05 "Setup Wizard (`pages/setup-wizard/`)", entry point "Popup
 // menu" (`chatgpt_web` is always configured) and "Blue wizard banner vs. red permission banner"
@@ -32,6 +32,8 @@ const PROMPTS = [
     { id: 'context_only', label: 'Context only', type: '0', show_in: 'context', position_display: 2, custom_icon: '' },
     { id: 'nowhere', label: 'Nowhere', type: '0', show_in: 'none', position_display: 2, custom_icon: '' },
     { id: 'compose_only', label: 'Compose only', type: '2', show_in: 'popup', position_display: 2, custom_icon: '' },
+    // no show_in (counts as popup), a label with entities
+    { id: 'unset', label: 'R&amp;D &lt;x&gt;', type: '0', position_display: 4, position_compose: 4, custom_icon: '' },
 ];
 const statuses = [{ working: true, processed: 5, cancelRequested: false }, { working: false, processed: 0, cancelRequested: false }];
 
@@ -84,12 +86,18 @@ k.test('red-banner-click', S_POPUP, 'a click on it opens the welcome page, where
     assert.match(opened[0].args[0].url, /pages\/onboarding\/onboarding\.html$/);
 });
 
-k.test('filtered', S_POPUP, 'only prompts shown in the popup (`popup` / `both`) of the reading types 0 + 1 are listed', () => {
-    assert.deepEqual(rows().map(r => r.dataset.id).sort(), ['first', 'late', 'special']);
+k.test('filtered', S_POPUP, 'only prompts shown in the popup (`popup` / `both` / none) of the reading types 0 + 1 are listed', () => {
+    assert.deepEqual(rows().map(r => r.dataset.id).sort(), ['first', 'late', 'special', 'unset']);
 });
 
 k.test('ordered', S_POPUP, 'the reading view is ordered by `position_display`', () => {
-    assert.deepEqual(rows().map(r => r.dataset.id), ['first', 'special', 'late']);
+    assert.deepEqual(rows().map(r => r.dataset.id), ['first', 'special', 'late', 'unset']);
+});
+
+k.test('label-decoded', S_POPUP, 'a label\'s entities are decoded as text, never as markup', () => {
+    const label = rowOf('unset').querySelector('.mzta_item_label');
+    assert.equal(label.textContent, '4. R&D <x>');
+    assert.equal(label.children.length, 0);
 });
 
 k.test('special-plain', S_POPUP, 'a special prompt gets no distinct treatment: its row is built like the others', () => {
@@ -134,7 +142,7 @@ const active = () => rows().filter(r => r.classList.contains('mzta_autocomplete-
 const runs = () => asked('shortcut_do_prompt').map(c => c.args[0]);
 
 k.test('prefixes', S_POPUP, 'the rows are prefixed with their number shortcut', () => {
-    assert.deepEqual(labels(), ['1. First', '2. Special', '3. Late']);
+    assert.deepEqual(labels(), ['1. First', '2. Special', '3. Late', '4. R&D <x>']);
 });
 
 k.test('search', S_POPUP, 'typing keeps the labels containing the trimmed text, case-insensitively, renumbered', async () => {
@@ -149,12 +157,18 @@ k.test('search-none', S_POPUP, 'no match hides the list', async () => {
     assert.deepEqual(rows(), []);
     assert.equal(list().style.display, 'none');
     await type('');
-    assert.equal(rows().length, 3);
+    assert.equal(rows().length, 4);
+});
+
+k.test('search-decoded', S_POPUP, 'the search matches the decoded label', async () => {
+    await type('&d <');
+    assert.deepEqual(rows().map(r => r.dataset.id), ['unset']);
+    await type('');
 });
 
 k.test('arrows-wrap', S_POPUP, 'the arrows move the highlight, wrapping at both ends', async () => {
     await key('ArrowUp');
-    assert.deepEqual(active(), ['late']);
+    assert.deepEqual(active(), ['unset']);
     await key('ArrowDown');
     assert.deepEqual(active(), ['first']);
     await key('ArrowDown');

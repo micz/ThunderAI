@@ -10,11 +10,14 @@
 // the disclosure and collapsed on a provider change), the connection test strip (visible per
 // provider, ok / error / idle reset, saves nothing; the network scripted with scriptFetch()),
 // "Pick your tools" (the four API features only, persisted as booleans), "Persistence" (the
-// same keys as the options page; picking a provider writes no feature flag).
+// same keys as the options page; picking a provider writes no feature flag; navigating writes
+// nothing). The connection test also covers the rejected key, the refused permission and, for
+// Ollama, the capability re-probe after a success.
 // Spec 04 "ChatGPT Web" (its rows injected once, with unprefixed ids, in the wizard).
 //
 // The tests run in order on one page: the user picks Gemini, walks to "Pick your tools", comes
-// back and switches to ChatGPT Web, which goes on to the done step, then "Run again".
+// back and switches to ChatGPT Web, which goes on to the done step, then "Run again", and
+// last tests an Ollama connection.
 
 import {
     test,
@@ -31,7 +34,8 @@ import {
     writtenSince,
 } from '../../ui/dom-helpers.mjs';
 
-const ctx = await openPage('setup-wizard');
+const permissions = {};
+const ctx = await openPage('setup-wizard', { permissions });
 after(() => ctx.close());
 const net = scriptFetch(ctx);
 const k = uiTests('setup-wizard', '01');
@@ -77,6 +81,12 @@ const indicator = () => ({
     lines: ctx.$$('#wiz_steps .wiz_line').map(l => l.classList.contains('wiz_line_on')),
 });
 const backShown = () => !back().classList.contains('hidden');
+/** Run `fn` and return the storage.local writes it made. */
+const writesDuring = async fn => {
+    const since = ctx.ctl.calls.length;
+    await fn();
+    return ctx.localWrites(since);
+};
 const GEMINI_MODELS = /^https:\/\/generativelanguage\.googleapis\.com\/v1beta\/models\?key=/;
 
 // ---- step 0, at load -------------------------------------------------------------------
@@ -126,8 +136,8 @@ k.test('tint', S_WIZ, 'the choice tints the connection panel and the done badge 
 
 // ---- Connect -----------------------------------------------------------------------------
 
-k.test('to-connect', S_WIZ, '"Continue" leads to Connect; the label stays "Continue" (not second-to-last)', async () => {
-    await ctx.click(next());
+k.test('to-connect', S_WIZ, '"Continue" leads to Connect, writing nothing; the label stays "Continue" (not second-to-last)', async () => {
+    assert.deepEqual(await writesDuring(() => ctx.click(next())), []);
     assert.equal(current(), 'connect');
     assert.equal(next().textContent, msg('wizard_continue'));
 });
@@ -222,10 +232,30 @@ k.test('test-network', S_TEST, 'an unreachable endpoint: red, with the network m
     assert.equal($('#mzta_conn_test_link').textContent, msg('connTest_link_retry'));
 });
 
+k.test('test-auth', S_TEST, 'a rejected key: red, with the authentication message', async () => {
+    net.answer(GEMINI_MODELS, () => json({ error: { message: 'API key not valid. Please pass a valid API key.' } },
+        { status: 400, statusText: 'Bad Request' }));
+    await runTest();
+    assert.equal(strip().getAttribute('data-state'), 'error');
+    assert.equal($('#mzta_conn_test_text').textContent, msg('connTest_error', [msg('connTest_error_auth')]));
+});
+
+k.test('test-denied', S_TEST, 'a refused host permission: no request sent, the permission message', async () => {
+    const fetches = ctx.fetchCalls.length;
+    permissions.request = () => false;
+    try {
+        await runTest();
+    } finally {
+        delete permissions.request;
+    }
+    assert.equal(ctx.fetchCalls.length, fetches, 'a request was sent');
+    assert.equal($('#mzta_conn_test_text').textContent, msg('connTest_error', [msg('Optional_Permission_Denied_Model_Fetching')]));
+});
+
 // ---- Pick your tools ---------------------------------------------------------------------
 
 k.test('to-tools', S_WIZ, 'an API provider goes on to "Pick your tools", whose button reads "Finish setup"', async () => {
-    await ctx.click(next());
+    assert.deepEqual(await writesDuring(() => ctx.click(next())), []);
     assert.equal(current(), 'tools');
     assert.equal(next().textContent, msg('wizard_finish'));
 });
@@ -255,10 +285,10 @@ k.test('tools-saved', S_WIZ, 'a toggle is persisted as a boolean under the featu
 
 // ---- back, and ChatGPT Web ---------------------------------------------------------------
 
-k.test('back-by-position', S_WIZ, 'Back walks the sequence: tools, Connect, then the provider step', async () => {
-    await ctx.click(back());
+k.test('back-by-position', S_WIZ, 'Back walks the sequence: tools, Connect, then the provider step, writing nothing', async () => {
+    assert.deepEqual(await writesDuring(() => ctx.click(back())), []);
     assert.equal(current(), 'connect');
-    await ctx.click(back());
+    assert.deepEqual(await writesDuring(() => ctx.click(back())), []);
     assert.equal(current(), 'provider');
 });
 
@@ -309,8 +339,8 @@ k.test('web-header', S_WIZ, 'the Connect header follows the new provider, with t
     assert.equal($('#mzta_conn_pill_name').textContent, name);
 });
 
-k.test('done-chrome', S_WIZ, 'the done step has no navigation: Back and "Continue" hidden, every dot on', async () => {
-    await ctx.click(next());
+k.test('done-chrome', S_WIZ, '"Finish setup" saves nothing more; the done step has no navigation: Back and "Continue" hidden, every dot on', async () => {
+    assert.deepEqual(await writesDuring(() => ctx.click(next())), []);
     assert.equal(current(), 'done');
     assert.equal(backShown(), false);
     assert.equal(next().classList.contains('hidden'), true);
@@ -331,6 +361,29 @@ k.test('run-again', S_WIZ, '"Run again" returns to step 0, the provider still ch
 k.test('web-flags-untouched', S_WIZ, 'the wizard never writes the feature flags itself: only the toggled ones are stored', () => {
     const flagWrites = ctx.localWrites(0).flatMap(w => Object.keys(w.items)).filter(key => FEATURES.includes(key));
     assert.deepEqual([...new Set(flagWrites)].sort(), ['summarize', 'translate']);
+});
+
+// ---- Ollama ------------------------------------------------------------------------------
+
+const OLLAMA = 'http://ollama.example:11434';
+
+k.test('ollama-reprobe', S_TEST, 'a successful Ollama test probes /api/version, then re-reads the model capabilities', async () => {
+    await ctx.click(card('ollama_api'));
+    await ctx.click(next());
+    assert.equal(current(), 'connect');
+    // typed, not committed: no capability probe has run for this host and model yet
+    $('#ollama_host').value = OLLAMA;
+    const model = $('#ollama_model');
+    model.appendChild(new ctx.window.Option('llama3:8b', 'llama3:8b'));
+    model.value = 'llama3:8b';
+    const from = ctx.fetchCalls.length;
+    net.answer(OLLAMA + '/api/version', () => json({ version: '0.6.0' }));
+    net.answer(OLLAMA + '/api/show', () => json({ capabilities: ['completion'], model_info: {} }));
+    await runTest();
+    await until(ctx, () => ctx.fetchCalls.length > from + 1, 'the capability probe');
+    assert.equal(strip().getAttribute('data-state'), 'ok');
+    assert.deepEqual(ctx.fetchCalls.slice(from).map(c => c.url), [OLLAMA + '/api/version', OLLAMA + '/api/show']);
+    assert.deepEqual(net.pending(), []);
 });
 
 k.coverage();

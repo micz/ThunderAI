@@ -7,8 +7,10 @@
 // ChatGPT Web rows shown at load, none rewritten by opening the page, a change stored under its
 // key with its default's type; the feature flags on "Pick your tools"), "Connection Settings
 // Panel — Advanced Options Disclosure" (JSON field validation on restore, which names the
-// wizard). Spec 04 "Anthropic / Claude (`anthropic_api`)" (`anthropic_effort` filled and the per-model
-// availability computed after the restore, a call site the spec lists for the wizard).
+// wizard). Spec 04 "Anthropic / Claude (`anthropic_api`)", "OpenAI API (`chatgpt_api`)" and "Ollama
+// (`ollama_api`)": the per-model availability computed after the restore, the three call sites
+// the spec lists for the wizard (`anthropic_effort` filled; the OpenAI fields gated by the stored
+// model and format; the Ollama capability probe for the stored host and model).
 
 import {
     test,
@@ -51,6 +53,8 @@ const $ = ctx.$;
 
 const S_WIZ = 'spec 05 "Setup Wizard (`pages/setup-wizard/`)"';
 const S_ADV = 'spec 05 "Connection Settings Panel — Advanced Options Disclosure"';
+const S_OPENAI = 'spec 04 "OpenAI API (`chatgpt_api`)"';
+const S_OLLAMA = 'spec 04 "Ollama (`ollama_api`)"';
 const S_CLAUDE = 'spec 04 "Anthropic / Claude (`anthropic_api`)"';
 
 const shownValue = el => el.type === 'checkbox' ? el.checked
@@ -102,6 +106,23 @@ k.test('effort-filled', S_CLAUDE, 'after the restore the effort select is filled
     assert.equal(effort.disabled, true);
     assert.notEqual($('#anthropic_effort_unsupported').style.display, 'none');
     assert.equal($('#anthropic_temperature').disabled, false);
+});
+
+k.test('openai-gated', S_OPENAI, 'after the restore the OpenAI fields follow the stored model and format', () => {
+    // gpt-4.1 has no reasoning: its two reasoning fields disabled with their notes, sampling kept
+    for (const id of ['chatgpt_reasoning_effort', 'chatgpt_reasoning_summary']) {
+        assert.equal($('#' + id).disabled, true, id);
+        assert.notEqual($('#' + id + '_unsupported').style.display, 'none', id);
+    }
+    assert.equal($('#chatgpt_temperature').disabled, false);
+    // json_object: the schema name and schema apply to json_schema only
+    assert.equal($('#chatgpt_text_format_schema_name').disabled, true);
+    assert.equal($('#chatgpt_text_format_schema').disabled, true);
+});
+
+k.test('ollama-probed', S_OLLAMA, 'after the restore the stored Ollama host and model are probed for their capabilities', () => {
+    assert.ok(ctx.fetchCalls.some(c => c.url === STORED.ollama_host + '/api/show'),
+        ctx.fetchCalls.map(c => c.url).join(', '));
 });
 
 // ---- changes -----------------------------------------------------------------------------
