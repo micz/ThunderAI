@@ -384,7 +384,7 @@ k.test('import-refused', S_PAGE, 'Import asks first; refused, no file is asked f
 
 k.test('import', S_CUSTOM, 'Import merges on the prefixed id, skips an entry with no usable id, and waits for Save All', async () => {
     const since = ctx.ctl.calls.length;
-    // What is stored now, whatever the earlier tests left (see delete-after-save), plus new1.
+    // What is stored now, plus new1 (sig is merged, the two entries with no usable id skipped).
     const expected = [...new Set([...stored().map(p => p.id.replace('thunderai_custom_', '')), 'sig', 'new1'])].sort();
     await pickFile(ctx, () => ctx.click($('#btnImport')), FILE,
         () => $('#msgDisplay').textContent === msg('importCustomDataPH_import_completed'));

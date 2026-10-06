@@ -426,6 +426,13 @@ function applyIconToPreview(preview, filename, promptId) {
     }
 }
 
+// custom_icon is one value shared by every row of the prompt, in both panels: repaint
+// them all at once, not only the preview that opened the picker.
+function applyIconToAllPreviews(promptId, filename) {
+    document.querySelectorAll(`.sortable_item[data-id="${CSS.escape(promptId)}"] img.item_icon_preview`)
+        .forEach(preview => applyIconToPreview(preview, filename, promptId));
+}
+
 function buildIconPicker(prompt) {
     const preview = document.createElement('img');
     preview.classList.add('item_icon_preview', 'item_icon_preview_editable');
@@ -473,7 +480,7 @@ function openIconPopover(anchorEl, prompt) {
     if (!prompt.custom_icon) noneBtn.classList.add('selected');
     noneBtn.addEventListener('click', () => {
         prompt.custom_icon = '';
-        applyIconToPreview(anchorEl, '', prompt.id);
+        applyIconToAllPreviews(prompt.id, '');
         markUnsaved();
         closeIconPopover();
     });
@@ -493,7 +500,7 @@ function openIconPopover(anchorEl, prompt) {
 
         btn.addEventListener('click', () => {
             prompt.custom_icon = filename;
-            applyIconToPreview(anchorEl, filename);
+            applyIconToAllPreviews(prompt.id, filename);
             markUnsaved();
             closeIconPopover();
         });

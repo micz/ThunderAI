@@ -169,15 +169,9 @@ that section. `validateKnown()` refuses a page with no `ui-` file, a section not
 `spec NN "<section>"`, a case id that is a pattern or names no existing file, a case listed under two
 sections, and an empty reason; `ui/99-harness-known-issues` runs it.
 
-Today (the options page and the feature pages have none):
-
-| Page | Case | Spec section | What the page does instead |
-|---|---|---|---|
-| customdataplaceholders | `01-save-all-text`, `01-edit-saved-text` | spec 05 "Manage Data Placeholders Page" (the stored text stays clean) | Save All re-reads the rows with List.js `reIndex()`, which takes `.text` from the innerHTML of the decorated read-mode span: a text with a `{%…%}` token is stored with `<span class="ph_chip">…</span>` around it (and `&` as `&amp;`), and that is what the placeholder expands to in a prompt |
-| customdataplaceholders | `01-enabled-saved` | spec 03 "Custom Placeholders" (disabled with the page's checkbox) | `enabled` is re-read from the checkbox's `checked_val` attribute, which the switch never changes: the stored value stays what it was at load |
-| customdataplaceholders | `01-enabled-toggle-new-row` | spec 05 "Manage Data Placeholders Page" (clickable from the row) | a row added in the session gets no `change` handler on its switch: unticking it does not enable Save All |
-| customdataplaceholders | `01-delete-after-save` | spec 05 "Manage Data Placeholders Page" | after any Save All, Delete removes nothing until the page is reloaded: `setCustomPlaceholders()` writes the `thunderai_custom_` prefix into the objects List.js holds, so the unprefixed id the row shows matches no item |
-| menu_order | `01-icon-other-panel` | spec 02 "Menu Order Page" ("an icon chosen in one panel shows in the other") | only the clicked preview changes; the other panel keeps the old icon until it is re-rendered |
+**Today there is none.** The six that group C found (the Data Placeholders page storing the chip markup
+and a stale `enabled`, ignoring the switch of a new row and losing Delete after a Save All; the Menu
+Order icon shown in one panel only) were fixed in the pages, and spec 02 / 05 now state the behaviour.
 
 ## What is not covered
 
@@ -254,8 +248,6 @@ is now in spec 05 (or spec 08), decided case by case.
 - The row is built by concatenating the values into markup (`value="…"`, `<textarea>…</textarea>`): a
   name with `"` or a text with `</textarea>` breaks the row. The spec rules out values parsed as markup on
   the Custom Prompts page only.
-- After a Save All `enabled` is stored as the string `"1"` / `"0"` (read from an attribute); on Add it is
-  the number `1`.
 
 **menu_order**
 

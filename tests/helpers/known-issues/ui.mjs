@@ -39,37 +39,6 @@ const CASE_RE = /^(\d\d)-[a-z0-9][a-z0-9-]*$/;
 
 /** The known issues, by page, spec section and case id. */
 export const KNOWN = {
-    customdataplaceholders: {
-        'spec 05 "Manage Data Placeholders Page (`pages/customdataplaceholders/`)"': {
-            '01-save-all-text': 'the spec has the stored text stay clean (sanitizeHtml() strips the chip markup); Save All '
-                + 're-reads every row with List.js reIndex(), which takes `.text` from the innerHTML of the decorated '
-                + 'read-mode span, so a text holding a {%…%} token is stored as \'Hello <span class="ph_chip">{%author%}</span>\' '
-                + '(and & as &amp;) - which is what the placeholder then expands to in a prompt',
-            '01-edit-saved-text': 'same cause as 01-save-all-text, for a text confirmed with OK: stored as '
-                + '\'Kind regards\\n<span class="ph_chip">{%author%}</span> &amp; <span class="ph_chip">{%mail_subject%}</span>\'',
-            '01-enabled-toggle-new-row': 'the enabled switch stays clickable straight from the row; a row added in this '
-                + 'session gets Edit / Delete / OK / Cancel handlers but no `change` handler on its .input_mod switch '
-                + '(only loadCustomDataPHsList() binds those, at load and after an import), so unticking it neither '
-                + 'enables Save All nor arms beforeunload',
-            '01-delete-after-save': 'Delete matches the row by the id it shows (without the prefix); after any Save All '
-                + 'it removes nothing, because setCustomPlaceholders() writes the thunderai_custom_ prefix into the very '
-                + 'objects List.js holds (item.values() is handed by reference), so remove("id", "greet") finds no item '
-                + 'until the page is reloaded (the add-form\'s "id already used" check misses for the same reason)',
-        },
-        'spec 03 "Custom Placeholders"': {
-            '01-enabled-saved': 'a custom placeholder is disabled with the page\'s checkbox (enabled: 0); Save All re-reads '
-                + '`enabled` from the checkbox\'s checked_val attribute (List.js valueName {name: "enabled", attr: '
-                + '"checked_val"}), which ticking or unticking the switch never changes, so the stored value stays what '
-                + 'it was at load (here 1 after unticking)',
-        },
-    },
-    menu_order: {
-        'spec 02 "Menu Order Page (`pages/menu_order/`)"': {
-            '01-icon-other-panel': '"an icon chosen in one panel shows in the other": the pick updates only the clicked '
-                + 'preview (applyIconToPreview() on the anchor); the same prompt\'s row in the other panel keeps the old '
-                + 'icon until that panel is re-rendered (a drag, Reset all, a reload)',
-        },
-    },
 };
 
 /** {page: [the NN of each ui-NN- file]} of tests/dom/. */

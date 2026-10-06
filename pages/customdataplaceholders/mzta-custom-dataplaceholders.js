@@ -156,6 +156,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         okBtn.addEventListener('click', handleConfirmClick);
         let cancelBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnCancelItem`);
         cancelBtn.addEventListener('click', handleCancelClick);
+        // The enabled switch is clickable straight from the row, a new one included.
+        document.querySelectorAll(`tr[data-idnum="${curr_idnum}"] .input_mod`).forEach(element => {
+            element.addEventListener('change', handleInputChange);
+        });
         // console.log('>>>>>>>>>>>>> deleteBtn: ' + JSON.stringify(deleteBtn));
         // console.log('>>>>>>>>>>>>> newItem: ' + JSON.stringify(newItem));
         document.getElementById('btnNew').disabled = false;
@@ -673,6 +677,26 @@ function checkSelectedBoxes(checkboxes = null) {
     });
 }
 
+// The placeholder to store for one row, as a NEW object read from the row itself.
+// - reIndex() reads every class value with innerHTML, so the read-mode text comes back with
+//   the chip markup decoratePlaceholderText() wrapped around its tokens (and "&" as "&amp;"):
+//   the text, name and id are read as plain text instead, the text from its recorded source.
+// - `enabled` is the switch's live state: List.js reads it from the checked_val attribute,
+//   which ticking the switch never changes.
+// - A copy, never item.values() itself: setCustomPlaceholders() adds the thunderai_custom_
+//   prefix to what it is given, and the list must keep the unprefixed id the row shows, or
+//   Delete and the "already used" check stop matching after a save.
+function itemToSave(item) {
+    const tr = item.elm;
+    const values = { ...item.values() };
+    values.id = tr.querySelector('.id_show').textContent;
+    values.name = tr.querySelector('.name_show').textContent;
+    values.text = getTextShowSource(tr.querySelector('.text_show'));
+    values.type = tr.querySelector('.type').textContent;
+    values.enabled = tr.querySelector('input.enabled').checked ? 1 : 0;
+    return values;
+}
+
 //Save all custom data placeholders
 async function saveAll() {
     setMessage(browser.i18n.getMessage('customDataPH_saving_custom'));
@@ -680,7 +704,7 @@ async function saveAll() {
     if(customDataPHsList != null) {
         setMessage(browser.i18n.getMessage('customPrompts_reindexing_list'));
         customDataPHsList.reIndex();
-        let newCustomDataPHs = customDataPHsList.items.filter(item => item.values().is_default == 0).map(item => item.values());
+        let newCustomDataPHs = customDataPHsList.items.filter(item => item.values().is_default == 0).map(itemToSave);
         taLog.log('newCustomDataPlaceholders: ' + JSON.stringify(newCustomDataPHs));
         // newCustomDataPHs.forEach(prompt => {
         //     console.log('>>>>>>>>>>>>> id: ' + JSON.stringify(prompt));
