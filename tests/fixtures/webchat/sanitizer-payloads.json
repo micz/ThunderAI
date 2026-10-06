@@ -1,5 +1,5 @@
 {
-    "_comment": "The answers the webchat area streams to probe the sanitizer (spec 01 'One render path, no router', spec 07 'The sanitizer is a security boundary'). Each is checked as one token and split across two tokens, and in the diff picker on both sides. 'why' is what the payload is there to catch; tests/webchat/README.md lists them.",
+    "_comment": "The answers the webchat area streams to probe the sanitizer (spec 01 'One render path, no router', spec 07 'The sanitizer is a security boundary'). Each is checked as one token and split across two tokens, and in the diff picker on both sides. 'why' is what the payload is there to catch; tests/webchat/README.md lists them. A payload opening with an element the HTML parser would move to <head> (style, meta, base, template) is preceded by text, so it stays in the answer's body.",
     "payloads": [
         {
             "id": "script",
@@ -39,7 +39,7 @@
         {
             "id": "style",
             "why": "a <style> element (could restyle the whole window) and a style attribute carrying a url(javascript:)",
-            "html": "<style>body { background: url(javascript:window.__pwned=1) }</style><span style=\"background:url(javascript:window.__pwned=1)\">styled</span>"
+            "html": "Text first, so the parser keeps it in the body: <style>body { background: url(javascript:window.__pwned=1) }</style><span style=\"background:url(javascript:window.__pwned=1)\">styled</span>"
         },
         {
             "id": "svg-script",
@@ -64,12 +64,12 @@
         {
             "id": "meta-base",
             "why": "<meta http-equiv=refresh> to a javascript: URL, and a <base href> that would rebase every relative link",
-            "html": "<meta http-equiv=\"refresh\" content=\"0;url=javascript:window.__pwned=1\"><base href=\"javascript:window.__pwned=1//\"><a href=\"page.html\">rel</a>"
+            "html": "Text first, so the parser keeps it in the body: <meta http-equiv=\"refresh\" content=\"0;url=javascript:window.__pwned=1\"><base href=\"javascript:window.__pwned=1//\"><a href=\"page.html\">rel</a>"
         },
         {
             "id": "template",
             "why": "a <template> whose content is a separate fragment a naive element walk never visits",
-            "html": "<template><img src=x onerror=\"window.__pwned=1\"></template>visible"
+            "html": "Text first, so the parser keeps it in the body: <template><img src=x onerror=\"window.__pwned=1\"></template>visible"
         },
         {
             "id": "details-ontoggle",

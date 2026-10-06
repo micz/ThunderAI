@@ -24,9 +24,10 @@ node --test --test-timeout=120000 "tests/webchat/*.test.mjs" "tests/dom/webchat/
 from the repository root, after `npm ci` (jsdom). `tests/webchat/*.test.mjs` is level 1 and needs
 nothing installed; `node --test "tests/**/*.test.mjs"` runs it with the rest of level 1.
 
-The area adds about **3-5 s per DOM file** (each file opens the window once, in its own process); the
-whole area runs in about 18 s on its own, less within `npm test`, where `node --test` runs the files
-in parallel.
+The area adds about **3-15 s per DOM file** (each file opens the window once, in its own process;
+`webchat-06`, which streams 34 answers, is the longest). The whole area runs in about 35 s on its own,
+less within `npm test`, where `node --test` runs the files in parallel. A file whose last answer
+finished stays alive up to 4 s after its tests, until the "done" pill's own fade timer has fired.
 
 ## Status
 
@@ -35,7 +36,7 @@ The area is built group by group:
 | Group | What | State |
 |---|---|---|
 | A | start-up and the background protocol | done (`webchat-01` to `04`) |
-| B | rendering the stream | in progress (`webchat-05`) |
+| B | rendering the stream | done (`webchat-05` to `09`) |
 | C | actions on an answer | to do |
 | D | the diff picker (spec 07) | to do |
 
@@ -51,6 +52,7 @@ tests/
 │   ├── shadow.mjs                     sq() / sqa() / deepElements(): queries through the shadow roots
 │   ├── webchat-page.mjs               openWebchat(), fromBackground(), apiSend(), the views
 │   ├── safety.mjs                     allowlistProblems(), executableProblems(), htmlProblems()
+│   ├── usage-view.mjs                 the usage chip and its popover rows, as shown
 │   └── 99-harness-known-issues.test.mjs   level 1: the known-issue shape
 └── dom/webchat/webchat-NN-<scenario>.dom.mjs   the tests, one file per initial state of the window
 ```
@@ -74,6 +76,10 @@ one did (each file says so).
 | `dom/webchat/webchat-03-custom-text-append` | the same sections: no token and no entries, one step, no counter, the text appended after a space |
 | `dom/webchat/webchat-04-api-error` | spec 01 "Streaming data flow" (`api_error`: the error in a bot turn of its own, as text, nothing sent to the worker, the input left usable), "Transcript DOM contract" (the Close-only `.action-bar` of an error turn; Close sends `{command: "chatgpt_close", window_id}` and swallows its rejection); spec 04 "Live "Thinking…" indicator" (the error pill: its class alone, the inline alert icon), "Anthropic / Claude (`anthropic_api`)" (the four `anthropic_err_hint_*` strings, each holding the literal `$MODEL$`) |
 | `dom/webchat/webchat-05-stream` | (group B) spec 01 "Streaming data flow", "One render path, no router" (the hybrid `Ciao <b>Mario</b>\ngrazie`, a table and a rule kept, a code fence as text), "Streaming: re-render the whole accumulated raw each time" (live token spans between renders, the render past 2 KB re-parsing the whole raw, a tag split across tokens whole, no double `<br>`, no weld at a segment boundary, many tokens rendering exactly as one), "Transcript DOM contract" (one turn and one avatar per answer, the history, the full bar on the newest answer only); spec 04 "Thinking output in the webchat UI" (the block prepended, collapsed by default, inline `<think>` extracted; a thinking-only answer still shows its block), "Live "Thinking…" indicator" (the row, a sibling of the message, kept through a deferred flush, removed at `tokensDone`; the waiting and streaming icons, not rebuilt per token), "Emitting to the chat window" (the init flag off) |
+| `dom/webchat/webchat-06-sanitizer` | spec 07 "The sanitizer is a security boundary" and spec 01 "One render path, no router": every payload of `fixtures/webchat/sanitizer-payloads.json` streamed in one token and split in two after 2 KB of padding, so the first flush renders it cut in half; each time the answer region against the allowlist, the whole turn for anything executable, and the HTML "Use this answer" sends; `img` stripped, a fence's markup as text, an `https:` link kept with its `href` alone; spec 01 "Streaming: re-render the whole accumulated raw each time" (the mid-stream render of a partial tag); spec 04 "Thinking output in the webchat UI" (every payload as reasoning: text only; `hide_thinking` off, the block open) |
+| `dom/webchat/webchat-07-errors-stop` | spec 04 "Automatic Retry Handling" (`newRetryAttempt` in the pill: the HTTP 503, 429 and network wordings, the waiting icon kept, Stop visible; `requestAborted`: the "Request cancelled." notice and the input usable, the pill and its countdown gone; the `api_retry_after_hint` paragraph), spec 01 "Streaming data flow" (Stop posts `{type: "stop"}` and disables itself; an error mid-stream in a turn of its own, the input usable; Stop mid-stream then `tokensDone`), "Streaming: re-render the whole accumulated raw each time" (the next answer is not a continuation of the interrupted one), "Transcript DOM contract" (the error turn's Close-only bar, removed with no toolbar by the next answer) |
+| `dom/webchat/webchat-08-usage` | spec 04 "Rendering in the chat window" (nothing while streaming; the chip at `tokensDone`, last before Close, outside `.message`, marked `data-mzta-usage`; "711 tokens" / "42 output tokens" / the duration as a static label; the button's ARIA; the popover rows in order, a null omitted, a reported 0 printed, the duration and its rate; closing on a second click, Escape with the focus back, a pointerdown outside; one open at a time; the session total, and none on an earlier answer's snapshot; the chip moved, same node, into the compact toolbar), "Emitting to the chat window" (one usage per turn; one arriving with no open turn dropped and not counted), "Context window" (OpenAI: the count alone) |
+| `dom/webchat/webchat-09-usage-context` | spec 04 "Context window" (Ollama's `ollama_num_ctx` first, so no request; looked up after the first completed answer and shown by the popover of that answer, built before it), "Rendering in the chat window" (`820 / 1,000 · 82%`, the warn style and the note at 80% or more, none below; the provider's `tokens_per_second`, rounded) |
 | `webchat/99-harness-known-issues` | the known-issue shape (level 1) |
 
 ## The fake Worker
@@ -172,8 +178,10 @@ across two, and fed to the picker on both sides:
 | `markdown-links` | markdown rather than HTML: a javascript: link, a data: image, a javascript: autolink |
 | `code-fence` | markup in a fence must stay text |
 
-Group A already applies `executableProblems()` to the user bubble (the prompt carries mail content),
-the error message and the startup notice.
+The checks themselves are checked: every payload, parsed raw, is reported by them (a payload that opens
+with an element the HTML parser moves to `<head>` is preceded by text, so it stays in the body).
+Besides the answers, `executableProblems()` is applied to the user bubble (the prompt carries mail
+content), the error messages, the startup notice and the thinking block.
 
 ## Doing in the area what the harness does not offer
 
@@ -199,7 +207,8 @@ section. `validateKnown()` refuses a section not of the form `spec NN "<section>
 hold quotes), a case id that is a pattern or names no existing file, a case listed under two sections,
 and an empty reason; `webchat/99-harness-known-issues` runs it.
 
-**Today there is none.** What group A found was fixed in the window, and the specs state the behaviour:
+**Today there is none.** Group B found none: the sanitizer held against every payload, whole and cut
+mid-tag. What group A found was fixed in the window, and the specs state the behaviour:
 the startup notice escapes every value, a thinking-only answer shows its thinking block, the prompt
 name is decoded once (a `%` no longer breaks the window, and the Custom Prompts editor refuses it),
 the input stays usable after an error, and the header shows the model and the API only.
@@ -214,6 +223,11 @@ the input stays usable after an error, and the header shows the model and the AP
 - **The fade of the "done" pill** (3.5 s, then 0.5 s): timers longer than 1 s are not waited for by
   `settle()`.
 - **The real model workers**: the api area's business.
+- **The retry countdown ticking down** (a real 250 ms interval): the tests check the text it starts
+  with, and that `requestAborted` stops it; the pill returning to "waiting" at zero is not waited for.
+- **The context window from a provider's API** (Ollama's `/api/ps` and `/api/show`, Gemini's
+  `inputTokenLimit`, Claude's `max_input_tokens`): the area uses the configured `ollama_num_ctx`, which
+  needs no request; the lookups are `contextWindow.js` calling the provider clients.
 - **How the document title reads**: not a spec rule.
 
 ## Under-specified
