@@ -177,11 +177,6 @@ the error message and the startup notice.
 
 ## Doing in the area what the harness does not offer
 
-- **`window.markdownit`** (`openWebchat()`): `index.html` loads `markdown-it.min.js` as a classic
-  script, which in a browser defines `markdownit` on the window, the global object there. The harness
-  runs classic scripts in Node's global context, so the name lands on `globalThis` but not on the jsdom
-  window, and `streamingMessage.js` reads `window.markdownit` (lazily, at the first render).
-  `openWebchat()` copies it onto the window after `openPage()`.
 - **The window's own tab** (`webchat-02`, `03`): the custom-text flow asks
   `tabs.query({active: true, currentWindow: true})`, which the harness answers with no tab; the file
   replaces `ctx.ctl.browser.tabs.query` with one answering the window's tab.

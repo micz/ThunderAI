@@ -233,7 +233,10 @@ does, in the browser's order:
    any API it does not model**;
 4. runs the page's **classic** scripts in document order with `vm.runInThisContext`
    (`js/mzta-i18n.js` → `i18n`, `pages/_lib/list.js` → `List`): classic scripts run during
-   parsing, before the deferred module;
+   parsing, before the deferred module. In a browser the window *is* the global object, so a
+   classic script's global is also `window.<name>`: every global the scripts created is mirrored
+   onto the jsdom window (a live getter/setter), never over a property the window already has
+   (`markdown-it.min.js` → `window.markdownit`, read so by the chat window);
 5. `import()`s the page's own module script;
 6. dispatches `DOMContentLoaded` and `await`s `settle()`.
 

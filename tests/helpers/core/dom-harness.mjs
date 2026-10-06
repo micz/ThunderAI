@@ -12,7 +12,8 @@
  *       plugins' pageApis()) and wrapped in a Proxy that THROWS on any API it does not model;
  *    4. run the page's classic scripts in document order (js/mzta-i18n.js -> `i18n`,
  *       pages/_lib/list.js -> `List`): classic scripts run during parsing, before the
- *       deferred module script;
+ *       deferred module script. The globals they create are mirrored onto the window, which in
+ *       a browser is the global object (`window.markdownit`);
  *    5. import() the page's own module script;
  *    6. dispatch DOMContentLoaded and wait until the page has settled.
  *
@@ -473,10 +474,24 @@ export async function openPage(page, opts = {}) {
     // 4. classic scripts, in document order
     const scripts = [...document.querySelectorAll('script[src]')];
     const pageDir = new URL(rel, REPO);
+    const globalsBefore = new Set(Object.getOwnPropertyNames(globalThis));
     for (const s of scripts) {
         if (s.type === 'module') continue;
         const file = new URL(s.getAttribute('src'), pageDir);
         vm.runInThisContext(readFileSync(file, 'utf8'), { filename: file.pathname });
+    }
+    // In a browser the window IS the global object, so what a classic script defines is reachable
+    // both as a bare name and as window.<name> (markdown-it.min.js -> window.markdownit). Here the
+    // scripts ran in Node's global context: mirror every global they created onto the jsdom window,
+    // never over a property the window already has.
+    for (const name of Object.getOwnPropertyNames(globalThis)) {
+        if (globalsBefore.has(name) || name in window) continue;
+        Object.defineProperty(window, name, {
+            get: () => globalThis[name],
+            set: (v) => { globalThis[name] = v; },
+            configurable: true,
+            enumerable: false,
+        });
     }
     // 5. the module script(s)
     for (const s of scripts) {

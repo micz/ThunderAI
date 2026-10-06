@@ -56,12 +56,6 @@ export async function openWebchat({
         permissions,
         commands: { [ready]: () => true, ...commands },
     });
-    // index.html loads markdown-it.min.js as a classic script, which in a browser defines
-    // `markdownit` on the window (the window IS the global object there). The harness runs classic
-    // scripts in Node's global context, so the name lands on globalThis but not on the jsdom
-    // window, and streamingMessage.js reads it as `window.markdownit` (lazily, at the first
-    // render). Mirror it, as the browser would have it.
-    if (ctx.window.markdownit === undefined) ctx.window.markdownit = globalThis.markdownit;
     return { ctx, worker, ready };
 }
 
