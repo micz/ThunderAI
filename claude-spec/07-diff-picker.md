@@ -112,11 +112,22 @@ rather than computing it separately is load-bearing: `sliceHtmlByText` maps offs
 onto `block.html`, so two independent projections that merely *looked* equivalent would drift on the
 first odd input and every offset after the drift would be silently wrong.
 
-> **Not yet re-verified after the HTML rewrite.** The plain-text model was verified over hand-picked
-> samples plus 8000 fuzz checks with zero failures. The block model's harness exists but has to run
-> in the webchat window's devtools console — it needs `DOMParser` and the `Diff` global, neither of
-> which exists in Node, and this project has no npm — so the numbers above have **not** been
-> reproduced for the HTML path. Run the harness before trusting the invariant.
+> **Verified by the test suite, with two known violations.** The plain-text model was verified over
+> hand-picked samples plus 8000 fuzz checks with zero failures. The block model is now checked by the
+> `webchat` test area, which runs the real module in jsdom (`npm ci` provides it as a dev dependency):
+> `tests/dom/webchat/webchat-15-picker.dom.mjs` drives `<diff-picker>` through its toolbar on a table of
+> cases (word changes, markup differences, `<br>` lines, lists, tag changes, inserted and deleted
+> blocks, entities, nested `<br>`, reworded sentences) at both granularities, and checks accept all,
+> reject all, the plain-text result and P1. Accept all holds everywhere. **Reject all does not**, in two
+> cases, run as known issues (`tests/helpers/known-issues/webchat.mjs`) until they are fixed:
+>
+> - a block whose words match but whose markup differs is a replace pair with no hunk to choose, so
+>   reject all keeps the answer's markup;
+> - a replace pair takes its wrapper (`tag`, `listType`) from the answer's block only, so reject all
+>   puts the original's words in the answer's wrapper (`<div>` → `<p>`, `<ul>` → `<ol>`, `<p>` →
+>   `<h2>`).
+>
+> It is a table of cases, not the plain-text model's fuzzing. See `tests/webchat/README.md`.
 
 ### Why `Diff.diffWords()` cannot be used
 
@@ -168,8 +179,9 @@ never reaches the text diff**. The related cost is likewise gone, since the bloc
 `\n`, is what carries paragraph structure.
 
 > The plain-text model was verified with 8058 invariant checks over both granularities, zero
-> failures. **Those numbers do not carry over to the block model** — see the caveat under the
-> invariant above.
+> failures. **Those numbers do not carry over to the block model**, which is checked on a table of
+> cases by the test suite instead — see the note under the invariant above. The whitespace-only case
+> (`"one two"` vs `"one    two"`, zero changes) is one of them.
 
 > An earlier draft of this feature planned `body_text_raw` / `selection_text_raw` fields on
 > `prompt_info` carrying un-normalized text, so the invariant could hold against the byte-exact
@@ -371,7 +383,9 @@ security boundary cannot drift between them. The picker imports the three saniti
 **segmentation** `BLOCK_TAGS` (still `{p,div,li,h1-6,blockquote,pre}` — deliberately narrow, no
 `ul/ol/tr/table`). `blockTextOfHtml`, `segmentBlocks`, `sliceHtmlByText`, `normalizeBlockHtml` and
 `makeBlock` **stay in `diffPicker.js`**: `blockTextOfHtml` is the offset-space anchor
-`sliceHtmlByText` maps against, and moving it risks the P1/P2/P3 invariant that has no harness here.
+`sliceHtmlByText` maps against, and moving it risks the P1/P2/P3 invariant. The `webchat` test area
+(`tests/dom/webchat/webchat-15-picker.dom.mjs`) checks that invariant and P1 on a table of cases, so a
+move would be caught there, but only on the cases it lists.
 
 **`BLOCK_ALLOWED` was widened** (for the renderer, which now emits markdown tables and `hr`) with the
 table family `table, thead, tbody, tr, td, th` and `hr`. That widening is a **separate addend on
@@ -443,7 +457,11 @@ body-level `<br>` walk mirrors this: the first `<br>` after a run sets `sep = 'b
 consecutive one (only whitespace between) promotes it to `null`. A **trailing** `<br>` (empty final
 run) leaves `sep = null` on the last emitted block, so a `<br>` can never leave a block pointing at a
 successor belonging to a different wrapper. Verified against P1 and the accept-all / reject-all
-invariant, running the real module in a browser (the harness `07`'s invariant caveat asks for).
+invariant, running the real module in a browser, and now pinned by the test suite
+(`tests/dom/webchat/webchat-15-picker.dom.mjs`): `<p>a<br>b</p>` and `<p>a<br><br>b</p>` round trips,
+the body-level `<br>` walk, the trailing `<br>`, and Body Text mode pairing line by line. One case
+of the invariant still fails there: `<div>` lines against `<p>` answer paragraphs, rejected, come
+back in `<p>` (the answer's wrapper, see the note under the invariant).
 
 **`sep` is part of `buildBlockPairs`' comparator**, for the same reason `html` is: for a context part
 jsdiff keeps one side's objects and discards the other, so two blocks differing only in their
@@ -767,7 +785,8 @@ hint is conditional (*"if you change it"*), matching the behaviour above.
 
 The invariant survives the round-trip: after EDIT → REVIEW, reject-all still yields
 `renderBlocks(segmentBlocks(originalHtml))` — the original side never changed, so P1–P3 hold exactly
-as before. (Verified for the plain-text model; see the caveat under the invariant for the HTML one.)
+as before. (Verified for the plain-text model, and by the test suite for the HTML one on an edit of
+a block's words: `tests/dom/webchat/webchat-15-picker.dom.mjs`, `back-changed`.)
 
 `setContent()` also forces `'review'` and clears the editor: a fresh picker opening into the editor
 would hide the very changes the button was clicked to see.
