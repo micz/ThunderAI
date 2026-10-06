@@ -45,6 +45,10 @@ let reloadDebounce = null;
 // True when the in-memory state differs from what is stored, i.e. Save All is
 // pending. Guards the beforeunload warning, like on the custom prompts page.
 let somethingChanged = false;
+// True while saveAll() is writing: the storage.onChanged reloader must not take the page's
+// own writes for another tab's, or a write that fails halfway would reload the page and
+// throw away both the pending changes and the error saying so.
+let saveInProgress = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadAndRender();
@@ -57,6 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Any unsaved changes on this page are discarded to avoid overwriting the other page's changes.
     browser.storage.onChanged.addListener((changes, areaName) => {
         if (areaName !== 'local') return;
+        if (saveInProgress) return;
         if (!(changes._default_prompts_properties || changes._custom_prompt || changes._special_prompts)) return;
         clearTimeout(reloadDebounce);
         reloadDebounce = setTimeout(() => {
@@ -745,9 +750,24 @@ async function saveAll() {
         String(p.is_default) === '0' && String(p.is_special) !== '1' && String(p.is_org) !== '1');
     const specialPromptsToSave = allPrompts.filter(p => String(p.is_special) === '1').concat(allExcludedSpecialPrompts);
 
-    await setDefaultPromptsProperties(defaultPromptsToSave);
-    await setCustomPrompts(customPromptsToSave);
-    await setSpecialPrompts(specialPromptsToSave);
+    saveInProgress = true;
+    try {
+        await setDefaultPromptsProperties(defaultPromptsToSave);
+        await setCustomPrompts(customPromptsToSave);
+        await setSpecialPrompts(specialPromptsToSave);
+    } catch (err) {
+        // What is on screen is not (all) in storage: say so, keep the warning armed and
+        // give Save All back, so the user can try again.
+        console.error('[ThunderAI | menu order] Saving failed: ' + err);
+        clearTimeout(reloadDebounce);
+        btnSaveAll.disabled = false;
+        msgDisplay.textContent = browser.i18n.getMessage('menu_order_save_error') + ' ' + err;
+        msgDisplay.style.display = 'inline';
+        msgDisplay.style.color = 'red';
+        return;
+    } finally {
+        saveInProgress = false;
+    }
 
     await browser.runtime.sendMessage({ command: "reload_menus" });
 

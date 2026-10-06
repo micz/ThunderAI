@@ -700,17 +700,25 @@ function itemToSave(item) {
 //Save all custom data placeholders
 async function saveAll() {
     setMessage(browser.i18n.getMessage('customDataPH_saving_custom'));
-    setNothingChanged();
+    // Disabled while the write is in flight; the pending state itself is cleared only once
+    // the write has landed, so a failed one keeps the beforeunload warning armed.
+    document.getElementById('btnSaveAll').disabled = true;
     if(customDataPHsList != null) {
         setMessage(browser.i18n.getMessage('customPrompts_reindexing_list'));
         customDataPHsList.reIndex();
         let newCustomDataPHs = customDataPHsList.items.filter(item => item.values().is_default == 0).map(itemToSave);
         taLog.log('newCustomDataPlaceholders: ' + JSON.stringify(newCustomDataPHs));
-        // newCustomDataPHs.forEach(prompt => {
-        //     console.log('>>>>>>>>>>>>> id: ' + JSON.stringify(prompt));
-        // });
-        //console.log('>>>>>>>>>>>>> saveAll: ' + JSON.stringify(newCustomDataPHs));
-        await setCustomPlaceholders(newCustomDataPHs);
+        try {
+            await setCustomPlaceholders(newCustomDataPHs);
+        } catch (err) {
+            // What is on screen is not in storage: say so, and give Save All back.
+            taLog.error('Saving the custom data placeholders failed: ' + err);
+            somethingChanged = true;
+            document.getElementById('btnSaveAll').disabled = false;
+            setMessage(browser.i18n.getMessage('customDataPH_save_error') + ' ' + err, 'red');
+            return;
+        }
+        setNothingChanged();
         setMessage(browser.i18n.getMessage('customDataPH_saved'),'green');
         msgTimeout = setTimeout(() => {
             clearMessage();

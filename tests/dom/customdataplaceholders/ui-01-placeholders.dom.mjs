@@ -203,6 +203,22 @@ k.test('unsaved-guard', S_GUARD, 'with a pending Save All, leaving the page asks
     assert.equal(leaveBlocked(ctx), true);
 });
 
+k.test('save-error', S_PAGE, 'a failed Save All says so in red, gives the button back and keeps the changes pending', async () => {
+    const local = ctx.ctl.browser.storage.local;
+    const realSet = local.set;
+    local.set = async () => { throw new Error('disk full'); };
+    try {
+        await saveAll();
+    } finally {
+        local.set = realSet;
+    }
+    assert.ok($('#msgDisplay').textContent.startsWith(msg('customDataPH_save_error')), $('#msgDisplay').textContent);
+    assert.equal($('#msgDisplay').style.color, 'red');
+    assert.equal($('#btnSaveAll').disabled, false, 'no way to try again');
+    assert.equal(leaveBlocked(ctx), true, 'the pending changes can be lost without a warning');
+    assert.equal(storedOf('greet'), undefined);
+});
+
 k.test('save-all', S_CUSTOM, 'Save All stores every placeholder with the thunderai_custom_ prefix, is_default and is_dynamic "0"', async () => {
     await saveAll();
     assert.deepEqual(stored().map(p => p.id).sort(),

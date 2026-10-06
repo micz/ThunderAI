@@ -315,6 +315,29 @@ k.test('reorder', S_MO, 'reordering inside Visible moves the row and marks the p
 
 // ---- save ------------------------------------------------------------------------------------
 
+k.test('save-error', S_MO, 'a Save All failing halfway says so in red, gives the button back and keeps the changes pending', async () => {
+    const local = ctx.ctl.browser.storage.local;
+    const realSet = local.set;
+    // The built-ins' properties are written, the custom prompts are not.
+    local.set = async function (items) {
+        if ('_custom_prompt' in items) throw new Error('disk full');
+        return realSet.call(this, items);
+    };
+    const popup = idsIn('popup_list');
+    try {
+        await ctx.click($('#btnSaveAll'));
+        await new Promise(r => setTimeout(r, 300));     // past the reloader's 200 ms debounce
+        await ctx.settle();
+    } finally {
+        local.set = realSet;
+    }
+    assert.ok($('#msgDisplay').textContent.startsWith(msg('menu_order_save_error')), $('#msgDisplay').textContent);
+    assert.equal($('#msgDisplay').style.color, 'red');
+    assert.equal($('#btnSaveAll').disabled, false, 'no way to try again');
+    assert.equal(leaveBlocked(ctx), true);
+    assert.deepEqual(idsIn('popup_list'), popup, 'the page reloaded over its pending changes');
+});
+
 let saved;
 
 k.test('save-positions', S_MO, 'Save All stores the Visible order as positions 1, 2, 3…', async () => {

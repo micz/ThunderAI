@@ -147,7 +147,8 @@ It models the WebExtension APIs the shipped modules use:
 - `storage.local` / `storage.sync` / `storage.session` with the real `get()` semantics:
   `get({key: default})` substitutes a default only for a **missing** key, so a stored
   `null` comes back as `null`. Values are structured-cloned in and out, and `set()` fires
-  `storage.onChanged`;
+  `storage.onChanged`. Each area starts with the content of the option of the same name
+  (`local`, `sync`, `session`; `openPage()` takes `local` and `session`);
 - `storage.managed.get()`, resolving to the `policy` option and **rejecting** when there is
   none (`policy: null`), as Thunderbird does;
 - `runtime.sendMessage` (to the `remote` you pass, else rejecting with "Receiving end does
@@ -168,7 +169,7 @@ The controller it returns records every storage call (`calls`) and every message
   (`mztaPrefs`, `prompts`, `utils`, `prefs_default`, `defaults`);
 - `startBackground(mockOpts)`: a background context. Mock, console capture, modules, then
   each plugin's background startup;
-- `startPage({policy, local, accounts, sender, remote, onOtherMessage, external, decorate})`:
+- `startPage({policy, local, session, accounts, sender, remote, onOtherMessage, external, decorate})`:
   a non-background page, with its background started by the plugins in the same process;
 - `loadFixture(name, dir = '')` reads `tests/fixtures/[<dir>/]<name>`; `captureConsole()`,
   `repoPath()`, `REPO`.

@@ -262,7 +262,7 @@ function trackTimers(host, rec) {
  *
  * @param {string} page   a PAGES key
  * @param {object} opts
- *   policy, local, accounts   as for startPage()
+ *   policy, local, session, accounts   as for startPage()
  *   permissions               {contains(q), request(q)} overrides (default: granted)
  *   commands                  {command: (message) => reply} overrides / additions
  *   confirm, prompt           what window.confirm / window.prompt return (default true / '')
@@ -339,6 +339,7 @@ export async function openPage(page, opts = {}) {
     const ctx = await startPage({
         policy: opts.policy ?? null,
         local: opts.local,
+        session: opts.session,
         accounts: opts.accounts,
         sender: { url, id: 'thunderai@micz.it' },
         external: async () => null, // no other add-on (the Sparks presence check)

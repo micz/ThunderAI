@@ -2839,6 +2839,10 @@
     "message": "Custom data placeholders saved!",
     "description": "Custom data placeholders page: status message shown after the data placeholders are saved."
   },
+  "customDataPH_save_error": {
+    "message": "Error while saving the custom data placeholders:",
+    "description": "Custom data placeholders page: shown in red when Save All fails. Followed by the error message"
+  },
   "customDataPH_btnAddNewCommit": {
     "message": "Add the Data Placeholder",
     "description": "Custom data placeholders page: label of the button that adds the new data placeholder from the form."
@@ -3547,6 +3551,10 @@
   "menu_order_saved": {
     "message": "Menu order saved!",
     "description": "Message shown after saving menu order"
+  },
+  "menu_order_save_error": {
+    "message": "Error while saving the menu order:",
+    "description": "Menu Order page: shown in red when Save All fails. Followed by the error message"
   },
   "menu_order_reset_all": {
     "message": "Reset all",

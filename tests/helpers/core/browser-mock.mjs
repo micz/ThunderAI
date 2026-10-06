@@ -124,6 +124,7 @@ function loadEnMessages() {
  *                 installed, and then get() REJECTS, as Thunderbird does.
  *   local       - initial storage.local content
  *   sync        - initial storage.sync content
+ *   session     - initial storage.session content
  *   accounts    - what accounts.list() resolves to (MailAccount-like objects)
  *   tags        - what messages.tags.list() resolves to (MessageTag-like objects)
  *   remote      - (message, sender) => reply: the OTHER end of runtime.sendMessage, i.e. the
@@ -151,7 +152,7 @@ export function installBrowserMock(opts = {}) {
         storage: {
             local: makeStorageArea('local', opts.local, storageOnChanged, calls),
             sync: makeStorageArea('sync', opts.sync, storageOnChanged, calls),
-            session: makeStorageArea('session', {}, storageOnChanged, calls),
+            session: makeStorageArea('session', opts.session, storageOnChanged, calls),
             managed: {
                 async get(keys) {
                     calls.push({ area: 'managed', op: 'get', keys: clone(keys) });

@@ -113,7 +113,7 @@ export function remoteFields(ctx) {
  * only through runtime.sendMessage, answered in the order documented in ./plugins.mjs.
  *
  * @param {object} o
- *   policy, local, accounts - as for installBrowserMock()
+ *   policy, local, session, accounts - as for installBrowserMock()
  *   sender   - the SENDERS entry the page sends from (its url decides what it receives)
  *   remote   - optional replacement for the background's reply (fail-open tests)
  *   onOtherMessage - optional (message, sender, fields) => reply, for every message no plugin
@@ -126,7 +126,7 @@ export function remoteFields(ctx) {
  *              globalThis.browser in time.
  */
 export async function startPage(opts = {}) {
-    const { policy = null, local, accounts, sender, remote, onOtherMessage, external, decorate } = opts;
+    const { policy = null, local, session, accounts, sender, remote, onOtherMessage, external, decorate } = opts;
     const list = await plugins();
     const listeners = [];
     const fields = {};
@@ -143,7 +143,7 @@ export async function startPage(opts = {}) {
         return onOtherMessage ? onOtherMessage(message, s, fields) : undefined;
     };
     const ctl = installBrowserMock({
-        policy, local, accounts, external,
+        policy, local, session, accounts, external,
         senderUrl: sender.url,
         remote: remote ?? dispatch,
     });
