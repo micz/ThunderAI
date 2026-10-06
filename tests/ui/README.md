@@ -83,11 +83,16 @@ A new file only for a genuinely different initial state.
 | `dom/customdataplaceholders/ui-02-special-chars` | customdataplaceholders | spec 05 "Manage Data Placeholders Page" ("The values in the row markup"): a name with quotes, `<` `>` and `&`, a text with `</textarea>`, a tag, an entity and a token, shown and edited literally, stored back unchanged by Edit / OK / Save All (twice) and Cancel; the same for a placeholder added in the form and one imported; Delete and the "already used" check on an id with `&`; rows added after an import of a placeholder with no row number, each with a unique number and working buttons |
 | `dom/menu_order/ui-01-menu-order` | menu_order | spec 02 "Menu Order Page (`pages/menu_order/`)": the panels (Reading / Composing and their types, the context panel without type 2), Visible by position (a prompt with none last, a missing `position_context` ranked alphabetically at load), Hidden alphabetically, "hidden everywhere", the exclusions, the badges and the legend, the icon picker (the first cell per prompt kind, Esc and outside mousedown, a pick marks unsaved and writes nothing, the other panel), the drag (rows not moved before the drop, the insertion line, a release outside any list and a reorder inside Hidden marking the page unsaved), the eight `show_in` transitions, the drop position, reordering, Save All (positions 1, 2, 3…, the three stores, the excluded specials written back, reload_menus, its state), a Save All failing halfway (the error, the button back, no reload over the pending changes), Reset all (in memory, factory order / visibility / icons, then saved), the cross-tab reload (an unrelated key, a prompt store), the drag listeners wired once (no new ones on a re-render), a reorder in Composing renumbering `position_compose`, the `menu_order_highlight` deep-link (its reload dropping the pending changes and the dirty state, every instance, the tab dot, persistence, the sub-tab switch, cleared by a drag); spec 02 "Icon Resolution"; spec 05 "Unsaved-Changes Guard" (this page's own beforeunload) |
 | `dom/menu_order/ui-02-deeplink-stash` | menu_order | spec 02 "Menu Order Page (`pages/menu_order/`)": the `menu_order_highlight_target` stashed in `storage.session` by "Menu position" (read after the initial load and deleted, the prompt highlighted, Composing selected for a composing-only one, nothing pending) |
+| `dom/setup-wizard/ui-01-fresh` | setup-wizard | spec 05 "Setup Wizard (`pages/setup-wizard/`)": step 0 (six cards, their names and tags; nothing preselected, the hidden select unset, no `connection_type` persisted by opening the page; "Continue" disabled and refusing to advance, enabled by the first card click with no re-render), the tint of the panel and the done badge, the sequence by position (an API provider through "Pick your tools", whose button reads "Finish setup"; Back walking it; ChatGPT Web skipping it, Connect then second-to-last), the Connect step (only the chosen provider's rows), "Pick your tools" (the four API features only, persisted as booleans), "Persistence" (a field under the options page's key; picking a provider writes no flag); "Connection Settings Panel — Advanced Options Disclosure" (rows moved, collapsed, toggled with nothing persisted, collapsed on a provider change), "… — Connection Test Status Strip" (per provider; ok with the form's key and nothing saved, idle on edit, network error; Gemini scripted); spec 04 "ChatGPT Web" (its rows once, unprefixed) |
+| `dom/setup-wizard/ui-02-configured` | setup-wizard | spec 05 "Setup Wizard": the saved provider applied at load (card marked, "Continue" enabled), "Persistence" (every `{provider}_{key}` of the fixture `ui/provider-fields.json` and the ChatGPT Web rows shown at load, none rewritten by opening the page, each change stored under its key with its default's type; the stored flags on "Pick your tools"), "Connection Settings Panel — Advanced Options Disclosure" (JSON validation on restore); spec 04 "Anthropic / Claude (`anthropic_api`)" (`anthropic_effort` filled after the restore, holding the stored level, gated by the model) |
+| `dom/onboarding/ui-01-no-connection` | onboarding | spec 05 "Setup Wizard", entry point "Onboarding banner" (`.wizard_banner_urgent` with no connection) and "Blue wizard banner vs. red permission banner" (no red banner with an empty `connection_type`, every permission missing, none even checked); nothing written |
+| `dom/onboarding/ui-02-web-no-permission` | onboarding | the same sections: ChatGPT Web chosen without its permission; the banner visible but not urgent, only that provider's red banner |
+| `dom/popup/ui-01-no-connection` | popup | spec 05 "Setup Wizard", entry point "Popup menu" (the invitation *instead of* the prompt list: list hidden, `popup_menu_ready` never sent) and "Blue wizard banner vs. red permission banner" (no red banner with an empty `connection_type`) |
+| `dom/popup/ui-02-key-missing` | popup | spec 05 "Setup Wizard", entry point "Popup menu": a cloud provider without its `*_api_key` is not configured (a host stored for another provider counts for nothing) |
+| `dom/popup/ui-03-reading-web` | popup | spec 02 "Popup Menu" (reading types 0 + 1, `show_in` `popup` / `both`, `position_display` order, a special prompt built like the others, the resolved icon or the blank slot); spec 05 "Setup Wizard" ("Popup menu": `chatgpt_web` always configured; the chosen provider's red banner); spec 04 "Batch cancellation (user-triggered stop)" (the banner and its count, `batch_status` polled, the banner gone with the batch) |
+| `dom/popup/ui-04-compose-ollama` | popup | spec 02 "Popup Menu" (compose types 0 + 2, `position_compose` order); spec 05 "Setup Wizard" ("Popup menu": Ollama configured by its host); spec 04 "Batch cancellation (user-triggered stop)" ("Stop processing" sends `cancel_batch`); spec 01 "Data Flow: User Action → AI Response" (a chosen prompt sent as `shortcut_do_prompt` with the popup's tab) |
 | `ui/01-window-position` | — (level 1) | spec 05 "UI & Feature Preferences", rows `chatgpt_win_top` / `chatgpt_win_left`: `toWindowCoordinate()` / `getSavedWindowPosition()` (0 and negatives are positions, `''` / `null` / `NaN` are not, both coordinates needed), and the background's `applyWindowPositionAndSize()` reading through them (checked in the source: `mzta-background.js` cannot be imported) |
 | `ui/99-harness-known-issues` | — | the known-issue shape (level 1) |
-
-The last group of the area (the setup wizard, onboarding and the popup) is not written yet: see
-[What is not covered](#what-is-not-covered).
 
 ## Doing in a file what the harness does not offer
 
@@ -123,6 +128,11 @@ without touching the core or adding a plugin:
 - **The message tags** (`addtags/ui-01`): the harness's `messages.tags.list()` answers none and
   `openPage()` takes no tags; the Add Tags page reads them on every preview refresh, so the file
   replaces `ctx.ctl.browser.messages.tags.list` after the page has opened.
+- **The background's answers to the popup** (`popup/ui-03`, `ui-04`): `popup_menu_ready` (the payload
+  `preparePopupMenu()` builds: tab, filtering, prompts, batch status), `batch_status`, `cancel_batch` and
+  `shortcut_do_prompt` are given with `openPage({ commands })`. The popup polls `batch_status` with a
+  bare `setInterval`, which is Node's and keeps the process alive: each file ends the polling the way
+  the page does (the batch reported over, or "Stop processing" clicked).
 - **Another add-on's answer** (Sparks, `ui-03`): the harness answers the two-argument
   `runtime.sendMessage('thunderai-sparks@micz.it', …)` with `null`. The options page asks again
   whenever its feature rows are recomputed, so the file wraps the mock's `ctx.ctl.browser.runtime.sendMessage`
@@ -183,11 +193,17 @@ token under the caret (only an open token being typed).
 
 The six that group C found first (the Data Placeholders page storing the chip markup and a stale
 `enabled`, ignoring the switch of a new row, losing Delete after a Save All; the Menu Order icon shown in
-one panel only) were fixed in the pages, and spec 02 / 05 state the behaviour.
+one panel only) were fixed in the pages, and spec 02 / 05 state the behaviour. The one group D found
+(the setup wizard not validating the stored JSON fields after its restore) was fixed in the wizard.
 
 ## What is not covered
 
-- **Group D of the area is not written yet**: the setup wizard, onboarding and popup.
+- **The wizard's hidden connection select** (`#connection_type_tr{display:none}`), its 432px card, its
+  type scale and the connection-row typography override: CSS, which jsdom does not load.
+- **The popup's search keyboard** (typing, arrows, digits, Enter) and the clicks on the onboarding / popup
+  permission banners: not specified (see [Under-specified](#under-specified)).
+- **"Update list" in the wizard**: the same shared code as on the options page (`options/ui-02`); the
+  wizard files check the connection test only.
 - **Drag and drop beyond its two ends** (Menu Order): with no layout, a drop lands before the first row
   or after the last; dropping between two rows by pointer position, the drag image and the entry pulse of
   a deep-link highlight are not tested.
@@ -228,7 +244,42 @@ one panel only) were fixed in the pages, and spec 02 / 05 state the behaviour.
 What the pages do that no spec states, listed instead of tested: the area does not invent rules from
 what a page happens to do.
 
-None today. What the area found on the options page and the six feature settings pages is in spec 05
+**setup-wizard**
+
+- **The order of the provider cards.** Spec 05 says their ids and order "match `CONN_TYPES`", but the
+  options page's `CONN_TYPES` (`chatgpt_web, chatgpt_api, ollama_api, openai_comp_api, google_gemini_api,
+  anthropic_api`) and the wizard's own, derived from its `PROVIDERS` (`chatgpt_web, chatgpt_api,
+  google_gemini_api, anthropic_api, ollama_api, openai_comp_api`), differ. The tests check the six ids,
+  not their order.
+- **The navigation chrome**: when Back is shown (not on step 0 nor on done), "Continue" hidden on done,
+  the step-indicator dots, and what "Run again" (`#wiz_restart`) does.
+- **The Connect step's text**: the heading (`wizard_connect_heading` with the provider name), the
+  subtitle (`wizard_step_connect_sub_web` for ChatGPT Web) and the pill's provider name. The spec says
+  the pill is tinted, not what it reads.
+
+**onboarding**
+
+- **The red permission banners' click**: requesting the provider's permission, then hiding the banner
+  and showing `#integration_permission_ok`, whose click closes the tab. Spec 05 says only when the
+  banners appear.
+- **The documentation links** (`#link_doc_guides`, `#link_doc_tutorial`): plain links, as on the options
+  page.
+
+**popup**
+
+- **The search and the keyboard**: filtering by label as the user types, the `1.` to `0.` prefixes and
+  the digit shortcuts, arrow navigation with wrap-around, Enter, and what `dynamic_menu_force_enter`
+  ("Force Enter to submit in popup", spec 05) changes in that flow.
+- **The red permission banners' click** (opening the welcome page) and whether the search box hides
+  under them.
+- **The invitation's link closing the popup** after opening the wizard, and "Stop processing" disabling
+  itself, relabelling to `batch_stopping` and closing the popup: spec 04 says only that it requests the
+  cancellation.
+- **No tab to answer** (`popup_menu_ready` answering nothing): the page hides the loading spinner.
+- **What counts as "set"** for a credential: the page trims it, so a whitespace-only key is not
+  configured.
+
+What the area found on the earlier groups on the options page and the six feature settings pages is in spec 05
 (or 08); what it found on the three prompt management pages is in spec 05 ("Manage Custom Prompts
 Page": order and arrival, newlines; "Manage Data Placeholders Page": the add-form, Import and Export) and spec 02 ("Menu Order Page": prompts with no position, what marks the page unsaved),
 or was fixed (the deep-link reload now calls `markSaved()`; a copy's id is made unique; the Data

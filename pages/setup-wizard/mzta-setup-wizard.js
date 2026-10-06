@@ -27,6 +27,7 @@ import {
   varConnectionUI,
   showConnectionOptions,
   ensureRestorableOption,
+  checkJsonFields,
   updateAnthropicModelCapabilityUI,
   updateOllamaModelCapabilityUI,
   updateOpenAIModelCapabilityUI
@@ -390,6 +391,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   await restoreOptions();
+
+  // Flag any malformed JSON already stored: restoring assigns .value, which fires no
+  // input event, so the live validation would only run once the field is touched.
+  checkJsonFields();
 
   // The saved model is in the selects now, so the per-model option availability can
   // finally be computed (before the restore they would read an empty model).
