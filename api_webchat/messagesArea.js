@@ -920,10 +920,15 @@ class MessagesArea extends HTMLElement {
     }
 
     async handleTokensDone(promptData = null) {
+        // A response made only of thinking tokens never created an accumulating
+        // message (only a content token does): open one now, so the final flush
+        // below renders its thinking block instead of dropping the reasoning.
+        if (!this.accumulatingMessageEl && this._streaming?.hasThinking()) {
+            this.createNewAccumulatingMessage();
+        }
         this.flushAccumulatingMessage(true);
-        // A response made only of thinking tokens never creates an accumulating
-        // message, so the flush above is a no-op and would leave the indicator
-        // spinning forever.
+        // The flush removes the live indicator; with no thinking and no content at
+        // all there was nothing to flush, and it would be left spinning forever.
         this._removeThinkingIndicator();
         const closingTurn = this._currentTurnEl;
         this._buildUsageChipForTurn(closingTurn);

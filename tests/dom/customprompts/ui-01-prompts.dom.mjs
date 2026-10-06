@@ -423,7 +423,7 @@ k.test('dirty', S_PAGE, 'an edit enables Save, shows Cancel and arms beforeunloa
     assert.equal(storedOf('mine_alpha').text, ALPHA.text, 'Cancel wrote something');
 });
 
-k.test('validation', S_PAGE, 'Save refuses an empty, spaced or taken id and a missing name or text, writing nothing', async () => {
+k.test('validation', S_PAGE, 'Save refuses an empty, spaced or taken id, a missing name or text, and a "%" in the name, writing nothing', async () => {
     const since = ctx.ctl.calls.length;
     const tryIt = async (field, value, errorKey, badId) => {
         await ctx.click($('#btnDetailCancel')).catch(() => {});
@@ -439,6 +439,7 @@ k.test('validation', S_PAGE, 'Save refuses an empty, spaced or taken id and a mi
     await tryIt('detail_id', 'Prompt_Reply', 'customPrompts_error_id', 'detail_id');
     await tryIt('detail_name', '   ', 'customPrompts_error_required', 'detail_name');
     await tryIt('detail_text', ' \n ', 'customPrompts_error_required', 'detail_text');
+    await tryIt('detail_name', '100% polite', 'customPrompts_error_name_percent', 'detail_name');
     assert.deepEqual(ctx.localWrites(since), []);
     await ctx.click($('#btnDetailCancel'));
     assert.equal(hidden('detail_error'), true, 'the error outlived the reload of the pane');

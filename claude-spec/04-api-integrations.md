@@ -647,6 +647,11 @@ Both paths are combined into `combinedThinking` and rendered by
 `<details class="thinking-block">` prepended to the answer. Nothing is rendered when
 there is no thinking content.
 
+**A response made only of thinking tokens still shows its block.** Only a content token opens
+the accumulating `.message` element, so such a response reaches `tokensDone` with none:
+`handleTokensDone()` then opens one (`StreamingMessage.hasThinking()`) before the final flush,
+which renders the thinking block alone, with an empty answer.
+
 ### Live "Thinking…" indicator
 
 The `<details>` block only materializes at flush time, so a long reasoning phase
@@ -678,8 +683,8 @@ error pill.
 `_removeThinkingIndicator()` swaps it out in `flushAccumulatingMessage()`, right
 after the deferred-flush early return (which must keep the indicator alive) and
 before `renderThinkingBlock()`, so the placeholder and the real block are never on
-screen together. It is also called from `handleTokensDone()` (a response made only
-of thinking tokens never creates an accumulating message, so the flush is a no-op),
+screen together. It is also called from `handleTokensDone()` (a response with no
+token at all has nothing to flush, see the thinking-only rule above),
 `appendUserMessage()`, and `appendBotMessage()` (error path). `hide_thinking` does
 not affect the indicator — it only governs the final block's initial state.
 Inline-`<think>` models never post `newThinkingToken` and so get no indicator.

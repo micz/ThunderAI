@@ -137,6 +137,13 @@ export class StreamingMessage {
         this._thinkingAccumulator += token;
     }
 
+    // Whether any reasoning arrived through newThinkingToken. A response made only of
+    // thinking tokens has no content token to open its accumulating element, so the
+    // caller asks this before the final flush.
+    hasThinking() {
+        return this._thinkingAccumulator !== '';
+    }
+
     // Immutable snapshot of the HTML accrued so far. Plain string (never a live
     // reference to internal state).
     getFullTextHTMLSnapshot() {

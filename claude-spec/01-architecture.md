@@ -804,7 +804,7 @@ Worker. No framework, no build step; plain ES6 modules under the strict default 
 
 ```
 index.html
-  ├── #appHeader                           — logo, product name, static model chip, session token total (light DOM)
+  ├── #appHeader                           — logo, product name, model chip, API chip (light DOM; no usage figures)
   ├── <messages-area>   (messagesArea.js)  — renders the conversation transcript
   ├── <message-input>   (messageInput.js)  — input field, send/stop buttons, status pill
   └── controller.js                        — DI / worker wiring (see below)
@@ -817,6 +817,31 @@ into both components (`messagesArea.init()`, `messageInput.init()`,
 worker/runtime messages into component method calls. It owns the module-level `promptData`
 (set once by `api_send`) and the Ctrl+/Ctrl-/Ctrl+0 font-zoom.
 
+**URL parameters.** The background opens the window at `api_webchat/index.html?llm=<connection
+type>&call_id=<id>&ph_def_val=<0|1>&prompt_id=<id>&prompt_name=<name>`, each value through **one**
+`encodeURIComponent`. `URLSearchParams` already decodes them, so the controller uses
+`prompt_name` as it comes and never decodes it a second time (that threw on a name holding a lone
+`%`, and broke the whole window). The Custom Prompts editor refuses a `%` in a prompt name anyway
+(see [05-options.md](05-options.md#manage-custom-prompts-page-pagescustomprompts)).
+
+**Header.** `#appHeader` shows the model in use (the prompt's own `{integration}_model` when it
+carries one, see [04-api-integrations.md](04-api-integrations.md#configuration-validation)) and the
+API name. It shows **no usage figures**: token counts live only in each answer's usage chip (see
+[04-api-integrations.md](04-api-integrations.md#rendering-in-the-chat-window)).
+
+**Ready handshake.** Once the worker's `init` message is posted and the startup notice shown, the
+window sends the background `{command: "${llm}_ready_${call_id}", window_id}` (its own window id,
+from `windows.getCurrent()`). The background listener registered for that `call_id` answers by
+sending the window `api_send` (the prompt), or `api_error` when the configuration is unusable
+(an empty key or model). Nothing is sent to the worker before that answer.
+
+**Startup notice.** The first turn is an info notice (`.turn-info > .message.info`) built by
+`getAPIsInitMessageString()` (`js/mzta-utils.js`): the API, the model, the host, the version, the
+prompt (`[id] name`) and the provider's non-empty text settings. The window parses it as HTML (its
+own `<i>`/`<span>` labels, newlines → `<br>`), so **every value is escaped** with
+`mztaEscapeHtml()`: a prompt name, a model or a system prompt holding markup is shown as text and
+never becomes an element.
+
 ### Streaming data flow
 
 ```
@@ -826,13 +851,18 @@ Worker → controller.js → components
   newThinkingToken → messagesArea.handleNewThinkingToken(token)  (feeds StreamingMessage + live "Thinking…" indicator)
   usage            → messagesArea.handleUsageData(messageId, payload)  (token-usage chip; optional, see below)
   tokensDone       → messagesArea.handleTokensDone(promptData)   (flush → action buttons)
-  error            → messagesArea.appendBotMessage(payload,'error') + messageInput.showErrorStatus()
+  error            → messagesArea.appendBotMessage(payload,'error') + messageInput.enableInput(false) + showErrorStatus()
 
 background → controller.js (browser.runtime commands)
   api_send             → set promptData; send prompt (or show custom-text field)
   api_send_custom_text → merge custom text into the prompt, then send
-  api_error            → render an error bot message
+  api_error            → render an error bot message; enableInput(false) + showErrorStatus()
 ```
+
+**After an error the input stays usable.** Both error paths (`error` from the worker, `api_error`
+from the background) call `enableInput(false)`: the field and Send are enabled and Stop hidden, so
+the user can type another message in the same window, and the status pill shows the error state
+(no timeout, it stays until the next request replaces it).
 
 The `usage` message is **separate from `tokensDone` and carries no response text**, and is only
 emitted when `chat_show_usage_data` is on and the integration reports usage. It is posted *before*

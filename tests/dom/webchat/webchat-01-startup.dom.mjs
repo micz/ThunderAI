@@ -1,11 +1,14 @@
-// The chat window opened by a ChatGPT API prompt that carries its own model, a saved font zoom of
-// 130%, then the background's api_send: start-up, the worker's init message, the header, the
-// prompt sent, and the font zoom keys.
+// The chat window opened by a ChatGPT API prompt that carries its own model, whose name holds
+// markup and a "%", with a developer message holding markup and a saved font zoom of 130%, then the
+// background's api_send: start-up, the ready handshake, the worker's init message, the header, the
+// startup notice, the prompt sent, and the font zoom keys.
 //
 // Spec 01 "API WebChat (`api_webchat/`)": "Component structure" (the controller resolves the
 // provider prefs, spins up the provider's worker, sends it the init message), "Streaming data flow"
 // (api_send: promptData set, the prompt sent), "Transcript DOM contract" (the startup notice, the
-// user turn), "Web Workers" (the worker file of each provider). Spec 04 "Configuration Validation"
+// user turn), "Web Workers" (the worker file of each provider); "Component structure" also holds
+// the URL parameters (prompt_name decoded once), the header (model and API, no usage), the ready
+// handshake and the startup notice (every value escaped). Spec 04 "Configuration Validation"
 // (the prompt's own {integration}_{key} fields over the global ones, "the rule
 // api_webchat/controller.js applies"), "Anthropic / Claude (`anthropic_api`)" (the four 400 hints
 // only for the anthropic integration), "Emitting to the chat window" (the chat_show_usage_data
@@ -35,16 +38,19 @@ import {
 } from '../../webchat/webchat-page.mjs';
 import { executableProblems } from '../../webchat/safety.mjs';
 
+const NAME = 'Own <b>prompt</b> 100%';
+const DEV = 'Be <img src=x onerror="window.__pwned=1"> brief';
 const OWN = {
-    id: 'prompt_own', name: 'Own prompt', text: 'Fix this', type: '0', action: '0', is_default: '0',
+    id: 'prompt_own', name: NAME, text: 'Fix this', type: '0', action: '0', is_default: '0',
     show_in: 'popup', api_type: 'chatgpt_api', chatgpt_model: 'gpt-own',
 };
 const { ctx, worker } = await openWebchat({
     llm: 'chatgpt_api',
     call_id: 'c01',
     prompt_id: 'prompt_own',
-    prompt_name: 'Own prompt',
+    prompt_name: NAME,
     local: {
+        chatgpt_developer_messages: DEV,
         chatgpt_api_key: 'sk-global',
         chatgpt_model: 'gpt-global',
         api_webchat_font_scale: 1.3,
@@ -107,6 +113,25 @@ k.test('header-no-usage', S_USAGE, 'no usage chrome in the window header: nothin
     const header = ctx.$('#appHeader');
     assert.equal(header.querySelector('[data-mzta-usage]'), null);
     assert.doesNotMatch(header.textContent, /token/i);
+});
+
+k.test('ready', S_COMP, 'the window announces itself once with {command: "${llm}_ready_${call_id}", window_id}, before any prompt', () => {
+    const ready = ctx.ctl.sent.filter(m => m && typeof m.command === 'string' && m.command.endsWith('_ready_c01'));
+    assert.deepEqual(ready, [{ command: 'chatgpt_api_ready_c01', window_id: 1 }]);
+    assert.deepEqual(worker.chatMessages(), []);
+});
+
+k.test('name-percent', S_COMP, 'prompt_name is decoded once: a name holding "%" and markup opens the window and reaches the header as written', () => {
+    assert.ok(ctx.$('#appHeaderModel').textContent.includes(NAME), ctx.$('#appHeaderModel').textContent);
+    assert.equal(ctx.$('#appHeaderModel b'), null);
+});
+
+k.test('notice-escaped', S_COMP, 'the startup notice shows the prompt name and the text settings as text: nothing they hold becomes an element', () => {
+    const notice = turns(ctx)[0].querySelector('.message.info');
+    assert.ok(notice.textContent.includes('[prompt_own] ' + NAME), notice.textContent);
+    assert.ok(notice.textContent.includes(DEV), notice.textContent);
+    assert.equal(notice.querySelector('b, img'), null);
+    assert.deepEqual(executableProblems(notice), []);
 });
 
 k.test('startup-notice', S_DOM, 'the transcript opens with the startup notice: a .turn-info holding a .message.info, and no user turn', () => {

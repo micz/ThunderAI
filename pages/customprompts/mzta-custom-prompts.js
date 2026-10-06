@@ -1247,10 +1247,14 @@ function validateDetail(values) {
     if (idBad) error = 'customPrompts_error_id';
 
     const nameBad = values.name === '';
+    // "%" is refused in a name: the name travels in the chat window's url (prompt_name),
+    // where a lone "%" is a malformed escape for anything that decodes it.
+    const namePercent = values.name.includes('%');
     const textBad = values.text.trim() === '';
-    detailEl('detail_name').classList.toggle('input_error', nameBad);
+    detailEl('detail_name').classList.toggle('input_error', nameBad || namePercent);
     detailEl('detail_text').classList.toggle('input_error', textBad);
     if (!error && (nameBad || textBad)) error = 'customPrompts_error_required';
+    if (!error && namePercent) error = 'customPrompts_error_name_percent';
     return error;
 }
 

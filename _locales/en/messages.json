@@ -605,6 +605,10 @@
     "message": "Name and prompt text are required.",
     "description": "Validation message for the name and text fields"
   },
+  "customPrompts_error_name_percent": {
+    "message": "The name cannot contain the % character.",
+    "description": "Custom prompts page: validation message when the prompt name contains a percent sign"
+  },
   "importPrompts_confirmText": {
     "message": "You are about to import new prompts.",
     "description": "Custom prompts page: first line of the confirmation dialog shown before importing prompts from a file."

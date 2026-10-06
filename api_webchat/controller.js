@@ -42,7 +42,9 @@ const llm = urlParams.get('llm');
 const call_id = urlParams.get('call_id');
 const ph_def_val = urlParams.get('ph_def_val');
 const prompt_id = urlParams.get('prompt_id');
-const prompt_name = urlParams.get('prompt_name');
+// Already decoded by URLSearchParams: the background encodes it once
+// (encodeURIComponent). Decoding it a second time throws on a name holding a lone "%".
+const prompt_name = urlParams.get('prompt_name') ?? '';
 
 // Data received from the user
 let promptData = null;
@@ -219,11 +221,11 @@ if (worker) {
         // Model chip: "prompt name | model", dropping either half when missing.
         const modelChip = document.getElementById('appHeaderModel');
         const model_label = prefs_api[`${integration_prefix}_model`] || llmName;
-        const prompt_label = decodeURIComponent(prompt_name ?? '').trim();
+        const prompt_label = prompt_name.trim();
         modelChip.textContent = prompt_label ? `${prompt_label} | ${model_label}` : model_label;
         modelChip.title = modelChip.textContent;
 
-        document.title += " [" + llmName + " | " + decodeURIComponent(prompt_name) + "]";
+        document.title += " [" + llmName + " | " + prompt_name + "]";
 
         let workerInitMessage = {
             type: 'init',
@@ -335,7 +337,7 @@ if (worker) {
         };
 
         let additional_text_elements = [];
-        additional_text_elements.push({label: browser.i18n.getMessage("prompt_string"), value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
+        additional_text_elements.push({label: browser.i18n.getMessage("prompt_string"), value: '[' + prompt_id + '] ' + prompt_name});
         additional_text_elements.push(...getAdditionalMessages(integration, prefs_api));
 
         messagesArea.appendUserMessage(getAPIsInitMessageString({

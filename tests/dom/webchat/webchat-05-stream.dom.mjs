@@ -251,6 +251,14 @@ k.test('d-thinking-only', S_LIVE, 'a response made only of thinking tokens: the 
     assert.equal(field(ctx).disabled, false);
 });
 
+k.test('d-thinking-only-block', S_THINK, 'a response made only of thinking tokens still shows its thinking block, with an empty answer', () => {
+    const turn = lastBotTurn(ctx);
+    const block = answerEls(turn)[0]?.querySelector('details.thinking-block');
+    assert.ok(block, 'no thinking block');
+    assert.equal(block.querySelector('.thinking-content').textContent, 'Only thoughts.');
+    assert.equal(answerHtml(turn).trim(), '');
+});
+
 // ---- answer E: inline <think> -------------------------------------------------------------
 
 k.test('e-inline-no-indicator', S_LIVE, 'inline <think> tags post no newThinkingToken, so no live indicator', async () => {

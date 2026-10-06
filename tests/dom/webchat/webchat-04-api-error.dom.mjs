@@ -2,7 +2,7 @@
 // not even start). The error text carries markup. The background's chatgpt_close rejects, as it
 // does in Thunderbird when it closes the very window waiting for the answer.
 //
-// Spec 01 "Streaming data flow" (api_error -> an error bot message), "Transcript DOM contract" (an
+// Spec 01 "Streaming data flow" (api_error -> an error bot message, the input left usable), "Transcript DOM contract" (an
 // error turn takes the full-bar slot with a Close-only .action-bar; "Self-closing chatgpt_close
 // must be fire-and-forget": `{command: "chatgpt_close", window_id}`, its rejection swallowed).
 // Spec 04 "Live "Thinking…" indicator" (the status pill's static error state, the in-flight
@@ -26,6 +26,10 @@ import {
     statusPill,
     statusText,
     statusIcon,
+    field,
+    sendButton,
+    stopButton,
+    usable,
 } from '../../webchat/webchat-page.mjs';
 import { executableProblems } from '../../webchat/safety.mjs';
 
@@ -82,6 +86,12 @@ k.test('error-pill', S_PILL, 'the pill is in its error state with the alert icon
     assert.equal(statusText(ctx), 'Error');
     assert.ok(statusIcon(ctx).querySelector('svg'), 'the inline alert icon');
     assert.equal(statusIcon(ctx).querySelector('img'), null);
+});
+
+k.test('input-usable', S_FLOW, 'after an error the input stays usable: field and Send enabled, Stop hidden', () => {
+    assert.ok(usable(field(ctx)));
+    assert.ok(usable(sendButton(ctx)));
+    assert.equal(usable(stopButton(ctx)), false);
 });
 
 k.test('close-only-bar', S_DOM, 'the error turn has a Close-only .action-bar', () => {

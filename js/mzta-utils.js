@@ -1037,6 +1037,11 @@ export function setTomSelectBorder(el){
   }
 }
 
+// The chat window's startup notice, as HTML. The values are TEXT (the API name, the model, the
+// host, the prompt name, the provider's text settings such as a system prompt) and the window
+// parses the result as HTML, so every one is escaped: a prompt named "<img src=x onerror=...>"
+// shows as those characters instead of becoming an element. The markup around them is this
+// function's own. Newlines are kept: the window turns them into <br>.
 export function getAPIsInitMessageString(args = {}) {
   const {
     api_string = '',
@@ -1045,20 +1050,21 @@ export function getAPIsInitMessageString(args = {}) {
     version_string = '',
     additional_messages = []
   } = args;
+  const esc = (value) => globalThis.mztaEscapeHtml(value);
 
-  let output = "<i class='info_obj'>" + browser.i18n.getMessage("_api_connecting", api_string) + "</i>";
+  let output = "<i class='info_obj'>" + esc(browser.i18n.getMessage("_api_connecting", api_string)) + "</i>";
   if (model_string !== '') {
-    output += "\n<span class='info_obj'>" + browser.i18n.getMessage("_api_connecting_model") + ":</span> " + model_string;
+    output += "\n<span class='info_obj'>" + esc(browser.i18n.getMessage("_api_connecting_model")) + ":</span> " + esc(model_string);
   }
   if (host_string !== '') {
-    output += "\n<span class='info_obj'>" + browser.i18n.getMessage("_api_connecting_host") + ":</span> " + host_string;
+    output += "\n<span class='info_obj'>" + esc(browser.i18n.getMessage("_api_connecting_host")) + ":</span> " + esc(host_string);
   }
   if (version_string !== '') {
-    output += "\n<span class='info_obj'>" + browser.i18n.getMessage("_api_connecting_version") + ":</span> " + version_string;
+    output += "\n<span class='info_obj'>" + esc(browser.i18n.getMessage("_api_connecting_version")) + ":</span> " + esc(version_string);
   }
   let additional_message = '';
   if (additional_messages.length > 0) {
-    additional_message = additional_messages.map(msg => "<span class='info_obj'>" + msg.label + ":</span> " + msg.value).join("\n");
+    additional_message = additional_messages.map(msg => "<span class='info_obj'>" + esc(msg.label) + ":</span> " + esc(msg.value)).join("\n");
   }
   if (additional_message !== '') {
     output += "\n" + additional_message;
