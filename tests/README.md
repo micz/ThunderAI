@@ -224,7 +224,7 @@ does, in the browser's order:
 1. parses the page's **real HTML file** at its `moz-extension://` URL;
 2. exposes the jsdom window's globals (`window`, `document`, `navigator`, `Event` and the
    other event classes, `HTMLElement` and friends, `DOMParser`, `XPathResult`, `Option`,
-   `customElements` and `ShadowRoot`…) on
+   `customElements`, `ShadowRoot`, `NodeFilter`…) on
    `globalThis`, where the page's module code looks them up. The list is explicit: copying
    the whole window would shadow Node's own `URL`, timers and so on;
 3. installs the browser mock through `startPage()`, extended with the page-side APIs

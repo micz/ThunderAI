@@ -47,6 +47,21 @@ export const KNOWN = {
             + 'line ("Dear Bob,\\n\\nTom..."), indistinguishable from a paragraph break. stripHtmlKeepLines() '
             + 'consumes that newline for the same reason (spec 01 "Writing into a plain text compose window").',
     },
+    'spec 07 "The `composeResult` invariant"': {
+        ...Object.fromEntries(['words', 'sentences'].map(g => [`15-inv-reject-markup-only-${g}`,
+            'a block whose words match but whose markup differs ("Dear <b>Sir</b>," vs "Dear Sir,") is '
+            + 'a replace pair whose word diff finds no change: the block has no hunk the user can choose, '
+            + 'contextSide() answers "new", and reject all returns the ANSWER\'s markup ("<p>Dear Sir,</p>") '
+            + 'instead of renderBlocks(segmentBlocks(original)) ("<p>Dear <b>Sir</b>,</p>"). The spec says '
+            + 'a markup-only difference "falls through to a replace pair, where both sides are kept and the '
+            + 'user can choose".'])),
+        ...Object.fromEntries(['br-lines', 'lists', 'tag-change', 'to-list'].flatMap(c => ['words', 'sentences']
+            .map(g => [`15-inv-reject-${c}-${g}`,
+                'a replace pair takes its wrapper from the ANSWER\'s block only (buildHunks() copies '
+                + 'nb.tag / nb.listType into the composed block), so reject all puts the original\'s words '
+                + 'in the answer\'s wrapper: <div> becomes <p>, <ul> becomes <ol>, <p> becomes <h2> or '
+                + '<ul><li>, instead of renderBlocks(segmentBlocks(original)).']))),
+    },
 };
 
 /** [the NN of each webchat-NN- file of tests/dom/webchat/]. */

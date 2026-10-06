@@ -95,7 +95,7 @@ const WINDOW_GLOBALS = [
     'MutationObserver', 'getComputedStyle', 'getSelection', 'CSS',
     'FileReader', 'DataTransfer',
     // The webchat page is built from custom elements with open shadow roots.
-    'customElements', 'ShadowRoot',
+    'customElements', 'ShadowRoot', 'NodeFilter',
 ];
 
 /**

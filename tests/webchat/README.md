@@ -25,7 +25,8 @@ from the repository root, after `npm ci` (jsdom). `tests/webchat/*.test.mjs` is 
 nothing installed; `node --test "tests/**/*.test.mjs"` runs it with the rest of level 1.
 
 The area adds about **3-15 s per DOM file** (each file opens the window once, in its own process;
-`webchat-06`, which streams 34 answers, is the longest). The whole area runs in about 35 s on its own,
+`webchat-06`, which streams 34 answers, and `webchat-15`, which builds about a hundred pickers, are
+the longest, 15-25 s each). The whole area runs in about 55 s on its own,
 less within `npm test`, where `node --test` runs the files in parallel. A file whose last answer
 finished stays alive up to 4 s after its tests, until the "done" pill's own fade timer has fired.
 
@@ -38,7 +39,7 @@ The area is built group by group:
 | A | start-up and the background protocol | done (`webchat-01` to `04`) |
 | B | rendering the stream | done (`webchat-05` to `09`) |
 | C | actions on an answer | done (`webchat-10` to `12`) |
-| D | the diff picker (spec 07) | to do |
+| D | the diff picker (spec 07) | done (`webchat-13` to `15`) |
 
 ## Layout
 
@@ -83,6 +84,9 @@ one did (each file says so).
 | `dom/webchat/webchat-10-reply` | spec 01 "The rich-text layer" closing paragraphs (each button closes over its own answer's snapshot; Copy writes plain text, entities decoded, a `<br>` one newline, a paragraph a blank line; Copy does not close the window and says it copied), "Transcript DOM contract" (the full bar and `.sel_info` on the newest answer, the compact toolbar - Copy, Use this answer, the chip - on earlier ones, never both; the toolbar acting on its own answer; Close; the action awaited, then `chatgpt_close`), "Files" (`<split-button>`: the reply-type dropdown, opened by its toggle, closed by Escape with the focus back and by a click outside); spec 05 "UI & Feature Preferences" (`reply_type`: the main button replies with the stored type, named on its second line; the dropdown with the other); spec 04 "Rendering in the chat window" (the chip not in what Copy writes) |
 | `dom/webchat/webchat-11-compose` | spec 07 "Scope" (the compose-window case, `mailMessageId` -1: the action forced to a replace, `chatgpt_replaceSelectedText`, never a reply); spec 01 "Files" (no reply type, so a standalone button with no dropdown), "Transcript DOM contract" (`.sel_info`; an earlier answer's toolbar replacing with its own answer) |
 | `dom/webchat/webchat-12-summary` | spec 01 "The rich-text layer" closing paragraphs and "Transcript DOM contract" (a summary session, action "0": no "use this answer"; Save as Summary sends `chatgpt_saveSummary` with the answer snapshot and the message's `headerMessageId`, then closes the window); spec 04 "Rendering in the chat window" (Copy, Save as Summary, the chip, Close) |
+| `dom/webchat/webchat-13-diff-button` | spec 07 "Overview" (the Show differences button), "Where the original's HTML comes from" (the selection, not the body, through its HTML twin), "The result indirection" (the picker in a titled turn of its own, the button disabled; "use this answer" and the picker's own button reading the picker at click time; the indirection surviving the degrade to the compact toolbar), "Two things the picker deliberately bypasses" (`.sel_info` hidden), "Where the initial value comes from" (`diff_granularity` "sentences"), "`composeResultText()` is mode-aware" (Copy through it); spec 01 "Transcript DOM contract" (the picker turn takes no bar, the next answer streams into a turn of its own) |
+| `dom/webchat/webchat-14-diff-original` | spec 07 "Where the original's HTML comes from" (no selection: the body; a structure-less twin rebuilt from the text, one `<p>` per line; reject all gives it back), "Where the initial value comes from" (an unknown value falls back to Words) |
+| `dom/webchat/webchat-15-picker` | `<diff-picker>` driven directly. Spec 07 "The `composeResult` invariant" (accept all and reject all against `renderBlocks(segmentBlocks(…))`, eleven cases × two granularities, through the toolbar; the plain-text result of reject all; P1 a fixed point), "Line breaks: `<br>` is a block separator" (the pinned round trips, body level, a trailing `<br>`, never a `</br>`, Body Text mode pairing line by line), "Block-structured HTML" (nested lists flattened one level), "Into a plain text compose window" (`p`/`li`-wrapped output, `<br>` only inside a block), "Normalization, and what the invariant is really against" + "Two CSS traps in this shadow root" (its zero-changes paragraph), "The sanitizer is a security boundary" (every payload as the answer and as the original: the picker, both results, the editor), "REVIEW and EDIT modes" (paste and drop through the allowlist, a plain-text paste escaped; `setContent()` back to REVIEW), "`composeResultHTML()` and escaping", "The hunk model", "UI" (two sides in order, the empty side, radio semantics and labels, click keeps a side, idempotent; j/k/arrows, Enter/Space, modified keys), "The toolbar" (status copy, aria-live and aria-hidden; the stepper: total, position, clamped; the overflow menu, Escape, outside pointerdown; Reject all / Accept all and their disabled states), "Surgical re-render" (no element created or removed by a choice), "`composeResultText()` is mode-aware", "EDIT → REVIEW re-diffs only if the text actually changed" (choices kept; an edit re-diffed against the original, and reject all still the original), "What is hidden in EDIT", "Granularity" (the radiogroup; fewer changes by sentence; choices reset; the same position a no-op; re-diffed from the answer) |
 | `webchat/99-harness-known-issues` | the known-issue shape (level 1) |
 
 ## The fake Worker
@@ -186,6 +190,21 @@ with an element the HTML parser moves to `<head>` is preceded by text, so it sta
 Besides the answers, `executableProblems()` is applied to the user bubble (the prompt carries mail
 content), the error messages, the startup notice and the thinking block.
 
+## Driving the diff picker
+
+`webchat-13` and `14` open the picker as the user does (Show differences under an answer).
+`webchat-15` creates `<diff-picker>` elements in the opened window (its module defines the element),
+appends them to the document, and calls the two methods `messagesArea.js` itself calls,
+`setGranularity()` then `setContent(original, answer)`; everything after that goes through the
+picker's own controls in its shadow root (sides, toolbar, overflow menu, editor, keys), and the
+results through its public `composeResultHTML()` / `composeResultText()`.
+
+The invariant is stated by spec 07 in terms of the picker module's `renderBlocks()` and
+`segmentBlocks()`, so `webchat-15` imports the module (the same instance the page loaded, same url)
+and uses those two as the oracle **for the invariant only**; the pinned outputs of spec 07 (the `<br>`
+round trips) and every other expectation are written out. The toolbar is always on its **wide**
+layout: jsdom measures every box as 0 wide, which `_isNarrow()` reads as "not yet in the document".
+
 ## Doing in the area what the harness does not offer
 
 - **The window's own tab** (`webchat-02`, `03`): the custom-text flow asks
@@ -210,8 +229,17 @@ section. `validateKnown()` refuses a section not of the form `spec NN "<section>
 hold quotes), a case id that is a pattern or names no existing file, a case listed under two sections,
 and an empty reason; `webchat/99-harness-known-issues` runs it.
 
-**Today there is one**, found by group C:
+**Today there are eleven**, from groups C and D.
 
+- spec 07 "The `composeResult` invariant": **reject all does not always give the original back**.
+  - `15-inv-reject-markup-only-words` / `-sentences`: a block whose words match but whose markup differs
+    (`Dear <b>Sir</b>,` vs `Dear Sir,`) is a replace pair whose word diff finds no change, so it has no
+    hunk to choose, `contextSide()` answers "new", and reject all returns the answer's markup. The spec
+    says such a pair is kept "where both sides are kept and the user can choose".
+  - `15-inv-reject-{br-lines,lists,tag-change,to-list}-{words,sentences}`: a replace pair takes its
+    wrapper from the answer's block only (`buildHunks()` copies `nb.tag` / `nb.listType`), so reject all
+    puts the original's words in the answer's wrapper: `<div>` becomes `<p>`, `<ul>` becomes `<ol>`,
+    `<p>` becomes `<h2>` or `<ul><li>`.
 - spec 01 "The rich-text layer" (`10-copy-plain`): Copy turns each `<br>` into a real newline, but the
   answer is markdown-it output, which writes `<br>
 `, and `htmlToPlainText()`
@@ -220,7 +248,8 @@ and an empty reason; `webchat/99-harness-known-issues` runs it.
   `stripHtmlKeepLines()` consumes that newline for the same reason (spec 01 "Writing into a plain text
   compose window").
 
-Group B found none: the sanitizer held against every payload, whole and cut mid-tag. What group A
+Group B found none, and group D's sanitizer tests none either: the sanitizer held against every
+payload, whole and cut mid-tag in the stream, and on both sides of the picker. What group A
 found was fixed in the window, and the specs state the behaviour:
 the startup notice escapes every value, a thinking-only answer shows its thinking block, the prompt
 name is decoded once (a `%` no longer breaks the window, and the Custom Prompts editor refuses it),
@@ -242,6 +271,18 @@ the input stays usable after an error, and the header shows the model and the AP
   the shadow root"). So "use this answer", Copy and Save as Summary are tested on the whole answer
   only, and the usage chip's scrubbing out of a selection (`_cloneSelectionWithoutUsage()`) is not
   reached.
+- **The picker's layout**: the narrow container-query layout and the two measured decisions (the
+  long stepper label, "Reject all" moving into the menu), the menu's left/right anchoring, the opening
+  scroll position (the picker turn anchored), "Height and scroll" (the editor opened at the review
+  view's height, `mzta-picker-resize` from the editor's `ResizeObserver`), and the CSS traps of spec 07
+  (`[hidden] { display: none !important }`; no backticks in the stylesheet - the module would not
+  even import if that one broke).
+- **The editor's caret**: a paste or drop is inserted at the caret only when the selection's range is
+  inside the editor; jsdom keeps no range inside a shadow tree, so the tests see the documented
+  fallback, appended at the end. `styleWithCSS` (Ctrl+B / I / U emitting `<b>` / `<i>` / `<u>`) needs
+  `document.execCommand`, which jsdom does not implement.
+- **The aborted diff** (`buildHunks()` returning `null`, the `apiwebchat_picker_diff_failed` note): no
+  option that can abort the diff is passed today, so no input reaches it.
 - **Copy's fallback** (a hidden textarea and `document.execCommand('copy')` when the clipboard API
   rejects), and the button's label going back to "Copy" after 1.5 s (a timer `settle()` does not wait
   for).
@@ -272,6 +313,9 @@ What the window does that no spec states, listed instead of tested:
   (also `<p>&quot;` … `&quot;</p>`) before the buttons close over it.
 - **What the compact toolbar of a summary session holds**: Copy only (no Save as Summary); the spec
   describes the toolbar as the bar's icons, without listing them per session kind.
+- **Clicking a side makes that change the current one**: the stepper then reads "1 / 3" and Next
+  moves to the second change. The spec says the label reports the current change and shows no position
+  "before the user navigates", without saying whether a click is navigation.
 - **Line breaks of the first prompt**: `sendPrompt()` turns every `\n` into `<br>` before posting it to
   the worker, while a typed message keeps its `\n` (and shows on one line in its bubble). Under review;
   `webchat-01` asserts only the words of the prompt.

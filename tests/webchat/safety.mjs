@@ -50,12 +50,15 @@ const describe = el => '<' + el.localName + [...el.attributes].map(a => ' ' + a.
  *                region, e.g. the thinking block it builds itself)
  *   tokenSpans   accept the live token spans of a streaming answer: <span class="token"> holding
  *                text only (the sanitizer drops every class, so the model cannot produce one)
+ *   transparent(el)  true for the window's own wrappers inside the region (the picker's .hunk /
+ *                .hunk-side spans): not judged themselves, their content is
  */
-export function allowlistProblems(container, { skip = () => false, tokenSpans = false } = {}) {
+export function allowlistProblems(container, { skip = () => false, tokenSpans = false, transparent = () => false } = {}) {
     const problems = [];
     const walk = (node) => {
         for (const el of node.children) {
             if (skip(el)) continue;
+            if (transparent(el)) { walk(el); continue; }
             if (tokenSpans && el.localName === 'span' && el.getAttribute('class') === 'token'
                 && el.attributes.length === 1 && el.children.length === 0) {
                 continue;
