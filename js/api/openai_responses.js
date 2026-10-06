@@ -223,9 +223,12 @@ export class OpenAI {
 
   fetchResponse = async (messages, previous_response_id = null, retryConfig = {}) => {
 
+    // The content part type depends on the role: an earlier answer resent with the
+    // history (chatgpt_store off) is model output, and the API rejects it with a 400
+    // when it is typed as input_text.
     const input = messages.map(msg => ({
       role: msg.role,
-      content: [{ type: "input_text", text: msg.content }]
+      content: [{ type: msg.role === 'assistant' ? "output_text" : "input_text", text: msg.content }]
     }));
 
     // Which parameters this model actually accepts. Sending one it rejects is a

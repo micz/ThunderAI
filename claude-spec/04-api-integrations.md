@@ -188,6 +188,11 @@ Per-prompt ChatGPT Web overrides are a separate, unrelated mechanism: the custom
   the server. With `chatgpt_store` off (the default) nothing is stored, so nothing can be referenced:
   `fetchResponse()` never sends `previous_response_id` and the worker sends the whole
   `conversationHistory` with every request, like the other workers.
+- **Content part types**: `fetchResponse()` sends every message as one content part, typed
+  `output_text` for an `assistant` message (an earlier answer resent with the history) and
+  `input_text` for every other role. The API answers a 400 ("Supported values are: 'output_text'
+  and 'refusal'") to an assistant message typed `input_text`, so with `chatgpt_store` off any
+  second turn would fail.
 - **`chatgpt_include_encrypted_reasoning`** adds `include: ['reasoning.encrypted_content']`
   **only when the checkbox is on** — an empty `include` array is not a valid request. It is
   only meaningful when `chatgpt_store` is off.

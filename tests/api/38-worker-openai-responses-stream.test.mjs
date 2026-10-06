@@ -104,6 +104,12 @@ k.test('turn2-history', 'turn 2 resends the whole history: the first question, i
     assert.ok(sent.includes('Say hi'), 'the new question');
     assert.ok(sent.includes('Classify this text'), 'the first question');
     assert.ok(sent.includes(JSON.stringify(ANSWER_1).slice(1, -1)), 'the first answer');
+    // An earlier answer is model output: typed input_text, the API rejects it with a 400.
+    assert.deepEqual(turn2Request.input.map(m => [m.role, m.content.map(c => c.type)]), [
+        ['user', ['input_text']],
+        ['assistant', ['output_text']],
+        ['user', ['input_text']],
+    ]);
 });
 
 k.test('turn3-item-fallback', 'turn 3: a summary delivered only in the reasoning item is emitted once; encrypted_content never', async () => {
