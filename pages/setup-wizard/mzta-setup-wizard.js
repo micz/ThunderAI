@@ -235,6 +235,9 @@ function selectProvider(id) {
 
   refreshConnTestVisibility();
   refreshNextEnabled();
+  // The sequence depends on the provider (ChatGPT Web has no tools step): redraw the
+  // indicator now, or it would keep the old number of dots until the next navigation.
+  renderSteps();
 }
 
 function buildProviderCards() {

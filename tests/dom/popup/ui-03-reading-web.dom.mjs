@@ -3,14 +3,16 @@
 //
 // Spec 02 "Popup Menu" (filtered by `show_in` and by the reading types 0 + 1, ordered by
 // `position_display`, special prompts styled like the others, the icon slot always rendered and
-// blank without an icon). Spec 05 "Setup Wizard (`pages/setup-wizard/`)", entry point "Popup
+// blank without an icon; the search, the number prefixes, the keyboard and selecting vs.
+// running with `dynamic_menu_force_enter` off; the red banner in place of the search box and
+// its click). Spec 05 "Setup Wizard (`pages/setup-wizard/`)", entry point "Popup
 // menu" (`chatgpt_web` is always configured) and "Blue wizard banner vs. red permission banner"
 // (the chosen provider's red banner). Spec 04 "Batch cancellation (user-triggered stop)" ("Popup payload": the
 // "Stop processing — N processed" banner, `batch_status` polled every ~1 s while working).
 //
 // The background's answers are given with openPage({ commands }): `popup_menu_ready` (the
-// payload preparePopupMenu() builds) and `batch_status` (one more message, then idle, which
-// also stops the page's polling interval so the process can exit).
+// payload preparePopupMenu() builds), `batch_status` (one more message, then idle, which
+// also stops the page's polling interval so the process can exit) and `shortcut_do_prompt`.
 
 import {
     test,
@@ -45,6 +47,7 @@ const ctx = await openPage('popup', {
             lastShortcutPromptsData: structuredClone(PROMPTS),
         }),
         batch_status: () => statuses.length > 1 ? statuses.shift() : statuses[0],
+        shortcut_do_prompt: () => true,
     },
 });
 after(() => ctx.close());
@@ -68,6 +71,17 @@ k.test('red-banner', S_WIZ, 'the chosen provider\'s red permission banner is sho
     assert.equal($('#ask_chatgpt_web_perm').style.display, 'block');
     assert.notEqual($('#ask_anthropic_api_perm').style.display, 'block');
     assert.notEqual($('#ask_openai_api_perm').style.display, 'block');
+});
+
+k.test('red-banner-replaces-search', S_POPUP, 'the red banner takes the search box\'s place', () => {
+    assert.equal($('#mzta_search_banner').style.display, 'none');
+});
+
+k.test('red-banner-click', S_POPUP, 'a click on it opens the welcome page, where the permission is granted', async () => {
+    await ctx.click($('#ask_chatgpt_web_perm'));
+    const opened = ctx.apiCalls('browser.tabs.create');
+    assert.equal(opened.length, 1);
+    assert.match(opened[0].args[0].url, /pages\/onboarding\/onboarding\.html$/);
 });
 
 k.test('filtered', S_POPUP, 'only prompts shown in the popup (`popup` / `both`) of the reading types 0 + 1 are listed', () => {
@@ -107,6 +121,72 @@ k.test('batch-polled', S_BATCH, 'while open the popup polls `batch_status` (~1 s
 k.test('batch-ended', S_BATCH, 'once the batch is over the banner goes away', async () => {
     await until(ctx, () => $('#mzta_batch_stop').style.display === 'none', 'the banner to hide', 3000);
     assert.equal(asked('batch_status').length, 2);
+});
+
+// ---- search and keyboard (after the batch: no poll can interleave) -----------------------
+
+const input = () => $('#mzta_search_input');
+const list = () => $('#mzta_autocomplete-items');
+const labels = () => rows().map(r => r.querySelector('.mzta_item_label').textContent);
+const type = async text => { input().value = text; await ctx.fire(input(), 'input'); };
+const key = k => ctx.fire(input(), 'keydown', { key: k });
+const active = () => rows().filter(r => r.classList.contains('mzta_autocomplete-item-active')).map(r => r.dataset.id);
+const runs = () => asked('shortcut_do_prompt').map(c => c.args[0]);
+
+k.test('prefixes', S_POPUP, 'the rows are prefixed with their number shortcut', () => {
+    assert.deepEqual(labels(), ['1. First', '2. Special', '3. Late']);
+});
+
+k.test('search', S_POPUP, 'typing keeps the labels containing the trimmed text, case-insensitively, renumbered', async () => {
+    await type('  A ');
+    assert.deepEqual(rows().map(r => r.dataset.id), ['special', 'late']);
+    assert.deepEqual(labels(), ['1. Special', '2. Late']);
+    assert.notEqual(list().style.display, 'none');
+});
+
+k.test('search-none', S_POPUP, 'no match hides the list', async () => {
+    await type('zzz');
+    assert.deepEqual(rows(), []);
+    assert.equal(list().style.display, 'none');
+    await type('');
+    assert.equal(rows().length, 3);
+});
+
+k.test('arrows-wrap', S_POPUP, 'the arrows move the highlight, wrapping at both ends', async () => {
+    await key('ArrowUp');
+    assert.deepEqual(active(), ['late']);
+    await key('ArrowDown');
+    assert.deepEqual(active(), ['first']);
+    await key('ArrowDown');
+    assert.deepEqual(active(), ['special']);
+});
+
+k.test('enter-selects', S_POPUP, 'Enter selects the highlighted row: its label in the box, the list closed, nothing run', async () => {
+    await key('Enter');
+    assert.equal(input().value, 'Special');
+    assert.equal(list().style.display, 'none');
+    assert.deepEqual(runs(), []);
+});
+
+k.test('enter-runs', S_POPUP, 'a second Enter runs it with the popup\'s tab and closes the popup', async () => {
+    await key('Enter');
+    assert.deepEqual(runs(), [{ command: 'shortcut_do_prompt', tabId: 7, promptId: 'special' }]);
+    assert.equal(ctx.dialogs.filter(d => d.kind === 'close').length, 1);
+});
+
+k.test('enter-first', S_POPUP, 'with nothing highlighted Enter selects the first row', async () => {
+    await type('');
+    await key('Enter');
+    assert.equal(input().value, 'First');
+    assert.equal(runs().length, 1, 'selecting ran the prompt');
+});
+
+k.test('digit-selects', S_POPUP, 'a digit selects its row without running it (`dynamic_menu_force_enter` off)', async () => {
+    await type('');
+    await key('3');
+    assert.equal(input().value, 'Late');
+    assert.equal(list().style.display, 'none');
+    assert.equal(runs().length, 1);
 });
 
 k.coverage();

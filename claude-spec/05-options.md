@@ -913,8 +913,11 @@ the entry points below.
   scale is deliberately one step down from the feature pages to suit the narrow card:
   16px step title / 12px subtitle / 13px provider name / 11.5px descriptions.
 
-**Step 0 — Choose your AI:** six provider cards built in JS from a local `PROVIDERS` array
-(ids/order match `CONN_TYPES`); names reuse `prefs_Connection_type_*`, tags use new
+**Step 0 — Choose your AI:** six provider cards built in JS from a local `PROVIDERS` array, in
+this order: ChatGPT Web, OpenAI API, Google Gemini, Claude, Ollama, OpenAI Compatible
+(`chatgpt_web`, `chatgpt_api`, `google_gemini_api`, `anthropic_api`, `ollama_api`,
+`openai_comp_api`). The wizard's own `CONN_TYPES` is derived from it; it is not the options page's
+`CONN_TYPES`, whose order differs. Names reuse `prefs_Connection_type_*`, tags use the
 `wizard_provider_tag_*` keys. Selecting a card sets the hidden select's value and dispatches
 `change` (so the shared UI reacts and `connection_type` persists via the same
 save-on-`change` path), then re-tints panel/badge/pill and recomputes the step sequence.
@@ -940,6 +943,25 @@ selected but "Continue" permanently greyed out. Keep the enabling rule in that o
 Nav walks sequence *positions*, never raw indices, so skipped steps are never landed on.
 "Finish setup" is the label on the second-to-last position, "Continue" otherwise.
 
+**Navigation chrome** (`renderStep()`, run by `goNext()` / `goBack()` / "Run again" / boot):
+- **Back** (`#wiz_back`) is shown on every position except the first and the done step; while it is
+  hidden, `#wiz_nav` carries `.wiz_nav_back_hidden`. On the done step **"Continue"** (`#wiz_next`)
+  is hidden too: the done step has no navigation of its own.
+- **Step indicator** (`#wiz_steps`): one `.wiz_dot` per position of the current sequence (so three
+  for ChatGPT Web, four otherwise), numbered `1`, `2`, … and `✓` on the last; the dots up to the
+  current position carry `.wiz_dot_on`. Each dot is followed by a `.wiz_line`, `.wiz_line_on`
+  before the current position.
+  `selectProvider()` redraws it too (`renderSteps()`), so picking or changing the provider on step 0
+  updates the number of dots at once instead of at the next navigation.
+- **"Run again"** (`#wiz_restart`, `wizard_run_again`) on the done step returns to step 0. It resets
+  nothing: the chosen provider stays selected (and "Continue" enabled), and what was stored stays.
+
+**Connect step header.** Picking a provider also writes the Connect step's text: the heading
+`#wiz_connect_heading` is `wizard_connect_heading` with the provider's name, the subtitle
+`#wiz_connect_sub` is `wizard_step_connect_sub_web` for ChatGPT Web and `wizard_step_connect_sub`
+for every API, and the pill `#mzta_conn_pill_name` reads the provider's name
+(`prefs_Connection_type_*`).
+
 **Step 2 — Pick your tools:** only the four API-driven features (`add_tags`, `spamfilter`,
 `summarize`, `translate`) — the two Sparks features are omitted. Same toggle markup / ids as
 the options page, so they persist via the shared save-on-`change`.
@@ -963,6 +985,12 @@ the options page, so they persist via the shared save-on-`change`.
   The banner is **always visible**; when no connection is selected at all, `onboarding.js` adds
   `.wizard_banner_urgent` to give it more prominence (bold + a soft blue glow — still blue, since
   nothing is broken). No permission banner can apply in that state.
+  The page's red permission banner (below) is also its way to grant the permission: a click
+  requests the provider's host permission (`https://*.chatgpt.com/*`, `https://*.anthropic.com/*`,
+  `https://*.openai.com/*`). Granted, the banner hides and `#integration_permission_ok` shows; a
+  click on that closes the welcome tab. Refused, nothing changes and the banner stays clickable.
+  The doc panel's two links (`#link_doc_guides`, `#link_doc_tutorial`) point to the guides and the
+  custom-prompt tutorial on micz.it, localized by `getMiczItUrl()`.
 - **Options banner** — `#no_connection_banner`, with `#btn_options_setup_wizard`. It is the **first
   child of `#mzta_card`, above `#mzta_top_links`** (the documentation block), so it is the first thing
   a new user sees. Because `#mzta_card` has no padding of its own, the banner carries explicit
@@ -987,8 +1015,10 @@ the options page, so they persist via the shared save-on-`change`.
   added, update both column counts.
 - **Popup menu** — when the popup opens and the selected connection has no credentials,
   `mzta-popup.js`'s `isConnectionConfigured(prefs)` returns false and the popup shows
-  `#setup_wizard_prompt` (a button opening the wizard) instead of the prompt list.
-  "Configured" = the required credential is set: `*_api_key` for the cloud APIs, `*_host`
+  `#setup_wizard_prompt` (a button opening the wizard) instead of the prompt list. The button opens
+  the wizard in a new tab and closes the popup.
+  "Configured" = the required credential is set, ignoring surrounding blanks (a key of spaces is
+  not set): `*_api_key` for the cloud APIs, `*_host`
   for Ollama / OpenAI-compatible; `chatgpt_web` is always considered configured (its host
   permission is handled by the existing permission banner). The function **first** returns
   false when no connection is selected at all — otherwise the empty value would fall through

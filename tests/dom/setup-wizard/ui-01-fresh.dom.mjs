@@ -4,7 +4,8 @@
 // nothing preselected, nothing persisted by opening the page, "Continue" disabled until a card
 // is picked and enabled by that first click), the tint of the panel and the done badge, the
 // provider-dependent sequence walked by position (an API provider through "Pick your tools",
-// ChatGPT Web skipping it; "Finish setup" on the second-to-last position), the Connect step
+// ChatGPT Web skipping it; "Finish setup" on the second-to-last position), "Navigation chrome"
+// (Back, the done step, the step indicator, "Run again"), "Connect step header", the Connect step
 // (the injected connection UI showing only the chosen provider, the advanced rows moved below
 // the disclosure and collapsed on a provider change), the connection test strip (visible per
 // provider, ok / error / idle reset, saves nothing; the network scripted with scriptFetch()),
@@ -13,7 +14,7 @@
 // Spec 04 "ChatGPT Web" (its rows injected once, with unprefixed ids, in the wizard).
 //
 // The tests run in order on one page: the user picks Gemini, walks to "Pick your tools", comes
-// back and switches to ChatGPT Web, which goes on to the done step.
+// back and switches to ChatGPT Web, which goes on to the done step, then "Run again".
 
 import {
     test,
@@ -69,13 +70,20 @@ const runTest = async () => {
     await ctx.click($('#mzta_conn_test_link'));
     await until(ctx, () => strip().getAttribute('data-state') !== 'loading', 'the test to end');
 };
+/** The step indicator: each dot's text, and which dots / lines are on. */
+const indicator = () => ({
+    dots: ctx.$$('#wiz_steps .wiz_dot').map(d => d.textContent),
+    on: ctx.$$('#wiz_steps .wiz_dot').map(d => d.classList.contains('wiz_dot_on')),
+    lines: ctx.$$('#wiz_steps .wiz_line').map(l => l.classList.contains('wiz_line_on')),
+});
+const backShown = () => !back().classList.contains('hidden');
 const GEMINI_MODELS = /^https:\/\/generativelanguage\.googleapis\.com\/v1beta\/models\?key=/;
 
 // ---- step 0, at load -------------------------------------------------------------------
 
-k.test('six-cards', S_WIZ, 'step 0 offers six provider cards, one per connection type, named and tagged', () => {
+k.test('six-cards', S_WIZ, 'step 0 offers six provider cards in the wizard\'s order, named and tagged', () => {
     const cards = ctx.$$('.wiz_provider_card');
-    assert.deepEqual(cards.map(c => c.dataset.provider).sort(), [...PROVIDERS].sort());
+    assert.deepEqual(cards.map(c => c.dataset.provider), PROVIDERS);
     for (const id of PROVIDERS) {
         assert.equal(card(id).querySelector('.wiz_provider_name').textContent, msg(NAME_KEY[id]), id);
         assert.equal(card(id).querySelector('.wiz_provider_tag').textContent, msg('wizard_provider_tag_' + id), id);
@@ -122,6 +130,24 @@ k.test('to-connect', S_WIZ, '"Continue" leads to Connect; the label stays "Conti
     await ctx.click(next());
     assert.equal(current(), 'connect');
     assert.equal(next().textContent, msg('wizard_continue'));
+});
+
+k.test('connect-chrome', S_WIZ, 'on Connect: Back shown, four dots (an API provider), the first two on', () => {
+    assert.equal(backShown(), true);
+    assert.equal($('#wiz_nav').classList.contains('wiz_nav_back_hidden'), false);
+    assert.equal(next().classList.contains('hidden'), false);
+    assert.deepEqual(indicator(), {
+        dots: ['1', '2', '3', '✓'],
+        on: [true, true, false, false],
+        lines: [true, false, false, false],
+    });
+});
+
+k.test('connect-header', S_WIZ, 'the Connect header names the provider: heading, API subtitle, pill', () => {
+    const name = msg(NAME_KEY.google_gemini_api);
+    assert.equal($('#wiz_connect_heading').textContent, msg('wizard_connect_heading', [name]));
+    assert.equal($('#wiz_connect_sub').textContent, msg('wizard_step_connect_sub'));
+    assert.equal($('#mzta_conn_pill_name').textContent, name);
 });
 
 k.test('connect-rows', S_WIZ, 'the injected panel shows only the chosen provider\'s core rows', () => {
@@ -204,6 +230,11 @@ k.test('to-tools', S_WIZ, 'an API provider goes on to "Pick your tools", whose b
     assert.equal(next().textContent, msg('wizard_finish'));
 });
 
+k.test('tools-chrome', S_WIZ, 'on "Pick your tools" the first three dots are on, Back still shown', () => {
+    assert.equal(backShown(), true);
+    assert.deepEqual(indicator().on, [true, true, true, false]);
+});
+
 k.test('tools-four', S_WIZ, 'only the four API-driven features are offered, each showing its flag (the defaults here)', () => {
     const toggles = ctx.$$('#wiz_step_tools input[type="checkbox"]');
     assert.deepEqual(toggles.map(t => t.id), FEATURES);
@@ -231,6 +262,12 @@ k.test('back-by-position', S_WIZ, 'Back walks the sequence: tools, Connect, then
     assert.equal(current(), 'provider');
 });
 
+k.test('first-chrome', S_WIZ, 'on the first position Back is hidden and the nav says so; only the first dot is on', () => {
+    assert.equal(backShown(), false);
+    assert.equal($('#wiz_nav').classList.contains('wiz_nav_back_hidden'), true);
+    assert.deepEqual(indicator().on, [true, false, false, false]);
+});
+
 k.test('switch-collapses', S_ADV, 'opened, the disclosure collapses when the provider changes', async () => {
     await ctx.click(next());
     await ctx.click($('#mzta_conn_adv_btn'));
@@ -248,18 +285,47 @@ k.test('switch-persisted', S_WIZ, 'the new choice is persisted and re-tints pane
     assert.deepEqual(tints($('#wiz_step_done')), ['tint_chatgpt_web']);
 });
 
+k.test('switch-indicator', S_WIZ, 'the step indicator follows the new provider at once, still on step 0', () => {
+    assert.deepEqual(indicator(), { dots: ['1', '2', '✓'], on: [true, false, false], lines: [false, false, false] });
+});
+
 k.test('web-strip-hidden', S_TEST, 'ChatGPT Web has no testable endpoint: the strip hides', () => {
     assert.equal(strip().style.display, 'none');
 });
 
-k.test('web-sequence', S_WIZ, 'ChatGPT Web skips "Pick your tools": Connect is second-to-last ("Finish setup"), then done', async () => {
+k.test('web-sequence', S_WIZ, 'ChatGPT Web skips "Pick your tools": Connect is second-to-last ("Finish setup")', async () => {
     await ctx.click(next());
     assert.equal(current(), 'connect');
     assert.equal(next().textContent, msg('wizard_finish'));
     const rows = ctx.$$('#connection_ui_table tr[class*="conntype_"]');
     for (const tr of rows) assert.equal(rowShown(tr), tr.classList.contains('conntype_chatgpt_web'), tr.className);
+    assert.deepEqual(indicator().dots, ['1', '2', '✓'], 'three positions for ChatGPT Web');
+});
+
+k.test('web-header', S_WIZ, 'the Connect header follows the new provider, with the ChatGPT Web subtitle', () => {
+    const name = msg(NAME_KEY.chatgpt_web);
+    assert.equal($('#wiz_connect_heading').textContent, msg('wizard_connect_heading', [name]));
+    assert.equal($('#wiz_connect_sub').textContent, msg('wizard_step_connect_sub_web'));
+    assert.equal($('#mzta_conn_pill_name').textContent, name);
+});
+
+k.test('done-chrome', S_WIZ, 'the done step has no navigation: Back and "Continue" hidden, every dot on', async () => {
     await ctx.click(next());
     assert.equal(current(), 'done');
+    assert.equal(backShown(), false);
+    assert.equal(next().classList.contains('hidden'), true);
+    assert.deepEqual(indicator(), { dots: ['1', '2', '✓'], on: [true, true, true], lines: [true, true, false] });
+});
+
+k.test('run-again', S_WIZ, '"Run again" returns to step 0, the provider still chosen, nothing reset or written', async () => {
+    const since = ctx.ctl.calls.length;
+    await ctx.click($('#wiz_restart'));
+    assert.equal(current(), 'provider');
+    assert.deepEqual(ctx.$$('.wiz_provider_card.wiz_selected').map(c => c.dataset.provider), ['chatgpt_web']);
+    assert.equal(next().disabled, false);
+    assert.equal(next().classList.contains('hidden'), false);
+    assert.deepEqual(ctx.localWrites(since), []);
+    assert.equal(ctx.ctl.localData().connection_type, 'chatgpt_web');
 });
 
 k.test('web-flags-untouched', S_WIZ, 'the wizard never writes the feature flags itself: only the toggled ones are stored', () => {

@@ -4,7 +4,8 @@
 // Spec 05 "Setup Wizard (`pages/setup-wizard/`)", entry point "Onboarding banner" (always
 // visible; `.wizard_banner_urgent` when no connection is selected) and "Blue wizard banner vs.
 // red permission banner" (the red banners are keyed on an explicitly selected provider, so an
-// empty `connection_type` never triggers them, even with every permission missing).
+// empty `connection_type` never triggers them, even with every permission missing); the doc
+// panel's two links.
 // The banner's link opening the wizard is managed's onboarding/01-no-policy.
 
 import {
@@ -35,6 +36,11 @@ k.test('no-red-banner', S_WIZ, 'no red permission banner, though every host perm
 
 k.test('nothing-written', S_WIZ, 'opening the page writes nothing', () => {
     assert.deepEqual(ctx.localWrites(0), []);
+});
+
+k.test('doc-links', S_WIZ, 'the doc panel links to the guides and the custom-prompt tutorial on micz.it', () => {
+    assert.match($('#link_doc_guides').href, /^https:\/\/micz\.it\/([a-z]{2}\/)?thunderbird-addon-thunderai\/guides\/$/);
+    assert.match($('#link_doc_tutorial').href, /^https:\/\/micz\.it\/([a-z]{2}\/)?thunderbird-addon-thunderai\/tutorial\/$/);
 });
 
 k.coverage();
