@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             idnum: idnumMax + 1,
         };
 
-        let newItem = customDataPHsList.add(newItemData);
+        let newItem = customDataPHsList.add(toListValues(newItemData));
         idnumMax++;
         let curr_idnum = newItem[0].values().idnum;
         let checkboxes = document.querySelectorAll(`tr[data-idnum="${curr_idnum}"] input[type="checkbox"]`);
@@ -363,8 +363,10 @@ function handleDeleteClick(e) {
         return;
     }
     const tr = e.target.parentNode.parentNode;
-    //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
-    customDataPHsList.remove("id", tr.querySelector('span.id').innerText);
+    // Found by its row, then removed by the id the list itself holds: the list keeps the
+    // values escaped (see toListValues()), so the text the row shows may not match them.
+    const item = customDataPHsList.items.find(it => it.elm === tr);
+    if (item) customDataPHsList.remove("id", item.values().id);
     setSomethingChanged();
 }
 
@@ -376,7 +378,7 @@ function handleCancelClick(e) {
 //        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
     tr.querySelector('.btnEditItem').style.display = '';   // Edit btn
     tr.querySelector('.btnDeleteItem').style.display = '';   // Delete btn
-    tr.querySelector('.id_output').value = tr.querySelector('.id_show').innerText.toLocaleUpperCase();
+    tr.querySelector('.id_output').value = tr.querySelector('.id_show').innerText;
     tr.querySelector('.name_output').value = tr.querySelector('.name_show').innerText;
     tr.querySelector('.text_output').value = getTextShowSource(tr.querySelector('.text_show'));
 	tr.querySelector('.type_output').value = tr.querySelector('.type').innerText;
@@ -477,6 +479,29 @@ function updatePlaceholdersCount() {
     el.textContent = browser.i18n.getMessage('customDataPH_placeholdersCount', [String(count)]);
 }
 
+// Escape a value for HTML text or a double-quoted attribute.
+function escapeHtml(value) {
+    return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// The values of one placeholder as the list takes them. List.js writes every class value
+// into its cell with innerHTML, and the row template concatenates them into markup
+// (value="...", the <textarea> content): escaped here, a quote, a "</textarea>", a tag or an
+// entity in the data is shown and edited literally, and read back unchanged by Save All
+// (itemToSave() reads the cells as text). The id is listed without its thunderai_custom_
+// prefix, and a legacy <br> becomes a newline, so the read-only span and the textarea agree.
+function toListValues(ph) {
+    return {
+        ...ph,
+        id: escapeHtml(placeholdersUtils.stripCustomDataPH_ID_Prefix(String(ph.id ?? ''))),
+        name: escapeHtml(ph.name),
+        text: escapeHtml(String(ph.text ?? '').replace(/<br\s*\/?>/gi, "\n")),
+        type: escapeHtml(ph.type),
+        is_default: escapeHtml(ph.is_default),
+    };
+}
+
 function loadCustomDataPHsList(values){
     // console.log('>>>>>>>> loadCustomDataPHsList values: ' + JSON.stringify(values));
     let options = {
@@ -489,12 +514,9 @@ function loadCustomDataPHsList(values){
             'type',
             { name: 'enabled', attr: 'checked_val'}
         ],
+        // The values arrive escaped (toListValues()): they are concatenated into this
+        // markup as they are.
         item: function(values) {
-            values.id = placeholdersUtils.stripCustomDataPH_ID_Prefix(values.id);
-            // Legacy stored values may hold <br> instead of newlines. Normalise once,
-            // here, so the read-only span and the textarea show the same text: List.js
-            // binds .text_show as text and would otherwise render "<br>" literally.
-            values.text = String(values.text).replace(/<br\s*\/?>/gi, "\n");
             let type_output = '';
             switch(String(values.type)){
                 case "0":
@@ -550,7 +572,7 @@ function loadCustomDataPHsList(values){
     // console.log('>>>>>>>>>>>>> options: ' + JSON.stringify(options));
     // console.log('>>>>>>>>>>>>> values: ' + JSON.stringify(values));
 
-    customDataPHsList = new List('all_custom_dataplaceholders', options, values);
+    customDataPHsList = new List('all_custom_dataplaceholders', options, values.map(toListValues));
 
     decoratePlaceholderText();
     updatePlaceholdersCount();
@@ -596,9 +618,9 @@ function checkFields() {
         inputSetError('txtIdNew');
         is_error = true;
     } else {
-        let exists = customDataPHsList.get("id", id_value);
-        //console.log('>>>>>>>>>>>>> exists: ' + JSON.stringify(exists));
-        if(exists && exists.length > 0) {
+        // Against the ids the rows show: the list holds them escaped.
+        const listed = customDataPHsList.items.map(it => it.elm.querySelector('.id_show').textContent);
+        if(listed.includes(id_value)) {
             inputSetError('txtIdNew');
             is_error = true;
         } else {

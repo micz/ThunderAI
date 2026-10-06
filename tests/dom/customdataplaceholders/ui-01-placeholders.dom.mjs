@@ -337,8 +337,8 @@ k.test('edit-cancel', S_PAGE, 'Cancel restores the row as it was, back in read m
     assert.deepEqual(ctx.localWrites(since), []);
 });
 
-k.test('cancel-id-uppercased', S_PAGE, 'Cancel puts the id back into its (hidden) input uppercased', () => {
-    assert.equal(rowOf('sig').querySelector('.id_output').value, 'SIG');
+k.test('cancel-id-restored', S_PAGE, 'Cancel puts the id back into its (hidden) input as it was', () => {
+    assert.equal(rowOf('sig').querySelector('.id_output').value, 'sig');
 });
 
 k.test('edit-confirm', S_PAGE, 'Confirm updates the row in place, chips included, back in read mode, and marks the page unsaved', async () => {
