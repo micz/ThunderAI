@@ -1,0 +1,90 @@
+{
+    "_comment": "The answers the webchat area streams to probe the sanitizer (spec 01 'One render path, no router', spec 07 'The sanitizer is a security boundary'). Each is checked as one token and split across two tokens, and in the diff picker on both sides. 'why' is what the payload is there to catch; tests/webchat/README.md lists them.",
+    "payloads": [
+        {
+            "id": "script",
+            "why": "the plain <script> element: html:true lets raw HTML through markdown-it, so only the allowlist removes it",
+            "html": "Hello <script>window.__pwned = 1</script> world"
+        },
+        {
+            "id": "img-onerror",
+            "why": "an element outside the allowlist carrying an inline handler; img is stripped (spec 01: 'img stays stripped')",
+            "html": "Look <img src=\"x\" onerror=\"window.__pwned = 1\"> here"
+        },
+        {
+            "id": "handler-on-allowed",
+            "why": "on* attributes on ALLOWED elements (b, a, p): the element survives, the attribute must not",
+            "html": "<p onmouseover=\"window.__pwned = 1\">A <b onclick=\"window.__pwned = 1\">bold</b> and <a href=\"https://example.com\" onclick=\"window.__pwned = 1\">link</a></p>"
+        },
+        {
+            "id": "javascript-href",
+            "why": "javascript: in an <a href>, plain and obfuscated: mixed case, leading whitespace, a tab entity inside the scheme, a decimal entity for the first letter",
+            "html": "<a href=\"javascript:window.__pwned=1\">a</a> <a href=\"JaVaScRiPt:window.__pwned=1\">b</a> <a href=\"  javascript:window.__pwned=1\">c</a> <a href=\"java&#x09;script:window.__pwned=1\">d</a> <a href=\"&#106;avascript:window.__pwned=1\">e</a>"
+        },
+        {
+            "id": "data-vbscript-href",
+            "why": "the other script-capable schemes: data: (spec 07 names it) and vbscript:",
+            "html": "<a href=\"data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==\">x</a> <a href=\"vbscript:msgbox(1)\">y</a>"
+        },
+        {
+            "id": "iframe",
+            "why": "an <iframe> with a javascript: src and a srcdoc holding a script",
+            "html": "Before <iframe src=\"javascript:window.__pwned=1\" srcdoc=\"<script>window.__pwned=1</script>\"></iframe> after"
+        },
+        {
+            "id": "object-embed",
+            "why": "the plugin elements, each able to load active content",
+            "html": "<object data=\"data:text/html,<script>window.__pwned=1</script>\"><param name=\"x\" value=\"y\"></object><embed src=\"javascript:window.__pwned=1\">"
+        },
+        {
+            "id": "style",
+            "why": "a <style> element (could restyle the whole window) and a style attribute carrying a url(javascript:)",
+            "html": "<style>body { background: url(javascript:window.__pwned=1) }</style><span style=\"background:url(javascript:window.__pwned=1)\">styled</span>"
+        },
+        {
+            "id": "svg-script",
+            "why": "SVG brings its own <script>, onload, an <a xlink:href>, and animation elements that can set an href to javascript:",
+            "html": "<svg onload=\"window.__pwned=1\"><script>window.__pwned=1</script><a xlink:href=\"javascript:window.__pwned=1\"><text>t</text></a><animate attributeName=\"href\" to=\"javascript:window.__pwned=1\" onbegin=\"window.__pwned=1\"/></svg>"
+        },
+        {
+            "id": "math-mxss",
+            "why": "MathML namespace confusion (the DOMPurify mXSS family): an <img onerror> that a re-parse could resurrect",
+            "html": "<math><mtext><table><mglyph><style><img src=x onerror=\"window.__pwned=1\"></style></mglyph></table></mtext></math>"
+        },
+        {
+            "id": "noscript-mxss",
+            "why": "<noscript> parses differently with scripting on and off: the attribute text must not become an <img onerror> on the second parse",
+            "html": "<noscript><p title=\"</noscript><img src=x onerror=window.__pwned=1>\">x</p></noscript>"
+        },
+        {
+            "id": "form",
+            "why": "a <form> with a javascript: action and a <button formaction>",
+            "html": "<form action=\"javascript:window.__pwned=1\"><button formaction=\"javascript:window.__pwned=1\">go</button><input type=\"image\" src=\"x\" onerror=\"window.__pwned=1\"></form>"
+        },
+        {
+            "id": "meta-base",
+            "why": "<meta http-equiv=refresh> to a javascript: URL, and a <base href> that would rebase every relative link",
+            "html": "<meta http-equiv=\"refresh\" content=\"0;url=javascript:window.__pwned=1\"><base href=\"javascript:window.__pwned=1//\"><a href=\"page.html\">rel</a>"
+        },
+        {
+            "id": "template",
+            "why": "a <template> whose content is a separate fragment a naive element walk never visits",
+            "html": "<template><img src=x onerror=\"window.__pwned=1\"></template>visible"
+        },
+        {
+            "id": "details-ontoggle",
+            "why": "an event that fires with no user action (<details open ontoggle>)",
+            "html": "<details open ontoggle=\"window.__pwned=1\"><summary>s</summary>body</details>"
+        },
+        {
+            "id": "markdown-links",
+            "why": "markdown syntax rather than HTML: a javascript: link, a data: image and a javascript: autolink",
+            "html": "[click](javascript:window.__pwned=1) ![img](data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9YWxlcnQoMSk+) <javascript:window.__pwned=1>"
+        },
+        {
+            "id": "code-fence",
+            "why": "markup inside a code fence must stay text (spec 01: 'Code fences still show markup as text')",
+            "html": "```\n<script>window.__pwned=1</script>\n<img src=x onerror=window.__pwned=1>\n```"
+        }
+    ]
+}

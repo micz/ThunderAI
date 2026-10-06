@@ -56,6 +56,7 @@ const CORE_PAGES = {
     'customdataplaceholders': 'pages/customdataplaceholders/mzta-custom-dataplaceholders.html',
     'popup': 'popup/mzta-popup.html',
     'onboarding': 'pages/onboarding/onboarding.html',
+    'webchat': 'api_webchat/index.html',
 };
 
 /**
@@ -92,6 +93,8 @@ const WINDOW_GLOBALS = [
     'DOMParser', 'XMLSerializer', 'XPathResult', 'Option', 'Image',
     'MutationObserver', 'getComputedStyle', 'getSelection', 'CSS',
     'FileReader', 'DataTransfer',
+    // The webchat page is built from custom elements with open shadow roots.
+    'customElements', 'ShadowRoot',
 ];
 
 /**
@@ -241,6 +244,75 @@ function trackTimers(host, rec) {
     };
 }
 
+/**
+ * requestAnimationFrame, tracked like the timers: jsdom provides it (pretendToBeVisual) on the
+ * window only, and page modules call it as a bare name, so the tracked pair goes on both. A
+ * frame is pending from the request until its callback runs or it is cancelled.
+ */
+function trackFrames(window, rec) {
+    const origRequest = window.requestAnimationFrame.bind(window);
+    const origCancel = window.cancelAnimationFrame.bind(window);
+    const request = function (callback) {
+        let handle;
+        handle = origRequest((time) => {
+            rec.frames.delete(handle);
+            callback(time);
+        });
+        rec.frames.add(handle);
+        return handle;
+    };
+    const cancel = function (handle) {
+        rec.frames.delete(handle);
+        return origCancel(handle);
+    };
+    for (const host of [window, globalThis]) {
+        host.requestAnimationFrame = request;
+        host.cancelAnimationFrame = cancel;
+    }
+}
+
+/**
+ * ResizeObserver, which jsdom does not implement. With no layout nothing ever resizes, so the
+ * stub never calls back: it records each observer (its callback, what it observes, whether it
+ * was disconnected) in rec.resizeObservers.
+ */
+function stubResizeObserver(window, rec) {
+    class ResizeObserver {
+        constructor(callback) {
+            this._record = { callback, targets: [], disconnected: false };
+            rec.resizeObservers.push(this._record);
+        }
+        observe(target) { this._record.targets.push(target); }
+        unobserve(target) {
+            const i = this._record.targets.indexOf(target);
+            if (i !== -1) this._record.targets.splice(i, 1);
+        }
+        disconnect() { this._record.targets.length = 0; this._record.disconnected = true; }
+    }
+    window.ResizeObserver = ResizeObserver;
+    globalThis.ResizeObserver = ResizeObserver;
+}
+
+/**
+ * navigator.clipboard, which jsdom does not implement: writeText() records the text in
+ * rec.clipboard and resolves, readText() resolves to the last text written ('' before any).
+ */
+function stubClipboard(window, rec) {
+    const clipboard = {
+        writeText(text) {
+            const p = Promise.resolve().then(() => { rec.clipboard.push(String(text)); });
+            rec.track(p);
+            return p;
+        },
+        readText() {
+            const p = Promise.resolve(rec.clipboard.length ? rec.clipboard[rec.clipboard.length - 1] : '');
+            rec.track(p);
+            return p;
+        },
+    };
+    Object.defineProperty(window.navigator, 'clipboard', { value: clipboard, configurable: true });
+}
+
 // ---------------------------------------------------------------------------------------
 // openPage()
 // ---------------------------------------------------------------------------------------
@@ -257,6 +329,8 @@ function trackTimers(host, rec) {
  *   apiCalls(api?)                   every browser.* call the page made (optionally filtered)
  *   fetchCalls                       every fetch() the page attempted (all rejected)
  *   dialogs                          alert / confirm / prompt / window.close calls
+ *   clipboard                        every text written with navigator.clipboard.writeText()
+ *   resizeObservers                  every ResizeObserver created: {callback, targets, disconnected}
  *   violations, rejections, jsdomErrors   what assertHarnessClean() checks
  *   close()
  *
@@ -281,7 +355,10 @@ export async function openPage(page, opts = {}) {
         apiCalls: [],
         fetchCalls: [],
         dialogs: [],
+        clipboard: [],
+        resizeObservers: [],
         timers: new Set(),
+        frames: new Set(),
         inflight: 0,
         track(p) {
             rec.inflight++;
@@ -328,6 +405,9 @@ export async function openPage(page, opts = {}) {
     };
     trackTimers(globalThis, rec);
     trackTimers(window, rec);
+    trackFrames(window, rec);
+    stubResizeObserver(window, rec);
+    stubClipboard(window, rec);
 
     const onRejection = reason => rec.rejections.push(String(reason && reason.stack || reason));
     process.on('unhandledRejection', onRejection);
@@ -376,14 +456,16 @@ export async function openPage(page, opts = {}) {
         while (quiet < 3) {
             if (Date.now() - start > cap) {
                 throw new Error('dom-page: ' + page + ' did not settle within ' + cap + ' ms ('
-                    + rec.inflight + ' browser promises, ' + rec.timers.size + ' timers pending)');
+                    + rec.inflight + ' browser promises, ' + rec.timers.size + ' timers, '
+                    + rec.frames.size + ' animation frames pending)');
             }
             const before = mutations;
-            if (rec.inflight === 0 && rec.timers.size > 0) {
+            if (rec.inflight === 0 && (rec.timers.size > 0 || rec.frames.size > 0)) {
                 await new Promise(r => setImmediate(r));
             }
             await new Promise(r => setImmediate(r));
-            if (rec.inflight === 0 && rec.timers.size === 0 && mutations === before) quiet++;
+            if (rec.inflight === 0 && rec.timers.size === 0 && rec.frames.size === 0
+                && mutations === before) quiet++;
             else quiet = 0;
         }
     };
@@ -426,6 +508,8 @@ export async function openPage(page, opts = {}) {
         apiCalls: api => rec.apiCalls.filter(c => !api || c.api === api),
         fetchCalls: rec.fetchCalls,
         dialogs: rec.dialogs,
+        clipboard: rec.clipboard,
+        resizeObservers: rec.resizeObservers,
         violations: rec.violations,
         rejections: rec.rejections,
         jsdomErrors: rec.jsdomErrors,
