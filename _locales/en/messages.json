@@ -2063,6 +2063,16 @@
     "message": "timeout",
     "description": "Reason shown in apiwebchat_retrying when the server did not answer in time"
   },
+  "apiwebchat_unknown_connection": {
+    "message": "Unknown connection type \"$TYPE$\": this chat window cannot send anything. Open the ThunderAI settings and choose an AI provider.",
+    "description": "API webchat: error shown when the window was opened for a connection type it has no worker for (e.g. a stale or mistyped value). $TYPE$ is the raw connection type.",
+    "placeholders": {
+      "type": {
+        "content": "$1",
+        "example": "foo_api"
+      }
+    }
+  },
   "apiwebchat_request_cancelled": {
     "message": "Request cancelled.",
     "description": "API webchat notice shown when the user stops a request before any answer arrived"

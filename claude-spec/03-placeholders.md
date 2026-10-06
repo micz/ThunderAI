@@ -342,6 +342,18 @@ prepared, in the chat window. They are the deferred half of `skip_additional_tex
    token, whatever `placeholders_use_default_value` says (the user saw the field and left it blank).
    Only a token with no answer at all follows the `||` chain of *Placeholder Resolution Order*.
 
+   **The legacy string form.** Before 4.0.0 `api_send_custom_text` carried `custom_text` as a single
+   string instead of the array; the controller still accepts it. With no `additional_text` token in the
+   prompt the string is appended after a space, like a single answer. With tokens, the string becomes
+   the answer to the bare `additional_text` key, and the `||` chain hands it to **every** token: a
+   labelled `{%additional_text:<label>%}` has no answer of its own, so it falls back to the bare id's.
+   The window itself always sends the array, so only an older producer reaches this path.
+
+   **A token missing from the array** (an entry the producer left out; the menus build one per
+   distinct label, so the normal flow never does) also has no answer of its own and follows the
+   chain: the bare id's answer if there is one, else `default_value` with `placeholders_use_default_value`
+   (`ph_def_val=1` in the window's url) on, else the literal token.
+
 The tokens are shown only when `need_custom_text` is `"1"`: the Custom Prompts editor flags
 `need_custom_text` when the text has an `additional_text` token but the flag is off (see
 [05-options.md](05-options.md)).

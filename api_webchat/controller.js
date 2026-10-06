@@ -107,7 +107,7 @@ document.addEventListener('keydown', (event) => {
 // The controller wires up all the components and workers together,
 // managing the dependencies. A kind of "DI" class.
 let worker = null;
-const integration = llm.replace('_api', '');
+const integration = (llm ?? '').replace('_api', '');
 const worker_path_map = {
     chatgpt: '../js/workers/model-worker-openai_responses.js',
     google_gemini: '../js/workers/model-worker-google_gemini.js',
@@ -116,12 +116,17 @@ const worker_path_map = {
     anthropic: '../js/workers/model-worker-anthropic.js',
 };
 
-const worker_path = worker_path_map[integration];
+const worker_path = Object.hasOwn(worker_path_map, integration) ? worker_path_map[integration] : null;
 
 if (worker_path) {
     worker = new Worker(worker_path, { type: 'module' });
 } else {
+    // No worker can serve this connection type, so nothing can ever be sent: say so in the
+    // transcript, lock the input, and announce nothing to the background (no ready message).
     console.error('[ThunderAI] API WebChat Unknown LLM type:', llm);
+    messagesArea.appendBotMessage(browser.i18n.getMessage('apiwebchat_unknown_connection', [llm ?? '']), 'error');
+    messageInput.disableInput();
+    messageInput.showErrorStatus();
 }
 
 if (worker) {
@@ -359,8 +364,8 @@ if (worker) {
 
 //let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
 
-// Event listeners for worker messages
-worker.onmessage = async function(event) {
+// Event listeners for worker messages (none without a worker: an unknown connection type)
+if (worker) worker.onmessage = async function(event) {
     const { type, payload } = event.data;
     switch (type) {
         case 'messageSent':
@@ -418,6 +423,8 @@ worker.onmessage = async function(event) {
 
 // handling commands from the backgound page
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    // Without a worker nothing can be sent (and the background was never told the window is ready).
+    if (!worker) { return; }
     switch (message.command) {
         case "api_send":
             promptData = message;

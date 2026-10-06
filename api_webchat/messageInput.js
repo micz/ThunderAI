@@ -408,6 +408,15 @@ class MessageInput extends HTMLElement {
         }
     }
 
+    // Lock the input for good: the window has no worker to send to (an unknown
+    // connection type), so neither the field nor Send can do anything.
+    disableInput() {
+        this._messageInputField.setAttribute('disabled', 'disabled');
+        this._sendButton.setAttribute('disabled', 'disabled');
+        this._stopButton.setAttribute('disabled', 'disabled');
+        this._stopButton.style.display = 'none';
+    }
+
     // Every status change goes through here, so this is also where a running
     // retry countdown stops: no other status can be overwritten by a late tick.
     setStatusMessage(message) {

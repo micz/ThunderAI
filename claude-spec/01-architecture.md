@@ -829,6 +829,22 @@ carries one, see [04-api-integrations.md](04-api-integrations.md#configuration-v
 API name. It shows **no usage figures**: token counts live only in each answer's usage chip (see
 [04-api-integrations.md](04-api-integrations.md#rendering-in-the-chat-window)).
 
+- The **model chip** (`#appHeaderModel`) reads `<prompt name> | <model>`, the prompt name trimmed.
+  Either half is dropped when missing: no prompt name gives the model alone, and with no model set the
+  provider's display name stands in for it (`ChatGPT`, `Google Gemini`, `Ollama Local`, the
+  `openai_comp_chat_name` or `OpenAI Comp`, `Claude`). The chip's `title` repeats its text, so a name
+  cut off by the chip's width can still be read. Set with `textContent`: the name is text.
+- The **API chip** (`#appHeaderApi`) shows the API's name (`ChatGPT API`, `Google Gemini API`,
+  `Ollama API`, `OpenAI Compatible API`, `Claude API`) and is tinted with the connection type
+  (`tint_<llm>`), the class the settings pages tint their connection pill with.
+
+**Unknown connection type.** An `llm` the window has no worker for (a stale or mistyped value, or
+none) creates no worker. The transcript shows an error turn with `apiwebchat_unknown_connection`
+naming the value, the status pill shows the error, and the input is locked for good
+(`messageInput.disableInput()`: field, Send and Stop disabled), since nothing could ever be sent.
+The window sends no ready message and ignores the background's commands; its Close button still
+closes it.
+
 **Ready handshake.** Once the worker's `init` message is posted and the startup notice shown, the
 window sends the background `{command: "${llm}_ready_${call_id}", window_id}` (its own window id,
 from `windows.getCurrent()`). The background listener registered for that `call_id` answers by

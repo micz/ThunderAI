@@ -24,7 +24,8 @@ import { EXT_ORIGIN } from '../helpers/core/browser-mock.mjs';
 const PAGE_URL = EXT_ORIGIN + 'api_webchat/index.html';
 
 /**
- * Install the fake Worker for one expected worker file (e.g. 'model-worker-ollama.js').
+ * Install the fake Worker for one expected worker file (e.g. 'model-worker-ollama.js'), or for
+ * none at all (file null: a window that must create no worker, such as an unknown connection type).
  * Returns its controller:
  *
  *   url, options        what the window passed to the constructor (url resolved)
@@ -36,7 +37,7 @@ const PAGE_URL = EXT_ORIGIN + 'api_webchat/index.html';
  *   stream(ctx, tokens, {done})   a newToken per token, then (by default) tokensDone
  */
 export function expectWorker(file) {
-    const expectedUrl = EXT_ORIGIN + 'js/workers/' + file;
+    const expectedUrl = file ? EXT_ORIGIN + 'js/workers/' + file : null;
     const w = {
         url: null,
         options: null,
@@ -80,7 +81,7 @@ export function expectWorker(file) {
             if (w.instance !== null || resolved !== expectedUrl) {
                 w.unexpected.push(resolved);
                 throw new Error('fake Worker: unexpected worker ' + resolved + ' (this file expects '
-                    + (w.instance ? 'only one worker' : expectedUrl) + ')');
+                    + (w.instance ? 'only one worker' : expectedUrl ?? 'no worker at all') + ')');
             }
             w.url = resolved;
             w.options = structuredClone(options);

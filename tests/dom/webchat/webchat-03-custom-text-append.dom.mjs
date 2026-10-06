@@ -4,7 +4,8 @@
 // Spec 01 "Streaming data flow" (api_send shows the custom-text field; api_send_custom_text merges
 // the text into the prompt, then sends). Spec 03 "`additional_text`: the user's input, filled
 // late" (step 3: "A prompt with need_custom_text "1" and no additional_text token asks a single
-// text, which is appended to the prompt after a space"; one step, so no n/total counter).
+// text, which is appended to the prompt after a space"; one step, so no n/total counter; "The legacy
+// string form" and "A token missing from the array", played by the test as an older producer would).
 
 import {
     test,
@@ -55,6 +56,27 @@ k.test('appended', S_AT, 'the text is appended to the prompt after a space, and 
 
 k.test('field-gone', S_FLOW, 'once sent, the custom-text field is hidden', () => {
     assert.equal(box().style.display, 'none');
+});
+
+// ---- what an older producer can send: each case is a fresh api_send, played by the test ------
+
+k.test('legacy-string-append', S_AT, 'the legacy string form, no token in the prompt: the string is appended after a space', async () => {
+    await apiSend(ctx, { prompt: 'Translate this', do_custom_text: '1', prompt_info: {} });
+    await fromBackground(ctx, { command: 'api_send_custom_text', custom_text: 'to French' });
+    assert.equal(worker.chatMessages().at(-1), 'Translate this to French');
+});
+
+k.test('legacy-string-tokens', S_AT, 'the legacy string form with tokens: through the || chain the one string fills every token, labelled or not', async () => {
+    await apiSend(ctx, { prompt: 'Write {%additional_text:#1%} in a {%additional_text:tone%} way', do_custom_text: '1', prompt_info: {} });
+    await fromBackground(ctx, { command: 'api_send_custom_text', custom_text: 'warmly' });
+    assert.equal(worker.chatMessages().at(-1), 'Write warmly in a warmly way');
+});
+
+k.test('missing-entry', S_AT, 'a token the array has no entry for follows the chain to its end: with default values off (ph_def_val not 1) it stays as written', async () => {
+    await apiSend(ctx, { prompt: 'Write {%additional_text:#1%} in a {%additional_text:tone%} way', do_custom_text: '1', prompt_info: {} });
+    await fromBackground(ctx, { command: 'api_send_custom_text',
+        custom_text: [{ placeholder: '{%additional_text:#1%}', info: '#1', custom_text: 'a note' }] });
+    assert.equal(worker.chatMessages().at(-1), 'Write a note in a {%additional_text:tone%} way');
 });
 
 k.coverage();

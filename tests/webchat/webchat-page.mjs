@@ -42,7 +42,8 @@ export async function openWebchat({
     commands = {},
     permissions,
 } = {}) {
-    const worker = expectWorker(WORKER_FILES[llm]);
+    // An llm with no worker (an unknown connection type) expects none: any construction throws.
+    const worker = expectWorker(Object.hasOwn(WORKER_FILES, llm) ? WORKER_FILES[llm] : null);
     // Built as the background builds it (openChatGPT() in mzta-background.js): each value through
     // one encodeURIComponent.
     let query = '?llm=' + llm + '&call_id=' + call_id;

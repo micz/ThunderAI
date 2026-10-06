@@ -121,6 +121,18 @@ k.test('ready', S_COMP, 'the window announces itself once with {command: "${llm}
     assert.deepEqual(worker.chatMessages(), []);
 });
 
+k.test('model-chip', S_COMP, 'the model chip reads "<prompt name> | <model>" as text, and its title repeats it', () => {
+    const chip = ctx.$('#appHeaderModel');
+    assert.equal(chip.textContent, NAME + ' | gpt-own');
+    assert.equal(chip.title, chip.textContent);
+});
+
+k.test('api-chip', S_COMP, 'the API chip names the API and is tinted with the connection type', () => {
+    const api = ctx.$('#appHeaderApi');
+    assert.equal(ctx.$('#appHeaderApiName').textContent, 'ChatGPT API');
+    assert.ok(api.classList.contains('tint_chatgpt_api'));
+});
+
 k.test('name-percent', S_COMP, 'prompt_name is decoded once: a name holding "%" and markup opens the window and reaches the header as written', () => {
     assert.ok(ctx.$('#appHeaderModel').textContent.includes(NAME), ctx.$('#appHeaderModel').textContent);
     assert.equal(ctx.$('#appHeaderModel b'), null);
