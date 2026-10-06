@@ -3,7 +3,7 @@
 Automated tests for ThunderAI. Today they cover the enterprise managed configuration
 ([`managed/README.md`](managed/README.md)), the static consistency of the locales and the
 preferences ([`static/README.md`](static/README.md)), the prompt and placeholder systems
-([`prompts/README.md`](prompts/README.md)), the API integrations ([`api/README.md`](api/README.md)), and what the settings pages do with no policy ([`ui/README.md`](ui/README.md), the options page, the six feature settings pages, the three prompt management pages, the setup wizard, the welcome page and the popup); the infrastructure is built to extend to the whole
+([`prompts/README.md`](prompts/README.md)), the API integrations ([`api/README.md`](api/README.md)), and what the settings pages do with no policy ([`ui/README.md`](ui/README.md), the options page, the six feature settings pages, the three prompt management pages, the setup wizard, the welcome page and the popup), and the API chat window with its diff picker ([`webchat/README.md`](webchat/README.md), being built group by group); the infrastructure is built to extend to the whole
 add-on, one **area** at a time. Each area adds its own files - tests, fixtures, a plugin, its
 known issues - and never edits the shared ones.
 
@@ -14,7 +14,7 @@ There are two levels:
 
 | Level | Where | What it loads | Needs |
 |---|---|---|---|
-| **1** | `tests/<area>/*.test.mjs` (today `tests/managed/`, `tests/static/`, `tests/prompts/`, `tests/api/`, `tests/ui/`) | the shipped modules, imported as they are | Node 22+, **nothing to install** |
+| **1** | `tests/<area>/*.test.mjs` (today `tests/managed/`, `tests/static/`, `tests/prompts/`, `tests/api/`, `tests/ui/`, `tests/webchat/`) | the shipped modules, imported as they are | Node 22+, **nothing to install** |
 | **DOM** | `tests/dom/<page>/*.dom.mjs` | each page's real HTML and script, in [jsdom](https://github.com/jsdom/jsdom) | Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`, `npm ci` |
 
 Both use only Node's built-in runner (`node:test`, `node:assert/strict`). jsdom is the
@@ -94,7 +94,7 @@ tests/
 │   │                           (the only core file that imports jsdom)
 │   ├── plugins/<area>.mjs      an area's hooks into the core (today: managed.mjs)
 │   ├── known-issues/<area>.mjs an area's known issues and their shape (today: managed.mjs,
-│   │                           static.mjs, prompts.mjs, api.mjs, ui.mjs)
+│   │                           static.mjs, prompts.mjs, api.mjs, ui.mjs, webchat.mjs)
 │   │
 │   └── *.mjs                   the managed layer: load.mjs, dom-page.mjs, browser-mock.mjs,
 │                               dom-known-issues.mjs re-export the core with the managed
@@ -105,6 +105,8 @@ tests/
 ├── prompts/                    level 1 of the prompt and placeholder systems, and its README
 ├── api/                        level 1 of the API integrations, and its README
 ├── ui/                         the ui area (its DOM files are dom/<page>/ui-*): README, helpers, level-1 harness test
+├── webchat/                    the webchat area (its DOM files are dom/webchat/webchat-*): README, the fake
+│                               Worker, the shadow-DOM queries, the safety checks, level-1 harness test
 ├── <area>/                     level 1 of another area
 └── dom/<page>/                 DOM: one file per page × scenario, shared by every area
 ```
@@ -221,7 +223,8 @@ does, in the browser's order:
 
 1. parses the page's **real HTML file** at its `moz-extension://` URL;
 2. exposes the jsdom window's globals (`window`, `document`, `navigator`, `Event` and the
-   other event classes, `HTMLElement` and friends, `DOMParser`, `XPathResult`, `Option`…) on
+   other event classes, `HTMLElement` and friends, `DOMParser`, `XPathResult`, `Option`,
+   `customElements` and `ShadowRoot`…) on
    `globalThis`, where the page's module code looks them up. The list is explicit: copying
    the whole window would shadow Node's own `URL`, timers and so on;
 3. installs the browser mock through `startPage()`, extended with the page-side APIs
@@ -236,7 +239,8 @@ does, in the browser's order:
 
 `settle()` does not sleep for a fixed time: it turns the event loop until three consecutive
 turns pass with no browser-mock promise in flight, no pending `setTimeout` (both realms'
-timers are tracked; ones longer than 1 s are not waited for) and no DOM mutation. It throws
+timers are tracked; ones longer than 1 s are not waited for), no pending `requestAnimationFrame`
+callback and no DOM mutation. It throws
 "did not settle", naming what is pending, after 30 s (a safety net: the time includes the page's whole init, which a loaded machine stretches). `ctx.fire(el, type)` and
 `ctx.click(el)` settle after the event too.
 
@@ -248,7 +252,8 @@ failure with the reason, never as fewer tests passing.
 
 `ctx` holds `window`, `document`, `$`/`$$`, `fire()`, `click()`, `settle()`, `ctl` (the mock
 controller: `localData()`, `calls`, `sent`), `con`, `mods` (the page's own modules),
-`apiCalls(api)`, `fetchCalls`, `dialogs`, `localWrites(since)` and the plugins' remote fields.
+`apiCalls(api)`, `fetchCalls`, `dialogs`, `clipboard`, `resizeObservers`, `localWrites(since)` and
+the plugins' remote fields.
 The page is opened at the top level, with `await`, because node:test must know the generated
 tests before it runs them.
 
@@ -275,6 +280,9 @@ else is:
 | `fetch` | records the call and rejects: no network. The secret tests assert on it |
 | `alert`, `confirm` (→ `true`), `prompt` (→ `''`), `window.close` | not implemented by jsdom; recorded in `ctx.dialogs` |
 | `Element.prototype.scrollIntoView`, `window.scrollTo` | not implemented by jsdom |
+| `requestAnimationFrame` / `cancelAnimationFrame` | jsdom's own (`pretendToBeVisual`), put on `globalThis` too, where module code calls them as bare names, and **tracked**: a frame is pending from the request until its callback runs or it is cancelled, and `settle()` waits for it |
+| `ResizeObserver` | not implemented by jsdom. With no layout nothing resizes, so the stub never calls back: it records each observer (`callback`, `targets`, `disconnected`) in `ctx.resizeObservers`. On the prompt pages, `js/mzta-editor-highlight.js` now takes its `ResizeObserver` branch, as in Thunderbird |
+| `navigator.clipboard` | not implemented by jsdom: `writeText()` records the text in `ctx.clipboard` and resolves, `readText()` resolves to the last text written |
 | Sparks (the other add-on) | `sendMessage('thunderai-sparks@micz.it', …)` answers `null`: not installed |
 
 The third-party libraries run for real: **Tom Select** loads itself through the page's own
@@ -324,4 +332,5 @@ rules are in [`managed/README.md`](managed/README.md#potential-bugs-todo-tests).
   what the static checks leave out in [`static/README.md`](static/README.md#what-is-not-covered),
   what the prompts area leaves out in [`prompts/README.md`](prompts/README.md#what-is-not-covered),
   what the api area leaves out in [`api/README.md`](api/README.md#what-is-not-covered),
-  what the ui area leaves out in [`ui/README.md`](ui/README.md#what-is-not-covered).
+  what the ui area leaves out in [`ui/README.md`](ui/README.md#what-is-not-covered),
+  what the webchat area leaves out in [`webchat/README.md`](webchat/README.md#what-is-not-covered).
