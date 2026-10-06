@@ -27,6 +27,7 @@ import { uiTests } from '../../helpers/known-issues/ui.mjs';
 import { until } from '../../ui/dom-helpers.mjs';
 import {
     stubDialogs,
+    stubExecCommand,
     pickFile,
     lastDownload,
     withConfirm,
@@ -109,6 +110,12 @@ k.test('list-rows', S_PAGE, 'every prompt is listed once: the built-ins as Syste
         assert.equal(r.querySelector('.btnRowEdit').textContent, msg('customPrompts_btnEdit'), id);
     }
     assert.equal(rowOf('mine_alpha').querySelector('.p-name').textContent, 'Alpha helper');
+});
+
+k.test('list-order', S_PAGE, 'the list is in id order, and on arrival the pane shows its first row', () => {
+    assert.deepEqual(ids(), [...ids()].sort((a, b) => a.localeCompare(b)));
+    assert.equal($('#detail_id').value, ids()[0]);
+    assert.ok(rows()[0].classList.contains('is_selected'));
 });
 
 k.test('list-count', S_PAGE, '#prompts_count says how many prompts are listed', () => {
@@ -451,7 +458,7 @@ k.test('save-edit', S_PAGE, 'Save applies the pane to the prompt and writes the 
     const p = storedOf('mine_alpha');
     assert.ok(p, 'the id was not trimmed and lowercased: ' + stored().map(x => x.id).join());
     assert.equal(p.name, 'Alpha renamed');
-    assert.equal(textOf(p.text), 'Line one\nline {%mail_subject%}');
+    assert.equal(p.text, 'Line one\nline {%mail_subject%}', 'the newline is not stored as \\n');
     assert.equal(p.type, '1');
     assert.equal(p.action, '2');
     assert.equal(p.show_in, 'popup', 'a property the pane does not edit was lost');
@@ -463,8 +470,6 @@ k.test('save-edit', S_PAGE, 'Save applies the pane to the prompt and writes the 
     assert.equal($('#btnDetailSave').disabled, true);
     assert.equal(leaveBlocked(ctx), false);
 });
-// The stored text may encode the newline as <br> (the read side turns it back).
-const textOf = t => String(t).replace(/<br\s*\/?>/gi, '\n');
 
 k.test('save-flags-numbers', S_FLAGS, 'the editor writes the five flags as numbers 1 / 0', () => {
     const p = storedOf('mine_alpha');
@@ -519,6 +524,123 @@ k.test('autocomplete-type', S_AUTO, 'suggestions follow #detail_type, read on ev
     await typeAtCaret('x {%folder');
     assert.deepEqual(suggestions(), ['{%mail_folder_name%}', '{%mail_folder_path%}']);
     await ctx.click($('#btnDetailCancel'));
+});
+
+const acList = () => $('#detail_text').closest('.autocomplete-container').querySelector('.autocomplete-list');
+const acItems = () => [...acList().querySelectorAll('li')];
+const key = async k => ctx.fire($('#detail_text'), 'keydown', { key: k });
+const execCalls = stubExecCommand(ctx);
+
+k.test('autocomplete-substring', S_AUTO, 'a substring of the id matches; prefix matches come first; the matched run is bold, the sigil plain', async () => {
+    await typeAtCaret('x {%selected');
+    assert.deepEqual(suggestions(), ['{%selected_text%}', '{%selected_html%}',
+        '{%mail_text_body_or_selected%}', '{%mail_html_body_or_selected%}']);
+    const bold = acItems().map(li => li.querySelector('.ac_cmd b').textContent);
+    assert.deepEqual(bold, ['selected', 'selected', 'selected', 'selected']);
+    assert.ok(acItems()[2].querySelector('.ac_cmd').textContent.startsWith('{%mail_text_body_or_'));
+    await typeAtCaret('x {%');
+    assert.ok(suggestions().length > 10, 'a bare {% offers every eligible placeholder');
+    await typeAtCaret('x {%zzz');
+    assert.deepEqual(suggestions(), [], 'no match closes the list');
+});
+
+k.test('autocomplete-aria', S_AUTO, 'listbox / option roles, aria-autocomplete, aria-controls and aria-expanded follow the list', async () => {
+    const ta = $('#detail_text');
+    assert.equal(ta.getAttribute('aria-autocomplete'), 'list');
+    assert.equal(ta.getAttribute('aria-controls'), acList().id);
+    assert.equal(acList().getAttribute('role'), 'listbox');
+    assert.equal(ta.getAttribute('aria-expanded'), 'false');
+    await typeAtCaret('x {%folder');
+    assert.equal(ta.getAttribute('aria-expanded'), 'true');
+    for (const li of acItems()) {
+        assert.equal(li.getAttribute('role'), 'option');
+        assert.equal(li.getAttribute('aria-selected'), 'false');
+    }
+    const desc = acItems()[0].querySelector('.ac_desc');
+    assert.ok(desc && desc.textContent !== '' && !desc.textContent.startsWith('__MSG_'), 'no resolved description line');
+});
+
+k.test('autocomplete-keys', S_AUTO, 'the arrows move the active item and wrap around; Escape closes', async () => {
+    const ta = $('#detail_text');
+    await key('ArrowDown');
+    assert.equal(acItems()[0].getAttribute('aria-selected'), 'true');
+    assert.equal(ta.getAttribute('aria-activedescendant'), acItems()[0].id);
+    await key('ArrowDown');
+    assert.equal(acItems()[1].getAttribute('aria-selected'), 'true');
+    await key('ArrowDown');
+    assert.equal(acItems()[0].getAttribute('aria-selected'), 'true', 'no wrap at the bottom');
+    await key('ArrowUp');
+    assert.equal(acItems()[1].getAttribute('aria-selected'), 'true', 'no wrap at the top');
+    await key('Escape');
+    assert.deepEqual(suggestions(), []);
+    assert.equal(ta.getAttribute('aria-expanded'), 'false');
+});
+
+k.test('autocomplete-enter', S_AUTO, 'Enter accepts the active item: the whole typed token is replaced, through an insertText edit', async () => {
+    const ta = $('#detail_text');
+    await typeAtCaret('Hi {%folder');
+    await key('ArrowDown');
+    await key('ArrowDown');
+    await key('Enter');
+    assert.equal(ta.value, 'Hi {%mail_folder_path%}');
+    assert.equal(ta.selectionStart, ta.value.length);
+    assert.deepEqual(suggestions(), []);
+    assert.deepEqual(execCalls.at(-1), ['insertText', false, '{%mail_folder_path%}']);
+    const mirror = ta.closest('.editor-wrap').querySelector('.editor-highlights');
+    assert.ok(mirror.textContent.startsWith('Hi {%mail_folder_path%}'), 'the mirror was not repainted');
+});
+
+k.test('autocomplete-tab', S_AUTO, 'Tab accepts like Enter; with no active item the first one', async () => {
+    const ta = $('#detail_text');
+    await typeAtCaret('A {%subj');
+    await key('Tab');
+    assert.equal(ta.value, 'A {%mail_subject%}');
+});
+
+k.test('autocomplete-mousedown', S_AUTO, 'a mousedown on an item inserts it', async () => {
+    const ta = $('#detail_text');
+    await typeAtCaret('B {%folder');
+    await ctx.fire(acItems()[1], 'mousedown');
+    assert.equal(ta.value, 'B {%mail_folder_path%}');
+    assert.deepEqual(suggestions(), []);
+});
+
+k.test('autocomplete-dynamic', S_AUTO, 'a dynamic placeholder completes to {%id:%} with the caret after the colon, before the closing %}', async () => {
+    const ta = $('#detail_text');
+    await typeAtCaret('C {%additional');
+    await key('Enter');
+    assert.equal(ta.value, 'C {%additional_text:%}');
+    assert.equal(ta.selectionStart, ta.value.length - '%}'.length);
+});
+
+k.test('mirror-unterminated', S_INVALID, 'edit mode: an unterminated {% is red', async () => {
+    await typeAway('Text {%mail_subj and more');
+    const chip = mirrorChips().find(c => c.textContent.startsWith('{%mail_subj'));
+    assert.ok(chip, 'the unterminated token is not marked');
+    assert.ok(chip.classList.contains('ph_chip_error'));
+    assert.equal(chip.title, msg('editor_placeholder_unterminated'));
+});
+
+k.test('mirror-caret-open', S_INVALID, 'edit mode: the token being typed (open, the caret inside it) is not flagged', async () => {
+    const ta = $('#detail_text');
+    ta.value = 'x {%mail_su';
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+    await ctx.fire(ta, 'input');
+    assert.equal(mirrorChips().some(c => c.classList.contains('ph_chip_invalid')), false, 'flagged while typing it');
+    await typeAway(ta.value);
+    assert.ok(mirrorChips().some(c => c.classList.contains('ph_chip_error')), 'not flagged once the caret left');
+});
+
+k.test('mirror-caret-complete', S_INVALID, 'edit mode: a complete token is judged even with the caret inside it', async () => {
+    const ta = $('#detail_text');
+    try {
+        ta.value = 'x {%no_such_ph%} y';
+        ta.setSelectionRange(6, 6);
+        await ctx.fire(ta, 'input');
+        assert.ok(chipOf('{%no_such_ph%}').classList.contains('ph_chip_error'), 'an unknown closed token not flagged');
+    } finally {
+        await ctx.click($('#btnDetailCancel'));
+    }
 });
 
 // ---- the connection override -----------------------------------------------------------------
@@ -645,6 +767,14 @@ k.test('duplicate-personal', S_PAGE, 'Duplicate seeds "new" mode from a copy: id
     assert.equal(storedOf('mine_beta')?.name, 'Beta writer', 'the original changed');
 });
 
+k.test('duplicate-unique', S_PAGE, 'a second copy of the same prompt gets a free id: <id>_<copy>_2', async () => {
+    await select('mine_beta');
+    await ctx.click($('#btnDetailDuplicate'));
+    assert.equal($('#detail_id').value, 'mine_beta_' + msg('copy_text') + '_2');
+    await ctx.click($('#btnDetailCancel'));
+    assert.equal($('#detail_id').value, 'mine_beta');
+});
+
 k.test('duplicate-builtin', S_PAGE, 'Duplicate and edit on a built-in gives an ordinary personal prompt with its resolved name', async () => {
     await select('prompt_classify');
     await ctx.click($('#btnDetailDuplicateEdit'));
@@ -739,6 +869,28 @@ k.test('guard-new', S_PAGE, 'New goes through the guard as well', async () => {
     await dialogs.choose(GUARD[1]);
     assert.equal($('#detail_title').textContent, msg('customPrompts_new_prompt_title'));
     await ctx.click($('#btnDetailCancel'));
+});
+
+k.test('guard-escape', S_PAGE, 'Escape on the guard dialog is a Cancel: the user stays, the edits pending', async () => {
+    await typeIn($('#detail_name'), 'Alpha pending');
+    await ctx.click(rowOf('mine_beta'));
+    const dlg = dialogs.open();
+    assert.ok(dlg, 'no dialog');
+    dlg.dispatchEvent(new ctx.window.Event('cancel', { cancelable: true }));
+    await ctx.settle();
+    assert.equal(dialogs.open(), null);
+    assert.equal($('#detail_id').value, 'mine_alpha');
+    assert.equal($('#detail_name').value, 'Alpha pending');
+});
+
+k.test('guard-table-edit', S_PAGE, 'the table view\'s Edit goes through the guard too', async () => {
+    await ctx.click($('#btnViewTable'));
+    await ctx.click(rowOf('mine_beta').querySelector('.btnRowEdit'));
+    assert.deepEqual(dialogs.labels(), GUARD);
+    await dialogs.choose(GUARD[1]);
+    assert.equal($('#detail_id').value, 'mine_beta');
+    assert.ok($('#prompts_card').classList.contains('view-split'));
+    assert.equal(storedOf('mine_alpha').name, 'Alpha renamed');
 });
 
 // ---- Menu position, from this side -----------------------------------------------------------

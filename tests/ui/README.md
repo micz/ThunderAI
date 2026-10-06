@@ -41,7 +41,7 @@ tests/
 │   ├── feature-page.mjs          the six feature pages' shared scenarios (connection panel, editor, guard)
 │   ├── calendar-task.mjs         the Calendar Event / Task pages' timezone and reminder tests
 │   ├── page-stubs.mjs            what jsdom lacks on the prompt management pages: <dialog>, innerText,
-│   │                             the import file picker, the exported file, a one-off confirm()
+│   │                             execCommand, the import file picker, the exported file, a one-off confirm()
 │   ├── 01-window-position.test.mjs        level 1: a page rule that lives in a shared module
 │   └── 99-harness-known-issues.test.mjs   level 1: the known-issue shape
 └── dom/<page>/ui-NN-<scenario>.dom.mjs     the tests, one file per initial state of a page
@@ -76,10 +76,11 @@ A new file only for a genuinely different initial state.
 | `dom/get-calendar-event/ui-01-settings` | get-calendar-event | spec 05 "Feature Flags" (`calendar_no_selection` reloads the menus; switching it on refused, and Save refused, without the body placeholder; the clipboard switch and its permission, granted and refused), "Timezone Select" (generated labels, offset order, Tom Select settings, a known stored zone, a pick stored as the id), "Reminder Section" + spec 02 "Calendar event / task: reminder (#887)" (placement, the rules with their own Save, the preview of format and rules, the warning), spec 02 "Calendar event / task: link to the original email" (the switch, unprefixed); the editor saves both calendar prompts |
 | `dom/get-calendar-event/ui-02-own-integration` | get-calendar-event | also "Timezone Select": no zone stored, no red border |
 | `dom/get-task/ui-01-settings` | get-task | as the calendar page, for the task: an unknown stored zone gets its fallback option, `task_append_email_link` |
-| `dom/customprompts/ui-01-prompts` | customprompts | spec 05 "Manage Custom Prompts Page (`pages/customprompts/`)": the list (System / Personal badges, padlock, Open / Edit, resolved names, the one-line preview, menu and action labels, the option chips, the count), keyboard selection, the search (name, resolved built-in name, id, text; marks, "shown of total", the badge, no match, clear; not List.js' `search` class), the view switch and `custom_prompts_view`, the row menu (items per prompt kind, closing on overlay / Esc / search / view switch / scroll / resize, upward for the last rows), Edit from the table, a built-in read-only (banner, fields, flags: only `need_custom_text`, saved at once), a personal prompt (buttons, the diff viewer only with "substitute text", the flag rings, dirty / Cancel, validation, Save and its status), the mirror repainted on fill, the [API] disclosure and its Reset, New (ID from the name, Cancel, Save after the last position, the search cleared), Duplicate / Duplicate and edit, Delete (confirmed, cancelled, from the row menu), the dirty guard (Cancel / Discard / Apply, invalid Apply, New, Import), the Custom Data PH button, Export (one / all, with and without API settings), Import (refused, merged and saved at once, invalid files), a failed write; spec 02 "Custom Prompts" (no idnum, no built-in in `_custom_prompt`; an imported legacy `enabled: 0`), "The five boolean flags are normalized on read" (numbers from the editor), "Per-Prompt API Override Properties" (the export without API settings), "Menu Order Page (`pages/menu_order/`)" (the "Menu position" button: stash + new tab, or focus + message); spec 03 "Invalid placeholder feedback" (read mode and the edit-mode mirror, the repaint on a type change), "Placeholder Autocomplete" (the type read through the getter) |
+| `dom/customprompts/ui-01-prompts` | customprompts | spec 05 "Manage Custom Prompts Page (`pages/customprompts/`)": the list (its id order, the first row shown on arrival, System / Personal badges, padlock, Open / Edit, resolved names, the one-line preview, menu and action labels, the option chips, the count), keyboard selection, the search (name, resolved built-in name, id, text; marks, "shown of total", the badge, no match, clear; not List.js' `search` class), the view switch and `custom_prompts_view`, the row menu (items per prompt kind, closing on overlay / Esc / search / view switch / scroll / resize, upward for the last rows), Edit from the table, a built-in read-only (banner, fields, flags: only `need_custom_text`, saved at once), a personal prompt (buttons, the diff viewer only with "substitute text", the flag rings, dirty / Cancel, validation, Save and its status), the mirror repainted on fill, the [API] disclosure and its Reset, New (ID from the name, Cancel, Save after the last position, the search cleared), Duplicate / Duplicate and edit (a second copy's id made unique), Delete (confirmed, cancelled, from the row menu), the dirty guard (Cancel / Discard / Apply, Escape, invalid Apply, New, Import, the table's Edit), the newline stored as `
+`, the Custom Data PH button, Export (one / all, with and without API settings), Import (refused, merged and saved at once, invalid files), a failed write; spec 02 "Custom Prompts" (no idnum, no built-in in `_custom_prompt`; an imported legacy `enabled: 0`), "The five boolean flags are normalized on read" (numbers from the editor), "Per-Prompt API Override Properties" (the export without API settings), "Menu Order Page (`pages/menu_order/`)" (the "Menu position" button: stash + new tab, or focus + message); spec 03 "Invalid placeholder feedback" (read mode and the edit-mode mirror, the repaint on a type change), "Placeholder Autocomplete" (the type read through the getter, substring and prefix-first matching with the bold run, the ARIA attributes, the arrows wrapping, Escape, Enter / Tab / mousedown replacing the whole token through `insertText`, the caret after a dynamic one), the unterminated `{%` and the token under the caret (open: exempt; closed: judged) |
 | `dom/customprompts/ui-02-table-chatgpt-web` | customprompts | spec 05 "Manage Custom Prompts Page": the stored table view, the [ChatGPT Web] disclosure (open with a model / project, gone while an api_type is set, offered closed on a new prompt, saved trimmed); spec 02 "Per-Prompt API Override Properties" (a built-in's override summarized with its localized label), "The five boolean flags are normalized on read" (a stored `need_custom_text: ""` shows the built-in's own "1") |
-| `dom/customdataplaceholders/ui-01-placeholders` | customdataplaceholders | spec 05 "Manage Data Placeholders Page (`pages/customdataplaceholders/`)": the rows (id without the prefix, chips in read mode, a legacy `<br>`, the enabled switch, the count), quiet at load, the add-form (New, its mirror, Add), Delete (confirmed, cancelled, after a Save All), the row editor (Edit with Confirm / Cancel as `flex`, Edit / Delete restored with `''`, Cancel, Confirm, the mirror and the autocomplete destroyed on exit), the enabled switch (a loaded row, a new row), Save All and its state, a failed Save All, the stored text, Export, Import (refused, invalid files); "Unsaved-Changes Guard" (this page's own beforeunload); spec 03 "Custom Placeholders" (the prefix, `is_default` / `is_dynamic` "0", `enabled`, the import merged on the prefixed id, an entry with no id skipped), "Placeholder Autocomplete" (the add-form's select, the row's own `.type_output`, built-ins only), "Invalid placeholder feedback" (a custom token is red here, the repaint on a type change, in the add-form and in a row) |
-| `dom/menu_order/ui-01-menu-order` | menu_order | spec 02 "Menu Order Page (`pages/menu_order/`)": the panels (Reading / Composing and their types, the context panel without type 2), Visible by position, Hidden alphabetically, "hidden everywhere", the exclusions, the badges and the legend, the icon picker (the first cell per prompt kind, Esc and outside mousedown, a pick marks unsaved and writes nothing, the other panel), the drag (rows not moved before the drop, the insertion line), the eight `show_in` transitions, the drop position, reordering, Save All (positions 1, 2, 3…, the three stores, the excluded specials written back, reload_menus, its state), a Save All failing halfway (the error, the button back, no reload over the pending changes), Reset all (in memory, factory order / visibility / icons, then saved), the cross-tab reload (an unrelated key, a prompt store), the `menu_order_highlight` deep-link (every instance, the tab dot, persistence, the sub-tab switch, cleared by a drag); spec 02 "Icon Resolution"; spec 05 "Unsaved-Changes Guard" (this page's own beforeunload) |
+| `dom/customdataplaceholders/ui-01-placeholders` | customdataplaceholders | spec 05 "Manage Data Placeholders Page (`pages/customdataplaceholders/`)": the rows (id without the prefix, chips in read mode, a legacy `<br>`, the enabled switch, the count), quiet at load, the add-form (New, its mirror, its validation, Add, closed by Save All), Delete (confirmed, cancelled, after a Save All), the row editor (Edit with Confirm / Cancel as `flex`, Edit / Delete restored with `''`, Cancel and its uppercased id, Confirm, the mirror and the autocomplete destroyed on exit), the enabled switch (a loaded row, a new row), Save All and its state, a failed Save All, the stored text, Export (what is stored, not a pending edit), Import (refused, invalid files); "Unsaved-Changes Guard" (this page's own beforeunload); spec 03 "Custom Placeholders" (the prefix, `is_default` / `is_dynamic` "0", `enabled`, the import merged on the prefixed id, an entry with no id skipped), "Placeholder Autocomplete" (the add-form's select, the row's own `.type_output`, built-ins only), "Invalid placeholder feedback" (a custom token is red here, the repaint on a type change, in the add-form and in a row) |
+| `dom/menu_order/ui-01-menu-order` | menu_order | spec 02 "Menu Order Page (`pages/menu_order/`)": the panels (Reading / Composing and their types, the context panel without type 2), Visible by position (a prompt with none last, a missing `position_context` ranked alphabetically at load), Hidden alphabetically, "hidden everywhere", the exclusions, the badges and the legend, the icon picker (the first cell per prompt kind, Esc and outside mousedown, a pick marks unsaved and writes nothing, the other panel), the drag (rows not moved before the drop, the insertion line, a release outside any list and a reorder inside Hidden marking the page unsaved), the eight `show_in` transitions, the drop position, reordering, Save All (positions 1, 2, 3…, the three stores, the excluded specials written back, reload_menus, its state), a Save All failing halfway (the error, the button back, no reload over the pending changes), Reset all (in memory, factory order / visibility / icons, then saved), the cross-tab reload (an unrelated key, a prompt store), the `menu_order_highlight` deep-link (its reload dropping the pending changes and the dirty state, every instance, the tab dot, persistence, the sub-tab switch, cleared by a drag); spec 02 "Icon Resolution"; spec 05 "Unsaved-Changes Guard" (this page's own beforeunload) |
 | `dom/menu_order/ui-02-deeplink-stash` | menu_order | spec 02 "Menu Order Page (`pages/menu_order/`)": the `menu_order_highlight_target` stashed in `storage.session` by "Menu position" (read after the initial load and deleted, the prompt highlighted, Composing selected for a composing-only one, nothing pending) |
 | `ui/01-window-position` | — (level 1) | spec 05 "UI & Feature Preferences", rows `chatgpt_win_top` / `chatgpt_win_left`: `toWindowCoordinate()` / `getSavedWindowPosition()` (0 and negatives are positions, `''` / `null` / `NaN` are not, both coordinates needed), and the background's `applyWindowPositionAndSize()` reading through them (checked in the source: `mzta-background.js` cannot be imported) |
 | `ui/99-harness-known-issues` | — | the known-issue shape (level 1) |
@@ -134,6 +135,9 @@ On the prompt management pages (`ui/page-stubs.mjs`, each installed by the one f
 - **`innerText`** (`stubInnerText(ctx)`): jsdom does not implement it, and the Data Placeholders rows
   read and write their cells with it. For the plain inline spans involved Firefox returns their text,
   so the stub maps it to `textContent`.
+- **`document.execCommand()`** (`stubExecCommand(ctx)`): jsdom does not implement it. The autocomplete
+  inserts with `execCommand('insertText')` and falls back to `setRangeText()` plus an `input` event when it
+  returns `false`; the stub records the call and returns `false`, so the fallback runs.
 - **The import file picker** (`pickFile(ctx, trigger, content, done)`): the pages create an
   `<input type="file">`, `click()` it and wait for `change`. The stub answers the next such click with a
   jsdom `File`, then settles until `done()` holds (the page reads it with a `FileReader`, which
@@ -172,9 +176,13 @@ that section. `validateKnown()` refuses a page with no `ui-` file, a section not
 `spec NN "<section>"`, a case id that is a pattern or names no existing file, a case listed under two
 sections, and an empty reason; `ui/99-harness-known-issues` runs it.
 
-**Today there is none.** The six that group C found (the Data Placeholders page storing the chip markup
-and a stale `enabled`, ignoring the switch of a new row and losing Delete after a Save All; the Menu
-Order icon shown in one panel only) were fixed in the pages, and spec 02 / 05 now state the behaviour.
+**Today there is none.** Two found on customprompts were the spec's wording, now corrected in spec 03:
+the caret after a completed dynamic placeholder (after the colon, before `%}`) and the exemption of the
+token under the caret (only an open token being typed).
+
+The six that group C found first (the Data Placeholders page storing the chip markup and a stale
+`enabled`, ignoring the switch of a new row, losing Delete after a Save All; the Menu Order icon shown in
+one panel only) were fixed in the pages, and spec 02 / 05 state the behaviour.
 
 ## What is not covered
 
@@ -219,40 +227,8 @@ Order icon shown in one panel only) were fixed in the pages, and spec 02 / 05 no
 What the pages do that no spec states, listed instead of tested: the area does not invent rules from
 what a page happens to do.
 
-None for the options page and the six feature settings pages: every behaviour the area found on them
-is now in spec 05 (or spec 08), decided case by case.
-
-**customprompts**
-
-- Which prompt the detail pane shows on arrival: the first visible row. The spec says nothing.
-- The order of the list (by id, from `getPromptsForManagement()`).
-- How a newline is stored in a prompt's text: the editor reads `<br>` as a newline and saves `\n`.
-- The id of a copy is `<id>_<copy_text>` with no uniqueness suffix: a second copy of the same prompt
-  starts with a taken id and is refused by Save until renamed (the ID-from-the-name rule adds `_2`, `_3`,
-  this one does not).
-
-**customdataplaceholders**
-
-- The add-form's validation: id required, no whitespace, not already used; name and text required; the
-  red / green borders and the disabled Add. The form's own label says "Must be unique, lowercase and
-  without spaces"; the spec states none of it. The "already used" check compares the typed id as typed
-  (`Sig` passes next to `sig`, then is lowercased on Add).
-- Cancel puts the id back into its input **uppercased** (`toLocaleUpperCase()`); it shows only at the
-  next Edit, and OK lowercases it again.
-- Save All also closes and empties the add-form, discarding a new placeholder being typed.
-- Import is not saved at once (unlike Custom Prompts): it waits for Save All, with an orange status.
-- Export All exports what is stored, not the list on screen: a pending edit is not in the file.
-- The row is built by concatenating the values into markup (`value="…"`, `<textarea>…</textarea>`): a
-  name with `"` or a text with `</textarea>` breaks the row. The spec rules out values parsed as markup on
-  the Custom Prompts page only.
-
-**menu_order**
-
-- A Visible prompt with no stored position (the special prompts, on a profile where nothing was saved):
-  it is listed last. A missing `position_context` is assigned at load, by the alphabetical rank among all
-  the prompts.
-- The `menu_order_highlight` reload discards the page's unsaved changes **without** `markSaved()`: the red
-  banner, Save All and the beforeunload warning go on reporting changes that are gone. The spec has the
-  storage reload call `markSaved()` for this very reason, and says nothing of the deep-link one.
-- A reorder inside Hidden ("has no effect") and a drag released outside any list both mark the page
-  unsaved.
+None today. What the area found on the options page and the six feature settings pages is in spec 05
+(or 08); what it found on the three prompt management pages is in spec 05 ("Manage Custom Prompts
+Page": order and arrival, newlines; "Manage Data Placeholders Page": the add-form, Import and Export, the
+known quirks) and spec 02 ("Menu Order Page": prompts with no position, what marks the page unsaved),
+or was fixed (the deep-link reload now calls `markSaved()`; a copy's id is made unique).

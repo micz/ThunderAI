@@ -157,6 +157,27 @@ k.test('form-invalid', S_INVALID, 'the add-form: a custom data placeholder token
     assert.equal(mirrorChip(form.text(), '{%mail_folder_name%}').classList.contains('ph_chip_invalid'), false);
 });
 
+k.test('form-validation', S_PAGE, 'Add is enabled only for an id that is set, has no space and is not listed (as typed), with a name and a text', async () => {
+    const add = $('#btnAddNew');
+    await typeIn(form.name(), 'A name');
+    await typeIn(form.text(), 'A text');
+    for (const bad of ['', 'two words', 'sig']) {
+        await typeIn(form.id(), bad);
+        assert.equal(add.disabled, true, JSON.stringify(bad));
+        assert.equal(form.id().style.borderColor, 'red', JSON.stringify(bad));
+    }
+    await typeIn(form.id(), 'Sig');
+    assert.equal(add.disabled, false, 'the check is on the id as typed');
+    assert.equal(form.id().style.borderColor, 'green');
+    await typeIn(form.name(), '  ');
+    assert.equal(add.disabled, true, 'a blank name');
+    assert.equal(form.name().style.borderColor, 'red');
+    await typeIn(form.name(), 'A name');
+    await typeIn(form.text(), '');
+    assert.equal(add.disabled, true, 'an empty text');
+    assert.equal(form.text().style.borderColor, 'red');
+});
+
 k.test('add', S_PAGE, 'Add puts the new row in the list, closes and clears the form, and marks the page unsaved', async () => {
     await typeIn(form.id(), 'Greet');
     await typeIn(form.name(), 'Greeting');
@@ -217,6 +238,15 @@ k.test('save-error', S_PAGE, 'a failed Save All says so in red, gives the button
     assert.equal($('#btnSaveAll').disabled, false, 'no way to try again');
     assert.equal(leaveBlocked(ctx), true, 'the pending changes can be lost without a warning');
     assert.equal(storedOf('greet'), undefined);
+});
+
+k.test('save-all-closes-form', S_PAGE, 'Save All also closes and empties the add-form', async () => {
+    await ctx.click($('#btnNew'));
+    await typeIn(form.id(), 'draft');
+    await saveAll();
+    assert.equal($('#formNew').style.display, 'none');
+    assert.equal(form.id().value, '');
+    assert.equal(storedOf('draft'), undefined);
 });
 
 k.test('save-all', S_CUSTOM, 'Save All stores every placeholder with the thunderai_custom_ prefix, is_default and is_dynamic "0"', async () => {
@@ -307,6 +337,10 @@ k.test('edit-cancel', S_PAGE, 'Cancel restores the row as it was, back in read m
     assert.deepEqual(ctx.localWrites(since), []);
 });
 
+k.test('cancel-id-uppercased', S_PAGE, 'Cancel puts the id back into its (hidden) input uppercased', () => {
+    assert.equal(rowOf('sig').querySelector('.id_output').value, 'SIG');
+});
+
 k.test('edit-confirm', S_PAGE, 'Confirm updates the row in place, chips included, back in read mode, and marks the page unsaved', async () => {
     const r = rowOf('sig');
     await ctx.click(btn(r, 'btnEditItem'));
@@ -314,6 +348,7 @@ k.test('edit-confirm', S_PAGE, 'Confirm updates the row in place, chips included
     await typeIn(r.querySelector('.text_output'), 'Kind regards\n{%author%} & {%mail_subject%}');
     await choose(r.querySelector('.type_output'), '1');
     await ctx.click(btn(r, 'btnConfirmItem'));
+    assert.equal(r.querySelector('.id_show').textContent, 'sig', 'OK did not lowercase the id again');
     assert.equal(r.querySelector('.name_show').textContent, 'Signature 2');
     assert.equal(r.querySelector('.text_show').textContent, 'Kind regards\n{%author%} & {%mail_subject%}');
     assert.deepEqual([...r.querySelectorAll('.text_show .ph_chip')].map(c => c.textContent), ['{%author%}', '{%mail_subject%}']);
@@ -380,6 +415,16 @@ k.test('export', S_PAGE, 'Export All downloads a file the import accepts, with t
     assert.equal(opts.saveAs, true);
     assert.equal(json.id, 'thunderai-custom-data-placeholders');
     assert.deepEqual(json.customdataplaceholders.map(p => p.id).sort(), stored().map(p => p.id).sort());
+});
+
+k.test('export-stored-only', S_PAGE, 'Export All writes what is stored: a pending edit is not in the file', async () => {
+    const r = rowOf('off');
+    await ctx.click(btn(r, 'btnEditItem'));
+    await typeIn(r.querySelector('.name_output'), 'Pending name');
+    await ctx.click(btn(r, 'btnConfirmItem'));
+    await ctx.click($('#btnExportAll'));
+    const { json } = await lastDownload(ctx);
+    assert.equal(json.customdataplaceholders.find(p => p.id === 'thunderai_custom_off').name, 'Disabled one');
 });
 
 const FILE = JSON.stringify({ id: 'thunderai-custom-data-placeholders', addon_version: '1', customdataplaceholders: [

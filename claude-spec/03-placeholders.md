@@ -384,7 +384,8 @@ used: it discards the native undo stack and fires no `input` event, which leaves
 mirror painting stale text while the caret advances over glyphs that never get repainted. For the same
 reason the list items handle **`mousedown` with `preventDefault()`**, not `click` — a click lets the
 textarea lose focus and collapse its selection before the insertion runs. Completing a dynamic
-placeholder leaves the caret before the trailing `:%}` so the value can be typed immediately.
+placeholder leaves the caret after the colon, before the closing `%}` (`{%additional_text:|%}`), so the
+value can be typed immediately.
 
 **Positioning.** The dropdown is `position: fixed` and placed at the caret by JS. Fixed, not absolute:
 on the two table pages an absolutely positioned list is clipped by the surrounding `<td>`. The caret
@@ -557,8 +558,10 @@ are viewport coordinates, so the mirror's scroll offset needs no correction.
 that no longer exists; the next `mousemove` re-reads it. Read mode needs none of this — there the chips
 are the hovered elements, which is why `.ph_chip_invalid_read` can simply set `cursor: help`.
 
-**The token under the caret is never flagged.** Typing `{%mail_su` would otherwise flash a warning on
-every keystroke. `chip()` reads `textarea.selectionStart/End` live rather than taking an offset argument,
+**The token being typed is never flagged.** Typing `{%mail_su` would otherwise flash a warning on
+every keystroke. The exemption covers only an **open** token (no closing `%}` yet) with the caret inside
+it: a complete token is judged as soon as it is closed, so an unknown `{%no_such_ph%}` is red even with
+the caret inside it. `chip()` reads `textarea.selectionStart/End` live rather than taking an offset argument,
 because the ordinary repaint path (`refresh()`, on every `input`) passes none.
 
 **Re-validation on type change.** Validity depends on the prompt type, and the mirror caches its render,

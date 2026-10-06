@@ -126,6 +126,25 @@ k.test('visible-by-position', S_MO, 'Visible follows the position (position_disp
     assert.ok(ids.indexOf('prompt_classify') < ids.indexOf('c_read'), 'position 6 after position 100');
 });
 
+k.test('no-position-last', S_MO, 'a Visible prompt with no position is listed after every positioned one', async () => {
+    const m = await model();
+    const has = id => m[id].position_display !== undefined && m[id].position_display !== '';
+    const ids = idsIn('popup_list');
+    const firstMissing = ids.findIndex(id => !has(id));
+    assert.ok(firstMissing > 0, 'precondition: a prompt with no position_display is listed');
+    assert.ok(ids.slice(firstMissing).every(id => !has(id)), ids.join());
+});
+
+k.test('context-position-at-load', S_MO, 'a missing position_context is the alphabetical rank among all the listed prompts', async () => {
+    const m = await model();
+    const names = new Map(LISTS.flatMap(l => ctx.$$('#' + l + ' > li').map(li => [li.dataset.id, nameOf(li)])));
+    const rank = new Map([...names.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([id], i) => [id, i + 1]));
+    const pos = id => (m[id].position_context === undefined || m[id].position_context === '') ? rank.get(id) : Number(m[id].position_context);
+    const ids = idsIn('context_list');
+    assert.deepEqual(ids, [...ids].sort((a, b) => pos(a) - pos(b)));
+    assert.ok(ids.indexOf('prompt_summarize') < ids.indexOf('c_read'), 'a special prompt with no position after position 100');
+});
+
 k.test('hidden-alphabetical', S_MO, 'Hidden is sorted alphabetically by the displayed name', () => {
     for (const list of ['popup_list_hidden', 'context_list_hidden']) {
         const names = ctx.$$('#' + list + ' > li').map(nameOf);
@@ -381,6 +400,23 @@ k.test('save-state', S_MO, 'after Save All: reload_menus sent, the saved status 
     assert.equal(leaveBlocked(ctx), false);
 });
 
+k.test('drag-marks-unsaved', S_MO, 'a drag released outside any list, and a reorder inside Hidden, mark the page unsaved', async () => {
+    assert.equal($('#btnSaveAll').disabled, true, 'precondition: nothing pending');
+    const before = idsIn('popup_list');
+    const li = rowIn('popup_list', 'prompt_reply');
+    li.dispatchEvent(dragEvent('dragstart', -1));
+    li.dispatchEvent(dragEvent('dragend', -1));
+    await ctx.settle();
+    assert.deepEqual(idsIn('popup_list'), before);
+    assert.equal($('#btnSaveAll').disabled, false, 'outside any list');
+    await ctx.click($('#btnSaveAll'));
+    assert.equal($('#btnSaveAll').disabled, true);
+    const hiddenRow = ctx.$$('#popup_list_hidden > li').at(-1).dataset.id;
+    await drag('popup_list_hidden', hiddenRow, 'popup_list_hidden', 'top');
+    assert.equal($('#btnSaveAll').disabled, false, 'inside Hidden');
+    await ctx.click($('#btnSaveAll'));
+});
+
 // ---- Reset all -------------------------------------------------------------------------------
 
 k.test('reset-in-memory', S_MO, 'Reset all asks nothing, writes nothing, and marks the page unsaved', async () => {
@@ -441,6 +477,18 @@ k.test('cross-tab-reload', S_MO, 'a prompt store written elsewhere reloads the p
 // ---- the "Menu position" deep-link -----------------------------------------------------------
 
 const highlighted = () => ctx.$$('.sortable_item.mzta_highlight').map(li => li.parentElement.id + ':' + li.dataset.id);
+
+k.test('deeplink-discards-pending', S_MO, 'the deep-link reload drops the pending changes and the dirty state with them', async () => {
+    const before = idsIn('popup_list');
+    await drag('popup_list', before[0], 'popup_list', 'end');
+    assert.equal($('#btnSaveAll').disabled, false);
+    await ctx.ctl.dispatchMessage({ command: 'menu_order_highlight', promptId: 'prompt_classify' }, {});
+    await ctx.settle();
+    assert.deepEqual(idsIn('popup_list'), before, 'the pending reorder survived the reload');
+    assert.equal($('#btnSaveAll').disabled, true);
+    assert.equal($('#msgDisplay').textContent, '');
+    assert.equal(leaveBlocked(ctx), false, 'still warning about changes thrown away');
+});
 
 k.test('deeplink-all-instances', S_MO, 'menu_order_highlight highlights every instance of the prompt, in both panels', async () => {
     await ctx.ctl.dispatchMessage({ command: 'menu_order_highlight', promptId: 'prompt_classify' }, {});

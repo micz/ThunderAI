@@ -1265,6 +1265,11 @@ function promptIdFromName(name) {
     const taken = new Set(promptsList.items
         .filter(it => it !== self)
         .map(it => String(it.values().id).toLowerCase()));
+    return uniquePromptId(base, taken);
+}
+
+// `base`, or `base_2`, `base_3`, ... : the first one not in `taken` (a Set of lowercase ids).
+function uniquePromptId(base, taken) {
     let id = base;
     for (let n = 2; taken.has(id); n++) id = base + '_' + n;
     return id;
@@ -1371,7 +1376,10 @@ async function duplicatePrompt(item) {
     const seed = JSON.parse(JSON.stringify(v));
     // Flags inherited from policy state or ownership must not ride along into the copy.
     ['idnum', 'is_default', 'is_org', 'is_special', '_shadowed_by_org', '_inert_by_policy', '_default_inert_by_policy'].forEach(k => delete seed[k]);
-    seed.id = cleanString(v.id) + '_' + copyText;
+    // Unique among the listed prompts, as the ID derived from a name is: a second copy of
+    // the same prompt gets _2, a third _3, ... instead of an id Save would refuse.
+    seed.id = uniquePromptId((cleanString(v.id) + '_' + copyText).toLowerCase(),
+        new Set(promptsList.items.map(it => String(it.values().id).toLowerCase())));
     seed.name = resolvePromptName(v.name) + ' (' + copyText + ')';
     startNewPrompt(seed);
 }

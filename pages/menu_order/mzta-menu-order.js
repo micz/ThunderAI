@@ -85,6 +85,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     browser.runtime.onMessage.addListener((message) => {
         if (message && message.command === 'menu_order_highlight') {
             clearTimeout(reloadDebounce);
+            // The reload discards any unsaved change, as the storage reloader does: drop
+            // the dirty state with it, or the page would go on warning about changes it
+            // has just thrown away.
+            markSaved();
             (async () => {
                 await loadAndRender();
                 highlightPrompt(message.promptId);

@@ -37,6 +37,17 @@ export function stubDialogs(ctx) {
     };
 }
 
+/**
+ * document.execCommand(): jsdom does not implement it. The autocomplete inserts a suggestion with
+ * execCommand('insertText') and falls back to setRangeText() + an `input` event when it returns
+ * false; the stub records the call and returns false, so the fallback runs. Returns the calls.
+ */
+export function stubExecCommand(ctx) {
+    const calls = [];
+    ctx.document.execCommand = (...args) => { calls.push(args); return false; };
+    return calls;
+}
+
 /** innerText as Firefox gives it for the plain inline spans the pages use: their text. */
 export function stubInnerText(ctx) {
     Object.defineProperty(ctx.window.HTMLElement.prototype, 'innerText', {
