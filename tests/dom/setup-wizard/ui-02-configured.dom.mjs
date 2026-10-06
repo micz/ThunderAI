@@ -9,7 +9,7 @@
 // Panel — Advanced Options Disclosure" (JSON field validation on restore, which names the
 // wizard). Spec 04 "Anthropic / Claude (`anthropic_api`)", "OpenAI API (`chatgpt_api`)" and "Ollama
 // (`ollama_api`)": the per-model availability computed after the restore, the three call sites
-// the spec lists for the wizard (`anthropic_effort` filled; the OpenAI fields gated by the stored
+// the spec lists for the wizard (`anthropic_effort` filled; a stored thinking budget checked; the OpenAI fields gated by the stored
 // model and format; the Ollama capability probe for the stored host and model).
 
 import {
@@ -35,6 +35,8 @@ const STORED = {
     ...WEB,
     // malformed: must be flagged at load without being touched
     chatgpt_extra_body: '{"a": 1,',
+    // not below anthropic_max_tokens (8000): must be flagged at load too
+    anthropic_extended_thinking_budget: 9000,
     add_tags: true,
     summarize: true,
     translate: false,
@@ -123,6 +125,16 @@ k.test('openai-gated', S_OPENAI, 'after the restore the OpenAI fields follow the
 k.test('ollama-probed', S_OLLAMA, 'after the restore the stored Ollama host and model are probed for their capabilities', () => {
     assert.ok(ctx.fetchCalls.some(c => c.url === STORED.ollama_host + '/api/show'),
         ctx.fetchCalls.map(c => c.url).join(', '));
+});
+
+k.test('budget-on-restore', S_CLAUDE, 'a stored thinking budget not below max_tokens is flagged at load, with its reason', () => {
+    // claude-sonnet-4-5 takes a budget, so the field is enabled and checked
+    const field = $('#anthropic_extended_thinking_budget');
+    assert.equal(field.disabled, false);
+    assert.match(field.style.border, /red/);
+    const box = $('#anthropic_extended_thinking_budget_error');
+    assert.equal(box.hidden, false);
+    assert.equal(box.textContent, msg('anthropic_warn_thinking_budget_max', '8000'));
 });
 
 // ---- changes -----------------------------------------------------------------------------
