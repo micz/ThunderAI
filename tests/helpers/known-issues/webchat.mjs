@@ -40,6 +40,13 @@ const CASE_RE = /^(\d\d)-[a-z0-9][a-z0-9-]*$/;
 
 /** The known issues, by spec section and case id. */
 export const KNOWN = {
+    'spec 01 "The rich-text layer — `js/lib/mzta-html-lines.js` (classic) + `js/mzta-richtext.js` (module)"': {
+        '10-copy-plain': 'Copy turns each <br> into a real newline. The answer is markdown-it output, which '
+            + 'writes `<br>\\n`: htmlToPlainText() (api_webchat/messagesArea.js) turns the <br> into a newline '
+            + 'AND keeps the source newline after it, so every line break of the answer is copied as a blank '
+            + 'line ("Dear Bob,\\n\\nTom..."), indistinguishable from a paragraph break. stripHtmlKeepLines() '
+            + 'consumes that newline for the same reason (spec 01 "Writing into a plain text compose window").',
+    },
 };
 
 /** [the NN of each webchat-NN- file of tests/dom/webchat/]. */

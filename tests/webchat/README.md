@@ -37,7 +37,7 @@ The area is built group by group:
 |---|---|---|
 | A | start-up and the background protocol | done (`webchat-01` to `04`) |
 | B | rendering the stream | done (`webchat-05` to `09`) |
-| C | actions on an answer | to do |
+| C | actions on an answer | done (`webchat-10` to `12`) |
 | D | the diff picker (spec 07) | to do |
 
 ## Layout
@@ -80,6 +80,9 @@ one did (each file says so).
 | `dom/webchat/webchat-07-errors-stop` | spec 04 "Automatic Retry Handling" (`newRetryAttempt` in the pill: the HTTP 503, 429 and network wordings, the waiting icon kept, Stop visible; `requestAborted`: the "Request cancelled." notice and the input usable, the pill and its countdown gone; the `api_retry_after_hint` paragraph), spec 01 "Streaming data flow" (Stop posts `{type: "stop"}` and disables itself; an error mid-stream in a turn of its own, the input usable; Stop mid-stream then `tokensDone`), "Streaming: re-render the whole accumulated raw each time" (the next answer is not a continuation of the interrupted one), "Transcript DOM contract" (the error turn's Close-only bar, removed with no toolbar by the next answer) |
 | `dom/webchat/webchat-08-usage` | spec 04 "Rendering in the chat window" (nothing while streaming; the chip at `tokensDone`, last before Close, outside `.message`, marked `data-mzta-usage`; "711 tokens" / "42 output tokens" / the duration as a static label; the button's ARIA; the popover rows in order, a null omitted, a reported 0 printed, the duration and its rate; closing on a second click, Escape with the focus back, a pointerdown outside; one open at a time; the session total, and none on an earlier answer's snapshot; the chip moved, same node, into the compact toolbar), "Emitting to the chat window" (one usage per turn; one arriving with no open turn dropped and not counted), "Context window" (OpenAI: the count alone) |
 | `dom/webchat/webchat-09-usage-context` | spec 04 "Context window" (Ollama's `ollama_num_ctx` first, so no request; looked up after the first completed answer and shown by the popover of that answer, built before it), "Rendering in the chat window" (`820 / 1,000 · 82%`, the warn style and the note at 80% or more, none below; the provider's `tokens_per_second`, rounded) |
+| `dom/webchat/webchat-10-reply` | spec 01 "The rich-text layer" closing paragraphs (each button closes over its own answer's snapshot; Copy writes plain text, entities decoded, a `<br>` one newline, a paragraph a blank line; Copy does not close the window and says it copied), "Transcript DOM contract" (the full bar and `.sel_info` on the newest answer, the compact toolbar - Copy, Use this answer, the chip - on earlier ones, never both; the toolbar acting on its own answer; Close; the action awaited, then `chatgpt_close`), "Files" (`<split-button>`: the reply-type dropdown, opened by its toggle, closed by Escape with the focus back and by a click outside); spec 05 "UI & Feature Preferences" (`reply_type`: the main button replies with the stored type, named on its second line; the dropdown with the other); spec 04 "Rendering in the chat window" (the chip not in what Copy writes) |
+| `dom/webchat/webchat-11-compose` | spec 07 "Scope" (the compose-window case, `mailMessageId` -1: the action forced to a replace, `chatgpt_replaceSelectedText`, never a reply); spec 01 "Files" (no reply type, so a standalone button with no dropdown), "Transcript DOM contract" (`.sel_info`; an earlier answer's toolbar replacing with its own answer) |
+| `dom/webchat/webchat-12-summary` | spec 01 "The rich-text layer" closing paragraphs and "Transcript DOM contract" (a summary session, action "0": no "use this answer"; Save as Summary sends `chatgpt_saveSummary` with the answer snapshot and the message's `headerMessageId`, then closes the window); spec 04 "Rendering in the chat window" (Copy, Save as Summary, the chip, Close) |
 | `webchat/99-harness-known-issues` | the known-issue shape (level 1) |
 
 ## The fake Worker
@@ -207,8 +210,18 @@ section. `validateKnown()` refuses a section not of the form `spec NN "<section>
 hold quotes), a case id that is a pattern or names no existing file, a case listed under two sections,
 and an empty reason; `webchat/99-harness-known-issues` runs it.
 
-**Today there is none.** Group B found none: the sanitizer held against every payload, whole and cut
-mid-tag. What group A found was fixed in the window, and the specs state the behaviour:
+**Today there is one**, found by group C:
+
+- spec 01 "The rich-text layer" (`10-copy-plain`): Copy turns each `<br>` into a real newline, but the
+  answer is markdown-it output, which writes `<br>
+`, and `htmlToPlainText()`
+  (`api_webchat/messagesArea.js`) keeps the source newline after the `<br>` as well: every line break
+  of the answer is copied as a blank line, indistinguishable from a paragraph break.
+  `stripHtmlKeepLines()` consumes that newline for the same reason (spec 01 "Writing into a plain text
+  compose window").
+
+Group B found none: the sanitizer held against every payload, whole and cut mid-tag. What group A
+found was fixed in the window, and the specs state the behaviour:
 the startup notice escapes every value, a thinking-only answer shows its thinking block, the prompt
 name is decoded once (a `%` no longer breaks the window, and the Custom Prompts editor refuses it),
 the input stays usable after an error, and the header shows the model and the API only.
@@ -223,6 +236,15 @@ the input stays usable after an error, and the header shows the model and the AP
 - **The fade of the "done" pill** (3.5 s, then 0.5 s): timers longer than 1 s are not waited for by
   `settle()`.
 - **The real model workers**: the api area's business.
+- **A text selection inside the answer** ("Every one of those buttons honours a text selection"): the
+  answers live in `<messages-area>`'s shadow root, and jsdom refuses to add to the document's
+  selection a range whose nodes are inside a shadow tree (Gecko accepts it, spec 07 "Selection inside
+  the shadow root"). So "use this answer", Copy and Save as Summary are tested on the whole answer
+  only, and the usage chip's scrubbing out of a selection (`_cloneSelectionWithoutUsage()`) is not
+  reached.
+- **Copy's fallback** (a hidden textarea and `document.execCommand('copy')` when the clipboard API
+  rejects), and the button's label going back to "Copy" after 1.5 s (a timer `settle()` does not wait
+  for).
 - **The retry countdown ticking down** (a real 250 ms interval): the tests check the text it starts
   with, and that `requestAborted` stops it; the pill returning to "waiting" at zero is not waited for.
 - **The context window from a provider's API** (Ollama's `/api/ps` and `/api/show`, Gemini's
@@ -242,6 +264,14 @@ What the window does that no spec states, listed instead of tested:
   does not say what should happen.
 - **The model chip's exact wording** ("prompt name | model"): the spec says only that the header shows
   the model and the API.
+- **The fields of the action commands beyond the text**: the `tabId` and `mailMessageId` of
+  `chatgpt_replyMessage` / `chatgpt_replaceSelectedText`, and the `tabId` of `chatgpt_saveSummary`
+  (`summaryTabId`, else the prompt's tab). The spec names the commands and says they act on the
+  answer snapshot; what identifies the target is not stated.
+- **The quotes stripped from the snapshot**: the window removes a `"` opening or closing the answer
+  (also `<p>&quot;` … `&quot;</p>`) before the buttons close over it.
+- **What the compact toolbar of a summary session holds**: Copy only (no Save as Summary); the spec
+  describes the toolbar as the bar's icons, without listing them per session kind.
 - **Line breaks of the first prompt**: `sendPrompt()` turns every `\n` into `<br>` before posting it to
   the worker, while a typed message keeps its `\n` (and shows on one line in its bubble). Under review;
   `webchat-01` asserts only the words of the prompt.
