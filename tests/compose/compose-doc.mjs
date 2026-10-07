@@ -69,6 +69,15 @@ export function plainTextComposeHtml({ typed = false } = {}) {
 }
 
 /**
+ * The body of a live message display, captured (tests/fixtures/compose/captured/<name>, a <body>
+ * read with tabs.executeScript), as a document.
+ */
+export function liveCaptureHtml(name) {
+    const body = readFileSync(repoPath('tests/fixtures/compose/captured/' + name), 'utf8').trim();
+    return '<!DOCTYPE html><html><head></head>' + body + '</html>';
+}
+
+/**
  * Open a mail document with the content scripts loaded.
  *
  * @param {object} o

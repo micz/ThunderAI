@@ -21,7 +21,7 @@ node --test tests/compose/99-harness-known-issues.test.mjs   # level 1: the know
 |---|---|---|
 | `compose-01-html-reply-captured` | the captured HTML reply, reopened in a compose window | **A**: typed / quoted / body text and HTML of a real draft (serializer indentation included); a panel drawn in the compose body is never read back |
 | `compose-02-html-reply-paragraph` | an HTML reply in Paragraph mode | **A**: exact typed / quoted / body text, the raw join rule, selection twins, mid-tag selection, autoselect ranges |
-| `compose-03-html-bodytext-new` | a new message in Body Text mode, with signature | **A**: `<br>` lines, the bogus trailing `<br>`, the signature; the generating panels where the own message is unknown |
+| `compose-03-html-bodytext-new` | a live HTML compose window in Body Text mode, captured: a new message with typed lines and an Outlook-made signature | **A**: the window's shape (lines straight in the body), the typed text stopping at the signature, the body text; the generating panels where the own message is unknown |
 | `compose-04-plaintext-read` | a live plain text compose window, captured (a reply, nothing typed) | **A**: the window's shape (pre-wrap body, top-level `<br>`), the quoted text with its `> ` lines and the signature, the body text, the html twin, a selection |
 | `compose-05-html-write` | as 02 | **B**: `replaceSelectedText` into HTML: nodes through a fragment, no nested `<body>`, none skipped, the rest untouched, `compose_reloadBody` |
 | `compose-06-plaintext-write` | as 04 | **B**: `replaceSelectedText` into plain text: one `Text` node, markup kept literal, `compose_reloadBody` flagged plain |
@@ -33,10 +33,13 @@ node --test tests/compose/99-harness-known-issues.test.mjs   # level 1: the know
 | `compose-12-dialogs` | the captured mail in the message display | **D**: the `getTags` confirmation dialog (exclusions, exact match, hiding, lock) and `sendAlert` |
 | `compose-13-reinjected` | a message display holding a previous instance's panels | **D**: the stale generating panels removed when the script is injected again |
 | `compose-14-plaintext-typed` | as 04, with three typed lines and a blank line | **A**: the typed lines' contract, the body text, the autoselect range |
+| `compose-15-display-live` | a live message display, captured: an HTML mail | **A**: the display's shape (header table, `div.moz-text-html`), the body text of indented source, the HTML without the header |
+| `compose-16-display-bodytext-reply` | a live message display, captured: a reply written in Body Text mode | **A**: as 15, with citation, quote and a nested signature |
+| `compose-17-display-bodytext-new` | a live message display, captured: a new message written in Body Text mode | **A**: as 15; the last line followed straight by the signature `<div>` |
 
 `99-harness-known-issues.test.mjs` (level 1) checks the known-issue file itself.
 
-Run time: one document per file, many tests on it (14 jsdom processes). Run alone, the
+Run time: one document per file, many tests on it (17 jsdom processes). Run alone, the
 area takes about 58 s one file at a time and about 23 s with `--test-concurrency=4`.
 
 ## The core entry point: `openDocument()`
@@ -80,9 +83,10 @@ In `tests/fixtures/compose/`:
 | `captured/mail_html_compose_signature_quote_text.txt` | **captured**: an HTML reply draft as Thunderbird saved it (Paragraph mode, quote, signature). Opened as the compose body, its serializer indentation included, as a reopened draft holds it |
 | `captured/plaintext_compose_body_live.html` | **captured**: the `<body>` of a live plain text compose window, a reply with quote and signature and nothing typed, read with `tabs.executeScript(tab.id, {code: 'document.body.outerHTML'})` from the add-on's background console. Anonymized |
 | `plaintext-compose-typed.json` | derived from the live capture: three typed lines and a blank line, in the capture's own shape (top-level text and `<br>`) |
-| `captured/mail_html_reading.txt` | **captured**: an HTML mail. Its bytes are ISO-8859-1 although its header says `charset=utf-8` (re-saved after anonymizing): `readCapture()` decodes it as latin1. Its body is put in `div.moz-text-html`, the message display's wrapper, written by hand |
+| `captured/mail_html_reading.txt` | **captured**: an HTML mail. Its bytes are ISO-8859-1 although its header says `charset=utf-8` (re-saved after anonymizing): `readCapture()` decodes it as latin1. Its body is put in `div.moz-text-html lang="x-unicode"`, the message display's wrapper, written by hand and confirmed by the live captures below |
+| `captured/html_display_live.html`, `captured/html_compose_bodytext_reply_live.html`, `captured/html_compose_bodytext_new_live.html` | **captured**: the `<body>` of three live message displays (an HTML mail; a reply and a new message written in Body Text mode, opened from the sent folder), read with `tabs.executeScript(tab.id, {code: 'document.body.outerHTML'})` on the `mail` tab. Saved as UTF-8 with LF, the console's quotes removed. Not compose windows |
+| `captured/html_compose_bodytext_window_live.html` | **captured**: the `<body>` of a live HTML compose window in Body Text mode, a new message with three typed lines and the identity's signature, read with `tabs.executeScript` on the `messageCompose` tab and anonymized in the browser before the copy (every text but the typed lines turned to `x`, image sources and links replaced). Outlook's random `OWA…` link ids are left as they were |
 | `html-compose-paragraph-reply.json` | hand-written: the captured reply's structure without the indentation, plus a non-breaking space, a Shift+Enter `<br>` and a second quoted line |
-| `html-compose-bodytext-new.json` | hand-written: Body Text mode as spec 07 describes it (`<br>` lines in one `<div>`, the bogus trailing `<br>`), the captured signature block |
 | `html-display-newsletter.json` | hand-written: every shape the extraction rules of spec 01 / 03 name; `text_body` is the expected text, written from those rules |
 | `sanitizer-payloads.json` | hand-written: the payloads below |
 

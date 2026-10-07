@@ -1,4 +1,0 @@
-{
-    "source": "Hand-written. A new message in an HTML compose window in Body Text mode, with the identity's signature. Spec 07 'Line breaks: <br> is a block separator': Body Text mode 'separates lines with <br> inside one <div>'; spec 01 'The compose-extraction newline contract': the editor ends most lines with a bogus trailing <br>. A blank line is two <br>. The signature block is the capture's (captured/mail_html_compose_signature_quote_text.txt): div.moz-signature with '-- <br>'.",
-    "html": "<!DOCTYPE html><html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></head><body><div>Hello Bob,<br><br>see you<br>tomorrow.<br></div><div class=\"moz-signature\">-- <br>This is my <b>best</b> signature!!!</div></body></html>"
-}

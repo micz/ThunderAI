@@ -419,7 +419,12 @@ Two details are load-bearing:
 segments to one `<p>` per paragraph — so `buildBlockPairs` pairs nothing and every hunk reads as
 changed. Two live producers hit exactly that shape:
 
-- Thunderbird's HTML compose **"Body Text"** mode separates lines with `<br>` inside one `<div>`.
+- Thunderbird's HTML compose **"Body Text"** mode separates lines with `<br>`, with **no** wrapper:
+  the lines are text and `<br>` directly in the body, the last one followed straight by the signature
+  `<div>` with no bogus `<br>` (captured from a live compose window:
+  `tests/fixtures/compose/captured/html_compose_bodytext_window_live.html`; a message written that way
+  shows the same once sent, straight in `div.moz-text-html`). This used to say "inside one `<div>`";
+  the segmenter handles both.
 - `getMailInlineTextParts()` in `js/mzta-utils.js` builds the html of a **text/plain-only mail**
   from the plain part's `\n` via `mztaLinesToHtml(text, { mode: 'br' })`.
 
