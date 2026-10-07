@@ -186,18 +186,24 @@ browser.runtime.onMessage.addListener((message, sender) => {
 // and the two migrations guarded by them must be skipped rather than re-run destructively.
 const _prefs_migration_ok = await migratePrefsToLocal();
 
+// A failed migration must never stop the add-on from starting: this is the top level, where a
+// rejection would abort everything below it (menus, listeners), at every start. So each
+// migration that can reject is awaited with a .catch() that only logs. Its one-shot flag is
+// written only on success, so it simply runs again at the next start. migratePrefsToLocal(),
+// isSyncDrained() and migrateOllamaThinkLevel() catch their own failures.
+//
 // Once storage.sync is drained these two have nothing left to find, and each would otherwise
 // pay a storage.sync.get() at every startup forever. The other two migrations below are NOT
 // skipped this way: they work on storage.local data and own their own flags, so they must be
 // allowed to decide for themselves.
 if (!await isSyncDrained()) {
-    await migrateCustomPromptsStorage();
-    await migrateDefaultPromptsPropStorage();
+    await migrateCustomPromptsStorage().catch(e => console.error("[ThunderAI] migrateCustomPromptsStorage error: " + e));
+    await migrateDefaultPromptsPropStorage().catch(e => console.error("[ThunderAI] migrateDefaultPromptsPropStorage error: " + e));
 }
-if (_prefs_migration_ok) await migrateEnabledToShowIn();
+if (_prefs_migration_ok) await migrateEnabledToShowIn().catch(e => console.error("[ThunderAI] migrateEnabledToShowIn error: " + e));
 // Reads the user's stored calendar_no_selection, so it needs the sync copy to be in place
 // for the same reason as the migration above.
-if (_prefs_migration_ok) await migrateCalendarNoSelection();
+if (_prefs_migration_ok) await migrateCalendarNoSelection().catch(e => console.error("[ThunderAI] migrateCalendarNoSelection error: " + e));
 // Converts the global ollama_think from the old boolean checkbox to the level format.
 // Guarded by _prefs_migration_ok for the same reason as the line above: its own one-shot
 // flag lives in storage.local, and reading it before the copy succeeded would find the
@@ -2747,7 +2753,9 @@ setupPermissionsRemovedListener();
 // Menus handling
 // Guarded: see _prefs_migration_ok above. Running this with the flag missing would
 // renumber every prompt and discard the user's custom menu ordering.
-if (_prefs_migration_ok) await migrateMenuOrderAlphabetic();
+// Never fatal either, like the migration block above: on failure its flag stays unset and it
+// runs again at the next start.
+if (_prefs_migration_ok) await migrateMenuOrderAlphabetic().catch(e => console.error("[ThunderAI] migrateMenuOrderAlphabetic error: " + e));
 const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
 await menus.loadMenus(await _computeActiveSpecialIds());
 

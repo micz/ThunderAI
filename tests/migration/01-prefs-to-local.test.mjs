@@ -37,6 +37,9 @@ const starts = {
     upgrade: startup({ run, sync: P.sync, local: P.local }),
     fresh: startup({ run, sync: {}, local: {} }),
     steady: startup({ run, sync: P.sync, local: { ...P.local, ...P.sync, [MARKER]: true } }),
+    // Back from a downgrade: the older version changed settings in sync after the upgrade.
+    downgraded: startup({ run, sync: { ...P.sync, connection_type: 'ollama_api', chatgpt_model: 'changed-while-downgraded' },
+        local: { ...P.local, ...P.sync, [MARKER]: true } }),
     conflict: startup({ run, sync: { a: 'sync', b: 'sync', c: 'sync', d: 'sync', e: 'sync' },
         local: { a: 'local', b: false, c: 0, d: null, e: '' } }),
     types: startup({ run, sync: TYPES, local: {} }),
@@ -124,6 +127,14 @@ k.test('steady-single-read', 'once migrated, a start costs a single-key read of 
     assert.equal(r.calls[0].area, 'local');
     assert.equal(r.calls[0].op, 'get');
     assert.deepEqual(keyNames(r.calls[0].keys), [MARKER]);
+});
+
+k.test('downgraded-changes-stay', 'settings changed in sync while downgraded are not carried back, deliberately', async () => {
+    const r = await starts.downgraded;
+    assert.equal(r.value, true);
+    assert.equal(r.local.connection_type, P.sync.connection_type);
+    assert.equal(r.local.chatgpt_model, P.sync.chatgpt_model);
+    assert.deepEqual(writesOf(r.calls), []);
 });
 
 // --- Conflicts and values ----------------------------------------------------------------------------

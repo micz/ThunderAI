@@ -1,7 +1,8 @@
 // isSyncDrained() (js/mzta-prefs-migration.js), from spec 05 (opening paragraph): it reads the
 // marker _prefs_migrated_from_sync, which means "storage.sync is drained", not merely "the
 // preferences were copied", and lets mzta-background.js skip the two #129 migrations. It is
-// therefore false while the marker is withheld (a payload still in sync).
+// therefore false while the marker is withheld (a payload still in sync), and false whenever the
+// marker cannot be confirmed - not true, or the read failing - never true on a failure.
 
 import assert from 'node:assert/strict';
 import { caseTests } from '../helpers/known-issues/migration.mjs';
@@ -20,6 +21,8 @@ const P = profile('5.0');
 
 const starts = {
     marked: startup({ run, sync: P.sync, local: { [MARKER]: true } }),
+    notTrue: startup({ run, sync: P.sync, local: { [MARKER]: 'true' } }),
+    unreadable: startup({ run, sync: P.sync, local: { [MARKER]: true }, faults: [{ area: 'local', op: 'get' }] }),
     unmarked: startup({ run, sync: P.sync, local: P.local }),
     // After the preference copy of a pre-#129 profile: the marker is withheld.
     withheld: (async () => {
@@ -53,6 +56,17 @@ k.test('withheld', 'false while a #129 payload is still in sync (the #129 migrat
 k.test('upgraded', 'true right after a 5.0.x upgrade, whose sync holds no payload', async () => {
     const r = await starts.upgraded;
     assert.equal(r.value, true);
+});
+
+k.test('not-true', 'false for a marker that is not the boolean true', async () => {
+    const r = await starts.notTrue;
+    assert.equal(r.value, false);
+});
+
+k.test('unreadable', 'false, without throwing, when the marker cannot be read', async () => {
+    const r = await starts.unreadable;
+    assert.equal(r.error, null);
+    assert.equal(r.value, false);
 });
 
 k.test('single-read', 'it reads the one marker key of storage.local, never storage.sync, and writes nothing', async () => {

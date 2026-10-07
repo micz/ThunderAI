@@ -6,6 +6,10 @@
 // overwrite the user's custom menu ordering. So when the copy fails the migrations guarded by it
 // must be SKIPPED, not re-run destructively - and the next start, with storage working again,
 // must end where a clean upgrade ends. Nothing the user configured may be lost on the way.
+//
+// Spec 05 "Overview": a failed migration never stops the add-on from starting. The sequence must
+// complete (no rejection escapes the cut block, which in mzta-background.js would abort the rest
+// of the startup), and a failed migration runs again at the next start.
 
 import assert from 'node:assert/strict';
 import { caseTests } from '../helpers/known-issues/migration.mjs';
@@ -46,6 +50,14 @@ oldClean2.catch(() => {});
 
 // storage.sync.get() keeps failing.
 const syncAlways = startup({ run, sync: P.sync, local: P.local, faults: [{ area: 'sync', op: 'get', count: Infinity }] });
+
+// The oldest profile, where every migration has work: the copy lands, then every later write of
+// storage.local fails - the #129 moves, the enabled and calendar migrations, the menu order one.
+const laterWrites = startup({ run, sync: OLD.sync, local: OLD.local, faults: [{ area: 'local', op: 'set', nth: 2, count: Infinity }] });
+const laterRetry = laterWrites.then(r => startup({ run, sync: r.sync, local: r.local }));
+const laterThird = laterRetry.then(r => startup({ run, sync: r.sync, local: r.local }));
+laterRetry.catch(() => {});
+laterThird.catch(() => {});
 
 // --- The copy's write fails ----------------------------------------------------------------------
 
@@ -105,6 +117,12 @@ k.test('sync-once-converges', 'two more starts end where two clean starts end', 
 
 // --- storage.sync keeps failing ------------------------------------------------------------------
 
+k.test('sync-always-starts', 'storage.sync unreadable at every call: the sequence still completes', async () => {
+    const r = await syncAlways;
+    assert.equal(r.error, null);
+    assert.ok(r.logs.some(e => e.level === 'error' && /migrateCustomPromptsStorage/.test(e.msg)), 'the failure is logged');
+});
+
 k.test('sync-always-nothing-lost', 'storage.sync unreadable at every call: nothing in storage.local is touched', async () => {
     const r = await syncAlways;
     assert.deepEqual(r.local, P.local);
@@ -113,6 +131,29 @@ k.test('sync-always-nothing-lost', 'storage.sync unreadable at every call: nothi
 k.test('sync-always-guarded-skipped', 'storage.sync unreadable: the guarded migrations do not run', async () => {
     const r = await syncAlways;
     for (const flag of GUARDED_FLAGS) assert.ok(!(flag in r.local), flag + ' written');
+});
+
+// --- Every write after the copy fails --------------------------------------------------------------
+
+k.test('later-writes-start', 'every write after the copy fails: the sequence still completes', async () => {
+    const r = await laterWrites;
+    assert.equal(r.error, null);
+    assert.equal(r.value._prefs_migration_ok, true);
+});
+
+k.test('later-writes-nothing-lost', 'every write after the copy fails: the payloads are still in sync, unchanged', async () => {
+    const r = await laterWrites;
+    for (const key of ['_custom_prompt', '_default_prompts_properties']) assert.deepEqual(r.sync[key], OLD.sync[key], key);
+    assert.deepEqual(r.local._special_prompts, OLD.local._special_prompts);
+});
+
+k.test('later-writes-converge', 'the failed migrations run again: two more starts end where two clean starts end', async () => {
+    const r = await laterThird;
+    assert.equal(r.error, null);
+    const ref = await oldClean2;
+    const strip = local => { const o = { ...local }; delete o[MARKER]; return o; };
+    assert.deepEqual(strip(r.local), strip(ref.local));
+    assert.deepEqual(r.sync, ref.sync);
 });
 
 k.coverage();

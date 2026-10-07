@@ -46,13 +46,13 @@ mock's options. The run takes about 15 s, most of it spent in the interruption t
 
 | File | Covers | Spec |
 |---|---|---|
-| `01-prefs-to-local` | `migratePrefsToLocal()` alone: an upgrade from 5.0.x, a fresh install, the steady state (one single-key read), a key in both areas, every value type, keys absent from `prefs_default`, the one-shot flags carried across, the payloads left to #129, the marker withheld and then set, a failing `sync.get()` / `local.set()` / `local.get()` | 05 "Overview", 01 "Storage", 05 `dynamic_menu_order_alphabet` row |
-| `02-sync-drained` | `isSyncDrained()` | 05 "Overview" |
+| `01-prefs-to-local` | `migratePrefsToLocal()` alone: an upgrade from 5.0.x, a fresh install, the steady state (one single-key read), a key in both areas, every value type, keys absent from `prefs_default`, the one-shot flags carried across, the payloads left to #129, the marker withheld and then set, settings changed while downgraded not carried back, a failing `sync.get()` / `local.set()` / `local.get()` | 05 "Overview", 01 "Storage", 05 `dynamic_menu_order_alphabet` row |
+| `02-sync-drained` | `isSyncDrained()`, including a marker that is not `true` and one that cannot be read | 05 "Overview" |
 | `03-ollama-think` | `migrateOllamaThinkLevel()`: boolean to level, level kept, unset kept, global only, its flag, idempotence | 04 (Ollama `think`) |
 | `04-prompts-129` | the two #129 migrations: copy then remove, a local copy kept with the stale sync copy removed, nothing to do | 01 "Storage", 05 "Preference access" |
 | `05-calendar-no-selection` | `migrateCalendarNoSelection()`: the stored `need_selected` × the stored preference, with the behaviour read back through `getSpecialPrompts()`; its flag | 05 `calendar_no_selection` row, 08 "Interaction points" |
 | `10-sequence-upgrade` | **the sequence** on a 5.0.x profile: the upgrade end to end, then a second and a third start (nothing written, `storage.sync` never touched) | all of the above |
-| `11-sequence-failure` | the sequence when the preference copy fails: the guarded migrations skipped, nothing lost, and the next start ending where a clean upgrade ends | 05 / 02 (the one-shot flags) |
+| `11-sequence-failure` | the sequence when storage fails: the copy failing (the guarded migrations skipped), `storage.sync` unreadable at every call, every write after the copy failing. Each time the sequence completes (the add-on starts), nothing is lost, and the next starts end where clean starts end | 05 "Overview" / 02 (the one-shot flags) |
 | `12-sequence-partial` | the sequence from partial states: the oldest (pre-#129) profile over three starts, a payload in both areas, and **Thunderbird closing at each storage write of the first start in turn**, followed by normal starts | 05 "Overview", 01, 02 |
 | `20-captured` | the sequence on every real `storage.sync` dump of `fixtures/migration/captured/` | as `10` |
 | `99-harness-known-issues` | the shape of `helpers/known-issues/migration.mjs` | harness |
@@ -91,9 +91,11 @@ that order themselves, because they would then test the copy. Instead, `sequence
    are resolved from the file's own `import` statements and imported, in the worker, from the real
    modules.
 
-Today the cut is seven statements: lines 187–205 (the copy, the `isSyncDrained()`-guarded #129
-pair, the three `_prefs_migration_ok`-guarded migrations), the policy load at line 269, and the
-guarded `migrateMenuOrderAlphabetic()` at line 2750. A migration added, moved or re-guarded in the
+Today the cut is seven statements: the migration block near the top (the copy, the
+`isSyncDrained()`-guarded #129 pair, the three `_prefs_migration_ok`-guarded migrations), the policy
+load, and the guarded `migrateMenuOrderAlphabetic()` just before the menus are loaded. Each
+migration that can reject is awaited with a `.catch()` that logs (spec 05 "Overview"); the cut runs
+that too, so a failure inside one shows as a completed sequence, as in Thunderbird. A migration added, moved or re-guarded in the
 file is run as it then stands. `99-harness-sequence` pins the splitter on small cases and checks that
 the cut of the real file calls each migration exactly once.
 
@@ -160,8 +162,6 @@ None today.
   `PREFS_INIT_KEYS`, `_reconcileFeatureFlags()` (which can switch a feature flag off at every start,
   after the migrations), `reload_pref_init()`, the startup warnings and the menu setup. They are not
   migrations; `_reconcileFeatureFlags()` is the one that can change a preference.
-- **What happens after the cut block rejects.** In the real file a rejection of a top-level `await`
-  aborts the rest of the background's startup. Here the start just reports `error`.
 - **A managed policy.** Every start runs with none. The policy interactions of the migrations are
   spec 08 and belong to the managed area. Spec 08 "Why the migration is not guarded" states that a
   pre-5.0 profile not yet migrated, with a policy installed, gets the user's prior value back when
@@ -178,22 +178,8 @@ None today.
 
 Where the spec says nothing, the behaviour is listed here, not pinned by a test:
 
-- **`storage.sync` that keeps failing.** `migratePrefsToLocal()` catches its failure, but
-  `migrateCustomPromptsStorage()` then calls `storage.sync.get()` with no `try`, so the cut block
-  rejects (`11-sequence-failure` checks only that nothing is lost). In Thunderbird the top-level
-  `await` would abort the whole background startup: no menus, no listeners after that point, and the
-  same at every start until `storage.sync` reads again. The same holds for any rejection inside
-  `migrateCalendarNoSelection()`, `migrateEnabledToShowIn()` and `migrateMenuOrderAlphabetic()`.
-  The spec says nothing on whether a migration failure may stop the add-on from starting.
-- **Settings changed while downgraded.** The sync copy is left so that a downgrade "still finds the
-  user's settings" (spec 05). After a downgrade, the older version shows the settings as they were
-  at the upgrade, not the ones changed under 5.1. On a later re-upgrade, the marker is already set,
-  so whatever the user changed while downgraded (written to sync) never reaches `storage.local`.
-  The spec does not say which should win.
 - **A stored calendar prompt with no `need_selected` field.** Which behaviour it had before the
   upgrade, and so what the alignment should give, is not stated.
-- **`isSyncDrained()` when the marker cannot be read.** It answers `false`, which lets the #129
-  migrations run their own checks. The spec does not say.
 - **The fields the alphabetic migration adds.** `migrateMenuOrderAlphabetic()` saves the prompts from
   the normalized view, so a custom prompt gains fields at their defaults (`api_type: ''`,
   `use_diff_viewer: '0'`…). No stored value changes, and `12-sequence-partial` checks exactly that.
