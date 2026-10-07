@@ -45,7 +45,6 @@ const TEXT = 'Buongiorno,\necco il riepilogo della settimana. Tutto procede seco
 const read = async () => ({
     text: cleanupNewlines(await send(ctx, { command: 'getTextOnly' })),
     html: await send(ctx, { command: 'getFullHtml' }),
-    raw: await send(ctx, { command: 'getText' }),
 });
 const bodyHtml = ctx.document.body.innerHTML;
 let before;
@@ -87,10 +86,6 @@ k.test('text-body-skips-injected', S_BODY, 'the body text reads the mail only', 
 
 k.test('full-html-skips-injected', S_TEXT_HTML, 'the HTML body carries none of the add-on\'s elements', async () => {
     assert.equal(await send(ctx, { command: 'getFullHtml' }), before.html);
-});
-
-k.test('get-text-skips-injected', S_TEXT_HTML, 'getText, the other text reading, reads the mail only', async () => {
-    assert.equal(await send(ctx, { command: 'getText' }), before.raw);
 });
 
 k.test('harness-clean', S_PATH, 'the content script ran on modelled APIs only', () => {

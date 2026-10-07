@@ -108,10 +108,9 @@ k.test('style-gone', S_INJECT, '<style> in the head or the body is not read', ()
         'text');
 });
 
-k.test('moz-main-header', S_PARTS, 'the moz-main-header table of a forwarded message is not read', () => {
-    const t = htmlBodyToPlainText('<div>Fwd</div><table class="moz-main-header"><tr><td>Subject: Old</td></tr></table><p>Body</p>');
-    assert.ok(!t.includes('Subject: Old'), t);
-    assert.ok(t.split('\n').includes('Body'), t);
+k.test('moz-main-header', S_PARTS, 'the header block of a forwarded message - the moz-main-header table and the DIVs right before it - is not read', () => {
+    assert.equal(htmlBodyToPlainText('<p>Kept</p><div>Fwd</div><div>Fwd 2</div>'
+        + '<table class="moz-main-header"><tr><td>Subject: Old</td></tr></table><p>Body</p>'), 'Kept\nBody');
 });
 
 const HIDDEN = ['display:none', 'display: none', 'DISPLAY : NONE', 'display:none !important', 'display: none;',

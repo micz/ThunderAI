@@ -1,6 +1,15 @@
 {
-    "source": "Hand-written. An HTML mail in the message display, holding every shape spec 01 / 03 name for the text extraction: a <style> block, a newsletter preheader hidden with the spaced 'display: none', the hidden attribute, 'visibility:hidden', an upper-case 'DISPLAY:NONE !important', the vendor longhand 'mso-hide:all;-x-display:none' (NOT hidden), Outlook/Word compact paragraphs (p.MsoNormal with <o:p>) and an empty spacer paragraph, a non-breaking space, a <br>, a table, a list, an <hr> and a <script>. The message display wraps an HTML body in div.moz-text-html (Thunderbird's own wrapper, written by hand here: no live capture of it yet).",
-    "mail_html": "<style>p{color:red}.MsoNormal{margin:0}</style><span style=\"display: none; max-height: 0\">Preheader: 50% off today only</span><div hidden>Hidden attr text</div><p style=\"color:#333; visibility:hidden\">Invisible paragraph</p><p class=MsoNormal>Dear customer,<o:p></o:p></p><p class=MsoNormal><o:p>&nbsp;</o:p></p><p class=MsoNormal>Your&nbsp;order<br>has shipped.</p><table><tr><td>Item</td><td>Qty</td></tr><tr><td>Book</td><td>2</td></tr></table><ul><li>First</li><li>Second</li></ul><div style=\"mso-hide:all;-x-display:none\">Vendor longhand stays</div><span style=\"DISPLAY:NONE !important\">Shouty hidden</span><hr><div>Footer line</div><script>var leaked = \"script text\";</script>",
-    "hidden_texts": ["Preheader: 50% off today only", "Hidden attr text", "Invisible paragraph", "Shouty hidden"],
-    "text_body": "Dear customer,\nYour order\nhas shipped.\nItem Qty\nBook 2\nFirst\nSecond\nVendor longhand stays\nFooter line"
+    "source": "Hand-written. An HTML mail in the message display, holding every shape spec 01 / 03 name for the text extraction: the header block of a forwarded message (a div, then table.moz-main-header, removed with the DIVs right before it - spec 01 \"Where the body comes from\"), a <style> block, a newsletter preheader hidden with the spaced 'display: none', the hidden attribute, 'visibility:hidden', an upper-case 'DISPLAY:NONE !important', the vendor longhand 'mso-hide:all;-x-display:none' (NOT hidden), Outlook/Word compact paragraphs (p.MsoNormal with <o:p>) and an empty spacer paragraph, a non-breaking space, a <br>, a table, a list, an <hr> and a <script>. The message display wraps an HTML body in div.moz-text-html (Thunderbird's own wrapper, written by hand here: no live capture of it yet).",
+    "mail_html": "<div class=\"moz-forward-header\">-------- Forwarded Message --------</div><table class=\"moz-main-header\"><tbody><tr><th>Subject: </th><td>Old subject</td></tr></tbody></table><style>p{color:red}.MsoNormal{margin:0}</style><span style=\"display: none; max-height: 0\">Preheader: 50% off today only</span><div hidden>Hidden attr text</div><p style=\"color:#333; visibility:hidden\">Invisible paragraph</p><p class=MsoNormal>Dear customer,<o:p></o:p></p><p class=MsoNormal><o:p>&nbsp;</o:p></p><p class=MsoNormal>Your&nbsp;order<br>has shipped.</p><table><tr><td>Item</td><td>Qty</td></tr><tr><td>Book</td><td>2</td></tr></table><ul><li>First</li><li>Second</li></ul><div style=\"mso-hide:all;-x-display:none\">Vendor longhand stays</div><span style=\"DISPLAY:NONE !important\">Shouty hidden</span><hr><div>Footer line</div><script>var leaked = \"script text\";</script>",
+    "hidden_texts": [
+        "Preheader: 50% off today only",
+        "Hidden attr text",
+        "Invisible paragraph",
+        "Shouty hidden"
+    ],
+    "text_body": "Dear customer,\nYour order\nhas shipped.\nItem Qty\nBook 2\nFirst\nSecond\nVendor longhand stays\nFooter line",
+    "header_texts": [
+        "Forwarded Message",
+        "Old subject"
+    ]
 }

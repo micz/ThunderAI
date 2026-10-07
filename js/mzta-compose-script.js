@@ -507,7 +507,20 @@ switch (message.command) {
         return Promise.resolve(false);
       }
     }
-    const r = sel.getRangeAt(0);
+    // No selection: once the user has confirmed, the answer goes at the start of the
+    // email, above everything but ThunderAI's own elements - wherever the cursor is,
+    // and with no cursor at all (no range, e.g. an editor never clicked into).
+    let r;
+    if (!force_insert) {
+      r = sel.getRangeAt(0);
+    } else {
+      r = document.createRange();
+      let first = document.body.firstChild;
+      while (first && isInjectedNode(first)) first = first.nextSibling;
+      if (first) r.setStartBefore(first);
+      else r.selectNodeContents(document.body);
+      r.collapse(true);
+    }
     r.deleteContents();
     if (message.isPlainText) {
       // In a plain text compose window the line breaks ARE the \n characters,
@@ -531,20 +544,6 @@ switch (message.command) {
     }
     browser.runtime.sendMessage({command: "compose_reloadBody", tabId: message.tabId, isPlainText: message.isPlainText === true});
     return Promise.resolve(true);
-  }
-
-  case "getText": {
-    let t = '';
-    const children = getTextBodyHtml().childNodes;
-    for (const node of children) {
-      if (node instanceof Element) {
-        if (node.classList.contains('moz-signature')) {
-          continue;
-        }
-      }
-      t += node.textContent;
-    }
-    return Promise.resolve(t);
   }
 
   case "getTextOnly": {

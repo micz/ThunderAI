@@ -284,7 +284,7 @@ k.test('generic-clear', S_GENERIC, 'clearGenericError / clearGenericInfo remove 
 
 // --- order -------------------------------------------------------------------------------------
 
-k.test('order', S_MODULES, 'whatever the arrival order: the spam badge first in the toolbar, the generic error first among the panels', async () => {
+k.test('order', S_MODULES, 'whatever the arrival order: toolbar spam, summary, translation; panels generic error, generic info, translation, summary', async () => {
     await send(ctx, { command: 'showTranslationButton', headerMessageId: ID });
     await send(ctx, { command: 'showSummaryButton', headerMessageId: ID });
     await send(ctx, { command: 'showSpamReport', data: { spamValue: 3, SpamThreshold: 70, explanation: 'ok', headerMessageId: ID } });
@@ -296,11 +296,33 @@ k.test('order', S_MODULES, 'whatever the arrival order: the spam badge first in 
     assert.deepEqual(toolbarIds(), ['mzta-toolbar-spam']);
     await send(ctx, { command: 'showTranslationButton', headerMessageId: ID });
     await send(ctx, { command: 'showSummaryButton', headerMessageId: ID });
-    assert.equal(toolbarIds()[0], 'mzta-toolbar-spam');
-    const panels = panelIds();
-    assert.equal(panels[0], 'mzta-generic-error', panels.join());
-    assert.deepEqual([...panels].sort(), ['mzta-generic-error', 'mzta-generic-info', 'mzta-summary-banner', 'mzta-translation-banner']);
+    assert.deepEqual(toolbarIds(), ['mzta-toolbar-spam', 'mzta-toolbar-summary', 'mzta-toolbar-translation']);
+    assert.deepEqual(panelIds(), ['mzta-generic-error', 'mzta-generic-info', 'mzta-translation-banner', 'mzta-summary-banner']);
     assert.equal(ctx.document.body.firstElementChild.id, 'mzta-container', 'above the mail');
+});
+
+const S_PANELS = 'spec 01 "The message-display panels and dialogs (`js/mzta-compose-script.js`)"';
+
+k.test('summary-button-webchat', S_PANELS, 'a summary button drawn for the webchat display mode triggers the webchat summary', async () => {
+    await summary();      // removes the summary button left by the order test
+    await send(ctx, { command: 'showSummaryButton', headerMessageId: ID, webchat: true });
+    await ctx.click($('#mzta-toolbar-summary'));
+    assert.equal($('#mzta-toolbar-summary'), null);
+    assert.deepEqual(sentCommands(ctx, 'triggerSummaryWebchat').map(m => m.headerMessageId), [ID]);
+});
+
+k.test('translation-skipped', S_PANELS, 'a skipped translation shows the "skipped" message, not a text', async () => {
+    await translation({ translated_text: 'should not show', translation_status: '-1' });
+    const banner = $('#mzta-translation-banner');
+    assert.ok(banner.textContent.includes(msg('translate_skipped')), banner.textContent);
+    assert.ok(!banner.textContent.includes('should not show'));
+});
+
+k.test('generic-prefix', S_PANELS, 'the generic panels read "[ThunderAI | source] message", "[ThunderAI] message" with no source', async () => {
+    await send(ctx, { command: 'showGenericError', data: { message: 'Tagging failed.', source: 'Add tags' } });
+    assert.ok($('#mzta-generic-error').textContent.includes('[ThunderAI | Add tags] Tagging failed.'));
+    await send(ctx, { command: 'showGenericInfo', data: { message: 'Done.' } });
+    assert.ok($('#mzta-generic-info').textContent.includes('[ThunderAI] Done.'));
 });
 
 k.test('harness-clean', S_SUMMARY, 'the content script ran on modelled APIs only', () => {

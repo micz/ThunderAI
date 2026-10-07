@@ -12,7 +12,10 @@
 
 import { after } from 'node:test';
 import assert from 'node:assert/strict';
-import { assertHarnessClean } from '../../helpers/core/dom-harness.mjs';
+import {
+    assertHarnessClean,
+    msg,
+} from '../../helpers/core/dom-harness.mjs';
 import { composeTests } from '../../helpers/known-issues/compose.mjs';
 import {
     DISPLAY_URL,
@@ -31,7 +34,10 @@ const ctx = await openMailDocument({
     html: '<!DOCTYPE html><html><head></head><body><div class="moz-text-html" lang="x-unicode">'
         + capture.body + '</div></body></html>',
     commands: {
-        addtags_get_exclusion_prefs: () => structuredClone(prefs),
+        addtags_get_exclusion_prefs: () => {
+            if (prefs === 'fail') throw new Error('background unreachable');
+            return structuredClone(prefs);
+        },
         addtags_set_exclusions: () => true,
         assign_tags: () => true,
     },
@@ -108,13 +114,34 @@ k.test('close-assigns-nothing', S_CONFIRM, 'closing the dialog assigns nothing',
     assert.equal(sentCommands(ctx, 'assign_tags').length, 1, 'only the submitted one');
 });
 
-// sendAlert: the user must see the message (spec 05 "Global Integration Settings": an alert
-// "instead of only logging"). The in-pane dialog of a mail tab, its titles and the alert() of other
-// tabs are not in the spec (README "Under-specified"): only what the user reads is checked.
-k.test('alert-text', S_CONFIRM, 'sendAlert shows the message to the user, as text', async () => {
+// sendAlert and the fallback of the tag dialog: spec 01 "The message-display panels and dialogs".
+const S_PANELS = 'spec 01 "The message-display panels and dialogs (`js/mzta-compose-script.js`)"';
+
+k.test('alert-in-pane', S_PANELS, 'sendAlert in a mail tab: an in-pane dialog with the warning title and the message as text, removed on Close', async () => {
     assert.equal(await send(ctx, { command: 'sendAlert', curr_tab_type: 'mail', message: '<b>Select</b> some text first.' }), true);
     assert.ok(dialog().textContent.includes('<b>Select</b> some text first.'));
     assert.equal(dialog().querySelector('.mzta_dialog_message b'), null);
+    assert.ok(dialog().textContent.includes(msg('thunderai_warning_title')));
+    await closeDialog();
+});
+
+k.test('alert-error-title', S_PANELS, 'an error alert carries the error title', async () => {
+    await send(ctx, { command: 'sendAlert', curr_tab_type: 'mail', is_error: true, message: 'Failed.' });
+    assert.ok(dialog().textContent.includes(msg('thunderai_error_title')));
+    await closeDialog();
+});
+
+k.test('alert-other-tab', S_PANELS, 'sendAlert in another tab: the window\'s alert(), no in-pane dialog', async () => {
+    assert.equal(await send(ctx, { command: 'sendAlert', curr_tab_type: 'messageDisplay', message: 'Plain alert.' }), true);
+    assert.deepEqual(ctx.dialogs.filter(d => d.kind === 'alert').map(d => d.args[0]), ['Plain alert.']);
+    assert.equal(dialog(), null);
+});
+
+k.test('prefs-fallback', S_PANELS, 'addtags_get_exclusion_prefs failing: the dialog still opens, with the defaults (no exclusion, not locked)', async () => {
+    await openTags(['Work', 'newsletter'], 'fail');
+    assert.deepEqual(checked(), ['Work', 'newsletter']);
+    assert.ok(dialog().querySelector('img.exclude-tag-icon'), 'not locked: the exclude icon is there');
+    assert.ok(ctx.con.entries.some(e => e.level === 'error'), 'the failure is logged');
     await closeDialog();
 });
 

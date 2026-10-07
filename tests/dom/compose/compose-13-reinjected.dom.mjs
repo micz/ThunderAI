@@ -5,7 +5,8 @@
 //
 // Spec 01 "Stale-result guard (rapid message switching)": "the one surviving document - an
 // already-open tab re-injected on extension reload - gets both generating panels removed when the
-// script loads". The spec says nothing of the other leftovers (README "Under-specified").
+// script loads"; "The message-display panels and dialogs": nothing else is removed, the new
+// instance draws into the same container.
 
 import { after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -39,6 +40,18 @@ const S_STALE = 'spec 01 "Stale-result guard (rapid message switching)"';
 k.test('spinners-removed', S_STALE, 'the re-injected script removes both generating panels at load', () => {
     assert.equal(ctx.$('#mzta-summary-generating'), null);
     assert.equal(ctx.$('#mzta-translation-generating'), null);
+});
+
+const S_PANELS = 'spec 01 "The message-display panels and dialogs (`js/mzta-compose-script.js`)"';
+
+k.test('rest-kept', S_PANELS, 'nothing else the previous instance drew is removed at load: its summary banner stays', () => {
+    assert.ok(ctx.$('#mzta-summary-banner').textContent.includes('Old summary.'));
+});
+
+k.test('rest-replaced', S_PANELS, 'the new instance replaces the old banner with its own: one banner', async () => {
+    await send(ctx, { command: 'showSummary', data: { summary: 'New summary.', headerMessageId: ID } });
+    assert.equal(ctx.$$('#mzta-summary-banner').length, 1);
+    assert.ok(ctx.$('#mzta-summary-banner').textContent.includes('New summary.'));
 });
 
 k.test('new-panel-draws', S_STALE, 'the new instance draws into the same container, once', async () => {

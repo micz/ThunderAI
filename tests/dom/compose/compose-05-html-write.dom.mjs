@@ -10,10 +10,15 @@
 
 import { after } from 'node:test';
 import assert from 'node:assert/strict';
-import { assertHarnessClean } from '../../helpers/core/dom-harness.mjs';
+import {
+    assertHarnessClean,
+    msg,
+} from '../../helpers/core/dom-harness.mjs';
 import { composeTests } from '../../helpers/known-issues/compose.mjs';
 import {
     COMPOSE_URL,
+    caretAfter,
+    clearSelection,
     fixture,
     openMailDocument,
     select,
@@ -79,6 +84,42 @@ k.test('quote-signature-untouched', S_WRITE, 'the quote and the signature are un
 
 k.test('one-reload-per-insert', S_WRITE, 'one compose_reloadBody per insertion, each for its tab', () => {
     assert.deepEqual(sentCommands(ctx, 'compose_reloadBody').map(m => m.tabId), [3, 5, 3]);
+});
+
+// No selection (spec 01 "Writing into a plain text compose window"): the user is asked
+// (Replace_No_Selected_Text); yes inserts at the start of the email, wherever the cursor is.
+const S_NOSEL = S_WRITE;
+const confirmWith = answer => {
+    const orig = globalThis.confirm;
+    globalThis.confirm = (...args) => { orig(...args); return answer; };
+    return () => { globalThis.confirm = orig; };
+};
+
+k.test('no-selection-declined', S_NOSEL, 'no selection, the user declines: nothing is inserted, no reload', async () => {
+    caretAfter(ctx, 'Here we use');
+    const before = ctx.document.body.innerHTML;
+    const reloads = sentCommands(ctx, 'compose_reloadBody').length;
+    const restore = confirmWith(false);
+    try {
+        assert.equal(await replace('<b>no</b>'), false);
+    } finally { restore(); }
+    assert.equal(ctx.dialogs.at(-1).args[0], msg('Replace_No_Selected_Text'));
+    assert.equal(ctx.document.body.innerHTML, before);
+    assert.equal(sentCommands(ctx, 'compose_reloadBody').length, reloads);
+});
+
+k.test('no-selection-at-start', S_NOSEL, 'no selection, the user accepts: the answer lands at the start of the email, not at the cursor', async () => {
+    caretAfter(ctx, 'Here we use');
+    const line = top()[1].innerHTML;
+    assert.equal(await replace('<p>START</p>'), true);
+    assert.equal(ctx.document.body.firstElementChild.outerHTML, '<p>START</p>');
+    assert.equal(top()[2].innerHTML, line, 'nothing inserted at the cursor');
+});
+
+k.test('no-cursor-at-start', S_NOSEL, 'no cursor at all: the answer lands at the start of the email', async () => {
+    clearSelection(ctx);
+    assert.equal(await replace('<p>TOP</p>'), true);
+    assert.equal(ctx.document.body.firstElementChild.outerHTML, '<p>TOP</p>');
 });
 
 k.test('harness-clean', S_WRITE, 'the content script ran on modelled APIs only', () => {

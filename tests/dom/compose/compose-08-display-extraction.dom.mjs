@@ -39,7 +39,8 @@ const k = composeTests('08');
 const S_BODY = 'spec 03 "Newline contract of the body placeholders"';
 const S_HIDDEN = 'spec 01 "Hidden elements — `mztaStripHidden()`, and why the attribute selector was wrong"';
 const S_TEXT_HTML = 'spec 01 "The text/HTML rule: stripped from the TEXT, never from the HTML"';
-const S_DETACHED = 'spec 01 "`getCleanBodyHtml()` returns a DETACHED clone, so `innerText` does not work there"';
+const S_PARTS = 'spec 01 "Where the body comes from — `listInlineTextParts()`, not a `getFull()` walk"';
+const S_DETACHED ='spec 01 "`getCleanBodyHtml()` returns a DETACHED clone, so `innerText` does not work there"';
 
 const textBody = async () => cleanupNewlines(await send(ctx, { command: 'getTextOnly' }));
 
@@ -61,10 +62,13 @@ k.test('style-script-not-in-text', S_DETACHED, 'the stylesheet rules and the scr
     assert.ok(!t.includes('color:red') && !t.includes('MsoNormal') && !t.includes('script text'), t);
 });
 
-k.test('get-text-hidden', S_TEXT_HTML, 'getText, the other text case, strips the hidden elements and <style>/<script> too', async () => {
-    const t = await send(ctx, { command: 'getText' });
-    for (const hidden of mail.hidden_texts) assert.ok(!t.includes(hidden), hidden);
-    assert.ok(!t.includes('color:red') && !t.includes('script text'), t);
+k.test('forward-header-gone', S_PARTS, 'the header block of a forwarded message (the moz-main-header table and the DIV before it) is in neither the text nor the HTML', async () => {
+    const t = await textBody();
+    const html = await send(ctx, { command: 'getFullHtml' });
+    for (const header of mail.header_texts) {
+        assert.ok(!t.includes(header), header + ' in the text');
+        assert.ok(!html.includes(header), header + ' in the HTML');
+    }
 });
 
 k.test('html-keeps-hidden', S_TEXT_HTML, 'the HTML body keeps the hidden markup', async () => {

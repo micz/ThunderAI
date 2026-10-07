@@ -161,7 +161,7 @@ What the area found was fixed, and the spec updated where it described the old b
 
 ## Under-specified
 
-What the code does that no spec states, listed instead of tested:
+What the code does that no spec states, listed instead of tested. None today: every item below was settled in the spec, then tested.
 
 1. *(resolved: spec 01 now states that HTML source whitespace is not line structure, in the shared
    projection and in the compose walkers; a line no longer starts with the indentation's space, and
@@ -171,22 +171,18 @@ What the code does that no spec states, listed instead of tested:
    citation and signature divs, the quote span. It used to say the lines were `\n` in the text nodes.)*
 3. *(resolved: spec 01 "The rich-text layer" now states that `getOnlyQuotedText` reads to the end of the
    body, the signature included, while `getOnlyTypedText` stops at it.)*
-4. **`getText`**: no spec, and `js/mzta-menus.js` does not send it. Only what spec 01 says of "the two
-   text cases" (hidden elements, `<style>`/`<script>` and the add-on's own elements removed) is tested.
-5. **`replaceSelectedText` with no selection**: it asks `confirm(Replace_No_Selected_Text)` and inserts
-   at the caret; with no range at all `getRangeAt(0)` throws.
-6. **`sendAlert`**: an in-pane dialog for `curr_tab_type: 'mail'` (a workaround for a Thunderbird
-   bug, says the code), `alert()` otherwise, and the error / warning titles. Only that the message
-   reaches the user, as text, is tested.
-7. **The order of the summary and the translation panels.** Spec 01 "Key Modules" lists "generic
-   error, spam explanation, summary, translation"; the code draws the translation above the summary
-   (`_PANEL_ORDER`), the generic info after the error, and the spam report is no longer a panel but the
-   toolbar badge. Tested: the badge first in the toolbar, the error first among the panels, the
-   container above the mail.
-8. **`moz-main-header`**: what is removed with the table (the `DIV`s before it), and that the
-   interactive path removes it too (`getCleanBodyHtml()`). Tested: the header's text is gone.
-9. **The webchat summary button** (`triggerSummaryWebchat`), the skipped translation
-   (`translation_status: '-1'`), the `[ThunderAI | source]` prefix of the generic panels, and the
-   fallback to defaults when `addtags_get_exclusion_prefs` fails.
-10. **What a re-injected script does with the rest of a previous instance's container** (a banner, the
-    toolbar): spec 01 names only the two generating panels.
+4. *(resolved: `getText`, which nothing sent, was removed from the compose script and from spec 01.)*
+5. *(resolved: spec 01 "Writing into a plain text compose window" now states the no-selection case: after
+   the confirmation the answer goes at the start of the email, wherever the cursor is, and also with no
+   range at all, which used to throw.)*
+6. *(resolved: spec 01 "The message-display panels and dialogs" now describes `sendAlert`: the in-pane
+   dialog of a mail tab and its titles, `alert()` elsewhere.)*
+7. *(resolved: spec 01 "Key Modules" and "The message-display panels and dialogs" now give the code's
+   order - toolbar spam, summary, translation; panels generic error, generic info, translation,
+   summary - and the tests check it exactly.)*
+8. *(resolved: spec 01 "Where the body comes from" now says what is removed with the
+   `moz-main-header` table, on both paths, from the text and the HTML.)*
+9. *(resolved: spec 01 "The message-display panels and dialogs" now covers the webchat summary button,
+   the skipped translation, the generic panels' prefix and the tag dialog's fallback.)*
+10. *(resolved: same section: a re-injected script removes only the generating panels and draws into
+    the same container.)*

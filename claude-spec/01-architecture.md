@@ -720,6 +720,42 @@ own `.catch(() => {})`, which is the same quiet drop. (The generating-panel send
 trigger/refresh handlers go to `sender.tab` but use `sendTabMessageSafe()` anyway: they are
 not awaited, so a rejection would otherwise surface as unhandled.)
 
+### The message-display panels and dialogs (`js/mzta-compose-script.js`)
+
+What the content script draws, on the commands the sections above send (tested by the `compose`
+test area, `tests/compose/README.md`):
+
+- **The container.** `#mzta-container` is inserted as the body's **first** child, above the mail:
+  `#mzta-toolbar` (hidden while empty), then `#mzta-panels`.
+- **The order** does not depend on the order the commands arrive in. Toolbar: the spam badge, the
+  summary button, the translation button (`_TOOLBAR_SLOT_ORDER`). Panels: the generic error, the
+  generic info, the translation (its generating panel, then its banner), the summary (same)
+  (`_PANEL_ORDER`, which still lists the spam ids of the time the spam report was a panel: today it
+  is the toolbar badge).
+- **The summary button** sends `triggerSummaryGeneration` when clicked, or `triggerSummaryWebchat`
+  when the background drew it with `webchat: true` (`summarize_display_mode` `'webchat'`, see
+  *Data Flow: Inline Summary on Message Display*); either way with the message's `headerMessageId`,
+  and the button is removed.
+- **A skipped translation.** A result with `translation_status: '-1'` (the model reports the
+  language as excluded, or identical to the target) shows the `translate_skipped` message instead of
+  a text.
+- **The generic panels** read `[ThunderAI | <source>] <message>`, or `[ThunderAI] <message>` with
+  no source, as text.
+- **A re-injected script** (an already-open tab when the extension is reloaded, see *Stale-result
+  guard*) removes the two generating panels at load and nothing else: what else the previous
+  instance drew (a banner, a toolbar item) stays, and the new instance draws into the same container,
+  replacing those as its own commands arrive.
+- **`sendAlert`.** In a `mail` tab (`curr_tab_type: 'mail'`) the message is shown in an in-pane
+  `<dialog class="mzta_dialog">` — Thunderbird does not show an `alert()` raised there — titled
+  `thunderai_error_title` when `is_error` is set and `thunderai_warning_title` otherwise; Close
+  removes the dialog and its stylesheet. In any other tab it is the window's `alert()`. The message is
+  always text. The command resolves `true`.
+- **`getTags`** opens the tag confirmation dialog (*Unreachable message pane*: the user's
+  confirmation step). Its exclusion list and flags come from `addtags_get_exclusion_prefs` (spec 05);
+  when that command fails, the dialog logs it and opens with the defaults — no exclusion, both flags
+  off, not locked.
+- **`replaceSelectedText`** (compose window): see *Writing into a plain text compose window*.
+
 ### Batch cancellation (`taBatchController`)
 
 Batch email processing (`processEmails` — auto add-tags, spam filter, summarize, translate,
@@ -1199,10 +1235,10 @@ business.
 | Interactive | `getTextBodyHtml()` → **stripped** | `getFullHtml` → `getCleanBodyHtml().innerHTML` — **kept** |
 | Background | `htmlBodyToPlainText()` — **stripped** | `getMailInlineTextParts().html` — **kept** |
 
-- **Interactive.** `getCleanBodyHtml()` is shared by three message cases, two of them text
-  (`getText`, `getTextOnly`) and one HTML (`getFullHtml`). The strip therefore lives in a thin
-  wrapper, **`getTextBodyHtml()` = `mztaStripHidden(getCleanBodyHtml())`**, called by the two text
-  cases only. Putting it inside `getCleanBodyHtml()` — the obvious-looking spot — silently strips
+- **Interactive.** `getCleanBodyHtml()` is shared by two message cases, one text (`getTextOnly`)
+  and one HTML (`getFullHtml`). The strip therefore lives in a thin wrapper,
+  **`getTextBodyHtml()` = `mztaStripHidden(getCleanBodyHtml())`**, called by the text case only (a
+  second text case, `getText`, was removed: nothing sent it). Putting it inside `getCleanBodyHtml()` — the obvious-looking spot — silently strips
   `{%mail_html_body%}` and the diff picker's original side as a side effect, because `getFullHtml`
   reads that same clone.
 - **Background.** Nothing was needed: `getMailInlineTextParts()` (`js/mzta-utils.js`) builds
@@ -1250,6 +1286,13 @@ by the source change rather than patched:
 **Deleted with it:** `extractTextParts()`, `smartDecode()` (the utf-8 → windows-1252 fallback) and
 the sole `browser.messages.getAttachmentFile()` call in the repo — all three existed only to work
 around `getFull()`. `removeMozMainHeader()` stays: `htmlBodyToPlainText()` uses it too.
+
+**The header block of a forwarded message.** Thunderbird renders a forwarded (or attached) message's
+headers as a `table.moz-main-header`, preceded by the `DIV`s of its title ("-------- Forwarded
+Message --------"). Every body reading removes the table **and the `DIV` siblings right before it**,
+so none of it reaches a placeholder, text or HTML: `removeMozMainHeader()` on the background path
+(`getMailInlineTextParts()`'s html and `htmlBodyToPlainText()`), the same loop in
+`getCleanBodyHtml()` on the interactive one (`getTextOnly` and `getFullHtml`).
 
 **Unchanged, deliberately:** the `{text, html}` construction itself. The `html === ""` synthesis via
 `mztaLinesToHtml(text, { mode: 'br' })` and the `else` branch's `DOMParser` +
@@ -1410,6 +1453,13 @@ HTML.** Three places cooperate, and all three are required:
   `message.isPlainText` is set, instead of routing through `DOMParser`. This is the actual
   fix for #855: in HTML a bare `\n` is collapsible whitespace, so parsing the converted text
   rendered every line break as a single space and the whole message arrived as one line.
+- **With no selection** the handler asks first (`Replace_No_Selected_Text`, "…insert the AI's
+  response at the beginning of the email?"). No: nothing is inserted, no `compose_reloadBody`, it
+  resolves `false`. Yes: the answer goes at the **start of the email** — before the first node of the
+  body that is not one of ThunderAI's own elements — wherever the cursor is, and also when the
+  selection holds no range at all (an editor never clicked into), which used to throw on
+  `getRangeAt(0)`. Before this the answer went at the cursor, which in a freshly opened reply is at
+  the top, so the message's promise held only in the common case.
 - The HTML branch of the same handler inserts the parsed nodes through a
   **`DocumentFragment`**, never `doc.body` itself. Inserting the `<body>` element nests a
   second `<body>` inside the compose body; the `compose_reloadBody` round-trip on the very
@@ -1668,7 +1718,7 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 | `js/mzta-placeholders.js` | Placeholder definitions and resolution logic |
 | `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.). Shared message-inspection helpers used by the auto-processing features: `extractEmail()` (the single copy of the address regex — **case-preserving**, since `getIdentityForMessage()` compares against the configured identities; prefers the `<...>` part of the header, keeps RFC 5322 local parts such as `user+tag` / `o'brien` and Unicode addresses whole, returns `''` for non-string input), `matchAddressList()` / `hasAddressListEntries()`, `messageFolderHasSpecialUse()` / `isMessageInAutoSkippedFolder()` (+ the `AUTO_SKIP_SPECIAL_USE` list); `sendTabMessageSafe()` (tabs.sendMessage guarded against tabs with no reachable message browser — see [Unreachable message pane](#unreachable-message-pane-sendtabmessagesafe-901)) |
 | `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection, `buildSummaryPrompt()` for unified summary prompt assembly, `buildTranslationPrompt()` for translation prompt assembly) |
-| `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders unified toolbar (spam badge, summary/translation trigger buttons) and content panels (generic error, spam explanation, summary, translation) in message display via `#mzta-container` |
+| `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders unified toolbar (spam badge, summary button, translation button, in that order) and content panels (generic error, generic info, translation, summary, in that order) in message display via `#mzta-container` — see [The message-display panels and dialogs](#the-message-display-panels-and-dialogs-jsmzta-compose-scriptjs) |
 | `js/mzta-chatgpt.js` | ChatGPT Web integration (opens browser window, reads DOM) |
 | `js/mzta-special-commands.js` | Handles special prompt actions (add_tags, calendar, task) |
 | `js/mzta-spamreport.js` | Spam filter logic |
