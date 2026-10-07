@@ -431,8 +431,8 @@ policy without a connection leaves the add-on unconfigured and the setup wizard 
 
 The migration copies what the **user** already chose, not something the administrator
 imposed, and a locked policy value wins on every read regardless — so a migrated value is
-never observable while the policy is active. The residual case (a pre-5.0 profile not yet
-migrated *and* a policy installed) only means the user's own prior value reappears if the
+never observable while the policy is active. The residual case (a 5.0.x profile, its preferences still in
+`storage.sync`, *and* a policy installed) only means the user's own prior value reappears if the
 policy is later removed, which is the correct fallback anyway.
 
 It also keeps an ordering constraint away from a module that is a one-shot destined for

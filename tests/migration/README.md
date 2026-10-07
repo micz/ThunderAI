@@ -164,10 +164,8 @@ None today.
   after the migrations), `reload_pref_init()`, the startup warnings and the menu setup. They are not
   migrations; `_reconcileFeatureFlags()` is the one that can change a preference.
 - **A managed policy.** Every start runs with none. The policy interactions of the migrations are
-  spec 08 and belong to the managed area. Spec 08 "Why the migration is not guarded" states that a
-  pre-5.0 profile not yet migrated, with a policy installed, gets the user's prior value back when
-  the policy is removed. **The managed area does not test that today**; it is reported here, not
-  tested.
+  spec 08 and belong to the managed area: spec 08 "Why the migration is not guarded" is
+  `managed/14-migration-not-guarded`.
 - The per-function behaviour of `migrateEnabledToShowIn()` and `migrateMenuOrderAlphabetic()`: the
   prompts area's (`prompts/13a`, `13b`, `14`). Here they are only steps of the sequence: whether
   they run, and that the user's prompts survive them.
