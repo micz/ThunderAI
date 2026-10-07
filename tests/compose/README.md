@@ -117,11 +117,7 @@ A payload that is only a `<frameset>` parses with the frameset as the body, so n
 
 ## Known issues
 
-In `tests/helpers/known-issues/compose.mjs`, run as TODOs while they fail:
-
-| Case | Spec section | What the code does |
-|---|---|---|
-| `14-typed-lines` | 03 "Newline contract of the compose placeholders" | a plain text window's lines are top-level `<br>`, and the typed walker counts each one twice (the `<br>` node and the join): `line one<br>line two` gives a blank line between the two |
+In `tests/helpers/known-issues/compose.mjs`, run as TODOs while they fail. None today.
 
 What the area found was fixed, and the spec updated where it described the old behaviour:
 
@@ -136,7 +132,11 @@ What the area found was fixed, and the spec updated where it described the old b
   injects the line structure", spec 03 "Newline contract of the body placeholders");
 - the typed / quoted walkers had the same whitespace defect, read the add-on's own panels and
   dialogs, and read the signature of a new message as typed text (spec 01 "The compose-extraction
-  newline contract" and "The rich-text layer", where these were recorded as known gaps).
+  newline contract" and "The rich-text layer", where these were recorded as known gaps);
+- the typed / quoted walkers made every top-level node a line, so a plain text window - whose lines
+  are top-level `<br>`, as the live capture showed - had each line break counted twice in
+  `{%mail_typed_text%}` (spec 03 "Newline contract of the compose placeholders"; spec 01, which said
+  the lines were `\n` in the text nodes, was corrected).
 
 ## What is not covered
 

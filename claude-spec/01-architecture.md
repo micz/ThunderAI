@@ -1008,13 +1008,26 @@ space join erased the boundaries *between* top-level nodes. The composed mail th
 the model as one run-together line, and the diff picker compared a well-formatted answer against
 a one-line original — every line read as changed. [#829]
 
-The extraction now projects each top-level node with `nodeTextKeepLines()` (`<br>` → `\n`, trailing
-break trimmed because Thunderbird's editor ends most lines with a bogus `<br>`) and joins nodes with
-`\n`, or `\n\n` when the node is block-level (`MZTA_BLOCK_LEVEL_RE`: `P`, `BLOCKQUOTE`, `UL`, `OL`,
-`TABLE`, `H1`–`H6`, `PRE`). That is `blockTextOfHtml()`'s projection from `api_webchat/diffPicker.js`
-applied to a live node — **reimplemented, not imported**: the compose script is registered as a
-*classic* content script (`composeScripts.register`), has no module context, and cannot import from
-`js/mzta-utils.js`.
+The extraction now projects each top-level node with `nodeTextKeepLines()` (`<br>` → `\n`) — that is
+`blockTextOfHtml()`'s projection from `api_webchat/diffPicker.js` applied to a live node,
+**reimplemented, not imported**: the compose script is registered as a *classic* content script
+(`composeScripts.register`), has no module context, and cannot import from `js/mzta-utils.js` — and
+joins the nodes with **`createLineJoiner()`**, which reads the top level as the **flow** a browser lays
+out, not as a list of lines:
+
+| Top-level node | Kind | In the text |
+|---|---|---|
+| `<br>`, `<hr>` | break | ends the current line; with no line open, makes an empty one |
+| `MZTA_BLOCK_LEVEL_RE` (`P`, `BLOCKQUOTE`, `UL`, `OL`, `TABLE`, `H1`–`H6`, `PRE`) | paragraph | a line of its own, a blank line before and after |
+| any other block (`DIV`, `LI`, `SECTION`…), or an element with an inline `display: block` | line | a line of its own |
+| text, inline elements | inline | continues the current line |
+
+A block's trailing break is trimmed, because Thunderbird's editor ends most lines with a bogus `<br>`
+and the joiner already ends the block's line; an inline node's is kept, it is a real line break. The
+joiner replaced a plain `\n` join between top-level nodes (`\n\n` before a paragraph), which was right
+for `<p>` and `<div>` but not for a flow: a plain text compose window holds its lines as top-level
+`<br>` (below), and each `<br>`, a node of its own, was counted twice — every line came out as a
+paragraph in `{%mail_typed_text%}`.
 
 **What a plain text compose window really holds** (captured from a live one, a reply:
 `tests/fixtures/compose/captured/plaintext_compose_body_live.html`). Its `<body>` carries
@@ -1023,7 +1036,9 @@ editor opens a reply with `<br><br>` for the lines to type, then a `div.moz-cite
 `div.moz-signature` exactly as in HTML, the quote being a `span` (`white-space: pre-wrap; display:
 block`) whose lines are `<br>` too and whose `"> "` are text in the DOM. A `\n` inside a text node
 appears where text was inserted as text — the answer inserted by `replaceSelectedText` ([#855]) —
-and the `pre-wrap` body renders it as a line. Both forms must project to the same lines.
+and the `pre-wrap` body renders it as a line. Both forms must project to the same lines. The quote
+`span` is a "line" for the joiner (its inline `display: block`), so the top-level `<br>` that follows
+it is the empty line the window shows before the signature.
 
 `nodeTextKeepLines()` follows the shared layer's whitespace rule (see *`htmlBodyToPlainText()` injects
 the line structure*), reusing its `mztaTextNodes()` / `mztaIsPreformatted()` globals: outside

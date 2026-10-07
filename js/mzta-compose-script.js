@@ -90,10 +90,6 @@ function isInjectedNode(node) {
 // node rather than imported, because this file is registered as a CLASSIC
 // content script by composeScripts.register and has no module context.
 //
-// PLAIN TEXT compose: the line breaks ARE the \n already inside the text nodes
-// [#855]. There are no <br> to replace, so this returns textContent unchanged
-// and nothing doubles up. One path serves both window kinds.
-//
 // HTML whitespace is not line structure, the same rule as mztaInjectLineBreaks()
 // (js/lib/mzta-html-lines.js, whose helpers this reuses): outside preformatted
 // content a run of spaces, tabs and newlines is one space, and a space at the
@@ -101,12 +97,22 @@ function isInjectedNode(node) {
 // serializer's indentation, and "-- <br>\n      This" used to give a blank line
 // inside the signature. Preformatted is checked on the LIVE ancestors too: the
 // clone below is detached, and a plain text window's "white-space: pre-wrap" sits
-// on <body>, outside it - there the newlines ARE the lines [#855].
-function nodeTextKeepLines(node) {
+// on <body>, outside it - there a \n inside a text node (the answer inserted as
+// text [#855]) IS a line.
+//
+// startsLine: the node opens a line (a block, or inline content after a break),
+// so a leading space goes; inline content continuing a line keeps it.
+// inline: the node is part of a line, not a block - its trailing break is real
+// and is kept. A block's trailing break is Thunderbird's bogus <br>, the same one
+// the line joiner adds after every block: keeping both doubles every line.
+function nodeTextKeepLines(node, { startsLine = true, inline = false } = {}) {
   const livePre = mztaIsPreformatted(node, document.documentElement);
   if (node.nodeType !== Node.ELEMENT_NODE) {
-    const text = node.textContent || '';
-    return (livePre || node.nodeType !== Node.TEXT_NODE) ? text : text.replace(/[ \t\n\r\f]+/g, ' ');
+    if (node.nodeType !== Node.TEXT_NODE) return '';
+    const text = node.data;
+    if (livePre) return text;
+    const collapsed = text.replace(/[ \t\n\r\f]+/g, ' ');
+    return startsLine ? collapsed.replace(/^ +/, '') : collapsed;
   }
   const clone = node.cloneNode(true);
   if (!livePre) {
@@ -118,16 +124,71 @@ function nodeTextKeepLines(node) {
     br.replaceWith(document.createTextNode('\n'));
   }
   if (!livePre) {
-    let atLineStart = true;
+    let atLineStart = startsLine;
     for (const t of mztaTextNodes(clone)) {
       if (atLineStart && !mztaIsPreformatted(t, clone)) t.data = t.data.replace(/^ +/, '');
       if (t.data !== '') atLineStart = t.data.endsWith('\n');
     }
   }
-  // Thunderbird's HTML editor ends most lines with a trailing bogus <br>. That
-  // break is the same one the join in the callers adds - keeping both doubles
-  // every line.
-  return (clone.textContent || '').replace(/\n+$/, '');
+  const text = clone.textContent || '';
+  return inline ? text : text.replace(/\n+$/, '');
+}
+
+// How a top-level node of the compose body takes part in the lines, as a browser
+// lays it out. The body is a flow, not a list of lines: a plain text window holds
+// its lines as top-level text and <br> (captured live: tests/fixtures/compose/
+// captured/plaintext_compose_body_live.html), and so does HTML typed straight into
+// the body.
+//   break      <br>, <hr>: ends the current line - or, with none open, makes an
+//              empty one
+//   paragraph  MZTA_BLOCK_LEVEL_RE: a line of its own, a blank line around it
+//   line       any other block, or an element with an inline display: block (the
+//              plain text window's quote span): a line of its own
+//   inline     text and inline elements: continue the current line
+const MZTA_LINE_LEVEL_RE = /^(DIV|LI|DL|DT|DD|ADDRESS|CENTER|SECTION|ARTICLE|HEADER|FOOTER|NAV|ASIDE|MAIN|FIGURE|FIGCAPTION|FIELDSET|DETAILS|SUMMARY|FORM)$/;
+const MZTA_DISPLAY_BLOCK_RE = /(?:^|;)\s*display\s*:\s*(?:block|flex|grid|list-item|table)\s*(?:;|!|$)/i;
+
+function topLevelKind(node) {
+  if (node.nodeType !== Node.ELEMENT_NODE) return 'inline';
+  if (node.nodeName === 'BR' || node.nodeName === 'HR') return 'break';
+  if (MZTA_BLOCK_LEVEL_RE.test(node.nodeName)) return 'paragraph';
+  if (MZTA_LINE_LEVEL_RE.test(node.nodeName) ||
+      MZTA_DISPLAY_BLOCK_RE.test(node.getAttribute('style') || '')) return 'line';
+  return 'inline';
+}
+
+// Joins the top-level nodes the typed / quoted walkers accept into text with the
+// contract of {%mail_typed_text%} / {%mail_quoted_text%}: one \n between lines, a
+// blank line around paragraphs. Every top-level node used to be a line of its own,
+// joined with \n: right for <p> and <div>, wrong for a flow - a top-level <br> is a
+// node too, so each line break of a plain text window counted twice, and every
+// line read as a paragraph.
+function createLineJoiner() {
+  let out = '';
+  let lineOpen = false;
+  return {
+    add(node) {
+      const kind = topLevelKind(node);
+      if (kind === 'break') {
+        out += '\n';
+        lineOpen = false;
+        return;
+      }
+      if (kind === 'inline') {
+        const text = nodeTextKeepLines(node, { startsLine: !lineOpen, inline: true });
+        if (text === '') return;
+        out += text;
+        lineOpen = !text.endsWith('\n');
+        return;
+      }
+      if (lineOpen) out += '\n';
+      if (kind === 'paragraph' && out !== '' && !out.endsWith('\n\n')) out += '\n';
+      out += nodeTextKeepLines(node) + '\n';
+      if (kind === 'paragraph') out += '\n';
+      lineOpen = false;
+    },
+    text() { return out; },
+  };
 }
 
 // ── Theme colors ────────────────────────────────────────────────────
@@ -504,7 +565,7 @@ switch (message.command) {
   }
 
   case "getOnlyTypedText": {
-    let t = '';
+    const lines = createLineJoiner();
     const children = window.document.body.childNodes;
     const selection = window.getSelection();
 
@@ -524,13 +585,10 @@ switch (message.command) {
           break;
         }
       }
-      // Top-level nodes are lines, joined with "\n" - the old " " join is what
-      // made a multi-line compose body arrive as a single line. A block element
-      // is a paragraph boundary and gets a blank line.
-      if (t !== '') {
-        t += MZTA_BLOCK_LEVEL_RE.test(node.nodeName) ? "\n\n" : "\n";
-      }
-      t += nodeTextKeepLines(node);
+      // The line structure of the top-level flow (createLineJoiner): the old " "
+      // join made a multi-line compose body arrive as a single line, a "\n" join
+      // counted a plain text window's every <br> twice.
+      lines.add(node);
 
       // Track the first and last nodes for range
       if (!firstNode) {
@@ -554,11 +612,11 @@ switch (message.command) {
       selection.addRange(range);
     }
 
-    return Promise.resolve(t);
+    return Promise.resolve(lines.text());
   }
 
   case "getOnlyQuotedText": {
-    let t = '';
+    const lines = createLineJoiner();
     const children = window.document.body.childNodes;
     const selection = window.getSelection();
   
@@ -576,11 +634,8 @@ switch (message.command) {
         }
       }
   
-      // Same line-preserving join as getOnlyTypedText above.
-      if (t !== '') {
-        t += MZTA_BLOCK_LEVEL_RE.test(node.nodeName) ? "\n\n" : "\n";
-      }
-      t += nodeTextKeepLines(node);
+      // Same line structure as getOnlyTypedText above.
+      lines.add(node);
 
       if (!firstNode) {
         firstNode = node;
@@ -601,8 +656,8 @@ switch (message.command) {
       selection.removeAllRanges();
       selection.addRange(range);
     }
-  
-    return Promise.resolve(t);
+
+    return Promise.resolve(lines.text());
   }
   
   
