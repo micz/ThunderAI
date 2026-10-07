@@ -149,11 +149,15 @@ aligned with a behaviour the maintainer ruled correct.
   `menus` API, and the icon resolution (`getBuiltInPromptIcon()` / `getContextMenuIcon()`).
 - **The Menu Order page** and the **Placeholder Autocomplete** and **highlight mirror** UI: DOM. The
   level-1 half of "Invalid placeholder feedback" (the two tiers, the highlight matrix) is in `01`.
-- **The extraction side of the newline contracts**: `getMailBody()`, `selectionTwin()`, the compose
-  DOM walk (`js/mzta-compose-script.js`), `htmlBodyToPlainText()` and `mztaHtmlToLines()` all need a
-  DOM. Level 1 sees only that the value the caller extracted reaches the prompt unchanged (`04`, `20`).
+- **The extraction side of the newline contracts** needs a DOM. Level 1 sees only that the value the
+  caller extracted reaches the prompt unchanged (`04`, `20`). The extraction itself - the compose DOM
+  walk (`js/mzta-compose-script.js`), `htmlBodyToPlainText()`, `getMailInlineTextParts()`,
+  `mztaHtmlToLines()` and the twins' normalizers - is the `compose` area's
+  ([`../compose/README.md`](../compose/README.md)). Not covered anywhere: `getMailBody()` and
+  `selectionTwin()` as functions, closures inside the menu builder of `js/mzta-menus.js`.
 - **`buildSummaryPrompt()`**: it always converts the HTML body to text, which needs `DOMParser`.
-  `getSummaryLang()`, the part that decides the language statements, is in `23`.
+  `getSummaryLang()`, the part that decides the language statements, is in `23`; the functions it
+  reads the body with are tested in the `compose` area, not the assembly itself.
 - **The response side** of the special features (`normalizeReminderMinutes()`,
   `appendMessageLinkToDescription()`, the spam report), and `savePrompt()` / `clearPromptAPI()`
   beyond their use in `12`.
