@@ -58,7 +58,7 @@ time: the debounce, the worker timeout and the batch yield points run on node:te
 | `25-inline-summary` | `initSummary` / `triggerSummaryGeneration` / `refreshSummary` / `removeSummary` / `getDisplayedMessageId`: every `summarize_auto` mode, both display modes, the cache, stale results, a deletion while generating, delete-then-generate-again, an unreachable pane | 01 "Inline Summary on Message Display", "Stale-result guard", "In-flight jobs", "Unreachable message pane" |
 | `26-inline-translation` | the same for the translation: the target language and its fallback, status `-1`, HTML / plain text through the sanitizer, no language configured | 01 "Inline Translation on Message Display", 02 "Translate" |
 | `27-dedup` | joining across callers: the batch joining a manual summary, the panel joining the batch's summary and translation, the batch joining a manual spam Refresh (moved once), `checkSpamReport` joining, the context menu and the batch sharing add_tags, overlapping batches, the working level | 01 "In-flight jobs" |
-| `28-batch-stop` | a Stop in the middle of a 7-message batch: `batch_status` / `cancel_batch`, what was done, what was in flight, what never started, what is stored, the blue notice, the next batch | 01 "Batch cancellation", "Per-message pipelines"; 04 "Batch cancellation" |
+| `28-batch-stop` | a Stop in the middle of a 7-message batch: `batch_status` / `cancel_batch`, what was done, what was in flight, what never started, what is stored, the blue notice, not resumed later, the button on open, the next batch | 01 "Batch cancellation", "Per-message pipelines"; 04 "Batch cancellation" |
 | `29-rate-limit` | a rate limit on each feature: what ran, what is stored, the red panel, the retry-after notice, the next batch | 01 "Automatic stop on a rate limit", 04 #batch-stop-on-rate-limit |
 | `30-snapshot` | invariants 1-3: the fresh read, the effective connection, `get_active_special_ids`, the 200 ms debounce, coalescing, the snapshot before the menus (and Sparks), the accumulated flags, the two gates, the menu-relevant keys, the ignored keys and areas, `_process_incoming`, the flag repair | 01 "Background Preference Snapshot and Menu Invalidation" |
 | `31-menus` | the context menu (parent, `show_in`, types, order, specials, icons, titles), what the popup is handed, `popup_menu_ready` / `preparePopupMenu()`, `shortcut_do_prompt` on a special prompt, the shortcut list swap, no context prompt at all | 02 "Menu System"; 01 (the swap) |
@@ -235,13 +235,12 @@ Input for the spec:
    job did not await its report. `taStorage` now queues the writes of each record, and the job
    awaits the save; spec 01 "Per-Message Data Storage" says so, `04-storage` `concurrent-*` /
    `queue-*` and `23-spam-actions` `outcome-after-save` test it.)*
-3. **What becomes of the messages a Stop or a rate limit left unprocessed** in an automatic batch:
-   nothing reprocesses them (spec 01 rules out a periodic scan for the sender list only).
-4. **`_process_incoming` and `add_tags`.** `reload_pref_init()` ORs in `add_tags_auto` alone, while
-   `newEmailListener()` passes `add_tags && add_tags_auto` (and the code comment there says the two
-   must be checked together): with `add_tags` off and `add_tags_auto` on, every incoming mail wakes
-   `processEmails()` for nothing. Spec 01 only says "whether any auto-processing feature needs
-   incoming mail".
+3. *(resolved: the messages a Stop or a rate limit left unprocessed are not resumed, by design; spec 01
+   "Batch cancellation", "What a stop leaves behind", says what stays available. `28-batch-stop`
+   `not-resumed` / `button-on-open` test it.)*
+4. *(resolved: `_process_incoming` was woken by `add_tags_auto` alone, a batch with nothing to do;
+   it now gates `add_tags && add_tags_auto` like `newEmailListener()`. Spec 01 "Background Preference
+   Snapshot" lists the gate of each feature; `30-snapshot` `process-incoming` tests it.)*
 5. **A message present twice in one batch** (the same `headerMessageId` in two folders): the summary
    and translation run once (spec 01 "De-duplication"), but the spam filter and add_tags run once
    per copy, one AI call each; spec 01 does not say whether that is meant.

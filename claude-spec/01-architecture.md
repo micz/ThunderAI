@@ -825,6 +825,14 @@ triggers are not batches and are never gated by a cancel.
 so the AI calls currently in flight — up to `batch_max_concurrency` — finish first — bounded by `special_command_timeout` (default 120s). There is no
 mid-request worker termination in v1.
 
+**What a stop leaves behind.** The messages a Stop or a rate limit kept from starting (and the
+features an in-flight message did not reach) are **not resumed**: no queue outlives the batch, and
+there is no periodic scan to find them again. That is by design. What remains available to the
+user: the summary and the translation, offered as the manual button when the message is opened
+(with `summarize_auto` / `translate_auto` = 3 nothing is cached, and only mode 2 generates on open,
+so `initSummary` / `initTranslation` draw the button); the spam filter and the tags, from the
+context menu only. The stop notice gives the number of messages processed, not of those skipped.
+
 The UI trigger lives in the toolbar popup (`popup/mzta-popup.html/.js/.css`); see
 [04-api-integrations.md](04-api-integrations.md) for the `batch_status` / `cancel_batch`
 runtime messages and the `preparePopupMenu` payload.
@@ -1788,7 +1796,7 @@ Regular preferences (feature flags, connection settings, `ollama_*`/`chatgpt_*`/
 
 ### Background Preference Snapshot and Menu Invalidation
 
-The background script keeps a **snapshot** of the preferences it consults often, in the module-level `prefs_init` object, refreshed by `reload_pref_init()`. The exact set of keys it holds is the module-level `PREFS_INIT_KEYS` constant, whose keys are also what `reload_pref_init()` passes to `mztaPrefs.getPrefs()` — the storage-change gate is derived from that same constant so the two cannot drift apart. `PREFS_INIT_KEYS` stays an **object** (not a key array) precisely because `MENU_RELEVANT_KEYS` and that gate are derived from it. Besides the snapshot itself, `reload_pref_init()` recomputes `_process_incoming` (whether any auto-processing feature needs incoming mail) and `_sparks_presence`.
+The background script keeps a **snapshot** of the preferences it consults often, in the module-level `prefs_init` object, refreshed by `reload_pref_init()`. The exact set of keys it holds is the module-level `PREFS_INIT_KEYS` constant, whose keys are also what `reload_pref_init()` passes to `mztaPrefs.getPrefs()` — the storage-change gate is derived from that same constant so the two cannot drift apart. `PREFS_INIT_KEYS` stays an **object** (not a key array) precisely because `MENU_RELEVANT_KEYS` and that gate are derived from it. Besides the snapshot itself, `reload_pref_init()` recomputes `_process_incoming` (whether any auto-processing feature needs incoming mail) and `_sparks_presence`. `_process_incoming` is true when at least one of these holds, each feature gated exactly as `newEmailListener()` then passes it to `processEmails()`: `add_tags && add_tags_auto`; `spamfilter`; `summarize && summarize_auto === 3`; `translate && translate_auto === 3`; `summarize && summarize_auto_senders` with a list that `hasAddressListEntries()`. So a feature switched off (`_reconcileFeatureFlags()` turns `add_tags` off and leaves `add_tags_auto` as it is) never wakes the pipeline for a batch with nothing to do.
 
 Four invariants apply here. The first three were established by [#855](https://github.com/micz/ThunderAI/issues/855); the fourth was added later, when the debounce turned out to cover only one of the three reload paths.
 

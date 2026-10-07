@@ -12,7 +12,9 @@
 //  - the outer finally always runs stopWorking() + endBatch(); when the last batch exits cancelled
 //    by the user, showGenericInfo(batch_stopped_notice, N processed) - the blue panel - goes to
 //    every tab;
-//  - a batch begun after the request is not affected (a manual action right after a Stop runs).
+//  - a batch begun after the request is not affected (a manual action right after a Stop runs);
+//  - "What a stop leaves behind": the unstarted messages are not resumed; opening one offers the
+//    summary and the translation as the manual button (summarize_auto / translate_auto = 3).
 // Spec 01 "Cooperative check points": also after the between-chunks setTimeout(0) yield (every 5
 // messages). The batch here has 7 messages and runs under node:test's mock timers.
 
@@ -21,6 +23,7 @@ import { bgContext } from './context.mjs';
 import { holding } from './fake-worker.mjs';
 import {
     API,
+    fromTab,
     featureOf,
     messageOf,
     sentPrompts,
@@ -141,6 +144,22 @@ k.test('notice', 'the blue "stopped" notice, with the number of messages process
 k.test('ended-clean', 'after the batch: no batch working, nothing in flight, the counter reset', async () => {
     assert.deepEqual(await popup({ command: 'batch_status' }), { working: false, processed: 0, cancelRequested: false, cancelReason: null });
     assert.equal(taWorkingStatus.WorkingLevel, 0);
+});
+
+k.test('not-resumed', 'the messages the Stop kept from starting are not processed later: still no prompt, nothing stored', async () => {
+    for (let i = 0; i < 60; i++) await new Promise(r => setImmediate(r));
+    assert.deepEqual(heldOpen(), []);
+    for (const id of ids.slice(2)) assert.equal(record(ctx, id), null, id);
+});
+
+k.test('button-on-open', 'opening a message the Stop skipped offers the summary and the translation as the manual button', async () => {
+    ctx.m.tab(7).displayed = hs[3].id;
+    ctx.m.tabSends.length = 0;
+    await fromTab(ctx, 7, { command: 'initSummary' });
+    await fromTab(ctx, 7, { command: 'initTranslation' });
+    assert.deepEqual(ctx.m.commandsTo(7), ['showSummaryButton', 'showTranslationButton']);
+    assert.equal(ctx.m.sentTo(7, 'showSummaryButton')[0].headerMessageId, 'st4@x');
+    assert.deepEqual(heldOpen(), [], 'nothing generated on open');
 });
 
 k.test('next-batch-runs', 'the next incoming mail is processed normally: the Stop never leaks into a later batch', async () => {
