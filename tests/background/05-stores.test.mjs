@@ -1,6 +1,7 @@
 // Spec 01 "Per-Message Data Storage", the three stores over taStorage:
-//  - taSummaryStore (js/mzta-summarystore.js): load / save / remove summaries, a 100-entry cache
-//    limit with oldest-first truncation, error states;
+//  - taSummaryStore (js/mzta-summarystore.js): load / save / remove summaries, error states, and
+//    truncSummaries() (the 100 newest kept, oldest-first), which nothing calls at the moment: it is
+//    tested here as a method;
 //  - taTranslationStore (js/mzta-translationstore.js): the same; a translation record stores
 //    translated_text, lang and optional error information;
 //  - taSpamReport (js/mzta-spamreport.js), with spec 02 "Missing special prompts":

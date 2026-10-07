@@ -48,9 +48,9 @@ time: the debounce, the worker timeout and the batch yield points run on node:te
 | `02-batch-controller` | `taBatchController`: tokens, `endBatch()`'s snapshot and the reset on the last exit, a cancel flagging the active batches only, later batches unaffected, overlapping batches and one notice, `rate_limit` never overwritten, the longest `retryAfterMs`, `getStatus()`, independence from `WorkingLevel` | 01 "Batch cancellation", 04 "Batch cancellation" |
 | `03-working-status-exclusions` | `taWorkingStatus` (level, icons, never negative); `checkExcludedTag()` and the exclusion list preference | 01 "Working indicator", 05 `add_tags_exclusions` |
 | `04-storage` | `taStorage`: the `msg:<id>` key and schema, the three fields in one record, force / no force, deleting a field and the last field, `deleteRecord()`, `getAll*Records()`, age-based `cleanup()`, `clearAllRecords()`, the preferences never touched | 01 "Per-Message Data Storage" |
-| `05-stores` | `taSummaryStore`, `taTranslationStore`, `taSpamReport`: round trips, error states, records written by older versions, removal, the 100-entry truncation, `saveError()` metadata, `getAllReportData()` → `{}`, clearing one field only, no `storage.session` state | 01 "Per-Message Data Storage", 02 "Missing special prompts" |
+| `05-stores` | `taSummaryStore`, `taTranslationStore`, `taSpamReport`: round trips, error states, records written by older versions, removal, the 100-entry truncation (as methods: the background calls only the spam one), `saveError()` metadata, `getAllReportData()` → `{}`, clearing one field only, no `storage.session` state | 01 "Per-Message Data Storage", 02 "Missing special prompts" |
 | `10-special-command` | `mzta_specialCommand` after `initWorker()`: the prompt posted, the answer accumulated, `newRetryAttempt` / `messageSent` ignored, thinking tokens and `<think>` blocks (closed, leading whitespace, unterminated), errors with `rateLimited` / `retryAfterMs`, a worker crash, the timeout (the preference, the default, after a 429, after a 503, never after an answer), `dispose()` on every path | 04 "Worker Lifecycle & Timeout", "Thinking in special commands", #batch-stop-on-rate-limit |
-| `20-receive-summary-translation` | `summarize_auto = 3` / `translate_auto = 3`: the listener registration, what is stored on which message, the prompts, the broadcast to the displaying tabs, the ids, the sanitizer on the way out, one worker per prompt, the cache hit, the same id twice in a batch, the skipped folders and archives, several messages; the 100-entry cache limit (known issue) | 01 "Background Summary / Translation on Email Receive", "Per-message pipelines", "Shared guards", "In-flight jobs" |
+| `20-receive-summary-translation` | `summarize_auto = 3` / `translate_auto = 3`: the listener registration, what is stored on which message, the prompts, the broadcast to the displaying tabs, the ids, the sanitizer on the way out, one worker per prompt, the cache hit, the same id twice in a batch, the skipped folders and archives, several messages | 01 "Background Summary / Translation on Email Receive", "Per-message pipelines", "Shared guards", "In-flight jobs" |
 | `21-sender-list` | the sender list on reception and on open: exact, domain, subdomain, other senders, no tab, skipped folders, the cached summary, both triggers = one call, an unusable connection, a legacy `['']` list | 01 "Auto-Summarize by Sender Address List" |
 | `22-spam-rules` | the allow / block lists and the address book: every precedence case, never moving an allow-list report (threshold 0), the pipeline stopped by a block, a manual check, legacy `['']` lists | 01 "Spam filter sender rules" |
 | `23-spam-actions` | the AI verdict: moved to junk (marked, then moved), the threshold, the panels, an account with no junk folder, the account list, skipped folders, a message gone after the analysis, `getFull()` failing, a non-JSON answer, serialized moves, the manual path, `spamfilter_only_inbox` | 01 "Per-message pipelines", "Spam filter sender rules", "Shared guards" |
@@ -191,12 +191,7 @@ reason goes in `helpers/known-issues/background.mjs` and it runs as a `# TODO` u
 the run ("stale known issue") so the entry is removed. The shape of an entry (a file × a case id ×
 a reason naming the spec section) is validated by `99-harness-known-issues`.
 
-- `20-receive-summary-translation` `cache-limit`: spec 01 "Per-Message Data Storage" (and spec 02
-  "Summarize" / "Translate", "max 100 entries"): the summary and translation stores enforce a
-  100-entry limit with oldest-first truncation. `truncSummaries()` and `truncTranslations()` exist
-  (and work, `05-stores`) but nothing calls them: every summary and translation stays in
-  `storage.local` for ever. Only `spamReport.truncReportData()` runs, after an incoming batch with the
-  spam filter on.
+None today.
 
 ## What is not covered
 
@@ -254,9 +249,11 @@ Input for the spec:
 5. **A message present twice in one batch** (the same `headerMessageId` in two folders): the summary
    and translation run once (spec 01 "De-duplication"), but the spam filter and add_tags run once
    per copy, one AI call each; spec 01 does not say whether that is meant.
-6. **The age-based cleanup**: `taStorage.cleanup(maxAgeDays)` exists ("age-based cleanup", spec 01)
-   but nothing calls it, and the spec names no age. Likewise the 100-report spam limit is applied
-   only after an incoming batch with the spam filter on, never after a manual check.
+6. **Cleanup and truncation**: `taStorage.cleanup(maxAgeDays)` exists ("age-based cleanup", spec 01)
+   but nothing calls it, and the spec names no age. Summaries and translations are not truncated at
+   the moment (spec 01 says so: `truncSummaries()` / `truncTranslations()` exist, tested as methods
+   in `05-stores`, but nothing calls them); the 100-report spam limit is applied only after an
+   incoming batch with the spam filter on, never after a manual check.
 7. **A spam job ending on a configuration error** has already removed the message's previous report
    (`removeReportData()` is its first step): after a Refresh with a missing key the old verdict is
    gone. Spec 04 only says the error is "not persisted".

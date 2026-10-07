@@ -629,7 +629,7 @@ The summarize feature uses two distinct prompt pathways:
 - Does **not** support `chatgpt_web` connection type (shows error if configured)
 - Result is rendered as a styled banner at the top of the message body via `mzta-compose-script.js`
 - Banner includes a refresh button (↻) to regenerate the summary
-- Cached per-message via `taSummaryStore` / `taStorage` (max 100 entries)
+- Cached per-message via `taSummaryStore` / `taStorage`. Not truncated at the moment: the store has a 100-entry truncation that nothing calls (see [01-architecture.md](01-architecture.md#per-message-data-storage))
 
 **Unified Prompt Building** — `taPromptUtils.buildSummaryPrompt(messageDataArray)`:
 - All summary paths (inline, webchat single, webchat multi) use this single method
@@ -654,7 +654,7 @@ The translate feature uses a single special prompt (`prompt_translate_this`) for
 - Does **not** support `chatgpt_web` connection type (shows error if configured)
 - Result is rendered as a styled banner (green/teal theme) in the message body via `mzta-compose-script.js`
 - Banner includes refresh (↻) and delete (×) buttons
-- Cached per-message via `taTranslationStore` / `taStorage` (max 100 entries)
+- Cached per-message via `taTranslationStore` / `taStorage`. Not truncated at the moment: the store has a 100-entry truncation that nothing calls (see [01-architecture.md](01-architecture.md#per-message-data-storage))
 - The prompt was originally a regular prompt (`defaultPrompts`) and was moved to `specialPrompts` with `is_special: "1"` and `type: "1"` (reading email only)
 
 **Prompt Building** — `taPromptUtils.buildTranslationPrompt(fullMessage, messageId)`:

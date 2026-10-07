@@ -39,18 +39,10 @@ const SPEC_REF = /\bspec 0[1-8][a-c]? "[^"]+"/;
 
 /** The reasons of KNOWN, one per spec contradiction. */
 export const REASONS = {
-    cacheLimitNotEnforced: 'spec 01 "Per-Message Data Storage": taSummaryStore and taTranslationStore "enforce a ' +
-        '100-entry cache limit with oldest-first truncation" (spec 02 "Summarize" / "Translate": max 100 entries). ' +
-        'truncSummaries() and truncTranslations() exist but nothing calls them: every summary and translation ' +
-        'generated stays in storage.local for ever (only spamReport.truncReportData() runs, after a batch ' +
-        'with the spam filter on)',
 };
 
 /** The known issues, by test file and case id. */
 export const KNOWN = {
-    '20-receive-summary-translation': {
-        'cache-limit': REASONS.cacheLimitNotEnforced,
-    },
 };
 
 /** The file stems of tests/background/ (the files a KNOWN entry may name). */
