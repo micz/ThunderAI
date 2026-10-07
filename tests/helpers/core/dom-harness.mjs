@@ -23,6 +23,10 @@
  *  minimal answer (defaultCommands() below, then the plugins' pageCommands(), then
  *  opts.commands); anything else is a recorded violation. The order is in ./plugins.mjs.
  *
+ *  openDocument() runs the same steps on a document that is not a page file: given HTML, given
+ *  classic scripts, given modules (a content script in a mail, a module that needs a DOM). The
+ *  two share one implementation, openContext().
+ *
  *  One file = one page = one scenario, as for the level-1 suite: the page's modules are
  *  singletons, loaded once per process.
  *
@@ -315,7 +319,7 @@ function stubClipboard(window, rec) {
 }
 
 // ---------------------------------------------------------------------------------------
-// openPage()
+// openPage(), openDocument()
 // ---------------------------------------------------------------------------------------
 
 /**
@@ -346,8 +350,81 @@ function stubClipboard(window, rec) {
 export async function openPage(page, opts = {}) {
     const rel = PAGES[page];
     if (!rel) throw new Error('dom-page: unknown page "' + page + '"');
-    const html = readFileSync(repoPath(rel), 'utf8');
-    const url = EXT_ORIGIN + rel + (opts.query || '');
+    const pageDir = new URL(rel, REPO);
+    return openContext({
+        name: page,
+        html: readFileSync(repoPath(rel), 'utf8'),
+        url: EXT_ORIGIN + rel + (opts.query || ''),
+        // The page's own <script src> tags, in document order: the classic ones run, then the
+        // module ones are imported.
+        scripts(document) {
+            const tags = [...document.querySelectorAll('script[src]')];
+            const at = s => new URL(s.getAttribute('src'), pageDir);
+            return {
+                classic: tags.filter(s => s.type !== 'module').map(at),
+                modules: tags.filter(s => s.type === 'module').map(at),
+            };
+        },
+        domContentLoaded: true,
+    }, opts);
+}
+
+/**
+ * Open a document that is not a page file of the add-on: given HTML, given classic scripts,
+ * given modules. What a content script runs in (a mail in the message display, the body of a
+ * compose window), or the background page for a module that needs a DOM. Same mock, same strict
+ * proxy, same tracking and the same ctx as openPage(), plus:
+ *
+ *   imports                          {path: namespace} of the `modules` imported
+ *
+ * The steps are openPage()'s, with the scripts taken from the options instead of the HTML:
+ * parse `html` at `url`, expose the window globals, install the mock (`apis` extends it before
+ * the strict proxy), run `scripts` in order as classic scripts (mirrored onto the window),
+ * import `modules` in order, settle. No DOMContentLoaded is dispatched: a content script is
+ * injected into a document that has already loaded (document_idle), and jsdom fired the
+ * document's own.
+ *
+ * One process, one document, as for a page: the scripts' top-level `const`s and the modules'
+ * singletons live in the process.
+ *
+ * @param {object} opts
+ *   html        the document's markup (a whole document, or a body fragment jsdom completes)
+ *   url         the document's url, also the sender url of its runtime.sendMessage (default
+ *               'about:blank')
+ *   name        a label for the error messages (default 'document')
+ *   scripts     repository-relative classic scripts, run in this order
+ *   modules     repository-relative modules, imported in this order after the scripts
+ *   apis(browser, opts)   adds the browser.* APIs this document needs to the mock, before the
+ *               strict proxy wraps it (as a plugin's pageApis(), for this document only)
+ *   ...         every option of openPage() but `query`
+ */
+export async function openDocument(opts = {}) {
+    if (typeof opts.html !== 'string') throw new Error('dom-page: openDocument() needs the html');
+    const scripts = (opts.scripts || []).map(rel => new URL(rel, REPO));
+    const modules = (opts.modules || []).map(rel => new URL(rel, REPO));
+    return openContext({
+        name: opts.name || 'document',
+        html: opts.html,
+        url: opts.url || 'about:blank',
+        scripts: () => ({ classic: scripts, modules }),
+        domContentLoaded: false,
+        apis: opts.apis,
+        keepImports: opts.modules || [],
+    }, opts);
+}
+
+/**
+ * What openPage() and openDocument() share: everything from the parse to the returned ctx.
+ *
+ * @param {object} what
+ *   name, html, url
+ *   scripts(document) -> {classic: [file URL], modules: [file URL]}
+ *   domContentLoaded   dispatch DOMContentLoaded once the scripts ran (a page), or not
+ *   apis               optional (browser, opts) => void, before the strict proxy
+ *   keepImports        the repository paths of `modules`, to return their namespaces as `imports`
+ */
+async function openContext(what, opts) {
+    const { name: page, html, url } = what;
 
     const rec = {
         violations: [],
@@ -427,6 +504,7 @@ export async function openPage(page, opts = {}) {
         decorate(ctl) {
             addPageApis(ctl.browser, opts);
             for (const p of pluginList) if (p.pageApis) p.pageApis(ctl.browser, opts);
+            if (what.apis) what.apis(ctl.browser, opts);
             const strict = strictProxy(ctl.browser, rec);
             globalThis.browser = strict;
             globalThis.messenger = strict;
@@ -471,13 +549,10 @@ export async function openPage(page, opts = {}) {
         }
     };
 
-    // 4. classic scripts, in document order
-    const scripts = [...document.querySelectorAll('script[src]')];
-    const pageDir = new URL(rel, REPO);
+    // 4. classic scripts, in order
+    const scripts = what.scripts(document);
     const globalsBefore = new Set(Object.getOwnPropertyNames(globalThis));
-    for (const s of scripts) {
-        if (s.type === 'module') continue;
-        const file = new URL(s.getAttribute('src'), pageDir);
+    for (const file of scripts.classic) {
         vm.runInThisContext(readFileSync(file, 'utf8'), { filename: file.pathname });
     }
     // In a browser the window IS the global object, so what a classic script defines is reachable
@@ -494,16 +569,19 @@ export async function openPage(page, opts = {}) {
         });
     }
     // 5. the module script(s)
-    for (const s of scripts) {
-        if (s.type !== 'module') continue;
-        await import(new URL(s.getAttribute('src'), pageDir).href);
+    const imported = [];
+    for (const file of scripts.modules) imported.push(await import(file.href));
+    // 6. DOMContentLoaded (a page only)
+    if (what.domContentLoaded) {
+        document.dispatchEvent(new window.Event('DOMContentLoaded', { bubbles: true }));
     }
-    // 6. DOMContentLoaded
-    document.dispatchEvent(new window.Event('DOMContentLoaded', { bubbles: true }));
     await settle();
 
     const page_ctx = {
         page, url, window, document,
+        ...(what.keepImports
+            ? { imports: Object.fromEntries(what.keepImports.map((rel, i) => [rel, imported[i]])) }
+            : {}),
         $: sel => document.querySelector(sel),
         $$: sel => [...document.querySelectorAll(sel)],
         ctl: ctx.ctl, con: ctx.con, mods,

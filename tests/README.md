@@ -3,7 +3,7 @@
 Automated tests for ThunderAI. Today they cover the enterprise managed configuration
 ([`managed/README.md`](managed/README.md)), the static consistency of the locales and the
 preferences ([`static/README.md`](static/README.md)), the prompt and placeholder systems
-([`prompts/README.md`](prompts/README.md)), the API integrations ([`api/README.md`](api/README.md)), and what the settings pages do with no policy ([`ui/README.md`](ui/README.md), the options page, the six feature settings pages, the three prompt management pages, the setup wizard, the welcome page and the popup), and the API chat window with its diff picker ([`webchat/README.md`](webchat/README.md), being built group by group), and the one-time storage migrations run at startup ([`migration/README.md`](migration/README.md)); the infrastructure is built to extend to the whole
+([`prompts/README.md`](prompts/README.md)), the API integrations ([`api/README.md`](api/README.md)), and what the settings pages do with no policy ([`ui/README.md`](ui/README.md), the options page, the six feature settings pages, the three prompt management pages, the setup wizard, the welcome page and the popup), and the API chat window with its diff picker ([`webchat/README.md`](webchat/README.md), being built group by group), and the one-time storage migrations run at startup ([`migration/README.md`](migration/README.md)), and what the add-on reads from a mail and writes into it, with the message-display panels ([`compose/README.md`](compose/README.md)); the infrastructure is built to extend to the whole
 add-on, one **area** at a time. Each area adds its own files - tests, fixtures, a plugin, its
 known issues - and never edits the shared ones.
 
@@ -14,8 +14,8 @@ There are two levels:
 
 | Level | Where | What it loads | Needs |
 |---|---|---|---|
-| **1** | `tests/<area>/*.test.mjs` (today `tests/managed/`, `tests/static/`, `tests/prompts/`, `tests/api/`, `tests/ui/`, `tests/webchat/`, `tests/migration/`) | the shipped modules, imported as they are | Node 22+, **nothing to install** |
-| **DOM** | `tests/dom/<page>/*.dom.mjs` | each page's real HTML and script, in [jsdom](https://github.com/jsdom/jsdom) | Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`, `npm ci` |
+| **1** | `tests/<area>/*.test.mjs` (today `tests/managed/`, `tests/static/`, `tests/prompts/`, `tests/api/`, `tests/ui/`, `tests/webchat/`, `tests/migration/`, `tests/compose/`) | the shipped modules, imported as they are | Node 22+, **nothing to install** |
+| **DOM** | `tests/dom/<page>/*.dom.mjs` | each page's real HTML and script (or a given document with given scripts), in [jsdom](https://github.com/jsdom/jsdom) | Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`, `npm ci` |
 
 Both use only Node's built-in runner (`node:test`, `node:assert/strict`). jsdom is the
 project's **only** dependency, a dev dependency pinned to an exact version in the root
@@ -90,11 +90,12 @@ tests/
 │   │   │                       tokenizer, locateListener(), evalListener()
 │   │   ├── worker.mjs          a fresh extension context in a worker thread (runWorker())
 │   │   ├── known-issues.mjs    the known-issue mechanism: knownTest(), runKnown()
-│   │   └── dom-harness.mjs     DOM harness: openPage(), the strict browser proxy, settle()
-│   │                           (the only core file that imports jsdom)
+│   │   └── dom-harness.mjs     DOM harness: openPage(), openDocument(), the strict browser proxy,
+│   │                           settle() (the only core file that imports jsdom)
 │   ├── plugins/<area>.mjs      an area's hooks into the core (today: managed.mjs)
 │   ├── known-issues/<area>.mjs an area's known issues and their shape (today: managed.mjs,
-│   │                           static.mjs, prompts.mjs, api.mjs, ui.mjs, webchat.mjs, migration.mjs)
+│   │                           static.mjs, prompts.mjs, api.mjs, ui.mjs, webchat.mjs, migration.mjs,
+│   │                           compose.mjs)
 │   │
 │   └── *.mjs                   the managed layer: load.mjs, dom-page.mjs, browser-mock.mjs,
 │                               dom-known-issues.mjs re-export the core with the managed
@@ -109,6 +110,8 @@ tests/
 │                               Worker, the shadow-DOM queries, the safety checks, level-1 harness test
 ├── migration/                  level 1 of the startup storage migrations (the sequence cut out of
 │                               mzta-background.js, one worker per start), and its README
+├── compose/                    the compose area (its DOM files are dom/compose/compose-*): README, the
+│                               mail documents, the safety check, level-1 harness test
 ├── <area>/                     level 1 of another area
 └── dom/<page>/                 DOM: one file per page × scenario, shared by every area
 ```
@@ -262,6 +265,32 @@ the plugins' remote fields.
 The page is opened at the top level, with `await`, because node:test must know the generated
 tests before it runs them.
 
+### A document that is not a page: `openDocument()`
+
+A content script does not run in a page of the add-on but in a document Thunderbird builds (the
+body of a compose window, a message in the message display), and some modules need a DOM to run
+(the background page is a DOM page in Thunderbird). `openDocument(opts)`, in the same file, opens
+such a document. It is `openPage()`'s own implementation (both call `openContext()`): the same
+window globals, the same mock behind the same strict proxy, the same tracking, `settle()`, `ctx`,
+`ctl`, `commands` and `assertHarnessClean()`. What differs is where the document and its scripts
+come from:
+
+| Option | |
+|---|---|
+| `html` | the document's markup (a whole document, or a body fragment jsdom completes) |
+| `url` | its url, also the sender url of its `runtime.sendMessage` (default `about:blank`) |
+| `scripts` | repository-relative classic scripts, run in this order (mirrored onto the window, as for a page) |
+| `modules` | repository-relative modules, imported in this order after the scripts; their namespaces are `ctx.imports[path]` |
+| `apis(browser, opts)` | adds the `browser.*` APIs this document needs to the mock before the strict proxy wraps it (as a plugin's `pageApis()`, for this document only) |
+| `name` | a label for the error messages |
+
+with every option of `openPage()` but `query`. No `DOMContentLoaded` is dispatched: a content
+script is injected into a document that has already loaded (`document_idle`). One process opens
+one document, as for a page: the scripts' top-level `const`s and the modules' singletons live in the
+process. The compose area uses it for the compose window and the message display
+(`js/lib/mzta-html-lines.js` + `js/mzta-compose-script.js`) and for the background page's DOM
+helpers ([`compose/README.md`](compose/README.md)).
+
 ### Where the background's answers come from
 
 - the real background code wherever it can run without starting `mzta-background.js`: a
@@ -339,4 +368,5 @@ rules are in [`managed/README.md`](managed/README.md#potential-bugs-todo-tests).
   what the api area leaves out in [`api/README.md`](api/README.md#what-is-not-covered),
   what the ui area leaves out in [`ui/README.md`](ui/README.md#what-is-not-covered),
   what the webchat area leaves out in [`webchat/README.md`](webchat/README.md#what-is-not-covered),
-  what the migration area leaves out in [`migration/README.md`](migration/README.md#what-is-not-covered).
+  what the migration area leaves out in [`migration/README.md`](migration/README.md#what-is-not-covered),
+  what the compose area leaves out in [`compose/README.md`](compose/README.md#what-is-not-covered).

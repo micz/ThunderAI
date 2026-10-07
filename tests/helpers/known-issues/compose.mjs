@@ -1,0 +1,179 @@
+/*
+ *  Known issues of the compose area: assertions written from the specs about what the add-on
+ *  reads from a mail and writes into it (js/mzta-compose-script.js, the rich-text layer in
+ *  js/lib/mzta-html-lines.js and js/mzta-utils.js) and about the message-display panels, which
+ *  the shipped code contradicts today. How they run (TODO while failing, "stale" once passing) is
+ *  the core mechanism, ../core/known-issues.mjs; this file holds the entries, their shape, and
+ *  composeTests(), the one way a test of the area is declared.
+ *
+ *  The area's DOM files all live in tests/dom/compose/ (compose-NN-<scenario>.dom.mjs), and
+ *  every test names the spec section it checks. The shape is "a spec section × a case id":
+ *
+ *      KNOWN = { 'spec NN "<section>"': { 'NN-<case>': '<what the code does>' } }
+ *
+ *   - a section is `spec NN "<section title>"`, the section the test was written from;
+ *   - a case id is `NN-<slug>`: NN is the number of the compose-NN- file that declares it (so an
+ *     entry names exactly one test of one file), the slug is a non-empty slug, never '*' nor a
+ *     pattern: a catch-all would hide every later failure of the file at once;
+ *   - the value is the reason: what the spec says and what the code does instead.
+ *  validateKnown() enforces this; tests/compose/99-harness-known-issues runs it.
+ *
+ *  Each DOM file ends with composeTests().coverage(): a test that fails on an entry of KNOWN
+ *  naming a case of that file the file never declared (or declared under another section), so an
+ *  entry cannot outlive the test it was written for.
+ *
+ *  No jsdom here, so level 1 can import it.
+ */
+
+import { readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { knownTest } from '../core/known-issues.mjs';
+
+const FILE = 'tests/helpers/known-issues/compose.mjs';
+const DOM_DIR = new URL('../../dom/compose/', import.meta.url);
+
+// A section title may hold quotes and backticks itself.
+const SECTION_RE = /^spec \d\d ".+"$/;
+const CASE_RE = /^(\d\d)-[a-z0-9][a-z0-9-]*$/;
+
+const S_RICHTEXT = 'spec 01 "The rich-text layer — `js/lib/mzta-html-lines.js` (classic) + `js/mzta-richtext.js` (module)"';
+
+const INJECTED_IN_TYPED = 'MZTA_INJECTED_SELECTORS lists the add-on\'s own elements so that they never reach a '
+    + 'placeholder, and spec 03 defines {%mail_typed_text%} as the text typed in the compose window. '
+    + 'getOnlyTypedText walks document.body.childNodes directly, not getCleanBodyHtml(), so the '
+    + '#mzta-container a panel inserts at the top of the compose body is read as typed text (its '
+    + '"[ThunderAI] ..." line and menu glyphs). Spec 01 records it as a known gap ("injected ThunderAI '
+    + 'DOM ... can contaminate {%mail_typed_text%}").';
+
+const WHITESPACE = 'a newline inside a text node of an HTML document is HTML whitespace (rendered as a space, '
+    + 'or nothing next to a tag), not a line of the mail. The projection keeps it as a line break: ';
+const SOURCE_NEWLINE = WHITESPACE + 'a draft reopened in the compose window carries the serializer\'s '
+    + 'indentation, so ';
+
+/** The known issues, by spec section and case id. */
+export const KNOWN = {
+    'spec 03 "Newline contract of the compose placeholders"': {
+        '01-quoted-br-single-break': SOURCE_NEWLINE + 'the newline after each <br> becomes a second line break: '
+            + '"-- <br>\\n      This is my" gives "--\\n\\n This is my", a blank line inside the signature, where '
+            + 'the contract is one \\n between lines and a blank line only between paragraphs '
+            + '(nodeTextKeepLines() replaces the <br> and keeps the text node\'s \\n).',
+    },
+    'spec 03 "Newline contract of the body placeholders"': {
+        '01-text-body-citation-one-line': SOURCE_NEWLINE + 'the citation "On 05/11/2024 08:27,\\n      <a>...</a> wrote:" '
+            + '(one div.moz-cite-prefix, one line on screen) reaches {%mail_text_body%} as two lines, where the '
+            + 'contract is one \\n per HTML block boundary.',
+        '09-source-newline-not-a-line': WHITESPACE + 'HTML generators wrap their source lines, so "<p>A long '
+            + 'sentence wrapped\\nby the HTML generator.</p>" gives two lines in {%mail_text_body%} '
+            + '(htmlBodyToPlainText(), and getTextOnly through the same projection), where the contract is one '
+            + '\\n per HTML block boundary.',
+        '09-gmail-div-lines': 'the projection only APPENDS a \\n to a block (spec 01 "htmlBodyToPlainText() '
+            + 'injects the line structure", pass 3), so text that precedes a block element in the same parent is '
+            + 'welded to the block\'s first line. Gmail writes exactly that shape (the first line bare, every '
+            + 'following line in a <div> of its own): "<div dir=ltr>Hi Bob,<div>thanks for the file.</div>..." '
+            + 'gives "Hi Bob,thanks for the file." where the contract is one \\n per HTML block boundary - the '
+            + 'boundary before the <div> is one. Both paths share the projection.',
+        '09-paths-in-step': 'htmlBodyToPlainText() removes <style> but not <script>, while the interactive path '
+            + 'drops both (MZTA_INJECTED_SELECTORS; spec 01 "getCleanBodyHtml() returns a DETACHED clone": their '
+            + 'SOURCE is text, read out as body copy). The same mail gives a different {%mail_text_body%} on the '
+            + 'two paths: on the background one (auto tagging, spam filter, summarize / translate on receive) '
+            + 'a script\'s source is sent to the model as part of the body. Spec 03: both paths share one '
+            + 'projection, "do not re-fork it"; spec 01: they "must be kept in step".',
+    },
+    [S_RICHTEXT]: {
+        '01-typed-skips-injected': INJECTED_IN_TYPED,
+        '03-typed-without-signature': 'spec 03 defines {%mail_typed_text%} as the text typed so far; in a new '
+            + 'message with no quote there is no moz-cite-prefix to stop the walk, so getOnlyTypedText '
+            + 'appends the div.moz-signature ("--\\nThis is my best signature!!!") to the typed text. Spec 01 '
+            + 'records it as a known gap ("the moz-signature can contaminate {%mail_typed_text%}").',
+    },
+    'spec 01 "Writing into a plain text compose window"': {
+        '09-markdown-br-newline': 'stripHtmlKeepLines() must consume the pretty-printing newline that follows '
+            + 'a tag ("the renderer emits <br>\\n and </p>\\n<p>, so each of those rules consumes the '
+            + 'pretty-printing newline that follows its tag. Counting both would double every line and make a '
+            + 'single <br> indistinguishable from a paragraph break"). The DOM projection turns the <br> into '
+            + '\\n AND keeps the source \\n after it, so "<p>a<br>\\nb</p>\\n<p>c</p>" becomes "a\\n\\nb\\n\\nc" '
+            + 'instead of "a\\nb\\n\\nc": every line break of a markdown-it answer reaches a plain text '
+            + 'compose window as a blank line.',
+        '09-markdown-list': 'the same on a markdown-it list ("<ul>\\n<li>one</li>\\n<li>two</li>\\n</ul>"): '
+            + 'each <li> ends a line AND the source \\n after </li> is kept, so the items reach a plain text '
+            + 'compose window with a blank line between them ("one\\n\\ntwo"). Spec 07 "Into a plain text compose '
+            + 'window": every block boundary other than <p> is a single \\n.',
+    },
+    'spec 01 "Stale-result guard (rapid message switching)"': {
+        '11-frameset-summary':'a summary_html opening with <frameset> makes the parsed document\'s body the '
+            + 'frameset itself; _renderSafeHtml() removes it (frameset is in _UNSAFE_PANEL_TAGS), so '
+            + 'doc.body is null and the next doc.body.querySelectorAll() throws a TypeError. The listener '
+            + 'throws, the summary panel is never drawn, and the previous one was already removed. Nothing '
+            + 'executable reaches the pane, but the panel is lost (the spec says the step removes the '
+            + 'frameset and keeps the rest).',
+        '11-frameset-translation': 'same as 11-frameset-summary, on the translation panel: translated_text '
+            + 'opening with <frameset> throws inside _renderSafeHtml() and no translation panel is drawn.',
+    },
+};
+
+/** [the NN of each compose-NN- file of tests/dom/compose/]. */
+export function areaFiles() {
+    let files;
+    try { files = readdirSync(fileURLToPath(DOM_DIR)); } catch { return []; }
+    return files.map(f => /^compose-(\d\d)-.+\.dom\.mjs$/.exec(f)).filter(Boolean).map(m => m[1]);
+}
+
+/** The problems with a KNOWN-shaped object, as strings; [] when it is valid. */
+export function validateKnown(known, files = areaFiles()) {
+    const problems = [];
+    const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
+    if (!isObj(known)) return ['KNOWN must be an object'];
+    const seen = new Set();
+    for (const [section, cases] of Object.entries(known)) {
+        if (!SECTION_RE.test(section)) problems.push(`${section}: a section is \`spec NN "<section>"\``);
+        if (!isObj(cases)) { problems.push(`${section}: must be an object {case id: reason}`); continue; }
+        for (const [id, reason] of Object.entries(cases)) {
+            const m = CASE_RE.exec(id);
+            if (!m) problems.push(`${section}.${id}: a case id is NN-<slug> and names one test, never a pattern`);
+            else if (!files.includes(m[1])) problems.push(`${section}.${id}: no compose-${m[1]}- file in tests/dom/compose/`);
+            if (seen.has(id)) problems.push(`${id}: listed under two sections`);
+            seen.add(id);
+            if (typeof reason !== 'string' || reason.trim() === '') problems.push(`${section}.${id}: no reason`);
+        }
+    }
+    return problems;
+}
+
+/**
+ * The test declarer of one DOM file of the area.
+ *
+ *   const k = composeTests('05');
+ *   k.test('case-slug', 'spec 01 "Writing into a plain text compose window"', 'what the spec says', async () => { ... });
+ *   ...
+ *   k.coverage();     // last: every KNOWN entry of this file names a declared case
+ *
+ * k.test() runs through knownTest(): a case listed in KNOWN is a TODO while it fails and fails the
+ * run once it passes. A case declared twice in a file, or a section not of the form
+ * `spec NN "<section>"`, throws at load.
+ */
+export function composeTests(nn, { known = KNOWN } = {}) {
+    const declared = new Map();     // case id -> its section
+    return {
+        test(slug, section, name, fn) {
+            const id = `${nn}-${slug}`;
+            if (!CASE_RE.test(id)) throw new Error(`composeTests(${nn}): bad case id "${id}"`);
+            if (!SECTION_RE.test(section)) throw new Error(`composeTests(${nn}): bad section ${section}`);
+            if (declared.has(id)) throw new Error(`composeTests(${nn}): case "${id}" declared twice`);
+            declared.set(id, section);
+            const reason = known[section]?.[id];
+            return knownTest(`[${id}] ${section}: ${name}`,
+                reason ? `${section}: ${reason}` : undefined, fn, { file: FILE });
+        },
+        coverage() {
+            test(`compose-${nn}: every known issue names a case this file declares`, () => {
+                const orphans = Object.entries(known).flatMap(([section, cases]) =>
+                    Object.keys(cases)
+                        .filter(id => id.startsWith(nn + '-') && declared.get(id) !== section)
+                        .map(id => `${section} ${id}`));
+                assert.deepEqual(orphans, [], `remove or rename these entries of KNOWN in ${FILE}`);
+            });
+        },
+    };
+}
