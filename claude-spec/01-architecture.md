@@ -1017,6 +1017,14 @@ applied to a live node — **reimplemented, not imported**: the compose script i
 `js/mzta-utils.js`. A plain text compose window needs no special case: its breaks are already real
 `\n` in the text nodes ([#855]), there are no `<br>` to replace, and nothing doubles up.
 
+`nodeTextKeepLines()` follows the shared layer's whitespace rule (see *`htmlBodyToPlainText()` injects
+the line structure*), reusing its `mztaTextNodes()` / `mztaIsPreformatted()` globals: outside
+preformatted content, HTML whitespace collapses to one space and a space at the start of a line goes.
+A draft reopened in the compose window carries the serializer's indentation, and `"-- <br>\n      This"`
+used to give a blank line inside the signature of `{%mail_quoted_text%}`. Preformatted is also checked
+on the **live** ancestors of the node: the projection runs on a detached clone, and a plain text
+window's `white-space: pre-wrap` sits on `<body>`, outside it.
+
 The resulting contract, identical across every compose-window kind: **one `\n` between lines, one
 blank line (`\n\n`) between paragraphs.** Paragraph mode gives every `<p>` boundary a blank line, so
 its output is `\n\n`-separated throughout.

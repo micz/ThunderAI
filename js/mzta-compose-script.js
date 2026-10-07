@@ -84,13 +84,36 @@ const MZTA_BLOCK_LEVEL_RE = /^(P|BLOCKQUOTE|UL|OL|TABLE|H[1-6]|PRE)$/;
 // PLAIN TEXT compose: the line breaks ARE the \n already inside the text nodes
 // [#855]. There are no <br> to replace, so this returns textContent unchanged
 // and nothing doubles up. One path serves both window kinds.
+//
+// HTML whitespace is not line structure, the same rule as mztaInjectLineBreaks()
+// (js/lib/mzta-html-lines.js, whose helpers this reuses): outside preformatted
+// content a run of spaces, tabs and newlines is one space, and a space at the
+// start of a line goes. A draft reopened in the compose window carries the
+// serializer's indentation, and "-- <br>\n      This" used to give a blank line
+// inside the signature. Preformatted is checked on the LIVE ancestors too: the
+// clone below is detached, and a plain text window's "white-space: pre-wrap" sits
+// on <body>, outside it - there the newlines ARE the lines [#855].
 function nodeTextKeepLines(node) {
+  const livePre = mztaIsPreformatted(node, document.documentElement);
   if (node.nodeType !== Node.ELEMENT_NODE) {
-    return node.textContent || '';
+    const text = node.textContent || '';
+    return (livePre || node.nodeType !== Node.TEXT_NODE) ? text : text.replace(/[ \t\n\r\f]+/g, ' ');
   }
   const clone = node.cloneNode(true);
+  if (!livePre) {
+    for (const t of mztaTextNodes(clone)) {
+      if (!mztaIsPreformatted(t, clone)) t.data = t.data.replace(/[ \t\n\r\f]+/g, ' ');
+    }
+  }
   for (const br of clone.querySelectorAll('br')) {
     br.replaceWith(document.createTextNode('\n'));
+  }
+  if (!livePre) {
+    let atLineStart = true;
+    for (const t of mztaTextNodes(clone)) {
+      if (atLineStart && !mztaIsPreformatted(t, clone)) t.data = t.data.replace(/^ +/, '');
+      if (t.data !== '') atLineStart = t.data.endsWith('\n');
+    }
   }
   // Thunderbird's HTML editor ends most lines with a trailing bogus <br>. That
   // break is the same one the join in the callers adds - keeping both doubles

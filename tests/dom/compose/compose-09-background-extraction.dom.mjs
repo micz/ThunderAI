@@ -88,10 +88,8 @@ k.test('gmail-div-lines', S_BODY, 'one \n per block boundary: text followed by a
 });
 
 k.test('never-blank', S_INJECT, 'pretty-printed HTML and empty spacer paragraphs give no blank line', () => {
-    // Compared trimmed: the cleanup keeps one space where the indentation was (README "Under-specified").
-    const t = htmlBodyToPlainText('<div>\n  <p>a</p>\n\n  <p class=MsoNormal><o:p>&nbsp;</o:p></p>\n  <p>b</p>\n</div>\n');
-    assert.ok(!t.includes('\n\n'), JSON.stringify(t));
-    assert.deepEqual(t.split('\n').map(l => l.trim()), ['a', 'b']);
+    assert.equal(htmlBodyToPlainText('<div>\n  <p>a</p>\n\n  <p class=MsoNormal><o:p>&nbsp;</o:p></p>\n  <p>b</p>\n</div>\n'),
+        'a\nb');
 });
 
 k.test('source-newline-not-a-line', S_BODY, 'one \\n per block boundary: a newline inside a paragraph\'s source is not a line', () => {

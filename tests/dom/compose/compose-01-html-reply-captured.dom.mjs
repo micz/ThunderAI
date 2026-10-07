@@ -58,13 +58,12 @@ k.test('typed-paragraphs', S_COMPOSE, 'the typed text is the three paragraphs, a
 
 // The draft carries the serializer's indentation: a newline and spaces between the elements and
 // after each <br>. That whitespace is HTML whitespace, rendered as nothing (or one space): it is not
-// a line of the mail. The lines are compared trimmed, because the spec's cleanup keeps one space at
-// the start of a line (README "Under-specified").
-const trimmedLines = s => s.split('\n').map(l => l.trim());
+// a line of the mail, and no line starts with it.
+const splitLines = s => s.split('\n');
 
 k.test('quoted-starts-at-prefix', S_COMPOSE, 'the quoted text starts at the citation line and holds the quote on a line of its own', async () => {
     before.quoted = await quoted();
-    const lines = trimmedLines(before.quoted);
+    const lines = splitLines(before.quoted);
     assert.match(lines[0], /^On 05\/11\/2024 08:27,/);
     assert.ok(lines.includes('This is the body of test email number 8. It was received.'), JSON.stringify(before.quoted));
     assert.ok(!before.quoted.includes('Here we use HTML'), 'no typed text in the quoted text');
@@ -72,19 +71,19 @@ k.test('quoted-starts-at-prefix', S_COMPOSE, 'the quoted text starts at the cita
 
 k.test('quoted-blank-line-before-quote', S_COMPOSE, 'the blockquote is a paragraph boundary: a blank line before the quote, never two', async () => {
     const q = before.quoted ?? await quoted();
-    assert.match(q, /wrote:\n\n ?This is the body of test email number 8/);
+    assert.match(q, /wrote:\n\nThis is the body of test email number 8/);
     assert.ok(!/\n\n\n/.test(q), JSON.stringify(q));
 });
 
 k.test('quoted-br-single-break', S_COMPOSE, 'a <br> is one line break: the signature\'s "-- <br>" is followed by its next line, not by a blank line', async () => {
     const q = before.quoted ?? await quoted();
-    assert.match(q, /--\n ?This is my best signature!!!/, JSON.stringify(q));
+    assert.match(q, /--\nThis is my best signature!!!/, JSON.stringify(q));
 });
 
 k.test('text-body-never-blank', S_BODY, 'the body text has every paragraph on a line of its own and no blank line', async () => {
     before.text = await textBody();
     assert.ok(!before.text.includes('\n\n'), JSON.stringify(before.text));
-    const lines = trimmedLines(before.text);
+    const lines = splitLines(before.text);
     for (const line of ['Here we use HTML because we are pretty!', 'Regards!!!', 'Bye!!',
         'This is the body of test email number 8. It was received.']) {
         assert.ok(lines.includes(line), `${JSON.stringify(line)} in ${JSON.stringify(before.text)}`);
@@ -92,7 +91,7 @@ k.test('text-body-never-blank', S_BODY, 'the body text has every paragraph on a 
 });
 
 k.test('text-body-citation-one-line', S_BODY, 'one line break per block boundary: the citation, one block, is one line', async () => {
-    const lines = trimmedLines(before.text ?? await textBody());
+    const lines = splitLines(before.text ?? await textBody());
     assert.ok(lines.includes('On 05/11/2024 08:27, sender8@example.com wrote:'), JSON.stringify(lines));
 });
 

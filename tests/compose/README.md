@@ -118,7 +118,6 @@ In `tests/helpers/known-issues/compose.mjs`, run as TODOs while they fail:
 
 | Case | Spec section | What the code does |
 |---|---|---|
-| `01-quoted-br-single-break` | 03 "Newline contract of the compose placeholders" | the typed / quoted walkers keep HTML whitespace as lines (their own projection, `nodeTextKeepLines()`): in a reopened draft `<br>` + the newline after it gives a blank line in `{%mail_quoted_text%}` |
 | `01-typed-skips-injected` | 01 "The rich-text layer" | a panel drawn in the compose body is read as typed text (spec 01's own "Known gap") |
 | `03-typed-without-signature` | 01 "The rich-text layer" | in a new message the signature is read as typed text (spec 01's own "Known gap") |
 
@@ -148,10 +147,9 @@ In `tests/helpers/known-issues/compose.mjs`, run as TODOs while they fail:
 
 What the code does that no spec states, listed instead of tested:
 
-1. **A line's leading whitespace in the typed / quoted text.** The shared projection drops a space at
-   the start of a line (HTML's own rule), but the compose walkers do not: their cleanup keeps one space
-   where a reopened draft's indentation was (`" This is the body…"`). The tests compare such lines
-   trimmed.
+1. *(resolved: spec 01 now states that HTML source whitespace is not line structure, in the shared
+   projection and in the compose walkers; a line no longer starts with the indentation's space, and
+   the tests compare exact lines.)*
 2. **The plain text compose window's DOM.** Spec 01 says its breaks are `\n` in text nodes; how the
    editor holds the quote and the signature (elements or text) is neither stated nor captured. The
    fixture is the captured text as one text node, so `{%mail_quoted_text%}` is not tested there. A

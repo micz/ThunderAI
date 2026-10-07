@@ -47,19 +47,8 @@ const INJECTED_IN_TYPED = 'MZTA_INJECTED_SELECTORS lists the add-on\'s own eleme
     + '"[ThunderAI] ..." line and menu glyphs). Spec 01 records it as a known gap ("injected ThunderAI '
     + 'DOM ... can contaminate {%mail_typed_text%}").';
 
-const SOURCE_NEWLINE = 'a newline inside a text node of an HTML document is HTML whitespace (rendered as a space, '
-    + 'or nothing next to a tag), not a line of the mail. The shared projection collapses it now, but the '
-    + 'typed / quoted walkers of js/mzta-compose-script.js use their own (nodeTextKeepLines()), which keeps '
-    + 'it as a line break: a draft reopened in the compose window carries the serializer\'s indentation, so ';
-
 /** The known issues, by spec section and case id. */
 export const KNOWN = {
-    'spec 03 "Newline contract of the compose placeholders"': {
-        '01-quoted-br-single-break': SOURCE_NEWLINE + 'the newline after each <br> becomes a second line break: '
-            + '"-- <br>\\n      This is my" gives "--\\n\\n This is my", a blank line inside the signature, where '
-            + 'the contract is one \\n between lines and a blank line only between paragraphs '
-            + '(nodeTextKeepLines() replaces the <br> and keeps the text node\'s \\n).',
-    },
     [S_RICHTEXT]: {
         '01-typed-skips-injected': INJECTED_IN_TYPED,
         '03-typed-without-signature': 'spec 03 defines {%mail_typed_text%} as the text typed so far; in a new '
