@@ -162,6 +162,17 @@ function mztaStripHidden(root) {
 // this mutates it.
 function mztaInjectLineBreaks(root) {
   const doc = root.ownerDocument || document;
+  // HTML whitespace is not line structure. Outside preformatted content a run of
+  // spaces, tabs and newlines in the SOURCE renders as one space: a newline the
+  // HTML generator wrapped a paragraph at, or the serializer's indentation in a
+  // reopened draft, used to come out as a line break of its own. Collapsed first,
+  // on the document's own text nodes only, before any break is injected. U+00A0 is
+  // not HTML whitespace and is left to the normalizer.
+  for (const node of mztaTextNodes(root)) {
+    if (!mztaIsPreformatted(node, root)) {
+      node.data = node.data.replace(/[ \t\n\r\f]+/g, ' ');
+    }
+  }
   // A block OPENS a line too, when inline content precedes it in the same parent:
   // the passes below only APPEND a break, so "Hi Bob,<div>thanks</div>" - Gmail's
   // own shape, the first line bare and every following line in a <div> - came out
@@ -189,7 +200,45 @@ function mztaInjectLineBreaks(root) {
   for (const el of root.querySelectorAll(MZTA_PARA_BLOCK_SELECTOR)) {
     el.appendChild(doc.createTextNode('\n\n'));
   }
+  // A space at the start of a line is not rendered either: the collapsed source
+  // whitespace right after a break (markdown-it's "<br>\n", "</p>\n<p>", a
+  // pretty-printed list, an indented draft) would otherwise open the next line
+  // with a space, or stand alone between two breaks as a blank line.
+  let atLineStart = true;
+  for (const node of mztaTextNodes(root)) {
+    if (atLineStart && !mztaIsPreformatted(node, root)) {
+      node.data = node.data.replace(/^ +/, '');
+    }
+    if (node.data !== '') atLineStart = node.data.endsWith('\n');
+  }
   return root;
+}
+
+// The text nodes under `root`, in document order, as a static list.
+function mztaTextNodes(root) {
+  const doc = root.ownerDocument || document;
+  const walker = doc.createTreeWalker(root, 4 /* NodeFilter.SHOW_TEXT */);
+  const nodes = [];
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) nodes.push(n);
+  return nodes;
+}
+
+// Preformatted: inside a <pre> (or its obsolete kin, or a <textarea>), or under an
+// inline white-space: pre / pre-wrap / pre-line / break-spaces - the plain text
+// compose window's body carries "white-space: pre-wrap", and its newlines ARE its
+// lines [#855]. Inline styles only: the projection runs on a detached DOM with no
+// computed style. Checked from the node up to `root` included.
+const MZTA_PRE_SELECTOR = 'pre, textarea, listing, xmp, plaintext';
+const MZTA_PRE_STYLE_RE = /(?:^|;)\s*white-space\s*:\s*(?:pre|pre-wrap|pre-line|break-spaces)\s*(?:;|!|$)/i;
+function mztaIsPreformatted(node, root) {
+  for (let el = node.parentNode; el; el = el.parentNode) {
+    if (el.nodeType === 1 && (el.matches(MZTA_PRE_SELECTOR) ||
+        MZTA_PRE_STYLE_RE.test(el.getAttribute('style') || ''))) {
+      return true;
+    }
+    if (el === root) break;
+  }
+  return false;
 }
 
 // True when the nearest sibling before `el` that carries anything (whitespace-only

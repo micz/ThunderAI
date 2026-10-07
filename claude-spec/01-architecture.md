@@ -1059,7 +1059,19 @@ being compact. Every paragraph therefore came out welded to the next one
 
 The function now inserts real break text nodes into the parsed DOM **before** the `textContent`
 read, by calling `mztaInjectLineBreaks()` after the hidden-element / `<style>` / `<script>` removals. That helper
-lives in **`js/lib/mzta-html-lines.js`** and applies four passes:
+lives in **`js/lib/mzta-html-lines.js`** and applies four passes, between two whitespace rules
+taken from how HTML renders:
+
+- **Before the passes, HTML whitespace is collapsed.** Outside preformatted content, every run of
+  spaces, tabs and newlines in the document's own text nodes becomes one space. A newline in the
+  HTML *source* is not a line of the mail: an HTML generator wrapping a long paragraph, or the
+  serializer's indentation in a draft reopened in the compose window, used to come out as line
+  breaks (`"On 05/11/2024 08:27,\n      <a>…</a> wrote:"` was two lines of `{%mail_text_body%}`).
+  Preformatted means inside `pre` (and `textarea`, `listing`, `xmp`, `plaintext`) or under an
+  inline `white-space: pre / pre-wrap / pre-line / break-spaces`, checked up to the root included:
+  the plain text compose window's body carries `white-space: pre-wrap`, and there the newlines
+  **are** the lines ([#855]). Inline styles only, as for the hidden elements: there is no computed
+  style on a detached DOM. U+00A0 is not HTML whitespace; it is left to the normalizer.
 
 0. A block element (the pass-3 list) **preceded by inline content** in its parent — text, or an
    inline element, skipping whitespace-only text and comments — gets a `\n` node inserted **before**
@@ -1075,6 +1087,14 @@ lives in **`js/lib/mzta-html-lines.js`** and applies four passes:
    them rather than being appended inside them.
 3. `p, div, li, tr, h1`–`h6`, `blockquote, pre, table, ul, ol, section, article, header, footer` →
    append a `\n` node.
+
+- **After the passes, a space at the start of a line is dropped** (outside preformatted content),
+  as a browser does not render one. Without it the collapsed source whitespace right after a break
+  would open the next line with a space or, alone between two breaks, make a blank line on the
+  `{ keepParagraphs }` side: markdown-it's `<br>\n` gave `a\n\nb` instead of `a\nb`, its pretty-printed
+  `</p>\n<p>` and `</li>\n<li>` added blank lines between paragraphs and list items. This is what
+  makes the insertion side consume "the pretty-printing newline that follows its tag" (see
+  *Writing into a plain text compose window*).
 
 Same parse-then-inject recipe as `htmlToPlainText()` (`api_webchat/messagesArea.js`) and
 `blockTextOfHtml()` (`api_webchat/diffPicker.js`) — the add-on treats this as *the* HTML→text

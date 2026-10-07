@@ -96,7 +96,8 @@ cleanup rules*.
 
 Both share **one** projection, `js/lib/mzta-html-lines.js`: `<br>`/`<hr>` → `\n`, a paragraph (`<p>`)
 → `\n\n`, every other block element → a trailing `\n` (and a leading one when inline content precedes it,
-so Gmail's `Hi Bob,<div>thanks</div>` is two lines), `<td>`/`<th>` → a space, injected into the DOM
+so Gmail's `Hi Bob,<div>thanks</div>` is two lines), `<td>`/`<th>` → a space, while a newline in the
+HTML *source* is whitespace, not a line (outside `<pre>` and inline `white-space: pre*`), injected into the DOM
 **before** the text is read, because `textContent` alone drops every block boundary and `innerText`
 is useless on the detached clone `getCleanBodyHtml()` returns. They had the same bug twice precisely
 because each used to carry its own copy — do not re-fork it.

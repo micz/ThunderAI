@@ -118,9 +118,7 @@ In `tests/helpers/known-issues/compose.mjs`, run as TODOs while they fail:
 
 | Case | Spec section | What the code does |
 |---|---|---|
-| `09-source-newline-not-a-line`, `01-text-body-citation-one-line` | 03 "Newline contract of the body placeholders" | a newline in an HTML text node (source wrapping, serializer indentation) becomes a line of `{%mail_text_body%}` |
-| `01-quoted-br-single-break` | 03 "Newline contract of the compose placeholders" | the same in a reopened draft: `<br>` + the newline after it gives a blank line in `{%mail_quoted_text%}` |
-| `09-markdown-br-newline`, `09-markdown-list` | 01 "Writing into a plain text compose window", 07 | `stripHtmlKeepLines()` keeps the newline after `<br>` and `</li>`: markdown-it's `<br>\n` becomes a blank line, list items get blank lines between them |
+| `01-quoted-br-single-break` | 03 "Newline contract of the compose placeholders" | the typed / quoted walkers keep HTML whitespace as lines (their own projection, `nodeTextKeepLines()`): in a reopened draft `<br>` + the newline after it gives a blank line in `{%mail_quoted_text%}` |
 | `01-typed-skips-injected` | 01 "The rich-text layer" | a panel drawn in the compose body is read as typed text (spec 01's own "Known gap") |
 | `03-typed-without-signature` | 01 "The rich-text layer" | in a new message the signature is read as typed text (spec 01's own "Known gap") |
 
@@ -150,9 +148,10 @@ In `tests/helpers/known-issues/compose.mjs`, run as TODOs while they fail:
 
 What the code does that no spec states, listed instead of tested:
 
-1. **A line's leading whitespace.** The cleanup collapses space runs and trims line ends and the whole
-   value, but keeps one space where the source indentation was (`" Regards!!!"` from a reopened
-   draft, `"a\n b"` from pretty-printed HTML). The tests compare such lines trimmed.
+1. **A line's leading whitespace in the typed / quoted text.** The shared projection drops a space at
+   the start of a line (HTML's own rule), but the compose walkers do not: their cleanup keeps one space
+   where a reopened draft's indentation was (`" This is the body…"`). The tests compare such lines
+   trimmed.
 2. **The plain text compose window's DOM.** Spec 01 says its breaks are `\n` in text nodes; how the
    editor holds the quote and the signature (elements or text) is neither stated nor captured. The
    fixture is the captured text as one text node, so `{%mail_quoted_text%}` is not tested there. A

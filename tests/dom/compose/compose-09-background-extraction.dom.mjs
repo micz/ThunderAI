@@ -99,6 +99,12 @@ k.test('source-newline-not-a-line', S_BODY, 'one \\n per block boundary: a newli
         'A long sentence wrapped by the HTML generator.\nNext.');
 });
 
+k.test('pre-keeps-lines', S_INJECT, 'inside <pre> and under an inline white-space: pre-wrap the source newlines ARE lines', () => {
+    assert.equal(htmlBodyToPlainText('<p>wrapped\nsource</p><pre>line one\nline two</pre>'
+        + '<div style="white-space: pre-wrap">kept one\nkept two</div>'),
+    'wrapped source\nline one\nline two\nkept one\nkept two');
+});
+
 k.test('style-gone', S_INJECT, '<style> in the head or the body is not read', () => {
     assert.equal(htmlBodyToPlainText('<html><head><style>.a{color:red}</style></head><body><style>p{x:y}</style><p>text</p></body></html>'),
         'text');

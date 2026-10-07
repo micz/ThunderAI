@@ -47,10 +47,10 @@ const INJECTED_IN_TYPED = 'MZTA_INJECTED_SELECTORS lists the add-on\'s own eleme
     + '"[ThunderAI] ..." line and menu glyphs). Spec 01 records it as a known gap ("injected ThunderAI '
     + 'DOM ... can contaminate {%mail_typed_text%}").';
 
-const WHITESPACE = 'a newline inside a text node of an HTML document is HTML whitespace (rendered as a space, '
-    + 'or nothing next to a tag), not a line of the mail. The projection keeps it as a line break: ';
-const SOURCE_NEWLINE = WHITESPACE + 'a draft reopened in the compose window carries the serializer\'s '
-    + 'indentation, so ';
+const SOURCE_NEWLINE = 'a newline inside a text node of an HTML document is HTML whitespace (rendered as a space, '
+    + 'or nothing next to a tag), not a line of the mail. The shared projection collapses it now, but the '
+    + 'typed / quoted walkers of js/mzta-compose-script.js use their own (nodeTextKeepLines()), which keeps '
+    + 'it as a line break: a draft reopened in the compose window carries the serializer\'s indentation, so ';
 
 /** The known issues, by spec section and case id. */
 export const KNOWN = {
@@ -60,34 +60,12 @@ export const KNOWN = {
             + 'the contract is one \\n between lines and a blank line only between paragraphs '
             + '(nodeTextKeepLines() replaces the <br> and keeps the text node\'s \\n).',
     },
-    'spec 03 "Newline contract of the body placeholders"': {
-        '01-text-body-citation-one-line': SOURCE_NEWLINE + 'the citation "On 05/11/2024 08:27,\\n      <a>...</a> wrote:" '
-            + '(one div.moz-cite-prefix, one line on screen) reaches {%mail_text_body%} as two lines, where the '
-            + 'contract is one \\n per HTML block boundary.',
-        '09-source-newline-not-a-line': WHITESPACE + 'HTML generators wrap their source lines, so "<p>A long '
-            + 'sentence wrapped\\nby the HTML generator.</p>" gives two lines in {%mail_text_body%} '
-            + '(htmlBodyToPlainText(), and getTextOnly through the same projection), where the contract is one '
-            + '\\n per HTML block boundary.',
-    },
     [S_RICHTEXT]: {
         '01-typed-skips-injected': INJECTED_IN_TYPED,
         '03-typed-without-signature': 'spec 03 defines {%mail_typed_text%} as the text typed so far; in a new '
             + 'message with no quote there is no moz-cite-prefix to stop the walk, so getOnlyTypedText '
             + 'appends the div.moz-signature ("--\\nThis is my best signature!!!") to the typed text. Spec 01 '
             + 'records it as a known gap ("the moz-signature can contaminate {%mail_typed_text%}").',
-    },
-    'spec 01 "Writing into a plain text compose window"': {
-        '09-markdown-br-newline': 'stripHtmlKeepLines() must consume the pretty-printing newline that follows '
-            + 'a tag ("the renderer emits <br>\\n and </p>\\n<p>, so each of those rules consumes the '
-            + 'pretty-printing newline that follows its tag. Counting both would double every line and make a '
-            + 'single <br> indistinguishable from a paragraph break"). The DOM projection turns the <br> into '
-            + '\\n AND keeps the source \\n after it, so "<p>a<br>\\nb</p>\\n<p>c</p>" becomes "a\\n\\nb\\n\\nc" '
-            + 'instead of "a\\nb\\n\\nc": every line break of a markdown-it answer reaches a plain text '
-            + 'compose window as a blank line.',
-        '09-markdown-list': 'the same on a markdown-it list ("<ul>\\n<li>one</li>\\n<li>two</li>\\n</ul>"): '
-            + 'each <li> ends a line AND the source \\n after </li> is kept, so the items reach a plain text '
-            + 'compose window with a blank line between them ("one\\n\\ntwo"). Spec 07 "Into a plain text compose '
-            + 'window": every block boundary other than <p> is a single \\n.',
     },
 };
 
