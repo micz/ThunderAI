@@ -79,7 +79,6 @@ In `tests/fixtures/compose/`:
 |---|---|
 | `captured/mail_html_compose_signature_quote_text.txt` | **captured**: an HTML reply draft as Thunderbird saved it (Paragraph mode, quote, signature). Opened as the compose body, its serializer indentation included, as a reopened draft holds it |
 | `captured/plaintext_compose_body_live.html` | **captured**: the `<body>` of a live plain text compose window, a reply with quote and signature and nothing typed, read with `tabs.executeScript(tab.id, {code: 'document.body.outerHTML'})` from the add-on's background console. Anonymized |
-| `captured/mail_text_compose_signature_quote_text.txt` | **captured**, kept for reference and not used: a plain text reply draft as Thunderbird SAVED it - the serializer's output (`format=flowed`, the `> ` it writes), not what the editor holds |
 | `plaintext-compose-typed.json` | derived from the live capture: three typed lines and a blank line, in the capture's own shape (top-level text and `<br>`) |
 | `captured/mail_html_reading.txt` | **captured**: an HTML mail. Its bytes are ISO-8859-1 although its header says `charset=utf-8` (re-saved after anonymizing): `readCapture()` decodes it as latin1. Its body is put in `div.moz-text-html`, the message display's wrapper, written by hand |
 | `html-compose-paragraph-reply.json` | hand-written: the captured reply's structure without the indentation, plus a non-breaking space, a Shift+Enter `<br>` and a second quoted line |
