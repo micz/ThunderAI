@@ -47,13 +47,13 @@ time: the debounce, the worker timeout and the batch yield points run on node:te
 | `01-job-registry` | `taJobRegistry`: one entry per kind and message, synchronous registration, the job body not run inside `start()`, the promise never rejecting (thrown, rate-limited, synchronous throw, no outcome), the entry removed on every path, a retry in the same session, joiners sharing the outcome, `invalidate()` / `revive()`, the log lines | 01 "In-flight jobs" |
 | `02-batch-controller` | `taBatchController`: tokens, `endBatch()`'s snapshot and the reset on the last exit, a cancel flagging the active batches only, later batches unaffected, overlapping batches and one notice, `rate_limit` never overwritten, the longest `retryAfterMs`, `getStatus()`, independence from `WorkingLevel` | 01 "Batch cancellation", 04 "Batch cancellation" |
 | `03-working-status-exclusions` | `taWorkingStatus` (level, icons, never negative); `checkExcludedTag()` and the exclusion list preference | 01 "Working indicator", 05 `add_tags_exclusions` |
-| `04-storage` | `taStorage`: the `msg:<id>` key and schema, the three fields in one record, force / no force, deleting a field and the last field, `deleteRecord()`, `getAll*Records()`, age-based `cleanup()`, `clearAllRecords()`, the preferences never touched | 01 "Per-Message Data Storage" |
+| `04-storage` | `taStorage`: the `msg:<id>` key and schema, the three fields in one record, force / no force, deleting a field and the last field, `deleteRecord()`, `getAll*Records()`, age-based `cleanup()`, `clearAllRecords()`, the preferences never touched, the per-record write queue (concurrent fields, delete + write, two instances, order, other messages in parallel) | 01 "Per-Message Data Storage" |
 | `05-stores` | `taSummaryStore`, `taTranslationStore`, `taSpamReport`: round trips, error states, records written by older versions, removal, the 100-entry truncation (as methods: the background calls only the spam one), `saveError()` metadata, `getAllReportData()` → `{}`, clearing one field only, no `storage.session` state | 01 "Per-Message Data Storage", 02 "Missing special prompts" |
 | `10-special-command` | `mzta_specialCommand` after `initWorker()`: the prompt posted, the answer accumulated, `newRetryAttempt` / `messageSent` ignored, thinking tokens and `<think>` blocks (closed, leading whitespace, unterminated), errors with `rateLimited` / `retryAfterMs`, a worker crash, the timeout (the preference, the default, after a 429, after a 503, never after an answer), `dispose()` on every path | 04 "Worker Lifecycle & Timeout", "Thinking in special commands", #batch-stop-on-rate-limit |
 | `20-receive-summary-translation` | `summarize_auto = 3` / `translate_auto = 3`: the listener registration, what is stored on which message, the prompts, the broadcast to the displaying tabs, the ids, the sanitizer on the way out, one worker per prompt, the cache hit, the same id twice in a batch, the skipped folders and archives, several messages | 01 "Background Summary / Translation on Email Receive", "Per-message pipelines", "Shared guards", "In-flight jobs" |
 | `21-sender-list` | the sender list on reception and on open: exact, domain, subdomain, other senders, no tab, skipped folders, the cached summary, both triggers = one call, an unusable connection, a legacy `['']` list | 01 "Auto-Summarize by Sender Address List" |
 | `22-spam-rules` | the allow / block lists and the address book: every precedence case, never moving an allow-list report (threshold 0), the pipeline stopped by a block, a manual check, legacy `['']` lists | 01 "Spam filter sender rules" |
-| `23-spam-actions` | the AI verdict: moved to junk (marked, then moved), the threshold, the panels, an account with no junk folder, the account list, skipped folders, a message gone after the analysis, `getFull()` failing, a non-JSON answer, serialized moves, the manual path, `spamfilter_only_inbox` | 01 "Per-message pipelines", "Spam filter sender rules", "Shared guards" |
+| `23-spam-actions` | the AI verdict: moved to junk (marked, then moved), the threshold, the panels, an account with no junk folder, the account list, skipped folders, a message gone after the analysis, `getFull()` failing, a non-JSON answer, serialized moves, the manual path, `spamfilter_only_inbox`, the outcome only after the report is stored | 01 "Per-message pipelines", "Spam filter sender rules", "Shared guards" |
 | `24-add-tags` | automatic tagging and the context-menu Add tags: tags assigned (existing and new), existing tags kept, exclusions, not tagging a spam message, spam first, only-inbox and sent, one new tag from parallel pipelines, the right tags on the right message, the selection cap, force existing, include sent, an unusable connection | 01 "Per-message pipelines", "Shared guards", "Add tags selection cap"; 02 "Add tags: extra prompt statements" |
 | `25-inline-summary` | `initSummary` / `triggerSummaryGeneration` / `refreshSummary` / `removeSummary` / `getDisplayedMessageId`: every `summarize_auto` mode, both display modes, the cache, stale results, a deletion while generating, delete-then-generate-again, an unreachable pane | 01 "Inline Summary on Message Display", "Stale-result guard", "In-flight jobs", "Unreachable message pane" |
 | `26-inline-translation` | the same for the translation: the target language and its fallback, status `-1`, HTML / plain text through the sanitizer, no language configured | 01 "Inline Translation on Message Display", 02 "Translate" |
@@ -217,8 +217,8 @@ None today.
   `addtags_get_exclusion_prefs` / `addtags_set_exclusions` (compose and ui areas' callers).
 - What the background does at startup besides `STARTUP` (see above), the keyboard shortcut and the
   `permissions.onRemoved` listener.
-- **The real Thunderbird storage and its timing**: the core mock resolves at once; a race that needs
-  a slow storage (see "Under-specified" 2) is shown with direct concurrent calls, not through a flow.
+- **The real Thunderbird storage and its timing**: the core mock resolves at once; the write races of
+  a slow storage are tested with direct concurrent calls (`04-storage`), not through a flow.
 
 ## Under-specified
 
@@ -226,19 +226,15 @@ Where the spec says nothing, or says two things, the behaviour is listed here, n
 Input for the spec:
 
 1. **A rate limit stops every overlapping batch.** Spec 01 says "Only the current batch stops", but
-   the mechanism it documents (`stopForRateLimit()` → `requestCancel('rate_limit')`, which "flags
+   the mechanism it documents (`stopForRateLimit()` -> `requestCancel('rate_limit')`, which "flags
    every batch active at that moment") also stops a batch running beside it, e.g. another account
-   receiving at the same time. Observed: that batch's queued messages are never screened, tagged or
-   summarized, and, in auto mode, never again (there is no periodic scan): spam from the other
-   account stays in its inbox. Which one is meant?
-2. **Concurrent writes to one `msg:` record lose fields.** `taStorage` reads the record, sets its
-   field and writes the whole record back. Three writes of different fields to the same message at
-   the same moment leave only the last writer's field (observed: summary, translation and spam
-   written together → only `spam` survives). Within one pipeline the features run in series, but the
-   batch and a manual action on the same message (a panel Refresh, the spam job's
-   `removeReportData()` at its start) can overlap; and the spam job does not await
-   `saveReportData()`, so its outcome resolves before the report is stored. Spec 01 does not say
-   whether a record's fields must survive concurrent writers.
+   receiving at the same time: that batch's queued messages are never screened, tagged or
+   summarized. *Decided:* the target is to stop only the features that use the connection that hit
+   the rate limit, in every batch; a separate job, not pinned by a test here until then.
+2. *(resolved: concurrent writes to one `msg:` record used to drop each other's field, and the spam
+   job did not await its report. `taStorage` now queues the writes of each record, and the job
+   awaits the save; spec 01 "Per-Message Data Storage" says so, `04-storage` `concurrent-*` /
+   `queue-*` and `23-spam-actions` `outcome-after-save` test it.)*
 3. **What becomes of the messages a Stop or a rate limit left unprocessed** in an automatic batch:
    nothing reprocesses them (spec 01 rules out a periodic scan for the sender list only).
 4. **`_process_incoming` and `add_tags`.** `reload_pref_init()` ORs in `add_tags_auto` alone, while

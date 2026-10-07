@@ -4,6 +4,8 @@
 //  - a record holds the optional fields `summary`, `spam`, `translation`, plus metadata `v`, `ts`;
 //  - typed read / write / delete per field, automatic record cleanup when all fields are removed,
 //    and age-based cleanup.
+//  - the writes of one record are queued: writers of different fields running together never
+//    drop each other's field; writes to different messages still run in parallel.
 // And spec 05: the preferences live in the same storage.local, so nothing here may touch a key
 // that is not a `msg:` record.
 // The field contents are the stores' business (05-stores); here the record as a whole.
@@ -139,6 +141,54 @@ k.test('clear-all', 'clearAllRecords() removes every msg: record and keeps the p
     const data = ctx.ctl.localData();
     assert.deepEqual(Object.keys(data).filter(k2 => k2.startsWith('msg:')), []);
     assert.equal(data.connection_type, 'ollama_api');
+});
+
+k.test('concurrent-fields', 'three fields written to one message at the same moment: all three are stored', async () => {
+    await Promise.all([
+        st.writeSummary('race@x', { summary: 'S' }),
+        st.writeTranslation('race@x', { translated_text: 'T' }),
+        st.writeSpam('race@x', { spamValue: 1 }),
+    ]);
+    assert.deepEqual(Object.keys(raw('race@x')).filter(f => f !== 'v' && f !== 'ts').sort(), ['spam', 'summary', 'translation']);
+});
+
+k.test('concurrent-delete-write', 'a field deleted while another is written: the written one stays', async () => {
+    await st.writeSpam('race2@x', { spamValue: 1 });
+    await Promise.all([st.deleteSpamField('race2@x'), st.writeSummary('race2@x', { summary: 'kept' })]);
+    const rec = raw('race2@x');
+    assert.equal(rec.summary.summary, 'kept');
+    assert.equal('spam' in rec, false);
+});
+
+k.test('concurrent-across-instances', 'the queue is shared: two taStorage instances (two stores) writing one message keep both fields', async () => {
+    const other = new taStorage(false);
+    await Promise.all([st.writeSummary('race3@x', { summary: 'S' }), other.writeTranslation('race3@x', { translated_text: 'T' })]);
+    assert.ok(raw('race3@x').summary && raw('race3@x').translation);
+});
+
+k.test('queue-order', 'the writes of one message apply in the order they were made', async () => {
+    await Promise.all([1, 2, 3].map(n => st.writeSummary('order@x', { summary: 'v' + n })));
+    assert.equal(raw('order@x').summary.summary, 'v3');
+});
+
+k.test('queue-other-messages', 'writes to different messages are not queued behind each other', async () => {
+    const gets = [];
+    const realGet = ctx.ctl.browser.storage.local.get;
+    let release;
+    const gate = new Promise(r => { release = r; });
+    ctx.ctl.browser.storage.local.get = async (keys) => {
+        if (keys === 'msg:slow@x') { gets.push('slow'); await gate; }
+        else if (keys === 'msg:fast@x') gets.push('fast');
+        return realGet.call(ctx.ctl.browser.storage.local, keys);
+    };
+    const slow = st.writeSummary('slow@x', { summary: 's' });
+    const fast = st.writeSummary('fast@x', { summary: 'f' });
+    await fast;
+    assert.ok(raw('fast@x'), 'the other message was written while the first one waits');
+    release();
+    await slow;
+    ctx.ctl.browser.storage.local.get = realGet;
+    assert.ok(raw('slow@x'));
 });
 
 k.coverage();

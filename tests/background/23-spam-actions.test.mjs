@@ -19,6 +19,8 @@
 // Spec 01 "In-flight jobs": updateSpamPanel() broadcasts to every tab displaying the message,
 // gated by spamfilter_show_msg_panel: the in-progress badge, then the report.
 // Spec 05 `spamfilter_threshold`: the verdict is spam from the threshold up.
+// Spec 01 "Per-Message Data Storage": the spam job awaits its saveReportData() before it returns,
+// so its outcome means the report is stored.
 
 import assert from 'node:assert/strict';
 import { bgContext } from './context.mjs';
@@ -217,6 +219,27 @@ k.test('only-inbox', 'with spamfilter_only_inbox, auto mode screens the inbox on
     assert.equal(inFolder('oi1@x'), 'f-lists');
     assert.equal(prompted('spam', 'oi2@x'), true);
     assert.equal(inFolder('oi2@x'), 'f-junk');
+});
+
+k.test('outcome-after-save', 'the spam job resolves only once its report is stored', async () => {
+    const h = mail('aw@x', 'f-inbox', 20);
+    const local = ctx.ctl.browser.storage.local;
+    const realSet = local.set;
+    let release;
+    const gate = new Promise(r => { release = r; });
+    local.set = async (items) => {
+        if (items['msg:aw@x']?.spam) await gate;
+        return realSet.call(local, items);
+    };
+    let done = false;
+    const job = ctx.bg._generateSpamReportForMessage('aw@x', { messageId: h.id }).then(o => { done = true; return o; });
+    for (let i = 0; i < 60; i++) await new Promise(r => setImmediate(r));
+    assert.equal(done, false, 'not resolved while the report write is pending');
+    release();
+    const outcome = await job;
+    local.set = realSet;
+    assert.equal(outcome.data.report.spamValue, 20);
+    assert.equal(record(ctx, 'aw@x').spam.spamValue, 20);
 });
 
 k.test('no-leak', 'no worker left alive, no unmodelled API touched, no unhandled rejection', () => {

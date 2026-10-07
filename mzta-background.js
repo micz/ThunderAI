@@ -1955,7 +1955,7 @@ async function _saveRuleSpamReport(entry, headerMessageId, message, message_meta
     if (verdict.isSpam && (options.autoMove || entry.wantsMove)) {
         report_data.moved = await _moveMessageToJunk(message, headerMessageId);
     }
-    spamReport.saveReportData(report_data, headerMessageId);
+    await spamReport.saveReportData(report_data, headerMessageId);
     await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
     // moved: read by the processEmails() pipeline, a moved message gets no tags, summary or translation.
     return _spamOutcome(true, report_data, { moved: report_data.moved });
@@ -2150,7 +2150,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
             report_data.moved = await _moveMessageToJunk(message, headerMessageId);
         }
 
-        spamReport.saveReportData(report_data, headerMessageId);
+        await spamReport.saveReportData(report_data, headerMessageId);
         await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
         // moved: read by the processEmails() pipeline, a moved message gets no tags, summary or translation.
         return _spamOutcome(true, report_data, { moved: report_data.moved });
