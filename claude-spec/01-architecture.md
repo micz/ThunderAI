@@ -1330,7 +1330,7 @@ truth, reached anywhere the classic script is loaded. A settings or popup page t
 of them would need the `<script>` tag too. Same shape as `js/lib/diff.js`.
 
 **`{%mail_typed_text%}` / `{%mail_quoted_text%}` are untouched by all of this.** Their walkers read
-`window.document.body.childNodes` **directly**, not the clone (which is the known gap recorded
+`window.document.body.childNodes` **directly**, not the clone (see the add-on's own elements
 below), so neither the `<style>` removal nor the new projection reaches them, and their `\n\n`
 paragraph contract is preserved exactly.
 
@@ -1345,10 +1345,15 @@ The node-walking logic is unchanged — the `moz-cite-prefix` / `moz-forward-con
 particular `lastNode` is still keyed off `node.textContent`, **not** the new projection, so the
 autoselect range is provably identical.
 
-> Known gap, not fixed here: `getOnlyTypedText` walks `document.body.childNodes` directly rather
-> than `getCleanBodyHtml()`, so injected ThunderAI DOM (`#mzta-container`, `.mzta_dialog`) and the
-> `moz-signature` can contaminate `{%mail_typed_text%}`. Swapping in `getCleanBodyHtml()` would
-> break autoselect — it returns a detached clone, and the range needs live nodes.
+**The add-on's own elements and the signature, on the live body.** The walkers cannot use
+`getCleanBodyHtml()`: it returns a detached clone, and the autoselect range needs live nodes. So they
+filter the live top-level nodes themselves, with `isInjectedNode()` (`MZTA_INJECTED_SELECTORS`):
+both skip the add-on's own elements — `#mzta-container` is always the body's first child, the
+`.mzta_dialog` are appended at its end, so a top-level check is enough — and a skipped node is never
+`firstNode` / `lastNode`, so the autoselect range leaves it out. `getOnlyTypedText` also **stops at
+`div.moz-signature`**, as it does at the citation: in a new message, with no quote to stop the walk,
+the signature used to be read as typed text. `getOnlyQuotedText` still reads to the end of the body,
+the signature included.
 
 The answer-text snapshot is what the "use this answer" /
 "copy" / "save as summary" / diff buttons close over — one instance per turn keeps each

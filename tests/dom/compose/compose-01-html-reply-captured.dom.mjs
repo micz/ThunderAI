@@ -101,11 +101,14 @@ k.test('full-html-is-the-body', S_TEXT_HTML, 'getFullHtml hands over the body ma
 });
 
 // The add-on's own elements: a generic info panel (spec 04 "Generic panels": rendered in the
-// compose window too) puts #mzta-container at the top of the compose body.
-k.test('panel-drawn', 'spec 04 "Batch cancellation (user-triggered stop)"', 'a generic info panel is drawn at the top of the compose body', async () => {
+// compose window too) puts #mzta-container at the top of the compose body, and an alert dialog is
+// appended at its end, after the quote.
+k.test('panel-drawn', 'spec 04 "Batch cancellation (user-triggered stop)"', 'a generic info panel is drawn at the top of the compose body, a dialog at its end', async () => {
     assert.equal(await send(ctx, { command: 'showGenericInfo', data: { message: 'Email processing stopped.', source: 'Batch' } }), true);
-    assert.equal(injected(ctx).length, 1);
+    assert.equal(await send(ctx, { command: 'sendAlert', curr_tab_type: 'mail', message: 'An alert.' }), true);
+    assert.equal(injected(ctx).length, 2);
     assert.equal(ctx.document.body.firstElementChild.id, 'mzta-container');
+    assert.ok(ctx.document.body.lastElementChild.matches('dialog.mzta_dialog'));
 });
 
 k.test('text-body-skips-injected', S_BODY, 'the body text does not read the panel', async () => {
@@ -116,12 +119,21 @@ k.test('full-html-skips-injected', S_TEXT_HTML, 'the HTML body does not carry th
     assert.equal(await fullHtml(), before.html);
 });
 
-k.test('quoted-skips-injected', S_COMPOSE, 'the quoted text does not read the panel', async () => {
+k.test('quoted-skips-injected', S_COMPOSE, 'the quoted text reads neither the panel nor the dialog after the quote', async () => {
     assert.equal(await quoted(), before.quoted);
 });
 
 k.test('typed-skips-injected', S_RICHTEXT, 'the typed text does not read the panel', async () => {
     assert.equal(await typed(), before.typed);
+});
+
+k.test('autoselect-skips-injected', S_RICHTEXT, 'the autoselect range of the typed text leaves the panel out', async () => {
+    ctx.window.getSelection().removeAllRanges();
+    await send(ctx, { command: 'getOnlyTypedText', do_autoselect: true });
+    const range = ctx.window.getSelection().getRangeAt(0);
+    assert.ok(!range.intersectsNode(ctx.$('#mzta-container')), 'the panel is outside the range');
+    assert.ok(range.intersectsNode(ctx.$('body > p')), 'the first paragraph is inside it');
+    ctx.window.getSelection().removeAllRanges();
 });
 
 k.test('harness-clean', S_COMPOSE, 'the content script ran on modelled APIs only', () => {

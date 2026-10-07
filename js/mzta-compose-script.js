@@ -71,6 +71,15 @@ function getTextBodyHtml() {
 // js/mzta-utils.js treats the same two tags.
 const MZTA_BLOCK_LEVEL_RE = /^(P|BLOCKQUOTE|UL|OL|TABLE|H[1-6]|PRE)$/;
 
+// The typed / quoted walkers read the LIVE body (the autoselect range needs live
+// nodes, so they cannot use the detached getCleanBodyHtml() clone). They skip the
+// add-on's own elements here instead: #mzta-container is always the body's first
+// child and the .mzta_dialog are appended to it, so a top-level check is enough. A
+// skipped node is never firstNode / lastNode, so the autoselect range leaves it out.
+function isInjectedNode(node) {
+  return node instanceof Element && MZTA_INJECTED_SELECTORS.some(selector => node.matches(selector));
+}
+
 // One top-level node of the compose body, projected to text with its line
 // structure intact.
 //
@@ -503,11 +512,15 @@ switch (message.command) {
     let lastNode = null;
 
     for (const node of children) {
+      if (isInjectedNode(node)) continue; // ThunderAI's own panels and dialogs
       if (node instanceof Element) {
         if (node.classList.contains('moz-cite-prefix')) { // quoted text in a reply
           break;
         }
         if (node.classList.contains('moz-forward-container')) { // quoted text in a forward
+          break;
+        }
+        if (node.classList.contains('moz-signature')) { // the signature is not typed text
           break;
         }
       }
@@ -554,6 +567,7 @@ switch (message.command) {
     let foundCitePrefix = false;
   
     for (const node of children) {
+      if (isInjectedNode(node)) continue; // ThunderAI's own panels and dialogs
       if (!foundCitePrefix) {
         if (node instanceof Element && (node.classList.contains('moz-cite-prefix') || node.classList.contains('moz-forward-container'))) {
           foundCitePrefix = true;

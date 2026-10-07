@@ -38,25 +38,8 @@ const DOM_DIR = new URL('../../dom/compose/', import.meta.url);
 const SECTION_RE = /^spec \d\d ".+"$/;
 const CASE_RE = /^(\d\d)-[a-z0-9][a-z0-9-]*$/;
 
-const S_RICHTEXT = 'spec 01 "The rich-text layer — `js/lib/mzta-html-lines.js` (classic) + `js/mzta-richtext.js` (module)"';
-
-const INJECTED_IN_TYPED = 'MZTA_INJECTED_SELECTORS lists the add-on\'s own elements so that they never reach a '
-    + 'placeholder, and spec 03 defines {%mail_typed_text%} as the text typed in the compose window. '
-    + 'getOnlyTypedText walks document.body.childNodes directly, not getCleanBodyHtml(), so the '
-    + '#mzta-container a panel inserts at the top of the compose body is read as typed text (its '
-    + '"[ThunderAI] ..." line and menu glyphs). Spec 01 records it as a known gap ("injected ThunderAI '
-    + 'DOM ... can contaminate {%mail_typed_text%}").';
-
-/** The known issues, by spec section and case id. */
-export const KNOWN = {
-    [S_RICHTEXT]: {
-        '01-typed-skips-injected': INJECTED_IN_TYPED,
-        '03-typed-without-signature': 'spec 03 defines {%mail_typed_text%} as the text typed so far; in a new '
-            + 'message with no quote there is no moz-cite-prefix to stop the walk, so getOnlyTypedText '
-            + 'appends the div.moz-signature ("--\\nThis is my best signature!!!") to the typed text. Spec 01 '
-            + 'records it as a known gap ("the moz-signature can contaminate {%mail_typed_text%}").',
-    },
-};
+/** The known issues, by spec section and case id. None today. */
+export const KNOWN = {};
 
 /** [the NN of each compose-NN- file of tests/dom/compose/]. */
 export function areaFiles() {

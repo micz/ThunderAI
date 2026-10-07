@@ -114,12 +114,22 @@ A payload that is only a `<frameset>` parses with the frameset as the body, so n
 
 ## Known issues
 
-In `tests/helpers/known-issues/compose.mjs`, run as TODOs while they fail:
+In `tests/helpers/known-issues/compose.mjs`, run as TODOs while they fail. None today.
 
-| Case | Spec section | What the code does |
-|---|---|---|
-| `01-typed-skips-injected` | 01 "The rich-text layer" | a panel drawn in the compose body is read as typed text (spec 01's own "Known gap") |
-| `03-typed-without-signature` | 01 "The rich-text layer" | in a new message the signature is read as typed text (spec 01's own "Known gap") |
+What the area found was fixed, and the spec updated where it described the old behaviour:
+
+- the sanitizer threw on a payload that is only a `<frameset>` (the panel was lost) - spec 01
+  "Panel HTML sanitization" already required the removal;
+- `htmlBodyToPlainText()` read a `<script>`'s source as body text, unlike the interactive path
+  (spec 01 "`getCleanBodyHtml()` returns a DETACHED clone", "`htmlBodyToPlainText()` injects the
+  line structure");
+- the projection welded text to the block after it (Gmail's `Hi,<div>next</div>`), and read the
+  HTML source's whitespace as lines: wrapped paragraphs, a reopened draft's indentation, markdown-it's
+  `<br>\n` and pretty-printed lists doubled on plain text insertion (spec 01 "`htmlBodyToPlainText()`
+  injects the line structure", spec 03 "Newline contract of the body placeholders");
+- the typed / quoted walkers had the same whitespace defect, read the add-on's own panels and
+  dialogs, and read the signature of a new message as typed text (spec 01 "The compose-extraction
+  newline contract" and "The rich-text layer", where these were recorded as known gaps).
 
 ## What is not covered
 
@@ -154,8 +164,8 @@ What the code does that no spec states, listed instead of tested:
    editor holds the quote and the signature (elements or text) is neither stated nor captured. The
    fixture is the captured text as one text node, so `{%mail_quoted_text%}` is not tested there. A
    capture of `document.body.innerHTML` from a live plain text compose window would settle it.
-3. **The signature in `{%mail_quoted_text%}`**: the walker reads from the citation to the end of the
-   body, the signature included.
+3. *(resolved: spec 01 "The rich-text layer" now states that `getOnlyQuotedText` reads to the end of the
+   body, the signature included, while `getOnlyTypedText` stops at it.)*
 4. **`getText`**: no spec, and `js/mzta-menus.js` does not send it. Only what spec 01 says of "the two
    text cases" (hidden elements, `<style>`/`<script>` and the add-on's own elements removed) is tested.
 5. **`replaceSelectedText` with no selection**: it asks `confirm(Replace_No_Selected_Text)` and inserts
