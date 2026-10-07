@@ -68,12 +68,6 @@ export const KNOWN = {
             + 'sentence wrapped\\nby the HTML generator.</p>" gives two lines in {%mail_text_body%} '
             + '(htmlBodyToPlainText(), and getTextOnly through the same projection), where the contract is one '
             + '\\n per HTML block boundary.',
-        '09-gmail-div-lines': 'the projection only APPENDS a \\n to a block (spec 01 "htmlBodyToPlainText() '
-            + 'injects the line structure", pass 3), so text that precedes a block element in the same parent is '
-            + 'welded to the block\'s first line. Gmail writes exactly that shape (the first line bare, every '
-            + 'following line in a <div> of its own): "<div dir=ltr>Hi Bob,<div>thanks for the file.</div>..." '
-            + 'gives "Hi Bob,thanks for the file." where the contract is one \\n per HTML block boundary - the '
-            + 'boundary before the <div> is one. Both paths share the projection.',
     },
     [S_RICHTEXT]: {
         '01-typed-skips-injected': INJECTED_IN_TYPED,

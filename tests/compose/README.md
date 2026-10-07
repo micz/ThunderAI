@@ -118,7 +118,6 @@ In `tests/helpers/known-issues/compose.mjs`, run as TODOs while they fail:
 
 | Case | Spec section | What the code does |
 |---|---|---|
-| `09-gmail-div-lines` | 03 "Newline contract of the body placeholders" | the projection only appends a `\n` to a block, so text before a block is welded to it: Gmail's `Hi Bob,<div>thanks</div>` gives `Hi Bob,thanks` (both paths) |
 | `09-source-newline-not-a-line`, `01-text-body-citation-one-line` | 03 "Newline contract of the body placeholders" | a newline in an HTML text node (source wrapping, serializer indentation) becomes a line of `{%mail_text_body%}` |
 | `01-quoted-br-single-break` | 03 "Newline contract of the compose placeholders" | the same in a reopened draft: `<br>` + the newline after it gives a blank line in `{%mail_quoted_text%}` |
 | `09-markdown-br-newline`, `09-markdown-list` | 01 "Writing into a plain text compose window", 07 | `stripHtmlKeepLines()` keeps the newline after `<br>` and `</li>`: markdown-it's `<br>\n` becomes a blank line, list items get blank lines between them |

@@ -162,6 +162,18 @@ function mztaStripHidden(root) {
 // this mutates it.
 function mztaInjectLineBreaks(root) {
   const doc = root.ownerDocument || document;
+  // A block OPENS a line too, when inline content precedes it in the same parent:
+  // the passes below only APPEND a break, so "Hi Bob,<div>thanks</div>" - Gmail's
+  // own shape, the first line bare and every following line in a <div> - came out
+  // welded as "Hi Bob,thanks". Only after inline content: a block after a block
+  // (whose break was already appended), after a <br>/<hr> or first in its parent
+  // gets nothing, so no blank line appears between two <div> or two <li> on the
+  // keepParagraphs side. First, while the <br> are still elements.
+  for (const el of root.querySelectorAll(MZTA_PARA_BLOCK_SELECTOR + ', ' + MZTA_LINE_BLOCK_SELECTOR)) {
+    if (mztaFollowsInline(el)) {
+      el.parentNode.insertBefore(doc.createTextNode('\n'), el);
+    }
+  }
   // Cells first, so the <tr> newline still wins at row level.
   for (const cell of root.querySelectorAll(MZTA_LINE_CELL_SELECTOR)) {
     cell.appendChild(doc.createTextNode(' '));
@@ -178,6 +190,21 @@ function mztaInjectLineBreaks(root) {
     el.appendChild(doc.createTextNode('\n\n'));
   }
   return root;
+}
+
+// True when the nearest sibling before `el` that carries anything (whitespace-only
+// text and comments are skipped) is text or an inline element - not a block, not a
+// cell, not a <br>/<hr>, which all end their line already.
+function mztaFollowsInline(el) {
+  let prev = el.previousSibling;
+  while (prev && (prev.nodeType === 8 || (prev.nodeType === 3 && !/\S/.test(prev.data)))) {
+    prev = prev.previousSibling;
+  }
+  if (!prev) return false;
+  if (prev.nodeType === 3) return true;
+  if (prev.nodeType !== 1) return false;
+  return !prev.matches(MZTA_PARA_BLOCK_SELECTOR + ', ' + MZTA_LINE_BLOCK_SELECTOR + ', '
+    + MZTA_LINE_VOID_SELECTOR + ', ' + MZTA_LINE_CELL_SELECTOR);
 }
 
 // The whole of `root` (a NODE) projected to text with its line structure intact.

@@ -1059,8 +1059,16 @@ being compact. Every paragraph therefore came out welded to the next one
 
 The function now inserts real break text nodes into the parsed DOM **before** the `textContent`
 read, by calling `mztaInjectLineBreaks()` after the hidden-element / `<style>` / `<script>` removals. That helper
-lives in **`js/lib/mzta-html-lines.js`** and applies three passes:
+lives in **`js/lib/mzta-html-lines.js`** and applies four passes:
 
+0. A block element (the pass-3 list) **preceded by inline content** in its parent — text, or an
+   inline element, skipping whitespace-only text and comments — gets a `\n` node inserted **before**
+   it. The other passes only *append*, so without this "Hi Bob,<div>thanks</div>" — Gmail's own
+   shape, the first line bare and every following line in a `<div>` — came out welded as "Hi
+   Bob,thanks". Only after inline content, never after a block, a cell, a `<br>`/`<hr>` or as the
+   first child: those already end their line, and an extra `\n` there would turn two consecutive
+   `<div>` or `<li>` into a blank line on the `{ keepParagraphs }` (insertion) side. Runs first,
+   while the `<br>` are still elements.
 1. `td, th` → append a **space** (cells separate with a space, not a newline). First, so the block
    pass's `<tr>` newline still wins at row level.
 2. `br, hr` → `replaceWith` a `\n` node. Both are void: they carry no text, so the break replaces

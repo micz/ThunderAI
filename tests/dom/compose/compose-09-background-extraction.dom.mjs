@@ -209,6 +209,11 @@ k.test('markdown-list', S_WRITE, 'a markdown-it list: one line per item, no blan
     assert.equal(stripHtmlKeepLines('<ul>\n<li>one</li>\n<li>two</li>\n</ul>\n'), 'one\ntwo');
 });
 
+k.test('strip-block-boundaries', S_PICKER, 'every block boundary other than <p> is one \\n: consecutive <div> and <li> get no blank line, text before a <div> is its own line', () => {
+    assert.equal(stripHtmlKeepLines('<div>a</div><div>b</div><ul><li>c</li><li>d</li></ul>'), 'a\nb\nc\nd');
+    assert.equal(stripHtmlKeepLines('<div>Hi Bob,<div>thanks</div><div>Mario</div></div>'), 'Hi Bob,\nthanks\nMario');
+});
+
 k.test('strip-keeps-hidden', S_HIDDEN, 'the insertion side does not strip hidden elements: nothing of the answer is dropped', () => {
     assert.equal(stripHtmlKeepLines('<p>a<span style="display:none">b</span></p>'), 'ab');
 });
