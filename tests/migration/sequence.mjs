@@ -92,6 +92,43 @@ export function identifiers(text) {
     return names;
 }
 
+/**
+ * The identifiers a top-level statement evaluates when it runs: those of identifiers(), minus the
+ * bodies of the functions it only defines (an arrow function's braced body, a `function`'s body),
+ * which run later if at all. A listener registration evaluates `browser.runtime.onMessage
+ * .addListener` and nothing of its callback.
+ */
+export function topLevelIdentifiers(text) {
+    const code = stripComments(text);
+    const names = new Set();
+    let skipDepth = -1;     // the depth at which the skipped function body opened, or -1
+    let depth = 0;
+    let fnPending = false;  // a `function` keyword was seen: its next "{" opens a body
+    for (const s of segments(code)) {
+        if (s.type !== 'code') continue;
+        for (let i = s.start; i < s.end; i++) {
+            const c = code[i];
+            if (c === '{') {
+                const before = code.slice(0, i).trimEnd();
+                if (skipDepth < 0 && (fnPending || before.endsWith('=>'))) skipDepth = depth;
+                fnPending = false;
+                depth++;
+            } else if (c === '}') {
+                depth--;
+                if (depth === skipDepth) skipDepth = -1;
+            } else if (/[A-Za-z_$]/.test(c) && !/[\w$]/.test(code[i - 1] || '')) {
+                const m = /^[A-Za-z_$][\w$]*/.exec(code.slice(i, s.end));
+                if (skipDepth < 0) {
+                    names.add(m[0]);
+                    if (m[0] === 'function') fnPending = true;
+                }
+                i += m[0].length - 1;
+            }
+        }
+    }
+    return names;
+}
+
 /** The import declarations of `src`: [{local, imported, module}], module relative to the repo. */
 export function importedNames(src) {
     const out = [];

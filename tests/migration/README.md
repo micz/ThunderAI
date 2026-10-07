@@ -51,9 +51,10 @@ mock's options. The run takes about 15 s, most of it spent in the interruption t
 | `03-ollama-think` | `migrateOllamaThinkLevel()`: boolean to level, level kept, unset kept, global only, its flag, idempotence | 04 (Ollama `think`) |
 | `04-prompts-129` | the two #129 migrations: copy then remove, a local copy kept with the stale sync copy removed, nothing to do | 01 "Storage", 05 "Preference access" |
 | `05-calendar-no-selection` | `migrateCalendarNoSelection()`: the stored `need_selected` × the stored preference, with the behaviour read back through `getSpecialPrompts()`; its flag | 05 `calendar_no_selection` row, 08 "Interaction points" |
-| `10-sequence-upgrade` | **the sequence** on a 5.0.x profile: the upgrade end to end, then a second and a third start (nothing written, `storage.sync` never touched) | all of the above |
+| `10-sequence-upgrade` | **the sequence** on a 5.0.x profile: the upgrade end to end, then a second and a third start (nothing written, `storage.sync` never touched); and, statically, that nothing before the preference copy awaits or touches storage | all of the above, 01 "Storage" |
 | `11-sequence-failure` | the sequence when storage fails: the copy failing (the guarded migrations skipped), `storage.sync` unreadable at every call, every write after the copy failing. Each time the sequence completes (the add-on starts), nothing is lost, and the next starts end where clean starts end | 05 "Overview" / 02 (the one-shot flags) |
 | `12-sequence-partial` | the sequence from partial states: the oldest (pre-#129) profile over three starts, a payload in both areas, and **Thunderbird closing at each storage write of the first start in turn**, followed by normal starts | 05 "Overview", 01, 02 |
+| `13-sequence-menu-order` | the alphabetic migration as a step of the sequence: every prompt reads back as before, positions aside, a field it lacked appearing only as `''`; no stored value changes | 02 "Alphabetic-to-Position Migration" step 3 |
 | `20-captured` | the sequence on every real `storage.sync` dump of `fixtures/migration/captured/` | as `10` |
 | `99-harness-known-issues` | the shape of `helpers/known-issues/migration.mjs` | harness |
 | `99-harness-sequence` | the statement splitter, the cut, the injected faults and the fresh contexts | harness |
@@ -180,10 +181,3 @@ Where the spec says nothing, the behaviour is listed here, not pinned by a test:
 
 - **A stored calendar prompt with no `need_selected` field.** Which behaviour it had before the
   upgrade, and so what the alignment should give, is not stated.
-- **The fields the alphabetic migration adds.** `migrateMenuOrderAlphabetic()` saves the prompts from
-  the normalized view, so a custom prompt gains fields at their defaults (`api_type: ''`,
-  `use_diff_viewer: '0'`…). No stored value changes, and `12-sequence-partial` checks exactly that.
-  Whether the stored shape may grow is not stated.
-- **"The first statement".** Spec 01 calls `migratePrefsToLocal()` "the first statement of
-  `mzta-background.js`". Two listener registrations come before it; it is the first `await` and the
-  first storage access, which is what the spec's reason needs.

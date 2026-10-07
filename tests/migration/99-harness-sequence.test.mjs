@@ -8,6 +8,7 @@ import {
     topLevelStatements,
     importedNames,
     identifiers,
+    topLevelIdentifiers,
     cutSequence,
     compileSequence
 } from './sequence.mjs';
@@ -40,6 +41,18 @@ test('a source ending inside a statement is an error', () => {
 
 test('identifiers() skips strings and comments', () => {
     assert.deepEqual([...identifiers('if (ok) await run("notMe"); // nor me')].sort(), ['await', 'if', 'ok', 'run']);
+});
+
+test('topLevelIdentifiers() leaves out the bodies of the functions a statement only defines', () => {
+    const ids = s => [...topLevelIdentifiers(s)].sort();
+    assert.deepEqual(ids('browser.runtime.onMessage.addListener((m, s) => { return storage.get(await x()); });'),
+        ['addListener', 'browser', 'm', 'onMessage', 'runtime', 's']);
+    assert.deepEqual(ids('function f() { await storage.get(); }'), ['f', 'function']);
+    assert.deepEqual(ids('async function g(a) { if (a) { await h(); } }'), ['a', 'async', 'function', 'g']);
+    // A block that runs at the top level is kept: an if body, an object literal.
+    assert.deepEqual(ids('if (ok) { await browser.storage.local.get(); }'),
+        ['await', 'browser', 'get', 'if', 'local', 'ok', 'storage']);
+    assert.deepEqual(ids('const o = { a: storage, b: () => { hidden(); } };'), ['a', 'b', 'const', 'o', 'storage']);
 });
 
 test('importedNames() reads named, aliased and default imports', () => {

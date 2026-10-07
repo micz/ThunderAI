@@ -56,7 +56,8 @@ const WORKER_TIMEOUT_MS = 60000;
  *                 point reaches storage
  *   read          after the run, with every fault off and the policy loaded as the background
  *                 does before its first read: {prefs: [ids]} through mztaPrefs.getPrefs(),
- *                 {specialPrompts: true} through getSpecialPrompts()
+ *                 {specialPrompts: true} through getSpecialPrompts(), {menuOrderView: true}
+ *                 through getPromptsForMenuOrder() (every prompt the user owns, normalized)
  */
 export function startup(o) {
     const p = runWorker(new URL(import.meta.url), structuredClone(o), {
@@ -157,6 +158,7 @@ async function main(o) {
         await mztaManaged.loadManaged();
         if (o.read.prefs) read.prefs = await mods.mztaPrefs.getPrefs(o.read.prefs);
         if (o.read.specialPrompts) read.specialPrompts = await mods.prompts.getSpecialPrompts();
+        if (o.read.menuOrderView) read.menuOrderView = await mods.prompts.getPromptsForMenuOrder();
     }
     return {
         value: value === undefined ? null : structuredClone(value),

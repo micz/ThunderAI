@@ -15,6 +15,11 @@ import assert from 'node:assert/strict';
 import { prefs_default } from '../../options/mzta-options-default.js';
 import { caseTests } from '../helpers/known-issues/migration.mjs';
 import { startup } from './context.mjs';
+import { backgroundSource } from '../helpers/core/background-source.mjs';
+import {
+    topLevelStatements,
+    topLevelIdentifiers
+} from './sequence.mjs';
 import {
     MARKER,
     PAYLOAD_KEYS,
@@ -42,6 +47,22 @@ third.catch(() => {});
 const CAL = profile('5.0');
 CAL.local._special_prompts.find(p => p.id === 'prompt_get_calendar_event').need_selected = '1';
 const calendar = startup({ run, sync: CAL.sync, local: CAL.local, read });
+
+// --- Where the copy sits ------------------------------------------------------------------------
+
+// Spec 01 "Storage": migratePrefsToLocal() is the first await and the first storage access of
+// mzta-background.js; only synchronous listener registrations, which touch no storage, come before.
+k.test('copy-first', 'nothing before the preference copy awaits or touches storage', () => {
+    const statements = topLevelStatements(backgroundSource()).filter(st => !/^import\b/.test(st.text));
+    const at = statements.findIndex(st => topLevelIdentifiers(st.text).has('migratePrefsToLocal'));
+    assert.ok(at >= 0, 'migratePrefsToLocal() is not called at the top level');
+    for (const st of statements.slice(0, at)) {
+        const ids = topLevelIdentifiers(st.text);
+        const head = st.text.slice(0, 80).replace(/\s+/g, ' ');
+        assert.ok(!ids.has('await'), 'awaits before the copy: ' + head);
+        assert.ok(!ids.has('storage'), 'touches storage before the copy: ' + head);
+    }
+});
 
 // --- The first start -----------------------------------------------------------------------------
 
