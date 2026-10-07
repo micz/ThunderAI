@@ -283,6 +283,18 @@ once for all its features.
   batch, a panel button, the context menu), every feature goes through `taJobRegistry`: a pipeline
   that reaches a feature already running on its message joins it — see
   [In-flight jobs](#in-flight-jobs-tajobregistry).
+  **A message present twice in a batch** (the same `headerMessageId` in two folders: a copy made by
+  a filter, a list delivered to two accounts) is handled per copy for the spam filter and add_tags,
+  which act on the message object (its folder, its tags), and the result depends on timing, as of
+  today:
+  - copies processed one after the other (`batch_max_concurrency` 1, the default): each copy gets
+    its own AI call and its own result (moved to junk, tagged); the spam log keeps one report per
+    `headerMessageId`, the last one written;
+  - copies processed at the same time (`batch_max_concurrency` > 1): the second copy finds the
+    first one's spam or add_tags job running and joins it, so there is one AI call; the job acts on
+    **its own copy only**. The joining copy is not moved (its pipeline stops as if it had been, when
+    the verdict moved the other copy) and not tagged (a joiner assigns nothing), and its summary
+    and translation are the shared ones.
 - **add_tags setup once per batch.** `getAddTagsPrompt()` and `getConnectionType(…, 'add_tags')`
   are the same for every message, so `resolveAddTagsSetup()` resolves them once (memoized promise
   that never rejects), the first time a message passes the add_tags gating. A missing prompt or an

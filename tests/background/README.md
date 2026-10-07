@@ -241,9 +241,10 @@ Input for the spec:
 4. *(resolved: `_process_incoming` was woken by `add_tags_auto` alone, a batch with nothing to do;
    it now gates `add_tags && add_tags_auto` like `newEmailListener()`. Spec 01 "Background Preference
    Snapshot" lists the gate of each feature; `30-snapshot` `process-incoming` tests it.)*
-5. **A message present twice in one batch** (the same `headerMessageId` in two folders): the summary
-   and translation run once (spec 01 "De-duplication"), but the spam filter and add_tags run once
-   per copy, one AI call each; spec 01 does not say whether that is meant.
+5. *(documented as it is: spec 01 "Per-message pipelines", "De-duplication", says what happens to a
+   message present twice in a batch. One AI call per copy when they are processed one after the
+   other; with `batch_max_concurrency` > 1 the second copy joins the first one's spam / add_tags job
+   and is left where it is, untagged. Not pinned by a test.)*
 6. **Cleanup and truncation**: `taStorage.cleanup(maxAgeDays)` exists ("age-based cleanup", spec 01)
    but nothing calls it, and the spec names no age. Summaries and translations are not truncated at
    the moment (spec 01 says so: `truncSummaries()` / `truncTranslations()` exist, tested as methods
