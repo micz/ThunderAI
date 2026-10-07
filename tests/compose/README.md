@@ -110,7 +110,7 @@ spaces ignored, any case) - in the panel, and nowhere in the document (`compose/
   comment and CDATA tricks, handlers inside allowed formatting, `<body onload>`.
 
 Result: nothing executable reaches the message display through either panel, for any payload.
-The one failure is `<frameset>` (below): it loses the panel, it does not execute.
+A payload that is only a `<frameset>` parses with the frameset as the body, so nothing is left once it is removed: the panel is drawn empty (it used to throw and lose the panel, fixed).
 
 ## Known issues
 
@@ -118,7 +118,6 @@ In `tests/helpers/known-issues/compose.mjs`, run as TODOs while they fail:
 
 | Case | Spec section | What the code does |
 |---|---|---|
-| `11-frameset-summary`, `11-frameset-translation` | 01 "Stale-result guard" (Panel HTML sanitization) | a payload opening with `<frameset>`: the parsed body IS the frameset, `_renderSafeHtml()` removes it and then throws on `doc.body.querySelectorAll()`; no panel is drawn (the previous one is already gone) |
 | `09-paths-in-step` | 03 "Newline contract of the body placeholders" | `htmlBodyToPlainText()` removes `<style>` but not `<script>`: on the background path a script's source reaches `{%mail_text_body%}`, while the interactive path drops it |
 | `09-gmail-div-lines` | 03 "Newline contract of the body placeholders" | the projection only appends a `\n` to a block, so text before a block is welded to it: Gmail's `Hi Bob,<div>thanks</div>` gives `Hi Bob,thanks` (both paths) |
 | `09-source-newline-not-a-line`, `01-text-body-citation-one-line` | 03 "Newline contract of the body placeholders" | a newline in an HTML text node (source wrapping, serializer indentation) becomes a line of `{%mail_text_body%}` |

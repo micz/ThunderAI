@@ -254,6 +254,9 @@ function _renderSafeHtml(container, html) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     doc.querySelectorAll(_UNSAFE_PANEL_TAGS).forEach(el => el.remove());
+    // A payload that is only a <frameset> parses with the frameset AS the body, so
+    // removing it leaves no body at all: nothing safe is left to render.
+    if (!doc.body) return;
     doc.body.querySelectorAll('*').forEach(el => {
         for (const attr of Array.from(el.attributes)) {
             const name = attr.name.toLowerCase();

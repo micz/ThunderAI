@@ -101,16 +101,6 @@ export const KNOWN = {
             + 'compose window with a blank line between them ("one\\n\\ntwo"). Spec 07 "Into a plain text compose '
             + 'window": every block boundary other than <p> is a single \\n.',
     },
-    'spec 01 "Stale-result guard (rapid message switching)"': {
-        '11-frameset-summary':'a summary_html opening with <frameset> makes the parsed document\'s body the '
-            + 'frameset itself; _renderSafeHtml() removes it (frameset is in _UNSAFE_PANEL_TAGS), so '
-            + 'doc.body is null and the next doc.body.querySelectorAll() throws a TypeError. The listener '
-            + 'throws, the summary panel is never drawn, and the previous one was already removed. Nothing '
-            + 'executable reaches the pane, but the panel is lost (the spec says the step removes the '
-            + 'frameset and keeps the rest).',
-        '11-frameset-translation': 'same as 11-frameset-summary, on the translation panel: translated_text '
-            + 'opening with <frameset> throws inside _renderSafeHtml() and no translation panel is drawn.',
-    },
 };
 
 /** [the NN of each compose-NN- file of tests/dom/compose/]. */
