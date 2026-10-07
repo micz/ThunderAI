@@ -202,11 +202,12 @@ aligned where it contradicted itself:
   `checkAnthropicThinkingBudget()`): `pages/_lib/connection-ui.js`, DOM.
 - **"Optional Permissions"**: manifest and runtime permission requests.
 - **The rest of `mzta_specialCommand`**: `sendPrompt()`, its timeout, `dispose()`, the copy of
-  `rateLimited` / `retryAfterMs` onto the rejected error, thinking stripping. Reachable the same way as
-  `27` (a fake global `Worker`, which would then have to answer like a worker), not done in this pass.
-  Only "Configuration Validation" and the worker file and type are covered.
-- **Batch cancellation** (`js/mzta-batch-controller.js`, `processEmails()`): background code. From that
-  section only the worker side of a stop is covered (`stop` before and during streaming).
+  `rateLimited` / `retryAfterMs` onto the rejected error, thinking stripping. Covered by the background
+  area (`background/10-special-command`, with a scripted Worker); here only "Configuration Validation"
+  and the worker file and type.
+- **Batch cancellation** (`js/mzta-batch-controller.js`, `processEmails()`): covered by the background
+  area (`background/02-batch-controller`, `28-batch-stop`, `29-rate-limit`). Here only the worker side of
+  a stop (`stop` before and during streaming).
 - **The managed branches** (spec 08b): policy keys, locked providers, enforced per-feature connections.
 - **`fetchModelInfo()` of Gemini and Claude**, and the shape of every `fetchModels()` result: spec 04
   only says they go through `fetchWithRetry()`, which `26` checks.
