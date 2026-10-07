@@ -11,7 +11,8 @@
 // "Stop processing — N processed" banner, `batch_status` polled every ~1 s while working).
 //
 // The background's answers are given with openPage({ commands }): `popup_menu_ready` (the
-// payload preparePopupMenu() builds), `batch_status` (one more message, then idle, which
+// payload preparePopupMenu() builds), `batch_status` (the opening state until batch-polled releases
+// the batch, then one more message, then idle, which
 // also stops the page's polling interval so the process can exit) and `shortcut_do_prompt`.
 
 import {
@@ -35,20 +36,28 @@ const PROMPTS = [
     // no show_in (counts as popup), a label with entities
     { id: 'unset', label: 'R&amp;D &lt;x&gt;', type: '0', position_display: 4, position_compose: 4, custom_icon: '' },
 ];
+// The batch "moves" only once batch-polled releases it. The popup polls every second on an interval
+// settle() does not wait for, so on a loaded machine a poll can land before the batch-banner test
+// runs: until the release every poll answers the opening state (still 3, still working), which
+// changes nothing on screen, and the counts below start at the release.
+const OPENING = { working: true, processed: 3, cancelRequested: false };
 const statuses = [{ working: true, processed: 5, cancelRequested: false }, { working: false, processed: 0, cancelRequested: false }];
+let released = false;
+let askedAtRelease = 0;
 
 const ctx = await openPage('popup', {
     local: { connection_type: 'chatgpt_web' },
     permissions: { contains: () => false },
     commands: {
         popup_menu_ready: () => ({
-            batchStatus: { working: true, processed: 3, cancelRequested: false },
+            batchStatus: structuredClone(OPENING),
             lastShortcutTabId: 7,
             lastShortcutTabType: 'mail',
             lastShortcutFiltering: 1,
             lastShortcutPromptsData: structuredClone(PROMPTS),
         }),
-        batch_status: () => statuses.length > 1 ? statuses.shift() : statuses[0],
+        batch_status: () => !released ? structuredClone(OPENING)
+            : statuses.length > 1 ? statuses.shift() : statuses[0],
         shortcut_do_prompt: () => true,
     },
 });
@@ -122,13 +131,15 @@ k.test('batch-banner', S_BATCH, 'a running batch shows the "Stop processing" ban
 });
 
 k.test('batch-polled', S_BATCH, 'while open the popup polls `batch_status` (~1 s) and updates the count', async () => {
+    askedAtRelease = asked('batch_status').length;
+    released = true;
     await until(ctx, () => $('#mzta_batch_progress').textContent === msg('batch_progress_x', ['5']), 'the first poll', 3000);
-    assert.equal(asked('batch_status').length, 1);
+    assert.equal(asked('batch_status').length - askedAtRelease, 1);
 });
 
 k.test('batch-ended', S_BATCH, 'once the batch is over the banner goes away', async () => {
     await until(ctx, () => $('#mzta_batch_stop').style.display === 'none', 'the banner to hide', 3000);
-    assert.equal(asked('batch_status').length, 2);
+    assert.equal(asked('batch_status').length - askedAtRelease, 2);
 });
 
 // ---- search and keyboard (after the batch: no poll can interleave) -----------------------
