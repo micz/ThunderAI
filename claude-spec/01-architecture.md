@@ -1058,7 +1058,7 @@ being compact. Every paragraph therefore came out welded to the next one
 (`...quotation below:DMS could be XXXXServer 2TB...`).
 
 The function now inserts real break text nodes into the parsed DOM **before** the `textContent`
-read, by calling `mztaInjectLineBreaks()` after the hidden-element / `<style>` removals. That helper
+read, by calling `mztaInjectLineBreaks()` after the hidden-element / `<style>` / `<script>` removals. That helper
 lives in **`js/lib/mzta-html-lines.js`** and applies three passes:
 
 1. `td, th` → append a **space** (cells separate with a space, not a newline). First, so the block
@@ -1241,7 +1241,10 @@ Two fixes, both in `getCleanBodyHtml()`'s orbit:
    *source* is text, and `textContent` reads stylesheet rules out as body copy. A Word mail carries a
    long `@font-face` / `.MsoNormal` block at the top of `<body>`, which is what was landing in the
    prompt. Removing them in the clone also keeps the CSS out of `getFullHtml`'s `innerHTML`, so it no
-   longer rides along in `{%mail_html_body%}` or the diff picker's original side.
+   longer rides along in `{%mail_html_body%}` or the diff picker's original side. The background
+   path drops the same two tags from its own parse (`htmlBodyToPlainText()`), so the two paths give
+   the same `{%mail_text_body%}`; it used to drop only `<style>`, and a mail's script source reached
+   the model on the automatic features.
 2. **`getTextOnly` now calls `mztaHtmlNodeToLines()`** instead of `innerText` — the shared
    projection, layout-independent by construction.
 

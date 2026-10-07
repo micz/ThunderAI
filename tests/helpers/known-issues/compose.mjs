@@ -74,12 +74,6 @@ export const KNOWN = {
             + 'following line in a <div> of its own): "<div dir=ltr>Hi Bob,<div>thanks for the file.</div>..." '
             + 'gives "Hi Bob,thanks for the file." where the contract is one \\n per HTML block boundary - the '
             + 'boundary before the <div> is one. Both paths share the projection.',
-        '09-paths-in-step': 'htmlBodyToPlainText() removes <style> but not <script>, while the interactive path '
-            + 'drops both (MZTA_INJECTED_SELECTORS; spec 01 "getCleanBodyHtml() returns a DETACHED clone": their '
-            + 'SOURCE is text, read out as body copy). The same mail gives a different {%mail_text_body%} on the '
-            + 'two paths: on the background one (auto tagging, spam filter, summarize / translate on receive) '
-            + 'a script\'s source is sent to the model as part of the body. Spec 03: both paths share one '
-            + 'projection, "do not re-fork it"; spec 01: they "must be kept in step".',
     },
     [S_RICHTEXT]: {
         '01-typed-skips-injected': INJECTED_IN_TYPED,

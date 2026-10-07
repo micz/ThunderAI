@@ -450,7 +450,11 @@ export function htmlBodyToPlainText(htmlString) {
   // keeps its hidden markup. Do not add this call to getMailInlineTextParts():
   // the HTML placeholders must hand over the message's markup unedited on every path.
   globalThis.mztaStripHidden(doc.body);
-  doc.querySelectorAll('style').forEach(e => e.remove());//.querySelector('html').children.not(':visible').remove()
+  // <style> and <script> hold no readable text, but their SOURCE is text and
+  // textContent would read it out as body copy. The same two tags the interactive
+  // path drops (MZTA_INJECTED_SELECTORS in js/mzta-compose-script.js): the two
+  // paths must give the same {%mail_text_body%}.
+  doc.querySelectorAll('style, script').forEach(e => e.remove());
 
   // The line structure has to be put into the DOM before textContent reads it:
   // textContent emits NO break for a block-level element, so <p>, <div>, <br>,
