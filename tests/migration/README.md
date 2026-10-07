@@ -50,7 +50,7 @@ mock's options. The run takes about 15 s, most of it spent in the interruption t
 | `02-sync-drained` | `isSyncDrained()`, including a marker that is not `true` and one that cannot be read | 05 "Overview" |
 | `03-ollama-think` | `migrateOllamaThinkLevel()`: boolean to level, level kept, unset kept, global only, its flag, idempotence | 04 (Ollama `think`) |
 | `04-prompts-129` | the two #129 migrations: copy then remove, a local copy kept with the stale sync copy removed, nothing to do | 01 "Storage", 05 "Preference access" |
-| `05-calendar-no-selection` | `migrateCalendarNoSelection()`: the stored `need_selected` × the stored preference, with the behaviour read back through `getSpecialPrompts()`; its flag | 05 `calendar_no_selection` row, 08 "Interaction points" |
+| `05-calendar-no-selection` | `migrateCalendarNoSelection()`: the stored `need_selected` (missing and out-of-domain values included) × the stored preference, with the behaviour read back through `getSpecialPrompts()`; its flag | 05 `calendar_no_selection` row, 08 "Interaction points" |
 | `10-sequence-upgrade` | **the sequence** on a 5.0.x profile: the upgrade end to end, then a second and a third start (nothing written, `storage.sync` never touched); and, statically, that nothing before the preference copy awaits or touches storage | all of the above, 01 "Storage" |
 | `11-sequence-failure` | the sequence when storage fails: the copy failing (the guarded migrations skipped), `storage.sync` unreadable at every call, every write after the copy failing. Each time the sequence completes (the add-on starts), nothing is lost, and the next starts end where clean starts end | 05 "Overview" / 02 (the one-shot flags) |
 | `12-sequence-partial` | the sequence from partial states: the oldest (pre-#129) profile over three starts, a payload in both areas, and **Thunderbird closing at each storage write of the first start in turn**, followed by normal starts | 05 "Overview", 01, 02 |
@@ -177,7 +177,4 @@ None today.
 
 ## Under-specified
 
-Where the spec says nothing, the behaviour is listed here, not pinned by a test:
-
-- **A stored calendar prompt with no `need_selected` field.** Which behaviour it had before the
-  upgrade, and so what the alignment should give, is not stated.
+Where the spec says nothing, the behaviour is listed here, not pinned by a test. None today.

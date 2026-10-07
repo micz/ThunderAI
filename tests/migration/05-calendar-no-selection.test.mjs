@@ -18,12 +18,19 @@ const k = caseTests('05-calendar-no-selection');
 const run = 'migrateCalendarNoSelection';
 const FLAG = '_migrated_calendar_no_selection';
 
-const calendar = need_selected => ({
-    id: 'prompt_get_calendar_event', name: '__MSG_prompt_get_calendar_event__',
-    text: 'My text {%mail_text_body_or_selected%}', type: '1', action: '0', need_selected,
-    need_signature: '0', need_custom_text: '0', define_response_lang: '0', api_type: '',
-    is_default: '1', is_special: '1', show_in: 'both',
-});
+// A stored calendar prompt with no need_selected field at all.
+const MISSING = '<missing>';
+
+const calendar = need_selected => {
+    const p = {
+        id: 'prompt_get_calendar_event', name: '__MSG_prompt_get_calendar_event__',
+        text: 'My text {%mail_text_body_or_selected%}', type: '1', action: '0', need_selected,
+        need_signature: '0', need_custom_text: '0', define_response_lang: '0', api_type: '',
+        is_default: '1', is_special: '1', show_in: 'both',
+    };
+    if (need_selected === MISSING) delete p.need_selected;
+    return p;
+};
 
 // [case id, stored need_selected, stored calendar_no_selection (undefined = unset)]
 const MATRIX = [
@@ -35,6 +42,12 @@ const MATRIX = [
     ['ran-with-number-true', 1, true],
     ['ran-with-unset', '1', undefined],
     ['ran-with-false', '1', false],
+    // Missing or out of domain: every 5.0.x read it as the shipped "1" (normalizePromptFlags()
+    // with the built-in fallback), so it asked for a selection. Spec 05 row calendar_no_selection.
+    ['missing-pref-true', MISSING, true],
+    ['empty-pref-true', '', true],
+    ['null-pref-true', null, true],
+    ['boolean-false-pref-true', false, true],
 ];
 
 const read = { prefs: ['calendar_no_selection'], specialPrompts: true };
