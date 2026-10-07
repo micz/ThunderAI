@@ -38,8 +38,17 @@ const DOM_DIR = new URL('../../dom/compose/', import.meta.url);
 const SECTION_RE = /^spec \d\d ".+"$/;
 const CASE_RE = /^(\d\d)-[a-z0-9][a-z0-9-]*$/;
 
-/** The known issues, by spec section and case id. None today. */
-export const KNOWN = {};
+/** The known issues, by spec section and case id. */
+export const KNOWN = {
+    'spec 03 "Newline contract of the compose placeholders"': {
+        '14-typed-lines': 'a plain text compose window holds its lines as top-level <br> (the live capture, '
+            + 'captured/plaintext_compose_body_live.html). getOnlyTypedText joins every top-level node with '
+            + '\\n, and a top-level <br> is a node of its own (projected to nothing): each line break is '
+            + 'counted twice. "line one<br>line two<br><br>line three" gives "line one\\n\\nline two\\n\\nline '
+            + 'three" - every line a paragraph, the real blank line lost among them - where the contract is '
+            + 'one \\n between lines and a blank line between paragraphs, in a plain text window as in HTML.',
+    },
+};
 
 /** [the NN of each compose-NN- file of tests/dom/compose/]. */
 export function areaFiles() {

@@ -54,6 +54,21 @@ export function readCapture(name, { encoding = 'utf8' } = {}) {
 }
 
 /**
+ * The body of a live plain text compose window (captured/plaintext_compose_body_live.html), as a
+ * document; with `typed`, the variant of plaintext-compose-typed.json (three typed lines).
+ */
+export function plainTextComposeHtml({ typed = false } = {}) {
+    let body = readFileSync(repoPath('tests/fixtures/compose/captured/plaintext_compose_body_live.html'), 'utf8').trim();
+    if (typed) {
+        const t = fixture('plaintext-compose-typed.json');
+        const at = body.indexOf(t.replaces);
+        if (at === -1) throw new Error('plaintext-compose-typed.json: the capture no longer opens with ' + t.replaces);
+        body = body.slice(0, at) + t.typed_html + body.slice(at + t.replaces.length);
+    }
+    return '<!DOCTYPE html><html><head></head>' + body + '</html>';
+}
+
+/**
  * Open a mail document with the content scripts loaded.
  *
  * @param {object} o

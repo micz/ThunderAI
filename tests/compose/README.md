@@ -22,7 +22,7 @@ node --test tests/compose/99-harness-known-issues.test.mjs   # level 1: the know
 | `compose-01-html-reply-captured` | the captured HTML reply, reopened in a compose window | **A**: typed / quoted / body text and HTML of a real draft (serializer indentation included); a panel drawn in the compose body is never read back |
 | `compose-02-html-reply-paragraph` | an HTML reply in Paragraph mode | **A**: exact typed / quoted / body text, the raw join rule, selection twins, mid-tag selection, autoselect ranges |
 | `compose-03-html-bodytext-new` | a new message in Body Text mode, with signature | **A**: `<br>` lines, the bogus trailing `<br>`, the signature; the generating panels where the own message is unknown |
-| `compose-04-plaintext-read` | the captured plain text compose window | **A**: lines as `\n`, the structure-less html twin rebuilt from the text, selections across a line |
+| `compose-04-plaintext-read` | a live plain text compose window, captured (a reply, nothing typed) | **A**: the window's shape (pre-wrap body, top-level `<br>`), the quoted text with its `> ` lines and the signature, the body text, the html twin, a selection |
 | `compose-05-html-write` | as 02 | **B**: `replaceSelectedText` into HTML: nodes through a fragment, no nested `<body>`, none skipped, the rest untouched, `compose_reloadBody` |
 | `compose-06-plaintext-write` | as 04 | **B**: `replaceSelectedText` into plain text: one `Text` node, markup kept literal, `compose_reloadBody` flagged plain |
 | `compose-07-display-captured` | the captured HTML mail in the message display | **A**: body text and HTML; then every panel, the badge and a dialog are drawn and none of it is read back, by any reading command |
@@ -32,10 +32,11 @@ node --test tests/compose/99-harness-known-issues.test.mjs   # level 1: the know
 | `compose-11-sanitizer` | the captured mail in the message display | **D**: every payload of `sanitizer-payloads.json` through the summary and the translation panel |
 | `compose-12-dialogs` | the captured mail in the message display | **D**: the `getTags` confirmation dialog (exclusions, exact match, hiding, lock) and `sendAlert` |
 | `compose-13-reinjected` | a message display holding a previous instance's panels | **D**: the stale generating panels removed when the script is injected again |
+| `compose-14-plaintext-typed` | as 04, with three typed lines and a blank line | **A**: the typed lines' contract, the body text, the autoselect range |
 
 `99-harness-known-issues.test.mjs` (level 1) checks the known-issue file itself.
 
-Run time: one document per file, many tests on it (13 jsdom processes, 236 tests). Run alone, the
+Run time: one document per file, many tests on it (14 jsdom processes). Run alone, the
 area takes about 58 s one file at a time and about 23 s with `--test-concurrency=4`.
 
 ## The core entry point: `openDocument()`
@@ -77,7 +78,9 @@ In `tests/fixtures/compose/`:
 | Fixture | Source |
 |---|---|
 | `captured/mail_html_compose_signature_quote_text.txt` | **captured**: an HTML reply draft as Thunderbird saved it (Paragraph mode, quote, signature). Opened as the compose body, its serializer indentation included, as a reopened draft holds it |
-| `captured/mail_text_compose_signature_quote_text.txt` | **captured**: a plain text reply draft. Its body becomes the text of the compose body (see "Under-specified" 2) |
+| `captured/plaintext_compose_body_live.html` | **captured**: the `<body>` of a live plain text compose window, a reply with quote and signature and nothing typed, read with `tabs.executeScript(tab.id, {code: 'document.body.outerHTML'})` from the add-on's background console. Anonymized |
+| `captured/mail_text_compose_signature_quote_text.txt` | **captured**, kept for reference and not used: a plain text reply draft as Thunderbird SAVED it - the serializer's output (`format=flowed`, the `> ` it writes), not what the editor holds |
+| `plaintext-compose-typed.json` | derived from the live capture: three typed lines and a blank line, in the capture's own shape (top-level text and `<br>`) |
 | `captured/mail_html_reading.txt` | **captured**: an HTML mail. Its bytes are ISO-8859-1 although its header says `charset=utf-8` (re-saved after anonymizing): `readCapture()` decodes it as latin1. Its body is put in `div.moz-text-html`, the message display's wrapper, written by hand |
 | `html-compose-paragraph-reply.json` | hand-written: the captured reply's structure without the indentation, plus a non-breaking space, a Shift+Enter `<br>` and a second quoted line |
 | `html-compose-bodytext-new.json` | hand-written: Body Text mode as spec 07 describes it (`<br>` lines in one `<div>`, the bogus trailing `<br>`), the captured signature block |
@@ -114,7 +117,11 @@ A payload that is only a `<frameset>` parses with the frameset as the body, so n
 
 ## Known issues
 
-In `tests/helpers/known-issues/compose.mjs`, run as TODOs while they fail. None today.
+In `tests/helpers/known-issues/compose.mjs`, run as TODOs while they fail:
+
+| Case | Spec section | What the code does |
+|---|---|---|
+| `14-typed-lines` | 03 "Newline contract of the compose placeholders" | a plain text window's lines are top-level `<br>`, and the typed walker counts each one twice (the `<br>` node and the join): `line one<br>line two` gives a blank line between the two |
 
 What the area found was fixed, and the spec updated where it described the old behaviour:
 
@@ -151,7 +158,6 @@ What the area found was fixed, and the spec updated where it described the old b
   (`getMailInlineTextParts()`, `htmlBodyToPlainText()`, `preparePrompt()`), not end to end.
 - **The `<pre>` gap** spec 01 documents ("keeps its line breaks but not its internal indentation or
   blank lines"): stated as a gap, not asserted.
-- **`{%mail_quoted_text%}` in a plain text compose window** (Under-specified 2).
 
 ## Under-specified
 
@@ -160,10 +166,9 @@ What the code does that no spec states, listed instead of tested:
 1. *(resolved: spec 01 now states that HTML source whitespace is not line structure, in the shared
    projection and in the compose walkers; a line no longer starts with the indentation's space, and
    the tests compare exact lines.)*
-2. **The plain text compose window's DOM.** Spec 01 says its breaks are `\n` in text nodes; how the
-   editor holds the quote and the signature (elements or text) is neither stated nor captured. The
-   fixture is the captured text as one text node, so `{%mail_quoted_text%}` is not tested there. A
-   capture of `document.body.innerHTML` from a live plain text compose window would settle it.
+2. *(resolved: a live plain text compose window was captured, and spec 01 "The compose-extraction
+   newline contract" now describes what it holds - top-level `<br>` under a pre-wrap body, the
+   citation and signature divs, the quote span. It used to say the lines were `\n` in the text nodes.)*
 3. *(resolved: spec 01 "The rich-text layer" now states that `getOnlyQuotedText` reads to the end of the
    body, the signature included, while `getOnlyTypedText` stops at it.)*
 4. **`getText`**: no spec, and `js/mzta-menus.js` does not send it. Only what spec 01 says of "the two

@@ -1014,8 +1014,16 @@ break trimmed because Thunderbird's editor ends most lines with a bogus `<br>`) 
 `TABLE`, `H1`–`H6`, `PRE`). That is `blockTextOfHtml()`'s projection from `api_webchat/diffPicker.js`
 applied to a live node — **reimplemented, not imported**: the compose script is registered as a
 *classic* content script (`composeScripts.register`), has no module context, and cannot import from
-`js/mzta-utils.js`. A plain text compose window needs no special case: its breaks are already real
-`\n` in the text nodes ([#855]), there are no `<br>` to replace, and nothing doubles up.
+`js/mzta-utils.js`.
+
+**What a plain text compose window really holds** (captured from a live one, a reply:
+`tests/fixtures/compose/captured/plaintext_compose_body_live.html`). Its `<body>` carries
+`white-space: pre-wrap`, and its lines are **top-level `<br>`**, not `\n` in the text nodes: the
+editor opens a reply with `<br><br>` for the lines to type, then a `div.moz-cite-prefix` and a
+`div.moz-signature` exactly as in HTML, the quote being a `span` (`white-space: pre-wrap; display:
+block`) whose lines are `<br>` too and whose `"> "` are text in the DOM. A `\n` inside a text node
+appears where text was inserted as text — the answer inserted by `replaceSelectedText` ([#855]) —
+and the `pre-wrap` body renders it as a line. Both forms must project to the same lines.
 
 `nodeTextKeepLines()` follows the shared layer's whitespace rule (see *`htmlBodyToPlainText()` injects
 the line structure*), reusing its `mztaTextNodes()` / `mztaIsPreformatted()` globals: outside
