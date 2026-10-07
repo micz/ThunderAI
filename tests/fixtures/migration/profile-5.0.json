@@ -1,0 +1,85 @@
+{
+  "description": "A 5.0.x profile, as 5.1.0 finds it: the preferences and the one-shot flags in storage.sync (the prompt payloads moved to storage.local long ago, #129), the prompt payloads with a custom menu order and custom show_in in storage.local. Every API key is a fake.",
+  "sync": {
+    "connection_type": "chatgpt_api",
+    "chatgpt_api_key": "fake-0000000000000000",
+    "chatgpt_model": "gpt-4.1-nano",
+    "chatgpt_temperature": "0.7",
+    "chatgpt_developer_messages": "You are an email assistant",
+    "chatgpt_win_top": null,
+    "chatgpt_win_height": 800,
+    "chatgpt_store": false,
+    "do_debug": false,
+    "add_tags": false,
+    "add_tags_maxnum": 0,
+    "add_tags_exclusions": ["Important", "To do"],
+    "default_sign_name": "",
+    "default_chatgpt_lang": "Italiano",
+    "summarize_auto_senders_list": ["boss@example.com", "team@example.com"],
+    "spamfilter_threshold": 70,
+    "ollama_host": "http://localhost:11434",
+    "ollama_model": "llama3",
+    "ollama_think": false,
+    "add_tags_ollama_think": true,
+    "calendar_no_selection": true,
+    "add_tags_use_specific_integration": true,
+    "add_tags_connection_type": "anthropic_api",
+    "add_tags_anthropic_api_key": "fake-anthropic-0000",
+    "add_tags_anthropic_model": "claude-test",
+    "legacy_removed_option": "kept as stored",
+    "legacy_nested": { "level1": { "list": [1, { "flag": false, "empty": "" }, []], "zero": 0 } },
+    "dynamic_menu_order_alphabet": false,
+    "_migrated_enabled_to_showin": true
+  },
+  "local": {
+    "_custom_prompt": [
+      {
+        "id": "prompt_custom_zeta", "name": "Zeta summary", "text": "Summarize {%mail_text_body%}",
+        "type": "1", "action": "0", "need_selected": "0", "need_signature": "0", "need_custom_text": "0",
+        "define_response_lang": "1", "use_diff_viewer": "0", "is_default": "0", "is_special": "0",
+        "show_in": "context", "position_display": 3, "position_compose": 1, "position_context": 2,
+        "api_type": "ollama_api", "ollama_model": "llama3", "custom_icon": ""
+      },
+      {
+        "id": "prompt_custom_alpha", "name": "alpha draft", "text": "Draft a reply to {%mail_text_body%}",
+        "type": "2", "action": "2", "need_selected": "0", "need_signature": "1", "need_custom_text": "1",
+        "define_response_lang": "0", "use_diff_viewer": "0", "is_default": "0", "is_special": "0",
+        "show_in": "none", "position_display": 1, "position_compose": 3, "position_context": 1,
+        "api_type": "", "custom_icon": "star.png"
+      }
+    ],
+    "_default_prompts_properties": {
+      "prompt_reply": {
+        "position_compose": 2, "position_display": 2, "position_context": 3, "need_custom_text": "0",
+        "chatgpt_web_model": "", "chatgpt_web_project": "", "chatgpt_web_custom_gpt": "",
+        "api_type": "", "show_in": "popup", "custom_icon": ""
+      },
+      "prompt_this": {
+        "position_compose": 4, "position_display": 4, "position_context": 4, "need_custom_text": "1",
+        "chatgpt_web_model": "", "chatgpt_web_project": "", "chatgpt_web_custom_gpt": "",
+        "api_type": "ollama_api", "show_in": "none", "custom_icon": "bolt.png"
+      }
+    },
+    "_special_prompts": [
+      {
+        "id": "prompt_get_calendar_event", "name": "__MSG_prompt_get_calendar_event__",
+        "text": "My calendar text {%mail_text_body_or_selected%}", "type": "1", "action": "0",
+        "need_selected": "0", "need_signature": "0", "need_custom_text": "0", "define_response_lang": "0",
+        "use_diff_viewer": "0", "api_type": "", "is_default": "1", "is_special": "1",
+        "show_in": "both", "custom_icon": ""
+      },
+      {
+        "id": "prompt_spamfilter", "name": "__MSG_prompt_spamfilter__",
+        "text": "My spam text {%mail_text_body%}", "type": "1", "action": "0",
+        "need_selected": "0", "need_signature": "0", "need_custom_text": "0", "define_response_lang": "0",
+        "use_diff_viewer": "0", "api_type": "ollama_api", "ollama_model": "llama3",
+        "is_default": "1", "is_special": "1", "show_in": "context", "custom_icon": "shield.png",
+        "position_display": 5, "position_compose": 5, "position_context": 5
+      }
+    ],
+    "_custom_placeholder": [
+      { "id": "thunderai_custom_sig", "name": "Signature", "text": "Best regards", "type": "0", "is_default": "0", "is_dynamic": "0" }
+    ],
+    "msg:42": { "summary": "A stored summary record, not a preference" }
+  }
+}

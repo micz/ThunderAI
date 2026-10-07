@@ -32,11 +32,10 @@
  *  js/mzta-utils.js owns their own sync -> local migration (issue #129) and runs right
  *  after this one in mzta-background.js.
  *
- *  Copying them here would break those migrations rather than help them: each one bails out
- *  when it finds its key already present in storage.local, so it would take the early return
- *  and never reach its `storage.sync.remove()`. The payload would then stay in storage.sync
- *  forever — exactly the quota problem #129 exists to solve — and a later reset of the local
- *  copy would silently resurrect the stale pre-#129 data.
+ *  Those migrations copy the payload and then remove it from storage.sync; when they find a
+ *  copy already in storage.local they keep it (it is the user's current data) and only drain
+ *  the stale sync copy. Copying the payloads here as well would only split that one job across
+ *  two modules, so the copy and its removal stay in js/mzta-utils.js.
  *
  *  `_special_prompts` and `_custom_placeholder` were only ever written to storage.local, so
  *  they cannot appear in a sync read; they are listed for completeness and to document that
@@ -72,8 +71,8 @@ const MIGRATION_FLAG = '_prefs_migrated_from_sync';
  *
  * - **The sync copy is NOT removed.** A user who downgrades to an older version finds their
  *   settings intact. The cost is a few unused KB in sync; the cost of the alternative is a
- *   profile that looks factory-reset (no connection, setup wizard again). This mirrors what
- *   migrateCustomPromptsStorage() already does on its "local copy already present" path.
+ *   profile that looks factory-reset (no connection, setup wizard again). The #129 prompt
+ *   payloads are the exception: their migrations drain sync (see NOT_PREFERENCES above).
  * - **Local wins on conflict.** A key already present in local is left untouched, so even if
  *   the flag below were lost the migration could re-run without reverting a value the user
  *   changed after migrating.

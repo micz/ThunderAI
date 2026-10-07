@@ -1657,17 +1657,17 @@ export async function migrateCalendarNoSelection() {
         return;
     }
     const stored = await browser.storage.local.get({ _special_prompts: null, calendar_no_selection: null });
-    const calendar = Array.isArray(stored._special_prompts)
+    // No stored calendar prompt: it has only ever run with the shipped definition, so that is
+    // what the preference is aligned to. A preference stored true with no prompt stored (the
+    // settings page rollback above, with no special prompt ever saved) must become false, or
+    // the command would stop asking for a selection on upgrade.
+    const calendar = (Array.isArray(stored._special_prompts)
         ? stored._special_prompts.find(p => p.id === 'prompt_get_calendar_event')
-        : undefined;
-    // No stored calendar prompt: it has only ever run with the shipped need_selected "1",
-    // which is exactly what the preference's default (false) derives. Nothing to align.
-    if (calendar) {
-        const ran_without_selection = (calendar.need_selected === "0") || (calendar.need_selected === 0);
-        const pref_says = (stored.calendar_no_selection === true);
-        if (ran_without_selection !== pref_says) {
-            await browser.storage.local.set({ calendar_no_selection: ran_without_selection });
-        }
+        : undefined) || specialPrompts.find(p => p.id === 'prompt_get_calendar_event');
+    const ran_without_selection = (calendar.need_selected === "0") || (calendar.need_selected === 0);
+    const pref_says = (stored.calendar_no_selection === true);
+    if (ran_without_selection !== pref_says) {
+        await browser.storage.local.set({ calendar_no_selection: ran_without_selection });
     }
     await browser.storage.local.set({ _migrated_calendar_no_selection: true });
 }

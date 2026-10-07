@@ -1,0 +1,47 @@
+{
+  "description": "The oldest profile 5.1.0 can meet: everything in storage.sync, the prompt payloads included (before #129), still carrying the removed `enabled` flag, and none of the one-shot flags set, so every migration has work to do. storage.local holds only the special prompts (always written there). Every API key is a fake.",
+  "sync": {
+    "connection_type": "ollama_api",
+    "ollama_host": "http://localhost:11434",
+    "ollama_model": "llama3",
+    "ollama_think": true,
+    "do_debug": true,
+    "calendar_no_selection": false,
+    "chatgpt_api_key": "fake-0000000000000000",
+    "spamfilter": true,
+    "spamfilter_threshold": 0,
+    "summarize_auto_senders_list": [],
+    "_custom_prompt": [
+      {
+        "id": "prompt_custom_old", "name": "Old prompt", "text": "Translate {%mail_text_body%}",
+        "type": "1", "action": "0", "need_selected": "0", "need_signature": "0", "need_custom_text": "0",
+        "define_response_lang": "0", "is_default": "0", "is_special": "0", "enabled": 0,
+        "show_in": "both", "position_display": 1, "position_compose": 1, "position_context": 1
+      },
+      {
+        "id": "prompt_custom_kept", "name": "Kept prompt", "text": "Answer {%mail_text_body%}",
+        "type": "0", "action": "1", "need_selected": "1", "need_signature": "1", "need_custom_text": "0",
+        "define_response_lang": "1", "is_default": "0", "is_special": "0", "enabled": 1,
+        "show_in": "popup", "position_display": 2, "position_compose": 2, "position_context": 2,
+        "api_type": "chatgpt_api", "chatgpt_model": "gpt-4.1-nano"
+      }
+    ],
+    "_default_prompts_properties": {
+      "prompt_reply": {
+        "position_compose": 1, "position_display": 1, "position_context": 1, "need_custom_text": "0",
+        "chatgpt_web_model": "", "chatgpt_web_project": "", "chatgpt_web_custom_gpt": "",
+        "api_type": "", "show_in": "popup", "enabled": 0
+      }
+    }
+  },
+  "local": {
+    "_special_prompts": [
+      {
+        "id": "prompt_get_calendar_event", "name": "__MSG_prompt_get_calendar_event__",
+        "text": "Old calendar text {%mail_text_body_or_selected%}", "type": "1", "action": "0",
+        "need_selected": "1", "need_signature": "0", "need_custom_text": "0", "define_response_lang": "0",
+        "api_type": "", "is_default": "1", "is_special": "1", "enabled": 1
+      }
+    ]
+  }
+}

@@ -1501,8 +1501,11 @@ export async function migrateCustomPromptsStorage(){
   //check if storage.local has custom prompts
   let custom_prompts_local = await browser.storage.local.get({_custom_prompt: null});
   if(custom_prompts_local._custom_prompt !== null){
-    // There are custom prompts in storage.local, nothing to do
-    // console.log("migrateCustomPromptsStorage: there are custom prompts in storage.local, nothing to do");
+    // There are custom prompts in storage.local: they are the user's current data and are kept.
+    // The sync copy is stale (a previous move interrupted between its set() and its remove()),
+    // so it is drained all the same: left there it would withhold _prefs_migrated_from_sync
+    // forever (js/mzta-prefs-migration.js) and every startup would re-read both areas.
+    await browser.storage.sync.remove("_custom_prompt");
     return;
   }
 
@@ -1525,8 +1528,8 @@ export async function migrateDefaultPromptsPropStorage(){
   //check if storage.local has default prompts properties
   let default_prompts_properties_local = await browser.storage.local.get({_default_prompts_properties: null});
   if(default_prompts_properties_local._default_prompts_properties !== null){
-    // There are default prompts properties in storage.local, nothing to do
-    // console.log("migrateDefaultPromptsPropStorage: there are default prompts properties in storage.local, nothing to do");
+    // Kept, and the stale sync copy drained: same reasoning as migrateCustomPromptsStorage().
+    await browser.storage.sync.remove("_default_prompts_properties");
     return;
   }
 
