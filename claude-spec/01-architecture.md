@@ -614,7 +614,11 @@ never runs twice on a message at the same time.
 - **The promise never rejects**: it resolves to an outcome `{ status: 'ok' | 'error' | 'skipped' |
   'cancelled', data, errorMessage, rateLimited, retryAfterMs }` (spam adds `success`, `moved` and
   `data.report`; add_tags `data.tags` / `data.assigned`). The entry is removed when the job
-  settles, in every path.
+  settles, in every path. Every job body returns an outcome on every path; one that resolves to
+  nothing (a missing `return`, a programming mistake) gives `{ status: 'error', errorMessage:
+  'the job returned no outcome' }` and a `[taJobs] <kind>:<id> returned no outcome` error log,
+  never a silent `skipped`: the joiners end as on any failure. A body that throws gives `error`
+  too, with the thrown message.
 - **Joining.** A caller that finds an entry awaits it (`_joinSummaryJob()`,
   `_joinTranslationJob()`, `_joinSpamJob()`): no `taWorkingStatus.startWorking()`, no store
   write, no API call. With a tab of its own it sends the generating panel there, then delivers
@@ -664,7 +668,7 @@ never runs twice on a message at the same time.
   the dialog: `data.assigned = false`). The dialog path joining a running job shows the job's
   tags in the confirmation dialog without an AI call; if that job produced no tags it runs its
   own. `_assign_tags()` stays serialized through `_enqueueTagAssign()`.
-- **Logs** (`do_debug`): `[taJobs] start|join|invalidate|revive <kind>:<id>`, and `[taJobs] end <kind>:<id> <status>` when the job settles (plus `[taJobs] <kind>:<id> threw: <message>`, an error, when a job body throws past its own catches).
+- **Logs** (`do_debug`): `[taJobs] start|join|invalidate|revive <kind>:<id>`, and `[taJobs] end <kind>:<id> <status>` when the job settles (plus, as errors, `[taJobs] <kind>:<id> threw: <message>` when a job body throws past its own catches and `[taJobs] <kind>:<id> returned no outcome`).
 
 ### Context-menu actions: one source for messages and UI tab
 

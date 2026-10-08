@@ -32,6 +32,7 @@
 // The promise of an entry never rejects: it resolves to an outcome
 //   { status: 'ok' | 'error' | 'skipped' | 'cancelled', data, errorMessage, rateLimited, retryAfterMs, ... }
 // 'cancelled' = the job was invalidated (the user removed the result while it ran).
+// A job body that resolves to nothing (a missing return) resolves 'error', logged.
 // The entry is removed in a finally, so no path can leave it behind.
 //
 // The entry object itself is the per-job token: invalidate() flags it, the job reads the
@@ -65,7 +66,14 @@ export const taJobRegistry = {
         this.taLog.log("[taJobs] start " + key);
         entry.promise = Promise.resolve()
             .then(() => fn(entry))
-            .then(outcome => outcome || { status: 'skipped' })
+            .then(outcome => {
+                if (outcome) return outcome;
+                // Every job body returns an outcome on every path: nothing back can only be a
+                // missing return. Reported as an error, so the joiners end as on a failure and
+                // the log names the job, instead of a silent 'skipped'.
+                this.taLog.error("[taJobs] " + key + " returned no outcome");
+                return { status: 'error', errorMessage: 'the job returned no outcome', rateLimited: false, retryAfterMs: null };
+            })
             .catch(e => {
                 // Last resort: the job bodies catch their own errors.
                 this.taLog.error("[taJobs] " + key + " threw: " + (e?.message || e));

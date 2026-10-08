@@ -252,7 +252,8 @@ Input for the spec:
    removes the previous report, so a configuration error leaves the message with none.)*
 8. *(resolved: spec 01 "In-flight jobs" now writes the `[taJobs]` lines as the code logs them, and
    `01-job-registry` `logs` asserts them exactly.)*
-9. **A job that returns no outcome** resolves to `skipped`: spec 01 lists the four statuses but not
-   which one that case takes (`01-job-registry` asserts only "one of the four").
+9. *(resolved: a job body resolving to nothing can only be a missing `return`; the registry used to
+   turn it into a silent `skipped`, it now resolves `error` and logs `[taJobs] <kind>:<id> returned
+   no outcome`. Spec 01 "In-flight jobs" says so; `01-job-registry` `no-outcome` tests it.)*
 10. **The context-menu inline summary sends `showSummaryGenerating` twice** to its tab: the #901
     probe and the job's broadcast. Harmless (the content script draws one), not stated.

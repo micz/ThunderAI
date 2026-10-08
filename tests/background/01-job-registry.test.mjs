@@ -4,7 +4,8 @@
 //  - check and registration are synchronous and back to back: get() then start(), no await in
 //    between, so two callers arriving together cannot both start;
 //  - the promise never rejects: it resolves to an outcome {status: 'ok' | 'error' | 'skipped' |
-//    'cancelled', data, errorMessage, rateLimited, retryAfterMs};
+//    'cancelled', data, errorMessage, rateLimited, retryAfterMs}; a body resolving to nothing (a
+//    missing return) gives 'error', logged;
 //  - the entry is removed when the job settles, in every path, so a retry in the same session
 //    works and nothing stays "in progress";
 //  - invalidate(): the entry object is the job's token, flagged; revive() clears the flag;
@@ -106,10 +107,15 @@ k.test('throw-sync', 'a job body that throws synchronously still resolves to an 
     assert.equal(taJobRegistry.isRunning('spam', 'g@x'), false);
 });
 
-k.test('no-outcome', 'a job that returns nothing resolves to an outcome with one of the four statuses', async () => {
+k.test('no-outcome', 'a job that returns nothing (a missing return) resolves to an error outcome, logged with its key', async () => {
+    ctx.con.clear();
     const outcome = await taJobRegistry.start('add_tags', 'h@x', async () => undefined).promise;
-    assert.ok(['ok', 'error', 'skipped', 'cancelled'].includes(outcome.status), JSON.stringify(outcome));
+    assert.equal(outcome.status, 'error');
+    assert.equal(outcome.errorMessage, 'the job returned no outcome');
+    assert.equal(outcome.rateLimited, false);
     assert.equal(taJobRegistry.isRunning('add_tags', 'h@x'), false);
+    assert.ok(ctx.con.entries.some(e => e.level === 'error' && e.msg === '[taJobs] add_tags:h@x returned no outcome'),
+        JSON.stringify(ctx.con.entries.map(e => e.msg)));
 });
 
 k.test('retry-same-session', 'once a job settled, a new job for the same message can start (a retry works)', async () => {
