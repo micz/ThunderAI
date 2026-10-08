@@ -140,6 +140,8 @@ export class GoogleGemini {
           let output = {};
           output.ok = false;
           output.error = errorDetail;
+          output.status = response.status;
+          output.statusText = response.statusText;
           return output;
       }
 
@@ -184,6 +186,8 @@ export class GoogleGemini {
           let output = {};
           output.ok = false;
           output.error = errorDetail;
+          output.status = response.status;
+          output.statusText = response.statusText;
           return output;
       }
 

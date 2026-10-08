@@ -121,21 +121,29 @@ function _mapError(data) {
   if (data && data.is_exception) {
     return browser.i18n.getMessage('connTest_error_network');
   }
-  // HTTP error: data.error holds the raw response body (often JSON with .error.message).
+  // HTTP error: data.error holds the raw response body (often JSON with .error.message;
+  // Ollama's is {"error": "<message>"}), data.status / data.statusText the response's.
   let detail = '';
   try {
     const parsed = JSON.parse(data.error);
-    detail = (parsed && parsed.error && parsed.error.message) ? parsed.error.message : '';
+    if (typeof parsed?.error?.message === 'string') detail = parsed.error.message;
+    else if (typeof parsed?.error === 'string') detail = parsed.error;
   } catch (e) {
     detail = typeof data.error === 'string' ? data.error : '';
   }
-  const lower = (detail || '').toLowerCase();
-  if (lower.includes('api key') || lower.includes('api-key') ||
-      lower.includes('unauthorized') || lower.includes('authentication') ||
-      lower.includes('invalid x-api-key') || lower.includes('permission')) {
+  // A rejected key: a 401, or a message about the key itself (Gemini answers a wrong key
+  // with a 400). Never a 403: that is a valid key without access to the resource (Claude's
+  // "Your API key does not have permission..."), and its own message says so better than
+  // "check your API key".
+  const lower = detail.toLowerCase();
+  const aboutKey = lower.includes('api key') || lower.includes('api-key') ||
+      lower.includes('unauthorized') || lower.includes('authentication');
+  if (data.status === 401 || (data.status !== 403 && aboutKey)) {
     return browser.i18n.getMessage('connTest_error_auth');
   }
-  if (detail) return detail;
+  if (detail.trim()) return detail;
+  // The server answered, with nothing to say: its status, never "unreachable".
+  if (data.status) return ('HTTP ' + data.status + ' ' + (data.statusText || '')).trim();
   return browser.i18n.getMessage('connTest_error_network');
 }
 

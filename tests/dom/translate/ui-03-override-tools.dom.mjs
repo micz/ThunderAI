@@ -242,6 +242,22 @@ k.test('test-http-detail', S_TEST, 'any other HTTP error: red, with the provider
     assert.equal(stripText(), errorText('model: claude-own-1 not found'));
 });
 
+k.test('test-forbidden', S_TEST, 'a 403 (a valid key without access): the provider\'s message, not "check your API key"', async () => {
+    const message = 'Your API key does not have permission to use the specified resource.';
+    net.answer(MODELS, () => json({ type: 'error', error: { type: 'permission_error', message } },
+        { status: 403, statusText: 'Forbidden' }));
+    await runTest();
+    assert.equal(stripState(), 'error');
+    assert.equal(stripText(), errorText(message));
+});
+
+k.test('test-empty-error', S_TEST, 'an HTTP error with no body: its status, never "unreachable"', async () => {
+    net.answer(MODELS, () => new Response('', { status: 502, statusText: 'Bad Gateway' }));
+    await runTest();
+    assert.equal(stripState(), 'error');
+    assert.equal(stripText(), errorText('HTTP 502 Bad Gateway'));
+});
+
 k.test('test-unreachable', S_TEST, 'an unreachable host: red, the network message', async () => {
     net.fail(MODELS);
     await runTest();

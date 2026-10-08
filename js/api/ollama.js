@@ -149,6 +149,8 @@ export class Ollama {
             let output = {};
             output.ok = false;
             output.error = errorDetail;
+            output.status = response.status;
+            output.statusText = response.statusText;
             return output;
         }
 
@@ -195,6 +197,8 @@ export class Ollama {
             let output = {};
             output.ok = false;
             output.error = errorDetail;
+            output.status = response.status;
+            output.statusText = response.statusText;
             return output;
         }
 
@@ -232,6 +236,8 @@ export class Ollama {
             let output = {};
             output.ok = false;
             output.error = errorDetail;
+            output.status = response.status;
+            output.statusText = response.statusText;
             return output;
         }
 
@@ -263,6 +269,8 @@ export class Ollama {
             let output = {};
             output.ok = false;
             output.error = errorDetail;
+            output.status = response.status;
+            output.statusText = response.statusText;
             return output;
         }
 

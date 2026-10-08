@@ -125,6 +125,16 @@ for (const [id, P] of Object.entries(PROVIDERS)) {
     // success carries the model list; a 200 whose JSON has none is an exception. OpenAI Comp turns
     // it into an empty list instead (spec 05 "Update list"); Ollama's /api/tags answer is passed on
     // as it is, and the page reports "no models".
+    k.test(id + '-models-http', `${id}: fetchModels() on an HTTP error gives {ok:false, error: <body>, status, statusText}`, async () => {
+        net.expect(P.modelsUrl, () => jsonResponse(P.error, { status: 401, statusText: 'Unauthorized' }));
+        const r = await P.make().fetchModels({ maxRetries: 0 });
+        assert.equal(r.ok, false);
+        assert.equal(r.is_exception, undefined);
+        assert.deepEqual(JSON.parse(r.error), P.error);
+        assert.equal(r.status, 401);
+        assert.equal(r.statusText, 'Unauthorized');
+    });
+
     k.test(id + '-models-no-list', `${id}: fetchModels() on a 200 with no model list`, async () => {
         net.expect(P.modelsUrl, () => jsonResponse({}));
         const r = await P.make().fetchModels({ maxRetries: 0 });
@@ -147,6 +157,12 @@ k.test('ollama-version-no-version', 'ollama: fetchVersion() on a 200 with no ver
     assert.equal(r.ok, false, JSON.stringify(r));
     assert.equal(r.is_exception, true);
     assert.match(r.error, /Ollama/);
+});
+
+k.test('ollama-version-http', 'ollama: fetchVersion() on an HTTP error carries the status', async () => {
+    net.expect('http://localhost:11434/api/version', () => new Response('', { status: 502, statusText: 'Bad Gateway' }));
+    const r = await PROVIDERS.ollama.make().fetchVersion();
+    assert.deepEqual(r, { ok: false, error: '', status: 502, statusText: 'Bad Gateway' });
 });
 
 k.test('ollama-version-ok', 'ollama: fetchVersion() with a version string succeeds and passes the answer on', async () => {

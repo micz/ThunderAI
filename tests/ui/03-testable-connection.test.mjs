@@ -6,7 +6,8 @@
 // `makeClient` and `requestPermission` read the fields of the form they are given ('' on the
 // options page and in the wizard, `<feature>_` on a feature page with its own connection), never
 // another form's. Spec 04 "Optional Permissions" for the origins of the two cloud providers it
-// names.
+// names. And what runConnectionTest() reports for an HTTP error (spec 05 "Test logic": a rejected
+// key, a 403, the provider's message, the status of an empty answer).
 //
 // What the page shows and stores for each outcome is in the DOM files (options/ui-02,
 // setup-wizard/ui-01, translate/ui-03); what the clients do with an answer is the api area's.
@@ -21,6 +22,7 @@ import { REPO, startBackground } from '../helpers/core/load.mjs';
 let ctx, ct, valid_connection_types;
 const requests = [];
 const fetches = [];
+let nextAnswer = null;      // () => Response for the next fetch only
 const realFetch = globalThis.fetch;
 
 before(async () => {
@@ -32,6 +34,7 @@ before(async () => {
     ct = await import(new URL('js/mzta-connection-test.js', REPO).href);
     globalThis.fetch = async (input, init = {}) => {
         fetches.push({ url: String(input), headers: new Headers(init.headers) });
+        if (nextAnswer) { const a = nextAnswer; nextAnswer = null; return a(); }
         return new Response(JSON.stringify({ data: [], models: [], version: '0.6.0' }),
             { status: 200, headers: { 'Content-Type': 'application/json' } });
     };
@@ -167,3 +170,36 @@ test('requestPermission(): the two cloud providers spec 04 names ask for their o
         }
     }
 });
+
+// ---- what an HTTP error shows ---------------------------------------------------------------
+// Spec 05 "Connection Test Status Strip", "Test logic": a rejected key is a 401, or a message
+// about the key that is not a 403 (Gemini answers a wrong key with a 400); a 403 is a valid key
+// without access, shown with the provider's message; a body with nothing to say shows the status,
+// never "unreachable". runConnectionTest() on the unprefixed form, one answer per case.
+
+const body = (status, statusText, text, type = 'application/json') =>
+    () => new Response(text, { status, statusText, headers: { 'Content-Type': type } });
+const errJson = (status, statusText, error) => body(status, statusText, JSON.stringify({ error }));
+
+const HTTP_CASES = [
+    ['a 401 whatever its message', 'openai_comp_api', errJson(401, 'Unauthorized', { message: 'invalid token' }), 'auth'],
+    ['a 400 about the key (Gemini)', 'google_gemini_api',
+        errJson(400, 'Bad Request', { code: 400, message: 'API key not valid. Please pass a valid API key.', status: 'INVALID_ARGUMENT' }), 'auth'],
+    ['a 403 mentioning the key (Claude permission_error)', 'anthropic_api',
+        body(403, 'Forbidden', JSON.stringify({ type: 'error', error: { type: 'permission_error', message: 'Your API key does not have permission to use the specified resource.' } })),
+        'Your API key does not have permission to use the specified resource.'],
+    ['a 403 with no body', 'chatgpt_api', body(403, 'Forbidden', ''), 'HTTP 403 Forbidden'],
+    ['a 404 with Ollama\'s {"error": "<message>"}', 'ollama_api', errJson(404, 'Not Found', 'model not found'), 'model not found'],
+    ['a 502 with no body', 'openai_comp_api', body(502, 'Bad Gateway', ''), 'HTTP 502 Bad Gateway'],
+    ['a 500 with a plain-text body', 'openai_comp_api', body(500, 'Internal Server Error', 'upstream crashed', 'text/plain'), 'upstream crashed'],
+];
+
+for (const [name, type, answer, expected] of HTTP_CASES) {
+    test(`runConnectionTest(): ${name} -> ${expected === 'auth' ? 'the authentication message' : JSON.stringify(expected)}`, async () => {
+        useForm();
+        nextAnswer = answer;
+        const r = await ct.runConnectionTest(type, '');
+        assert.equal(nextAnswer, null, 'the scripted answer was not used');
+        assert.deepEqual(r, { status: 'error', message: expected === 'auth' ? msg('connTest_error_auth') : expected });
+    });
+}

@@ -848,7 +848,8 @@ The `postMessage` payload and the `throw` reuse the same `error_text` so the UI 
 
 **`fetchModels()` and `fetchVersion()`.** The page-side probes (the "Update list" buttons and the
 connection test, see [05-options.md](05-options.md)) resolve `{ok: true, response}` or the two failure
-shapes above, with the HTTP error as `{ok: false, error: <body text>}` instead of the `Response`. A
+shapes above, with the HTTP error as `{ok: false, error: <body text>, status, statusText}` instead of
+the `Response` (the same for `fetchModelInfo()` and Ollama's `fetchRunningModels()`). A
 success means the answer **is** the provider's: a `200` whose JSON is not its model list (a proxy or a
 captive portal answering `{}`) resolves the exception shape, exactly like an answer that is not JSON,
 with `error` naming the provider and saying no list came back. OpenAI, Gemini and Claude check their

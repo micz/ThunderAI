@@ -782,9 +782,23 @@ registry entry (`makeClient` reading current form fields, `nameKey`, `requestPer
 `<feature>_` on the feature pages —
 plus the two optional fields below); `runConnectionTest(connType, idPrefix = '')` requests the needed host
 permission (mirroring the fetch-models / CORS buttons), calls the probe with a ~10s
-`Abort`-style timeout (`Promise.race`), and maps the `{ok, error, is_exception}` result to
+`Abort`-style timeout (`Promise.race`), and maps the `{ok, error, is_exception, status}` result to
 auth / network / timeout messages. It reads current (possibly unsaved) form values and
-**saves nothing**. It shows "Connected" only for an answer that is the provider's: a `200`
+**saves nothing**.
+
+What an HTTP error shows, in this order:
+- **authentication** (`connTest_error_auth`): a `401`, or a provider message about the key itself
+  ("api key", "api-key", "unauthorized", "authentication": Gemini answers a wrong key with a `400`)
+  that is **not** a `403`. A `403` is a valid key without access to the resource (Claude's
+  `permission_error` says "Your API key does not have permission…"), so "check your API key" would
+  send the user to change a key that is right;
+- **the provider's message**: `error.message` of a JSON body, the `error` string of Ollama's
+  `{"error": "<message>"}`, or the body itself when it is not JSON;
+- **the status** (`HTTP 502 Bad Gateway`) when the body says nothing: the server answered, so it
+  is never reported as unreachable.
+
+The network message is for an exception of the probe only: no answer, CORS, or an answer that
+is not the provider's (below). It shows "Connected" only for an answer that is the provider's: a `200`
 that is not JSON, or whose JSON is not the model list (Ollama: has no `version`), is an
 exception of the probe (see [04-api-integrations.md](04-api-integrations.md), "`fetchModels()`
 and `fetchVersion()`") and shows the network message.

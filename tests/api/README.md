@@ -59,7 +59,7 @@ Helper modules have no `.test.mjs` suffix, so the level-1 glob never runs them.
 | `23-ollama-request` | "Ollama": think levels, keep_alive, options, Bearer on every endpoint; 300 s timeout |
 | `24-openai-comp-request` | "OpenAI-Compatible", "Extra body data", stream_options; 300 s timeout |
 | `25-openai-responses-request` | "OpenAI API": reasoning, text, sampling, limits, pass-through, extra-body gating |
-| `26-client-error-contract` | "Error contract between js/api/* and workers" (the classes); fetchModels through the retry; "`fetchModels()` and `fetchVersion()`" (a `200` with no model list or no Ollama version is an exception; OpenAI Comp's empty list, Ollama's `/api/tags` object) |
+| `26-client-error-contract` | "Error contract between js/api/* and workers" (the classes); fetchModels through the retry; "`fetchModels()` and `fetchVersion()`" (an HTTP error with its `status` / `statusText`; a `200` with no model list or no Ollama version is an exception; OpenAI Comp's empty list, Ollama's `/api/tags` object) |
 | `27-config-validation` | "Configuration Validation", "Web Worker Pattern" (module worker per provider) |
 | `30`/`31-worker-anthropic-*` | "Web Worker Pattern", "Thinking output…", "Per-provider support", "Wiring in the workers", "Emitting to the chat window", "Workers and UI", "Error contract…" |
 | `32`/`33-worker-gemini-*` | the same, Gemini (turn 1 replays the capture) |

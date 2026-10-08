@@ -174,6 +174,8 @@ export class Anthropic {
           let output = {};
           output.ok = false;
           output.error = errorDetail;
+          output.status = response.status;
+          output.statusText = response.statusText;
           return output;
       }
 
@@ -209,6 +211,8 @@ export class Anthropic {
           let output = {};
           output.ok = false;
           output.error = errorDetail;
+          output.status = response.status;
+          output.statusText = response.statusText;
           return output;
       }
 
