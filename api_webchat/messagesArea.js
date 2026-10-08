@@ -40,6 +40,10 @@ import {
 } from './svgIcons.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
 import {
+    htmlToLines,
+    normalizePlain
+} from '../js/mzta-richtext.js';
+import {
     buildUsageChip,
     createSessionUsage,
     addUsageToSession,
@@ -988,11 +992,12 @@ class MessagesArea extends HTMLElement {
 
         const messageElement = document.createElement('div');
         messageElement.classList.add(type === 'info' ? 'message' : 'bubble', type);
-        // Replace \n with <br> for correct HTML display
+        // An info notice is the window's own HTML (every value in it escaped by
+        // its builder); a user message is text, its \n shown as line breaks.
         if (type === "info") {
             messageElement.appendChild(htmlStringToFragment(messageText));
         } else {
-            messageElement.appendChild(textWithBrToFragment(messageText));
+            messageElement.appendChild(textWithNewlinesToFragment(messageText));
         }
         turn.appendChild(messageElement);
         // Pin the exchange to this prompt: the view scrolls until the prompt is
@@ -1868,21 +1873,18 @@ function hasBlockStructure(html) {
     return doc.body.querySelector('br, p, div, li, ul, ol, tr, table, h1, h2, h3, h4, h5, h6, pre, blockquote') !== null;
 }
 
-// HTML → the text the user actually sees. Unlike a regex tag-strip this parses
-// the markup, so entities are decoded (&amp; → &) instead of being copied as
-// their escape sequences, and <br>/</p> become real line breaks. The diff
-// button used to strip tags with a regex instead, which DELETED <br> rather
-// than converting it and so fed the diff a single run-together line.
+// HTML → the text the user actually sees, for Copy. It goes through the ONE
+// projection of the shared rich-text layer (js/lib/mzta-html-lines.js) with the
+// same {keepParagraphs} contract as stripHtmlKeepLines(), so Copy writes exactly
+// what a plain text compose window would receive: entities decoded (&amp; → &),
+// a <br> one newline, a paragraph a blank line.
+//
+// It used to be a converter of its own, which turned each <br> into a newline
+// AND kept the source newline markdown-it writes after it ("<br>\n"), so every
+// line break was copied as a blank line, the same as a paragraph break. The
+// projection treats a source newline as whitespace, which is what it is in HTML.
 function htmlToPlainText(htmlString) {
-    const doc = new DOMParser().parseFromString(htmlString, 'text/html');
-    doc.querySelectorAll('br').forEach(br => br.replaceWith(document.createTextNode('\n')));
-    // Block-level boundaries would otherwise run together into one long line.
-    doc.querySelectorAll('p, div, li, tr, h1, h2, h3, h4, h5, h6, pre, blockquote').forEach(el => {
-        el.appendChild(document.createTextNode('\n'));
-    });
-    return (doc.body.textContent || '')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
+    return normalizePlain(htmlToLines(htmlString), { keepParagraphs: true });
 }
 
 // Clipboard write with a fallback for the (unlikely) case the async API is
@@ -1911,9 +1913,15 @@ async function copyTextToClipboard(text) {
     }
 }
 
-function textWithBrToFragment(text) {
+// The user's message, as TEXT: every line break (\n) becomes a <br> element,
+// everything else a text node. Nothing in it is parsed as HTML, so a "<br>" the
+// user typed, or the mail the prompt quotes contained, is shown as those four
+// characters - which is also what the model receives. It used to split on
+// "<br>" instead, back when the first prompt was sent with its \n turned into
+// <br>: a typed message then showed on one line, and a literal <br> as a break.
+function textWithNewlinesToFragment(text) {
     const fragment = document.createDocumentFragment();
-    const segments = text.split(/<br\s*\/?>/gi);
+    const segments = String(text).replace(/\r\n?/g, '\n').split('\n');
     segments.forEach((segment, idx) => {
         if (segment.length > 0) {
             fragment.appendChild(document.createTextNode(segment));

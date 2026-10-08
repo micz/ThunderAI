@@ -5,8 +5,9 @@
 //
 // Spec 01 "API WebChat (`api_webchat/`)": "Component structure" (the controller resolves the
 // provider prefs, spins up the provider's worker, sends it the init message), "Streaming data flow"
-// (api_send: promptData set, the prompt sent), "Transcript DOM contract" (the startup notice, the
-// user turn), "Web Workers" (the worker file of each provider); "Component structure" also holds
+// (api_send: promptData set, the prompt sent as it came, plain text with its \n; a typed message
+// likewise, its bubble showing its line breaks as text, a literal "<br>" included), "Transcript DOM
+// contract" (the startup notice, the user turn), "Web Workers" (the worker file of each provider); "Component structure" also holds
 // the URL parameters (prompt_name decoded once), the header (model and API, no usage), the ready
 // handshake and the startup notice (every value escaped). Spec 04 "Configuration Validation"
 // (the prompt's own {integration}_{key} fields over the global ones, "the rule
@@ -27,6 +28,7 @@ import { webchatTests } from '../../helpers/known-issues/webchat.mjs';
 import {
     openWebchat,
     apiSend,
+    typeAndSend,
     turns,
     field,
     sendButton,
@@ -189,6 +191,10 @@ k.test('api-send-worker', S_FLOW, 'api_send: the prompt is sent to the worker as
     }
 });
 
+k.test('api-send-worker-exact', S_FLOW, 'api_send: the worker receives the prompt exactly as the background sent it, plain text, its line breaks as \\n and no <br> added', () => {
+    assert.deepEqual(worker.chatMessages(), [PROMPT]);
+});
+
 k.test('api-send-waiting', S_FLOW, 'while the request is out the input is locked, Stop is offered, and the pill says it is waiting', () => {
     assert.equal(field(ctx).disabled, true);
     assert.equal(usable(sendButton(ctx)), false);
@@ -200,6 +206,28 @@ k.test('api-send-waiting', S_FLOW, 'while the request is out the input is locked
 k.test('message-sent', S_FLOW, 'messageSent: the field is emptied (messageInput.handleMessageSent())', async () => {
     await worker.sent(ctx);
     assert.equal(field(ctx).value, '');
+});
+
+// A typed message on two lines, holding a literal "<br>" the user wrote.
+const TYPED = 'Shorter, please:\nkeep the <br> as written';
+
+k.test('typed-worker-exact', S_FLOW, 'a typed message reaches the worker exactly as typed, its \\n kept, like the first prompt', async () => {
+    await worker.stream(ctx, ['Done.']);
+    await typeAndSend(ctx, TYPED);
+    assert.deepEqual(worker.chatMessages(), [PROMPT, TYPED]);
+});
+
+k.test('typed-bubble-lines', S_FLOW, 'its bubble shows its line break, as text nodes and a <br>: the literal "<br>" stays text', () => {
+    const bubble = turns(ctx).at(-1).querySelector('.bubble');
+    assert.equal(bubble.querySelectorAll('br').length, 1, 'one line break per newline of the message');
+    assert.deepEqual([...bubble.childNodes].map(n => n.nodeName), ['#text', 'BR', '#text']);
+    assert.equal(bubble.textContent, TYPED.replace('\n', ''));
+});
+
+k.test('typed-done', S_FLOW, 'the answer to the typed message gives the input back', async () => {
+    await worker.sent(ctx);
+    await worker.stream(ctx, ['Done again.']);
+    assert.ok(usable(field(ctx)));
 });
 
 // ---- font zoom -------------------------------------------------------------------------

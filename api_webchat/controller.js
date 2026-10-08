@@ -27,7 +27,6 @@ import {
 import { placeholdersUtils } from '../js/mzta-placeholders.js';
 import {
     getAPIsInitMessageString,
-    convertNewlinesToBr,
     formatDuration,
     supportsUsageData
 } from '../js/mzta-utils.js';
@@ -470,7 +469,12 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 });
 
+// The prompt goes to the worker as plain text, its line breaks as \n, exactly as
+// a message the user types does - and as the placeholders' newline contracts
+// deliver it. It used to go through convertNewlinesToBr() first, so the first
+// message of every chat reached the model with a literal "<br>" at each line
+// break of the prompt, the mail body included.
 function sendPrompt(message){
-    messageInput._setMessageInputValue(convertNewlinesToBr(message.prompt));
+    messageInput._setMessageInputValue(message.prompt);
     messageInput._handleNewChatMessage();
 }

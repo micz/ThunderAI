@@ -928,7 +928,10 @@ sending the window `api_send` (the prompt), or `api_error` when the configuratio
 prompt (`[id] name`) and the provider's non-empty text settings. The window parses it as HTML (its
 own `<i>`/`<span>` labels, newlines → `<br>`), so **every value is escaped** with
 `mztaEscapeHtml()`: a prompt name, a model or a system prompt holding markup is shown as text and
-never becomes an element.
+never becomes an element. The three values always there are the most exposed: the prompt name (the
+URL's `prompt_name`, which an imported prompts file can fill), the model and the host. The test
+suite feeds every sanitizer payload through those three (`webchat-17`) and finds nothing but the
+notice's own `<i>`, `<span class="info_obj">` and `<br>`.
 
 ### Streaming data flow
 
@@ -951,6 +954,26 @@ background → controller.js (browser.runtime commands)
 from the background) call `enableInput(false)`: the field and Send are enabled and Stop hidden, so
 the user can type another message in the same window, and the status pill shows the error state
 (no timeout, it stays until the next request replaces it).
+
+**The prompt is plain text, from the background to the model.** `sendPrompt()` puts the
+`api_send` prompt (or, after `api_send_custom_text`, the prompt with the custom text merged in)
+into the input field **as it came**, and `_handleNewChatMessage()` posts the field's value to the
+worker unchanged, as one `chatMessage`, exactly as it does for a message the user types. So the
+worker always receives plain text whose line breaks are `\n`, the ones the placeholders' newline
+contracts put there (see [03-placeholders.md](03-placeholders.md)). `sendPrompt()` used to run
+`convertNewlinesToBr()` on the prompt first, so the first message of every chat reached the model
+with a literal `<br>` at each line break of the prompt, the mail body included, while a typed
+message kept its `\n`.
+
+**The user's bubble is text.** `appendUserMessage()` builds it with `textWithNewlinesToFragment()`:
+every `\n` (a `\r\n` or a lone `\r` counts as one) becomes a `<br>` element and everything else a
+text node. Nothing in the message is parsed as HTML, so a `<br>` the user typed, or that the mail or
+an HTML placeholder put in the prompt, is shown as those four characters, which is also what the
+model receives, like any other markup in the prompt. (The old `textWithBrToFragment()` split on a
+literal `<br>` instead, the form the first prompt arrived in: a typed message showed on a single
+line, and a `<br>` written in the text as a line break.) Only the startup notice and the
+"Request cancelled." notice (`type` `"info"`) are the window's own HTML, through
+`htmlStringToFragment()`.
 
 The `usage` message is **separate from `tokensDone` and carries no response text**, and is only
 emitted when `chat_show_usage_data` is on and the integration reports usage. It is posted *before*
@@ -1054,7 +1077,9 @@ also double-space the answer, since markdown-it emits `<p>a<br>\nb</p>` and the 
 
 The complementary half of this lives on the input side: the compose-window HTML placeholders
 go through `normalizeHtmlSourceNewlines()` (`js/mzta-utils.js`), **not** `convertNewlinesToBr()`,
-so the prompt no longer carries a `<br>` at every source newline for the model to copy back.
+so the prompt no longer carries a `<br>` at every source newline for the model to copy back, and
+the window posts the prompt as it comes (see "The prompt is plain text" under *Streaming data
+flow*), adding none of its own.
 
 **With one exception, and it is the important one: that rule assumes the source really is HTML.**
 In a plain text compose window there are no tags — the line breaks *are* the `\n` characters — so
@@ -1423,7 +1448,9 @@ of which give it module context, so it cannot `import`. It is loaded on **four**
 - **background** — a plain `<script>` in `mzta-background.html`, ahead of the `type="module"` entry
   point, exactly as `markdown-it.min.js`. `js/mzta-utils.js` reaches it through `globalThis`.
 - **webchat** — a plain `<script>` in `api_webchat/index.html`, ahead of the module scripts, because
-  `js/mzta-utils.js` (imported there for `convertNewlinesToBr`, now a `globalThis` shim) needs it.
+  Copy converts the answer through it (`htmlToPlainText()` in `messagesArea.js`, via the
+  `mzta-richtext.js` re-exports, see the end of this section) and `js/mzta-utils.js`, imported by
+  the controller, reaches `mztaEscapeHtml` through it for the startup notice.
 
 `js/mzta-utils.js`'s conversion helpers (`htmlBodyToPlainText`, `stripHtmlKeepLines`, `cleanupNewlines`
 / `cleanupNewlinesKeepParagraphs` / `normalizePlainTextPart`, `convertNewlinesToBr` /
@@ -1464,9 +1491,15 @@ turn's buttons tied to their own response.
 Every one of those buttons honours a text selection and acts on just that part of the
 answer, falling back to the whole snapshot when nothing is selected. "Copy" writes **plain
 text**, so it reads the selection through `getCurrentSelectionText()` and converts the
-snapshot with `htmlToPlainText()` — which parses the markup, decoding entities (`&amp;` → `&`)
-and turning `<br>` and block boundaries into real newlines. The older `stripHtmlTags()` regex
-is still used where the consumer wants tags gone but escapes left alone (the diff viewer).
+snapshot with `htmlToPlainText()`, which **is this layer**: `normalizePlain(htmlToLines(html),
+{ keepParagraphs: true })`, the same conversion as `stripHtmlKeepLines()`. Copy therefore writes
+exactly what a plain text compose window would receive: entities decoded (`&amp;` → `&`), a `<br>`
+one `\n`, a paragraph a blank line. The `\n` markdown-it writes after each `<br>` (`<br>\n`) is
+source whitespace to the projection and adds nothing. `htmlToPlainText()` used to be a converter of
+its own that turned the `<br>` into a newline **and** kept that source newline, so every line break
+of an answer was copied as a blank line, indistinguishable from a paragraph break. The older
+`stripHtmlTags()` regex is still used where the consumer wants tags gone but escapes left alone
+(the diff viewer).
 
 ### Writing into a plain text compose window
 
@@ -1585,6 +1618,51 @@ waiting for it, so the promise rejects with `Actor 'Conduits' destroyed before q
 `chatgpt_replyMessage`, `chatgpt_replaceSelectedText`) is still `await`ed because its reply
 is needed before the window goes away. Same pattern in `js/mzta-chatgpt.js` (the legacy
 fixed-div buttons).
+
+### Actions on an answer
+
+What the buttons under an answer send, what they act on, and which of them each kind of session
+offers. `promptData` is the `api_send` message, set once per window, so every answer of a session
+has the same target.
+
+**The commands and their fields.** Each carries the text (the answer snapshot, the picker's result
+or the selection, as described under *The rich-text layer*) and the fields that name its target,
+and nothing else:
+
+| Command | Sent by | Fields besides `command` and `text` | What the background uses |
+|---|---|---|---|
+| `chatgpt_replyMessage` | "use this answer", action `"1"` with a real message | `tabId`, `mailMessageId` (both from `api_send`), `replyType` (`reply_sender` / `reply_all`) | `mailMessageId`, to open the reply (`messages.get` → `compose.beginReply`); `tabId` is not read |
+| `chatgpt_replaceSelectedText` | "use this answer", action `"2"`, or action `"1"` with `mailMessageId` -1 (forced to `"2"`, [07-diff-picker.md](07-diff-picker.md#scope)) | `tabId` (the compose tab), `mailMessageId` (-1 from a compose window) | `tabId`, the compose window it writes into; `mailMessageId` is not read |
+| `chatgpt_saveSummary` | Save as Summary, summary sessions only | `headerMessageId` (`prompt_info.headerMessageId`), `tabId` (`prompt_info.summaryTabId`) | `headerMessageId` to store the summary; `tabId` to show it in that tab's message pane if the message is still displayed there |
+
+`chatgpt_saveSummary`'s `tabId` is written `summaryTabId || promptData.tabId`, but the button exists
+only when `summaryTabId` is set, so it is always `summaryTabId`. Each of the three is awaited, then
+followed by the fire-and-forget `chatgpt_close` (see *Transcript DOM contract*).
+
+**The quotes stripped from the snapshot.** When an answer gets its buttons, `addActionButtons()`
+builds the snapshot from `fullTextHTML`, trimmed, removing a `"` at its very start and one at its
+very end (each on its own), then a `<p>&quot;` opening it (left as `<p>`) and a `&quot;</p>` closing
+it (left as `</p>`). The intent is to drop the quotes a model sometimes wraps its whole answer in.
+**Today none of the four patterns matches a rendered answer**: the snapshot is the sanitizer's
+serialization, which always opens with a tag (markdown-it wraps text in `<p>`) and writes a quote in
+text as a bare `"`, never `&quot;`. So `"Dear Bob, hi."` reaches the mail as `<p>"Dear Bob, hi."</p>`,
+quotes included. Reported as a suspected defect and listed under "Under-specified" in
+`tests/webchat/README.md`, untested until it is ruled on.
+
+**What each kind of session offers.** The full bar, on the newest answer, and the compact toolbar
+(`.turn-tools`), built from the same arguments when that answer stops being the newest:
+
+| Session | Full bar | Compact toolbar |
+|---|---|---|
+| Reply (action `"1"`, a real message) | "use this answer" split button with the reply-type dropdown, Copy, the chip, Close | Copy, "use this answer" (the stored reply type, no dropdown), the chip |
+| Replace (action `"2"`, or a compose window) | "use this answer", Copy, the chip, Close | Copy, "use this answer", the chip |
+| Picker prompt (`use_diff_viewer` `"1"`, whatever its action; the shipped ones replace) | its session's bar, plus Show differences before the chip | its session's toolbar: no Show differences. Copy and "use this answer" read the picker, if one was opened ([07-diff-picker.md](07-diff-picker.md#the-result-indirection)) |
+| Summary (`prompt_info` with `headerMessageId` and `summaryTabId`) | Copy, Save as Summary, the chip, Close | Copy, the chip: **no Save as Summary** |
+| Anything else (action `"0"`) | Copy, the chip, Close | Copy, the chip |
+
+The chip is there only when the usage display is on (spec 04 *Rendering in the chat window*), and is
+moved, not rebuilt, from the bar to the toolbar. The toolbar never holds Close: the window has one
+Close, on the newest answer's bar.
 
 ### Scrolling (prompt-anchored following)
 

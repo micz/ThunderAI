@@ -51,6 +51,7 @@ const S_DOM = 'spec 01 "Transcript DOM contract"';
 const S_FILES = 'spec 01 "Files"';
 const S_PREF = 'spec 05 "UI & Feature Preferences"';
 const S_USAGE = 'spec 04 "Rendering in the chat window"';
+const S_ACT = 'spec 01 "Actions on an answer"';
 
 const msg = key => ctx.ctl.browser.i18n.getMessage(key);
 const first = () => botTurns(ctx)[0];
@@ -62,6 +63,8 @@ const menu = turn => sq(actionBar(turn), 'split-button', '.dropdown-menu');
 const copyBtn = turn => actionBar(turn).querySelector('.copy_btn');
 const closeBtn = turn => actionBar(turn).querySelector('.close_btn');
 const selInfo = turn => turnBody(turn).querySelector('.sel_info');
+/** What a compact toolbar holds, in order: each button by its label, the usage chip as "chip". */
+const toolKinds = tools => [...tools.children].map(el => el.classList.contains('mzta-usage') ? 'chip' : el.getAttribute('aria-label'));
 /** The snapshot of an answer as the window rendered it, for comparison with what is sent. */
 const norm = html => {
     const doc = new ctx.window.DOMParser().parseFromString(html, 'text/html');
@@ -134,6 +137,13 @@ k.test('use-main', S_PREF, '"Use this answer" sends chatgpt_replyMessage with th
     assert.deepEqual(sentCommands(ctx, 'chatgpt_close').at(-1), { command: 'chatgpt_close', window_id: 1 });
 });
 
+k.test('use-target', S_ACT, 'chatgpt_replyMessage names its target with the api_send fields: tabId and mailMessageId, besides the text and the reply type, and nothing else', () => {
+    const reply = sentCommands(ctx, 'chatgpt_replyMessage')[0];
+    assert.deepEqual(Object.keys(reply).sort(), ['command', 'mailMessageId', 'replyType', 'tabId', 'text']);
+    assert.equal(reply.tabId, 3);
+    assert.equal(reply.mailMessageId, 42);
+});
+
 k.test('use-dropdown', S_FILES, 'the dropdown\'s option sends the same answer with the other reply type', async () => {
     const since = ctx.ctl.sent.length;
     await ctx.click(toggle(first()));
@@ -162,6 +172,10 @@ k.test('degrade', S_DOM, 'a newer answer takes the full bar: the earlier one kee
     assert.ok(tools.lastElementChild.classList.contains('mzta-usage'));
     assert.ok(actionBar(second()));
     assert.equal(toolbar(second()), null);
+});
+
+k.test('toolbar-reply', S_ACT, 'the compact toolbar of a reply session holds Copy, Use this answer and the usage chip, nothing else: no reply-type choice, no Close', () => {
+    assert.deepEqual(toolKinds(toolbar(first())), [msg('apiwebchat_copy'), msg('apiwebchat_use_this_answer'), 'chip']);
 });
 
 k.test('toolbar-own-text', S_DOM, 'the earlier answer\'s toolbar acts on its OWN answer: Use sends the first answer, Copy copies it', async () => {

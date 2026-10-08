@@ -48,6 +48,7 @@ const k = webchatTests('08');
 const S_RENDER = 'spec 04 "Rendering in the chat window"';
 const S_EMIT = 'spec 04 "Emitting to the chat window"';
 const S_CTX = 'spec 04 "Context window"';
+const S_ACT = 'spec 01 "Actions on an answer"';
 
 const msg = (key, subs) => ctx.ctl.browser.i18n.getMessage(key, subs);
 const L = {
@@ -185,6 +186,11 @@ k.test('moved-to-toolbar', S_RENDER, 'the earlier answer keeps its chip: the sam
     assert.ok(tools);
     assert.equal(actionBar(turnAt(0)), null);
     assert.equal(tools.lastElementChild, usageWrap(turnAt(0)));
+});
+
+k.test('toolbar-action-0', S_ACT, 'the compact toolbar of an answer with nothing to insert (action "0", no summary) holds Copy and the usage chip, nothing else', () => {
+    const kinds = [...toolbar(turnAt(0)).children].map(el => el.classList.contains('mzta-usage') ? 'chip' : el.getAttribute('aria-label'));
+    assert.deepEqual(kinds, [msg('apiwebchat_copy'), 'chip']);
 });
 
 k.test('one-open', S_RENDER, 'at most one popover is open in the window', async () => {

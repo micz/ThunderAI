@@ -60,6 +60,11 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`).
 | `mail_html_body_or_selected` | HTML body, or selected HTML if any | 0 | |
 | `mail_plain_text_part` | The original `text/plain` MIME part, verbatim (no HTML conversion) | 1 | |
 
+The newline contracts below are what the model receives: the API chat window posts the prompt to
+its worker as it comes, line breaks as `\n` and no `<br>` added, both for the prompt the background
+sends and for a message the user types (see [01-architecture.md](01-architecture.md) → *Streaming
+data flow*, "The prompt is plain text").
+
 ### Newline contract of the compose placeholders
 
 `mail_typed_text` and `mail_quoted_text` are the only placeholders whose value is extracted by

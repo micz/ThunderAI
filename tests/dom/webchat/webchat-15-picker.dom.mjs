@@ -128,6 +128,22 @@ for (const c of CASES) {
     });
 }
 
+k.test('markup-only-choice', S_INV, 'the same words marked up differently are a change of their own: both sides on screen, each with its own markup, the original pickable', async () => {
+    const p = makePicker('<p>Dear <b>Sir</b>,</p>', '<p>Dear Sir,</p>');
+    assert.equal(hunks(p).length, 1);
+    assert.equal(side(p, 0, 'old').querySelector('b')?.textContent, 'Sir');
+    assert.equal(side(p, 0, 'new').querySelector('b'), null);
+    assert.equal(side(p, 0, 'old').textContent, side(p, 0, 'new').textContent);
+    await ctx.click(side(p, 0, 'old'));
+    assert.equal(p.composeResultHTML(), '<p>Dear <b>Sir</b>,</p>');
+});
+
+k.test('wrapper-follows-side', S_INV, 'a block keeps the wrapper of the side it shows: the original\'s words rejected back into their <div>, an accepted neighbour in the answer\'s <p>', async () => {
+    const p = makePicker('<div>one two</div><div>three four</div>', '<p>one too</p><p>three for</p>');
+    await ctx.click(side(p, 0, 'old'));
+    assert.equal(p.composeResultHTML(), '<div>one two</div><p>three for</p>');
+});
+
 k.test('p1-fixed-point', S_INV, 'P1: segment -> render is a normalization, so a second pass changes nothing, on every side of every case', () => {
     for (const html of CASES.flatMap(c => [c.o, c.n])) {
         assert.equal(canon(canon(html)), canon(html), html);
@@ -483,6 +499,17 @@ k.test('setcontent-review', S_MODES, 'setContent() always opens in REVIEW with a
     assert.equal(U.hasAttribute('mode'), false);
     assert.equal(pq(U, '.picker-editor').innerHTML, '');
     assert.equal(hunks(U).length, 1);
+});
+
+k.test('click-current', S_TOOL, 'choosing a side makes that change the current one: the stepper reads its position, and Next moves on from it', async () => {
+    const p = makePicker('<p>Alpha one two.</p><p>Beta three.</p><p>Gamma.</p>', '<p>Alpha one too.</p><p>Beta three four.</p><p>Delta.</p>');
+    assert.equal(pq(p, '.picker-step-label').textContent, '3');
+    await ctx.click(side(p, 1, 'old'));
+    assert.equal(pq(p, '.picker-step-label').textContent, msg('apiwebchat_picker_step_short', ['2', '3']));
+    await ctx.click(pq(p, '.picker-step-next'));
+    assert.equal(pq(p, '.picker-step-label').textContent, msg('apiwebchat_picker_step_short', ['3', '3']));
+    assert.equal(focused(p), side(p, 2, 'new'));
+    p.remove();
 });
 
 // ---- granularity ------------------------------------------------------------------------------

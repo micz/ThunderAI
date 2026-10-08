@@ -117,9 +117,12 @@ function buildBlockPairs(oldBlocks, newBlocks) {
     // only in their trailing <br> would collapse to one and reject-all would emit
     // the ANSWER'S line structure. Comparing it sends that case to a replace pair,
     // where both sides survive and contextSide can choose between them.
+    // listType likewise: an item of a <ul> matched to the same item of an <ol>
+    // as context would carry the answer's list type into reject-all.
     const parts = Diff.diffArrays(oldBlocks, newBlocks, {
         comparator: (a, b) => a.text === b.text && a.tag === b.tag && a.html === b.html
-                              && (a.sep || null) === (b.sep || null),
+                              && (a.sep || null) === (b.sep || null)
+                              && (a.listType || null) === (b.listType || null),
     });
     if (!parts) { return null; }
 
@@ -169,7 +172,10 @@ function buildBlockPairs(oldBlocks, newBlocks) {
 //     state: 'accepted' | 'rejected'               // ignored for context
 //   }
 //
-//   ComposedBlock = { kind, tag, listType, hunks }
+//   ComposedBlock = { kind, tag, listType, oldTag, oldListType, oldSep, newSep, hunks }
+//
+// tag/listType are the answer's wrapper, oldTag/oldListType the original's;
+// composeResultBlocksHTML picks one by the side the block shows.
 //
 // Every non-context hunk defaults to 'accepted', so a user who touches nothing
 // gets exactly what they got before the picker existed.
@@ -194,6 +200,8 @@ export function buildHunks(originalHtml, newHtml, granularity = 'words') {
                 kind: pair.kind,
                 tag: b.tag,
                 listType: b.listType,
+                oldTag: b.tag,
+                oldListType: b.listType,
                 // The block exists on one side only, so the other side has no
                 // junction to contribute.
                 oldSep: isInsert ? null : b.sep,
@@ -223,6 +231,8 @@ export function buildHunks(originalHtml, newHtml, granularity = 'words') {
                 kind: 'context',
                 tag: nb.tag,
                 listType: nb.listType,
+                oldTag: ob.tag,
+                oldListType: ob.listType,
                 // sep IS in the comparator, so a context pair matched on it too:
                 // ob and nb are the same object and these two reads agree by
                 // construction, exactly as they do for text, tag and html.
@@ -238,6 +248,35 @@ export function buildHunks(originalHtml, newHtml, granularity = 'words') {
                     state: 'accepted',
                 }],
             });
+            continue;
+        }
+
+        // The same words with different markup ("Dear <b>Sir</b>," against
+        // "Dear Sir,"): the text diff below would find nothing, leaving the
+        // block with no hunk at all - nothing for the user to choose, and
+        // reject-all stuck on the answer's markup. The whole block is one
+        // change instead, its two sides the two blocks' own html. Both sides read
+        // the same as text and differ in how they are marked up, which the sides
+        // show, since they render their html.
+        //
+        // Only for a difference in the HTML. Two blocks differing in nothing but
+        // their wrapper (tag, list type) or their separator stay without a hunk:
+        // that is line structure, settled once for the whole composition in
+        // composeResultBlocksHTML, so a <div> body against <p> answer paragraphs
+        // still pairs line by line instead of turning every line into a change.
+        if ((ob.text === nb.text) && (ob.html !== nb.html)) {
+            blocks.push({ kind: 'replace', tag: nb.tag, listType: nb.listType,
+                          oldTag: ob.tag, oldListType: ob.listType,
+                          oldSep: ob.sep, newSep: nb.sep,
+                          hunks: [{
+                              id: id++,
+                              type: 'replace',
+                              oldText: ob.text,
+                              newText: nb.text,
+                              oldHtml: ob.html,
+                              newHtml: nb.html,
+                              state: 'accepted',
+                          }] });
             continue;
         }
 
@@ -297,11 +336,14 @@ export function buildHunks(originalHtml, newHtml, granularity = 'words') {
             newPos += ins.length;
         }
 
-        // Both separators are kept, unlike tag/listType which take the new side
-        // unconditionally: composeResultBlocksHTML chooses between them at
-        // compose time, so reject-all can reproduce the original's line
-        // structure instead of the answer's.
+        // Both separators are kept, and both wrappers: composeResultBlocksHTML
+        // chooses between them at compose time, so reject-all can reproduce the
+        // original's line structure and the original's <div>, <ul> or <p>
+        // instead of putting its words in the answer's wrapper. tag/listType are
+        // the answer's, the wrapper the picker body draws the block in;
+        // oldTag/oldListType the original's.
         blocks.push({ kind: 'replace', tag: nb.tag, listType: nb.listType,
+                      oldTag: ob.tag, oldListType: ob.listType,
                       oldSep: ob.sep, newSep: nb.sep, hunks });
     }
 
@@ -358,16 +400,25 @@ export function flatHunks(blocks) {
 // must be the original's too.
 //
 // A block with no changed hunks at all has two sides identical in text and
-// html, so either answer is correct here. That now includes a replace pair the
-// comparator split on the separator alone - same words, same markup, different
-// trailing <br> - because the separator is not chosen here: it is settled once
-// for the whole composition, in composeResultBlocksHTML.
+// html, so either answer is correct here. That includes a replace pair the
+// comparator split on the separator or the wrapper alone - same words, same
+// markup, a different trailing <br>, tag or list type - because neither is
+// chosen here: both are settled once for the whole composition, in
+// composeResultBlocksHTML. (Same words with different MARKUP never get here
+// without a hunk: buildHunks makes the whole block one change.)
 function contextSide(block) {
     for (const h of block.hunks) {
         if (h.type === 'context') { continue; }
         if (h.state === 'accepted') { return 'new'; }
     }
-    return block.hunks.some(h => h.type !== 'context') ? 'old' : 'new';
+    return hasOwnChanges(block) ? 'old' : 'new';
+}
+
+// Whether the block holds a change the user can choose. A block without one is
+// a context block, or a replace pair whose two sides differ only in their
+// wrapper or separator (see buildHunks).
+function hasOwnChanges(block) {
+    return block.hunks.some(h => h.type !== 'context');
 }
 
 export function composeResult(blocks) {
@@ -419,7 +470,16 @@ export function composeResultBlocksHTML(blocks) {
             else                             { html += h.oldHtml; }
         }
         if (html === '') { continue; }
-        rendered.push({ tag: b.tag, listType: b.listType, html: html, sep: null,
+        // The wrapper follows the side the block shows: a block whose changes
+        // are all rejected is the original's block again, so it keeps the
+        // original's <div>, <ul> or <p> - the wrapper is never carried inside a
+        // hunk, so it is chosen here. A block with no change to choose (same
+        // words and markup, a different wrapper) follows the composition's line
+        // structure, exactly as its separator does.
+        const wrap = hasOwnChanges(b) ? ctx : structure;
+        rendered.push({ tag: (wrap === 'old') ? b.oldTag : b.tag,
+                        listType: (wrap === 'old') ? b.oldListType : b.listType,
+                        html: html, sep: null,
                         _sep: (structure === 'old') ? (b.oldSep || null) : (b.newSep || null),
                         _kind: b.kind });
     }
@@ -2282,6 +2342,8 @@ class DiffPicker extends HTMLElement {
                 kind: 'context',
                 tag: b.tag,
                 listType: b.listType,
+                oldTag: b.tag,
+                oldListType: b.listType,
                 oldSep: b.sep,
                 newSep: b.sep,
                 hunks: [{
@@ -2324,6 +2386,12 @@ class DiffPicker extends HTMLElement {
     // _chooseSide, _moveCurrent, _focusActiveSide and the keyboard handler are
     // pure index lookups and need no knowledge of blocks at all. Only this
     // method knows the nesting exists.
+    //
+    // Each block is drawn in the ANSWER'S wrapper (block.tag / listType), and is
+    // not redrawn when its changes are rejected, although the composed result
+    // then takes the original's wrapper (composeResultBlocksHTML): redrawing a
+    // wrapper would recreate the side elements inside it, which the surgical
+    // re-render exists to avoid. Same trade-off as the context hunks below.
     _renderAll() {
         this._bodyEl.textContent = '';
         this._hunkEls = [];

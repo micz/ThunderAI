@@ -33,7 +33,9 @@ Block = { tag, listType, text, html }           // segmentBlocks() output; html 
 
 ComposedBlock = {
   kind: 'context' | 'replace' | 'insert' | 'delete',
-  tag, listType,
+  tag, listType,                                // the answer's wrapper (the original's for a delete)
+  oldTag, oldListType,                          // the original's wrapper (the answer's for an insert)
+  oldSep, newSep,                               // each side's junction, see "Line breaks"
   hunks: Hunk[],
 }
 
@@ -91,20 +93,39 @@ It rests on three properties, each checkable on its own:
   `diffWordsWithSpace` is safe below.
 - **P3 — inner partition.** Inside a paired block the existing text-level argument applies verbatim.
 
-**Context means the words match, not the markup.** Two places would otherwise leak the answer's
-formatting into a rejected result, and both are load-bearing:
+**Context means the words match, not the markup.** Four places would otherwise leak the answer's
+formatting or structure into a rejected result, and all four are load-bearing:
 
-- **`buildBlockPairs`'s comparator matches on `text` *and* `tag` *and* `html`.** For a context part
-  jsdiff keeps only one side's objects and discards which block on the other side it matched, so
-  matching on text alone would give a "context" block carrying the answer's markup — and reject-all
-  would emit it. Requiring `html` to match makes a context block genuinely identical on both sides;
-  a markup-only difference falls through to a `replace` pair, where both sides are kept and the user
-  can choose.
-- **`contextSide(block)` decides which side a context *hunk* contributes.** Inside a `replace` block
-  the two sides can mark the same words up differently, so a context hunk that always emitted
-  `newHtml` would hand back the answer's bold for text the user just rejected. It follows the block:
-  if every changed hunk in the block is rejected, the block is showing the original, so its context
-  must be the original's too.
+- **`buildBlockPairs`'s comparator matches on `text`, `tag`, `listType`, `html` and `sep`.** For a
+  context part jsdiff keeps only one side's objects and discards which block on the other side it
+  matched, so matching on text alone would give a "context" block carrying the answer's markup — and
+  reject-all would emit it. Requiring all five to match makes a context block genuinely identical on
+  both sides (`listType` included: an item of a `<ul>` matched as context to the same item of an
+  `<ol>` would carry the answer's list type into reject-all). Any other difference falls through to
+  a `replace` pair, where both sides are kept.
+- **A markup-only difference is a change of its own.** A `replace` pair whose two blocks have the
+  same `text` and a different `html` (`Dear <b>Sir</b>,` against `Dear Sir,`) would get nothing from
+  the text diff, so the block would hold no hunk: nothing for the user to choose, and reject-all stuck
+  on the answer's markup. `buildHunks` makes **the whole block one `replace` hunk** instead, its sides
+  the two blocks' own `text` / `html`. The two sides read the same and differ in how they are marked
+  up, which they show, since a side renders its html. This is what "both sides are kept and the user
+  can choose" means for it.
+- **A block without a changed hunk follows the composition's structure.** Two blocks differing in
+  nothing but their wrapper (`tag`, `listType`) or their separator (`sep`) still become a `replace`
+  pair with no hunk: a `<div>` body against `<p>` answer paragraphs keeps pairing line by line rather
+  than making every line a change. Like the separator, such a block's wrapper is settled once for the
+  whole composition (see *Line breaks* below): the original's when nothing at all is accepted, the
+  answer's otherwise.
+- **`contextSide(block)` decides which side a context *hunk*, and the block's wrapper,
+  contribute.** Inside a `replace` block the two sides can mark the same words up differently, so a
+  context hunk that always emitted `newHtml` would hand back the answer's bold for text the user just
+  rejected. It follows the block: if every changed hunk in the block is rejected, the block is showing
+  the original, so its context must be the original's too. **The wrapper follows the same side**: a
+  composed block carries both wrappers (`tag`/`listType` the answer's, `oldTag`/`oldListType` the
+  original's) and `composeResultBlocksHTML` emits the original's for a block whose changes are all
+  rejected. It used to take the answer's unconditionally, so reject-all put the original's words in
+  the answer's wrapper: a `<div>` came back as `<p>`, a `<ul>` as `<ol>`, a `<p>` as `<h2>` or a list
+  item.
 
 **The single source of truth for offsets.** `block.html` is normalized (`normalizeBlockHtml`) and
 `block.text` is then **read back out of it** (`blockTextOfHtml`). Deriving the text from the html
@@ -112,20 +133,15 @@ rather than computing it separately is load-bearing: `sliceHtmlByText` maps offs
 onto `block.html`, so two independent projections that merely *looked* equivalent would drift on the
 first odd input and every offset after the drift would be silently wrong.
 
-> **Verified by the test suite, with two known violations.** The plain-text model was verified over
-> hand-picked samples plus 8000 fuzz checks with zero failures. The block model is now checked by the
-> `webchat` test area, which runs the real module in jsdom (`npm ci` provides it as a dev dependency):
+> **Verified by the test suite.** The plain-text model was verified over hand-picked samples plus 8000
+> fuzz checks with zero failures. The block model is checked by the `webchat` test area, which runs
+> the real module in jsdom (`npm ci` provides it as a dev dependency):
 > `tests/dom/webchat/webchat-15-picker.dom.mjs` drives `<diff-picker>` through its toolbar on a table of
 > cases (word changes, markup differences, `<br>` lines, lists, tag changes, inserted and deleted
 > blocks, entities, nested `<br>`, reworded sentences) at both granularities, and checks accept all,
-> reject all, the plain-text result and P1. Accept all holds everywhere. **Reject all does not**, in two
-> cases, run as known issues (`tests/helpers/known-issues/webchat.mjs`) until they are fixed:
->
-> - a block whose words match but whose markup differs is a replace pair with no hunk to choose, so
->   reject all keeps the answer's markup;
-> - a replace pair takes its wrapper (`tag`, `listType`) from the answer's block only, so reject all
->   puts the original's words in the answer's wrapper (`<div>` → `<p>`, `<ul>` → `<ol>`, `<p>` →
->   `<h2>`).
+> reject all, the plain-text result and P1. Both directions hold on every case. The two violations
+> the suite found in reject-all (a markup-only block with no hunk to choose, and a replace pair taking
+> its wrapper from the answer only) were fixed as described above.
 >
 > It is a table of cases, not the plain-text model's fuzzing. See `tests/webchat/README.md`.
 
@@ -464,11 +480,10 @@ run) leaves `sep = null` on the last emitted block, so a `<br>` can never leave 
 successor belonging to a different wrapper. Verified against P1 and the accept-all / reject-all
 invariant, running the real module in a browser, and now pinned by the test suite
 (`tests/dom/webchat/webchat-15-picker.dom.mjs`): `<p>a<br>b</p>` and `<p>a<br><br>b</p>` round trips,
-the body-level `<br>` walk, the trailing `<br>`, and Body Text mode pairing line by line. One case
-of the invariant still fails there: `<div>` lines against `<p>` answer paragraphs, rejected, come
-back in `<p>` (the answer's wrapper, see the note under the invariant).
+the body-level `<br>` walk, the trailing `<br>`, and Body Text mode pairing line by line, and
+`<div>` lines against `<p>` answer paragraphs, rejected, coming back in their `<div>`.
 
-**`sep` is part of `buildBlockPairs`' comparator**, for the same reason `html` is: for a context part
+**`sep` is part of `buildBlockPairs`' comparator**, for the same reason `html` and `listType` are: for a context part
 jsdiff keeps one side's objects and discards the other, so two blocks differing only in their
 trailing `<br>` would collapse into one and reject-all would emit the ANSWER'S line structure.
 Comparing it sends that case to a replace pair, where both sides survive.
@@ -479,6 +494,11 @@ junction between them undefined. `composeResultBlocksHTML` sets `structure` to `
 all was accepted and `'old'` otherwise — the same rule `contextSide` applies per block. A separator
 then only survives if the block it joined to is still in the output and belongs to that side; a block
 absent from the chosen side (`insert` has no original, `delete` has no answer) ends the run.
+
+The same `structure` gives the wrapper of a block that has **no changed hunk** (a `replace` pair
+split on its wrapper or separator alone, see the invariant): there is no per-block choice to follow,
+so it follows the composition, and reject-all, with nothing accepted, emits the original's `<div>`.
+A block with a changed hunk follows its own `contextSide()`.
 
 P1 (segment → render idempotence) is preserved, and is now a true ROUND TRIP for `<br>`:
 `renderBlocks(segmentBlocks("<p>a<br>b</p>")) === "<p>a<br>b</p>"`. This matters beyond tidiness —
@@ -579,7 +599,11 @@ That is the core interaction:
 
 - The body holds **real block elements** — one per segmented block, with `<li>` runs re-wrapped into
   a single `<ul>`/`<ol>` — so the picker shows the structure it is going to write into the mail
-  instead of a flat wall of text. Context entries render their own sanitized markup.
+  instead of a flat wall of text. Context entries render their own sanitized markup. Each block is
+  drawn in the **answer's** wrapper and is not redrawn when its changes are rejected, although the
+  composed result then takes the original's wrapper (see the invariant): redrawing a wrapper would
+  recreate the side elements inside it, which *Surgical re-render* rules out. The same trade-off as
+  a context hunk, which always shows the answer's markup.
 - Each change renders as a wrapper `.hunk` span holding **two** `.hunk-side` spans: the original
   (red, `--err-*`) and the answer's replacement (green, `--ok-*`), in that order.
 - The side currently in force is `.is-active` (full colour, semibold); the other is `.is-inactive`
@@ -636,6 +660,20 @@ gone. Before the user navigates there is no current change, so it shows the tota
 `9 changes` when narrow) rather than a `0 / 9` that claims a position which does not exist. Prev/Next
 are **clamped, not wrapping** — landing back on the first change after the last would lose the user's
 place in a long answer — and disable at the ends.
+
+**Choosing a side is navigation too.** A click on a side makes its change the current one
+(`_currentIdx`), and choosing the side not in force repaints the stepper through `_updateCounter()`:
+the label reads that change's position (`2 / 3`), Prev/Next disable at its ends, and Next moves on to
+the change after it. So a user who picks their way through the answer by clicking keeps their place
+for the arrows. Two gaps, reported as suspected defects and listed under "Under-specified" in
+`tests/webchat/README.md` until they are ruled on:
+
+- a click does not move the `.is-current` ring (only `_moveCurrent()` sets it), so after the arrows
+  the ring stays on the change they reached; and since `_moveCurrent()` then clears it from the
+  clicked change only, the next arrow leaves two changes ringed;
+- a click on the side **already** in force makes its change current but repaints nothing
+  (`_chooseSide()` returns early on an idempotent choice), so the label and the disabled state of
+  Prev/Next still describe the previous position, while the next arrow moves from the clicked change.
 
 **Overflow menu:** *Accept all* and *Edit manually* always; *Reject all* joins them only on the
 narrow layout, where it leaves the actions row. Dismissed by outside `pointerdown` (registered on

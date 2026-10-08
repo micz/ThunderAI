@@ -51,6 +51,7 @@ const S_BYPASS = 'spec 07 "Two things the picker deliberately bypasses"';
 const S_INIT = 'spec 07 "Where the initial value comes from"';
 const S_TEXT = 'spec 07 "`composeResultText()` is mode-aware"';
 const S_DOM = 'spec 01 "Transcript DOM contract"';
+const S_ACT = 'spec 01 "Actions on an answer"';
 
 const msg = (key, subs) => ctx.ctl.browser.i18n.getMessage(key, subs);
 const owner = () => botTurns(ctx)[0];
@@ -71,7 +72,10 @@ await apiSend(ctx, {
         body_text: 'unrelated body', body_html: '<p>unrelated body</p>',
     },
 });
-await worker.stream(ctx, ['Dear Sir,\n\nI hope you are well. We meet today.']);
+// The answer marks "Sir" up as the selection does, so its first block matches the original's only
+// if the picker took the selection's HTML twin: rebuilt from the text, "Dear Sir," would differ from
+// it in markup alone, which is a change of its own (spec 07 "The `composeResult` invariant").
+await worker.stream(ctx, ['Dear <b>Sir</b>,\n\nI hope you are well. We meet today.']);
 
 k.test('button', S_OVER, 'a prompt with use_diff_viewer "1": its answer offers "Show differences"', () => {
     assert.ok(diffBtn());
@@ -139,6 +143,11 @@ k.test('degraded-keeps-picker', S_IND, 'after a newer answer, the compact toolba
     await ctx.click(use);
     assert.match(lastReplace(), /fine/);
     assert.doesNotMatch(lastReplace(), /well|Another/);
+});
+
+k.test('toolbar-picker', S_ACT, 'the compact toolbar of a picker answer holds Copy and Use this answer, nothing else: no Show differences', () => {
+    const kinds = [...toolbar(owner()).children].map(el => el.classList.contains('mzta-usage') ? 'chip' : el.getAttribute('aria-label'));
+    assert.deepEqual(kinds, [msg('apiwebchat_copy'), msg('apiwebchat_use_this_answer')]);
 });
 
 k.test('newer-answer-own-turn', S_DOM, 'the newer answer streamed into a turn of its own, after the picker\'s', () => {

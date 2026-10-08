@@ -45,10 +45,13 @@ const k = webchatTests('11');
 const S_SCOPE = 'spec 07 "Scope"';
 const S_DOM = 'spec 01 "Transcript DOM contract"';
 const S_FILES = 'spec 01 "Files"';
+const S_ACT = 'spec 01 "Actions on an answer"';
 
 const msg = key => ctx.ctl.browser.i18n.getMessage(key);
 const norm = html => new ctx.window.DOMParser().parseFromString(html, 'text/html').body.innerHTML.replace(/>\s+</g, '><').trim();
 const turn = i => botTurns(ctx)[i];
+/** What a compact toolbar holds, in order: each button by its label, the usage chip as "chip". */
+const toolKinds = tools => [...tools.children].map(el => el.classList.contains('mzta-usage') ? 'chip' : el.getAttribute('aria-label'));
 
 await apiSend(ctx, { prompt: 'Make it formal', action: '1', tabId: 4, mailMessageId: -1 });
 await worker.stream(ctx, ['Dear Sir,\nkind regards.']);
@@ -73,6 +76,13 @@ k.test('replace', S_SCOPE, 'compose window: "Use this answer" replaces the text 
     assert.deepEqual(sentCommands(ctx, 'chatgpt_replyMessage'), []);
 });
 
+k.test('replace-target', S_ACT, 'chatgpt_replaceSelectedText names its target with the api_send fields: tabId (the compose tab) and mailMessageId (-1), besides the text, and nothing else', () => {
+    const replace = sentCommands(ctx, 'chatgpt_replaceSelectedText')[0];
+    assert.deepEqual(Object.keys(replace).sort(), ['command', 'mailMessageId', 'tabId', 'text']);
+    assert.equal(replace.tabId, 4);
+    assert.equal(replace.mailMessageId, -1);
+});
+
 k.test('toolbar-replace', S_DOM, 'an earlier answer\'s toolbar button replaces with ITS answer too', async () => {
     await typeAndSend(ctx, 'Shorter');
     await worker.stream(ctx, ['Dear Sir.']);
@@ -83,6 +93,10 @@ k.test('toolbar-replace', S_DOM, 'an earlier answer\'s toolbar button replaces w
     await ctx.click(use);
     assert.deepEqual(commandNames(ctx, since), ['chatgpt_replaceSelectedText', 'chatgpt_close']);
     assert.equal(norm(sentCommands(ctx, 'chatgpt_replaceSelectedText').at(-1).text), norm(answerEls(turn(0))[0].innerHTML));
+});
+
+k.test('toolbar-compose', S_ACT, 'the compact toolbar of a compose session holds Copy and Use this answer (no usage chip: the display is off), nothing else', () => {
+    assert.deepEqual(toolKinds(toolbar(turn(0))), [msg('apiwebchat_copy'), msg('apiwebchat_use_this_answer')]);
 });
 
 k.coverage();
