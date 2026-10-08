@@ -115,6 +115,7 @@ k.test('ac-custom', S_CUSTOM, 'the enabled custom placeholders of a usable type 
     const offered = suggestions();
     assert.ok(offered.includes('{%thunderai_custom_sig%}'), offered.join());
     assert.ok(offered.includes('{%thunderai_custom_reader%}'), 'a custom placeholder with no `enabled` is enabled');
+    assert.ok(offered.includes('{%thunderai_custom_bare%}'), 'a custom placeholder with no type counts as type 0');
     assert.equal(offered.includes('{%thunderai_custom_writer%}'), false, 'a composing-only custom placeholder offered');
     assert.equal(offered.includes('{%thunderai_custom_off%}'), false, 'a disabled custom placeholder offered');
 });

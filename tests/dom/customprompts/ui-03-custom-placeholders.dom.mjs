@@ -71,16 +71,16 @@ k.test('new-prompt-editor', S_AUTO, 'a new prompt opens the editor, type "always
     assert.equal($('#detail_type').value, '0');
 });
 
-k.test('ac-custom-type-0', S_CUSTOM, 'a type-0 prompt is offered the enabled type-0 custom placeholders only', async () => {
+k.test('ac-custom-type-0', S_CUSTOM, 'a type-0 prompt is offered the enabled type-0 custom placeholders only, one with no type included', async () => {
     const offered = await customOffered();
-    assert.ok(offered.includes('sig') && offered.includes('noname'), offered.join());
+    for (const id of ['sig', 'noname', 'bare']) assert.ok(offered.includes(id), id + ' not in ' + offered.join());
     for (const id of ['reader', 'writer', 'off']) assert.equal(offered.includes(id), false, id);
 });
 
-k.test('ac-custom-type-1', S_CUSTOM, 'reading: its own custom placeholders and the type-0 ones, never a disabled one', async () => {
+k.test('ac-custom-type-1', S_CUSTOM, 'reading: its own custom placeholders and the type-0 ones (no type counting as 0), never a disabled one', async () => {
     await setType('1');
     const offered = await customOffered();
-    for (const id of ['sig', 'reader', 'noname']) assert.ok(offered.includes(id), id + ' not in ' + offered.join());
+    for (const id of ['sig', 'reader', 'noname', 'bare']) assert.ok(offered.includes(id), id + ' not in ' + offered.join());
     assert.equal(offered.includes('writer'), false);
     assert.equal(offered.includes('off'), false, 'a disabled custom placeholder offered');
 });
@@ -88,7 +88,7 @@ k.test('ac-custom-type-1', S_CUSTOM, 'reading: its own custom placeholders and t
 k.test('ac-custom-type-2', S_CUSTOM, 'composing: the type read again on the next keystroke', async () => {
     await setType('2');
     const offered = await customOffered();
-    for (const id of ['sig', 'writer']) assert.ok(offered.includes(id), id + ' not in ' + offered.join());
+    for (const id of ['sig', 'writer', 'bare']) assert.ok(offered.includes(id), id + ' not in ' + offered.join());
     assert.equal(offered.includes('reader'), false);
 });
 

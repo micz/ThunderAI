@@ -203,3 +203,54 @@ for (const [name, type, answer, expected] of HTTP_CASES) {
         assert.deepEqual(r, { status: 'error', message: expected === 'auth' ? msg('connTest_error_auth') : expected });
     });
 }
+
+// ---- the host permission -------------------------------------------------------------------
+// Spec 04 "Optional Permissions", what is requested at run time: Gemini's origin; for Ollama and
+// OpenAI Comp a localhost host asks for <all_urls>, another host for its own origin; an empty
+// host asks for nothing, and the test reports a refused permission.
+
+test('requestPermission(): Gemini asks for its API origin', async () => {
+    useForm();
+    const from = requests.length;
+    assert.equal(await ct.getTestableConnection('google_gemini_api').requestPermission(''), true);
+    assert.deepEqual(requests.slice(from), [['https://generativelanguage.googleapis.com/*']]);
+});
+
+const HOSTS = [
+    ['http://localhost:11434', '<all_urls>'],
+    ['http://127.0.0.1:1234', '<all_urls>'],
+    ['https://llm.example.com:8443', 'https://llm.example.com:8443/*'],
+    ['https://llm.example.com/', 'https://llm.example.com/*'],
+];
+for (const [type, field] of [['ollama_api', 'ollama_host'], ['openai_comp_api', 'openai_comp_host']]) {
+    for (const [host, origin] of HOSTS) {
+        test(`requestPermission(): ${type} with the host ${host} asks for ${origin}`, async () => {
+            useForm();
+            const saved = FIELDS[field].value;
+            FIELDS[field].value = host;
+            try {
+                const from = requests.length;
+                await ct.getTestableConnection(type).requestPermission('');
+                assert.deepEqual(requests.slice(from), [[origin]]);
+            } finally {
+                FIELDS[field].value = saved;
+            }
+        });
+    }
+
+    test(`runConnectionTest(): ${type} with an empty host asks for nothing, sends nothing, and reports a refused permission`, async () => {
+        useForm();
+        const saved = FIELDS[field].value;
+        FIELDS[field].value = '  ';
+        try {
+            const asked = requests.length;
+            const sent = fetches.length;
+            const r = await ct.runConnectionTest(type, '');
+            assert.deepEqual(r, { status: 'error', message: msg('Optional_Permission_Denied_Model_Fetching') });
+            assert.equal(requests.length, asked);
+            assert.equal(fetches.length, sent);
+        } finally {
+            FIELDS[field].value = saved;
+        }
+    });
+}

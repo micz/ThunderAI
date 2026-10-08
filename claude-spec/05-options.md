@@ -781,7 +781,9 @@ registry entry (`makeClient` reading current form fields, `nameKey`, `requestPer
 — both callbacks receive the field-id prefix, `''` on the options page and in the wizard,
 `<feature>_` on the feature pages —
 plus the two optional fields below); `runConnectionTest(connType, idPrefix = '')` requests the needed host
-permission (mirroring the fetch-models / CORS buttons), calls the probe with a ~10s
+permission (mirroring the fetch-models / CORS buttons; the origins per provider, Gemini's and the
+`localhost` rule included, are in [04-api-integrations.md](04-api-integrations.md#optional-permissions)),
+calls the probe with a ~10s
 `Abort`-style timeout (`Promise.race`), and maps the `{ok, error, is_exception, status}` result to
 auth / network / timeout messages. It reads current (possibly unsaved) form values and
 **saves nothing**.
@@ -803,9 +805,13 @@ that is not JSON, or whose JSON is not the model list (Ollama: has no `version`)
 exception of the probe (see [04-api-integrations.md](04-api-integrations.md), "`fetchModels()`
 and `fetchVersion()`") and shows the network message.
 
-One optional registry field keeps a provider quirk out of the shared runner:
+The two optional registry fields:
 
-- **`testMethod`** names the probe, defaulting to `'fetchModels'`. Every such method shares
+- **`keyId`** is the id of the provider's API key field, without the prefix (`chatgpt_api_key`,
+  `anthropic_api_key`, …). Before anything is requested, the runner reads that field and, when it
+  holds `MANAGED_SECRET_MARKER` (a key supplied by the policy, which never reaches the page), stops
+  with `connTest_managed_api_key` instead of sending the placeholder as a key (spec 08b).
+- **`testMethod`** keeps a provider quirk out of the shared runner: it names the probe, defaulting to `'fetchModels'`. Every such method shares
   the same `{ok, error, is_exception}` contract. **Ollama sets it to `'fetchVersion'`**
   (`GET /api/version`) because `/api/tags` conflates *"server unreachable / CORS not
   configured"* with *"reachable but no models pulled"* — it answers with an empty list in

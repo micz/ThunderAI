@@ -282,7 +282,11 @@ export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
         const prefixed = [];
         const contained = [];
         for (const s of suggestions) {
-            if (String(s.type) !== String(type) && String(s.type) !== '0') continue;
+            // A placeholder with no type counts as '0' ("always"), as in findPlaceholder(): a
+            // custom one imported without the field is usable everywhere, so it is offered too.
+            const sType = (s.type === null || s.type === undefined || String(s.type).trim() === '')
+                ? '0' : String(s.type);
+            if (sType !== String(type) && sType !== '0') continue;
             const at = s.command.slice(SIGIL).toLowerCase().indexOf(needle);
             if (at < 0) continue;
             (at === 0 ? prefixed : contained).push({ s, at: at + SIGIL });

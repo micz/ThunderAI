@@ -382,7 +382,9 @@ shifted back into command coordinates, so `render()` can slice the command direc
 offers every type-eligible placeholder.
 
 **Type filtering.** A placeholder is offered only if its `type` equals the prompt's selected type, or
-its type is `0` ("always"). The type is read **lazily on every keystroke**, so changing the selector
+its type is `0` ("always"). A placeholder with **no** type (missing, `null` or blank: a custom one
+imported without the field) counts as `0`, the same normalisation as `findPlaceholder()` (see
+*Invalid placeholder feedback*), so the autocomplete offers every token the editor accepts. The type is read **lazily on every keystroke**, so changing the selector
 mid-edit takes effect immediately with no re-registration.
 
 - The 6 single-textarea pages pass an explicit `type_value` (all currently `1`, "reading").

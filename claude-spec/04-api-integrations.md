@@ -1072,6 +1072,16 @@ API calls require host permissions. These are declared as `optional_permissions`
 - `https://*.anthropic.com/*` for Claude
 - `https://*/*` and `http://*/*` for Ollama and OpenAI-compatible endpoints
 
+What is actually requested at run time:
+- **ChatGPT / Claude**: the origins above (the "Update list" buttons and the connection test).
+- **Gemini**: the "Update list" button requests nothing (the API answers CORS requests); the
+  connection test requests `https://generativelanguage.googleapis.com/*`, covered by `https://*/*`.
+- **Ollama / OpenAI Comp**, from the host field, the same rule for the CORS "give permission"
+  buttons and the connection test: a host containing `localhost` or `127.0.0.1` requests
+  `<all_urls>`, any other host its own origin (`prepareOriginURL(host)`: the host followed by `/*`,
+  or `*` when it already ends with `/`). An empty host requests nothing: there is no origin to ask
+  for, and the connection test reports it as a refused permission.
+
 ## Token usage data
 
 Every provider reports token counts under a different name and a different shape. `js/api/mzta-api-usage.js`
