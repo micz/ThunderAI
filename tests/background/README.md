@@ -248,9 +248,8 @@ Input for the spec:
 6. *(documented as it is: spec 01 "Per-Message Data Storage", "Cleanup and truncation, as of today":
    `taStorage.cleanup()` unused, the spam reports truncated only after an incoming batch with the
    spam filter on, summaries and translations never. The policy is a separate job.)*
-7. **A spam job ending on a configuration error** has already removed the message's previous report
-   (`removeReportData()` is its first step): after a Refresh with a missing key the old verdict is
-   gone. Spec 04 only says the error is "not persisted".
+7. *(documented as it is: spec 04 "Configuration Validation", the spam filter routing: a check first
+   removes the previous report, so a configuration error leaves the message with none.)*
 8. **The `[taJobs]` log format**: spec 01 writes `end <status> <kind>:<id>`, the code logs
    `end <kind>:<id> <status>`; `01-job-registry` asserts only the action and `<kind>:<id>`.
 9. **A job that returns no outcome** resolves to `skipped`: spec 01 lists the four statuses but not
