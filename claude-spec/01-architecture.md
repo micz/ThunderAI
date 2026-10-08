@@ -827,8 +827,9 @@ Checked after each feature of the pipeline: add tags (the
 returns `{success: false, rateLimited}`), summarize on receive and translate
 (`_generateSummaryForMessage` / `_generateTranslationForMessage` return `{rateLimited}` from
 their catch; other callers ignore it). The context-menu summarize block makes no per-message
-API call and is unaffected. Only the current batch stops: in auto mode each incoming mail
-starts a new batch, which may hit the 429 again.
+API call and is unaffected. Like the Stop button, `requestCancel('rate_limit')` stops **every
+batch active at that moment**, not only the one that hit the limit; a batch begun afterwards
+is not affected: in auto mode each incoming mail starts a new batch, which may hit the 429 again.
 
 **Add tags selection cap.** On the context-menu path (`addTagsAuto && !isAutoMode`), a
 `add_tags_max_messages` > 0 makes the loop collect the selection into an array first (the
