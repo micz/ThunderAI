@@ -37,7 +37,7 @@ node --test "tests/background/*.test.mjs"     # this area only, from the reposit
 
 Level 1 only: nothing to install, no jsdom. The area imports only `helpers/core/` (and its own
 `helpers/known-issues/background.mjs`), and has **no plugin**: the APIs the core mock lacks are added
-per context (see "The API models"). The run takes about 16 s (353 tests); nothing waits for real
+per context (see "The API models"). The run takes about 16 s (360 tests); nothing waits for real
 time: the debounce, the worker timeout and the batch yield points run on node:test's mock timers.
 
 ## Layout
@@ -222,8 +222,9 @@ None today.
 
 ## Under-specified
 
-Where the spec says nothing, or says two things, the behaviour is listed here, not pinned by a test.
-Input for the spec:
+Where the spec says nothing, or says two things, the behaviour is listed here, not pinned by a test,
+until the maintainer rules on it. The ten items the first run found have all been ruled on: each
+says how (fixed, documented as it is, or left to a separate job).
 
 1. **A rate limit stops every overlapping batch.** Spec 01 says "Only the current batch stops", but
    the mechanism it documents (`stopForRateLimit()` -> `requestCancel('rate_limit')`, which "flags
