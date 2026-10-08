@@ -255,5 +255,7 @@ Input for the spec:
 9. *(resolved: a job body resolving to nothing can only be a missing `return`; the registry used to
    turn it into a silent `skipped`, it now resolves `error` and logs `[taJobs] <kind>:<id> returned
    no outcome`. Spec 01 "In-flight jobs" says so; `01-job-registry` `no-outcome` tests it.)*
-10. **The context-menu inline summary sends `showSummaryGenerating` twice** to its tab: the #901
-    probe and the job's broadcast. Harmless (the content script draws one), not stated.
+10. *(documented as it is: spec 01 "Stale-result guard" says when the same tab gets the generating
+    panel more than once - the panel buttons, Refresh, the context-menu inline Summarize, a click
+    joining a running job - and that the content script draws one. `33-context-menu` asserts the
+    two sends of the context-menu path.)*

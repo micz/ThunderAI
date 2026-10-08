@@ -547,6 +547,18 @@ correctly discarded by `_sendIfCurrent()` — the spinner spins forever. So:
   (`showSummary`, `showSummaryButton`, `showTranslation`, `showTranslationButton`) bumps a
   per-feature counter, and a generating command that sees the counter moved does nothing — a
   result can never be painted over by a late spinner.
+- **The same tab can get the generating panel two or three times**, by design: the tab that asked
+  gets its own immediate send, and the job's broadcast reaches it too, since the job updates every
+  tab displaying the message without knowing who started it. This happens on the panel buttons and
+  the Refresh of both features (`triggerSummaryGeneration` / `refreshSummary`,
+  `triggerTranslationGeneration` / `refreshTranslation`: the direct send, then the broadcast), on
+  the context-menu inline Summarize of one message (the #901 probe of `processEmails()`, then the
+  broadcast), and when a click joins a running job (the direct send, the joiner's own send, and the
+  broadcast if the tab displayed the message when the job started). Generating on open (mode 2), on
+  receive (mode 3), from the sender list and from the context-menu Translate send it once (the
+  broadcast only); a cache hit sends none. The content script draws one panel: a generating command
+  that finds its panel (`mzta-summary-generating` / `mzta-translation-generating`) already there does
+  nothing.
 - `hideSummaryGenerating` / `hideTranslationGenerating` remove a panel (message-aware when an id
   is given, unconditional otherwise). The jobs broadcast them from their `catch` blocks and when
   an invalidated job lands; `_clearGeneratingPanels()` sends them to one tab, from a joiner whose
