@@ -1827,4 +1827,18 @@ Per-message data (summaries, spam reports, translations) is stored via `js/mzta-
 
 `js/mzta-summarystore.js` (`taSummaryStore` class) wraps `taStorage` for summary-specific operations: load/save/remove summaries and store error states. It also has `truncSummaries()` (keep the 100 newest summaries, oldest-first truncation), but **nothing calls it at the moment**: summaries are not truncated and accumulate in `storage.local`.
 
-`js/mzta-translationstore.js` (`taTranslationStore` class) wraps `taStorage` for translation-specific operations: load/save/remove translations and store error states. Likewise it has `truncTranslations()`, which **nothing calls at the moment**: translations are not truncated either. Each translation record stores `translated_text`, `lang`, and optional error information.
+`js/mzta-translationstore.js` (`taTranslationStore` class) wraps `taStorage` for translation-specific operations: load/save/remove translations and store error states. Likewise it has `truncTranslations()`, which **nothing calls at the moment**: translations are not truncated either.
+
+**Cleanup and truncation, as of today.** Besides the two truncations above, nothing removes old
+per-message records automatically:
+- **Age-based cleanup.** `taStorage.cleanup(maxAgeDays)` (remove the records whose `ts` is older
+  than that, every field included; `0` does nothing) exists but **nothing calls it**, and no
+  preference sets an age. The only bulk removal is `taStorage.clearAllRecords()`, from the options
+  page.
+- **Spam reports.** `js/mzta-spamreport.js` (`taSpamReport`) has `truncReportData()` (keep the 100
+  most recent reports, by their `ts`), called **only** by `newEmailListener()` after an incoming
+  batch, and only with `spamfilter` on. Reports of manual checks (context menu, panel Refresh)
+  accumulate until the next such batch; with the spam filter off they are never truncated.
+
+When to clean up, with which age and which limits is still to be decided (one job for all three
+stores). Each translation record stores `translated_text`, `lang`, and optional error information.

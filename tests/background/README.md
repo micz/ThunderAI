@@ -245,11 +245,9 @@ Input for the spec:
    message present twice in a batch. One AI call per copy when they are processed one after the
    other; with `batch_max_concurrency` > 1 the second copy joins the first one's spam / add_tags job
    and is left where it is, untagged. Not pinned by a test.)*
-6. **Cleanup and truncation**: `taStorage.cleanup(maxAgeDays)` exists ("age-based cleanup", spec 01)
-   but nothing calls it, and the spec names no age. Summaries and translations are not truncated at
-   the moment (spec 01 says so: `truncSummaries()` / `truncTranslations()` exist, tested as methods
-   in `05-stores`, but nothing calls them); the 100-report spam limit is applied only after an
-   incoming batch with the spam filter on, never after a manual check.
+6. *(documented as it is: spec 01 "Per-Message Data Storage", "Cleanup and truncation, as of today":
+   `taStorage.cleanup()` unused, the spam reports truncated only after an incoming batch with the
+   spam filter on, summaries and translations never. The policy is a separate job.)*
 7. **A spam job ending on a configuration error** has already removed the message's previous report
    (`removeReportData()` is its first step): after a Refresh with a missing key the old verdict is
    gone. Spec 04 only says the error is "not persisted".
