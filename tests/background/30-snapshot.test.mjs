@@ -10,7 +10,8 @@
 //  3. the two staleness flags accumulate across a burst and are cleared only when the debounced
 //     work runs.
 // And: the listener gates on areaName === 'local' (spec 01 "Storage"); keys the policy locks are
-// filtered (managed area: not tested here); reload_pref_init() is gated on PREFS_INIT_KEYS, NOT on
+// filtered (managed area: not tested here); _process_incoming gates each feature as newEmailListener()
+// passes it (add_tags && add_tags_auto, ...); reload_pref_init() is gated on PREFS_INIT_KEYS, NOT on
 // the menu keys (add_tags_auto, summarize_auto, translate_auto feed _process_incoming), so
 // _sparks_presence refreshes only when a PREFS_INIT_KEYS key changes; MENU_RELEVANT_KEYS holds
 // the per-feature integration keys of every feature, calendar_no_selection and _custom_placeholder
@@ -194,13 +195,16 @@ k.test('other-area-ignored', 'a change in storage.sync or storage.session does n
     assert.equal(prefsInit().connection_type, 'chatgpt_api');
 });
 
-k.test('process-incoming', 'add_tags_auto (not a menu key) still refreshes _process_incoming', async (t) => {
+k.test('process-incoming', '_process_incoming follows the automatic features, each gated as newEmailListener() passes it', async (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     assert.equal(ctx.bg.$eval('_process_incoming'), false);
     await write({ add_tags_auto: true });
     await advance(t, 200);
-    assert.equal(ctx.bg.$eval('_process_incoming'), true);
-    await write({ add_tags_auto: false, translate_auto: 3 });
+    assert.equal(ctx.bg.$eval('_process_incoming'), false, 'add_tags_auto with add_tags off: nothing to do, no wake-up');
+    await write({ add_tags: true });
+    await advance(t, 200);
+    assert.equal(ctx.bg.$eval('_process_incoming'), true, 'add_tags and add_tags_auto (not a menu key) both on');
+    await write({ add_tags: false, add_tags_auto: false, translate_auto: 3 });
     await advance(t, 200);
     assert.equal(ctx.bg.$eval('_process_incoming'), true, 'translate_auto = 3 alone wakes it too');
     await write({ translate_auto: 0 });

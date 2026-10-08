@@ -2660,7 +2660,7 @@ async function reload_pref_init(){
     // does: otherwise every incoming mail wakes the whole pipeline for a no-op. Since the
     // reconciliation turns add_tags off without touching add_tags_auto, that combination
     // is now the common case rather than an edge case.
-    _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter || (prefs_init.summarize && prefs_init.summarize_auto === 3) || (prefs_init.translate && prefs_init.translate_auto === 3) || (prefs_init.summarize && prefs_init.summarize_auto_senders && hasAddressListEntries(prefs_init.summarize_auto_senders_list));
+    _process_incoming = (prefs_init.add_tags && prefs_init.add_tags_auto) || prefs_init.spamfilter || (prefs_init.summarize && prefs_init.summarize_auto === 3) || (prefs_init.translate && prefs_init.translate_auto === 3) || (prefs_init.summarize && prefs_init.summarize_auto_senders && hasAddressListEntries(prefs_init.summarize_auto_senders_list));
     _sparks_presence = await checkSparksPresence();
 }
 
