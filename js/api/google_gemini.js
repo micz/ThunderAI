@@ -147,6 +147,9 @@ export class GoogleGemini {
       output.ok = true;
       let output_response = await response.json();
       //console.log("[ThunderAI] Google Gemini API response: " + JSON.stringify(output_response));
+      // A success always carries the list: an answer without one (a proxy's {}) is not the
+      // API's, and is reported like an answer that is not JSON.
+      if (!Array.isArray(output_response?.models)) throw new Error("the answer carries no model list");
       output.response = output_response.models;
 
       return output;

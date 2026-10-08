@@ -59,7 +59,7 @@ Helper modules have no `.test.mjs` suffix, so the level-1 glob never runs them.
 | `23-ollama-request` | "Ollama": think levels, keep_alive, options, Bearer on every endpoint; 300 s timeout |
 | `24-openai-comp-request` | "OpenAI-Compatible", "Extra body data", stream_options; 300 s timeout |
 | `25-openai-responses-request` | "OpenAI API": reasoning, text, sampling, limits, pass-through, extra-body gating |
-| `26-client-error-contract` | "Error contract between js/api/* and workers" (the classes); fetchModels through the retry |
+| `26-client-error-contract` | "Error contract between js/api/* and workers" (the classes); fetchModels through the retry; "`fetchModels()` and `fetchVersion()`" (a `200` with no model list or no Ollama version is an exception; OpenAI Comp's empty list, Ollama's `/api/tags` object) |
 | `27-config-validation` | "Configuration Validation", "Web Worker Pattern" (module worker per provider) |
 | `30`/`31-worker-anthropic-*` | "Web Worker Pattern", "Thinking output…", "Per-provider support", "Wiring in the workers", "Emitting to the chat window", "Workers and UI", "Error contract…" |
 | `32`/`33-worker-gemini-*` | the same, Gemini (turn 1 replays the capture) |
@@ -209,8 +209,9 @@ aligned where it contradicted itself:
   area (`background/02-batch-controller`, `28-batch-stop`, `29-rate-limit`). Here only the worker side of
   a stop (`stop` before and during streaming).
 - **The managed branches** (spec 08b): policy keys, locked providers, enforced per-feature connections.
-- **`fetchModelInfo()` of Gemini and Claude**, and the shape of every `fetchModels()` result: spec 04
-  only says they go through `fetchWithRetry()`, which `26` checks.
+- **`fetchModelInfo()` of Gemini and Claude**, and the shape of a successful `fetchModels()` result
+  beyond its list: spec 04 says they go through `fetchWithRetry()` and that a success carries the list
+  ("`fetchModels()` and `fetchVersion()`"), which `26` checks.
 - **Anything requiring a live provider.**
 
 ## Under-specified

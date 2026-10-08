@@ -120,6 +120,39 @@ for (const [id, P] of Object.entries(PROVIDERS)) {
         assert.equal(retries.length, 1);
         assert.equal(retries[0].status, 503);
     });
+
+    // Spec 04 "Error contract between js/api/* and workers", "fetchModels() and fetchVersion()": a
+    // success carries the model list; a 200 whose JSON has none is an exception. OpenAI Comp turns
+    // it into an empty list instead (spec 05 "Update list"); Ollama's /api/tags answer is passed on
+    // as it is, and the page reports "no models".
+    k.test(id + '-models-no-list', `${id}: fetchModels() on a 200 with no model list`, async () => {
+        net.expect(P.modelsUrl, () => jsonResponse({}));
+        const r = await P.make().fetchModels({ maxRetries: 0 });
+        if (id === 'openai_comp') {
+            assert.deepEqual(r, { ok: true, response: [] });
+        } else if (id === 'ollama') {
+            assert.equal(r.ok, true);
+            assert.deepEqual(r.response, {});
+        } else {
+            assert.equal(r.ok, false, JSON.stringify(r));
+            assert.equal(r.is_exception, true);
+            assert.match(r.error, P.name);
+        }
+    });
 }
+
+k.test('ollama-version-no-version', 'ollama: fetchVersion() on a 200 with no version string is an exception', async () => {
+    net.expect('http://localhost:11434/api/version', () => jsonResponse({}));
+    const r = await PROVIDERS.ollama.make().fetchVersion();
+    assert.equal(r.ok, false, JSON.stringify(r));
+    assert.equal(r.is_exception, true);
+    assert.match(r.error, /Ollama/);
+});
+
+k.test('ollama-version-ok', 'ollama: fetchVersion() with a version string succeeds and passes the answer on', async () => {
+    net.expect('http://localhost:11434/api/version', () => jsonResponse({ version: '0.12.0' }));
+    const r = await PROVIDERS.ollama.make().fetchVersion();
+    assert.deepEqual(r, { ok: true, response: { version: '0.12.0' } });
+});
 
 k.coverage();

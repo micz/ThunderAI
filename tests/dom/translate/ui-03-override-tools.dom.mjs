@@ -256,6 +256,13 @@ k.test('test-not-json', S_TEST, 'an answer that is not JSON (a proxy\'s HTML pag
     assert.equal(stripText(), errorText(msg('connTest_error_network')));
 });
 
+k.test('test-no-list', S_TEST, 'a 200 whose JSON is not the provider\'s answer (a proxy\'s {}): red, never "Connected"', async () => {
+    net.answer(MODELS, () => json({}));
+    await runTest();
+    assert.equal(stripState(), 'error');
+    assert.equal(stripText(), errorText(msg('connTest_error_network')));
+});
+
 k.test('test-timeout', S_TEST, 'no answer: "Testing…" with the link hidden until ~10 s, then the time-out message; the request is aborted', async () => {
     const req = net.hang(MODELS);
     const clock = holdLongTimers(ctx);
@@ -332,6 +339,16 @@ k.test('fetch-not-json', S_FETCH, 'an answer that is not JSON: an error in red, 
     assert.ok(status().textContent.startsWith(fetchError('')), status().textContent);
     assert.equal(status().classList.contains('is_ok'), false);
     assert.equal(loading().style.display, 'none');
+});
+
+k.test('fetch-no-list', S_FETCH, 'a 200 with no model list: an error in red, the button back, the models kept', async () => {
+    const before = [...$('#translate_anthropic_model').options].map(o => o.value);
+    net.answer(MODELS, () => json({}));
+    await clickUpdate();
+    assert.ok(status().textContent.startsWith(fetchError('')), status().textContent);
+    assert.equal(status().classList.contains('is_ok'), false);
+    assert.equal(loading().style.display, 'none');
+    assert.deepEqual([...$('#translate_anthropic_model').options].map(o => o.value), before);
 });
 
 k.test('fetch-denied', S_FETCH, 'a refused permission: no request, the permission message', async () => {

@@ -208,6 +208,9 @@ export class OpenAI {
       let output = {};
       output.ok = true;
       let output_response = await response.json();
+      // A success always carries the list: an answer without one (a proxy's {}) is not the
+      // API's, and is reported like an answer that is not JSON.
+      if (!Array.isArray(output_response?.data)) throw new Error("the answer carries no model list");
       output.response = output_response.data.filter(item => item.id.startsWith('gpt-') || item.id.startsWith('o1-') || item.id.startsWith('o4-') || item.id.startsWith('o3-')).sort((a, b) => b.id.localeCompare(a.id));
 
       return output;

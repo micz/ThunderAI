@@ -784,7 +784,10 @@ plus the two optional fields below); `runConnectionTest(connType, idPrefix = '')
 permission (mirroring the fetch-models / CORS buttons), calls the probe with a ~10s
 `Abort`-style timeout (`Promise.race`), and maps the `{ok, error, is_exception}` result to
 auth / network / timeout messages. It reads current (possibly unsaved) form values and
-**saves nothing**.
+**saves nothing**. It shows "Connected" only for an answer that is the provider's: a `200`
+that is not JSON, or whose JSON is not the model list (Ollama: has no `version`), is an
+exception of the probe (see [04-api-integrations.md](04-api-integrations.md), "`fetchModels()`
+and `fetchVersion()`") and shows the network message.
 
 One optional registry field keeps a provider quirk out of the shared runner:
 
@@ -854,7 +857,9 @@ the row reports `connTest_error_timeout` and no retry keeps running in the backg
 to an `{ok, error|response}` result, also when `fetchModels()` throws. Every implementation,
 OpenAIComp included, catches its own network errors and resolves `{ok:false, is_exception:true,
 error}`, so the `catch` there is only a safety net. OpenAIComp also accepts a bare-array
-`/models` answer besides `{data:[...]}`, and turns any other shape into an empty list.
+`/models` answer besides `{data:[...]}`, and turns any other shape into an empty list. OpenAI,
+Gemini and Claude refuse an answer with no model list as an exception, so a success always
+carries a list to merge and every click ends in *done* or *error*, never on the loading label.
 `parseModelsFetchError()` extracts `error.message` from a JSON error body. The `warn_*()` helpers
 still manage the button's `disabled` state, independently of its visibility.
 

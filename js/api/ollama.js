@@ -155,6 +155,9 @@ export class Ollama {
         let output = {};
         output.ok = true;
         output.response = await response.json();
+        // A success means "speaking Ollama": an answer with no version (a proxy's {}) is not
+        // Ollama's, and is reported like an answer that is not JSON.
+        if (typeof output.response?.version !== 'string') throw new Error("the answer carries no Ollama version");
         return output;
       }catch (error) {
         console.error("[ThunderAI] Ollama API request failed: " + error);

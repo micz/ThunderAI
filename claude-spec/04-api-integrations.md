@@ -846,6 +846,18 @@ throw new Error("[ThunderAI] <Provider> API request failed: " + error_text);
 
 The `postMessage` payload and the `throw` reuse the same `error_text` so the UI panel and the console message cannot drift apart.
 
+**`fetchModels()` and `fetchVersion()`.** The page-side probes (the "Update list" buttons and the
+connection test, see [05-options.md](05-options.md)) resolve `{ok: true, response}` or the two failure
+shapes above, with the HTTP error as `{ok: false, error: <body text>}` instead of the `Response`. A
+success means the answer **is** the provider's: a `200` whose JSON is not its model list (a proxy or a
+captive portal answering `{}`) resolves the exception shape, exactly like an answer that is not JSON,
+with `error` naming the provider and saying no list came back. OpenAI, Gemini and Claude check their
+list (`data`, `models`, `data`); Ollama's `fetchVersion()` requires a `version` string. Two answers are
+deliberately not refused: OpenAI Comp turns any other shape into an empty list, and Ollama's
+`fetchModels()` passes its `/api/tags` object on as it is (the page reports "no models" when it holds
+none). Without this a `{}` read as "Connected" on the connection test, and "Update list" threw on the
+missing list, leaving the row on its loading label for good.
+
 **Reading the body of an HTTP error.** Before that branch, a worker that got an HTTP error reads
 its body with `readResponseBody()` (`js/api/api-retry.js`, the same helper as the retry logs), into
 `errorBodyText`:
