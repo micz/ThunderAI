@@ -1901,7 +1901,7 @@
         "message": "Escludi lingue"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Elenco di codici lingua separati da virgola (es. en, fr, it) da saltare per la traduzione automatica. Se l'email è in una di queste lingue, non verrà tradotta automaticamente o il pulsante manuale non sarà mostrato."
+        "message": "Elenco di codici lingua separati da virgola (es. en, fr, it) che non devono essere tradotti. Se l'email è in una di queste lingue, l'IA non esegue la traduzione e la segnala come ignorata."
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "Prompt che descrive l'attività di traduzione:"

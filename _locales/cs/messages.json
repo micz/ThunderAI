@@ -1500,7 +1500,7 @@
         "message": "Vyloučit jazyky"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Čárkami oddělený seznam kódů jazyků (např. en, fr, it), které se mají při automatickém překladu přeskočit. Pokud je e-mail v jednom z těchto jazyků, nebude přeložen automaticky nebo se nezobrazí tlačítko pro manuální překlad."
+        "message": "Čárkami oddělený seznam kódů jazyků (např. en, fr, it), které se nemají překládat. Pokud je e-mail v jednom z těchto jazyků, AI překlad přeskočí a oznámí jej jako přeskočený."
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "Prompt popisující úkol překladu:"

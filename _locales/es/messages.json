@@ -1517,7 +1517,7 @@
         "message": "Excluir idiomas"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Lista separada por comas de códigos de idioma (por ejemplo, en, fr, it) para omitir en la traducción automática. Si el correo electrónico está en uno de estos idiomas, no se traducirá automáticamente ni se mostrará el botón manual."
+        "message": "Lista separada por comas de códigos de idioma (por ejemplo, en, fr, it) que no deben traducirse. Si el correo electrónico está en uno de estos idiomas, la IA omite la traducción y la indica como omitida."
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "El prompt que describe la tarea de traducción:"

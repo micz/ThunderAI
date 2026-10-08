@@ -1494,7 +1494,7 @@
         "message": "Uteslut språk"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Kommaavgränsad lista med språkkoder (t.ex. en, fr, it) som ska hoppas över för automatisk översättning. Om e-postmeddelandet är på ett av dessa språk kommer det inte att översättas automatiskt eller så visas inte den manuella knappen."
+        "message": "Kommaavgränsad lista med språkkoder (t.ex. en, fr, it) som inte ska översättas. Om e-postmeddelandet är på ett av dessa språk hoppar AI:n över översättningen och rapporterar den som överhoppad."
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "Prompten som beskriver översättningsuppgiften:"

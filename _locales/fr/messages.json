@@ -1531,7 +1531,7 @@
         "message": "Exclure des langues"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Liste de codes de langue séparés par des virgules (ex : en, fr, it) à ignorer pour la traduction automatique. Si l'e-mail est dans l'une de ces langues, il ne sera pas traduit automatiquement ou le bouton manuel ne sera pas affiché."
+        "message": "Liste de codes de langue séparés par des virgules (ex : en, fr, it) qui ne doivent pas être traduits. Si l'e-mail est dans l'une de ces langues, l'IA ignore la traduction et la signale comme ignorée."
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "Prompt décrivant la tâche de traduction :"

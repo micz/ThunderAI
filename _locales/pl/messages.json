@@ -1989,7 +1989,7 @@
         "message": "Wyklucz języki"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Rozdzielana przecinkami lista kodów języków (np. en, fr, it) do pominięcia przy automatycznym tłumaczeniu. Jeśli wiadomość jest w jednym z tych języków, nie zostanie przetłumaczona automatycznie lub przycisk ręczny nie będzie pokazany."
+        "message": "Rozdzielana przecinkami lista kodów języków (np. en, fr, it), które nie mają być tłumaczone. Jeśli wiadomość jest w jednym z tych języków, AI pomija tłumaczenie i zgłasza je jako pominięte."
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "Polecenie opisujące zadanie tłumaczenia:"

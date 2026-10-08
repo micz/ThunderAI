@@ -1617,7 +1617,7 @@
         "message": "Sprachen ausschließen"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Kommagetrennte Liste von Sprachkürzeln (z. B. en, fr, it), die von der automatischen Übersetzung ausgeschlossen werden sollen. Falls eine E-Mail in einer dieser Sprachen verfasst ist, wird sie nicht automatisch übersetzt bzw. die Schaltfläche für die manuelle Übersetzung wird nicht angezeigt."
+        "message": "Kommagetrennte Liste von Sprachkürzeln (z. B. en, fr, it), die nicht übersetzt werden sollen. Ist die E-Mail in einer dieser Sprachen verfasst, überspringt die KI die Übersetzung und meldet sie als übersprungen."
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "Der Prompt für die Übersetzungsaufgabe:"

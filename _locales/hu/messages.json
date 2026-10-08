@@ -1538,7 +1538,7 @@
         "message": "Kizárt nyelvek"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Vesszővel elválasztott nyelvügynökségi kódok listája (pl. en, fr, it), amelyeket ki kell hagyni az automatikus fordításból. Ha az e-mail a felsorolt nyelvek egyikén íródott, nem lesz automatikusan lefordítva, illetve a manuális gomb sem jelenik meg."
+        "message": "Vesszővel elválasztott nyelvkódok listája (pl. en, fr, it), amelyeket nem kell lefordítani. Ha az e-mail a felsorolt nyelvek egyikén íródott, az MI kihagyja a fordítást, és kihagyottként jelzi."
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "A fordítási feladatot leíró utasítás:"

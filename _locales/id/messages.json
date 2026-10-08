@@ -1550,7 +1550,7 @@
         "message": "Kecualikan bahasa"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Daftar kode bahasa yang dipisahkan koma (misalnya en, fr, it) untuk dilewati dalam terjemahan otomatis. Jika email menggunakan salah satu bahasa ini, email tidak akan diterjemahkan secara otomatis dan tombol manual juga tidak akan ditampilkan."
+        "message": "Daftar kode bahasa yang dipisahkan koma (misalnya en, fr, it) yang tidak boleh diterjemahkan. Jika email menggunakan salah satu bahasa ini, AI melewati terjemahan dan melaporkannya sebagai dilewati."
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "Prompt yang menjelaskan tugas terjemahan:"

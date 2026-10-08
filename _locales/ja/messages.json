@@ -1915,7 +1915,7 @@
         "message": "除外する言語"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "自動翻訳をスキップする言語コードをカンマ区切りで指定します（例: en, fr, it）。メールがこれらの言語のいずれかである場合、自動的に翻訳されないか、手動ボタンが表示されません。"
+        "message": "翻訳しない言語コードをカンマ区切りで指定します（例: en, fr, it）。メールがこれらの言語のいずれかである場合、AI は翻訳をスキップし、スキップしたことを通知します。"
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "翻訳タスクを説明するプロンプト:"
