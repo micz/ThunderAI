@@ -1635,19 +1635,22 @@ and nothing else:
 | `chatgpt_replaceSelectedText` | "use this answer", action `"2"`, or action `"1"` with `mailMessageId` -1 (forced to `"2"`, [07-diff-picker.md](07-diff-picker.md#scope)) | `tabId` (the compose tab), `mailMessageId` (-1 from a compose window) | `tabId`, the compose window it writes into; `mailMessageId` is not read |
 | `chatgpt_saveSummary` | Save as Summary, summary sessions only | `headerMessageId` (`prompt_info.headerMessageId`), `tabId` (`prompt_info.summaryTabId`) | `headerMessageId` to store the summary; `tabId` to show it in that tab's message pane if the message is still displayed there |
 
-`chatgpt_saveSummary`'s `tabId` is written `summaryTabId || promptData.tabId`, but the button exists
-only when `summaryTabId` is set, so it is always `summaryTabId`. Each of the three is awaited, then
-followed by the fire-and-forget `chatgpt_close` (see *Transcript DOM contract*).
+`chatgpt_saveSummary`'s `tabId` is `summaryTabId`, always set, since the button exists only when it
+is. (It used to be written `summaryTabId || promptData.tabId`, a fallback that could never apply.)
+Each of the three is awaited, then followed by the fire-and-forget `chatgpt_close` (see
+*Transcript DOM contract*).
 
 **The quotes stripped from the snapshot.** When an answer gets its buttons, `addActionButtons()`
-builds the snapshot from `fullTextHTML`, trimmed, removing a `"` at its very start and one at its
-very end (each on its own), then a `<p>&quot;` opening it (left as `<p>`) and a `&quot;</p>` closing
-it (left as `</p>`). The intent is to drop the quotes a model sometimes wraps its whole answer in.
-**Today none of the four patterns matches a rendered answer**: the snapshot is the sanitizer's
-serialization, which always opens with a tag (markdown-it wraps text in `<p>`) and writes a quote in
-text as a bare `"`, never `&quot;`. So `"Dear Bob, hi."` reaches the mail as `<p>"Dear Bob, hi."</p>`,
-quotes included. Reported as a suspected defect and listed under "Under-specified" in
-`tests/webchat/README.md`, untested until it is ruled on.
+builds the snapshot from `fullTextHTML`, trimmed, through `stripWrappingQuotes()`: the quotation
+marks a model sometimes wraps its **whole** answer in are removed, so `"Dear Bob, hi."` reaches the
+mail as `<p>Dear Bob, hi.</p>`. The rule is read on the **parsed** snapshot, on its text: the first
+non-blank text node must open with `"`, the last must close with one, and these must be the only two
+`"` in the answer. A quote at one end alone is part of the text (`As he said, "yes"`), and with
+other quotes inside the two ends may belong to two quotations (`"Yes," he said, "fine"`), so both
+are left alone; a snapshot left alone is returned unchanged, byte for byte. The rule used to be four
+string patterns (a `"` at the very start, one at the very end, `<p>&quot;`, `&quot;</p>`), none of
+which could match: the snapshot is the sanitizer's serialization, which always opens with a tag and
+writes a quote in text as a bare `"`, never `&quot;`, so the quotes reached the mail.
 
 **What each kind of session offers.** The full bar, on the newest answer, and the compact toolbar
 (`.turn-tools`), built from the same arguments when that answer stops being the newest:

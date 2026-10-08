@@ -135,8 +135,9 @@ export function sanitizeBlockHtml(html) {
 //
 // These forward to the globals defined in js/lib/mzta-html-lines.js. The lookup
 // is at CALL time (not module-eval time), so this module's load order relative
-// to the classic script never matters, and the api_webchat page - which has no
-// classic script and never calls these - is unaffected by their absence.
+// to the classic script never matters, and a page that imports this module
+// without loading the classic script works as long as it never calls these.
+// The api_webchat page loads it: Copy goes through htmlToLines/normalizePlain.
 export const htmlToLines = (html) => globalThis.mztaHtmlToLines(html);
 export const htmlNodeToLines = (node) => globalThis.mztaHtmlNodeToLines(node);
 export const stripHidden = (node) => globalThis.mztaStripHidden(node);

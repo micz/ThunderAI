@@ -1290,7 +1290,7 @@ class MessagesArea extends HTMLElement {
         // first, so two full bars never coexist.
         this._degradeFullActionBar();
 
-        const fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
+        const fullTextHTMLAtAssignment = stripWrappingQuotes(this.fullTextHTML.trim());
         //console.log(">>>>>>>>>>>> fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
         let reply_type_pref = await mztaPrefs.getPrefs(['reply_type']);
 
@@ -1556,7 +1556,8 @@ class MessagesArea extends HTMLElement {
                 command: "chatgpt_saveSummary",
                 text: finalText,
                 headerMessageId: promptData.prompt_info.headerMessageId,
-                tabId: promptData.prompt_info.summaryTabId || promptData.tabId,
+                // Always set: the button exists only when it is (see the guard above).
+                tabId: promptData.prompt_info.summaryTabId,
             });
             browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id}).catch(() => {});
         });
@@ -1885,6 +1886,35 @@ function hasBlockStructure(html) {
 // projection treats a source newline as whitespace, which is what it is in HTML.
 function htmlToPlainText(htmlString) {
     return normalizePlain(htmlToLines(htmlString), { keepParagraphs: true });
+}
+
+// The quotation marks a model sometimes wraps its WHOLE answer in, removed from
+// the snapshot every action button closes over. Read on the parsed snapshot:
+// it is the sanitizer's serialization, which always opens with a tag (<p>…)
+// and writes a quote in text as a bare ", so the string patterns this replaced
+// (a leading/trailing ", <p>&quot; … &quot;</p>) never matched a rendered
+// answer and the quotes reached the mail.
+//
+// Only as a PAIR, and only when it is the answer's only pair: the first text
+// must open with ", the last close with one, and the answer must hold no other
+// ". A quote at one end alone is part of the text (…as he said "yes"), and
+// with more quotes inside, the two ends can belong to two different quotations
+// ("Yes," he said, "fine"): stripping them would break the text, while leaving
+// a real wrapping pair in place only keeps what the model wrote.
+function stripWrappingQuotes(html) {
+    const doc = new DOMParser().parseFromString(String(html), 'text/html');
+    if ((doc.body.textContent.match(/"/g) || []).length !== 2) { return html; }
+    const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+    const texts = [];
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (n.data.trim() !== '') { texts.push(n); }
+    }
+    const first = texts[0];
+    const last = texts[texts.length - 1];
+    if (!/^\s*"/.test(first.data) || !/"\s*$/.test(last.data)) { return html; }
+    first.data = first.data.replace(/^(\s*)"/, '$1');
+    last.data = last.data.replace(/"(\s*)$/, '$1');
+    return doc.body.innerHTML;
 }
 
 // Clipboard write with a fallback for the (unlikely) case the async API is

@@ -99,6 +99,27 @@ k.test('toolbar-compose', S_ACT, 'the compact toolbar of a compose session holds
     assert.deepEqual(toolKinds(toolbar(turn(0))), [msg('apiwebchat_copy'), msg('apiwebchat_use_this_answer')]);
 });
 
+/** Stream one more answer and click "use this answer" on it: the text sent to the background. */
+async function useNewAnswer(answer) {
+    await typeAndSend(ctx, 'Again');
+    await worker.stream(ctx, [answer]);
+    await ctx.click(sq(actionBar(botTurns(ctx).at(-1)), 'split-button', '.action_btn'));
+    return sentCommands(ctx, 'chatgpt_replaceSelectedText').at(-1).text;
+}
+
+k.test('quotes-stripped', S_ACT, 'an answer the model wrapped in quotation marks is used without them', async () => {
+    // Source newlines (markdown-it's "<br>\n") are not what this checks.
+    assert.equal(norm(await useNewAnswer('"Dear Sir,\nkind regards."')).replace(/\n/g, ''), '<p>Dear Sir,<br>kind regards.</p>');
+});
+
+k.test('quotes-one-end', S_ACT, 'a quotation mark at one end only is part of the text, and stays', async () => {
+    assert.equal(norm(await useNewAnswer('As he said, "yes"')), '<p>As he said, "yes"</p>');
+});
+
+k.test('quotes-two-quotations', S_ACT, 'with other quotation marks inside, the two ends are left alone: they may open and close two different quotations', async () => {
+    assert.equal(norm(await useNewAnswer('"Yes," he said, "fine"')), '<p>"Yes," he said, "fine"</p>');
+});
+
 k.coverage();
 
 test('the page ran on modelled APIs only', () => assertHarnessClean(ctx));

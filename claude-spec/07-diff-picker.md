@@ -661,19 +661,15 @@ gone. Before the user navigates there is no current change, so it shows the tota
 are **clamped, not wrapping** — landing back on the first change after the last would lose the user's
 place in a long answer — and disable at the ends.
 
-**Choosing a side is navigation too.** A click on a side makes its change the current one
-(`_currentIdx`), and choosing the side not in force repaints the stepper through `_updateCounter()`:
-the label reads that change's position (`2 / 3`), Prev/Next disable at its ends, and Next moves on to
-the change after it. So a user who picks their way through the answer by clicking keeps their place
-for the arrows. Two gaps, reported as suspected defects and listed under "Under-specified" in
-`tests/webchat/README.md` until they are ruled on:
-
-- a click does not move the `.is-current` ring (only `_moveCurrent()` sets it), so after the arrows
-  the ring stays on the change they reached; and since `_moveCurrent()` then clears it from the
-  clicked change only, the next arrow leaves two changes ringed;
-- a click on the side **already** in force makes its change current but repaints nothing
-  (`_chooseSide()` returns early on an idempotent choice), so the label and the disabled state of
-  Prev/Next still describe the previous position, while the next arrow moves from the clicked change.
+**Choosing a side is navigation too.** A click on a side, or Enter / Space on one, makes its change
+the current one, so a user who picks their way through the answer keeps their place for the arrows:
+the label reads that change's position (`2 / 3`), Prev/Next disable at its ends, Next moves on to the
+change after it, and the `.is-current` ring moves there. This holds also for a click on the side
+**already** in force, which changes nothing in the text. All of it goes through `_setCurrent(index)`,
+the one place that moves the ring and repaints the stepper, shared with `_moveCurrent()`. A choice
+used to set `_currentIdx` alone: the ring stayed where the arrows had left it (and the next arrow,
+clearing it from the clicked change only, left two changes ringed), and an idempotent click
+repainted nothing, so the stepper kept showing the previous position.
 
 **Overflow menu:** *Accept all* and *Edit manually* always; *Reject all* joins them only on the
 narrow layout, where it leaves the actions row. Dismissed by outside `pointerdown` (registered on

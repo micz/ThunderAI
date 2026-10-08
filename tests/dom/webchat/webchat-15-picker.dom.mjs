@@ -512,6 +512,40 @@ k.test('click-current', S_TOOL, 'choosing a side makes that change the current o
     p.remove();
 });
 
+const rings = p => hunks(p).map(h => h.classList.contains('is-current'));
+
+k.test('click-ring', S_TOOL, 'the current change carries the ring, alone: a click moves it there from where the arrows left it, and the next arrow moves it on', async () => {
+    const p = makePicker('<p>Alpha one two.</p><p>Beta three.</p><p>Gamma.</p>', '<p>Alpha one too.</p><p>Beta three four.</p><p>Delta.</p>');
+    await ctx.click(pq(p, '.picker-step-next'));
+    assert.deepEqual(rings(p), [true, false, false]);
+    await ctx.click(side(p, 2, 'old'));
+    assert.deepEqual(rings(p), [false, false, true]);
+    await ctx.click(pq(p, '.picker-step-prev'));
+    assert.deepEqual(rings(p), [false, true, false]);
+    p.remove();
+});
+
+k.test('click-active-current', S_TOOL, 'a click on the side already in force changes nothing in the text but still makes its change current: the stepper and the ring follow', async () => {
+    const p = makePicker('<p>Alpha one two.</p><p>Beta three.</p><p>Gamma.</p>', '<p>Alpha one too.</p><p>Beta three four.</p><p>Delta.</p>');
+    await ctx.click(pq(p, '.picker-step-next'));
+    await ctx.click(pq(p, '.picker-step-next'));
+    await ctx.click(side(p, 0, 'new'));
+    assert.deepEqual(active(p), ['new', 'new', 'new']);
+    assert.equal(pq(p, '.picker-step-label').textContent, msg('apiwebchat_picker_step_short', ['1', '3']));
+    assert.equal(pq(p, '.picker-step-prev').disabled, true);
+    assert.deepEqual(rings(p), [true, false, false]);
+    p.remove();
+});
+
+k.test('enter-current', S_TOOL, 'Enter on a side is a choice too: its change becomes the current one', async () => {
+    const p = makePicker('<p>Alpha one two.</p><p>Beta three.</p><p>Gamma.</p>', '<p>Alpha one too.</p><p>Beta three four.</p><p>Delta.</p>');
+    side(p, 1, 'old').focus();
+    await key(side(p, 1, 'old'), 'Enter');
+    assert.equal(pq(p, '.picker-step-label').textContent, msg('apiwebchat_picker_step_short', ['2', '3']));
+    assert.deepEqual(rings(p), [false, true, false]);
+    p.remove();
+});
+
 // ---- granularity ------------------------------------------------------------------------------
 
 const G = makePicker(CASES[10].o, CASES[10].n);

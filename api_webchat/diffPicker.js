@@ -2492,7 +2492,7 @@ class DiffPicker extends HTMLElement {
 
         side.addEventListener('click', (e) => {
             e.preventDefault();
-            this._currentIdx = index;
+            this._setCurrent(index);
             this._chooseSide(index, which);
         });
         return side;
@@ -2711,14 +2711,24 @@ class DiffPicker extends HTMLElement {
         const next = pos + delta;
         if (next < 0 || next >= this._interactive.length) { return; }
 
+        this._setCurrent(this._interactive[next]);
+        this._focusActiveSide(this._currentIdx);
+        this._hunkEls[this._currentIdx].scrollIntoView({ block: 'nearest' });
+    }
+
+    // Make a change the current one: the ONE place that moves the .is-current
+    // ring and repaints the stepper, for the arrows and for a choice made on a
+    // side (click, Enter, Space) alike. A choice used to set _currentIdx alone:
+    // the ring stayed where the arrows had left it (and the next arrow, clearing
+    // it from the clicked change only, left two changes ringed), and choosing
+    // the side already in force repainted nothing, so the stepper still showed
+    // the previous position.
+    _setCurrent(index) {
         if (this._currentIdx >= 0) {
             this._hunkEls[this._currentIdx]?.classList.remove('is-current');
         }
-        this._currentIdx = this._interactive[next];
-        const span = this._hunkEls[this._currentIdx];
-        span.classList.add('is-current');
-        this._focusActiveSide(this._currentIdx);
-        span.scrollIntoView({ block: 'nearest' });
+        this._currentIdx = index;
+        this._hunkEls[index]?.classList.add('is-current');
         // The stepper label IS the position readout, so it has to follow every
         // move - including the j/k keyboard path, which comes through here too.
         this._updateStepper(false);
@@ -2763,7 +2773,7 @@ class DiffPicker extends HTMLElement {
                 if (idx === undefined) { return; }
                 e.preventDefault();   // Space would scroll the transcript
                 const index = Number(idx);
-                this._currentIdx = index;
+                this._setCurrent(index);
                 // Enter/Space on a side means "keep this one". On the side
                 // already in force that would be a no-op, so flip instead -
                 // otherwise the key would appear dead.
