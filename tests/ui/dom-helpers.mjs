@@ -16,6 +16,7 @@
  *   net.answer('https://api.openai.com/v1/models', () => json({ data: [...] }));
  *   net.answer(url => url.endsWith('/api/version'), () => json({ version: '0.5.0' }));
  *   net.fail('https://...');                       // a network error (TypeError), as Firefox
+ *   const req = net.hang('https://...');           // no answer until the request is aborted
  *   net.pending()                                  // the answers no call consumed yet
  *
  * A matcher is a string (the exact url), a RegExp or a predicate on (url, init).
@@ -36,7 +37,87 @@ export function scriptFetch(ctx) {
     return {
         answer(match, respond) { answers.push({ match, respond }); },
         fail(match) { answers.push({ match, respond: () => { throw new TypeError('NetworkError when attempting to fetch resource.'); } }); },
+        /**
+         * A server that never answers: the call stays pending until its signal aborts it, then
+         * rejects with the signal's reason, as fetch() does. Returns {called, aborted, reason}.
+         */
+        hang(match) {
+            const req = { called: false, aborted: false, reason: undefined };
+            answers.push({
+                match,
+                respond: (url, init) => new Promise((resolve, reject) => {
+                    req.called = true;
+                    init?.signal?.addEventListener('abort', () => {
+                        req.aborted = true;
+                        req.reason = init.signal.reason;
+                        reject(init.signal.reason);
+                    }, { once: true });
+                }),
+            });
+            return req;
+        },
         pending: () => answers.map(a => String(a.match)),
+    };
+}
+
+/**
+ * Fake time for the timers longer than `over` ms (default 1 s) that the page starts while it is
+ * installed: the connection test's ~10 s and "Update list"'s 20 s time-outs, the 30 s fade of the
+ * green status. settle() never waits for such timers (tests/helpers/core/dom-harness.mjs), so
+ * holding them changes nothing it tracks; the shorter ones still go to the harness's tracked
+ * setTimeout. The page's modules call the bare `setTimeout`, looked up on globalThis at call
+ * time, so the clock replaces the global pair (the harness's wrappers) and puts them back on
+ * uninstall(); timers still held then never fire.
+ *
+ *   const clock = holdLongTimers(ctx);
+ *   await ctx.click(link);                 // the page starts its 10 s timer: held
+ *   await clock.advance(9999);             // nothing due yet
+ *   await clock.advance(1);                // the due timers run, in due order then start order
+ *   clock.uninstall();
+ *
+ * advance() settles the page after each timer it runs, as the event loop would give the page a
+ * turn between two timer tasks.
+ */
+export function holdLongTimers(ctx, { over = 1000 } = {}) {
+    const realSet = globalThis.setTimeout;
+    const realClear = globalThis.clearTimeout;
+    class Held {}
+    const held = new Map();     // Held handle -> {due, seq, fn, args}
+    let now = 0;
+    let seq = 0;
+    globalThis.setTimeout = function (fn, ms = 0, ...args) {
+        if (!(Number(ms) > over)) return realSet.call(this, fn, ms, ...args);
+        const handle = new Held();
+        held.set(handle, { due: now + Number(ms), seq: seq++, fn: typeof fn === 'function' ? fn : () => {}, args });
+        return handle;
+    };
+    globalThis.clearTimeout = function (handle) {
+        if (handle instanceof Held) { held.delete(handle); return; }
+        return realClear.call(this, handle);
+    };
+    return {
+        /** The delays (ms from now) of the timers held and not yet run. */
+        pending: () => [...held.values()].map(t => t.due - now),
+        async advance(ms) {
+            const target = now + ms;
+            for (;;) {
+                const next = [...held.entries()]
+                    .filter(([, t]) => t.due <= target)
+                    .sort(([, a], [, b]) => a.due - b.due || a.seq - b.seq)[0];
+                if (!next) break;
+                const [handle, t] = next;
+                held.delete(handle);
+                now = t.due;
+                t.fn(...t.args);
+                await ctx.settle();
+            }
+            now = target;
+            await ctx.settle();
+        },
+        uninstall() {
+            globalThis.setTimeout = realSet;
+            globalThis.clearTimeout = realClear;
+        },
     };
 }
 

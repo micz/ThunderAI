@@ -7,7 +7,8 @@
 // reset bound to both tables), "Connection Settings Panel — Connection Test Status Strip" and
 // "Connection Settings Panel — 'Update list' Model Fetch Buttons" (a missing credential
 // disables, never clears), with the network scripted
-// in this file (tests/ui/dom-helpers.mjs, scriptFetch()).
+// in this file (tests/ui/dom-helpers.mjs, scriptFetch()) and the connection test's ~10 s
+// time-out run on held timers (holdLongTimers()).
 
 import {
     test,
@@ -22,6 +23,7 @@ import {
     until,
     shown,
     userSets,
+    holdLongTimers,
 } from '../../ui/dom-helpers.mjs';
 
 const STORED = {
@@ -243,6 +245,48 @@ k.test('test-denied', S_TEST, 'a denied host permission: no request, the permiss
     }
     assert.equal(ctx.fetchCalls.length, fetches, 'a request was sent');
     assert.equal(stripText(), msg('connTest_error', [msg('Optional_Permission_Denied_Model_Fetching')]));
+});
+
+k.test('test-http-detail', S_TEST, 'another HTTP error (model not found): red, with the provider\'s own message', async () => {
+    const message = 'The model `gpt-4o` does not exist or you do not have access to it.';
+    net.answer(OPENAI_MODELS, () => json({ error: { message, type: 'invalid_request_error', param: null, code: 'model_not_found' } },
+        { status: 404, statusText: 'Not Found' }));
+    await runTest();
+    assert.equal(strip().getAttribute('data-state'), 'error');
+    assert.equal(stripText(), msg('connTest_error', [message]));
+    assert.equal(stripLink().textContent, msg('connTest_link_retry'));
+});
+
+k.test('test-not-json', S_TEST, 'an answer that is not JSON: red, the network message', async () => {
+    net.answer(OPENAI_MODELS, () => new Response('<html><body>Proxy login</body></html>', { status: 200, headers: { 'Content-Type': 'text/html' } }));
+    await runTest();
+    assert.equal(strip().getAttribute('data-state'), 'error');
+    assert.equal(stripText(), msg('connTest_error', [msg('connTest_error_network')]));
+});
+
+k.test('test-timeout', S_TEST, 'no answer: loading with the link hidden until ~10 s, then the time-out message; nothing saved', async () => {
+    const req = net.hang(OPENAI_MODELS);
+    const clock = holdLongTimers(ctx);
+    try {
+        const w = await writesDuring(async () => {
+            await ctx.click(stripLink());
+            assert.equal(strip().getAttribute('data-state'), 'loading');
+            assert.equal(stripText(), msg('connTest_testing'));
+            assert.equal(stripLink().style.display, 'none');
+            await clock.advance(9999);
+            assert.equal(strip().getAttribute('data-state'), 'loading', 'ended before ~10 s');
+            await clock.advance(1);
+            await until(ctx, () => strip().getAttribute('data-state') !== 'loading', 'the time-out');
+        });
+        assert.equal(strip().getAttribute('data-state'), 'error');
+        assert.equal(stripText(), msg('connTest_error', [msg('connTest_error_timeout')]));
+        assert.equal(stripLink().textContent, msg('connTest_link_retry'));
+        assert.notEqual(stripLink().style.display, 'none');
+        assert.equal(req.aborted, true, 'the request outlived the test');
+        assert.deepEqual(w, []);
+    } finally {
+        clock.uninstall();
+    }
 });
 
 // ---- "Update list" -----------------------------------------------------------------------

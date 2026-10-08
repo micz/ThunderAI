@@ -11,8 +11,9 @@
 // provider, ok / error / idle reset, saves nothing; the network scripted with scriptFetch()),
 // "Pick your tools" (the four API features only, persisted as booleans), "Persistence" (the
 // same keys as the options page; picking a provider writes no feature flag; navigating writes
-// nothing). The connection test also covers the rejected key, the refused permission and, for
-// Ollama, the capability re-probe after a success.
+// nothing). The connection test also covers the rejected key, the refused permission, another
+// HTTP error with its detail, an answer that is not JSON, the ~10 s time-out (on held timers,
+// holdLongTimers()) and, for Ollama, the capability re-probe after a success.
 // Spec 04 "ChatGPT Web" (its rows injected once, with unprefixed ids, in the wizard).
 //
 // The tests run in order on one page: the user picks Gemini, walks to "Pick your tools", comes
@@ -32,6 +33,7 @@ import {
     until,
     userSets,
     writtenSince,
+    holdLongTimers,
 } from '../../ui/dom-helpers.mjs';
 
 const permissions = {};
@@ -250,6 +252,41 @@ k.test('test-denied', S_TEST, 'a refused host permission: no request sent, the p
     }
     assert.equal(ctx.fetchCalls.length, fetches, 'a request was sent');
     assert.equal($('#mzta_conn_test_text').textContent, msg('connTest_error', [msg('Optional_Permission_Denied_Model_Fetching')]));
+});
+
+k.test('test-http-detail', S_TEST, 'another HTTP error: red, with the provider\'s own message as the detail', async () => {
+    net.answer(GEMINI_MODELS, () => json({ error: { code: 404, message: 'Requested entity was not found.', status: 'NOT_FOUND' } },
+        { status: 404, statusText: 'Not Found' }));
+    await runTest();
+    assert.equal(strip().getAttribute('data-state'), 'error');
+    assert.equal($('#mzta_conn_test_text').textContent, msg('connTest_error', ['Requested entity was not found.']));
+});
+
+k.test('test-not-json', S_TEST, 'an answer that is not JSON: red, the network message', async () => {
+    net.answer(GEMINI_MODELS, () => new Response('<!DOCTYPE html><title>Sign in</title>', { status: 200, headers: { 'Content-Type': 'text/html' } }));
+    await runTest();
+    assert.equal(strip().getAttribute('data-state'), 'error');
+    assert.equal($('#mzta_conn_test_text').textContent, msg('connTest_error', [msg('connTest_error_network')]));
+});
+
+k.test('test-timeout', S_TEST, 'no answer: loading, the link hidden, until ~10 s, then the time-out message and "Retry"', async () => {
+    const req = net.hang(GEMINI_MODELS);
+    const clock = holdLongTimers(ctx);
+    try {
+        await ctx.click($('#mzta_conn_test_link'));
+        assert.equal(strip().getAttribute('data-state'), 'loading');
+        assert.equal($('#mzta_conn_test_text').textContent, msg('connTest_testing'));
+        assert.equal($('#mzta_conn_test_link').style.display, 'none');
+        await clock.advance(9999);
+        assert.equal(strip().getAttribute('data-state'), 'loading', 'ended before ~10 s');
+        await clock.advance(1);
+        await until(ctx, () => strip().getAttribute('data-state') !== 'loading', 'the time-out');
+        assert.equal($('#mzta_conn_test_text').textContent, msg('connTest_error', [msg('connTest_error_timeout')]));
+        assert.equal($('#mzta_conn_test_link').textContent, msg('connTest_link_retry'));
+        assert.equal(req.aborted, true, 'the request outlived the test');
+    } finally {
+        clock.uninstall();
+    }
 });
 
 // ---- Pick your tools ---------------------------------------------------------------------
