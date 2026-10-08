@@ -8,7 +8,8 @@
 //  - the entry is removed when the job settles, in every path, so a retry in the same session
 //    works and nothing stays "in progress";
 //  - invalidate(): the entry object is the job's token, flagged; revive() clears the flag;
-//  - logs (do_debug): [taJobs] start | join | invalidate | revive | end ... <kind>:<id>.
+//  - logs (do_debug): [taJobs] start | join | invalidate | revive <kind>:<id>, and
+//    [taJobs] end <kind>:<id> <status>.
 // How the generators use it (joining, broadcasting) is tested in 26-dedup and 25-inline-display.
 
 import assert from 'node:assert/strict';
@@ -151,7 +152,7 @@ k.test('revive', 'revive() clears the flag of an invalidated entry, and does not
     await entry.promise;
 });
 
-k.test('logs', 'the do_debug log lines name the action and <kind>:<id>', async () => {
+k.test('logs', 'the do_debug log lines: <action> <kind>:<id>, and end <kind>:<id> <status>', async () => {
     ctx.con.clear();
     const d = deferred();
     const entry = taJobRegistry.start('spam', 'log@x', () => d.promise);
@@ -162,11 +163,10 @@ k.test('logs', 'the do_debug log lines name the action and <kind>:<id>', async (
     await entry.promise;
     await flush(2);
     const lines = ctx.con.all().filter(l => l.startsWith('[taJobs]'));
-    for (const action of ['start', 'join', 'invalidate', 'revive', 'end']) {
-        assert.ok(lines.some(l => l.startsWith('[taJobs] ' + action + ' ') && l.includes('spam:log@x')),
-            action + ' logged with spam:log@x: ' + JSON.stringify(lines));
+    for (const action of ['start', 'join', 'invalidate', 'revive']) {
+        assert.ok(lines.includes('[taJobs] ' + action + ' spam:log@x'), action + ': ' + JSON.stringify(lines));
     }
-    assert.ok(lines.some(l => l.startsWith('[taJobs] end') && /\bok\b/.test(l)), 'the end line carries the status');
+    assert.ok(lines.includes('[taJobs] end spam:log@x ok'), 'end, with the status after the key: ' + JSON.stringify(lines));
 });
 
 k.coverage();

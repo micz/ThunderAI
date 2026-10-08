@@ -250,8 +250,8 @@ Input for the spec:
    spam filter on, summaries and translations never. The policy is a separate job.)*
 7. *(documented as it is: spec 04 "Configuration Validation", the spam filter routing: a check first
    removes the previous report, so a configuration error leaves the message with none.)*
-8. **The `[taJobs]` log format**: spec 01 writes `end <status> <kind>:<id>`, the code logs
-   `end <kind>:<id> <status>`; `01-job-registry` asserts only the action and `<kind>:<id>`.
+8. *(resolved: spec 01 "In-flight jobs" now writes the `[taJobs]` lines as the code logs them, and
+   `01-job-registry` `logs` asserts them exactly.)*
 9. **A job that returns no outcome** resolves to `skipped`: spec 01 lists the four statuses but not
    which one that case takes (`01-job-registry` asserts only "one of the four").
 10. **The context-menu inline summary sends `showSummaryGenerating` twice** to its tab: the #901

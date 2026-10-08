@@ -664,7 +664,7 @@ never runs twice on a message at the same time.
   the dialog: `data.assigned = false`). The dialog path joining a running job shows the job's
   tags in the confirmation dialog without an AI call; if that job produced no tags it runs its
   own. `_assign_tags()` stays serialized through `_enqueueTagAssign()`.
-- **Logs** (`do_debug`): `[taJobs] start|join|invalidate|revive|end <status> <kind>:<id>`.
+- **Logs** (`do_debug`): `[taJobs] start|join|invalidate|revive <kind>:<id>`, and `[taJobs] end <kind>:<id> <status>` when the job settles (plus `[taJobs] <kind>:<id> threw: <message>`, an error, when a job body throws past its own catches).
 
 ### Context-menu actions: one source for messages and UI tab
 
