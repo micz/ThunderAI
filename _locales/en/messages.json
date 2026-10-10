@@ -529,6 +529,10 @@
     "message": "ChatGPT Web Interface",
     "description": ""
   },
+  "prefs_Connection_type_Claude_Web": {
+    "message": "Claude Web Interface",
+    "description": ""
+  },
   "prefs_Connection_type_ChatGPT_API": {
     "message": "ChatGPT OpenAI API",
     "description": ""
@@ -696,6 +700,26 @@
   "OpenChatGPTTab_Info2": {
     "message": "Opening ChatGPT Web from here will apply any configured settings for the model, project, and Custom GPT.",
     "description": ""
+  },
+  "claude_web_connection_info": {
+    "message": "Claude Web",
+    "description": "Label for the Claude Web connection"
+  },
+  "claude_web_connection_info_text": {
+    "message": "Uses your signed-in claude.ai session. ThunderAI inserts the prompt and lets you review and apply Claude’s reply. No API key is used or stored.",
+    "description": "Explains how the Claude Web connection works"
+  },
+  "claude_web_open_button": {
+    "message": "Open Claude / sign in",
+    "description": "Button that requests claude.ai access and opens Claude Web"
+  },
+  "claude_web_wait_time": {
+    "message": "Wait time after opening Claude",
+    "description": "Claude Web page load wait preference"
+  },
+  "claude_web_wait_time_info": {
+    "message": "Time in milliseconds to wait after opening claude.ai before using the page. Default is 1000ms.",
+    "description": "Explains the Claude Web page load wait preference"
   },
   "placeholder_mail_text_body": {
     "message": "Mail body",
@@ -2362,6 +2386,10 @@
     "message": "To use this feature, you need an API integration rather than the ChatGPT Web Integration. You can define a specific API in the feature settings page by first checking the checkbox above and then clicking the button on the left.",
     "description": ""
   },
+  "warn_web_API_needed": {
+    "message": "This feature needs an API connection. Web connections cannot run automatic features; configure a specific API in the feature settings page.",
+    "description": "Explains that ChatGPT Web and Claude Web cannot run API-only automatic features"
+  },
   "specific_integration_mandatory_badge": {
     "message": "Required",
     "description": "Badge shown next to the 'Use specific Model and API' toggle when that toggle is forced on and cannot be turned off."
@@ -2369,6 +2397,10 @@
   "specific_integration_mandatory_chatgpt_web": {
     "message": "This option is required and cannot be turned off: the ChatGPT Web Integration selected as the global connection cannot run this feature. Choose a specific API below.",
     "description": "Explains why the 'Use specific Model and API' toggle is locked on when the global connection is ChatGPT Web."
+  },
+  "specific_integration_mandatory_web": {
+    "message": "This option is required and cannot be turned off: the selected web connection cannot run this feature. Choose a specific API below.",
+    "description": "Explains why a specific API is required when the global connection is a web provider"
   },
   "specific_integration_mandatory_no_connection": {
     "message": "This option is required and cannot be turned off: no global AI connection has been selected yet. Choose a specific API below, or configure a global connection in the ThunderAI settings.",
@@ -3068,6 +3100,10 @@
     "message": "Almost nothing to set up here.",
     "description": "Setup wizard step 1 (Connect) sub-line for the ChatGPT Web interface"
   },
+  "wizard_step_connect_sub_claude_web": {
+    "message": "Sign in to Claude in the opened tab. ThunderAI will use that session to insert prompts and let you apply replies.",
+    "description": "Setup wizard step 1 sub-line for Claude Web"
+  },
   "wizard_step_tools_title": {
     "message": "Pick your tools",
     "description": "Setup wizard step 2 heading"
@@ -3113,6 +3149,10 @@
   "wizard_provider_tag_chatgpt_web": {
     "message": "No API key — sign in on first use",
     "description": "Setup wizard provider card tag line for ChatGPT Web"
+  },
+  "wizard_provider_tag_claude_web": {
+    "message": "Sign in to Claude — no API key needed",
+    "description": "Setup wizard provider card tag line for Claude Web"
   },
   "wizard_provider_tag_chatgpt_api": {
     "message": "Needs API key + model",
@@ -3349,5 +3389,22 @@
   "editor_placeholder_unterminated": {
     "message": "Unterminated placeholder: missing the closing %}",
     "description": "Tooltip on a highlighted placeholder token in the prompt editor when the token opens with {% but never closes with %}"
-  }
+  },
+  "claude_web_waiting_login": { "message": "Sign in to Claude, then click Send prompt.", "description": "Claude Web prompt bar status while the user is not signed in" },
+  "claude_web_send_prompt": { "message": "Send prompt", "description": "Button to send a prompt to Claude Web" },
+  "claude_web_waiting_reply": { "message": "Waiting for Claude’s response…", "description": "Claude Web prompt bar status while waiting for a response" },
+  "claude_web_ready": { "message": "Response available. Review it before applying it to your email.", "description": "Claude Web prompt bar status when a response is ready" },
+  "claude_web_timeout": { "message": "Claude did not finish in time. Select its finished answer on the page, then click Use the selected answer.", "description": "Claude Web response timeout; allows the user to select a completed answer without resending the prompt" },
+  "claude_web_send_failed": { "message": "The prompt could not be sent. Check the Claude page, then retry.", "description": "Claude Web prompt send failure" },
+  "claude_web_no_response": { "message": "No Claude response was found.", "description": "Claude Web response detection failure" },
+  "claude_web_start_failed": { "message": "Could not open Claude Web. Please try again.", "description": "Claude Web page could not be opened" },
+  "claude_web_response_changed": { "message": "The response changed. Review it before applying it.", "description": "Claude Web response changed after review started" },
+  "claude_web_select_response": { "message": "Select Claude’s response on the page, then click Use the selected answer.", "description": "Instruction for selecting a Claude response manually" },
+  "claude_web_review_response": { "message": "Review response", "description": "Button to review a Claude Web response" },
+  "claude_web_confirm_response": { "message": "Apply to email", "description": "Button to apply the reviewed response to the email" },
+  "claude_web_cancel": { "message": "Cancel", "description": "Cancel Claude Web response review" },
+  "claude_web_sending": { "message": "Sending prompt…", "description": "Claude Web prompt submission status" },
+  "claude_web_send_uncertain": { "message": "The prompt is in Claude’s composer. Click Send on the page if needed; ThunderAI will not send it again automatically.", "description": "Claude Web status when prompt submission is uncertain" },
+  "claude_web_review_hint": { "message": "Check this response before applying it. You can edit it here.", "description": "Instruction for reviewing a Claude Web response" },
+  "claude_web_permission_denied": { "message": "Claude Web needs permission to access claude.ai. Grant it in Connection Settings.", "description": "Claude Web access permission was not granted" }
 }

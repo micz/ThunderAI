@@ -36,7 +36,8 @@ import {
   sanitizeChatGPTWebCustomData,
   prepareOriginURL,
   setTomSelectBorder,
-  hasNoConnectionSelected
+  hasNoConnectionSelected,
+  isWebConnection
 } from '../../js/mzta-utils.js';
 import { openAICompConfigs } from '../../js/api/openai_comp_configs.js';
 import {
@@ -78,6 +79,7 @@ export function isClosedCatalogueSelect(elementId = '') {
 // provider can never appear in one and not the other.
 const CONNECTION_TYPE_OPTIONS = [
   { value: 'chatgpt_web',        msgKey: 'prefs_Connection_type_ChatGPT_Web' },
+  { value: 'claude_web',          msgKey: 'prefs_Connection_type_Claude_Web' },
   { value: 'chatgpt_api',        msgKey: 'prefs_Connection_type_ChatGPT_API' },
   { value: 'google_gemini_api',  msgKey: 'prefs_Connection_type_Google_Gemini_API' },
   { value: 'anthropic_api',      msgKey: 'prefs_Connection_type_Anthropic_API' },
@@ -217,6 +219,21 @@ export async function injectConnectionUI({
     </td>
   </tr>`;
 
+  const claude_web_rows = `
+  <tr class="conntype_claude_web${tr_class ? ` ${tr_class}` : ''}">
+    <td><label><span class="opt_title">__MSG_claude_web_connection_info__</span></label></td>
+    <td>__MSG_claude_web_connection_info_text__</td>
+  </tr>
+  <tr class="conntype_claude_web${tr_class ? ` ${tr_class}` : ''}">
+    <td colspan="2" style="padding:0px 2em;text-align:center;">
+      <button id="btnClaudeWeb_Tab">__MSG_claude_web_open_button__</button>
+    </td>
+  </tr>
+  <tr class="conntype_claude_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td><label><span class="opt_title">__MSG_claude_web_wait_time__</span></label></td>
+    <td><input type="number" min="0" step="1" id="claude_web_load_wait_time" name="claude_web_load_wait_time" class="option-input check-number" /><br>__MSG_claude_web_wait_time_info__</td>
+  </tr>`;
+
   let tpl = `
   <tr id="${selectId}_tr"${tr_class ? ` class="${tr_class}"` : ''}>
     <td>
@@ -230,7 +247,7 @@ export async function injectConnectionUI({
         ${customButtonLabel ? `<button id="${modelId_prefix}customButton" style="margin-left: 10px;">${customButtonLabel}</button>` : ''}
       </label>
     </td>
-  </tr>${no_chatgpt_web ? '' : chatgpt_web_rows}
+  </tr>${no_chatgpt_web ? '' : chatgpt_web_rows + claude_web_rows}
   <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_ChatGPT_API_Key__</span>
@@ -826,8 +843,20 @@ export async function injectConnectionUI({
       icon_img_anthropic_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
   });
 
-  // Null when the ChatGPT Web rows were not injected (see chatgpt_web_rows).
+  // Null when the global web-provider rows were not injected.
   const btnChatGPTWeb_Tab = document.getElementById('btnChatGPTWeb_Tab');
+  const btnClaudeWeb_Tab = document.getElementById('btnClaudeWeb_Tab');
+  const claudeWebWaitInput = document.getElementById('claude_web_load_wait_time');
+  claudeWebWaitInput?.addEventListener('change', () => {
+    if (claudeWebWaitInput.value !== '' && Number(claudeWebWaitInput.value) < 0) {
+      claudeWebWaitInput.value = '0';
+    }
+  });
+  btnClaudeWeb_Tab?.addEventListener('click', async () => {
+    const granted = await messenger.permissions.request({ origins: ['https://claude.ai/*'] });
+    if (!granted) return;
+    await browser.tabs.create({ url: 'https://claude.ai/new' });
+  });
   btnChatGPTWeb_Tab?.addEventListener('click', async () => {
     let prefs_mod = await browser.storage.sync.get({
       chatgpt_web_model: prefs_default.chatgpt_web_model,
@@ -1377,7 +1406,7 @@ export async function initializeSpecificIntegrationUI({
   // read as enabled while still having nothing to run against, and would silently
   // disappear from the menus on the next reload.
   let globalPrefs = await browser.storage.sync.get({ connection_type: prefs_default.connection_type });
-  const mandatory_integration = (globalPrefs.connection_type === 'chatgpt_web')
+  const mandatory_integration = isWebConnection(globalPrefs.connection_type)
       || hasNoConnectionSelected(globalPrefs.connection_type);
   if (mandatory_integration) {
       use_specific_integration_el.checked = true;
@@ -1396,8 +1425,8 @@ export async function initializeSpecificIntegrationUI({
       // other switch while silently ignoring clicks. The badge and the note are
       // inert markup on every feature page; the note text is picked here because
       // it depends on which of the two unusable global connections we are in.
-      const _lockedMsgKey = (globalPrefs.connection_type === 'chatgpt_web')
-          ? 'specific_integration_mandatory_chatgpt_web'
+      const _lockedMsgKey = isWebConnection(globalPrefs.connection_type)
+          ? 'specific_integration_mandatory_web'
           : 'specific_integration_mandatory_no_connection';
       const _lockedText = browser.i18n.getMessage(_lockedMsgKey);
       use_specific_integration_el.title = _lockedText;
@@ -1504,6 +1533,7 @@ export function updateWarnings(modelId_prefix = '') {
 
 export function changeConnTypeRowColor(conntype_row, conntype_select) {
   conntype_row.classList.toggle("conntype_chatgpt_web", (conntype_select.value === "chatgpt_web"));
+  conntype_row.classList.toggle("conntype_claude_web", (conntype_select.value === "claude_web"));
   conntype_row.classList.toggle("conntype_chatgpt_api", (conntype_select.value === "chatgpt_api"));
   conntype_row.classList.toggle("conntype_ollama_api", (conntype_select.value === "ollama_api"));
   conntype_row.classList.toggle("conntype_openai_comp_api", (conntype_select.value === "openai_comp_api"));
@@ -1518,6 +1548,7 @@ export function showConnectionOptions(conntype_select, modelId_prefix = '') {
   // <table>, where '' falls back to the default <tr> = table-row. Hidden rows
   // still use 'none'.
   let chatgpt_web_display = '';
+  let claude_web_display = 'none';
   let chatgpt_api_display = 'none';
   let ollama_api_display = 'none';
   let openai_comp_api_display = 'none';
@@ -1530,6 +1561,7 @@ export function showConnectionOptions(conntype_select, modelId_prefix = '') {
   }else{
     chatgpt_web_display = 'none';
   }
+  if (conntype_select.value === "claude_web") claude_web_display = '';
   if (conntype_select.value === "chatgpt_api") {
     chatgpt_api_display = '';
   }else{
@@ -1557,6 +1589,9 @@ export function showConnectionOptions(conntype_select, modelId_prefix = '') {
   }
   parent.parentElement.querySelectorAll(".conntype_chatgpt_web").forEach(element => {
     element.style.display = chatgpt_web_display;
+  });
+  parent.parentElement.querySelectorAll(".conntype_claude_web").forEach(element => {
+    element.style.display = claude_web_display;
   });
   parent.parentElement.querySelectorAll(".conntype_chatgpt_api").forEach(element => {
     element.style.display = chatgpt_api_display;
@@ -1639,7 +1674,7 @@ function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
     conntype_select.appendChild(placeholderEl);
   }
 
-  for (const opt of options.filter(o => !(no_chatgpt_web && o.value === 'chatgpt_web'))) {
+  for (const opt of options.filter(o => !(no_chatgpt_web && isWebConnection(o.value)))) {
     const optionEl = document.createElement('option');
     optionEl.value = opt.value;
     optionEl.textContent = browser.i18n.getMessage(opt.msgKey) || opt.msgKey;
@@ -1649,7 +1684,7 @@ function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
   // Validate against the options actually rendered, not the full catalogue: on the
   // per-prompt selects chatgpt_web has no <option>, so accepting it here would leave
   // the control showing a value it cannot represent.
-  if (options.some(o => o.value === prevValue && !(no_chatgpt_web && o.value === 'chatgpt_web'))) {
+  if (options.some(o => o.value === prevValue && !(no_chatgpt_web && isWebConnection(o.value)))) {
     conntype_select.value = prevValue;
   } else {
     conntype_select.value = "";

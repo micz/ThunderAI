@@ -50,16 +50,16 @@ string**: a new user is not given a provider they never chose. Instead the three
   `getActiveSpecialPromptsIDs()` receives an `effective_conn` map (one resolved connection type per
   feature prefix) and emits a prompt only when `isApiUsableConnection()` accepts that feature's
   connection. An empty type must never read as "some API is configured" (a check comparing only
-  against `chatgpt_web` would do exactly that) and would otherwise surface features that cannot run.
+  against a web connection would do exactly that) and would otherwise surface features that cannot run.
 - **The connection select shows a placeholder.** `populateConnectionTypeOptions()`
   (`pages/_lib/connection-ui.js`) prepends a **disabled** `<option value="">`
   (`prefs_Connection_type_none`) for the *global* select only — the per-prompt selects
-  (`no_chatgpt_web: true`) already use an empty value to mean "inherit the global connection".
+  (`no_chatgpt_web: true`) already use an empty value to mean "inherit the global connection" and omit both web providers.
   The placeholder is required because the select otherwise has no empty option, so an empty pref
   would display the first provider (ChatGPT Web) and saving would silently persist it.
   Accordingly `restoreOptions()` in `options/mzta-options.js` no longer falls back to
   `'chatgpt_web'`, and its `selectedIndex = -1` branch excludes `connection_type`.
-- **Custom prompts require a specific integration**, exactly as with `chatgpt_web`
+- **Custom prompts require a specific integration**, exactly as with a web provider
   (`connection-ui.js`, the `use_specific_integration` force-check).
 - **The API-driven features are shown as unavailable**, but for a *different reason* than with
   `chatgpt_web` — see "Feature Rows — Disabled vs. API-Needed" below. `disable_GetCalendarEvent()`
@@ -141,7 +141,7 @@ reintroduce a per-page copy.
 
 **Turning the box on persists the shown connection.** Each page's `restoreOptions()` pre-fills
 `{prefix}_connection_type` in the DOM with the global connection when that one is API-usable
-(`isApiUsableConnection(getting['connection_type'])`, else `''` — `chatgpt_web` has no `<option>`
+  (`isApiUsableConnection(getting['connection_type'])`, else `''` — web providers have no `<option>`
 in a per-prompt select). That is a *display* default only: a user who accepts it without opening
 the menu fires no `change`, so nothing would reach storage. `_persistSelectedConnection()` writes
 it — from the checkbox handler's on-branch and from the initial-state apply (which also covers the
@@ -176,6 +176,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `chatgpt_web_project` | `''` | ChatGPT Web project |
 | `chatgpt_web_custom_gpt` | `''` | Custom GPT URL |
 | `chatgpt_web_load_wait_time` | `1000` | Wait time (ms) for ChatGPT page |
+| `claude_web_load_wait_time` | `1000` | Wait time (ms) before using a Claude Web page; nonnegative |
 | `dynamic_menu_force_enter` | `false` | Force Enter to submit in popup |
 | `dynamic_menu_order_alphabet` | `true` | Internal migration flag only; no UI. **Not declared in `prefs_default`** — unlike every other preference, its default (`true`) is hardcoded in the `browser.storage.sync.get()` call in `js/mzta-prompts.js`, not in `options/mzta-options-default.js`. Set to `false` by `migrateMenuOrderAlphabetic()` on first boot after upgrade to bootstrap position-based ordering. See `claude-spec/02-prompts.md` for details. |
 | `placeholders_use_default_value` | `false` | Use placeholder defaults when empty |

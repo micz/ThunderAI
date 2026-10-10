@@ -8,6 +8,7 @@ The active AI provider is controlled by the `connection_type` preference. Possib
 |------------------------|----------|
 | `''` (empty) | **No connection selected yet** — the default on a fresh install |
 | `chatgpt_web` | ChatGPT Web (no API key, opens browser window) |
+| `claude_web` | Claude Web (no API key, uses a signed-in `claude.ai` tab) |
 | `chatgpt_api` | OpenAI API (ChatGPT via API key) |
 | `ollama_api` | Ollama (self-hosted LLM) |
 | `openai_comp_api` | OpenAI-compatible API |
@@ -16,12 +17,38 @@ The active AI provider is controlled by the `connection_type` preference. Possib
 
 The global default is the **empty string**: no provider is chosen for a new user, who is instead
 guided to the Setup Wizard. Test it with `hasNoConnectionSelected()` (`js/mzta-utils.js`) rather than
-comparing to `''` inline — and never assume "not `chatgpt_web`" implies "an API is configured". See
+comparing to `''` inline — and never assume "not a web connection" implies "an API is configured". See
 [05-options.md](05-options.md#global-integration-settings) for the full behaviour of the empty state.
 
 Each special prompt (`add_tags`, `spamfilter`, etc.) can independently override this via its own
 `{prefix}_connection_type` pref (whose own default is `chatgpt_api`, applied only when that prompt's
 `use_specific_integration` is on).
+
+### Claude Web
+`claude_web` uses the user's signed-in Claude session in a `claude.ai` popup window. The extension requests optional host access when the user clicks **Open Claude / sign in**. It does not read or store OAuth credentials, API keys, cookies, or session tokens. A dynamically registered page adapter receives the prompt only in the window created for that request, inserts it into Claude's composer, and lets the user review/edit the response before applying it to the email. Submission is recorded before clicking Send; reloading cannot send the same prompt again. Prompt state is kept in memory and removed on tab closure.
+
+The first version uses Claude's current page model and plain-text response review; it has no model, Project, Custom GPT, or diff-picker settings. The `claude_web_load_wait_time` preference controls the delay once the composer is available (default 1000 ms, bounded to 0–15000 ms at execution). API-only automatic features still require a separate API connection. Response detection uses assistant markup, streaming hints, and text stability; if Claude changes its markup, the user can send using Claude's own button and select the finished answer manually. The editable review is always required before inserting text into the email.
+
+**Extension API audit for the Claude Web adapter.** The connection uses the existing WebExtension APIs only; it adds no third-party runtime dependencies.
+
+| API | Use and result | Required permission |
+|-----|----------------|---------------------|
+| `runtime.onMessage.addListener` | Receives adapter requests; returns `false` or a promise for a handled message. | None |
+| `contentScripts.register` | Registers the page adapter after host access is granted; returns a `RegisteredContentScript`. | `https://claude.ai/*` |
+| `runtime.sendMessage` | Returns a promise for the background reply. | None |
+| `tabs.onRemoved` | Cleans up in-memory state for the removed `tabId`. | None |
+| `tabs.query({windowId})` | Returns an array; the first tab belongs to the created popup. | Existing `tabs` permission for metadata |
+| `tabs.get(tabId)` | Returns a `Tab`, read via `tab.type`. | Existing `tabs` permission for metadata |
+| `windows.create(...)` | Returns a `Window`, read via `win.id`. | None |
+| `windows.remove(windowId)` | Closes the popup; resolves without a value. | None |
+| `permissions.contains({origins})` | Returns a boolean for optional host access. | None |
+| `permissions.request({origins})` | Requests access from the sign-in button; returns a boolean. | Declared optional `https://claude.ai/*` |
+| `i18n.getMessage` | Returns localized text as a string. | None |
+| `storage.sync.get(defaults)` | Returns an object of saved/default values. | Existing `storage` permission |
+
+API references: [runtime](https://webextension-api.thunderbird.net/en/mv2/runtime.html), [contentScripts](https://webextension-api.thunderbird.net/en/mv2/contentScripts.html), [tabs](https://webextension-api.thunderbird.net/en/mv2/tabs.html), [windows](https://webextension-api.thunderbird.net/en/mv2/windows.html), [permissions](https://webextension-api.thunderbird.net/en/mv2/permissions.html), [i18n](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/i18n/getMessage), [storage](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/storage/StorageArea/get).
+
+**Verification:** run `node --experimental-vm-modules --test tests/claude-web-connection.test.mjs`. Run `node tests/serve-claude-web.cjs`, then open `http://127.0.0.1:8123/tests/claude-web-fixture.html` for the native browser DOM checks. Live testing with a signed-in Claude account is pending.
 
 ## Provider Configuration
 

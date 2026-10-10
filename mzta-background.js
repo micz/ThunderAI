@@ -17,6 +17,7 @@
  */
 
 import { mzta_script } from './js/mzta-chatgpt.js';
+import { openClaudeWeb, getClaudeWebCall } from './js/mzta-claude-web-connection.js';
 import {
     prefs_default,
     getDynamicSettingsDefaults,
@@ -58,6 +59,7 @@ import {
     messageFolderHasSpecialUse,
     isMessageInAutoSkippedFolder,
     isApiUsableConnection,
+    isWebConnection,
     hasSpecificIntegration,
     sendTabMessageSafe,
      } from './js/mzta-utils.js';
@@ -360,6 +362,24 @@ async function _assign_tags(_data, create_new_tags = true, exclusions_exact_matc
 }
 
 messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message?.command === 'claude_web_close') {
+        const call = getClaudeWebCall(sender);
+        return call ? browser.windows.remove(call.windowId).then(() => true) : false;
+    }
+    if (message?.command === 'claude_web_apply') {
+        const call = getClaudeWebCall(sender);
+        if (!call?.submitted || !['1', '2'].includes(call.payload.action) || typeof message.text !== 'string' || !message.text.trim()) return false;
+        const p = call.payload;
+        message = {
+            command: p.action === '1' && p.mailMessageId !== -1 ? 'chatgpt_replyMessage' : 'chatgpt_replaceSelectedText',
+            // Claude Web returns plain text. Escape it before the existing HTML
+            // compose path, so model output can never inject active markup.
+            text: convertNewlinesToParagraphs(message.text),
+            tabId: p.tabId,
+            mailMessageId: p.mailMessageId,
+            replyType: message.replyType === 'reply_sender' ? 'reply_sender' : 'reply_all'
+        };
+    }
     // Check what type of message we have received and invoke the appropriate
     // handler function.
     if (message && message.hasOwnProperty("command")){
@@ -1457,7 +1477,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
     taLog.log("Prompt length: " + promptText.length);
     let _max_prompt_length = prefs.max_prompt_length;
-    if(prefs.connection_type == 'chatgpt_web'){
+    if(isWebConnection(prefs.connection_type)){
         _max_prompt_length = prefs_default.max_prompt_length;
     }
     if((_max_prompt_length > 0) && (promptText.length > _max_prompt_length)){
@@ -1470,6 +1490,34 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
 
     switch(prefs.connection_type){
+        case 'claude_web':
+        {
+            if (!await browser.permissions.contains({ origins: ['https://claude.ai/*'] })) {
+                const tab = await browser.tabs.get(curr_tabId);
+                sendTabMessageSafe(curr_tabId, { command: 'sendAlert', curr_tab_type: tab.type, message: browser.i18n.getMessage('claude_web_permission_denied') });
+                return;
+            }
+            const winOptions = {};
+            applyWindowPositionAndSize(winOptions, prefs);
+            try {
+                await openClaudeWeb(winOptions, {
+                    prompt: promptText,
+                    action: String(action),
+                    tabId: curr_tabId,
+                    mailMessageId: mailMessage?.id ?? -1,
+                    promptName: i18nConditionalGet(prompt_name),
+                    doCustomText: String(do_custom_text) === '1',
+                    promptInfo: { custom_text_array: prompt_info.custom_text_array },
+                    replyType: prefs.reply_type,
+                    loadWaitTime: prefs.claude_web_load_wait_time
+                });
+            } catch (error) {
+                taLog.error('Claude Web could not be opened:', error);
+                const tab = await browser.tabs.get(curr_tabId);
+                sendTabMessageSafe(curr_tabId, { command: 'sendAlert', curr_tab_type: tab.type, message: browser.i18n.getMessage('claude_web_start_failed') });
+            }
+        }
+        break;
         case 'chatgpt_web':
         {
             // We are using the ChatGPT web interface

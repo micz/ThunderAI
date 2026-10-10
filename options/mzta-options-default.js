@@ -114,13 +114,14 @@ export const prefs_default = {
     reply_type: 'reply_all',
     // Empty means "no AI connection selected yet": a new user is guided to the setup wizard
     // instead of having a provider forced on them.
-    // Values: 'chatgpt_web', 'chatgpt_api', 'ollama_api', 'openai_comp_api', 'google_gemini_api', 'anthropic_api'
+    // Values: 'chatgpt_web', 'claude_web', 'chatgpt_api', 'ollama_api', 'openai_comp_api', 'google_gemini_api', 'anthropic_api'
     connection_type: '',
     chatgpt_web_model: '',
     chatgpt_web_tempchat: false,
     chatgpt_web_project: '',
     chatgpt_web_custom_gpt: '',
     chatgpt_web_load_wait_time: 1000,
+    claude_web_load_wait_time: 1000,
     special_command_timeout: 120000,   // ms before a hung special command (API worker) is aborted
     dynamic_menu_force_enter: false,
     placeholders_use_default_value: false,

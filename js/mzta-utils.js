@@ -1002,7 +1002,11 @@ export function hasSpecificIntegration(use, conntype){
 // Always feed it an *effective* connection type (getConnectionType with a prefix),
 // never the global one, or per-feature integrations get ignored.
 export function isApiUsableConnection(connection_type){
-  return !hasNoConnectionSelected(connection_type) && (connection_type !== 'chatgpt_web');
+  return !hasNoConnectionSelected(connection_type) && !isWebConnection(connection_type);
+}
+
+export function isWebConnection(connection_type){
+  return connection_type === 'chatgpt_web' || connection_type === 'claude_web';
 }
 
 export function extractJsonObject(inputString) {

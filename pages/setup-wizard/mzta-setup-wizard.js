@@ -36,6 +36,7 @@ let taLog = console;
 // the UI. tag keys are wizard-specific (see _locales/en/messages.json).
 const PROVIDERS = [
   { id: 'chatgpt_web',        nameKey: 'prefs_Connection_type_ChatGPT_Web',        tagKey: 'wizard_provider_tag_chatgpt_web' },
+  { id: 'claude_web',         nameKey: 'prefs_Connection_type_Claude_Web',         tagKey: 'wizard_provider_tag_claude_web' },
   { id: 'chatgpt_api',        nameKey: 'prefs_Connection_type_ChatGPT_API',        tagKey: 'wizard_provider_tag_chatgpt_api' },
   { id: 'google_gemini_api',  nameKey: 'prefs_Connection_type_Google_Gemini_API',  tagKey: 'wizard_provider_tag_google_gemini_api' },
   { id: 'anthropic_api',      nameKey: 'prefs_Connection_type_Anthropic_API',      tagKey: 'wizard_provider_tag_anthropic_api' },
@@ -63,11 +64,11 @@ function getProviderName(id) {
   return browser.i18n.getMessage(p.nameKey) || id;
 }
 
-// Step sequence is provider-dependent: ChatGPT Web skips the "Pick your tools"
-// step because it has no API-driven features. With no provider chosen yet the
+// Step sequence is provider-dependent: web providers skip the "Pick your tools"
+// step because they have no API-driven features. With no provider chosen yet the
 // full sequence is assumed (navigation past step 0 is blocked anyway).
 function getSequence() {
-  return state.provider === 'chatgpt_web' ? [0, 1, 3] : [0, 1, 2, 3];
+  return ['chatgpt_web', 'claude_web'].includes(state.provider) ? [0, 1, 3] : [0, 1, 2, 3];
 }
 
 // ---- Persistence (mirrors options/mzta-options.js) -----------------------
@@ -226,7 +227,11 @@ function selectProvider(id) {
   let heading = document.getElementById('wiz_connect_heading');
   if (heading) heading.textContent = browser.i18n.getMessage('wizard_connect_heading', [getProviderName(id)]);
   let sub = document.getElementById('wiz_connect_sub');
-  if (sub) sub.textContent = browser.i18n.getMessage(id === 'chatgpt_web' ? 'wizard_step_connect_sub_web' : 'wizard_step_connect_sub');
+  if (sub) {
+    const subKey = id === 'claude_web' ? 'wizard_step_connect_sub_claude_web'
+      : id === 'chatgpt_web' ? 'wizard_step_connect_sub_web' : 'wizard_step_connect_sub';
+    sub.textContent = browser.i18n.getMessage(subKey);
+  }
 
   // Mark the selected provider card.
   document.querySelectorAll('.wiz_provider_card').forEach(card => {
