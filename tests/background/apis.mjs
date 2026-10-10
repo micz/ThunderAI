@@ -12,7 +12,8 @@
  *    messages            {id, headerMessageId, folderId, author, subject, date, text, tags, junk}
  *                        (the text/plain part only: the HTML path of the body reading needs a
  *                        DOM, and belongs to the compose area)
- *    tabs                {id, type, windowId, active, displayed: message id | null, reachable}
+ *    tabs                {id, type, windowId, active, displayed: message id | null, reachable,
+ *                        isPlainText: the format of a messageCompose tab}
  *    menus               the items created, by id
  *
  *  Every namespace added is STRICT: reading a property it does not model throws ("unmodelled
@@ -88,6 +89,8 @@ export function mailModel(o = {}) {
         tabs: [],
         /** The windows opened ({id, url, type}): the API chat window. */
         windows: [],
+        /** The replies opened (compose.beginReply()): {messageId, replyType, details, tabId}. */
+        replies: [],
         menus: new Map(),
         /** Every menus.create() of a duplicate id, and every update/remove of a missing one. */
         menuErrors: [],
@@ -174,8 +177,8 @@ export function mailModel(o = {}) {
         },
 
         /** Open a tab. `displayed` is a message id (or null); returns the tab id. */
-        addTab({ id, type = 'mail', windowId = 1, active = false, displayed = null, reachable = true, selected = null } = {}) {
-            const tab = { id: id ?? (100 + m.tabs.length), type, windowId, active, displayed, reachable, selected };
+        addTab({ id, type = 'mail', windowId = 1, active = false, displayed = null, reachable = true, selected = null, isPlainText = false } = {}) {
+            const tab = { id: id ?? (100 + m.tabs.length), type, windowId, active, displayed, reachable, selected, isPlainText };
             m.tabs.push(tab);
             return tab.id;
         },
@@ -341,6 +344,26 @@ export function installApis(browser, m) {
             const id = 900 + m.windows.length;
             m.windows.push({ id, url: opts.url, type: opts.type });
             return { id, tabs: [{ id: id * 10 }] };
+        },
+    }, u);
+
+    // Only the format of a compose window (isPlainTextCompose()) and the opening of a reply
+    // (chatgpt_replyMessage): what the compose script does with what it is sent is the compose
+    // area's. A reply opens a reachable messageCompose tab of the given format (`replyPlainText`
+    // on the model), already loaded.
+    browser.compose = strict('browser.compose', {
+        async getComposeDetails(tabId) {
+            rec('compose.getComposeDetails', [tabId]);
+            const t = m.tab(tabId);
+            if (!t || t.type !== 'messageCompose') throw new Error('Invalid compose tab: ' + tabId);
+            return { isPlainText: t.isPlainText === true };
+        },
+        async beginReply(messageId, replyType, details) {
+            rec('compose.beginReply', [messageId, replyType, details]);
+            if (!m.messages.has(messageId)) throw new Error('Message not found: ' + messageId);
+            const tabId = m.addTab({ type: 'messageCompose', windowId: 50 + m.replies.length, isPlainText: m.replyPlainText === true });
+            m.replies.push({ messageId, replyType, details: clone(details), tabId });
+            return { ...tabInfo(m.tab(tabId)), status: 'complete', url: 'chrome://messenger/content/messengercompose/messengercompose.xhtml' };
         },
     }, u);
 

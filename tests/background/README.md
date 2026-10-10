@@ -65,6 +65,7 @@ time: the debounce, the worker timeout and the batch yield points run on node:te
 | `32-menu-coalescing` | invariant 4: three rebuilds → one plus one trailing rerun, the newest arguments, every caller waiting for the final state, one click listener, the three real triggers together | 01 "Background Preference Snapshot and Menu Invalidation" |
 | `33-context-menu` | the context-menu special actions: the selection of the clicked tab (and its fallback), the UI tab, inline / other message displayed / unreachable pane / several messages / the cap, Translate's UI tab | 01 "Context-menu actions", "Inline Summary" (context menu), "Unreachable message pane" |
 | `34-config-errors` | a missing API key on every automatic feature: no worker, nothing stored, each panel (generic for add_tags), nothing in progress, the retry once fixed | 04 "Configuration Validation"; 01 "In-flight jobs" |
+| `35-compose-commands` | `chatgpt_replaceSelectedText` / `chatgpt_replyMessage`: what the compose script is sent, HTML through `sanitizeBlockHtml` (it ends in `execCommand('insertHTML')`), plain text converted and never sanitized (`stripHtmlKeepLines` a stand-in of this file: it needs a DOMParser) | 01 "Replacing text in a compose window", "Writing a reply" |
 | `99-harness-known-issues` | the shape of `helpers/known-issues/background.mjs` | harness |
 | `99-harness-scope` | the statement splitter and the cut (small cases and the real file), the fake Worker, the strict API models | harness |
 
@@ -165,6 +166,8 @@ modules, then loads the policy with no policy installed, as the background does)
 - **tabs**: `{id, type, windowId, active, displayed, reachable, selected}`; `tabs.query`,
   `tabs.sendMessage` (recorded in `tabSends`; rejects with the #901 `TypeError` on an unreachable
   pane, "Invalid tab ID" on a missing tab), `messageDisplay.getDisplayedMessage`,
+  `compose.getComposeDetails` (a `messageCompose` tab's `isPlainText`) and `compose.beginReply` (a
+  loaded reply tab of the model's `replyPlainText` format, recorded in `replies`),
   `mailTabs.getSelectedMessages`, the two action icons, `windows.create` (the chat window opening);
 - **menus**: `removeAll`, `create` (with its callback; a duplicate id is recorded in `menuErrors`,
   which is how an interleaved rebuild would show), `onClicked`;
@@ -212,7 +215,8 @@ None today.
   only that the window opens, for which messages. The regular prompts' menu actions
   (`executeMenuAction()`) and the popup's Add tags dialog path (`act()` in `js/mzta-menus.js`, the
   `getTags` confirmation) are not run.
-- **The compose-window commands** (`chatgpt_replaceSelectedText`, `chatgpt_replyMessage`),
+- **The compose-window commands** past what they send the compose tab (`35-compose-commands`):
+  the `replaceBody()` fallback of a reply, the retry while the compose script is not loaded;
   `chatgpt_close`, `chatgpt_saveSummary`, `assign_tags`,
   `addtags_get_exclusion_prefs` / `addtags_set_exclusions` (compose and ui areas' callers).
 - What the background does at startup besides `STARTUP` (see above), the keyboard shortcut and the

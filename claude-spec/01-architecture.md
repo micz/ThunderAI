@@ -1547,7 +1547,13 @@ the text it replaced, Ctrl+Y / Ctrl+Shift+Z redoes it.
 - **HTML window:** one `document.execCommand('insertHTML', false, html)`, where `html` is the
   `innerHTML` of the answer parsed with `DOMParser` — the body's children serialized, never a
   `<body>`, `<html>` or `<head>` (an answer that is a whole document is reduced to its body's
-  children).
+  children). `DOMParser` only balances the markup, it does not sanitize it, and `insertHTML` (like
+  the fallback's `insertNode`) is an HTML insertion even if no linter flags it. So **the background
+  sanitizes it first**: `_replaceSelectedText()` passes an HTML answer through `sanitizeBlockHtml()`
+  (`js/mzta-richtext.js`, the ONE sanitizer) before sending `replaceSelectedText`. The API chat's
+  answers already crossed it (the renderer, the diff picker), so a second pass leaves them as they are; the ChatGPT web
+  window's (`getSelectedHtml()`, the provider page's HTML) are sanitized nowhere else. A plain text
+  answer is converted (`stripHtmlKeepLines()`), never sanitized.
 - **Plain text window:** one `document.execCommand('insertText', false, text)` with the whole
   answer, its `\n` included: one call, so one undo step. Gecko's editor turns each `\n` into a line
   break of the plain text editor (a `<br>`, or a preformatted linefeed); this is not modelled by the
@@ -1606,7 +1612,8 @@ The reply of `chatgpt_replyMessage` goes through the same editor path (*Writing 
 `chatgpt_replyMessage` opens the reply (`compose.beginReply`, *Writing into a plain text compose
 window* for the format), waits for the tab to load, and 500 ms later runs `_insertReply()`
 (`mzta-background.js`). It reads the window's format with `isPlainTextCompose()`, converts the
-answer with `stripHtmlKeepLines()` on a plain text window, and sends **`insertReply`**
+answer with `stripHtmlKeepLines()` on a plain text window or passes it through `sanitizeBlockHtml()`
+on an HTML one (as *Replacing text in a compose window*: it ends in `insertHTML`), and sends **`insertReply`**
 `{text, isPlainText}` to the compose script, which inserts it through `insertIntoEditor()` — the
 same editor path as *Replacing text in a compose window*: one `execCommand`, so one Ctrl+Z takes the
 answer out of the reply and Ctrl+Y puts it back; the window is focused first; the direct-DOM
@@ -1637,7 +1644,7 @@ That error alone is retried, every 250 ms, 20 times. Any other rejection is logg
 retried nor followed by the fallback: it may come after the answer was inserted, and a second
 insertion would double it. When the script never answers, the error is logged and the reply is
 written with **`replaceBody()`**, the old way: `setComposeDetails` with `body` (built by
-`insertHtml()`) or `plainTextBody`. That write cannot be undone, and on Thunderbird ≥ 143 the HTML
+`insertHtml()`, from the same sanitized HTML) or `plainTextBody`. That write cannot be undone, and on Thunderbird ≥ 143 the HTML
 one clears the window's undo history (bug 1975127); the window is new, so the history holds nothing
 of the user's.
 

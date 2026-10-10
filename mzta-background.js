@@ -954,6 +954,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     let isPlainText = await isPlainTextCompose(tabId);
                     if(isPlainText){
                         text = stripHtmlKeepLines(text);
+                    }else{
+                        // The compose script inserts it with execCommand('insertHTML'): only
+                        // sanitized markup may reach it. The ChatGPT web window's HTML is not
+                        // sanitized anywhere else; the API chat's already crossed it.
+                        text = sanitizeBlockHtml(text);
                     }
                     await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: text, tabId: tabId, isPlainText: isPlainText });
                     return true;
@@ -1028,6 +1033,9 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 // The script may not be loaded yet: a missing receiver is retried.
                 async function _insertReply(tabId, html) {
                     let isPlainText = await isPlainTextCompose(tabId);
+                    // Sanitized before execCommand('insertHTML') and the replaceBody() fallback
+                    // alike, as in _replaceSelectedText().
+                    if (!isPlainText) html = sanitizeBlockHtml(html);
                     let text = isPlainText ? stripHtmlKeepLines(html) : html;
                     for (let attempt = 0; attempt < 20; attempt++) {
                         try {
