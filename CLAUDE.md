@@ -31,7 +31,7 @@ ThunderAI is a **Thunderbird WebExtension (Manifest V2)** that integrates multip
 8. **Keep spec files up to date:** When making code changes that affect a subsystem described in claude-spec/, update the relevant spec file to reflect the new behavior. Read the spec before modifying, update it after.
 9. **Never commit or add on your own initiative.** Do not run `git commit` (or `git push`, or `git add`, or create branches) unless explicitly asked to in that same request. Finishing a task is *not* permission to commit it: leave the work modified, report what is ready, and let the maintainer decide when to commit and how to word the message. Approval to implement a plan is not approval to commit it.
 10. **Never show the full diff in chat.** When finishing a task, do not paste the complete diff (or whole rewritten files) into the final message. Summarize what changed — files touched with clickable links, and a short description per change — and let the maintainer inspect the actual diff in the editor or via git. Short snippets are fine only when needed to explain a specific decision.
-11. **Ask to run the full tests suite when completing a job.** Do not always run the full tests suite, ask the user if he wants to run it. If you want to run one or more specific test, you can run them without asking.
+11. **Never run the full test suite, and never ask to run it.** The maintainer runs `npm test` (and the full DOM run) themselves. When completing a job, run only the specific test files the change touches, without asking, and list which ones you ran.
 
 ## Directory Map
 
