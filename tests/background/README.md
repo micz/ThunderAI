@@ -212,8 +212,8 @@ None today.
   only that the window opens, for which messages. The regular prompts' menu actions
   (`executeMenuAction()`) and the popup's Add tags dialog path (`act()` in `js/mzta-menus.js`, the
   `getTags` confirmation) are not run.
-- **The compose-window commands** (`chatgpt_replaceSelectedText`, `chatgpt_replyMessage`,
-  `compose_reloadBody`), `chatgpt_close`, `chatgpt_saveSummary`, `assign_tags`,
+- **The compose-window commands** (`chatgpt_replaceSelectedText`, `chatgpt_replyMessage`),
+  `chatgpt_close`, `chatgpt_saveSummary`, `assign_tags`,
   `addtags_get_exclusion_prefs` / `addtags_set_exclusions` (compose and ui areas' callers).
 - What the background does at startup besides `STARTUP` (see above), the keyboard shortcut and the
   `permissions.onRemoved` listener.

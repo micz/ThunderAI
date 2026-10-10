@@ -157,6 +157,66 @@ function stubDialogs(window) {
     };
 }
 
+/**
+ * The compose editor's document.execCommand(), which jsdom does not implement, and the window's
+ * focus(). Modelled on the two commands replaceSelectedText uses, acting on the CURRENT selection
+ * as Gecko's editor does: insertHTML replaces it with the markup's nodes, insertText with a Text
+ * node. What Gecko's plain text editor makes of a \n (a line break) and the undo stack itself are
+ * not modelled: those are the manual test in Thunderbird.
+ *
+ * `editor.mode`, changeable between tests: 'ok' (the command runs, true), 'refuse' (false,
+ * nothing changes) or 'throw'. `editor.calls`: one {command, showUI, value, range, focusCalls}
+ * per call - `range` the selection's range as it was at the call (null with none: a snapshot,
+ * see below), `focusCalls` how many window.focus() calls came before it. `editor.focusCalls`: the
+ * running count.
+ */
+export function stubEditor(ctx, { mode = 'ok' } = {}) {
+    const editor = { mode, calls: [], focusCalls: 0 };
+    ctx.window.focus = () => { editor.focusCalls++; };
+    ctx.document.execCommand = (command, showUI, value) => {
+        const sel = ctx.window.getSelection();
+        const range = sel.rangeCount ? sel.getRangeAt(0) : null;
+        editor.calls.push({ command, showUI, value, range: range && snapshot(range), focusCalls: editor.focusCalls });
+        if (editor.mode === 'throw') throw new Error('execCommand: modelled failure');
+        if (editor.mode === 'refuse' || !range) return false;
+        if (command !== 'insertHTML' && command !== 'insertText') return false;
+        range.deleteContents();
+        let inserted;
+        if (command === 'insertText') {
+            inserted = ctx.document.createTextNode(value);
+        } else {
+            const template = ctx.document.createElement('template');
+            template.innerHTML = value;
+            inserted = template.content;
+        }
+        range.insertNode(inserted);
+        range.collapse(false);
+        return true;
+    };
+    return editor;
+}
+
+/**
+ * A range as it is now, frozen (a cloned Range is live and moves with the insertion): its text,
+ * whether it is collapsed, its start, and the node right after its start when that is an element
+ * (null at its end).
+ */
+function snapshot(range) {
+    const { startContainer, startOffset } = range;
+    return {
+        text: range.toString(),
+        collapsed: range.collapsed,
+        startContainer,
+        startOffset,
+        nodeAfterStart: startContainer.nodeType === 1 ? (startContainer.childNodes[startOffset] ?? null) : null,
+    };
+}
+
+/** The error lines the content script logged since `from` (an index into ctx.con.entries). */
+export function errorsSince(ctx, from) {
+    return ctx.con.entries.slice(from).filter(e => e.level === 'error');
+}
+
 // ---------------------------------------------------------------------------------------
 // Selections
 // ---------------------------------------------------------------------------------------

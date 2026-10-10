@@ -782,7 +782,7 @@ test area, `tests/compose/README.md`):
   confirmation step). Its exclusion list and flags come from `addtags_get_exclusion_prefs` (spec 05);
   when that command fails, the dialog logs it and opens with the defaults — no exclusion, both flags
   off, not locked.
-- **`replaceSelectedText`** (compose window): see *Writing into a plain text compose window*.
+- **`replaceSelectedText`** (compose window): see *Replacing text in a compose window*.
 
 ### Batch cancellation (`taBatchController`)
 
@@ -1133,8 +1133,9 @@ paragraph in `{%mail_typed_text%}`.
 editor opens a reply with `<br><br>` for the lines to type, then a `div.moz-cite-prefix` and a
 `div.moz-signature` exactly as in HTML, the quote being a `span` (`white-space: pre-wrap; display:
 block`) whose lines are `<br>` too and whose `"> "` are text in the DOM. A `\n` inside a text node
-appears where text was inserted as text — the answer inserted by `replaceSelectedText` ([#855]) —
-and the `pre-wrap` body renders it as a line. Both forms must project to the same lines. The quote
+appears where text was inserted as a `Text` node — the answer inserted by `replaceSelectedText`'s
+fallback ([#855], *Replacing text in a compose window*) — and the `pre-wrap` body renders it as a
+line. Both forms must project to the same lines. The quote
 `span` is a "line" for the joiner (its inline `display: block`), so the top-level `<br>` that follows
 it is the empty line the window shows before the signature.
 
@@ -1517,36 +1518,128 @@ those rules consumes the pretty-printing newline that follows its tag. Counting 
 double every line and make a single `<br>` indistinguishable from a paragraph break.
 
 **Converting is only half the job — the insertion path has to stop treating the result as
-HTML.** Three places cooperate, and all three are required:
+HTML.** These places cooperate, and all of them are required:
 
-- `replaceSelectedText` (`js/mzta-compose-script.js`) inserts a **`Text` node** when
-  `message.isPlainText` is set, instead of routing through `DOMParser`. This is the actual
-  fix for #855: in HTML a bare `\n` is collapsible whitespace, so parsing the converted text
-  rendered every line break as a single space and the whole message arrived as one line.
-- **With no selection** the handler asks first (`Replace_No_Selected_Text`, "…insert the AI's
-  response at the beginning of the email?"). No: nothing is inserted, no `compose_reloadBody`, it
-  resolves `false`. Yes: the answer goes at the **start of the email** — before the first node of the
-  body that is not one of ThunderAI's own elements — wherever the cursor is, and also when the
-  selection holds no range at all (an editor never clicked into), which used to throw on
-  `getRangeAt(0)`. Before this the answer went at the cursor, which in a freshly opened reply is at
-  the top, so the message's promise held only in the common case.
-- The HTML branch of the same handler inserts the parsed nodes through a
-  **`DocumentFragment`**, never `doc.body` itself. Inserting the `<body>` element nests a
-  second `<body>` inside the compose body; the `compose_reloadBody` round-trip on the very
-  next line hands that invalid markup to Thunderbird's serializer, which flattens the
-  misplaced blocks and destroys the `<p>` paragraphs the diff picker emits. The fragment's
-  children are collected with `Array.from(doc.body.childNodes)` because `childNodes` is a
-  **live** NodeList — `appendChild` removes each node from the list being walked, so
-  iterating it directly would skip every other node.
-- `getOriginalBody` / `setBody` / `reloadBody` / `replaceBody` (`js/mzta-utils.js`) read and
-  write **`plainTextBody`**, not `body`. Writing `body` on a plain text window makes
-  Thunderbird convert the HTML down to text, undoing the line structure again — which matters
-  most in `compose_reloadBody`, whose `setBody` round-trip runs right after the insertion.
+- `replaceSelectedText` (`js/mzta-compose-script.js`) inserts the answer **as text** when
+  `message.isPlainText` is set — `execCommand('insertText')`, or a **`Text` node** on the
+  fallback (see *Replacing text in a compose window*) — never through `DOMParser` /
+  `insertHTML`. This is the actual fix for #855: in HTML a bare `\n` is collapsible whitespace,
+  so parsing the converted text rendered every line break as a single space and the whole
+  message arrived as one line.
+- `replaceBody` (`js/mzta-utils.js`, the fallback of *Writing a reply*) reads and writes **`plainTextBody`**, not `body`, on a
+  plain text window. Writing `body` there makes Thunderbird convert the HTML down to text,
+  undoing the line structure again.
 - `chatgpt_replyMessage` **omits** `isPlainText` from `compose.beginReply` rather than forcing
-  `false`, so the reply follows the identity's own format; `replaceBody()` then reads the
-  format back off the created tab. On a plain text reply there is no DOM to splice into, so
-  the answer is prepended to the existing text with a blank line rather than going through
-  `insertHtml()`.
+  `false`, so the reply follows the identity's own format; `_insertReply()` then reads the
+  format back off the created tab, and on a plain text reply the answer is converted and
+  inserted as text before everything, with a blank line (*Writing a reply*).
+
+### Replacing text in a compose window
+
+`chatgpt_replaceSelectedText` (from the AI chat window, with or without the diff picker, and from
+the ChatGPT web window) reads the window's format (*Writing into a plain text compose window*),
+converts the answer for a plain text window, and sends `replaceSelectedText` to the compose tab.
+That is all the background does: **nothing writes the body through the compose API afterwards.**
+The insertion happens in the compose script (`insertIntoEditor()` in `js/mzta-compose-script.js`),
+**through the editor**, so it is one transaction of the editor's undo stack: one Ctrl+Z restores
+the text it replaced, Ctrl+Y / Ctrl+Shift+Z redoes it.
+
+- **HTML window:** one `document.execCommand('insertHTML', false, html)`, where `html` is the
+  `innerHTML` of the answer parsed with `DOMParser` — the body's children serialized, never a
+  `<body>`, `<html>` or `<head>` (an answer that is a whole document is reduced to its body's
+  children).
+- **Plain text window:** one `document.execCommand('insertText', false, text)` with the whole
+  answer, its `\n` included: one call, so one undo step. Gecko's editor turns each `\n` into a line
+  break of the plain text editor (a `<br>`, or a preformatted linefeed); this is not modelled by the
+  tests and is part of the manual test (#855: the message must not collapse into one line).
+- **The selection.** `execCommand` acts on the **current** selection, so the handler sets it
+  (`removeAllRanges()` + `addRange()`) to the range it computed. A selection that reaches into
+  ThunderAI's own elements (`#mzta-container` and its `.mzta_dialog`, e.g. after a select-all) starts
+  right after them instead (`keepOutOfInjected()`): they are never deleted nor part of the
+  transaction. They are top-level and `#mzta-container` is the body's first child, so no typed text
+  is lost; a range lying entirely inside one collapses right after it.
+- **With no selection** the handler asks first (`Replace_No_Selected_Text`, "…insert the AI's
+  response at the beginning of the email?"). No: nothing is inserted, no editor command, it
+  resolves `false`. Yes: the answer goes at the **start of the email** — a collapsed range before the
+  first node of the body that is not one of ThunderAI's own elements — wherever the cursor is, and
+  also when the selection holds no range at all (an editor never clicked into), which used to throw
+  on `getRangeAt(0)`.
+- **Focus.** From the AI chat or the ChatGPT window the compose window is not focused, and an editor
+  command can then do nothing. When `document.hasFocus()` is false the handler calls
+  `window.focus()` first, and sets the selection **after** it, since focusing may restore the
+  editor's own saved selection.
+- **Fallback.** When `execCommand` returns `false` or throws, the failure is logged
+  (`console.error`) and the answer is inserted **directly** in the same range, so it is never lost —
+  but outside the undo stack: a `Text` node holding the `\n` verbatim in plain text (the `pre-wrap`
+  body renders them as lines), or the parsed nodes through a **`DocumentFragment`** in HTML, never
+  `doc.body` itself (a nested `<body>` is invalid markup that Thunderbird's serializer flattens,
+  destroying the `<p>` paragraphs the diff picker emits). The fragment's children are collected with
+  `Array.from(doc.body.childNodes)` because `childNodes` is a **live** NodeList — `appendChild`
+  removes each node from the list being walked, so iterating it directly would skip every other
+  node.
+- The command resolves `true` once the answer is inserted, by either path.
+
+**Why not the compose API: `setComposeDetails()` and the undo history.** Until v5.1.0 the content
+script mutated the DOM directly (`deleteContents()` + `insertNode()`), which bypasses the editor's
+transaction manager, and then sent `compose_reloadBody`: the background had saved the body before
+the insertion (`original_html`) and called `setComposeDetails` twice — the old body, then the new
+one — so that the second write was an undoable step ([#34](https://github.com/micz/ThunderAI/issues/34)).
+That stopped working with **Thunderbird 143** (bug [1975127](https://bugzilla.mozilla.org/show_bug.cgi?id=1975127),
+commit `18fda6f17aa`, in ESR 153, **not** in ESR 140): `SetComposeDetails()` in
+`mail/components/compose/content/MsgComposeCommands.js` now writes an HTML body with
+`editor.document.documentElement.innerHTML = body; editor.beginningOfDocument();
+editor.clearUndoRedo();` instead of `editor.rebuildDocumentFromSource(body)`, so **every
+`setComposeDetails({body})` wipes the whole undo/redo history**. (The `plainTextBody` branch —
+`selectAll` + `insertTextWithQuotations` — does not clear it.) Hence:
+
+- after the editor insertion **nothing may call `setComposeDetails` with a body for that tab**, or
+  the undo entry just created is destroyed; `compose_reloadBody`, `original_html` / `modified_html`
+  and the `getOriginalBody()` / `setBody()` helpers are gone;
+- the `execCommand` path works the same on ESR 140; no version is relied on to make
+  `setComposeDetails` undoable.
+
+The reply of `chatgpt_replyMessage` goes through the same editor path (*Writing a reply*); the only
+`setComposeDetails` left is that path's fallback, `replaceBody()`.
+
+### Writing a reply
+
+`chatgpt_replyMessage` opens the reply (`compose.beginReply`, *Writing into a plain text compose
+window* for the format), waits for the tab to load, and 500 ms later runs `_insertReply()`
+(`mzta-background.js`). It reads the window's format with `isPlainTextCompose()`, converts the
+answer with `stripHtmlKeepLines()` on a plain text window, and sends **`insertReply`**
+`{text, isPlainText}` to the compose script, which inserts it through `insertIntoEditor()` — the
+same editor path as *Replacing text in a compose window*: one `execCommand`, so one Ctrl+Z takes the
+answer out of the reply and Ctrl+Y puts it back; the window is focused first; the direct-DOM
+fallback (logged) when the editor refuses or throws. Nothing writes the body through the compose
+API afterwards. The command resolves `true`. `chatgpt_replyMessage` itself still resolves `true` as
+soon as the tab has loaded, without waiting for the insertion, as before.
+
+Where the answer goes is what `replaceBody()` / `insertHtml()` (`js/mzta-utils.js`) produced:
+
+- **HTML:** the range runs from the body's first node that is not one of ThunderAI's own elements
+  to the **first quote or signature** (`firstQuoteOrSignature()`: `.moz-cite-prefix`, or
+  `.moz-forward-container` when there is none, or `.moz-signature`, whichever comes first — the
+  signature with "signature above the quote" — taken as its top-level ancestor), so the empty lines a
+  new reply opens with are replaced. The value is the parsed answer's body children (never a
+  `<body>`) followed by a **`<br>` spacer unless that block already starts with a `<br>`**
+  (`startsWithBreak()`, [#849](https://github.com/micz/ThunderAI/issues/849): the signature does, the cite prefix does not). With neither quote nor
+  signature the range is a caret before the first node, which is kept, and drives the same spacer
+  rule; on an empty body there is no spacer. `startsWithBreak()` is a copy of the one in
+  `js/mzta-utils.js`: the compose script is classic and cannot import a module.
+- **Plain text:** a caret before the first node; the text is the answer followed by `\n\n` when the
+  body (ThunderAI's elements left out) holds any non-blank text, the answer alone otherwise —
+  `replaceBody()`'s "prepended with a blank line".
+- ThunderAI's own elements stay above the answer, untouched.
+
+**Reaching the compose script.** The script may not be loaded yet when the tab reports `complete`:
+`tabs.sendMessage` then rejects with "Could not establish connection. Receiving end does not exist."
+That error alone is retried, every 250 ms, 20 times. Any other rejection is logged and **not**
+retried nor followed by the fallback: it may come after the answer was inserted, and a second
+insertion would double it. When the script never answers, the error is logged and the reply is
+written with **`replaceBody()`**, the old way: `setComposeDetails` with `body` (built by
+`insertHtml()`) or `plainTextBody`. That write cannot be undone, and on Thunderbird ≥ 143 the HTML
+one clears the window's undo history (bug 1975127); the window is new, so the history holds nothing
+of the user's.
 
 ### Theming
 

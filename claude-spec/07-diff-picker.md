@@ -519,9 +519,11 @@ segmenter is what handles the original's markup.
 non-picker render path, and those blocks may contain `<br>` where the chosen side had one. The
 conversion back to text is still **not** the picker's job — it happens downstream, where the target
 window's format is known: `mzta-background.js` detects it with `isPlainTextCompose()` and runs
-`stripHtmlKeepLines()`, and the content script inserts a `Text` node instead of parsing HTML. See
+`stripHtmlKeepLines()`, and the content script inserts it as text (`execCommand('insertText')`, or a
+`Text` node on the fallback) instead of parsing HTML. See
 [01-architecture.md](01-architecture.md) → *Writing into a plain text compose window* for the full
-path and why all of its parts are load-bearing.
+path and why all of its parts are load-bearing, and *Replacing text in a compose window* for the
+insertion through the editor's undo stack.
 
 **`stripHtmlKeepLines()` is now DOM-based, not a regex.** It is a thin shim over the shared rich-text
 layer: `normalizePlain(htmlToLines(html), { keepParagraphs: true })`. `htmlToLines`'s two-tier
@@ -533,8 +535,9 @@ the picker's `<p>`/`<li>`/`<br>` output.
 bug visible: `stripHtmlKeepLines` expected `<p>`-wrapped markdown, and the picker's converted `\n`
 were then re-parsed as collapsible HTML whitespace, collapsing the whole message onto one line. The
 picker's output is now in that function's designed happy path, so **no change was needed in the
-insertion path**. The rest of the #855 machinery (the `Text`-node branch, the `plainTextBody`-aware
-helpers) is still load-bearing for every other producer and is untouched.
+insertion path**. The rest of the #855 machinery (the as-text insertion — `insertText`, or the
+`Text` node of the fallback — and the `plainTextBody`-aware `replaceBody()`) is still load-bearing
+for every other producer.
 
 ## The result indirection
 
@@ -981,7 +984,7 @@ the picker (`prompt_proofread_this`, `prompt_rewrite_formal`, `prompt_rewrite_po
 | `js/mzta-menus.js` | sets `curr_prompt.body_html` (the picker's original side) alongside `body_text` / `selection_html`; `selectionTwin()` derives `selected_text`/`selected_html` from ONE normalization (shared `hasLineStructure` + `htmlToLines`/`linesToHtml`) so the pair agrees; `htmlOrFromText` rebuilds a structure-less html twin from its text; captures `only_typed_html` off the auto-selected range and pairs it onto `selection_html` when `mail_typed_text` is substituted |
 | `_locales/en/messages.json` | `apiwebchat_picker_*`, including the EDIT hint's conditional choice-reset warning |
 | `js/mzta-utils.js` | `isPlainTextCompose`, `stripHtmlKeepLines`, and the `plainTextBody`-aware body helpers |
-| `js/mzta-compose-script.js` | `replaceSelectedText` — the `Text`-node branch that preserves `\n`; the HTML branch inserts a `DocumentFragment` of `doc.body`'s children, never `doc.body` itself, so the `compose_reloadBody` round-trip cannot flatten the picker's `<p>` blocks |
+| `js/mzta-compose-script.js` | `replaceSelectedText` — through the editor's undo stack (spec 01 *Replacing text in a compose window*): `insertText` with the `\n` verbatim in plain text, `insertHTML` of `doc.body`'s children (never `doc.body` itself) in HTML, so the picker's `<p>` blocks survive; the direct-DOM fallback keeps the same two rules (`Text` node, `DocumentFragment`) |
 | `mzta-background.js` | detects the compose format and converts before insertion |
 | `options/mzta-options-default.js` | the global `diff_granularity` preference |
 | `options/mzta-options.html/.js` | the global preference's control in the advanced section |

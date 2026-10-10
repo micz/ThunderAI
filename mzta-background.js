@@ -26,9 +26,7 @@ import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
 import {
     getCurrentIdentity,
-    getOriginalBody,
     replaceBody,
-    setBody,
     i18nConditionalGet,
     generateCallID,
     migrateCustomPromptsStorage,
@@ -209,9 +207,6 @@ if (_prefs_migration_ok) await migrateCalendarNoSelection().catch(e => console.e
 // flag lives in storage.local, and reading it before the copy succeeded would find the
 // "not yet run" default and rewrite a value that is not there yet.
 if (_prefs_migration_ok) await migrateOllamaThinkLevel();
-
-var original_html = '';
-var modified_html = '';
 
 let _process_incoming = false;
 let _sparks_presence = false;
@@ -953,7 +948,6 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _replaceSelectedText(tabId, text) {
                     //console.log('chatgpt_replaceSelectedText: [' + tabId +'] ' + text)
                     taLog.log("chatgpt_replaceSelectedText text: " + text);
-                    original_html = await getOriginalBody(tabId);
                     // The compose format is read from the window itself, not from a
                     // preference: it is a per-message property, so a global setting
                     // could never be right for a user who writes in both formats.
@@ -1024,24 +1018,35 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             }
                         });
                         // we need to wait for the compose windows to load the content script
-                        //setTimeout(() => browser.tabs.sendMessage(reply_tab.id, { command: "insertText", text: paragraphsHtmlString, tabId: reply_tab.id }), 500);
-                        setTimeout(async () => await replaceBody(reply_tab.id, paragraphsHtmlString), 500);
+                        setTimeout(() => _insertReply(reply_tab.id, paragraphsHtmlString).catch(e => taLog.error("chatgpt_replyMessage: the reply could not be inserted: " + e)), 500);
                         return true;
                 }
-                return _replyMessage(message);
-                break;
-            case 'compose_reloadBody':
-                async function _reloadBody(tabId) {
-                    // getOriginalBody/setBody must agree on which field they use, or
-                    // this round-trip would push the freshly inserted plain text
-                    // through the HTML body field and collapse its line breaks.
+                // The answer goes into the reply through the compose script (insertReply), as
+                // an editor command, so one Ctrl+Z takes it out. setComposeDetails cannot be
+                // undone and, from Thunderbird 143, clears the undo history (bug 1975127):
+                // replaceBody() is only the fallback, when the compose script cannot be reached.
+                // The script may not be loaded yet: a missing receiver is retried.
+                async function _insertReply(tabId, html) {
                     let isPlainText = await isPlainTextCompose(tabId);
-                    modified_html = await getOriginalBody(tabId);
-                    await setBody(tabId, original_html, isPlainText);
-                    await setBody(tabId, modified_html, isPlainText);
-                    return true;
+                    let text = isPlainText ? stripHtmlKeepLines(html) : html;
+                    for (let attempt = 0; attempt < 20; attempt++) {
+                        try {
+                            await browser.tabs.sendMessage(tabId, { command: "insertReply", text: text, isPlainText: isPlainText });
+                            return;
+                        } catch (e) {
+                            // Only "no receiver yet" is worth a retry: any other failure may
+                            // come after the answer was inserted, and a retry would double it.
+                            if (!/Receiving end does not exist|Could not establish connection/.test(String(e?.message ?? e))) {
+                                taLog.error("chatgpt_replyMessage: insertReply failed, not retried: " + e);
+                                return;
+                            }
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 250));
+                    }
+                    taLog.error("chatgpt_replyMessage: the compose script never answered, writing the reply with setComposeDetails (not undoable)");
+                    await replaceBody(tabId, html);
                 }
-                return _reloadBody(message.tabId);
+                return _replyMessage(message);
                 break;
             case 'reload_menus':
                 return _reload_menus();

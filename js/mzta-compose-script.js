@@ -80,6 +80,91 @@ function isInjectedNode(node) {
   return node instanceof Element && MZTA_INJECTED_SELECTORS.some(selector => node.matches(selector));
 }
 
+// A selection reaching into ThunderAI's own elements (a select-all takes #mzta-container
+// too) must not delete them: the range starts after each of them instead. They are
+// top-level and #mzta-container is the body's first child, so no typed text is lost; a
+// range that lay entirely inside one collapses right after it.
+function keepOutOfInjected(range) {
+  for (const node of Array.from(document.body.childNodes)) {
+    if (isInjectedNode(node) && range.intersectsNode(node)) range.setStartAfter(node);
+  }
+}
+
+// The insertion of replaceSelectedText and insertReply. It goes through the editor
+// (document.execCommand), so it is one transaction of the editor's undo stack: one Ctrl+Z
+// restores the text it replaced, Ctrl+Y / Ctrl+Shift+Z redoes it. A DOM mutation bypasses the transaction
+// manager, and the old way of making it undoable - two compose.setComposeDetails() calls
+// from the background, issue #34 - stopped working in Thunderbird 143 (bug 1975127): there
+// every setComposeDetails({body}) clears the undo history. So nothing may write the body
+// through the compose API after this, or the undo entry just created is gone.
+function insertIntoEditor(range, text, isPlainText) {
+  try {
+    // From the AI chat or the ChatGPT window the compose window is not focused, and an
+    // editor command can then do nothing. Focus it first, then set the selection: focusing
+    // may restore the editor's own saved selection, and execCommand acts on the current one.
+    if (!document.hasFocus()) window.focus();
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    // Plain text: insertText, never a parse - in HTML a bare \n is collapsible whitespace,
+    // which is how the whole message ended up as one line [#855]. One call for the whole
+    // text, so it is one undo step; the plain text editor turns each \n into a line break.
+    // HTML: the serialization of the parsed body's children, never a nested <body>.
+    const ok = isPlainText
+      ? document.execCommand('insertText', false, text)
+      : document.execCommand('insertHTML', false, new DOMParser().parseFromString(text, 'text/html').body.innerHTML);
+    if (ok) return;
+    console.error("[ThunderAI] Compose insertion: the editor refused the insertion, inserting it directly (not undoable)");
+  } catch (e) {
+    console.error("[ThunderAI] Compose insertion: the editor insertion failed, inserting it directly (not undoable): " + e);
+  }
+  // The fallback, so the answer is never lost: a direct DOM mutation, outside the undo stack.
+  range.deleteContents();
+  if (isPlainText) {
+    // The line breaks ARE the \n characters, and the plain text editor renders the body as
+    // preformatted text: a Text node keeps them. [#855]
+    range.insertNode(document.createTextNode(text));
+  } else {
+    const doc = new DOMParser().parseFromString(text, 'text/html');
+    // Insert the parsed NODES, not the <body> element that wraps them: a <body> nested
+    // inside the compose body is invalid markup, which Thunderbird's serializer flattens
+    // when the message is saved or sent - destroying the <p> paragraphs the picker emits.
+    const fragment = document.createDocumentFragment();
+    // Iterate over a copy: appending to the fragment removes each node from the live
+    // childNodes NodeList being walked.
+    Array.from(doc.body.childNodes).forEach(node => fragment.appendChild(node));
+    range.insertNode(fragment);
+  }
+}
+
+// The top-level block a reply's answer goes above: the first quoted mail (reply, or
+// forward when there is no reply prefix) or the signature, whichever comes first (the
+// signature comes first with "signature above the quote"). null with neither. The same
+// choice as insertHtml() in js/mzta-utils.js, which is replyMessage's fallback.
+function firstQuoteOrSignature() {
+  const quote = document.querySelector('.moz-cite-prefix') || document.querySelector('.moz-forward-container');
+  const signature = document.querySelector('.moz-signature');
+  let block = quote && signature
+    ? (quote.compareDocumentPosition(signature) & Node.DOCUMENT_POSITION_FOLLOWING ? quote : signature)
+    : (quote || signature);
+  while (block && block.parentNode !== document.body) block = block.parentNode;
+  return block;
+}
+
+// Does this block already open with a <br> of its own? Thunderbird's signature does
+// (<div class="moz-signature"><br>...), the cite prefix does not: the spacer after a
+// reply's answer is added only when it does not, or the gap is a double blank line.
+// Whitespace-only text nodes are skipped. A copy of startsWithBreak() in
+// js/mzta-utils.js (a module, which this classic script cannot import). [#849]
+function startsWithBreak(element) {
+  if (!element || element.nodeType !== Node.ELEMENT_NODE) return false;
+  for (let node = element.firstChild; node; node = node.nextSibling) {
+    if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '') continue;
+    return node.nodeType === Node.ELEMENT_NODE && node.tagName.toLowerCase() === 'br';
+  }
+  return false;
+}
+
 // One top-level node of the compose body, projected to text with its line
 // structure intact.
 //
@@ -512,7 +597,8 @@ switch (message.command) {
     // and with no cursor at all (no range, e.g. an editor never clicked into).
     let r;
     if (!force_insert) {
-      r = sel.getRangeAt(0);
+      r = sel.getRangeAt(0).cloneRange();
+      keepOutOfInjected(r);
     } else {
       r = document.createRange();
       let first = document.body.firstChild;
@@ -521,28 +607,37 @@ switch (message.command) {
       else r.selectNodeContents(document.body);
       r.collapse(true);
     }
-    r.deleteContents();
+    insertIntoEditor(r, message.text, message.isPlainText === true);
+    return Promise.resolve(true);
+  }
+
+  case "insertReply": {
+    // chatgpt_replyMessage: the answer at the top of a reply window just opened, through
+    // the editor like replaceSelectedText, so one Ctrl+Z takes it out again. It used to be
+    // written with compose.setComposeDetails (replaceBody() in js/mzta-utils.js, now the
+    // background's fallback), which cannot be undone and, from Thunderbird 143, clears the
+    // undo history (bug 1975127). Same result as replaceBody():
+    //  - HTML: the answer replaces whatever precedes the first quote or signature (the empty
+    //    lines a new reply opens with), followed by a <br> unless that block starts with one;
+    //  - plain text: the answer goes before everything, with a blank line between when the
+    //    body holds any text.
+    // ThunderAI's own elements stay above it, untouched.
+    let first = document.body.firstChild;
+    while (first && isInjectedNode(first)) first = first.nextSibling;
+    const r = document.createRange();
+    if (first) r.setStartBefore(first);
+    else r.selectNodeContents(document.body);
+    r.collapse(true);
     if (message.isPlainText) {
-      // In a plain text compose window the line breaks ARE the \n characters,
-      // and the editor renders the body as preformatted text. Going through
-      // DOMParser here would treat those \n as collapsible HTML whitespace and
-      // render each one as a single space - which is exactly how the whole
-      // message ended up as one run-together line. [#855]
-      r.insertNode(document.createTextNode(message.text));
+      const hasText = getCleanBodyHtml().textContent.trim() !== '';
+      insertIntoEditor(r, message.text + (hasText ? '\n\n' : ''), true);
     } else {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(message.text, 'text/html');
-      // Insert the parsed NODES, not the <body> element that wraps them: a <body>
-      // nested inside the compose body is invalid markup, and the compose_reloadBody
-      // round-trip below hands it to Thunderbird's serializer, which flattens the
-      // misplaced blocks - destroying the <p> paragraphs the picker emits.
-      const fragment = document.createDocumentFragment();
-      // Iterate over a copy: appending to the fragment removes each node from the
-      // live childNodes NodeList being walked.
-      Array.from(doc.body.childNodes).forEach(node => fragment.appendChild(node));
-      r.insertNode(fragment);
+      const block = firstQuoteOrSignature();
+      if (block) r.setEndBefore(block);
+      const following = block || first;
+      const spacer = following && !startsWithBreak(following) ? '<br>' : '';
+      insertIntoEditor(r, new DOMParser().parseFromString(message.text, 'text/html').body.innerHTML + spacer, false);
     }
-    browser.runtime.sendMessage({command: "compose_reloadBody", tabId: message.tabId, isPlainText: message.isPlainText === true});
     return Promise.resolve(true);
   }
 
