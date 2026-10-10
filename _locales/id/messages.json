@@ -2317,7 +2317,7 @@
         }
     },
     "customPrompts_search_placeholder": {
-        "message": "Cari berdasarkan nama atau ID"
+        "message": "Cari berdasarkan nama, ID, atau teks…"
     },
     "customPrompts_filter_active": {
         "message": "Difilter: $SHOWN$ dari $TOTAL$",
@@ -2731,5 +2731,378 @@
     },
     "translate_error_no_message_id": {
         "message": "Pesan tidak dapat dibaca: terjemahan hanya akan dibuat berdasarkan subjek."
+    },
+    "customPrompts_autosave_info": {
+        "message": "Setiap perubahan langsung disimpan."
+    },
+    "customPrompts_import_saved_now": {
+        "message": "Prompt yang diimpor akan langsung disimpan."
+    },
+    "customPrompts_import_completed_saved": {
+        "message": "Prompt khusus berhasil diimpor dan disimpan!"
+    },
+    "customPrompts_save_error": {
+        "message": "Terjadi kesalahan saat menyimpan prompt:"
+    },
+    "chatgpt_win_retrying": {
+        "message": "Mencoba lagi…"
+    },
+    "chatgpt_composer_click_to_continue": {
+        "message": "Kotak pesan ChatGPT tidak ditemukan. Klik di dalam kotak pesan untuk melanjutkan."
+    },
+    "customPrompts_view_detail": {
+        "message": "Detail"
+    },
+    "customPrompts_view_table": {
+        "message": "Tabel"
+    },
+    "customPrompts_view_switch": {
+        "message": "Tampilan"
+    },
+    "customPrompts_new_prompt": {
+        "message": "+ Prompt baru"
+    },
+    "customPrompts_badge_system": {
+        "message": "Sistem"
+    },
+    "customPrompts_badge_personal": {
+        "message": "Pribadi"
+    },
+    "customPrompts_badge_readonly": {
+        "message": "Hanya baca"
+    },
+    "customPrompts_system_tooltip": {
+        "message": "Prompt sistem, hanya baca"
+    },
+    "customPrompts_system_banner": {
+        "message": "Prompt sistem: teksnya tidak dapat diubah. Duplikasikan untuk membuat versi Anda sendiri."
+    },
+    "customPrompts_org_banner": {
+        "message": "Prompt organisasi: prompt ini dikelola melalui kebijakan konfigurasi organisasi Anda dan tidak dapat diubah. Duplikasikan untuk membuat versi Anda sendiri."
+    },
+    "customPrompts_btnDuplicate": {
+        "message": "Duplikasikan"
+    },
+    "customPrompts_btnDuplicateEdit": {
+        "message": "Duplikasikan dan edit"
+    },
+    "customPrompts_btnSavePrompt": {
+        "message": "Simpan"
+    },
+    "customPrompts_btnExport": {
+        "message": "Ekspor"
+    },
+    "customPrompts_btnOpen": {
+        "message": "Buka"
+    },
+    "customPrompts_more_actions": {
+        "message": "Tindakan lainnya"
+    },
+    "customPrompts_col_prompt": {
+        "message": "Prompt"
+    },
+    "customPrompts_col_text": {
+        "message": "Teks"
+    },
+    "customPrompts_col_menu": {
+        "message": "Menu"
+    },
+    "customPrompts_col_options": {
+        "message": "Opsi"
+    },
+    "customPrompts_col_actions": {
+        "message": "Tindakan"
+    },
+    "customPrompts_label_text": {
+        "message": "Teks prompt"
+    },
+    "customPrompts_label_options": {
+        "message": "Opsi"
+    },
+    "customPrompts_label_connection": {
+        "message": "Koneksi"
+    },
+    "customPrompts_chip_need_selected": {
+        "message": "Pilihan"
+    },
+    "customPrompts_chip_need_signature": {
+        "message": "Tanda tangan"
+    },
+    "customPrompts_chip_need_custom_text": {
+        "message": "Teks tambahan"
+    },
+    "customPrompts_chip_define_response_lang": {
+        "message": "Bahasa"
+    },
+    "customPrompts_chip_use_diff_viewer": {
+        "message": "Bandingkan"
+    },
+    "customPrompts_flag_fixed_suffix": {
+        "message": "ditetapkan oleh prompt"
+    },
+    "customPrompts_new_prompt_title": {
+        "message": "Prompt baru"
+    },
+    "customPrompts_no_selection": {
+        "message": "Pilih prompt dari daftar atau buat prompt baru."
+    },
+    "customPrompts_dirty_confirm": {
+        "message": "Prompt yang sedang Anda edit memiliki perubahan yang belum diterapkan. Apa yang ingin Anda lakukan?"
+    },
+    "customPrompts_dirty_apply": {
+        "message": "Terapkan perubahan"
+    },
+    "customPrompts_dirty_discard": {
+        "message": "Buang perubahan"
+    },
+    "customPrompts_error_id": {
+        "message": "ID wajib diisi, tidak boleh mengandung spasi, dan harus unik."
+    },
+    "customPrompts_error_required": {
+        "message": "Nama dan teks prompt wajib diisi."
+    },
+    "customPrompts_error_name_percent": {
+        "message": "Nama tidak boleh mengandung karakter %."
+    },
+    "prefs_OptionText_batch_max_concurrency": {
+        "message": "Email yang diproses secara paralel"
+    },
+    "prefs_OptionText_batch_max_concurrency_Info": {
+        "message": "Jumlah maksimum email yang diproses secara bersamaan saat beberapa email ditangani sekaligus, misalnya ketika email baru masuk atau beberapa email dipilih. Setiap email diproses melalui fitur-fiturnya (filter spam, penambahan tag, peringkasan, penerjemahan) secara berurutan, sehingga nilai ini juga menentukan jumlah maksimum permintaan AI yang dikirim sekaligus. Nilai yang lebih tinggi mempercepat pemrosesan, tetapi dapat mencapai batas laju permintaan penyedia AI Anda atau membebani model lokal seperti Ollama."
+    },
+    "prefs_OptionText_add_tags_max_messages_Info": {
+        "message": "Jumlah maksimum pesan terpilih yang dapat diberi tag sekaligus melalui menu konteks. Berguna untuk penyedia AI yang memiliki kuota permintaan harian. Pemberian tag otomatis pada pesan masuk tidak dibatasi. Atur ke 0 untuk menghapus batas."
+    },
+    "prompt_calendar_reminder_format": {
+        "message": "Selain bidang yang dijelaskan di atas, tambahkan bidang \"reminderMinutes\" ke objek JSON. Bidang ini harus berisi salah satu dari tiga nilai berikut: bilangan bulat yang menyatakan jumlah menit sebelum acara dimulai saat pengingat harus diatur, sesuai aturan pengingat dalam prompt ini; null, jika aturan pengingat diberikan tetapi tidak ada yang berlaku; string \"default\", jika tidak ada aturan pengingat yang diberikan sama sekali."
+    },
+    "prompt_task_reminder_format": {
+        "message": "Selain bidang yang dijelaskan di atas, tambahkan bidang \"reminderMinutes\" ke objek JSON. Bidang ini harus berisi salah satu dari tiga nilai berikut: bilangan bulat yang menyatakan jumlah menit sebelum tanggal jatuh tempo tugas (atau sebelum tanggal mulainya jika tidak ada tanggal jatuh tempo) saat pengingat harus diatur, sesuai aturan pengingat dalam prompt ini; null, jika aturan pengingat diberikan tetapi tidak ada yang berlaku; string \"default\", jika tidak ada aturan pengingat yang diberikan sama sekali."
+    },
+    "prompt_reminder_rules_intro": {
+        "message": "Aturan pengingat:"
+    },
+    "prefs_OptionText_reminder_enabled": {
+        "message": "Izinkan AI mengatur pengingat"
+    },
+    "prefs_OptionText_calendar_reminder_enabled_Info": {
+        "message": "Jika dicentang, AI diminta mengatur pengingat berdasarkan waktu mulai acara sesuai aturan pengingat. Aturan dapat ditulis di kolom di bawah atau langsung di prompt utama. Dalam kedua kasus tersebut, opsi ini harus dicentang. Jika tidak ada aturan yang berlaku, acara dibuat tanpa pengingat. Jika tidak ada aturan yang ditulis, baik di bawah maupun di prompt utama, pengaturan pengingat bawaan Thunderbird berlaku. Jika tidak dicentang, pengaturan pengingat bawaan Thunderbird selalu berlaku."
+    },
+    "prefs_OptionText_task_reminder_enabled_Info": {
+        "message": "Jika dicentang, AI diminta mengatur pengingat berdasarkan tanggal jatuh tempo tugas (atau tanggal mulainya jika tidak ada tanggal jatuh tempo) sesuai aturan pengingat. Aturan dapat ditulis di kolom di bawah atau langsung di prompt utama. Dalam kedua kasus tersebut, opsi ini harus dicentang. Jika tidak ada aturan yang berlaku, tugas dibuat tanpa pengingat. Jika tidak ada aturan yang ditulis, baik di bawah maupun di prompt utama, pengaturan pengingat bawaan Thunderbird berlaku. Jika tidak dicentang, pengaturan pengingat bawaan Thunderbird selalu berlaku."
+    },
+    "prefs_OptionText_reminder_rules_title": {
+        "message": "Aturan pengingat"
+    },
+    "prefs_OptionText_reminder_rules_Info": {
+        "message": "Tulis aturan dengan bahasa sehari-hari. Kolom ini bersifat opsional: jika kosong, aturan diambil dari prompt utama di atas."
+    },
+    "prefs_OptionText_calendar_reminder_rules_example": {
+        "message": "Contoh: \"Jika acara berlangsung pada pagi hari di gedung A atau B, atur pengingat 45 menit sebelumnya. Jika berlangsung pada sore hari, 15 menit sebelumnya. Selain itu, jangan atur pengingat.\""
+    },
+    "prefs_OptionText_task_reminder_rules_example": {
+        "message": "Contoh: \"Jika tugas berkaitan dengan pembayaran, atur pengingat satu hari sebelum tanggal jatuh tempo. Jika berkaitan dengan laporan, dua jam sebelumnya. Selain itu, jangan atur pengingat.\""
+    },
+    "reminder_prompt_warning": {
+        "message": "Prompt utama berisi \"reminderMinutes\", tetapi opsi \"Izinkan AI mengatur pengingat\" tidak dicentang: instruksi pengingat dalam prompt utama diabaikan dan pengingat bawaan Thunderbird berlaku hingga opsi tersebut dicentang."
+    },
+    "prompt_add_tags_force_existing": {
+        "message": "Pilih tag HANYA dari daftar tag yang sudah ada berikut ini, yang dipisahkan dengan koma. Gunakan tag persis seperti yang tertulis dan jangan buat tag baru"
+    },
+    "SpamFilter_block_addresses_title": {
+        "message": "Daftar blokir alamat email"
+    },
+    "SpamFilter_block_addresses_infoline": {
+        "message": "Email dari alamat atau domain ini akan selalu ditandai sebagai spam tanpa dikirim ke AI. Saat filter spam berjalan secara otomatis, email tersebut dipindahkan ke folder spam."
+    },
+    "SpamFilter_address_lists_precedence": {
+        "message": "Jika pengirim ada dalam kedua daftar, entri yang lebih spesifik diutamakan (alamat lengkap lebih diutamakan daripada domain). Jika kedua entri sama spesifiknya, daftar pengecualian diutamakan. Kedua daftar diperiksa sebelum buku alamat."
+    },
+    "spamfilter_block_addresses_explanation": {
+        "message": "Pengirim ada dalam daftar blokir alamat email antispam."
+    },
+    "apiwebchat_retrying": {
+        "message": "Server tidak tersedia ($REASON$), mencoba lagi dalam $SECONDS$ detik (percobaan $ATTEMPT$ dari $MAX$)",
+        "placeholders": {
+            "reason": {
+                "content": "$1",
+                "example": "HTTP 503"
+            },
+            "seconds": {
+                "content": "$2",
+                "example": "2"
+            },
+            "attempt": {
+                "content": "$3",
+                "example": "1"
+            },
+            "max": {
+                "content": "$4",
+                "example": "3"
+            }
+        }
+    },
+    "apiwebchat_retrying_rate_limit": {
+        "message": "Batas laju permintaan tercapai, mencoba lagi dalam $SECONDS$ detik (percobaan $ATTEMPT$ dari $MAX$)",
+        "placeholders": {
+            "seconds": {
+                "content": "$1",
+                "example": "10"
+            },
+            "attempt": {
+                "content": "$2",
+                "example": "2"
+            },
+            "max": {
+                "content": "$3",
+                "example": "5"
+            }
+        }
+    },
+    "apiwebchat_retry_reason_network": {
+        "message": "kesalahan jaringan"
+    },
+    "apiwebchat_retry_reason_timeout": {
+        "message": "batas waktu habis"
+    },
+    "apiwebchat_unknown_connection": {
+        "message": "Jenis koneksi \"$TYPE$\" tidak dikenal: jendela percakapan ini tidak dapat mengirim apa pun. Buka pengaturan ThunderAI dan pilih penyedia AI.",
+        "placeholders": {
+            "type": {
+                "content": "$1",
+                "example": "foo_api"
+            }
+        }
+    },
+    "apiwebchat_request_cancelled": {
+        "message": "Permintaan dibatalkan."
+    },
+    "AccountSelector_managed_note": {
+        "message": "Akun ditentukan oleh kebijakan konfigurasi organisasi Anda dan tidak dapat diubah di sini."
+    },
+    "AccountSelector_managed_none": {
+        "message": "Kebijakan konfigurasi organisasi Anda membatasi fitur ini pada akun yang tidak ada dalam profil ini, sehingga fitur ini tidak berjalan secara otomatis pada akun mana pun."
+    },
+    "customDataPH_save_error": {
+        "message": "Terjadi kesalahan saat menyimpan placeholder data khusus:"
+    },
+    "prefs_OptionText_calendar_no_selection_save_missing_placeholder": {
+        "message": "Opsi \"Jangan minta pemilihan teks\" diaktifkan, sehingga prompt harus berisi placeholder {%mail_text_body_or_selected%} atau {%mail_html_body_or_selected%}. Tambahkan salah satu placeholder tersebut ke prompt atau atur ulang prompt ke bawaan."
+    },
+    "prefs_OptionText_calendar_no_selection_policy_missing_placeholder": {
+        "message": "Organisasi Anda telah mengaktifkan opsi ini, tetapi prompt tidak berisi {%mail_text_body_or_selected%} maupun {%mail_html_body_or_selected%}, sehingga isi pesan tidak dikirim ke AI. Tambahkan salah satu placeholder tersebut ke prompt atau atur ulang prompt ke bawaan."
+    },
+    "managed_banner": {
+        "message": "Beberapa pengaturan dikelola oleh organisasi Anda dan tidak dapat diubah."
+    },
+    "managed_banner_org": {
+        "message": "Beberapa pengaturan dikelola oleh $ORG$ dan tidak dapat diubah.",
+        "placeholders": {
+            "org": {
+                "content": "$1",
+                "example": "ACME Corp"
+            }
+        }
+    },
+    "managed_marker": {
+        "message": "Dikelola"
+    },
+    "managed_marker_org": {
+        "message": "Dikelola oleh $ORG$",
+        "placeholders": {
+            "org": {
+                "content": "$1",
+                "example": "ACME Corp"
+            }
+        }
+    },
+    "managed_marker_tooltip": {
+        "message": "Pengaturan ini ditetapkan oleh kebijakan konfigurasi organisasi Anda dan tidak dapat diubah di sini."
+    },
+    "managed_prompt_text_tooltip": {
+        "message": "Teks prompt ini ditetapkan oleh kebijakan konfigurasi organisasi Anda dan tidak dapat diubah di sini. Anda tetap dapat memilih dan menyalinnya."
+    },
+    "managed_restriction_tooltip": {
+        "message": "Tindakan ini dinonaktifkan oleh kebijakan konfigurasi organisasi Anda."
+    },
+    "managed_restriction_prompts": {
+        "message": "Pengelolaan prompt dinonaktifkan oleh kebijakan konfigurasi organisasi Anda. Prompt tidak dapat dibuat, disalin, diimpor, atau diekspor. Prompt pribadi Anda yang sudah ada hanya dapat dibaca dan tidak tersedia dalam menu."
+    },
+    "customPrompts_policy_inert_note": {
+        "message": "Hanya baca dan tidak tersedia dalam menu: kebijakan konfigurasi organisasi Anda menonaktifkan pengelolaan prompt. Prompt Anda tidak dihapus."
+    },
+    "managed_restriction_default_prompts": {
+        "message": "Prompt bawaan dinonaktifkan oleh kebijakan konfigurasi organisasi Anda. Prompt tersebut tetap tercantum di sini, tetapi tidak tersedia dalam menu."
+    },
+    "customPrompts_policy_default_inert_note": {
+        "message": "Tidak tersedia dalam menu: kebijakan konfigurasi organisasi Anda menonaktifkan prompt bawaan."
+    },
+    "menu_order_badge_policy_inactive": {
+        "message": "Dinonaktifkan oleh kebijakan"
+    },
+    "menu_order_badge_shadowed": {
+        "message": "Dinonaktifkan: ID duplikat"
+    },
+    "managed_restriction_wizard": {
+        "message": "Panduan penyiapan dinonaktifkan oleh kebijakan konfigurasi organisasi Anda. Koneksi AI Anda dikonfigurasi secara terpusat."
+    },
+    "managed_restriction_wizard_title": {
+        "message": "Panduan penyiapan tidak tersedia"
+    },
+    "customPrompts_org_badge": {
+        "message": "Organisasi"
+    },
+    "customPrompts_org_shadowing_note": {
+        "message": "Salah satu prompt Anda menggunakan ID yang sama dan dinonaktifkan selama prompt organisasi ini aktif."
+    },
+    "customPrompts_shadowed_note": {
+        "message": "Dinonaktifkan: prompt organisasi menggunakan ID yang sama. Prompt Anda tetap disimpan dan akan berfungsi kembali jika prompt organisasi dihapus."
+    },
+    "batch_stopped_rate_limit": {
+        "message": "Pemrosesan email dihentikan setelah $COUNT$ pesan: batas laju permintaan atau kuota penyedia AI terlampaui. Coba lagi nanti.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stopped_retry_after": {
+        "message": "Pemrosesan email dihentikan setelah $COUNT$ pesan: penyedia AI tidak menerima permintaan dan meminta untuk mencoba lagi dalam $WAIT$.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            },
+            "wait": {
+                "content": "$2"
+            }
+        }
+    },
+    "api_retry_after_hint": {
+        "message": "Penyedia AI meminta untuk mencoba lagi dalam $WAIT$.",
+        "placeholders": {
+            "wait": {
+                "content": "$1"
+            }
+        }
+    },
+    "add_tags_too_many_messages": {
+        "message": "Anda memilih $SELECTED$ pesan, tetapi hanya hingga $MAX$ pesan yang dapat diberi tag sekaligus. Pilih lebih sedikit pesan.",
+        "placeholders": {
+            "selected": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            }
+        }
+    },
+    "menu_order_save_error": {
+        "message": "Terjadi kesalahan saat menyimpan urutan menu:"
+    },
+    "menu_order_badge_org": {
+        "message": "Organisasi"
+    },
+    "connTest_managed_api_key": {
+        "message": "Kunci API ditetapkan oleh organisasi Anda dan tidak dapat diuji dari sini"
     }
 }
