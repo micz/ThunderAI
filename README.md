@@ -69,6 +69,7 @@ Drafts, templates, outbox and sent messages are skipped, so a draft is never pro
 | Provider | API key | Notes |
 |---|---|---|
 | **ChatGPT Web** | not needed | Works with a free account: the prompt is sent through a ChatGPT window. Supports a specific model, a Project, a Custom GPT and temporary chats |
+| **Claude Web** | not needed | Uses your signed-in claude.ai session. ThunderAI inserts prompts and lets you review and apply replies. No API key or session credentials are read or stored. Uses the current page model; automatic features still need a separate API connection |
 | **OpenAI API** | required | Model, developer messages, temperature and conversation storage. On reasoning models you can set the *reasoning summary* and the *effort*, and send extra JSON parameters with every request |
 | **Google Gemini** | required | Model, temperature, *System Instructions* and *thinking budget* — leave the budget empty to let the model decide |
 | **Claude API** | required | Model, system prompt, max tokens, extended thinking budget and *effort*. The request adapts to the selected model, so the options that a model rejects are disabled instead of failing. Requires the permission *"Access your data for sites in the https://anthropic.com domain"* |

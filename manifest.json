@@ -39,6 +39,7 @@
         "messagesUpdate",
         "messagesMove",
         "https://*.chatgpt.com/*",
+        "https://claude.ai/*",
         "https://*.openai.com/*",
         "https://*.anthropic.com/*",
         "https://*/*",

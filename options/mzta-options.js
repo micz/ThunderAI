@@ -31,7 +31,8 @@ import {
   hasNoConnectionSelected,
   setTomSelectBorder,
   getMiczItUrl,
-  getCacheStorageUsedSpace
+  getCacheStorageUsedSpace,
+  isWebConnection
 } from '../js/mzta-utils.js';
 import { taStorage } from '../js/mzta-storage.js';
 import {
@@ -150,6 +151,7 @@ async function restoreOptions() {
 // longer carry a solid per-provider background.
 const CONN_TINT_RGB = {
   chatgpt_web:       '180, 83, 14',
+  claude_web:        '180, 83, 14',
   chatgpt_api:       '10, 83, 214',
   google_gemini_api: '150, 120, 12',
   anthropic_api:     '168, 20, 80',
@@ -202,7 +204,7 @@ function disable_MaxPromptLength(){
   let maxPromptLength = document.getElementById('max_prompt_length');
   let conntype_select = document.getElementById("connection_type");
   // API-only setting: irrelevant for ChatGPT Web and until a connection is chosen.
-  maxPromptLength.disabled = (conntype_select.value === "chatgpt_web") || hasNoConnectionSelected(conntype_select.value);
+  maxPromptLength.disabled = isWebConnection(conntype_select.value) || hasNoConnectionSelected(conntype_select.value);
   let maxPromptLength_tr = document.getElementById('max_prompt_length_tr');
   maxPromptLength_tr.style.display = (maxPromptLength.disabled) ? 'none' : '';
 }
@@ -217,10 +219,9 @@ function setFeatureManageVisibility(btn, visible){
 
 // Why an API-driven feature can't be used with the current connection:
 //   no_connection -> nothing selected yet (the setup wizard banner covers it)
-//   chatgpt_web   -> ChatGPT Web has no API
-// Both disable the feature, but only chatgpt_web shows the "switch to an API
-// integration" hint (warn_API_needed) — that text is about ChatGPT Web and would
-// be misleading when no provider has been chosen at all.
+//   web provider  -> web connections have no API
+// Web providers show the "API connection needed" hint; an empty connection is
+// handled by the setup banner instead.
 function getFeatureConnState(prefs_opt, prefix){
   let conntype_select = document.getElementById("connection_type");
   // The live select value must win: it is the not-yet-persisted choice this call is
@@ -233,13 +234,13 @@ function getFeatureConnState(prefs_opt, prefix){
   let no_connection = hasNoConnectionSelected(effective);
   return {
     no_connection: no_connection,
-    // ChatGPT Web is deliberately NOT disabling: the per-feature API is configured from
+    // Web providers are deliberately NOT disabling: the per-feature API is configured from
     // the feature's own settings page, which is only reachable once the feature is on, so
     // forcing it off here would make that page unreachable and the setup impossible. The
     // amber "API needed" badge already states the requirement, and the real gate lives
     // downstream (menus and body buttons both judge the *effective* connection).
     disabled: no_connection,
-    show_api_warning: (effective === "chatgpt_web")
+    show_api_warning: isWebConnection(effective)
   };
 }
 
@@ -302,7 +303,7 @@ async function disable_GetCalendarEvent(prefs_opt){
   let is_spark_present = await checkSparksPresence();
   // These features need an API, so they follow the same rule as the other API-driven
   // rows: only "no connection selected" takes them away, while ChatGPT Web leaves them
-  // usable and merely shows the warn_API_needed hint (the per-feature API is configured
+  // usable and merely shows the API-needed hint (the per-feature API is configured
   // from the feature's own settings page, which is reachable only once it is enabled).
   // Judged per feature, so a specific integration keeps them available whatever the
   // global connection is.
@@ -334,7 +335,7 @@ async function disable_GetCalendarEvent(prefs_opt){
   wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
 }
 
-const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
+const CONN_TYPES = ["chatgpt_web", "claude_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
 
 // Documentation page behind the "Full guide" link of the provider setup callout.
 // Sparse on purpose: only these providers have a dedicated page, so the link is

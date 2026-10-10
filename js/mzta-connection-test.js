@@ -37,7 +37,7 @@ function _val(id) {
 
 // Provider registry: for each testable connection_type, how to build the client from the
 // current form fields, its display-name i18n key, and how to obtain the needed host
-// permission. chatgpt_web is intentionally absent (no testable endpoint).
+// permission. ChatGPT Web and Claude Web are intentionally absent (no testable API endpoint).
 const TESTABLE = {
   chatgpt_api: {
     nameKey: 'prefs_Connection_type_ChatGPT_API',
@@ -90,12 +90,12 @@ async function _requestHostPermission(host) {
   return messenger.permissions.request({ origins: [prepareOriginURL(h)] });
 }
 
-// Returns the registry entry for a connection type, or null if it has no testable endpoint.
+// Returns the registry entry for a connection type, or null if it has no testable API endpoint.
 export function getTestableConnection(connType) {
   return TESTABLE[connType] || null;
 }
 
-// True if the given connection type exposes a testable endpoint (everything but chatgpt_web).
+// True if the given connection type exposes a testable API endpoint.
 export function isTestableConnection(connType) {
   return !!TESTABLE[connType];
 }
