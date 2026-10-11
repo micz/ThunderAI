@@ -32,6 +32,7 @@ ThunderAI is a **Thunderbird WebExtension (Manifest V2)** that integrates multip
 9. **Never commit or add on your own initiative.** Do not run `git commit` (or `git push`, or `git add`, or create branches) unless explicitly asked to in that same request. Finishing a task is *not* permission to commit it: leave the work modified, report what is ready, and let the maintainer decide when to commit and how to word the message. Approval to implement a plan is not approval to commit it.
 10. **Never show the full diff in chat.** When finishing a task, do not paste the complete diff (or whole rewritten files) into the final message. Summarize what changed — files touched with clickable links, and a short description per change — and let the maintainer inspect the actual diff in the editor or via git. Short snippets are fine only when needed to explain a specific decision.
 11. **Never run the full test suite, and never ask to run it.** The maintainer runs `npm test` (and the full DOM run) themselves. When completing a job, run only the specific test files the change touches, without asking, and list which ones you ran.
+12. **Release notes:** edit only `options/mzta-release-notes.html`. `CHANGELOG.md` is generated from it (`.github/scripts/changelog-sync.mjs`, `npm run changelog`) and committed by the `changelog-sync.yml` workflow on every push that touches the release notes — never edit it by hand.
 
 ## Directory Map
 
