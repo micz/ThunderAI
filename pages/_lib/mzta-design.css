@@ -32,8 +32,8 @@
     --line: rgba(0, 0, 0, .09);
     --field: #f7f8fa;
     --fieldLine: rgba(0, 0, 0, .16);
-    --accent: #0a68ff;
-    --accentLight: #0a68ff0f;
+    --accent: #2c5e9b;
+    --accentLight: #2c5e9b0f;
     --success: #1f8a5b;
     --warning: #c9760a;
 
@@ -371,7 +371,7 @@ input, select, button, textarea { font-family: inherit; }
     --ed-surface: var(--field);
     --ed-surface-focus: var(--panel);
     --ed-border: var(--fieldLine);
-    /* NOT --accentLight: that token is a 6%-alpha wash (#0a68ff0f) meant for
+    /* NOT --accentLight: that token is a 6%-alpha wash (#2c5e9b0f) meant for
        large hover surfaces, and a token-sized chip painted with it is invisible
        (1.09 contrast against --field). --code/--codeBg are dedicated tokens with
        per-theme values, since mixing --accent into --field cannot reach a legible

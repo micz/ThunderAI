@@ -466,7 +466,7 @@ them exactly — change one side and the mirror drifts.
 
 The chip colours there come from dedicated `--code` / `--codeBg` tokens, added to both theme blocks of
 `mzta-design.css` with the same values as the two table pages' `--code` / `--code-bg`. Do **not** reach
-for `--accentLight`: it is a 6%-alpha wash (`#0a68ff0f`) intended for large hover surfaces, and a
+for `--accentLight`: it is a 6%-alpha wash (`#2c5e9b0f`) intended for large hover surfaces, and a
 token-sized chip painted with it is invisible (1.09 contrast against `--field`) — which is exactly how
 the first attempt shipped no visible highlight on those six pages. The same caution applies to
 `--warnBg`/`--warnBorder`, which are also low-alpha washes. Fallbacks in the shared
