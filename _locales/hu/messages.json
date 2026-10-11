@@ -45,7 +45,7 @@
         "message": "Utasítás (Prompt)"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Az alapértelmezett utasítások nem szerkeszthetők. Letilthatja őket, majd a szövegüket kimásolva és egy új utasításba beillesztve létrehozhat egy módosított verziót."
+        "message": "Az alapértelmezett utasítások nem szerkeszthetők. Módosított verzió létrehozásához használja a „Duplikálás és szerkesztés” lehetőséget. Ha el szeretne rejteni egy utasítást a menükből, használja a menüsorrend beállításait."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Az utasításokat importálhatja és exportálhatja. Az azonos azonosítóval (ID) rendelkező meglévő utasítások felülíródnak. Az új azonosítóval rendelkezők hozzáadásra kerülnek."

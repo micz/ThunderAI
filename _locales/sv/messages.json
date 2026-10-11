@@ -261,7 +261,7 @@
         "message": "Prompt"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Standardpromptar kan inte redigeras. Du kan inaktivera dem och sedan kopiera prompttexten och klistra in den i en ny för att skapa en modifierad version."
+        "message": "Standardpromptar kan inte redigeras. Använd ”Duplicera och redigera” för att skapa en modifierad version. Använd inställningarna för menyordning för att dölja en prompt från menyerna."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Du kan importera och exportera promptar. Befintliga promptar med samma ID kommer att skrivas över. Promptar med nya ID:n kommer att läggas till."

@@ -9,7 +9,7 @@
         "message": "翻譯這段"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "預設的提示無法編輯。你可以先停用它們，然後複製提示內容，再貼到新的提示中，就能製作出修改版本。"
+        "message": "預設的提示無法編輯。若要製作修改版本，請使用「複製並編輯」。若要在選單中隱藏提示，請使用選單順序設定。"
     },
     "prompt_rewrite_formal": {
         "message": "改寫得比較正式一點"

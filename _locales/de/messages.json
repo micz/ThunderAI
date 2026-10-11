@@ -43,7 +43,7 @@
         "message": "Informationen"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Die Standard-Eingabeaufforderungen sind nicht bearbeitbar. Sie können sie deaktivieren, dann den Text der Eingabeaufforderung kopieren und in eine neue einfügen, um eine modifizierte Version zu erstellen."
+        "message": "Die Standard-Eingabeaufforderungen sind nicht bearbeitbar. Um eine modifizierte Version zu erstellen, verwenden Sie „Duplizieren und bearbeiten“. Um eine Eingabeaufforderung in den Menüs auszublenden, verwenden Sie die Einstellungen der Menü-Reihenfolge."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Sie können die Prompts importieren und exportieren. Bestehende Prompts mit derselben ID werden überschrieben. Prompts mit neuen IDs werden hinzugefügt."

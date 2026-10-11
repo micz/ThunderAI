@@ -42,7 +42,7 @@
         "message": "Más información"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Los prompts predeterminados no son editables. Puedes deshabilitarlos, luego copiar el texto y pegarlo en uno nuevo para crear una versión modificada."
+        "message": "Los prompts predeterminados no son editables. Para crear una versión modificada, usa \"Duplicar y editar\". Para ocultar un prompt de los menús, usa la configuración del orden del menú."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Puedes importar y exportar los prompts. Los prompts existentes con el mismo ID serán sobrescritos. Se agregarán nuevos prompts con nuevos ID."

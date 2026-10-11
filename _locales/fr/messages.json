@@ -43,7 +43,7 @@
         "message": "Informations"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Les invites par défaut ne sont pas modifiables. Vous pouvez les désactiver, puis copier le texte de l'invite et le coller dans une nouvelle pour créer une version modifiée."
+        "message": "Les invites par défaut ne sont pas modifiables. Pour créer une version modifiée, utilisez « Dupliquer et modifier ». Pour masquer une invite dans les menus, utilisez les paramètres d'ordre du menu."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Vous pouvez importer et exporter les prompts. Les prompts existantes avec le même ID seront écrasées. Les prompts avec de nouveaux ID seront ajoutées."

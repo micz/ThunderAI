@@ -40,7 +40,7 @@
         "message": "Više informacija"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Zadane upite nije moguće uređivati. Možete ih onemogućiti, a zatim kopirati tekst upita i zalijepiti ga u novi kako biste stvorili modificiranu verziju."
+        "message": "Zadane upite nije moguće uređivati. Za stvaranje izmijenjene verzije koristite \"Dupliciraj i uredi\". Za skrivanje upita iz izbornika koristite postavke redoslijeda izbornika."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Možete uvoziti i izvoziti upite. Postojeći upiti s istim ID-om bit će prebrisani. Dodat će se upiti s novim ID-ovima."

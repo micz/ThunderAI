@@ -54,7 +54,7 @@
         "message": "更多信息"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "默认的提示词无法直接编辑。你可以先禁用它们，然后将提示文本复制并粘贴到新提示中，从而创建修改后的版本。"
+        "message": "默认的提示词无法直接编辑。要创建修改后的版本，请使用“复制并编辑”。要在菜单中隐藏提示词，请使用菜单顺序设置。"
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "你可以导入和导出提示。具有相同ID的现有提示将会被覆盖。具有新ID的提示会被添加。"

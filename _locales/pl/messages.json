@@ -43,7 +43,7 @@
         "message": "Więcej informacji"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Domyślne polecenia nie są edytowalne. Możesz je wyłączyć, skopiować tekst polecenia i wkleić go do nowego, aby stworzyć zmodyfikowaną wersję."
+        "message": "Domyślne polecenia nie są edytowalne. Aby utworzyć zmodyfikowaną wersję, użyj opcji „Duplikuj i edytuj”. Aby ukryć polecenie w menu, użyj ustawień kolejności menu."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Możesz importować i eksportować polecenia. Istniejące polecenia o tym samym ID zostaną nadpisane. Polecenia z nowymi ID zostaną dodane."

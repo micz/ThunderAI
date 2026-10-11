@@ -123,7 +123,7 @@
         "message": "Gerir prompts"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Os prompts padrão não são editáveis. Podes desativá-los, copiar o texto do prompt e colá-lo num novo, para criar uma versão modificada."
+        "message": "Os prompts padrão não são editáveis. Para criar uma versão modificada, usa \"Duplicar e editar\". Para ocultar um prompt dos menus, usa as definições da ordem do menu."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Podes importar e exportar prompts. Prompts existentes com o mesmo ID serão escritos por cima. Prompts com um ID novo serão adicionados."

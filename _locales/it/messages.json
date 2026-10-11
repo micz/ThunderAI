@@ -43,7 +43,7 @@
         "message": "Informazioni"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "I prompt predefiniti non sono modificabili. Puoi disattivarli, quindi copiare il testo del prompt e incollarlo in uno nuovo per crearne una versione modificata."
+        "message": "I prompt predefiniti non sono modificabili. Per crearne una versione modificata, usa \"Duplica e modifica\". Per nascondere un prompt dai menu, usa le impostazioni dell'ordine dei menu."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Puoi importare ed esportare i prompt. I prompt esistenti con lo stesso ID verranno sovrascritti. I prompt con nuovi ID verranno aggiunti."

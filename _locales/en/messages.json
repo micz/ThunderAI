@@ -60,8 +60,8 @@
     "description": "AI chat window (api_webchat): label shown in the info area before the ID and name of the prompt being used; a noun."
   },
   "customPrompts_managePrompts_info_default": {
-    "message": "The default prompts are not editable. You can disable them, then copy the prompt text and paste it into a new one to create a modified version.",
-    "description": "Custom prompts page: help text under the heading explaining that built-in prompts cannot be edited but can be disabled and copied."
+    "message": "The default prompts are not editable. To create a modified version, use \"Duplicate and edit\". To hide a prompt from the menus, use the menu order settings.",
+    "description": "Custom prompts page: help text under the heading explaining that built-in prompts cannot be edited, that 'Duplicate and edit' creates an editable copy, and that prompts are hidden from the menus on the Menu Order page. 'Duplicate and edit' must match the translation of that button label."
   },
   "customPrompts_managePrompts_info_default_2": {
     "message": "You can import and export the prompts. Existing prompts with the same ID will be overwritten. Prompts with new IDs will be added.",

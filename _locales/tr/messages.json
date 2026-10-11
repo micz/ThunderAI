@@ -6,7 +6,7 @@
         "message": "YZ"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Varsayılan promptlar düzenlenemez. Bunları devre dışı bırakabilir, ardından prompt metnini kopyalayıp yeni bir prompta yapıştırarak düzenlenmiş bir sürüm oluşturabilirsiniz."
+        "message": "Varsayılan promptlar düzenlenemez. Düzenlenmiş bir sürüm oluşturmak için \"Çoğalt ve düzenle\" seçeneğini kullanın. Bir promptu menülerden gizlemek için menü sırası ayarlarını kullanın."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Promptları içe ve dışa aktarabilirsiniz. Aynı kimliğe (ID) sahip mevcut istemlerin üzerine yazılır. Yeni kimliklere (ID) sahip promptlar eklenir."

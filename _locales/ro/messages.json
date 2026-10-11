@@ -45,7 +45,7 @@
         "message": "Administrare prompturi"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Prompturile predefinite nu pot fi modificate. Însă poți să le dezactivezi, să le copiezi și, în final, să creezi o nouă versiune a lor."
+        "message": "Prompturile predefinite nu pot fi modificate. Pentru a crea o versiune modificată, folosește „Duplică și editează”. Pentru a ascunde un prompt din meniuri, folosește setările pentru ordinea meniului."
     },
     "customPrompts_form_label_ID": {
         "message": "ID"

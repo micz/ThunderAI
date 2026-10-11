@@ -117,7 +117,7 @@
         "message": "Máte neuložené změny!"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Výchozí dotazy nelze upravovat. Pro vytvoření upravené verze je můžete zakázat, poté zkopírovat text dotazu a vložit jej do nového."
+        "message": "Výchozí dotazy nelze upravovat. Pro vytvoření upravené verze použijte „Duplikovat a upravit“. Pro skrytí dotazu z nabídek použijte nastavení pořadí nabídek."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Můžete importovat a exportovat dotazy. Existující dotazy se stejným ID budou přepsány. Dotazy s novými ID budou přidány."

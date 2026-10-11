@@ -48,7 +48,7 @@
         "message": "Prompt"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Prompt bawaan tidak dapat diedit. Anda dapat menonaktifkannya, lalu menyalin teks prompt dan menempelkannya ke prompt baru untuk membuat versi yang dimodifikasi."
+        "message": "Prompt bawaan tidak dapat diedit. Untuk membuat versi yang dimodifikasi, gunakan \"Duplikasikan dan edit\". Untuk menyembunyikan prompt dari menu, gunakan pengaturan urutan menu."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Anda dapat mengimpor dan mengekspor prompt. Prompt yang sudah ada dengan ID yang sama akan ditimpa. Prompt dengan ID baru akan ditambahkan."
