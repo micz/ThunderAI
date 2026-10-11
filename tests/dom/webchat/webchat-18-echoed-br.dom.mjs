@@ -5,10 +5,18 @@
 //
 // Spec 01 "One render path, no router" ("An echoed `<br>` is one line break": the break right after
 // a raw <br> is whitespace, not a second <br>, for <br/> and <br  /> and a hardbreak too; two <br>
-// written stay two; code untouched; a "\n" rather than nothing, so a list item is not welded once
-// removeAloneBRs() drops its <br>; the chat, "use this answer" and Copy get the same line).
+// written stay two; code untouched; the chat, "use this answer" and Copy get the same line; "In a
+// raw HTML block, a newline between two pieces of text is a line break": text-newline-text, also
+// through inline tags, becomes <br>, while HTML's own formatting - after a block tag or a <br>,
+// before indentation, inside <pre> - stays whitespace).
 // Spec 07 "Line breaks: `<br>` is a block separator" (the echoed answer pairs with the original's
 // <br>: no change, and the picker's result keeps it a line break, not a paragraph break).
+// Spec 01 "Actions on an answer" ("Only the edge `<br>` are trimmed": a <br> in a list item or a
+// table cell, and in a selection made inside one paragraph, reaches the mail; a <br> at the edge of
+// a selection does not).
+//
+// jsdom keeps no selection inside a shadow root (Selection.addRange() ignores such a range), so the
+// selection tests hand the page a getSelection() over a real Range of the answer's nodes.
 //
 // The tests run in order on one window.
 
@@ -44,6 +52,7 @@ const k = webchatTests('18');
 
 const S_RENDER = 'spec 01 "One render path, no router"';
 const S_BR = 'spec 07 "Line breaks: `<br>` is a block separator"';
+const S_ACT = 'spec 01 "Actions on an answer"';
 
 const message = () => answerEls(lastBotTurn(ctx))[0];
 /** An element's children, whitespace-only text left out, as [nodeName, text]. A text node is
@@ -125,14 +134,97 @@ k.test('code-untouched', S_RENDER, 'a "<br>" and its newline inside a code fence
     assert.equal(pre.querySelector('br'), null);
 });
 
-k.test('list-no-weld', S_RENDER, 'in a list item the break becomes whitespace, not nothing: the two lines are never welded in the mail', async () => {
+k.test('list-no-weld', S_RENDER, 'in a list item the break becomes whitespace, not nothing: the two lines are never welded', async () => {
     await answer(['- a<br>\n  b']);
-    assert.equal(message().querySelector('li').querySelectorAll('br').length, 1);
+    const li = message().querySelector('li');
+    assert.equal(li.querySelectorAll('br').length, 1);
+    assert.equal(li.textContent.replace(/\s+/g, ' '), 'a b');
+});
+
+// ---- raw HTML blocks ----------------------------------------------------------------------
+
+/** The <br> count of the first `sel` element of the newest answer. */
+const brsIn = sel => message().querySelector(sel).querySelectorAll('br').length;
+
+k.test('html-block-lines', S_RENDER, 'a block opening with <div>: a newline between two pieces of text is a line break, also after an inline tag', async () => {
+    await answer(['<div>Ciao\ngrazie</div>\n\n<div>Ciao <b>Mario</b>\ngrazie</div>']);
+    const divs = [...message().querySelectorAll('div')];
+    assert.equal(divs.length, 2);
+    assert.deepEqual(shape(divs[0]), [['#text', 'Ciao'], ['br', ''], ['#text', 'grazie']]);
+    assert.deepEqual(shape(divs[1]), [['#text', 'Ciao '], ['b', 'Mario'], ['br', ''], ['#text', 'grazie']]);
+});
+
+k.test('html-block-after-br', S_RENDER, 'a <br> alone on its line, then two text lines: one <br> between the lines, none added after the tag', async () => {
+    await answer(['<br>\nriga1\nriga2']);
+    assert.equal(message().querySelectorAll('br').length, 2);
+    assert.match(message().innerHTML, /riga1<br>\s*riga2/);
+});
+
+k.test('html-block-echoed-br', S_RENDER, 'inside a raw block too, an echoed "<br>" and its newline are ONE line break', async () => {
+    await answer(['<div>Ciao,<br>\ngrazie</div>']);
+    assert.deepEqual(shape(message().querySelector('div')), ONE_BR());
+});
+
+k.test('html-block-formatting', S_RENDER, "HTML's own formatting stays whitespace: newlines between blocks, before indentation, inside a list", async () => {
+    await answer(['<div>\n  <p>a</p>\n  <p>b</p>\n</div>\n\n<p>\n  Ciao\n  grazie\n</p>\n\n<ul>\n<li>a</li>\n<li>b</li>\n</ul>']);
+    assert.equal(message().querySelectorAll('br').length, 0, message().innerHTML);
+});
+
+k.test('html-block-pre', S_RENDER, 'a <pre> in a raw block keeps its newlines and indentation as written, with no <br>', async () => {
+    await answer(['<pre>\na\n  b\n</pre>']);
+    assert.equal(brsIn('pre'), 0);
+    assert.equal(message().querySelector('pre').textContent, 'a\n  b\n');
+});
+
+// ---- what "use this answer" sends: only the edge <br> trimmed --------------------------------
+
+k.test('mail-list-br', S_ACT, 'the <br> of a list item reaches the mail', async () => {
+    await answer(['- a<br>\n  b']);
     await ctx.click(useBtn(lastBotTurn(ctx)));
     const li = parse(lastReplace()).querySelector('li');
     assert.ok(li, lastReplace());
-    assert.notEqual(li.textContent, 'ab');
-    assert.equal(li.textContent.replace(/\s+/g, ' '), 'a b');
+    assert.equal(li.querySelectorAll('br').length, 1);
+});
+
+k.test('mail-cell-br', S_ACT, 'the <br> of a table cell reaches the mail: "a<br>b" is never welded to "ab"', async () => {
+    await answer(['| x |\n|---|\n| a<br>b |']);
+    await ctx.click(useBtn(lastBotTurn(ctx)));
+    const td = parse(lastReplace()).querySelector('td');
+    assert.ok(td, lastReplace());
+    assert.deepEqual(shape(td), [['#text', 'a'], ['br', ''], ['#text', 'b']]);
+});
+
+/** Make `range` the window's selection (see the note at the top), click "use this answer" on the
+ *  newest answer and give the selection back. Returns what was sent. */
+async function useWithSelection(range) {
+    const real = ctx.window.getSelection;
+    ctx.window.getSelection = () => ({ rangeCount: 1, getRangeAt: () => range, toString: () => range.toString() });
+    try {
+        await ctx.click(useBtn(lastBotTurn(ctx)));
+    } finally {
+        ctx.window.getSelection = real;
+    }
+    return lastReplace();
+}
+
+k.test('mail-selection-in-paragraph', S_ACT, 'a selection made inside one paragraph (its cloned range has no <p> around it) keeps its <br>', async () => {
+    await answer(['Ciao,\ngrazie mille']);
+    const range = ctx.document.createRange();
+    range.selectNodeContents(message().querySelector('p'));
+    assert.deepEqual(shape(parse(await useWithSelection(range))), ONE_BR('grazie mille'));
+});
+
+k.test('mail-selection-edges', S_ACT, 'a selection opening and closing on a <br> sends no empty line at either end', async () => {
+    await answer(['uno\ndue\ntre']);
+    const p = message().querySelector('p');
+    const brs = [...p.querySelectorAll('br')];
+    const range = ctx.document.createRange();
+    range.setStartBefore(brs[0]);
+    range.setEndAfter(brs[1]);
+    assert.equal(range.cloneContents().querySelectorAll('br').length, 2, 'the range does hold both <br>');
+    const sent = parse(await useWithSelection(range));
+    assert.equal(sent.querySelectorAll('br').length, 0, sent.innerHTML);
+    assert.equal(sent.textContent.trim(), 'due');
 });
 
 k.coverage();

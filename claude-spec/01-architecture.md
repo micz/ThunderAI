@@ -1025,13 +1025,28 @@ branches, `BLOCK_TAG`/`LEAD_IN*` machinery) is **gone**.
   case, `<br/>`, `<br />`) into a `"\n"` text token, so the output is `<p>Ciao,<br>\ngrazie</p>`,
   the shape markdown-it writes for a bare newline. Two `<br>` written (`<br><br>\n`, `<br>\n<br>\n`)
   stay two: an intended blank line survives. The break becomes whitespace rather than being
-  **dropped** because `removeAloneBRs()` removes a `<br>` with no `<p>` ancestor (a tight list
-  item): without the `\n` the two lines would reach the mail welded (`<li>ab</li>`). It works on
-  tokens, inside the one render path, so the chat, "use this answer", Copy and the diff picker all
+  **dropped** so that whatever later drops the `<br>` itself (a mail client's own HTML-to-text
+  conversion) still finds whitespace between the two lines instead of welding them (`ab`). It works
+  on tokens, inside the one render path, so the chat, "use this answer", Copy and the diff picker all
   get the same HTML, and every coalesced re-render of the accumulated raw text gives the same result
   however the `<br>` and the newline were split across tokens. Code spans, code blocks and raw HTML
   blocks are tokens of their own and are never looked at; a regex over the raw text would have
   reached into fenced code.
+- **In a raw HTML block, a newline between two pieces of text is a line break.** A line that opens
+  with a block-level tag (`<div>Ciao\ngrazie</div>`), or with any complete tag alone on its line
+  (`<br>` then text lines), is an `html_block`: markdown-it passes it through raw and `breaks: true`
+  never applies, so the model's newlines inside it were HTML whitespace and the lines reached the chat
+  and the mail welded (`Ciao grazie`). A second core rule, after `block` (`breakHtmlBlockLines()`),
+  rewrites each `html_block` token's content so it gets the reading `breaks: true` gives a paragraph,
+  but only where the newline really sits between two pieces of text on one line — which keeps HTML's
+  own formatting out of it. **Before** the newline there must be text, possibly through inline tags
+  (`Ciao <b>Mario</b>\n`), and not a block tag or a `<br>`, which end their line already: `<p>\n`,
+  `</li>\n` and the echoed `Ciao,<br>\ngrazie` are left alone. **Right after** it there must be text
+  or an inline opening tag: a newline followed by indentation is pretty-printing
+  (`<p>\n  Ciao\n  grazie\n</p>`) and stays whitespace, as a browser shows it. Such a newline becomes
+  `<br>\n`. The content of `pre`, `textarea`, `script`, `style`, `xmp`, `listing`, `plaintext` and
+  `code`, and comments, are never touched. Like the echoed-`<br>` rule it runs on tokens, inside the
+  parser: a pass over the rendered output would also see the `<br>\n` markdown-it writes itself.
 - **Code fences still show markup as text**: markdown-it escapes HTML inside code blocks regardless
   of `html: true`, so "how do I center a `<div>`?" is unaffected.
 - **`BLOCK_ALLOWED` is a superset of everything markdown-it emits** — it was widened with the table
@@ -1092,8 +1107,9 @@ already a real `<br>` element in the HTML — and therefore in `fullTextHTML`, t
 must show the same line structure. The old `convertTextNodeNewlinesToBr()` fixed up only the chat
 DOM, so the mail silently lost every single-`<br>` break; it has been removed. Re-adding it would
 also double-space the answer, since markdown-it emits `<p>a<br>\nb</p>` and the `\n` right after the
-`<br>` would be promoted to a second one. (The echoed-`<br>` rule under *One render path, no router*
-is not such a pass: it runs inside the parser, on tokens, before anything is rendered.)
+`<br>` would be promoted to a second one. (The echoed-`<br>` and raw-HTML-block rules under *One
+render path, no router* are not such a pass: they run inside the parser, on tokens, before anything
+is rendered, and the second touches only the content of `html_block` tokens.)
 
 The complementary half of this lives on the input side: the compose-window HTML placeholders
 go through `normalizeHtmlSourceNewlines()` (`js/mzta-utils.js`), **not** `convertNewlinesToBr()`,
@@ -1687,6 +1703,19 @@ are left alone; a snapshot left alone is returned unchanged, byte for byte. The 
 string patterns (a `"` at the very start, one at the very end, `<p>&quot;`, `&quot;</p>`), none of
 which could match: the snapshot is the sanitizer's serialization, which always opens with a tag and
 writes a quote in text as a bare `"`, never `&quot;`, so the quotes reached the mail.
+
+**Only the edge `<br>` are trimmed.** "use this answer" and Save as Summary send the snapshot, or the
+user's selection in the answer when there is one (`getCurrentSelectionHTML()`, the cloned range),
+through `trimEdgeBRs()`: the `<br>` at the very start and the very end of the HTML — the first / last
+thing in document order, so one opening the first block of a selection cloned with its partially
+selected `<p>` counts too — are removed, and **every other `<br>` is kept**, so the mail shows the
+line structure the chat shows. A selection dragged from the end of a line, or over the break that ends
+one, would otherwise open or close the inserted text with an empty line. The picker's result skips it
+(07-diff-picker.md, *Two things the picker deliberately bypasses*). It replaces `removeAloneBRs()`,
+which removed every `<br>` with no `<p>` ancestor: written for a newline→`<br>` post-pass that turned
+markdown-it's `</p>\n<p>` into stray `<br>` between blocks, it outlived that pass and then only deleted
+real line breaks — in a tight list item, in a table cell (`a<br>b` reached the mail as `ab`), and in
+any selection made inside one paragraph, whose cloned range has no `<p>` around it.
 
 **What each kind of session offers.** The full bar, on the newest answer, and the compact toolbar
 (`.turn-tools`), built from the same arguments when that answer stops being the newest:

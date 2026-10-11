@@ -1234,14 +1234,11 @@ class MessagesArea extends HTMLElement {
                 // Read the picker NOW, not when the bar was built, so the click
                 // picks up every accept/reject the user has made since.
                 //
-                // Deliberately NOT through removeAloneBRs(). It would now be
-                // SAFE - the picker emits <p>/<li>-wrapped blocks, so every
-                // <br> it produces has a block ancestor, and the collapse that
-                // made this skip mandatory when the output was <br>-only markup
-                // can no longer happen. It is skipped because it is pointless:
-                // the picker's output is canonical by construction, and running
-                // it through a cleaner written for the markdown producer only
-                // adds a way to go wrong.
+                // Deliberately NOT through trimEdgeBRs(): the picker's output is
+                // canonical by construction (<p>/<li>-wrapped blocks), so it has
+                // no edge <br> to trim, and running it through a cleaner written
+                // for the answer snapshot and the selection only adds a way to
+                // go wrong.
                 //
                 // The mouse-selection override is skipped too: two mechanisms
                 // competing over the same output is confusing, and the picker is
@@ -1255,10 +1252,10 @@ class MessagesArea extends HTMLElement {
                 }
             }
             if(finalText === null) {
-                finalText = removeAloneBRs(fullTextHTMLAtAssignment);
+                finalText = trimEdgeBRs(fullTextHTMLAtAssignment);
                 const selectedHTML = this.getCurrentSelectionHTML();
                 if(selectedHTML != "") {
-                    finalText = removeAloneBRs(selectedHTML);
+                    finalText = trimEdgeBRs(selectedHTML);
                 }
             }
 
@@ -1555,10 +1552,10 @@ class MessagesArea extends HTMLElement {
         saveLabelEl.textContent = saveLabel;
         saveSummaryButton.appendChild(saveLabelEl);
         saveSummaryButton.addEventListener('click', async () => {
-            let finalText = removeAloneBRs(fullTextHTMLAtAssignment);
+            let finalText = trimEdgeBRs(fullTextHTMLAtAssignment);
             const selectedHTML = this.getCurrentSelectionHTML();
             if(selectedHTML != "") {
-                finalText = removeAloneBRs(selectedHTML);
+                finalText = trimEdgeBRs(selectedHTML);
             }
             await browser.runtime.sendMessage({
                 command: "chatgpt_saveSummary",
@@ -1982,35 +1979,32 @@ function htmlStringToFragment(htmlString) {
   return fragment;
 }
 
-// removeAloneBRs strips every <br> that has no <p> ancestor.
+// The <br> at the very START and END of the HTML removed, every other one kept:
+// the edges of a mouse selection (dragged from the end of a line, or over the
+// break that ends one) would otherwise open or close the inserted text with an
+// empty line. "Edge" is the first / last thing in document order, so a <br>
+// opening the first block of the fragment (a selection cloned with its partially
+// selected <p>) counts too; whitespace-only text and comments are skipped.
 //
-// On the markdown answer path this now has real work to do, and does the right
-// thing: with breaks:true the snapshot contains <br> INSIDE <p> (the line breaks
-// the model wrote), and those are exactly the ones it preserves. What it still
-// removes are the <br> a mouse selection can leave outside any paragraph, which
-// is what it was written for.
-function removeAloneBRs(htmlString) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(htmlString, 'text/html');
-
-  const brElements = Array.from(doc.querySelectorAll('br'));
-
-  brElements.forEach(br => {
-    let current = br;
-    let isInsideP = false;
-
-    while (current.parentElement) {
-      if (current.parentElement.tagName.toLowerCase() === 'p') {
-        isInsideP = true;
-        break;
-      }
-      current = current.parentElement;
+// It replaces removeAloneBRs(), which stripped every <br> with no <p> ancestor.
+// That was written for a newline->br post-pass that turned markdown-it's
+// "</p>\n<p>" into stray <br> between the blocks, and outlived it: since that
+// pass was removed it only deleted real line breaks - in a tight list item or a
+// table cell ("a<br>b" reached the mail as "ab"), and in any selection made
+// inside one paragraph, whose cloned range has no <p> around it.
+function trimEdgeBRs(htmlString) {
+  const doc = new DOMParser().parseFromString(String(htmlString), 'text/html');
+  const isFiller = n => n.nodeType === 8 || (n.nodeType === 3 && n.data.trim() === '');
+  for (const fromStart of [true, false]) {
+    let el = doc.body;
+    while (el) {
+      const kids = Array.from(el.childNodes);
+      if (!fromStart) { kids.reverse(); }
+      const edge = kids.find(n => !isFiller(n));
+      if (!edge) { break; }
+      if (edge.nodeName === 'BR') { edge.remove(); continue; }
+      el = (edge.nodeType === 1) ? edge : null;
     }
-
-    if (!isInsideP) {
-      br.remove();
-    }
-  });
-
+  }
   return doc.body.innerHTML;
 }

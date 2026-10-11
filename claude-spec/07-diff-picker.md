@@ -567,13 +567,13 @@ answer's compact toolbar has to keep handing back that picker's current state.
 
 ### Two things the picker deliberately bypasses
 
-- **`removeAloneBRs()`.** It strips every `<br>` with no `<p>` ancestor. **The reason for skipping it
-  has changed, even though the behaviour has not.** It used to be mandatory: `composeResultHTML()`
-  emitted `<br>`-separated text with no `<p>` wrapper, so running it would have deleted *every* line
-  break. Now that the picker emits `<p>`/`<li>`-wrapped blocks, every `<br>` it produces has a block
-  ancestor and the call would be **safe** — it is skipped because it is *pointless*: the picker's
-  output is canonical by construction, and routing it through a cleaner written for the markdown
-  producer only adds a way to go wrong. `removeAloneBRs` still guards the non-picker path.
+- **`trimEdgeBRs()`.** It removes the `<br>` at the very start and end of the snapshot or of the
+  user's selection (01-architecture.md, *Actions on an answer*). The picker's output is canonical by
+  construction (`<p>`/`<li>`-wrapped blocks) and has no edge `<br>` to trim, so it is skipped: routing
+  it through a cleaner written for the snapshot and the selection only adds a way to go wrong. (Its
+  predecessor, `removeAloneBRs()`, stripped every `<br>` with no `<p>` ancestor; skipping it was
+  mandatory when `composeResultHTML()` emitted `<br>`-separated text with no wrapper, since it would
+  have deleted every line break.)
 - **The mouse-selection override.** `getCurrentSelectionHTML()` is not consulted for a turn with a
   picker, and that turn's `.sel_info` hint is hidden: two mechanisms competing over the same output
   would be confusing, and the picker is the explicit one. Turns without a picker keep the override
