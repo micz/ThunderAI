@@ -1407,7 +1407,7 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
     }
 
     .picker-body {
-      line-height: 1.5;
+      line-height: 1.55;
       white-space: normal;
     }
 
@@ -1415,7 +1415,9 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
        picker shows the structure it is going to write into the mail. These
        rules only tame the UA defaults; the page's own font and colours are
        inherited. Margins are collapsed to a single trailing gap so a paragraph
-       and a list item sit on the same rhythm.
+       and a list item sit on the same rhythm - the answer's own (.message p in
+       messagesArea.js: 10px, line-height 1.55), so the review shows the text
+       spaced as the answer above it.
 
        The EDITOR is in every selector here too, and that is the point rather
        than tidiness: it holds the same block elements from the same composer, so
@@ -1440,7 +1442,7 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
     .picker-editor h4,
     .picker-editor h5,
     .picker-editor h6 {
-      margin: 0 0 .5em;
+      margin: 0 0 10px;
     }
     .picker-body > :last-child,
     .picker-editor > :last-child {
@@ -1450,7 +1452,7 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
     .picker-body ol,
     .picker-editor ul,
     .picker-editor ol {
-      margin: 0 0 .5em;
+      margin: 0 0 10px;
       padding-inline-start: 1.5em;
     }
     .picker-body li,
