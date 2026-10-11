@@ -1018,7 +1018,7 @@ branches, `BLOCK_TAG`/`LEAD_IN*` machinery) is **gone**.
   (`{%selected_html%}`, sent by the rewrite / proofread "full text" prompts) usually writes a newline
   after it as well, and `breaks: true` would add a second `<br>` for that newline:
   `Ciao,<br>\ngrazie` rendered as `<p>Ciao,<br><br>\ngrazie</p>`, a blank line in the mail (`\n\n`
-  once projected for a plain text window, a paragraph break in the diff picker's result, see
+  once projected for a plain text window, an empty line in the diff picker's result, see
   [07-diff-picker.md](07-diff-picker.md) *Line breaks: `<br>` is a block separator*). A markdown-it
   **core rule** registered after `inline` (`collapseEchoedBrBreaks()`, in `getMarkdownIt()`) turns
   a `softbreak` or `hardbreak` (`<br>  \n`) whose previous sibling is an `html_inline` `<br>` (any

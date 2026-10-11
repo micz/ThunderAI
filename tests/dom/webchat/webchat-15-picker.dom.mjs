@@ -49,6 +49,7 @@ const S_INV = 'spec 07 "The `composeResult` invariant"';
 const S_NORM = 'spec 07 "Normalization, and what the invariant is really against"';
 const S_BLOCK = 'spec 07 "Block-structured HTML"';
 const S_BR = 'spec 07 "Line breaks: `<br>` is a block separator"';
+const S_GAP = 'spec 07 "Empty lines: the gap before a block"';
 const S_PLAIN = 'spec 07 "Into a plain text compose window"';
 const S_SAN = 'spec 07 "The sanitizer is a security boundary"';
 const S_ESC = 'spec 07 "`composeResultHTML()` and escaping"';
@@ -107,6 +108,10 @@ const CASES = [
     { id: 'entities', why: 'escaped characters in the changed text', o: '<p>Tom &amp; Jerry &lt;3 you</p>', n: '<p>Tom &amp; Jerry &lt;4 you</p>' },
     { id: 'nested-br', why: 'a <br> nested in an inline element stays within its run', o: '<p><em>a<br>b</em> c</p>', n: '<p><em>a<br>b</em> d</p>' },
     { id: 'sentences', why: 'three reworded sentences, two changes each', o: '<p>One is here, as usual. Two is there, as planned. Three is everywhere, as expected.</p>', n: '<p>One was here, as always. Two was there, as agreed. Three was everywhere, as hoped.</p>' },
+    { id: 'empty-paragraph', why: 'Paragraph mode: an empty line as <p><br></p>, kept by the answer', o: '<p>riga 1</p><p><br></p><p>riga2</p><p>riga 3</p>', n: '<p>Gentile riga 1</p><p><br></p><p>Gentile riga2</p><p>riga 3</p>' },
+    { id: 'empty-lines-br', why: 'Body Text mode: two empty lines as a third <br>', o: 'a one<br><br><br>b two', n: 'a uno<br><br><br>b two' },
+    { id: 'gap-differs', why: 'empty lines in the original only, a word changed after them', o: '<p>a one</p><p><br></p><p>b two</p><p><br></p><p>c three</p>', n: '<p>a one</p><p>b two</p><p>c four</p>' },
+    { id: 'body-text-paragraphs', why: 'a Body Text original (an empty line as <br><br>) against markdown paragraphs', o: 'Hello Bob,<br><br>see you<br>tomorrow.', n: '<p>Hello Bob,</p><p>see you<br>tomorrow morning.</p>' },
 ];
 
 for (const c of CASES) {
@@ -156,17 +161,17 @@ k.test('br-round-trip', S_BR, '<p>a<br>b</p> comes back as <p>a<br>b</p>: a sing
     assert.equal(canon('<p>a<br>b</p>'), '<p>a<br>b</p>');
 });
 
-k.test('br-blank-line', S_BR, '<p>a<br><br>b</p> comes back as <p>a</p><p>b</p>: a blank line is a paragraph break', () => {
-    assert.equal(canon('<p>a<br><br>b</p>'), '<p>a</p><p>b</p>');
+k.test('br-blank-line', S_BR, '<p>a<br><br>b</p> comes back as itself: a blank line is a line break and an empty line in the same paragraph, never a paragraph break', () => {
+    assert.equal(canon('<p>a<br><br>b</p>'), '<p>a<br><br>b</p>');
 });
 
 k.test('br-trailing', S_BR, 'a trailing <br> leaves nothing pointing at a successor: <p>a<br></p> is <p>a</p>', () => {
     assert.equal(canon('<p>a<br></p>'), '<p>a</p>');
 });
 
-k.test('br-body-level', S_BR, 'at body level one <br> joins two lines in one paragraph, two make a paragraph break', () => {
+k.test('br-body-level', S_BR, 'at body level (Body Text mode) one <br> joins two lines in one paragraph, and two keep the empty line in it', () => {
     assert.equal(canon('a<br>b'), '<p>a<br>b</p>');
-    assert.equal(canon('a<br><br>b'), '<p>a</p><p>b</p>');
+    assert.equal(canon('a<br><br>b'), '<p>a<br><br>b</p>');
 });
 
 k.test('br-not-a-wrapper', S_BR, '<br> is a separator, never emitted as a wrapper: no </br> in any output', () => {
@@ -177,6 +182,58 @@ k.test('br-pairs-lines', S_BR, 'Body Text mode (lines as <br> in one <div>) agai
     const p = makePicker('<div>Hello Bob<br>How are you<br>Bye</div>', '<p>Hello Bob<br>How are you doing<br>Bye</p>');
     assert.equal(hunks(p).length, 1);
     assert.match(side(p, 0, 'new').textContent, /doing/);
+});
+
+// ---- empty lines --------------------------------------------------------------------------
+
+k.test('gap-paragraph-mode', S_GAP, 'an empty line written as an empty wrapper (<p><br></p>, <div><br></div>) comes back as one', () => {
+    assert.equal(canon('<p>a</p><p><br></p><p>b</p>'), '<p>a</p><p><br></p><p>b</p>');
+    assert.equal(canon('<div>a</div><div><br></div><div>b</div>'), '<div>a</div><div><br></div><div>b</div>');
+});
+
+k.test('gap-extra-br', S_GAP, 'every <br> past the one joining two lines is an empty line, kept in the paragraph; one opening a wrapper or after a block is an empty wrapper', () => {
+    assert.equal(canon('a<br><br><br>b'), '<p>a<br><br><br>b</p>');
+    assert.equal(canon('<p>a<br><br><br>b</p>'), '<p>a<br><br><br>b</p>');
+    assert.equal(canon('<p><br>a</p>'), '<p><br></p><p>a</p>');
+    assert.equal(canon('<p>a</p><br><p>b</p>'), '<p>a</p><p><br></p><p>b</p>');
+});
+
+k.test('gap-list', S_GAP, 'an empty line between two lists keeps them two lists; an empty list item is still dropped', () => {
+    assert.equal(canon('<ul><li>a</li></ul><p><br></p><ul><li>b</li></ul>'), '<ul><li>a</li></ul><p><br></p><ul><li>b</li></ul>');
+    assert.equal(canon('<ul><li>a</li><li><br></li><li>b</li></ul>'), '<ul><li>a</li><li>b</li></ul>');
+});
+
+k.test('gap-trailing', S_GAP, 'empty lines after the last block have no block to carry them and are dropped', () => {
+    assert.equal(canon('<p>a</p><p><br></p>'), '<p>a</p>');
+});
+
+k.test('gap-shown', S_GAP, 'the picker draws the empty line between the blocks, as the mail will get it', () => {
+    const p = makePicker('<p>riga 1</p><p><br></p><p>riga2</p>', '<p>Gentile riga 1</p><p><br></p><p>Gentile riga2</p>');
+    const tops = [...pq(p, '.picker-body').children];
+    assert.equal(tops.length, 3);
+    assert.equal(tops[1].localName, 'p');
+    assert.equal(tops[1].innerHTML, '<br>');
+});
+
+k.test('gap-body-text', S_GAP, 'a Body Text original (lines and an empty line as <br>) against an answer that keeps that shape: the result is one paragraph with its <br>, as the answer inserted directly', () => {
+    const answer = '<p>Gentile riga 1<br><br><b>Gentile riga 2</b><br><i>riga 3</i></p>';
+    const p = makePicker('riga 1<br><br><b>riga2</b><br><i>riga 3</i>', answer);
+    assert.equal(p.composeResultHTML(), answer);
+    const tops = [...pq(p, '.picker-body').children];
+    assert.equal(tops.length, 1, 'drawn as one paragraph, as it is written');
+    assert.equal([...tops[0].children].filter(c => c.localName === 'br').length, 3);
+});
+
+k.test('gap-body-text-pairs', S_GAP, 'a Body Text original against an answer in markdown paragraphs still pairs block by block: the <br> between them are not compared', () => {
+    const p = makePicker('Hello Bob<br><br>see you<br>tomorrow', '<p>Hello Bob</p><p>see you<br>tomorrow morning</p>');
+    assert.equal(hunks(p).length, 1);
+    assert.match(side(p, 0, 'new').textContent, /morning/);
+});
+
+k.test('gap-not-compared', S_GAP, 'empty lines in one side only do not break the block alignment: one change, the word that changed', () => {
+    const p = makePicker('<p>a one</p><p><br></p><p>b two</p><p><br></p><p>c three</p>', '<p>a one</p><p>b two</p><p>c four</p>');
+    assert.equal(hunks(p).length, 1);
+    assert.match(side(p, 0, 'new').textContent, /four/);
 });
 
 k.test('nested-list-flat', S_BLOCK, 'nested lists are flattened one level: the inner item becomes an item of the inner list\'s type', () => {
