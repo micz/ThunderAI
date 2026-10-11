@@ -488,6 +488,16 @@ jsdiff keeps one side's objects and discards the other, so two blocks differing 
 trailing `<br>` would collapse into one and reject-all would emit the ANSWER'S line structure.
 Comparing it sends that case to a replace pair, where both sides survive.
 
+This is why the answer's renderer must not double an echoed `<br>`. A proofread / rewrite answer
+that echoes the original's `<br>` followed by a newline (`Ciao,<br>\ngrazie`) used to render as
+`<br><br>` — a paragraph break here, `sep = null` — while the original's `Ciao,<br>grazie` has
+`sep = 'br'`. The two blocks then differed in their separator alone: a `replace` pair with no hunk,
+whose structure follows the composition, so with anything accepted the picker's result was
+`<p>Ciao,</p><p>grazie</p>` and every echoed line break reached the mail as a paragraph break. The
+render path now turns the newline after a raw `<br>` into plain whitespace (see
+01-architecture.md, *One render path, no router*), so both sides segment to `sep = 'br'`, pair as
+context, and the result is `<p>Ciao,<br>grazie</p>`.
+
 **Which side's line structure wins is decided ONCE for the whole composition**, not per block: a
 separator joins two blocks, so an accepted hunk in one and a rejected one in the next would leave the
 junction between them undefined. `composeResultBlocksHTML` sets `structure` to `'new'` if anything at

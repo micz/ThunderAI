@@ -2,7 +2,8 @@
 // custom_text_array: a single text, appended to the prompt.
 //
 // Spec 01 "Streaming data flow" (api_send shows the custom-text field; api_send_custom_text merges
-// the text into the prompt, then sends). Spec 03 "`additional_text`: the user's input, filled
+// the text into the prompt, then sends; the prompt sent as plain text, its \n kept, and shown in a
+// bubble with one <br> per \n). Spec 03 "`additional_text`: the user's input, filled
 // late" (step 3: "A prompt with need_custom_text "1" and no additional_text token asks a single
 // text, which is appended to the prompt after a space"; one step, so no n/total counter; "The legacy
 // string form" and "A token missing from the array", played by the test as an older producer would).
@@ -19,6 +20,7 @@ import {
     apiSend,
     fromBackground,
     sentCommands,
+    turns,
     sq,
 } from '../../webchat/webchat-page.mjs';
 
@@ -56,6 +58,21 @@ k.test('appended', S_AT, 'the text is appended to the prompt after a space, and 
 
 k.test('field-gone', S_FLOW, 'once sent, the custom-text field is hidden', () => {
     assert.equal(box().style.display, 'none');
+});
+
+k.test('multiline', S_FLOW, 'a prompt and a custom text on several lines: the worker receives both with their \\n, and the bubble shows one <br> per \\n', async () => {
+    const prompt = 'Summarize this mail:\nDear Bob,\nsee you';
+    await apiSend(ctx, { prompt, do_custom_text: '1', prompt_info: {} });
+    area().value = 'in two lines,\nformal';
+    await ctx.click(ok());
+    const sent = sentCommands(ctx, 'api_send_custom_text').at(-1);
+    await fromBackground(ctx, { command: 'api_send_custom_text', custom_text: sent.custom_text });
+    const expected = prompt + ' in two lines,\nformal';
+    assert.equal(worker.chatMessages().at(-1), expected);
+    const bubble = turns(ctx).at(-1).querySelector('.bubble');
+    assert.ok(bubble);
+    assert.equal(bubble.querySelectorAll('br').length, 3);
+    assert.equal(bubble.textContent, expected.replace(/\n/g, ''));
 });
 
 // ---- what an older producer can send: each case is a fresh api_send, played by the test ------

@@ -39,6 +39,12 @@
 //                break kept. The old router forced such an answer down one of two
 //                pure branches, each of which lost half of it.
 //
+// One exception to "a '\n' is a <br>": a model that echoes the <br> of an HTML
+// placeholder ({%selected_html%}) usually writes a newline after it too, and
+// "Ciao,<br>\ngrazie" would render as "Ciao,<br><br>\ngrazie" - a blank line in
+// the mail. The break right after a raw <br> is therefore turned back into a plain
+// "\n" by a core rule (collapseEchoedBrBreaks), see getMarkdownIt().
+//
 // html:true disables markdown-it's escaping, so the output is now UNTRUSTED model
 // HTML on its way into outgoing mail. It MUST cross the sanitizer - the same ONE
 // allowlist walk everything else uses (js/mzta-richtext.js). Code fences are still
@@ -81,8 +87,39 @@ const CLOSE_THINK_RE = /<\/think>/i;
 // but module evaluation order relative to it is not something to rely on.
 let _md = null;
 function getMarkdownIt() {
-    if (_md === null) { _md = window.markdownit({ html: true, breaks: true }); }
+    if (_md === null) {
+        _md = window.markdownit({ html: true, breaks: true });
+        _md.core.ruler.after('inline', 'mzta_echoed_br', collapseEchoedBrBreaks);
+    }
     return _md;
+}
+
+// A raw <br> tag the model wrote, as markdown-it isolates it in an html_inline token.
+const ECHOED_BR_RE = /^<br\s*\/?>$/i;
+
+// Core rule, after 'inline': a softbreak (or a hardbreak, "<br>  \n") right after a
+// raw <br> is the newline the model wrote after that <br>, not a second line break.
+// It becomes a "\n" text token - plain HTML whitespace, so the output is exactly
+// the "<br>\n" markdown-it writes for a bare newline. NOT dropped: removeAloneBRs()
+// (messagesArea.js) removes a <br> that has no <p> ancestor (a tight list item),
+// and without the "\n" the two lines would then be welded ("a<br>b" -> "ab").
+// Code spans, code blocks and raw HTML blocks are tokens of their own, so a <br>
+// written inside them is never looked at here.
+function collapseEchoedBrBreaks(state) {
+    for (const token of state.tokens) {
+        if (token.type !== 'inline' || !token.children) { continue; }
+        const children = token.children;
+        for (let i = 1; i < children.length; i++) {
+            const child = children[i];
+            const prev = children[i - 1];
+            if ((child.type === 'softbreak' || child.type === 'hardbreak') &&
+                prev.type === 'html_inline' && ECHOED_BR_RE.test(prev.content)) {
+                const text = new state.Token('text', '', 0);
+                text.content = '\n';
+                children[i] = text;
+            }
+        }
+    }
 }
 
 // The ONE render path. markdown-it (html:true) may pass raw model HTML through, so

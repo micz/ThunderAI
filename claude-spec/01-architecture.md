@@ -1014,6 +1014,24 @@ branches, `BLOCK_TAG`/`LEAD_IN*` machinery) is **gone**.
 - **`html: true` disables markdown-it's escaping**, so its output is now UNTRUSTED model HTML on its
   way into outgoing mail. It MUST cross `sanitize(..., { allowBlocks: true })` — the ONE allowlist
   walk in `js/mzta-richtext.js`, the same one the diff picker uses. No second copy.
+- **An echoed `<br>` is one line break.** A model that echoes the `<br>` of an HTML placeholder
+  (`{%selected_html%}`, sent by the rewrite / proofread "full text" prompts) usually writes a newline
+  after it as well, and `breaks: true` would add a second `<br>` for that newline:
+  `Ciao,<br>\ngrazie` rendered as `<p>Ciao,<br><br>\ngrazie</p>`, a blank line in the mail (`\n\n`
+  once projected for a plain text window, a paragraph break in the diff picker's result, see
+  [07-diff-picker.md](07-diff-picker.md) *Line breaks: `<br>` is a block separator*). A markdown-it
+  **core rule** registered after `inline` (`collapseEchoedBrBreaks()`, in `getMarkdownIt()`) turns
+  a `softbreak` or `hardbreak` (`<br>  \n`) whose previous sibling is an `html_inline` `<br>` (any
+  case, `<br/>`, `<br />`) into a `"\n"` text token, so the output is `<p>Ciao,<br>\ngrazie</p>`,
+  the shape markdown-it writes for a bare newline. Two `<br>` written (`<br><br>\n`, `<br>\n<br>\n`)
+  stay two: an intended blank line survives. The break becomes whitespace rather than being
+  **dropped** because `removeAloneBRs()` removes a `<br>` with no `<p>` ancestor (a tight list
+  item): without the `\n` the two lines would reach the mail welded (`<li>ab</li>`). It works on
+  tokens, inside the one render path, so the chat, "use this answer", Copy and the diff picker all
+  get the same HTML, and every coalesced re-render of the accumulated raw text gives the same result
+  however the `<br>` and the newline were split across tokens. Code spans, code blocks and raw HTML
+  blocks are tokens of their own and are never looked at; a regex over the raw text would have
+  reached into fenced code.
 - **Code fences still show markup as text**: markdown-it escapes HTML inside code blocks regardless
   of `html: true`, so "how do I center a `<div>`?" is unaffected.
 - **`BLOCK_ALLOWED` is a superset of everything markdown-it emits** — it was widened with the table
@@ -1074,7 +1092,8 @@ already a real `<br>` element in the HTML — and therefore in `fullTextHTML`, t
 must show the same line structure. The old `convertTextNodeNewlinesToBr()` fixed up only the chat
 DOM, so the mail silently lost every single-`<br>` break; it has been removed. Re-adding it would
 also double-space the answer, since markdown-it emits `<p>a<br>\nb</p>` and the `\n` right after the
-`<br>` would be promoted to a second one.
+`<br>` would be promoted to a second one. (The echoed-`<br>` rule under *One render path, no router*
+is not such a pass: it runs inside the parser, on tokens, before anything is rendered.)
 
 The complementary half of this lives on the input side: the compose-window HTML placeholders
 go through `normalizeHtmlSourceNewlines()` (`js/mzta-utils.js`), **not** `convertNewlinesToBr()`,
@@ -1244,6 +1263,14 @@ injected one) does not gain any. Do not relax the rule to "fix" paragraph spacin
 > `cleanupNewlines()`'s `[ \t]+` → ` ` and `\n{2,}` → `\n` rules run over the whole string.
 > Preserving it verbatim would need a sentinel/restore pass around that chain: new machinery and a
 > new collision failure mode, for an element that is rare in mail.
+>
+> The same gap exists on the `{ keepParagraphs }` side, i.e. plain-text **insertion**
+> (`stripHtmlKeepLines()`) and the chat's **Copy** (`htmlToPlainText()`): a fenced code block in an
+> answer (`<pre><code>`) keeps its lines, but its indentation collapses to one space and its blank
+> lines are capped at one (`"<pre>a\n  b</pre>"` → `"a\n b"`). The projection itself keeps the
+> `<pre>` text verbatim (`mztaIsPreformatted()`); the loss is the normalizer's, which works on a
+> string and cannot see where the `<pre>` was. Deliberately left as is, for the same reason as
+> above. Insertion into an **HTML** compose window is not affected: the `<pre>` goes in as HTML.
 
 #### Hidden elements — `mztaStripHidden()`, and why the attribute selector was wrong
 
@@ -1515,6 +1542,8 @@ When it reports plain text, `mzta-background.js` converts the answer snapshot wi
 **tags**, not by the source newlines: the renderer emits `<br>\n` and `</p>\n<p>`, so each of
 those rules consumes the pretty-printing newline that follows its tag. Counting both would
 double every line and make a single `<br>` indistinguishable from a paragraph break.
+A fenced code block in the answer keeps its lines but not its indentation: see the `<pre>` known
+gap under *`htmlBodyToPlainText()` injects the line structure*.
 
 **Converting is only half the job — the insertion path has to stop treating the result as
 HTML.** Three places cooperate, and all three are required:
@@ -1582,6 +1611,12 @@ and its buttons. There are no `<hr>` dividers; spacing separates the turns.
                                    .action-bar        (full bar, newest answer)
                                    .sel_info          (alongside the full bar)
 ```
+
+The user `.bubble` and every `.message` wrap anywhere (`overflow-wrap: anywhere`): the bubble shows
+the prompt as text, HTML placeholders included, and an answer may hold a long URL, neither with a
+break opportunity, while `#messages` clips horizontally (`overflow-x: hidden`). `anywhere`, not
+`break-word`, because only it lowers the min-content width of the bubble, a flex item. A `<pre>` in
+an answer is unaffected: it does not wrap and keeps its own horizontal scroll.
 
 Two invariants in `MessagesArea`, both easy to break:
 

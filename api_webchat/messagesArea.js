@@ -123,6 +123,11 @@ messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + USAGE_CHIP_CSS + 
         border-radius: var(--r-bubble) var(--r-bubble) 4px var(--r-bubble);
         font-size: .875rem;
         line-height: 1.45;
+        /* The bubble shows the prompt as text, HTML placeholders included, so a
+           long URL has no break opportunity; #messages clips horizontally.
+           'anywhere' rather than 'break-word': only it also lowers the
+           min-content width of this flex item. */
+        overflow-wrap: anywhere;
     }
 
     .turn-bot {
@@ -164,6 +169,9 @@ messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + USAGE_CHIP_CSS + 
         font-size: .875rem;
         line-height: 1.55;
         color: var(--ink);
+        /* A long URL in an answer would be clipped by #messages; <pre> keeps
+           its own horizontal scroll (white-space: pre does not wrap). */
+        overflow-wrap: anywhere;
     }
     .message p{
         margin: 0 0 10px;

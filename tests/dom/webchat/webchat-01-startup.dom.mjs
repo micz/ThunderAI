@@ -5,8 +5,9 @@
 //
 // Spec 01 "API WebChat (`api_webchat/`)": "Component structure" (the controller resolves the
 // provider prefs, spins up the provider's worker, sends it the init message), "Streaming data flow"
-// (api_send: promptData set, the prompt sent as it came, plain text with its \n; a typed message
-// likewise, its bubble showing its line breaks as text, a literal "<br>" included), "Transcript DOM
+// (api_send: promptData set, the prompt sent as it came, plain text with its \n, a literal "<br>"
+// in it shown as text; a typed message likewise, its bubble showing its line breaks as text, a
+// literal "<br>" included), "Transcript DOM
 // contract" (the startup notice, the user turn), "Web Workers" (the worker file of each provider); "Component structure" also holds
 // the URL parameters (prompt_name decoded once), the header (model and API, no usage), the ready
 // handshake and the startup notice (every value escaped). Spec 04 "Configuration Validation"
@@ -162,7 +163,8 @@ k.test('idle-input', S_FLOW, 'before api_send the input is usable and nothing wa
     assert.deepEqual(worker.chatMessages(), []);
 });
 
-const PROMPT = 'Rewrite this:\nDear <b>Bob</b>,\nsee <img src=x onerror="window.__pwned=1"> you';
+// A literal "<br>" before a newline: the shape {%selected_html%} puts in a prompt.
+const PROMPT = 'Rewrite this:\nDear <b>Bob</b>,<br>\nsee <img src=x onerror="window.__pwned=1"> you';
 
 k.test('api-send-user-turn', S_FLOW, 'api_send: the prompt is shown as the user\'s message, in a .turn-user .bubble', async () => {
     await apiSend(ctx, { prompt: PROMPT, action: '0' });
@@ -181,6 +183,11 @@ k.test('api-send-user-turn', S_FLOW, 'api_send: the prompt is shown as the user\
 k.test('api-send-bubble-safe', S_FLOW, 'the prompt carries mail content: nothing executable reaches the user bubble', () => {
     assert.deepEqual(executableProblems(turns(ctx)[1]), []);
     assert.equal(turns(ctx)[1].querySelector('img, b'), null);
+});
+
+k.test('api-send-literal-br', S_FLOW, 'a literal "<br>" in the prompt is shown as those four characters: only the \\n are line breaks', () => {
+    const bubble = turns(ctx)[1].querySelector('.bubble');
+    assert.equal(bubble.textContent, PROMPT.replace(/\n/g, ''));
 });
 
 k.test('api-send-worker', S_FLOW, 'api_send: the prompt is sent to the worker as one chatMessage', () => {
