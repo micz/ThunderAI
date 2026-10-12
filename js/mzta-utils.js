@@ -340,23 +340,14 @@ export async function isPlainTextCompose(tabId){
 // On a plain text compose window the body lives in `plainTextBody`, not `body`.
 // Writing `body` there makes Thunderbird convert the HTML down to text, which
 // collapses every bare \n as HTML whitespace and loses the line structure —
-// so each of the helpers below has to pick the field that matches the window.
-export async function getOriginalBody(tabId){
-  let composeDetails = await messenger.compose.getComposeDetails(tabId);
-  if(composeDetails.isPlainText){
-    return composeDetails.plainTextBody;
-  }
-  return composeDetails.body;
-}
-
-export async function setBody(tabId, fullBody, isPlainText = false){
-  if(isPlainText){
-    await messenger.compose.setComposeDetails(tabId, {plainTextBody: fullBody});
-    return;
-  }
-  await messenger.compose.setComposeDetails(tabId, {body: fullBody});
-}
-
+// so the helper below has to pick the field that matches the window.
+//
+// Only the fallback of chatgpt_replyMessage, when the compose script never answers:
+// the reply normally goes in through the editor (insertReply in the compose script),
+// so it can be undone. A setComposeDetails write cannot, and from Thunderbird 143
+// (bug 1975127) every setComposeDetails({body}) clears the editor's undo history.
+// Here it writes a reply window just opened, whose history holds nothing of the
+// user's yet. Never use it on a window the user has typed in.
 export async function replaceBody(tabId, replyHtml) {
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
   if(composeDetails.isPlainText){

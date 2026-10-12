@@ -23,8 +23,9 @@ node --test tests/compose/99-harness-known-issues.test.mjs   # level 1: the know
 | `compose-02-html-reply-paragraph` | an HTML reply in Paragraph mode | **A**: exact typed / quoted / body text, the raw join rule, selection twins, mid-tag selection, autoselect ranges |
 | `compose-03-html-bodytext-new` | a live HTML compose window in Body Text mode, captured: a new message with typed lines and an Outlook-made signature | **A**: the window's shape (lines straight in the body), the typed text stopping at the signature, the body text; the generating panels where the own message is unknown |
 | `compose-04-plaintext-read` | a live plain text compose window, captured (a reply, nothing typed) | **A**: the window's shape (pre-wrap body, top-level `<br>`), the quoted text with its `> ` lines and the signature, the body text, the html twin, a selection |
-| `compose-05-html-write` | as 02 | **B**: `replaceSelectedText` into HTML: nodes through a fragment, no nested `<body>`, none skipped, the rest untouched, `compose_reloadBody` |
-| `compose-06-plaintext-write` | as 04 | **B**: `replaceSelectedText` into plain text: one `Text` node, markup kept literal, `compose_reloadBody` flagged plain |
+| `compose-05-html-write` | as 02 | **B**: `replaceSelectedText` into HTML: one `insertHTML` on the selection (window focused first, no nested `<body>`, ThunderAI's elements kept out of the range), nothing sent to the background; the direct fallback (refused / thrown): nodes through a fragment, none skipped, logged |
+| `compose-06-plaintext-write` | as 04 | **B**: `replaceSelectedText` into plain text: one `insertText` with the `
+` verbatim, markup kept literal, nothing sent to the background; the direct fallback: one `Text` node, logged |
 | `compose-07-display-captured` | the captured HTML mail in the message display | **A**: body text and HTML; then every panel, the badge and a dialog are drawn and none of it is read back, by any reading command |
 | `compose-08-display-extraction` | a hand-written newsletter in the message display | **A**: hidden elements in every spelling, `<style>`/`<script>`, Outlook markup, tables, lists; text stripped, HTML kept, selections untouched |
 | `compose-09-background-extraction` | the background page | **C**: `htmlBodyToPlainText()`, `getMailInlineTextParts()`, `{%mail_text_body%}` / `{%mail_plain_text_part%}` through `preparePrompt()`, `stripHtmlKeepLines()` |
@@ -36,10 +37,11 @@ node --test tests/compose/99-harness-known-issues.test.mjs   # level 1: the know
 | `compose-15-display-live` | a live message display, captured: an HTML mail | **A**: the display's shape (header table, `div.moz-text-html`), the body text of indented source, the HTML without the header |
 | `compose-16-display-bodytext-reply` | a live message display, captured: a reply written in Body Text mode | **A**: as 15, with citation, quote and a nested signature |
 | `compose-17-display-bodytext-new` | a live message display, captured: a new message written in Body Text mode | **A**: as 15; the last line followed straight by the signature `<div>` |
+| `compose-18-reply-insert` | a reply just opened: HTML bodies written per test, then the live plain text one of 04 | **B**: `insertReply` (`chatgpt_replyMessage`): one `insertHTML` replacing what precedes the first quote / forward / signature, the `<br>` spacer rule (#849), empty body, whole-document answer, ThunderAI's elements above it; plain text: one `insertText` with the blank line; the fallbacks; nothing sent to the background |
 
 `99-harness-known-issues.test.mjs` (level 1) checks the known-issue file itself.
 
-Run time: one document per file, many tests on it (17 jsdom processes). Run alone, the
+Run time: one document per file, many tests on it (18 jsdom processes). Run alone, the
 area takes about 58 s one file at a time and about 23 s with `--test-concurrency=4`.
 
 ## The core entry point: `openDocument()`
@@ -155,8 +157,13 @@ What the area found was fixed, and the spec updated where it described the old b
   `mzta-background.js`.
 - **`getMailBody()` / `selectionTwin()` / `htmlOrFromText()`** of `js/mzta-menus.js` as functions: see
   above; their normalizers are applied to the script's values.
-- **The compose API round trip**: what `compose_reloadBody`, `setBody()`, `replaceBody()`,
-  `insertHtml()` and `isPlainTextCompose()` do with the body (`plainTextBody` vs `body`).
+- **The compose API**: what `replaceBody()` (the reply's fallback), `insertHtml()` and `isPlainTextCompose()` do with the
+  body (`plainTextBody` vs `body`).
+- **The editor itself**: `document.execCommand()` is modelled (`stubEditor()` in `compose-doc.mjs`:
+  `insertHTML` / `insertText` on the current selection, or a refusal, or a throw). What Gecko's plain
+  text editor makes of a `
+`, the undo / redo stack and the focus are tested by hand in Thunderbird
+  (spec 01 "Replacing text in a compose window").
 - **`buildSummaryPrompt()` / `buildTranslationPrompt()`**: they go through the functions tested here
   (`getMailInlineTextParts()`, `htmlBodyToPlainText()`, `preparePrompt()`), not end to end.
 - **The `<pre>` gap** spec 01 documents ("keeps its line breaks but not its internal indentation or
@@ -175,7 +182,7 @@ What the code does that no spec states, listed instead of tested. None today: ev
 3. *(resolved: spec 01 "The rich-text layer" now states that `getOnlyQuotedText` reads to the end of the
    body, the signature included, while `getOnlyTypedText` stops at it.)*
 4. *(resolved: `getText`, which nothing sent, was removed from the compose script and from spec 01.)*
-5. *(resolved: spec 01 "Writing into a plain text compose window" now states the no-selection case: after
+5. *(resolved: spec 01 "Replacing text in a compose window" now states the no-selection case: after
    the confirmation the answer goes at the start of the email, wherever the cursor is, and also with no
    range at all, which used to throw.)*
 6. *(resolved: spec 01 "The message-display panels and dialogs" now describes `sendAlert`: the in-pane
