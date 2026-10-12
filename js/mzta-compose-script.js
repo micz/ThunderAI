@@ -34,8 +34,32 @@ const MZTA_INJECTED_SELECTORS = [
   'script',
 ];
 
-function getCleanBodyHtml() {
-  const clone = document.body.cloneNode(true);
+// The containers the message display renders a mail's text parts into. Everything else in
+// a displayed body is not the mail: ThunderAI's panels, the header table of the display, the
+// attachment headers, and the banners other add-ons draw from their own message display
+// scripts (an "External sender" or "Possible spoofing" notice), which no selector list of
+// ours could name. Not used in a compose window: a reply or an inline forward can carry
+// these classes inside the quoted text, so there they would cut the body down to the quote.
+const MZTA_DISPLAY_PART_SELECTOR = 'div.moz-text-html, div.moz-text-plain, div.moz-text-flowed';
+
+// The top-level part containers of a displayed body, cloned into a detached <body>; null
+// when there is none (a document not built by the message display), so the caller falls
+// back to the whole body. A container nested in another (an inline forwarded message) is
+// already inside its parent's clone and is not taken twice.
+function cloneDisplayParts() {
+  const parts = Array.from(document.body.querySelectorAll(MZTA_DISPLAY_PART_SELECTOR))
+    .filter(el => !el.parentElement.closest(MZTA_DISPLAY_PART_SELECTOR));
+  if (parts.length === 0) return null;
+  const root = document.body.cloneNode(false);
+  for (const part of parts) root.appendChild(part.cloneNode(true));
+  return root;
+}
+
+// displayOnly: the message display only (see MZTA_DISPLAY_PART_SELECTOR). The caller
+// says so, because only the background knows the tab type: the content script is the
+// same file in both window kinds.
+function getCleanBodyHtml(displayOnly = false) {
+  const clone = (displayOnly && cloneDisplayParts()) || document.body.cloneNode(true);
   for (const selector of MZTA_INJECTED_SELECTORS) {
     for (const el of clone.querySelectorAll(selector)) {
       el.remove();
@@ -62,8 +86,8 @@ function getCleanBodyHtml() {
 // stripped from the TEXT, never from the HTML - on any path. Unlike <style>/
 // <script> in MZTA_INJECTED_SELECTORS (which are noise in both worlds), a hidden
 // element is real markup that an HTML consumer may legitimately want.
-function getTextBodyHtml() {
-  return mztaStripHidden(getCleanBodyHtml());
+function getTextBodyHtml(displayOnly = false) {
+  return mztaStripHidden(getCleanBodyHtml(displayOnly));
 }
 
 // <p> is Paragraph mode; <div> is Body Text mode. Only <p>-class elements earn a
@@ -651,11 +675,13 @@ switch (message.command) {
       // the background path.
       // getTextBodyHtml(), not getCleanBodyHtml(): this is the TEXT side, so
       // hidden elements go. getFullHtml below keeps them.
-      return Promise.resolve(mztaHtmlNodeToLines(getTextBodyHtml()));
+      // message.display: the sender is reading a message display, so only the mail's own
+      // part containers are read - not another add-on's banner drawn in the same body.
+      return Promise.resolve(mztaHtmlNodeToLines(getTextBodyHtml(!!message.display)));
   }
 
   case "getFullHtml": {
-      return Promise.resolve(getCleanBodyHtml().innerHTML);
+      return Promise.resolve(getCleanBodyHtml(!!message.display).innerHTML);
   }
 
   case "getOnlyTypedText": {

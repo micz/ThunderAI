@@ -38,10 +38,11 @@ node --test tests/compose/99-harness-known-issues.test.mjs   # level 1: the know
 | `compose-16-display-bodytext-reply` | a live message display, captured: a reply written in Body Text mode | **A**: as 15, with citation, quote and a nested signature |
 | `compose-17-display-bodytext-new` | a live message display, captured: a new message written in Body Text mode | **A**: as 15; the last line followed straight by the signature `<div>` |
 | `compose-18-reply-insert` | a reply just opened: HTML bodies written per test, then the live plain text one of 04 | **B**: `insertReply` (`chatgpt_replyMessage`): one `insertHTML` replacing what precedes the first quote / forward / signature, the `<br>` spacer rule (#849), empty body, whole-document answer, ThunderAI's elements above it; plain text: one `insertText` with the blank line; the fallbacks; nothing sent to the background |
+| `compose-19-display-foreign-panels` | the live display of 15, with another add-on's banner above the mail and a footer below it | **A**: with `display`, only the top-level part containers are read (text and HTML), nested ones once, several in order; without it, or with no container, the whole body, as before |
 
 `99-harness-known-issues.test.mjs` (level 1) checks the known-issue file itself.
 
-Run time: one document per file, many tests on it (18 jsdom processes). Run alone, the
+Run time: one document per file, many tests on it (19 jsdom processes). Run alone, the
 area takes about 58 s one file at a time and about 23 s with `--test-concurrency=4`.
 
 ## The core entry point: `openDocument()`

@@ -162,8 +162,12 @@ export class mzta_Menus {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             const raw_selection = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" });
             const raw_selection_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" });
-            const raw_text = await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" });
-            const raw_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" });
+            // A message display (a mail tab or a message tab or window): read only the mail's
+            // own part containers, so a banner another add-on draws in the same body is not
+            // sent to the AI. A compose window reads the whole body, as before.
+            const display = tabs[0].type !== 'messageCompose';
+            const raw_text = await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly", display });
+            const raw_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml", display });
             // Raw values as they arrive from the content script, before the twins
             // rewrite them. JSON.stringify() so newlines/escapes stay visible. [#829]
             this.logger.log("getMailBody raw_text: " + JSON.stringify(raw_text));

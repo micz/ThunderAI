@@ -1427,12 +1427,41 @@ thing about this area. Two separate extractions exist:
 | Interactive (menu / popup) | `getTextOnly` in `js/mzta-compose-script.js` | `{%mail_text_body%}` when the user runs a prompt |
 
 The interactive chain is `getMailBody()` (`js/mzta-menus.js`) → `getTextOnly` → `getCleanBodyHtml()`
-→ `cleanupNewlines()` → `curr_prompt.body_text`. Fixing one path does nothing for the other; both
+(in a message display, the mail's part containers only — see below) → `cleanupNewlines()` →
+`curr_prompt.body_text`. Fixing one path does nothing for the other; both
 carry the same one-`\n`-per-block, never-a-blank-line contract and must be kept in step.
 
 `js/mzta-compose-script.js` serves **both** window kinds — `composeScripts.register` *and*
 `messageDisplayScripts.register` (`mzta-background.js`) — so "compose script" is a misnomer: it is
 also the reading-side extractor.
+
+#### Message display: only the mail's own part containers are read
+
+A displayed body holds more than the mail. Other add-ons draw into it from their own message
+display scripts — an "External sender" / "Possible spoofing" banner, a footer — and reading the
+whole `document.body` sent that text to the AI as if it were the message. No list of selectors can
+name another add-on's markup, so the extraction keeps what Thunderbird itself renders the mail
+into instead: the **top-level** `div.moz-text-html`, `div.moz-text-plain` and `div.moz-text-flowed`
+(`MZTA_DISPLAY_PART_SELECTOR`, `cloneDisplayParts()` in `js/mzta-compose-script.js`), cloned into a
+detached `<body>` in document order. A container nested in another (an inline forwarded message)
+travels inside its parent and is not taken twice. Everything outside them is dropped as a side
+effect: the display's header table, the attachment headers, ThunderAI's own panels.
+
+- **Who decides.** `getMailBody()` (`js/mzta-menus.js`) sends `display: true` with `getTextOnly` and
+  `getFullHtml` for every tab type but `messageCompose`. The content script cannot tell by itself
+  reliably — it is the same file in both window kinds, and its displayed-message lookup is async
+  and may be `null` — so the caller, which knows `tabs[0].type`, says so.
+- **Never in a compose window.** A reply or an inline forward can carry these classes inside the
+  quoted text; restricting there would cut the body down to the quote. Without the flag the whole
+  body is read, as before.
+- **Fallback.** A displayed body with no such container (a document not built by the message
+  display) is read whole, as before.
+- **After the restriction** everything else in `getCleanBodyHtml()` applies unchanged:
+  `MZTA_INJECTED_SELECTORS`, the forwarded `moz-main-header` block, and `mztaStripHidden()` on the
+  text side only.
+- **Not covered:** a selection (`getSelectedText` / `getSelectedHtml`) is what the user selected,
+  banner included; and the typed / quoted walkers, which are compose concepts. The background path
+  never had the problem: it reads the MIME parts (`getMailInlineTextParts()`), not the DOM.
 
 #### `getCleanBodyHtml()` returns a DETACHED clone, so `innerText` does not work there
 
