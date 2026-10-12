@@ -1,6 +1,6 @@
-const fs = require('fs');
-const https = require('https');
-const path = require('path');
+import fs from 'node:fs';
+import https from 'node:https';
+import path from 'node:path';
 
 // --- Utility: fetch URL following redirects ---
 function fetchUrl(url) {
