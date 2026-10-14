@@ -3,9 +3,8 @@
 // Spec 01 "Feature permissions" and spec 05 "Permission-gated toggles": FEATURE_PERMISSIONS
 // (js/mzta-feature-permissions.js) is the single source of truth for the optional API permissions
 // a feature needs:
-//  - each key is a preference declared in prefs_default, with a boolean default (a default of
-//    true - spamfilter_skip_addressbook's - is turned off by the reconciliation at the first
-//    start of a profile that never granted the permission);
+//  - each key is a preference declared in prefs_default, a boolean that defaults to false (a
+//    feature needing a permission cannot start on: nobody granted it yet);
 //  - each permission it lists is declared in manifest.json optional_permissions (a permission
 //    that is not there can never be requested), and is an API permission, not a host one;
 //  - each key has its label, an en message, for the missing-permission messages;
@@ -46,7 +45,7 @@ test('the map is not empty, and the scan finds the calls the module itself makes
 const mapViolations = new Map();
 for (const [key, permissions] of Object.entries(FEATURE_PERMISSIONS)) {
     if (!(key in prefs_default)) mapViolations.set(key, 'not in prefs_default');
-    else if (typeof prefs_default[key] !== 'boolean') mapViolations.set(key, 'its default is ' + JSON.stringify(prefs_default[key]) + ', not a boolean');
+    else if (prefs_default[key] !== false) mapViolations.set(key, 'its default is ' + JSON.stringify(prefs_default[key]) + ', not false');
     if (!Array.isArray(permissions) || permissions.length === 0) mapViolations.set(key, 'no permission listed');
     for (const p of permissions || []) {
         if (/[:/*<]/.test(p)) mapViolations.set(key + ':' + p, 'a host permission, which belongs to the connections');
@@ -55,7 +54,7 @@ for (const [key, permissions] of Object.entries(FEATURE_PERMISSIONS)) {
     const label = getFeatureLabelKey(key);
     if (!label || !enKeys.has(label.toLowerCase())) mapViolations.set(key + ':label', 'no en message ' + JSON.stringify(label));
 }
-declareCheck('permission-map', 'every gated preference is a declared boolean, its permissions are optional ones in manifest.json, and it has a label', mapViolations);
+declareCheck('permission-map', 'every gated preference is declared (default false), its permissions are optional ones in manifest.json, and it has a label', mapViolations);
 
 const hardcoded = new Map();
 for (const f of sourceFiles()) {
