@@ -99,6 +99,13 @@ import {
     migrateOllamaThinkLevel
 } from './js/mzta-prefs-migration.js';
 import { mztaManaged, MANAGED_SECRET_MARKER } from './js/mzta-managed.js';
+import {
+    FEATURE_PERMISSIONS,
+    hasFeaturePermissions,
+    getFeaturesAffectedByRemoval,
+    getFeatureLabel,
+    getMissingPermissionMessage
+} from './js/mzta-feature-permissions.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -360,6 +367,26 @@ await (async () => {
         taLog.error('Could not check the placeholders of the enforced special prompt texts: ' + e);
     }
 })();
+
+// A feature the policy locks on while Thunderbird has not granted its optional permissions:
+// _reconcileFeatureFlags() leaves it on (the administrator's decision), so it does nothing but
+// show its runtime notice. Say so here too - warn(), not gated on do_debug.
+await (async () => {
+    try {
+        const locked_on = Object.keys(FEATURE_PERMISSIONS).filter(key => mztaManaged.isManagedLocked(key));
+        if (locked_on.length === 0) return;
+        const values = await mztaPrefs.getPrefs(locked_on);
+        for (const key of locked_on) {
+            if (values[key] === true && !(await hasFeaturePermissions(key))) {
+                taLog.warn(`${key} is enabled by the managed configuration, but Thunderbird has not ` +
+                    `granted the permissions it needs (${FEATURE_PERMISSIONS[key].join(', ')}): ` +
+                    'it cannot work until they are granted.');
+            }
+        }
+    } catch (e) {
+        taLog.error('Could not check the permissions of the features enforced by policy: ' + e);
+    }
+})();
 taWorkingStatus.taLog = taLog;
 taBatchController.taLog = taLog;
 taJobRegistry.taLog = taLog;
@@ -472,10 +499,31 @@ async function _readFeatureConnPrefs() {
 // Only true -> false, never the reverse: restoring a flag when a usable connection comes
 // back would silently re-enable a feature the user may have turned off on purpose,
 // exactly as disable_ApiFeature() already declines to do.
+//
+// Two rules, each with its own pass:
+//  - unusable connection: the features of special_prompts_with_integration, with the
+//    exceptions below (a specific integration, ChatGPT Web, Sparks);
+//  - missing permission: every preference of FEATURE_PERMISSIONS
+//    (js/mzta-feature-permissions.js) that is true while Thunderbird has not granted its
+//    optional permissions [#962] - the wizard used to turn add_tags and the spam filter on
+//    without them, and a prefs import or a permission revoked while the add-on was not
+//    running land the same state. None of the exceptions of the connection rule applies: a
+//    missing permission blocks the feature whatever its integration, and unlike Sparks it is
+//    not transient - nothing grants it back without the user's gesture. The calendar
+//    clipboard flag is still gated on Sparks at read time (doGetSparkFeature()); the two do
+//    not interfere, since this rule only ever looks at the permission. A sub-option
+//    (spamfilter_skip_addressbook) is turned off on its own: the feature it belongs to works
+//    without it, so it must not take the spam filter down with it.
+// Because every storage write lands here (storage.onChanged), a page must write a gated
+// preference true only AFTER permissions.request() resolved to true
+// (pages/_lib/permission-toggle.js): written first, this pass would find the permission
+// missing and turn the flag back off under a switch still shown on.
 // Mutates and returns the prefs object, so the caller can keep using the healed values
-// without waiting for the write to round-trip.
+// without waiting for the write to round-trip. A gated key the caller did not read (the
+// sub-option) is read here.
 async function _reconcileFeatureFlags(prefs) {
     let to_disable = {};
+    let no_permission = [];
     for (const prefix of special_prompts_with_integration) {
         if (!prefs[prefix]) continue;
         // A flag the enterprise policy enforces is the administrator's decision, not a
@@ -510,9 +558,37 @@ async function _reconcileFeatureFlags(prefs) {
             prefs[prefix] = false;
         }
     }
+    const no_connection = Object.keys(to_disable);
+    const gated_keys = Object.keys(FEATURE_PERMISSIONS);
+    const unread = gated_keys.filter(key => !(key in prefs));
+    const gated_values = unread.length > 0 ? { ...(await mztaPrefs.getPrefs(unread)), ...prefs } : prefs;
+    for (const key of gated_keys) {
+        if (gated_values[key] !== true || key in to_disable) continue;
+        // Locked by the policy: left on for the same reason as above. The runtime guards
+        // tell the user, and the settings pages show a warning next to the switch.
+        if (mztaManaged.isManagedLocked(key)) continue;
+        let granted = true;
+        try {
+            granted = await hasFeaturePermissions(key);
+        } catch (e) {
+            // An unknown answer is not a missing permission: never persist false on it.
+            console.error("[ThunderAI] Could not check the permissions of " + key + ": " + e);
+        }
+        if (!granted) {
+            to_disable[key] = false;
+            if (key in prefs) prefs[key] = false;
+            no_permission.push(key);
+        }
+    }
     if (Object.keys(to_disable).length > 0) {
         // console.log and not taLog: this also runs at startup, before taLog is built.
-        console.log("[ThunderAI] Disabling features with an unusable connection: " + Object.keys(to_disable).join(', '));
+        if (no_connection.length > 0) {
+            console.log("[ThunderAI] Disabling features with an unusable connection: " + no_connection.join(', '));
+        }
+        if (no_permission.length > 0) {
+            console.log("[ThunderAI] Disabling features missing their Thunderbird permission: " +
+                no_permission.map(key => key + ' (' + FEATURE_PERMISSIONS[key].join(', ') + ')').join(', '));
+        }
         await mztaPrefs.setPrefs(to_disable);
     }
     return prefs;
@@ -592,6 +668,7 @@ async function _assign_tags_now(_data, create_new_tags, exclusions_exact_match) 
         if (!checkIfTagLabelExists(tag, all_tags_list)) {
             if (create_new_tags) {
                 taLog.log("Creating tag: " + tag);
+                // Throws on failure: the assignment stops and the caller reports it.
                 await createTag(tag);
             } else {
                 taLog.log("Skipping non-existing tag: " + tag);
@@ -1101,9 +1178,19 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 return _popup_menu_ready();
                 break;
             case 'assign_tags':
+                // The tags the user confirmed in the dialog (js/mzta-compose-script.js). The
+                // permissions are checked again: they can have been removed while the dialog
+                // was open. A failure is shown, never left to the console [#962].
                 async function _do_assign_tags(message) {
+                    if (!(await _ensureFeaturePermissions('add_tags'))) return false;
                     let prefs_assign_tags = await mztaPrefs.getPrefs(['add_tags_exclusions_exact_match']);
-                    return _assign_tags(message,true, prefs_assign_tags.add_tags_exclusions_exact_match);
+                    try {
+                        return await _assign_tags(message,true, prefs_assign_tags.add_tags_exclusions_exact_match);
+                    } catch (err) {
+                        taLog.error("Could not assign the tags: " + (err?.message || err));
+                        await showGenericError(err?.message || String(err), getFeatureLabel('add_tags'));
+                        return false;
+                    }
                 }
                 return _do_assign_tags(message);
                 break;
@@ -1878,6 +1965,8 @@ function _enqueueJunkMove(fn) {
 //   joins a running analysis, the tab it delivers the report to
 // options.prefs: pass pre-fetched prefs to avoid re-querying
 // options.autoMove: if true, move spam messages to junk folder (default: false)
+// options.permissionNotices: the Set of missing-permission notices already given in this run
+//   (processEmails()), so the address book one is not repeated per message
 //
 // One spam analysis per message is in flight (taJobRegistry, kind 'spam'): the batch, the
 // context menu and the panel's Refresh can reach the same message together, and a second
@@ -2058,8 +2147,12 @@ async function _runSpamJob(entry, headerMessageId, options) {
             : (await mztaPrefs.getPrefs(['spamfilter_skip_addressbook'])).spamfilter_skip_addressbook;
         if (skip_addressbook && senderEmail) {
             try {
-                let hasPermission = await browser.permissions.contains({ permissions: ["addressBooks"] });
-                if (hasPermission) {
+                let hasPermission = await hasFeaturePermissions('spamfilter_skip_addressbook');
+                if (!hasPermission) {
+                    // Never silent [#962]: logged and told (once per run when the batch passes
+                    // its notices), and the message goes on to the AI below.
+                    await _noticeAddressBookRuleSkipped(options.permissionNotices || null);
+                } else {
                     let matchingContacts = await browser.contacts.quickSearch({ searchString: senderEmail });
                     let isInAddressBook = matchingContacts.some(contact => {
                         let props = contact.properties;
@@ -2690,6 +2783,10 @@ let _storageChangeDebounce = null;
 // silently dropping a needed menu rebuild.
 let _prefsInitStale = false;
 let _menusStale = false;
+// A permission-gated preference the two lists above do not hold (spamfilter_skip_addressbook):
+// its write must still wake the reconciliation, or a true written without the permission
+// would wait for the next restart to be healed.
+let _gatedStale = false;
 
 // Register the listener for storage changes
 function setupStorageChangeListener() {
@@ -2710,14 +2807,17 @@ function setupStorageChangeListener() {
         if (changed_keys.length === 0) return;
         _prefsInitStale = _prefsInitStale || changed_keys.some(key => key in PREFS_INIT_KEYS);
         _menusStale = _menusStale || changed_keys.some(key => MENU_RELEVANT_KEYS.includes(key));
-        if (!_prefsInitStale && !_menusStale) return;
+        _gatedStale = _gatedStale || changed_keys.some(key => key in FEATURE_PERMISSIONS);
+        if (!_prefsInitStale && !_menusStale && !_gatedStale) return;
 
         clearTimeout(_storageChangeDebounce);
         _storageChangeDebounce = setTimeout(() => {
             const do_prefs_init = _prefsInitStale;
             const do_menus = _menusStale;
+            const do_gated = _gatedStale;
             _prefsInitStale = false;
             _menusStale = false;
+            _gatedStale = false;
             // The snapshot must be refreshed first: the menus read storage directly,
             // but doGetSparkFeature() consults the _sparks_presence that
             // reload_pref_init() sets.
@@ -2730,7 +2830,7 @@ function setupStorageChangeListener() {
                 // true -> false, so the follow-up pass finds nothing to disable and writes
                 // nothing. The extra pass is useful anyway — it is what refreshes
                 // prefs_init with the healed values.
-                if (do_prefs_init || do_menus) await _reconcileFeatureFlags(await _readFeatureConnPrefs());
+                if (do_prefs_init || do_menus || do_gated) await _reconcileFeatureFlags(await _readFeatureConnPrefs());
                 if (do_prefs_init) await reload_pref_init();
                 if (do_menus) await _reload_menus();
             })().catch(error => taLog.error("ERROR handling storage changes: ", error));
@@ -2745,18 +2845,20 @@ setupStorageChangeListener();
 
 // Register the listener for removed permissions
 function setupPermissionsRemovedListener() {
-    browser.permissions.onRemoved.addListener((permissions) => {
-        // console.log(">>>>>>>>>>> Permissions onRemoved permissions: " + JSON.stringify(permissions));
-        // Process 'tags' permissions removal
-        if (["messagesTags", "messagesUpdate"].some(permission => permissions.permissions.includes(permission))) {
-            // console.log(">>>>>>>>>>> Permissions onRemoved: tags");
-            mztaPrefs.setPref('add_tags', false);
-        }
-        // Process 'spamfilter' permissions removal
-        if (["messagesMove", "messagesUpdate"].some(permission => permissions.permissions.includes(permission))) {
-            // console.log(">>>>>>>>>>> Permissions onRemoved: spamfilter");
-            mztaPrefs.setPref('spamfilter', false);
-        }
+    // Every feature that needs one of the removed permissions is turned off, from the one map
+    // (FEATURE_PERMISSIONS, js/mzta-feature-permissions.js): a shared permission such as
+    // messagesUpdate turns off both add_tags and the spam filter. Keys the policy locks are
+    // skipped, as in _reconcileFeatureFlags(): the write guard would refuse them anyway, and the
+    // runtime guards say why the feature does nothing. One write: storage.onChanged then
+    // refreshes the snapshot and rebuilds the menus of the features that have menu entries
+    // (add_tags, spamfilter, the calendar clipboard prompt are MENU_RELEVANT_KEYS).
+    browser.permissions.onRemoved.addListener((removed) => {
+        const affected = getFeaturesAffectedByRemoval(removed?.permissions)
+            .filter(key => !mztaManaged.isManagedLocked(key));
+        if (affected.length === 0) return;
+        taLog.log("Permissions removed (" + removed.permissions.join(', ') + "), disabling: " + affected.join(', '));
+        return mztaPrefs.setPrefs(Object.fromEntries(affected.map(key => [key, false])))
+            .catch(e => taLog.error("Could not disable the features of the removed permissions: " + e));
     });
 }
 
@@ -2931,6 +3033,55 @@ async function showGenericInfo(infoMsg, source) {
     }
 }
 
+// Runtime guard of a feature gated by optional permissions (js/mzta-feature-permissions.js).
+// _reconcileFeatureFlags() turns such a feature off when its permissions are missing, but not
+// when the policy locks it, and not before the next storage event when a permission goes away
+// while the add-on runs: this check is what keeps a feature path from failing silently inside
+// the API call [#962]. Returns true when the feature may run. Otherwise it logs and tells the
+// user, with the panel of every tab: the background cannot request the permission itself (no
+// user gesture), so the message says where to grant it - or, for a locked feature, to ask the
+// administrator. `notified` (a Set of keys), when given, makes the notice once per run.
+// A failing permissions.contains() blocks too: never throws.
+async function _ensureFeaturePermissions(key, notified = null) {
+    let granted = false;
+    try {
+        granted = await hasFeaturePermissions(key);
+    } catch (e) {
+        taLog.error("Could not check the permissions of " + key + ": " + e);
+    }
+    if (granted) return true;
+    taLog.error("[ThunderAI] " + key + " is enabled, but Thunderbird has not granted its permissions (" + FEATURE_PERMISSIONS[key].join(', ') + "), skipping it.");
+    if (!notified || !notified.has(key)) {
+        notified?.add(key);
+        try {
+            await showGenericError(getMissingPermissionMessage(key, mztaManaged.isManagedLocked(key)), getFeatureLabel(key));
+        } catch (e) {
+            taLog.error("Could not show the missing permission notice of " + key + ": " + e);
+        }
+    }
+    return false;
+}
+
+// The address book rule of the spam filter (spamfilter_skip_addressbook) without its permission.
+// The rule is an optimization, not the feature: the message is still analyzed, so this is an
+// informational notice, not an error, given once per run (`notified`, as above).
+async function _noticeAddressBookRuleSkipped(notified = null) {
+    const key = 'spamfilter_skip_addressbook';
+    taLog.warn("[ThunderAI | SpamFilter] The address book check is enabled, but Thunderbird has not granted the addressBooks permission: skipped, the messages are analyzed anyway.");
+    if (notified?.has(key)) return;
+    notified?.add(key);
+    try {
+        await showGenericInfo(
+            mztaManaged.isManagedLocked(key)
+                ? getMissingPermissionMessage(key, true)
+                : browser.i18n.getMessage('spamfilter_addressbook_permission_missing', [getFeatureLabel(key)]),
+            getFeatureLabel('spamfilter')
+        );
+    } catch (e) {
+        taLog.error("Could not show the address book permission notice: " + e);
+    }
+}
+
 // Spam panel update for every tab displaying the message, not just the active tab of the
 // current window: the analysis may be running for a message open in another window, or in
 // two places at once. _sendToTabsDisplaying() keeps the displayed-message check and the
@@ -2991,8 +3142,6 @@ function _concurrencyCap(value, fallback) {
 async function processEmails(args) {
     const {
         messages,
-        addTagsAuto = false,
-        spamFilter = false,
         summarize = false,
         summarizeOnReceive = false,
         summarizeSenders = [],
@@ -3004,10 +3153,24 @@ async function processEmails(args) {
         // fallback when absent — see the comment above specialContextMenuActions.
         sourceTabId = null,
     } = args;
+    // let: turned off for this run below when the feature lacks its Thunderbird permissions.
+    let {
+        addTagsAuto = false,
+        spamFilter = false,
+    } = args;
 
     // Auto-summarize restricted to a sender list: the decision is per message, so only the
     // presence of a usable list can be checked here.
     const summarizeSendersActive = hasAddressListEntries(summarizeSenders);
+
+    // The features gated by optional permissions are checked once per run, before any message
+    // is read: without their permissions they would fail inside the API calls (creating a tag,
+    // moving to junk), so they are skipped for the whole run, with one notice each [#962]. The
+    // other features of the run go on.
+    if (addTagsAuto && !(await _ensureFeaturePermissions('add_tags'))) addTagsAuto = false;
+    if (spamFilter && !(await _ensureFeaturePermissions('spamfilter'))) spamFilter = false;
+    // The notices given in this run, shared with the spam jobs (the address book rule).
+    const permission_notices = new Set();
 
     taWorkingStatus.startWorking();
     // This call's own cancel token: a Stop or a rate-limit stop cancels the batches active
@@ -3050,6 +3213,20 @@ async function processEmails(args) {
         let spamfilter_skip_addresses = prefs_aats.spamfilter_skip_addresses;
         let spamfilter_block_addresses = prefs_aats.spamfilter_block_addresses;
         let spamfilter_skip_addressbook = prefs_aats.spamfilter_skip_addressbook;
+        // The address book rule without its permission: skipped for the run, told once, and
+        // the spam filter itself goes on (see _noticeAddressBookRuleSkipped()).
+        if (spamFilter && spamfilter_skip_addressbook) {
+            let addressbook_granted = false;
+            try {
+                addressbook_granted = await hasFeaturePermissions('spamfilter_skip_addressbook');
+            } catch (e) {
+                taLog.error("Could not check the addressBooks permission: " + e);
+            }
+            if (!addressbook_granted) {
+                await _noticeAddressBookRuleSkipped(permission_notices);
+                spamfilter_skip_addressbook = false;
+            }
+        }
 
         // The accounts the automatic runs are limited to: the stored selection, or the one a
         // policy resolves from {feature}_enabled_accounts_match, which replaces it. Resolved
@@ -3378,8 +3555,15 @@ async function processEmails(args) {
             }
             taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
             let _data = { messageId: msg.id, tags: tags_current_email };
-            // Serialized with every other tag assignment, see _enqueueTagAssign().
-            await _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
+            // Serialized with every other tag assignment, see _enqueueTagAssign(). A tag that
+            // cannot be created or assigned stops the assignment and is reported here, never
+            // passed over [#962].
+            try {
+                await _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
+            } catch (err) {
+                taLog.error("[ThunderAI | Auto add_tags] Could not assign the tags to " + msg.headerMessageId + ": " + (err?.message || err));
+                return { status: 'error', errorMessage: err?.message || String(err) };
+            }
             return { status: 'ok', data: { tags: tags_current_email, assigned: true } };
         };
 
@@ -3424,7 +3608,8 @@ async function processEmails(args) {
                                 autoMove: true,
                                 skip_addresses: spamfilter_skip_addresses,
                                 block_addresses: spamfilter_block_addresses,
-                                skip_addressbook: spamfilter_skip_addressbook
+                                skip_addressbook: spamfilter_skip_addressbook,
+                                permissionNotices: permission_notices
                             });
                         if (spamResult?.rateLimited) {
                             stopForRateLimit('Spam filter', spamResult.retryAfterMs);

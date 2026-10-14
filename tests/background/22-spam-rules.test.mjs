@@ -53,7 +53,7 @@ const ctx = await bgContext({
         translate: false,
     },
     mail: {
-        permissions: ['addressBooks'],
+        // The default permissions include addressBooks (and those of the spam filter itself).
         contacts: [
             { id: 'c1', properties: { PrimaryEmail: 'pal@else.test' } },
             { id: 'c2', properties: { PrimaryEmail: 'rogue@evil.test' } },

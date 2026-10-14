@@ -1781,6 +1781,56 @@
     "message": "Error requesting address book permission. Please try again.",
     "description": "Spam filter page: alert shown when requesting the address book permission fails with an error."
   },
+  "feature_permission_missing": {
+    "message": "\"$FEATURE$\" cannot work: Thunderbird has not granted ThunderAI the permission it needs. To grant it, open the ThunderAI settings and turn this option off and on again.",
+    "description": "Error shown when a feature that needs an optional Thunderbird permission (tags, moving messages, address books, clipboard) runs without it. $FEATURE$ is the name of the option as shown in the settings, e.g. 'Add tags to emails'. Turning the option off and on again is what makes Thunderbird ask for the permission.",
+    "placeholders": {
+      "feature": {
+        "content": "$1",
+        "example": "Add tags to emails"
+      }
+    }
+  },
+  "feature_permission_missing_managed": {
+    "message": "\"$FEATURE$\" is enabled by your organization, but Thunderbird has not granted ThunderAI the permission it needs, so it cannot work. Please contact your administrator.",
+    "description": "Error and settings-page warning shown when an option enforced by the organization's managed configuration lacks the Thunderbird permission it needs; the user cannot change the option. $FEATURE$ is the name of the option as shown in the settings.",
+    "placeholders": {
+      "feature": {
+        "content": "$1",
+        "example": "Automatic Spam Filter"
+      }
+    }
+  },
+  "feature_permission_denied": {
+    "message": "Thunderbird did not grant the permission \"$FEATURE$\" needs, so the option stays off.",
+    "description": "Settings pages: alert shown when the user refuses the Thunderbird permission requested while turning an option on. $FEATURE$ is the name of the option.",
+    "placeholders": {
+      "feature": {
+        "content": "$1",
+        "example": "Add tags to emails"
+      }
+    }
+  },
+  "feature_permission_error": {
+    "message": "Error requesting the permission \"$FEATURE$\" needs. Please try again.",
+    "description": "Settings pages: alert shown when requesting the Thunderbird permission of an option fails with an error. $FEATURE$ is the name of the option.",
+    "placeholders": {
+      "feature": {
+        "content": "$1",
+        "example": "Add tags to emails"
+      }
+    }
+  },
+  "spamfilter_addressbook_permission_missing": {
+    "message": "The spam filter did not check the address books, because Thunderbird has not granted ThunderAI access to them; the messages were analyzed anyway. To grant it, turn \"$FEATURE$\" off and on again in the spam filter settings.",
+    "description": "Notice shown once per run when the spam filter's address book check is enabled but the address book permission is missing. $FEATURE$ is the name of the option, e.g. 'Skip address books addresses'.",
+    "placeholders": {
+      "feature": {
+        "content": "$1",
+        "example": "Skip address books addresses"
+      }
+    }
+  },
   "SpamReport_Title": {
     "message": "Spam Filter Reports",
     "description": "Spam filter page: heading of the table listing the latest spam filter reports."

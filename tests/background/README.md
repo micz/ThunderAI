@@ -67,6 +67,8 @@ time: the debounce, the worker timeout and the batch yield points run on node:te
 | `34-config-errors` | a missing API key on every automatic feature: no worker, nothing stored, each panel (generic for add_tags), nothing in progress, the retry once fixed | 04 "Configuration Validation"; 01 "In-flight jobs" |
 | `35-compose-commands` | `chatgpt_replaceSelectedText` / `chatgpt_replyMessage`: what the compose script is sent, HTML through `sanitizeBlockHtml` (it ends in `execCommand('insertHTML')`), plain text converted and never sanitized (`stripHtmlKeepLines` a stand-in of this file: it needs a DOMParser) | 01 "Replacing text in a compose window", "Writing a reply" |
 | `36-special-show-in` | the shipped `show_in` of the special prompts, from a fresh profile: summarize and translate (`"both"`) handed to the popup for a message tab and in the context menu, the spam filter (`"context"`) only in the latter; the popup running summarize / translate; feature off or a non-API connection: in neither menu; a saved `"context"` kept, never migrated | 02 "User Properties", "Shipped menus of the special prompts", "Special Prompt Visibility Dependencies" |
+| `37-permission-reconcile` | the permission map; the reconciliation's permission rule for every gated preference (missing → off, granted → on, at startup and on a storage change), with a specific integration, the sub-option alone, Sparks absent, locked keys skipped (simulated by stubbing `mztaManaged`), the log line; `permissions.onRemoved` (a shared permission, `addressBooks`, `clipboardRead`, host permissions only, a locked key) | 01 "Feature permissions" |
+| `38-permission-guards` | the runtime guards: automatic and context-menu add_tags / spam filter without their permissions (one red panel per run, the other features go on), the address book rule skipped with one blue notice (batch and Refresh), `assign_tags` blocked and a tag that cannot be created, `createTag()` / `assignTagsToMessage()` rejecting, the popup Add tags and calendar-from-clipboard menu actions refused with their alert | 01 "Feature permissions" |
 | `99-harness-known-issues` | the shape of `helpers/known-issues/background.mjs` | harness |
 | `99-harness-scope` | the statement splitter and the cut (small cases and the real file), the fake Worker, the strict API models | harness |
 
@@ -109,8 +111,9 @@ a module-level binding (`prefs_init`, `_process_incoming`, `menus`).
 
 The startup a context runs is `STARTUP`, in file order: `loadManaged()` (no policy), the flag
 repair, `reload_pref_init()`, the three `taLog` assignments, the main `runtime.onMessage` listener,
-the `onMessageExternal` listener, `setupStorageChangeListener()`, the initial menu build, the
-background's `menus.onClicked` listener and the `onNewMailReceived` registration. So a test sends a
+the `onMessageExternal` listener, `setupStorageChangeListener()`, `setupPermissionsRemovedListener()`,
+the initial menu build, the background's `menus.onClicked` listener and the `onNewMailReceived`
+registration. So a test sends a
 content script's message through `ctl.dispatchMessage()` to the **real listener**, fires the **real
 registered** `onNewMailReceived` listener, clicks through the **real** `menus.onClicked` listener.
 `99-harness-scope` fails by name when a root or a guard no longer exists, before any flow test.
@@ -118,7 +121,7 @@ registered** `onNewMailReceived` listener, clicks through the **real** `menus.on
 **Every piece the flows need could be cut.** What a context does not run is left out on purpose:
 the migrations (the migration area), the startup policy warnings (managed), the content script
 registrations and the injection loop into open tabs (`let openTabs = await messenger.tabs.query()`,
-a top-level await), `onInstalled`, the permissions and keyboard-command listeners.
+a top-level await), `onInstalled`, the keyboard-command listener.
 
 ### What is injected instead of the real module (the stand-ins)
 
@@ -172,7 +175,10 @@ modules, then loads the policy with no policy installed, as the background does)
   `mailTabs.getSelectedMessages`, the two action icons, `windows.create` (the chat window opening);
 - **menus**: `removeAll`, `create` (with its callback; a duplicate id is recorded in `menuErrors`,
   which is how an interleaved rebuild would show), `onClicked`;
-- `permissions.contains`, `contacts.quickSearch`.
+- `permissions.contains` and `permissions.onRemoved`, `contacts.quickSearch`. The optional API
+  permissions granted are `m.permissions` (default `DEFAULT_PERMISSIONS`: every one a feature
+  needs); `messages.tags.create`, `messages.update`, `messages.move` and `contacts.quickSearch`
+  throw Thunderbird's "is not a function" `TypeError` without theirs.
 
 Every namespace added is **strict**: reading a property it does not model throws and is recorded
 in `unmodelled`; every flow file ends with `assertClean()` (no worker alive, no unexpected worker,
@@ -220,8 +226,7 @@ None today.
   the `replaceBody()` fallback of a reply, the retry while the compose script is not loaded;
   `chatgpt_close`, `chatgpt_saveSummary`, `assign_tags`,
   `addtags_get_exclusion_prefs` / `addtags_set_exclusions` (compose and ui areas' callers).
-- What the background does at startup besides `STARTUP` (see above), the keyboard shortcut and the
-  `permissions.onRemoved` listener.
+- What the background does at startup besides `STARTUP` (see above) and the keyboard shortcut.
 - **The real Thunderbird storage and its timing**: the core mock resolves at once; the write races of
   a slow storage are tested with direct concurrent calls (`04-storage`), not through a flow.
 

@@ -66,7 +66,7 @@ export const ROOTS = [
  * The top-level statements of the startup a context runs, by the text they start with, in the
  * order they have in the file (which is the order they run in). What the startup does besides
  * these is left out: the migrations (migration area), the policy warnings (managed area), the
- * content script registrations and injections, the permission and onInstalled listeners.
+ * content script registrations and injections, the onInstalled listener.
  */
 export const STARTUP = [
     'await mztaManaged.loadManaged();',
@@ -78,6 +78,7 @@ export const STARTUP = [
     'messenger.runtime.onMessage.addListener(',
     'browser.runtime.onMessageExternal.addListener(',
     'setupStorageChangeListener();',
+    'setupPermissionsRemovedListener();',
     'await menus.loadMenus(await _computeActiveSpecialIds());',
     'browser.menus.onClicked.addListener(',
     'browser.messages.onNewMailReceived.addListener(newEmailListener, true);',

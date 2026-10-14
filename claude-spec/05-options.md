@@ -205,7 +205,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `add_tags` | `false` | Enable auto-tagging feature |
+| `add_tags` | `false` | Enable auto-tagging feature. Needs the optional `messagesTags` and `messagesUpdate` permissions: see "Permission-gated toggles" below. |
 | `add_tags_maxnum` | `3` | Max tags to apply: asked of the model as `prompt_add_tags_maxnum N.` when `> 0` (see [02-prompts.md](02-prompts.md#add-tags-extra-prompt-statements)). `0` = no limit, no statement. Number input with `min="0"`. |
 | `add_tags_max_messages` | `0` | Maximum number of messages tagged at once from the **context menu**. Above this limit `processEmails()` (`mzta-background.js`) blocks the run and shows the `add_tags_too_many_messages` warning. `0` = no limit. Automatic tagging of incoming mail is never capped. Exposed in the add tags settings page as a number input (`min="0"`, no reset button: the page's restore fallback for number inputs is already `0`). Meant for providers with a daily quota (#901), where a large selection cannot fit anyway. |
 | `add_tags_hide_exclusions` | `false` | Hide excluded tags from menu |
@@ -222,7 +222,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `add_tags_enabled_accounts` | `[]` | Accounts where auto-tag is active: account ids, per profile, so **not** policy-settable. `[]` = all accounts. Replaced at read time — never overwritten — by the ids resolved from `add_tags_enabled_accounts_match` when a policy sets it (`resolveEnabledAccounts()`, `js/mzta-utils.js`). |
 | `add_tags_enabled_accounts_match` | `[]` | **Policy-only**, no control of its own: account matchers (`user@domain`, `@domain` / `*@domain`, `local` for Local Folders) resolved to account ids on every automatic batch; the result replaces `add_tags_enabled_accounts`, and an empty result means **no** account. `[]` = not managed. Always enforced, validated entry by entry. See [08b-managed-connections.md](08b-managed-connections.md#account-lists-by-policy-_enabled_accounts_match). |
 | `get_calendar_event` | `true` | Enable calendar event extraction |
-| `get_calendar_event_from_clipboard` | `false` | Enable calendar from clipboard (the clipboard prompt is shown only with `get_calendar_event` on too, see [02-prompts.md](02-prompts.md#special-prompt-visibility-dependencies)). On the Calendar Event page, switching it **on** first requests the optional `clipboardRead` permission: granted, `true` is stored and the menus are reloaded; refused, the switch goes back off, an `alert()` says why (`clipboard_permission_denied`, or `clipboard_permission_error` when the request throws) and the stored value is `false`, never a `true` the permission does not back. Switching it **off** stores `false`, requests nothing and reloads the menus. |
+| `get_calendar_event_from_clipboard` | `false` | Enable calendar from clipboard (the clipboard prompt is shown only with `get_calendar_event` on too, see [02-prompts.md](02-prompts.md#special-prompt-visibility-dependencies)). On the Calendar Event page it is a permission-gated toggle (see "Permission-gated toggles" below) needing `clipboardRead`, skipped by the page's `saveOptions()`: granted, `true` is stored and the menus are reloaded; refused, the switch goes back off, an `alert()` says why (`clipboard_permission_denied`, or `clipboard_permission_error` when the request throws), nothing is written (the stored `false` stays) and the menus are reloaded. The page no longer writes `true` first and rolls it back. Switching it **off** stores `false`, requests nothing and reloads the menus. |
 | `get_task` | `true` | Enable task creation |
 | `calendar_enforce_timezone` | `false` | Force specific timezone |
 | `calendar_timezone` | `''` | IANA timezone id to enforce (see note below) |
@@ -233,13 +233,13 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `calendar_reminder_rules` | `''` | Optional natural-language reminder rules, appended to the event prompt (after `prompt_reminder_rules_intro`) only when `calendar_reminder_enabled` is true |
 | `task_reminder_enabled` | `false` | Same as `calendar_reminder_enabled`, for tasks (reference: due date, or initial date) |
 | `task_reminder_rules` | `''` | Same as `calendar_reminder_rules`, for tasks |
-| `spamfilter` | `false` | Enable spam filter |
+| `spamfilter` | `false` | Enable spam filter. Needs the optional `messagesMove` and `messagesUpdate` permissions: see "Permission-gated toggles" below. |
 | `spamfilter_threshold` | `70` | Spam confidence threshold (%). The settings page warns next to the field (`#spamfilter_threshold_too_low`): below 50 with `spamfilter_threshold_too_low`, at 0 with `spamfilter_threshold_zero` (larger), hidden from 50 up. Refreshed at load and on every `input`. A warning only: any value from 0 to 100 is stored, 0 included ("flag everything", see `getSpamThreshold()`). |
 | `spamfilter_enabled_accounts` | `[]` | Accounts where the automatic spam filter is active: account ids, per profile, so **not** policy-settable. `[]` = all accounts. Replaced at read time — never overwritten — by the ids resolved from `spamfilter_enabled_accounts_match` when a policy sets it. |
 | `spamfilter_enabled_accounts_match` | `[]` | **Policy-only**, same as `add_tags_enabled_accounts_match`, for the automatic spam filter. |
 | `spamfilter_skip_addresses` | `[]` | Allow list: senders never sent to the AI for spam filtering (report with spamValue 0). Entries are exact addresses, `@domain.com` or `*@domain.com`, matched by `matchAddressListType()` like `summarize_auto_senders_list`. Lists saved before domain support hold exact addresses only, which match exactly as before. Tested with `hasAddressListEntries()` (see the note below the table). |
 | `spamfilter_block_addresses` | `[]` | Block list: senders always reported as spam (spamValue 100) without an AI call; in automatic mode (`autoMove`) the message is also marked junk and moved to the account's junk folder. Same entry syntax as `spamfilter_skip_addresses`. On a sender in both lists the more specific entry wins (exact beats domain), and on equal specificity the allow list wins. Both lists are checked before `spamfilter_skip_addressbook`. Saved by its own Save button through `normalizeStringList(value, 2)`. See [01-architecture.md](01-architecture.md#data-flow-spam-filter-sender-rules). |
-| `spamfilter_skip_addressbook` | `true` | Skip senders found in any address book (`browser.contacts.quickSearch`). On the settings page the switch is saved by its own handler, not by the page's `saveOptions()`: switching it **on** first requests the optional `addressBooks` permission and stores `true` only once it is granted; refused, the switch goes back off, an `alert()` says why (`addressbook_permission_denied`, or `addressbook_permission_error` when the request throws) and nothing is stored. Switching it **off** stores `false` and requests nothing. |
+| `spamfilter_skip_addressbook` | `true` | Skip senders found in any address book (`browser.contacts.quickSearch`). A permission-gated toggle (see "Permission-gated toggles" below) needing `addressBooks`; the default `true` is stored as `false` by the background reconciliation at the first start of a profile that never granted it. On the settings page the switch is saved by the shared handler, not by the page's `saveOptions()`: switching it **on** first requests the optional `addressBooks` permission and stores `true` only once it is granted; refused, the switch goes back off, an `alert()` says why (`addressbook_permission_denied`, or `addressbook_permission_error` when the request throws) and nothing is stored. Switching it **off** stores `false` and requests nothing. |
 | `spamfilter_show_msg_panel` | `true` | Show info panel on spam detection |
 | `spamfilter_only_inbox` | `false` | Auto spam filter runs only on inbox messages |
 | `summarize` | `false` | Enable email summarization |
@@ -257,6 +257,42 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `translate_max_display_length` | `0` | Maximum characters shown in inline translation before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
 | `translate_lang` | `''` | Target language for translation. Falls back to `default_chatgpt_lang` if empty. |
 | `translate_exclude_lang` | `''` | Languages the translation skips: free text, typically comma-separated language codes (`en, fr, it`), stored trimmed as typed (not normalized). **No code reads it**: it only fills `{%thunderai_translate_exclude_lang%}` in `prompt_translate_this`, whose shipped text asks the AI to answer `status: -1` when the email is in one of those languages (or already in the target one), which the banner shows as "skipped" (see [02-prompts.md](02-prompts.md#translate-inline-only-prompt-system)). So the decision is the AI's, after the request: the manual button is still shown, and an automatic translation still makes the call. Empty = no exclusion (the placeholder resolves to `""`). A user prompt without the placeholder ignores it. |
+
+#### Permission-gated toggles
+
+Four feature preferences need an optional Thunderbird API permission (`FEATURE_PERMISSIONS` in
+`js/mzta-feature-permissions.js`, see [01-architecture.md](01-architecture.md#feature-permissions-962)):
+`add_tags` and `spamfilter` (options page, setup wizard), `spamfilter_skip_addressbook` (spam
+filter page), `get_calendar_event_from_clipboard` (calendar event page). Every one of their
+switches goes through the one shared flow, `bindPermissionToggle(element, key, {onChange,
+deniedMsgKey, errorMsgKey})` in `pages/_lib/permission-toggle.js`, so the pages cannot drift:
+
+- **checked**: `permissions.request()` with exactly the mapped permissions is the **first await**
+  of the `change` handler (it must stay within the user gesture). The preference is written
+  `true` only after it resolved to true. Refused, the switch goes back off and an `alert()`
+  names the feature (`feature_permission_denied` by default; the spam filter page keeps
+  `addressbook_permission_denied`, the calendar page `clipboard_permission_denied`). A
+  failed request does the same with `feature_permission_error` (or the page's
+  `*_permission_error`). Nothing is written on a refusal: `true` was never written, so
+  there is nothing to roll back and the stored `false` stays;
+- **unchecked**: `false` is written;
+- `onChange(checked)` runs after either outcome, for the page's side effects (the options
+  page's Manage button, the calendar page's `reload_menus`);
+- a key locked by the policy is disabled by `applyManagedUI()`; if its switch still fires
+  (re-enabled from the developer tools) the change is put back, with no prompt and no write.
+
+**Why the order matters**: every storage write wakes the background reconciliation, which turns
+off a gated preference whose permissions are missing. Written before the grant, the preference
+would be turned back to `false` under a switch still shown on. So each page's generic
+`saveOptions()` returns early on these keys (`isPermissionGatedPref()`), even though the
+options, wizard and calendar switches stay `.option-input` (for `restoreOptions()` and
+`applyManagedUI()`).
+
+**Locked on without its permission**: `showLockedPermissionWarning(element, key)` adds an amber
+`.feature_locked_note` (`feature_permission_missing_managed`) to the switch's `.feature_info`
+when the policy locks the key on and Thunderbird has not granted its permissions. Neither the
+reconciliation (which skips locked keys) nor the user can fix it; see
+[08c-managed-ui.md](08c-managed-ui.md).
 
 #### Address-list preferences and the empty-string trap
 
@@ -989,7 +1025,11 @@ for every API, and the pill `#mzta_conn_pill_name` reads the provider's name
 
 **Step 2 — Pick your tools:** only the four API-driven features (`add_tags`, `spamfilter`,
 `summarize`, `translate`) — the two Sparks features are omitted. Same toggle markup / ids as
-the options page, so they persist via the shared save-on-`change`.
+the options page. `summarize` and `translate` persist via the shared save-on-`change`;
+`add_tags` and `spamfilter` are permission-gated toggles (see "Permission-gated toggles"):
+the wizard's `saveOptions()` skips them and `bindPermissionToggle()` requests their
+permissions first, exactly as the options page does. Saving them like the other two is what
+turned them on without their permissions in [#962](https://github.com/micz/ThunderAI/issues/962).
 
 **Persistence:** the wizard writes the **same** storage keys as the options page
 (`connection_type`, the per-provider `*` fields, and the four feature flags) via
@@ -1126,8 +1166,8 @@ hint logic: `setApiWarnVisibility(prefix, show)` is the **single** place that fl
 explicit `inline-block` because `.warn_API_needed` is `display:none` in the stylesheet (which avoids a
 flash before the JS runs), so `''` would leave the span hidden. The greyed-out look
 needs no new CSS — `.mzta_switch input[type="checkbox"]:disabled + .track` already sets
-`opacity: .5`. The per-feature `click` handlers (which request Thunderbird permissions) need no guard
-either: a disabled checkbox fires no `click`.
+`opacity: .5`. The permission-gated `change` handlers (`bindPermissionToggle()`, which request Thunderbird permissions) need no guard
+either: a disabled checkbox fires no `change`.
 
 It builds its `tempPrefs` as `{...prefs_opt, connection_type: conntype_select.value}` — **the live
 select value must come last**. It is the not-yet-persisted choice the call is reacting to, while
@@ -1463,7 +1503,7 @@ settings page. When the feature's checkbox is unchecked, the button is fully **h
 `setFeatureManageVisibility(btn, visible)` in `options/mzta-options.js`. The helper sets
 both `style.display` and the `disabled` attribute together, and replaces all prior
 inline `btn.disabled = ...` toggling for these six buttons (on checkbox `click`, on
-`disable_*()` re-evaluation, and on permission-request denial).
+`disable_*()` re-evaluation, and in the `onChange` of `bindPermissionToggle()`, which also covers a refused permission).
 
 ### Unsaved-Changes Guard (`pages/_lib/unsaved-guard.js`)
 

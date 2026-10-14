@@ -49,6 +49,11 @@ import {
     applyManagedUI,
     isLockedKey
 } from '../_lib/managed-ui.js';
+import { isPermissionGatedPref } from '../../js/mzta-feature-permissions.js';
+import {
+    bindPermissionToggle,
+    showLockedPermissionWarning
+} from '../_lib/permission-toggle.js';
 import {
     persistPromptConnectionToPrefs,
     resolveFeatureConnectionPrefs,
@@ -127,41 +132,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         note.classList.toggle('shown', show);
     };
 
-    // Switched off without the permission: saveOptions(), registered above and therefore run
-    // first, has already stored true, so the preference is rolled back too - or the clipboard
-    // prompt would reach the menus with no permission to read the clipboard.
-    const clipboardRefused = async (event, msgKey) => {
-        event.target.checked = false;
-        await mztaPrefs.setPref('get_calendar_event_from_clipboard', false);
-        browser.runtime.sendMessage({command: "reload_menus"});
-        alert(browser.i18n.getMessage(msgKey));
-    };
-
-    get_calendar_event_from_clipboard.addEventListener('change', async (event) => {
-        if (event.target.checked) {
-            // Request clipboardRead permission when enabling the feature
-            try {
-                const granted = await browser.permissions.request({
-                    permissions: ["clipboardRead"]
-                });
-
-                if (granted) {
-                    // Permission granted, enable the feature
-                    await mztaPrefs.setPref('get_calendar_event_from_clipboard', true);
-                    browser.runtime.sendMessage({command: "reload_menus"});
-                } else {
-                    await clipboardRefused(event, "clipboard_permission_denied");
-                }
-            } catch (err) {
-                taLog.error("Error requesting clipboard permission:", err);
-                await clipboardRefused(event, "clipboard_permission_error");
-            }
-        } else {
-            // Disabling the feature
-            await mztaPrefs.setPref('get_calendar_event_from_clipboard', false);
-            browser.runtime.sendMessage({command: "reload_menus"});
-        }
+    // Needs the clipboardRead permission: the shared activation flow requests it first and writes
+    // true only once granted (saveOptions() skips this key), so the clipboard prompt never reaches
+    // the menus without the permission. The menus are rebuilt after every outcome.
+    bindPermissionToggle(get_calendar_event_from_clipboard, 'get_calendar_event_from_clipboard', {
+        taLog: taLog,
+        deniedMsgKey: 'clipboard_permission_denied',
+        errorMsgKey: 'clipboard_permission_error',
+        onChange: () => { browser.runtime.sendMessage({command: "reload_menus"}); },
     });
+    await showLockedPermissionWarning(get_calendar_event_from_clipboard, 'get_calendar_event_from_clipboard');
 
     // This textarea saves both calendar prompts, so either one being enforced locks it. The
     // policy validation gives the clipboard prompt the same text unless it names it too.
@@ -229,6 +209,9 @@ function saveOptions(e) {
   e.preventDefault();
   let options = {};
   let element = e.target;
+  // get_calendar_event_from_clipboard needs an optional permission: written by its own handler,
+  // and only once the permission is granted (bindPermissionToggle()).
+  if (isPermissionGatedPref(element.id)) return;
 
     switch (element.type) {
       case 'checkbox':

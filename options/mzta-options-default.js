@@ -241,7 +241,7 @@ export const prefs_default = {
     spamfilter_enabled_accounts_match: [],
     spamfilter_skip_addresses: [],
     spamfilter_block_addresses: [],   // Senders always reported as spam (score 100) without asking the AI
-    spamfilter_skip_addressbook: true,
+    spamfilter_skip_addressbook: false,
     spamfilter_show_msg_panel: true,
     spamfilter_only_inbox: false,   // If true, auto spam filter runs only on inbox folders
     summarize: false,

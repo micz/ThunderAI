@@ -63,6 +63,11 @@ import {
   isSetupWizardDisabled,
   disableForManagedRestriction
 } from '../pages/_lib/managed-ui.js';
+import { isPermissionGatedPref } from '../js/mzta-feature-permissions.js';
+import {
+  bindPermissionToggle,
+  showLockedPermissionWarning
+} from '../pages/_lib/permission-toggle.js';
 
 let taLog = new taLogger("mzta-options",true);
 
@@ -70,6 +75,9 @@ function saveOptions(e) {
   e.preventDefault();
   let options = {};
   let element = e.target;
+  // A feature gated by an optional permission is written by its own handler, and only once the
+  // permission is granted (bindPermissionToggle() in pages/_lib/permission-toggle.js).
+  if (isPermissionGatedPref(element.id)) return;
 
     switch (element.type) {
       case 'checkbox':
@@ -636,42 +644,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     element.addEventListener("change", saveOptions);
   });
   
+  // Both need optional permissions: the preference is written only once they are granted
+  // (pages/_lib/permission-toggle.js), never by saveOptions().
   let addtags_el = document.getElementById('add_tags');
   let addtags_info_btn = document.getElementById('btnManageTagsInfo');
-  addtags_el.addEventListener('click', (event) => {
-    async function _addtags_el_change() {
-      if (event.target.checked) {
-        let granted = false;
-        granted = await messenger.permissions.request({ permissions: ["messagesTags", "messagesUpdate"] });
-        if (!granted) {
-          event.target.checked = false;
-          setFeatureManageVisibility(addtags_info_btn, false);
-          mztaPrefs.setPref('add_tags', false);
-        }
-      }
-    }
-    _addtags_el_change();
-    setFeatureManageVisibility(addtags_info_btn, event.target.checked);
+  bindPermissionToggle(addtags_el, 'add_tags', {
+    taLog: taLog,
+    onChange: (checked) => setFeatureManageVisibility(addtags_info_btn, checked),
   });
   setFeatureManageVisibility(addtags_info_btn, addtags_el.checked);
+  await showLockedPermissionWarning(addtags_el, 'add_tags');
 
   let spamfilter_el = document.getElementById('spamfilter');
   let spamfilter_info_btn = document.getElementById('btnManageSpamFilterInfo');
-  spamfilter_el.addEventListener('click', (event) => {
-    async function _spamfilter_el_change() {
-      if (event.target.checked) {
-        let granted = await messenger.permissions.request({ permissions: ["messagesMove", "messagesUpdate"] });
-        if (!granted) {
-          event.target.checked = false;
-          setFeatureManageVisibility(spamfilter_info_btn, false);
-          mztaPrefs.setPref('spamfilter', false);
-        }
-      }
-    }
-    _spamfilter_el_change();
-    setFeatureManageVisibility(spamfilter_info_btn, event.target.checked);
+  bindPermissionToggle(spamfilter_el, 'spamfilter', {
+    taLog: taLog,
+    onChange: (checked) => setFeatureManageVisibility(spamfilter_info_btn, checked),
   });
   setFeatureManageVisibility(spamfilter_info_btn, spamfilter_el.checked);
+  await showLockedPermissionWarning(spamfilter_el, 'spamfilter');
 
   let summarize_el = document.getElementById('summarize');
   let summarize_info_btn = document.getElementById('btnManageSummarizeInfo');

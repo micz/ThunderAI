@@ -50,6 +50,8 @@ export const CHECKS = [
     'undeclared-pref',
     // 04-prefs-defaults (spec 05, spec 08, CLAUDE.md rule 7)
     'derivation', 'duplicate', 'orphan-rule', 'type-coherence', 'secret-name', 'secret-treatment',
+    // 05-feature-permissions (spec 01 "Feature permissions", spec 05)
+    'permission-map', 'permission-hardcoded',
 ];
 
 /**

@@ -25,10 +25,23 @@
  *  with "Invalid tab ID". Moves give the message a NEW id, as Thunderbird does, so the old id no
  *  longer resolves.
  *
+ *  The optional API permissions granted are `permissions` (default: every one a feature needs,
+ *  DEFAULT_PERMISSIONS). The calls that need one fail without it the way Thunderbird does - the
+ *  function is not there - so a feature path that skips its permission check shows up as the
+ *  TypeError of issue #962: messages.tags.create (messagesTags), messages.update
+ *  (messagesUpdate), messages.move (messagesMove), contacts.quickSearch (addressBooks).
+ *
  *  Not a test file (no .test.mjs suffix). Imports nothing.
  */
 
 const clone = v => (v === undefined ? undefined : structuredClone(v));
+
+/**
+ * The optional API permissions of a profile where every permission-gated feature was turned on
+ * through its switch: the union of FEATURE_PERMISSIONS (js/mzta-feature-permissions.js), written
+ * out because this file imports nothing (37-permission-reconcile checks they agree).
+ */
+export const DEFAULT_PERMISSIONS = ['messagesTags', 'messagesUpdate', 'messagesMove', 'addressBooks', 'clipboardRead'];
 
 function makeEvent() {
     const listeners = [];
@@ -64,6 +77,8 @@ function strict(path, target, unmodelled) {
  *             f-trash, f-sent, f-drafts, f-templates, f-outbox, f-archives (each with its
  *             specialUse) and f-lists, a plain folder
  *   tags      [{key, tag, color, ordinal}]      the tag list (replaces the core one)
+ *   permissions  the optional API permissions granted (default DEFAULT_PERMISSIONS); a test
+ *             revokes one with m.permissions.delete()
  */
 export function mailModel(o = {}) {
     const accounts = clone(o.accounts ?? [{ id: 'acc1', name: 'Account 1' }]);
@@ -99,7 +114,7 @@ export function mailModel(o = {}) {
         tabSends: [],
         icons: [],
         unmodelled: [],
-        permissions: new Set(o.permissions ?? []),
+        permissions: new Set(o.permissions ?? DEFAULT_PERMISSIONS),
         contacts: clone(o.contacts ?? []),
         /** Message ids getFull() fails on (a filter moved the message after the event). */
         failGetFull: new Set(),
@@ -202,6 +217,10 @@ export function mailModel(o = {}) {
 export function installApis(browser, m) {
     const rec = (api, args) => m.calls.push({ api, args: clone(args) });
     const u = m.unmodelled;
+    // Without its permission the API function is not there in Thunderbird: calling it throws.
+    const need = (permission, api) => {
+        if (!m.permissions.has(permission)) throw new TypeError('browser.' + api + ' is not a function');
+    };
 
     const tabInfo = t => ({ id: t.id, type: t.type, windowId: t.windowId, active: t.active });
 
@@ -243,6 +262,7 @@ export function installApis(browser, m) {
         },
         async update(id, props) {
             rec('messages.update', [id, props]);
+            need('messagesUpdate', 'messages.update');
             const r = m.messages.get(id);
             if (!r) throw new Error('Message not found: ' + id);
             if ('junk' in props) r.junk = props.junk;
@@ -250,6 +270,7 @@ export function installApis(browser, m) {
         },
         async move(ids, folderId) {
             rec('messages.move', [ids, folderId]);
+            need('messagesMove', 'messages.move');
             if (!m.folders.has(folderId)) throw new Error('Folder not found: ' + folderId);
             for (const id of ids) m.moveTo(id, folderId);
         },
@@ -260,6 +281,7 @@ export function installApis(browser, m) {
             },
             async create(key, tag, color) {
                 rec('messages.tags.create', [key, tag, color]);
+                need('messagesTags', 'messages.tags.create');
                 if (m.tags.some(t => t.key === key)) throw new Error('Tag key exists: ' + key);
                 m.tags.push({ key, tag, color, ordinal: '' });
             },
@@ -378,6 +400,7 @@ export function installApis(browser, m) {
     browser.contacts = strict('browser.contacts', {
         async quickSearch(q) {
             rec('contacts.quickSearch', [q]);
+            need('addressBooks', 'contacts.quickSearch');
             const s = String(q.searchString || q).toLowerCase();
             return clone(m.contacts.filter(c => Object.values(c.properties).some(v => String(v).toLowerCase() === s)));
         },

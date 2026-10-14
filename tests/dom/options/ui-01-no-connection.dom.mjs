@@ -404,14 +404,16 @@ k.test('flag-off', S_MANAGE, 'unchecking it stores false and hides the Manage bu
     assert.equal($('#btnManageTagsInfo').disabled, true);
 });
 
-k.test('flag-denied', S_MANAGE, 'a denied permission turns Spam Filter back off, stores false and hides its Manage button', async () => {
+k.test('flag-denied', S_MANAGE, 'a denied permission turns Spam Filter back off, keeps false stored and hides its Manage button', async () => {
     permissions.request = () => false;
     try {
         const since = ctx.ctl.calls.length;
         await ctx.click($('#spamfilter'));
         assert.equal($('#spamfilter').checked, false);
+        // true is never written before the grant, so a refusal has nothing to roll back [#962].
         const written = ctx.localWrites(since).map(c => c.items.spamfilter).filter(v => v !== undefined);
-        assert.strictEqual(written.at(-1), false, 'the last value stored');
+        assert.deepEqual(written, [], 'nothing written');
+        assert.notStrictEqual(ctx.ctl.localData().spamfilter, true, 'false stays stored');
         assert.equal($('#btnManageSpamFilterInfo').style.display, 'none');
         assert.equal($('#btnManageSpamFilterInfo').disabled, true);
     } finally {

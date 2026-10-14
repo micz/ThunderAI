@@ -43,6 +43,7 @@ tests/
     ├── 02-locales-references.test.mjs spec 06: the keys the code references, and the unused ones
     ├── 03-prefs-references.test.mjs  rule 7, spec 05: the preference keys the code names
     ├── 04-prefs-defaults.test.mjs    spec 05, spec 08, rule 7: the declarations themselves
+    ├── 05-feature-permissions.test.mjs spec 01, spec 05: the permission map of the gated features
     ├── 99-harness-known-issues.test.mjs  the known-issue shape
     └── 99-harness-source-scan.test.mjs   the scan, on small cases and on the real files
 ```
@@ -68,6 +69,8 @@ violation: the thing a known issue names.
 | `type-coherence` | 04 | a key's default is `''` or a member of its enumeration, or inside its number range | rule 7, 08 "Content rules" | key |
 | `secret-name` | 04 | a credential field or preference is named `api_key` / `*_api_key` | rule 7, 08 "Policy-supplied API keys" | key |
 | `secret-treatment` | 04 | every `*_api_key` is masked by `mztaManaged._logValue()` and `mztaPrefs._logValue()`, recognised by `isAPIKeyValue()`, and named by every hand-written list of API key fields | 05 "Preference access", 08 "Policy-supplied API keys" | `site:key` |
+| `permission-map` | 05 | every key of `FEATURE_PERMISSIONS` is a declared boolean preference with an `en` label, and every permission it lists is an API permission in `manifest.json` `optional_permissions` | 01 "Feature permissions", 05 "Permission-gated toggles" | key or `key:permission` |
+| `permission-hardcoded` | 05 | no shipped code but `js/mzta-feature-permissions.js` calls `permissions.request` / `contains` / `remove` with its own list of API permissions (host permissions, `{origins}`, are not checked) | 01 "Feature permissions" | `file:line` |
 
 Some tests are reports, not checks: the **unresolvable** keys (02 and 03), built at run time and
 listed with their `file:line` as a test diagnostic, never failed; and the informational check

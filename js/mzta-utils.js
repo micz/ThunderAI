@@ -698,11 +698,16 @@ export async function getTagsList(){
 export async function createTag(tag) {
   let prefs_tag = await mztaPrefs.getPrefs(['add_tags_first_uppercase']);
   if(prefs_tag.add_tags_first_uppercase) tag = tag.toLowerCase().charAt(0).toUpperCase() + tag.toLowerCase().slice(1);
+  // Awaited, and the failure rethrown: returning the bare promise let the catch see only
+  // synchronous errors, and the caller went on to assign a tag that was never created. Without
+  // the messagesTags permission the call itself throws ("tags.create is not a function") [#962].
   try {
     const tagKey = '$ta-' + generateCallID(16) + '-' + sanitizeString(tag); // Ensure uniqueness with a longer random ID
-    return browser.messages.tags.create(tagKey, tag, generateHexColorForTag());
+    await browser.messages.tags.create(tagKey, tag, generateHexColorForTag());
+    return tagKey;
   } catch (error) {
     console.error('[ThunderAI] Error creating tag:', error);
+    throw error;
   }
 }
 
@@ -758,11 +763,13 @@ export async function assignTagsToMessage(messageId, tags) {
   tags = tags.concat(msg_prop.tags || []);
   tags = [...new Set(tags)];
   // console.log(">>>>>>>>>>> assignTagsToMessage tags after concat: " + JSON.stringify(tags));
+  // The failure reaches the caller, which stops and reports it [#962].
   try {
     await browser.messages.update(messageId, {tags: tags});
     return tags; // Return the updated tags for confirmation
   } catch (error) {
-    console.error('[ThunderAI] Error assigning tag [messageId: ', messageId, ' - tag: ', tag, ']:', error);
+    console.error('[ThunderAI] Error assigning tags [messageId: ', messageId, ' - tags: ', tags, ']:', error);
+    throw error;
   }
 }
 

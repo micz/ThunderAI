@@ -58,7 +58,19 @@ import { mzta_specialCommand } from './mzta-special-commands.js';
 import { taWorkingStatus } from './mzta-working-status.js';
 import { taJobRegistry } from './mzta-job-registry.js';
 import { mztaPrefs } from './mzta-prefs.js';
- 
+import { mztaManaged } from './mzta-managed.js';
+import {
+    hasFeaturePermissions,
+    getMissingPermissionMessage
+} from './mzta-feature-permissions.js';
+
+// The special prompts run by a menu action whose feature needs optional permissions
+// (js/mzta-feature-permissions.js): prompt id -> feature preference key.
+const PERMISSION_GATED_PROMPTS = {
+    prompt_add_tags: 'add_tags',
+    prompt_get_calendar_event_from_clipboard: 'get_calendar_event_from_clipboard',
+};
+
 export class mzta_Menus {
 
     allPrompts = [];
@@ -222,6 +234,27 @@ export class mzta_Menus {
                 curr_prompt.text = await placeholdersUtils.replaceCustomPlaceholders(curr_prompt.text);
             }
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+            // A special prompt whose feature needs optional permissions is refused up front,
+            // before the body is read or the AI called, with the message saying which feature
+            // lacks its permission and where to grant it: without them it would fail inside the
+            // tag or clipboard API, with nothing shown to the user [#962].
+            const gated_feature = PERMISSION_GATED_PROMPTS[curr_prompt.id];
+            if (gated_feature) {
+                let granted = false;
+                try {
+                    granted = await hasFeaturePermissions(gated_feature);
+                } catch (e) {
+                    this.logger.error("Could not check the permissions of " + gated_feature + ": " + e);
+                }
+                if (!granted) {
+                    this.logger.error("Menu action [" + curr_prompt.id + "] refused: Thunderbird has not granted the permissions of " + gated_feature + ".");
+                    if (tabs.length > 0) {
+                        sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: getMissingPermissionMessage(gated_feature, mztaManaged.isManagedLocked(gated_feature)) });
+                    }
+                    taWorkingStatus.stopWorking();
+                    return {ok:'0'};
+                }
+            }
             // The body is scraped through the content script, so it can only be read
             // from a tab that can receive tab messages. A 3-pane "mail" tab with the
             // message pane hidden (F8), nothing displayed or a multi-message view has

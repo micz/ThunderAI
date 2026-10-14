@@ -45,6 +45,11 @@ import {
   getManagedState,
   isSetupWizardDisabled
 } from '../_lib/managed-ui.js';
+import { isPermissionGatedPref } from '../../js/mzta-feature-permissions.js';
+import {
+  bindPermissionToggle,
+  showLockedPermissionWarning
+} from '../_lib/permission-toggle.js';
 
 let taLog = console;
 
@@ -92,6 +97,10 @@ function getSequence() {
 function saveOptions(e) {
   let options = {};
   let element = e.target;
+  // add_tags and spamfilter need optional permissions: written by their own handler, and only
+  // once the permissions are granted (bindPermissionToggle()). Saving them here, as the wizard
+  // used to, left the feature on without its permissions [#962].
+  if (isPermissionGatedPref(element.id)) return;
   switch (element.type) {
     case 'checkbox':
       options[element.id] = element.checked;
@@ -428,6 +437,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('.option-input').forEach(element => {
     element.addEventListener('change', saveOptions);
   });
+
+  // The offered features that need optional permissions get the same activation flow as the
+  // options page: request first, write true only once granted.
+  for (const key of WIZARD_FEATURES.filter(isPermissionGatedPref)) {
+    const el = document.getElementById(key);
+    bindPermissionToggle(el, key, { taLog: taLog });
+    await showLockedPermissionWarning(el, key);
+  }
 
   // Per-connection advanced disclosure toggle.
   let conn_adv_btn = document.getElementById('mzta_conn_adv_btn');

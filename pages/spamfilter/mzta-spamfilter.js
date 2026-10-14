@@ -54,6 +54,10 @@ import {
     lockAccountSelector
 } from '../_lib/managed-ui.js';
 import {
+    bindPermissionToggle,
+    showLockedPermissionWarning
+} from '../_lib/permission-toggle.js';
+import {
     persistPromptConnectionToPrefs,
     resolveFeatureConnectionPrefs,
     bindConnPanelTint,
@@ -198,31 +202,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     let prefs_skip_ab = await mztaPrefs.getPrefs(['spamfilter_skip_addressbook']);
     skip_addressbook_checkbox.checked = prefs_skip_ab.spamfilter_skip_addressbook;
 
-    skip_addressbook_checkbox.addEventListener('change', async (event) => {
-        // Locked: no permission prompt and no write, even if the checkbox was re-enabled
-        // from the developer tools. Put back the enforced state the change just flipped.
-        if (isLockedKey('spamfilter_skip_addressbook')) {
-            event.target.checked = !event.target.checked;
-            return;
-        }
-        if (event.target.checked) {
-            try {
-                const granted = await browser.permissions.request({ permissions: ["addressBooks"] });
-                if (granted) {
-                    await mztaPrefs.setPref('spamfilter_skip_addressbook', true);
-                } else {
-                    event.target.checked = false;
-                    alert(browser.i18n.getMessage("addressbook_permission_denied"));
-                }
-            } catch (err) {
-                taLog.error("Error requesting addressBooks permission:", err);
-                event.target.checked = false;
-                alert(browser.i18n.getMessage("addressbook_permission_error"));
-            }
-        } else {
-            await mztaPrefs.setPref('spamfilter_skip_addressbook', false);
-        }
+    // Needs the addressBooks permission: the shared activation flow requests it first and writes
+    // true only once granted. Locked: no permission prompt and no write, even if the checkbox was
+    // re-enabled from the developer tools.
+    bindPermissionToggle(skip_addressbook_checkbox, 'spamfilter_skip_addressbook', {
+        taLog: taLog,
+        deniedMsgKey: 'addressbook_permission_denied',
+        errorMsgKey: 'addressbook_permission_error',
     });
+    await showLockedPermissionWarning(skip_addressbook_checkbox, 'spamfilter_skip_addressbook');
 
      //Accounts manager
      let accounts = await getAccountsList();

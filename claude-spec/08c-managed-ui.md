@@ -55,6 +55,17 @@ by their Save buttons),
 `pages/_lib/reminder-ui.js`, saved trimmed by its Save button), and
 `spamfilter_skip_addressbook` (a checkbox whose change handler requests the `addressBooks`
 permission). They opt in explicitly with `data-mzta-pref="<preference key>"`.
+The other permission-gated switches (`add_tags`, `spamfilter`,
+`get_calendar_event_from_clipboard`) stay `.option-input` for `restoreOptions()`, and their
+page's `saveOptions()` skips them instead (`isPermissionGatedPref()`); all four are saved by
+`bindPermissionToggle()` (`pages/_lib/permission-toggle.js`), which also puts back a locked
+switch's change with no prompt and no write. When the policy locks one of them **on** while
+Thunderbird has not granted its permissions, `showLockedPermissionWarning()` appends an amber
+`.feature_locked_note` (`feature_permission_missing_managed`, marked
+`data-mzta-permission-warning`) to the switch's `.feature_info`: the switch is disabled and
+the background skips locked keys, so only the administrator can fix it, and the page says so.
+This runs on the options page, the setup wizard, the spam filter page and the calendar event
+page.
 `applyManagedUI()` walks `.option-input, [data-mzta-pref]` in the same single pass against the
 same `Set`, taking the key from `data-mzta-pref` when present and from the `id` otherwise, and
 gives the match exactly the `.option-input` treatment. Two ids are not the key:
