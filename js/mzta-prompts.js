@@ -361,7 +361,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
-        show_in: "context",
+        show_in: "both",
     },
     {
         id: 'prompt_summarize_email_template',
@@ -412,7 +412,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
-        show_in: "context",
+        show_in: "both",
     }
 ];
 

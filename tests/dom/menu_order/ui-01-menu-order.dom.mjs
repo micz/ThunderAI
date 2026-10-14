@@ -420,6 +420,9 @@ k.test('drag-marks-unsaved', S_MO, 'a drag released outside any list, and a reor
 // ---- Reset all -------------------------------------------------------------------------------
 
 k.test('reset-in-memory', S_MO, 'Reset all asks nothing, writes nothing, and marks the page unsaved', async () => {
+    // Out of the popup first, so reset-factory sees Reset all put summarize back there.
+    await drag('popup_list', 'prompt_summarize', 'popup_list_hidden');
+    assert.deepEqual(where('prompt_summarize'), ['popup_list_hidden', 'context_list'], 'precondition');
     const since = ctx.ctl.calls.length;
     const dialogs = ctx.dialogs.length;
     await ctx.click($('#btnResetAll'));
@@ -432,7 +435,8 @@ k.test('reset-in-memory', S_MO, 'Reset all asks nothing, writes nothing, and mar
 k.test('reset-factory', S_MO, 'Reset all: factory visibility and icons, specials first then the others, alphabetically', async () => {
     assert.equal(preview('popup_list', 'c_read').getAttribute('src'), '../../images/context_menu/custom/empty_icon.png', 'icon kept');
     assert.deepEqual(where('c_read'), ['popup_list', 'context_list_hidden'], 'a custom prompt goes back to the popup');
-    assert.deepEqual(where('prompt_summarize'), ['popup_list_hidden', 'context_list'], 'summarize goes back to the context menu only');
+    assert.deepEqual(where('prompt_summarize'), ['popup_list', 'context_list'], 'summarize goes back to both menus');
+    assert.deepEqual(where('prompt_translate_this'), ['popup_list', 'context_list'], 'translate goes back to both menus');
     assert.deepEqual(where('prompt_add_tags'), ['popup_list', 'context_list']);
     const names = ctx.$$('#context_list > li').map(nameOf);
     const specials = ctx.$$('#context_list > li').filter(li => li.querySelector('.badge_special')).map(nameOf);

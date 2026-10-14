@@ -265,7 +265,7 @@ the summarize header and separator (which are passed no content).
 | `position_display` | number | Sort order for the popup menu in reading view |
 | `position_compose` | number | Sort order for the popup menu in compose view |
 | `position_context` | number | Sort order for the context menu |
-| `show_in` | string | `"popup"` = popup only, `"context"` = context menu only, `"both"` = both, `"none"` = in no menu (unreachable). Default: `"popup"` for default/custom prompts, `"both"` for special prompts. **`show_in` is the single source of truth for reachability** — there is no separate enabled/disabled flag. |
+| `show_in` | string | `"popup"` = popup only, `"context"` = context menu only, `"both"` = both, `"none"` = in no menu (unreachable). Default: `"popup"` for default/custom prompts; a special prompt ships with its own value (see "Shipped menus of the special prompts"), and one saved with no `show_in` reads `"both"`. **`show_in` is the single source of truth for reachability** — there is no separate enabled/disabled flag. |
 | `custom_icon` | string | Filename (with extension) of an icon in `images/context_menu/custom/`. A single shared value: the same icon is used in **both** the context menu and the popup menu. Empty string = fall back to the prompt's built-in icon (see Icon Resolution), which for most prompts is not "no icon". Used for **all** prompts, special ones included: a chosen `custom_icon` overrides even a special prompt's hard-coded icon. Selectable from the icon picker on the Menu Order page — in every list of both panels; that page is the only place icons are chosen. |
 
 **Positions of a built-in prompt with nothing stored** (`getDefaultPrompts_withProps()`):
@@ -311,6 +311,24 @@ Some prompts trigger additional Thunderbird actions beyond just sending text to 
 | `get_calendar_event` | Extract and create a calendar event |
 | `get_task` | Extract and create a task |
 | `translate` | Translate email content into a target language |
+
+### Shipped menus of the special prompts
+
+The factory `show_in` of each special prompt is declared once, in the `specialPrompts` array of
+`js/mzta-prompts.js`; `getSpecialPrompts()` (fresh profile, or an entry missing from the store) and
+`getFactoryShowIn()` (Menu Order "Reset all") both read it from there, and nothing else repeats it:
+
+| id | `show_in` |
+|----|-----------|
+| `prompt_add_tags` | `"both"` |
+| `prompt_get_calendar_event`, `prompt_get_calendar_event_from_clipboard`, `prompt_get_task` | `"popup"` |
+| `prompt_spamfilter` | `"context"` |
+| `prompt_summarize`, `prompt_translate_this` | `"both"` |
+| `prompt_summarize_email_template`, `prompt_summarize_email_separator` | `"none"` (text fragments, never in a menu) |
+
+A value already saved in `_special_prompts` is never migrated to a new shipped one: a saved
+`"context"` may be the user's choice in the Menu Order page and cannot be told apart from a default
+saved by an earlier version. Only a **missing** `show_in` is repaired, to `"both"`.
 
 These special prompts can have their own dedicated API integration settings (configured in the Options page). The list of these special prompts is in `options/mzta-options-default.js` as `special_prompts_with_integration`.
 
@@ -529,7 +547,7 @@ Both sections are draggable and act as drop targets; the section the row lands i
 
 **Reset all** — a `#btnResetAll` button in the command palette (next to Save All, always enabled) restores the factory state of everything this page customizes, via `resetAll()`:
 - **Order**: prompts are re-sorted with special prompts first (alphabetically by resolved display name), then all the others alphabetically, and get sequential positions assigned to `position_display` = `position_compose` = `position_context`. This is the same factory ordering `migrateMenuOrderAlphabetic()` produces for a fresh install.
-- **Visibility**: `show_in` is restored from `getFactoryShowIn(promptId)` (exported by `js/mzta-prompts.js`), which reads the value declared in the built-in `defaultPrompts` / `specialPrompts` arrays and falls back to `"popup"` for user-created custom prompts. So context-only special prompts (`prompt_spamfilter`, `prompt_summarize`, `prompt_translate_this`) land back in the popup panel's Hidden section, not the Visible one.
+- **Visibility**: `show_in` is restored from `getFactoryShowIn(promptId)` (exported by `js/mzta-prompts.js`), which reads the value declared in the built-in `defaultPrompts` / `specialPrompts` arrays and falls back to `"popup"` for user-created custom prompts. So a context-only special prompt (`prompt_spamfilter`) lands back in the popup panel's Hidden section, while `prompt_summarize` and `prompt_translate_this` (shipped `"both"`) land back in both panels' Visible sections.
 - **Icons**: `custom_icon` is cleared to `""` on every prompt, which is all that is needed — the resolution chain falls back to `getBuiltInPromptIcon()` (see Icon Resolution), so shipped icons return and prompts with no built-in icon go back to no icon.
 
 The reset is **in-memory only**: it closes any open icon popover, clears the deep-link highlight, re-renders both panels and calls `markUnsaved()` — exactly like a drag or an icon pick. Nothing is persisted until Save All, so reloading the page discards it; that is why there is no confirmation dialog. `allExcludedSpecialPrompts` is deliberately untouched, since those rows are not shown and are re-appended verbatim by the save flow.

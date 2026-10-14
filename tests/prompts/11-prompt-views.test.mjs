@@ -57,6 +57,11 @@ const STORED = {
         { id: 'prompt_get_calendar_event_from_clipboard', name: '__MSG_prompt_get_calendar_event_from_clipboard__',
           text: 'Clip startDate endDate summary', type: '1', action: '0', is_default: '1', is_special: '1', show_in: 'popup',
           need_selected: '0' },
+        // Saved when "context" was the shipped value (or chosen in the Menu Order page): the two
+        // cannot be told apart, so the saved value is the user's and is never migrated.
+        { id: 'prompt_summarize', name: '__MSG_prompt_summarize__', text: 'Sum {%mail_text_body%}',
+          type: '1', action: '0', is_default: '1', is_special: '1', show_in: 'context', custom_icon: '',
+          need_selected: '0' },
     ],
 };
 
@@ -224,6 +229,12 @@ k.test('special-custom-icon-default', 'a special prompt saved with no custom_ico
     assert.equal(byId(await p.getSpecialPrompts(), 'prompt_get_task').custom_icon, '');
 });
 
+k.test('special-show-in-stored-kept', 'a saved show_in "context" is kept, though the shipped value is now "both"', async () => {
+    assert.equal(byId(await p.getSpecialPrompts(), 'prompt_summarize').show_in, 'context');
+    assert.equal(byId(await p.getPrompts(true, ['prompt_summarize']), 'prompt_summarize').show_in, 'context');
+    assert.equal(byId(ctx.ctl.localData()._special_prompts, 'prompt_summarize').show_in, 'context', 'storage untouched');
+});
+
 k.test('special-text-kept', 'the stored text of a special prompt is what getSpecialPrompts() returns', async () => {
     assert.equal(byId(await p.getSpecialPrompts(), 'prompt_spamfilter').text, 'Mine {%mail_text_body%} spamValue explanation');
 });
@@ -237,7 +248,7 @@ k.test('special-restored', 'the special prompts missing from the store are resto
     assert.deepEqual(stored.map(x => x.id).sort(), [...SPECIAL_IDS].sort());
     const translate = byId(stored, 'prompt_translate_this');
     assert.equal(translate.text, ctx.ctl.browser.i18n.getMessage('prompt_translate_this_full_text'));
-    assert.equal(translate.show_in, 'context');
+    assert.equal(translate.show_in, 'both');
     assert.equal(byId(stored, 'prompt_spamfilter').text, 'Mine {%mail_text_body%} spamValue explanation', 'a stored entry is kept');
 });
 
@@ -339,8 +350,12 @@ k.test('active-clipboard-shares-prefix', 'both calendar prompts follow the get_c
 });
 
 k.test('factory-show-in', 'getFactoryShowIn(): the declared value; "popup" for a custom prompt', () => {
-    for (const id of ['prompt_spamfilter', 'prompt_summarize', 'prompt_translate_this']) {
-        assert.equal(p.getFactoryShowIn(id), 'context', id);
+    assert.equal(p.getFactoryShowIn('prompt_spamfilter'), 'context');
+    for (const id of ['prompt_add_tags', 'prompt_summarize', 'prompt_translate_this']) {
+        assert.equal(p.getFactoryShowIn(id), 'both', id);
+    }
+    for (const id of ['prompt_get_calendar_event', 'prompt_get_calendar_event_from_clipboard', 'prompt_get_task']) {
+        assert.equal(p.getFactoryShowIn(id), 'popup', id);
     }
     assert.equal(p.getFactoryShowIn('prompt_reply'), 'popup');
     assert.equal(p.getFactoryShowIn('prompt_user_a'), 'popup');
