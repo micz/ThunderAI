@@ -111,7 +111,7 @@ You can find all the information on [this page](https://micz.it/thunderbird-addo
 ## Support this addon!
 
 Are you using this addon in your Thunderbird?<br>
-Consider to support the development making a small donation. [Click here!](https://www.paypal.com/donate/?business=UHN4SXPGEXWQL&no_recurring=1&item_name=Thunderbird+Addon+ThunderAI&currency_code=EUR)
+Consider supporting the development with a small donation. [Click here!](https://www.paypal.com/donate/?business=UHN4SXPGEXWQL&no_recurring=1&item_name=Thunderbird+Addon+ThunderAI&currency_code=EUR)
 
 ## License
 
@@ -165,5 +165,5 @@ _The language status represents the percentage of translated strings in the late
 ### Miscellaneous
 - <a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGPT web frontend
 - <a href="https://github.com/boxabirds">Julian Harris</a> for his project <a href="https://github.com/boxabirds/chatgpt-frontend-nobuild">chatgpt-frontend-nobuild</a>, that has been used as a starting point for the API Web Interface
-- <a href="https://hosted.weblate.org/widgets/thunderai/">Hosted Weblate</a> for managing the localization
+- <a href="https://hosted.weblate.org/engage/thunderai/">Hosted Weblate</a> for managing the localization
 - <a href="https://github.com/micz/Thunderbird-Addon-Options-Manager">Thunderbird Addon Options Manager</a> as the basis for the preference handling
