@@ -71,6 +71,11 @@
             "js": ["js/lib/diff.js"],
             "all_frames": true,
             "run_at": "document_start"
+        },
+        {
+            "matches": ["https://*.chatgpt.com/*"],
+            "js": ["js/mzta-chatgpt-loader.js"],
+            "run_at": "document_start"
         }
     ]
 }

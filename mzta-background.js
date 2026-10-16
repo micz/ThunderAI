@@ -405,13 +405,6 @@ messenger.messageDisplayScripts.register({
     js: [{ file: "js/lib/mzta-html-lines.js" }, { file: "js/mzta-compose-script.js" }]
 });
 
-browser.contentScripts.register({
-    matches: ["https://*.chatgpt.com/*"],
-    js: [{file: "js/mzta-chatgpt-loader.js"}],
-    // the loader waits for the composer itself, ChatGPT can keep the document loading for ~20 s (issue #924)
-    runAt: "document_start"
-  });
-
 // Listen for shortcut command
 messenger.commands.onCommand.addListener((command, tab) => {
     if (command === "_thunderai__do_action") {
