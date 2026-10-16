@@ -29,7 +29,9 @@ let custom_text_start_ms = null;
 let custom_text_ms = null;
 let send_button_wait_ms = null;
 let page_timing_logged = false;
-let force_go = false;
+let continue_model_verification = null;
+let proceed_pending = false;
+let prompt_send_started = false;
 let do_force_completion = false;
 let current_message = null;
 let current_action = null;
@@ -1372,8 +1374,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     btn_model.id="mzta-btn_model";
     btn_model.textContent = browser.i18n.getMessage("chatgpt_btn_model");
     btn_model.onclick = async function() {
-        force_go = true;
-        document.getElementById('mzta-model_warn').style.display = 'none';
+        if (continue_model_verification) continue_model_verification();
     };
     modelWarnDiv.appendChild(btn_model);
     
@@ -1970,50 +1971,129 @@ function customTextBtnClick(args) {
     }
 }
 
+// Observed in ChatGPT Web on 2026-10-16. Effort is language-neutral; only the
+// model's proper name is matched, inside the linked menu's selected radio row.
+function getGPTModelMenu(trigger) {
+    return Array.from(document.querySelectorAll('[role="menu"][data-state="open"]')).find(menu =>
+        menu.getAttribute('aria-labelledby') === trigger.id && isElementVisible(menu));
+}
+
+function isGPT6Selected(trigger, menu, effort) {
+    if (!menu || trigger.getAttribute('data-selected-reasoning-effort') !== effort) return false;
+    const selected = menu.querySelectorAll('[role="menuitemradio"][aria-checked="true"][data-model-selected="true"]');
+    if (selected.length !== 1) return false;
+    const row = selected[0];
+    if (!isElementVisible(row) || row.closest('[aria-hidden="true"], [inert]')) return false;
+    const label = row.querySelector('[data-menu-row-content] > span');
+    return label && label.textContent.trim() === 'GPT-6';
+}
+
 function checkGPTModel(model) {
-    if(model == '') return Promise.resolve();
-    doLog("checkGPTModel model: " + model);
-  return new Promise((resolve, reject) => {
-    // Set up an interval that shows the warning after 2 seconds
-    const intervalId2 = setTimeout(() => {
-        let modelWarn = document.getElementById('mzta-model_warn');
-        let btnModel = document.getElementById('mzta-btn_model');
-        if (modelWarn) modelWarn.style.display = 'inline-block';
-        if (btnModel) btnModel.style.display = 'inline';
-    }, 2000);
-    // Set up an interval that checks the value every 100 milliseconds
-    const intervalId = setInterval(() => {
-      // Get the '.text-token-text-secondary' element
-     // const element = document.querySelector('div#radix-\\\\:ri2\\\\: > div > span.text-token-text-secondary');
-     const elements = document.querySelectorAll('[id*=radix] span')
+    if (model === '') return Promise.resolve(true);
+    const effort = model === 'gpt-6' ? 'none' : model === 'gpt-6-thinking' ? 'medium' : null;
+    doLog('checkGPTModel model: ' + model);
+    return new Promise(resolve => {
+        let settled = false;
+        let watching = true;
+        const openedTriggers = new Set();
+        const changedViews = new Set();
+        const previousFocus = document.activeElement;
+        const observer = new MutationObserver(check);
+        const timeout = setTimeout(onTimeout, 15000);
+        // Also check after CSS menu transitions, which need not mutate the DOM.
+        const poll = setInterval(check, 200);
 
-     // If there are no elements, we are using a free account, so go on immediately
-     if (elements.length === 0) {
-        doLog("checkGPTModel no model found in DOM, we are using free account.");
-        clearInterval(intervalId);
-        clearTimeout(intervalId2);
-        resolve('free');
-        return;
-      }
+        function stopWatching() {
+            watching = false;
+            clearTimeout(timeout);
+            clearInterval(poll);
+            observer.disconnect();
+        }
 
-     // Loop through the elements to find the one with the specified text content
-     for(let element of elements){
-      // Check if the element exists and its content is '4' or '4o'
-      doLog("checkGPTModel model found in DOM: " + element.textContent);
-      if ((element && element.textContent === model)||(force_go)) {
-        doLog("The GPT Model is now " + model);
-        clearInterval(intervalId);
-        clearTimeout(intervalId2);
-        resolve(model);
-        break;
-      } else if (!element) {
-        console.error("[ThunderAI | ChatGPT Web] Model string element not found! [" + model + "]");
-        clearInterval(intervalId);
-        reject("Model string element not found: " + model);
-      }
-     }
-    }, 200);
-  });
+        function restoreMenu() {
+            const restoreFocus = Array.from(openedTriggers).some(trigger =>
+                trigger === document.activeElement || getGPTModelMenu(trigger)?.contains(document.activeElement));
+            for (const menu of changedViews) {
+                if (menu.isConnected && menu.querySelector('[data-model-picker-view="advanced"]')) {
+                    menu.querySelector('[data-model-picker-view-toggle="true"]')?.click();
+                }
+            }
+            for (const trigger of openedTriggers) {
+                const menu = getGPTModelMenu(trigger);
+                if (menu) menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }));
+            }
+            if (restoreFocus && previousFocus?.isConnected) previousFocus.focus();
+            changedViews.clear();
+            openedTriggers.clear();
+        }
+
+        function finish(reason) {
+            if (settled) return;
+            settled = true;
+            stopWatching();
+            restoreMenu();
+            continue_model_verification = null;
+            window.removeEventListener('pagehide', cancel);
+            const warning = document.getElementById('mzta-model_warn');
+            if (warning) warning.style.display = 'none';
+            doLog('checkGPTModel finished: ' + reason);
+            resolve(reason !== 'cancelled');
+        }
+
+        function cancel() { finish('cancelled'); }
+
+        function onTimeout() {
+            if (!watching || settled) return;
+            stopWatching();
+            restoreMenu();
+            doLog('checkGPTModel timed out: ' + model);
+            // Leave only a one-shot manual continuation; no late DOM match may send.
+            continue_model_verification = () => finish('manual');
+            const warning = document.getElementById('mzta-model_warn');
+            const button = document.getElementById('mzta-btn_model');
+            if (warning) warning.style.display = 'inline-block';
+            if (button) button.style.display = 'inline';
+        }
+
+        function check() {
+            if (!watching || settled) return;
+            if (effort === null) {
+                // Preserve the legacy display-name and free-account paths.
+                const elements = document.querySelectorAll('[id*=radix] span');
+                if (!elements.length || Array.from(elements).some(el => el.textContent === model)) finish('legacy');
+                return;
+            }
+            const triggers = Array.from(document.querySelectorAll('button[data-composer-navigation-target="reasoning"][data-selected-reasoning-effort]'))
+                .filter(el => isElementVisible(el) && !isOwnUiElement(el));
+            if (triggers.length !== 1) return;
+            const trigger = triggers[0];
+            if (!trigger.id || trigger.disabled || trigger.getAttribute('aria-disabled') === 'true') return;
+            if (trigger.getAttribute('data-selected-reasoning-effort') !== effort) return;
+            const menu = getGPTModelMenu(trigger);
+            if (!menu) {
+                if (!openedTriggers.has(trigger) && trigger.getAttribute('aria-expanded') === 'false') {
+                    openedTriggers.add(trigger);
+                    // Radix DropdownMenu opens on keydown/pointerdown, not click.
+                    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true }));
+                }
+                return;
+            }
+            // Simple view keeps the model rows inert. Expand the list, never a model.
+            if (menu.querySelector('[data-model-picker-view="simple"]')) {
+                const toggle = menu.querySelector('[data-model-picker-view-toggle="true"]');
+                if (toggle && !changedViews.has(menu)) {
+                    changedViews.add(menu);
+                    toggle.click();
+                }
+                return;
+            }
+            if (isGPT6Selected(trigger, menu, effort)) finish('matched');
+        }
+
+        window.addEventListener('pagehide', cancel);
+        observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, characterData: true });
+        check();
+    });
 }
 
 function operation_done(){
@@ -2066,10 +2146,23 @@ async function doProceed(message, customText = ''){
         console.error("[ThunderAI] doProceed: no message, nothing to send.");
         return;
     }
+    if (proceed_pending || prompt_send_started) {
+        doLog('doProceed: duplicate prompt flow skipped.');
+        return;
+    }
+    proceed_pending = true;
+    try {
+        await proceedWithPrompt(message, customText);
+    } finally {
+        proceed_pending = false;
+    }
+}
+
+async function proceedWithPrompt(message, customText){
     let _gpt_model = mztaGPTModel;
     doLog("doProceed _gpt_model: " + JSON.stringify(_gpt_model));
     if(_gpt_model != ''){
-        await checkGPTModel(_gpt_model);
+        if (!await checkGPTModel(_gpt_model)) return;
     }
     let final_prompt = message.prompt;
 
@@ -2100,6 +2193,7 @@ async function doProceed(message, customText = ''){
         }
     }
 
+    prompt_send_started = true;
     let send_result = await chatgpt_sendMsg(final_prompt,'click');
     if (mztaDoDebug == 1) logPageTiming(performance.now());
     //console.log(">>>>>>>>>>> send_result: " + send_result);
@@ -2111,6 +2205,7 @@ async function doProceed(message, customText = ''){
             // no return: the user is asked to click Send, then the idle wait below catches the answer
             break;
         case -2:    // textarea not found
+            prompt_send_started = false; // No send was attempted; the existing retry may run.
             let curr_model_warn = document.getElementById('mzta-model_warn');
             curr_model_warn.textContent = browser.i18n.getMessage("chatgpt_textarea_not_found_error");
             curr_model_warn.style.display = 'inline-block';

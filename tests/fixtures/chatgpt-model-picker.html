@@ -1,0 +1,28 @@
+<!-- Fixture preserving only attributes and hierarchy observed in the live ChatGPT DOM on 2026-10-16.
+     Dynamic classes/IDs, account information and conversation content are omitted. -->
+<main>
+  <div id="prompt-textarea" class="ProseMirror" contenteditable="true" role="textbox" style="min-height:30px"></div>
+  <button id="radix-model-trigger" type="button" aria-haspopup="menu" aria-expanded="false"
+    data-state="closed" data-codex-intelligence-trigger="true"
+    data-composer-navigation-target="reasoning" data-selected-reasoning-effort="none"><span>Instant</span></button>
+  <button id="composer-submit-button" type="submit">Send</button>
+</main>
+<template id="model-menu-fixture">
+  <div role="menu" data-state="open" aria-labelledby="radix-model-trigger" tabindex="-1">
+    <div data-model-picker-view="simple">
+      <div data-active="true" aria-hidden="false">
+        <div role="menuitem" data-model-picker-view-toggle="true" tabindex="0">
+          <div data-menu-row-content="true"><span>Medium</span></div>
+        </div>
+      </div>
+      <div data-active="false" aria-hidden="true" inert>
+        <div role="menuitemradio" aria-checked="true" data-model-selected="true" tabindex="-1">
+          <div data-menu-row-content="true"><span>GPT-6</span></div>
+        </div>
+        <div role="menuitemradio" aria-checked="false" tabindex="-1">
+          <div data-menu-row-content="true"><span>GPT-5.6 Sol</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
