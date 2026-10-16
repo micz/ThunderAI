@@ -30,13 +30,44 @@ Each provider has its own settings block in `integration_options_config` (`optio
 ### ChatGPT Web
 Controlled via `js/mzta-chatgpt.js`. Opens a browser window to `chatgpt.com`, injects the prompt via DOM automation, and reads back the response. Settings: `chatgpt_web_model`, `chatgpt_web_tempchat`, `chatgpt_web_project`, `chatgpt_web_custom_gpt`, `chatgpt_web_load_wait_time`.
 
+**GPT-6 model verification.** Model selection still uses the URL: `gpt-6` must resolve to
+GPT-6 / Instant, and `gpt-6-thinking` to GPT-6 / Medium. The composer button's
+`data-selected-reasoning-effort` must be `none` or `medium`, respectively. In the open menu
+whose `aria-labelledby` references that button's ID, exactly one visible `menuitemradio`
+must have both `aria-checked="true"` and `data-model-selected="true"`, with the model name
+exactly `GPT-6`. Only the model name uses display text; localized UI labels are not matched.
+The simple menu is expanded to the advanced view to read the model list without selecting a
+model or effort. The original view is restored, and only menus opened by the verifier are closed.
+Missing DOM never counts as successful GPT-6 verification.
+
+Verification has a 15-second deadline. A match resumes the send flow immediately; a timeout
+stops observation and polling and shows the existing warning and **Use the current model** button.
+Later DOM changes cannot trigger an automatic send; the button resumes the flow once.
+Completion or cancellation cleans up timers, observers and the manual resume callback.
+`doProceed()` prevents duplicate execution while a request is pending or has started sending,
+but preserves retry when no composer was found and nothing was sent. An empty model setting
+and Custom GPT skip verification. Other models retain their existing display-name and free-account checks.
+
+**Loader declaration.** `js/mzta-chatgpt-loader.js` is declared in `manifest.json` under
+`content_scripts` at `document_start` in ChatGPT's top-level frame, replacing the background's
+one-shot asynchronous registration. The separate `diff.js` entry retains injection into all frames.
+
 **Readiness does not wait for the document (issue #924).** ChatGPT can keep the HTML document open for ~20 s while its app is already usable, so every lifecycle event (`document_end`, `load`, `document_idle`) arrives late. The loader `js/mzta-chatgpt-loader.js` is registered at `document_start` and sends `chatgpt_web_ready_<call_id>` once, on the first of: `composer` (a visible `#prompt-textarea.ProseMirror`, `div.ProseMirror[contenteditable="true"]` or `[contenteditable="true"][role="textbox"]` with `document.body` present, via MutationObserver + 250 ms poll; the hidden server-side `textarea[name="prompt-textarea"]` does not count), `load` (or `readyState === "complete"` at start), `timeout` (15 s after navigation start). The message carries `loaderStartMs`, `readySentMs`, `readyReason`, `readyStateAtSend`. The background still waits `chatgpt_web_load_wait_time`, then injects `mzta_script` with `runAt: "document_start"` (the default `document_idle` would wait for the document again). `mzta_script` may therefore start while `readyState` is `"loading"`: `run()` waits for `document.head`/`document.body` (`waitForHeadAndBody()`) and, while the page is incomplete and no composer is visible, `checkLoggedIn()` waits for `findPromptInput()` before checking the login button. `run()` is started only by `chatgpt_send` (there is no retry interval any more) and only once `current_message` is set. `run_pending` drops a second call during that wait, and `prompt_flow_started`, set right before `doProceed()`/`showCustomTextField()` start, makes the prompt flow start at most once per script instance. Each skipped start is logged via `doLog()`. The "user not logged in" alert is shown only once. The debug "Page timing" line includes `readyReason`, `readyStateAtSend` (passed in the pre-script as `mztaReadyReason`/`mztaReadyStateAtSend`), `readyStateAtInject`, `loadWaitMs` (the background wait including the +1000 ms for a project, passed as `mztaLoadWaitMs`) and `sendButtonWaitMs`. The background "Waiting N millisec" log line also shows the `readyReason`.
 
 **ThunderAI's UI stays attached and is never duplicated (issue #924).** ChatGPT's React re-render of `body` can remove nodes it does not own. `addCustomDiv()` keeps module-level references to the only two nodes it inserts into the page, the bar (`mzta_ui_bar`, `.mzta-header-fixed`, appended with `document.body.appendChild()`, not as the first child) and the `<style>` (`mzta_ui_style`). Everything else (custom text box, diff overlay, force-completion hint, retry button) lives inside the bar. A second `addCustomDiv()` call creates nothing: it only re-attaches. `mztaEnsureUiAttached(reason)` re-inserts the SAME nodes when they are not connected: the bar into `document.body`, the style into `document.head` (or `document.documentElement`). Every element reference, listener, textarea value and state therefore stays valid. After a re-attach it logs the reason via `doLog()` and calls `scheduleComposerOverlapFix('ui-reattached')`, whose run re-syncs the ResizeObserver on the bar. It is called from a MutationObserver on `document.documentElement` (`childList`, catches `body`/`head` being replaced), from one on `document.body` (`childList`, no subtree, moved to the new `body` by `watchUiBody()` when `body` is replaced), and from the 2000 ms layout interval as a safety net (e.g. the style removed from inside `head`). `enableButton()`/`disableButton()` ignore a null button, and the `selectionchange` handler returns early while the bar does not exist. `doProceed()` logs an error and returns when called without a message.
 
 Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view support.
 
-**Everything in the ChatGPT page is identified by structure, never by localized text.** ChatGPT ships in dozens of languages and rolls out UI variants gradually (issues #890, #920, #924), so `aria-label`, placeholder, title and text content are never matched. Button aria-labels may appear in diagnostics, nothing else does. Existing selectors always come first so that older UIs keep working. `mzta_script` is a template literal: no backticks or `${…}` inside it, and backslashes are doubled.
+**Model menu stacking.** Only menus containing `[data-model-picker-view]` and their
+`[data-radix-popper-content-wrapper]` receive `z-index: 1001 !important`, keeping them above
+ThunderAI's bottom bar at `z-index: 1000`. Other menus retain their existing stacking order.
+
+**Composer, send and completion selectors use structure, never localized text.** ChatGPT ships in dozens of languages and rolls out UI variants gradually (issues #890, #920, #924), so `aria-label`, placeholder, title and text content are never matched. Button aria-labels may appear in diagnostics, nothing else does. Existing selectors always come first so that older UIs keep working. `mzta_script` is a template literal: no backticks or `${…}` inside it, and backslashes are doubled.
+
+Run `node --test tests/chatgpt-loader.test.mjs` and open `tests/chatgpt-model-verification.html`
+through a local HTTP server for regression tests. In Thunderbird, verify automatic sending for
+both model IDs, selection after changing effort to High on another Web session, manual resume
+and model menu access.
 
 **The composer is located by `findPromptInput(timeoutMs)`, never by a single id lookup.** `chatgpt_sendMsg()` waits up to 15 s for the first *visible* element matching `PROMPT_INPUT_SELECTORS`. The selectors, in priority order:
 1. `#prompt-textarea`
