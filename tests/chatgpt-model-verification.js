@@ -1,4 +1,5 @@
-import { mzta_script } from '../js/mzta-chatgpt.js';
+// Test reloads must execute the current source, not a cached module from a previous run.
+const { mzta_script } = await import('../js/mzta-chatgpt.js?test=' + Date.now());
 
 const fixture = await (await fetch('./fixtures/chatgpt-model-picker.html')).text();
 const messages = await (await fetch('../_locales/en/messages.json')).json();
@@ -322,6 +323,41 @@ test('A legacy model mismatch allows manual resume after a bounded wait', async 
     assert(h.events.sends === 0, 'Sent despite a legacy model mismatch');
     h.doc.getElementById('mzta-btn_model').click(); await h.clock.advance(1000);
     assert(h.events.sends === 1, 'Legacy manual resume regression'); h.assertClean();
+});
+
+test('The model menu portal and items remain clickable over the Close bar', async h => {
+    openMenu(h);
+    const menu = h.doc.querySelector('[role="menu"]');
+    menu.querySelector('[data-model-picker-view-toggle]').click();
+    const wrapper = h.doc.createElement('div');
+    wrapper.setAttribute('data-radix-popper-content-wrapper', '');
+    // The real Radix portal and menu both have z-index:50. A transformed portal
+    // establishes its own stacking context, even if the child menu is raised.
+    wrapper.style.cssText = 'position:fixed;bottom:0;left:20px;width:300px;height:90px;z-index:50;transform:translate(0,0)';
+    menu.style.cssText = 'position:relative;height:90px;background:white;z-index:50';
+    h.doc.body.append(wrapper); wrapper.append(menu);
+    await flush();
+    const row = menu.querySelector('[data-model-selected]');
+    const rect = row.getBoundingClientRect();
+    const bar = h.doc.querySelector('.mzta-header-fixed');
+    assert(rect.top > bar.getBoundingClientRect().top, 'Test menu does not overlap the Close bar');
+    const hit = h.doc.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    assert(hit && row.contains(hit), 'Close bar intercepts model menu clicks');
+    assert(h.win.getComputedStyle(wrapper).zIndex === '1001', 'Menu parent portal is behind the bar');
+    assert(h.win.getComputedStyle(menu).zIndex === '1001', 'Model menu stacking order was not adjusted');
+});
+test('Preserves other menu stacking and the Close button', async h => {
+    const wrapper = h.doc.createElement('div');
+    wrapper.setAttribute('data-radix-popper-content-wrapper', '');
+    wrapper.style.cssText = 'position:fixed;bottom:0;left:20px;width:100px;height:60px;z-index:50';
+    wrapper.innerHTML = '<div role="menu" style="z-index:50">Other menu</div>';
+    h.doc.body.append(wrapper);
+    assert(h.win.getComputedStyle(wrapper).zIndex === '50', 'Other menu portal stacking order changed');
+    assert(h.win.getComputedStyle(wrapper.firstElementChild).zIndex === '50', 'Other menu stacking order changed');
+    const close = h.doc.getElementById('mzta-btn_ok'); close.style.display = 'inline';
+    const rect = close.getBoundingClientRect();
+    const hit = h.doc.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    assert(hit && close.contains(hit), 'Close button is not clickable');
 });
 
 let passed = 0;
