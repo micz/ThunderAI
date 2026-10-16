@@ -34,8 +34,12 @@ Controlled via `js/mzta-chatgpt.js`. Opens a browser window to `chatgpt.com`, in
 GPT-6 / Instant, and `gpt-6-thinking` to GPT-6 / Medium. The composer button's
 `data-selected-reasoning-effort` must be `none` or `medium`, respectively. In the open menu
 whose `aria-labelledby` references that button's ID, exactly one visible `menuitemradio`
-must have both `aria-checked="true"` and `data-model-selected="true"`, with the model name
-exactly `GPT-6`. Only the model name uses display text; localized UI labels are not matched.
+must have both `aria-checked="true"` and `data-model-selected="true"`. The selected name is
+compared with the requested ID after removing its terminal `-thinking` suffix and trimming
+and lowercasing both strings. The full names must match; `GPT-6.1` and `GPT-6 Pro` cannot
+satisfy a `gpt-6` request. The two confirmed ID-to-effort mappings remain explicit; this
+does not automatically enable future models. Only the model name uses display text;
+localized UI labels are not matched.
 The simple menu is expanded to the advanced view to read the model list without selecting a
 model or effort. The original view is restored, and only menus opened by the verifier are closed.
 Missing DOM never counts as successful GPT-6 verification.

@@ -1980,14 +1980,15 @@ function getGPTModelMenu(trigger) {
         menu.getAttribute('aria-labelledby') === trigger.id && isElementVisible(menu));
 }
 
-function isGPT6Selected(trigger, menu, effort) {
+function isGPTModelSelected(trigger, menu, model, effort) {
     if (!menu || trigger.getAttribute('data-selected-reasoning-effort') !== effort) return false;
     const selected = menu.querySelectorAll('[role="menuitemradio"][aria-checked="true"][data-model-selected="true"]');
     if (selected.length !== 1) return false;
     const row = selected[0];
     if (!isElementVisible(row) || row.closest('[aria-hidden="true"], [inert]')) return false;
     const label = row.querySelector('[data-menu-row-content] > span');
-    return label && label.textContent.trim() === 'GPT-6';
+    const expectedName = model.trim().toLowerCase().replace(/-thinking$/, '');
+    return label && label.textContent.trim().toLowerCase() === expectedName;
 }
 
 function checkGPTModel(model) {
@@ -2089,7 +2090,7 @@ function checkGPTModel(model) {
                 }
                 return;
             }
-            if (isGPT6Selected(trigger, menu, effort)) finish('matched');
+            if (isGPTModelSelected(trigger, menu, model, effort)) finish('matched');
         }
 
         window.addEventListener('pagehide', cancel);
