@@ -114,7 +114,7 @@ async function setup(model = 'gpt-6', effort = 'none') {
         operation_done = () => {};
         installComposerOverlapWatch = () => {};
         mztaFixComposerOverlap = () => {};
-        return { checkGPTModel, doProceed, isGPT6Selected,
+        return { checkGPTModel, doProceed, isGPTModelSelected,
             init(model) { mztaGPTModel = model; current_action = '0'; addCustomDiv('0', 0, -1); }
         };
     `)(browser);
@@ -148,6 +148,24 @@ for (const [id, effort] of [['gpt-6', 'none'], ['gpt-6-thinking', 'medium']]) {
         assert(!warningVisible(h), 'Warning shown after successful verification');
         assert(h.events.opens === 1 && h.events.closes === 1, 'The opened menu was not closed');
         h.assertClean();
+    });
+}
+test('Selected model comparison derives full names from the supplied ID', async h => {
+    openMenu(h);
+    const menu = h.doc.querySelector('[role="menu"]');
+    menu.querySelector('[data-model-picker-view-toggle]').click();
+    menu.querySelector('[data-model-selected] [data-menu-row-content] > span').textContent = '  Fixture-Model  ';
+    // Exercise the shared comparator only; this does not enable an unverified URL alias.
+    assert(h.api.isGPTModelSelected(h.trigger, menu, ' FIXTURE-MODEL ', 'none'), 'Expected name was not derived from the requested ID');
+    assert(h.api.isGPTModelSelected(h.trigger, menu, 'fixture-model-thinking', 'none'), 'Terminal thinking suffix was not removed');
+    assert(!h.api.isGPTModelSelected(h.trigger, menu, 'fixture-model-thinking-preview', 'none'), 'Removed a non-terminal thinking suffix');
+});
+for (const label of ['GPT-6.1', 'GPT-6 Pro']) {
+    test('GPT-6 request rejects similar selected name ' + label, async h => {
+        h.doc.getElementById('model-menu-fixture').content.querySelector('[data-model-selected] [data-menu-row-content] > span').textContent = label;
+        void h.api.doProceed(h.message);
+        await waitForTimeout(h);
+        assert(h.events.sends === 0, 'Sent with a different model name');
     });
 }
 test('Rejects a different selected model', async h => {
