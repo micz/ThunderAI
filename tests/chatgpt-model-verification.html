@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>ThunderAI model verification tests</title>
+<style>
+  body { font:16px system-ui; max-width:1000px; margin:32px auto; padding:0 20px; }
+  li { margin:8px 0; } .pass { color:#176b35; } .fail { color:#b11d2b; }
+  iframe { position:absolute; left:-2000px; width:800px; height:600px; }
+  textarea { width:100%; height:120px; } pre { white-space:pre-wrap; }
+</style>
+<h1>ThunderAI model verification tests</h1>
+<p>Uses the production injected script and representative DOM. Extension APIs, the clock, response completion and layout watchers are stubbed; model verification and the actual input and send functions run unchanged.</p>
+<p id="summary">Running tests…</p>
+<ol id="results"></ol>
+<details>
+  <summary>Test script for a signed-in ChatGPT Web session</summary>
+  <p>Open the model URL to test, then run the script below in the DevTools Console.
+    This sends one real prompt without changing the model selection.</p>
+  <label>Model ID to verify <select id="live-model"><option>gpt-6</option><option>gpt-6-thinking</option></select></label>
+  <textarea id="live-script" readonly aria-label="Live Web test script"></textarea>
+</details>
+<script type="module" src="chatgpt-model-verification.js"></script>
+</html>
