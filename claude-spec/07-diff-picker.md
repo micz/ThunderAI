@@ -19,9 +19,12 @@ Implemented in `api_webchat/diffPicker.js`. Introduced by
 
 - **api_webchat only.** The ChatGPT Web path has its own independent read-only diff in
   `js/mzta-chatgpt.js` (fed by `mztaUseDiffViewer` / `mztaOriginalText`, baked into the injected
-  pre-script in `mzta-background.js`). It is untouched and still uses `Diff.diffWords()`.
+   pre-script in `mzta-background.js`). It uses `Diff.diffWords()`; with active companion processing,
+   its diff opens in a companion-owned window instead of exposing originals to ChatGPT.
 - Works in the compose-window case too (`promptData.mailMessageId == -1`, where `action` is forced
   to `"2"`).
+- With companion processing active, API responses are postprocessed before reaching the
+  picker, so its baseline, proposed text and composed result use original values.
 
 ## The hunk model
 

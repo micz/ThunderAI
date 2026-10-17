@@ -317,6 +317,7 @@ export function installApis(browser, m) {
 
     browser.tabs = strict('browser.tabs', {
         onUpdated: makeEvent(),
+        onRemoved: makeEvent(),
         async query(q = {}) {
             rec('tabs.query', [q]);
             return m.tabs.filter(t => (q.active === undefined || t.active === q.active)
@@ -361,6 +362,7 @@ export function installApis(browser, m) {
     // Only what opening the API chat window takes (openChatGPT()): the window itself is the
     // webchat area's. Each window gets one tab, whose content never answers.
     browser.windows = strict('browser.windows', {
+        onRemoved: makeEvent(),
         async create(opts) {
             rec('windows.create', [opts]);
             const id = 900 + m.windows.length;

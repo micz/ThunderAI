@@ -7,6 +7,12 @@
   <body>
     <div id="miczBackPrefs"><a href="mzta-options.html">__MSG_backToOptionsText__</a></div>
     <div id="miczRelNotes"><h1>ThunderAI Release Notes</h1>
+      <h2>Version 5.2.0 - ??/??/2026</h2>
+      <ul>
+        <li>Added async content-processing hooks for the separate ThunderAI Privacy companion. Privacy settings, model downloads and local processing live in the companion; ThunderAI does not bundle its runtime.</li>
+        <li>Active processing failures block the operation. Locally restored replies never enter provider conversation history or ChatGPT's page; Web input and restored previews/diffs open in the companion.</li>
+        <li>If an active companion is disabled or removed, AI requests stay blocked. Disable processing in the companion before uninstalling it to resume unprocessed requests. ThunderAI Privacy currently requires Thunderbird 153 or later, 64-bit.</li>
+      </ul>
       <h2>Version 5.1.0 - ??/??/2026</h2>
       <ul>
         <li>Redesigned the Custom Prompts page: a list with a detail editor, plus a table view of all the prompts and their options. The search also looks in the prompt text, and every change is saved immediately (the "Save All" button is gone) [<a href="https://github.com/micz/ThunderAI/issues/904">#904</a>].</li>

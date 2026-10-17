@@ -18,6 +18,15 @@
 
 import { mzta_script } from './js/mzta-chatgpt.js';
 import {
+    registerProcessingWeb,
+    handleProcessingWebMessage,
+    processWebAction
+} from './js/mzta-processing-web.js';
+import {
+    initializeAIProcessing,
+    getAIProcessingStatus
+} from './js/mzta-ai-processing.js';
+import {
     prefs_default,
     getDynamicSettingsDefaults,
     special_prompts_with_integration
@@ -106,6 +115,8 @@ import {
     getFeatureLabel,
     getMissingPermissionMessage
 } from './js/mzta-feature-permissions.js';
+
+initializeAIProcessing().catch(error => console.error('[ThunderAI] Content processor initialization failed:', error));
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -686,6 +697,9 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // handler function.
     if (message && message.hasOwnProperty("command")){
         switch (message.command) {
+            case 'processing_web_prompt':
+            case 'processing_web_view':
+                return handleProcessingWebMessage(message, sender);
             case 'initSummary':
                 async function _initSummary() {
                     try {
@@ -1040,7 +1054,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: text, tabId: tabId, isPlainText: isPlainText });
                     return true;
                 }
-                return _replaceSelectedText(message.tabId, message.text);
+                return processWebAction(message, sender).then(processed => _replaceSelectedText(processed.tabId, processed.text))
+                    .catch(error => ({ ok: false, error: error.message }));
             case 'chatgpt_replyMessage':
                 async function _replyMessage(message) {
                     let paragraphsHtmlString = message.text;
@@ -1131,7 +1146,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     taLog.error("chatgpt_replyMessage: the compose script never answered, writing the reply with setComposeDetails (not undoable)");
                     await replaceBody(tabId, html);
                 }
-                return _replyMessage(message);
+                return processWebAction(message, sender).then(_replyMessage).catch(error => ({ ok: false, error: error.message }));
                 break;
             case 'reload_menus':
                 return _reload_menus();
@@ -2353,6 +2368,9 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     switch(prefs.connection_type){
         case 'chatgpt_web':
         {
+            let webProcessing;
+            try { webProcessing = await getAIProcessingStatus(); }
+            catch (error) { await showGenericError(error.message, 'AI processing'); return; }
             // We are using the ChatGPT web interface
 
             let rand_call_id = '_chatgptweb_' + generateCallID();
@@ -2413,6 +2431,15 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     if((originalText == null) || (originalText == "")) {
                         originalText = prompt_info.body_text;
                     }
+                    if (webProcessing.enabled) {
+                        registerProcessingWeb(createdTab.id, {
+                            prompt: promptText, originalText,
+                            needCustomText: String(do_custom_text) === '1',
+                            customTextArray: prompt_info.custom_text_array,
+                            targetTabId: curr_tabId,
+                            mailMessageId: mailMessage ? mailMessage.id : -1,
+                        });
+                    }
                     let reply_type_pref = await mztaPrefs.getPrefs(['reply_type']);
                     //console.log(">>>>>>>>>> prompt_info: " + JSON.stringify(prompt_info));
                     let pre_script = `let mztaWinId = `+ createdTab.windowId +`;
@@ -2420,12 +2447,13 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     let mztaForceCompletionDesc="`+ browser.i18n.getMessage("chatgpt_force_completion") +`";
                     let mztaForceCompletionTitle="`+ browser.i18n.getMessage("chatgpt_force_completion_title") +`";
                     let mztaDoCustomText="`+ do_custom_text +`";
-                    let mztaPromptName="[`+ i18nConditionalGet(prompt_name) +`]";
+                    let mztaPromptName=`+ JSON.stringify('[' + (webProcessing.enabled ? browser.i18n.getMessage('ai_processing') : i18nConditionalGet(prompt_name)) + ']') +`;
                     let mztaPhDefVal="`+(prefs.placeholders_use_default_value?'1':'0')+`";
                     let mztaGPTModel="`+ (_custom_gpt_set ? '' : _gpt_model) +`";
                     let mztaDoDebug="`+(prefs.do_debug?'1':'0')+`";
                     let mztaUseDiffViewer="`+(prompt_info.use_diff_viewer=='1'?'1':'0')+`";
-                    let mztaOriginalText="`+ JSON.stringify(originalText).slice(1, -1) +`";
+                    let mztaOriginalText=`+ JSON.stringify(webProcessing.enabled ? '' : (originalText || '')) +`;
+                    let mztaProcessingEnabled=`+ JSON.stringify(!!webProcessing.enabled) +`;
                     let mztaReplyType="`+ reply_type_pref.reply_type + `";
                     let mztaReadyReason=`+ JSON.stringify(String(message.readyReason)) +`;
                     let mztaReadyStateAtSend=`+ JSON.stringify(String(message.readyStateAtSend)) +`;
@@ -2442,8 +2470,8 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     // let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
                     let mailMessageId = -1;
                     if(mailMessage) mailMessageId = mailMessage.id;
-                    promptText = convertNewlinesToParagraphs(promptText);
-                    browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId, prompt_info: prompt_info});
+                    const webPrompt = webProcessing.enabled ? '' : convertNewlinesToParagraphs(promptText);
+                    browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: webPrompt, action: action, tabId: curr_tabId, mailMessageId: mailMessageId, prompt_info: webProcessing.enabled ? {} : prompt_info});
                     taLog.log('[ChatGPT Web] Connection succeded!');
                     taLog.log("[ThunderAI] ChatGPT Web script injected successfully");
                     browser.runtime.onMessage.removeListener(listener);

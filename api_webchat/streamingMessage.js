@@ -304,7 +304,7 @@ export class StreamingMessage {
         // render until the closing tag arrives — tokens stay in the DOM as raw
         // fading spans, but the partial <think> content is never sent through the
         // renderer or promoted to the final thinking block.
-        if (OPEN_THINK_RE.test(fullText) && !CLOSE_THINK_RE.test(fullText)) {
+        if (!this.thinkingSeparated && OPEN_THINK_RE.test(fullText) && !CLOSE_THINK_RE.test(fullText)) {
             return null;
         }
 
@@ -317,7 +317,7 @@ export class StreamingMessage {
         // response, so the space opening it is interior to the answer once appended to
         // _htmlRawText below. Trimming it welds the last word of the previous segment to
         // the first word of this one ("the" + " body" -> "thebody").
-        const stripped = stripThinkTags(fullText);
+        const stripped = this.thinkingSeparated ? { text: fullText, thinking: '' } : stripThinkTags(fullText);
         if (stripped.thinking) {
             this._inlineThinking += (this._inlineThinking ? '\n' : '') + stripped.thinking;
         }

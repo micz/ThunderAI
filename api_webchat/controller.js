@@ -34,6 +34,7 @@ import { loadPrompt } from '../js/mzta-prompts.js';
 import { buildChatBubbleIcon } from './svgIcons.js';
 import { resolveContextWindow } from './contextWindow.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
+import { ProcessingWorker } from '../js/mzta-processing-worker.js';
 
 // Get the LLM to be used
 const urlParams = new URLSearchParams(window.location.search);
@@ -118,7 +119,8 @@ const worker_path_map = {
 const worker_path = Object.hasOwn(worker_path_map, integration) ? worker_path_map[integration] : null;
 
 if (worker_path) {
-    worker = new Worker(worker_path, { type: 'module' });
+    worker = new ProcessingWorker(new Worker(worker_path, { type: 'module' }));
+    window.addEventListener('pagehide', () => worker.terminate(), { once: true });
 } else {
     // No worker can serve this connection type, so nothing can ever be sent: say so in the
     // transcript, lock the input, and announce nothing to the background (no ready message).
@@ -367,6 +369,23 @@ if (worker) {
 if (worker) worker.onmessage = async function(event) {
     const { type, payload } = event.data;
     switch (type) {
+        case 'processingStarted':
+        case 'processingProgress':
+            messageInput.setStatusMessage(payload?.total > 1 ?
+                browser.i18n.getMessage('ai_processing_chunks', [String(payload.current), String(payload.total)]) :
+                browser.i18n.getMessage('ai_processing'));
+            messageInput.showStatusMessage();
+            break;
+        case 'processingBusy':
+            messageInput.setStatusMessage(browser.i18n.getMessage('ai_processing_busy'));
+            messageInput.showStatusMessage();
+            break;
+        case 'processingComplete':
+            messageInput.showWaitingStatus();
+            break;
+        case 'processingReceiving':
+            messageInput.showStreamingStatus();
+            break;
         case 'messageSent':
             messageInput.handleMessageSent();
             break;
@@ -381,7 +400,7 @@ if (worker) worker.onmessage = async function(event) {
             messageInput.enableInput(false);
             break;
         case 'newToken':
-            messagesArea.handleNewToken(payload.token);
+            messagesArea.handleNewToken(payload.token, payload.thinkingSeparated);
             messageInput.showStreamingStatus();
             break;
         case 'newThinkingToken':

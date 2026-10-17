@@ -162,13 +162,21 @@ export async function bgContext(o = {}) {
         local: o.local || {},
         accounts: m.accounts,
         tags: m.tags,
-        external: o.external ?? SPARKS_ABSENT,
+        external: (id, message) => {
+            if (id === 'thunderai-privacy@micz.it') {
+                if (o.processor) return o.processor(message);
+                throw new Error('Could not establish connection. Receiving end does not exist.');
+            }
+            return (o.external ?? SPARKS_ABSENT)(id, message);
+        },
     });
     installApis(ctl.browser, m);
     loadClassicScripts();
     const workers = installFakeWorker();
     const con = captureConsole();
     const mods = await loadModules();
+    const { initializeAIProcessing } = await import('../../js/mzta-ai-processing.js');
+    await initializeAIProcessing();
     if (o.setup) await o.setup(m);
     const rec = { sanitizeBlockHtml: [], htmlBodyToPlainText: [], buildSummaryPrompt: [] };
     const given = { ...(await standIns(rec)), ...(o.overrides || {}) };
@@ -189,13 +197,19 @@ export async function bgContext(o = {}) {
  */
 export async function moduleContext(o = {}) {
     const m = mailModel(o.mail || {});
-    const ctl = installBrowserMock({ policy: null, local: o.local || {}, session: o.session || {}, accounts: m.accounts, tags: m.tags });
+    const ctl = installBrowserMock({ policy: null, local: o.local || {}, session: o.session || {}, accounts: m.accounts, tags: m.tags,
+        external: (id, message) => {
+            if (id === 'thunderai-privacy@micz.it' && o.processor) return o.processor(message);
+            throw new Error('Could not establish connection. Receiving end does not exist.');
+        } });
     installApis(ctl.browser, m);
     const workers = installFakeWorker();
     const con = captureConsole();
     const mods = await loadModules();
     const { mztaManaged } = await import('../../js/mzta-managed.js');
     await mztaManaged.loadManaged();
+    const { initializeAIProcessing } = await import('../../js/mzta-ai-processing.js');
+    await initializeAIProcessing();
     return { ctl, con, m, workers, ...mods };
 }
 

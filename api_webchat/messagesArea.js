@@ -1069,7 +1069,7 @@ class MessagesArea extends HTMLElement {
         this.scrollToBottom();
     }
 
-    handleNewToken(token) {
+    handleNewToken(token, thinkingSeparated = false) {
         if (!this.accumulatingMessageEl) {
             this.createNewAccumulatingMessage();
         }
@@ -1077,6 +1077,7 @@ class MessagesArea extends HTMLElement {
         // Feed the raw token to the streaming state (source of truth for parsing)
         // and also render the fading token span for live display.
         const streaming = this._ensureStreaming();
+        if (thinkingSeparated) streaming.thinkingSeparated = true;
         streaming.handleNewToken(token);
 
         const newTokenElement = document.createElement('span');

@@ -94,4 +94,5 @@ For detailed documentation see [`claude-spec/`](claude-spec/):
   - [08a-managed-prompts.md](claude-spec/08a-managed-prompts.md) — restrictions, org prompts, enforced special prompt texts
   - [08b-managed-connections.md](claude-spec/08b-managed-connections.md) — policy values on the connection panels, enforced per-feature connections, account lists
   - [08c-managed-ui.md](claude-spec/08c-managed-ui.md) — how the settings pages present the policy (`pages/_lib/managed-ui.js`)
+- [09-ai-processing.md](claude-spec/09-ai-processing.md) — Async companion hook contract and lifecycle
 - [99-thunderbird-team-spec.md](claude-spec/99-thunderbird-team-spec.md) — Thunderbird WebExtensions development guidelines (API usage, experiments, review requirements)
