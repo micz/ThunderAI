@@ -16,7 +16,11 @@ import {
 
 const companion = fakeProcessingCompanion();
 const ctx = await moduleContext({ local: { special_command_timeout: 1000 }, processor: m => companion.receive(m) });
-const { createAIProcessingSession, getAIProcessingStatus } = await import('../../js/mzta-ai-processing.js');
+const { createAIProcessingBroker } = await import('../../js/mzta-ai-processing-broker.js');
+const { createAIProcessingClient, createRuntimeProcessingTransport } = await import('../../js/mzta-ai-processing-client.js');
+let client = ctx.processingClient;
+const createAIProcessingSession = options => client.createSession(options);
+const getAIProcessingStatus = () => client.getStatus();
 const input = () => ({ message: 'Alice', instructions: { system: 'Alice rules' }, extraBody: { body: '{"name":"Alice"}' } });
 beforeEach(async () => {
     companion.handle = null; companion.available = true;
@@ -111,9 +115,11 @@ test('untrusted registration and non-extension broker requests are rejected', as
 test('missing previously active processor fails closed, including after restart', async () => {
     await companion.announce(); companion.available = false;
     await assert.rejects(createAIProcessingSession().onBeforeSendToProvider(input()), /unavailable/);
-    const restarted = await import('../../js/mzta-ai-processing.js?restart-contract-test');
-    await restarted.initializeAIProcessing();
-    await assert.rejects(restarted.createAIProcessingSession().ready(), /unavailable/);
+    ctx.processingBroker.dispose();
+    ctx.processingBroker = createAIProcessingBroker();
+    await ctx.processingBroker.ready;
+    client = createAIProcessingClient(ctx.processingBroker.dispatch);
+    await assert.rejects(client.createSession().ready(), /unavailable/);
 });
 
 test('timeout cancels work; only matching, advancing progress renews its budget', async t => {
@@ -136,4 +142,94 @@ test('timeout cancels work; only matching, advancing progress renews its budget'
     await assert.rejects(call, /timed out/);
     assert.ok(companion.calls.some(m => m.action === 'aiProcessing.cancel' && m.requestId === request.requestId));
     session.dispose(); await flush(2);
+});
+
+test('importing broker/client registers no listeners', async () => {
+    const before = [browser.runtime.onMessage._listeners.length, browser.runtime.onMessageExternal._listeners.length];
+    await import('../../js/mzta-ai-processing-broker.js?import-only');
+    await import('../../js/mzta-ai-processing-client.js?import-only');
+    assert.deepEqual([browser.runtime.onMessage._listeners.length, browser.runtime.onMessageExternal._listeners.length], before);
+});
+
+test('a never-enabled slow hello is optional; an expected slow hello fails with a stable code even without locale text', async t => {
+    companion.handle = m => m.action === 'aiProcessing.hello' ? new Promise(() => {}) : undefined;
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const inactive = getAIProcessingStatus();
+    await flush(2);
+    t.mock.timers.tick(5000);
+    assert.equal((await inactive).enabled, false);
+    await companion.announce();
+    const original = browser.i18n.getMessage;
+    browser.i18n.getMessage = () => '';
+    try {
+        const active = getAIProcessingStatus(); active.catch(() => {});
+        await flush(2);
+        t.mock.timers.tick(5000);
+        await assert.rejects(active, error => error.code === 'ai_processing_timeout');
+    } finally {
+        browser.i18n.getMessage = original;
+    }
+});
+
+test('page transport routes through the broker, lazily relays matching progress, and removes its listener', async () => {
+    await companion.announce();
+    const pageClient = createAIProcessingClient(createRuntimeProcessingTransport());
+    const session = pageClient.createSession();
+    const listenerCount = browser.runtime.onMessage._listeners.length;
+    await session.ready();
+    assert.equal(browser.runtime.onMessage._listeners.length, listenerCount);
+    let request, release;
+    companion.handle = m => m.action === 'aiProcessing.before' ? new Promise(resolve => {
+        request = m;
+        release = () => resolve(companion.reply(m, { input: m.input, context: { token: m.requestId } }));
+    }) : undefined;
+    const progress = [];
+    const call = session.onBeforeSendToProvider(input(), { onProgress: value => progress.push(value) });
+    await flush(2);
+    assert.equal(browser.runtime.onMessage._listeners.length, listenerCount + 1);
+    await externalProcessingMessage(progressFor(request, 1));
+    await externalProcessingMessage(progressFor(request, 1));
+    await ctx.ctl.dispatchMessage({ command: 'ai_processing_progress', callId: request.callId, progress: { current: 99 } }, { id: 'untrusted' });
+    await flush(2);
+    assert.equal(progress.length, 1);
+    assert.equal(progress[0].current, 1);
+    release(); await call;
+    assert.equal(browser.runtime.onMessage._listeners.length, listenerCount);
+    await session.dispose();
+});
+
+test('page transport cleans up progress listeners on failure and cancellation', async () => {
+    await companion.announce();
+    const pageClient = createAIProcessingClient(createRuntimeProcessingTransport());
+    const listenerCount = browser.runtime.onMessage._listeners.length;
+    for (const cancel of [false, true]) {
+        const session = pageClient.createSession(); await session.ready();
+        companion.handle = m => m.action === 'aiProcessing.before' ? (cancel ? new Promise(() => {}) : { ok: false }) : undefined;
+        const call = session.onBeforeSendToProvider(input(), { onProgress: () => {} }); call.catch(() => {});
+        await flush(2);
+        if (cancel) session.cancel();
+        await assert.rejects(call);
+        assert.equal(browser.runtime.onMessage._listeners.length, listenerCount);
+        await session.dispose();
+    }
+});
+
+test('one active session cannot replace a pending request or overlap restoration hooks', async () => {
+    await companion.announce();
+    const session = createAIProcessingSession();
+    await session.onBeforeSendToProvider(input());
+    const calls = companion.calls.filter(m => m.action === 'aiProcessing.before').length;
+    await assert.rejects(session.onBeforeSendToProvider(input()), error => error.code === 'ai_processing_busy');
+    assert.equal(companion.calls.filter(m => m.action === 'aiProcessing.before').length, calls);
+    let release;
+    companion.handle = m => m.action === 'aiProcessing.after' ? new Promise(resolve => {
+        release = () => resolve(companion.reply(m, { output: m.output }));
+    }) : undefined;
+    const after = session.onAfterReceiveFromProvider({ content: 'x', thinking: '' });
+    await flush(2);
+    await assert.rejects(session.onAfterReceiveFromProvider({ content: 'y', thinking: '' }), error => error.code === 'ai_processing_busy');
+    release(); await after;
+    companion.handle = null;
+    await session.onBeforeSendToProvider(input()); // prior turn finished
+    await session.dispose();
 });

@@ -725,14 +725,15 @@ The API webchat window supports keyboard font zoom, handled in `api_webchat/cont
 
 ## Async content processing
 
-`js/mzta-ai-processing.js` exposes async before-send and after-receive hooks over
+`js/mzta-ai-processing-client.js` exposes async before-send and after-receive hooks over
 a versioned companion API. With no active processor they preserve existing content
 and streaming. An active processor's failure blocks the operation, never falls back
 to unchanged content. ThunderAI has no privacy settings, runtime or mapping store;
 activation, detection and restoration belong to ThunderAI Privacy.
 
-`js/mzta-processing-worker.js` wraps all five provider workers for every chat
-action and special command, including automatic/batch features. Only message text,
+`js/mzta-processing-worker.js` creates raw provider workers when inactive and wraps
+them only when active, for every chat action and special command, including
+automatic/batch features. Only message text,
 provider instructions and extra-body content enter the hook envelope—not credentials
 or the entire provider configuration. Provider workers retain processed conversation
 history and raw replies; locally postprocessed answers never re-enter that history.
@@ -758,7 +759,8 @@ Sessions pin their processing mode/companion instance, so changing activation af
 new chats/commands. Stop and timeout suppress late dispatch/results. A remembered
 active registration blocks new requests if the companion unexpectedly disappears;
 disable processing explicitly in the companion to resume unprocessed new sessions.
-See [09-ai-processing.md](09-ai-processing.md) for the concrete API contract.
+See [09-ai-processing.md](09-ai-processing.md) for the authoritative API contract,
+field classification, transport, concurrency and failure policies.
 
 ## Configuration Validation
 

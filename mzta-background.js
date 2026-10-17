@@ -22,10 +22,8 @@ import {
     handleProcessingWebMessage,
     processWebAction
 } from './js/mzta-processing-web.js';
-import {
-    initializeAIProcessing,
-    getAIProcessingStatus
-} from './js/mzta-ai-processing.js';
+import { createAIProcessingBroker } from './js/mzta-ai-processing-broker.js';
+import { createAIProcessingClient } from './js/mzta-ai-processing-client.js';
 import {
     prefs_default,
     getDynamicSettingsDefaults,
@@ -116,7 +114,9 @@ import {
     getMissingPermissionMessage
 } from './js/mzta-feature-permissions.js';
 
-initializeAIProcessing().catch(error => console.error('[ThunderAI] Content processor initialization failed:', error));
+const aiProcessingBroker = createAIProcessingBroker();
+const processingClient = createAIProcessingClient(aiProcessingBroker.dispatch);
+aiProcessingBroker.ready.catch(error => console.error('[ThunderAI] Content processor initialization failed:', error));
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -1724,6 +1724,7 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
         const { promptText } = await taPromptUtils.buildSummaryPrompt([{ message, fullMessage }]);
 
         const cmd = new mzta_specialCommand({
+            processingClient,
             prompt: promptText,
             llm: connectionType,
             do_debug: prefs.do_debug,
@@ -1901,6 +1902,7 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
         const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, curr_messageId);
 
         const cmd = new mzta_specialCommand({
+            processingClient,
             prompt: promptText,
             llm: connectionType,
             do_debug: prefs.do_debug,
@@ -2216,6 +2218,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
         taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
 
         let cmd_spamfilter = new mzta_specialCommand({
+            processingClient,
             prompt: specialFullPrompt_spamfilter,
             llm: spam_conntype,
             custom_model: curr_prompt_spamfilter.model ? curr_prompt_spamfilter.model : '',
@@ -2369,7 +2372,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         case 'chatgpt_web':
         {
             let webProcessing;
-            try { webProcessing = await getAIProcessingStatus(); }
+            try { webProcessing = await processingClient.getStatus(); }
             catch (error) { await showGenericError(error.message, 'AI processing'); return; }
             // We are using the ChatGPT web interface
 
@@ -2438,7 +2441,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                             customTextArray: prompt_info.custom_text_array,
                             targetTabId: curr_tabId,
                             mailMessageId: mailMessage ? mailMessage.id : -1,
-                        });
+                        }, processingClient);
                     }
                     let reply_type_pref = await mztaPrefs.getPrefs(['reply_type']);
                     //console.log(">>>>>>>>>> prompt_info: " + JSON.stringify(prompt_info));
@@ -2899,7 +2902,7 @@ setupPermissionsRemovedListener();
 // Never fatal either, like the migration block above: on failure its flag stays unset and it
 // runs again at the next start.
 if (_prefs_migration_ok) await migrateMenuOrderAlphabetic().catch(e => console.error("[ThunderAI] migrateMenuOrderAlphabetic error: " + e));
-const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
+const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug, processingClient);
 await menus.loadMenus(await _computeActiveSpecialIds());
 
 // Context menu click handling
@@ -3548,6 +3551,7 @@ async function processEmails(args) {
             specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list, prefs_aats.add_tags_auto_force_existing, tags_full_list[0], curr_prompt_add_tags.text);
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
             let cmd_addTags = new mzta_specialCommand({
+                processingClient,
                 prompt: specialFullPrompt_add_tags,
                 llm: addtags_conntype,
                 custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',

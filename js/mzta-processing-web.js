@@ -1,4 +1,3 @@
-import { createAIProcessingSession } from './mzta-ai-processing.js';
 import {
     convertNewlinesToParagraphs,
     stripHtmlKeepLines
@@ -7,9 +6,9 @@ import {
 // Owned by the background page. Originals never enter ChatGPT's DOM or history.
 const sessions = new Map();
 
-export function registerProcessingWeb(tabId, options) {
+export function registerProcessingWeb(tabId, options, client) {
     disposeProcessingWeb(tabId);
-    sessions.set(tabId, { ...options, tabId, session: createAIProcessingSession({ required: true }) });
+    sessions.set(tabId, { ...options, tabId, session: client.createSession({ required: true }) });
 }
 
 function getSession(sender) {
@@ -99,5 +98,5 @@ export async function handleProcessingWebMessage(message, sender) {
 
 browser.tabs.onRemoved.addListener(disposeProcessingWeb);
 browser.tabs.onUpdated.addListener((tabId, change) => {
-    if (change.status === 'loading') disposeProcessingWeb(tabId);
+    if (sessions.has(tabId) && change.status === 'loading') disposeProcessingWeb(tabId);
 });

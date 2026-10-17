@@ -175,8 +175,6 @@ export async function bgContext(o = {}) {
     const workers = installFakeWorker();
     const con = captureConsole();
     const mods = await loadModules();
-    const { initializeAIProcessing } = await import('../../js/mzta-ai-processing.js');
-    await initializeAIProcessing();
     if (o.setup) await o.setup(m);
     const rec = { sanitizeBlockHtml: [], htmlBodyToPlainText: [], buildSummaryPrompt: [] };
     const given = { ...(await standIns(rec)), ...(o.overrides || {}) };
@@ -208,9 +206,14 @@ export async function moduleContext(o = {}) {
     const mods = await loadModules();
     const { mztaManaged } = await import('../../js/mzta-managed.js');
     await mztaManaged.loadManaged();
-    const { initializeAIProcessing } = await import('../../js/mzta-ai-processing.js');
-    await initializeAIProcessing();
-    return { ctl, con, m, workers, ...mods };
+    const { createAIProcessingBroker } = await import('../../js/mzta-ai-processing-broker.js');
+    const { createAIProcessingClient } = await import('../../js/mzta-ai-processing-client.js');
+    const processingBroker = createAIProcessingBroker();
+    await processingBroker.ready;
+    const processingClient = createAIProcessingClient(processingBroker.dispatch);
+    // Module-only callers model a page reaching its background through messaging.
+    ctl.setRemote((message, sender) => ctl.dispatchMessage(message, sender));
+    return { ctl, con, m, workers, processingBroker, processingClient, ...mods };
 }
 
 /** Let every pending promise chain (and setImmediate) run: n turns of the event loop. */

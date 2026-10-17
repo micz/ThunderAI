@@ -1,8 +1,7 @@
 # AI processing API v1
 
-Working contract for companion testing, subject to maintainer review. The PR is
-based on `v5.1.0` to prepare for the intended ThunderAI **5.2.0** release; it does
-not backport processing into released 5.1.0 builds. ThunderAI supports Thunderbird
+Authoritative working contract for companion testing, subject to maintainer review.
+ThunderAI supports Thunderbird
 140+, but the companion currently requires **Thunderbird 153+, 64-bit**.
 
 ## Trust and ownership
@@ -16,17 +15,26 @@ registration receipt (`aiProcessingRegistration.expected`) persists in ThunderAI
 
 ## Session facade
 
-`createAIProcessingSession()` provides `ready()`, `onBeforeSendToProvider(input)`,
+`createAIProcessingClient(transport).createSession()` provides `ready()`, `onBeforeSendToProvider(input)`,
 `onAfterReceiveFromProvider(output, {format, view})`, `collectInput(fields)`,
 `cancel()` and `dispose()`.
 The facade generates a conversation `sessionId`, individual `requestId`s and
 per-message `callId`s. Its opaque `context` is returned to the companion, never
 interpreted. No processor: input/output are returned unchanged. Active processor:
 every hook is awaited and any failure blocks the operation.
-Without active processing the adapter forwards every prompt, including consecutive
-sends while initialization settles or a prior turn is pending, preserving provider
-streaming behavior. An active send while busy emits `processingBusy`, displayed as
-a localized unsent-message notice; it cannot replace the current request/context.
+The background explicitly creates the broker in `mzta-ai-processing-broker.js`
+and injects its dispatch transport into the client in `mzta-ai-processing-client.js`.
+Pages use the runtime transport; neither module registers listeners at import time.
+The page progress listener exists only while a progress-aware call is pending.
+`createProviderWorker()` awaits discovery and returns the raw provider Worker when
+inactive, or an active-only `ProcessingWorker` otherwise. Initialization errors are
+displayed before any provider Worker is constructed. Provider messages remain
+separate from the adapter's `onprocessingstatus` callback.
+An active send while busy displays a localized unsent-message notice. A session
+allows one pending provider turn and no overlapping hooks; violations reject with
+`ai_processing_busy` without replacing its request/context. Restoration may be
+repeated for selections/previews of the same response after the turn finishes.
+Cancellation invalidates that context and suppresses late results.
 
 Input: `{message: string, instructions: {[key]: string}, extraBody: {[key]: string}}`.
 The latter two maps contain only relevant provider instruction/extra-body fields;
@@ -34,6 +42,9 @@ connection credentials/configuration are not part of this envelope.
 Content includes provider system/developer prompts, stop sequences, user-provided
 schema names/cache keys/safety identifiers, and JSON extra-body/options/schema fields.
 Hosts, model selection, credentials and numeric/provider-control settings stay out.
+`integration_content_fields` explicitly classifies every provider string option as
+text, JSON or non-content. Static coverage rejects missing/duplicate/stale decisions;
+the active adapter also blocks encountered unclassified string options at runtime.
 Privacy pseudonymizes nonempty cache/safety identifiers with installation-keyed HMAC
 instead of session placeholders, including top-level extra-body overrides. They stay
 stable across sessions/restarts without transmitting originals. Invalid JSON blocks
@@ -79,6 +90,9 @@ sessionId, requestId, callId and `{phase, current, total}`. Only matching in-fli
 monotonically advancing progress renews the timeout. The default timeout is 120 s,
 using `special_command_timeout`; discovery is bounded to 5 s. Expired calls cancel
 companion work. Stalled startup/queueing cannot keep a request alive indefinitely.
+A discovery timeout is treated as inactive only when no active receipt exists
+(including registrations received during discovery); otherwise it blocks. Local
+timeout decisions use stable error codes, not translated message comparisons.
 The timeout uses `mztaPrefs`, respecting local storage and enforced enterprise values.
 User input forms have no processing deadline; closing the form or disposing its
 session cancels the wait. Bridge initialization does not delay unrelated background
@@ -112,10 +126,12 @@ startup; only processing calls await its registration-state read.
 
 Committed hook tests: `tests/background/11-ai-processing.test.mjs`,
 `tests/background/12-processing-worker.test.mjs` and
-`tests/dom/webchat/webchat-19-processing.dom.mjs`. They use a scripted companion,
+`tests/dom/webchat/webchat-19-processing.dom.mjs`, with field coverage in
+`tests/static/06-processing-content-fields.test.mjs`. Hook tests use a scripted companion,
 not inference/model downloads, and cover inactive forwarding, active hook transforms,
 response/history isolation, Web HTML actions, trust/result validation, restart,
-timeout/progress, busy notices and Stop. Real detection and Thunderbird IPC/platform
+timeout/progress, page-to-broker transport/listener cleanup, session concurrency,
+raw-worker selection, busy notices and Stop. Real detection and Thunderbird IPC/platform
 behavior still require manual testing.
 
 Load both repositories as temporary Thunderbird add-ons. Download/enable the model

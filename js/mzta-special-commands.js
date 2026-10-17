@@ -24,7 +24,10 @@
 import { mztaPrefs } from './mzta-prefs.js';
  import { taLogger } from './mzta-logger.js';
  import { stripThinkTags } from './mzta-utils.js';
- import { ProcessingWorker } from './mzta-processing-worker.js';
+ import {
+     createProviderWorker,
+     ProcessingWorker
+ } from './mzta-processing-worker.js';
 
  // Fallback timeout (ms) for a special command if the special_command_timeout
  // preference is unavailable. Kept generous to accommodate slow local models.
@@ -75,11 +78,13 @@ import { mztaPrefs } from './mzta-prefs.js';
             prompt = '',
             llm = '',
             do_debug = false,
-            config = {}
+            config = {},
+            processingClient
         } = args;
         this.prompt = prompt;
         this.llm = llm;
         this.config = config;
+        this.processingClient = processingClient;
         this.do_debug = do_debug;
         this.logger = new taLogger('mzta_specialCommand', do_debug);
 
@@ -186,7 +191,11 @@ import { mztaPrefs } from './mzta-prefs.js';
             workerInitMessage[prefKey] = value;
         }
 
-        this.worker = new ProcessingWorker(new Worker(new URL(this.worker_path, import.meta.url), { type: 'module' }), { format: 'json' });
+        this.worker = await createProviderWorker(new URL(this.worker_path, import.meta.url), {
+            format: 'json',
+            client: this.processingClient
+        });
+        this.responsePrepared = this.worker instanceof ProcessingWorker;
         this.worker.postMessage(workerInitMessage);
     }
 
@@ -211,19 +220,18 @@ import { mztaPrefs } from './mzta-prefs.js';
             resetTimer();
             const clearTimer = () => { clearTimeout(timeoutId); };
 
+            if (this.responsePrepared) {
+                this.worker.onprocessingstatus = status => {
+                    if (['started', 'progress', 'complete'].includes(status.type)) resetTimer();
+                };
+            }
+
             // Event listeners for worker messages
             this.worker.onmessage = (event) => {
                 const { type, payload } = event.data;
                 // console.log(`>>>>>>>>>>>> [Worker Message Received] type: ${type}`, payload);
                 switch (type) {
                     case 'messageSent':
-                    case 'processingBusy':
-                    case 'processingReceiving':
-                        break;
-                    case 'processingStarted':
-                    case 'processingProgress':
-                    case 'processingComplete':
-                        resetTimer();
                         break;
                     case 'newRetryAttempt':
                         // Transient failure being retried by the worker: nothing to
@@ -251,7 +259,7 @@ import { mztaPrefs } from './mzta-prefs.js';
                         // removed block leaves behind is safe to trim (third argument).
                         // Filtered output has reasoning stripped before restoration,
                         // so literal <think> text in an original value stays intact.
-                        const cleaned = this.worker.active ? this.full_message : stripThinkTags(this.full_message, true, true).text;
+                        const cleaned = this.responsePrepared ? this.full_message : stripThinkTags(this.full_message, true, true).text;
                         this.logger.log("tokensDone: " + cleaned);
                         resolve(cleaned); // Resolve the promise with the full message
                         break;

@@ -34,7 +34,10 @@ import { loadPrompt } from '../js/mzta-prompts.js';
 import { buildChatBubbleIcon } from './svgIcons.js';
 import { resolveContextWindow } from './contextWindow.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
-import { ProcessingWorker } from '../js/mzta-processing-worker.js';
+import {
+    createProviderWorker,
+    ProcessingWorker
+} from '../js/mzta-processing-worker.js';
 
 // Get the LLM to be used
 const urlParams = new URLSearchParams(window.location.search);
@@ -119,8 +122,22 @@ const worker_path_map = {
 const worker_path = Object.hasOwn(worker_path_map, integration) ? worker_path_map[integration] : null;
 
 if (worker_path) {
-    worker = new ProcessingWorker(new Worker(worker_path, { type: 'module' }));
-    window.addEventListener('pagehide', () => worker.terminate(), { once: true });
+    let closed = false;
+    window.addEventListener('pagehide', () => {
+        closed = true;
+        worker?.terminate();
+    }, { once: true });
+    try {
+        worker = await createProviderWorker(worker_path);
+        if (closed) {
+            worker.terminate();
+            worker = null;
+        }
+    } catch (error) {
+        messagesArea.appendBotMessage(error.message, 'error');
+        messageInput.disableInput();
+        messageInput.showErrorStatus();
+    }
 } else {
     // No worker can serve this connection type, so nothing can ever be sent: say so in the
     // transcript, lock the input, and announce nothing to the background (no ready message).
@@ -366,26 +383,33 @@ if (worker) {
 //let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
 
 // Event listeners for worker messages (none without a worker: an unknown connection type)
+if (worker instanceof ProcessingWorker) {
+    worker.onprocessingstatus = ({ type, progress }) => {
+        switch (type) {
+            case 'started':
+            case 'progress':
+                messageInput.setStatusMessage(progress?.total > 1 ?
+                    browser.i18n.getMessage('ai_processing_chunks', [String(progress.current), String(progress.total)]) :
+                    browser.i18n.getMessage('ai_processing'));
+                messageInput.showStatusMessage();
+                break;
+            case 'busy':
+                messageInput.setStatusMessage(browser.i18n.getMessage('ai_processing_busy'));
+                messageInput.showStatusMessage();
+                break;
+            case 'complete':
+                messageInput.showWaitingStatus();
+                break;
+            case 'receiving':
+                messageInput.showStreamingStatus();
+                break;
+        }
+    };
+}
+
 if (worker) worker.onmessage = async function(event) {
     const { type, payload } = event.data;
     switch (type) {
-        case 'processingStarted':
-        case 'processingProgress':
-            messageInput.setStatusMessage(payload?.total > 1 ?
-                browser.i18n.getMessage('ai_processing_chunks', [String(payload.current), String(payload.total)]) :
-                browser.i18n.getMessage('ai_processing'));
-            messageInput.showStatusMessage();
-            break;
-        case 'processingBusy':
-            messageInput.setStatusMessage(browser.i18n.getMessage('ai_processing_busy'));
-            messageInput.showStatusMessage();
-            break;
-        case 'processingComplete':
-            messageInput.showWaitingStatus();
-            break;
-        case 'processingReceiving':
-            messageInput.showStreamingStatus();
-            break;
         case 'messageSent':
             messageInput.handleMessageSent();
             break;
