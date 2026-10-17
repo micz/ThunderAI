@@ -127,7 +127,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     get_calendar_event_no_selection.addEventListener('change', async (event) => {
         if (event.target.checked) {
             const currentPromptText = get_calendar_event_textarea.value;
-            const hasBodyOrSelected = currentPromptText.includes('{%mail_text_body_or_selected%}') || currentPromptText.includes('{%mail_html_body_or_selected%}');
+            // hasPlaceholder(), not includes(): the body placeholder accepts an
+            // optional length limit ({%mail_text_body_or_selected:2000%}), and a
+            // literal substring match would miss that form and refuse to disable
+            // the selection requirement on a prompt that does carry the body.
+            const hasBodyOrSelected = placeholdersUtils.hasPlaceholder(currentPromptText, 'mail_text_body_or_selected') || placeholdersUtils.hasPlaceholder(currentPromptText, 'mail_html_body_or_selected');
             if (!hasBodyOrSelected) {
                 alert(browser.i18n.getMessage('prefs_OptionText_calendar_no_selection_missing_placeholder'));
                 event.target.checked = false;
