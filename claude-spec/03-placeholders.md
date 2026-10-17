@@ -29,7 +29,7 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`).
 
 | ID | Description | Type | Dyn |
 |----|-------------|------|-----|
-| `mail_text_body` | Full plain text of the email | 0 | |
+| `mail_text_body` | Full plain text of the email; `{%mail_text_body:N%}` cuts it to N characters | 0 | ✓ |
 | `mail_html_body` | Full HTML of the email | 0 | |
 | `mail_typed_text` | Text typed so far in compose window (line structure preserved, see below) | 2 | |
 | `mail_quoted_text` | Quoted text in the compose window (line structure preserved, see below) | 2 | |
@@ -56,9 +56,35 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`).
 | `thunderai_translate_exclude_lang` | Language to exclude from translation | 0 | |
 | `empty` | Empty string (placeholder that resolves to nothing) | 0 | |
 | `mail_attachments_info` | Information about the email's attachments | 1 | |
-| `mail_text_body_or_selected` | Plain text body, or selected text if any | 0 | |
+| `mail_text_body_or_selected` | Plain text body, or selected text if any; `{%mail_text_body_or_selected:N%}` cuts it to N characters | 0 | ✓ |
 | `mail_html_body_or_selected` | HTML body, or selected HTML if any | 0 | |
 | `mail_plain_text_part` | The original `text/plain` MIME part, verbatim (no HTML conversion) | 1 | |
+
+### Optional length limit on the body placeholders
+
+`mail_text_body` and `mail_text_body_or_selected` accept a character limit after the colon:
+
+```
+{%mail_text_body:2000%}
+{%mail_text_body_or_selected:4000%}
+```
+
+The value is cut to N characters with `truncateText()` (`js/mzta-utils.js`), which prefers a word
+boundary in the last 10% of the window and appends ` [...]` when it actually cut something. The plain
+`{%mail_text_body%}` stays the whole body, and an invalid parameter (not a positive integer) falls
+back to it — an unusable limit must never silently empty the prompt.
+
+Why a placeholder parameter rather than a preference:
+
+- the limit is per prompt, so tagging can run on 2 000 characters while a summary keeps 20 000;
+- it works on every path that resolves placeholders (menu, popup, auto add-tags, summarize, translate)
+  without any of them knowing about it;
+- nothing is mutated: the cut happens at substitution time, so the shared `body_text` / `msg_text`
+  of the other features processing the same message stays whole.
+
+Both are therefore `is_dynamic: "1"`. Two tokens with different limits in one prompt resolve
+independently: the value is stored under the full token key (`mail_text_body:2000`), the same way
+`mail_headers:Subject` already works.
 
 ### Newline contract of the compose placeholders
 
