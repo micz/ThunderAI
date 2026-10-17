@@ -32,6 +32,10 @@ import {
   addTags_setExclusionList
 } from "../../js/mzta-addtags-exclusion-list.js";
 import {
+  addTags_getAccountPrompts,
+  addTags_setAccountPrompt
+} from "../../js/mzta-addtags-account-prompts.js";
+import {
   getAccountsList,
   normalizeStringList,
   isAPIKeyValue,
@@ -192,6 +196,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(addtags_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
+    try {
+        await initAccountPrompts(addtags_textarea);
+    } catch (err) {
+        console.error("[ThunderAI] Error initializing the per-account prompts: ", err);
+    }
+
     let excl_list_textarea = document.getElementById('addtags_excl_list');
     let excl_list_save_btn = document.getElementById('btn_save_excl_list');
 
@@ -271,6 +281,100 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
+
+// Per-account prompts editor: one textarea, the account selector picks which prompt it edits.
+// An empty saved text means "no own prompt", the account then uses the global prompt.
+async function initAccountPrompts(global_textarea) {
+    const account_select = document.getElementById('addtags_account_prompt_account');
+    const account_textarea = document.getElementById('addtags_account_prompt_text');
+    const save_btn = document.getElementById('btn_save_account_prompt');
+    const remove_btn = document.getElementById('btn_account_prompt_remove');
+    const copy_btn = document.getElementById('btn_account_prompt_copy_global');
+    const unsaved_el = document.getElementById('addtags_account_prompt_unsaved');
+
+    const accounts = await getAccountsList();
+    let account_prompts = await addTags_getAccountPrompts();
+    let saved_text = '';
+    let current_account_id = '';
+
+    const hasOwnPrompt = (accountId) => typeof account_prompts[accountId] === 'string' && account_prompts[accountId].trim() !== '';
+
+    function renderAccountOptions() {
+        account_select.replaceChildren(...accounts.map(account => {
+            let label = account.name;
+            if (hasOwnPrompt(account.id)) {
+                label += ' ' + browser.i18n.getMessage('AddTags_account_prompt_custom_suffix');
+            }
+            return new Option(label, account.id);
+        }));
+        if (current_account_id) {
+            account_select.value = current_account_id;
+        }
+    }
+
+    function updateButtons() {
+        const is_dirty = account_textarea.value !== saved_text;
+        save_btn.disabled = !is_dirty;
+        unsaved_el.classList.toggle('hidden', !is_dirty);
+        remove_btn.disabled = !hasOwnPrompt(current_account_id) && account_textarea.value === '';
+    }
+
+    const account_textarea_hl = attachEditorHighlight(account_textarea);
+    if (account_textarea_hl) account_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
+    textareaAutocomplete(account_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
+
+    function setEditorText(text) {
+        account_textarea.value = text;
+        if (account_textarea_hl) account_textarea_hl.refresh();
+        updateButtons();
+    }
+
+    function loadAccount(accountId) {
+        current_account_id = accountId;
+        saved_text = hasOwnPrompt(accountId) ? account_prompts[accountId] : '';
+        setEditorText(saved_text);
+    }
+
+    if (accounts.length === 0) {
+        account_select.disabled = true;
+        account_textarea.disabled = true;
+        copy_btn.disabled = true;
+        return;
+    }
+
+    renderAccountOptions();
+    loadAccount(account_select.value);
+
+    account_textarea.addEventListener('input', updateButtons);
+
+    account_select.addEventListener('change', () => {
+        if (!save_btn.disabled && !confirm(browser.i18n.getMessage('AddTags_account_prompt_discard_confirm'))) {
+            account_select.value = current_account_id;
+            return;
+        }
+        loadAccount(account_select.value);
+    });
+
+    copy_btn.addEventListener('click', () => {
+        setEditorText(global_textarea.value);
+    });
+
+    save_btn.addEventListener('click', async () => {
+        let text = account_textarea.value.trim() === '' ? '' : account_textarea.value;
+        account_prompts = await addTags_setAccountPrompt(current_account_id, text);
+        taLog.log("Saved the add_tags prompt of account " + current_account_id + " (" + (text === '' ? "removed, using the global prompt" : "own prompt") + ").");
+        renderAccountOptions();
+        loadAccount(current_account_id);
+    });
+
+    remove_btn.addEventListener('click', async () => {
+        account_prompts = await addTags_setAccountPrompt(current_account_id, '');
+        taLog.log("Removed the add_tags prompt of account " + current_account_id + ", using the global prompt.");
+        renderAccountOptions();
+        loadAccount(current_account_id);
+    });
+}
 
 async function updateAdditionalPromptStatements(){
     let prefs_ = await browser.storage.sync.get({

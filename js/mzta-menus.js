@@ -55,6 +55,7 @@ import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
 import { mzta_specialCommand } from './mzta-special-commands.js';
+import { addTags_applyAccountPrompt } from './mzta-addtags-account-prompts.js';
 import { taWorkingStatus } from './mzta-working-status.js';
  
 export class mzta_Menus {
@@ -325,6 +326,17 @@ export class mzta_Menus {
                     break;
             }
 
+            // The prompt whose text builds fullPrompt. For Add Tags the account of the
+            // message may have its own prompt text: addTags_applyAccountPrompt() returns a
+            // copy, so the menu entry's curr_prompt keeps the global text for the next run.
+            let text_prompt = curr_prompt;
+            if (curr_prompt.id === 'prompt_add_tags') {
+                text_prompt = await addTags_applyAccountPrompt(curr_prompt, curr_message?.folder?.accountId);
+                if (text_prompt !== curr_prompt) {
+                    this.logger.log("Add tags: using the custom prompt of account " + curr_message.folder.accountId + ".");
+                }
+            }
+
             // {%mail_plain_text_part%} wants the ORIGINAL text/plain part, which the
             // local getMailBody() above cannot supply: it reads the rendered DOM
             // through the content script, so its .text is the HTML converted to text,
@@ -338,7 +350,7 @@ export class mzta_Menus {
             // plain_part is a distinct field, never msg_text.text: the clipboard branch
             // above overwrites .text, and the resolver must be able to tell "no plain
             // part" apart from the scrape rather than silently falling back to it.
-            if (placeholdersUtils.hasPlaceholder(curr_prompt.text, 'mail_plain_text_part')) {
+            if (placeholdersUtils.hasPlaceholder(text_prompt.text, 'mail_plain_text_part')) {
                 // '' rather than leaving it unset: the resolver's ?? would otherwise fall
                 // through to msg_text.text, i.e. the HTML conversion this placeholder
                 // exists to avoid. Compose tabs land here too and must resolve empty.
@@ -354,7 +366,7 @@ export class mzta_Menus {
             }
 
             fullPrompt = await taPromptUtils.preparePrompt({
-                curr_prompt: curr_prompt,
+                curr_prompt: text_prompt,
                 curr_message: curr_message,
                 chatgpt_lang: chatgpt_lang,
                 selection_text: selection_text,

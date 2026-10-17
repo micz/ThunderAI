@@ -80,6 +80,7 @@ import {
     addTags_getExclusionList,
     checkExcludedTag
 } from './js/mzta-addtags-exclusion-list.js';
+import { addTags_applyAccountPrompt } from './js/mzta-addtags-account-prompts.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -2244,6 +2245,13 @@ async function processEmails(args) {
                     await ensureBodyText();
                     let specialFullPrompt_add_tags = '';
                     let tags_full_list = await getTagsList();
+                    // The account of the message may have its own Add Tags prompt text.
+                    let addtags_account_id = message.folder?.accountId;
+                    let addtags_global_text = curr_prompt_add_tags.text;
+                    curr_prompt_add_tags = await addTags_applyAccountPrompt(curr_prompt_add_tags, addtags_account_id);
+                    if (curr_prompt_add_tags.text !== addtags_global_text) {
+                        taLog.log("Add tags: using the custom prompt of account " + addtags_account_id + ".");
+                    }
                     //  console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + JSON.stringify(curr_prompt_add_tags));
                     let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
                     specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({

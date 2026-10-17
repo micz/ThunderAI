@@ -198,6 +198,28 @@
                 </div>
             </div>
 
+            <!-- PER-ACCOUNT PROMPTS -->
+            <div class="mzta_section" id="addtags_account_prompt_container">
+                <div class="mzta_prompt_title">__MSG_AddTags_account_prompt_title__<span id="addtags_account_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                <p class="mzta_help">
+                    __MSG_AddTags_account_prompt_infoline__
+                    <br>__MSG_AddTags_account_prompt_infoline2__
+                </p>
+                <div class="mzta_field">
+                    <select id="addtags_account_prompt_account"></select>
+                    <div class="autocomplete-container editor-wrap">
+                        <div class="editor-backdrop" aria-hidden="true"><div class="editor-highlights"></div></div>
+                        <textarea id="addtags_account_prompt_text" rows="15" class="editor" placeholder="__MSG_AddTags_account_prompt_placeholder__"></textarea>
+                        <ul class="autocomplete-list hidden"></ul>
+                    </div>
+                    <div class="btn_div">
+                        <button id="btn_account_prompt_copy_global" class="btn_secondary">__MSG_AddTags_account_prompt_copy_global__</button>
+                        <button id="btn_account_prompt_remove" class="btn_secondary" disabled>__MSG_AddTags_account_prompt_remove__</button>
+                        <button id="btn_save_account_prompt" class="btn_primary" disabled>__MSG_save__</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- EXCLUSIONS LIST -->
             <div class="mzta_section" id="addtags_excl_list_container">
                 <div class="mzta_prompt_title">__MSG_AddTags_excl_list_title__<span id="excl_list_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>

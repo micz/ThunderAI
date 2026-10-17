@@ -159,6 +159,17 @@ Some prompts trigger additional Thunderbird actions beyond just sending text to 
 
 These special prompts can have their own dedicated API integration settings (configured in the Options page). The list of these special prompts is in `options/mzta-options-default.js` as `special_prompts_with_integration`.
 
+### Add tags: per-account prompts
+
+Each Thunderbird account can have its own Add Tags prompt text, edited in the "Prompts for single accounts" section of `pages/addtags/`. The texts live in `storage.local` under `add_tags_account_prompts` as `{ [accountId]: text }` (module `js/mzta-addtags-account-prompts.js`); an account without an entry, or with an empty/blank text, uses the global `prompt_add_tags` text. Saving an empty text deletes the entry.
+
+Only the **text** is per account: connection type, model and every other property still come from the `prompt_add_tags` special prompt, and the page options (`add_tags_maxnum`, `add_tags_force_lang`, tag list, exclusions, ...) apply to all accounts — `finalizePrompt_add_tags()` appends its statements to the account text as well.
+
+`addTags_applyAccountPrompt(curr_prompt, accountId)` returns a shallow copy of the prompt with the account text, or `curr_prompt` itself when the account has none. It must be a copy: `preparePrompt()` rewrites `prompt.text` in place, and on the menu path `curr_prompt` is the long-lived menu entry object. The account is `message.folder.accountId`:
+
+- Auto/batch path (`processEmails()` in `mzta-background.js`): applied to the freshly loaded `curr_prompt_add_tags` right before `preparePrompt()`.
+- Menu path (`js/mzta-menus.js`, popup): applied once `curr_message` is known, into `text_prompt`, which feeds both the `{%mail_plain_text_part%}` presence check and `preparePrompt()`; `curr_prompt` itself is left untouched. A message without a folder (e.g. an opened `.eml` file) uses the global text.
+
 ### Missing special prompts
 
 The lookup helpers in `js/mzta-prompts.js` (`getSpamFilterPrompt()`, `getAddTagsPrompt()`, `getSummarizePrompt()`, …) are `Array.find()` over `_special_prompts` and return `undefined` when the user has removed or corrupted the entry. Every caller must guard before using the result, and `taPromptUtils.getDefaultLang()` uses optional chaining so a missing prompt yields `''` (no forced language) instead of throwing (issue #855).

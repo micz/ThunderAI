@@ -1001,6 +1001,38 @@
     "message": "Current prompt text",
     "description": ""
   },
+  "AddTags_account_prompt_title": {
+    "message": "Prompts for single accounts",
+    "description": ""
+  },
+  "AddTags_account_prompt_infoline": {
+    "message": "Choose an account to give it its own tagging prompt. For the messages of that account it is used instead of the prompt above.",
+    "description": ""
+  },
+  "AddTags_account_prompt_infoline2": {
+    "message": "Accounts without their own prompt use the prompt above. The options on this page (maximum number of tags, language, tags list) apply to all the accounts.",
+    "description": ""
+  },
+  "AddTags_account_prompt_placeholder": {
+    "message": "No prompt for this account, the prompt above will be used.",
+    "description": ""
+  },
+  "AddTags_account_prompt_copy_global": {
+    "message": "Copy the prompt above",
+    "description": "Button that copies the general add tags prompt into the account prompt editor"
+  },
+  "AddTags_account_prompt_remove": {
+    "message": "Use the prompt above",
+    "description": "Button that deletes the account prompt, so the general add tags prompt is used again"
+  },
+  "AddTags_account_prompt_custom_suffix": {
+    "message": "(own prompt)",
+    "description": "Appended to the account name in the account selector when the account has its own add tags prompt"
+  },
+  "AddTags_account_prompt_discard_confirm": {
+    "message": "The prompt of the selected account has unsaved changes. Do you want to discard them?",
+    "description": ""
+  },
   "AddTags_excl_list_title": {
     "message": "Exclusion list",
     "description": ""
