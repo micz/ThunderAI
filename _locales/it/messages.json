@@ -291,7 +291,7 @@
         }
     },
     "customPrompts_search_placeholder": {
-        "message": "Cerca per nome o ID"
+        "message": "Cerca per nome, ID o testo…"
     },
     "customPrompts_filter_active": {
         "message": "Filtrati: $SHOWN$ di $TOTAL$",
@@ -1593,7 +1593,7 @@
         "message": "Abilita il thinking"
     },
     "prefs_ollama_think_Info": {
-        "message": "Se selezionato, il Modello rifletterà prima di rispondere. Questa opzione funziona solo con i modelli che supportano la funzione \"think\"."
+        "message": "Permette che il modello ragioni prima di rispondere. Il \"Predefinito del modello\" non invia nulla e lascia decidere al modello, il che su alcuni significa che ragiona comunque: scegli \"Disattivato\" per disattivare esplicitamente il ragionamento. I livelli di ragionamento disponibili dipendono dal modello selezionato e vengono elencati dopo averlo scelto."
     },
     "prefs_ollama_think_default": {
         "message": "Predefinito del modello",
