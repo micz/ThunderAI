@@ -45,6 +45,8 @@ async function started(prompt = 'Say hi', llm = 'chatgpt_api') {
     const w = ctx.workers.last();
     const p = cmd.sendPrompt();
     p.catch(() => {});
+    // Before-send hooks are async even without an installed companion.
+    await flush(3);
     return { cmd, w, p };
 }
 

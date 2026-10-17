@@ -24,6 +24,10 @@
 import { mztaPrefs } from './mzta-prefs.js';
  import { taLogger } from './mzta-logger.js';
  import { stripThinkTags } from './mzta-utils.js';
+ import {
+     createProviderWorker,
+     ProcessingWorker
+ } from './mzta-processing-worker.js';
 
  // Fallback timeout (ms) for a special command if the special_command_timeout
  // preference is unavailable. Kept generous to accommodate slow local models.
@@ -74,11 +78,13 @@ import { mztaPrefs } from './mzta-prefs.js';
             prompt = '',
             llm = '',
             do_debug = false,
-            config = {}
+            config = {},
+            processingClient
         } = args;
         this.prompt = prompt;
         this.llm = llm;
         this.config = config;
+        this.processingClient = processingClient;
         this.do_debug = do_debug;
         this.logger = new taLogger('mzta_specialCommand', do_debug);
 
@@ -185,7 +191,11 @@ import { mztaPrefs } from './mzta-prefs.js';
             workerInitMessage[prefKey] = value;
         }
 
-        this.worker = new Worker(new URL(this.worker_path, import.meta.url), { type: 'module' });
+        this.worker = await createProviderWorker(new URL(this.worker_path, import.meta.url), {
+            format: 'json',
+            client: this.processingClient
+        });
+        this.responsePrepared = this.worker instanceof ProcessingWorker;
         this.worker.postMessage(workerInitMessage);
     }
 
@@ -195,15 +205,26 @@ import { mztaPrefs } from './mzta-prefs.js';
             // special_command_timeout, so a request still retrying a 429 when the timer
             // fires is reported as rate limited too, not as a plain timeout.
             let lastRetryStatus = null;
-            // Abort the worker if it never replies (e.g. a hung network connection),
-            // so the caller's queue is not stuck waiting forever. Cleared on any outcome.
-            let timeoutId = setTimeout(() => {
-                this.logger.error("Special command timed out after " + this.timeout_ms + " ms");
-                const err = new Error(`[ThunderAI] Special command timed out after ${this.timeout_ms} ms`);
-                if (lastRetryStatus === 429) err.rateLimited = true;
-                reject(err);
-            }, this.timeout_ms);
+            // Each local chunk gets the configured timeout; dispatch starts a
+            // fresh provider budget. A stalled chunk or queue still times out.
+            let timeoutId;
+            const resetTimer = () => {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    this.logger.error("Special command timed out after " + this.timeout_ms + " ms");
+                    const err = new Error(`[ThunderAI] Special command timed out after ${this.timeout_ms} ms`);
+                    if (lastRetryStatus === 429) err.rateLimited = true;
+                    reject(err);
+                }, this.timeout_ms);
+            };
+            resetTimer();
             const clearTimer = () => { clearTimeout(timeoutId); };
+
+            if (this.responsePrepared) {
+                this.worker.onprocessingstatus = status => {
+                    if (['started', 'progress', 'complete'].includes(status.type)) resetTimer();
+                };
+            }
 
             // Event listeners for worker messages
             this.worker.onmessage = (event) => {
@@ -236,7 +257,9 @@ import { mztaPrefs } from './mzta-prefs.js';
                         // rather than handing raw reasoning to the caller's parser.
                         // The whole response is passed here, so the leading whitespace a
                         // removed block leaves behind is safe to trim (third argument).
-                        const cleaned = stripThinkTags(this.full_message, true, true).text;
+                        // Filtered output has reasoning stripped before restoration,
+                        // so literal <think> text in an original value stays intact.
+                        const cleaned = this.responsePrepared ? this.full_message : stripThinkTags(this.full_message, true, true).text;
                         this.logger.log("tokensDone: " + cleaned);
                         resolve(cleaned); // Resolve the promise with the full message
                         break;

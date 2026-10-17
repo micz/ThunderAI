@@ -1,0 +1,341 @@
+// Background-only trust boundary. Importing this module registers no listeners.
+import { mztaPrefs } from './mzta-prefs.js';
+import {
+    AI_PROCESSOR_ID,
+    AI_PROCESSING_PROTOCOL,
+    processingError
+} from './mzta-ai-processing-protocol.js';
+
+const STATE_KEY = 'aiProcessingRegistration';
+const NO_PROGRESS = () => {};
+
+function validateStatus(status) {
+    if (!status?.ok ||
+        status.protocol !== AI_PROCESSING_PROTOCOL ||
+        typeof status.instanceId !== 'string' ||
+        typeof status.enabled !== 'boolean') {
+        throw processingError('ai_processing_incompatible');
+    }
+}
+
+function validateInput(input, original) {
+    if (typeof input?.message !== 'string') {
+        throw processingError('ai_processing_invalid_result');
+    }
+    for (const group of ['instructions', 'extraBody']) {
+        const values = input[group];
+        const keys = Object.keys(original[group] || {});
+        if (!values || typeof values !== 'object' || Array.isArray(values)) {
+            throw processingError('ai_processing_invalid_result');
+        }
+        if (Object.keys(values).length !== keys.length) {
+            throw processingError('ai_processing_invalid_result');
+        }
+        for (const [key, value] of Object.entries(values)) {
+            if (!Object.hasOwn(original[group] || {}, key) || typeof value !== 'string') {
+                throw processingError('ai_processing_invalid_result');
+            }
+        }
+    }
+    return input;
+}
+
+export function createAIProcessingBroker() {
+    const sessions = new Map();
+    const pending = new Map();
+    let expected = false;
+    let absentUntil = 0;
+    const ready = browser.storage.local.get(STATE_KEY).then(data => {
+        expected = !!data[STATE_KEY]?.expected;
+    });
+
+    async function remember(enabled) {
+        absentUntil = 0;
+        expected = enabled;
+        await browser.storage.local.set({ [STATE_KEY]: { expected: enabled } });
+    }
+
+    async function discover() {
+        if (!expected && Date.now() < absentUntil) {
+            return { enabled: false };
+        }
+        let timer;
+        let status;
+        try {
+            status = await Promise.race([
+                browser.runtime.sendMessage(AI_PROCESSOR_ID, {
+                    action: 'aiProcessing.hello',
+                    protocol: AI_PROCESSING_PROTOCOL
+                }),
+                new Promise((_, reject) => {
+                    timer = setTimeout(() => reject(processingError('ai_processing_timeout')), 5000);
+                })
+            ]);
+        } catch (error) {
+            if (expected) {
+                if (error.code === 'ai_processing_timeout') {
+                    throw error;
+                }
+                throw processingError('ai_processing_unavailable');
+            }
+            // A slow, never-enabled legacy companion is optional, just like an
+            // absent one. A registration received during discovery sets expected.
+            absentUntil = Date.now() + 2000;
+            return { enabled: false };
+        } finally {
+            clearTimeout(timer);
+        }
+        if (status?.enabled === true) {
+            await remember(true);
+        }
+        try {
+            validateStatus(status);
+        } catch (error) {
+            if (expected) {
+                throw error;
+            }
+            console.warn('[ThunderAI] Ignoring an incompatible inactive content processor.');
+            return { enabled: false };
+        }
+        await remember(status.enabled);
+        return status;
+    }
+
+    function notify(message) {
+        void browser.runtime.sendMessage(AI_PROCESSOR_ID, message).catch(NO_PROGRESS);
+    }
+
+    async function remote(operation, record, payload, callId, onProgress) {
+        const prefs = await mztaPrefs.getPrefs(['special_command_timeout']);
+        const configured = prefs.special_command_timeout;
+        const timeout = Number.isFinite(configured) && configured > 0 ? configured : 120000;
+        const message = {
+            action: `aiProcessing.${operation}`,
+            protocol: AI_PROCESSING_PROTOCOL,
+            instanceId: record.instanceId,
+            sessionId: record.sessionId,
+            callId,
+            ...payload
+        };
+        const cancel = () => notify({ ...message, action: 'aiProcessing.cancel' });
+        let timer;
+        try {
+            const reply = await new Promise((resolve, reject) => {
+                const renew = () => {
+                    clearTimeout(timer);
+                    if (operation === 'collectInput') {
+                        return; // A person completing a form has no inference deadline.
+                    }
+                    timer = setTimeout(() => {
+                        cancel();
+                        reject(processingError('ai_processing_timeout'));
+                    }, timeout);
+                };
+                pending.set(callId, {
+                    record,
+                    requestId: payload.requestId,
+                    phases: new Map(),
+                    renew,
+                    onProgress,
+                    cancel() {
+                        cancel();
+                        reject(processingError('ai_processing_cancelled'));
+                    }
+                });
+                renew();
+                browser.runtime.sendMessage(AI_PROCESSOR_ID, message).then(resolve, () => {
+                    reject(processingError('ai_processing_unavailable'));
+                });
+            });
+            if (!reply?.ok) {
+                throw new Error(reply?.error?.message || browser.i18n.getMessage('ai_processing_failed'));
+            }
+            if (reply.protocol !== AI_PROCESSING_PROTOCOL ||
+                reply.instanceId !== record.instanceId ||
+                reply.callId !== callId) {
+                throw processingError('ai_processing_incompatible');
+            }
+            return reply;
+        } finally {
+            clearTimeout(timer);
+            pending.delete(callId);
+        }
+    }
+
+    async function dispatch(operation, data, onProgress = NO_PROGRESS, ownerTabId) {
+        await ready;
+        if (operation === 'status') {
+            return discover();
+        }
+        if (operation === 'createSession') {
+            const status = await discover();
+            if (data.required && !status.enabled) {
+                throw processingError('ai_processing_unavailable');
+            }
+            const record = {
+                sessionId: data.sessionId,
+                active: status.enabled,
+                instanceId: status.instanceId,
+                ownerTabId
+            };
+            sessions.set(record.sessionId, record);
+            try {
+                if (record.active) {
+                    await remote(operation, record, {}, data.callId, onProgress);
+                }
+            } catch (error) {
+                sessions.delete(record.sessionId);
+                notify({
+                    action: 'aiProcessing.disposeSession',
+                    protocol: AI_PROCESSING_PROTOCOL,
+                    instanceId: record.instanceId,
+                    sessionId: record.sessionId,
+                    callId: crypto.randomUUID()
+                });
+                throw error;
+            }
+            return { active: record.active };
+        }
+        const record = sessions.get(data.sessionId);
+        if (!record) {
+            throw processingError('ai_processing_session_expired');
+        }
+        if (operation === 'cancel') {
+            const entry = pending.get(data.targetCallId);
+            if (entry?.record === record) {
+                entry.cancel();
+            }
+            return {};
+        }
+        if (operation === 'disposeSession') {
+            sessions.delete(record.sessionId);
+            for (const entry of pending.values()) {
+                if (entry.record === record) {
+                    entry.cancel();
+                }
+            }
+            if (record.active) {
+                void remote(operation, record, {}, data.callId, NO_PROGRESS).catch(NO_PROGRESS);
+            }
+            return {};
+        }
+        if (!record.active) {
+            if (operation === 'before') return { input: data.input, context: null };
+            if (operation === 'after') return { output: data.output };
+            return {};
+        }
+        const reply = await remote(operation, record, data.payload, data.callId, onProgress);
+        if (operation === 'before') {
+            if (reply.context == null) {
+                throw processingError('ai_processing_invalid_result');
+            }
+            return { input: validateInput(reply.input, data.payload.input), context: reply.context };
+        }
+        if (operation === 'after') {
+            const output = reply.output;
+            if (typeof output?.content !== 'string' ||
+                typeof output?.thinking !== 'string' ||
+                (output.error != null && typeof output.error !== 'string')) {
+                throw processingError('ai_processing_invalid_result');
+            }
+            return { output };
+        }
+        if (operation === 'collectInput') {
+            if (!Array.isArray(reply.values) ||
+                reply.values.length !== data.payload.fields.length ||
+                reply.values.some(value => typeof value !== 'string')) {
+                throw processingError('ai_processing_invalid_result');
+            }
+            return { values: reply.values };
+        }
+        return {};
+    }
+
+    function onMessage(message, sender) {
+        if (message?.command !== 'ai_processing') {
+            return;
+        }
+        if (sender.id !== browser.runtime.id ||
+            !sender.url?.startsWith(browser.runtime.getURL(''))) {
+            return Promise.reject(processingError('ai_processing_invalid_sender'));
+        }
+        return dispatch(message.operation, message.data, progress => {
+            void browser.runtime.sendMessage({
+                command: 'ai_processing_progress',
+                callId: message.data.callId,
+                progress
+            }).catch(NO_PROGRESS);
+        }, sender.tab?.id);
+    }
+
+    function onExternalMessage(message, sender) {
+        if (typeof message?.action !== 'string' || !message.action.startsWith('aiProcessing.')) {
+            return;
+        }
+        if (sender.id !== AI_PROCESSOR_ID) {
+            return Promise.resolve({ ok: false });
+        }
+        if (message.action === 'aiProcessing.register') {
+            return ready.then(async () => {
+                if (message.enabled === true) {
+                    await remember(true);
+                }
+                validateStatus({ ...message, ok: true });
+                await remember(message.enabled);
+                return { ok: true, protocol: AI_PROCESSING_PROTOCOL };
+            });
+        }
+        if (message.protocol !== AI_PROCESSING_PROTOCOL) {
+            return Promise.resolve({ ok: false });
+        }
+        if (message.action === 'aiProcessing.progress') {
+            const entry = pending.get(message.callId);
+            const progress = message.progress;
+            if (!entry ||
+                message.instanceId !== entry.record.instanceId ||
+                message.sessionId !== entry.record.sessionId ||
+                message.requestId !== entry.requestId ||
+                !Number.isInteger(progress?.current) ||
+                !Number.isInteger(progress?.total) ||
+                progress.current <= 0 ||
+                progress.current > progress.total ||
+                progress.total > 1000000) {
+                return Promise.resolve({ ok: false });
+            }
+            const phase = String(progress.phase || '').slice(0, 128);
+            if (progress.current > (entry.phases.get(phase) || 0)) {
+                entry.phases.set(phase, progress.current);
+                entry.renew();
+                entry.onProgress(progress);
+            }
+            return Promise.resolve({ ok: true });
+        }
+    }
+
+    function onTabRemoved(tabId) {
+        for (const record of sessions.values()) {
+            if (record.ownerTabId === tabId) {
+                void dispatch('disposeSession', {
+                    sessionId: record.sessionId,
+                    callId: crypto.randomUUID()
+                }).catch(NO_PROGRESS);
+            }
+        }
+    }
+
+    browser.runtime.onMessage.addListener(onMessage);
+    browser.runtime.onMessageExternal.addListener(onExternalMessage);
+    browser.tabs.onRemoved.addListener(onTabRemoved);
+    return {
+        ready,
+        dispatch,
+        dispose() {
+            browser.runtime.onMessage.removeListener(onMessage);
+            browser.runtime.onMessageExternal.removeListener(onExternalMessage);
+            browser.tabs.onRemoved.removeListener(onTabRemoved);
+            for (const entry of pending.values()) {
+                entry.cancel();
+            }
+        }
+    };
+}

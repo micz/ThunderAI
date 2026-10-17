@@ -723,6 +723,45 @@ The API webchat window supports keyboard font zoom, handled in `api_webchat/cont
 - The level is clamped to **0.5–2.5** (step 0.1) and persisted in `browser.storage.local` under the global `api_webchat_font_scale` pref (default `1.0`, in `options/mzta-options-default.js`). On window open the saved value is read and re-applied, so the zoom survives closing the window and is shared across all webchat windows and providers.
 - The `keydown` listener is registered on `document`; key events from inside the components bubble up (composed), so no per-component handler is needed.
 
+## Async content processing
+
+`js/mzta-ai-processing-client.js` exposes async before-send and after-receive hooks over
+a versioned companion API. With no active processor they preserve existing content
+and streaming. An active processor's failure blocks the operation, never falls back
+to unchanged content. ThunderAI has no privacy settings, runtime or mapping store;
+activation, detection and restoration belong to ThunderAI Privacy.
+
+`js/mzta-processing-worker.js` creates raw provider workers when inactive and wraps
+them only when active, for every chat action and special command, including
+automatic/batch features. Only message text,
+provider instructions and extra-body content enter the hook envelope—not credentials
+or the entire provider configuration. Provider workers retain processed conversation
+history and raw replies; locally postprocessed answers never re-enter that history.
+
+Active processing buffers responses, separates dedicated/inline thinking, then
+awaits postprocessing before UI rendering, JSON parsing, storage or Sparks actions.
+The companion receives an output format (`text`, `html`, `json`) and returns content
+and thinking separately. Already-separated results bypass a second inline-thinking
+parse. Hook diagnostics and their consent live entirely in the companion; provider
+workers have no request-interception/logging bridge.
+Inactive processing preserves the provider's normal init-before-first-prompt
+lifecycle. Active processing defers init until content-bearing configuration is
+processed. Usage, retry and abort events retain their existing UI/batch behavior.
+
+`js/mzta-processing-web.js` applies the same hooks before ChatGPT DOM injection
+and after extracting responses for Thunderbird actions/local views. With an active
+processor, custom input and previews/diffs use the companion's own windows, not
+ThunderAI pages or the provider's DOM. The site receives only the preprocessed prompt; postprocessed text
+is never written back to the site. Manual site input, existing history and project/
+custom-GPT content are outside these hooks. Closing/reloading disposes the session.
+
+Sessions pin their processing mode/companion instance, so changing activation affects
+new chats/commands. Stop and timeout suppress late dispatch/results. A remembered
+active registration blocks new requests if the companion unexpectedly disappears;
+disable processing explicitly in the companion to resume unprocessed new sessions.
+See [09-ai-processing.md](09-ai-processing.md) for the authoritative API contract,
+field classification, transport, concurrency and failure policies.
+
 ## Configuration Validation
 
 For special prompts (`mzta_specialCommand`), required fields are validated in `initWorker()` (`js/mzta-special-commands.js`) **before** the worker is created. If a required field is empty, an `Error` with `isConfigError = true` is thrown. Validation covers:
@@ -809,8 +848,8 @@ sent.
 
 `mzta_specialCommand` (`js/mzta-special-commands.js`) creates one Worker per instance, in `initWorker()`, only once the configuration has passed the [validation](#configuration-validation): the constructor merely checks the connection type and picks the worker file, so a configuration error leaves no Worker behind (`sendPrompt()`, whose `finally` disposes of it, is never reached in that case). Callers (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, auto add-tags in `mzta-background.js`) create a **fresh instance per prompt** — instances are never reused.
 
-- **Termination:** `sendPrompt()` always calls `dispose()` (via `Promise.finally`) once the prompt settles — on success, error, or timeout. `dispose()` calls `worker.terminate()` and nulls the reference. This prevents Worker leaks during batch processing, where one Worker would otherwise be created per message and never freed (a cause of out-of-memory hangs on large selections).
-- **Timeout:** `sendPrompt()` aborts the request if the worker never replies (no `tokensDone`/`error`). The duration comes from the `special_command_timeout` pref (default `120000` ms), with a hardcoded `SPECIAL_COMMAND_TIMEOUT_DEFAULT` fallback. The pref is configurable in the main options page (always shown — see `claude-spec/05-options.md`). On timeout the promise rejects with a clear error and the worker is terminated by the same `finally`.
+- **Termination:** `sendPrompt()` always calls `dispose()` (via `Promise.finally`) once the prompt settles — on success, error, or timeout. `dispose()` terminates the provider worker, disposes the command's isolated companion session and nulls the reference. Disposing during preprocessing prevents delayed provider dispatch and cancels queued work for that command.
+- **Timeout:** `special_command_timeout` (default `120000` ms, with `SPECIAL_COMMAND_TIMEOUT_DEFAULT` fallback) bounds stalled initialization/queueing and each local processing part. Hook progress renews the budget, and provider dispatch starts a fresh budget for the API response. Progressing multi-part input can exceed one interval overall, while stalled processing/provider calls still time out. Without active processing, the existing request-wide timeout applies. The same `finally` disposes the command without terminating peers' work.
 - **Strings:** `initWorker()` sends the worker the same `i18nStrings` as the chat window
   (`<integration>_api_request_failed`, `error_connection_interrupted`, and for Claude the four
   `anthropic_err_hint_*` with the literal `$MODEL$`): a Web Worker has no `browser.i18n`, and the
