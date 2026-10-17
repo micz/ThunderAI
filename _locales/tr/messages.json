@@ -3,7 +3,7 @@
         "message": "E-postalarınızı geliştirmek için ChatGPT, Google Gemini, Claude veya Ollama’yı kullanın!"
     },
     "menu_title": {
-        "message": "YZ"
+        "message": "ThunderAI"
     },
     "customPrompts_managePrompts_info_default": {
         "message": "Varsayılan promptlar düzenlenemez. Düzenlenmiş bir sürüm oluşturmak için \"Çoğalt ve düzenle\" seçeneğini kullanın. Bir promptu menülerden gizlemek için menü sırası ayarlarını kullanın."
