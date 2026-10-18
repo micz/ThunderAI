@@ -28,42 +28,7 @@ Each special prompt (`add_tags`, `spamfilter`, etc.) can independently override 
 Each provider has its own settings block in `integration_options_config` (`options/mzta-options-default.js`):
 
 ### ChatGPT Web
-Controlled via `js/mzta-chatgpt.js`. Opens a browser window to `chatgpt.com`, injects the prompt via DOM automation, and reads back the response. Settings: `chatgpt_web_model`, `chatgpt_web_tempchat`, `chatgpt_web_project`, `chatgpt_web_custom_gpt`, `chatgpt_web_load_wait_time`.
-
-**GPT-6 model verification.** Model selection still uses the URL: `gpt-6` must resolve to
-GPT-6 / Instant, and `gpt-6-thinking` to GPT-6 / Medium. The composer button's
-`data-selected-reasoning-effort` must be `none` or `medium`, respectively. In the open menu
-whose `aria-labelledby` references that button's ID, exactly one visible `menuitemradio`
-must have both `aria-checked="true"` and `data-model-selected="true"`. The selected name is
-compared with the requested ID after removing its terminal `-thinking` suffix and trimming
-and lowercasing both strings. The full names must match; `GPT-6.1` and `GPT-6 Pro` cannot
-satisfy a `gpt-6` request. The two confirmed ID-to-effort mappings remain explicit; this
-does not automatically enable future models. Only the model name uses display text;
-localized UI labels are not matched.
-The simple menu is not expanded; verification reads the selection already present in the DOM.
-The inactive-state exception is limited to the model track marked
-`[data-active="false"][aria-hidden="true"][inert]` that is a direct child of
-`[data-model-picker-view="simple"]`. Other hidden selected items remain rejected.
-Verification does not change the model, effort or view. It closes only menus it opened
-and restores the previous focus. Menus already opened by the user retain their view and
-focus on both success and timeout.
-In the live UI observed on 2026-10-18, the view control only enters advanced view, so it
-is not used for restoration. The regression fixture reproduces this one-way behavior.
-After this change, all 49 browser regression tests and 7 loader tests passed. In a dedicated
-ChatGPT test tab in Chrome, verification preserved menus and focus in six success cases
-(both models with the menu closed, simple or advanced), and on an effort-mismatch timeout
-in the Thinking/advanced state. Live UI checks ran the verifier and visibility helpers
-extracted from production source without sending a message. These live UI checks did not
-cover the complete send flow through Thunderbird.
-Missing DOM never counts as successful GPT-6 verification.
-
-Verification has a 15-second deadline. A match resumes the send flow immediately; a timeout
-stops observation and polling and shows the existing warning and **Use the current model** button.
-Later DOM changes cannot trigger an automatic send; the button resumes the flow once.
-Completion or cancellation cleans up timers, observers and the manual resume callback.
-`doProceed()` prevents duplicate execution while a request is pending or has started sending,
-but preserves retry when no composer was found and nothing was sent. An empty model setting
-and Custom GPT skip verification. Other models retain their existing display-name and free-account checks.
+Controlled via `js/mzta-chatgpt.js`. Opens a browser window to `chatgpt.com`, injects the prompt via DOM automation, and reads back the response. Settings: `chatgpt_web_model`, `chatgpt_web_model_extended_check`, `chatgpt_web_tempchat`, `chatgpt_web_project`, `chatgpt_web_custom_gpt`, `chatgpt_web_load_wait_time`. Before sending, the requested model is checked on the page: see [Model verification](#model-verification-checkgptmodel) below.
 
 **Loader declaration.** `js/mzta-chatgpt-loader.js` is declared in `manifest.json` under
 `content_scripts` at `document_start` in ChatGPT's top-level frame, replacing the background's
@@ -75,16 +40,11 @@ one-shot asynchronous registration. The separate `diff.js` entry retains injecti
 
 Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view support.
 
-**Model menu stacking.** Only menus containing `[data-model-picker-view]` and their
-`[data-radix-popper-content-wrapper]` receive `z-index: 1001 !important`, keeping them above
-ThunderAI's bottom bar at `z-index: 1000`. Other menus retain their existing stacking order.
-
 **Composer, send and completion selectors use structure, never localized text.** ChatGPT ships in dozens of languages and rolls out UI variants gradually (issues #890, #920, #924), so `aria-label`, placeholder, title and text content are never matched. Button aria-labels may appear in diagnostics, nothing else does. Existing selectors always come first so that older UIs keep working. `mzta_script` is a template literal: no backticks or `${…}` inside it, and backslashes are doubled.
 
-Run `node --test tests/chatgpt-loader.test.mjs` and open `tests/chatgpt-model-verification.html`
-through a local HTTP server for regression tests. In Thunderbird, verify automatic sending for
-both model IDs, selection after changing effort to High on another Web session, manual resume
-and model menu access.
+The loader, the pre-script and the model verification are tested by the `chatgptweb` area
+([`tests/chatgptweb/README.md`](../tests/chatgptweb/README.md)); the rest of the content script is
+tested by hand in Thunderbird.
 
 **The composer is located by `findPromptInput(timeoutMs)`, never by a single id lookup.** `chatgpt_sendMsg()` waits up to 15 s for the first *visible* element matching `PROMPT_INPUT_SELECTORS`. The selectors, in priority order:
 1. `#prompt-textarea`
@@ -181,9 +141,91 @@ Stopping early costs little: the panel buttons appear sooner, and the user still
 
 **Injected UI styles are explicit.** Newer ChatGPT CSS resets `textarea` to a transparent background with no border, and some variants remove its resize handle, so `#mzta-custom_textarea` sets its own background, text and caret colors, border, font, `color-scheme`, `resize: vertical` and `overflow: auto` (the handle needs a non-`visible` overflow). ThunderAI elements must not rely on inherited colors, browser defaults that page CSS can override, or ChatGPT CSS variables.
 
-**The ChatGPT Web setting rows carry unprefixed element ids and are injected only when `no_chatgpt_web` is falsy.** In `injectConnectionUI()` (`pages/_lib/connection-ui.js`) every provider field id is prefixed with `modelId_prefix`, *except* the ChatGPT Web rows (`chatgpt_web_model`, `chatgpt_web_project`, `chatgpt_web_custom_gpt`, `chatgpt_web_tempchat`, `chatgpt_web_load_wait_time`, `btnChatGPTWeb_Tab`): on the options page and in the setup wizard the element id **is** the pref key (`saveOptions` writes `options[element.id]`), so prefixing them there would break persistence. Because bare ids can exist only once per page, those rows are emitted only for the two global consumers, which pass no `no_chatgpt_web`. Every per-prompt and per-feature panel passes `no_chatgpt_web: true` — it never offers the `chatgpt_web` option anyway, and the custom prompts page injects once per add-form plus once per edited row, which previously produced N+1 duplicates of those ids (misbound listeners, and one `btnChatGPTWeb_Tab` click opening N+1 tabs). Consequently the three lookups on those ids are guarded (`if (!no_chatgpt_web)` / optional chaining) — an unguarded lookup would throw on null and abort the rest of the injection, breaking every feature page.
+**The ChatGPT Web setting rows carry unprefixed element ids and are injected only when `no_chatgpt_web` is falsy.** In `injectConnectionUI()` (`pages/_lib/connection-ui.js`) every provider field id is prefixed with `modelId_prefix`, *except* the ChatGPT Web rows (`chatgpt_web_model`, `chatgpt_web_model_extended_check`, `chatgpt_web_project`, `chatgpt_web_custom_gpt`, `chatgpt_web_tempchat`, `chatgpt_web_load_wait_time`, `btnChatGPTWeb_Tab`): on the options page and in the setup wizard the element id **is** the pref key (`saveOptions` writes `options[element.id]`), so prefixing them there would break persistence. Because bare ids can exist only once per page, those rows are emitted only for the two global consumers, which pass no `no_chatgpt_web`. Every per-prompt and per-feature panel passes `no_chatgpt_web: true` — it never offers the `chatgpt_web` option anyway, and the custom prompts page injects once per add-form plus once per edited row, which previously produced N+1 duplicates of those ids (misbound listeners, and one `btnChatGPTWeb_Tab` click opening N+1 tabs). Consequently the three lookups on those ids are guarded (`if (!no_chatgpt_web)` / optional chaining) — an unguarded lookup would throw on null and abort the rest of the injection, breaking every feature page.
 
 Per-prompt ChatGPT Web overrides are a separate, unrelated mechanism: the custom prompts page renders its **own** in-page `chatgpt_web_*` fields (not injected), which are the ones actually persisted onto the prompt and consumed by `openChatGPT()`.
+
+#### Model verification (`checkGPTModel()`)
+
+The model is selected through the URL (`&model=`), which ChatGPT does not always honour, so before
+sending `proceedWithPrompt()` awaits `checkGPTModel(mztaGPTModel)`. `mztaGPTModel` is the prompt's own
+model or `chatgpt_web_model`, as `getGPTWebModelString()` turns it into the page's display string
+(`gpt-5-thinking` → `5 Thinking`, others unchanged). An **empty model** and a **Custom GPT** (the
+pre-script then injects `''`) skip the check: it resolves at once and nothing on the page is read.
+
+**The option.** `chatgpt_web_model_extended_check` (spec 05, default `false`) turns on the extended
+verification. The background passes it in the pre-script built by `handleChatGptWeb()`, as
+`mztaGPTExtendedCheck` (`"1"` or `"0"`), next to `mztaGPTModel`. The script reads it on every check,
+so a retry (`doRetry()` after no composer was found) runs the same check again. It is offered even
+when the global model field is empty, because a prompt's own model can still ask for one.
+
+**Which check runs**, when a model is requested:
+
+| Situation | Option off (default) | Option on |
+|---|---|---|
+| Newer UI: the composer trigger `button[data-composer-navigation-target="reasoning"]` is present | Proceed at once: no verification, no menu interaction. The trigger's `data-selected-reasoning-effort` is logged (`doLog()`). | A model the extended verification knows (`GPT_MODEL_EFFORTS`: today `gpt-6` and `gpt-6-thinking`): the extended verification, 15 s, then the manual button. Any other model: the legacy check, 2 s. |
+| Older UI, or the trigger not present | The legacy check, the manual button after 2 s | The legacy check, the manual button after 2 s |
+| Free account: no model selector (no `[id*=radix] span`, no trigger) | Proceed | Proceed |
+
+"Present" means visible (`isElementVisible()`) and outside ThunderAI's own UI (`getReasoningTrigger()`).
+
+**One watcher, two modes.** The check starts in the legacy mode with a 2 s deadline
+(`MODEL_CHECK_LEGACY_MS`), a MutationObserver on `document.documentElement` (child list, subtree,
+attributes, character data) and a 200 ms poll (CSS menu transitions need not mutate the DOM). Every
+check, the first one included, runs synchronously:
+
+1. **The trigger first.** The newer UI's trigger can render late: it is looked up on every check of
+   the 2 s window, with no fixed wait. Option off: the check ends at once (`not-verified`). Option on
+   and a known model: the check switches to the extended mode, for good; the 2 s deadline is replaced
+   by a 15 s one (`MODEL_CHECK_EXTENDED_MS`) counted **from that moment**.
+2. **Otherwise the legacy check.** No `[id*=radix] span` at all: a free account, the check ends
+   (`free`). A span whose text is exactly the model's display string: the check ends (`legacy`).
+   Anything else: wait. A page that has neither a Radix element nor the trigger at a check is
+   therefore taken for a free account there and then, on every path.
+
+**The extended verification.** `gpt-6` must resolve to GPT-6 / Instant and `gpt-6-thinking` to
+GPT-6 / Medium: the trigger's `data-selected-reasoning-effort` must be `none` or `medium`
+respectively, and with any other effort the menu is not even opened. The trigger must be the only
+visible one, with an id, enabled. Its menu is the open `[role="menu"][data-state="open"]` whose
+`aria-labelledby` is the trigger's id; when none is open and the trigger is not expanded, the check
+opens it once with a keydown Enter (Radix opens on keydown or pointerdown, not on click). In that
+menu exactly one visible `menuitemradio` must carry both `aria-checked="true"` and
+`data-model-selected="true"`, and its `[data-menu-row-content] > span` must equal the requested ID
+with its terminal `-thinking` removed, both trimmed and lower-cased: the full names must match, so
+`GPT-6.1` and `GPT-6 Pro` do not satisfy `gpt-6`. Only the model's name is read as text; localized UI
+labels are not matched. Text elsewhere in the page, a menu the trigger does not own, a hidden row, a
+row checked but not selected, or two selected rows never pass. The two ID-to-effort mappings are
+explicit: a future model is not verified until it is added to `GPT_MODEL_EFFORTS`.
+
+The simple view is never expanded: the check reads the selection the simple view keeps in its
+inactive model track. That exception is limited to the track `[data-active="false"][aria-hidden="true"][inert]`
+that is a direct child of `[data-model-picker-view="simple"]` (itself not hidden); any other hidden
+or inert ancestor rejects the row. The simple view's control only enters the advanced view (it is
+not a toggle back), so it is never used, neither to read nor to restore.
+
+The check changes neither the model, nor the effort, nor the view. It closes (Escape) only the menus
+it opened, and gives the focus back to what had it before only when the focus is still on the
+trigger or in that menu: a focus the user moved elsewhere stays there. A menu the user opened keeps
+its view and its focus, on success and on timeout.
+
+**Deadlines and the manual button.** A match resumes the flow at once. At either deadline the check
+stops observing and polling, closes its own menu, and shows the existing warning
+(`#mzta-model_warn`) and its **Use the current model** button (`#mzta-btn_model`). From then on no
+change of the page can send by itself: the button's one-shot continuation
+(`continue_model_verification`) resumes the flow once, hides the warning, and is cleared; an approval
+is never reused by a later check. `pagehide` cancels the check, or the wait for the button: it
+resolves `false` and nothing is sent. Whichever way it ends, the observer, the poll, the deadline
+and the continuation are gone. `doProceed()` drops a second flow while one is pending or has started
+sending, but lets the retry run when no composer was found and nothing was sent.
+
+**Model menu stacking.** Only menus containing `[data-model-picker-view]` and their
+`[data-radix-popper-content-wrapper]` receive `z-index: 1001 !important`, keeping them above
+ThunderAI's bottom bar at `z-index: 1000`. Other menus retain their existing stacking order.
+
+**Manual checks in Thunderbird** (the page's real layout and behaviour, which the tests model): with
+the option on, automatic sending for both model IDs, the warning after changing the effort to High
+in another ChatGPT session, the manual resume, and that the model menu stays usable above the bar;
+with the option off, that the prompt is sent at once on the newer UI.
 
 ### OpenAI API (`chatgpt_api`)
 - Module: `js/api/openai_responses.js`

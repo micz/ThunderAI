@@ -2416,6 +2416,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     let mztaPromptName="[`+ i18nConditionalGet(prompt_name) +`]";
                     let mztaPhDefVal="`+(prefs.placeholders_use_default_value?'1':'0')+`";
                     let mztaGPTModel="`+ (_custom_gpt_set ? '' : _gpt_model) +`";
+                    let mztaGPTExtendedCheck="`+(prefs.chatgpt_web_model_extended_check?'1':'0')+`";
                     let mztaDoDebug="`+(prefs.do_debug?'1':'0')+`";
                     let mztaUseDiffViewer="`+(prompt_info.use_diff_viewer=='1'?'1':'0')+`";
                     let mztaOriginalText="`+ JSON.stringify(originalText).slice(1, -1) +`";

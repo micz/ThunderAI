@@ -1,5 +1,8 @@
-<!-- Fixture preserving only attributes and hierarchy observed in the live ChatGPT DOM on 2026-10-16.
-     Dynamic classes/IDs, account information and conversation content are omitted. -->
+<!-- The newer ChatGPT UI around the composer, with its model/reasoning picker.
+     Source: the attributes and hierarchy observed in the live ChatGPT DOM on 2026-10-16 (PR #965).
+     Dynamic classes and ids, account information and conversation content are omitted.
+     The menu is a <template>: tests/chatgptweb/chatgpt-page.mjs models the Radix behaviour around it
+     (opened on keydown Enter, closed on Escape, the simple view's toggle entering the advanced view only). -->
 <main>
   <div id="prompt-textarea" class="ProseMirror" contenteditable="true" role="textbox" style="min-height:30px"></div>
   <button id="radix-model-trigger" type="button" aria-haspopup="menu" aria-expanded="false"

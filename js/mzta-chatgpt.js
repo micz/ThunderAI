@@ -2054,17 +2054,33 @@ function isGPTModelSelected(trigger, menu, model, effort) {
     return label && label.textContent.trim().toLowerCase() === expectedName;
 }
 
+// The model IDs the extended verification knows, with the effort the composer trigger must show.
+const GPT_MODEL_EFFORTS = { 'gpt-6': 'none', 'gpt-6-thinking': 'medium' };
+// Legacy check: the warning and the manual button after this long without a match.
+const MODEL_CHECK_LEGACY_MS = 2000;
+// Extended verification: its own deadline, started when it begins.
+const MODEL_CHECK_EXTENDED_MS = 15000;
+
+// The newer UI's composer model/reasoning trigger, or null while it is not rendered.
+function getReasoningTrigger() {
+    return Array.from(document.querySelectorAll('button[data-composer-navigation-target="reasoning"]'))
+        .find(el => isElementVisible(el) && !isOwnUiElement(el)) || null;
+}
+
 function checkGPTModel(model) {
     if (model === '') return Promise.resolve(true);
-    const effort = model === 'gpt-6' ? 'none' : model === 'gpt-6-thinking' ? 'medium' : null;
-    doLog('checkGPTModel model: ' + model);
+    const effort = Object.prototype.hasOwnProperty.call(GPT_MODEL_EFFORTS, model) ? GPT_MODEL_EFFORTS[model] : null;
+    const extendedCheck = mztaGPTExtendedCheck == '1';
+    doLog('checkGPTModel model: ' + model + ', extended check ' + (extendedCheck ? 'on' : 'off'));
     return new Promise(resolve => {
         let settled = false;
         let watching = true;
+        // 'legacy' until the newer UI's trigger is seen (within the legacy window), then 'extended' when it is verified
+        let mode = 'legacy';
         const openedTriggers = new Set();
         const previousFocus = document.activeElement;
         const observer = new MutationObserver(check);
-        const timeout = setTimeout(onTimeout, 15000);
+        let timeout = setTimeout(onTimeout, MODEL_CHECK_LEGACY_MS);
         // Also check after CSS menu transitions, which need not mutate the DOM.
         const poll = setInterval(check, 200);
 
@@ -2105,7 +2121,7 @@ function checkGPTModel(model) {
             if (!watching || settled) return;
             stopWatching();
             restoreMenu();
-            doLog('checkGPTModel timed out: ' + model);
+            doLog('checkGPTModel timed out (' + mode + '): ' + model);
             // Leave only a one-shot manual continuation; no late DOM match may send.
             continue_model_verification = () => finish('manual');
             const warning = document.getElementById('mzta-model_warn');
@@ -2116,11 +2132,26 @@ function checkGPTModel(model) {
 
         function check() {
             if (!watching || settled) return;
-            if (effort === null) {
-                // Preserve the legacy display-name and free-account paths.
-                const elements = document.querySelectorAll('[id*=radix] span');
-                if (!elements.length || Array.from(elements).some(el => el.textContent === model)) finish('legacy');
-                return;
+            if (mode === 'legacy') {
+                // The newer UI's trigger can render late: it is looked for on every check of the legacy window.
+                const newUiTrigger = getReasoningTrigger();
+                if (newUiTrigger && !extendedCheck) {
+                    doLog('checkGPTModel: newer model picker, selected reasoning effort ' + newUiTrigger.getAttribute('data-selected-reasoning-effort') + ', model not verified (extended check off)');
+                    finish('not-verified');
+                    return;
+                }
+                if (newUiTrigger && effort !== null) {
+                    mode = 'extended';
+                    clearTimeout(timeout);
+                    timeout = setTimeout(onTimeout, MODEL_CHECK_EXTENDED_MS);
+                    doLog('checkGPTModel: newer model picker, extended verification');
+                } else {
+                    // The legacy display-name and free-account checks.
+                    const elements = document.querySelectorAll('[id*=radix] span');
+                    if (!elements.length) finish('free');
+                    else if (Array.from(elements).some(el => el.textContent === model)) finish('legacy');
+                    return;
+                }
             }
             const triggers = Array.from(document.querySelectorAll('button[data-composer-navigation-target="reasoning"][data-selected-reasoning-effort]'))
                 .filter(el => isElementVisible(el) && !isOwnUiElement(el));

@@ -188,6 +188,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `reply_type` | `'reply_all'` | Default reply type |
 | `chatgpt_web_model` | `''` | ChatGPT Web model override |
 | `chatgpt_web_tempchat` | `false` | Use temporary chat |
+| `chatgpt_web_model_extended_check` | `false` | Opt-in extended model verification on ChatGPT Web: on the newer UI, the model menu is opened briefly to read the selected model before sending. Only known models are verified (today `gpt-6` and `gpt-6-thinking`); any other model gets the legacy check, and with the option off the newer UI sends without verification. It may stop working when ChatGPT changes its page. Read by the background into the pre-script (`mztaGPTExtendedCheck`), never by the page itself: see [04 "Model verification"](04-api-integrations.md#model-verification-checkgptmodel). A `.mzta_switch` toggle in the advanced ChatGPT Web rows of the shared connection template, right after the model row, unprefixed id (options page and setup wizard only). **Never disabled**, an empty model field included: a prompt's own model can still ask for one. Boolean, so policy-settable with no extra rule. |
 | `chatgpt_web_project` | `''` | ChatGPT Web project |
 | `chatgpt_web_custom_gpt` | `''` | Custom GPT URL |
 | `chatgpt_web_load_wait_time` | `1000` | Wait time (ms) for ChatGPT page |
@@ -660,9 +661,10 @@ are **not injected at all**, because they pass `no_chatgpt_web: true` (see
 [04-api-integrations.md](04-api-integrations.md), ChatGPT Web section, for why those
 rows must keep unprefixed ids and therefore exist only once per page).
 
-**Toggle inside the shared template.** The `chatgpt_web_tempchat` row renders its
-checkbox as the design-system `.mzta_switch` toggle (the only checkbox in the shared
-template; every other injected checkbox is still a plain one). The switch label is
+**Toggles inside the shared template.** The `chatgpt_web_model_extended_check` and
+`chatgpt_web_tempchat` rows render their checkboxes as the design-system `.mzta_switch`
+toggle (the only two in the shared template; every other injected checkbox is still a
+plain one), with the same markup. The switch label is
 wrapped in a flex `<div>` shared with the info text, not left inline: the
 connection-table restyle sets `label { display: block }` on every label inside
 `#connection_ui_table` / `#connection_ui_adv_table`, and that selector (1 id + 1 type)
@@ -671,7 +673,7 @@ the label is a flex item — `block` is what a flex item gets anyway — and
 `.mzta_switch`'s `width: auto !important` keeps it at the 38px track width, so only
 the switch is clickable. Without the wrapper the block label would stretch across the
 whole cell and toggle from a click anywhere in the row. Both pages that ever show the
-row (options + setup wizard) link `mzta-design.css`, so the toggle styles are always
+rows (options + setup wizard) link `mzta-design.css`, so the toggle styles are always
 present.
 
 **Prefix propagation invariant.** `showConnectionOptions(conntype_select, modelId_prefix)`
