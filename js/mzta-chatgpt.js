@@ -1985,7 +1985,11 @@ function isGPTModelSelected(trigger, menu, model, effort) {
     const selected = menu.querySelectorAll('[role="menuitemradio"][aria-checked="true"][data-model-selected="true"]');
     if (selected.length !== 1) return false;
     const row = selected[0];
-    if (!isElementVisible(row) || row.closest('[aria-hidden="true"], [inert]')) return false;
+    const hiddenAncestor = row.closest('[aria-hidden="true"], [inert]');
+    // Simple view retains the current model selection in its inactive model track.
+    const simpleTrack = menu.querySelector('[data-model-picker-view="simple"] > [data-active="false"][aria-hidden="true"][inert]');
+    if (!isElementVisible(row) || (hiddenAncestor && (hiddenAncestor !== simpleTrack ||
+        simpleTrack.parentElement.closest('[aria-hidden="true"], [inert]')))) return false;
     const label = row.querySelector('[data-menu-row-content] > span');
     const expectedName = model.trim().toLowerCase().replace(/-thinking$/, '');
     return label && label.textContent.trim().toLowerCase() === expectedName;
@@ -1999,7 +2003,6 @@ function checkGPTModel(model) {
         let settled = false;
         let watching = true;
         const openedTriggers = new Set();
-        const changedViews = new Set();
         const previousFocus = document.activeElement;
         const observer = new MutationObserver(check);
         const timeout = setTimeout(onTimeout, 15000);
@@ -2016,17 +2019,11 @@ function checkGPTModel(model) {
         function restoreMenu() {
             const restoreFocus = Array.from(openedTriggers).some(trigger =>
                 trigger === document.activeElement || getGPTModelMenu(trigger)?.contains(document.activeElement));
-            for (const menu of changedViews) {
-                if (menu.isConnected && menu.querySelector('[data-model-picker-view="advanced"]')) {
-                    menu.querySelector('[data-model-picker-view-toggle="true"]')?.click();
-                }
-            }
             for (const trigger of openedTriggers) {
                 const menu = getGPTModelMenu(trigger);
                 if (menu) menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }));
             }
             if (restoreFocus && previousFocus?.isConnected) previousFocus.focus();
-            changedViews.clear();
             openedTriggers.clear();
         }
 
@@ -2078,15 +2075,6 @@ function checkGPTModel(model) {
                     openedTriggers.add(trigger);
                     // Radix DropdownMenu opens on keydown/pointerdown, not click.
                     trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true }));
-                }
-                return;
-            }
-            // Simple view keeps the model rows inert. Expand the list, never a model.
-            if (menu.querySelector('[data-model-picker-view="simple"]')) {
-                const toggle = menu.querySelector('[data-model-picker-view-toggle="true"]');
-                if (toggle && !changedViews.has(menu)) {
-                    changedViews.add(menu);
-                    toggle.click();
                 }
                 return;
             }

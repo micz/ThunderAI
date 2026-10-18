@@ -67,7 +67,7 @@ async function setup(model = 'gpt-6', effort = 'none') {
     const clock = installClock(win);
     const trigger = doc.querySelector('[data-selected-reasoning-effort]');
     trigger.setAttribute('data-selected-reasoning-effort', effort);
-    const events = { sends: 0, modelClicks: 0, opens: 0, closes: 0 };
+    const events = { sends: 0, modelClicks: 0, opens: 0, closes: 0, viewClicks: 0 };
 
     function wireTrigger(button) {
         // Radix opens via keydown, not a synthetic click on the trigger.
@@ -78,10 +78,16 @@ async function setup(model = 'gpt-6', effort = 'none') {
             const menu = doc.getElementById('model-menu-fixture').content.firstElementChild.cloneNode(true);
             menu.setAttribute('aria-labelledby', button.id);
             menu.querySelector('[data-model-picker-view-toggle]').addEventListener('click', () => {
+                events.viewClicks++;
                 const view = menu.querySelector('[data-model-picker-view]');
-                const advanced = view.getAttribute('data-model-picker-view') === 'simple';
+                // The live simple-view control enters advanced; it is not a back toggle.
+                const advanced = true;
                 view.setAttribute('data-model-picker-view', advanced ? 'advanced' : 'simple');
-                const track = menu.querySelector('[inert], [data-active="true"]:has([role="menuitemradio"])');
+                const simpleTrack = menu.querySelector('[data-model-picker-view-toggle]').closest('[data-active]');
+                simpleTrack.setAttribute('aria-hidden', advanced ? 'true' : 'false');
+                simpleTrack.setAttribute('data-active', advanced ? 'false' : 'true');
+                simpleTrack.toggleAttribute('inert', advanced);
+                const track = menu.querySelector('[role="menuitemradio"]').closest('[data-active]');
                 track.setAttribute('aria-hidden', advanced ? 'false' : 'true');
                 track.setAttribute('data-active', advanced ? 'true' : 'false');
                 track.toggleAttribute('inert', !advanced);
@@ -94,6 +100,7 @@ async function setup(model = 'gpt-6', effort = 'none') {
             });
             menu.querySelectorAll('[role="menuitemradio"]').forEach(row => row.addEventListener('click', () => events.modelClicks++));
             doc.body.append(menu);
+            menu.focus();
         });
     }
     wireTrigger(trigger);
@@ -281,14 +288,67 @@ test('A match just before the deadline succeeds without a timeout warning', asyn
     await h.clock.advance(1001);
     assert(h.events.sends === 1 && !warningVisible(h), 'Success/timeout race failed'); h.assertClean();
 });
-test('Preserves the view and open state of an already open menu', async h => {
-    openMenu(h);
-    void h.api.doProceed(h.message);
-    await h.clock.advance(1000);
-    assert(h.events.sends === 1 && h.events.closes === 0, 'Closed a menu opened by the user');
-    assert(h.doc.querySelector('[data-model-picker-view="simple"]'), 'Menu view was not restored'); h.assertClean();
-});
-test('Closes its own menu and restores the view on failure', async h => {
+for (const [model, effort] of [['gpt-6', 'none'], ['gpt-6-thinking', 'medium']]) {
+    test(model + ': preserves an already open simple menu after success', async h => {
+        h.api.init(model); h.trigger.setAttribute('data-selected-reasoning-effort', effort);
+        openMenu(h);
+        void h.api.doProceed(h.message);
+        await h.clock.advance(1000);
+        assert(h.events.sends === 1 && h.events.closes === 0, 'Closed a menu opened by the user');
+        assert(h.doc.querySelector('[data-model-picker-view="simple"]'), 'Menu view was not restored'); h.assertClean();
+    });
+    test(model + ': preserves an already open simple menu after timeout', async h => {
+        h.api.init(model); h.trigger.setAttribute('data-selected-reasoning-effort', effort);
+        h.doc.getElementById('model-menu-fixture').content.querySelector('[data-model-selected] span').textContent = 'Other';
+        openMenu(h);
+        void h.api.doProceed(h.message); await waitForTimeout(h);
+        assert(h.events.sends === 0 && h.events.closes === 0, 'Sent or closed a menu opened by the user');
+        assert(h.doc.querySelector('[data-model-picker-view="simple"]'), 'Menu view was not restored on timeout'); h.assertClean();
+    });
+}
+for (const [model, effort] of [['gpt-6', 'none'], ['gpt-6-thinking', 'medium']]) {
+    for (const view of ['simple', 'advanced']) {
+        for (const matches of [true, false]) {
+            test(model + ': preserves ' + view + ' view and focus on ' + (matches ? 'success' : 'timeout'), async h => {
+                h.trigger.setAttribute('data-selected-reasoning-effort', effort);
+                openMenu(h);
+                const menu = h.doc.querySelector('[role="menu"]');
+                if (view === 'advanced') menu.querySelector('[data-model-picker-view-toggle]').click();
+                const focused = view === 'simple' ? menu.querySelector('[data-model-picker-view-toggle]') : menu.querySelector('[data-model-selected]');
+                focused.focus();
+                if (!matches) menu.querySelector('[data-model-selected] span').textContent = 'Other';
+                const clicks = h.events.viewClicks;
+                const pending = h.api.checkGPTModel(model);
+                if (matches) assert(await pending, 'Matching model failed');
+                else await waitForTimeout(h);
+                assert(menu.isConnected && menu.querySelector('[data-model-picker-view="' + view + '"]'), 'Menu or view changed');
+                assert(h.doc.activeElement === focused, 'Menu focus changed');
+                assert(h.events.viewClicks === clicks && h.events.closes === 0, 'Verifier changed the menu');
+                if (!matches) { h.win.dispatchEvent(new h.win.Event('pagehide')); await pending; }
+                h.assertClean();
+            });
+        }
+    }
+    test(model + ': restores composer focus after automatically opening the menu', async h => {
+        h.trigger.setAttribute('data-selected-reasoning-effort', effort);
+        const composer = h.doc.getElementById('prompt-textarea'); composer.focus();
+        assert(await h.api.checkGPTModel(model), 'Matching model failed');
+        assert(h.doc.activeElement === composer && h.events.closes === 1, 'Composer focus was not restored');
+        assert(h.events.viewClicks === 0, 'Verifier expanded the menu'); h.assertClean();
+    });
+}
+for (const variant of ['unexpected-track', 'nested-hidden', 'duplicate-selection']) {
+    test('Rejects ambiguous or hidden selected state: ' + variant, async h => {
+        openMenu(h);
+        const menu = h.doc.querySelector('[role="menu"]');
+        const row = menu.querySelector('[data-model-selected]');
+        if (variant === 'unexpected-track') row.parentElement.removeAttribute('data-active');
+        if (variant === 'nested-hidden') row.setAttribute('aria-hidden', 'true');
+        if (variant === 'duplicate-selection') row.parentElement.append(row.cloneNode(true));
+        assert(!h.api.isGPTModelSelected(h.trigger, menu, 'gpt-6', 'none'), 'Accepted hidden or ambiguous selection');
+    });
+}
+test('Closes its own menu on failure', async h => {
     h.doc.getElementById('model-menu-fixture').content.querySelector('[data-model-selected] span').textContent = 'Other';
     void h.api.doProceed(h.message); await waitForTimeout(h);
     assert(h.events.opens === 1 && h.events.closes === 1, 'Menu remains open after failure');

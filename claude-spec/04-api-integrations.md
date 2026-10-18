@@ -40,8 +40,19 @@ and lowercasing both strings. The full names must match; `GPT-6.1` and `GPT-6 Pr
 satisfy a `gpt-6` request. The two confirmed ID-to-effort mappings remain explicit; this
 does not automatically enable future models. Only the model name uses display text;
 localized UI labels are not matched.
-The simple menu is expanded to the advanced view to read the model list without selecting a
-model or effort. The original view is restored, and only menus opened by the verifier are closed.
+simple 메뉴는 확장하지 않고 현재 DOM의 선택 표시를 읽는다. 비활성 상태의 예외는
+`[data-model-picker-view="simple"]`의 직접 자식인
+`[data-active="false"][aria-hidden="true"][inert]` 모델 영역으로 제한한다.
+그 밖의 숨겨진 선택 항목은 계속 거부한다. 모델·effort·view는 변경하지 않으며,
+검증기가 직접 연 메뉴만 닫고 기존 포커스를 복원한다. 사용자가 열어 둔 메뉴는
+성공·timeout 모두 view와 포커스를 보존한다.
+2026-10-18 실제 UI에서 확인한 view 전환 control은 advanced로 진입하는 단방향 동작이므로
+복원용으로 사용하지 않는다. 회귀 fixture도 이 단방향 동작을 재현한다.
+수정 후 브라우저 회귀 테스트 49개와 loader 테스트 7개가 통과했다. 실제 Chrome의 전용
+ChatGPT 테스트 탭에서 두 모델 각각 닫힌 메뉴·simple·advanced의 6가지 성공 경로와
+Thinking/advanced 상태의 effort 불일치 timeout에서 메뉴·포커스 보존을 확인했다.
+실제 UI 검증은 제품 소스의 검증기와 visibility helper를 추출해 실행했으며 메시지는 전송하지 않았다.
+Thunderbird에서의 전체 전송 흐름은 이번 실제 UI 검증 범위에 포함하지 않았다.
 Missing DOM never counts as successful GPT-6 verification.
 
 Verification has a 15-second deadline. A match resumes the send flow immediately; a timeout
