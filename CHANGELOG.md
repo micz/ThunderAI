@@ -1,7 +1,7 @@
  # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI Release Notes
 
 
-<h2>Version 5.1.0 - ??/??/2026</h2>
+<h2>Version 5.1.0 - 18/10/2026</h2>
 <ul>
   <li>Redesigned the Custom Prompts page: a list with a detail editor, plus a table view of all the prompts and their options. The search also looks in the prompt text, and every change is saved immediately (the "Save All" button is gone) [<a href="https://github.com/micz/ThunderAI/issues/904">#904</a>].</li>
   <li>Added support for the Thunderbird Enterprise Policies: with <i>policies.json</i> an administrator can pre-configure or enforce any setting, provide organization prompts, turn off prompt management, hide the built-in prompts and disable the setup wizard [<a href="https://github.com/micz/ThunderAI/issues/880">#880</a>].</li>
@@ -30,7 +30,6 @@
   <li>Fix: on the feature settings pages, saving the prompt no longer undoes the connection changes, ChatGPT Web no longer silently sets the OpenAI API as the feature connection, and a summary shown in the chat window always uses the Summarize connection.</li>
   <li>Many improvements.</li>
   <li>Some minor bugs fixed.</li>
-  <li>...</li>
 </ul>
 <h2>Version 5.0.1 - 16/09/2026</h2>
 <ul>
