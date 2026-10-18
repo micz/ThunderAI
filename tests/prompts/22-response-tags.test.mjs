@@ -75,6 +75,10 @@ k.test('tags-malformed-json', 'a malformed JSON answer gives no tag, never piece
     }
 });
 
+k.test('tags-raw-newline-in-string', 'a raw line break inside a JSON string is read as \\n, not as a malformed answer', () => {
+    assert.deepEqual(u.getTagsFromResponse('{"tags": ["Work", "Follow\nup"]}'), ['Work', 'Follow\nup']);
+});
+
 k.test('tags-plain-list', 'a plain comma separated list (no brace) is still accepted', () => {
     assert.deepEqual(u.getTagsFromResponse('Work, Invoice,Urgent'), ['Work', 'Invoice', 'Urgent']);
 });

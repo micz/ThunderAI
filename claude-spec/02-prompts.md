@@ -406,7 +406,12 @@ The response is still filtered afterwards as a safety net: `checkIfTagLabelExist
 Both flows read the tags with it (the automatic one passes the use list as `filter_tags` /
 `filter_tags_list`, the manual one no filter).
 - **A JSON answer** — any answer holding `{` or `}` — is parsed with `extractJsonObject()`, so a code
-  fence or text around the object does not matter. `tags` is the array, or a comma separated
+  fence or text around the object does not matter. `extractJsonObject()` (`js/mzta-utils.js`, shared
+  by every feature that parses a JSON answer: tags, spam filter, calendar event, task, translation)
+  takes the text from the first `{` to the last `}`; when `JSON.parse` rejects it, it retries once
+  with the control characters found **inside strings** escaped (`\n`, `\r`, `\t`, …), because
+  models often write a multi-line value with raw line breaks. If the retry fails too, the
+  original parse error is thrown. `tags` is the array, or a comma separated
   string split on the commas; any other shape gives no tag. A malformed object gives **no tag** (and
   a `console.warn`): it is never split by commas, which would turn the raw JSON, or a whole
   sentence, into a tag name — one the automatic flow would then create with `create_new_tags` on.
@@ -668,6 +673,9 @@ The translate feature uses a single special prompt (`prompt_translate_this`) for
 - The AI response is a JSON object: `{ "subject": "...", "body": "...", "status": "1"|"-1" }`
   - `status = "1"`: translation completed, subject and body are displayed
   - `status = "-1"`: translation skipped (excluded/target language), a "skipped" message is shown
+  - It is read with `extractJsonObject()` (raw line breaks inside the strings tolerated, see
+    "Reading the answer" in "Add tags: extra prompt statements"). An answer that still does not
+    parse is shown whole as the body, with no subject and no status
 - Target language is determined by `translate_lang` pref, falling back to `default_chatgpt_lang`
 - Does **not** support `chatgpt_web` connection type (shows error if configured)
 - Result is rendered as a styled banner (green/teal theme) in the message body via `mzta-compose-script.js`
