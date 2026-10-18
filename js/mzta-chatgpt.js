@@ -49,6 +49,8 @@ let user_selected_composer = null;
 let current_composer_el = null;
 // debug only: message counts taken just before sending, for the completion diagnostics
 let send_baseline = null;
+// user turns, articles and path taken just before sending, to tell a send from a composer re-render
+let verify_baseline = null;
 let last_send_button_strategy = null;
 // ancestor padded so the composer clears the ThunderAI bar, with its original inline style
 let overlap_fix = null;
@@ -767,10 +769,31 @@ function isComposerEmpty(el) {
     return (el.textContent || '').trim() === '';
 }
 
-// Sent when the composer was cleared or re-rendered away, or the stop button (old or new UI) appeared
+// Max times the prompt is written again into a composer the page re-rendered before the send
+const MAX_COMPOSER_REFILLS = 1;
+
+function takeVerifyBaseline() {
+    return {
+        user: countElements('[data-message-author-role="user"]'),
+        article: countElements('main article'),
+        path: location.pathname
+    };
+}
+
+// A new user turn, or the navigation to the new conversation
+function hasSendEvidence() {
+    if (!verify_baseline) return false;
+    return countElements('[data-message-author-role="user"]') > verify_baseline.user
+        || countElements('main article') > verify_baseline.article
+        || location.pathname !== verify_baseline.path;
+}
+
+// Sent when the composer was cleared, the stop button (old or new UI) appeared, or there is
+// send evidence. A composer re-rendered away is not a send by itself: the page can replace it
+// before the send and drop the prompt with it.
 function isSendVerified(el) {
-    if (!el.isConnected || isComposerEmpty(el)) return true;
-    return chatgpt_isGenerating();
+    if (el.isConnected && isComposerEmpty(el)) return true;
+    return chatgpt_isGenerating() || hasSendEvidence();
 }
 
 // Checks isSendVerified() every 100 ms: resolves true as soon as it holds, false after maxMs
@@ -827,13 +850,17 @@ function dispatchEnter(el) {
     el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
 }
 
-// Waits for the button to be enabled, then sends. Resolves 'sent', or 'timeout' after 10 s.
+// Waits for the button to be enabled, then sends. Resolves 'sent', 'replaced' as soon as the
+// composer is no longer in the page (its prompt is gone with it), or 'timeout' after 10 s.
 function sendWithButton(sendButton, composerEl, method) {
     return new Promise(resolve => {
         const startTime = Date.now();
         const delaySend = setInterval(() => {
             try {
-                if (sendButton && sendButton.isConnected && !sendButton.hasAttribute('disabled')) { // send msg
+                if (!composerEl.isConnected) {
+                    clearInterval(delaySend);
+                    resolve('replaced');
+                } else if (sendButton && sendButton.isConnected && !sendButton.hasAttribute('disabled')) { // send msg
                     clearInterval(delaySend);
                     method.toLowerCase() == 'click' ? sendButton.click() : dispatchEnter(composerEl);
                     resolve('sent');
@@ -891,6 +918,24 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
     mztaFixComposerOverlap('composer-found');
     // counting turns is only needed by the completion diagnostics
     send_baseline = mztaDoDebug == 1 ? takeSendBaseline() : null;
+    verify_baseline = takeVerifyBaseline();
+    for (let refills = 0; ; refills++) {
+        fillComposer(textArea, msg);
+        const result = await sendAndVerify(textArea, method, refills < MAX_COMPOSER_REFILLS);
+        if (result === 'sent') return 0;   //everything is ok
+        if (result === 'failed') return -1;
+        // 'replaced': the page re-rendered the composer before the send, the prompt went with it
+        doLog("Composer replaced by the page before the send, filling the new one");
+        textArea = await findPromptInput(5000);
+        if (!textArea) {
+            console.error("[ThunderAI] The prompt could not be sent: no composer after the re-render!");
+            return -1;
+        }
+        current_composer_el = textArea;
+    }
+}
+
+function fillComposer(textArea, msg) {
     if (textArea.tagName === 'TEXTAREA') {
         // native setter, so React's value tracking notices the change
         Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(textArea, htmlToPlainText(msg));
@@ -910,6 +955,13 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
     textArea.dispatchEvent(new Event('input', { bubbles: true }));
     // lengths only, never the prompt itself
     doLog("Prompt input filled: tag " + textArea.tagName.toLowerCase() + ", content length " + (textArea.tagName === 'TEXTAREA' ? textArea.value.length : (textArea.textContent || '').length) + " (prompt length " + msg.length + ")");
+}
+
+// One send of the filled composer: 'sent', 'failed', or 'replaced' (only when canRefill)
+// when the composer left the page with no send evidence, so the caller can fill the new one
+async function sendAndVerify(textArea, method, canRefill) {
+    // before the send (button wait, sendWithButton) a refill is always safe, nothing was sent yet
+    const isReplaced = () => canRefill && !textArea.isConnected && !isSendVerified(textArea);
     //wait for the button to change from the audio button to the send button (from nov-2024),
     //the newer composer renders its submit button only once there is text
     const sendButtonWaitStart = Date.now();
@@ -919,10 +971,12 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
     let diagLogged = false;
     // for the send button diagnostics: the last method used, verified once the outcome is known
     const attempt = { strategy: null, method: null, verified: null };
+    if (isReplaced()) return 'replaced';
     if (sendButton) {
         const outcome = await sendWithButton(sendButton, textArea, method);
         // sendWithButton re-queries the button, so the strategy is read after it
         attempt.strategy = last_send_button_strategy;
+        if (outcome === 'replaced' && isReplaced()) return 'replaced';
         if (outcome === 'sent') {
             attempt.method = method.toLowerCase() == 'click' ? 'click' : 'enter';
         } else {
@@ -937,7 +991,11 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
         diagLogged = true;
         dispatchEnter(textArea);
     }
-    if (!(await waitForSendVerified(textArea, 1500))) {
+    let verified = await waitForSendVerified(textArea, 1500);
+    // a composer gone after the send gets more time to show send evidence: a refill would send twice
+    if (!verified && !textArea.isConnected) verified = await waitForSendVerified(textArea, 1500);
+    if (!verified) {
+        if (isReplaced()) return 'replaced';
         const form = textArea.closest('form');
         if (form && typeof form.requestSubmit === 'function') {
             doLog("Send not verified, trying form.requestSubmit()");
@@ -950,16 +1008,17 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
             await waitForSendVerified(textArea, 1500);
         }
         if (!isSendVerified(textArea)) {
+            if (isReplaced()) return 'replaced';
             console.error("[ThunderAI] The prompt could not be sent!");
             attempt.verified = false;
             if (!diagLogged) logSendButtonDiagnostics(textArea, attempt);
-            return -1;
+            return 'failed';
         }
     }
     doLog("Send verified");
     attempt.verified = true;
     if (mztaDoDebug == 1 && !diagLogged) logSendButtonDiagnostics(textArea, attempt);
-    return 0;   //everything is ok
+    return 'sent';
 }
 
 // Buttons of the last answer turn (copy, thumbs, regenerate...), outside the composer
