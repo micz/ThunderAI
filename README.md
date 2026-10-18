@@ -85,6 +85,8 @@ Drafts, templates, outbox and sent messages are skipped, so a draft is never pro
 
 ## Contributing
 
+Before opening an issue or a pull request, please read the [contributing guidelines](CONTRIBUTING.md): they explain how to report issues, help with translations and which branch to target with a pull request.
+
 - **Found a bug, or have an idea?** Open an issue using the [bug report or feature request templates](https://github.com/micz/ThunderAI/issues/new/choose).
 - **Do you want to help translate this add-on?** [Find out how!](https://micz.it/thunderbird-addon-thunderai/translate/) Translations are managed on [Weblate](https://hosted.weblate.org/engage/thunderai/) — please do not edit the locale files directly, only `_locales/en/messages.json` is edited by hand.
 
