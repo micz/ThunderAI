@@ -31,6 +31,21 @@
   <li>Many improvements.</li>
   <li>Some minor bugs fixed.</li>
 </ul>
+<h2>Version 5.0.4 - 30/09/2026</h2>
+      <ul>
+        <li><i>[Claude API]</i> Added support for Claude Opus 5.5, Fable 5.1 and Mythos 5.1. The requests are now more resilient to new Claude models: a model not yet known to ThunderAI no longer inherits the rules of an older version with a similar name, extended thinking is never turned off on an unknown model (the newer ones reject it), and if a model rejects a parameter the request is automatically repeated once without it. The selected <i>Effort</i> level is now always sent, so it is honoured even on models whose default level is different; leave it on <i>Default</i> to let the API decide [<a href="https://github.com/micz/ThunderAI/issues/936">#936</a>].</li>
+        <li><i>[ChatGPT Web]</i> The prompt is now sent to ChatGPT faster. The ThunderAI bar stays attached to the page and is never shown twice, and the prompt is sent only once. More detailed logs help adapt ThunderAI to future changes of the ChatGPT interface.</li>
+      </ul>
+<h2>Version 5.0.3 - 28/09/2026</h2>
+      <ul>
+        <li><i>[ChatGPT Web]</i> Fix: ThunderAI works again with the new ChatGPT interface. If the message box can't be found, ThunderAI asks you to click inside it and then continues. The Retry button now shows that a new attempt is in progress [<a href="https://github.com/micz/ThunderAI/issues/924">#924</a>].</li>
+        <li>Fix: the spam badge in the message pane no longer jitters, and it no longer makes the message body jump up and down [<a href="https://github.com/micz/ThunderAI/issues/929">#929</a>].</li>
+      </ul>
+<h2>Version 5.0.2 - 22/09/2026</h2>
+      <ul>
+        <li>Fix: the <i>{%tags_current_email%}</i> placeholder no longer breaks the summarize and the spam filter prompts, and the tags are now correctly resolved to their current names [<a href="https://github.com/micz/ThunderAI/issues/911">#911</a>].</li>
+        <li>Fix: the ThunderAI actions no longer fail silently when the message pane is not visible, like when it is hidden with F8, when no email is displayed or when more emails are selected. The summarize command from the context menu now opens the AI chat window in that case, the add tags command no longer assigns the tags without showing the confirmation dialog, and the other actions stop cleanly instead of leaving the working indicator spinning [<a href="https://github.com/micz/ThunderAI/issues/901">#901</a>].</li>
+      </ul>
 <h2>Version 5.0.1 - 16/09/2026</h2>
 <ul>
   <li>The spam report is now wider and easier to read: a scroll box with a fixed header row, truncated values shown in full as a tooltip, resizable rows and a button to expand the report to the whole tab [<a href="https://github.com/micz/ThunderAI/issues/895">#895</a>].</li>

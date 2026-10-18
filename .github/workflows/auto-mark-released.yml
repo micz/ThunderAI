@@ -92,7 +92,8 @@ jobs:
               return;
             }
 
-            const commentBody = `Released in version ${milestone.title}.`;
+            const releasesUrl = `https://github.com/${owner}/${repo}/releases`;
+            const commentBody = `Released in version [${milestone.title}](${releasesUrl}).`;
 
             // Avoid duplicate comment if the action reruns
             const existingComments = await github.paginate(
