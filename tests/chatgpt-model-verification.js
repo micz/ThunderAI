@@ -1,0 +1,479 @@
+// Test reloads must execute the current source, not a cached module from a previous run.
+const { mzta_script } = await import('../js/mzta-chatgpt.js?test=' + Date.now());
+
+const fixture = await (await fetch('./fixtures/chatgpt-model-picker.html')).text();
+const messages = await (await fetch('../_locales/en/messages.json')).json();
+const defaults = {
+    mztaGPTModel: 'gpt-6', mztaDoDebug: '0', mztaDoCustomText: '0',
+    mztaPromptName: '[Model verification test]', mztaPhDefVal: '1',
+    mztaUseDiffViewer: '0', mztaOriginalText: '', mztaReplyType: 'reply_sender',
+    mztaWinId: 0, mztaStatusPageDesc: '', mztaForceCompletionDesc: '', mztaForceCompletionTitle: ''
+};
+const prelude = Object.entries(defaults).map(([key, value]) => 'let ' + key + '=' + JSON.stringify(value) + ';').join('\n');
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
+const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+
+// Keep production timeout values. Move a per-frame clock instead of waiting 15s per case.
+function installClock(win) {
+    let now = 0;
+    let sequence = 0;
+    const jobs = new Map();
+    const observers = new Set();
+    win.Date.now = () => now;
+    win.setTimeout = (fn, delay = 0) => {
+        const id = ++sequence;
+        jobs.set(id, { fn, at: now + delay, repeat: 0 });
+        return id;
+    };
+    win.setInterval = (fn, delay) => {
+        const id = ++sequence;
+        jobs.set(id, { fn, at: now + delay, repeat: delay });
+        return id;
+    };
+    win.clearTimeout = win.clearInterval = id => jobs.delete(id);
+    const NativeObserver = win.MutationObserver;
+    win.MutationObserver = class extends NativeObserver {
+        observe(...args) { observers.add(this); return super.observe(...args); }
+        disconnect() { observers.delete(this); return super.disconnect(); }
+    };
+    return {
+        count: () => ({ timers: jobs.size, observers: observers.size }),
+        async advance(ms) {
+            const end = now + ms;
+            await flush();
+            while (true) {
+                const next = [...jobs].filter(([, job]) => job.at <= end)
+                    .sort((a, b) => a[1].at - b[1].at || a[0] - b[0])[0];
+                if (!next) break;
+                const [id, job] = next;
+                now = job.at;
+                if (job.repeat) job.at += job.repeat;
+                else jobs.delete(id);
+                job.fn();
+                await flush();
+            }
+            now = end;
+            await flush();
+        }
+    };
+}
+
+async function setup(model = 'gpt-6', effort = 'none') {
+    const frame = document.createElement('iframe');
+    document.body.append(frame);
+    const win = frame.contentWindow;
+    const doc = win.document;
+    doc.body.innerHTML = fixture;
+    const clock = installClock(win);
+    const trigger = doc.querySelector('[data-selected-reasoning-effort]');
+    trigger.setAttribute('data-selected-reasoning-effort', effort);
+    const events = { sends: 0, modelClicks: 0, opens: 0, closes: 0, viewClicks: 0 };
+
+    function wireTrigger(button) {
+        // Radix opens via keydown, not a synthetic click on the trigger.
+        button.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' || button.getAttribute('aria-expanded') === 'true') return;
+            events.opens++;
+            button.setAttribute('aria-expanded', 'true');
+            const menu = doc.getElementById('model-menu-fixture').content.firstElementChild.cloneNode(true);
+            menu.setAttribute('aria-labelledby', button.id);
+            menu.querySelector('[data-model-picker-view-toggle]').addEventListener('click', () => {
+                events.viewClicks++;
+                const view = menu.querySelector('[data-model-picker-view]');
+                // The live simple-view control enters advanced; it is not a back toggle.
+                const advanced = true;
+                view.setAttribute('data-model-picker-view', advanced ? 'advanced' : 'simple');
+                const simpleTrack = menu.querySelector('[data-model-picker-view-toggle]').closest('[data-active]');
+                simpleTrack.setAttribute('aria-hidden', advanced ? 'true' : 'false');
+                simpleTrack.setAttribute('data-active', advanced ? 'false' : 'true');
+                simpleTrack.toggleAttribute('inert', advanced);
+                const track = menu.querySelector('[role="menuitemradio"]').closest('[data-active]');
+                track.setAttribute('aria-hidden', advanced ? 'false' : 'true');
+                track.setAttribute('data-active', advanced ? 'true' : 'false');
+                track.toggleAttribute('inert', !advanced);
+            });
+            menu.addEventListener('keydown', e => {
+                if (e.key !== 'Escape') return;
+                events.closes++;
+                button.setAttribute('aria-expanded', 'false');
+                menu.remove();
+            });
+            menu.querySelectorAll('[role="menuitemradio"]').forEach(row => row.addEventListener('click', () => events.modelClicks++));
+            doc.body.append(menu);
+            menu.focus();
+        });
+    }
+    wireTrigger(trigger);
+    doc.getElementById('composer-submit-button').addEventListener('click', () => {
+        events.sends++;
+        doc.getElementById('prompt-textarea').innerHTML = '';
+    });
+    const browser = {
+        i18n: { getMessage: key => messages[key]?.message || key },
+        runtime: { getURL: path => path, getManifest: () => ({ version: 'test' }),
+            onMessage: { addListener() {} }, sendMessage: async () => {} }
+    };
+    // Evaluate the full production script, not a test copy of the verifier.
+    // Completion/layout handling is outside this change; the real composer/send code stays active.
+    const api = new win.Function('browser', prelude + mzta_script + `
+        chatgpt_isIdle = async () => {};
+        showForceCompletionHint = async () => {};
+        operation_done = () => {};
+        installComposerOverlapWatch = () => {};
+        mztaFixComposerOverlap = () => {};
+        return { checkGPTModel, doProceed, isGPTModelSelected,
+            init(model) { mztaGPTModel = model; current_action = '0'; addCustomDiv('0', 0, -1); }
+        };
+    `)(browser);
+    api.init(model);
+    await clock.advance(1000); // Settle the existing UI layout timer before measuring verifier resources.
+    const baseline = clock.count();
+    return { api, doc, win, clock, events, trigger, wireTrigger,
+        message: { prompt: 'ThunderAI model verification test.', prompt_info: {} },
+        assertClean() {
+            const count = clock.count();
+            assert(count.timers === baseline.timers, 'Verification timers remain active: ' + JSON.stringify(count));
+            assert(count.observers === baseline.observers, 'Verification observers remain connected: ' + JSON.stringify(count));
+            assert(events.modelClicks === 0, 'Model selection was changed');
+        },
+        dispose() { frame.remove(); }
+    };
+}
+
+const tests = [];
+const test = (name, run) => tests.push({ name, run });
+const warningVisible = h => h.doc.getElementById('mzta-model_warn').style.display === 'inline-block';
+const waitForTimeout = async h => { await h.clock.advance(15000); assert(warningVisible(h), 'Timeout warning is missing'); h.assertClean(); };
+const openMenu = h => h.trigger.dispatchEvent(new h.win.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+for (const [id, effort] of [['gpt-6', 'none'], ['gpt-6-thinking', 'medium']]) {
+    test(id + ': automatically sends once through the actual send function', async h => {
+        h.trigger.setAttribute('data-selected-reasoning-effort', effort);
+        h.api.init(id);
+        await Promise.all([h.api.doProceed(h.message), h.clock.advance(1000)]);
+        assert(h.events.sends === 1, 'Send count: ' + h.events.sends);
+        assert(!warningVisible(h), 'Warning shown after successful verification');
+        assert(h.events.opens === 1 && h.events.closes === 1, 'The opened menu was not closed');
+        h.assertClean();
+    });
+}
+test('Selected model comparison derives full names from the supplied ID', async h => {
+    openMenu(h);
+    const menu = h.doc.querySelector('[role="menu"]');
+    menu.querySelector('[data-model-picker-view-toggle]').click();
+    menu.querySelector('[data-model-selected] [data-menu-row-content] > span').textContent = '  Fixture-Model  ';
+    // Exercise the shared comparator only; this does not enable an unverified URL alias.
+    assert(h.api.isGPTModelSelected(h.trigger, menu, ' FIXTURE-MODEL ', 'none'), 'Expected name was not derived from the requested ID');
+    assert(h.api.isGPTModelSelected(h.trigger, menu, 'fixture-model-thinking', 'none'), 'Terminal thinking suffix was not removed');
+    assert(!h.api.isGPTModelSelected(h.trigger, menu, 'fixture-model-thinking-preview', 'none'), 'Removed a non-terminal thinking suffix');
+});
+for (const label of ['GPT-6.1', 'GPT-6 Pro']) {
+    test('GPT-6 request rejects similar selected name ' + label, async h => {
+        h.doc.getElementById('model-menu-fixture').content.querySelector('[data-model-selected] [data-menu-row-content] > span').textContent = label;
+        void h.api.doProceed(h.message);
+        await waitForTimeout(h);
+        assert(h.events.sends === 0, 'Sent with a different model name');
+    });
+}
+test('Rejects a different selected model', async h => {
+    const template = h.doc.getElementById('model-menu-fixture').content;
+    template.querySelector('[data-model-selected] [data-menu-row-content] > span').textContent = 'GPT-5.6 Sol';
+    void h.api.doProceed(h.message);
+    await waitForTimeout(h);
+    assert(h.events.sends === 0, 'Sent with a different model');
+});
+for (const effort of ['medium', 'high', 'unknown']) {
+    test('Instant request rejects effort ' + effort, async h => {
+        h.trigger.setAttribute('data-selected-reasoning-effort', effort);
+        void h.api.doProceed(h.message);
+        await waitForTimeout(h);
+        assert(h.events.sends === 0 && h.events.opens === 0, 'Sent or opened the menu with the wrong effort');
+    });
+}
+test('Medium request rejects Instant', async h => {
+    h.api.init('gpt-6-thinking');
+    void h.api.doProceed(h.message);
+    await waitForTimeout(h);
+    assert(h.events.sends === 0, 'Sent with Instant');
+});
+test('Unselected GPT-6 and body text do not pass verification', async h => {
+    const rows = h.doc.getElementById('model-menu-fixture').content.querySelectorAll('[role="menuitemradio"]');
+    rows[0].setAttribute('aria-checked', 'false'); rows[0].removeAttribute('data-model-selected');
+    rows[1].setAttribute('aria-checked', 'true'); rows[1].setAttribute('data-model-selected', 'true');
+    const text = h.doc.createElement('p'); text.textContent = 'GPT-6 Instant'; h.doc.body.append(text);
+    void h.api.doProceed(h.message);
+    await waitForTimeout(h);
+    assert(h.events.sends === 0, 'Sent based on text outside the selected state');
+});
+test('Missing DOM does not pass as a free account', async h => {
+    h.trigger.remove();
+    void h.api.doProceed(h.message);
+    await waitForTimeout(h);
+    assert(h.events.sends === 0, 'Sent without model DOM');
+});
+test('Rejects an unrelated menu', async h => {
+    h.doc.getElementById('model-menu-fixture').content.firstElementChild.setAttribute('aria-labelledby', 'other');
+    openMenu(h);
+    h.doc.querySelector('[role="menu"]').setAttribute('aria-labelledby', 'other');
+    void h.api.doProceed(h.message);
+    await waitForTimeout(h);
+    assert(h.events.sends === 0, 'Sent based on an unrelated menu');
+});
+test('Rejects a hidden selected item', async h => {
+    h.doc.getElementById('model-menu-fixture').content.querySelector('[data-model-selected]').hidden = true;
+    void h.api.doProceed(h.message);
+    await waitForTimeout(h);
+    assert(h.events.sends === 0, 'Sent based on a hidden selected item');
+});
+test('Rejects inconsistent checked and selected attributes', async h => {
+    h.doc.getElementById('model-menu-fixture').content.querySelector('[data-model-selected]').removeAttribute('data-model-selected');
+    void h.api.doProceed(h.message);
+    await waitForTimeout(h);
+    assert(h.events.sends === 0, 'Sent with a missing selection attribute');
+});
+test('Queries fresh DOM and sends after delayed rendering', async h => {
+    h.trigger.remove();
+    void h.api.doProceed(h.message);
+    await h.clock.advance(500);
+    h.doc.querySelector('main').append(h.trigger);
+    await h.clock.advance(1000);
+    assert(h.events.sends === 1, 'Did not send after delayed DOM rendering'); h.assertClean();
+});
+test('Sends once despite trigger replacement and duplicate calls during verification', async h => {
+    h.trigger.setAttribute('data-selected-reasoning-effort', 'high');
+    void h.api.doProceed(h.message); void h.api.doProceed(h.message);
+    await h.clock.advance(100);
+    const replacement = h.trigger.cloneNode(true);
+    replacement.setAttribute('data-selected-reasoning-effort', 'none');
+    h.wireTrigger(replacement); h.trigger.replaceWith(replacement);
+    await h.clock.advance(1000);
+    await h.api.doProceed(h.message);
+    assert(h.events.sends === 1, 'Send count after re-render: ' + h.events.sends); h.assertClean();
+});
+test('Matching DOM after timeout does not trigger automatic sending', async h => {
+    h.trigger.setAttribute('data-selected-reasoning-effort', 'high');
+    void h.api.doProceed(h.message);
+    await waitForTimeout(h);
+    h.trigger.setAttribute('data-selected-reasoning-effort', 'none');
+    await h.clock.advance(1000);
+    assert(h.events.sends === 0, 'Sent automatically after timeout'); h.assertClean();
+});
+test('Sends once after timeout despite repeated manual clicks and duplicate requests', async h => {
+    h.trigger.remove();
+    void h.api.doProceed(h.message);
+    await waitForTimeout(h);
+    const button = h.doc.getElementById('mzta-btn_model');
+    button.click(); button.click(); void h.api.doProceed(h.message);
+    await h.clock.advance(1000);
+    button.click(); await h.api.doProceed(h.message);
+    assert(h.events.sends === 1, 'Manual send count: ' + h.events.sends);
+    assert(!warningVisible(h), 'Warning remains after manual resume'); h.assertClean();
+});
+test('Manual approval is not reused for the next verification', async h => {
+    h.trigger.remove();
+    let first = false; h.api.checkGPTModel('gpt-6').then(() => { first = true; });
+    await waitForTimeout(h);
+    h.doc.getElementById('mzta-btn_model').click(); await flush();
+    assert(first, 'Manual resume failed');
+    let second = false; h.api.checkGPTModel('gpt-6').then(() => { second = true; });
+    await h.clock.advance(1000);
+    assert(!second, 'Manual approval leaked into the next verification');
+    h.win.dispatchEvent(new h.win.Event('pagehide')); await flush(); h.assertClean();
+});
+test('A match just before the deadline succeeds without a timeout warning', async h => {
+    h.trigger.setAttribute('data-selected-reasoning-effort', 'high');
+    void h.api.doProceed(h.message);
+    await h.clock.advance(14999);
+    h.trigger.setAttribute('data-selected-reasoning-effort', 'none');
+    await h.clock.advance(1001);
+    assert(h.events.sends === 1 && !warningVisible(h), 'Success/timeout race failed'); h.assertClean();
+});
+for (const [model, effort] of [['gpt-6', 'none'], ['gpt-6-thinking', 'medium']]) {
+    test(model + ': preserves an already open simple menu after success', async h => {
+        h.api.init(model); h.trigger.setAttribute('data-selected-reasoning-effort', effort);
+        openMenu(h);
+        void h.api.doProceed(h.message);
+        await h.clock.advance(1000);
+        assert(h.events.sends === 1 && h.events.closes === 0, 'Closed a menu opened by the user');
+        assert(h.doc.querySelector('[data-model-picker-view="simple"]'), 'Menu view was not restored'); h.assertClean();
+    });
+    test(model + ': preserves an already open simple menu after timeout', async h => {
+        h.api.init(model); h.trigger.setAttribute('data-selected-reasoning-effort', effort);
+        h.doc.getElementById('model-menu-fixture').content.querySelector('[data-model-selected] span').textContent = 'Other';
+        openMenu(h);
+        void h.api.doProceed(h.message); await waitForTimeout(h);
+        assert(h.events.sends === 0 && h.events.closes === 0, 'Sent or closed a menu opened by the user');
+        assert(h.doc.querySelector('[data-model-picker-view="simple"]'), 'Menu view was not restored on timeout'); h.assertClean();
+    });
+}
+for (const [model, effort] of [['gpt-6', 'none'], ['gpt-6-thinking', 'medium']]) {
+    for (const view of ['simple', 'advanced']) {
+        for (const matches of [true, false]) {
+            test(model + ': preserves ' + view + ' view and focus on ' + (matches ? 'success' : 'timeout'), async h => {
+                h.trigger.setAttribute('data-selected-reasoning-effort', effort);
+                openMenu(h);
+                const menu = h.doc.querySelector('[role="menu"]');
+                if (view === 'advanced') menu.querySelector('[data-model-picker-view-toggle]').click();
+                const focused = view === 'simple' ? menu.querySelector('[data-model-picker-view-toggle]') : menu.querySelector('[data-model-selected]');
+                focused.focus();
+                if (!matches) menu.querySelector('[data-model-selected] span').textContent = 'Other';
+                const clicks = h.events.viewClicks;
+                const pending = h.api.checkGPTModel(model);
+                if (matches) assert(await pending, 'Matching model failed');
+                else await waitForTimeout(h);
+                assert(menu.isConnected && menu.querySelector('[data-model-picker-view="' + view + '"]'), 'Menu or view changed');
+                assert(h.doc.activeElement === focused, 'Menu focus changed');
+                assert(h.events.viewClicks === clicks && h.events.closes === 0, 'Verifier changed the menu');
+                if (!matches) { h.win.dispatchEvent(new h.win.Event('pagehide')); await pending; }
+                h.assertClean();
+            });
+        }
+    }
+    test(model + ': restores composer focus after automatically opening the menu', async h => {
+        h.trigger.setAttribute('data-selected-reasoning-effort', effort);
+        const composer = h.doc.getElementById('prompt-textarea'); composer.focus();
+        assert(await h.api.checkGPTModel(model), 'Matching model failed');
+        assert(h.doc.activeElement === composer && h.events.closes === 1, 'Composer focus was not restored');
+        assert(h.events.viewClicks === 0, 'Verifier expanded the menu'); h.assertClean();
+    });
+}
+for (const variant of ['unexpected-track', 'nested-hidden', 'duplicate-selection']) {
+    test('Rejects ambiguous or hidden selected state: ' + variant, async h => {
+        openMenu(h);
+        const menu = h.doc.querySelector('[role="menu"]');
+        const row = menu.querySelector('[data-model-selected]');
+        if (variant === 'unexpected-track') row.parentElement.removeAttribute('data-active');
+        if (variant === 'nested-hidden') row.setAttribute('aria-hidden', 'true');
+        if (variant === 'duplicate-selection') row.parentElement.append(row.cloneNode(true));
+        assert(!h.api.isGPTModelSelected(h.trigger, menu, 'gpt-6', 'none'), 'Accepted hidden or ambiguous selection');
+    });
+}
+test('Closes its own menu on failure', async h => {
+    h.doc.getElementById('model-menu-fixture').content.querySelector('[data-model-selected] span').textContent = 'Other';
+    void h.api.doProceed(h.message); await waitForTimeout(h);
+    assert(h.events.opens === 1 && h.events.closes === 1, 'Menu remains open after failure');
+});
+test('Preserves focus moved by the user during verification', async h => {
+    h.doc.getElementById('model-menu-fixture').content.querySelector('[data-model-selected] span').textContent = 'Other';
+    void h.api.doProceed(h.message); await h.clock.advance(100);
+    const composer = h.doc.getElementById('prompt-textarea'); composer.focus();
+    await h.clock.advance(14900);
+    assert(h.doc.activeElement === composer, 'Took focus away from the user'); h.assertClean();
+});
+test('Manual resume preserves a menu reopened by the user after timeout', async h => {
+    h.doc.getElementById('model-menu-fixture').content.querySelector('[data-model-selected] span').textContent = 'Other';
+    void h.api.doProceed(h.message); await waitForTimeout(h);
+    openMenu(h);
+    h.doc.getElementById('mzta-btn_model').click(); await h.clock.advance(1000);
+    assert(h.events.sends === 1 && h.events.closes === 1, 'Manual resume closed the new menu'); h.assertClean();
+});
+test('Page exit after timeout cancels the manual wait', async h => {
+    h.trigger.remove();
+    const pending = h.api.doProceed(h.message); await waitForTimeout(h);
+    h.win.dispatchEvent(new h.win.Event('pagehide')); await pending;
+    h.doc.getElementById('mzta-btn_model').click(); await h.clock.advance(1000);
+    assert(h.events.sends === 0, 'Sent after the manual wait was cancelled'); h.assertClean();
+});
+test('Page exit cancels verification without sending', async h => {
+    h.trigger.setAttribute('data-selected-reasoning-effort', 'high');
+    const pending = h.api.doProceed(h.message);
+    h.win.dispatchEvent(new h.win.Event('pagehide')); await pending;
+    assert(h.events.sends === 0, 'Sent during page exit'); h.assertClean();
+});
+test('An empty model setting sends without verification', async h => {
+    h.api.init(''); h.trigger.remove();
+    void h.api.doProceed(h.message); await h.clock.advance(1000);
+    assert(h.events.sends === 1 && h.events.opens === 0, 'Empty model setting regression'); h.assertClean();
+});
+test('Preserves legacy display-name verification', async h => {
+    h.api.init('5 Thinking'); h.trigger.querySelector('span').textContent = '5 Thinking';
+    void h.api.doProceed(h.message); await h.clock.advance(1000);
+    assert(h.events.sends === 1 && h.events.opens === 0, 'Legacy model verification regression'); h.assertClean();
+});
+test('Preserves the legacy free-account branch', async h => {
+    h.api.init('5'); h.trigger.remove();
+    void h.api.doProceed(h.message); await h.clock.advance(1000);
+    assert(h.events.sends === 1, 'Legacy free-account branch regression'); h.assertClean();
+});
+test('A legacy model mismatch allows manual resume after a bounded wait', async h => {
+    h.api.init('5 Thinking');
+    void h.api.doProceed(h.message); await waitForTimeout(h);
+    assert(h.events.sends === 0, 'Sent despite a legacy model mismatch');
+    h.doc.getElementById('mzta-btn_model').click(); await h.clock.advance(1000);
+    assert(h.events.sends === 1, 'Legacy manual resume regression'); h.assertClean();
+});
+
+test('The model menu portal and items remain clickable over the Close bar', async h => {
+    openMenu(h);
+    const menu = h.doc.querySelector('[role="menu"]');
+    menu.querySelector('[data-model-picker-view-toggle]').click();
+    const wrapper = h.doc.createElement('div');
+    wrapper.setAttribute('data-radix-popper-content-wrapper', '');
+    // The real Radix portal and menu both have z-index:50. A transformed portal
+    // establishes its own stacking context, even if the child menu is raised.
+    wrapper.style.cssText = 'position:fixed;bottom:0;left:20px;width:300px;height:90px;z-index:50;transform:translate(0,0)';
+    menu.style.cssText = 'position:relative;height:90px;background:white;z-index:50';
+    h.doc.body.append(wrapper); wrapper.append(menu);
+    await flush();
+    const row = menu.querySelector('[data-model-selected]');
+    const rect = row.getBoundingClientRect();
+    const bar = h.doc.querySelector('.mzta-header-fixed');
+    assert(rect.top > bar.getBoundingClientRect().top, 'Test menu does not overlap the Close bar');
+    const hit = h.doc.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    assert(hit && row.contains(hit), 'Close bar intercepts model menu clicks');
+    assert(h.win.getComputedStyle(wrapper).zIndex === '1001', 'Menu parent portal is behind the bar');
+    assert(h.win.getComputedStyle(menu).zIndex === '1001', 'Model menu stacking order was not adjusted');
+});
+test('Preserves other menu stacking and the Close button', async h => {
+    const wrapper = h.doc.createElement('div');
+    wrapper.setAttribute('data-radix-popper-content-wrapper', '');
+    wrapper.style.cssText = 'position:fixed;bottom:0;left:20px;width:100px;height:60px;z-index:50';
+    wrapper.innerHTML = '<div role="menu" style="z-index:50">Other menu</div>';
+    h.doc.body.append(wrapper);
+    assert(h.win.getComputedStyle(wrapper).zIndex === '50', 'Other menu portal stacking order changed');
+    assert(h.win.getComputedStyle(wrapper.firstElementChild).zIndex === '50', 'Other menu stacking order changed');
+    const close = h.doc.getElementById('mzta-btn_ok'); close.style.display = 'inline';
+    const rect = close.getBoundingClientRect();
+    const hit = h.doc.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    assert(hit && close.contains(hit), 'Close button is not clickable');
+});
+
+let passed = 0;
+for (const { name, run } of tests) {
+    const row = document.createElement('li');
+    document.getElementById('results').append(row);
+    let h;
+    try {
+        h = await setup(); await run(h);
+        row.textContent = 'PASS — ' + name; row.className = 'pass'; passed++;
+    } catch (error) {
+        row.textContent = 'FAIL — ' + name + ': ' + error.stack; row.className = 'fail';
+    } finally { h?.dispose(); }
+}
+document.getElementById('summary').textContent = passed + '/' + tests.length + ' passed';
+document.title = 'ThunderAI: ' + passed + '/' + tests.length + ' passed';
+
+// ChatGPT consumes/removes the URL model parameter after loading. Keep the requested
+// ID explicit, like background.js does; the URL is never proof of the selected model.
+const liveMessages = Object.fromEntries(Object.entries(messages).filter(([key]) =>
+    key.startsWith('chatgpt_') || mzta_script.includes('"' + key + '"') || mzta_script.includes("'" + key + "'")));
+function updateLiveScript() {
+document.getElementById('live-script').value = `(() => {
+    const browser = {
+        i18n: { getMessage: key => (${JSON.stringify(liveMessages)})[key]?.message || key },
+        runtime: { getManifest: () => ({version: 'Web test'}), getURL: () => 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+            onMessage: {addListener(fn) { this.receive = fn; }}, sendMessage: async () => {} }
+    };
+    ${prelude}
+    mztaGPTModel = ${JSON.stringify(document.getElementById('live-model').value)};
+    mztaDoDebug = '1';
+    ${mzta_script}
+    const composer = queryPromptInput([document])?.el;
+    if (!composer || (composer.tagName === 'TEXTAREA' ? composer.value : composer.textContent).trim()) {
+        throw new Error('Use an empty composer; the test must not overwrite a draft.');
+    }
+    browser.runtime.onMessage.receive({command: 'chatgpt_send', prompt: 'ThunderAI model verification test. Reply with only OK.', action: '0', tabId: 0, mailMessageId: -1, prompt_info: {}});
+})()`;
+}
+document.getElementById('live-model').addEventListener('change', updateLiveScript);
+updateLiveScript();
