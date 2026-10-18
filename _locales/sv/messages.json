@@ -1,4 +1,7 @@
 {
+    "prefs_api_extra_body": {
+        "message": "Extra innehållsdata"
+    },
     "extensionDescription": {
         "message": "Använd ChatGPT, Google Gemini, Claude eller Ollama för att förbättra dina e-postmeddelanden!"
     },
@@ -77,9 +80,6 @@
     "prompt_classify": {
         "message": "Klassificera"
     },
-    "customPrompts_reloading_menus": {
-        "message": "Laddar om menyer..."
-    },
     "customPrompts_form_required_fields": {
         "message": "Obligatoriska fält"
     },
@@ -103,9 +103,6 @@
     },
     "prefs_OptionText_release_notes": {
         "message": "Versionsinformation"
-    },
-    "prefsInfoTitle": {
-        "message": "Viktig information"
     },
     "placeholder_tags_current_email": {
         "message": "E-posttaggar"
@@ -203,15 +200,6 @@
     "customPrompts_reindexing_list": {
         "message": "Omindexerar listan..."
     },
-    "customPrompts_filtering_prompts": {
-        "message": "Filtrerar promptar..."
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "Sparar standardpromptar..."
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "Sparar anpassade promptar..."
-    },
     "customPrompts_saved": {
         "message": "Promptar sparade!"
     },
@@ -220,9 +208,6 @@
     },
     "customPrompts_form_label_ID_rules": {
         "message": "Måste vara unikt, med gemener och utan mellanslag"
-    },
-    "customPrompts_form_label_Text": {
-        "message": "Prompttext"
     },
     "customPrompts_form_label_need_selected": {
         "message": "Textval behövs"
@@ -238,9 +223,6 @@
     },
     "customPrompts_form_label_use_diff_viewer_title": {
         "message": "Tillgänglig när \"Åtgärd\" är \"Ersätt text\"."
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Lägg till prompten"
     },
     "customPrompts_add_to_menu": {
         "message": "Lägg till i meny"
@@ -279,7 +261,7 @@
         "message": "Prompt"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Standardpromptar kan inte redigeras. Du kan inaktivera dem och sedan kopiera prompttexten och klistra in den i en ny för att skapa en modifierad version."
+        "message": "Standardpromptar kan inte redigeras. Använd ”Duplicera och redigera” för att skapa en modifierad version. Använd inställningarna för menyordning för att dölja en prompt från menyerna."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Du kan importera och exportera promptar. Befintliga promptar med samma ID kommer att skrivas över. Promptar med nya ID:n kommer att läggas till."
@@ -335,26 +317,8 @@
     "prefsInfoDesc_4": {
         "message": "För att använda den här integrationen behöver du konfigurera en lokal server som är kompatibel med OpenAI API, som LM Studio. När servern är igång anger du dess adress i det angivna fältet i applikationen. För att säkerställa korrekt kommunikation mellan ThunderAI och den lokala servern, kom ihåg att ställa in CORS-inställningarna korrekt."
     },
-    "prefsInfoDesc_5": {
-        "message": "Kom ihåg att du kan öppna ThunderAI-menyn med kortkommandot CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Du kan ändra genvägen genom att klicka på kugghjulsikonen längst upp till höger på den här sidan och välja \"Hantera genväg för tillägg\"."
-    },
-    "prefsDonation_1": {
-        "message": "Gillar du det här tillägget?"
-    },
-    "prefsDonation_2": {
-        "message": "Överväg att göra en donation!"
-    },
     "backToOptionsText": {
         "message": "Alternativ"
-    },
-    "TranslateText": {
-        "message": "Vill du hjälpa till att översätta det här tillägget?"
-    },
-    "TranslateLink": {
-        "message": "Ta reda på hur!"
     },
     "customPrompts_ExportAll": {
         "message": "Exportera alla promptar"
@@ -367,9 +331,6 @@
     },
     "customPrompts_start_import": {
         "message": "Startar import av anpassade promptar..."
-    },
-    "customPrompts_import_completed": {
-        "message": "Import av anpassade promptar är klar! Du måste klicka på knappen \"Spara alla\" för att spara dina ändringar."
     },
     "importPrompts_invalidFile": {
         "message": "Filen du försöker importera är inte en giltig fil med anpassade promptar."
@@ -575,9 +536,6 @@
     "chatgpt_btn_model": {
         "message": "Använd den nuvarande modellen"
     },
-    "AllowedValues": {
-        "message": "Tillåtna värden"
-    },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Du kan använda ytterligare dataplatshållare."
     },
@@ -649,9 +607,6 @@
     },
     "prefs_SurveyLinkText2": {
         "message": "Dela din feedback"
-    },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Infoga modell manuellt"
     },
     "OpenAIComp_force_model_ask": {
         "message": "Ange här modellnamnet du vill använda."
@@ -770,17 +725,11 @@
     "no_string": {
         "message": "Nej"
     },
-    "noActiveCalendar": {
-        "message": "Ingen redigerbar kalender hittades!"
-    },
     "btn_show_differences": {
         "message": "Visa skillnader"
     },
     "chatgpt_win_diff_title": {
         "message": "Skillnader mellan originaltexten och den modifierade texten"
-    },
-    "apiwebchat_you": {
-        "message": "Du"
     },
     "apiwebchat_info": {
         "message": "Information"
@@ -817,9 +766,6 @@
     },
     "customPrompts_hide_additional_info": {
         "message": "Dölj ytterligare egenskaper"
-    },
-    "customPrompts_show_additional_info_show": {
-        "message": "Ytterligare egenskaper"
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Om ett projekt anges i alternativen eller i en prompt kommer det att åsidosätta inställningen för anpassad GPT."
@@ -916,7 +862,7 @@
         "message": "Aktivera tänkande"
     },
     "prefs_ollama_think_Info": {
-        "message": "Om markerat kommer modellen att tänka innan den svarar. Det här alternativet fungerar bara med modeller som stöder funktionen \"tänk\"."
+        "message": "Tvinga modellen att tänka efter innan den svarar. \"Model default\" skickar ingenting och låter modellen bestämma, vilket på vissa modeller innebär att den tänker efter ändå: välj \"Off\" för att uttryckligen stänga av tänkandet. De tillgängliga tänknivåerna beror på den valda modellen och listas efter att en modell har valts."
     },
     "chatgpt_win_change_reply_type": {
         "message": "Klicka för att ändra svarstypen"
@@ -1088,9 +1034,6 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Observera att alla <br>-taggar i AI:ns svar kommer att ersättas med radbrytningar."
-    },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Rensa modelllistan"
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Är du säker på att du vill rensa modellistan? Den här åtgärden kan inte ångras."
@@ -1323,9 +1266,6 @@
     "prefs_OptionText_calendar_no_selection_Info": {
         "message": "Om markerad behöver du inte markera någon text. Hela meddelandets innehåll kommer att användas för att hämta kalenderhändelsen."
     },
-    "customPrompts_btnCopy": {
-        "message": "Kopiera"
-    },
     "copy_text": {
         "message": "kopiera"
     },
@@ -1418,20 +1358,8 @@
             }
         }
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Aktivera automatisk AI-sammanfattning för förhandsgranskningar av meddelanden"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Om markerat kommer ThunderAI automatiskt att generera och visa AI-sammanfattningar ovanför e-postmeddelanden när de öppnas. Observera att detta innebär att alla meddelanden du förhandsgranskar omedelbart skickas till den konfigurerade AI-tjänsten."
-    },
-    "auto_summary_title": {
-        "message": "ThunderAI sammanfattning"
-    },
-    "auto_summary_generating": {
-        "message": "Genererar AI-sammanfattning..."
-    },
-    "auto_summary_failed": {
-        "message": "Misslyckades att generera AI-sammanfattning. Bekräfta dina inställningar och försök igen."
     },
     "prefs_OptionText_summarize_auto": {
         "message": "Sammanfatta meddelanden automatiskt"
@@ -1462,9 +1390,6 @@
     },
     "get_ai_summary": {
         "message": "AI sammanfattning"
-    },
-    "summarize_collapse": {
-        "message": "Fäll in sammanfattning"
     },
     "summarize_generating": {
         "message": "Genererar sammanfattning..."
@@ -1569,7 +1494,7 @@
         "message": "Uteslut språk"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Kommaavgränsad lista med språkkoder (t.ex. en, fr, it) som ska hoppas över för automatisk översättning. Om e-postmeddelandet är på ett av dessa språk kommer det inte att översättas automatiskt eller så visas inte den manuella knappen."
+        "message": "Kommaavgränsad lista med språkkoder (t.ex. en, fr, it) som inte ska översättas. Om e-postmeddelandet är på ett av dessa språk hoppar AI:n över översättningen och rapporterar den som överhoppad."
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "Prompten som beskriver översättningsuppgiften:"
@@ -1643,10 +1568,10 @@
         "message": "Lista över e-postadresser att hoppa över"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "E-postmeddelanden från dessa adresser kommer inte att skickas till AI:n för skräppostfiltrering."
+        "message": "E-postmeddelanden från dessa adresser eller domäner kommer inte att skickas till AI:n för skräppostfiltrering."
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "Lägg till en e-postadress per rad, eller separera med kommatecken."
+        "message": "Lägg till en post per rad, eller separera med kommatecken. En post kan vara en fullständig e-postadress (user@domain.com) eller en hel domän (@domain.com)."
     },
     "prefs_OptionText_spamfilter_skip_addressbook": {
         "message": "Hoppa över adressböckernas adresser"
@@ -1756,8 +1681,8 @@
     "prefs_OptionText_special_command_timeout_Info": {
         "message": "Tid i millisekunder innan en AI-begäran som har hängt sig (automatisk tillägg av taggar, spamfilter, sammanfattning, översättning) avbryts. Öka den om du använder långsamma lokala modeller. Detta gäller endast API-baserade anslutningar, inte ChatGPT-webbgränssnittet."
     },
-    "prefs_OptionText_summarize_max_messages": {
-        "message": "Max antal meddelanden"
+    "prefs_OptionText_max_messages": {
+        "message": "Max meddelanden"
     },
     "prefs_OptionText_summarize_max_messages_Info": {
         "message": "Maximalt antal meddelanden som kan sammanfattas samtidigt i webbchattläge. Över denna gräns blockeras åtgärden med en varning. Ställ in på 0 för ingen gräns."
@@ -2025,9 +1950,6 @@
     "prefs_OptionText_diff_granularity_info": {
         "message": "Hur ändringsväljaren jämför originaltexten med svaret. \"Ord\" passar för att korrigera stavning och grammatik; \"Meningar\" är lättare att läsa när svaret skriver om hela meningar. Observera att i en text som består av en enda mening visar \"Meningar\" hela texten som en ändring. Du kan också växla mellan de två medan du granskar ändringarna."
     },
-    "prefs_OptionText_openai_comp_extra_body": {
-        "message": "Extra innehållsdata"
-    },
     "prefs_OptionText_openai_comp_extra_body_info": {
         "message": "Ytterligare parametrar att skicka med varje API-anrop, som ett JSON-objekt. Användbart för alternativ som den här tjänsten stöder men som ThunderAI inte exponerar, som att inaktivera tänkandeläget: {\"chat_template_kwargs\": {\"thinking\": false}} eller {\"top_p\": 0.9}. Parametrarna som hanteras av ThunderAI (modell, meddelanden, strömning, temperatur) kan inte åsidosättas här. Ett ogiltigt värde ignoreras."
     },
@@ -2094,9 +2016,6 @@
                 "content": "$1"
             }
         }
-    },
-    "apiwebchat_picker_progress": {
-        "message": "Accepterade ändringar"
     },
     "apiwebchat_picker_more_actions": {
         "message": "Fler åtgärder"
@@ -2217,19 +2136,22 @@
     "anthropic_effort_default": {
         "message": "Standard (bestäms av API:et)"
     },
-    "Anthropic_Effort_Level_low": {
+    "prefs_level_minimal": {
+        "message": "Minimal"
+    },
+    "prefs_level_low": {
         "message": "Låg"
     },
-    "Anthropic_Effort_Level_medium": {
+    "prefs_level_medium": {
         "message": "Medium"
     },
-    "Anthropic_Effort_Level_high": {
+    "prefs_level_high": {
         "message": "Hög"
     },
-    "Anthropic_Effort_Level_xhigh": {
+    "prefs_level_xhigh": {
         "message": "Extra hög"
     },
-    "Anthropic_Effort_Level_max": {
+    "prefs_level_max": {
         "message": "Max"
     },
     "anthropic_note_temperature_unsupported": {
@@ -2250,9 +2172,6 @@
     "prefs_OptionText_chatgpt_reasoning_effort": {
         "message": "Resonemangsansträngning"
     },
-    "prefs_OptionText_chatgpt_extra_body": {
-        "message": "Extra innehållsdata"
-    },
     "prefs_OptionText_chatgpt_extra_body_info": {
         "message": "Ytterligare parametrar att skicka med varje API-anrop, som ett JSON-objekt, som {\"top_p\": 0.9}. Användbart för alternativ som OpenAI API stöder men ThunderAI inte exponerar. Parametrarna som hanteras av ThunderAI (modell, indata, strömning, temperatur, resonemang, instruktioner) kan inte åsidosättas här. Ett ogiltigt värde ignoreras."
     },
@@ -2262,7 +2181,7 @@
     "prefs_OptionText_chatgpt_reasoning_disabled": {
         "message": "Inaktiverad"
     },
-    "prefs_OptionText_chatgpt_reasoning_api_default": {
+    "prefs_reasoning_api_default": {
         "message": "API standard"
     },
     "prefs_OptionText_chatgpt_reasoning_summary_auto": {
@@ -2270,18 +2189,6 @@
     },
     "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
         "message": "Detaljerad"
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
-        "message": "Minimal"
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_low": {
-        "message": "Låg"
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
-        "message": "Medium"
-    },
-    "prefs_OptionText_chatgpt_reasoning_effort_high": {
-        "message": "Hög"
     },
     "customDataPH_placeholdersCount": {
         "message": "$COUNT$ dataplatshållare",
@@ -2299,9 +2206,6 @@
     },
     "Summarize_auto_senders_infoline2": {
         "message": "Lägg till en e-postadress per rad, eller separerad med ett kommatecken. Använd \"@domain.com\" för att matcha alla avsändare för en hel domän."
-    },
-    "Summarize_auto_senders_api_warning": {
-        "message": "Varning: dessa sammanfattningar genereras automatiskt, så varje e-postmeddelande från dessa avsändare förbrukar API-tokens och kan öka kostnaden för din AI-prenumeration. Håll listan så kort som möjligt."
     },
     "menu_order_icon_default": {
         "message": "Standardikon"
@@ -2350,12 +2254,6 @@
     },
     "menu_order_legend_source_custom": {
         "message": "Prompt du skapade"
-    },
-    "prefs_settings_subtitle": {
-        "message": "Inställningar"
-    },
-    "prefs_disclaimer": {
-        "message": "LLM-modeller kan generera felaktig information, och dina data kan användas av leverantören för att träna nya modeller. Användning sker på egen risk."
     },
     "prefs_ConnectionSettingsTitle": {
         "message": "Anslutningsinställningar"
@@ -2527,5 +2425,100 @@
     },
     "specific_integration_mandatory_no_connection": {
         "message": "Detta alternativ är obligatoriskt och kan inte stängas av: ingen global AI-anslutning har valts ännu. Välj ett specifikt API nedan eller konfigurera en global anslutning i ThunderAI-inställningarna."
+    },
+    "Models_Fetch_Done": {
+        "message": "Listan över modeller har lästs in"
+    },
+    "prefs_OptionText_chat_show_usage_data": {
+        "message": "Visa användningsdata i chatten"
+    },
+    "prefs_OptionText_chat_show_usage_data_info": {
+        "message": "Antalet token som rapporteras av API:et visas bredvid knapparna för varje svar. Ett klick öppnar detaljerna, inklusive hur stor del av modellens kontext som används av konversationen samt totalsumman för hela chattsessionen."
+    },
+    "prefs_OptionText_chat_show_usage_data_openai_comp_note": {
+        "message": "Vid användning av ett OpenAI-kompatibelt API beror tillgången på den specifika serverimplementeringen: vissa servrar rapporterar aldrig token-förbrukning."
+    },
+    "prefs_OptionText_append_email_link": {
+        "message": "Lägg till en länk till det ursprungliga e-postmeddelandet"
+    },
+    "prefs_OptionText_calendar_append_email_link_Info": {
+        "message": "Om detta alternativ är valt läggs en länk till det ursprungliga e-postmeddelandet till i slutet av händelsebeskrivningen. Om AI:n inte genererar någon beskrivning kommer beskrivningen endast att innehålla länken. Funktionen är inte tillgänglig när händelsen skapas från urklipp."
+    },
+    "prefs_OptionText_task_append_email_link_Info": {
+        "message": "Om detta är markerat läggs en länk till det ursprungliga e-postmeddelandet till i slutet av uppgiftsbeskrivningen. Om AI:n inte returnerar någon beskrivning kommer beskrivningen endast att innehålla länken."
+    },
+    "calendar_email_link_label": {
+        "message": "Ursprungligt e-postmeddelande:"
+    },
+    "apiwebchat_usage_label": {
+        "message": "Tokenanvändning"
+    },
+    "apiwebchat_usage_input": {
+        "message": "Indata"
+    },
+    "apiwebchat_usage_output": {
+        "message": "Utdata"
+    },
+    "apiwebchat_usage_total": {
+        "message": "Totalt"
+    },
+    "apiwebchat_usage_chip_tokens": {
+        "message": "$COUNT$ token",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_chip_output_tokens": {
+        "message": "$COUNT$ utdatatoken",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_of_which_cached": {
+        "message": "varav cachade"
+    },
+    "apiwebchat_usage_of_which_cache_write": {
+        "message": "varav skrivna till cache"
+    },
+    "apiwebchat_usage_of_which_reasoning": {
+        "message": "varav resonemang"
+    },
+    "apiwebchat_usage_duration": {
+        "message": "Varaktighet"
+    },
+    "apiwebchat_usage_speed": {
+        "message": "$RATE$ tok/s",
+        "placeholders": {
+            "rate": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_context": {
+        "message": "Kontext"
+    },
+    "apiwebchat_usage_context_value": {
+        "message": "$USED$ / $MAX$ · $PCT$%",
+        "placeholders": {
+            "used": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            },
+            "pct": {
+                "content": "$3"
+            }
+        }
+    },
+    "apiwebchat_usage_context_warn": {
+        "message": "överväg att starta en ny chatt"
+    },
+    "apiwebchat_usage_session_total": {
+        "message": "Totalt session"
     }
 }

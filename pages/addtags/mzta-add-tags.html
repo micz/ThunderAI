@@ -59,7 +59,18 @@
                         <span class="mzta_help">__MSG_prefs_OptionText_add_tags_maxnum_Info__</span>
                     </div>
                     <div class="mzta_field_num_ctrl">
-                        <input type="number" id="add_tags_maxnum" name="add_tags_maxnum" class="option-input" />
+                        <input type="number" id="add_tags_maxnum" name="add_tags_maxnum" min="0" class="option-input" />
+                    </div>
+                </div>
+
+                <!-- max messages -->
+                <div class="mzta_field mzta_field_num">
+                    <div class="mzta_field_num_text">
+                        <span class="opt_title">__MSG_prefs_OptionText_max_messages__</span>
+                        <span class="mzta_help">__MSG_prefs_OptionText_add_tags_max_messages_Info__</span>
+                    </div>
+                    <div class="mzta_field_num_ctrl">
+                        <input type="number" id="add_tags_max_messages" name="add_tags_max_messages" min="0" class="option-input" />
                     </div>
                 </div>
 
@@ -206,7 +217,7 @@
                     <br>__MSG_AddTags_excl_list_infoline2__
                 </p>
                 <div class="mzta_field">
-                    <textarea id="addtags_excl_list" rows="15"></textarea>
+                    <textarea id="addtags_excl_list" rows="15" data-mzta-pref="add_tags_exclusions"></textarea>
                     <div class="btn_div">
                         <button id="btn_save_excl_list" class="btn_primary" disabled>__MSG_save__</button>
                     </div>

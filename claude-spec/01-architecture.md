@@ -71,13 +71,15 @@ mzta-background.js      (checks summarize_auto + summarize_display_mode prefs)
   │ summarize_auto = 3 → cache hit (pre-cached on receive)   │
   └──────────────────────────────────────────────────────────┘
        ↓  (if generating inline)
-  taSummaryStore         (check cache / set processing)
+  taJobRegistry          (join a running summary job, or register a new one)
+       ↓
+  taSummaryStore         (check cache)
        ↓  (cache miss)
   mzta-special-commands  (via Web Worker, NOT chatgpt_web)
        ↓
   taSummaryStore         (save result via taStorage)
        ↓
-  mzta-compose-script.js (render summary banner in message body)
+  mzta-compose-script.js (render summary banner in every tab displaying the message)
 ```
 
 ### Data Flow: Inline Translation on Message Display
@@ -100,13 +102,15 @@ mzta-background.js      (checks translate + translate_auto prefs)
   │ translate_auto = 2 → generate immediately                │
   └──────────────────────────────────────────────────────────┘
        ↓
-  taTranslationStore     (check cache / set processing)
+  taJobRegistry          (join a running translation job, or register a new one)
+       ↓
+  taTranslationStore     (check cache)
        ↓  (cache miss)
   mzta-special-commands  (via Web Worker, NOT chatgpt_web)
        ↓
   taTranslationStore     (save result via taStorage)
        ↓
-  mzta-compose-script.js (render translation banner in message body)
+  mzta-compose-script.js (render translation banner in every tab displaying the message)
 ```
 ### Data Flow: Background Summary on Email Receive (summarize_auto = 3)
 
@@ -120,13 +124,18 @@ browser.messages.onNewMailReceived
 newEmailListener  (checks _process_incoming, which includes summarize_auto === 3)
        ↓
 processEmails({ summarizeOnReceive: true })
-       ↓  (single loop — shared with addTagsAuto / spamFilter / translateOnReceive)
+       ↓  (single loop — shared with addTagsAuto / spamFilter / translateOnReceive;
+       ↓   the loop only gates the message and sets target.summarize)
+per-message pipeline: spam → add_tags (those in the same batch) → summary
+       ↓  (up to batch_max_concurrency messages at once)
 _generateSummaryForMessage(headerMessageId, null, { messageData })
-  ← tabId is null → no UI messages sent, silent pre-cache
+  ← tabId is null: no tab of its own, but the job broadcasts its generating panel and
+    its result to every tab already displaying the message (_sendToTabsDisplaying)
        ↓
 taSummaryStore.saveSummary()
        ↓
 [later] user opens the message → initSummary → cache hit → showSummary instantly
+[meanwhile] user opens it while the job runs → initSummary joins the job → spinner → result
 ```
 
 ### Data Flow: Auto-Summarize by Sender Address List
@@ -134,8 +143,13 @@ taSummaryStore.saveSummary()
 `summarize_auto_senders` + `summarize_auto_senders_list` summarize emails from specific senders
 automatically, with no click. This is **independent of `summarize_auto`** and works even when
 `summarize_auto = 0`. Matching goes through `matchAddressList(author, list)`
-(`js/mzta-utils.js`), which extracts the address from the raw author header with the same regex
-used by the spamfilter skip list and supports exact addresses, `@domain.com`, and `*@domain.com`.
+(`js/mzta-utils.js`), which extracts the address from the raw author header with
+`extractEmail()` and supports exact addresses, `@domain.com`, and `*@domain.com` (a domain entry
+matches that domain only, not its subdomains). `matchAddressList()` is a boolean wrapper around
+`matchAddressListType(author, list)`, which returns `'exact'`, `'domain'` or `null` with the
+same parsing rules — an exact entry wins over a domain entry wherever it sits in the list. The
+spam filter allow/block lists use the typed variant to rank the two lists by specificity (see
+[Spam filter sender rules](#data-flow-spam-filter-sender-rules)).
 
 There are **two triggers**, because `onNewMailReceived` does not fire for every delivery path —
 subscribed IMAP folders that are not checked for new mail, and messages moved by a server-side
@@ -150,12 +164,12 @@ subscribed IMAP folders that are not checked for new mail, and messages moved by
    processEmails({ summarizeSenders: [...] })
         ↓  (per message, inside the shared loop)
    summarizeOnReceive || matchAddressList(message.author, summarizeSenders)
-        ↓
+        ↓  (sets target.summarize, run by the message's pipeline)
    _generateSummaryForMessage(headerMessageId, null, { messageData })   ← silent pre-cache
 
 2. On message open, if reception did not catch it
    initSummary handler
-        ↓  (after the cache check and the isProcessing() check,
+        ↓  (after the running-job check and the cache check,
         ↓   before the `summarize_auto === 0` return)
    matchAddressList(message.author, prefs.summarize_auto_senders_list)
         ↓
@@ -165,11 +179,166 @@ subscribed IMAP folders that are not checked for new mail, and messages moved by
 There is deliberately **no periodic scan**: no `setInterval`, no `browser.alarms`, no
 `browser.messages.query()` sweep, no recursive folder walk.
 
-**Idempotency** comes from `taSummaryStore` (cache + `isProcessing()`), which
-`_generateSummaryForMessage()` already consults, so a message caught by *both* triggers costs
-exactly one API call. In the `initSummary` handler the sender check is deliberately placed
-**after** the cached-summary and `isProcessing()` early returns for the same reason, and
-**before** the `summarize_auto === 0` return because the list must work with auto-summarize
+### Data Flow: Spam filter sender rules
+
+`_runSpamJob()` (`mzta-background.js`) decides some messages by rule, without an AI call, after
+the message is loaded and before the prompt is built:
+
+```
+allowMatch = matchAddressListType(author, spamfilter_skip_addresses)    'exact' | 'domain' | null
+blockMatch = matchAddressListType(author, spamfilter_block_addresses)
+blocked    = blockMatch && (!allowMatch || (blockMatch === 'exact' && allowMatch === 'domain'))
+    allowMatch && !blocked  → report spamValue 0   (spamfilter_skip_addresses_explanation)
+    blocked                 → report spamValue 100 (spamfilter_block_addresses_explanation),
+                              junk move when autoMove / entry.wantsMove
+    neither                 → address book check (spamfilter_skip_addressbook), unchanged
+                              → otherwise the AI
+```
+
+- **Precedence:** the more specific match wins (an exact address beats a domain entry); on equal
+  specificity the allow list wins. Both lists come **before** the address book, so a blocked
+  contact is still blocked.
+- **Entries:** exact addresses, `@domain.com`, `*@domain.com` (see `matchAddressListType()`).
+  Lists saved before domain support held exact addresses only and match exactly as before. Both
+  lists are tested with `hasAddressListEntries()`, so a legacy `['']` reads as empty.
+- **Where the lists come from:** `processEmails()` reads both in `prefs_aats` and passes them as
+  `options.skip_addresses` / `options.block_addresses`; any other caller (panel check, Refresh,
+  context menu) leaves them out and `_runSpamJob()` reads them from storage.
+- **`_saveRuleSpamReport(entry, headerMessageId, message, message_metadata, prefs, options,
+  verdict)`** builds, saves and broadcasts every rule-based report (allow list, block list,
+  address book) and returns the `_spamOutcome()` with `moved`. `verdict.isSpam` is explicit, not
+  derived from the threshold, so an allow-list report can never be moved even with a threshold
+  of 0. A blocked message is moved on the same terms as an AI verdict (`options.autoMove` or
+  `entry.wantsMove`), and `moved = true` stops the `processEmails()` pipeline like an AI move. A
+  manual check (no autoMove) only shows the 100 report.
+- **`_moveMessageToJunk(message, headerMessageId)`** is shared by the AI and block-list paths: it
+  marks the message junk and moves it to the account's `specialUse: ['junk']` folder through
+  `_enqueueJunkMove()`. It never throws: a message with no account folder, a missing junk
+  folder or an API error is logged and returns `false`, and the report is saved with
+  `moved = false`.
+
+### Per-message pipelines in `processEmails()`
+
+No feature of the shared loop awaits its AI call inside the `for await` message loop: a burst of
+incoming mail (or a large context-menu selection) would otherwise become one long serial chain
+(20 messages × ~8 s ≈ 2.5 min for the last one). The loop keeps all the per-message gating —
+account enable lists, `isMessageInAutoSkippedFolder()`, the only-inbox options, the sender list,
+`_summarizeConnectionMissing()`, the add_tags prompt/connection check — and builds **one target per
+message**, `{ message, spam, addTags, summarize, bySender, translate }`, with a flag for each
+feature that message needs. After the loop, still inside the outer `try`, up to
+`batch_max_concurrency` messages run at once, and **each message goes through its features in
+series: spam, add_tags, summary, translate** (`runPipeline()`).
+
+```
+for await (message of batch)        ← gating only, no fetch and no AI call
+    targets.push({ message, spam, addTags, summarize, translate })
+        ↓
+runWithConcurrency(targets, batch_max_concurrency, runPipeline, batchStopped)
+
+runPipeline(target)                 ← one message, features in series
+    spam       getFull + _loadMessageBody → _generateSpamReportForMessage({ autoMove: true })
+               moved to junk → stop here (no tags, summary, translation)
+               otherwise messages.get(id) again (a filter may have moved it) → gone → stop
+    add_tags   (same fullMessage/body) → prompt → sendPrompt → await _assign_tags()
+               (force existing: non-existing tags skipped, see 02-prompts.md)
+    summary    → _generateSummaryForMessage()
+    translate  → _generateTranslationForMessage(…, translateTabId)
+    (batchStopped() checked between features)
+```
+
+Why per message and not per feature (the previous design ran one "drain" per feature, each over
+the whole batch, one after the other): every message is **done as soon as possible** — the first
+incoming mail has its tags, summary and translation after its own four calls, not after the whole
+batch went through the spam filter, then tagging, then summaries — and the message is fetched
+once for all its features.
+
+- **`runWithConcurrency(items, limit, fn, shouldStop)`** (`mzta-background.js`): `limit` pull-based
+  workers (capped at `items.length`, at least 1) over a shared index. `shouldStop()` is checked
+  before each item is taken; `batchStopped` is `() => taBatchController.isCancelled()`. A throwing
+  `fn` is logged and never stops the others.
+- **One cap: `batch_max_concurrency`** (default 1, i.e. serial as before). Each pipeline has one AI
+  call in flight at a time, so the cap is also the maximum number of AI requests in flight. There
+  are no per-feature caps: with N > 1, N messages can be in their spam step together, i.e. N
+  requests to the spam filter's connection (relevant for a local Ollama). A cleared field is saved
+  as `NaN`, so `_concurrencyCap()` falls back to the default. The cap applies per
+  `processEmails()` call: overlapping calls (several accounts receiving at once, each firing
+  `onNewMailReceived`) can exceed it. There is no global budget.
+- **Spam first, per message.** A spam verdict can move the message to the junk folder, which makes
+  its tags, summary and translation pointless, so the pipeline stops there: a message the spam
+  filter moved is **not tagged** (on `main`, add_tags ran before the spam filter and tagged it).
+  `_generateSpamReportForMessage()` returns `{ moved }` for this, and the junk move is awaited
+  before it returns.
+- **Re-read after the spam step.** The analysis takes a while, and a filter or the user may move or
+  delete the message meanwhile: after the spam step the header is re-read with
+  `browser.messages.get(message.id)` (a moved message gets a new id, so this fails) and the
+  pipeline stops quietly when it is gone. Each later feature also skips, in auto mode, a header now
+  in an auto-skipped folder (`add_tags_auto_include_sent` for add_tags). Nothing is written to
+  `taSummaryStore` / `translationStore` for a skipped message, so the cache is not poisoned.
+- **Targets hold only the MessageHeader.** The full message and the body are fetched by the
+  pipeline (`ensureFull()` / `ensureBody()`, per pipeline and lazy), once for all its features, so
+  memory is bounded by the cap, not by the batch size. A fetch failure skips only the feature that
+  needed it, with a log line; the next feature retries the fetch once.
+- **De-duplication.** Summary and translation stores are keyed on `headerMessageId`, so the loop
+  sets `summarize` / `translate` only on the first target with a given id. Across callers (another
+  batch, a panel button, the context menu), every feature goes through `taJobRegistry`: a pipeline
+  that reaches a feature already running on its message joins it — see
+  [In-flight jobs](#in-flight-jobs-tajobregistry).
+  **A message present twice in a batch** (the same `headerMessageId` in two folders: a copy made by
+  a filter, a list delivered to two accounts) is handled per copy for the spam filter and add_tags,
+  which act on the message object (its folder, its tags), and the result depends on timing, as of
+  today:
+  - copies processed one after the other (`batch_max_concurrency` 1, the default): each copy gets
+    its own AI call and its own result (moved to junk, tagged); the spam log keeps one report per
+    `headerMessageId`, the last one written;
+  - copies processed at the same time (`batch_max_concurrency` > 1): the second copy finds the
+    first one's spam or add_tags job running and joins it, so there is one AI call; the job acts on
+    **its own copy only**. The joining copy is not moved (its pipeline stops as if it had been, when
+    the verdict moved the other copy) and not tagged (a joiner assigns nothing), and its summary
+    and translation are the shared ones.
+- **add_tags setup once per batch.** `getAddTagsPrompt()` and `getConnectionType(…, 'add_tags')`
+  are the same for every message, so `resolveAddTagsSetup()` resolves them once (memoized promise
+  that never rejects), the first time a message passes the add_tags gating. A missing prompt or an
+  unusable connection is logged once and skips add_tags for the whole batch.
+- **Serialized tag assignment.** `_assign_tags()` goes through `_enqueueTagAssign()`, a module-level
+  promise chain, and re-reads `getTagsList()` inside it. `createTag()` gives each new tag a random
+  key, so two parallel pipelines that both found the same label missing would otherwise create two
+  tags with that label. The queue also covers the context-menu/popup path, which can overlap with
+  an automatic batch. The pipeline awaits `_assign_tags()`. The tag list embedded in the *prompt*
+  is still read per message, so parallel pipelines do not see each other's new tags there; only
+  exact-label duplicates are prevented.
+- **Translate tab.** The manual action (`translate: true`) resolves its UI tab once, before the
+  pipelines start (`sourceTabId`, else `tabs.query({active, currentWindow})`), and gets the outcome
+  delivered there (only for the message that tab displays). On receive the tab is `null`. Either
+  way every tab displaying a message follows its job through the job's own broadcast.
+- **Delayed junk move.** The spam step runs after the whole loop, so spam sits in its folder
+  slightly longer than when the analysis ran inside the loop.
+- **Serialized junk moves.** Several analyses run at once, but the moves into the junk folder go
+  through `_enqueueJunkMove()`, a module-level promise chain, so only one
+  `messages.update({junk})` + `messages.move()` is in flight at a time (concurrent moves over IMAP
+  were never exercised). The move is awaited: a failure — including an account with no junk folder —
+  is logged and leaves `report_data.moved = false`, and the verdict is still saved.
+- **Stop and rate limit.** `batchStopped()` is checked before each message is taken and between the
+  features of a message: after a Stop or a rate-limit stop, queued messages do not start and
+  in-flight ones stop after their current call (bounded by `special_command_timeout`).
+- **Progress counter.** A message with a target is not `tick()`ed by the loop: its pipeline ticks
+  it in its `finally`, also when it stopped early (moved to junk, gone, batch stopped between
+  features). Targets that never start because of a cancel are not counted.
+- **Working indicator.** `taWorkingStatus.WorkingLevel` is 1 for the batch itself
+  (`processEmails()` start/`finally`) plus 1 per AI call in flight: every feature — spam
+  (`_generateSpamReportForMessage()`), add_tags (`runAddTags()`), summary, translate — brackets its
+  own `initWorker()` + `sendPrompt()` with `startWorking()` / `stopWorking()` in a `finally`, so
+  the level drops back on every return path. Early exits before the AI call (cache hit, skip
+  address, missing prompt) are not counted.
+- **Error paths.** Parallel calls hit the error paths far more often than the serial loop did.
+  Anything the pipeline's `finally` (or a `catch` in the `_generate*` functions) reads is declared
+  above its `try` with a value it can tolerate — the same rule `message_metadata` already follows
+  in `_generateSpamReportForMessage()`.
+
+**Idempotency** comes from `taJobRegistry` (one summary job per message in flight, joined by any
+later caller) plus the `taSummaryStore` cache, which the job consults first, so a message caught by
+*both* triggers costs exactly one API call. In the `initSummary` handler the sender check is
+deliberately placed **after** the running-job and cached-summary early returns for the same reason,
+and **before** the `summarize_auto === 0` return because the list must work with auto-summarize
 otherwise disabled.
 
 **Shared guards** in both triggers (`mzta-background.js`):
@@ -205,7 +374,7 @@ otherwise disabled.
   every other feature: `chatgpt_web` has no API and cannot produce a summary, so it counts as
   unusable here exactly as an empty connection does. It used to test `hasNoConnectionSelected()`
   instead, which let `chatgpt_web` through — the run then reached
-  `_generateSummaryForMessage()`, which rejects it only **after** `setProcessing()` and
+  `_generateSummaryForMessage()`, which rejects it only **inside its job** and
   persists the error into `summaryStore`. That is why the pre-check exists at all and why it
   must use the strict predicate: an automatic trigger would otherwise write an error record
   for a message the user never asked to summarize. On an unusable connection the trigger logs
@@ -241,27 +410,26 @@ only-inbox guards use `messageFolderHasSpecialUse()` and are authoritative: they
 thing keeping the automatic processing in the Inbox. `_process_incoming` in `newEmailListener`
 remains the cheap gate that avoids waking the whole pipeline when no automatic feature is enabled.
 
-**Lazy per-message body fetch.** In the `processEmails()` loop, `browser.messages.getFull()` and
-the body conversion are deferred to two per-iteration helpers, `ensureFullMessage()` and
-`ensureBodyText()`, each idempotent. Every feature awaits the one it needs only after all of its
-own skip checks have passed. A message discarded by the guards is therefore never fetched or
-converted at all, which matters now that the listener reports every folder.
+**No fetch in the loop.** The `processEmails()` loop reads only the `MessageHeader` it is handed:
+`browser.messages.getFull()` and the body conversion happen in the per-message pipeline, after all of the
+feature's skip checks have passed (see [Per-message pipelines](#per-message-pipelines-in-processemails)).
+A message discarded by the guards is therefore never fetched or converted at all, which matters now
+that the listener reports every folder. The per-iteration helpers `ensureFullMessage()` /
+`ensureBodyText()` became `ensureFull()` / `ensureBody()` inside `runPipeline()`: lazy and cached
+per pipeline, so a message handled by several features is fetched once for all of them.
+The full message and the body are **independent** fetches — the body comes from
+`getMailInlineTextParts(message.id)`, which needs only the message id — and each feature awaits both
+when it needs both (add_tags: `fullMessage.headers.subject` and the body for the prompt).
 
-**The two helpers are INDEPENDENT.** `ensureBodyText()` used to begin with `await
-ensureFullMessage()`, because the body was extracted from the MIME tree that call returned. It no
-longer does: the body now comes from `getMailInlineTextParts(message.id)`, which needs only the
-message id. Every feature therefore awaits *each* helper it actually uses — add-tags and the spam
-filter await **both** (`ensureFullMessage()` for `headers.subject` and the report metadata,
-`ensureBodyText()` for the prompt), summarize and translate await `ensureFullMessage()`. As it
-happens all four still need the full message for its headers, so this saves no `getFull()` today;
-what it buys is that a future body-only consumer would pay for no MIME fetch, and that neither
-helper silently drags the other in. Dropping the implicit call without adding the two explicit ones
-would have left `curr_fullMessage` null under `headers.subject` — the trap to watch for here.
+**Fetch failures are feature-local.** `messages.onNewMailReceived` fires after message filters
+have run, and a filter running after junk classification may still move or delete the message,
+so `getFull()` can throw because the message is no longer where it was reported. The pipeline
+catches each fetch failure and skips *only that feature for that message* (the next feature retries
+the fetch); the re-read after the spam step turns most of them into a quiet skip. The loop's outer
+`catch`+`continue` stays as the last resort for genuine per-message errors in the gating.
 
-`ensureBodyText()` prefers the HTML body converted with
-`htmlBodyToPlainText()` and falls back to the whitespace-collapsed plain text part when the HTML
-body is empty. The `finally` block still nulls `curr_fullMessage` / `msg_text` / `body_text` after
-each message.
+`_loadMessageBody()` prefers the HTML body converted with `htmlBodyToPlainText()` and falls back
+to the whitespace-collapsed plain text part when the HTML body is empty.
 
 ### Data Flow: Background Translation on Email Receive (translate_auto = 3)
 
@@ -275,9 +443,12 @@ browser.messages.onNewMailReceived
 newEmailListener  (checks _process_incoming, which includes translate_auto === 3)
        ↓
 processEmails({ translateOnReceive: true })
-       ↓  (single loop — shared with addTagsAuto / spamFilter / summarizeOnReceive)
+       ↓  (single loop — shared with addTagsAuto / spamFilter / summarizeOnReceive;
+       ↓   the loop only gates the message and sets target.translate)
+per-message pipeline: spam → add_tags → summary (those in the same batch) → translate
+       ↓  (up to batch_max_concurrency messages at once)
 _generateTranslationForMessage(headerMessageId, null, { messageData })
-  ← tabId is null → no UI messages sent, silent pre-cache
+  ← tabId is null: the job still broadcasts to every tab displaying the message
        ↓
 taTranslationStore.saveTranslation()
        ↓
@@ -314,9 +485,18 @@ message: ids are per-folder and can be reused after a delete + compaction. (a) r
 the same reason: a caller that resolved the message earlier may now hold a stale reference.
 A mismatch falls through to the next route rather than returning the wrong message.
 
+**A falsy `headerMessageId` returns `null` at once**, before route (a). Handed to (d) it would be
+worse than slow: the schema drops an `undefined` / empty property, so `query()` runs with *no
+filter*, matches every message of every account, and `messages[0]` is an arbitrary message from
+an arbitrary folder — summarized in place of the real one. Reaching (d) at all is logged with
+`taLog.warn()`, since no normal user-facing path should get there. The three generators
+(`_generateSummaryForMessage`, `_generateTranslationForMessage`, `_generateSpamReportForMessage`)
+also bail out on a falsy id **before** registering a job or calling `saveError()`, so no store
+(and no registry entry) is ever keyed on `undefined`.
+
 The generators keep their own "Message not found" handling: `_resolveMessage()` returns `null`
-and the caller runs its existing `saveError()` / `_sendIfCurrent()` / `taWorkingStatus.stopWorking()`
-bookkeeping unchanged.
+and the job stores and broadcasts the error through `_endSummaryJob()` / `_endTranslationJob()`
+(`saveError()` for spam); `taWorkingStatus.stopWorking()` runs in the job's `finally`.
 
 **Passing the resolution is the caller's job.** A handler that already holds a message object
 (the `initSummary` / `initTranslation` auto-display paths, which fetched it via
@@ -343,11 +523,184 @@ already-saved cache is unaffected, so revisiting the message later shows the cor
 on cache hit. This generalizes the same displayed-message check already used by
 `updateSpamPanel()`.
 
-The transient *loading* indicators (`showSummaryGenerating`, `showTranslationGenerating`,
-`showSpamCheckInProgress`) are intentionally **not** guarded — they are not keyed to a
-specific result, are idempotent in the content script, and are quickly replaced; guarding
-them would add latency without preventing wrong-content display. That is the *staleness*
-question; their *delivery* is a separate concern — see the next section.
+**The summary/translation loading indicators are message-aware too.** They used to be sent
+unguarded, on the theory that they are transient and quickly replaced by the result. They are
+not when the result is dropped: a `showSummaryGenerating` drawn on a tab displaying message X
+while message Y is being generated is never replaced, because the final `showSummary` for Y is
+correctly discarded by `_sendIfCurrent()` — the spinner spins forever. So:
+
+- `showSummaryGenerating` / `showTranslationGenerating` always carry `headerMessageId`.
+- A running job sends them through **`_sendToTabsDisplaying()`** (see
+  [In-flight jobs](#in-flight-jobs-tajobregistry)), which checks each tab's displayed message.
+  A caller that joins a running job sends one to its own tab through
+  **`_sendGeneratingIfCurrent(tabId, headerMessageId, payload)`**, which returns
+  `{ current, delivered }` (the context-menu #901 probe below uses it too). When the tab
+  displays another message the panel is skipped and generation **continues**: the result lands
+  in the cache and renders if the user comes back to the message.
+- The trigger/refresh handlers (`triggerSummaryGeneration`, `refreshSummary`,
+  `triggerTranslationGeneration`, `refreshTranslation`) keep a direct send, before any await:
+  the id comes from that very tab's content script.
+- The content script checks every generating command against **its own** message: at load it
+  asks the background once (`getDisplayedMessageId` → `getDisplayedMessage(sender.tab.id)`),
+  and draws the panel only when the supplied id is non-empty and matches (or its own id is
+  unknown, e.g. in a compose window). Because that check is asynchronous, each result command
+  (`showSummary`, `showSummaryButton`, `showTranslation`, `showTranslationButton`) bumps a
+  per-feature counter, and a generating command that sees the counter moved does nothing — a
+  result can never be painted over by a late spinner.
+- **The same tab can get the generating panel two or three times**, by design: the tab that asked
+  gets its own immediate send, and the job's broadcast reaches it too, since the job updates every
+  tab displaying the message without knowing who started it. This happens on the panel buttons and
+  the Refresh of both features (`triggerSummaryGeneration` / `refreshSummary`,
+  `triggerTranslationGeneration` / `refreshTranslation`: the direct send, then the broadcast), on
+  the context-menu inline Summarize of one message (the #901 probe of `processEmails()`, then the
+  broadcast), and when a click joins a running job (the direct send, the joiner's own send, and the
+  broadcast if the tab displayed the message when the job started). Generating on open (mode 2), on
+  receive (mode 3), from the sender list and from the context-menu Translate send it once (the
+  broadcast only); a cache hit sends none. The content script draws one panel: a generating command
+  that finds its panel (`mzta-summary-generating` / `mzta-translation-generating`) already there does
+  nothing.
+- `hideSummaryGenerating` / `hideTranslationGenerating` remove a panel (message-aware when an id
+  is given, unconditional otherwise). The jobs broadcast them from their `catch` blocks and when
+  an invalidated job lands; `_clearGeneratingPanels()` sends them to one tab, from a joiner whose
+  job was skipped and from `_handleTaskError()`, the `.catch()` attached to every
+  fire-and-forget task in the `runtime.onMessage` listener.
+- `showSummaryButton` / `showTranslationButton` also remove the generating panel: the button is
+  what an invalidated job leaves behind.
+- A message change replaces the document, so panels never outlive their message; the one
+  surviving document — an already-open tab re-injected on extension reload — gets both
+  generating panels removed when the script loads.
+
+**Panel HTML sanitization.** The two send helpers are the sanitization gates: both
+`_sendIfCurrent()` (one tab) and `_sendToTabsDisplaying()` (every tab displaying the message)
+pass the payload through `_sanitizePanelPayload(payload)` before sending. Fresh results of the
+shared summary / translation jobs are broadcast through `_sendToTabsDisplaying()`, which
+sanitizes once before the per-tab loop; cached results and the webchat save go through
+`_sendIfCurrent()`. `_sanitizePanelPayload()` returns every other command (spam panel, buttons,
+generating / hide panels, error payloads) unchanged. The summary / translation text is model output about a possibly crafted email, and the content
+script inserts it into the message pane, so a `<style>` or similar markup could restyle the
+message or hide ThunderAI's own panels.
+- `showSummary`: `data.summary_html` is passed through `sanitizeBlockHtml()` (`js/mzta-richtext.js`,
+  the ONE sanitizer).
+- `showTranslation`: `data.translated_text` is sanitized **only when it looks like HTML**, using the
+  same `/<[a-z][^>]*>/i` test as the content script's `_isHtml()`. Plain text is left untouched,
+  because a DOMParser round trip would encode `<` / `&` and the plain branch shows them literally.
+  HTML left with no tag after sanitizing is handed on as its decoded text.
+- The payload is copied, and the stored object is never modified. Because the gates sit on the
+  send and not on the save, **cached results** (including entries written by older versions)
+  cross them exactly like fresh ones, in both `summarize_display_mode`s (the webchat save,
+  `chatgpt_saveSummary`, sends through `_sendIfCurrent()` too).
+- Everything else in these panels (plain `summary`, `translated_subject`, error messages, the spam
+  report, `showGeneric*`) is rendered through `textContent` and needs no sanitizing.
+- Defense in depth in the content script: `_renderSafeHtml()` in `js/mzta-compose-script.js`, used
+  by **both** the summary and the translation panel, removes `script, img, style, link, iframe,
+  frame, frameset, object, embed, form, meta, base, svg, math, template, noscript`, every `on*` and
+  `style` attribute, and `javascript:` / `vbscript:` / `data:` URLs.
+
+`showSpamCheckInProgress` carries no id: `updateSpamPanel()` broadcasts it through
+`_sendToTabsDisplaying()`, which checks every tab's displayed message, and a joiner sends it to its
+own tab through `_sendIfCurrent()`. That is the *staleness* question; *delivery* is a separate
+concern — see the next section.
+
+### In-flight jobs (`taJobRegistry`)
+
+The batch (`processEmails()`) and the manual paths — panel buttons, auto display, context menu,
+Refresh, the popup's Add tags — can reach the same message at any moment: before the batch gets
+to it, while it works on it, or after. `js/mzta-job-registry.js` (`taJobRegistry`, a singleton
+like `taBatchController`, logging through the background's `taLogger`) makes sure a feature
+never runs twice on a message at the same time.
+
+- **One entry per `${kind}:${headerMessageId}`**, `kind` ∈ `summary | translation | spam |
+  add_tags`, holding the job's promise. It is the only authority for "in progress": the old
+  `storage.session` processing flags (`setProcessing` / `isProcessing` in the three stores) are
+  gone. They were checked and set across several awaits, so two callers could both pass, and
+  they were cleared only on the save path, so a config error left the message "processing" for
+  the whole session (eternal spinner, every retry refused). The background page is persistent
+  (MV2), so an in-memory Map has the same lifetime.
+- **Check and registration are synchronous and back to back** (`get()` then `start()`, no await
+  in between), in the generator wrappers `_generateSummaryForMessage()`,
+  `_generateTranslationForMessage()`, `_generateSpamReportForMessage()`, in `runAddTags()`
+  (`processEmails`) and in the Add tags dialog path of `act()` (`js/mzta-menus.js`). The guards
+  that must not create a job run before it: the empty-id guard, and the missing translate
+  language (which needs a prefs read, so the translation wrapper awaits it first and only then
+  does the synchronous lookup). `_summarizeConnectionMissing()` stays in the automatic callers.
+- **The promise never rejects**: it resolves to an outcome `{ status: 'ok' | 'error' | 'skipped' |
+  'cancelled', data, errorMessage, rateLimited, retryAfterMs }` (spam adds `success`, `moved` and
+  `data.report`; add_tags `data.tags` / `data.assigned`). The entry is removed when the job
+  settles, in every path. Every job body returns an outcome on every path; one that resolves to
+  nothing (a missing `return`, a programming mistake) gives `{ status: 'error', errorMessage:
+  'the job returned no outcome' }` and a `[taJobs] <kind>:<id> returned no outcome` error log,
+  never a silent `skipped`: the joiners end as on any failure. A body that throws gives `error`
+  too, with the thrown message.
+- **Joining.** A caller that finds an entry awaits it (`_joinSummaryJob()`,
+  `_joinTranslationJob()`, `_joinSpamJob()`): no `taWorkingStatus.startWorking()`, no store
+  write, no API call. With a tab of its own it sends the generating panel there, then delivers
+  the outcome there (result, error banner, restored button for `cancelled`, hidden spinner for
+  `skipped`). It delivers even though the job broadcasts too: the joiner's own spinner — or the
+  direct one the trigger handlers send before any await — can reach its tab after the job's
+  result broadcast, and only the joiner's final send is guaranteed to come after it. The batch
+  only reads the outcome (`rateLimited`, `moved`).
+- **Broadcast.** The job itself updates every tab displaying the message
+  (`_sendToTabsDisplaying(headerMessageId, payload)`: `mail` and `messageDisplay` tabs,
+  `getDisplayedMessage()` checked per tab, sent through `sendTabMessageSafe()` [#901]): the
+  generating panel when it really starts (after the cache check), the result or the error when
+  it ends. The job awaits each broadcast, so a tab gets generating before the result. A cache hit
+  is not broadcast (the other tabs show it already); it goes to the job's own tab and into the
+  outcome for joiners. `updateSpamPanel()` broadcasts the same way, still gated by
+  `spamfilter_show_msg_panel` (it used to reach only the active tab of the current window).
+- **Working indicator.** Exactly one `startWorking()` / `stopWorking()` pair per job that gets
+  past the cache (`finally`), none for joiners. `taBatchController.tick()` counts are unchanged
+  (the pipeline ticks its message whether its features ran or joined).
+- **Queued messages.** A message only collected in a batch's `targets` shows the manual button.
+  A click starts the job at once; when the pipeline reaches that feature it joins it, or starts a
+  job that hits the cache. When the batch starts the feature, its generating broadcast replaces
+  the button (the generating panels remove the toolbar button), then the result replaces it.
+- **Refresh** (`options.refresh`) goes through the same wrapper: with a job running it joins it;
+  otherwise the job itself drops the stored result and skips the cache. The handler no longer
+  removes anything before calling it, so there is never a second generation next to a running
+  one.
+- **Remove / invalidate.** `removeSummary` / `removeTranslation` call
+  `taJobRegistry.invalidate()` synchronously, before removing the stored result. The entry
+  object is the job's token: an invalidated job lands without saving or showing its result,
+  broadcasts `hide…Generating` and restores the manual button in every displaying tab
+  (`_restoreSummaryButton(null, …)`), and resolves `cancelled`. An explicit manual trigger
+  (`options.manual`: panel button, Refresh, context menu) on an invalidated job **revives** it
+  and joins it, so delete-then-generate-again is still one API call; the auto display and the
+  batch never revive. The spam report delete does not invalidate (a spam job is also a junk
+  move).
+- **Config errors** are broadcast and not stored (a later attempt runs again). Nothing stays
+  "in progress": the entry is dropped when the job settles, so a retry in the same session works.
+- **Spam.** Only the job owning the entry can reach `_moveMessageToJunk()` (and so
+  `_enqueueJunkMove()`), for an AI verdict or a block-list match alike; a joiner never moves.
+  An `autoMove` joiner (the batch joining a manual Refresh) sets `entry.wantsMove`, which the job
+  reads at its verdict, so the message is still moved, once. A joiner arriving after that point
+  gets the outcome without a move. `checkSpamReport` and `refreshSpamReport` join a running
+  analysis.
+- **add_tags.** The batch / context menu (`runAddTags()`) and the popup dialog (`act()`) share
+  the `add_tags` entry. A batch joiner assigns nothing (the job did, or the user is confirming in
+  the dialog: `data.assigned = false`). The dialog path joining a running job shows the job's
+  tags in the confirmation dialog without an AI call; if that job produced no tags it runs its
+  own. `_assign_tags()` stays serialized through `_enqueueTagAssign()`.
+- **Logs** (`do_debug`): `[taJobs] start|join|invalidate|revive <kind>:<id>`, and `[taJobs] end <kind>:<id> <status>` when the job settles (plus, as errors, `[taJobs] <kind>:<id> threw: <message>` when a job body throws past its own catches and `[taJobs] <kind>:<id> returned no outcome`).
+
+### Context-menu actions: one source for messages and UI tab
+
+`browser.menus.onClicked` reads the selection from the **clicked tab**
+(`mailTabs.getSelectedMessages(tab.id)`, falling back to `info.selectedMessages` only when that
+fails) and passes `tab.id` to `processEmails()` as `sourceTabId`; the summarize and translate
+branches use it as their UI tab and fall back to `tabs.query({active, currentWindow})` only when
+it is absent. `info.selectedMessages` is not bound to the clicked tab (several mail
+tabs/windows, a right-click that does not move the selection) and the active-tab query resolves
+to the last focused window, so the two could disagree — the generating panel ended up on the
+displayed message while another message, from another folder, was sent to the AI. The
+`shortcut_do_prompt` path passes its `tabId` the same way. The handler awaits
+`processEmails()`; a rejection is logged and clears any generating panel.
+
+With `do_debug` on, each click logs one entry with `tab.id/windowId/type` and, for
+`info.selectedMessages`, `mailTabs.getSelectedMessages()` and `getDisplayedMessage()`, the
+`id`, `headerMessageId` and `folder.path` of each message, prefixed `MISMATCH` when they
+disagree. The generators also log the `headerMessageId` and `folder.path` actually used right
+before the prompt is built. `getMessages()` (`js/mzta-utils.js`) logs and stops, keeping what it
+already yielded, when `continueList()` fails on an expired MessageList id.
 
 ### Unreachable message pane (`sendTabMessageSafe`, [#901](https://github.com/micz/ThunderAI/issues/901))
 
@@ -375,9 +728,11 @@ Two deliberate behaviours on top of the plain drop:
 
 - **The context-menu summarize flow uses the indicator send as a probe.** In `'inline'`
   mode with a single message, `processEmails()` awaits the `showSummaryGenerating`
-  send; when the pane cannot receive it, it falls back to the webchat flow — the same
-  fallback already used for inline mode with multiple messages — so the action still
-  produces something visible instead of dying.
+  send (through `_sendGeneratingIfCurrent()`); when the pane cannot receive it
+  (`current && !delivered`), it falls back to the webchat flow — the same fallback already
+  used for inline mode with multiple messages — so the action still produces something
+  visible instead of dying. When the tab displays another message (`!current`) the panel is
+  not drawn and the summary is generated inline anyway, silently, into the cache.
 - **`act()` bails out cleanly when the body cannot be scraped.** `getMailBody()` talks
   to the content script; when the first send rejects, the action logs, calls
   `taWorkingStatus.stopWorking()` and returns `{ok:'0'}` — previously the rejection
@@ -389,7 +744,45 @@ Two deliberate behaviours on top of the plain drop:
 messaged us is alive by construction, so its tab has a browser), awaited sends whose
 rejection the caller observes (e.g. `chatgpt_replaceSelectedText`), and the chat tabs
 the background itself created. `showGenericError()` / `showGenericInfo()` keep their
-own `.catch(() => {})`, which is the same quiet drop.
+own `.catch(() => {})`, which is the same quiet drop. (The generating-panel sends of the
+trigger/refresh handlers go to `sender.tab` but use `sendTabMessageSafe()` anyway: they are
+not awaited, so a rejection would otherwise surface as unhandled.)
+
+### The message-display panels and dialogs (`js/mzta-compose-script.js`)
+
+What the content script draws, on the commands the sections above send (tested by the `compose`
+test area, `tests/compose/README.md`):
+
+- **The container.** `#mzta-container` is inserted as the body's **first** child, above the mail:
+  `#mzta-toolbar` (hidden while empty), then `#mzta-panels`.
+- **The order** does not depend on the order the commands arrive in. Toolbar: the spam badge, the
+  summary button, the translation button (`_TOOLBAR_SLOT_ORDER`). Panels: the generic error, the
+  generic info, the translation (its generating panel, then its banner), the summary (same)
+  (`_PANEL_ORDER`, which still lists the spam ids of the time the spam report was a panel: today it
+  is the toolbar badge).
+- **The summary button** sends `triggerSummaryGeneration` when clicked, or `triggerSummaryWebchat`
+  when the background drew it with `webchat: true` (`summarize_display_mode` `'webchat'`, see
+  *Data Flow: Inline Summary on Message Display*); either way with the message's `headerMessageId`,
+  and the button is removed.
+- **A skipped translation.** A result with `translation_status: '-1'` (the model reports the
+  language as excluded, or identical to the target) shows the `translate_skipped` message instead of
+  a text.
+- **The generic panels** read `[ThunderAI | <source>] <message>`, or `[ThunderAI] <message>` with
+  no source, as text.
+- **A re-injected script** (an already-open tab when the extension is reloaded, see *Stale-result
+  guard*) removes the two generating panels at load and nothing else: what else the previous
+  instance drew (a banner, a toolbar item) stays, and the new instance draws into the same container,
+  replacing those as its own commands arrive.
+- **`sendAlert`.** In a `mail` tab (`curr_tab_type: 'mail'`) the message is shown in an in-pane
+  `<dialog class="mzta_dialog">` — Thunderbird does not show an `alert()` raised there — titled
+  `thunderai_error_title` when `is_error` is set and `thunderai_warning_title` otherwise; Close
+  removes the dialog and its stylesheet. In any other tab it is the window's `alert()`. The message is
+  always text. The command resolves `true`.
+- **`getTags`** opens the tag confirmation dialog (*Unreachable message pane*: the user's
+  confirmation step). Its exclusion list and flags come from `addtags_get_exclusion_prefs` (spec 05);
+  when that command fails, the dialog logs it and opens with the defaults — no exclusion, both flags
+  off, not locked.
+- **`replaceSelectedText`** (compose window): see *Replacing text in a compose window*.
 
 ### Batch cancellation (`taBatchController`)
 
@@ -397,31 +790,77 @@ Batch email processing (`processEmails` — auto add-tags, spam filter, summariz
 run both on-receive and from the context menu) can iterate over a large selection and run for
 a long time. `js/mzta-batch-controller.js` provides a cooperative way for the user to stop it.
 
-It is a singleton mirroring `taWorkingStatus`, exposing a **single global "cancel all" flag**
-plus a **progress counter**:
+It is a singleton mirroring `taWorkingStatus`, exposing a **per-batch cancel token** plus a
+global **progress counter**:
 
-- `beginBatch()` / `endBatch()` — called at the start of `processEmails` and in its `finally`.
-  A `_activeBatches` counter allows overlapping batches; the cancel flag and `processed`
-  counter are reset only when the **last** active batch exits, so a single cancel request is
-  honored by every overlapping batch and never leaks into a future one.
-- `requestCancel()` / `isCancelled()` — set/read the global flag.
+- `beginBatch()` / `endBatch(batch)` — called at the start of `processEmails` and in its
+  `finally`. `beginBatch()` returns the batch's token `{ cancelled }`, kept in a `Set` of active
+  batches. The notice state and the `processed` counter are reset only when the **last** active
+  batch exits, so one "stopped" notice covers all overlapping batches.
+- `requestCancel(reason = 'user', retryAfterMs = null)` — flags **every batch active at that
+  moment**; `isCancelled(batch)` reads one batch's flag. A batch begun after the request is not
+  affected: with the old single global flag, reset only on the last exit, a manual context-menu
+  Summarize/Translate started while an automatic batch was still winding down after a Stop or a
+  rate limit was silently skipped. `retryAfterMs` is the wait the provider asked for, the longest
+  one kept. `reason` is `'user'` (Stop button) or `'rate_limit'` (set by `processEmails` itself,
+  see below); a `'rate_limit'` reason is never overwritten by a later `'user'` one.
 - `tick()` / `processed` — increments the "N processed" counter shown in the popup.
-- `isWorking()` / `getStatus()` — report `{ working, processed, cancelRequested }`.
+- `isWorking()` / `getStatus()` — report `{ working, processed, cancelRequested, cancelReason }`;
+  `cancelRequested` is true only when every active batch is cancelled.
+- `endBatch()` returns `{ lastExit, cancelled, processed, reason, retryAfterMs }`, a snapshot taken before the
+  reset, which picks the notice shown by the `finally` of `processEmails`.
 
-**Scope decision:** `isWorking()` tracks its own `_activeBatches` counter, **not**
+**Automatic stop on a rate limit (#901).** When a message fails with `err.rateLimited` (a 429
+that outlived the per-request retries, or that `fetchWithRetry` returned at once because the
+body reports a used-up quota or spend limit, see
+[04-api-integrations.md](04-api-integrations.md#batch-stop-on-rate-limit)), every following
+message would fail the same way. The failing pipeline calls the local `stopForRateLimit()`,
+which calls `requestCancel('rate_limit')` and stops that pipeline; `batchStopped()` then keeps
+the queued messages from starting, and the in-flight ones stop before their next feature (see
+[Per-message pipelines](#per-message-pipelines-in-processemails)). The
+`finally` then shows the red `batch_stopped_rate_limit` panel
+("stopped after N messages: … rate limit or quota was exceeded") instead of the blue
+`batch_stopped_notice`; when the provider asked for a wait too long to retry, it is
+`batch_stopped_retry_after` instead, with the wait formatted by `formatDuration()` ("1 h").
+Checked after each feature of the pipeline: add tags (the
+`sendPrompt` catch; tags are not assigned), spam filter (`_generateSpamReportForMessage`
+returns `{success: false, rateLimited}`), summarize on receive and translate
+(`_generateSummaryForMessage` / `_generateTranslationForMessage` return `{rateLimited}` from
+their catch; other callers ignore it). The context-menu summarize block makes no per-message
+API call and is unaffected. Like the Stop button, `requestCancel('rate_limit')` stops **every
+batch active at that moment**, not only the one that hit the limit; a batch begun afterwards
+is not affected: in auto mode each incoming mail starts a new batch, which may hit the 429 again.
+
+**Add tags selection cap.** On the context-menu path (`addTagsAuto && !isAutoMode`), a
+`add_tags_max_messages` > 0 makes the loop collect the selection into an array first (the
+paged list can be read only once) and abort with `add_tags_too_many_messages` when it is
+larger. Automatic tagging of incoming mail is never capped.
+
+**Scope decision:** `isWorking()` tracks its own set of active batches, **not**
 `taWorkingStatus.WorkingLevel`. Standalone operations (e.g. a single inline summary via
 `_generateSummaryForMessage`) also drive `WorkingLevel` but are not cancellable batches — so
 the popup's "Stop processing" button must not appear for them.
 
 **Cooperative check points** in `processEmails`: at the top of the `for await` message loop
-(before the heavy `getFull`), after the between-chunks `setTimeout(0)` yield, and inside the
+(before the heavy `getFull`), after the between-chunks `setTimeout(0)` yield, after a
+rate-limited failure (see above), before each queued message (`runWithConcurrency`'s
+`shouldStop()`), between the features of a message, and inside the
 separate `summarize` block (before each `getFull` and before opening the webchat). All
 `break`/`return` paths fall through to the existing `finally`, so `stopWorking()` +
-`endBatch()` always run.
+`endBatch(batch)` always run. Every check point reads the batch's own token. The panel-button
+triggers are not batches and are never gated by a cancel.
 
-**Abort latency (v1):** cancellation is checked *between* messages, so the message currently
-in flight finishes first — bounded by `special_command_timeout` (default 120s). There is no
+**Abort latency (v1):** cancellation is checked *between* messages (and between the features of a message),
+so the AI calls currently in flight — up to `batch_max_concurrency` — finish first — bounded by `special_command_timeout` (default 120s). There is no
 mid-request worker termination in v1.
+
+**What a stop leaves behind.** The messages a Stop or a rate limit kept from starting (and the
+features an in-flight message did not reach) are **not resumed**: no queue outlives the batch, and
+there is no periodic scan to find them again. That is by design. What remains available to the
+user: the summary and the translation, offered as the manual button when the message is opened
+(with `summarize_auto` / `translate_auto` = 3 nothing is cached, and only mode 2 generates on open,
+so `initSummary` / `initTranslation` draw the button); the spam filter and the tags, from the
+context menu only. The stop notice gives the number of messages processed, not of those skipped.
 
 The UI trigger lives in the toolbar popup (`popup/mzta-popup.html/.js/.css`); see
 [04-api-integrations.md](04-api-integrations.md) for the `batch_status` / `cancel_batch`
@@ -438,7 +877,7 @@ Worker. No framework, no build step; plain ES6 modules under the strict default 
 
 ```
 index.html
-  ├── #appHeader                           — logo, product name, static model chip (light DOM)
+  ├── #appHeader                           — logo, product name, model chip, API chip (light DOM; no usage figures)
   ├── <messages-area>   (messagesArea.js)  — renders the conversation transcript
   ├── <message-input>   (messageInput.js)  — input field, send/stop buttons, status pill
   └── controller.js                        — DI / worker wiring (see below)
@@ -451,6 +890,50 @@ into both components (`messagesArea.init()`, `messageInput.init()`,
 worker/runtime messages into component method calls. It owns the module-level `promptData`
 (set once by `api_send`) and the Ctrl+/Ctrl-/Ctrl+0 font-zoom.
 
+**URL parameters.** The background opens the window at `api_webchat/index.html?llm=<connection
+type>&call_id=<id>&ph_def_val=<0|1>&prompt_id=<id>&prompt_name=<name>`, each value through **one**
+`encodeURIComponent`. `URLSearchParams` already decodes them, so the controller uses
+`prompt_name` as it comes and never decodes it a second time (that threw on a name holding a lone
+`%`, and broke the whole window). The Custom Prompts editor refuses a `%` in a prompt name anyway
+(see [05-options.md](05-options.md#manage-custom-prompts-page-pagescustomprompts)).
+
+**Header.** `#appHeader` shows the model in use (the prompt's own `{integration}_model` when it
+carries one, see [04-api-integrations.md](04-api-integrations.md#configuration-validation)) and the
+API name. It shows **no usage figures**: token counts live only in each answer's usage chip (see
+[04-api-integrations.md](04-api-integrations.md#rendering-in-the-chat-window)).
+
+- The **model chip** (`#appHeaderModel`) reads `<prompt name> | <model>`, the prompt name trimmed.
+  Either half is dropped when missing: no prompt name gives the model alone, and with no model set the
+  provider's display name stands in for it (`ChatGPT`, `Google Gemini`, `Ollama Local`, the
+  `openai_comp_chat_name` or `OpenAI Comp`, `Claude`). The chip's `title` repeats its text, so a name
+  cut off by the chip's width can still be read. Set with `textContent`: the name is text.
+- The **API chip** (`#appHeaderApi`) shows the API's name (`ChatGPT API`, `Google Gemini API`,
+  `Ollama API`, `OpenAI Compatible API`, `Claude API`) and is tinted with the connection type
+  (`tint_<llm>`), the class the settings pages tint their connection pill with.
+
+**Unknown connection type.** An `llm` the window has no worker for (a stale or mistyped value, or
+none) creates no worker. The transcript shows an error turn with `apiwebchat_unknown_connection`
+naming the value, the status pill shows the error, and the input is locked for good
+(`messageInput.disableInput()`: field, Send and Stop disabled), since nothing could ever be sent.
+The window sends no ready message and ignores the background's commands; its Close button still
+closes it.
+
+**Ready handshake.** Once the worker's `init` message is posted and the startup notice shown, the
+window sends the background `{command: "${llm}_ready_${call_id}", window_id}` (its own window id,
+from `windows.getCurrent()`). The background listener registered for that `call_id` answers by
+sending the window `api_send` (the prompt), or `api_error` when the configuration is unusable
+(an empty key or model). Nothing is sent to the worker before that answer.
+
+**Startup notice.** The first turn is an info notice (`.turn-info > .message.info`) built by
+`getAPIsInitMessageString()` (`js/mzta-utils.js`): the API, the model, the host, the version, the
+prompt (`[id] name`) and the provider's non-empty text settings. The window parses it as HTML (its
+own `<i>`/`<span>` labels, newlines → `<br>`), so **every value is escaped** with
+`mztaEscapeHtml()`: a prompt name, a model or a system prompt holding markup is shown as text and
+never becomes an element. The three values always there are the most exposed: the prompt name (the
+URL's `prompt_name`, which an imported prompts file can fill), the model and the host. The test
+suite feeds every sanitizer payload through those three (`webchat-17`) and finds nothing but the
+notice's own `<i>`, `<span class="info_obj">` and `<br>`.
+
 ### Streaming data flow
 
 ```
@@ -458,14 +941,46 @@ Worker → controller.js → components
   messageSent      → messageInput.handleMessageSent()
   newToken         → messagesArea.handleNewToken(token)          (feeds StreamingMessage + fading span)
   newThinkingToken → messagesArea.handleNewThinkingToken(token)  (feeds StreamingMessage + live "Thinking…" indicator)
+  usage            → messagesArea.handleUsageData(messageId, payload)  (token-usage chip; optional, see below)
   tokensDone       → messagesArea.handleTokensDone(promptData)   (flush → action buttons)
-  error            → messagesArea.appendBotMessage(payload,'error') + messageInput.showErrorStatus()
+  error            → messagesArea.appendBotMessage(payload,'error') + messageInput.enableInput(false) + showErrorStatus()
 
 background → controller.js (browser.runtime commands)
   api_send             → set promptData; send prompt (or show custom-text field)
   api_send_custom_text → merge custom text into the prompt, then send
-  api_error            → render an error bot message
+  api_error            → render an error bot message; enableInput(false) + showErrorStatus()
 ```
+
+**After an error the input stays usable.** Both error paths (`error` from the worker, `api_error`
+from the background) call `enableInput(false)`: the field and Send are enabled and Stop hidden, so
+the user can type another message in the same window, and the status pill shows the error state
+(no timeout, it stays until the next request replaces it).
+
+**The prompt is plain text, from the background to the model.** `sendPrompt()` puts the
+`api_send` prompt (or, after `api_send_custom_text`, the prompt with the custom text merged in)
+into the input field **as it came**, and `_handleNewChatMessage()` posts the field's value to the
+worker unchanged, as one `chatMessage`, exactly as it does for a message the user types. So the
+worker always receives plain text whose line breaks are `\n`, the ones the placeholders' newline
+contracts put there (see [03-placeholders.md](03-placeholders.md)). `sendPrompt()` used to run
+`convertNewlinesToBr()` on the prompt first, so the first message of every chat reached the model
+with a literal `<br>` at each line break of the prompt, the mail body included, while a typed
+message kept its `\n`.
+
+**The user's bubble is text.** `appendUserMessage()` builds it with `textWithNewlinesToFragment()`:
+every `\n` (a `\r\n` or a lone `\r` counts as one) becomes a `<br>` element and everything else a
+text node. Nothing in the message is parsed as HTML, so a `<br>` the user typed, or that the mail or
+an HTML placeholder put in the prompt, is shown as those four characters, which is also what the
+model receives, like any other markup in the prompt. (The old `textWithBrToFragment()` split on a
+literal `<br>` instead, the form the first prompt arrived in: a typed message showed on a single
+line, and a `<br>` written in the text as a line break.) Only the startup notice and the
+"Request cancelled." notice (`type` `"info"`) are the window's own HTML, through
+`htmlStringToFragment()`.
+
+The `usage` message is **separate from `tokensDone` and carries no response text**, and is only
+emitted when `chat_show_usage_data` is on and the integration reports usage. It is posted *before*
+`tokensDone` so it lands while the turn it belongs to is still open. See
+[04-api-integrations.md](04-api-integrations.md#emitting-to-the-chat-window) for the worker side and
+the DOM-extraction invariants.
 
 Per bot response a fresh `StreamingMessage` accumulates raw + thinking tokens and, on flush,
 returns an **immutable HTML snapshot**; `<messages-area>` renders it and hands the thinking
@@ -499,6 +1014,39 @@ branches, `BLOCK_TAG`/`LEAD_IN*` machinery) is **gone**.
 - **`html: true` disables markdown-it's escaping**, so its output is now UNTRUSTED model HTML on its
   way into outgoing mail. It MUST cross `sanitize(..., { allowBlocks: true })` — the ONE allowlist
   walk in `js/mzta-richtext.js`, the same one the diff picker uses. No second copy.
+- **An echoed `<br>` is one line break.** A model that echoes the `<br>` of an HTML placeholder
+  (`{%selected_html%}`, sent by the rewrite / proofread "full text" prompts) usually writes a newline
+  after it as well, and `breaks: true` would add a second `<br>` for that newline:
+  `Ciao,<br>\ngrazie` rendered as `<p>Ciao,<br><br>\ngrazie</p>`, a blank line in the mail (`\n\n`
+  once projected for a plain text window, an empty line in the diff picker's result, see
+  [07-diff-picker.md](07-diff-picker.md) *Line breaks: `<br>` is a block separator*). A markdown-it
+  **core rule** registered after `inline` (`collapseEchoedBrBreaks()`, in `getMarkdownIt()`) turns
+  a `softbreak` or `hardbreak` (`<br>  \n`) whose previous sibling is an `html_inline` `<br>` (any
+  case, `<br/>`, `<br />`) into a `"\n"` text token, so the output is `<p>Ciao,<br>\ngrazie</p>`,
+  the shape markdown-it writes for a bare newline. Two `<br>` written (`<br><br>\n`, `<br>\n<br>\n`)
+  stay two: an intended blank line survives. The break becomes whitespace rather than being
+  **dropped** so that whatever later drops the `<br>` itself (a mail client's own HTML-to-text
+  conversion) still finds whitespace between the two lines instead of welding them (`ab`). It works
+  on tokens, inside the one render path, so the chat, "use this answer", Copy and the diff picker all
+  get the same HTML, and every coalesced re-render of the accumulated raw text gives the same result
+  however the `<br>` and the newline were split across tokens. Code spans, code blocks and raw HTML
+  blocks are tokens of their own and are never looked at; a regex over the raw text would have
+  reached into fenced code.
+- **In a raw HTML block, a newline between two pieces of text is a line break.** A line that opens
+  with a block-level tag (`<div>Ciao\ngrazie</div>`), or with any complete tag alone on its line
+  (`<br>` then text lines), is an `html_block`: markdown-it passes it through raw and `breaks: true`
+  never applies, so the model's newlines inside it were HTML whitespace and the lines reached the chat
+  and the mail welded (`Ciao grazie`). A second core rule, after `block` (`breakHtmlBlockLines()`),
+  rewrites each `html_block` token's content so it gets the reading `breaks: true` gives a paragraph,
+  but only where the newline really sits between two pieces of text on one line — which keeps HTML's
+  own formatting out of it. **Before** the newline there must be text, possibly through inline tags
+  (`Ciao <b>Mario</b>\n`), and not a block tag or a `<br>`, which end their line already: `<p>\n`,
+  `</li>\n` and the echoed `Ciao,<br>\ngrazie` are left alone. **Right after** it there must be text
+  or an inline opening tag: a newline followed by indentation is pretty-printing
+  (`<p>\n  Ciao\n  grazie\n</p>`) and stays whitespace, as a browser shows it. Such a newline becomes
+  `<br>\n`. The content of `pre`, `textarea`, `script`, `style`, `xmp`, `listing`, `plaintext` and
+  `code`, and comments, are never touched. Like the echoed-`<br>` rule it runs on tokens, inside the
+  parser: a pass over the rendered output would also see the `<br>\n` markdown-it writes itself.
 - **Code fences still show markup as text**: markdown-it escapes HTML inside code blocks regardless
   of `html: true`, so "how do I center a `<div>`?" is unaffected.
 - **`BLOCK_ALLOWED` is a superset of everything markdown-it emits** — it was widened with the table
@@ -559,11 +1107,15 @@ already a real `<br>` element in the HTML — and therefore in `fullTextHTML`, t
 must show the same line structure. The old `convertTextNodeNewlinesToBr()` fixed up only the chat
 DOM, so the mail silently lost every single-`<br>` break; it has been removed. Re-adding it would
 also double-space the answer, since markdown-it emits `<p>a<br>\nb</p>` and the `\n` right after the
-`<br>` would be promoted to a second one.
+`<br>` would be promoted to a second one. (The echoed-`<br>` and raw-HTML-block rules under *One
+render path, no router* are not such a pass: they run inside the parser, on tokens, before anything
+is rendered, and the second touches only the content of `html_block` tokens.)
 
 The complementary half of this lives on the input side: the compose-window HTML placeholders
 go through `normalizeHtmlSourceNewlines()` (`js/mzta-utils.js`), **not** `convertNewlinesToBr()`,
-so the prompt no longer carries a `<br>` at every source newline for the model to copy back.
+so the prompt no longer carries a `<br>` at every source newline for the model to copy back, and
+the window posts the prompt as it comes (see "The prompt is plain text" under *Streaming data
+flow*), adding none of its own.
 
 **With one exception, and it is the important one: that rule assumes the source really is HTML.**
 In a plain text compose window there are no tags — the line breaks *are* the `\n` characters — so
@@ -589,14 +1141,46 @@ space join erased the boundaries *between* top-level nodes. The composed mail th
 the model as one run-together line, and the diff picker compared a well-formatted answer against
 a one-line original — every line read as changed. [#829]
 
-The extraction now projects each top-level node with `nodeTextKeepLines()` (`<br>` → `\n`, trailing
-break trimmed because Thunderbird's editor ends most lines with a bogus `<br>`) and joins nodes with
-`\n`, or `\n\n` when the node is block-level (`MZTA_BLOCK_LEVEL_RE`: `P`, `BLOCKQUOTE`, `UL`, `OL`,
-`TABLE`, `H1`–`H6`, `PRE`). That is `blockTextOfHtml()`'s projection from `api_webchat/diffPicker.js`
-applied to a live node — **reimplemented, not imported**: the compose script is registered as a
-*classic* content script (`composeScripts.register`), has no module context, and cannot import from
-`js/mzta-utils.js`. A plain text compose window needs no special case: its breaks are already real
-`\n` in the text nodes ([#855]), there are no `<br>` to replace, and nothing doubles up.
+The extraction now projects each top-level node with `nodeTextKeepLines()` (`<br>` → `\n`) — that is
+`blockTextOfHtml()`'s projection from `api_webchat/diffPicker.js` applied to a live node,
+**reimplemented, not imported**: the compose script is registered as a *classic* content script
+(`composeScripts.register`), has no module context, and cannot import from `js/mzta-utils.js` — and
+joins the nodes with **`createLineJoiner()`**, which reads the top level as the **flow** a browser lays
+out, not as a list of lines:
+
+| Top-level node | Kind | In the text |
+|---|---|---|
+| `<br>`, `<hr>` | break | ends the current line; with no line open, makes an empty one |
+| `MZTA_BLOCK_LEVEL_RE` (`P`, `BLOCKQUOTE`, `UL`, `OL`, `TABLE`, `H1`–`H6`, `PRE`) | paragraph | a line of its own, a blank line before and after |
+| any other block (`DIV`, `LI`, `SECTION`…), or an element with an inline `display: block` | line | a line of its own |
+| text, inline elements | inline | continues the current line |
+
+A block's trailing break is trimmed, because Thunderbird's editor ends most lines with a bogus `<br>`
+and the joiner already ends the block's line; an inline node's is kept, it is a real line break. The
+joiner replaced a plain `\n` join between top-level nodes (`\n\n` before a paragraph), which was right
+for `<p>` and `<div>` but not for a flow: a plain text compose window holds its lines as top-level
+`<br>` (below), and each `<br>`, a node of its own, was counted twice — every line came out as a
+paragraph in `{%mail_typed_text%}`.
+
+**What a plain text compose window really holds** (captured from a live one, a reply:
+`tests/fixtures/compose/captured/plaintext_compose_body_live.html`). Its `<body>` carries
+`white-space: pre-wrap`, and its lines are **top-level `<br>`**, not `\n` in the text nodes: the
+editor opens a reply with `<br><br>` for the lines to type, then a `div.moz-cite-prefix` and a
+`div.moz-signature` exactly as in HTML, the quote being a `span` (`white-space: pre-wrap; display:
+block`) whose lines are `<br>` too and whose `"> "` are text in the DOM. A `\n` inside a text node
+appears where text was inserted as a `Text` node — the answer inserted by `replaceSelectedText`'s
+fallback ([#855], *Replacing text in a compose window*) — and the `pre-wrap` body renders it as a
+line. Both forms must project to the same lines. The quote
+`span` is a "line" for the joiner (its inline `display: block`), so the top-level `<br>` that follows
+it is the empty line the window shows before the signature.
+
+`nodeTextKeepLines()` follows the shared layer's whitespace rule (see *`htmlBodyToPlainText()` injects
+the line structure*), reusing its `mztaTextNodes()` / `mztaIsPreformatted()` globals: outside
+preformatted content, HTML whitespace collapses to one space and a space at the start of a line goes.
+A draft reopened in the compose window carries the serializer's indentation, and `"-- <br>\n      This"`
+used to give a blank line inside the signature of `{%mail_quoted_text%}`. Preformatted is also checked
+on the **live** ancestors of the node: the projection runs on a detached clone, and a plain text
+window's `white-space: pre-wrap` sits on `<body>`, outside it.
 
 The resulting contract, identical across every compose-window kind: **one `\n` between lines, one
 blank line (`\n\n`) between paragraphs.** Paragraph mode gives every `<p>` boundary a blank line, so
@@ -639,15 +1223,43 @@ being compact. Every paragraph therefore came out welded to the next one
 (`...quotation below:DMS could be XXXXServer 2TB...`).
 
 The function now inserts real break text nodes into the parsed DOM **before** the `textContent`
-read, by calling `mztaInjectLineBreaks()` after the hidden-element / `<style>` removals. That helper
-lives in **`js/lib/mzta-html-lines.js`** and applies three passes:
+read, by calling `mztaInjectLineBreaks()` after the hidden-element / `<style>` / `<script>` removals. That helper
+lives in **`js/lib/mzta-html-lines.js`** and applies four passes, between two whitespace rules
+taken from how HTML renders:
 
+- **Before the passes, HTML whitespace is collapsed.** Outside preformatted content, every run of
+  spaces, tabs and newlines in the document's own text nodes becomes one space. A newline in the
+  HTML *source* is not a line of the mail: an HTML generator wrapping a long paragraph, or the
+  serializer's indentation in a draft reopened in the compose window, used to come out as line
+  breaks (`"On 05/11/2024 08:27,\n      <a>…</a> wrote:"` was two lines of `{%mail_text_body%}`).
+  Preformatted means inside `pre` (and `textarea`, `listing`, `xmp`, `plaintext`) or under an
+  inline `white-space: pre / pre-wrap / pre-line / break-spaces`, checked up to the root included:
+  the plain text compose window's body carries `white-space: pre-wrap`, and there the newlines
+  **are** the lines ([#855]). Inline styles only, as for the hidden elements: there is no computed
+  style on a detached DOM. U+00A0 is not HTML whitespace; it is left to the normalizer.
+
+0. A block element (the pass-3 list) **preceded by inline content** in its parent — text, or an
+   inline element, skipping whitespace-only text and comments — gets a `\n` node inserted **before**
+   it. The other passes only *append*, so without this "Hi Bob,<div>thanks</div>" — Gmail's own
+   shape, the first line bare and every following line in a `<div>` — came out welded as "Hi
+   Bob,thanks". Only after inline content, never after a block, a cell, a `<br>`/`<hr>` or as the
+   first child: those already end their line, and an extra `\n` there would turn two consecutive
+   `<div>` or `<li>` into a blank line on the `{ keepParagraphs }` (insertion) side. Runs first,
+   while the `<br>` are still elements.
 1. `td, th` → append a **space** (cells separate with a space, not a newline). First, so the block
    pass's `<tr>` newline still wins at row level.
 2. `br, hr` → `replaceWith` a `\n` node. Both are void: they carry no text, so the break replaces
    them rather than being appended inside them.
 3. `p, div, li, tr, h1`–`h6`, `blockquote, pre, table, ul, ol, section, article, header, footer` →
    append a `\n` node.
+
+- **After the passes, a space at the start of a line is dropped** (outside preformatted content),
+  as a browser does not render one. Without it the collapsed source whitespace right after a break
+  would open the next line with a space or, alone between two breaks, make a blank line on the
+  `{ keepParagraphs }` side: markdown-it's `<br>\n` gave `a\n\nb` instead of `a\nb`, its pretty-printed
+  `</p>\n<p>` and `</li>\n<li>` added blank lines between paragraphs and list items. This is what
+  makes the insertion side consume "the pretty-printing newline that follows its tag" (see
+  *Writing into a plain text compose window*).
 
 Same parse-then-inject recipe as `htmlToPlainText()` (`api_webchat/messagesArea.js`) and
 `blockTextOfHtml()` (`api_webchat/diffPicker.js`) — the add-on treats this as *the* HTML→text
@@ -668,6 +1280,14 @@ injected one) does not gain any. Do not relax the rule to "fix" paragraph spacin
 > `cleanupNewlines()`'s `[ \t]+` → ` ` and `\n{2,}` → `\n` rules run over the whole string.
 > Preserving it verbatim would need a sentinel/restore pass around that chain: new machinery and a
 > new collision failure mode, for an element that is rare in mail.
+>
+> The same gap exists on the `{ keepParagraphs }` side, i.e. plain-text **insertion**
+> (`stripHtmlKeepLines()`) and the chat's **Copy** (`htmlToPlainText()`): a fenced code block in an
+> answer (`<pre><code>`) keeps its lines, but its indentation collapses to one space and its blank
+> lines are capped at one (`"<pre>a\n  b</pre>"` → `"a\n b"`). The projection itself keeps the
+> `<pre>` text verbatim (`mztaIsPreformatted()`); the loss is the normalizer's, which works on a
+> string and cannot see where the `<pre>` was. Deliberately left as is, for the same reason as
+> above. Insertion into an **HTML** compose window is not affected: the `<pre>` goes in as HTML.
 
 #### Hidden elements — `mztaStripHidden()`, and why the attribute selector was wrong
 
@@ -721,10 +1341,10 @@ business.
 | Interactive | `getTextBodyHtml()` → **stripped** | `getFullHtml` → `getCleanBodyHtml().innerHTML` — **kept** |
 | Background | `htmlBodyToPlainText()` — **stripped** | `getMailInlineTextParts().html` — **kept** |
 
-- **Interactive.** `getCleanBodyHtml()` is shared by three message cases, two of them text
-  (`getText`, `getTextOnly`) and one HTML (`getFullHtml`). The strip therefore lives in a thin
-  wrapper, **`getTextBodyHtml()` = `mztaStripHidden(getCleanBodyHtml())`**, called by the two text
-  cases only. Putting it inside `getCleanBodyHtml()` — the obvious-looking spot — silently strips
+- **Interactive.** `getCleanBodyHtml()` is shared by two message cases, one text (`getTextOnly`)
+  and one HTML (`getFullHtml`). The strip therefore lives in a thin wrapper,
+  **`getTextBodyHtml()` = `mztaStripHidden(getCleanBodyHtml())`**, called by the text case only (a
+  second text case, `getText`, was removed: nothing sent it). Putting it inside `getCleanBodyHtml()` — the obvious-looking spot — silently strips
   `{%mail_html_body%}` and the diff picker's original side as a side effect, because `getFullHtml`
   reads that same clone.
 - **Background.** Nothing was needed: `getMailInlineTextParts()` (`js/mzta-utils.js`) builds
@@ -773,6 +1393,13 @@ by the source change rather than patched:
 the sole `browser.messages.getAttachmentFile()` call in the repo — all three existed only to work
 around `getFull()`. `removeMozMainHeader()` stays: `htmlBodyToPlainText()` uses it too.
 
+**The header block of a forwarded message.** Thunderbird renders a forwarded (or attached) message's
+headers as a `table.moz-main-header`, preceded by the `DIV`s of its title ("-------- Forwarded
+Message --------"). Every body reading removes the table **and the `DIV` siblings right before it**,
+so none of it reaches a placeholder, text or HTML: `removeMozMainHeader()` on the background path
+(`getMailInlineTextParts()`'s html and `htmlBodyToPlainText()`), the same loop in
+`getCleanBodyHtml()` on the interactive one (`getTextOnly` and `getFullHtml`).
+
 **Unchanged, deliberately:** the `{text, html}` construction itself. The `html === ""` synthesis via
 `mztaLinesToHtml(text, { mode: 'br' })` and the `else` branch's `DOMParser` +
 `removeMozMainHeader()` + `doc.body.innerHTML` are carried over verbatim, so every placeholder value
@@ -800,12 +1427,41 @@ thing about this area. Two separate extractions exist:
 | Interactive (menu / popup) | `getTextOnly` in `js/mzta-compose-script.js` | `{%mail_text_body%}` when the user runs a prompt |
 
 The interactive chain is `getMailBody()` (`js/mzta-menus.js`) → `getTextOnly` → `getCleanBodyHtml()`
-→ `cleanupNewlines()` → `curr_prompt.body_text`. Fixing one path does nothing for the other; both
+(in a message display, the mail's part containers only — see below) → `cleanupNewlines()` →
+`curr_prompt.body_text`. Fixing one path does nothing for the other; both
 carry the same one-`\n`-per-block, never-a-blank-line contract and must be kept in step.
 
 `js/mzta-compose-script.js` serves **both** window kinds — `composeScripts.register` *and*
 `messageDisplayScripts.register` (`mzta-background.js`) — so "compose script" is a misnomer: it is
 also the reading-side extractor.
+
+#### Message display: only the mail's own part containers are read
+
+A displayed body holds more than the mail. Other add-ons draw into it from their own message
+display scripts — an "External sender" / "Possible spoofing" banner, a footer — and reading the
+whole `document.body` sent that text to the AI as if it were the message. No list of selectors can
+name another add-on's markup, so the extraction keeps what Thunderbird itself renders the mail
+into instead: the **top-level** `div.moz-text-html`, `div.moz-text-plain` and `div.moz-text-flowed`
+(`MZTA_DISPLAY_PART_SELECTOR`, `cloneDisplayParts()` in `js/mzta-compose-script.js`), cloned into a
+detached `<body>` in document order. A container nested in another (an inline forwarded message)
+travels inside its parent and is not taken twice. Everything outside them is dropped as a side
+effect: the display's header table, the attachment headers, ThunderAI's own panels.
+
+- **Who decides.** `getMailBody()` (`js/mzta-menus.js`) sends `display: true` with `getTextOnly` and
+  `getFullHtml` for every tab type but `messageCompose`. The content script cannot tell by itself
+  reliably — it is the same file in both window kinds, and its displayed-message lookup is async
+  and may be `null` — so the caller, which knows `tabs[0].type`, says so.
+- **Never in a compose window.** A reply or an inline forward can carry these classes inside the
+  quoted text; restricting there would cut the body down to the quote. Without the flag the whole
+  body is read, as before.
+- **Fallback.** A displayed body with no such container (a document not built by the message
+  display) is read whole, as before.
+- **After the restriction** everything else in `getCleanBodyHtml()` applies unchanged:
+  `MZTA_INJECTED_SELECTORS`, the forwarded `moz-main-header` block, and `mztaStripHidden()` on the
+  text side only.
+- **Not covered:** a selection (`getSelectedText` / `getSelectedHtml`) is what the user selected,
+  banner included; and the typed / quoted walkers, which are compose concepts. The background path
+  never had the problem: it reads the MIME parts (`getMailInlineTextParts()`), not the DOM.
 
 #### `getCleanBodyHtml()` returns a DETACHED clone, so `innerText` does not work there
 
@@ -822,7 +1478,10 @@ Two fixes, both in `getCleanBodyHtml()`'s orbit:
    *source* is text, and `textContent` reads stylesheet rules out as body copy. A Word mail carries a
    long `@font-face` / `.MsoNormal` block at the top of `<body>`, which is what was landing in the
    prompt. Removing them in the clone also keeps the CSS out of `getFullHtml`'s `innerHTML`, so it no
-   longer rides along in `{%mail_html_body%}` or the diff picker's original side.
+   longer rides along in `{%mail_html_body%}` or the diff picker's original side. The background
+   path drops the same two tags from its own parse (`htmlBodyToPlainText()`), so the two paths give
+   the same `{%mail_text_body%}`; it used to drop only `<style>`, and a mail's script source reached
+   the model on the automatic features.
 2. **`getTextOnly` now calls `mztaHtmlNodeToLines()`** instead of `innerText` — the shared
    projection, layout-independent by construction.
 
@@ -847,7 +1506,8 @@ classic-script constraint:
   (default collapses `\n{2,}` for the body contract, `{keepParagraphs}` caps at `\n\n` for insertion,
   `{keepColumns}` is verbatim for `{%mail_plain_text_part%}`).
 - **`js/mzta-richtext.js`** — an **ES module** hosting the ONE **sanitizer** + **tag taxonomy** (see
-  the render section above and [07-diff-picker.md](07-diff-picker.md)), plus **`globalThis`
+  the render section above and [07-diff-picker.md](07-diff-picker.md); the background also uses it
+  for the summary/translation panel payloads, see *Panel HTML sanitization*), plus **`globalThis`
   re-exports** of the projection above (`htmlToLines`/`linesToHtml`/`normalizePlain`/
   `hasLineStructure`) so module-world callers get a clean `import`. The re-exports resolve the global
   at CALL time, so the module loads fine even where the classic script is absent as long as they are
@@ -862,7 +1522,9 @@ of which give it module context, so it cannot `import`. It is loaded on **four**
 - **background** — a plain `<script>` in `mzta-background.html`, ahead of the `type="module"` entry
   point, exactly as `markdown-it.min.js`. `js/mzta-utils.js` reaches it through `globalThis`.
 - **webchat** — a plain `<script>` in `api_webchat/index.html`, ahead of the module scripts, because
-  `js/mzta-utils.js` (imported there for `convertNewlinesToBr`, now a `globalThis` shim) needs it.
+  Copy converts the answer through it (`htmlToPlainText()` in `messagesArea.js`, via the
+  `mzta-richtext.js` re-exports, see the end of this section) and `js/mzta-utils.js`, imported by
+  the controller, reaches `mztaEscapeHtml` through it for the startup notice.
 
 `js/mzta-utils.js`'s conversion helpers (`htmlBodyToPlainText`, `stripHtmlKeepLines`, `cleanupNewlines`
 / `cleanupNewlinesKeepParagraphs` / `normalizePlainTextPart`, `convertNewlinesToBr` /
@@ -871,7 +1533,7 @@ truth, reached anywhere the classic script is loaded. A settings or popup page t
 of them would need the `<script>` tag too. Same shape as `js/lib/diff.js`.
 
 **`{%mail_typed_text%}` / `{%mail_quoted_text%}` are untouched by all of this.** Their walkers read
-`window.document.body.childNodes` **directly**, not the clone (which is the known gap recorded
+`window.document.body.childNodes` **directly**, not the clone (see the add-on's own elements
 below), so neither the `<style>` removal nor the new projection reaches them, and their `\n\n`
 paragraph contract is preserved exactly.
 
@@ -886,10 +1548,15 @@ The node-walking logic is unchanged — the `moz-cite-prefix` / `moz-forward-con
 particular `lastNode` is still keyed off `node.textContent`, **not** the new projection, so the
 autoselect range is provably identical.
 
-> Known gap, not fixed here: `getOnlyTypedText` walks `document.body.childNodes` directly rather
-> than `getCleanBodyHtml()`, so injected ThunderAI DOM (`#mzta-container`, `.mzta_dialog`) and the
-> `moz-signature` can contaminate `{%mail_typed_text%}`. Swapping in `getCleanBodyHtml()` would
-> break autoselect — it returns a detached clone, and the range needs live nodes.
+**The add-on's own elements and the signature, on the live body.** The walkers cannot use
+`getCleanBodyHtml()`: it returns a detached clone, and the autoselect range needs live nodes. So they
+filter the live top-level nodes themselves, with `isInjectedNode()` (`MZTA_INJECTED_SELECTORS`):
+both skip the add-on's own elements — `#mzta-container` is always the body's first child, the
+`.mzta_dialog` are appended at its end, so a top-level check is enough — and a skipped node is never
+`firstNode` / `lastNode`, so the autoselect range leaves it out. `getOnlyTypedText` also **stops at
+`div.moz-signature`**, as it does at the citation: in a new message, with no quote to stop the walk,
+the signature used to be read as typed text. `getOnlyQuotedText` still reads to the end of the body,
+the signature included.
 
 The answer-text snapshot is what the "use this answer" /
 "copy" / "save as summary" / diff buttons close over — one instance per turn keeps each
@@ -898,9 +1565,15 @@ turn's buttons tied to their own response.
 Every one of those buttons honours a text selection and acts on just that part of the
 answer, falling back to the whole snapshot when nothing is selected. "Copy" writes **plain
 text**, so it reads the selection through `getCurrentSelectionText()` and converts the
-snapshot with `htmlToPlainText()` — which parses the markup, decoding entities (`&amp;` → `&`)
-and turning `<br>` and block boundaries into real newlines. The older `stripHtmlTags()` regex
-is still used where the consumer wants tags gone but escapes left alone (the diff viewer).
+snapshot with `htmlToPlainText()`, which **is this layer**: `normalizePlain(htmlToLines(html),
+{ keepParagraphs: true })`, the same conversion as `stripHtmlKeepLines()`. Copy therefore writes
+exactly what a plain text compose window would receive: entities decoded (`&amp;` → `&`), a `<br>`
+one `\n`, a paragraph a blank line. The `\n` markdown-it writes after each `<br>` (`<br>\n`) is
+source whitespace to the projection and adds nothing. `htmlToPlainText()` used to be a converter of
+its own that turned the `<br>` into a newline **and** kept that source newline, so every line break
+of an answer was copied as a blank line, indistinguishable from a paragraph break. The older
+`stripHtmlTags()` regex is still used where the consumer wants tags gone but escapes left alone
+(the diff viewer).
 
 ### Writing into a plain text compose window
 
@@ -915,31 +1588,139 @@ When it reports plain text, `mzta-background.js` converts the answer snapshot wi
 **tags**, not by the source newlines: the renderer emits `<br>\n` and `</p>\n<p>`, so each of
 those rules consumes the pretty-printing newline that follows its tag. Counting both would
 double every line and make a single `<br>` indistinguishable from a paragraph break.
+A fenced code block in the answer keeps its lines but not its indentation: see the `<pre>` known
+gap under *`htmlBodyToPlainText()` injects the line structure*.
 
 **Converting is only half the job — the insertion path has to stop treating the result as
-HTML.** Three places cooperate, and all three are required:
+HTML.** These places cooperate, and all of them are required:
 
-- `replaceSelectedText` (`js/mzta-compose-script.js`) inserts a **`Text` node** when
-  `message.isPlainText` is set, instead of routing through `DOMParser`. This is the actual
-  fix for #855: in HTML a bare `\n` is collapsible whitespace, so parsing the converted text
-  rendered every line break as a single space and the whole message arrived as one line.
-- The HTML branch of the same handler inserts the parsed nodes through a
-  **`DocumentFragment`**, never `doc.body` itself. Inserting the `<body>` element nests a
-  second `<body>` inside the compose body; the `compose_reloadBody` round-trip on the very
-  next line hands that invalid markup to Thunderbird's serializer, which flattens the
-  misplaced blocks and destroys the `<p>` paragraphs the diff picker emits. The fragment's
-  children are collected with `Array.from(doc.body.childNodes)` because `childNodes` is a
-  **live** NodeList — `appendChild` removes each node from the list being walked, so
-  iterating it directly would skip every other node.
-- `getOriginalBody` / `setBody` / `reloadBody` / `replaceBody` (`js/mzta-utils.js`) read and
-  write **`plainTextBody`**, not `body`. Writing `body` on a plain text window makes
-  Thunderbird convert the HTML down to text, undoing the line structure again — which matters
-  most in `compose_reloadBody`, whose `setBody` round-trip runs right after the insertion.
+- `replaceSelectedText` (`js/mzta-compose-script.js`) inserts the answer **as text** when
+  `message.isPlainText` is set — `execCommand('insertText')`, or a **`Text` node** on the
+  fallback (see *Replacing text in a compose window*) — never through `DOMParser` /
+  `insertHTML`. This is the actual fix for #855: in HTML a bare `\n` is collapsible whitespace,
+  so parsing the converted text rendered every line break as a single space and the whole
+  message arrived as one line.
+- `replaceBody` (`js/mzta-utils.js`, the fallback of *Writing a reply*) reads and writes **`plainTextBody`**, not `body`, on a
+  plain text window. Writing `body` there makes Thunderbird convert the HTML down to text,
+  undoing the line structure again.
 - `chatgpt_replyMessage` **omits** `isPlainText` from `compose.beginReply` rather than forcing
-  `false`, so the reply follows the identity's own format; `replaceBody()` then reads the
-  format back off the created tab. On a plain text reply there is no DOM to splice into, so
-  the answer is prepended to the existing text with a blank line rather than going through
-  `insertHtml()`.
+  `false`, so the reply follows the identity's own format; `_insertReply()` then reads the
+  format back off the created tab, and on a plain text reply the answer is converted and
+  inserted as text before everything, with a blank line (*Writing a reply*).
+
+### Replacing text in a compose window
+
+`chatgpt_replaceSelectedText` (from the AI chat window, with or without the diff picker, and from
+the ChatGPT web window) reads the window's format (*Writing into a plain text compose window*),
+converts the answer for a plain text window, and sends `replaceSelectedText` to the compose tab.
+That is all the background does: **nothing writes the body through the compose API afterwards.**
+The insertion happens in the compose script (`insertIntoEditor()` in `js/mzta-compose-script.js`),
+**through the editor**, so it is one transaction of the editor's undo stack: one Ctrl+Z restores
+the text it replaced, Ctrl+Y / Ctrl+Shift+Z redoes it.
+
+- **HTML window:** one `document.execCommand('insertHTML', false, html)`, where `html` is the
+  `innerHTML` of the answer parsed with `DOMParser` — the body's children serialized, never a
+  `<body>`, `<html>` or `<head>` (an answer that is a whole document is reduced to its body's
+  children). `DOMParser` only balances the markup, it does not sanitize it, and `insertHTML` (like
+  the fallback's `insertNode`) is an HTML insertion even if no linter flags it. So **the background
+  sanitizes it first**: `_replaceSelectedText()` passes an HTML answer through `sanitizeBlockHtml()`
+  (`js/mzta-richtext.js`, the ONE sanitizer) before sending `replaceSelectedText`. The API chat's
+  answers already crossed it (the renderer, the diff picker), so a second pass leaves them as they are; the ChatGPT web
+  window's (`getSelectedHtml()`, the provider page's HTML) are sanitized nowhere else. A plain text
+  answer is converted (`stripHtmlKeepLines()`), never sanitized.
+- **Plain text window:** one `document.execCommand('insertText', false, text)` with the whole
+  answer, its `\n` included: one call, so one undo step. Gecko's editor turns each `\n` into a line
+  break of the plain text editor (a `<br>`, or a preformatted linefeed); this is not modelled by the
+  tests and is part of the manual test (#855: the message must not collapse into one line).
+- **The selection.** `execCommand` acts on the **current** selection, so the handler sets it
+  (`removeAllRanges()` + `addRange()`) to the range it computed. A selection that reaches into
+  ThunderAI's own elements (`#mzta-container` and its `.mzta_dialog`, e.g. after a select-all) starts
+  right after them instead (`keepOutOfInjected()`): they are never deleted nor part of the
+  transaction. They are top-level and `#mzta-container` is the body's first child, so no typed text
+  is lost; a range lying entirely inside one collapses right after it.
+- **With no selection** the handler asks first (`Replace_No_Selected_Text`, "…insert the AI's
+  response at the beginning of the email?"). No: nothing is inserted, no editor command, it
+  resolves `false`. Yes: the answer goes at the **start of the email** — a collapsed range before the
+  first node of the body that is not one of ThunderAI's own elements — wherever the cursor is, and
+  also when the selection holds no range at all (an editor never clicked into), which used to throw
+  on `getRangeAt(0)`.
+- **Focus.** From the AI chat or the ChatGPT window the compose window is not focused, and an editor
+  command can then do nothing. When `document.hasFocus()` is false the handler calls
+  `window.focus()` first, and sets the selection **after** it, since focusing may restore the
+  editor's own saved selection.
+- **Fallback.** When `execCommand` returns `false` or throws, the failure is logged
+  (`console.error`) and the answer is inserted **directly** in the same range, so it is never lost —
+  but outside the undo stack: a `Text` node holding the `\n` verbatim in plain text (the `pre-wrap`
+  body renders them as lines), or the parsed nodes through a **`DocumentFragment`** in HTML, never
+  `doc.body` itself (a nested `<body>` is invalid markup that Thunderbird's serializer flattens,
+  destroying the `<p>` paragraphs the diff picker emits). The fragment's children are collected with
+  `Array.from(doc.body.childNodes)` because `childNodes` is a **live** NodeList — `appendChild`
+  removes each node from the list being walked, so iterating it directly would skip every other
+  node.
+- The command resolves `true` once the answer is inserted, by either path.
+
+**Why not the compose API: `setComposeDetails()` and the undo history.** Until v5.1.0 the content
+script mutated the DOM directly (`deleteContents()` + `insertNode()`), which bypasses the editor's
+transaction manager, and then sent `compose_reloadBody`: the background had saved the body before
+the insertion (`original_html`) and called `setComposeDetails` twice — the old body, then the new
+one — so that the second write was an undoable step ([#34](https://github.com/micz/ThunderAI/issues/34)).
+That stopped working with **Thunderbird 143** (bug [1975127](https://bugzilla.mozilla.org/show_bug.cgi?id=1975127),
+commit `18fda6f17aa`, in ESR 153, **not** in ESR 140): `SetComposeDetails()` in
+`mail/components/compose/content/MsgComposeCommands.js` now writes an HTML body with
+`editor.document.documentElement.innerHTML = body; editor.beginningOfDocument();
+editor.clearUndoRedo();` instead of `editor.rebuildDocumentFromSource(body)`, so **every
+`setComposeDetails({body})` wipes the whole undo/redo history**. (The `plainTextBody` branch —
+`selectAll` + `insertTextWithQuotations` — does not clear it.) Hence:
+
+- after the editor insertion **nothing may call `setComposeDetails` with a body for that tab**, or
+  the undo entry just created is destroyed; `compose_reloadBody`, `original_html` / `modified_html`
+  and the `getOriginalBody()` / `setBody()` helpers are gone;
+- the `execCommand` path works the same on ESR 140; no version is relied on to make
+  `setComposeDetails` undoable.
+
+The reply of `chatgpt_replyMessage` goes through the same editor path (*Writing a reply*); the only
+`setComposeDetails` left is that path's fallback, `replaceBody()`.
+
+### Writing a reply
+
+`chatgpt_replyMessage` opens the reply (`compose.beginReply`, *Writing into a plain text compose
+window* for the format), waits for the tab to load, and 500 ms later runs `_insertReply()`
+(`mzta-background.js`). It reads the window's format with `isPlainTextCompose()`, converts the
+answer with `stripHtmlKeepLines()` on a plain text window or passes it through `sanitizeBlockHtml()`
+on an HTML one (as *Replacing text in a compose window*: it ends in `insertHTML`), and sends **`insertReply`**
+`{text, isPlainText}` to the compose script, which inserts it through `insertIntoEditor()` — the
+same editor path as *Replacing text in a compose window*: one `execCommand`, so one Ctrl+Z takes the
+answer out of the reply and Ctrl+Y puts it back; the window is focused first; the direct-DOM
+fallback (logged) when the editor refuses or throws. Nothing writes the body through the compose
+API afterwards. The command resolves `true`. `chatgpt_replyMessage` itself still resolves `true` as
+soon as the tab has loaded, without waiting for the insertion, as before.
+
+Where the answer goes is what `replaceBody()` / `insertHtml()` (`js/mzta-utils.js`) produced:
+
+- **HTML:** the range runs from the body's first node that is not one of ThunderAI's own elements
+  to the **first quote or signature** (`firstQuoteOrSignature()`: `.moz-cite-prefix`, or
+  `.moz-forward-container` when there is none, or `.moz-signature`, whichever comes first — the
+  signature with "signature above the quote" — taken as its top-level ancestor), so the empty lines a
+  new reply opens with are replaced. The value is the parsed answer's body children (never a
+  `<body>`) followed by a **`<br>` spacer unless that block already starts with a `<br>`**
+  (`startsWithBreak()`, [#849](https://github.com/micz/ThunderAI/issues/849): the signature does, the cite prefix does not). With neither quote nor
+  signature the range is a caret before the first node, which is kept, and drives the same spacer
+  rule; on an empty body there is no spacer. `startsWithBreak()` is a copy of the one in
+  `js/mzta-utils.js`: the compose script is classic and cannot import a module.
+- **Plain text:** a caret before the first node; the text is the answer followed by `\n\n` when the
+  body (ThunderAI's elements left out) holds any non-blank text, the answer alone otherwise —
+  `replaceBody()`'s "prepended with a blank line".
+- ThunderAI's own elements stay above the answer, untouched.
+
+**Reaching the compose script.** The script may not be loaded yet when the tab reports `complete`:
+`tabs.sendMessage` then rejects with "Could not establish connection. Receiving end does not exist."
+That error alone is retried, every 250 ms, 20 times. Any other rejection is logged and **not**
+retried nor followed by the fallback: it may come after the answer was inserted, and a second
+insertion would double it. When the script never answers, the error is logged and the reply is
+written with **`replaceBody()`**, the old way: `setComposeDetails` with `body` (built by
+`insertHtml()`, from the same sanitized HTML) or `plainTextBody`. That write cannot be undone, and on Thunderbird ≥ 143 the HTML
+one clears the window's undo history (bug 1975127); the window is new, so the history holds nothing
+of the user's.
 
 ### Theming
 
@@ -976,18 +1757,22 @@ and its buttons. There are no `<hr>` dividers; spacing separates the turns.
                                    .sel_info          (alongside the full bar)
 ```
 
+The user `.bubble` and every `.message` wrap anywhere (`overflow-wrap: anywhere`): the bubble shows
+the prompt as text, HTML placeholders included, and an answer may hold a long URL, neither with a
+break opportunity, while `#messages` clips horizontally (`overflow-x: hidden`). `anywhere`, not
+`break-word`, because only it lowers the min-content width of the bubble, a flex item. A `<pre>` in
+an answer is unaffected: it does not wrap and keeps its own horizontal scroll.
+
 Two invariants in `MessagesArea`, both easy to break:
 
-- **`_currentTurnEl` must survive a flush.** A single response flushes on every bare `\n`
-  token, and — only once the response is known to be HTML — on every token that *contains* a
-  `\n` (`handleNewToken()` tests `token === '\n' || (token.includes('\n') &&
-  streaming.isHtmlResponse === true)`, not just `token === '\n'` — providers tokenize
-  differently and plenty send `"foo\nbar"` as one token, which a strict equality test would
-  never flush). The embedded-newline trigger is gated to the HTML path because `flush()`
-  re-renders the whole accumulated raw text there, so splitting at an embedded newline costs
-  nothing; on the markdown path each flush renders only its own segment, so flushing at
-  `"foo\nbar"` would strand the text after the newline in a separate `<p>`. While the shape is
-  still undecided only a bare `\n` flushes. Clearing `_currentTurnEl` in
+- **`_currentTurnEl` must survive a flush.** A single response flushes on every token that
+  *contains* a `\n` (`handleNewToken()` tests `token.includes('\n')`, not just
+  `token === '\n'` — providers tokenize differently and plenty send `"foo\nbar"` as one
+  token, which a strict equality test would never flush). The trigger is ungated: there is
+  one render path now, and `flush()` re-renders the whole accumulated raw text every time,
+  so splitting at an embedded newline strands nothing — the `HTML_RENDER_CHUNK` threshold
+  inside `flush()` is what coalesces the re-renders, and a provider that never sends a `\n`
+  at all still renders everything at the final flush. Clearing `_currentTurnEl` in
   `flushAccumulatingMessage()` would therefore open a new wrapper — and render a second
   avatar — part-way through one answer. Only `appendUserMessage()`, `appendBotMessage()` and
   `handleTokensDone()` reset it. `appendDiffPicker()` can run against an older turn mid-session,
@@ -999,7 +1784,10 @@ Two invariants in `MessagesArea`, both easy to break:
   Degrading therefore *replaces* the bar with the toolbar. The toolbar is built at that
   moment, but from the arguments stashed on the turn (`_mztaToolsArgs`) when the bar was
   created, so it stays bound to that answer's own text rather than to whatever is on screen
-  later.
+  later. An error turn (`appendBotMessage(..., 'error')`) also takes the full-bar slot: it
+  degrades the previous bar and gets a Close-only `.action-bar` (built by
+  `_buildCloseButton()`, shared with `addActionButtons()`), with no `_mztaToolsArgs`, so the
+  next degrade just removes it and builds no toolbar.
 
 **Self-closing `chatgpt_close` must be fire-and-forget.** Every button that finishes an
 action (reply / replace / save-summary / plain close) ends by sending
@@ -1011,6 +1799,67 @@ waiting for it, so the promise rejects with `Actor 'Conduits' destroyed before q
 `chatgpt_replyMessage`, `chatgpt_replaceSelectedText`) is still `await`ed because its reply
 is needed before the window goes away. Same pattern in `js/mzta-chatgpt.js` (the legacy
 fixed-div buttons).
+
+### Actions on an answer
+
+What the buttons under an answer send, what they act on, and which of them each kind of session
+offers. `promptData` is the `api_send` message, set once per window, so every answer of a session
+has the same target.
+
+**The commands and their fields.** Each carries the text (the answer snapshot, the picker's result
+or the selection, as described under *The rich-text layer*) and the fields that name its target,
+and nothing else:
+
+| Command | Sent by | Fields besides `command` and `text` | What the background uses |
+|---|---|---|---|
+| `chatgpt_replyMessage` | "use this answer", action `"1"` with a real message | `tabId`, `mailMessageId` (both from `api_send`), `replyType` (`reply_sender` / `reply_all`) | `mailMessageId`, to open the reply (`messages.get` → `compose.beginReply`); `tabId` is not read |
+| `chatgpt_replaceSelectedText` | "use this answer", action `"2"`, or action `"1"` with `mailMessageId` -1 (forced to `"2"`, [07-diff-picker.md](07-diff-picker.md#scope)) | `tabId` (the compose tab), `mailMessageId` (-1 from a compose window) | `tabId`, the compose window it writes into; `mailMessageId` is not read |
+| `chatgpt_saveSummary` | Save as Summary, summary sessions only | `headerMessageId` (`prompt_info.headerMessageId`), `tabId` (`prompt_info.summaryTabId`) | `headerMessageId` to store the summary; `tabId` to show it in that tab's message pane if the message is still displayed there |
+
+`chatgpt_saveSummary`'s `tabId` is `summaryTabId`, always set, since the button exists only when it
+is. (It used to be written `summaryTabId || promptData.tabId`, a fallback that could never apply.)
+Each of the three is awaited, then followed by the fire-and-forget `chatgpt_close` (see
+*Transcript DOM contract*).
+
+**The quotes stripped from the snapshot.** When an answer gets its buttons, `addActionButtons()`
+builds the snapshot from `fullTextHTML`, trimmed, through `stripWrappingQuotes()`: the quotation
+marks a model sometimes wraps its **whole** answer in are removed, so `"Dear Bob, hi."` reaches the
+mail as `<p>Dear Bob, hi.</p>`. The rule is read on the **parsed** snapshot, on its text: the first
+non-blank text node must open with `"`, the last must close with one, and these must be the only two
+`"` in the answer. A quote at one end alone is part of the text (`As he said, "yes"`), and with
+other quotes inside the two ends may belong to two quotations (`"Yes," he said, "fine"`), so both
+are left alone; a snapshot left alone is returned unchanged, byte for byte. The rule used to be four
+string patterns (a `"` at the very start, one at the very end, `<p>&quot;`, `&quot;</p>`), none of
+which could match: the snapshot is the sanitizer's serialization, which always opens with a tag and
+writes a quote in text as a bare `"`, never `&quot;`, so the quotes reached the mail.
+
+**Only the edge `<br>` are trimmed.** "use this answer" and Save as Summary send the snapshot, or the
+user's selection in the answer when there is one (`getCurrentSelectionHTML()`, the cloned range),
+through `trimEdgeBRs()`: the `<br>` at the very start and the very end of the HTML — the first / last
+thing in document order, so one opening the first block of a selection cloned with its partially
+selected `<p>` counts too — are removed, and **every other `<br>` is kept**, so the mail shows the
+line structure the chat shows. A selection dragged from the end of a line, or over the break that ends
+one, would otherwise open or close the inserted text with an empty line. The picker's result skips it
+(07-diff-picker.md, *Two things the picker deliberately bypasses*). It replaces `removeAloneBRs()`,
+which removed every `<br>` with no `<p>` ancestor: written for a newline→`<br>` post-pass that turned
+markdown-it's `</p>\n<p>` into stray `<br>` between blocks, it outlived that pass and then only deleted
+real line breaks — in a tight list item, in a table cell (`a<br>b` reached the mail as `ab`), and in
+any selection made inside one paragraph, whose cloned range has no `<p>` around it.
+
+**What each kind of session offers.** The full bar, on the newest answer, and the compact toolbar
+(`.turn-tools`), built from the same arguments when that answer stops being the newest:
+
+| Session | Full bar | Compact toolbar |
+|---|---|---|
+| Reply (action `"1"`, a real message) | "use this answer" split button with the reply-type dropdown, Copy, the chip, Close | Copy, "use this answer" (the stored reply type, no dropdown), the chip |
+| Replace (action `"2"`, or a compose window) | "use this answer", Copy, the chip, Close | Copy, "use this answer", the chip |
+| Picker prompt (`use_diff_viewer` `"1"`, whatever its action; the shipped ones replace) | its session's bar, plus Show differences before the chip | its session's toolbar: no Show differences. Copy and "use this answer" read the picker, if one was opened ([07-diff-picker.md](07-diff-picker.md#the-result-indirection)) |
+| Summary (`prompt_info` with `headerMessageId` and `summaryTabId`) | Copy, Save as Summary, the chip, Close | Copy, the chip: **no Save as Summary** |
+| Anything else (action `"0"`) | Copy, the chip, Close | Copy, the chip |
+
+The chip is there only when the usage display is on (spec 04 *Rendering in the chat window*), and is
+moved, not rebuilt, from the bar to the toolbar. The toolbar never holds Close: the window has one
+Close, on the newest answer's bar.
 
 ### Scrolling (prompt-anchored following)
 
@@ -1152,7 +2001,7 @@ geometry that decides that button's visibility.
 `addActionButtons()` deliberately does *not* scroll — `handleTokensDone()` does, which also covers
 the paths where that method returns early — though it *does* refresh `#jumpToLatest`: its append is
 the largest single content growth of the exchange (in reply mode the split button gains a second text
-line and `.sel_info` becomes visible), it lands after an `await browser.storage.sync.get`, and the
+line and `.sel_info` becomes visible), it lands after an `await` on a storage read, and the
 `_scrollIfSticky()` that follows it is a no-op while the user sits at the anchored prompt.
 
 ### Files
@@ -1178,9 +2027,9 @@ line and `.sel_info` becomes visible), it lands after an `await browser.storage.
 | `js/mzta-menus.js` | Context menu creation and management |
 | `js/mzta-prompts.js` | Prompt definitions (built-in) and custom prompt loading |
 | `js/mzta-placeholders.js` | Placeholder definitions and resolution logic |
-| `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.). Shared message-inspection helpers used by the auto-processing features: `extractEmail()` (the single copy of the address regex — **case-preserving**, since `getIdentityForMessage()` compares against the configured identities), `matchAddressList()` / `hasAddressListEntries()`, `messageFolderHasSpecialUse()` / `isMessageInAutoSkippedFolder()` (+ the `AUTO_SKIP_SPECIAL_USE` list); `sendTabMessageSafe()` (tabs.sendMessage guarded against tabs with no reachable message browser — see [Unreachable message pane](#unreachable-message-pane-sendtabmessagesafe-901)) |
+| `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.). Shared message-inspection helpers used by the auto-processing features: `extractEmail()` (the single copy of the address regex — **case-preserving**, since `getIdentityForMessage()` compares against the configured identities; prefers the `<...>` part of the header, keeps RFC 5322 local parts such as `user+tag` / `o'brien` and Unicode addresses whole, returns `''` for non-string input), `matchAddressList()` / `hasAddressListEntries()`, `messageFolderHasSpecialUse()` / `isMessageInAutoSkippedFolder()` (+ the `AUTO_SKIP_SPECIAL_USE` list); `sendTabMessageSafe()` (tabs.sendMessage guarded against tabs with no reachable message browser — see [Unreachable message pane](#unreachable-message-pane-sendtabmessagesafe-901)) |
 | `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection, `buildSummaryPrompt()` for unified summary prompt assembly, `buildTranslationPrompt()` for translation prompt assembly) |
-| `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders unified toolbar (spam badge, summary/translation trigger buttons) and content panels (generic error, spam explanation, summary, translation) in message display via `#mzta-container` |
+| `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders unified toolbar (spam badge, summary button, translation button, in that order) and content panels (generic error, generic info, translation, summary, in that order) in message display via `#mzta-container` — see [The message-display panels and dialogs](#the-message-display-panels-and-dialogs-jsmzta-compose-scriptjs) |
 | `js/mzta-chatgpt.js` | ChatGPT Web integration (opens browser window, reads DOM) |
 | `js/mzta-special-commands.js` | Handles special prompt actions (add_tags, calendar, task) |
 | `js/mzta-spamreport.js` | Spam filter logic |
@@ -1188,8 +2037,9 @@ line and `.sel_info` becomes visible), it lands after an `await browser.storage.
 | `js/mzta-logger.js` | Debug logging (`taLogger`). `log()` gates only the `console.log`, **not its argument** — the message string is always built. On a hot path (per SSE chunk / per line in the workers) guard the call site with `if (taLog.do_debug)`, or do not log there at all. `warn()`/`error()` are never gated. |
 | `js/mzta-store.js` | Storage abstraction helpers |
 | `js/mzta-storage.js` | Unified per-message storage layer (`taStorage` class) for summary, spam, and translation data |
-| `js/mzta-summarystore.js` | Summary-specific storage wrapper (`taSummaryStore` class) with caching, truncation, and processing-state tracking |
-| `js/mzta-translationstore.js` | Translation-specific storage wrapper (`taTranslationStore` class) with caching, truncation, and processing-state tracking |
+| `js/mzta-summarystore.js` | Summary-specific storage wrapper (`taSummaryStore` class) with caching and truncation |
+| `js/mzta-translationstore.js` | Translation-specific storage wrapper (`taTranslationStore` class) with caching and truncation |
+| `js/mzta-job-registry.js` | In-flight job registry (`taJobRegistry`): one summary / translation / spam / add_tags job per message, joined by later callers |
 | `js/mzta-working-status.js` | Visual status indicator during AI processing (ref-counted toolbar loading icon) |
 | `js/mzta-batch-controller.js` | Cooperative cancellation controller + progress counter for batch email processing (`processEmails`) |
 | `js/mzta-addtags-exclusion-list.js` | Tag exclusion list management |
@@ -1208,6 +2058,8 @@ Each file handles HTTP communication for one provider:
 | `openai_comp.js` | OpenAI-compatible APIs |
 | `openai_comp_configs.js` | Pre-configured providers (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity) |
 | `openai_responses.js` | OpenAI Responses API |
+| `api-utils.js` | Shared worker-safe helpers (`parseExtraBody()`) |
+| `api-retry.js` | `fetchWithRetry()`: automatic retry with backoff, see [04-api-integrations.md](04-api-integrations.md#automatic-retry-handling) |
 
 ## Web Workers (`js/workers/`)
 
@@ -1237,31 +2089,81 @@ Each subdirectory is a self-contained settings/UI page for a specific feature:
 | `summarize/` | Email summarization settings |
 | `translate/` | Email translation settings |
 | `onboarding/` | First-run welcome page |
-| `_lib/` | Shared libraries used by pages: `connection-ui.js` (API connection UI), `mzta-timezones.js` (runtime-generated IANA timezone list for the calendar event / task selects, see [05-options.md](05-options.md)), `mzta-design.css` (shared design system), `autocomplete.css` (placeholder autocomplete dropdown, linked by all 8 pages that use it — written against both token systems via fallback chains), `editor-highlight.css` (backdrop-mirror structure for live `{%placeholder%}` highlighting, parameterized by `--ed-*` custom properties each page supplies), plus the vendored `tom-select.*` and `list.js` |
+| `_lib/` | Shared libraries used by pages: `connection-ui.js` (API connection UI), `feature-page.js` (what the six feature pages share: the per-feature connection kept in step with the `{prefix}_*` preferences, the connection panel tint, the special prompt text editors), `managed-ui.js` (enterprise policy presentation, see [08-managed-configuration.md](08-managed-configuration.md)), `mzta-timezones.js` (runtime-generated IANA timezone list for the calendar event / task selects, see [05-options.md](05-options.md)), `mzta-design.css` (shared design system), `autocomplete.css` (placeholder autocomplete dropdown, linked by all 8 pages that use it — written against both token systems via fallback chains), `editor-highlight.css` (backdrop-mirror structure for live `{%placeholder%}` highlighting, parameterized by `--ed-*` custom properties each page supplies), plus the vendored `tom-select.*` and `list.js` |
 
 ## Storage
 
-Regular preferences (feature flags, connection settings, `ollama_*`/`chatgpt_*`/etc., `reply_type`, `connection_type`, ...) are read/written via `browser.storage.sync`, keyed by `prefs_default` in `options/mzta-options-default.js`. A small set of large-payload keys — `_custom_prompt`, `_default_prompts_properties`, `_special_prompts`, `_custom_placeholder`, `add_tags_exclusions` — live in `browser.storage.local` instead, because `storage.sync` has a narrow storage quota (see the one-time sync→local migration in `js/mzta-utils.js`, `migrateCustomPromptsStorage()` / `migrateDefaultPromptsPropStorage()`, added for [#129](https://github.com/micz/ThunderAI/issues/129)).
+Regular preferences (feature flags, connection settings, `ollama_*`/`chatgpt_*`/etc., `reply_type`, `connection_type`, ...) live in `browser.storage.local`, keyed by `prefs_default` in `options/mzta-options-default.js`. They are read through the accessor module `js/mzta-prefs.js` (`mztaPrefs.getPref` / `getPrefs` / `getAllPrefs` / `setPref`), the single choke point for preference access — see [05-options.md](05-options.md#preference-access-jsmzta-prefsjs) for the API, the preserved missing-vs-`null` semantics and the handful of deliberate bypasses. The large-payload keys — `_custom_prompt`, `_default_prompts_properties`, `_special_prompts`, `_custom_placeholder` — live in the same area (`add_tags_exclusions`, once one of them, is now a regular declared preference), where they went first, because `storage.sync` has a narrow storage quota (the one-time migrations in `js/mzta-utils.js`, `migrateCustomPromptsStorage()` / `migrateDefaultPromptsPropStorage()`, added for [#129](https://github.com/micz/ThunderAI/issues/129)). Each copies its key to local and then removes it from sync; when local already holds the key (a move interrupted between the copy and the remove), the local copy is kept and the stale sync copy is removed all the same, so `storage.sync` always ends drained.
+
+**The preferences followed them out of `storage.sync` for the same quota reason.** The move is carried by `migratePrefsToLocal()` (`js/mzta-prefs-migration.js`), the first `await` and the first storage access of `mzta-background.js` (only synchronous listener registrations, which touch no storage, come before it): it copies every key `storage.sync` still holds, skipping any already present in local (so it never reverts a later change), and **leaves the sync copy in place** so a downgrade still finds the user's settings. It then records `_prefs_migrated_from_sync` in `storage.local` and short-circuits on that marker at every subsequent startup, rather than re-reading both areas forever. Two consequences worth knowing: preferences **no longer sync across profiles or devices**, and every `storage.onChanged` listener that watches preferences gates on `areaName === 'local'` — a gate left on `'sync'` does not error, it simply stops firing. The area itself is decided once, by `PREFS_AREA` in `js/mzta-prefs.js`.
 
 ### Background Preference Snapshot and Menu Invalidation
 
-The background script keeps a **snapshot** of the preferences it consults often, in the module-level `prefs_init` object, refreshed by `reload_pref_init()`. The exact set of keys it holds is the module-level `PREFS_INIT_KEYS` constant, which is also what `reload_pref_init()` passes to `storage.sync.get` — the storage-change gate is derived from that same constant so the two cannot drift apart. Besides the snapshot itself, `reload_pref_init()` recomputes `_process_incoming` (whether any auto-processing feature needs incoming mail) and `_sparks_presence`.
+The background script keeps a **snapshot** of the preferences it consults often, in the module-level `prefs_init` object, refreshed by `reload_pref_init()`. The exact set of keys it holds is the module-level `PREFS_INIT_KEYS` constant, whose keys are also what `reload_pref_init()` passes to `mztaPrefs.getPrefs()` — the storage-change gate is derived from that same constant so the two cannot drift apart. `PREFS_INIT_KEYS` stays an **object** (not a key array) precisely because `MENU_RELEVANT_KEYS` and that gate are derived from it. Besides the snapshot itself, `reload_pref_init()` recomputes `_process_incoming` (whether any auto-processing feature needs incoming mail) and `_sparks_presence`. `_process_incoming` is true when at least one of these holds, each feature gated exactly as `newEmailListener()` then passes it to `processEmails()`: `add_tags && add_tags_auto`; `spamfilter`; `summarize && summarize_auto === 3`; `translate && translate_auto === 3`; `summarize && summarize_auto_senders` with a list that `hasAddressListEntries()`. So a feature switched off (`_reconcileFeatureFlags()` turns `add_tags` off and leaves `add_tags_auto` as it is) never wakes the pipeline for a batch with nothing to do.
 
 Four invariants apply here. The first three were established by [#855](https://github.com/micz/ThunderAI/issues/855); the fourth was added later, when the debounce turned out to cover only one of the three reload paths.
 
-1. **Special-prompt menu gating must read `storage.sync` fresh, never `prefs_init`.** The single source of truth is `_computeActiveSpecialIds()` in `mzta-background.js`; `_reload_menus()`, `_getActiveSpecialIds()` and the startup `menus.loadMenus()` all go through it. Mixing a freshly changed value with values taken from the snapshot is what made the per-feature integration flags lag behind `connection_type`, hiding a command until restart. Reading everything fresh in one `get` removes the whole class of bug rather than resequencing it. That single `get` must also spread `getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])`, since the gate is computed from each feature's **effective** connection — `getConnectionType(prefs, null, prefix)` for every prefix in `special_prompts_with_integration` — and not from the global `connection_type`. A feature pointing at its own API integration must stay available under ChatGPT Web or with no global connection selected, matching what the options page shows (see `claude-spec/05-options.md`).
-2. **`storage.onChanged` handling is coalesced, and refreshes the snapshot before rebuilding menus.** The listener body is synchronous (a 200 ms debounce, the same idiom as `pages/menu_order/mzta-menu-order.js`); the async work lives in the timer, because `onChanged` ignores listener return values. Coalescing here reduces redundant work — a multi-key `storage.sync.set` fires one event carrying several keys, and options pages write one key per change event — but it does **not** by itself prevent overlapping rebuilds from interleaving, since the debounce only covers the `onChanged` path (see invariant 4). The `reload_pref_init()` → `_reload_menus()` order is load-bearing: `doGetSparkFeature()` consults the `_sparks_presence` that the former sets.
-3. **The two staleness flags accumulate across a burst** (`_prefsInitStale`, `_menusStale`) and are cleared only when the debounced work runs. Computing them per event and reading them after the debounce would let a later event overwrite an earlier one's flags, silently dropping a needed rebuild — e.g. a `connection_type` write immediately followed by a non-menu write.
+1. **Special-prompt menu gating must read storage fresh, never `prefs_init`.** The single source of truth is `_computeActiveSpecialIds()` in `mzta-background.js`; `_reload_menus()`, `_getActiveSpecialIds()` and the startup `menus.loadMenus()` all go through it. Mixing a freshly changed value with values taken from the snapshot is what made the per-feature integration flags lag behind `connection_type`, hiding a command until restart. Reading everything fresh in one `get` removes the whole class of bug rather than resequencing it. That single `get` must also spread `getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])`, since the gate is computed from each feature's **effective** connection — `getConnectionType(prefs, null, prefix)` for every prefix in `special_prompts_with_integration` — and not from the global `connection_type`. A feature pointing at its own API integration must stay available under ChatGPT Web or with no global connection selected, matching what the options page shows (see `claude-spec/05-options.md`).
+2. **`storage.onChanged` handling is coalesced, and refreshes the snapshot before rebuilding menus.** The listener body is synchronous (a 200 ms debounce, the same idiom as `pages/menu_order/mzta-menu-order.js`); the async work lives in the timer, because `onChanged` ignores listener return values. Coalescing here reduces redundant work — a multi-key `storage.local.set` fires one event carrying several keys, and options pages write one key per change event — but it does **not** by itself prevent overlapping rebuilds from interleaving, since the debounce only covers the `onChanged` path (see invariant 4). The `reload_pref_init()` → `_reload_menus()` order is load-bearing: `doGetSparkFeature()` consults the `_sparks_presence` that the former sets.
+3. **The staleness flags accumulate across a burst** (`_prefsInitStale`, `_menusStale`, and `_gatedStale` for a permission-gated key neither set holds, see "Feature permissions" below) and are cleared only when the debounced work runs. Computing them per event and reading them after the debounce would let a later event overwrite an earlier one's flags, silently dropping a needed rebuild — e.g. a `connection_type` write immediately followed by a non-menu write.
 4. **Menu rebuilds are coalesced inside `mzta_Menus`, not just at the callers.** `loadMenus()` holds a `_rebuildInFlight` promise and a `_rebuildPending` argument slot; the real work moved to `_loadMenusUnguarded()`. Three unsynchronized triggers reach `_reload_menus()` — the internal `reload_menus` message, the external one from Sparks, and the debounced `storage.onChanged` handler — and options pages routinely both write storage *and* send `reload_menus`, so a single click can start two independent reload paths that the debounce cannot serialize against each other. The damage is concrete: `loadContextMenus()` calls `browser.menus.removeAll()` before recreating each item one at a time, so an overlapping rebuild wipes items the first one already created, or fails on duplicate ids. The guard belongs on the class rather than on `_reload_menus()` because the startup `menus.loadMenus()` at module top level does not go through that funnel and is registered *after* the message listeners, so a Sparks reload arriving mid-startup would otherwise run concurrently with the initial build. Rebuilds coalesce rather than queue — rebuilding is idempotent and only the final state is observable, so N triggers collapse into the running rebuild plus one trailing rerun instead of N flickering teardown/rebuild cycles. `removeClickListener()` moved from `reload()` into `_loadMenusUnguarded()` so it runs under the guard and cannot deregister the listener of a rebuild in flight.
 
 The two gates are deliberately separate. `reload_pref_init()` is *not* gated on the menu-relevant key set, because `add_tags_auto`, `summarize_auto` and `translate_auto` feed `_process_incoming` without being menu keys; gating both on the menu set would freeze auto-processing until restart. Gating at all is worthwhile because `reload_pref_init()` calls `checkSparksPresence()`, a `runtime.sendMessage` to an external extension. A consequence to keep in mind: `_sparks_presence` now refreshes only when a `PREFS_INIT_KEYS` key changes, not on every sync write. If it ever needs to be event-driven, `onMessageExternal` is the right hook, not `onChanged`.
 
 Separately, `loadShortcutMenu()` builds into a local array and swaps it in at the end, and `initialize()` deliberately does *not* clear `shortcutMenu`. `preparePopupMenu()` reads `menus.shortcutMenu` **synchronously**, so it never takes the rebuild guard; clearing the array up front left it empty for the whole rebuild, and a shortcut pressed in that window rendered an empty popup. `rootMenu` and `menu_listeners` keep their in-place rebuild on purpose — they are only read by the click listener, whose registration spans the rebuild.
 
+### Feature permissions ([#962](https://github.com/micz/ThunderAI/issues/962))
+
+Some features call Thunderbird APIs that need an **optional** permission (`manifest.json` `optional_permissions`). Without it the API function is simply not there (`browser.messages.tags.create is not a function`). #962 was a user whose setup wizard turned `add_tags` on without ever requesting the permission, so every tag creation failed with nothing shown. The single source of truth is `FEATURE_PERMISSIONS` in `js/mzta-feature-permissions.js` (no imports, loaded by the background, the menus and the settings pages):
+
+| Preference | Optional permissions | Turned on from |
+|---|---|---|
+| `add_tags` | `messagesTags`, `messagesUpdate` | options page, setup wizard |
+| `spamfilter` | `messagesMove`, `messagesUpdate` | options page, setup wizard |
+| `spamfilter_skip_addressbook` | `addressBooks` | spam filter page |
+| `get_calendar_event_from_clipboard` | `clipboardRead` | calendar event page |
+
+The module also gives `hasFeaturePermissions()` (`permissions.contains`), `requestFeaturePermissions()` (`permissions.request`), `getFeaturesAffectedByRemoval()`, the feature's label (the label of its switch) and `getMissingPermissionMessage(key, managed)`. Host permissions (`origins`) are not in it: they belong to the connection and have their own flow (`pages/_lib/connection-ui.js`, `js/mzta-connection-test.js`). A new gated feature means one map entry plus its label, its permissions in `optional_permissions`, and its switch bound through `bindPermissionToggle()`. The static check `tests/static/05-feature-permissions` fails on a map entry that is not a declared boolean preference, or that names a permission missing from `optional_permissions`. It also fails on any other code that requests or checks API permissions with a hard-coded list.
+
+**Turning a feature on.** This is the job of the settings pages, through `pages/_lib/permission-toggle.js` (see `claude-spec/05-options.md`, "Permission-gated toggles"): the preference is written `true` only after `permissions.request()` resolved to true.
+
+**Reconciliation.** `_reconcileFeatureFlags()` has a second rule beside the unusable connection. Every map preference that is `true` while `hasFeaturePermissions()` is false is turned off, in the same single `setPrefs()`, logged with `console.log` as "missing their Thunderbird permission" (apart from "unusable connection"). It runs at startup and on every storage change that names a `PREFS_INIT_KEYS` key, a `MENU_RELEVANT_KEYS` key or a map key (`_gatedStale`). It reads the map keys `_readFeatureConnPrefs()` does not hold (the sub-option) itself. Its rules:
+- locked keys (`mztaManaged.isManagedLocked`) are skipped, as for the connection rule;
+- none of the connection rule's exceptions applies. A specific integration, ChatGPT Web or Sparks do not matter, because a missing permission blocks the feature in every case and, unlike Sparks, is not transient. The clipboard flag stays gated on Sparks at read time (`doGetSparkFeature()`); the permission rule only ever looks at the permission, so the two do not interact;
+- the sub-option `spamfilter_skip_addressbook` is turned off on its own: the spam filter works without it. Its default is `false`, like every gated feature: nobody granted the permission yet. (It was `true` before 5.1.0, so a profile that never stored it and never granted `addressBooks` used to have the rule on and silently skipped.)
+- a failing `permissions.contains()` leaves the flag alone (an unknown answer is not a missing permission).
+
+**Ordering.** Every storage write wakes this reconciliation. A page that wrote `true` before the grant would have it turned back to `false` under a switch still shown on. Hence: request first, write after, and the pages' generic `saveOptions()` skip the map keys.
+
+**`permissions.onRemoved`.** `setupPermissionsRemovedListener()` turns off every map preference that needs a removed permission, in one `setPrefs()`. A shared permission (`messagesUpdate`) turns off both `add_tags` and `spamfilter`; `addressBooks` and `clipboardRead` turn off their own key; locked keys are skipped. The menus of the affected features (`add_tags`, `spamfilter`, the clipboard prompt: menu-relevant keys) are rebuilt by the `storage.onChanged` handling that write triggers.
+
+**Runtime guards.** A gated feature can still be on without its permissions: locked by the policy, or with a permission removed before the next reconciliation. Every path checks first, does not act, and tells the user. The background cannot call `permissions.request()` (no user gesture), so the message (`feature_permission_missing`, naming the feature) says to turn the option off and on again in the settings. For a locked key, `feature_permission_missing_managed` says to contact the administrator. The paths:
+- `processEmails()` (automatic runs and the context-menu Add tags / Analyze for spam) checks `add_tags` and `spamfilter` **once per run**, before any message is read (`_ensureFeaturePermissions()`). A feature without its permissions is skipped for the whole run with one red `showGenericError()` panel; the other features of the run go on;
+- the address book rule without `addressBooks` is skipped and the message is still analyzed. One blue `showGenericInfo()` notice per run (`spamfilter_addressbook_permission_missing`; the run's `permission_notices` set is passed to the spam jobs as `options.permissionNotices`). A spam job outside a batch (the panel's Refresh) notifies on its own. The panel Refresh itself is not gated on `spamfilter`'s permissions: it never moves or updates a message;
+- `assign_tags` (the tags confirmed in the dialog) checks again, since the permission can go away while the dialog is open;
+- the menu actions of the popup Add tags dialog and of "Add calendar event from clipboard" (`act()` in `js/mzta-menus.js`, `PERMISSION_GATED_PROMPTS`) are refused before the body is read or the AI called, with the message as a `sendAlert`. `clipboard_read_error` is kept for the other clipboard failures;
+- at startup a feature the policy locks on without its permissions gets a `taLog.warn()`, like the other policy warnings.
+
+**Tag API failures.** `createTag()` awaits `messages.tags.create()` and rethrows. `assignTagsToMessage()` rethrows the `messages.update()` error (its catch used to throw a `ReferenceError` on an undefined `tag`). So `_assign_tags_now()` stops at the first failure: the batch job logs it and resolves `error`, and `assign_tags` shows it with `showGenericError()`.
+
 ### Per-Message Data Storage
 
-Per-message data (summaries, spam reports, translations) is stored via `js/mzta-storage.js` (`taStorage` class). Each record is keyed by `msg:<headerMessageId>` in `messenger.storage.local` and follows schema version 1. Records contain optional fields: `summary`, `spam`, `translation`, plus metadata (`v`, `ts`). The `taStorage` class provides typed read/write/delete methods per field, automatic record cleanup when all fields are removed, and age-based cleanup.
+Per-message data (summaries, spam reports, translations) is stored via `js/mzta-storage.js` (`taStorage` class). Each record is keyed by `msg:<headerMessageId>` in `messenger.storage.local` and follows schema version 1. Records contain optional fields: `summary`, `spam`, `translation`, plus metadata (`v`, `ts`). The `taStorage` class provides typed read/write/delete methods per field, automatic record cleanup when all fields are removed, and age-based cleanup. Every write of a record is a read-modify-write of the whole object, so the writes of one message (`writeSpam/Summary/Translation()`, `delete*Field()`, `deleteRecord()`) are **queued per record**: each waits for the earlier ones on the same `msg:` key and reads what they wrote, so writers of different fields running together (a summary saved while the spam job removes the previous report, a translation saved during a panel Refresh) never drop each other's field. The queue is module-level, shared by the three stores, and lives in the background, the context that writes these records; writes to different messages still run in parallel, and a failed write never blocks the next one. The spam job awaits its `saveReportData()` before it returns, so its outcome means the report is stored.
 
-`js/mzta-summarystore.js` (`taSummaryStore` class) wraps `taStorage` for summary-specific operations: load/save/remove summaries, track in-flight generation state via `browser.storage.session`, enforce a 100-entry cache limit with oldest-first truncation, and store error states.
+`js/mzta-summarystore.js` (`taSummaryStore` class) wraps `taStorage` for summary-specific operations: load/save/remove summaries and store error states. It also has `truncSummaries()` (keep the 100 newest summaries, oldest-first truncation), but **nothing calls it at the moment**: summaries are not truncated and accumulate in `storage.local`.
 
-`js/mzta-translationstore.js` (`taTranslationStore` class) wraps `taStorage` for translation-specific operations: load/save/remove translations, track in-flight generation state via `browser.storage.session`, enforce a 100-entry cache limit with oldest-first truncation, and store error states. Each translation record stores `translated_text`, `lang`, and optional error information.
+`js/mzta-translationstore.js` (`taTranslationStore` class) wraps `taStorage` for translation-specific operations: load/save/remove translations and store error states. Likewise it has `truncTranslations()`, which **nothing calls at the moment**: translations are not truncated either.
+
+**Cleanup and truncation, as of today.** Besides the two truncations above, nothing removes old
+per-message records automatically:
+- **Age-based cleanup.** `taStorage.cleanup(maxAgeDays)` (remove the records whose `ts` is older
+  than that, every field included; `0` does nothing) exists but **nothing calls it**, and no
+  preference sets an age. The only bulk removal is `taStorage.clearAllRecords()`, from the options
+  page.
+- **Spam reports.** `js/mzta-spamreport.js` (`taSpamReport`) has `truncReportData()` (keep the 100
+  most recent reports, by their `ts`), called **only** by `newEmailListener()` after an incoming
+  batch, and only with `spamfilter` on. Reports of manual checks (context menu, panel Refresh)
+  accumulate until the next such batch; with the spam filter off they are never truncated.
+
+When to clean up, with which age and which limits is still to be decided (one job for all three
+stores). Each translation record stores `translated_text`, `lang`, and optional error information.

@@ -1,0 +1,10 @@
+<!-- The older ChatGPT UI around the composer: a Radix model switcher showing the selected model's
+     display name, and no composer reasoning trigger.
+     Source: hand-written, not captured. It holds only what the legacy check of checkGPTModel() reads
+     (spec 04 "Model verification"): a Radix id and the display name in a <span> under it. -->
+<main>
+  <button id="radix-:r2:" type="button" aria-haspopup="menu" aria-expanded="false" data-state="closed"
+    data-testid="model-switcher-dropdown-button"><div>ChatGPT <span>5 Thinking</span></div></button>
+  <div id="prompt-textarea" class="ProseMirror" contenteditable="true" role="textbox" style="min-height:30px"></div>
+  <button id="composer-submit-button" type="submit">Send</button>
+</main>

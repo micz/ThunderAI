@@ -1,0 +1,14 @@
+{
+  "_org_name": "ACME",
+  "_special_prompts_text": {
+    "prompt_spamfilter": "ACME spam check of {%mail_html_body%}. Answer as JSON: {\"explanation\": \"why\", \"spamValue\": 0}",
+    "prompt_add_tags": "ACME: suggest labels for {%mail_text_body%}. Answer as JSON: {\"tags\": []}",
+    "prompt_summarize": "ACME: summarize the messages below.",
+    "prompt_summarize_email_template": "ACME message: {%mail_text_body%}",
+    "prompt_summarize_email_separator": "--- ACME ---",
+    "prompt_translate_this": "ACME: translate {%mail_html_body%} to {%thunderai_translate_lang%}. Return JSON with subject, body and status.",
+    "prompt_get_calendar_event": "ACME calendar from {%mail_text_body_or_selected%}: return startDate, endDate and summary as JSON",
+    "prompt_get_calendar_event_from_clipboard": "ACME clipboard calendar from {%selected_text%}: return startDate, endDate and summary as JSON",
+    "prompt_get_task": "ACME task from {%mail_text_body_or_selected%}: return the summary as JSON"
+  }
+}

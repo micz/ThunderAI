@@ -20,11 +20,9 @@
 
 import { getPrompts } from './mzta-prompts.js';
 import {
-    prefs_default,
     getDynamicSettingsDefaults
 } from '../options/mzta-options-default.js';
 import {
-    getLanguageDisplayName,
     getMenuContextCompose,
     getMenuContextDisplay,
     i18nConditionalGet,
@@ -32,6 +30,8 @@ import {
     getTagsList,
     extractJsonObject,
     normalizeDateTimeString,
+    appendMessageLinkToDescription,
+    normalizeReminderMinutes,
     normalizeHtmlSourceNewlines,
     checkIfTagLabelExists,
     getConnectionType,
@@ -56,7 +56,21 @@ import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
 import { mzta_specialCommand } from './mzta-special-commands.js';
 import { taWorkingStatus } from './mzta-working-status.js';
- 
+import { taJobRegistry } from './mzta-job-registry.js';
+import { mztaPrefs } from './mzta-prefs.js';
+import { mztaManaged } from './mzta-managed.js';
+import {
+    hasFeaturePermissions,
+    getMissingPermissionMessage
+} from './mzta-feature-permissions.js';
+
+// The special prompts run by a menu action whose feature needs optional permissions
+// (js/mzta-feature-permissions.js): prompt id -> feature preference key.
+const PERMISSION_GATED_PROMPTS = {
+    prompt_add_tags: 'add_tags',
+    prompt_get_calendar_event_from_clipboard: 'get_calendar_event_from_clipboard',
+};
+
 export class mzta_Menus {
 
     allPrompts = [];
@@ -160,8 +174,12 @@ export class mzta_Menus {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             const raw_selection = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" });
             const raw_selection_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" });
-            const raw_text = await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" });
-            const raw_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" });
+            // A message display (a mail tab or a message tab or window): read only the mail's
+            // own part containers, so a banner another add-on draws in the same body is not
+            // sent to the AI. A compose window reads the whole body, as before.
+            const display = tabs[0].type !== 'messageCompose';
+            const raw_text = await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly", display });
+            const raw_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml", display });
             // Raw values as they arrive from the content script, before the twins
             // rewrite them. JSON.stringify() so newlines/escapes stay visible. [#829]
             this.logger.log("getMailBody raw_text: " + JSON.stringify(raw_text));
@@ -207,7 +225,36 @@ export class mzta_Menus {
     
         curr_menu_entry.act = async () => {
             taWorkingStatus.startWorking();
+            // Custom placeholders first, so every check below (the typed text, the plain text
+            // part, additional_text...) also sees a placeholder written inside a custom
+            // placeholder's text; preparePrompt() then finds none left to expand. This object
+            // lives until the next menu rebuild, which the Data Placeholders page triggers on
+            // save, so a changed placeholder text takes effect at once.
+            if(placeholdersUtils.hasCustomPlaceholder(curr_prompt.text)){
+                curr_prompt.text = await placeholdersUtils.replaceCustomPlaceholders(curr_prompt.text);
+            }
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+            // A special prompt whose feature needs optional permissions is refused up front,
+            // before the body is read or the AI called, with the message saying which feature
+            // lacks its permission and where to grant it: without them it would fail inside the
+            // tag or clipboard API, with nothing shown to the user [#962].
+            const gated_feature = PERMISSION_GATED_PROMPTS[curr_prompt.id];
+            if (gated_feature) {
+                let granted = false;
+                try {
+                    granted = await hasFeaturePermissions(gated_feature);
+                } catch (e) {
+                    this.logger.error("Could not check the permissions of " + gated_feature + ": " + e);
+                }
+                if (!granted) {
+                    this.logger.error("Menu action [" + curr_prompt.id + "] refused: Thunderbird has not granted the permissions of " + gated_feature + ".");
+                    if (tabs.length > 0) {
+                        sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: getMissingPermissionMessage(gated_feature, mztaManaged.isManagedLocked(gated_feature)) });
+                    }
+                    taWorkingStatus.stopWorking();
+                    return {ok:'0'};
+                }
+            }
             // The body is scraped through the content script, so it can only be read
             // from a tab that can receive tab messages. A 3-pane "mail" tab with the
             // message pane hidden (F8), nothing displayed or a multi-message view has
@@ -374,15 +421,9 @@ export class mzta_Menus {
             }
             // console.log(">>>>>>>>>>>>>>>>>>> curr_prompt.custom_text_array: " + JSON.stringify(curr_prompt.custom_text_array));
             
+            // prompt_translate_this never reaches this point: the popup and the context menu both
+            // send it to processEmails() (specialContextMenuActions in mzta-background.js).
             switch(curr_prompt.id){
-                case 'prompt_translate_this':
-                    let prefs2 = await browser.storage.sync.get({default_chatgpt_lang: getLanguageDisplayName(browser.i18n.getUILanguage()), translate_lang: ''});
-                    let chatgpt_lang2 = prefs2.translate_lang || prefs2.default_chatgpt_lang;
-                    if(chatgpt_lang2 === ''){
-                        chatgpt_lang2 = getLanguageDisplayName(browser.i18n.getUILanguage());
-                    }
-                    fullPrompt = curr_prompt.text + " " + chatgpt_lang2 + ". \"" + body_text + "\" ";
-                    break;
                 case 'prompt_reply':
                     fullPrompt += browser.i18n.getMessage("prompt_reply_additional_text");
                     break;
@@ -398,22 +439,22 @@ export class mzta_Menus {
                     case 'prompt_add_tags': {   // Add tags to the email
                         let tags_current_email = [];
                         let tags_current_email_final = [];
-                        let prefs_at = await browser.storage.sync.get({
-                            add_tags_maxnum: prefs_default.add_tags_maxnum,
-                            connection_type: prefs_default.connection_type,
-                            add_tags_force_lang: prefs_default.add_tags_force_lang,
-                            add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
-                            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
-                            do_debug: prefs_default.do_debug,
-                            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
-                        });
+                        let prefs_at = await mztaPrefs.getPrefs([
+                            'add_tags_maxnum',
+                            'connection_type',
+                            'add_tags_force_lang',
+                            'add_tags_auto_force_existing',
+                            'default_chatgpt_lang',
+                            'do_debug',
+                            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+                        ]);
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'add_tags');
                         if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + def_conntype);
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
-                        fullPrompt = taPromptUtils.finalizePrompt_add_tags(fullPrompt, prefs_at.add_tags_maxnum, prefs_at.add_tags_force_lang, prefs_at.default_chatgpt_lang);
+                        fullPrompt = taPromptUtils.finalizePrompt_add_tags(fullPrompt, prefs_at.add_tags_maxnum, prefs_at.add_tags_force_lang, prefs_at.default_chatgpt_lang, false, '', prefs_at.add_tags_auto_force_existing, tags_full_list[0], curr_prompt.text);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let create_new_tags = !prefs_at.add_tags_auto_force_existing;
                         let all_tags_list = tags_full_list[1];
@@ -429,9 +470,43 @@ export class mzta_Menus {
                             do_debug: prefs_at.do_debug,
                             config: curr_prompt
                         });
-                        await cmd_addTags.initWorker();
+                        // One add_tags job per message (taJobRegistry): the automatic batch, the
+                        // context menu and this dialog path can reach the same message at once.
+                        // A job already running is JOINED - its tags feed the dialog below and
+                        // no second AI call is made. Only when it did not produce tags (error,
+                        // skipped) does this path run its own call. get() and start() are
+                        // synchronous and back to back, so two callers cannot both start.
+                        const tags_job_id = curr_message?.headerMessageId || '';
+                        let tags_outcome = null;
+                        let tags_running = tags_job_id ? taJobRegistry.get('add_tags', tags_job_id) : null;
+                        while (tags_running) {
+                            taJobRegistry.logJoin(tags_running);
+                            const joined = await tags_running.promise;
+                            if (joined.status === 'ok' && Array.isArray(joined.data?.tags)) {
+                                tags_outcome = joined;
+                                break;
+                            }
+                            tags_running = taJobRegistry.get('add_tags', tags_job_id);
+                        }
+                        if (!tags_outcome) {
+                            // assigned: false - a batch joining this job must not assign the
+                            // tags itself, the user confirms them in the dialog.
+                            const run_tags = async () => {
+                                try {
+                                    await cmd_addTags.initWorker();
+                                    const tags = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt());
+                                    return { status: 'ok', data: { tags: tags, assigned: false } };
+                                } catch (err) {
+                                    return { status: 'error', error: err, errorMessage: err?.message || String(err), rateLimited: !!err?.rateLimited, retryAfterMs: err?.retryAfterMs ?? null };
+                                }
+                            };
+                            tags_outcome = tags_job_id
+                                ? await taJobRegistry.start('add_tags', tags_job_id, run_tags).promise
+                                : await run_tags();
+                        }
                         try{
-                            tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt());
+                            if (tags_outcome.status !== 'ok') throw (tags_outcome.error || new Error(tags_outcome.errorMessage));
+                            tags_current_email = tags_outcome.data.tags;
                             if(!create_new_tags){
                                     this.logger.log("Not creating new tags, only showing existing ones...");
                                 }
@@ -468,12 +543,15 @@ export class mzta_Menus {
                     case 'prompt_get_calendar_event':                   // Get a calendar event info
                     case 'prompt_get_calendar_event_from_clipboard': {  // here from clipboard
                         let calendar_event_data = '';
-                        let prefs_at = await browser.storage.sync.get({
-                            connection_type: prefs_default.connection_type,
-                            calendar_enforce_timezone: prefs_default.calendar_enforce_timezone,
-                            calendar_timezone: prefs_default.calendar_timezone,
-                            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
-                        });
+                        let prefs_at = await mztaPrefs.getPrefs([
+                            'connection_type',
+                            'calendar_enforce_timezone',
+                            'calendar_timezone',
+                            'calendar_append_email_link',
+                            'calendar_reminder_enabled',
+                            'calendar_reminder_rules',
+                            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+                        ]);
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_calendar_event');
                         if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | GetCalendarEvent] Invalid connection type: " + def_conntype);
@@ -489,8 +567,9 @@ export class mzta_Menus {
                         *   "location": "YourLocation",
                         *   "attendees": [attendee1@example.com,attendee2@example.com,attendee3@example.com]
                         *  } 
+                        *  plus an optional "reminderMinutes", only with the reminder option on (see normalizeReminderMinutes()) [#887]
                         */
-                        fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt);
+                        fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt, curr_prompt.text, prefs_at.calendar_reminder_enabled, prefs_at.calendar_reminder_rules);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_GetCalendarEvent = new mzta_specialCommand({
                             prompt: fullPrompt,
@@ -524,11 +603,22 @@ export class mzta_Menus {
                         if (calendar_event_data_obj.endDate) {
                             calendar_event_data_obj.endDate = normalizeDateTimeString(calendar_event_data_obj.endDate);
                         }
+                        // Reminder: the checkbox is the single switch (off = field always removed) [#887]
+                        normalizeReminderMinutes(calendar_event_data_obj, prefs_at.calendar_reminder_enabled, this.logger);
                         // Timezone management
                         calendar_event_data_obj.use_timezone = false;
                         if(prefs_at.calendar_enforce_timezone){
                             calendar_event_data_obj.use_timezone = true;
                             calendar_event_data_obj.timezone = prefs_at.calendar_timezone;
+                        }
+                        // Link to the original email, added by code after the response:
+                        // it never reaches the AI. No source message from the clipboard
+                        // or a compose tab (compose details have no headerMessageId).
+                        if (prefs_at.calendar_append_email_link) {
+                            const link_source = (curr_prompt.id === 'prompt_get_calendar_event_from_clipboard' || tabs[0].type === 'messageCompose') ? null : curr_message;
+                            if (!appendMessageLinkToDescription(calendar_event_data_obj, link_source, browser.i18n.getMessage('calendar_email_link_label'))) {
+                                this.logger.log("calendar_append_email_link: no source message, link not added.");
+                            }
                         }
                         let calendar_event_data_str = JSON.stringify(calendar_event_data_obj);
                         // Timezone management - END
@@ -558,11 +648,14 @@ export class mzta_Menus {
                     }
                     case 'prompt_get_task': {  // Get a task info
                         let task_data = '';
-                        let prefs_at = await browser.storage.sync.get({
-                            connection_type: prefs_default.connection_type,
-                            calendar_enforce_timezone: prefs_default.calendar_enforce_timezone,
-                            calendar_timezone: prefs_default.calendar_timezone,
-                            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])});
+                        let prefs_at = await mztaPrefs.getPrefs([
+                            'connection_type',
+                            'calendar_enforce_timezone',
+                            'calendar_timezone',
+                            'task_append_email_link',
+                            'task_reminder_enabled',
+                            'task_reminder_rules',
+                            ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))]);
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_task');
                         if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | GetTask] Invalid connection type: " + def_conntype);
@@ -577,7 +670,9 @@ export class mzta_Menus {
                         *   "description": "Detailed task description including action items, and relevant notes from the email.",
                         *   "location": "YourLocation"
                         *  } 
+                        *  plus an optional "reminderMinutes", only with the reminder option on (see normalizeReminderMinutes()) [#887]
                         */
+                        fullPrompt = taPromptUtils.finalizePrompt_get_task(fullPrompt, curr_prompt.text, prefs_at.task_reminder_enabled, prefs_at.task_reminder_rules);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_GetTask = new mzta_specialCommand({
                             prompt: fullPrompt,
@@ -611,6 +706,8 @@ export class mzta_Menus {
                             if (!task_data_obj.initialDate) {
                                 delete task_data_obj.initialDate;
                             }
+                            // Reminder: the checkbox is the single switch (off = field always removed) [#887]
+                            normalizeReminderMinutes(task_data_obj, prefs_at.task_reminder_enabled, this.logger);
                         }catch(err){
                             console.error("[ThunderAI] Error extracting JSON object from task data: ", err.message);
                             sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_getting_data_error") + ": " + err.message });
@@ -622,6 +719,14 @@ export class mzta_Menus {
                         if(prefs_at.calendar_enforce_timezone){
                             task_data_obj.use_timezone = true;
                             task_data_obj.timezone = prefs_at.calendar_timezone;
+                        }
+                        // Link to the original email, added by code after the response:
+                        // it never reaches the AI. No source message in a compose tab.
+                        if (prefs_at.task_append_email_link) {
+                            const link_source = (tabs[0].type === 'messageCompose') ? null : curr_message;
+                            if (!appendMessageLinkToDescription(task_data_obj, link_source, browser.i18n.getMessage('calendar_email_link_label'))) {
+                                this.logger.log("task_append_email_link: no source message, link not added.");
+                            }
                         }
                         let task_data_str = JSON.stringify(task_data_obj);
                         // Timezone management - END

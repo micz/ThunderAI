@@ -1,12 +1,6 @@
 {
-    "customPrompts_saving_custom_prompts": {
-        "message": "Ukládání vlastních dotazů…"
-    },
     "prompt_rewrite_formal": {
         "message": "Přepsat formálně"
-    },
-    "customPrompts_reloading_menus": {
-        "message": "Načítání nabídek…"
     },
     "customPrompts_form_label_Action": {
         "message": "Akce"
@@ -50,12 +44,6 @@
     "customPrompts_reindexing_list": {
         "message": "Indexování seznamu…"
     },
-    "customPrompts_filtering_prompts": {
-        "message": "Filtrování dotazů…"
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "Ukládání výchozích dotazů…"
-    },
     "prompt_translate_this": {
         "message": "Přeložit"
     },
@@ -89,9 +77,6 @@
     "customPrompts_close_button": {
         "message": "Tlačítko pro zavření"
     },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Přidat dotaz"
-    },
     "customPrompts_add_to_menu_always": {
         "message": "Vždy"
     },
@@ -100,9 +85,6 @@
     },
     "customPrompts_form_label_need_custom_text": {
         "message": "Zeptat se na dodatečný text"
-    },
-    "customPrompts_form_label_Text": {
-        "message": "Text dotazu"
     },
     "customPrompts_add_to_menu_reading": {
         "message": "Čtení e-mailu"
@@ -135,7 +117,7 @@
         "message": "Máte neuložené změny!"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Výchozí dotazy nelze upravovat. Pro vytvoření upravené verze je můžete zakázat, poté zkopírovat text dotazu a vložit jej do nového."
+        "message": "Výchozí dotazy nelze upravovat. Pro vytvoření upravené verze použijte „Duplikovat a upravit“. Pro skrytí dotazu z nabídek použijte nastavení pořadí nabídek."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Můžete importovat a exportovat dotazy. Existující dotazy se stejným ID budou přepsány. Dotazy s novými ID budou přidány."
@@ -221,9 +203,6 @@
     "prefs_OptionText_btnManagePrompts": {
         "message": "Spravovat vaše příkazy"
     },
-    "prefsInfoTitle": {
-        "message": "Důležité informace"
-    },
     "prefs_OptionText_reply_type": {
         "message": "Typ odpovědi"
     },
@@ -233,23 +212,8 @@
     "prefsInfoDesc_3": {
         "message": "Pro použití integrace s Ollama je nutné nastavit místní server Ollama. Jakmile server běží, zadejte jeho adresu do určeného pole v aplikaci. Pro zajištění správné komunikace mezi ThunderAI a serverem Ollama nezapomeňte nastavit proměnnou OLLAMA_ORIGINS=moz-extension://*."
     },
-    "prefsInfoDesc_5": {
-        "message": "Pamatujte, že nabídku ThunderAI můžete otevřít pomocí klávesové zkratky CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Zkratku můžete změnit kliknutím na ikonu ozubeného kola v pravém horním rohu této stránky a výběrem možnosti „Spravovat zkratku rozšíření“."
-    },
-    "prefsDonation_1": {
-        "message": "Líbí se vám tento doplněk?"
-    },
-    "prefsDonation_2": {
-        "message": "Zvažte dar!"
-    },
     "backToOptionsText": {
         "message": "Možnosti"
-    },
-    "TranslateText": {
-        "message": "Chcete pomoci s překladem tohoto doplňku?"
     },
     "customPrompts_ExportAll": {
         "message": "Exportovat všechny příkazy"
@@ -259,9 +223,6 @@
     },
     "importPrompts_confirmText": {
         "message": "Chystáte se importovat nové příkazy."
-    },
-    "customPrompts_import_completed": {
-        "message": "Import vlastních příkazů dokončen! Pro uložení změn musíte kliknout na tlačítko 'Uložit vše'."
     },
     "importPrompts_invalidPrompts": {
         "message": "Soubor, který se snažíte importovat, neobsahuje žádné platné příkazy."
@@ -473,9 +434,6 @@
     "prefs_OptionText_add_tags_first_uppercase": {
         "message": "První písmeno velké"
     },
-    "TranslateLink": {
-        "message": "Zjistěte, jak na to!"
-    },
     "prefsInfoDesc_1": {
         "message": "Může se stát, že se webové rozhraní ChatGPT změní způsobem, který naruší funkčnost doplňku. Zkontrolujte stránku „Stav služby“, která je odkazovaná ve spodní části této stránky. Také si pamatujte, že při prvním použití ThunderAI se musíte přihlásit do ChatGPT."
     },
@@ -529,9 +487,6 @@
     },
     "prefs_SurveyLinkText2": {
         "message": "Klikněte zde, zabere to jen minutu!"
-    },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Ručně vložit model"
     },
     "OpenAIComp_force_model_ask": {
         "message": "Zde vložte název modelu, který chcete použít."
@@ -670,9 +625,6 @@
     },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "Dočasný chat ChatGPT Web"
-    },
-    "AllowedValues": {
-        "message": "Povolené hodnoty"
     },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Můžete použít další zástupné symboly dat."
@@ -818,9 +770,6 @@
     "prefs_OptionText_calendar_enforce_timezone_Info": {
         "message": "Pokud je zaškrtnuto, bude pro události kalendáře vynuceno zvolené časové pásmo."
     },
-    "noActiveCalendar": {
-        "message": "Nenalezen žádný upravitelný kalendář!"
-    },
     "customPrompts_form_label_use_diff_viewer": {
         "message": "Povolit náhled změn"
     },
@@ -832,9 +781,6 @@
     },
     "apiwebchat_error": {
         "message": "Chyba"
-    },
-    "apiwebchat_you": {
-        "message": "Ty"
     },
     "apiwebchat_info": {
         "message": "Informace"
@@ -874,9 +820,6 @@
     },
     "customPrompts_hide_additional_info": {
         "message": "Skrýt další vlastnosti"
-    },
-    "customPrompts_show_additional_info_show": {
-        "message": "Další vlastnosti"
     },
     "prefs_OptionText_Project_No_temporary_chat_warn": {
         "message": "Pokud je v možnostech nebo v dotazu specifikován projekt, nebude použit dočasný chat."
@@ -1237,10 +1180,10 @@
         "message": "Seznam ignorovaných e-mailových adres"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "E-maily z těchto adres nebudou odesílány umělé inteligenci k filtraci spamu."
+        "message": "E-maily z těchto adres nebo domén nebudou odesílány umělé inteligenci k filtraci spamu."
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "Přidejte jednu e-mailovou adresu na řádek nebo je oddělte čárkou."
+        "message": "Přidejte jednu položku na řádek nebo je oddělte čárkou. Položkou může být celá e-mailová adresa (user@domain.com) nebo celá doména (@domain.com)."
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "Odesílatel je na seznamu ignorovaných adres pro antispam."
@@ -1297,7 +1240,7 @@
         "message": "Povolit přemýšlení (thinking)"
     },
     "prefs_ollama_think_Info": {
-        "message": "Pokud je zaškrtnuto, model bude před odpovědí „přemýšlet“. Tato možnost funguje pouze u modelů, které podporují funkci „think“."
+        "message": "Donuťte model, aby před odpovědí přemýšlel. Možnost „Model default“ nic neodesílá a nechává rozhodnutí na modelu, což u některých modelů znamená, že přemýšlí tak jako tak: vyberte „Off“ pro explicitní vypnutí přemýšlení. Dostupné úrovně přemýšlení závisí na vybraném modelu a zobrazí se po jeho vývěru."
     },
     "prefs_ollama_format_json": {
         "message": "Vynutit výstup v JSON"
@@ -1362,9 +1305,6 @@
     "customDataPH_add_to_menu": {
         "message": "Použitelné v promptech přidaných do nabídky"
     },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Vymazat seznam modelů"
-    },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Opravdu chcete vymazat seznam modelů? Tuto akci nelze vzít zpět."
     },
@@ -1415,20 +1355,8 @@
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Odmítli jste volitelné oprávnění potřebné pro načtení modelů pro tuto integraci."
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Povolit automatické shrnutí pomocí AI pro náhledy zpráv"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Pokud je zaškrtnuto, ThunderAI po otevření e-mailu automaticky vygeneruje a zobrazí shrnutí pomocí AI. Upozorňujeme, že to znamená okamžité odeslání všech zpráv, které si prohlížíte, nakonfigurované AI službě."
-    },
-    "auto_summary_title": {
-        "message": "ThunderAI Shrnutí"
-    },
-    "auto_summary_generating": {
-        "message": "Generování shrnutí pomocí AI..."
-    },
-    "auto_summary_failed": {
-        "message": "Nepodařilo se vygenerovat shrnutí pomocí AI. Zkontrolujte prosím nastavení a zkuste to znovu."
     },
     "customPrompts_export_include_api_settings": {
         "message": "Chcete do exportu zahrnout i nastavení API? Uvědomte si, že do souboru bude uložen i váš API klíč!"
@@ -1441,9 +1369,6 @@
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "Aby bylo možné tuto možnost povolit, musí prompt obsahovat zástupný symbol {%mail_text_body_or_selected%} nebo {%mail_html_body_or_selected%}. Přidejte prosím jeden z těchto symbolů do promptu nebo jej resetujte na výchozí hodnotu."
-    },
-    "customPrompts_btnCopy": {
-        "message": "Kopírovat"
     },
     "copy_text": {
         "message": "kopírovat"
@@ -1486,9 +1411,6 @@
     },
     "get_ai_summary": {
         "message": "AI Shrnutí"
-    },
-    "summarize_collapse": {
-        "message": "Sbalit shrnutí"
     },
     "summarize_generating": {
         "message": "Generování shrnutí..."
@@ -1578,7 +1500,7 @@
         "message": "Vyloučit jazyky"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Čárkami oddělený seznam kódů jazyků (např. en, fr, it), které se mají při automatickém překladu přeskočit. Pokud je e-mail v jednom z těchto jazyků, nebude přeložen automaticky nebo se nezobrazí tlačítko pro manuální překlad."
+        "message": "Čárkami oddělený seznam kódů jazyků (např. en, fr, it), které se nemají překládat. Pokud je e-mail v jednom z těchto jazyků, AI překlad přeskočí a oznámí jej jako přeskočený."
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "Prompt popisující úkol překladu:"

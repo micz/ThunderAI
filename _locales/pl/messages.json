@@ -1,4 +1,7 @@
 {
+    "prefs_api_extra_body": {
+        "message": "Dodatkowe dane treści"
+    },
     "extensionDescription": {
         "message": "Używaj ChatGPT, Goolge Gemini, Claude lub Ollama do ulepszania swoich e-maili!",
         "description": "Description of the extension."
@@ -40,7 +43,7 @@
         "message": "Więcej informacji"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Domyślne polecenia nie są edytowalne. Możesz je wyłączyć, skopiować tekst polecenia i wkleić go do nowego, aby stworzyć zmodyfikowaną wersję."
+        "message": "Domyślne polecenia nie są edytowalne. Aby utworzyć zmodyfikowaną wersję, użyj opcji „Duplikuj i edytuj”. Aby ukryć polecenie w menu, użyj ustawień kolejności menu."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Możesz importować i eksportować polecenia. Istniejące polecenia o tym samym ID zostaną nadpisane. Polecenia z nowymi ID zostaną dodane."
@@ -54,18 +57,6 @@
     "customPrompts_reindexing_list": {
         "message": "Ponowne indeksowanie listy..."
     },
-    "customPrompts_filtering_prompts": {
-        "message": "Filtrowanie poleceń..."
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "Zapisywanie domyślnych poleceń..."
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "Zapisywanie własnych poleceń..."
-    },
-    "customPrompts_reloading_menus": {
-        "message": "Odświeżanie menu..."
-    },
     "customPrompts_saved": {
         "message": "Polecenia zapisane!"
     },
@@ -77,9 +68,6 @@
     },
     "customPrompts_form_label_Name": {
         "message": "Nazwa"
-    },
-    "customPrompts_form_label_Text": {
-        "message": "Tekst polecenia"
     },
     "customPrompts_form_label_Action": {
         "message": "Akcja"
@@ -122,9 +110,6 @@
     },
     "btnNew_string": {
         "message": "Dodaj nowe"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Dodaj polecenie"
     },
     "customPrompts_add_to_menu": {
         "message": "Dodaj do menu"
@@ -225,9 +210,6 @@
     "prefs_OptionText_btnManagePrompts": {
         "message": "Zarządzaj poleceniami"
     },
-    "prefsInfoTitle": {
-        "message": "Ważne informacje"
-    },
     "prefsInfoDesc_1": {
         "message": "Może się zdarzyć, że interfejs ChatGPT zmieni się w sposób, który zakłóci działanie dodatku. Sprawdź stronę \"Status usługi\" połączoną na dole tej strony. Pamiętaj też, że przy pierwszym użyciu ThunderAI musisz zalogować się do ChatGPT."
     },
@@ -240,26 +222,8 @@
     "prefsInfoDesc_4": {
         "message": "Aby korzystać z tej integracji, musisz skonfigurować lokalny serwer kompatybilny z API OpenAI, jak LM Studio. Po uruchomieniu serwera wprowadź jego adres w odpowiednim polu w aplikacji. Aby zapewnić prawidłową komunikację między ThunderAI a serwerem lokalnym pamiętaj o prawidłowym ustawieniu CORS."
     },
-    "prefsInfoDesc_5": {
-        "message": "Pamiętaj, że możesz otworzyć menu ThunderAI używając skrótu klawiszowego CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Możesz zmienić skrót klikając ikonę koła zębatego w prawym górnym rogu tej strony i wybierając \"Zarządzaj skrótami rozszerzenia\"."
-    },
-    "prefsDonation_1": {
-        "message": "Czy podoba Ci się ten dodatek?"
-    },
-    "prefsDonation_2": {
-        "message": "Rozważ wsparcie poprzez darowiznę!"
-    },
     "backToOptionsText": {
         "message": "Opcje"
-    },
-    "TranslateText": {
-        "message": "Czy chcesz pomóc w tłumaczeniu tego dodatku?"
-    },
-    "TranslateLink": {
-        "message": "Dowiedz się jak!"
     },
     "customPrompts_ExportAll": {
         "message": "Eksportuj wszystkie polecenia"
@@ -272,9 +236,6 @@
     },
     "customPrompts_start_import": {
         "message": "Rozpoczynanie importu własnych poleceń..."
-    },
-    "customPrompts_import_completed": {
-        "message": "Import własnych poleceń zakończony! Musisz kliknąć przycisk 'Zapisz wszystko', aby zapisać zmiany."
     },
     "importPrompts_invalidFile": {
         "message": "Plik, który próbujesz zaimportować, nie jest prawidłowym plikiem poleceń."
@@ -471,9 +432,6 @@
     "chatgpt_btn_model": {
         "message": "Użyj bieżącego modelu"
     },
-    "AllowedValues": {
-        "message": "Dozwolone wartości"
-    },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Możesz użyć dodatkowych symboli zastępczych danych."
     },
@@ -482,9 +440,6 @@
     },
     "prefs_extra_body_error_not_object": {
         "message": "Wartość musi być obiektem JSON, ujętym w nawiasy klamrowe."
-    },
-    "prefs_OptionText_openai_comp_extra_body": {
-        "message": "Dodatkowe dane treści"
     },
     "prefs_OptionText_openai_comp_extra_body_info": {
         "message": "Dodatkowe parametry wysyłane przy każdym wywołaniu API, jako obiekt JSON. Przydatne dla opcji, które ta usługa obsługuje, ale których ThunderAI nie udostępnia, na przykład wyłączenie trybu myślenia: {\"chat_template_kwargs\": {\"thinking\": false}} lub {\"top_p\": 0.9}. Parametrów zarządzanych przez ThunderAI (model, messages, streaming, temperature) nie można tutaj nadpisać. Nieprawidłowa wartość jest ignorowana."
@@ -620,9 +575,6 @@
     },
     "prefs_SurveyLinkText2": {
         "message": "Podziel się swoją opinią"
-    },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Ręcznie wprowadź model"
     },
     "OpenAIComp_force_model_ask": {
         "message": "Wprowadź tutaj nazwę modelu, którego chcesz użyć."
@@ -1198,10 +1150,10 @@
         "message": "Lista pomijanych adresów e-mail"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "Wiadomości e-mail od tych adresów nie będą wysyłane do AI do filtrowania spamu."
+        "message": "Wiadomości e-mail od tych adresów lub domen nie będą wysyłane do AI do filtrowania spamu."
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "Dodaj po jednym adresie e-mail w wierszu lub oddzielone przecinkami."
+        "message": "Dodaj po jednym wpisie w wierszu lub oddziel je przecinkami. Wpis może być pełnym adresem e-mail (user@domain.com) lub całą domeną (@domain.com)."
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "Nadawca znajduje się na liście pomijanych adresów antyspamowych."
@@ -1229,9 +1181,6 @@
     },
     "Valid": {
         "message": "Prawidłowe"
-    },
-    "noActiveCalendar": {
-        "message": "Nie znaleziono edytowalnego kalendarza!"
     },
     "btn_show_differences": {
         "message": "Pokaż różnice"
@@ -1300,10 +1249,6 @@
                 "content": "$1"
             }
         }
-    },
-    "apiwebchat_picker_progress": {
-        "message": "Zaakceptowane zmiany",
-        "description": "Accessible label of the change picker's progress bar"
     },
     "apiwebchat_picker_more_actions": {
         "message": "Więcej akcji",
@@ -1400,9 +1345,6 @@
     "apiwebchat_picker_side_empty_inactive": {
         "message": "Brak tekstu. Aktywuj, aby pominąć tę część.",
         "description": "Accessible label of the empty side of a change, when it is not the one in use"
-    },
-    "apiwebchat_you": {
-        "message": "Ty"
     },
     "apiwebchat_info": {
         "message": "Informacje"
@@ -1534,9 +1476,6 @@
     "customPrompts_hide_additional_info": {
         "message": "Ukryj dodatkowe właściwości"
     },
-    "customPrompts_show_additional_info_show": {
-        "message": "Dodatkowe właściwości"
-    },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Jeśli w opcjach lub w poleceniu określono projekt, zastąpi on ustawienie niestandardowego GPT."
     },
@@ -1640,9 +1579,6 @@
     "prefs_OptionText_chatgpt_reasoning_effort": {
         "message": "Wysiłek wnioskowania"
     },
-    "prefs_OptionText_chatgpt_extra_body": {
-        "message": "Dodatkowe dane treści"
-    },
     "prefs_OptionText_chatgpt_extra_body_info": {
         "message": "Dodatkowe parametry wysyłane przy każdym wywołaniu API, jako obiekt JSON, na przykład {\"top_p\": 0.9}. Przydatne dla opcji, które API OpenAI obsługuje, ale których ThunderAI nie udostępnia. Parametrów zarządzanych przez ThunderAI (model, input, streaming, temperature, reasoning, instructions) nie można tutaj nadpisać. Nieprawidłowa wartość jest ignorowana."
     },
@@ -1653,7 +1589,7 @@
         "message": "Wyłączone",
         "description": "Option for the reasoning summary dropdown, meaning no summary is requested."
     },
-    "prefs_OptionText_chatgpt_reasoning_api_default": {
+    "prefs_reasoning_api_default": {
         "message": "Wartość domyślna API",
         "description": "Option for the reasoning effort dropdown, meaning the value is not sent and the API default applies."
     },
@@ -1665,21 +1601,23 @@
         "message": "Szczegółowo",
         "description": "Option for the reasoning summary dropdown: request a more detailed summary."
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
-        "message": "Minimalny",
-        "description": "Option for the reasoning effort dropdown: the lowest amount of reasoning."
+    "prefs_level_minimal": {
+        "message": "Minimalny"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_low": {
-        "message": "Niski",
-        "description": "Option for the reasoning effort dropdown."
+    "prefs_level_low": {
+        "message": "Niski"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
-        "message": "Średni",
-        "description": "Option for the reasoning effort dropdown."
+    "prefs_level_medium": {
+        "message": "Średni"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_high": {
-        "message": "Wysoki",
-        "description": "Option for the reasoning effort dropdown: the highest amount of reasoning."
+    "prefs_level_high": {
+        "message": "Wysoki"
+    },
+    "prefs_level_xhigh": {
+        "message": "Bardzo wysoki"
+    },
+    "prefs_level_max": {
+        "message": "Maksymalny"
     },
     "prefs_ollama_temperature_Info": {
         "message": "Temperatura modelu. Zwiększenie temperatury sprawia, że model odpowiada bardziej kreatywnie. Wartość domyślna to 0,8. Zaleca się używanie wartości od 0 do 1."
@@ -1688,7 +1626,7 @@
         "message": "Włącz myślenie"
     },
     "prefs_ollama_think_Info": {
-        "message": "Jeśli zaznaczone, model pomyśli przed udzieleniem odpowiedzi. Ta opcja działa tylko z modelami obsługującymi funkcję „think“."
+        "message": "Spraw, aby model przemyślał odpowiedź przed jej udzieleniem. Opcja „Model default” nie wysyła niczego i pozwala modelowi zdecydować, co w przypadku niektórych modeli oznacza, że i tak będzie przemyśliwał odpowiedź: wybierz „Off”, aby jawnie wyłączyć rozumowanie. Dostępne poziomy rozumowania zależą od wybranego modelu i zostaną wyświetlone po jego wybraniu."
     },
     "prefs_ollama_format_json": {
         "message": "Wymuś wyjście JSON"
@@ -1765,9 +1703,6 @@
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Zwróć uwagę, że wszystkie znaczniki <br> w odpowiedzi AI zostaną zastąpione podziałami wierszy."
     },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Wyczyść listę modeli"
-    },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Czy na pewno chcesz wyczyścić listę modeli? Tej czynności nie można cofnąć."
     },
@@ -1828,25 +1763,9 @@
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Odmówiłeś opcjonalnego uprawnienia potrzebnego do pobrania modeli dla tej integracji."
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Włącz automatyczne podsumowywanie AI dla podglądu wiadomości",
-        "description": "Label for the option to enable automatic AI summarization of email messages"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Jeśli zaznaczone, ThunderAI będzie automatycznie generować i wyświetlać podsumowania AI nad wiadomościami e-mail po ich otwarciu. Zwróć uwagę, że oznacza to, że wszystkie podglądane wiadomości zostaną natychmiast wysłane do skonfigurowanej usługi AI.",
         "description": "Tooltip/info text explaining the automatic AI summarization option and its privacy implications"
-    },
-    "auto_summary_title": {
-        "message": "Podsumowanie ThunderAI",
-        "description": "Title heading shown above the automatically generated AI summary in the message pane"
-    },
-    "auto_summary_generating": {
-        "message": "Generowanie podsumowania AI...",
-        "description": "Status message shown while the AI summary is being generated"
-    },
-    "auto_summary_failed": {
-        "message": "Nie udało się wygenerować podsumowania AI. Potwierdź ustawienia i spróbuj ponownie.",
-        "description": "Error message shown when the automatic AI summary generation fails"
     },
     "customPrompts_export_include_api_settings": {
         "message": "Czy chcesz uwzględnić ustawienia API w eksporcie? Miej na uwadze, że klucz API także zostanie zapisany w pliku!"
@@ -1859,9 +1778,6 @@
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "Polecenie musi zawierać symbol zastępczy {%mail_text_body_or_selected%} lub {%mail_html_body_or_selected%}, aby włączyć tę opcję. Dodaj jeden z tych symboli zastępczych do polecenia lub zresetuj je do wartości domyślnej."
-    },
-    "customPrompts_btnCopy": {
-        "message": "Kopiuj"
     },
     "copy_text": {
         "message": "kopiuj"
@@ -1887,8 +1803,8 @@
     "prefs_OptionText_summarize_max_display_length_Info": {
         "message": "Maksymalna liczba znaków wyświetlanych w podsumowaniu wewnątrz wiersza. Ustaw 0, aby brak limitu."
     },
-    "prefs_OptionText_summarize_max_messages": {
-        "message": "Maks. liczba wiadomości"
+    "prefs_OptionText_max_messages": {
+        "message": "Maks. wiadomości"
     },
     "prefs_OptionText_summarize_max_messages_Info": {
         "message": "Maksymalna liczba wiadomości, które można jednocześnie podsumować w trybie webchat. Powyżej tego limitu operacja jest blokowana z ostrzeżeniem. Ustaw 0, aby brak limitu."
@@ -1907,9 +1823,6 @@
     },
     "Summarize_auto_senders_infoline2": {
         "message": "Dodaj jeden adres e-mail w każdej linii lub oddziel je przecinkami. Użyj \"@domena.com\", aby dopasować wszystkich nadawców z całej domeny."
-    },
-    "Summarize_auto_senders_api_warning": {
-        "message": "Uwaga: te podsumowania są generowane automatycznie, więc każdy e-mail od tych nadawców zużywa tokeny API i może zwiększyć koszt Twojej subskrypcji AI. Utrzymuj listę możliwie krótką."
     },
     "Summarize_auto_senders_notice": {
         "message": "Automatyczne podsumowywanie jest wyłączone, ale dla nadawców z poniższej listy podsumowanie nadal jest generowane automatycznie."
@@ -1983,9 +1896,6 @@
     "batch_stop_source": {
         "message": "Zatrzymanie wsadowe",
         "description": "Source label shown as the prefix of the notice displayed when the user stops the running email processing jobs"
-    },
-    "summarize_collapse": {
-        "message": "Zwiń podsumowanie"
     },
     "summarize_generating": {
         "message": "Generowanie podsumowania..."
@@ -2079,7 +1989,7 @@
         "message": "Wyklucz języki"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Rozdzielana przecinkami lista kodów języków (np. en, fr, it) do pominięcia przy automatycznym tłumaczeniu. Jeśli wiadomość jest w jednym z tych języków, nie zostanie przetłumaczona automatycznie lub przycisk ręczny nie będzie pokazany."
+        "message": "Rozdzielana przecinkami lista kodów języków (np. en, fr, it), które nie mają być tłumaczone. Jeśli wiadomość jest w jednym z tych języków, AI pomija tłumaczenie i zgłasza je jako pominięte."
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "Polecenie opisujące zadanie tłumaczenia:"
@@ -2278,14 +2188,6 @@
     "menu_order_legend_source_custom": {
         "message": "Polecenie utworzone przez Ciebie",
         "description": "Legend description for the 'Custom' source badge"
-    },
-    "prefs_settings_subtitle": {
-        "message": "Ustawienia",
-        "description": "Subtitle shown under the ThunderAI name in the options page header"
-    },
-    "prefs_disclaimer": {
-        "message": "Modele LLM mogą generować nieprawidłowe informacje, a Twoje dane mogą być wykorzystane przez dostawcę do trenowania nowych modeli. Używasz na własne ryzyko.",
-        "description": "Disclaimer note shown at the top of the options page body"
     },
     "prefs_ConnectionSettingsTitle": {
         "message": "Ustawienia połączenia",
@@ -2688,21 +2590,6 @@
     },
     "anthropic_effort_default": {
         "message": "Domyślnie (decyduje API)"
-    },
-    "Anthropic_Effort_Level_low": {
-        "message": "Niski"
-    },
-    "Anthropic_Effort_Level_medium": {
-        "message": "Średni"
-    },
-    "Anthropic_Effort_Level_high": {
-        "message": "Wysoki"
-    },
-    "Anthropic_Effort_Level_xhigh": {
-        "message": "Bardzo wysoki"
-    },
-    "Anthropic_Effort_Level_max": {
-        "message": "Maksymalny"
     },
     "anthropic_note_temperature_unsupported": {
         "message": "Wybrany model nie przyjmuje wartości Temperatury i ignoruje to pole. Użyj zamiast niego ustawienia Wysiłek. Wartość jest zachowywana na wypadek powrotu do starszego modelu."

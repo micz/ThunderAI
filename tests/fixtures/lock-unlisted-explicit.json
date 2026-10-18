@@ -1,0 +1,21 @@
+{
+  "_org_name": "ACME",
+  "_lock_unlisted": true,
+  "connection_type": "chatgpt_api",
+  "default_sign_name": "ACME Staff",
+  "chatgpt_model": "gpt-org",
+  "chatgpt_model:locked": false,
+  "_special_prompts_connection": {
+    "summarize": {
+      "api_type": "ollama_api",
+      "ollama_host": "http://ollama.example.org:11434",
+      "ollama_model": "llama-org"
+    }
+  },
+  "_user_editable": [
+    "default_sign_name",
+    "chatgpt_model",
+    "summarize_use_specific_integration",
+    "translate_lang"
+  ]
+}

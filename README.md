@@ -88,6 +88,22 @@ Drafts, templates, outbox and sent messages are skipped, so a draft is never pro
 - **Found a bug, or have an idea?** Open an issue using the [bug report or feature request templates](https://github.com/micz/ThunderAI/issues/new/choose).
 - **Do you want to help translate this add-on?** [Find out how!](https://micz.it/thunderbird-addon-thunderai/translate/) Translations are managed on [Weblate](https://hosted.weblate.org/engage/thunderai/) — please do not edit the locale files directly, only `_locales/en/messages.json` is edited by hand.
 
+### Running the tests
+
+The add-on itself has no build step and no dependencies: it is plain JavaScript loaded as it is by Thunderbird. The enterprise managed configuration has an automated test suite in [`tests/`](tests/), in two levels, both run from the repository root with Node's built-in test runner:
+
+```sh
+# Level 1 - the modules. Node 22 or later, nothing to install
+node --test "tests/**/*.test.mjs"
+
+# Everything, including the DOM tests (the settings pages loaded in jsdom).
+# Node 22.22+ or 24.15+
+npm ci
+npm test
+```
+
+`npm` is used for development tooling only: [jsdom](https://github.com/jsdom/jsdom) is the one development dependency, and nothing in `package.json` or `node_modules` is part of the add-on or ends up in the XPI. The tests run in CI on demand only — manually from the Actions tab, or by adding the `run-tests` label to a pull request — not on every commit. How they work, and how to add a scenario or a page, is explained in [`tests/README.md`](tests/README.md).
+
 ## Privacy and Permissions
 
 You can find all the information on [this page](https://micz.it/thunderbird-addon-thunderai/privacy-permissions/).
@@ -95,7 +111,7 @@ You can find all the information on [this page](https://micz.it/thunderbird-addo
 ## Support this addon!
 
 Are you using this addon in your Thunderbird?<br>
-Consider to support the development making a small donation. [Click here!](https://www.paypal.com/donate/?business=UHN4SXPGEXWQL&no_recurring=1&item_name=Thunderbird+Addon+ThunderAI&currency_code=EUR)
+Consider supporting the development with a small donation. [Click here!](https://www.paypal.com/donate/?business=UHN4SXPGEXWQL&no_recurring=1&item_name=Thunderbird+Addon+ThunderAI&currency_code=EUR)
 
 ## License
 
@@ -149,4 +165,5 @@ _The language status represents the percentage of translated strings in the late
 ### Miscellaneous
 - <a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGPT web frontend
 - <a href="https://github.com/boxabirds">Julian Harris</a> for his project <a href="https://github.com/boxabirds/chatgpt-frontend-nobuild">chatgpt-frontend-nobuild</a>, that has been used as a starting point for the API Web Interface
-- <a href="https://hosted.weblate.org/widgets/thunderai/">Hosted Weblate</a> for managing the localization
+- <a href="https://hosted.weblate.org/engage/thunderai/">Hosted Weblate</a> for managing the localization
+- <a href="https://github.com/micz/Thunderbird-Addon-Options-Manager">Thunderbird Addon Options Manager</a> as the basis for the preference handling

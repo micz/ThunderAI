@@ -20,21 +20,41 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { prefs_default } from '../options/mzta-options-default.js';
 import './splitButton.js';   // registers the <split-button> custom element
 import './diffPicker.js';    // registers the <diff-picker> custom element
 import { textToBlockHtml } from './diffPicker.js';
 import { renderThinkingBlock } from './thinkingBlock.js';
 import { StreamingMessage } from './streamingMessage.js';
-import { SHARED_BASE_CSS, BUTTON_CSS } from './sharedStyles.js';
 import {
-    buildSparkleIcon, buildCopyIcon, buildCheckIcon, buildDiffIcon,
-    buildSaveIcon, buildUseAnswerIcon, buildScrollToBottomIcon,
+    SHARED_BASE_CSS,
+    BUTTON_CSS
+} from './sharedStyles.js';
+import {
+    buildSparkleIcon,
+    buildCopyIcon,
+    buildCheckIcon,
+    buildDiffIcon,
+    buildSaveIcon,
+    buildUseAnswerIcon,
+    buildScrollToBottomIcon,
 } from './svgIcons.js';
+import { mztaPrefs } from '../js/mzta-prefs.js';
+import {
+    htmlToLines,
+    normalizePlain
+} from '../js/mzta-richtext.js';
+import {
+    buildUsageChip,
+    createSessionUsage,
+    addUsageToSession,
+    contextTokensOf,
+    USAGE_MARKER_ATTR,
+    USAGE_CHIP_CSS,
+} from './usageBadge.js';
 const messagesAreaTemplate = document.createElement('template');
 
 const messagesAreaStyle = document.createElement('style');
-messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
+messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + USAGE_CHIP_CSS + `
     /* Exactly one box here scrolls, and it is #messages. The host must not:
        a wheel event over #messages bubbles up to it, so if both declared
        overflow the transcript could end up scrolling in a box whose scrollTop
@@ -103,6 +123,11 @@ messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
         border-radius: var(--r-bubble) var(--r-bubble) 4px var(--r-bubble);
         font-size: .875rem;
         line-height: 1.45;
+        /* The bubble shows the prompt as text, HTML placeholders included, so a
+           long URL has no break opportunity; #messages clips horizontally.
+           'anywhere' rather than 'break-word': only it also lowers the
+           min-content width of this flex item. */
+        overflow-wrap: anywhere;
     }
 
     .turn-bot {
@@ -144,6 +169,9 @@ messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
         font-size: .875rem;
         line-height: 1.55;
         color: var(--ink);
+        /* A long URL in an answer would be clipped by #messages; <pre> keeps
+           its own horizontal scroll (white-space: pre does not wrap). */
+        overflow-wrap: anywhere;
     }
     .message p{
         margin: 0 0 10px;
@@ -152,6 +180,18 @@ messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
     .message p:last-child{
         margin-bottom: 0;
     }
+    /* A hint under an error message (see appendBotMessage). */
+    .message.error + .message.error {
+        margin-top: 10px;
+    }
+    /* The token usage chip (USAGE_CHIP_CSS, prepended above) lives in the
+       action bar, a sibling of .message inside .turn-body and never a
+       descendant of it: every helper that reads an answer out of the DOM walks
+       the message element, so keeping the chip outside is the structural half
+       of the guarantee that it can never be copied, inserted into a reply or
+       fed back to the model. The [data-mzta-usage] attribute is the other half,
+       for the selection paths that start from the user's own range. */
+
     .token {
         display: inline;
         opacity: 0;
@@ -424,12 +464,26 @@ class MessagesArea extends HTMLElement {
         // handleTokensDone, so each turn's flushed HTML snapshot is isolated.
         this._streaming = null;
         this.hideThinking = false;
+        // Token usage UI, off until controller.js enables it: the option must be on
+        // AND the integration must be one that can report the counts.
+        this.showUsageData = false;
+        // Running per-chat usage, allocated only once the feature is enabled. One
+        // window is one chat, so there is nothing to reset between chats.
+        this.sessionUsage = null;
+        // Context window of the model in use, in tokens, or null when unknown.
+        // Read by the usage popovers each time one opens.
+        this.contextWindow = null;
+        // performance.now() when the pending request was sent, for the duration
+        // shown on the usage chip. Measured here rather than by the worker, so
+        // every provider has it, including those that report no usage at all.
+        this._requestStartedAt = null;
         // Live "Thinking..." placeholder element, while it is on screen.
         this.thinkingLiveEl = null;
         // Wrapper of the turn currently being built. It must survive every
-        // flush: a single response flushes on each '\n', so clearing it there
-        // would start a fresh wrapper (and a second avatar) mid-answer. Only
-        // appendUserMessage() and handleTokensDone() reset it.
+        // flush: a single response flushes on any token containing a newline,
+        // so clearing it there would start a fresh wrapper (and a second
+        // avatar) mid-answer. Only appendUserMessage(), appendBotMessage()
+        // and handleTokensDone() reset it.
         this._currentTurnEl = null;
         // Turn that currently owns the full action bar. When a newer answer
         // arrives its bar is removed, leaving only the light toolbar behind,
@@ -794,6 +848,71 @@ class MessagesArea extends HTMLElement {
         this.hideThinking = !!val;
     }
 
+    // Enable the usage UI for this window. Off by default, so nothing is rendered
+    // and no session counter appears unless the option is on AND the integration
+    // can report the counts (both judged in controller.js).
+    setShowUsageData(val) {
+        this.showUsageData = !!val;
+        if (this.showUsageData && this.sessionUsage === null) {
+            // Created here rather than in the constructor, so a window that never
+            // enables the feature carries no counter state at all. A window is one
+            // chat, so this is also the "reset when a new chat is opened" rule: a
+            // fresh window starts from a fresh accumulator.
+            this.sessionUsage = createSessionUsage();
+        }
+    }
+
+    // Context window of the active model, as the provider or the configuration
+    // states it (see contextWindow.js). Any non-positive or non-numeric value
+    // means "unknown": the popover then shows the context count without a maximum.
+    setContextWindow(tokens) {
+        const n = Number(tokens);
+        this.contextWindow = (Number.isFinite(n) && n > 0) ? n : null;
+    }
+
+    // Record the usage of a finished response, and fold it into the session.
+    //
+    // Nothing is drawn yet: the chip goes in the action bar, which only exists once
+    // 'tokensDone' arrives, and it also carries the duration, which is only known
+    // then. See _buildUsageChipForTurn().
+    //
+    // The messageId identifies the assistant message the worker produced. Only the
+    // turn still open when this arrives can own the usage -- the worker posts it
+    // before 'tokensDone', which is what closes that turn -- so the id is used as a
+    // guard rather than as a lookup key: a usage message that somehow arrives after
+    // its turn was closed is dropped instead of landing on the wrong answer.
+    handleUsageData(messageId, usage) {
+        if (!this.showUsageData) return;
+        if (usage === null || typeof usage !== 'object') return;
+        const turn = this._currentTurnEl;
+        if (turn === null) return;
+        // One usage per turn: a provider that reported twice must not count twice.
+        if (turn._mztaUsageId !== undefined) return;
+        turn._mztaUsageId = messageId;
+        turn._mztaUsage = usage;
+        addUsageToSession(this.sessionUsage, usage);
+    }
+
+    // Build the chip of the turn being closed, from its usage (if any arrived) and
+    // the measured duration. Stored on the turn, so the action bar can place it and
+    // the compact toolbar can take it over when a newer answer arrives.
+    _buildUsageChipForTurn(turn) {
+        if (!this.showUsageData || turn === null) return;
+        const durationMs = (this._requestStartedAt !== null)
+            ? Math.max(0, performance.now() - this._requestStartedAt) : null;
+        this._requestStartedAt = null;
+        const usage = turn._mztaUsage ?? null;
+        // Context and session total are snapshotted now, so an earlier answer's
+        // popover keeps describing the conversation as it was at that answer. The
+        // window is read live instead: it may be looked up after this answer.
+        const chip = buildUsageChip(usage, durationMs, {
+            context: contextTokensOf(usage),
+            sessionTotal: (usage !== null) ? this.sessionUsage.total : null,
+            getWindow: () => this.contextWindow,
+        });
+        if (chip !== null) turn._mztaUsageChip = chip;
+    }
+
     _ensureStreaming() {
         if (!this._streaming) {
             this._streaming = new StreamingMessage();
@@ -813,12 +932,29 @@ class MessagesArea extends HTMLElement {
     }
 
     async handleTokensDone(promptData = null) {
+        // A response made only of thinking tokens never created an accumulating
+        // message (only a content token does): open one now, so the final flush
+        // below renders its thinking block instead of dropping the reasoning.
+        if (!this.accumulatingMessageEl && this._streaming?.hasThinking()) {
+            this.createNewAccumulatingMessage();
+        }
         this.flushAccumulatingMessage(true);
-        // A response made only of thinking tokens never creates an accumulating
-        // message, so the flush above is a no-op and would leave the indicator
-        // spinning forever.
+        // The flush removes the live indicator; with no thinking and no content at
+        // all there was nothing to flush, and it would be left spinning forever.
         this._removeThinkingIndicator();
+        const closingTurn = this._currentTurnEl;
+        this._buildUsageChipForTurn(closingTurn);
         await this.addActionButtons(promptData);
+        // addActionButtons() places the chip in the bar. When it bailed out before
+        // building one, the chip still gets a row of its own.
+        const chip = closingTurn?._mztaUsageChip;
+        if (chip && !chip.isConnected) {
+            const row = document.createElement('div');
+            row.classList.add('action-bar');
+            row.appendChild(chip);
+            closingTurn.querySelector('.turn-body')?.appendChild(row);
+            this._updateJumpButton();
+        }
         // The exchange is over, so the anchor has nothing left to hold: its job
         // was to keep the view still while the answer streamed into it. Dropping
         // it here is what lets the follow below reach the REAL bottom.
@@ -839,8 +975,8 @@ class MessagesArea extends HTMLElement {
         // and close the turn wrapper.
         this._streaming = null;
         this._currentTurnEl = null;
-        // A cumulative (HTML) response keeps its accumulating element alive
-        // across flushes, so unlike the markdown path it is still set here.
+        // Every response is cumulative (there is one render path now), so the
+        // accumulating element stays alive across flushes and is still set here.
         // Clearing it is what makes the NEXT response open an element of its own
         // instead of streaming into this answer.
         this.accumulatingMessageEl = null;
@@ -853,16 +989,23 @@ class MessagesArea extends HTMLElement {
         // A user message ends the previous model turn, so the next token
         // opens a fresh one.
         this._currentTurnEl = null;
+        // Every real prompt is appended right before it is posted to the worker,
+        // so this is the start of the duration shown on the answer's usage chip.
+        // Info turns are notices, not requests.
+        if (type !== 'info') {
+            this._requestStartedAt = performance.now();
+        }
         // console.log("[ThunderAI] appendUserMessage: " + messageText);
         const turn = this._beginUserTurn(type);
 
         const messageElement = document.createElement('div');
         messageElement.classList.add(type === 'info' ? 'message' : 'bubble', type);
-        // Replace \n with <br> for correct HTML display
+        // An info notice is the window's own HTML (every value in it escaped by
+        // its builder); a user message is text, its \n shown as line breaks.
         if (type === "info") {
             messageElement.appendChild(htmlStringToFragment(messageText));
         } else {
-            messageElement.appendChild(textWithBrToFragment(messageText));
+            messageElement.appendChild(textWithNewlinesToFragment(messageText));
         }
         turn.appendChild(messageElement);
         // Pin the exchange to this prompt: the view scrolls until the prompt is
@@ -873,7 +1016,9 @@ class MessagesArea extends HTMLElement {
         this._resumeFollowing();
     }
 
-    appendBotMessage(messageText, type="bot") {
+    // hintText: optional second paragraph under the message (e.g. when the provider
+    // accepts requests again), kept apart so it is not lost inside a long error text.
+    appendBotMessage(messageText, type="bot", hintText = '') {
         // console.log("[ThunderAI] appendBotMessage: " + messageText);
 
         this.fullTextHTML = messageText;
@@ -899,6 +1044,25 @@ class MessagesArea extends HTMLElement {
         messageElement.classList.add('message', type);
         messageElement.textContent = messageText;
         body.appendChild(messageElement);
+        if (hintText) {
+            const hintElement = document.createElement('div');
+            hintElement.classList.add('message', type);
+            hintElement.textContent = hintText;
+            body.appendChild(hintElement);
+        }
+        if (type === 'error') {
+            // An error ends the exchange with no answer to act on, but the user
+            // still needs a way out: give the error turn the full-bar slot with
+            // a Close-only bar. The previous answer's bar degrades to its icon
+            // toolbar as usual. No _mztaToolsArgs is stashed, so when the next
+            // answer arrives _degradeFullActionBar() simply removes this bar.
+            this._degradeFullActionBar();
+            const actionButtons = document.createElement('div');
+            actionButtons.classList.add('action-bar');
+            actionButtons.appendChild(this._buildCloseButton());
+            body.appendChild(actionButtons);
+            this._lastFullBarTurn = this._currentTurnEl;
+        }
         // This is a terminal message (typically an error), not a streaming
         // turn: close it so the next answer starts its own.
         this._currentTurnEl = null;
@@ -1070,14 +1234,11 @@ class MessagesArea extends HTMLElement {
                 // Read the picker NOW, not when the bar was built, so the click
                 // picks up every accept/reject the user has made since.
                 //
-                // Deliberately NOT through removeAloneBRs(). It would now be
-                // SAFE - the picker emits <p>/<li>-wrapped blocks, so every
-                // <br> it produces has a block ancestor, and the collapse that
-                // made this skip mandatory when the output was <br>-only markup
-                // can no longer happen. It is skipped because it is pointless:
-                // the picker's output is canonical by construction, and running
-                // it through a cleaner written for the markdown producer only
-                // adds a way to go wrong.
+                // Deliberately NOT through trimEdgeBRs(): the picker's output is
+                // canonical by construction (<p>/<li>-wrapped blocks), so it has
+                // no edge <br> to trim, and running it through a cleaner written
+                // for the answer snapshot and the selection only adds a way to
+                // go wrong.
                 //
                 // The mouse-selection override is skipped too: two mechanisms
                 // competing over the same output is confusing, and the picker is
@@ -1091,10 +1252,10 @@ class MessagesArea extends HTMLElement {
                 }
             }
             if(finalText === null) {
-                finalText = removeAloneBRs(fullTextHTMLAtAssignment);
+                finalText = trimEdgeBRs(fullTextHTMLAtAssignment);
                 const selectedHTML = this.getCurrentSelectionHTML();
                 if(selectedHTML != "") {
-                    finalText = removeAloneBRs(selectedHTML);
+                    finalText = trimEdgeBRs(selectedHTML);
                 }
             }
 
@@ -1134,9 +1295,9 @@ class MessagesArea extends HTMLElement {
         // first, so two full bars never coexist.
         this._degradeFullActionBar();
 
-        const fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
+        const fullTextHTMLAtAssignment = stripWrappingQuotes(this.fullTextHTML.trim());
         //console.log(">>>>>>>>>>>> fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-        let reply_type_pref = await browser.storage.sync.get({ reply_type: prefs_default.reply_type });
+        let reply_type_pref = await mztaPrefs.getPrefs(['reply_type']);
 
         // Remember what the compact toolbar will need. It is only built when
         // this answer stops being the newest one (see _degradeFullActionBar):
@@ -1157,12 +1318,7 @@ class MessagesArea extends HTMLElement {
         // "use this answer" split button
         const splitButton = this._buildUseThisAnswerButton(promptData, reply_type_pref, fullTextHTMLAtAssignment, turn);
 
-        const closeButton = document.createElement('button');
-        closeButton.textContent = browser.i18n.getMessage("chatgpt_win_close");
-        closeButton.classList.add('close_btn', 'mzta-btn-tertiary');
-        closeButton.addEventListener('click', async () => {
-            browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id}).catch(() => {});    // close window
-        });
+        const closeButton = this._buildCloseButton();
         if(promptData.action != "0") {
             actionButtons.appendChild(splitButton);
             selectionInfo.style.display = "block"; // show selection info
@@ -1184,6 +1340,12 @@ class MessagesArea extends HTMLElement {
             actionButtons.appendChild(diffvButton);
         }
 
+        // token usage chip, always the last action (built in handleTokensDone);
+        // Close is not counted, it sits apart on the right
+        if(turn._mztaUsageChip) {
+            actionButtons.appendChild(turn._mztaUsageChip);
+        }
+
         actionButtons.appendChild(closeButton);
         turnBody.appendChild(actionButtons);
         turnBody.appendChild(selectionInfo);
@@ -1197,6 +1359,16 @@ class MessagesArea extends HTMLElement {
         // no-op while the user sits at the anchored prompt. Refresh here so the
         // button's state is never left over from before the bar existed.
         this._updateJumpButton();
+    }
+
+    _buildCloseButton() {
+        const closeButton = document.createElement('button');
+        closeButton.textContent = browser.i18n.getMessage("chatgpt_win_close");
+        closeButton.classList.add('close_btn', 'mzta-btn-tertiary');
+        closeButton.addEventListener('click', async () => {
+            browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id}).catch(() => {});    // close window
+        });
+        return closeButton;
     }
 
     // Swap the full action bar of the previously-newest answer for the compact
@@ -1244,6 +1416,13 @@ class MessagesArea extends HTMLElement {
             useBtn.addEventListener('click',
                 this.handleUseThisAnswerButtonClick(promptData, replyType, fullTextHTMLAtAssignment, ownerTurn));
             tools.appendChild(useBtn);
+        }
+
+        // The usage chip moves here from the full bar, so an earlier answer keeps
+        // its figures. Moved, not rebuilt: the node is about to leave with the bar.
+        // Always the last element, as in the full bar.
+        if(ownerTurn?._mztaUsageChip) {
+            tools.appendChild(ownerTurn._mztaUsageChip);
         }
 
         return tools;
@@ -1373,16 +1552,17 @@ class MessagesArea extends HTMLElement {
         saveLabelEl.textContent = saveLabel;
         saveSummaryButton.appendChild(saveLabelEl);
         saveSummaryButton.addEventListener('click', async () => {
-            let finalText = removeAloneBRs(fullTextHTMLAtAssignment);
+            let finalText = trimEdgeBRs(fullTextHTMLAtAssignment);
             const selectedHTML = this.getCurrentSelectionHTML();
             if(selectedHTML != "") {
-                finalText = removeAloneBRs(selectedHTML);
+                finalText = trimEdgeBRs(selectedHTML);
             }
             await browser.runtime.sendMessage({
                 command: "chatgpt_saveSummary",
                 text: finalText,
                 headerMessageId: promptData.prompt_info.headerMessageId,
-                tabId: promptData.prompt_info.summaryTabId || promptData.tabId,
+                // Always set: the button exists only when it is (see the guard above).
+                tabId: promptData.prompt_info.summaryTabId,
             });
             browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id}).catch(() => {});
         });
@@ -1396,7 +1576,7 @@ class MessagesArea extends HTMLElement {
     // Anything unrecognised falls back to 'words' rather than reaching
     // buildHunks, where an unknown key would silently pick the default fn.
     async _resolveDiffGranularity() {
-        const prefs = await browser.storage.sync.get({ diff_granularity: prefs_default.diff_granularity });
+        const prefs = await mztaPrefs.getPrefs(['diff_granularity']);
         return (prefs.diff_granularity === 'sentences') ? 'sentences' : 'words';
     }
 
@@ -1612,25 +1792,69 @@ class MessagesArea extends HTMLElement {
         }
     }
 
-    getCurrentSelectionHTML() {
+    // The current selection, cloned into a detached container with every usage
+    // chip and popover removed, or null when nothing is selected.
+    //
+    // They carry `user-select: none`, which in practice keeps them out of a
+    // dragged selection — but that property is a hint to the selection algorithm,
+    // not a guarantee about what `cloneContents()` hands back: a select-all, a
+    // programmatic range, or a selection whose endpoints straddle the badge can
+    // still bring it along. Since every path that inserts text into a mail or the
+    // clipboard funnels through here, the scrub is done once, structurally, rather
+    // than trusted to CSS.
+    _cloneSelectionWithoutUsage() {
         const selection = window.getSelection();
-        // console.log(">>>>>>>>>>>>>>>> getCurrentSelectionHTML: " + JSON.stringify(selection.toString()));
-        if (selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            const container = document.createElement('div');
-            container.appendChild(range.cloneContents());
-            return container.innerHTML;
+        if (!selection || selection.rangeCount === 0) return null;
+        const container = document.createElement('div');
+        container.appendChild(selection.getRangeAt(0).cloneContents());
+        // The text of each badge that was caught, so getCurrentSelectionText() can
+        // subtract it from selection.toString() without rebuilding that string.
+        // Empty (and left undefined) on the normal path, which is the signal that
+        // nothing was stripped and the raw selection can be returned untouched.
+        const badges = container.querySelectorAll('[' + USAGE_MARKER_ATTR + ']');
+        if (badges.length > 0) {
+            container._mztaHadUsage = Array.from(badges, el => el.textContent);
+            badges.forEach(el => el.remove());
         }
-        return '';
+        return container;
     }
 
-    // Selected text as plain text. Taken straight from the Selection rather
-    // than by stripping getCurrentSelectionHTML(), so entities in the rendered
-    // answer (&amp;, &lt;, &nbsp;, …) come out as the characters the user can
-    // actually see instead of their HTML escapes.
+    getCurrentSelectionHTML() {
+        // console.log(">>>>>>>>>>>>>>>> getCurrentSelectionHTML: " + JSON.stringify(selection.toString()));
+        const container = this._cloneSelectionWithoutUsage();
+        return container ? container.innerHTML : '';
+    }
+
+    // Selected text as plain text. Still taken straight from the Selection, as it
+    // always was: entities in the rendered answer (&amp;, &lt;, &nbsp;, …) come
+    // out as the characters the user can actually see instead of their HTML
+    // escapes, and toString() puts the line breaks between blocks that a bare
+    // textContent over a cloned range would drop. Both are exactly what the copy
+    // button and the "use this answer" path expect, so this string must not be
+    // rebuilt from the DOM.
+    //
+    // The badge is subtracted from it instead, and only when the selection really
+    // caught one — which `user-select: none` normally prevents. So on every
+    // ordinary selection this returns byte-for-byte what it returned before this
+    // feature existed, and in the pathological case the badge's own text is cut
+    // out rather than the whole result being re-derived.
     getCurrentSelectionText() {
         const selection = window.getSelection();
-        return selection ? selection.toString() : '';
+        if (!selection) return '';
+        let text = selection.toString();
+        if (text === '') return '';
+
+        const container = this._cloneSelectionWithoutUsage();
+        if (container === null || !container._mztaHadUsage) return text;
+
+        // Remove each chip's rendered text. The chip is a single line built by
+        // buildUsageChip(), so a plain substring removal is exact. A closed popover
+        // contributes nothing to toString() and its entry simply never matches.
+        for (const badgeText of container._mztaHadUsage) {
+            if (badgeText === '') continue;
+            text = text.split(badgeText).join('');
+        }
+        return text.replace(/\n{3,}/g, '\n\n').trim();
     }
 
 }
@@ -1655,21 +1879,47 @@ function hasBlockStructure(html) {
     return doc.body.querySelector('br, p, div, li, ul, ol, tr, table, h1, h2, h3, h4, h5, h6, pre, blockquote') !== null;
 }
 
-// HTML → the text the user actually sees. Unlike a regex tag-strip this parses
-// the markup, so entities are decoded (&amp; → &) instead of being copied as
-// their escape sequences, and <br>/</p> become real line breaks. The diff
-// button used to strip tags with a regex instead, which DELETED <br> rather
-// than converting it and so fed the diff a single run-together line.
+// HTML → the text the user actually sees, for Copy. It goes through the ONE
+// projection of the shared rich-text layer (js/lib/mzta-html-lines.js) with the
+// same {keepParagraphs} contract as stripHtmlKeepLines(), so Copy writes exactly
+// what a plain text compose window would receive: entities decoded (&amp; → &),
+// a <br> one newline, a paragraph a blank line.
+//
+// It used to be a converter of its own, which turned each <br> into a newline
+// AND kept the source newline markdown-it writes after it ("<br>\n"), so every
+// line break was copied as a blank line, the same as a paragraph break. The
+// projection treats a source newline as whitespace, which is what it is in HTML.
 function htmlToPlainText(htmlString) {
-    const doc = new DOMParser().parseFromString(htmlString, 'text/html');
-    doc.querySelectorAll('br').forEach(br => br.replaceWith(document.createTextNode('\n')));
-    // Block-level boundaries would otherwise run together into one long line.
-    doc.querySelectorAll('p, div, li, tr, h1, h2, h3, h4, h5, h6, pre, blockquote').forEach(el => {
-        el.appendChild(document.createTextNode('\n'));
-    });
-    return (doc.body.textContent || '')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
+    return normalizePlain(htmlToLines(htmlString), { keepParagraphs: true });
+}
+
+// The quotation marks a model sometimes wraps its WHOLE answer in, removed from
+// the snapshot every action button closes over. Read on the parsed snapshot:
+// it is the sanitizer's serialization, which always opens with a tag (<p>…)
+// and writes a quote in text as a bare ", so the string patterns this replaced
+// (a leading/trailing ", <p>&quot; … &quot;</p>) never matched a rendered
+// answer and the quotes reached the mail.
+//
+// Only as a PAIR, and only when it is the answer's only pair: the first text
+// must open with ", the last close with one, and the answer must hold no other
+// ". A quote at one end alone is part of the text (…as he said "yes"), and
+// with more quotes inside, the two ends can belong to two different quotations
+// ("Yes," he said, "fine"): stripping them would break the text, while leaving
+// a real wrapping pair in place only keeps what the model wrote.
+function stripWrappingQuotes(html) {
+    const doc = new DOMParser().parseFromString(String(html), 'text/html');
+    if ((doc.body.textContent.match(/"/g) || []).length !== 2) { return html; }
+    const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+    const texts = [];
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (n.data.trim() !== '') { texts.push(n); }
+    }
+    const first = texts[0];
+    const last = texts[texts.length - 1];
+    if (!/^\s*"/.test(first.data) || !/"\s*$/.test(last.data)) { return html; }
+    first.data = first.data.replace(/^(\s*)"/, '$1');
+    last.data = last.data.replace(/"(\s*)$/, '$1');
+    return doc.body.innerHTML;
 }
 
 // Clipboard write with a fallback for the (unlikely) case the async API is
@@ -1698,9 +1948,15 @@ async function copyTextToClipboard(text) {
     }
 }
 
-function textWithBrToFragment(text) {
+// The user's message, as TEXT: every line break (\n) becomes a <br> element,
+// everything else a text node. Nothing in it is parsed as HTML, so a "<br>" the
+// user typed, or the mail the prompt quotes contained, is shown as those four
+// characters - which is also what the model receives. It used to split on
+// "<br>" instead, back when the first prompt was sent with its \n turned into
+// <br>: a typed message then showed on one line, and a literal <br> as a break.
+function textWithNewlinesToFragment(text) {
     const fragment = document.createDocumentFragment();
-    const segments = text.split(/<br\s*\/?>/gi);
+    const segments = String(text).replace(/\r\n?/g, '\n').split('\n');
     segments.forEach((segment, idx) => {
         if (segment.length > 0) {
             fragment.appendChild(document.createTextNode(segment));
@@ -1723,35 +1979,32 @@ function htmlStringToFragment(htmlString) {
   return fragment;
 }
 
-// removeAloneBRs strips every <br> that has no <p> ancestor.
+// The <br> at the very START and END of the HTML removed, every other one kept:
+// the edges of a mouse selection (dragged from the end of a line, or over the
+// break that ends one) would otherwise open or close the inserted text with an
+// empty line. "Edge" is the first / last thing in document order, so a <br>
+// opening the first block of the fragment (a selection cloned with its partially
+// selected <p>) counts too; whitespace-only text and comments are skipped.
 //
-// On the markdown answer path this now has real work to do, and does the right
-// thing: with breaks:true the snapshot contains <br> INSIDE <p> (the line breaks
-// the model wrote), and those are exactly the ones it preserves. What it still
-// removes are the <br> a mouse selection can leave outside any paragraph, which
-// is what it was written for.
-function removeAloneBRs(htmlString) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(htmlString, 'text/html');
-
-  const brElements = Array.from(doc.querySelectorAll('br'));
-
-  brElements.forEach(br => {
-    let current = br;
-    let isInsideP = false;
-
-    while (current.parentElement) {
-      if (current.parentElement.tagName.toLowerCase() === 'p') {
-        isInsideP = true;
-        break;
-      }
-      current = current.parentElement;
+// It replaces removeAloneBRs(), which stripped every <br> with no <p> ancestor.
+// That was written for a newline->br post-pass that turned markdown-it's
+// "</p>\n<p>" into stray <br> between the blocks, and outlived it: since that
+// pass was removed it only deleted real line breaks - in a tight list item or a
+// table cell ("a<br>b" reached the mail as "ab"), and in any selection made
+// inside one paragraph, whose cloned range has no <p> around it.
+function trimEdgeBRs(htmlString) {
+  const doc = new DOMParser().parseFromString(String(htmlString), 'text/html');
+  const isFiller = n => n.nodeType === 8 || (n.nodeType === 3 && n.data.trim() === '');
+  for (const fromStart of [true, false]) {
+    let el = doc.body;
+    while (el) {
+      const kids = Array.from(el.childNodes);
+      if (!fromStart) { kids.reverse(); }
+      const edge = kids.find(n => !isFiller(n));
+      if (!edge) { break; }
+      if (edge.nodeName === 'BR') { edge.remove(); continue; }
+      el = (edge.nodeType === 1) ? edge : null;
     }
-
-    if (!isInsideP) {
-      br.remove();
-    }
-  });
-
+  }
   return doc.body.innerHTML;
 }

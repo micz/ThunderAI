@@ -17,13 +17,16 @@
  */
 
 import {
-  prefs_default,
-  getDynamicSettingValue
+  getDynamicSettingValue,
+  integration_options_config
 } from '../options/mzta-options-default.js';
 
 import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js'
+import { mztaPrefs } from './mzta-prefs.js';
+import { mztaManaged, managedReady, ACCOUNT_MATCH_LOCAL } from './mzta-managed.js';
+import { taLogger } from './mzta-logger.js';
 
-const sparks_min = '3.0.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
+const sparks_min = '3.1.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
 const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
 
 export const getMenuContextCompose = () => 'compose_action_menu';
@@ -110,6 +113,31 @@ export function getLanguageDisplayName(languageCode) {
    return lang_string.charAt(0).toUpperCase() + lang_string.slice(1);
 }
 
+// Human-readable duration for the UI ("1 h", "1 h, 30 min", "45 s"), localized through
+// Intl.DurationFormat. Only the two largest units are kept, and seconds are dropped from an
+// hour up: a wait of hours does not need them.
+export function formatDuration(ms, lang = browser.i18n.getUILanguage()) {
+  let rest = Math.max(1, Math.ceil(ms / 1000));
+  const units = [['days', 86400], ['hours', 3600], ['minutes', 60], ['seconds', 1]];
+  const parts = {};
+  for (const [unit, size] of units) {
+    const n = Math.floor(rest / size);
+    rest -= n * size;
+    if (n > 0) parts[unit] = n;
+  }
+  if (parts.days || parts.hours) delete parts.seconds;
+  const kept = Object.keys(parts).slice(0, 2);
+  const duration = Object.fromEntries(kept.map(unit => [unit, parts[unit]]));
+  try {
+    return new Intl.DurationFormat(lang, { style: 'short' }).format(duration);
+  } catch (e) {
+    const unitName = { days: 'day', hours: 'hour', minutes: 'minute', seconds: 'second' };
+    const pieces = kept.map(unit =>
+      new Intl.NumberFormat(lang, { style: 'unit', unit: unitName[unit], unitDisplay: 'short' }).format(duration[unit]));
+    return new Intl.ListFormat(lang, { type: 'unit', style: 'short' }).format(pieces);
+  }
+}
+
 export function getMiczItUrl(path) {
   const lang = browser.i18n.getUILanguage().split('-')[0];
   const prefix = MICZ_IT_LOCALIZED_LANGS.includes(lang) ? `${lang}/` : '';
@@ -188,16 +216,23 @@ export async function getCurrentIdentity(msgHeader, getFull = false) {
 }
 
 
-// Extracts the first email address found in a string, '' if there is none.
-// Accepts a raw header value like 'Name <addr@domain.com>'.
+// Local part: RFC 5322 atext (so "user+tag" and "o'brien" are kept whole) plus
+// Unicode letters/digits; domain: dot-separated Unicode labels.
+const EMAIL_REGEX = /[\p{L}\p{N}.!#$%&'*+\/=?^_`{|}~-]+@[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)+/u;
+
+// Extracts the first email address found in a string, '' if there is none
+// (or if the value is not a string).
+// Accepts a raw header value like 'Name <addr@domain.com>': the address inside
+// the angle brackets wins over anything address-like in the display name.
 // The case is preserved: getIdentityForMessage() compares the result with the
 // identity addresses as they were configured, so callers that need a
 // case-insensitive match have to lowercase it themselves.
 export function extractEmail(text) {
-  if((text=='')||(text==undefined)) return '';
-  const emailRegex = /[\w.-]+@[\w.-]+\.\w+/;
-  const match = text.match(emailRegex);
-  return match ? match[0] : '';
+  if (typeof text !== 'string' || text === '') return '';
+  const bracketed = text.match(/<([^<>]*)>/);
+  const match = (bracketed && bracketed[1].match(EMAIL_REGEX)) || text.match(EMAIL_REGEX);
+  // Leading quotes/dots are delimiters, not part of the address ('john@x.com').
+  return match ? match[0].replace(/^['.]+/, '') : '';
 }
 
 // tabs.sendMessage() guarded against Thunderbird's crash on tabs with no reachable
@@ -305,23 +340,14 @@ export async function isPlainTextCompose(tabId){
 // On a plain text compose window the body lives in `plainTextBody`, not `body`.
 // Writing `body` there makes Thunderbird convert the HTML down to text, which
 // collapses every bare \n as HTML whitespace and loses the line structure —
-// so each of the helpers below has to pick the field that matches the window.
-export async function getOriginalBody(tabId){
-  let composeDetails = await messenger.compose.getComposeDetails(tabId);
-  if(composeDetails.isPlainText){
-    return composeDetails.plainTextBody;
-  }
-  return composeDetails.body;
-}
-
-export async function setBody(tabId, fullBody, isPlainText = false){
-  if(isPlainText){
-    await messenger.compose.setComposeDetails(tabId, {plainTextBody: fullBody});
-    return;
-  }
-  await messenger.compose.setComposeDetails(tabId, {body: fullBody});
-}
-
+// so the helper below has to pick the field that matches the window.
+//
+// Only the fallback of chatgpt_replyMessage, when the compose script never answers:
+// the reply normally goes in through the editor (insertReply in the compose script),
+// so it can be undone. A setComposeDetails write cannot, and from Thunderbird 143
+// (bug 1975127) every setComposeDetails({body}) clears the editor's undo history.
+// Here it writes a reply window just opened, whose history holds nothing of the
+// user's yet. Never use it on a window the user has typed in.
 export async function replaceBody(tabId, replyHtml) {
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
   if(composeDetails.isPlainText){
@@ -415,7 +441,11 @@ export function htmlBodyToPlainText(htmlString) {
   // keeps its hidden markup. Do not add this call to getMailInlineTextParts():
   // the HTML placeholders must hand over the message's markup unedited on every path.
   globalThis.mztaStripHidden(doc.body);
-  doc.querySelectorAll('style').forEach(e => e.remove());//.querySelector('html').children.not(':visible').remove()
+  // <style> and <script> hold no readable text, but their SOURCE is text and
+  // textContent would read it out as body copy. The same two tags the interactive
+  // path drops (MZTA_INJECTED_SELECTORS in js/mzta-compose-script.js): the two
+  // paths must give the same {%mail_text_body%}.
+  doc.querySelectorAll('style, script').forEach(e => e.remove());
 
   // The line structure has to be put into the DOM before textContent reads it:
   // textContent emits NO break for a block-level element, so <p>, <div>, <br>,
@@ -666,13 +696,18 @@ export async function getTagsList(){
 }
 
 export async function createTag(tag) {
-  let prefs_tag = await browser.storage.sync.get({ add_tags_first_uppercase: prefs_default.add_tags_first_uppercase });
+  let prefs_tag = await mztaPrefs.getPrefs(['add_tags_first_uppercase']);
   if(prefs_tag.add_tags_first_uppercase) tag = tag.toLowerCase().charAt(0).toUpperCase() + tag.toLowerCase().slice(1);
+  // Awaited, and the failure rethrown: returning the bare promise let the catch see only
+  // synchronous errors, and the caller went on to assign a tag that was never created. Without
+  // the messagesTags permission the call itself throws ("tags.create is not a function") [#962].
   try {
     const tagKey = '$ta-' + generateCallID(16) + '-' + sanitizeString(tag); // Ensure uniqueness with a longer random ID
-    return browser.messages.tags.create(tagKey, tag, generateHexColorForTag());
+    await browser.messages.tags.create(tagKey, tag, generateHexColorForTag());
+    return tagKey;
   } catch (error) {
     console.error('[ThunderAI] Error creating tag:', error);
+    throw error;
   }
 }
 
@@ -687,6 +722,22 @@ export function checkIfTagLabelExists(tag_label, tags_list) {
   // console.log(">>>>>>>>>>> checkIfTagExists tag_label: " + tag_label);
   const lowerTagLabel = tag_label.toLowerCase();
   return Object.values(tags_list).some(label => label.tag.toLowerCase() === lowerTagLabel);
+}
+
+// Returns the tags of uselist_list that also exist in existing_tags_list (both comma separated
+// strings), compared case-insensitively and written as the existing tag is, joined by ", ".
+// Empty string when none match.
+export function intersectTagsLists(uselist_list, existing_tags_list) {
+  const splitList = (list) => String(list || '').split(',').map(t => t.trim()).filter(t => t !== '');
+  const existing = splitList(existing_tags_list);
+  const result = [];
+  for (const tag of splitList(uselist_list)) {
+    const match = existing.find(e => e.toLowerCase() === tag.toLowerCase());
+    if (match && !result.includes(match)) {
+      result.push(match);
+    }
+  }
+  return result.join(', ');
 }
 
 // export async function assignTagsToMessage(messageId, tags) {
@@ -712,11 +763,13 @@ export async function assignTagsToMessage(messageId, tags) {
   tags = tags.concat(msg_prop.tags || []);
   tags = [...new Set(tags)];
   // console.log(">>>>>>>>>>> assignTagsToMessage tags after concat: " + JSON.stringify(tags));
+  // The failure reaches the caller, which stops and reports it [#962].
   try {
     await browser.messages.update(messageId, {tags: tags});
     return tags; // Return the updated tags for confirmation
   } catch (error) {
-    console.error('[ThunderAI] Error assigning tag [messageId: ', messageId, ' - tag: ', tag, ']:', error);
+    console.error('[ThunderAI] Error assigning tags [messageId: ', messageId, ' - tags: ', tags, ']:', error);
+    throw error;
   }
 }
 
@@ -843,18 +896,97 @@ export function joinAddressList(list){
    Supported entries: "user@domain.com" (exact), "@domain.com" and "*@domain.com" (whole domain).
    Returns false on an empty list or an unparseable author. */
 export function matchAddressList(author, list) {
-  if (!author || !hasAddressListEntries(list)) return false;
+  return matchAddressListType(author, list) !== null;
+}
+
+/* Same matching rules as matchAddressList(), but tells how the sender matched:
+   'exact' when an entry is the sender address itself, 'domain' when only a domain entry
+   ("@domain.com" / "*@domain.com") matches, null when nothing does (or on an empty list or an
+   unparseable author). An exact entry wins over a domain entry wherever it sits in the list,
+   so callers can rank two lists by specificity (see the spam filter allow/block lists). */
+export function matchAddressListType(author, list) {
+  if (!author || !hasAddressListEntries(list)) return null;
   const senderEmail = extractEmail(String(author)).toLowerCase();
-  if (senderEmail === '') return false;
+  if (senderEmail === '') return null;
   const senderDomain = senderEmail.slice(senderEmail.indexOf('@') + 1);
-  return list.some(item => {
-    if (typeof item !== 'string') return false;
+  let domainMatch = false;
+  for (const item of list) {
+    if (typeof item !== 'string') continue;
     let entry = item.trim().toLowerCase();
-    if (entry === '') return false;
+    if (entry === '') continue;
     if (entry.startsWith('*@')) entry = entry.slice(1);
-    if (entry.startsWith('@')) return senderDomain === entry.slice(1);
-    return senderEmail === entry;
-  });
+    if (entry.startsWith('@')) {
+      if (senderDomain === entry.slice(1)) domainMatch = true;
+    } else if (senderEmail === entry) {
+      return 'exact';
+    }
+  }
+  return domainMatch ? 'domain' : null;
+}
+
+// Keys resolveEnabledAccounts() has already warned about resolving to no account, so the
+// warning is printed once per transition rather than on every batch of new mail.
+const _accountMatchWarned = new Set();
+
+/* The accounts an automatic feature ('spamfilter' or 'add_tags') may run on.
+
+   Returns { restricted, accountIds, managed }:
+    - restricted false: every account (the stored "empty list = all accounts");
+    - restricted true: only accountIds, which may be EMPTY and then means NO account.
+
+   Without a policy it is exactly the stored {feature}_enabled_accounts, passed in by the
+   caller, which has already read it through mztaPrefs. When the policy supplies
+   {feature}_enabled_accounts_match, the ids are resolved here from browser.accounts and the
+   matchers, and REPLACE the stored list:
+    - an account matches when any of its identities matches an address or domain entry
+      (matchAddressList(), the helper summarize_auto_senders_list uses);
+    - Local Folders (type "none") has no identity and matches only ACCOUNT_MATCH_LOCAL;
+    - any other identity-less account (RSS feeds) is never matched: it has no stable name
+      to put in a fleet-wide policy, and the spam filter has no business on feed items.
+
+   The matchers are read from mztaManaged, not through mztaPrefs: they are policy-only, and
+   a value that somehow reached storage.local must not limit anything without a policy.
+   Resolved on every call, never cached and never written to {feature}_enabled_accounts:
+   accounts added, removed or re-addressed are picked up at the next call without listening
+   to accounts.onCreated/onUpdated/onDeleted, and removing the policy restores the user's
+   own selection. */
+export async function resolveEnabledAccounts(feature, storedList, { warnIfNone = true } = {}) {
+  const stored = Array.isArray(storedList) ? storedList : [];
+  const unmanaged = { restricted: stored.length > 0, accountIds: stored, managed: false };
+  const matchKey = feature + '_enabled_accounts_match';
+  await managedReady();
+  if (!mztaManaged.hasManagedValue(matchKey)) return unmanaged;
+  const matchers = mztaManaged.getManagedValue(matchKey);
+  if (!Array.isArray(matchers)) return unmanaged;
+
+  const matchLocal = matchers.includes(ACCOUNT_MATCH_LOCAL);
+  const addressMatchers = matchers.filter(entry => entry !== ACCOUNT_MATCH_LOCAL);
+  let accounts = [];
+  try {
+    accounts = await browser.accounts.list(false);
+  } catch (e) {
+    // Fail closed: the policy asked to limit the accounts, so an unreadable account list
+    // must not turn into "all accounts".
+    new taLogger('mzta-utils', false).warn('resolveEnabledAccounts: could not list the accounts for "' +
+      matchKey + '": ' + e);
+  }
+  const accountIds = accounts.filter(account => {
+    if (account.type === 'none') return matchLocal;
+    return (account.identities || []).some(identity =>
+      matchAddressList(identity.email, addressMatchers));
+  }).map(account => account.id);
+
+  if (accountIds.length === 0) {
+    if (warnIfNone && !_accountMatchWarned.has(matchKey)) {
+      _accountMatchWarned.add(matchKey);
+      new taLogger('mzta-utils', false).warn('Policy: "' + matchKey + '" ' +
+        JSON.stringify(matchers) + ' matches no account in this profile: the automatic ' +
+        feature + ' runs on no account.');
+    }
+  } else {
+    _accountMatchWarned.delete(matchKey);
+  }
+  return { restricted: true, accountIds: accountIds, managed: true };
 }
 
 export function prepareOriginURL(url) {
@@ -871,28 +1003,26 @@ function generateHexColorForTag() {
   return hexColor;
 }
 
-// Fails soft on both arguments: this resolves a USER-CHOSEN placeholder
-// ({%tags_current_email%}), so a gap in the data must not take down the whole
-// request. Two real cases reach here - a prompt with no curr_message, whose
-// .tags is undefined, and a call site that omits tags_full_list and gets
-// preparePrompt()'s empty ["", []] default.
 export async function transformTagsLabels(labels, tags_list) {
   // console.log(">>>>>>>>> transformTagsLabels labels: " + labels);
   // console.log(">>>>>>>>> transformTagsLabels tags_list: " + tags_list);
-  if(!Array.isArray(labels)) {
-      console.warn("[ThunderAI] transformTagsLabels: no tags to transform, expected an array but got: " + JSON.stringify(labels));
-      return [];
-  }
+  // Tolerant on purpose: a message can carry the key of a tag deleted from Thunderbird, a
+  // ComposeDetails has no tags at all, and a caller may have no tag list. Each of those used to
+  // throw, failing the whole prompt. An unresolved key is kept as it is rather than dropped: a
+  // key is still legible in a prompt, while a silent omission hides the tag entirely [#911].
   let output = [];
+  if(!Array.isArray(labels)) {
+      return output;
+  }
+  const has_list = tags_list && typeof tags_list === 'object';
   for(let label of labels) {
-      // Fall back to the raw internal key rather than dropping the tag: a key is
-      // still legible in a prompt, while a silent omission hides the tag entirely.
-      if(!tags_list || !tags_list[label]) {
+      const tag = has_list ? tags_list[label]?.tag : undefined;
+      if(typeof tag === 'string' && tag !== '') {
+          output.push(tag);
+      } else {
           console.warn("[ThunderAI] transformTagsLabels: unresolved tag key '" + label + "', using the raw key as fallback.");
           output.push(label);
-          continue;
       }
-      output.push(tags_list[label].tag);
   }
   return output;
 }
@@ -909,6 +1039,11 @@ export function setTomSelectBorder(el){
   }
 }
 
+// The chat window's startup notice, as HTML. The values are TEXT (the API name, the model, the
+// host, the prompt name, the provider's text settings such as a system prompt) and the window
+// parses the result as HTML, so every one is escaped: a prompt named "<img src=x onerror=...>"
+// shows as those characters instead of becoming an element. The markup around them is this
+// function's own. Newlines are kept: the window turns them into <br>.
 export function getAPIsInitMessageString(args = {}) {
   const {
     api_string = '',
@@ -917,20 +1052,21 @@ export function getAPIsInitMessageString(args = {}) {
     version_string = '',
     additional_messages = []
   } = args;
+  const esc = (value) => globalThis.mztaEscapeHtml(value);
 
-  let output = "<i class='info_obj'>" + browser.i18n.getMessage("_api_connecting", api_string) + "</i>";
+  let output = "<i class='info_obj'>" + esc(browser.i18n.getMessage("_api_connecting", api_string)) + "</i>";
   if (model_string !== '') {
-    output += "\n<span class='info_obj'>" + browser.i18n.getMessage("_api_connecting_model") + ":</span> " + model_string;
+    output += "\n<span class='info_obj'>" + esc(browser.i18n.getMessage("_api_connecting_model")) + ":</span> " + esc(model_string);
   }
   if (host_string !== '') {
-    output += "\n<span class='info_obj'>" + browser.i18n.getMessage("_api_connecting_host") + ":</span> " + host_string;
+    output += "\n<span class='info_obj'>" + esc(browser.i18n.getMessage("_api_connecting_host")) + ":</span> " + esc(host_string);
   }
   if (version_string !== '') {
-    output += "\n<span class='info_obj'>" + browser.i18n.getMessage("_api_connecting_version") + ":</span> " + version_string;
+    output += "\n<span class='info_obj'>" + esc(browser.i18n.getMessage("_api_connecting_version")) + ":</span> " + esc(version_string);
   }
   let additional_message = '';
   if (additional_messages.length > 0) {
-    additional_message = additional_messages.map(msg => "<span class='info_obj'>" + msg.label + ":</span> " + msg.value).join("\n");
+    additional_message = additional_messages.map(msg => "<span class='info_obj'>" + esc(msg.label) + ":</span> " + esc(msg.value)).join("\n");
   }
   if (additional_message !== '') {
     output += "\n" + additional_message;
@@ -992,6 +1128,26 @@ export function hasNoConnectionSelected(connection_type){
   return (connection_type == null) || (String(connection_type).trim() === '');
 }
 
+// One coordinate of the saved AI chat window position (chatgpt_win_top / chatgpt_win_left), as
+// a number, or null when there is none. Any finite number is a position, 0 and negatives
+// included (the screen edge, a monitor left of the primary one); a numeric string is accepted
+// too. Anything else means "not saved": the '' default, and the null Thunderbird stores for a
+// cleared number input (NaN). A loose `!= ''` test must not be used: it reads 0 as empty.
+export function toWindowCoordinate(value){
+  if (typeof value === 'string') {
+    if (value.trim() === '') return null;
+    value = Number(value);
+  }
+  return (typeof value === 'number' && Number.isFinite(value)) ? value : null;
+}
+
+// The saved AI chat window position as {top, left}, or null unless both coordinates are set.
+export function getSavedWindowPosition(prefs){
+  const top = toWindowCoordinate(prefs?.chatgpt_win_top);
+  const left = toWindowCoordinate(prefs?.chatgpt_win_left);
+  return (top === null || left === null) ? null : { top, left };
+}
+
 export function hasSpecificIntegration(use, conntype){
   return use && (conntype != null) && (conntype !== '');
 }
@@ -1003,6 +1159,25 @@ export function hasSpecificIntegration(use, conntype){
 // never the global one, or per-feature integrations get ignored.
 export function isApiUsableConnection(connection_type){
   return !hasNoConnectionSelected(connection_type) && (connection_type !== 'chatgpt_web');
+}
+
+// Which connection types report token usage, so the UI can ask without importing
+// every provider module (each one also exports its own `supportsUsageData`, and
+// the two must stay in agreement). The web interfaces -- ChatGPT Web and any
+// other non-API integration -- have no API to report it, hence false.
+const USAGE_DATA_SUPPORT = {
+  chatgpt_web: false,
+  chatgpt_api: true,
+  google_gemini_api: true,
+  anthropic_api: true,
+  ollama_api: true,
+  openai_comp_api: true,
+};
+
+// True when the given connection type can report token usage. An unknown or unset
+// type answers false: nothing can be shown for a provider we know nothing about.
+export function supportsUsageData(connection_type){
+  return USAGE_DATA_SUPPORT[connection_type] === true;
 }
 
 export function extractJsonObject(inputString) {
@@ -1034,6 +1209,68 @@ export function normalizeDateTimeString(str) {
   return `${y}${mo}${d}T${h}${mi}${s}${z}`;
 }
 
+// RFC 2392 mid: URI for a MessageHeader.headerMessageId, '' when unusable.
+// The id is NOT percent-encoded, on purpose: Thunderbird builds its own links as
+// `mid:${messageId}` (msgHdrView.js copyMessageLink, bug 1968470) and opens them
+// with openMessageForMessageId(href.slice(4)) - an exact match, no decoding
+// (MailLinkParent / calApplicationUtils.js, bug 264270). An encoded id such as
+// "a%2Bb@x" would never be found. Brackets are stripped defensively only.
+export function buildMessageMidLink(headerMessageId) {
+  if (typeof headerMessageId !== 'string') return '';
+  const id = headerMessageId.trim().replace(/^</, '').replace(/>$/, '').trim();
+  return id === '' ? '' : 'mid:' + id;
+}
+
+// Appends "label link" to data_obj.description (calendar event / task objects),
+// AFTER the AI response has been parsed: the link is never sent to the AI.
+// Returns false, leaving the description untouched, when no link can be built.
+export function appendMessageLinkToDescription(data_obj, message, label) {
+  const link = buildMessageMidLink(message?.headerMessageId);
+  if (link === '') return false;
+  const link_line = label + ' ' + link;
+  const desc = (typeof data_obj.description === 'string') ? data_obj.description.trim() : '';
+  data_obj.description = (desc !== '') ? desc + '\n\n' + link_line : link_line;
+  return true;
+}
+
+// Upper bound for reminderMinutes (4 weeks). Larger values are treated as invalid.
+export const REMINDER_MINUTES_MAX = 40320;
+
+// Normalizes data_obj.reminderMinutes (calendar event / task objects) before the
+// hand-off to Sparks, which reads it as: absent = Thunderbird default reminder,
+// -1 = no reminder, >= 0 = minutes before the event start / task due date.
+// The feature's reminder checkbox is the single switch:
+// - off: the field is ALWAYS removed, whatever the AI returned (even if the main
+//   prompt asks for "reminderMinutes"), so Thunderbird's defaults apply.
+// - on: a valid value is kept. Valid = a non-negative integer, or a string holding
+//   one, up to REMINDER_MINUTES_MAX. The string "default" (what the format
+//   instruction asks for when NO reminder rules are given at all, neither in the
+//   rules option nor in the main prompt) removes the field, so Thunderbird's
+//   defaults apply. null ("rules given, none applies"), a missing field or an
+//   invalid value becomes -1 (no reminder).
+export function normalizeReminderMinutes(data_obj, reminder_enabled, logger = null) {
+  const raw = data_obj.reminderMinutes;
+  if (!reminder_enabled) {
+    delete data_obj.reminderMinutes;
+    logger?.log("reminderMinutes: raw = " + JSON.stringify(raw) + ", final = " + JSON.stringify(data_obj.reminderMinutes) + " (reminder option off)");
+    return;
+  }
+  let value = null;
+  if (typeof raw === 'number' && Number.isInteger(raw)) {
+    value = raw;
+  } else if (typeof raw === 'string' && /^\s*\d+\s*$/.test(raw)) {
+    value = parseInt(raw.trim(), 10);
+  }
+  if (typeof raw === 'string' && raw.trim().toLowerCase() === 'default') {
+    delete data_obj.reminderMinutes;
+  } else if (value !== null && value >= 0 && value <= REMINDER_MINUTES_MAX) {
+    data_obj.reminderMinutes = value;
+  } else {
+    data_obj.reminderMinutes = -1;
+  }
+  logger?.log("reminderMinutes: raw = " + JSON.stringify(raw) + ", final = " + JSON.stringify(data_obj.reminderMinutes));
+}
+
 export function isAPIKeyValue(id){
   return id.endsWith('_api_key');
 }
@@ -1057,6 +1294,25 @@ export function getConnectionType(prefs, prompt, prefix = null) {
         if (prompt.api_type && prompt.api_type !== '') return prompt.api_type;
     }
     return defaultType;
+}
+
+// The provider settings a call with `prefs.connection_type` actually uses: `prefs` (the
+// global values) with the prompt's own {integration}_{key} fields on top, when the prompt
+// carries a provider override of exactly that type. The same rule the API chat window applies
+// in api_webchat/controller.js (prompt.api_type === llm, fields that are not undefined), so a
+// check made here on the result judges the configuration the window will really run.
+// Returns a new object; `prefs` is not modified.
+export function applyPromptConnection(prefs, prompt) {
+    const out = { ...prefs };
+    if (!prompt || !prompt.api_type || prompt.api_type !== prefs.connection_type) return out;
+    const integration = prompt.api_type.replace(/_api$/, '');
+    const options = integration_options_config[integration];
+    if (!options) return out;
+    for (const key of Object.keys(options)) {
+        const prefKey = `${integration}_${key}`;
+        if (prompt[prefKey] !== undefined) out[prefKey] = prompt[prefKey];
+    }
+    return out;
 }
 
 export async function checkSparksPresence() {
@@ -1247,8 +1503,11 @@ export async function migrateCustomPromptsStorage(){
   //check if storage.local has custom prompts
   let custom_prompts_local = await browser.storage.local.get({_custom_prompt: null});
   if(custom_prompts_local._custom_prompt !== null){
-    // There are custom prompts in storage.local, nothing to do
-    // console.log("migrateCustomPromptsStorage: there are custom prompts in storage.local, nothing to do");
+    // There are custom prompts in storage.local: they are the user's current data and are kept.
+    // The sync copy is stale (a previous move interrupted between its set() and its remove()),
+    // so it is drained all the same: left there it would withhold _prefs_migrated_from_sync
+    // forever (js/mzta-prefs-migration.js) and every startup would re-read both areas.
+    await browser.storage.sync.remove("_custom_prompt");
     return;
   }
 
@@ -1271,8 +1530,8 @@ export async function migrateDefaultPromptsPropStorage(){
   //check if storage.local has default prompts properties
   let default_prompts_properties_local = await browser.storage.local.get({_default_prompts_properties: null});
   if(default_prompts_properties_local._default_prompts_properties !== null){
-    // There are default prompts properties in storage.local, nothing to do
-    // console.log("migrateDefaultPromptsPropStorage: there are default prompts properties in storage.local, nothing to do");
+    // Kept, and the stale sync copy drained: same reasoning as migrateCustomPromptsStorage().
+    await browser.storage.sync.remove("_default_prompts_properties");
     return;
   }
 
@@ -1289,7 +1548,15 @@ export async function* getMessages(list) {
   }
 
   while (page.id) {
-    page = await messenger.messages.continueList(page.id);
+    // A MessageList id expires (and becomes invalid once the list is exhausted elsewhere):
+    // log it and stop here, keeping what was already yielded, instead of throwing into an
+    // unhandled rejection in the middle of the caller's for-await loop.
+    try {
+      page = await messenger.messages.continueList(page.id);
+    } catch (e) {
+      console.error("[ThunderAI] getMessages: continueList(" + page.id + ") failed, the message list is truncated: ", e);
+      return;
+    }
     for (let message of page.messages) {
       yield message;
     }

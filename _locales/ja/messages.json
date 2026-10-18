@@ -1,4 +1,23 @@
 {
+    "prefs_api_extra_body": {
+        "message": "追加のボディデータ"
+    },
+    "prefs_google_gemini_max_output_tokens_Info": {
+        "message": "応答で生成できるトークンの最大数です。空欄または 0 にするとモデルに任せます。",
+        "description": "Connection panel (Google Gemini): help text under the Max output tokens field."
+    },
+    "prefs_google_gemini_top_p_Info": {
+        "message": "核サンプリング（Nucleus sampling）：モデルは累積確率がこの値に達するまでのトークンのみを考慮します。受け付けられる範囲とデフォルト値はモデルによって異なります。空欄にすると、API 呼び出しでこのパラメーターは設定されません。",
+        "description": "Connection panel (Google Gemini): help text under the Top P field, explaining nucleus sampling."
+    },
+    "prefs_google_gemini_top_k_Info": {
+        "message": "後続の各トークンについて、上位 K 個の候補からのみサンプリングし、確率の低い「ロングテール」の応答を除外します。このパラメーターに対応していないモデルもあります。空欄にすると、API 呼び出しでこのパラメーターは設定されません。",
+        "description": "Connection panel (Google Gemini): help text under the Top K field."
+    },
+    "prefs_google_gemini_extra_body_Info": {
+        "message": "すべての API 呼び出しで送信する追加パラメーターを JSON オブジェクトで指定します。{\"safetySettings\": []} や {\"generationConfig\": {\"seed\": 42}} のように、Gemini API は対応しているが ThunderAI が公開していないオプションに便利です。\"generationConfig\" 内のキーは、ThunderAI が組み立てるキーと統合されます。ThunderAI が管理するパラメーター（コンテンツ、システム指示、思考、温度、最大出力トークン数、Top P、Top K）はここで上書きできません。無効な値は無視されます。",
+        "description": "Connection panel (Google Gemini): help text under the Extra body data field. Keep the JSON examples and key names (safetySettings, generationConfig, seed) unchanged."
+    },
     "extensionDescription": {
         "message": "ChatGPT、Google Gemini、Claude、Ollama を使ってメールを強化しましょう!"
     },
@@ -45,7 +64,7 @@
         "message": "プロンプト"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "デフォルトのプロンプトは編集できません。無効にしてから、プロンプトのテキストをコピーし、新しいプロンプトに貼り付けて変更版を作成できます。"
+        "message": "デフォルトのプロンプトは編集できません。変更版を作成するには「複製して編集」を使用してください。メニューからプロンプトを非表示にするには、メニューの順序設定を使用してください。"
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "プロンプトのインポートとエクスポートができます。同じIDの既存プロンプトは上書きされます。新しいIDのプロンプトは追加されます。"
@@ -59,17 +78,21 @@
     "customPrompts_reindexing_list": {
         "message": "リストを再インデックス中..."
     },
-    "customPrompts_filtering_prompts": {
-        "message": "プロンプトをフィルタリング中..."
+    "customPrompts_autosave_info": {
+        "message": "変更はすべてすぐに保存されます。",
+        "description": "Note on the Custom Prompts page: there is no Save All button"
     },
-    "customPrompts_saving_default_prompts": {
-        "message": "デフォルトプロンプトを保存中..."
+    "customPrompts_import_saved_now": {
+        "message": "インポートしたプロンプトはすぐに保存されます。",
+        "description": "Line of the confirmation shown before importing custom prompts"
     },
-    "customPrompts_saving_custom_prompts": {
-        "message": "カスタムプロンプトを保存中..."
+    "customPrompts_import_completed_saved": {
+        "message": "カスタムプロンプトをインポートして保存しました！",
+        "description": "Custom prompts page: success status message shown after prompts have been imported from a file and saved."
     },
-    "customPrompts_reloading_menus": {
-        "message": "メニューを再読み込み中..."
+    "customPrompts_save_error": {
+        "message": "プロンプトの保存中にエラーが発生しました：",
+        "description": "Followed by the error message"
     },
     "customPrompts_saved": {
         "message": "プロンプトを保存しました！"
@@ -82,9 +105,6 @@
     },
     "customPrompts_form_label_Name": {
         "message": "名前"
-    },
-    "customPrompts_form_label_Text": {
-        "message": "プロンプトテキスト"
     },
     "customPrompts_form_label_Action": {
         "message": "アクション"
@@ -134,9 +154,6 @@
     "btnNew_string": {
         "message": "新規追加"
     },
-    "customPrompts_btnAddNewCommit": {
-        "message": "プロンプトを追加"
-    },
     "customPrompts_add_to_menu": {
         "message": "メニューに追加"
     },
@@ -181,6 +198,14 @@
     },
     "chatgpt_btn_retry": {
         "message": "再試行"
+    },
+    "chatgpt_win_retrying": {
+        "message": "再試行中…",
+        "description": "Shown in the ChatGPT window panel for a moment after the Retry button is clicked"
+    },
+    "chatgpt_composer_click_to_continue": {
+        "message": "ChatGPT のメッセージ入力欄が見つかりませんでした。入力欄の中をクリックして続行してください。",
+        "description": "Shown in the ChatGPT window panel when the ChatGPT message input cannot be found automatically"
     },
     "chatgpt_sendbutton_not_found_error": {
         "message": "送信ボタンをクリックしてプロンプトを送信してください。"
@@ -268,9 +293,6 @@
             }
         }
     },
-    "prefsInfoTitle": {
-        "message": "重要な情報"
-    },
     "prefsInfoDesc_1": {
         "message": "ChatGPTのWebインターフェースが変更され、アドオンが動作しなくなる可能性があります。このページの下部にある「サービス状態」ページを確認してください。また、ThunderAIを初めて使用する際はChatGPTへのログインが必要です。"
     },
@@ -282,12 +304,6 @@
     },
     "prefsInfoDesc_4": {
         "message": "この連携を使用するには、LM StudioなどのOpenAI API互換のローカルサーバーを設定する必要があります。サーバーが起動したら、アプリケーション内の指定フィールドにアドレスを入力してください。ThunderAIとローカルサーバー間の適切な通信を確保するため、CORS設定を正しく行ってください。"
-    },
-    "prefsInfoDesc_5": {
-        "message": "キーボードショートカットCTRL+ALT+AでThunderAIメニューを開けることを覚えておいてください。"
-    },
-    "prefsInfoDesc_6": {
-        "message": "このページの右上にある歯車アイコンをクリックし、「拡張機能のショートカットを管理」を選択してショートカットを変更できます。"
     },
     "prefsInfoDesc_7": {
         "message": "Google Gemini APIを使用するには、Google Gemini APIキーとモデルの選択が必要です。"
@@ -307,20 +323,8 @@
     "prefs_footer_translate": {
         "message": "アドオンを翻訳する"
     },
-    "prefsDonation_1": {
-        "message": "このアドオンは気に入りましたか？"
-    },
-    "prefsDonation_2": {
-        "message": "寄付をご検討ください！"
-    },
     "backToOptionsText": {
         "message": "オプション"
-    },
-    "TranslateText": {
-        "message": "このアドオンの翻訳を手伝いませんか？"
-    },
-    "TranslateLink": {
-        "message": "方法を確認！"
     },
     "customPrompts_ExportAll": {
         "message": "すべてのプロンプトをエクスポート"
@@ -348,7 +352,7 @@
         }
     },
     "customPrompts_search_placeholder": {
-        "message": "名前またはIDで検索"
+        "message": "名前、ID、テキストで検索…"
     },
     "customPrompts_filter_active": {
         "message": "絞り込み中: $TOTAL$件中$SHOWN$件",
@@ -367,14 +371,163 @@
     "customPrompts_filter_clear": {
         "message": "フィルターをクリア"
     },
+    "customPrompts_view_detail": {
+        "message": "詳細",
+        "description": "View switch button: list on the left, editor on the right"
+    },
+    "customPrompts_view_table": {
+        "message": "表",
+        "description": "View switch button: dense table of all prompts"
+    },
+    "customPrompts_view_switch": {
+        "message": "表示",
+        "description": "Accessible label of the Detail/Table view switch"
+    },
+    "customPrompts_new_prompt": {
+        "message": "+ 新しいプロンプト",
+        "description": "Toolbar button that starts a new prompt in the editor"
+    },
+    "customPrompts_badge_system": {
+        "message": "システム",
+        "description": "Badge on a built-in prompt"
+    },
+    "customPrompts_badge_personal": {
+        "message": "個人",
+        "description": "Badge on a prompt created by the user"
+    },
+    "customPrompts_badge_readonly": {
+        "message": "読み取り専用",
+        "description": "Badge in the editor header of a prompt whose text cannot be changed"
+    },
+    "customPrompts_system_tooltip": {
+        "message": "システムプロンプト（読み取り専用）",
+        "description": "Tooltip of the lock glyph shown on read-only prompts in the list"
+    },
+    "customPrompts_system_banner": {
+        "message": "システムプロンプト：テキストは変更できません。複製して独自のバージョンを作成してください。",
+        "description": "Banner in the editor for a built-in prompt"
+    },
+    "customPrompts_org_banner": {
+        "message": "組織のプロンプト：組織の構成ポリシーによって管理されているため、変更できません。複製して独自のバージョンを作成してください。",
+        "description": "Banner in the editor for a prompt supplied by the enterprise policy"
+    },
+    "customPrompts_btnDuplicate": {
+        "message": "複製",
+        "description": "Button that creates a copy of the selected prompt"
+    },
+    "customPrompts_btnDuplicateEdit": {
+        "message": "複製して編集",
+        "description": "Button that creates an editable personal copy of a read-only prompt"
+    },
+    "customPrompts_btnSavePrompt": {
+        "message": "保存",
+        "description": "Button in the editor that saves the edits to the selected prompt"
+    },
+    "customPrompts_btnExport": {
+        "message": "エクスポート",
+        "description": "Row menu item that exports a single prompt to a file"
+    },
+    "customPrompts_btnOpen": {
+        "message": "開く",
+        "description": "Table row button that opens a read-only prompt in the detail view"
+    },
+    "customPrompts_more_actions": {
+        "message": "その他の操作",
+        "description": "Tooltip of the row menu button in the table view"
+    },
+    "customPrompts_col_prompt": {
+        "message": "プロンプト",
+        "description": "Table view column header"
+    },
+    "customPrompts_col_text": {
+        "message": "テキスト",
+        "description": "Table view column header"
+    },
+    "customPrompts_col_menu": {
+        "message": "メニュー",
+        "description": "Table view column header"
+    },
+    "customPrompts_col_options": {
+        "message": "オプション",
+        "description": "Table view column header"
+    },
+    "customPrompts_col_actions": {
+        "message": "操作",
+        "description": "Table view column header"
+    },
+    "customPrompts_label_text": {
+        "message": "プロンプトのテキスト",
+        "description": "Label of the prompt text field in the editor"
+    },
+    "customPrompts_label_options": {
+        "message": "オプション",
+        "description": "Label of the options column in the editor"
+    },
+    "customPrompts_label_connection": {
+        "message": "接続",
+        "description": "Label of the per-prompt connection override section in the editor"
+    },
+    "customPrompts_chip_need_selected": {
+        "message": "選択",
+        "description": "Short label of the 'Text selection needed' option chip"
+    },
+    "customPrompts_chip_need_signature": {
+        "message": "署名",
+        "description": "Short label of the 'Always add the signature' option chip"
+    },
+    "customPrompts_chip_need_custom_text": {
+        "message": "追加テキスト",
+        "description": "Short label of the 'Ask for additional text' option chip"
+    },
+    "customPrompts_chip_define_response_lang": {
+        "message": "言語",
+        "description": "Short label of the 'Define the response language' option chip"
+    },
+    "customPrompts_chip_use_diff_viewer": {
+        "message": "比較",
+        "description": "Short label of the 'Enable the text comparison viewer' option chip"
+    },
+    "customPrompts_flag_fixed_suffix": {
+        "message": "プロンプトで固定",
+        "description": "Suffix after an option that cannot be changed on a read-only prompt"
+    },
+    "customPrompts_new_prompt_title": {
+        "message": "新しいプロンプト",
+        "description": "Editor header while creating a prompt"
+    },
+    "customPrompts_no_selection": {
+        "message": "一覧からプロンプトを選択するか、新しいプロンプトを作成してください。",
+        "description": "Editor placeholder when no prompt is selected"
+    },
+    "customPrompts_dirty_confirm": {
+        "message": "編集中のプロンプトに、まだ適用されていない変更があります。どうしますか？",
+        "description": "Dialog shown when leaving a prompt with unapplied edits"
+    },
+    "customPrompts_dirty_apply": {
+        "message": "変更を適用",
+        "description": "Dialog button: apply the pending edits and continue"
+    },
+    "customPrompts_dirty_discard": {
+        "message": "変更を破棄",
+        "description": "Dialog button: throw away the pending edits and continue"
+    },
+    "customPrompts_error_id": {
+        "message": "ID は必須で、空白を含めることはできず、一意である必要があります。",
+        "description": "Validation message for the prompt ID"
+    },
+    "customPrompts_error_required": {
+        "message": "名前とプロンプトのテキストは必須です。",
+        "description": "Validation message for the name and text fields"
+    },
+    "customPrompts_error_name_percent": {
+        "message": "名前に % 文字を含めることはできません。",
+        "description": "Custom prompts page: validation message when the prompt name contains a percent sign"
+    },
     "importPrompts_confirmText": {
         "message": "新しいプロンプトをインポートしようとしています。"
     },
     "customPrompts_start_import": {
         "message": "カスタムプロンプトのインポートを開始中..."
-    },
-    "customPrompts_import_completed": {
-        "message": "カスタムプロンプトのインポートが完了しました！「すべて保存」ボタンをクリックして変更を保存してください。"
     },
     "importPrompts_invalidFile": {
         "message": "インポートしようとしているファイルは有効なカスタムプロンプトファイルではありません。"
@@ -444,6 +597,10 @@
     },
     "Ollama_Models_Error_fetching": {
         "message": "Ollamaモデルの取得中にエラー"
+    },
+    "Models_Fetch_Done": {
+        "message": "モデル一覧を読み込みました",
+        "description": "Confirmation shown in green under the models select after the 'Update list' button has fetched the models list successfully. It fades out after a few seconds."
     },
     "API_Models_Error_NoModels": {
         "message": "モデルが見つかりません"
@@ -598,6 +755,18 @@
     "prefs_OptionText_hide_thinking_info": {
         "message": "回答の上に表示される思考ブロックの初期状態を設定します。チェックすると、ブロックはデフォルトで折りたたまれ、クリックで開けます。チェックを外すと、ブロックはデフォルトで開いた状態になり、クリックで折りたためます。思考の内容は常に保持されます。"
     },
+    "prefs_OptionText_chat_show_usage_data": {
+        "message": "チャットに使用量データを表示",
+        "description": "Options page, advanced section: name of the option that shows token usage data in the AI chat window."
+    },
+    "prefs_OptionText_chat_show_usage_data_info": {
+        "message": "API が報告するトークン数が、各回答のボタンの横に表示されます。クリックすると詳細が開き、会話がモデルのコンテキストをどれだけ使用しているかや、チャットセッション全体の合計も確認できます。",
+        "description": "Options page, advanced section: description of the option showing token counts next to each AI response in the chat window."
+    },
+    "prefs_OptionText_chat_show_usage_data_openai_comp_note": {
+        "message": "OpenAI 互換 API の場合、利用できるかどうかはサーバーの実装によって異なります。トークン使用量をまったく報告しないサーバーもあります。",
+        "description": "Options page, advanced section: note appended to the usage data option description when the OpenAI Compatible API is in use."
+    },
     "prefs_OptionText_thinking_summary": {
         "message": "思考"
     },
@@ -613,11 +782,25 @@
     "prefs_OptionText_special_command_timeout_Info": {
         "message": "応答しないAIリクエスト（タグの自動追加、スパムフィルター、要約、翻訳）を中止するまでの時間をミリ秒で指定します。低速なローカルモデルを使用している場合は値を大きくしてください。これはAPIベースの接続にのみ適用され、ChatGPT Webインターフェースには適用されません。"
     },
+    "prefs_OptionText_batch_max_concurrency": {
+        "message": "並列処理するメール数",
+        "description": "Label of the option limiting how many emails the automatic features (add tags, spam filter, summarize, translate) process at the same time"
+    },
+    "prefs_OptionText_batch_max_concurrency_Info": {
+        "message": "新着メールの受信時や複数のメールを選択したときなど、複数のメールをまとめて処理する場合に、同時に処理するメールの最大数です。各メールはそれぞれの機能（スパムフィルター、タグの追加、要約、翻訳）を順番に通過するため、これは同時に送信される AI リクエストの最大数でもあります。値を大きくすると速くなりますが、AI プロバイダーのレート制限に達したり、Ollama などのローカルモデルに過負荷をかけたりする可能性があります。",
+        "description": "Options page: help text under the field setting how many emails are processed by AI features in parallel."
+    },
     "prefs_OptionText_chatgpt_web_model": {
         "message": "ChatGPT Webモデル"
     },
     "prefs_OptionText_chatgpt_web_model_info": {
         "message": "ChatGPT Webインターフェースで強制されるモデルです。指定されていないか不正な場合、Webページ上でChatGPTによりデフォルトモデルが設定されます。この設定はChatGPT無料アカウントでは機能しません。"
+    },
+    "prefs_OptionText_chatgpt_web_model_extended_check": {
+        "message": "モデルの拡張チェック"
+    },
+    "prefs_OptionText_chatgpt_web_model_extended_check_info": {
+        "message": "チェックすると、ThunderAIはプロンプトを送信する前にChatGPTのモデルメニューを一時的に開き、選択されているモデルを読み取ります。検証されるのは既知のモデルのみです(現在はgpt-6とgpt-6-thinking)。ChatGPTがページを変更すると、このチェックは機能しなくなる可能性があります。"
     },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "ChatGPT Web一時チャット"
@@ -634,9 +817,6 @@
     "chatgpt_btn_model": {
         "message": "現在のモデルを使用"
     },
-    "AllowedValues": {
-        "message": "許可される値"
-    },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "追加のデータプレースホルダーを使用できます。"
     },
@@ -645,9 +825,6 @@
     },
     "prefs_extra_body_error_not_object": {
         "message": "値は中括弧で囲まれたJSONオブジェクトである必要があります。"
-    },
-    "prefs_OptionText_openai_comp_extra_body": {
-        "message": "追加のボディデータ"
     },
     "prefs_OptionText_openai_comp_extra_body_info": {
         "message": "すべてのAPI呼び出しで送信する追加パラメーターをJSONオブジェクトで指定します。このサービスは対応しているがThunderAIが公開していないオプション、たとえば思考モードの無効化などに便利です: {\"chat_template_kwargs\": {\"thinking\": false}} または {\"top_p\": 0.9}。ThunderAIが管理するパラメーター（model、messages、streaming、temperature）はここで上書きできません。無効な値は無視されます。"
@@ -727,6 +904,10 @@
     "prefs_OptionText_add_tags_maxnum_Info": {
         "message": "AIが提案するタグの最大数。タグ数を制限しない場合は0を設定してください。"
     },
+    "prefs_OptionText_add_tags_max_messages_Info": {
+        "message": "コンテキストメニューから一度にタグを追加できる、選択メッセージの最大数です。1 日あたりのリクエスト上限がある AI プロバイダーで便利です。受信メッセージへの自動タグ付けには制限はありません。0 にすると無制限になります。",
+        "description": "Add tags page: help text under the field limiting how many selected messages can be tagged at once from the context menu."
+    },
     "prompt_add_tags_maxnum": {
         "message": "タグ数を次に制限："
     },
@@ -798,9 +979,6 @@
     },
     "prefs_SurveyLinkText2": {
         "message": "フィードバックをお寄せください"
-    },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "モデルを手動で入力"
     },
     "OpenAIComp_force_model_ask": {
         "message": "使用するモデル名をここに入力してください。"
@@ -928,6 +1106,66 @@
     "prefs_OptionText_calendar_enforce_timezone_Info": {
         "message": "チェックすると、指定したタイムゾーンがカレンダーイベントとタスクに強制されます。"
     },
+    "prefs_OptionText_append_email_link": {
+        "message": "元のメールへのリンクを追加",
+        "description": "Get calendar event page and Get task page: label of the option that appends a link to the original email to the description."
+    },
+    "prefs_OptionText_calendar_append_email_link_Info": {
+        "message": "チェックすると、イベントの説明の末尾に元のメールへのリンクが追加されます。AI が説明を返さない場合、説明にはリンクのみが含まれます。クリップボードからイベントを作成する場合は利用できません。",
+        "description": "Get calendar event page: help text under the 'Append a link to the original email' option."
+    },
+    "prefs_OptionText_task_append_email_link_Info": {
+        "message": "チェックすると、タスクの説明の末尾に元のメールへのリンクが追加されます。AI が説明を返さない場合、説明にはリンクのみが含まれます。",
+        "description": "Get task page: help text under the 'Append a link to the original email' option."
+    },
+    "calendar_email_link_label": {
+        "message": "元のメール：",
+        "description": "Label written before the link to the original email in the description of the calendar events and the tasks."
+    },
+    "prompt_calendar_reminder_format": {
+        "message": "上記のフィールドに加えて、JSON オブジェクトに \"reminderMinutes\" フィールドを追加してください。このフィールドは次の 3 つの値のいずれかでなければなりません：整数（このプロンプトで指定されたリマインダーのルールに従って、イベント開始の何分前にリマインダーを設定するか）、null（リマインダーのルールが指定されているが、どれにも該当しない場合）、文字列 \"default\"（リマインダーのルールがまったく指定されていない場合）。",
+        "description": "Appended to the calendar event prompt sent to the AI when the reminder option is enabled. Do not translate \"reminderMinutes\", \"null\" and \"default\"."
+    },
+    "prompt_task_reminder_format": {
+        "message": "上記のフィールドに加えて、JSON オブジェクトに \"reminderMinutes\" フィールドを追加してください。このフィールドは次の 3 つの値のいずれかでなければなりません：整数（このプロンプトで指定されたリマインダーのルールに従って、タスクの期限（期限がない場合は開始日）の何分前にリマインダーを設定するか）、null（リマインダーのルールが指定されているが、どれにも該当しない場合）、文字列 \"default\"（リマインダーのルールがまったく指定されていない場合）。",
+        "description": "Appended to the task prompt sent to the AI when the reminder option is enabled. Do not translate \"reminderMinutes\", \"null\" and \"default\"."
+    },
+    "prompt_reminder_rules_intro": {
+        "message": "リマインダーのルール：",
+        "description": "Sent to the AI before the reminder rules written by the user."
+    },
+    "prefs_OptionText_reminder_enabled": {
+        "message": "AI にリマインダーを設定させる",
+        "description": "Get calendar event page and Get task page: label of the option that lets the AI set a reminder; keep it short."
+    },
+    "prefs_OptionText_calendar_reminder_enabled_Info": {
+        "message": "チェックすると、リマインダーのルールに従って、イベントの開始を基準にリマインダーを設定するよう AI に依頼します。ルールは下のフィールドに書くことも、メインのプロンプトに直接書くこともできますが、どちらの場合もこのオプションをチェックする必要があります。どのルールにも該当しない場合、イベントはリマインダーなしで作成されます。下にもメインのプロンプトにもルールが書かれていない場合は、Thunderbird のデフォルトのリマインダー設定が適用されます。チェックしない場合は、常に Thunderbird のデフォルトのリマインダー設定が適用されます。",
+        "description": "Get calendar event page: help text under the 'Let the AI set a reminder' option explaining how reminder rules work."
+    },
+    "prefs_OptionText_task_reminder_enabled_Info": {
+        "message": "チェックすると、リマインダーのルールに従って、タスクの期限（期限がない場合は開始日）を基準にリマインダーを設定するよう AI に依頼します。ルールは下のフィールドに書くことも、メインのプロンプトに直接書くこともできますが、どちらの場合もこのオプションをチェックする必要があります。どのルールにも該当しない場合、タスクはリマインダーなしで作成されます。下にもメインのプロンプトにもルールが書かれていない場合は、Thunderbird のデフォルトのリマインダー設定が適用されます。チェックしない場合は、常に Thunderbird のデフォルトのリマインダー設定が適用されます。",
+        "description": "Get task page: help text under the 'Let the AI set a reminder' option explaining how reminder rules work."
+    },
+    "prefs_OptionText_reminder_rules_title": {
+        "message": "リマインダーのルール",
+        "description": "Get calendar event page and Get task page: heading of the text field where the user writes reminder rules."
+    },
+    "prefs_OptionText_reminder_rules_Info": {
+        "message": "ルールは自然な文章で書いてください。このフィールドは任意です。空の場合は、上のメインのプロンプトからルールが取得されます。",
+        "description": "Get calendar event page and Get task page: help text under the 'Reminder rules' heading."
+    },
+    "prefs_OptionText_calendar_reminder_rules_example": {
+        "message": "例：「イベントが午前中に A 棟または B 棟で行われる場合は、45 分前にリマインダーを設定する。午後の場合は 15 分前。それ以外はリマインダーなし。」",
+        "description": "Get calendar event page: example of reminder rules shown under the 'Reminder rules' field; translate the quoted example naturally."
+    },
+    "prefs_OptionText_task_reminder_rules_example": {
+        "message": "例：「タスクが支払いに関するものなら、期限の 1 日前にリマインダーを設定する。報告書に関するものなら 2 時間前。それ以外はリマインダーなし。」",
+        "description": "Get task page: example of reminder rules shown under the 'Reminder rules' field; translate the quoted example naturally."
+    },
+    "reminder_prompt_warning": {
+        "message": "メインのプロンプトに「reminderMinutes」が含まれていますが、「AI にリマインダーを設定させる」がチェックされていません。オプションをチェックするまで、メインのプロンプト内のリマインダーの指示は無視され、Thunderbird のデフォルトのリマインダーが適用されます。",
+        "description": "Do not translate \"reminderMinutes\"."
+    },
     "prefs_OptionText_btnManageCalendarEventInfo": {
         "message": "カレンダーイベント設定を管理"
     },
@@ -1020,6 +1258,10 @@
     },
     "prompt_add_tags_use_list": {
         "message": "このカンマ区切りリストのタグのみを使用"
+    },
+    "prompt_add_tags_force_existing": {
+        "message": "タグは、このカンマ区切りの既存タグ一覧の中からのみ選び、書かれているとおりに正確に使用し、新しいタグを作らないでください",
+        "description": "Instruction sent to the AI model in the Add tags prompt, followed by a colon and the list of existing tags; also previewed on the Add tags page."
     },
     "prefs_OptionText_add_tags_auto_only_inbox": {
         "message": "受信トレイのメールにのみタグを追加"
@@ -1139,13 +1381,29 @@
         "message": "メールアドレスのスキップリスト"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "これらのアドレスからのメールは、スパムフィルタリングのためにAIへ送信されません。"
+        "message": "これらのアドレスまたはドメインからのメールは、スパムフィルタリングのためにAIへ送信されません。"
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "1行に1つのメールアドレスを追加するか、カンマで区切ってください。"
+        "message": "1行に1つの項目を追加するか、カンマで区切ってください。項目には完全なメールアドレス（user@domain.com）またはドメイン全体（@domain.com）を指定できます。"
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "差出人はアンチスパムのメールアドレススキップリストに含まれています。"
+    },
+    "SpamFilter_block_addresses_title": {
+        "message": "メールアドレスのブロックリスト",
+        "description": "Spam filter page: heading of the section listing sender addresses or domains always reported as spam (block list)."
+    },
+    "SpamFilter_block_addresses_infoline": {
+        "message": "これらのアドレスまたはドメインからのメールは、AI に送信されることなく、常にスパムとして報告されます。スパムフィルターが自動で実行される場合、これらのメールは迷惑メールフォルダーに移動されます。",
+        "description": "Spam filter page: help text under the block list heading."
+    },
+    "SpamFilter_address_lists_precedence": {
+        "message": "差出人が両方のリストに含まれている場合は、より具体的なエントリが優先されます（完全なアドレスはドメインより優先）。両方のエントリが同じくらい具体的な場合は、スキップリストが優先されます。どちらのリストもアドレス帳より先に確認されます。",
+        "description": "Spam filter page: help text under the skip and block lists explaining which list wins when a sender matches both."
+    },
+    "spamfilter_block_addresses_explanation": {
+        "message": "差出人はアンチスパムのメールアドレスブロックリストに含まれています。",
+        "description": "Explanation stored in the spam report (and shown in the message spam panel) when the sender matched the block list, so the email was marked spam without the AI."
     },
     "prefs_OptionText_spamfilter_skip_addressbook": {
         "message": "アドレス帳のアドレスをスキップ"
@@ -1164,6 +1422,56 @@
     },
     "addressbook_permission_error": {
         "message": "アドレス帳の権限を要求する際にエラーが発生しました。もう一度お試しください。"
+    },
+    "feature_permission_missing": {
+        "message": "「$FEATURE$」は動作できません。Thunderbird が ThunderAI に必要な権限を付与していません。権限を付与するには、ThunderAI の設定を開き、このオプションをいったんオフにしてから再度オンにしてください。",
+        "description": "Error shown when a feature that needs an optional Thunderbird permission (tags, moving messages, address books, clipboard) runs without it. $FEATURE$ is the name of the option as shown in the settings, e.g. 'Add tags to emails'. Turning the option off and on again is what makes Thunderbird ask for the permission.",
+        "placeholders": {
+            "feature": {
+                "content": "$1",
+                "example": "Add tags to emails"
+            }
+        }
+    },
+    "feature_permission_missing_managed": {
+        "message": "「$FEATURE$」は組織によって有効化されていますが、Thunderbird が ThunderAI に必要な権限を付与していないため、動作できません。管理者にお問い合わせください。",
+        "description": "Error and settings-page warning shown when an option enforced by the organization's managed configuration lacks the Thunderbird permission it needs; the user cannot change the option. $FEATURE$ is the name of the option as shown in the settings.",
+        "placeholders": {
+            "feature": {
+                "content": "$1",
+                "example": "Automatic Spam Filter"
+            }
+        }
+    },
+    "feature_permission_denied": {
+        "message": "Thunderbird が「$FEATURE$」に必要な権限を付与しなかったため、オプションはオフのままです。",
+        "description": "Settings pages: alert shown when the user refuses the Thunderbird permission requested while turning an option on. $FEATURE$ is the name of the option.",
+        "placeholders": {
+            "feature": {
+                "content": "$1",
+                "example": "Add tags to emails"
+            }
+        }
+    },
+    "feature_permission_error": {
+        "message": "「$FEATURE$」に必要な権限の要求中にエラーが発生しました。もう一度お試しください。",
+        "description": "Settings pages: alert shown when requesting the Thunderbird permission of an option fails with an error. $FEATURE$ is the name of the option.",
+        "placeholders": {
+            "feature": {
+                "content": "$1",
+                "example": "Add tags to emails"
+            }
+        }
+    },
+    "spamfilter_addressbook_permission_missing": {
+        "message": "Thunderbird が ThunderAI にアドレス帳へのアクセスを許可していないため、スパムフィルターはアドレス帳を確認しませんでした。メッセージの分析は行われています。アクセスを許可するには、スパムフィルターの設定で「$FEATURE$」をいったんオフにしてから再度オンにしてください。",
+        "description": "Notice shown once per run when the spam filter's address book check is enabled but the address book permission is missing. $FEATURE$ is the name of the option, e.g. 'Skip address books addresses'.",
+        "placeholders": {
+            "feature": {
+                "content": "$1",
+                "example": "Skip address books addresses"
+            }
+        }
     },
     "SpamReport_Title": {
         "message": "スパムフィルターレポート"
@@ -1200,9 +1508,6 @@
     },
     "no_string": {
         "message": "いいえ"
-    },
-    "noActiveCalendar": {
-        "message": "編集可能なカレンダーが見つかりません！"
     },
     "btn_show_differences": {
         "message": "差分を表示"
@@ -1264,9 +1569,6 @@
                 "content": "$1"
             }
         }
-    },
-    "apiwebchat_picker_progress": {
-        "message": "採用した変更"
     },
     "apiwebchat_picker_more_actions": {
         "message": "その他の操作"
@@ -1348,9 +1650,6 @@
     "apiwebchat_picker_side_empty_inactive": {
         "message": "ここにテキストはありません。有効にするとこの部分を除外します。"
     },
-    "apiwebchat_you": {
-        "message": "あなた"
-    },
     "apiwebchat_info": {
         "message": "情報"
     },
@@ -1362,6 +1661,68 @@
     },
     "apiwebchat_stopping": {
         "message": "停止中"
+    },
+    "apiwebchat_retrying": {
+        "message": "サーバーを利用できません（$REASON$）。$SECONDS$ 秒後に再試行します（$MAX$ 回中 $ATTEMPT$ 回目）",
+        "description": "API webchat status bar while a failed request is retried automatically; $REASON$ is e.g. 'HTTP 503' or 'network error'",
+        "placeholders": {
+            "reason": {
+                "content": "$1",
+                "example": "HTTP 503"
+            },
+            "seconds": {
+                "content": "$2",
+                "example": "2"
+            },
+            "attempt": {
+                "content": "$3",
+                "example": "1"
+            },
+            "max": {
+                "content": "$4",
+                "example": "3"
+            }
+        }
+    },
+    "apiwebchat_retrying_rate_limit": {
+        "message": "レート制限に達しました。$SECONDS$ 秒後に再試行します（$MAX$ 回中 $ATTEMPT$ 回目）",
+        "description": "API webchat status bar while a request refused with HTTP 429 (too many requests: the provider's rate limit) is retried automatically",
+        "placeholders": {
+            "seconds": {
+                "content": "$1",
+                "example": "10"
+            },
+            "attempt": {
+                "content": "$2",
+                "example": "2"
+            },
+            "max": {
+                "content": "$3",
+                "example": "5"
+            }
+        }
+    },
+    "apiwebchat_retry_reason_network": {
+        "message": "ネットワークエラー",
+        "description": "Reason shown in apiwebchat_retrying when the server could not be reached"
+    },
+    "apiwebchat_retry_reason_timeout": {
+        "message": "タイムアウト",
+        "description": "Reason shown in apiwebchat_retrying when the server did not answer in time"
+    },
+    "apiwebchat_unknown_connection": {
+        "message": "不明な接続タイプ「$TYPE$」：このチャットウィンドウからは何も送信できません。ThunderAI の設定を開き、AI プロバイダーを選択してください。",
+        "description": "API webchat: error shown when the window was opened for a connection type it has no worker for (e.g. a stale or mistyped value). $TYPE$ is the raw connection type.",
+        "placeholders": {
+            "type": {
+                "content": "$1",
+                "example": "foo_api"
+            }
+        }
+    },
+    "apiwebchat_request_cancelled": {
+        "message": "リクエストをキャンセルしました。",
+        "description": "API webchat notice shown when the user stops a request before any answer arrived"
     },
     "apiwebchat_receiving_data": {
         "message": "データ受信中"
@@ -1386,6 +1747,92 @@
     },
     "apiwebchat_turn_tools": {
         "message": "回答の操作"
+    },
+    "apiwebchat_usage_label": {
+        "message": "トークン使用量",
+        "description": "Accessible label of the token usage details popover opened from the chip next to an answer in the AI chat window"
+    },
+    "apiwebchat_usage_input": {
+        "message": "入力",
+        "description": "Row label of the usage details popover in the AI chat window: tokens sent to the model"
+    },
+    "apiwebchat_usage_output": {
+        "message": "出力",
+        "description": "Row label of the usage details popover in the AI chat window: tokens generated by the model"
+    },
+    "apiwebchat_usage_total": {
+        "message": "合計",
+        "description": "Row label of the usage details popover in the AI chat window: total tokens"
+    },
+    "apiwebchat_usage_chip_tokens": {
+        "message": "$COUNT$ トークン",
+        "description": "Usage chip next to an answer in the AI chat window: total tokens of that answer",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_chip_output_tokens": {
+        "message": "出力 $COUNT$ トークン",
+        "description": "Usage chip next to an answer in the AI chat window, when the provider reports only the generated tokens",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_of_which_cached": {
+        "message": "うちキャッシュ",
+        "description": "Indented row of the usage details popover in the AI chat window: part of the input tokens read from the provider cache"
+    },
+    "apiwebchat_usage_of_which_cache_write": {
+        "message": "うちキャッシュ書き込み",
+        "description": "Indented row of the usage details popover in the AI chat window: part of the input tokens written to the provider cache"
+    },
+    "apiwebchat_usage_of_which_reasoning": {
+        "message": "うち推論",
+        "description": "Indented row of the usage details popover in the AI chat window: part of the output tokens spent on reasoning/thinking"
+    },
+    "apiwebchat_usage_duration": {
+        "message": "所要時間",
+        "description": "Row label of the usage details popover in the AI chat window: time from sending the request to the end of the answer"
+    },
+    "apiwebchat_usage_speed": {
+        "message": "$RATE$ トークン/秒",
+        "description": "Generation speed in the usage details popover of the AI chat window (tokens per second)",
+        "placeholders": {
+            "rate": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_context": {
+        "message": "コンテキスト",
+        "description": "Row label of the usage details popover in the AI chat window: tokens the conversation occupies in the model context after this answer"
+    },
+    "apiwebchat_usage_context_value": {
+        "message": "$USED$ / $MAX$ · $PCT$%",
+        "description": "Value of the Context row of the usage details popover in the AI chat window: tokens used / model context window · percentage",
+        "placeholders": {
+            "used": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            },
+            "pct": {
+                "content": "$3"
+            }
+        }
+    },
+    "apiwebchat_usage_context_warn": {
+        "message": "新しいチャットを始めることを検討してください",
+        "description": "Note under the Context row of the usage details popover in the AI chat window, shown when the context is at least 80% full"
+    },
+    "apiwebchat_usage_session_total": {
+        "message": "セッション合計",
+        "description": "Row label of the usage details popover in the AI chat window: sum of the tokens of every answer in the chat so far"
     },
     "apiwebchat_scroll_to_latest": {
         "message": "最新までスクロール"
@@ -1447,6 +1894,14 @@
     "AccountSelector_Spamfilter": {
         "message": "自動スパムフィルターを有効にするアカウントを選択してください"
     },
+    "AccountSelector_managed_note": {
+        "message": "アカウントは組織の構成ポリシーによって選択されており、ここでは変更できません。",
+        "description": "Note above the account checkboxes (Spam Filter and Add Tags settings pages) when an enterprise policy decides which accounts the automatic feature runs on"
+    },
+    "AccountSelector_managed_none": {
+        "message": "組織の構成ポリシーにより、この機能はこのプロファイルに存在しないアカウントに限定されているため、どのアカウントでも自動では実行されません。",
+        "description": "Note above the account checkboxes (Spam Filter and Add Tags settings pages) when the enterprise policy's account list matches no account of the user"
+    },
     "prefs_OptionText_chatgpt_web_project": {
         "message": "ChatGPT Webプロジェクト"
     },
@@ -1473,9 +1928,6 @@
     },
     "customPrompts_hide_additional_info": {
         "message": "追加プロパティを非表示"
-    },
-    "customPrompts_show_additional_info_show": {
-        "message": "追加プロパティ"
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "オプションまたはプロンプトでプロジェクトが指定されている場合、カスタムGPT設定が上書きされます。"
@@ -1506,6 +1958,40 @@
     },
     "prefs_OptionText_anthropic_max_tokens_Info": {
         "message": "補完で生成するトークンの最大数。プロンプトのトークン数とmax_tokensの合計は、モデルのコンテキスト長を超えることはできません。"
+    },
+    "prefs_OptionText_anthropic_top_p_Info": {
+        "message": "核サンプリング（Nucleus sampling）：モデルは累積確率がこの値に達するまでのトークンのみを考慮します。範囲は 0.0～1.0 です。空欄にするとモデルのデフォルトが使用されます。Anthropic は、温度と Top P のどちらか一方のみを調整し、両方は調整しないことを推奨しています。新しい Claude モデルはこの設定をまったく受け付けず、代わりに Effort（労力）設定を使用します。そのようなモデルを選択すると、このフィールドは無効になり、値は送信されません。",
+        "description": "Connection panel (Claude API, advanced): help text under the Top P field, explaining nucleus sampling and that newer models disable the field. 'Temperature', 'Top P' and 'Effort' are names of other fields."
+    },
+    "prefs_OptionText_anthropic_top_k_Info": {
+        "message": "後続の各トークンについて、上位 K 個の候補からのみサンプリングし、確率の低い「ロングテール」の応答を除外します。空欄にするとモデルのデフォルトが使用されます。新しい Claude モデルはこの設定をまったく受け付けず、代わりに Effort（労力）設定を使用します。そのようなモデルを選択すると、このフィールドは無効になり、値は送信されません。",
+        "description": "Connection panel (Claude API, advanced): help text under the Top K field, explaining the setting and that newer models disable it. 'Effort' is the name of another field."
+    },
+    "prefs_OptionText_anthropic_stop_sequences": {
+        "message": "停止シーケンス",
+        "description": "Connection panel (Claude API, advanced) and AI chat window settings summary: label of the stop sequences setting (texts that make the model stop generating). Keep short."
+    },
+    "prefs_OptionText_anthropic_stop_sequences_Info": {
+        "message": "モデルの生成を停止させるカスタムのテキストシーケンスです。1 行に 1 つのシーケンスを入力してください。空行は無視されます。空欄にすると無効になります。この設定はすべての Claude モデルで受け付けられます。",
+        "description": "Connection panel (Claude API, advanced): help text under the stop sequences text area, explaining one sequence per line."
+    },
+    "anthropic_warn_thinking_budget_min": {
+        "message": "拡張思考の予算は $MIN$ トークン以上である必要があります。現在の値は送信されず、拡張思考は要求されません。",
+        "description": "Inline advisory warning shown under the Claude extended thinking budget field when the value is below the API minimum. The value is still saved.",
+        "placeholders": {
+            "min": {
+                "content": "$1"
+            }
+        }
+    },
+    "anthropic_warn_thinking_budget_max": {
+        "message": "拡張思考の予算は最大トークン数（$MAX$）より小さい必要があります。現在の値は送信されず、拡張思考は要求されません。",
+        "description": "Inline advisory warning shown under the Claude extended thinking budget field when the value is not lower than the Max Tokens field. The value is still saved.",
+        "placeholders": {
+            "max": {
+                "content": "$1"
+            }
+        }
     },
     "prefs_OptionText_anthropic_extended_thinking_budget": {
         "message": "拡張思考の予算（トークン）"
@@ -1580,9 +2066,6 @@
     "prefs_OptionText_chatgpt_reasoning_effort": {
         "message": "推論の強度"
     },
-    "prefs_OptionText_chatgpt_extra_body": {
-        "message": "追加のボディデータ"
-    },
     "prefs_OptionText_chatgpt_extra_body_info": {
         "message": "すべてのAPI呼び出しで送信する追加パラメーターをJSONオブジェクトで指定します（例: {\"top_p\": 0.9}）。OpenAI APIは対応しているがThunderAIが公開していないオプションに便利です。ThunderAIが管理するパラメーター（model、input、streaming、temperature、reasoning、instructions）はここで上書きできません。無効な値は無視されます。"
     },
@@ -1592,7 +2075,7 @@
     "prefs_OptionText_chatgpt_reasoning_disabled": {
         "message": "無効"
     },
-    "prefs_OptionText_chatgpt_reasoning_api_default": {
+    "prefs_reasoning_api_default": {
         "message": "APIのデフォルト"
     },
     "prefs_OptionText_chatgpt_reasoning_summary_auto": {
@@ -1601,17 +2084,147 @@
     "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
         "message": "詳細"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
+    "prefs_OptionText_chatgpt_max_output_tokens_Info": {
+        "message": "モデルが 1 回の応答で生成できるトークン数の上限です。推論モデルでは推論トークンも含まれます。受け付けられる最小値は 16 です。空欄または 0 にすると API に任せます。",
+        "description": "Connection panel (OpenAI API, advanced): help text under the maximum output tokens field."
+    },
+    "prefs_OptionText_chatgpt_verbosity": {
+        "message": "詳細度",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the selector for answer length/detail. Noun, keep short."
+    },
+    "prefs_OptionText_chatgpt_verbosity_Info": {
+        "message": "プロンプトを変更せずに、回答の長さと詳しさを指定します。対応しているのは gpt-5 ファミリーのみです。それ以外のモデルではこのフィールドは無効になり、値は送信されません。",
+        "description": "Connection panel (OpenAI API, advanced): help text under the Verbosity selector; keep 'gpt-5' unchanged."
+    },
+    "prefs_OptionText_chatgpt_text_format": {
+        "message": "出力形式",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the selector for the answer output format (text, JSON object, JSON schema). Keep short."
+    },
+    "prefs_OptionText_chatgpt_text_format_Info": {
+        "message": "モデルに有効な JSON で回答させます。「JSON オブジェクト」は回答が有効な JSON であることのみを保証するため、プロンプトで希望する構造を説明する必要があります。一方「JSON スキーマ」では、回答が下のスキーマにも従うようになります。この設定により、チャットウィンドウに表示される回答は生の JSON になることに注意してください。",
+        "description": "Connection panel (OpenAI API, advanced): help text under the output format selector. \"JSON object\" and \"JSON schema\" are option names of the selector; translate them as in those options."
+    },
+    "prefs_OptionText_chatgpt_text_format_json_object": {
+        "message": "JSON オブジェクト",
+        "description": "Option for the OpenAI output format dropdown: any valid JSON object."
+    },
+    "prefs_OptionText_chatgpt_text_format_json_schema": {
+        "message": "JSON スキーマ",
+        "description": "Option for the OpenAI output format dropdown: JSON following the schema given below."
+    },
+    "prefs_OptionText_chatgpt_text_format_schema_name": {
+        "message": "JSON スキーマ名",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the field for the JSON schema name. Keep short."
+    },
+    "prefs_OptionText_chatgpt_text_format_schema_name_Info": {
+        "message": "下のスキーマの名前で、API で必須です。英字、数字、アンダースコア、ハイフンのみを使用してください。空欄の場合、出力形式はまったく送信されません。",
+        "description": "Connection panel (OpenAI API, advanced): help text under the JSON schema name field, explaining the allowed characters."
+    },
+    "prefs_OptionText_chatgpt_text_format_schema": {
+        "message": "JSON スキーマ",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the text area for the JSON schema. Keep short."
+    },
+    "prefs_OptionText_chatgpt_text_format_schema_Info": {
+        "message": "回答が従う必要のある JSON スキーマを、JSON オブジェクトとして指定します。上の出力形式が「JSON スキーマ」に設定されている場合にのみ使用されます。無効な値は無視され、出力形式は送信されません。",
+        "description": "Connection panel (OpenAI API, advanced): help text under the JSON schema text area. \"JSON schema\" is an option name of the output format selector."
+    },
+    "prefs_OptionText_chatgpt_top_p_Info": {
+        "message": "核サンプリング（Nucleus sampling）：モデルは累積確率がこの値に達するまでのトークンのみを考慮します。範囲は 0.0～1.0 です。空欄にするとモデルのデフォルトが使用されます。OpenAI は、温度と Top P のどちらか一方のみを調整し、両方は調整しないことを推奨しています。推論モデルはこの設定を受け付けません。そのようなモデルを選択すると、このフィールドは無効になり、値は送信されません。",
+        "description": "Connection panel (OpenAI API, advanced): help text under the Top P field explaining nucleus sampling. 'Temperature' and 'Top P' are field names."
+    },
+    "prefs_OptionText_chatgpt_truncation": {
+        "message": "切り詰め",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the selector for how long conversations are truncated. Noun, keep short."
+    },
+    "prefs_OptionText_chatgpt_truncation_Info": {
+        "message": "会話がモデルのコンテキストウィンドウを超えた場合の動作です。「自動」は会話の途中のメッセージを削除して収まるようにし、「無効」はリクエストをエラーで失敗させます。",
+        "description": "Connection panel (OpenAI API, advanced): help text under the Truncation selector. \"Auto\" and \"Disabled\" are option names of the selector; translate them as in those options."
+    },
+    "prefs_OptionText_chatgpt_truncation_auto": {
+        "message": "自動",
+        "description": "Option for the OpenAI truncation dropdown: drop messages from the middle of the conversation to fit the context window."
+    },
+    "prefs_OptionText_chatgpt_truncation_disabled": {
+        "message": "無効",
+        "description": "Option for the OpenAI truncation dropdown: fail with an error instead of truncating."
+    },
+    "prefs_OptionText_chatgpt_prompt_cache_key": {
+        "message": "プロンプトキャッシュキー",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the field for the prompt cache key. Keep short."
+    },
+    "prefs_OptionText_chatgpt_prompt_cache_key_Info": {
+        "message": "同じキーを共有するリクエストは OpenAI のプロンプトキャッシュを再利用でき、繰り返し使うプロンプトのコストと待ち時間を減らせます。任意の文字列を使用できます。同じテキストで始まるリクエストには同じキーを使用してください。",
+        "description": "Connection panel (OpenAI API, advanced): help text under the prompt cache key field."
+    },
+    "prefs_OptionText_chatgpt_service_tier": {
+        "message": "サービスティア",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the selector for the OpenAI processing tier. Keep short."
+    },
+    "prefs_OptionText_chatgpt_service_tier_Info": {
+        "message": "リクエストに使用する処理ティアです。「Flex」と「優先」は一部のプランとモデルでのみ利用でき、選択したティアを使用できない場合、API はデフォルトのティアに切り替えます。",
+        "description": "Connection panel (OpenAI API, advanced): help text under the service tier selector. \"Flex\" and \"Priority\" are option names of the selector."
+    },
+    "prefs_OptionText_chatgpt_service_tier_auto": {
+        "message": "自動",
+        "description": "Option for the OpenAI service tier dropdown: let the API choose the tier."
+    },
+    "prefs_OptionText_chatgpt_service_tier_default": {
+        "message": "デフォルト",
+        "description": "Option for the OpenAI service tier dropdown: the standard tier."
+    },
+    "prefs_OptionText_chatgpt_service_tier_flex": {
+        "message": "Flex",
+        "description": "Option for the OpenAI service tier dropdown: cheaper and slower processing."
+    },
+    "prefs_OptionText_chatgpt_service_tier_priority": {
+        "message": "優先",
+        "description": "Option for the OpenAI service tier dropdown: faster and more expensive processing."
+    },
+    "prefs_OptionText_chatgpt_safety_identifier": {
+        "message": "安全識別子",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the field for the end-user safety identifier. Keep short."
+    },
+    "prefs_OptionText_chatgpt_safety_identifier_Info": {
+        "message": "エンドユーザーを表す固定の識別子で、OpenAI が特定のユーザーによる不正利用を検出するのに役立ちます。メールアドレスなどの個人データは使用しないでください。ハッシュ化するか、リクエスト間で変わらない別の文字列を使用してください。これは非推奨の \"user\" パラメーターに代わるものです。",
+        "description": "Connection panel (OpenAI API, advanced): help text under the safety identifier field. Keep \"user\" unchanged: it is an API parameter name."
+    },
+    "prefs_OptionText_chatgpt_include_encrypted_reasoning": {
+        "message": "暗号化された推論を含める",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the option to receive the model's reasoning in encrypted form. Keep short."
+    },
+    "prefs_OptionText_chatgpt_include_encrypted_reasoning_Info": {
+        "message": "モデルの推論を暗号化された形式で返すよう API に要求し、OpenAI に保存されることなくリクエスト間で再利用できるようにします。上の「ストレージを使用」がオフの場合、かつ推論モデルでのみ意味があります。",
+        "description": "Connection panel (OpenAI API, advanced): text next to the encrypted reasoning checkbox. \"Use storage\" is the label of another option; translate it as there."
+    },
+    "chatgpt_note_sampling_unsupported": {
+        "message": "選択したモデルはこの設定を受け付けず、このフィールドを無視します。代わりに推論の強度の設定を使用してください。別のモデルに戻す場合に備えて、値は保持されます。",
+        "description": "Shown next to the OpenAI Temperature and Top P fields when a reasoning model is selected."
+    },
+    "chatgpt_note_reasoning_unsupported": {
+        "message": "選択したモデルは推論に対応していないため、この設定は送信されません。推論モデルに戻す場合に備えて、値は保持されます。",
+        "description": "Shown next to the OpenAI Reasoning summary and Reasoning effort fields when a non-reasoning model is selected."
+    },
+    "chatgpt_note_verbosity_unsupported": {
+        "message": "選択したモデルは詳細度の設定に対応していないため、送信されません。対応するモデルに戻す場合に備えて、値は保持されます。",
+        "description": "Shown next to the OpenAI Verbosity field when a model without verbosity support is selected."
+    },
+    "prefs_level_minimal": {
         "message": "最小"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_low": {
+    "prefs_level_low": {
         "message": "低"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
+    "prefs_level_medium": {
         "message": "中"
     },
-    "prefs_OptionText_chatgpt_reasoning_effort_high": {
+    "prefs_level_high": {
         "message": "高"
+    },
+    "prefs_level_xhigh": {
+        "message": "非常に高"
+    },
+    "prefs_level_max": {
+        "message": "最大"
     },
     "prefs_ollama_temperature_Info": {
         "message": "モデルの温度。温度を上げると、モデルはより創造的に回答します。デフォルト値は0.8です。0から1の間の値を使用することをお勧めします。"
@@ -1620,7 +2233,57 @@
         "message": "思考を有効にする"
     },
     "prefs_ollama_think_Info": {
-        "message": "チェックすると、モデルは回答前に思考します。このオプションは「think」機能をサポートするモデルでのみ機能します。"
+        "message": "回答の前にモデルに推論させます。「モデルのデフォルト」を選択すると何も送信されずモデルに判断を委ねます（一部のモデルでは自動的に推論が行われます）。推論を明示的に無効にするには「オフ」を選択してください。利用可能な推論レベルは選択したモデルによって異なり、モデルを選択後に表示されます。"
+    },
+    "prefs_ollama_think_default": {
+        "message": "モデルのデフォルト",
+        "description": "Ollama thinking option: send no 'think' field and let the model do whatever it does by default"
+    },
+    "ollama_note_thinking_unsupported": {
+        "message": "選択したモデルは思考への対応を報告していないため、この設定は無視されます。",
+        "description": "Connection panel (Ollama API): note shown next to the thinking selector when the selected model does not report thinking support."
+    },
+    "ollama_num_ctx_max_info": {
+        "message": "このモデルは最大 $MAX$ トークンのコンテキストに対応しています。",
+        "description": "Hint next to the Ollama context size field, after a connection test; $MAX$ is the maximum the model reports",
+        "placeholders": {
+            "max": {
+                "content": "$1",
+                "example": "131072"
+            }
+        }
+    },
+    "prefs_Ollama_API_Key": {
+        "message": "Ollama API キー",
+        "description": "Connection panel (Ollama API): label of the optional API key field; keep 'Ollama' and 'API' unchanged, keep short."
+    },
+    "prefs_Ollama_API_Key_Info": {
+        "message": "ollama.com のホスト型 API を使用する場合、または認証が必要なプロキシの背後にあるセルフホストのサーバーを使用する場合にのみ必要です。通常のローカル Ollama インストールでは空欄のままにしてください。",
+        "description": "Connection panel (Ollama API): help text under the API key field explaining when a key is needed; keep 'ollama.com' unchanged."
+    },
+    "prefs_ollama_keep_alive": {
+        "message": "モデルを読み込んだままにする",
+        "description": "Connection panel (Ollama API, advanced) and AI chat window settings summary: label of the setting for how long the model stays loaded in memory, followed by the parameter name [keep_alive]. Keep short."
+    },
+    "prefs_ollama_keep_alive_Info": {
+        "message": "リクエスト後に Ollama がモデルをメモリに保持する時間です。5m や 30m のような期間、無期限に保持する場合は -1、すぐに解放する場合は 0 を指定します。空欄にするとサーバーのデフォルト（5 分）が使用されます。自動タグ付け、スパムフィルター、自動要約を受信メールに対して実行する場合は、値を大きくすると便利です。そうしないと、メッセージごとにモデルが再読み込みされてしまいます。",
+        "description": "Connection panel (Ollama API, advanced): help text under the keep-alive field. Keep the values 5m, 30m, -1 and 0 unchanged."
+    },
+    "Ollama_System_Prompt": {
+        "message": "システムプロンプト",
+        "description": "Connection panel (Ollama API, advanced) and AI chat window settings summary: label of the system prompt text area. Keep short."
+    },
+    "Ollama_System_Prompt_Info": {
+        "message": "各会話の最初にシステムメッセージとして送信され、モデルに役割や常に守る指示を与えます。",
+        "description": "Connection panel (Ollama API, advanced): help text under the System Prompt text area."
+    },
+    "prefs_OptionText_ollama_extra_options": {
+        "message": "追加オプション",
+        "description": "Connection panel (Ollama API, advanced) and AI chat window settings summary: label of the extra options JSON field, followed by the parameter name [options]. Keep short."
+    },
+    "prefs_OptionText_ollama_extra_options_info": {
+        "message": "Ollama の 'options' オブジェクト内で送信する追加パラメーターを JSON オブジェクトで指定します。{\"top_p\": 0.9, \"seed\": 42} や {\"num_predict\": 512} のように、ThunderAI が公開していないオプションに便利です。ThunderAI が管理するパラメーター（コンテキストのトークン数、温度）はここで上書きできません。無効な値は無視されます。",
+        "description": "Connection panel (Ollama API, advanced): help text under the extra options JSON text area. Keep 'options' and the JSON examples unchanged."
     },
     "prefs_ollama_format_json": {
         "message": "JSON出力を強制"
@@ -1672,6 +2335,10 @@
     "customDataPH_saved": {
         "message": "カスタムデータプレースホルダーを保存しました！"
     },
+    "customDataPH_save_error": {
+        "message": "カスタムデータプレースホルダーの保存中にエラーが発生しました：",
+        "description": "Custom data placeholders page: shown in red when Save All fails. Followed by the error message"
+    },
     "customDataPH_btnAddNewCommit": {
         "message": "データプレースホルダーを追加"
     },
@@ -1696,8 +2363,13 @@
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "AIの応答に含まれる<br>タグは改行に置換されます。"
     },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "モデルリストをクリア"
+    "prefs_OpenAIComp_AddManually": {
+        "message": "手動で追加",
+        "description": "Small button next to the OpenAI Compatible API models label: asks for a model name and adds it to the list. It is preceded by a plus icon."
+    },
+    "prefs_OpenAIComp_ClearList": {
+        "message": "一覧をクリア",
+        "description": "Small button next to the OpenAI Compatible API models label: removes all the models from the list, after a confirmation."
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "モデルリストをクリアしてもよろしいですか？この操作は元に戻せません。"
@@ -1737,6 +2409,18 @@
     "prefs_google_gemini_thinking_budget_Info": {
         "message": "思考に使用するトークン数を定義します。選択したモデルが思考をサポートしていない場合、またはデフォルトの方法を使用したい場合は、このフィールドを空白のままにしてください。思考を無効にするには0を、動的思考を有効にするには-1を入力してください。"
     },
+    "prefs_api_max_output_tokens": {
+        "message": "最大出力トークン数",
+        "description": "Connection panel: label of the field for the maximum number of tokens the model may generate; also used as a parameter label in the AI chat window's settings summary. Technical API term."
+    },
+    "prefs_api_top_p": {
+        "message": "Top P",
+        "description": "Connection panel: label of the Top P sampling parameter field; also used as a parameter label in the AI chat window's settings summary. Technical API term, usually kept as is."
+    },
+    "prefs_api_top_k": {
+        "message": "Top K",
+        "description": "Connection panel: label of the Top K sampling parameter field; also used as a parameter label in the AI chat window's settings summary. Technical API term, usually kept as is."
+    },
     "prefs_google_gemini_temperature_Info": {
         "message": "このパラメーターは0.0から2.0の間の数値である必要があります。出力のランダム性を制御します。デフォルト値はモデルによって異なります。APIコールでパラメーターを設定しない場合は空のままにしてください。"
     },
@@ -1758,20 +2442,8 @@
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "この連携のモデルを取得するために必要なオプション権限が拒否されました。"
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "メッセージのプレビューでAIによる自動要約を有効にする"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "チェックすると、ThunderAIはメールを開いたときにAIによる要約を自動的に生成し、メッセージの上に表示します。これは、プレビューしたすべてのメッセージが設定済みのAIサービスへ直ちに送信されることを意味しますのでご注意ください。"
-    },
-    "auto_summary_title": {
-        "message": "ThunderAIの要約"
-    },
-    "auto_summary_generating": {
-        "message": "AIによる要約を生成中..."
-    },
-    "auto_summary_failed": {
-        "message": "AIによる要約の生成に失敗しました。設定を確認して、もう一度お試しください。"
     },
     "customPrompts_export_include_api_settings": {
         "message": "エクスポートにAPI設定を含めますか？APIキーもファイルに保存されますのでご注意ください！"
@@ -1785,8 +2457,97 @@
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "このオプションを有効にするには、プロンプトにプレースホルダー {%mail_text_body_or_selected%} または {%mail_html_body_or_selected%} が含まれている必要があります。これらのいずれかのプレースホルダーをプロンプトに追加するか、プロンプトをデフォルトに戻してください。"
     },
-    "customPrompts_btnCopy": {
-        "message": "コピー"
+    "prefs_OptionText_calendar_no_selection_save_missing_placeholder": {
+        "message": "「テキストの選択を求めない」オプションが有効になっているため、プロンプトにはプレースホルダー {%mail_text_body_or_selected%} または {%mail_html_body_or_selected%} が含まれている必要があります。これらのプレースホルダーのいずれかをプロンプトに追加するか、プロンプトをデフォルトに戻してください。",
+        "description": "Alert shown when saving the calendar event prompt without the body placeholder while the 'Do not ask to select text' option is enabled; the prompt is not saved"
+    },
+    "prefs_OptionText_calendar_no_selection_policy_missing_placeholder": {
+        "message": "組織がこのオプションを有効にしていますが、プロンプトに {%mail_text_body_or_selected%} も {%mail_html_body_or_selected%} も含まれていないため、メッセージ本文は AI に送信されません。これらのプレースホルダーのいずれかをプロンプトに追加するか、プロンプトをデフォルトに戻してください。",
+        "description": "Note next to the calendar 'Do not ask to select text' switch when the enterprise policy locks it on and the calendar prompt lacks the body placeholder"
+    },
+    "managed_banner": {
+        "message": "一部の設定は組織によって管理されており、変更できません。",
+        "description": "Banner shown when an enterprise policy is active but sets no organization name"
+    },
+    "managed_banner_org": {
+        "message": "一部の設定は $ORG$ によって管理されており、変更できません。",
+        "description": "Banner shown when an enterprise policy is active, naming the organization",
+        "placeholders": {
+            "org": {
+                "content": "$1",
+                "example": "ACME Corp"
+            }
+        }
+    },
+    "managed_marker": {
+        "message": "管理対象",
+        "description": "Marker next to a setting enforced by the enterprise policy"
+    },
+    "managed_marker_org": {
+        "message": "$ORG$ による管理",
+        "description": "Marker next to a setting enforced by the enterprise policy, naming the organization",
+        "placeholders": {
+            "org": {
+                "content": "$1",
+                "example": "ACME Corp"
+            }
+        }
+    },
+    "managed_marker_tooltip": {
+        "message": "この設定は組織の構成ポリシーによって設定されており、ここでは変更できません。",
+        "description": "Tooltip on the managed marker"
+    },
+    "managed_prompt_text_tooltip": {
+        "message": "このプロンプトのテキストは組織の構成ポリシーによって設定されており、ここでは変更できません。選択してコピーすることはできます。",
+        "description": "Tooltip on a special prompt text editor (Spam Filter, Add Tags, Summarize, Translate, Calendar Event, Task settings pages) whose text is enforced by an enterprise policy"
+    },
+    "managed_restriction_tooltip": {
+        "message": "この操作は組織の構成ポリシーによって無効になっています。",
+        "description": "Tooltip on a button or link disabled by an enterprise policy restriction"
+    },
+    "managed_restriction_prompts": {
+        "message": "プロンプトの管理は組織の構成ポリシーによって無効になっています。プロンプトの作成、コピー、インポート、エクスポートはできません。また、既存の独自プロンプトは読み取り専用になり、メニューでは利用できません。",
+        "description": "Note shown on the custom prompts page when the policy disables prompt management"
+    },
+    "customPrompts_policy_inert_note": {
+        "message": "読み取り専用で、メニューでは利用できません。組織の構成ポリシーによってプロンプトの管理が無効になっています。プロンプトは削除されません。",
+        "description": "Note on a custom prompt row made read-only by the prompt management policy"
+    },
+    "managed_restriction_default_prompts": {
+        "message": "組み込みのプロンプトは組織の構成ポリシーによって無効になっています。ここには引き続き表示されますが、メニューでは利用できません。",
+        "description": "Note shown on the custom prompts page when the policy disables the built-in prompts"
+    },
+    "customPrompts_policy_default_inert_note": {
+        "message": "メニューでは利用できません。組織の構成ポリシーによって組み込みのプロンプトが無効になっています。",
+        "description": "Note on a built-in prompt row taken out of the menus by the policy"
+    },
+    "menu_order_badge_policy_inactive": {
+        "message": "ポリシーにより無効",
+        "description": "Badge on a prompt that an enterprise policy has made unavailable"
+    },
+    "menu_order_badge_shadowed": {
+        "message": "無効：ID が重複",
+        "description": "Badge on a custom prompt hidden by an organization prompt with the same ID"
+    },
+    "managed_restriction_wizard": {
+        "message": "セットアップウィザードは組織の構成ポリシーによって無効になっています。AI の接続は一元的に構成されています。",
+        "description": "Shown in place of the setup wizard, and instead of the wizard link in the popup, when the policy disables it"
+    },
+    "managed_restriction_wizard_title": {
+        "message": "セットアップウィザードは利用できません",
+        "description": "Title shown in place of the setup wizard when the policy disables it"
+    },
+    "customPrompts_org_badge": {
+        "message": "組織",
+        "description": "Badge on a prompt supplied by the enterprise policy, when no organization name is configured"
+    },
+    "customPrompts_org_shadowing_note": {
+        "message": "あなたのプロンプトの 1 つが同じ ID を使用しており、この組織のプロンプトが有効な間は無効になります。",
+        "description": "Shown under an organization prompt that is hiding a custom prompt with the same ID"
+    },
+    "customPrompts_shadowed_note": {
+        "message": "無効：組織のプロンプトが同じ ID を使用しています。あなたのプロンプトは保持され、組織のプロンプトが削除されると再び機能します。",
+        "description": "Shown under a custom prompt hidden by an organization prompt with the same ID"
     },
     "copy_text": {
         "message": "コピー"
@@ -1812,7 +2573,7 @@
     "prefs_OptionText_summarize_max_display_length_Info": {
         "message": "インライン要約で表示する最大文字数です。0に設定すると制限なしになります。"
     },
-    "prefs_OptionText_summarize_max_messages": {
+    "prefs_OptionText_max_messages": {
         "message": "最大メッセージ数"
     },
     "prefs_OptionText_summarize_max_messages_Info": {
@@ -1824,6 +2585,26 @@
     "prefs_OptionText_summarize_strip_formatting_Info": {
         "message": "AIが生成した要約からHTMLおよびマークダウンの書式を削除し、プレーンテキストのみを表示します。"
     },
+    "prefs_OptionText_summarize_force_lang": {
+        "message": "要約の言語を固定",
+        "description": "Summarize page: name of the option that forces summaries to be written in a chosen language."
+    },
+    "prefs_OptionText_summarize_force_lang_Info": {
+        "message": "チェックすると、メールの言語に関係なく、要約は常に選択した言語で作成されます。作成済みの要約は更新されません。再作成するには「要約を更新」を使用してください。",
+        "description": "Summarize page: description under the 'Force summary language' option; 'Refresh summary' must match the translation of the summary banner's refresh action."
+    },
+    "prefs_OptionText_summarize_lang_Info": {
+        "message": "要約の言語です。空欄にすると、ThunderAI のオプションで設定したデフォルトの言語が使用されます。両方とも空の場合、言語は固定されません。",
+        "description": "Summarize page: help text under the summary language text field, shown when 'Force summary language' is checked."
+    },
+    "prompt_summarize_force_lang": {
+        "message": "要約は次の言語で書いてください：",
+        "description": "Instruction sent to the AI model, appended to the summarize prompt and followed by a space, the language name and a period (e.g. 'The summary must be written in Italian.')."
+    },
+    "summarize_info_additional_statements": {
+        "message": "この指示がプロンプトの末尾に追加されます：",
+        "description": "Summarize page: note under the prompt text, followed by the quoted language instruction that is appended to the prompt sent to the AI."
+    },
     "Summarize_auto_senders_title": {
         "message": "自動要約する差出人のリスト"
     },
@@ -1832,9 +2613,6 @@
     },
     "Summarize_auto_senders_infoline2": {
         "message": "1行に1つのメールアドレスを追加するか、カンマで区切ってください。ドメイン全体のすべての差出人を対象にするには「@domain.com」を使用します。"
-    },
-    "Summarize_auto_senders_api_warning": {
-        "message": "注意: これらの要約は自動的に生成されるため、これらの差出人からのメール1通ごとにAPIトークンを消費し、AIサブスクリプションの費用が増加する可能性があります。リストはできるだけ短く保ってください。"
     },
     "Summarize_auto_senders_notice": {
         "message": "自動要約は無効になっていますが、以下のリストにある差出人については引き続き要約が自動生成されます。"
@@ -1902,8 +2680,47 @@
     "batch_stop_source": {
         "message": "一括停止"
     },
-    "summarize_collapse": {
-        "message": "要約を折りたたむ"
+    "batch_stopped_rate_limit": {
+        "message": "$COUNT$ 件のメッセージを処理した後、メールの処理を停止しました。AI プロバイダーのレート制限または利用上限を超えました。しばらくしてからもう一度お試しください。",
+        "description": "Error shown when the running email processing jobs were stopped automatically because the AI provider refused further requests (HTTP 429: rate limit or daily quota exhausted), reporting how many messages were processed before stopping",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stopped_retry_after": {
+        "message": "$COUNT$ 件のメッセージを処理した後、メールの処理を停止しました。AI プロバイダーがリクエストを受け付けておらず、$WAIT$ 後に再試行するよう求めています。",
+        "description": "Error shown when the running email processing jobs were stopped automatically because the AI provider asked to wait longer than ThunderAI waits on its own. $WAIT$ is a localized duration such as '1 h' or '1 h, 30 min'",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            },
+            "wait": {
+                "content": "$2"
+            }
+        }
+    },
+    "api_retry_after_hint": {
+        "message": "AI プロバイダーは $WAIT$ 後に再試行するよう求めています。",
+        "description": "Shown under an API error in the chat window when the provider asked to wait longer than ThunderAI waits on its own. $WAIT$ is a localized duration such as '1 h' or '1 h, 30 min'",
+        "placeholders": {
+            "wait": {
+                "content": "$1"
+            }
+        }
+    },
+    "add_tags_too_many_messages": {
+        "message": "$SELECTED$ 件のメッセージが選択されていますが、一度にタグを追加できるのは最大 $MAX$ 件です。選択するメッセージを減らしてください。",
+        "description": "Shown when the user tries to add tags to more messages than the configured limit",
+        "placeholders": {
+            "selected": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            }
+        }
     },
     "summarize_generating": {
         "message": "要約を生成中..."
@@ -1996,7 +2813,7 @@
         "message": "除外する言語"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "自動翻訳をスキップする言語コードをカンマ区切りで指定します（例: en, fr, it）。メールがこれらの言語のいずれかである場合、自動的に翻訳されないか、手動ボタンが表示されません。"
+        "message": "翻訳しない言語コードをカンマ区切りで指定します（例: en, fr, it）。メールがこれらの言語のいずれかである場合、AI は翻訳をスキップし、スキップしたことを通知します。"
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "翻訳タスクを説明するプロンプト:"
@@ -2082,6 +2899,10 @@
     "menu_order_saved": {
         "message": "メニューの順序を保存しました！"
     },
+    "menu_order_save_error": {
+        "message": "メニューの順序の保存中にエラーが発生しました：",
+        "description": "Menu Order page: shown in red when Save All fails. Followed by the error message"
+    },
     "menu_order_reset_all": {
         "message": "すべてリセット"
     },
@@ -2105,6 +2926,10 @@
     },
     "menu_order_badge_custom": {
         "message": "カスタム"
+    },
+    "menu_order_badge_org": {
+        "message": "組織",
+        "description": "Badge on a prompt supplied by the enterprise policy, in the menu order page"
     },
     "menu_order_type_reading": {
         "message": "閲覧時"
@@ -2163,12 +2988,6 @@
     "menu_order_legend_source_custom": {
         "message": "自分で作成したプロンプト"
     },
-    "prefs_settings_subtitle": {
-        "message": "設定"
-    },
-    "prefs_disclaimer": {
-        "message": "LLMモデルは誤った情報を生成する可能性があり、入力したデータが新しいモデルの学習に使用される場合があります。ご自身の責任でご利用ください。"
-    },
     "prefs_ConnectionSettingsTitle": {
         "message": "接続設定"
     },
@@ -2222,6 +3041,10 @@
     },
     "connTest_error_timeout": {
         "message": "タイムアウトしました — エンドポイントから応答がありません"
+    },
+    "connTest_managed_api_key": {
+        "message": "API キーは組織によって設定されているため、ここではテストできません",
+        "description": "Connection test status strip: shown instead of running the test when the API key is supplied by the enterprise policy, which never passes the real key to the settings page"
     },
     "connTest_link_test": {
         "message": "今すぐテスト"
@@ -2498,20 +3321,17 @@
     "anthropic_effort_default": {
         "message": "デフォルト（APIが判断）"
     },
-    "Anthropic_Effort_Level_low": {
-        "message": "低"
+    "prefs_level_off": {
+        "message": "オフ",
+        "description": "Shared reasoning/thinking level label: reasoning explicitly turned off."
     },
-    "Anthropic_Effort_Level_medium": {
-        "message": "中"
+    "prefs_level_none": {
+        "message": "なし",
+        "description": "Shared reasoning/thinking level label: no reasoning, requested explicitly rather than by leaving the setting empty."
     },
-    "Anthropic_Effort_Level_high": {
-        "message": "高"
-    },
-    "Anthropic_Effort_Level_xhigh": {
-        "message": "非常に高"
-    },
-    "Anthropic_Effort_Level_max": {
-        "message": "最大"
+    "prefs_level_on": {
+        "message": "オン",
+        "description": "Shared reasoning/thinking level label: reasoning explicitly turned on."
     },
     "anthropic_note_temperature_unsupported": {
         "message": "選択したモデルは温度の値を受け付けず、このフィールドを無視します。代わりにEffort（労力）設定を使用してください。古いモデルに戻す場合に備えて、値は保持されます。"

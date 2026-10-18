@@ -16,34 +16,53 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default, integration_options_config } from '../../options/mzta-options-default.js';
+import {
+  prefs_default,
+  integration_options_config
+} from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
 import {
-  getSpecialPrompts,
-  setSpecialPrompts
+  getSpecialPrompts
 } from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
   mapPlaceholderToSuggestion, placeholdersUtils } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
-import { attachEditorHighlight, makeTokenStateResolver } from "../../js/mzta-editor-highlight.js";
+import {
+  attachEditorHighlight,
+  makeTokenStateResolver
+} from "../../js/mzta-editor-highlight.js";
 import {
   addTags_getExclusionList,
   addTags_setExclusionList
 } from "../../js/mzta-addtags-exclusion-list.js";
 import {
   getAccountsList,
+  getTagsList,
+  intersectTagsLists,
   normalizeStringList,
   isAPIKeyValue,
-  setTomSelectBorder,
-  isApiUsableConnection
+  setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import {
   initializeSpecificIntegrationUI,
-  isClosedCatalogueSelect,
-  getConnectionTypeLabel
+  isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
+import { mztaPrefs } from '../../js/mzta-prefs.js';
+import {
+    applyManagedUI,
+    isLockedKey,
+    lockCompanions,
+    setDisabledRespectingManaged,
+    lockAccountSelector
+} from '../_lib/managed-ui.js';
+import {
+    persistPromptConnectionToPrefs,
+    resolveFeatureConnectionPrefs,
+    bindConnPanelTint,
+    bindSpecialPromptEditor
+} from '../_lib/feature-page.js';
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -57,32 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let specialPrompts = await getSpecialPrompts();
   let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
 
-    if (addtags_prompt && addtags_prompt.api_type && addtags_prompt.api_type !== '') {
-        let update_prefs = {};
-        update_prefs['add_tags_connection_type'] = addtags_prompt.api_type;
-        // getConnectionType() reads the prefixed connection type only when this flag is on,
-        // so writing the pair one half at a time leaves the value inert. It matters for the
-        // call sites that pass prompt = null (the menu gating in mzta-background.js and the
-        // feature row in mzta-options.js): they have no prompt to fall back on, so the pref
-        // pair is the only way they can see the per-feature connection.
-        // Only for a usable api_type: chatgpt_web has no <option> in the per-prompt select and
-        // isApiUsableConnection() rejects it, so the pair would read as "on" while the feature
-        // stayed hidden from the menus.
-        if (isApiUsableConnection(addtags_prompt.api_type)) {
-            update_prefs['add_tags_use_specific_integration'] = true;
-        }
-
-        let integration = addtags_prompt.api_type.replace('_api', '');
-        if (integration_options_config && integration_options_config[integration]) {
-             for (const key of Object.keys(integration_options_config[integration])) {
-                 const propName = `${integration}_${key}`;
-                 if (addtags_prompt[propName] !== undefined) {
-                     update_prefs[`add_tags_${propName}`] = addtags_prompt[propName];
-                 }
-             }
-        }
-        await browser.storage.sync.set(update_prefs);
-    }
+    await persistPromptConnectionToPrefs('add_tags', addtags_prompt);
 
     await initializeSpecificIntegrationUI({
       prefix: 'add_tags',
@@ -93,34 +87,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     i18n.updateDocument();
 
+    // Disable and mark every control the enterprise policy enforces. Runs after the
+    // connection panel has been injected above, so its provider rows are covered too.
+    await applyManagedUI(document, taLog.do_debug);
+
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
       });
-    let prefs_add_tags = await browser.storage.sync.get({ add_tags_enabled_accounts: [], connection_type: 'chatgpt_web' });
+    let prefs_add_tags = await mztaPrefs.getPrefs(['add_tags_enabled_accounts']);
 
     let addtags_textarea = document.getElementById('addtags_prompt_text');
-    let addtags_save_btn = document.getElementById('btn_save_prompt');
-    let addtags_reset_btn = document.getElementById('btn_reset_prompt');
-    let add_tags_use_specific_integration = document.getElementById('add_tags_use_specific_integration');
 
-    addtags_textarea.addEventListener('input', (event) => {
-        addtags_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_add_tags_full_text'));
-        addtags_save_btn.disabled = (event.target.value === addtags_prompt.text);
-        if(addtags_save_btn.disabled){
-            document.getElementById('addtags_prompt_unsaved').classList.add('hidden');
-        } else {
-            document.getElementById('addtags_prompt_unsaved').classList.remove('hidden');
-        }
-    });
-
-    // Colour the connection panel to match the selected provider, and hide the
-    // whole panel when "use specific integration" is off (no empty bordered box).
-    let add_tags_conntype_el = document.getElementById('add_tags_connection_type');
-    if (add_tags_conntype_el) {
-        add_tags_conntype_el.addEventListener('change', updateConnPanelTint);
-    }
-    add_tags_use_specific_integration.addEventListener('change', updateConnPanelTint);
-    updateConnPanelTint();
+    bindConnPanelTint('add_tags');
 
     let add_tags_auto_el = document.getElementById('add_tags_auto');
     let add_tags_auto_only_inbox_tr = document.getElementById('add_tags_auto_only_inbox_tr');
@@ -147,36 +125,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let add_tags_auto_uselist = document.getElementById('add_tags_auto_uselist');
     let add_tags_auto_uselist_list = document.getElementById('add_tags_auto_uselist_list');
+    // Through the managed-aware setter: both run after applyManagedUI(), and a plain
+    // assignment would re-enable the list when the policy locks it.
     add_tags_auto_uselist.addEventListener('click', (event) => {
-      add_tags_auto_uselist_list.disabled = !event.target.checked;
+      setDisabledRespectingManaged(add_tags_auto_uselist_list, !event.target.checked);
     });
-    add_tags_auto_uselist_list.disabled = !add_tags_auto_uselist.checked;
+    setDisabledRespectingManaged(add_tags_auto_uselist_list, !add_tags_auto_uselist.checked);
 
-    addtags_reset_btn.addEventListener('click', () => {
-        addtags_textarea.value = browser.i18n.getMessage('prompt_add_tags_full_text');
-        addtags_reset_btn.disabled = true;
-        let event = new Event('input', { bubbles: true, cancelable: true });
-        addtags_textarea.dispatchEvent(event);
+    await bindSpecialPromptEditor({
+        textarea: addtags_textarea,
+        saveBtn: document.getElementById('btn_save_prompt'),
+        resetBtn: document.getElementById('btn_reset_prompt'),
+        unsavedEl: document.getElementById('addtags_prompt_unsaved'),
+        specialPrompts: specialPrompts,
+        promptIds: ['prompt_add_tags'],
+        defaultMsgKey: 'prompt_add_tags_full_text',
+        do_debug: taLog.do_debug,
     });
-
-    addtags_save_btn.addEventListener('click', () => {
-        specialPrompts.find(prompt => prompt.id === 'prompt_add_tags').text = addtags_textarea.value;
-        setSpecialPrompts(specialPrompts);
-        addtags_save_btn.disabled = true;
-        document.getElementById('addtags_prompt_unsaved').classList.add('hidden');
-        browser.runtime.sendMessage({command: "reload_menus"});
-    });
-
-    if(addtags_prompt.text === 'prompt_add_tags_full_text'){
-        addtags_prompt.text = browser.i18n.getMessage(addtags_prompt.text);
-    }
-    addtags_textarea.value = addtags_prompt.text;
-    addtags_reset_btn.disabled = (addtags_textarea.value === browser.i18n.getMessage('prompt_add_tags_full_text'));
 
     document.getElementById('add_tags_maxnum').addEventListener('change', updateAdditionalPromptStatements);
     document.getElementById('add_tags_force_lang').addEventListener('change', updateAdditionalPromptStatements);
     document.getElementById('add_tags_auto_uselist').addEventListener('change', updateAdditionalPromptStatements);
     document.getElementById('add_tags_auto_uselist_list').addEventListener('change', updateAdditionalPromptStatements);
+    document.getElementById('add_tags_auto_force_existing').addEventListener('change', updateAdditionalPromptStatements);
+    addtags_textarea.addEventListener('change', updateAdditionalPromptStatements);
 
     updateAdditionalPromptStatements();
 
@@ -200,8 +172,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     excl_list_textarea.value = excl_list_string;
 
+    // data-mzta-pref="add_tags_exclusions" (the element id is not the preference key):
+    // applyManagedUI() above has already disabled and marked the textarea when the policy
+    // locks the list. Its Save button is ours to lock.
+    lockCompanions('add_tags_exclusions', [excl_list_save_btn]);
+
     excl_list_textarea.addEventListener('input', (event) => {
-        excl_list_save_btn.disabled = (event.target.value === excl_list_string);
+        setDisabledRespectingManaged(excl_list_save_btn, (event.target.value === excl_list_string));
         if(excl_list_save_btn.disabled){
             document.getElementById('excl_list_unsaved').classList.add('hidden');
         } else {
@@ -210,10 +187,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     excl_list_save_btn.addEventListener('click', () => {
+        // The button being disabled is not the same as the action being unavailable. The
+        // write guard in js/mzta-prefs.js would refuse it anyway.
+        if (isLockedKey('add_tags_exclusions')) return;
         let excl_array_new = normalizeStringList(excl_list_textarea.value, 2);
         addTags_setExclusionList(excl_array_new);
         excl_list_save_btn.disabled = true;
-        excl_list_textarea.value = excl_array_new.join('\n');
+        // The saved list is the new baseline for the dirty check above: without this,
+        // editing the text back to the pre-save value would disable Save again.
+        excl_list_string = excl_array_new.join('\n');
+        excl_list_textarea.value = excl_list_string;
         document.getElementById('excl_list_unsaved').classList.add('hidden');
     });
 
@@ -242,8 +225,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
 
+    // A policy add_tags_enabled_accounts_match replaces the stored selection: show the
+    // accounts it resolves to, read-only, and never write add_tags_enabled_accounts.
+    const accounts_managed = await lockAccountSelector('add_tags', accountsContainer,
+        [document.getElementById('accounts_select_all'), document.getElementById('accounts_deselect_all')],
+        taLog.do_debug);
+
     document.querySelectorAll('.accountCheckbox').forEach(checkbox => {
       checkbox.addEventListener('change', () => {
+      if (accounts_managed) return;
       let selectedAccounts = Array.from(document.querySelectorAll('.accountCheckbox:checked')).map(checkbox => checkbox.value);
       if (selectedAccounts.length === 0) {
         checkbox.checked = true; // Prevent deselecting the last selected checkbox
@@ -251,46 +241,77 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
       if (selectedAccounts.length === document.querySelectorAll('.accountCheckbox').length) {
-        browser.storage.sync.set({ add_tags_enabled_accounts: [] });
+        mztaPrefs.setPref('add_tags_enabled_accounts', []);
         taLog.log("All accounts selected, saving add_tags_enabled_accounts = [].");
       } else {
-        browser.storage.sync.set({ add_tags_enabled_accounts: selectedAccounts });
+        mztaPrefs.setPref('add_tags_enabled_accounts', selectedAccounts);
         taLog.log("Saving add_tags_enabled_accounts = " + JSON.stringify(selectedAccounts) + ".");
       }
       });
     });
 
+    // The two buttons store the selection they show, like a click on a single box: setting
+    // `checked` fires no change event. At least one account stays selected, as for a single
+    // box, so "Deselect all" keeps the first one: a start from which to add the others.
+    const saveShownAccounts = () => {
+      let checkboxes = Array.from(document.querySelectorAll('.accountCheckbox'));
+      let selectedAccounts = checkboxes.filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);
+      mztaPrefs.setPref('add_tags_enabled_accounts', selectedAccounts.length === checkboxes.length ? [] : selectedAccounts);
+    };
+
     document.getElementById('accounts_select_all').addEventListener('click', () => {
+      if (accounts_managed) return;
       let checkboxes = document.querySelectorAll('.accountCheckbox');
       checkboxes.forEach(checkbox => checkbox.checked = true);
+      saveShownAccounts();
     });
-    
+
     document.getElementById('accounts_deselect_all').addEventListener('click', () => {
+      if (accounts_managed) return;
       let checkboxes = document.querySelectorAll('.accountCheckbox');
-      checkboxes.forEach(checkbox => checkbox.checked = false);
+      if (checkboxes.length === 0) return;
+      checkboxes.forEach((checkbox, index) => checkbox.checked = (index === 0));
+      saveShownAccounts();
     });
 });
 
 
 async function updateAdditionalPromptStatements(){
-    let prefs_ = await browser.storage.sync.get({
-      add_tags_maxnum: prefs_default.add_tags_maxnum,
-      add_tags_force_lang: prefs_default.add_tags_force_lang,
-      default_chatgpt_lang: prefs_default.default_chatgpt_lang,
-      add_tags_auto_uselist: prefs_default.add_tags_auto_uselist,
-      add_tags_auto_uselist_list: prefs_default.add_tags_auto_uselist_list,
-    });
+    let prefs_ = await mztaPrefs.getPrefs([
+      'add_tags_maxnum',
+      'add_tags_force_lang',
+      'default_chatgpt_lang',
+      'add_tags_auto_uselist',
+      'add_tags_auto_uselist_list',
+      'add_tags_auto_force_existing'
+    ]);
+    // Mirrors taPromptUtils.finalizePrompt_add_tags() [#926]
+    let show_force_lang = !prefs_.add_tags_auto_force_existing && prefs_.add_tags_force_lang && prefs_.default_chatgpt_lang !== '';
+    let uselist_active = prefs_.add_tags_auto_uselist && prefs_.add_tags_auto_uselist_list.trim() !== '';
+    let force_existing_list = '';
+    if(prefs_.add_tags_auto_force_existing){
+        let existing_tags_list = (await getTagsList())[0];
+        if(uselist_active){
+            force_existing_list = intersectTagsLists(prefs_.add_tags_auto_uselist_list, existing_tags_list);
+        }else if(!document.getElementById('addtags_prompt_text').value.includes("{%tags_full_list%}")){
+            force_existing_list = existing_tags_list;
+        }
+    }
+    let show_use_list = !prefs_.add_tags_auto_force_existing && uselist_active;
     let el_tag_limit = document.getElementById('addtags_info_additional_statements');
-    if((prefs_.add_tags_maxnum > 0)||(prefs_.add_tags_force_lang && prefs_.default_chatgpt_lang !== '')||(prefs_.add_tags_auto_uselist && prefs_.add_tags_auto_uselist_list.trim() !== '')){
+    if((prefs_.add_tags_maxnum > 0)||show_force_lang||show_use_list||(force_existing_list !== '')){
         el_tag_limit.textContent = browser.i18n.getMessage("addtags_info_additional_statements") + " \""
         if(prefs_.add_tags_maxnum > 0){
           el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + prefs_.add_tags_maxnum +". "
         }
-        if(prefs_.add_tags_force_lang && prefs_.default_chatgpt_lang !== ''){
+        if(show_force_lang){
           el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + prefs_.default_chatgpt_lang + ". "
         }
-        if(prefs_.add_tags_auto_uselist && prefs_.add_tags_auto_uselist_list.trim() !== ''){
+        if(show_use_list){
           el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_use_list") + ": " + prefs_.add_tags_auto_uselist_list + ".";
+        }
+        if(force_existing_list !== ''){
+          el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_force_existing") + ": " + force_existing_list + ".";
         }
         el_tag_limit.textContent = el_tag_limit.textContent.trim();
         el_tag_limit.textContent += "\".";
@@ -303,33 +324,6 @@ async function updateAdditionalPromptStatements(){
 
 
 // Methods to manage options, derived from: /options/mzta-options.js
-
-const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
-
-// Tint the connection panel (border/background/pill) to match the selected
-// connection type, set the provider pill name, and hide the whole panel when
-// the "use specific integration" checkbox is off. Mirrors the summarize page,
-// scoped to the add_tags prefix.
-function updateConnPanelTint() {
-  let conntype_select = document.getElementById("add_tags_connection_type");
-  let panel = document.getElementById("mzta_conn_panel");
-  let use_specific = document.getElementById("add_tags_use_specific_integration");
-  if (!panel) return;
-
-  panel.style.display = (use_specific && use_specific.checked) ? "" : "none";
-
-  if (!conntype_select) return;
-  let conntype = conntype_select.value;
-  for (let t of CONN_TYPES) {
-    panel.classList.toggle("tint_" + t, conntype === t);
-  }
-  let pillName = document.getElementById("mzta_conn_pill_name");
-  if (pillName) {
-    // Resolved from the shared catalogue, not by scraping the select: populateConnectionTypeOptions()
-    // rebuilds the <option> list with replaceChildren(), so a DOM lookup can transiently miss.
-    pillName.textContent = getConnectionTypeLabel(conntype);
-  }
-}
 
 function saveOptions(e) {
   e.preventDefault();
@@ -361,7 +355,11 @@ function saveOptions(e) {
         console.error("[ThunderAI] Unhandled input type:", element.type);
     }
 
-  browser.storage.sync.set(options);
+  // Guard the default: branch above, which leaves `options` empty — the previous
+  // set(options) wrote nothing in that case, so nothing must be written here either.
+  if (Object.prototype.hasOwnProperty.call(options, element.id)) {
+    mztaPrefs.setPref(element.id, options[element.id]);
+  }
 }
 
 async function restoreOptions() {
@@ -420,33 +418,12 @@ async function restoreOptions() {
     });
   }
 
-  let getting = await browser.storage.sync.get(prefs_default);
+  let getting = await mztaPrefs.getAllPrefs();
 
   let specialPrompts = await getSpecialPrompts();
   let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
 
-  if (addtags_prompt) {
-      if (addtags_prompt.api_type && addtags_prompt.api_type !== '') {
-          getting['add_tags_connection_type'] = addtags_prompt.api_type;
-      } else {
-          // Inherit the global connection only when this select can actually offer it:
-          // chatgpt_web has no <option> here (it has no API), so inheriting it would show
-          // a value the control cannot represent. Leave it blank instead.
-          getting['add_tags_connection_type'] = isApiUsableConnection(getting['connection_type'])
-              ? getting['connection_type']
-              : '';
-      }
-      for (const [integration, options] of Object.entries(integration_options_config)) {
-          for (const key of Object.keys(options)) {
-              const propName = `${integration}_${key}`;
-              if (addtags_prompt[propName] !== undefined && addtags_prompt[propName] !== '') {
-                  getting[`add_tags_${propName}`] = addtags_prompt[propName];
-              } else {
-                  getting[`add_tags_${propName}`] = getting[propName];
-              }
-          }
-      }
-  }
+  resolveFeatureConnectionPrefs(getting, addtags_prompt, 'add_tags');
 
   setCurrentChoice(getting);
 }

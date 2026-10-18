@@ -22,19 +22,70 @@
 
 import {
     Anthropic,
-    describeAnthropicError
+    describeAnthropicError,
+    extractUsage
 } from '../api/anthropic.js';
+import { readResponseBody } from '../api/api-retry.js';
+import { mergeUsageData } from '../api/mzta-api-usage.js';
 import { taLogger } from '../mzta-logger.js';
+import {
+    initUsageEmitter,
+    nextUsageMessageId,
+    postUsageData
+} from './usage-emitter.js';
 
 let anthropic = null;
 let stopStreaming = false;
 let i18nStrings = null;
 let do_debug = false;
 let taLog = null;
+// Set only while waiting for the response headers (including the retry
+// backoff): Stop aborts the request then. Once streaming has started the
+// stopStreaming flag takes over, so a pending reader.read() is never rejected.
+let requestAbort = null;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
 let thinkingAccumulator = '';
+let usageData = null;
+
+// The id the window binds this response's usage badge to. Assigned when the
+// request goes out, so the 'usage' message and the answer it belongs to agree.
+let usageMessageId = null;
+
+// The usage captured for the last completed request. Accumulated here and nowhere
+// else: it is deliberately NOT posted anywhere yet, NOT appended to the response
+// text, and NOT pushed into conversationHistory -- the text the callers receive
+// must stay byte-identical to what it was before this layer existed.
+export function getUsageData() {
+    return usageData;
+}
+
+// Only the provider, the model and the token counts. Never the request URL or the
+// headers: Gemini and some OpenAI-compatible endpoints carry the API key in the
+// query string, and a header map carries it outright.
+function logUsageData(usage) {
+    if (!taLog || !taLog.do_debug || usage === null) return;
+    taLog.log("usage data captured: " + JSON.stringify(usage));
+}
+
+// A turn that fails once the question was sent (an HTTP or network error, an error
+// event or a cut connection in the middle of the stream): the partial answer is
+// dropped and the unanswered question leaves the history, as after an abort, so the
+// next turn does not send it twice.
+function abandonTurn() {
+    conversationHistory.pop();
+    assistantResponseAccumulator = '';
+    thinkingAccumulator = '';
+}
+
+// The text of an error thrown while reading the stream.
+function streamErrorText(error) {
+    if (error instanceof TypeError && String(error.message).includes('Error in input stream')) {
+        return i18nStrings['error_connection_interrupted'] + ": " + error.message;
+    }
+    return i18nStrings["anthropic_api_request_failed"] + ": " + (error && error.message ? error.message : String(error));
+}
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
@@ -51,11 +102,40 @@ self.onmessage = async function(event) {
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-anthropic', do_debug);
+        initUsageEmitter(event.data);
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', content: event.data.message });
+        usageData = null;
+        usageMessageId = nextUsageMessageId();
 
-    const response = await anthropic.fetchResponse(conversationHistory);
+        requestAbort = new AbortController();
+        const response = await anthropic.fetchResponse(conversationHistory, {
+            signal: requestAbort.signal,
+            logger: taLog,
+            onRetry: (info) => postMessage({ type: 'newRetryAttempt', payload: info }),
+        });
         postMessage({ type: 'messageSent' });
+
+        // The body of an HTTP error is read while Stop can still abort it (an abort
+        // errors the body), within the time limit of readResponseBody(): a body that
+        // never arrives must not leave the turn hanging.
+        let errorBodyText = '';
+        if (!response.ok && response.is_exception !== true) {
+            errorBodyText = await readResponseBody(response);
+        }
+        const aborted = response.is_aborted === true || requestAbort.signal.aborted;
+        requestAbort = null;
+
+        if (aborted) {
+            // Stopped before any answer arrived, also while the body of an HTTP
+            // error was read: drop the unanswered message, so the next turn does
+            // not send it twice.
+            stopStreaming = false;
+            conversationHistory.pop();
+            taLog.log("Request aborted by the user before the response arrived");
+            postMessage({ type: 'requestAborted' });
+            return;
+        }
 
         if (!response.ok) {
             let error_message = '';
@@ -68,7 +148,7 @@ self.onmessage = async function(event) {
                 error_text = error_message;
             }else{
                 try{
-                    const errorJSON = await response.json();
+                    const errorJSON = JSON.parse(errorBodyText);
                     errorDetail = JSON.stringify(errorJSON);
                     error_message = errorJSON.error.message;
                     if(response.status === 400){
@@ -83,109 +163,151 @@ self.onmessage = async function(event) {
                 taLog.log("error_message: " + JSON.stringify(error_message));
                 error_text = i18nStrings["anthropic_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
             }
-            postMessage({ type: 'error', payload: error_text });
+            // rateLimited: a 429 still failing after the retries (rate limit or used-up quota),
+            // or a server asking to wait longer than fetchWithRetry() accepts (retryAfterMs,
+            // shown to the user): processEmails() stops the whole batch. False on an is_exception.
+            const retryAfterMs = Number.isFinite(response.retryAfterMs) ? response.retryAfterMs : null;
+            abandonTurn();
+            postMessage({ type: 'error', payload: error_text, rateLimited: response.status === 429 || retryAfterMs !== null, retryAfterMs: retryAfterMs });
             throw new Error("[ThunderAI] Claude API request failed: " + error_text);
         }
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let buffer = '';
-    
-        while (true) {
-            if (stopStreaming) {
-                stopStreaming = false;
-                reader.cancel();
-                taLog.log("AI full reasoning [STOPPED]: " + thinkingAccumulator);
-                taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
-                conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
-                assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
-                thinkingAccumulator = '';
-                break;
-            }
-            const { done, value } = await reader.read();
-            if (done) {
-                taLog.log("AI full reasoning: " + thinkingAccumulator);
-                taLog.log("AI full response: " + assistantResponseAccumulator);
-                conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
-                assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
-                thinkingAccumulator = '';
-                break;
-            }
-            // lots of low-level Claude response parsing stuff
-            const chunk = decoder.decode(value);
-            buffer += chunk;
-            // No per-chunk dump of `buffer`: taLog.log() only gates the console call,
-            // so the whole unconsumed buffer would be re-concatenated on every SSE
-            // chunk even with debug off.
-            const lines = buffer.split("\n");
-            buffer = lines.pop();
-            
-            for (const line of lines) {
-                const cleanLine = line.trim();
 
-                // Ignore ping events
-                if (cleanLine === '' || cleanLine.startsWith('event: ping')) {
-                    continue;
+        try {
+            while (true) {
+                if (stopStreaming) {
+                    stopStreaming = false;
+                    reader.cancel();
+                    taLog.log("AI full reasoning [STOPPED]: " + thinkingAccumulator);
+                    taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
+                    conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
+                    assistantResponseAccumulator = '';
+                    // Separate from tokensDone and free of any response text: see usage-emitter.js.
+                    postUsageData(usageData, usageMessageId);
+                    postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                    thinkingAccumulator = '';
+                    break;
                 }
+                const { done, value } = await reader.read();
+                if (done) {
+                    taLog.log("AI full reasoning: " + thinkingAccumulator);
+                    taLog.log("AI full response: " + assistantResponseAccumulator);
+                    conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
+                    assistantResponseAccumulator = '';
+                    // Separate from tokensDone and free of any response text: see usage-emitter.js.
+                    postUsageData(usageData, usageMessageId);
+                    postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                    thinkingAccumulator = '';
+                    break;
+                }
+                // lots of low-level Claude response parsing stuff
+                // stream: true keeps a multi-byte character split across two chunks
+                // for the next call instead of replacing it with U+FFFD.
+                const chunk = decoder.decode(value, { stream: true });
+                buffer += chunk;
+                // No per-chunk dump of `buffer`: taLog.log() only gates the console call,
+                // so the whole unconsumed buffer would be re-concatenated on every SSE
+                // chunk even with debug off.
+                const lines = buffer.split("\n");
+                buffer = lines.pop();
+            
+                for (const line of lines) {
+                    const cleanLine = line.trim();
 
-                // Guarded at the call site: taLog.log() gates only the console call,
-                // so an unguarded concatenation would run per SSE line even with debug
-                // off. Placed after the ping filter so keep-alives stay out of the log,
-                // and logs cleanLine rather than JSON.stringify() as the other workers
-                // do: this stream is raw SSE ('event: ...' / 'data: {...}'), already a
-                // string, so stringifying would only re-quote it.
-                if (taLog.do_debug) taLog.log("line: " + cleanLine);
-
-                // Remove "data: " and parse the JSON
-                if (cleanLine.startsWith('data: ')) {
-                    const jsonPart = cleanLine.replace(/^data: /, '');
-                    let parsedData = null;
-
-                    try {
-                        parsedData = JSON.parse(jsonPart);
-                    } catch (e) {
-                        taLog.error("JSON parse error: " + e);
+                    // Ignore ping events
+                    if (cleanLine === '' || cleanLine.startsWith('event: ping')) {
                         continue;
                     }
 
-                    // Events handling
-                    switch (parsedData.type) {
-                        case 'content_block_delta':
-                            if (parsedData.delta && parsedData.delta.type === 'thinking_delta' && typeof parsedData.delta.thinking === 'string') {
-                                const token = parsedData.delta.thinking;
-                                thinkingAccumulator += token;
-                                postMessage({ type: 'newThinkingToken', payload: { token } });
-                            } else if (parsedData.delta && typeof parsedData.delta.text === 'string') {
-                                const token = parsedData.delta.text;
-                                assistantResponseAccumulator += token;
-                                postMessage({ type: 'newToken', payload: { token } });
+                    // Guarded at the call site: taLog.log() gates only the console call,
+                    // so an unguarded concatenation would run per SSE line even with debug
+                    // off. Placed after the ping filter so keep-alives stay out of the log,
+                    // and logs cleanLine rather than JSON.stringify() as the other workers
+                    // do: this stream is raw SSE ('event: ...' / 'data: {...}'), already a
+                    // string, so stringifying would only re-quote it.
+                    if (taLog.do_debug) taLog.log("line: " + cleanLine);
+
+                    // Remove "data: " and parse the JSON
+                    if (cleanLine.startsWith('data: ')) {
+                        const jsonPart = cleanLine.replace(/^data: /, '');
+                        let parsedData = null;
+
+                        try {
+                            parsedData = JSON.parse(jsonPart);
+                        } catch (e) {
+                            taLog.error("JSON parse error: " + e);
+                            continue;
+                        }
+
+                        // Events handling
+                        switch (parsedData.type) {
+                            case 'content_block_delta':
+                                if (parsedData.delta && parsedData.delta.type === 'thinking_delta' && typeof parsedData.delta.thinking === 'string') {
+                                    const token = parsedData.delta.thinking;
+                                    thinkingAccumulator += token;
+                                    postMessage({ type: 'newThinkingToken', payload: { token } });
+                                } else if (parsedData.delta && typeof parsedData.delta.text === 'string') {
+                                    const token = parsedData.delta.text;
+                                    assistantResponseAccumulator += token;
+                                    postMessage({ type: 'newToken', payload: { token } });
+                                }
+                                break;
+
+                            case 'content_block_start':
+                                // optional
+                                break;
+
+                            case 'error': {
+                                // An error event in the middle of the stream (e.g. overloaded_error):
+                                // the answer is incomplete, so the turn fails instead of ending.
+                                const streamError = parsedData.error || {};
+                                taLog.error("stream error event: " + JSON.stringify(streamError));
+                                reader.cancel();
+                                abandonTurn();
+                                postMessage({ type: 'error', payload: i18nStrings["anthropic_api_request_failed"] + ": " + (streamError.message || JSON.stringify(streamError)) });
+                                return;
                             }
-                            break;
 
-                        case 'content_block_start':
-                            // optional
-                            break;
+                            case 'message_start':
+                            case 'message_delta': {
+                                // The usage arrives in two halves: the input tokens and
+                                // the cache counters in message_start, the output tokens
+                                // in message_delta. The latter is cumulative, so merging
+                                // each one in turn leaves the last value standing.
+                                const usage = extractUsage(parsedData);
+                                if (usage !== null) {
+                                    usageData = mergeUsageData(usageData, usage);
+                                    logUsageData(usageData);
+                                }
+                                break;
+                            }
 
-                        case 'message_start':
-                            // optional
-                            break;
-
-                        case 'message_stop':
-                            taLog.log("AI full reasoning: " + thinkingAccumulator);
-                            taLog.log("AI full response: " + assistantResponseAccumulator);
-                            conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
-                            assistantResponseAccumulator = '';
-                            postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
-                            thinkingAccumulator = '';
-                            return; // end the loop
+                            case 'message_stop':
+                                taLog.log("AI full reasoning: " + thinkingAccumulator);
+                                taLog.log("AI full response: " + assistantResponseAccumulator);
+                                conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
+                                assistantResponseAccumulator = '';
+                                // Separate from tokensDone and free of any response text: see usage-emitter.js.
+                                postUsageData(usageData, usageMessageId);
+                                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                                thinkingAccumulator = '';
+                                return; // end the loop
+                        }
                     }
                 }
-            }
 
+            }
+        } catch (error) {
+            // The connection broke while reading: report it, never end the turn silently.
+            console.error('[ThunderAI] Claude stream interrupted:', error);
+            abandonTurn();
+            postMessage({ type: 'error', payload: streamErrorText(error) });
         }
     } else if (event.data.type === 'stop') {
         stopStreaming = true;
+        if (requestAbort) requestAbort.abort();
     }
 };

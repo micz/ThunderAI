@@ -2,10 +2,88 @@
 
 ## Overview
 
-Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI instruction and how it behaves. There are two kinds:
+Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI instruction and how it behaves. There are four kinds:
 
 - **Built-in prompts** — defined in `js/mzta-prompts.js`
 - **Custom prompts** — created by the user and stored in `browser.storage.local`
+- **Special prompts** — feature-driven (tagging, spam filter, summarize, translate, calendar, tasks), stored under `_special_prompts`
+- **Organization prompts** — supplied by an enterprise policy, see below
+
+### Organization prompts (the fourth set)
+
+Delivered by the enterprise managed configuration through `_org_prompts` (see
+[08a-managed-prompts.md](08a-managed-prompts.md#organization-prompts)). They differ from the other
+three sets in one fundamental way: **they are never stored.** The policy is the only source
+of truth, read once at Thunderbird startup, so a prompt added, changed or removed in the
+policy is reflected at the next start and nothing of the user's is ever touched.
+
+- **Read-only**, but with **Copy** enabled: a user can always derive an ordinary, fully
+  editable personal prompt from one. Marked `is_org: "1"`, `is_default: "0"`,
+  `is_special: "0"`.
+- **Ids are composed, not taken verbatim**: `org_<_org_id>_<id>`. `_org_id` is restricted to
+  `[a-z0-9-]+` (no underscore, or `org_acme_foo_bar` would be ambiguous). This makes a
+  collision with a built-in, or between two organizations, structurally impossible.
+- **A colliding custom prompt is shadowed, not rejected.** If the user owns a prompt with
+  an org prompt's id, the org prompt wins everywhere a prompt can be invoked. Otherwise a
+  user could disable an organization prompt just by creating one with its id, and neither
+  they nor the administrator would see why it vanished. The user's prompt is **not**
+  deleted: it stays in `_custom_prompt`, is still saved, and returns the moment the policy
+  stops supplying that id. `isShadowedByOrgPrompt()` implements this.
+- **Every read gets its own copy.** The policy is read and normalised once (`loadOrgPrompts()`
+  caches it), but `getOrgPrompts()` hands out a fresh copy on every call, as the other three sets
+  are rebuilt from storage on every read. A run mutates the prompt it is handed —
+  `preparePrompt()` rewrites `text`, the menus set `selection_text` / `custom_text_array` — and with
+  the cached object itself that change would last the whole session: a custom placeholder expanded
+  once would stay frozen at that value until Thunderbird restarts.
+- **Local display preferences belong to the user.** Menu position and visibility ride in
+  `_default_prompts_properties`, exactly as for a built-in, so org prompts participate in
+  `pages/menu_order/` like any other prompt. This does not break read-only: that store
+  holds only the ten per-prompt user properties `setDefaultPromptsProperties()` writes —
+  `position_display`, `position_compose`, `position_context`, `show_in`, `custom_icon`,
+  `need_custom_text`, `api_type`, `chatgpt_web_model`, `chatgpt_web_project`,
+  `chatgpt_web_custom_gpt` — never the prompt text.
+
+**Three getters, deliberately.** All three are thin views over `buildPromptSet()`, which
+merges the four sets once and **marks** the three reasons a prompt can be inactive —
+`_shadowed_by_org` (an org prompt took its id), `_inert_by_policy`
+(`_disable_prompt_management` is on and this is the user's own prompt) and
+`_default_inert_by_policy` (`_disable_default_prompts` is on and this is a built-in
+prompt) — rather than dropping them. Only the invocation view drops anything:
+
+| | Inactive prompts | Special prompts | Used by |
+|---|---|---|---|
+| `getPrompts()` | hidden | per arguments | popup, menus, `loadPrompt()` |
+| `getPromptsForManagement()` | listed, flagged | no | `pages/customprompts/`, import, export |
+| `getPromptsForMenuOrder()` | listed, flagged | yes | `pages/menu_order/`, `migrateMenuOrderAlphabetic()` |
+
+The administration pages must list an inactive prompt or a prompt of the user's would
+appear to have vanished; they show it disabled, dimmed, with an explanation. `pages/menu_order/`
+needs its own view purely because it also lists and rewrites the **special** prompts, which
+`getPromptsForManagement()` omits.
+
+The three flags describe the current policy state, not the prompt, so they are stripped in
+`setCustomPrompts()`, `setSpecialPrompts()` and `preparePromptsForExport()` — a stored or
+exported `_inert_by_policy` would outlive the policy that set it. `TRANSIENT_PROMPT_FLAGS`
+also holds `_text_by_policy`, set on a special prompt whose text the policy enforces, and
+`_connection_by_policy`, set on one whose connection the policy supplies, and `_user_fields`,
+set by the connection panel on the field the user just changed (see Special Prompt
+Visibility Dependencies below).
+
+The same two storage gates also drop `idnum` (`VIEW_PROMPT_FIELDS`). It is the row number each of
+the three views above gives its entries, renumbered on every read, which the pages' List.js rows
+are keyed by; it is not a property of the prompt. A prompt handed back from a view (`loadPrompt()`
+goes through `getPrompts()`, and the connection panel's `_updatePrompt()` saves what it returns)
+used to store a stale one, which nothing ever read back. `preparePromptsForExport()` already left it
+out.
+
+**Both** pages that persist prompts
+rewrite a whole store from what they list (`setCustomPrompts()` replaces `_custom_prompt`
+entirely), so their filters must exclude `is_org` from the custom-prompt save and include
+it in the default-properties save. Getting this wrong either copies org prompts into the
+user's storage or deletes the user's shadowed prompt for real. The same split applies to
+`migrateMenuOrderAlphabetic()`, which rewrites the same stores from `getPromptsForMenuOrder()`
+at startup. `setCustomPrompts()` also drops any `is_org: "1"` entry it is handed, so a writer
+that forgets the filter still cannot store an org prompt.
 
 ## Prompt Properties
 
@@ -18,7 +96,7 @@ Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI
 | `text` | string | The prompt template text — usually an i18n key (e.g. `prompt_reply_full_text`); may contain `{%placeholder%}` tokens |
 | `type` | string | `"0"` = always visible, `"1"` = reading email only, `"2"` = composing only |
 | `action` | string | `"0"` = close, `"1"` = reply (open compose), `"2"` = substitute text in-place |
-| `need_selected` | string | `"0"` = use full message body, `"1"` = requires text selection |
+| `need_selected` | string | `"0"` = use full message body, `"1"` = requires text selection. For `prompt_get_calendar_event` it is **derived**, see below |
 | `need_signature` | string | `"0"` = no signature, `"1"` = include signature |
 | `need_custom_text` | string | `"0"` = no custom input, `"1"` = show custom text input field |
 | `define_response_lang` | string | `"0"` = no language hint, `"1"` = append response language instruction |
@@ -42,12 +120,15 @@ asks *"is it `"1"`?"* and read the very same value as **off**. A default prompt 
 show "Ask for additional text" enabled and not ask for it.
 
 `normalizePromptFlags(prompt, fallbacks)` collapses all of this: `1`/`"1"`/`true` → `"1"`,
-everything else → `"0"`, with every key guaranteed present. It is mutating, idempotent and
-single-prompt, mirroring `normalizeEnabledToShowIn()`. The `fallbacks` argument supplies the
-value for an out-of-domain input — default and special prompts pass their **built-in
-definition**, so a corrupted override reverts to what the prompt ships with instead of being
-forced off (which would silently disable `prompt_reply_custom_command`, whose built-in is
-`"1"`).
+`0`/`"0"`/`false` → `"0"`, with every key guaranteed present. It is mutating, idempotent and
+single-prompt, mirroring `normalizeEnabledToShowIn()`. Any other value (`""`, `undefined`,
+`null`, `"undefined"`, …) is **out of domain**, and the `fallbacks` argument supplies its value —
+default and special prompts pass their **built-in definition**, so a corrupted override reverts to
+what the prompt ships with instead of being forced off (which would silently disable
+`prompt_reply_custom_command`, whose built-in is `"1"`); with no fallback it is `"0"`. `false` is in
+the domain, never out of it: a built-in `"1"` fallback must not turn an explicit `false` on (no
+writer emits booleans, but a policy's organization prompts, a backup file or a hand-edited store
+can).
 
 It is applied in the **three producers**, not in `getPrompts()`. That placement is deliberate:
 `getSpecialPrompts()` is exported and called *directly* — by `buildSummaryPrompt()` /
@@ -81,44 +162,99 @@ to `===` without the normalization in place would have silently broken it.
 > `setDefaultPromptsProperties()`. The other four always come from the built-in array, which is
 > why the corruption above could only ever affect `need_custom_text`.
 
-### The picker prompts send HTML — except one
+### The picker prompts send HTML
 
-The three prompts with `use_diff_viewer: "1"` are **not uniform**, and the difference is deliberate:
+The three prompts with `use_diff_viewer: "1"` are **uniform**: all three need a selection
+(`need_selected: "1"`) and send it as HTML.
 
 | prompt | placeholder | sends |
 |---|---|---|
 | `prompt_rewrite_formal` | `{%selected_html%}` | HTML |
-| `prompt_rewrite_polite` (`prompt_rewrite_full_text`) | `{%mail_html_body_or_selected%}` | HTML |
-| `prompt_proofread_this` | `{%mail_typed_text%}` | **plain text** |
+| `prompt_rewrite_polite` (`prompt_rewrite_full_text`) | `{%selected_html%}` | HTML |
+| `prompt_proofread_this` | `"{%selected_html%}"` | HTML |
 
-Sending HTML is what lets the picker preserve formatting: the model answers in HTML, the answer
-skips markdown-it and is sanitized instead (see [01-architecture.md](01-architecture.md) → *When the
-answer is HTML*), and the picker diffs markup against markup.
+Because they cannot run without a selection, `{%selected_html%}` always has a value and no body
+fallback (`{%mail_html_body_or_selected%}`) is needed.
 
-**`prompt_proofread_this` stays on plain text** because there is no `mail_typed_html`
-*placeholder*: `getOnlyTypedText` (`js/mzta-compose-script.js`) returns text, not markup, so what
-reaches the **model** is text. That text is no longer *flat* — since [#829] the walk preserves
-line structure (`<br>` → `\n`, block boundaries → `\n\n`; see
-[01-architecture.md](01-architecture.md) → *The compose-extraction newline contract*), so the
-picker's original side is genuine multi-line text rather than one run-together line. What the
-*prompt* still lacks is inline markup. Adding it would mean a `getOnlyTypedHtml` handler — same
-walk, same `moz-cite-prefix`/`moz-forward-container` breaks — plus a `mail_typed_html`
-placeholder. Not done; the cost is recorded here so the asymmetry does not read as an oversight.
+Sending HTML is what lets the picker preserve formatting: the model answers in HTML, the answer is
+sanitized as block HTML (`sanitizeBlockHtml()`), and the picker diffs markup against markup — the
+original side is the prompt's `selection_html`, the twin of the `selection_text` that
+`_buildDiffButton` resolves first (see [07-diff-picker.md](07-diff-picker.md)).
 
-> **The picker's original side is no longer part of that gap.** `getMailBody()` now returns an
-> `only_typed_html` field, read back off the range `do_autoselect` already creates, so a prompt
-> substituting `mail_typed_text` into `selection_text` gets a matching `selection_html`. See
-> [07-diff-picker.md](07-diff-picker.md) → *The `mail_typed_text` substitution must carry its
-> twin*. That closes the diff-picker half of the asymmetry; the placeholder half above is still
-> open.
-
-The consequence is that **both shapes are live at once**, and the picker handles both: with
-proofread the original side arrives as text and `_buildDiffButton` falls back to `textToBlockHtml()`.
+`prompt_proofread_this` used to send `{%mail_typed_text%}`, plain text, because there is no
+`mail_typed_html` placeholder (`getOnlyTypedText` in `js/mzta-compose-script.js` returns text, not
+markup). It was moved to `{%selected_html%}` with `need_selected: "1"` (3507e368), like the two rewrite
+prompts. A **custom** prompt that uses `{%mail_typed_text%}` still sends text; its picker original
+side is the `only_typed_html` twin that `getMailBody()` reads off the autoselect range (see
+[07-diff-picker.md](07-diff-picker.md) → *The `mail_typed_text` substitution must carry its twin*).
+`textToBlockHtml()` remains the backstop for an HTML twin with no block structure.
 
 > Changing a prompt from no-placeholder to a placeholder also changes which branch of
 > `preparePrompt()` (`js/mzta-utils-prompt.js`) builds it: without one, the content is appended in
 > quotes; with one, the placeholder supplies it. That is why `prompt_rewrite_polite` needed a
 > placeholder added rather than just a reworded sentence.
+
+### How the final prompt is built (`preparePrompt()`)
+
+`taPromptUtils.preparePrompt()` (`js/mzta-utils-prompt.js`) has two branches, chosen by whether the
+prompt text holds any `{%…%}` token (`hasPlaceholder()`). Both **end with the instructions**: the
+signature statement, then the language statement.
+
+- **No placeholder** — the parts `text`, `"content"`, `signature`, `language`, the empty ones dropped,
+  joined with **one space**. Nothing is trimmed, so a text that is only whitespace (the summarize
+  separator) reaches the result intact.
+  - `content` is `selection_text` when it is non-empty, otherwise `body_text`, for **every** prompt,
+    `need_selected: "0"` ones included: the menus always pass the user's selection, so a prompt run
+    with text selected works on the selection (`prompt_reply` then replies to the selected part).
+    With neither, nothing is appended.
+  - The content is wrapped in double quotes; quotes inside it are **not** escaped. It is the last
+    part before the instructions, so an unbalanced quote does not hide where it ends, and escaping
+    would alter the user's text (a model tends to copy `\"` back into its answer).
+- **With placeholders** — custom placeholders are expanded first, a bare `{%additional_text%}` is
+  numbered, the tokens are resolved and substituted (spec 03), then `" " + signature` (when asked)
+  and `" " + language` are appended and the whole result is **trimmed**.
+  - The expansion and the numbering are written back into **`curr_prompt.text`**: the function
+    mutates the prompt it is handed. `js/mzta-menus.js` relies on it — after the call it reads
+    `curr_prompt.text` for the `additional_text` field list, the add-tags `{%tags_full_list%}` check
+    and the reminder `reminderMinutes` check.
+  - **The menus hold their prompts across runs.** They load every prompt once per rebuild
+    (`initialize()` → `this.allPrompts`), and each menu action reuses the same object on every run
+    until the next rebuild. So a menu action expands the custom placeholders into `curr_prompt.text`
+    **itself, first** — before any of its checks, so the typed-text, plain-text-part and
+    `additional_text` checks also see a placeholder written inside a custom placeholder's text — and
+    `preparePrompt()` then finds none left. A changed placeholder text needs a rebuild to take
+    effect, which is why `_custom_placeholder` is in `MENU_RELEVANT_KEYS` (`mzta-background.js`): any
+    write of it rebuilds the menus, like `calendar_no_selection`. The `#N` numbering written into the
+    held object is harmless: it is idempotent. The fields the menus set on the prompt during a run
+    (`selection_text`, `body_text`, `custom_text_array`) are rewritten before use on every run.
+  - Every other caller (spam filter, auto add-tags, the summarize email blocks) hands it a prompt
+    read for that run, and relies on its own expansion. `buildTranslationPrompt()` does not go
+    through `preparePrompt()` and expands the custom placeholders itself.
+
+`signature` is `getDefaultSignature()` when `need_signature` is `"1"`; `language` is the
+`chatgpt_lang` the caller passes, normally `getDefaultLang(prompt)`. Their exact text:
+
+| Statement | When | Text |
+|---|---|---|
+| signature | `default_sign_name` non-empty after trimming | `sign_msg_as` + `" "` + name, then `"."` |
+| | `default_sign_name` empty or whitespace only | nothing |
+| language | `define_response_lang` not `"1"`, or no prompt (#855) | nothing |
+| | `define_response_lang` `"1"`, prompt in `SAME_LANGUAGE_PROMPT_IDS` | `reply_same_lang` |
+| | `define_response_lang` `"1"`, `default_chatgpt_lang` non-empty after trimming | `prompt_lang` + `" "` + language, then `"."` |
+| | `define_response_lang` `"1"`, `default_chatgpt_lang` empty or whitespace only | `reply_same_lang` |
+
+The user value is trimmed, and the closing `"."` is not added when it already ends with `.`, `!`
+or `?` (`endSentence()`), so `"Mic."` gives `Sign the message as Mic.`, never `Mic..`.
+
+`SAME_LANGUAGE_PROMPT_IDS` (`js/mzta-utils-prompt.js`) holds the three built-in prompts that rewrite
+or proofread the user's own text: `prompt_rewrite_polite`, `prompt_rewrite_formal`,
+`prompt_proofread_this`. Their answer replaces that text, so it must be in **its** language: the
+default language would ask the AI to translate it. They always get "reply in the same language",
+whatever `default_chatgpt_lang` is. The list is by id: a custom prompt copied from one of them has its
+own id and follows the general rule.
+
+Shipped prompts on the no-placeholder branch: `prompt_reply`, `prompt_classify`, `prompt_this`, and
+the summarize header and separator (which are passed no content).
 
 > **Reachability:** The popup and context menus are the only ways to invoke a prompt (the keyboard shortcut just opens the popup, which re-filters by `show_in`). Reachability is therefore fully determined by `show_in`: a prompt with `show_in === "none"` is in no menu and cannot be invoked. The old `enabled` (0/1) flag was removed — it was redundant with `show_in === "none"`. `getPrompts(onlyReachable = true, ...)` filters out prompts with `show_in === "none"`. See the `migrateEnabledToShowIn()` migration below for the one-time conversion of legacy data.
 
@@ -129,8 +265,17 @@ proofread the original side arrives as text and `_buildDiffButton` falls back to
 | `position_display` | number | Sort order for the popup menu in reading view |
 | `position_compose` | number | Sort order for the popup menu in compose view |
 | `position_context` | number | Sort order for the context menu |
-| `show_in` | string | `"popup"` = popup only, `"context"` = context menu only, `"both"` = both, `"none"` = in no menu (unreachable). Default: `"popup"` for default/custom prompts, `"both"` for special prompts. **`show_in` is the single source of truth for reachability** — there is no separate enabled/disabled flag. |
+| `show_in` | string | `"popup"` = popup only, `"context"` = context menu only, `"both"` = both, `"none"` = in no menu (unreachable). Default: `"popup"` for default/custom prompts; a special prompt ships with its own value (see "Shipped menus of the special prompts"), and one saved with no `show_in` reads `"both"`. **`show_in` is the single source of truth for reachability** — there is no separate enabled/disabled flag. |
 | `custom_icon` | string | Filename (with extension) of an icon in `images/context_menu/custom/`. A single shared value: the same icon is used in **both** the context menu and the popup menu. Empty string = fall back to the prompt's built-in icon (see Icon Resolution), which for most prompts is not "no icon". Used for **all** prompts, special ones included: a chosen `custom_icon` overrides even a special prompt's hard-coded icon. Selectable from the icon picker on the Menu Order page — in every list of both panels; that page is the only place icons are chosen. |
+
+**Positions of a built-in prompt with nothing stored** (`getDefaultPrompts_withProps()`):
+- no `_default_prompts_properties` at all: `1`, `2`, … in the order of the `defaultPrompts` array,
+  the three positions equal. On a real profile this lasts until the first startup, where the
+  alphabetic migration writes every position;
+- the store exists but has no entry for the prompt: `1000`, `1001`, … in array order among the
+  prompts without one. This is the case of a built-in prompt added by an update: it lands at the
+  **end** of the menus instead of among the prompts the user has ordered;
+- an entry without `position_context`: it takes `position_display`.
 
 ### Per-Prompt API Override Properties
 
@@ -138,11 +283,21 @@ Each prompt can override the global API connection. These mirror the keys in `in
 
 | Property | Description |
 |----------|-------------|
-| `api_type` | Override API type for this prompt. **Note the name:** on the *prompt object* the property is `api_type`; `connection_type` is the *pref* name (global `connection_type` and the per-feature `{prefix}_connection_type`). `getConnectionType()` reads `prompt.api_type`. In the custom prompts list the value is displayed **localized** via `getConnectionTypeLabel()` (exported from `pages/_lib/connection-ui.js`, backed by the same `CONNECTION_TYPE_OPTIONS` catalogue that builds the `<option>` list). The raw value stays machine-readable in the hidden `.api_type` span — the one List.js owns through `valueNames` — mirrored onto `data-api-type`; **every conditional must read it through `getRowApiType(tr)`**, never by comparing the visible text, which is translated. |
+| `api_type` | Override API type for this prompt. **Note the name:** on the *prompt object* the property is `api_type`; `connection_type` is the *pref* name (global `connection_type` and the per-feature `{prefix}_connection_type`). `getConnectionType()` reads `prompt.api_type`. On the Custom Prompts page a read-only prompt's override is displayed **localized** via `getConnectionTypeLabel()` (exported from `pages/_lib/connection-ui.js`, backed by the same `CONNECTION_TYPE_OPTIONS` catalogue that builds the `<option>` list); every conditional reads the raw `api_type` from the List.js item's values, never the visible text, which is translated. |
 | `chatgpt_web_model` | Override ChatGPT Web model |
 | `chatgpt_web_project` | Override ChatGPT Web project |
 | `chatgpt_web_custom_gpt` | Override custom GPT |
 | All `chatgpt_*`, `ollama_*`, `openai_comp_*`, `google_gemini_*`, `anthropic_*` keys | Override specific API settings |
+
+**On export.** `preparePromptsForExport(prompts, include_api_settings = false)` with the flag off
+removes **every** property of this table from every prompt: `api_type`, the three `chatgpt_web_*`
+overrides (named in `CHATGPT_WEB_PROMPT_FIELDS`, since ChatGPT Web is not in
+`integration_options_config`) and every `{integration}_{key}` of `integration_options_config`,
+credentials included. A shared prompt file must never carry a key, a host or a model choice the user
+did not opt in to export. With the flag **on**, the three `chatgpt_web_*` overrides are exported for
+every prompt, built-in ones included (they are in its `allowedKeys`, as they are among the properties
+`setDefaultPromptsProperties()` stores), together with `api_type` and the settings of the active
+integration.
 
 ## Special Prompts
 
@@ -157,11 +312,148 @@ Some prompts trigger additional Thunderbird actions beyond just sending text to 
 | `get_task` | Extract and create a task |
 | `translate` | Translate email content into a target language |
 
+### Shipped menus of the special prompts
+
+The factory `show_in` of each special prompt is declared once, in the `specialPrompts` array of
+`js/mzta-prompts.js`; `getSpecialPrompts()` (fresh profile, or an entry missing from the store) and
+`getFactoryShowIn()` (Menu Order "Reset all") both read it from there, and nothing else repeats it:
+
+| id | `show_in` |
+|----|-----------|
+| `prompt_add_tags` | `"both"` |
+| `prompt_get_calendar_event`, `prompt_get_calendar_event_from_clipboard`, `prompt_get_task` | `"popup"` |
+| `prompt_spamfilter` | `"context"` |
+| `prompt_summarize`, `prompt_translate_this` | `"both"` |
+| `prompt_summarize_email_template`, `prompt_summarize_email_separator` | `"none"` (text fragments, never in a menu) |
+
+A value already saved in `_special_prompts` is never migrated to a new shipped one: a saved
+`"context"` may be the user's choice in the Menu Order page and cannot be told apart from a default
+saved by an earlier version. Only a **missing** `show_in` is repaired, to `"both"`.
+
 These special prompts can have their own dedicated API integration settings (configured in the Options page). The list of these special prompts is in `options/mzta-options-default.js` as `special_prompts_with_integration`.
+
+`getSpecialPromptPrefix(id)` (`js/mzta-prompts.js`) maps a special prompt id to the feature prefix
+whose connection it runs with — both calendar prompts to `get_calendar_event`, `prompt_translate_this`
+to `translate`, and so on — for `openChatGPT()` in `mzta-background.js`, the one caller, which
+resolves the connection of the prompt it runs. Any other id gives `null`, and so do
+`prompt_summarize_email_template` and `prompt_summarize_email_separator`: they are text fragments
+that `buildSummaryPrompt()` pastes into `prompt_summarize`, never run as prompts of their own, so
+they have no connection to resolve.
+
+### Calendar event / task: link to the original email
+
+With `calendar_append_email_link` (events) or `task_append_email_link` (tasks) on, `js/mzta-menus.js` appends a link to the source email to the `description` of the parsed object (`calendar_event_data_obj` / `task_data_obj`), after date normalization and the timezone block, just before `JSON.stringify` and the hand-off to Sparks. It is done **by code, after the response**: the link is never sent to the AI, the prompt texts (`prompt_get_calendar_event_full_text`, `prompt_get_task_full_text`) do not mention it, and the AI JSON contract is unchanged.
+
+Both features use `appendMessageLinkToDescription(data_obj, message, label)` in `js/mzta-utils.js` (label = `calendar_email_link_label`, shared). Composition rule:
+- description a string, non-empty after trim → `description.trim() + "\n\n" + label + " " + link`;
+- description missing, empty or not a string (e.g. a custom prompt that asks for none) → `label + " " + link`;
+- no link can be built → description left exactly as the AI returned it (the helper returns `false`).
+
+Link format (`buildMessageMidLink()`): `"mid:" + headerMessageId`, angle brackets stripped defensively, **no percent-encoding**. This matches Thunderbird itself: "Copy Message Link" (bug 1968470, `msgHdrView.js` `copyMessageLink()`) writes `` `mid:${messageId}` ``, and the `mid:` handler (bug 264270: `MailLinkParent._handleMidLink`, `calApplicationUtils.js` `launchBrowser`) opens `openMessageForMessageId(href.slice(4))`, an exact Message-ID match with no decoding — an encoded id (`%2B`, `%3D`, …) would never be found.
+
+Skipped silently (logged via `this.logger.log`, no alert):
+- `prompt_get_calendar_event_from_clipboard` — no source message; it shares the case block with `prompt_get_calendar_event`, so `curr_prompt.id` is checked explicitly;
+- `messageCompose` tabs — `curr_message` is compose details, not a `MessageHeader`;
+- `curr_message` null (e.g. empty selection in a mail tab) or `headerMessageId` missing/empty.
+
+The description is plain text (`descriptionText` in Sparks); Thunderbird linkifies the `mid:` scheme in the event summary, but HTML descriptions are out of scope.
+
+### Calendar event / task: reminder (#887)
+
+**Sparks contract** (Sparks ≥ 3.1.0, hence `sparks_min = '3.1.0'` in `js/mzta-utils.js`): an optional integer `reminderMinutes` in the JSON of both `openCalendarEventDialog` and `openTaskDialog`:
+- absent → Thunderbird's default reminder settings apply;
+- `-1` → explicitly no reminder;
+- `>= 0` → one reminder that many minutes before the event start (events) / the due date (tasks; the initial date if there is no due date; ignored by Sparks if the task has no dates).
+
+Identical for the two features, each with its own prefs (`calendar_reminder_enabled` / `calendar_reminder_rules`, `task_reminder_enabled` / `task_reminder_rules`), implemented once and parameterized by the `REMINDER_FEATURES` map in `js/mzta-utils-prompt.js` (`calendar` / `task` → prefs + format message id).
+
+**The `*_reminder_enabled` checkbox is the single switch** for both asking for the value (prompt side, `taPromptUtils.getReminderPromptStatements()`) and accepting it (response side, `normalizeReminderMinutes()` in `js/mzta-utils.js`). Checkbox off → nothing is appended to the prompt **and** `reminderMinutes` is always removed from the AI response, whatever the main prompt says, so Thunderbird's default reminder applies. An option labeled "Let the AI set a reminder" that still let the AI set one when off would be contradictory.
+
+The rules can live in the optional rules textarea **or** directly in the main prompt (which users customize, possibly adding `reminderMinutes` to its JSON format); in both cases the checkbox must be on. Rules written only in the main prompt = checkbox on, rules textarea empty.
+
+**Asking (prompt side).** `finalizePrompt_get_calendar_event(fullPrompt, promptTemplate, enabled, rules)` (after its `{%cc_list%}`/`{%recipients%}` stripping) and `finalizePrompt_get_task(...)` both go through `appendReminderStatements()` → `getReminderPromptStatements(feature, promptTemplate, enabled, rules)`. Checkbox off → nothing appended. Checkbox on, in this order, joined with `" \n"`:
+1. the format instruction (`prompt_calendar_reminder_format` / `prompt_task_reminder_format` — they differ only in the reference date), **unless** the template already contains the case-sensitive string `reminderMinutes`. It is worded ("in addition to the fields described above, add to the JSON object…") to work whatever JSON format the main prompt describes, and describes the field as having one of three values: an integer (minutes before the reference date), `null` when rules are given but none applies, or the string `"default"` when no reminder rules are given at all (neither in the rules option nor in the main prompt — only the AI can tell, since the main-prompt rules are natural language);
+2. if the rules trimmed are non-empty: `prompt_reminder_rules_intro` + `"\n"` + rules — **also** when (1) was skipped.
+
+The `reminderMinutes` check runs on the **template** (`curr_prompt.text`), not on the resolved `fullPrompt`: an email body that happens to contain the word must not suppress the instruction, and the settings-page warning checks the same live text. The default prompt texts (`prompt_get_calendar_event_full_text`, `prompt_get_task_full_text`) are unchanged. `prompt_get_calendar_event_from_clipboard` shares the calendar case block, so it is covered. The rules are appended **after** placeholder resolution, so `{%…%}` in them is sent verbatim — which is why the rules textarea has no placeholder highlighting/autocomplete.
+
+**Accepting (response side).** In `js/mzta-menus.js`, after `extractJsonObject()` and the date normalization (inside the same `try` for tasks), `normalizeReminderMinutes(data_obj, enabled, this.logger)`:
+- checkbox **off** → field **deleted**, whatever its value (Thunderbird defaults); nothing else is checked;
+- checkbox **on**:
+  - valid = a non-negative integer, or a string of digits (converted), `<= REMINDER_MINUTES_MAX` (40320, 4 weeks); `1.5`, `"-5"`, `40321`, `true`, `"abc"` are invalid;
+  - valid → kept (as a number);
+  - `"default"` (trimmed, case-insensitive) → field **deleted**: no rules anywhere, so the user gets Thunderbird's standard reminder, not "no reminder";
+  - `null` (rules given, none applies), missing or invalid → `-1` (the user asked for "no rule → no reminder");
+- raw and final values are logged in both cases.
+
+Resulting meaning of the value sent to Sparks: absent = Thunderbird default (checkbox off, or `"default"`), `-1` = no reminder, `>= 0` = the AI's reminder.
+
+Consequence worth knowing: since Sparks 3.1.0, an event/task without `reminderMinutes` gets Thunderbird's default reminder (when enabled in Thunderbird) — previously none was set.
+
+### Add tags: extra prompt statements
+
+`taPromptUtils.finalizePrompt_add_tags()` (`js/mzta-utils-prompt.js`) appends statements to the prepared prompt, each on its own line (`" \n"`). It is called from both flows: the manual action (`js/mzta-menus.js`, with no use list) and the automatic/batch flow (`runAddTags` in `mzta-background.js`).
+- `add_tags_maxnum > 0` → `prompt_add_tags_maxnum N.`
+- `add_tags_force_lang` + `default_chatgpt_lang` → `prompt_add_tags_force_lang LANG.`. **Suppressed when `add_tags_auto_force_existing` is on**, because the existing tags dictate the language.
+- `add_tags_auto_force_existing` **off**: use list active → `prompt_add_tags_use_list: LIST.`
+- `add_tags_auto_force_existing` **on** (issue #926): the existing tags are sent to the model, which otherwise invented names that were then all filtered out.
+  - With an active use list → `prompt_add_tags_force_existing: X.`, where X = `intersectTagsLists(uselist, existing)` (`js/mzta-utils.js`: case-insensitive, written as the existing tag is). This replaces the use-list statement. An empty intersection → `console.warn` and no list statement.
+  - Without a use list → `prompt_add_tags_force_existing: <tags_full_list[0]>.`. It is skipped when the raw prompt text already contains `{%tags_full_list%}` or when no tags exist.
+
+The response is still filtered afterwards as a safety net: `checkIfTagLabelExists()` in the manual flow, and `_assign_tags_now()` in the automatic flow, which skips non-existing tags ("Skipping non-existing tag") when `create_new_tags` is false.
+
+**Reading the answer: `taPromptUtils.getTagsFromResponse(response, filter_tags, filter_tags_list)`.**
+Both flows read the tags with it (the automatic one passes the use list as `filter_tags` /
+`filter_tags_list`, the manual one no filter).
+- **A JSON answer** — any answer holding `{` or `}` — is parsed with `extractJsonObject()`, so a code
+  fence or text around the object does not matter. `tags` is the array, or a comma separated
+  string split on the commas; any other shape gives no tag. A malformed object gives **no tag** (and
+  a `console.warn`): it is never split by commas, which would turn the raw JSON, or a whole
+  sentence, into a tag name — one the automatic flow would then create with `create_new_tags` on.
+- **A plain comma separated list** (no brace at all) is still accepted, for backwards
+  compatibility; an item spanning several lines is prose and is dropped.
+- **Every tag is cleaned:** only strings, trimmed, empty ones dropped, each kept once, ignoring case
+  (the first spelling wins). A number or `null` in the array is dropped, never an error.
+- **The allow-list** (`filter_tags` on, a non-empty list): a tag is kept when it matches an entry
+  of the list ignoring case, and is returned **as written in the list** — the user's spelling, as
+  with the force-existing statement — each once. An empty list filters nothing.
+
+The Add Tags settings page (`updateAdditionalPromptStatements()` in `pages/addtags/mzta-add-tags.js`) previews the same statements with the same rules, and must be kept in sync with `finalizePrompt_add_tags()`.
+
+### The text carries the response format
+
+The output format a feature parses is written **in the prompt text itself** (e.g.
+`prompt_spamfilter_full_text` asks for `{"explanation", "spamValue"}`, `prompt_add_tags_full_text`
+for `{"tags": [...]}`); code appends only extras (`finalizePrompt_add_tags()`). So editing a
+special prompt's text can break its feature. `SPECIAL_PROMPT_TEXT_CONTRACT` in
+`js/mzta-prompts.js` records, per special prompt id, the JSON keys the parser reads and the
+placeholders that carry the message; `checkSpecialPromptText(id, text)` checks a text against
+it. It is used for texts enforced by an enterprise policy, which the user cannot fix (see
+[08a-managed-prompts.md](08a-managed-prompts.md#output-format-safety-the-response-contract));
+the feature pages do not apply it to the user's own edits. **A change to a shipped text's
+output format, or to a parser, must update that table**, or valid policies start being
+rejected.
+
+When the policy enforces a text, the feature page shows it read-only (`lockEnforcedPromptText()`
+in `pages/_lib/managed-ui.js`) with the managed marker, and its Save/Reset buttons are inert.
 
 ### Missing special prompts
 
-The lookup helpers in `js/mzta-prompts.js` (`getSpamFilterPrompt()`, `getAddTagsPrompt()`, `getSummarizePrompt()`, …) are `Array.find()` over `_special_prompts` and return `undefined` when the user has removed or corrupted the entry. Every caller must guard before using the result, and `taPromptUtils.getDefaultLang()` uses optional chaining so a missing prompt yields `''` (no forced language) instead of throwing (issue #855).
+**A removed entry is restored on read.** `getSpecialPrompts()` compares the stored `_special_prompts`
+array with the shipped `specialPrompts`: every shipped special prompt whose `id` is missing from the
+store is appended, as shipped — its i18n text, its shipped flags and `show_in`, `custom_icon: ""`.
+When it appended anything (the array length changed) it **writes the array back**, so the repair is
+persisted once; an array that is already complete is never rewritten by a read. Entries the store
+does have are kept as stored, with the read-time repairs only: a missing `show_in` becomes `"both"`, a
+missing `custom_icon` becomes `""`, and the five flags are normalised against the shipped definition.
+A store holding nothing at all (`null`) is not written: the shipped set is returned as is.
+
+So a lookup helper in `js/mzta-prompts.js` (`getSpamFilterPrompt()`, `getAddTagsPrompt()`,
+`getSummarizePrompt()`, …), an `Array.find()` over `getSpecialPrompts()`, finds every shipped id even
+after the user deleted its entry from storage. What it cannot repair is a **corrupted** entry: one
+that keeps its `id` but lost its `text` or other fields is returned as it is. Callers therefore still
+guard before using the result, and `taPromptUtils.getDefaultLang()` uses optional chaining so a
+missing prompt yields `''` (no forced language) instead of throwing (issue #855).
 
 Guarded callers, each reporting through the mechanism its feature already has:
 - Auto add-tags (`mzta-background.js`): logs an error and sets `skipAddTags = true`, leaving the rest of the message pipeline running.
@@ -193,10 +485,17 @@ To give a new default prompt a shipped icon, drop the PNG in `images/context_men
 `custom_icon` on special prompts persists in `_special_prompts` (whole prompt objects), so no storage-shape change was needed; `getSpecialPrompts()` normalizes a missing `custom_icon` to `""` for prompts saved before icons became selectable.
 
 ### Popup Menu
-- Displays prompts filtered by `show_in` (`"popup"` or `"both"`) and by tab context (`type` property: reading view shows types `0`+`1`, compose view shows types `0`+`2`)
+- Displays prompts filtered by `show_in` (`"popup"` or `"both"`) and by tab context (`type` property: reading view shows types `0`+`1`, compose view shows types `0`+`2`). A prompt with no `show_in` counts as `"popup"`. A tab that is neither a message nor a compose window (`lastShortcutFiltering` `0`) gets no type filter, and its list is ordered by `position_display`
+- Labels: each label arrives as the prompt's resolved name and may carry HTML entities; the popup decodes them as text (never as markup) before showing and searching, so `R&amp;D` reads and matches as `R&D`
 - Ordering: always position-based using `position_display` (reading view) or `position_compose` (compose view). Alphabetical ordering has been removed
 - Special prompts get **no** distinct visual treatment here: `is_special` does not affect row styling, so they render exactly like default and custom prompts (the icon is what identifies a prompt visually). The "special" badge exists only on the Menu Order page (`badge_special`). Removing the former `special_prompt` background also fixed a cascade bug where it overrode `:hover` and `.mzta_autocomplete-item-active`, leaving special rows with no hover or keyboard-selection feedback
 - Icons: each row shows the prompt's icon, resolved by `getContextMenuIcon()` and passed through in `addShortcutMenu()` as `custom_icon`. Each prompt shows its `custom_icon` if set, otherwise its built-in icon (see Icon Resolution). Icons here are **display-only** — they are chosen on the Menu Order page. The 16px slot is always rendered (blank via `.mzta_item_icon_empty` when there is no icon) so labels stay aligned
+- Search: the list is filtered as the user types in `#mzta_search_input`, keeping the prompts whose label contains the trimmed text, case-insensitively. When nothing matches, the list is hidden. The full list is shown once on opening (the page fires one `input` with the empty text)
+- Number shortcuts: the first ten rows of the current list are prefixed `1. ` … `9. `, then `0. ` for the tenth; later rows have no prefix. Pressing the digit selects that row
+- Keyboard: ArrowDown / ArrowUp move the highlight (`.mzta_autocomplete-item-active`) through the rows, wrapping at both ends. Enter selects the highlighted row, or the first one when none is highlighted; Enter on an already selected row runs it
+- **Selecting vs. running.** A click (mousedown) on a row runs the prompt at once. A digit or Enter only *selects* it — its label goes into the search box and the list closes — and a further Enter runs it, unless `dynamic_menu_force_enter` is on: then selecting runs it at once. Running sends `{command: "shortcut_do_prompt", tabId, promptId}` with the tab the popup was opened for (`lastShortcutTabId`) and closes the popup without waiting for the answer
+- Permission banners: with ChatGPT Web, Claude API or OpenAI API selected and its host permission missing, the popup shows that provider's red banner (`#ask_chatgpt_web_perm` / `#ask_anthropic_api_perm` / `#ask_openai_api_perm`) in place of the search box (`#mzta_search_banner` hidden). A click opens the welcome page (`pages/onboarding/`), where the permission is granted
+- No tab: when `popup_menu_ready` answers nothing (no tab ready for the popup), the loading spinner is hidden and the popup stays empty
 
 ### Context Menu
 - Dynamically built from all prompts with `show_in` set to `"context"` or `"both"`, filtered to reading types only (`type` 0 or 1)
@@ -218,7 +517,7 @@ Each list has two sections:
 - **Visible items**: active for the menu (`show_in` includes the menu), draggable to reorder
 - **Hidden items**: inactive for the menu (`show_in` excludes the menu), sorted alphabetically
 
-**Row icons** — every row in every list of both panels shows an icon slot (rendered in `renderListItems()`, between the drag handle and the name). **Every** prompt gets the same clickable picker (`buildIconPicker()` → `openIconPopover()`, a grid of `customMenuIcons` plus a first "restore default" cell) — special prompts included, so their hard-coded icon can be overridden. Selecting writes `custom_icon` on the in-memory prompt and calls `markUnsaved()`; it is persisted by the normal save flow (`_special_prompts` for special prompts, `_default_prompts_properties` for the rest). The preview is drawn by `applyIconToPreview(preview, filename, promptId)`, which falls back to `getBuiltInPromptIcon(promptId)` when no `custom_icon` is set. The first popover cell clears `custom_icon`, and previews the built-in icon (tooltip `menu_order_icon_default`, "Default icon") rather than an empty slot; it shows the greyscale `empty_icon.png` with tooltip `menu_order_icon_none` only for prompts that have no built-in icon, i.e. user-created custom ones. That placeholder carries an `icon_picker_none_empty` class so the dark-mode `filter: invert(1)` applies to it alone and never to a real color icon. Because `custom_icon` is a single shared value and the panels render the same prompt objects, an icon chosen in one panel shows in the other. Rendering the slot in all lists is what makes composing-only (`type: "2"`) prompts reachable, since they never appear in the context panel.
+**Row icons** — every row in every list of both panels shows an icon slot (rendered in `renderListItems()`, between the drag handle and the name). **Every** prompt gets the same clickable picker (`buildIconPicker()` → `openIconPopover()`, a grid of `customMenuIcons` plus a first "restore default" cell) — special prompts included, so their hard-coded icon can be overridden. Selecting writes `custom_icon` on the in-memory prompt and calls `markUnsaved()`; it is persisted by the normal save flow (`_special_prompts` for special prompts, `_default_prompts_properties` for the rest). The preview is drawn by `applyIconToPreview(preview, filename, promptId)`, which falls back to `getBuiltInPromptIcon(promptId)` when no `custom_icon` is set. The first popover cell clears `custom_icon`, and previews the built-in icon (tooltip `menu_order_icon_default`, "Default icon") rather than an empty slot; it shows the greyscale `empty_icon.png` with tooltip `menu_order_icon_none` only for prompts that have no built-in icon, i.e. user-created custom ones. That placeholder carries an `icon_picker_none_empty` class so the dark-mode `filter: invert(1)` applies to it alone and never to a real color icon. Because `custom_icon` is a single shared value and the panels render the same prompt objects, an icon chosen in one panel shows in the other, at once: a pick (or the first cell) repaints every preview of that prompt in both panels (`applyIconToAllPreviews(promptId, filename)`), not only the one that opened the picker. Rendering the slot in all lists is what makes composing-only (`type: "2"`) prompts reachable, since they never appear in the context panel.
 
 **Row badges** — each row shows two colored badges (rendered in `renderListItems()`): a **type** badge (`.badge_type`) with the value Always / Reading / Composing (from `type` `0`/`1`/`2`), and a **source** badge with the value Default / Special / Custom (`.badge_default` / `.badge_special` / `.badge_custom`, from `is_default` / `is_special`). A static **legend** near the top of the page (`#badge_legend` in the HTML) explains both badge groups; it reuses the same badge CSS classes and i18n labels so its swatches match the rows automatically.
 
@@ -232,7 +531,11 @@ Both sections are draggable and act as drop targets; the section the row lands i
 
 **Hidden everywhere** — the `show_in` change is applied via `setPromptShowIn(prompt, newShowIn)`, which only sets `prompt.show_in`. A prompt with `show_in === "none"` is in no menu (unreachable), while its full configuration is preserved. A non-special prompt with `show_in === "none"` appears in the **Hidden section of both panels** (popup and context), dimmed, so it can be dragged back into any menu — this is the recovery path. There is no separate "disabled" state or badge.
 
-**Drag and drop (reorder)** — native HTML5 DnD assigns sequential position numbers (1, 2, 3, ...) to `position_display`, `position_compose`, or `position_context`. Positions are only meaningful for the Visible section; reordering within Hidden has no effect. During the drag the other rows are **not** reordered live: the dragged node stays in place (dimmed) and only an insertion indicator line is shown (top edge of the target row, or bottom edge of the last row when dropping at the end); the actual DOM move happens once on `drop`. This avoids the sluggishness of moving the node on every `dragover` tick.
+**Drag and drop (reorder)** — native HTML5 DnD assigns sequential position numbers (1, 2, 3, ...) to `position_display`, `position_compose`, or `position_context`. Positions are only meaningful for the Visible section; reordering within Hidden has no effect. During the drag the other rows are **not** reordered live: the dragged node stays in place (dimmed) and only an insertion indicator line is shown (top edge of the target row, or bottom edge of the last row when dropping at the end); the actual DOM move happens once on `drop`. This avoids the sluggishness of moving the node on every `dragover` tick. The drag listeners are attached **once** per panel: `initPanelDragAndDrop()` runs on every render, but wires the four (static) lists only the first time; later calls only update the position key, which in the popup panel follows the sub-tab (`position_display` / `position_compose`) and is read when the drag ends.
+
+**Prompts with no position** — a Visible prompt with no position for the list (typically the special prompts on a profile where nothing has been saved yet) is listed after every positioned one (it sorts as `9999`). At load, a prompt with no `position_context` is given one: its rank in the alphabetical order of all the listed prompts (by resolved name). Neither is written until Save All.
+
+**What marks the page unsaved** — every drag end does, including a reorder inside a Hidden section (which changes no position: positions only matter in Visible) and a drag released outside any list (the rows stay where they were; for a row of a Visible section, that list's positions are renumbered in their current order).
 
 **Exclusions from the UI** (preserved on save so data is not lost):
 - Special prompts whose base definition has `show_in: "none"` (internal prompts like `prompt_summarize_email_template` and `prompt_summarize_email_separator`) — retrieved via `getHiddenSpecialPromptIds()`
@@ -240,11 +543,11 @@ Both sections are draggable and act as drop targets; the section the row lands i
 
 **Cross-tab reload** — the page listens on `browser.storage.onChanged` for changes to `_default_prompts_properties`, `_custom_prompt`, or `_special_prompts`. When one of those keys changes (e.g. user saves from the Custom Prompts page in another tab), the page reloads its data with a 200ms debounce. Any unsaved local changes are discarded to avoid overwriting the other page's work; the reloader calls `markSaved()` so the page also drops its dirty state and does not warn about changes it just threw away.
 
-**Unsaved-changes tracking** — every mutating interaction (drag, icon pick, Reset all) funnels through `markUnsaved()`, which sets the module-level `somethingChanged` flag, enables `#btnSaveAll` and shows the red `customPrompts_unsaved_changes` banner in `#msgDisplay`. `markSaved()` is the inverse (flag cleared, button disabled, banner hidden). A `beforeunload` listener calls `event.preventDefault()` while `somethingChanged` is set, so closing the tab or navigating away with a pending Save All raises Thunderbird's native confirmation dialog — the same mechanism as the Custom Prompts and Custom Data Placeholders pages (Thunderbird 128+ only; the extension supplies no text for that dialog). Note `saveAll()` clears the flag **after** its `await`s complete, so a failed write leaves the warning armed.
+**Unsaved-changes tracking** — every mutating interaction (drag, icon pick, Reset all) funnels through `markUnsaved()`, which sets the module-level `somethingChanged` flag, enables `#btnSaveAll` and shows the red `customPrompts_unsaved_changes` banner in `#msgDisplay`. `markSaved()` is the inverse (flag cleared, button disabled, banner hidden). A `beforeunload` listener calls `event.preventDefault()` while `somethingChanged` is set, so closing the tab or navigating away with a pending Save All raises Thunderbird's native confirmation dialog — the same mechanism as the Custom Data Placeholders page (Thunderbird 128+ only; the extension supplies no text for that dialog). Note `saveAll()` clears the flag **after** its `await`s complete, so a failed write leaves the warning armed. A failed write is caught: `#msgDisplay` shows `menu_order_save_error` and the error in red, and `#btnSaveAll` (disabled while the write is in flight) is enabled again so the user can retry. While `saveAll()` is writing, `saveInProgress` makes the `storage.onChanged` reloader ignore the page's own writes (and the error path cancels a pending `reloadDebounce`): otherwise a save failing halfway, after one of the three stores was written, would reload the page 200 ms later and discard both the pending changes and the error message.
 
 **Reset all** — a `#btnResetAll` button in the command palette (next to Save All, always enabled) restores the factory state of everything this page customizes, via `resetAll()`:
 - **Order**: prompts are re-sorted with special prompts first (alphabetically by resolved display name), then all the others alphabetically, and get sequential positions assigned to `position_display` = `position_compose` = `position_context`. This is the same factory ordering `migrateMenuOrderAlphabetic()` produces for a fresh install.
-- **Visibility**: `show_in` is restored from `getFactoryShowIn(promptId)` (exported by `js/mzta-prompts.js`), which reads the value declared in the built-in `defaultPrompts` / `specialPrompts` arrays and falls back to `"popup"` for user-created custom prompts. So context-only special prompts (`prompt_spamfilter`, `prompt_summarize`, `prompt_translate_this`) land back in the popup panel's Hidden section, not the Visible one.
+- **Visibility**: `show_in` is restored from `getFactoryShowIn(promptId)` (exported by `js/mzta-prompts.js`), which reads the value declared in the built-in `defaultPrompts` / `specialPrompts` arrays and falls back to `"popup"` for user-created custom prompts. So a context-only special prompt (`prompt_spamfilter`) lands back in the popup panel's Hidden section, while `prompt_summarize` and `prompt_translate_this` (shipped `"both"`) land back in both panels' Visible sections.
 - **Icons**: `custom_icon` is cleared to `""` on every prompt, which is all that is needed — the resolution chain falls back to `getBuiltInPromptIcon()` (see Icon Resolution), so shipped icons return and prompts with no built-in icon go back to no icon.
 
 The reset is **in-memory only**: it closes any open icon popover, clears the deep-link highlight, re-renders both panels and calls `markUnsaved()` — exactly like a drag or an icon pick. Nothing is persisted until Save All, so reloading the page discards it; that is why there is no confirmation dialog. `allExcludedSpecialPrompts` is deliberately untouched, since those rows are not shown and are re-appended verbatim by the save flow.
@@ -254,7 +557,7 @@ The reset is **in-memory only**: it closes any open icon popover, clears the dee
 2. Split by `is_default` / `is_special` and call `setDefaultPromptsProperties()`, `setCustomPrompts()`, `setSpecialPrompts()`
 3. Send `reload_menus` to the background to rebuild both menus
 
-**"Menu position" deep-link** — the Custom Prompts editor (see [05-options.md](05-options.md)) has a per-row **Menu position** button (`revealPromptInMenuOrder(promptId)` in `js/mzta-utils.js`), located in the row's "Add to menu" cell (pinned to the bottom of the cell, below the Type/Action selectors, via a `.menu_cell_inner` flex column), that opens/focuses the Menu Order page and highlights every instance of that prompt. If the tab is already open, a `menu_order_highlight` runtime message tells the page to reload then highlight (sequencing the reload before the highlight, and cancelling the pending `storage.onChanged` debounce so it does not wipe the highlight). If the tab is not open, the target id is stashed in `browser.storage.session` under `menu_order_highlight_target` and picked up (read-and-deleted) after the page's initial load. The highlight (blue outline) is applied via `highlightPrompt()` / module-state `highlightTargetId` and re-applied on every render so it survives sub-tab switches and re-renders. It **persists** until another `highlightPrompt()` targets a different prompt or a drag starts (`clearHighlight()` on `dragstart`) — it does not time out. A background pulse plays briefly on entry as a visual cue.
+**"Menu position" deep-link** — the Custom Prompts editor (see [05-options.md](05-options.md)) has a **Menu position** button (`revealPromptInMenuOrder(promptId)` in `js/mzta-utils.js`) in the detail editor's header, centred between the prompt title and the action buttons, shown only for a prompt that already exists, that opens/focuses the Menu Order page and highlights every instance of that prompt. If the tab is already open, a `menu_order_highlight` runtime message tells the page to reload then highlight (sequencing the reload before the highlight, and cancelling the pending `storage.onChanged` debounce so it does not wipe the highlight). Like the cross-tab reload, it discards any unsaved change of the page and calls `markSaved()` first, so the page does not go on warning about changes it has thrown away. If the tab is not open, the target id is stashed in `browser.storage.session` under `menu_order_highlight_target` and picked up (read-and-deleted) after the page's initial load. The highlight (blue outline) is applied via `highlightPrompt()` / module-state `highlightTargetId` and re-applied on every render so it survives sub-tab switches and re-renders. It **persists** until another `highlightPrompt()` targets a different prompt or a drag starts (`clearHighlight()` on `dragstart`) — it does not time out. A background pulse plays briefly on entry as a visual cue.
 
 **Sub-tab awareness of the deep-link** — only one popup sub-tab is in the DOM at a time, so the highlight target may live in the inactive one. `promptInPopupView(prompt, view)` is the single source of truth for "does this prompt appear in this view" (reading → types `0`+`1`, composing → types `0`+`2`) and is used both by `renderPopupList()` and by the deep-link logic:
 
@@ -265,21 +568,21 @@ The reset is **in-memory only**: it closes any open icon popover, clears the dee
 
 The `dynamic_menu_order_alphabet` preference (previously a user-facing option) has been retired and removed from the UI, but the key still exists in storage as a one-shot migration flag. At every background startup, `migrateMenuOrderAlphabetic()` in `js/mzta-prompts.js` runs:
 
-1. Reads `dynamic_menu_order_alphabet` (defaults to `true` if unset)
-2. If `true`: sorts all visible prompts with special prompts first (alphabetically), then the rest (alphabetically), and assigns sequential `position_display` = `position_compose` = `position_context` numbers. Hidden special prompts are preserved untouched.
-3. Persists the new positions via `setDefaultPromptsProperties` / `setCustomPrompts` / `setSpecialPrompts`
-4. Sets `dynamic_menu_order_alphabet = false` in sync storage so the migration does not run again
+1. Reads `dynamic_menu_order_alphabet` from `browser.storage.local` (defaults to `true` if unset)
+2. If `true`: sorts every prompt except the hidden special prompts — special prompts first (alphabetically), then the rest (alphabetically) — and assigns sequential `position_display` = `position_compose` = `position_context` numbers. The hidden special prompts, the ones with `show_in: "none"` in their **base definition** (`getHiddenSpecialPromptIds()`: the summarize email template and separator), are preserved untouched. Every other prompt gets a position, including a prompt the user has hidden (`show_in: "none"`) and a special prompt whose feature is off: while hidden the position is unused (the Menu Order page lists hidden items alphabetically, the menus skip them), and if the prompt is shown again it already has a slot in the alphabetical order instead of none. Organization prompts get a position too, saved in `_default_prompts_properties`, and are never written to `_custom_prompt` (see Organization prompts above).
+3. Persists the new positions via `setDefaultPromptsProperties` / `setCustomPrompts` / `setSpecialPrompts`. The prompts are saved from the normalized view, so a stored prompt may gain the fields it lacked, at the defaults every read already applies: no stored value changes, and every prompt reads back as before, its positions aside. The one visible difference: a field the read view lacked may now hold its empty default `''` (today `custom_icon` of a built-in prompt that was never customized), which every reader treats exactly as the absent field
+4. Sets `dynamic_menu_order_alphabet = false` in `browser.storage.local` so the migration does not run again. The flag is read directly, not through `js/mzta-prefs.js` (it is not a preference), but it must sit in the same area as `PREFS_AREA`, and `migratePrefsToLocal()` carries it across from sync: since its default means "not yet run", reading it from an area the relocation did not fill would rerun the migration and overwrite the user's ordering (see [05-options.md](05-options.md))
 
 This ensures existing users upgrading from the previous alphabetical-default behaviour get the same visible ordering on first run, while subsequent launches keep whatever custom ordering the user has set.
 
 ### Enabled-to-show_in Migration
 
-The `enabled` prompt flag was removed (`show_in` is now the single source of truth). `migrateEnabledToShowIn()` in `js/mzta-prompts.js` runs once at background startup (after the sync→local storage-relocation migrations), guarded by the one-shot sync flag `_migrated_enabled_to_showin`. Across all three stores (`_default_prompts_properties`, `_custom_prompt`, `_special_prompts`) it applies `normalizeEnabledToShowIn()` to every prompt:
+The `enabled` prompt flag was removed (`show_in` is now the single source of truth). `migrateEnabledToShowIn()` in `js/mzta-prompts.js` runs once at background startup (after the sync→local storage-relocation migrations), guarded by the one-shot flag `_migrated_enabled_to_showin` in `browser.storage.local` (the `PREFS_AREA`, like `dynamic_menu_order_alphabet` above). Across all three stores (`_default_prompts_properties`, `_custom_prompt`, `_special_prompts`) it applies `normalizeEnabledToShowIn()` to every prompt:
 
-- if `enabled` is `0`/`"0"` → set `show_in = "none"` (the previous `show_in`, if any, is intentionally discarded — "off" collapses to "none"), then delete `enabled`
+- if `enabled` is `0`/`"0"`/`false` → set `show_in = "none"` (the previous `show_in`, if any, is intentionally discarded — "off" collapses to "none"), then delete `enabled`
 - otherwise (`1`/`"1"`/absent) → just delete `enabled`
 
-It is idempotent: the flag short-circuits reruns, and after it runs no `enabled` keys remain. The same `normalizeEnabledToShowIn()` is also applied by `preparePromptsForImport()` so legacy backups carrying `enabled === 0` import as `show_in === "none"`; `enabled` is never emitted on export.
+It is idempotent: the flag short-circuits reruns, and after it runs no `enabled` keys remain. The same `normalizeEnabledToShowIn()` is also applied by `preparePromptsForImport()` so legacy backups carrying `enabled === 0` import as `show_in === "none"`. `preparePromptsForExport()` does not strip `enabled` from a custom prompt that still carries it (a built-in drops it through its `allowedKeys`): after the migration no stored prompt has it, and an export that does is harmless, since the import normalizes it away.
 
 ### Special Prompt Visibility Dependencies
 
@@ -287,10 +590,41 @@ It is idempotent: the flag short-circuits reruns, and after it runs no `enabled`
 
 Each prompt requires **two** conditions: its feature flag is on, **and** its feature's connection can drive an API. The second is judged per feature, never globally: the function takes an `effective_conn` map — one already-resolved connection type per prefix in `special_prompts_with_integration` — and tests it with `isApiUsableConnection()`. `_computeActiveSpecialIds()` in `mzta-background.js` is the only caller; it builds the map with `getConnectionType(prefs, null, prefix)`, so a feature with `use_specific_integration` stays available even when the global connection is ChatGPT Web or unset. Getting this wrong hides working features from the menus while the options page still shows them enabled.
 
-The `storage.sync.get` feeding it **must** include `getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])`. Without those keys `getConnectionType()` reads `use_specific_integration` as `undefined` and silently falls back to the global connection — the failure is invisible at the call site, which still looks correct.
+The preference read feeding it **must** include `getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])`. Without those keys `getConnectionType()` reads `use_specific_integration` as `undefined` and silently falls back to the global connection — the failure is invisible at the call site, which still looks correct.
 
 Notable dependency:
 
+- `need_selected` of `prompt_get_calendar_event` is **derived from the `calendar_no_selection`
+  preference** on every read, by `applyCalendarNoSelection()` at the end of
+  `getSpecialPrompts()` — the narrowest point every consumer (menus, popup, `loadPrompt()`,
+  the feature pages, `buildSummaryPrompt()`/`buildTranslationPrompt()`) goes through. The
+  preference is policy-settable, and a value derived from a policy must never be written to
+  storage. The overlaid value does reach storage when a feature page writes the whole
+  `_special_prompts` array back, which is harmless: no reader trusts the stored value, every
+  read overwrites it again. `prompt_get_calendar_event_from_clipboard` is not overlaid: its
+  `need_selected` is always `"0"`, since the clipboard replaces both selection and body.
+- The **provider override** (`api_type` + `{integration}_{key}`) of a feature's special
+  prompts is hidden on every read by `applyLockedOffIntegrations()`, also at the end of
+  `getSpecialPrompts()`, when the policy locks `{prefix}_use_specific_integration` to
+  `false`. Unlike `need_selected`, this overlay must **not** reach storage — it would erase
+  the user's override — so `setSpecialPrompts()` restores the stored override fields of
+  those prompts before writing. See [04-api-integrations.md](04-api-integrations.md#when-a-policy-locks-the-override-off).
+- The provider override can also be **supplied** by the policy (`_special_prompts_connection`):
+  `applyPolicyConnections()`, the third overlay, puts the administrator's `api_type` and fields
+  on the feature's prompts (enforced fields always, unlocked ones only where the prompt has no
+  value) and sets the transient `_connection_by_policy` marker. It must **not** reach storage
+  either: `setSpecialPrompts()` puts back the stored `api_type` and enforced fields, and keeps an
+  unlocked field that still holds the policy value out unless the writer marked it as the
+  user's own choice (`_user_fields`), with `keepStoredConnections()`. It can
+  never apply to the same prompt as the locked-off overlay. See
+  [08b-managed-connections.md](08b-managed-connections.md#enforced-per-feature-connections-_special_prompts_connection).
+- The **text** of any special prompt can be enforced by the policy (`_special_prompts_text`),
+  and is overlaid by `applyEnforcedTexts()`, the fourth and last overlay at the end of
+  `getSpecialPrompts()`, which also sets the transient `_text_by_policy` marker. Like the
+  provider override it must **not** reach storage: `setSpecialPrompts()` puts back the stored
+  (or shipped) text of every enforced id with `keepStoredTexts()`, so the user's text
+  returns exactly when the policy is removed. See
+  [08a-managed-prompts.md](08a-managed-prompts.md#enforced-special-prompt-texts-_special_prompts_text).
 - `prompt_get_calendar_event_from_clipboard` is emitted only if **both** `get_calendar_event` and `get_calendar_event_from_clipboard` are active. If `get_calendar_event` is off, neither calendar prompt is shown regardless of the clipboard pref. Both share the `get_calendar_event` prefix for the connection check.
 
 ### Summarize: Dual-Mode Prompt System
@@ -313,12 +647,16 @@ The summarize feature uses two distinct prompt pathways:
 - Does **not** support `chatgpt_web` connection type (shows error if configured)
 - Result is rendered as a styled banner at the top of the message body via `mzta-compose-script.js`
 - Banner includes a refresh button (↻) to regenerate the summary
-- Cached per-message via `taSummaryStore` / `taStorage` (max 100 entries)
+- Cached per-message via `taSummaryStore` / `taStorage`. Not truncated at the moment: the store has a 100-entry truncation that nothing calls (see [01-architecture.md](01-architecture.md#per-message-data-storage))
 
 **Unified Prompt Building** — `taPromptUtils.buildSummaryPrompt(messageDataArray)`:
 - All summary paths (inline, webchat single, webchat multi) use this single method
 - Accepts an array of `{ message, fullMessage }` entries
 - Returns `{ promptText, promptInfo }` where `promptInfo` is the `prompt_summarize` prompt object
+- Language: `taPromptUtils.getSummaryLang(prompt_summarize)` returns `{ chatgpt_lang, force_lang_statement }`.
+  - `chatgpt_lang` is passed to every `preparePrompt()` call (main prompt, separator, each email block), as before. With `summarize_force_lang` off it is `getDefaultLang(prompt_summarize)` (normally `''`, since `define_response_lang` is `"0"`), so the prompt is byte-identical to the pre-option one. With the flag on it is `''`, so it can't contradict the forced language.
+  - `force_lang_statement` is `prompt_summarize_force_lang + " " + (summarize_lang || default_chatgpt_lang) + "."` when the flag is on, `''` otherwise or when both languages are empty (never `reply_same_lang`). It is appended **once**, at the very end of the whole prompt after the last email, preceded by `\n\n`. Deliberately **not** after each email: `preparePrompt()` joins `chatgpt_lang` to the email body with a single space, so there it reads as part of the email text.
+  - The default prompt texts are not touched (they are localised and frozen in `_special_prompts`).
 
 ### Translate: Inline-Only Prompt System
 
@@ -334,7 +672,7 @@ The translate feature uses a single special prompt (`prompt_translate_this`) for
 - Does **not** support `chatgpt_web` connection type (shows error if configured)
 - Result is rendered as a styled banner (green/teal theme) in the message body via `mzta-compose-script.js`
 - Banner includes refresh (↻) and delete (×) buttons
-- Cached per-message via `taTranslationStore` / `taStorage` (max 100 entries)
+- Cached per-message via `taTranslationStore` / `taStorage`. Not truncated at the moment: the store has a 100-entry truncation that nothing calls (see [01-architecture.md](01-architecture.md#per-message-data-storage))
 - The prompt was originally a regular prompt (`defaultPrompts`) and was moved to `specialPrompts` with `is_special: "1"` and `type: "1"` (reading email only)
 
 **Prompt Building** — `taPromptUtils.buildTranslationPrompt(fullMessage, messageId)`:
@@ -343,7 +681,12 @@ The translate feature uses a single special prompt (`prompt_translate_this`) for
   alongside `fullMessage` on **both** of its branches, and its `options.messageData` now requires
   `message` as well as `fullMessage`.
 - Retrieves the `prompt_translate_this` special prompt text
-- Resolves placeholders via `placeholdersUtils.getPlaceholdersValues()` + `replacePlaceholders()`
+- Resolves placeholders via `placeholdersUtils.getPlaceholdersValues()` + `replacePlaceholders()`,
+  **always with the default values** (`use_default_value: true`), whatever
+  `placeholders_use_default_value` says: an empty value becomes `""`, never the literal token. The
+  preference is for the prompts the user writes; in this fixed-structure feature prompt a literal
+  token is never useful, and with the default empty `translate_exclude_lang` it would reach the AI as
+  `"{%thunderai_translate_exclude_lang%}"`, as if it were a language
 - Returns `{ promptText, promptInfo }`
 
 ## Prompt Types Reference
@@ -367,7 +710,7 @@ action 2  → replace selected text (or insert) in compose window
 1. Add the prompt object to the `defaultPrompts` array in `js/mzta-prompts.js`
 2. Add the `name` string key to `_locales/en/messages.json`
 3. If the prompt text needs a localized string, add it to `_locales/en/messages.json` as well
-4. Reference any needed placeholders using `{%placeholder_id%}` syntax in the `prompt` field
+4. Reference any needed placeholders using `{%placeholder_id%}` syntax in the `text` property (the prompt body)
 
 ## Custom Prompts
 

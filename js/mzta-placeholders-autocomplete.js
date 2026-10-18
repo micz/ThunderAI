@@ -251,7 +251,12 @@ export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
         }
         const lastWord = match[0];
         let type = type_value;
-        if (type_value === -1) {
+        if (typeof type_value === 'function') {
+            // A getter: the page resolves the type itself, lazily, on every
+            // keystroke. Used by the Custom Prompts detail editor, which is not a
+            // table row and so has no closest('tr') to search.
+            type = type_value();
+        } else if (type_value === -1) {
             // Resolve the prompt type lazily from the row, so changing the
             // selector mid-edit takes effect immediately. Uses closest() rather
             // than a fixed parentNode chain: the editor markup nests the
@@ -277,7 +282,11 @@ export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
         const prefixed = [];
         const contained = [];
         for (const s of suggestions) {
-            if (String(s.type) !== String(type) && String(s.type) !== '0') continue;
+            // A placeholder with no type counts as '0' ("always"), as in findPlaceholder(): a
+            // custom one imported without the field is usable everywhere, so it is offered too.
+            const sType = (s.type === null || s.type === undefined || String(s.type).trim() === '')
+                ? '0' : String(s.type);
+            if (sType !== String(type) && sType !== '0') continue;
             const at = s.command.slice(SIGIL).toLowerCase().indexOf(needle);
             if (at < 0) continue;
             (at === 0 ? prefixed : contained).push({ s, at: at + SIGIL });

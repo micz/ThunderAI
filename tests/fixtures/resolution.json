@@ -1,0 +1,15 @@
+{
+  "_schema_version": 1,
+  "_org_name": "ACME",
+  "connection_type": "chatgpt_api",
+  "default_sign_name": "ACME Staff",
+  "chatgpt_model": "gpt-org",
+  "chatgpt_model:locked": false,
+  "reply_type": "reply_sender",
+  "reply_type:locked": false,
+  "spamfilter_threshold": 90,
+  "spamfilter_threshold:locked": false,
+  "add_tags_maxnum": 5,
+  "add_tags_maxnum:locked": true,
+  "chatgpt_api_key": "sk-org-SECRET-resolution"
+}

@@ -17,7 +17,7 @@
  */
 
 import {
-    getPrompts,
+    getPromptsForMenuOrder,
     setDefaultPromptsProperties,
     setCustomPrompts,
     setSpecialPrompts,
@@ -45,6 +45,10 @@ let reloadDebounce = null;
 // True when the in-memory state differs from what is stored, i.e. Save All is
 // pending. Guards the beforeunload warning, like on the custom prompts page.
 let somethingChanged = false;
+// True while saveAll() is writing: the storage.onChanged reloader must not take the page's
+// own writes for another tab's, or a write that fails halfway would reload the page and
+// throw away both the pending changes and the error saying so.
+let saveInProgress = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadAndRender();
@@ -57,6 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Any unsaved changes on this page are discarded to avoid overwriting the other page's changes.
     browser.storage.onChanged.addListener((changes, areaName) => {
         if (areaName !== 'local') return;
+        if (saveInProgress) return;
         if (!(changes._default_prompts_properties || changes._custom_prompt || changes._special_prompts)) return;
         clearTimeout(reloadDebounce);
         reloadDebounce = setTimeout(() => {
@@ -80,6 +85,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     browser.runtime.onMessage.addListener((message) => {
         if (message && message.command === 'menu_order_highlight') {
             clearTimeout(reloadDebounce);
+            // The reload discards any unsaved change, as the storage reloader does: drop
+            // the dirty state with it, or the page would go on warning about changes it
+            // has just thrown away.
+            markSaved();
             (async () => {
                 await loadAndRender();
                 highlightPrompt(message.promptId);
@@ -100,7 +109,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadAndRender() {
-    allPrompts = await getPrompts(false, [], true);
+    // getPromptsForMenuOrder(), not getPrompts(): saveAll() below rewrites _custom_prompt
+    // (and _special_prompts) wholesale from this list, so it must contain every prompt the
+    // user owns - including the ones an org prompt shadows and the ones a policy has made
+    // inert. Those arrive flagged (_shadowed_by_org / _inert_by_policy /
+    // _default_inert_by_policy) and are rendered as inactive rather than hidden.
+    allPrompts = await getPromptsForMenuOrder();
 
     // Exclude special prompts that are defined with show_in: "none" (internal prompts, not user-toggleable)
     // and special prompts whose feature is not active (e.g. add_tags disabled, sparks not present)
@@ -304,7 +318,17 @@ function renderListItems(listEl, items, menuType, isActive) {
         li.dataset.id = prompt.id;
         li.dataset.menu = menuType;
         li.dataset.active = isActive ? '1' : '0';
-        li.draggable = true;
+
+        // A prompt that cannot be invoked at all: an org prompt has taken its id, or a
+        // policy has made the user's own prompts inert, or a policy has taken the built-in
+        // prompts out of the menus. It is listed - it must be, so saveAll() writes it back
+        // instead of deleting it - but ordering it would be meaningless, so it is shown
+        // dimmed, with a reason, and cannot be dragged.
+        const is_inactive = (prompt._shadowed_by_org === true)
+            || (prompt._inert_by_policy === true)
+            || (prompt._default_inert_by_policy === true);
+        li.draggable = !is_inactive;
+        if (is_inactive) li.classList.add('item_inactive');
 
         // Drag handle
         const handle = document.createElement('span');
@@ -342,6 +366,12 @@ function renderListItems(listEl, items, menuType, isActive) {
         if (String(prompt.is_special) === '1') {
             sourceBadge.classList.add('badge_special');
             sourceBadge.textContent = browser.i18n.getMessage('menu_order_badge_special');
+        } else if (String(prompt.is_org) === '1') {
+            // Supplied by the enterprise policy. Its content is read-only, but its menu
+            // position and visibility are the user's own and are reordered here like any
+            // other prompt - they ride in _default_prompts_properties, as for a built-in.
+            sourceBadge.classList.add('badge_org');
+            sourceBadge.textContent = browser.i18n.getMessage('menu_order_badge_org');
         } else if (String(prompt.is_default) === '1') {
             sourceBadge.classList.add('badge_default');
             sourceBadge.textContent = browser.i18n.getMessage('menu_order_badge_default');
@@ -350,6 +380,17 @@ function renderListItems(listEl, items, menuType, isActive) {
             sourceBadge.textContent = browser.i18n.getMessage('menu_order_badge_custom');
         }
         li.appendChild(sourceBadge);
+
+        // Why the row is greyed out. Without it a dimmed, undraggable row reads as a bug.
+        if (is_inactive) {
+            const inactiveBadge = document.createElement('span');
+            inactiveBadge.classList.add('badge', 'badge_inactive');
+            inactiveBadge.textContent = browser.i18n.getMessage(
+                (prompt._inert_by_policy === true || prompt._default_inert_by_policy === true)
+                    ? 'menu_order_badge_policy_inactive'
+                    : 'menu_order_badge_shadowed');
+            li.appendChild(inactiveBadge);
+        }
 
         listEl.appendChild(li);
     });
@@ -392,6 +433,13 @@ function applyIconToPreview(preview, filename, promptId) {
         preview.src = '../../' + customMenuIconsPath + 'empty_icon.png';
         preview.classList.add('item_icon_preview_empty');
     }
+}
+
+// custom_icon is one value shared by every row of the prompt, in both panels: repaint
+// them all at once, not only the preview that opened the picker.
+function applyIconToAllPreviews(promptId, filename) {
+    document.querySelectorAll(`.sortable_item[data-id="${CSS.escape(promptId)}"] img.item_icon_preview`)
+        .forEach(preview => applyIconToPreview(preview, filename, promptId));
 }
 
 function buildIconPicker(prompt) {
@@ -441,7 +489,7 @@ function openIconPopover(anchorEl, prompt) {
     if (!prompt.custom_icon) noneBtn.classList.add('selected');
     noneBtn.addEventListener('click', () => {
         prompt.custom_icon = '';
-        applyIconToPreview(anchorEl, '', prompt.id);
+        applyIconToAllPreviews(prompt.id, '');
         markUnsaved();
         closeIconPopover();
     });
@@ -461,7 +509,7 @@ function openIconPopover(anchorEl, prompt) {
 
         btn.addEventListener('click', () => {
             prompt.custom_icon = filename;
-            applyIconToPreview(anchorEl, filename);
+            applyIconToAllPreviews(prompt.id, filename);
             markUnsaved();
             closeIconPopover();
         });
@@ -519,10 +567,21 @@ function setPromptShowIn(prompt, newShowIn) {
 // item can cross between them: dropping into the active list makes the prompt
 // visible in that menu, dropping into the hidden list removes it from that menu
 // (and disables the prompt if it becomes hidden everywhere).
+//
+// Called on every render, but the listeners are added only the first time: the four lists
+// are static elements, and wiring them again on each render stacked one more set of drag
+// handlers per render. A later call only updates the position key, which in the popup
+// panel follows the sub-tab (position_display / position_compose).
+const panelDragState = {};
 function initPanelDragAndDrop(menuType, activeList, hiddenList, positionKey) {
-    const state = { draggedItem: null, afterElement: null };
-    wireDragList(activeList, true, menuType, positionKey, state);
-    wireDragList(hiddenList, false, menuType, positionKey, state);
+    if (panelDragState[menuType]) {
+        panelDragState[menuType].positionKey = positionKey;
+        return;
+    }
+    const state = { draggedItem: null, afterElement: null, positionKey };
+    panelDragState[menuType] = state;
+    wireDragList(activeList, true, menuType, state);
+    wireDragList(hiddenList, false, menuType, state);
 }
 
 // Remove any insertion indicators (top line / bottom-of-list line) from a list.
@@ -532,7 +591,7 @@ function clearDropIndicators(listEl) {
     });
 }
 
-function wireDragList(listEl, isActiveList, menuType, positionKey, state) {
+function wireDragList(listEl, isActiveList, menuType, state) {
     listEl.addEventListener('dragstart', (e) => {
         const li = e.target.closest('.sortable_item');
         if (!li) return;
@@ -605,7 +664,7 @@ function wireDragList(listEl, isActiveList, menuType, positionKey, state) {
             // Stayed within the same list: pure reorder. Positions are only
             // meaningful for the active list.
             if (droppedInActive) {
-                updatePositionsFromDOM(li.parentElement, positionKey);
+                updatePositionsFromDOM(li.parentElement, state.positionKey);
             }
             markUnsaved();
             return;
@@ -620,7 +679,7 @@ function wireDragList(listEl, isActiveList, menuType, positionKey, state) {
         // If it landed in the active list, capture the drop position so the item
         // keeps where the user dropped it (positions drive active-list order).
         if (droppedInActive) {
-            updatePositionsFromDOM(li.parentElement, positionKey);
+            updatePositionsFromDOM(li.parentElement, state.positionKey);
         }
         markUnsaved();
         // Re-render so badges/positions and the item's section settle.
@@ -694,13 +753,36 @@ async function saveAll() {
     const msgDisplay = document.getElementById('msgDisplay');
     btnSaveAll.disabled = true;
 
-    const defaultPromptsToSave = allPrompts.filter(p => String(p.is_default) === '1' && String(p.is_special) !== '1');
-    const customPromptsToSave = allPrompts.filter(p => String(p.is_default) === '0' && String(p.is_special) !== '1');
+    // Organization prompts are policy-supplied and must never be written to storage:
+    // setCustomPrompts() replaces the whole _custom_prompt array with what it is given, so
+    // an org prompt left in this filter would be copied into the user's own prompts and
+    // stop being declarative. Their menu position and visibility DO belong to the user
+    // though, and ride along in _default_prompts_properties exactly like a built-in's -
+    // which is why they go into defaultPromptsToSave and not into customPromptsToSave.
+    const defaultPromptsToSave = allPrompts.filter(p =>
+        (String(p.is_default) === '1' || String(p.is_org) === '1') && String(p.is_special) !== '1');
+    const customPromptsToSave = allPrompts.filter(p =>
+        String(p.is_default) === '0' && String(p.is_special) !== '1' && String(p.is_org) !== '1');
     const specialPromptsToSave = allPrompts.filter(p => String(p.is_special) === '1').concat(allExcludedSpecialPrompts);
 
-    await setDefaultPromptsProperties(defaultPromptsToSave);
-    await setCustomPrompts(customPromptsToSave);
-    await setSpecialPrompts(specialPromptsToSave);
+    saveInProgress = true;
+    try {
+        await setDefaultPromptsProperties(defaultPromptsToSave);
+        await setCustomPrompts(customPromptsToSave);
+        await setSpecialPrompts(specialPromptsToSave);
+    } catch (err) {
+        // What is on screen is not (all) in storage: say so, keep the warning armed and
+        // give Save All back, so the user can try again.
+        console.error('[ThunderAI | menu order] Saving failed: ' + err);
+        clearTimeout(reloadDebounce);
+        btnSaveAll.disabled = false;
+        msgDisplay.textContent = browser.i18n.getMessage('menu_order_save_error') + ' ' + err;
+        msgDisplay.style.display = 'inline';
+        msgDisplay.style.color = 'red';
+        return;
+    } finally {
+        saveInProgress = false;
+    }
 
     await browser.runtime.sendMessage({ command: "reload_menus" });
 

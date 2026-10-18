@@ -1,0 +1,65 @@
+X-Mozilla-Status: 0001
+X-Mozilla-Status2: 00000000
+Delivered-To: destinatario@example.com
+Received: by 2002:a05:7110:3f8b:b0:5d2:47e:1c94 with SMTP id k42csp9081733qta;
+        Tue, 14 Apr 2026 09:47:19 -0700 (PDT)
+X-Received: by 2002:a05:600c:8e17:b0:3c7:d41:92af with SMTP id 7e3a90c2d1155-3c70d4192afmr48210337e9.21.1776185239114;
+        Tue, 14 Apr 2026 09:47:19 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1776185239; cv=none;
+        d=google.com; s=arc-20260115;
+        b=Qx7LmT2vRk9PzW4hYc8NbF3jDs6UaE1oGi5KwXn0MeVrBt7yHq2ZpCl4JfSd8Ao
+         [...firma rimossa...]
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260115;
+        h=mime-version:date:content-transfer-encoding:message-id:subject:to
+         :from:dkim-signature;
+        bh=Zt8kP3wQx1Lm7RvN0sYc5HbJ2gDf9UaE4oTi6KyWnXc=;
+        fh=Hq4Lz8Vm2Tp6Rw1Ks9Nc3Yb7Jf5Gd0Ue8Ao4Ix2Ws6E=;
+        b=Mn3Rk8Px2Wq7Lt5Vz9Hc1Yb4Jf6Gd0Us3Ae8Io2Kw7Nr5Tm9Lp1Qx4Zv6Hc8Yb2
+         [...firma rimossa...]
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@example.com header.s=20260101 header.b="Xk4Rt9Pw";
+       spf=pass (google.com: domain of mittente@example.com designates 203.0.113.57 as permitted sender) smtp.mailfrom=mittente@example.com;
+       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=example.com;
+       dara=pass header.i=@example.com
+Return-Path: <mittente@example.com>
+Received: from mail-relay-x12.example.net (mail-relay-x12.example.net. [203.0.113.57])
+        by mx.example.net with SMTPS id a81c3e7f29d04-3b72e915c08sor4471902f8f.29.2026.04.14.09.47.18
+        for <destinatario@example.com>
+        (Google Transport Security);
+        Tue, 14 Apr 2026 09:47:19 -0700 (PDT)
+Received-SPF: pass (google.com: domain of mittente@example.com designates 203.0.113.57 as permitted sender) client-ip=203.0.113.57;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@example.com header.s=20260101 header.b="Xk4Rt9Pw";
+       spf=pass (google.com: domain of mittente@example.com designates 203.0.113.57 as permitted sender) smtp.mailfrom=mittente@example.com;
+       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=example.com;
+       dara=pass header.i=@example.com
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=example.com; s=20260101; t=1776185238; x=1776790038;
+        h=content-type:content-type:mime-version:date
+         :content-transfer-encoding:message-id:subject:to:from:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=Zt8kP3wQx1Lm7RvN0sYc5HbJ2gDf9UaE4oTi6KyWnXc=;
+        b=Xk4Rt9PwLm2Vq7Hz5Nc8Yb1Jf3Gd6Us0Ae4Io9Kw2Nr7Tm5Lp8Qx1Zv3Hc6Yb9
+         [...firma rimossa...]
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260301; t=1776185238; x=1776790038;
+        [...firma rimossa...]
+X-Gm-Message-State: AFq9FYTk2Lx8Rm4Pq7Vz1Hc5Nb9Jf3Gd6Us0Ae4Io8Kw2Nr7Tm5Lp
+X-Received: by 2002:a05:6000:7f31:b0:2e9:c84d:1b52 with SMTP id a81c3e7f29d04-3b72d0e4f17mr51873920f8f.12.1776185238607;
+        Tue, 14 Apr 2026 09:47:18 -0700 (PDT)
+Return-Path: <mittente@example.com>
+Received: from [127.0.0.1] ([198.51.100.142])
+        by smtp.example.com with ESMTPSA id a81c3e7f29d04-3b72f0a83d6sm91740352f8f.44.2026.04.14.09.47.17
+        for <destinatario@example.com>
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 14 Apr 2026 09:47:17 -0700 (PDT)
+From: mittente@example.com
+To: destinatario@example.com
+Subject: Aggiornamento settimanale
+Message-ID: <c3e81f07-5d29-4a6b-b1f4-82e07d9a3c15@example.com>
+Content-Transfer-Encoding: 8bit
+Date: Tue, 14 Apr 2026 16:47:18 +0000
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+
+<p>Buongiorno,</p><p>ecco il riepilogo della settimana. Tutto procede secondo i piani e non ci sono criticità da segnalare al momento.</p><p>Grazie.</p>

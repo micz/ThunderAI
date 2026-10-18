@@ -39,6 +39,12 @@
 //                break kept. The old router forced such an answer down one of two
 //                pure branches, each of which lost half of it.
 //
+// One exception to "a '\n' is a <br>": a model that echoes the <br> of an HTML
+// placeholder ({%selected_html%}) usually writes a newline after it too, and
+// "Ciao,<br>\ngrazie" would render as "Ciao,<br><br>\ngrazie" - a blank line in
+// the mail. The break right after a raw <br> is therefore turned back into a plain
+// "\n" by a core rule (collapseEchoedBrBreaks), see getMarkdownIt().
+//
 // html:true disables markdown-it's escaping, so the output is now UNTRUSTED model
 // HTML on its way into outgoing mail. It MUST cross the sanitizer - the same ONE
 // allowlist walk everything else uses (js/mzta-richtext.js). Code fences are still
@@ -81,8 +87,128 @@ const CLOSE_THINK_RE = /<\/think>/i;
 // but module evaluation order relative to it is not something to rely on.
 let _md = null;
 function getMarkdownIt() {
-    if (_md === null) { _md = window.markdownit({ html: true, breaks: true }); }
+    if (_md === null) {
+        _md = window.markdownit({ html: true, breaks: true });
+        _md.core.ruler.after('inline', 'mzta_echoed_br', collapseEchoedBrBreaks);
+        _md.core.ruler.after('block', 'mzta_html_block_lines', breakHtmlBlockLines);
+    }
     return _md;
+}
+
+// ── Raw HTML blocks: the model's newlines between two pieces of text ──────────
+//
+// A line that OPENS with a block-level tag ("<div>Ciao\ngrazie</div>"), or with
+// any complete tag alone on its line ("<br>" then text lines), is an html_block:
+// markdown-it passes it through raw and breaks:true never applies, so the
+// model's newlines inside it were HTML whitespace and the lines reached the chat
+// and the mail welded ("Ciao grazie"). This rule gives such a block the same
+// reading breaks:true gives a paragraph - a newline the model wrote is a line
+// break - but only where the newline really sits between two pieces of text on
+// one line, which is what keeps HTML's own formatting out of it:
+//
+//   before   text, possibly through inline tags ("Ciao <b>Mario</b>\n"); NOT a
+//            block tag or a <br>, which end their line already - so "<p>\n",
+//            "</li>\n" and the echoed "Ciao,<br>\ngrazie" are left alone;
+//   after    text or an inline opening tag, RIGHT after the newline. A newline
+//            followed by indentation is pretty-printing ("<p>\n  Ciao\n  grazie")
+//            and stays whitespace, as a browser shows it.
+//
+// The content of <pre>, <textarea>, <script>, <style>, <xmp>, <listing>,
+// <plaintext> and <code>, and comments, is never touched. It works on the
+// token's content, inside the parser - not a pass over the rendered output, which
+// would also see the "<br>\n" markdown-it writes itself.
+function breakHtmlBlockLines(state) {
+    for (const token of state.tokens) {
+        if (token.type === 'html_block') { token.content = htmlBlockWithLineBreaks(token.content); }
+    }
+}
+
+// A comment, or a tag (quoted attribute values may hold '>'). Captured, so split()
+// alternates text (even indexes) and markup (odd indexes).
+const HTML_PART_RE = /(<!--[\s\S]*?-->|<\/?[A-Za-z][^"'>]*(?:(?:"[^"]*"|'[^']*')[^"'>]*)*>)/;
+const HTML_INLINE_TAG_RE = /^<\/?(?:a|abbr|b|bdi|bdo|big|cite|code|data|del|dfn|em|font|i|ins|kbd|mark|q|s|samp|small|span|strike|strong|sub|sup|time|tt|u|var)\b/i;
+// Elements whose content is left exactly as written: whitespace is meaningful
+// (pre & co.), or is not text at all (script, style).
+const HTML_RAW_OPEN_RE = /^<(pre|textarea|script|style|xmp|listing|plaintext|code)\b/i;
+// A newline, with the trailing spaces of its line.
+const HTML_NEWLINE_RE = /[ \t]*\n/g;
+
+function htmlBlockWithLineBreaks(html) {
+    const parts = html.split(HTML_PART_RE);
+    // Whether the next non-comment part starts, right away, with text or an
+    // inline opening tag.
+    const textFollows = (from) => {
+        for (let j = from; j < parts.length; j++) {
+            const part = parts[j];
+            if (j % 2 === 1) {
+                if (part.startsWith('<!--')) { continue; }
+                return HTML_INLINE_TAG_RE.test(part) && !part.startsWith('</');
+            }
+            if (part !== '') { return /^\S/.test(part); }
+        }
+        return false;
+    };
+    let lineHasText = false;     // text since the last block tag / <br> / newline
+    let rawClose = null;         // inside a raw element: the closing tag awaited
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        if (i % 2 === 1) {
+            if (rawClose) {
+                if (part.toLowerCase().startsWith(rawClose)) {
+                    // </code> closes inline content; the others close a block.
+                    lineHasText = (rawClose === '</code');
+                    rawClose = null;
+                }
+                continue;
+            }
+            if (part.startsWith('<!--')) { continue; }
+            const raw = part.match(HTML_RAW_OPEN_RE);
+            if (raw) { rawClose = '</' + raw[1].toLowerCase(); continue; }
+            if (!HTML_INLINE_TAG_RE.test(part)) { lineHasText = false; }
+            continue;
+        }
+        if (rawClose || part === '') { continue; }
+        parts[i] = part.replace(HTML_NEWLINE_RE, (nl, offset) => {
+            const before = part.slice(0, offset);
+            const lastLine = before.slice(before.lastIndexOf('\n') + 1);
+            const hasBefore = before.includes('\n') ? /\S/.test(lastLine) : (lineHasText || /\S/.test(before));
+            const after = part.slice(offset + nl.length);
+            const hasAfter = (after !== '') ? /^\S/.test(after) : textFollows(i + 1);
+            return (hasBefore && hasAfter) ? '<br>\n' : nl;
+        });
+        const tail = part.slice(part.lastIndexOf('\n') + 1);
+        lineHasText = part.includes('\n') ? /\S/.test(tail) : (lineHasText || /\S/.test(part));
+    }
+    return parts.join('');
+}
+
+// A raw <br> tag the model wrote, as markdown-it isolates it in an html_inline token.
+const ECHOED_BR_RE = /^<br\s*\/?>$/i;
+
+// Core rule, after 'inline': a softbreak (or a hardbreak, "<br>  \n") right after a
+// raw <br> is the newline the model wrote after that <br>, not a second line break.
+// It becomes a "\n" text token - plain HTML whitespace, so the output is exactly
+// the "<br>\n" markdown-it writes for a bare newline. NOT dropped: whatever later
+// drops the <br> itself (a mail client's own HTML-to-text conversion) still finds
+// whitespace between the two lines instead of welding them ("a<br>b" -> "ab").
+// Code spans, code blocks and raw HTML blocks are tokens of their own, so a <br>
+// written inside them is never looked at here (raw HTML blocks have their own
+// rule, breakHtmlBlockLines).
+function collapseEchoedBrBreaks(state) {
+    for (const token of state.tokens) {
+        if (token.type !== 'inline' || !token.children) { continue; }
+        const children = token.children;
+        for (let i = 1; i < children.length; i++) {
+            const child = children[i];
+            const prev = children[i - 1];
+            if ((child.type === 'softbreak' || child.type === 'hardbreak') &&
+                prev.type === 'html_inline' && ECHOED_BR_RE.test(prev.content)) {
+                const text = new state.Token('text', '', 0);
+                text.content = '\n';
+                children[i] = text;
+            }
+        }
+    }
 }
 
 // The ONE render path. markdown-it (html:true) may pass raw model HTML through, so
@@ -135,6 +261,13 @@ export class StreamingMessage {
 
     handleNewThinkingToken(token) {
         this._thinkingAccumulator += token;
+    }
+
+    // Whether any reasoning arrived through newThinkingToken. A response made only of
+    // thinking tokens has no content token to open its accumulating element, so the
+    // caller asks this before the final flush.
+    hasThinking() {
+        return this._thinkingAccumulator !== '';
     }
 
     // Immutable snapshot of the HTML accrued so far. Plain string (never a live

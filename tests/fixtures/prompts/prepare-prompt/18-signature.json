@@ -1,0 +1,18 @@
+{
+  "description": "need_signature 1 with a placeholder: the resolved text, then the signature statement",
+  "spec": [
+    "spec 02 \"How the final prompt is built (`preparePrompt()`)\": with placeholders, \" \" + signature appended; signature = sign_msg_as + \" \" + name + \".\" (en: sign_msg_as = \"Sign the message as\")"
+  ],
+  "storage": {
+    "default_sign_name": "Mic Zelco"
+  },
+  "args": {
+    "curr_prompt": {
+      "id": "prompt_user",
+      "text": "Reply to: {%mail_text_body%}",
+      "need_signature": "1"
+    },
+    "body_text": "Are you coming?"
+  },
+  "expected": "Reply to: Are you coming? Sign the message as Mic Zelco."
+}

@@ -1,0 +1,10 @@
+{
+  "description": "A dynamic placeholder: {%mail_headers:x-spam-score%} is the X-Spam-Score header value",
+  "spec": ["spec 03 \"Dynamic Placeholders\": {%mail_headers:x-spam-score%} fetches the X-Spam-Score header value"],
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "The spam score is {%mail_headers:x-spam-score%}. Is it spam? {%mail_text_body%}", "need_signature": "0" },
+    "curr_message": { "id": 7 },
+    "body_text": "Win a prize"
+  },
+  "expected": "The spam score is 4.2. Is it spam? Win a prize"
+}
