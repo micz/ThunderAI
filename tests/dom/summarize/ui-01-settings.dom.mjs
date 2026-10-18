@@ -118,6 +118,25 @@ k.test('max-messages-zero', S_PAGE, 'the max messages field accepts 0 (no limit)
     assert.strictEqual(writtenSince(ctx, since).summarize_max_messages, 0);
 });
 
+k.test('max-messages-empty', S_PAGE, 'an emptied max messages field stores the default, never null, and shows it', async () => {
+    const since = ctx.ctl.calls.length;
+    await userSets(ctx, $('#summarize_max_messages'), '');
+    const d = ctx.mods.prefs_default.summarize_max_messages;
+    assert.strictEqual(writtenSince(ctx, since).summarize_max_messages, d);
+    assert.equal($('#summarize_max_messages').valueAsNumber, d);
+});
+
+k.test('max-messages-clamp', S_PAGE, 'a negative max messages is stored as 0, a fractional one rounded, as the field shows', async () => {
+    let since = ctx.ctl.calls.length;
+    await userSets(ctx, $('#summarize_max_messages'), '-5');
+    assert.strictEqual(writtenSince(ctx, since).summarize_max_messages, 0);
+    assert.equal($('#summarize_max_messages').valueAsNumber, 0);
+    since = ctx.ctl.calls.length;
+    await userSets(ctx, $('#summarize_max_messages'), '3.6');
+    assert.strictEqual(writtenSince(ctx, since).summarize_max_messages, 4);
+    assert.equal($('#summarize_max_messages').valueAsNumber, 4);
+});
+
 k.test('max-messages-reset', S_PAGE, 'Reset puts the default back in the field and stores it as a number', async () => {
     const since = ctx.ctl.calls.length;
     await ctx.click($('#reset_summarize_max_messages'));
