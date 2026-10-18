@@ -1240,7 +1240,7 @@
         "message": "Povolit přemýšlení (thinking)"
     },
     "prefs_ollama_think_Info": {
-        "message": "Pokud je zaškrtnuto, model bude před odpovědí „přemýšlet“. Tato možnost funguje pouze u modelů, které podporují funkci „think“."
+        "message": "Donuťte model, aby před odpovědí přemýšlel. Možnost „Model default“ nic neodesílá a nechává rozhodnutí na modelu, což u některých modelů znamená, že přemýšlí tak jako tak: vyberte „Off“ pro explicitní vypnutí přemýšlení. Dostupné úrovně přemýšlení závisí na vybraném modelu a zobrazí se po jeho vývěru."
     },
     "prefs_ollama_format_json": {
         "message": "Vynutit výstup v JSON"

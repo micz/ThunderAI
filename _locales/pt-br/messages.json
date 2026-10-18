@@ -1366,7 +1366,7 @@
         "message": "Ativar pensamento"
     },
     "prefs_ollama_think_Info": {
-        "message": "Se marcado, o Modelo pensará antes de responder. Esta opção funciona apenas com modelos que suportam o recurso \"think\"."
+        "message": "Faça o modelo raciocinar antes de responder. \"Model default\" não envia nada e deixa o modelo decidir, o que em alguns modelos significa que ele raciocina de qualquer maneira: escolha \"Off\" para desativar o raciocínio explicitamente. Os níveis de raciocínio disponíveis dependem do modelo selecionado e são listados após a escolha do modelo."
     },
     "prefs_ollama_format_json": {
         "message": "Forçar saída JSON"

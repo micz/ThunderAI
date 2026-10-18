@@ -1272,7 +1272,7 @@
         "message": "Gondolkodás engedélyezése"
     },
     "prefs_ollama_think_Info": {
-        "message": "Ha be van jelölve, a modell átgondolja a választ a kiküldés előtt. Ez a funkció csak az olyan modellekkel működik, amelyek támogatják a 'think' tulajdonságot."
+        "message": "Kényszerítse a modellt arra, hogy gondolkodjon a válaszadás előtt. A „Model default” (Modell alapértelmezett) opció nem küld semmit, és a modellre bízza a döntést, ami egyes modelleknél azt jelenti, hogy mindenképpen gondolkodni fog: válassza az „Off” (Ki) lehetőséget a gondolkodás kifejezett kikapcsolásához. A elérhető gondolkodási szintek a kiválasztott modelltől függenek, és a modell kiválasztása után jelennek meg."
     },
     "prefs_ollama_format_json": {
         "message": "JSON kimenet kényszerítése"

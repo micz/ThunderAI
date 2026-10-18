@@ -352,7 +352,7 @@
         }
     },
     "customPrompts_search_placeholder": {
-        "message": "名前またはIDで検索"
+        "message": "名前、ID、テキストで検索…"
     },
     "customPrompts_filter_active": {
         "message": "絞り込み中: $TOTAL$件中$SHOWN$件",
@@ -2227,7 +2227,7 @@
         "message": "思考を有効にする"
     },
     "prefs_ollama_think_Info": {
-        "message": "チェックすると、モデルは回答前に思考します。このオプションは「think」機能をサポートするモデルでのみ機能します。"
+        "message": "回答の前にモデルに推論させます。「モデルのデフォルト」を選択すると何も送信されずモデルに判断を委ねます（一部のモデルでは自動的に推論が行われます）。推論を明示的に無効にするには「オフ」を選択してください。利用可能な推論レベルは選択したモデルによって異なり、モデルを選択後に表示されます。"
     },
     "prefs_ollama_think_default": {
         "message": "モデルのデフォルト",

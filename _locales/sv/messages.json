@@ -862,7 +862,7 @@
         "message": "Aktivera tänkande"
     },
     "prefs_ollama_think_Info": {
-        "message": "Om markerat kommer modellen att tänka innan den svarar. Det här alternativet fungerar bara med modeller som stöder funktionen \"tänk\"."
+        "message": "Tvinga modellen att tänka efter innan den svarar. \"Model default\" skickar ingenting och låter modellen bestämma, vilket på vissa modeller innebär att den tänker efter ändå: välj \"Off\" för att uttryckligen stänga av tänkandet. De tillgängliga tänknivåerna beror på den valda modellen och listas efter att en modell har valts."
     },
     "chatgpt_win_change_reply_type": {
         "message": "Klicka för att ändra svarstypen"
