@@ -467,6 +467,12 @@
     "prefs_OptionText_chatgpt_web_model_info": {
         "message": "Dies ist das Modell, das für die ChatGPT-Webschnittstelle festgelegt wird. Wenn keines angegeben ist oder ein falsches Modell bereitgestellt wird, wird das Standardmodell von ChatGPT auf der Webseite festgelegt. Diese Einstellung funktioniert nicht mit einem kostenlosen ChatGPT-Konto."
     },
+    "prefs_OptionText_chatgpt_web_model_extended_check": {
+        "message": "Erweiterte Modellprüfung"
+    },
+    "prefs_OptionText_chatgpt_web_model_extended_check_info": {
+        "message": "Wenn aktiviert, öffnet ThunderAI kurz das Modellmenü von ChatGPT, um vor dem Senden des Prompts auszulesen, welches Modell ausgewählt ist. Nur bekannte Modelle werden überprüft (derzeit gpt-6 und gpt-6-thinking). Diese Prüfung kann nicht mehr funktionieren, wenn ChatGPT seine Seite ändert."
+    },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "ChatGPT Web temporärer Chat"
     },

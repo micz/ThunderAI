@@ -673,6 +673,12 @@
     "prefs_OptionText_chatgpt_web_model_info": {
         "message": "Questo è il Modello che verrà utilizzato nell'interfaccia Web di ChatGPT. Se non viene specificato o ne viene fornito uno errato, ChatGPT imposterà il modello predefinito sulla pagina Web. Questa impostazione non funziona con un account gratuito di ChatGPT."
     },
+    "prefs_OptionText_chatgpt_web_model_extended_check": {
+        "message": "Verifica estesa del modello"
+    },
+    "prefs_OptionText_chatgpt_web_model_extended_check_info": {
+        "message": "Se selezionato, ThunderAI apre brevemente il menu dei modelli di ChatGPT per leggere quale modello è selezionato prima di inviare il prompt. Vengono verificati solo i modelli conosciuti (attualmente gpt-6 e gpt-6-thinking). Questa verifica potrebbe smettere di funzionare se ChatGPT modifica la sua pagina."
+    },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "Chat temporanea di ChatGPT"
     },

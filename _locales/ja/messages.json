@@ -796,6 +796,12 @@
     "prefs_OptionText_chatgpt_web_model_info": {
         "message": "ChatGPT Webインターフェースで強制されるモデルです。指定されていないか不正な場合、Webページ上でChatGPTによりデフォルトモデルが設定されます。この設定はChatGPT無料アカウントでは機能しません。"
     },
+    "prefs_OptionText_chatgpt_web_model_extended_check": {
+        "message": "モデルの拡張チェック"
+    },
+    "prefs_OptionText_chatgpt_web_model_extended_check_info": {
+        "message": "チェックすると、ThunderAIはプロンプトを送信する前にChatGPTのモデルメニューを一時的に開き、選択されているモデルを読み取ります。検証されるのは既知のモデルのみです(現在はgpt-6とgpt-6-thinking)。ChatGPTがページを変更すると、このチェックは機能しなくなる可能性があります。"
+    },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "ChatGPT Web一時チャット"
     },
