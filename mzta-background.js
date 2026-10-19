@@ -91,6 +91,7 @@ import {
     addTags_setExclusionList,
     checkExcludedTag
 } from './js/mzta-addtags-exclusion-list.js';
+import { addTags_applyAccountPrompt } from './js/mzta-addtags-account-prompts.js';
 import { mztaPrefs } from './js/mzta-prefs.js';
 import { sanitizeBlockHtml } from './js/mzta-richtext.js';
 import {
@@ -3499,7 +3500,15 @@ async function processEmails(args) {
 
         // The add_tags work itself. Resolves to the job outcome.
         const runAddTagsJob = async (msg, fullMessage, body) => {
-            const { prompt: curr_prompt_add_tags, conntype: addtags_conntype } = await resolveAddTagsSetup();
+            const { prompt: global_prompt_add_tags, conntype: addtags_conntype } = await resolveAddTagsSetup();
+            // The account of the message may have its own Add Tags prompt text. Applied here,
+            // per message, never inside resolveAddTagsSetup(): that result is memoized and
+            // shared by the whole batch. addTags_applyAccountPrompt() returns a copy.
+            const addtags_account_id = msg.folder?.accountId;
+            const curr_prompt_add_tags = await addTags_applyAccountPrompt(global_prompt_add_tags, addtags_account_id);
+            if (curr_prompt_add_tags !== global_prompt_add_tags) {
+                taLog.log("Add tags: using the custom prompt of account " + addtags_account_id + ".");
+            }
             let tags_full_list = await getTagsList();
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
             let specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
