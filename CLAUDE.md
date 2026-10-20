@@ -10,7 +10,7 @@ ThunderAI is a **Thunderbird WebExtension (Manifest V2)** that integrates multip
 
 ## Key Rules
 
-1. **Localization:** Modify ONLY `_locales/en/messages.json`. All other locale files are managed via Weblate — never touch them.
+1. **Localization:** Modify ONLY `_locales/en/messages.json`. All other locale files are managed via Weblate — never touch them. The one exception: when the maintainer explicitly asks for it, the `translate-locales` skill (`.claude/skills/translate-locales/`) translates the locales listed in `LANG_AUTO.md`, writing them only through its script (see "Automatic Translation" in `claude-spec/06-localization.md`).
 2. **`LANG.md` is the release packaging allowlist, not a locale inventory.** It lists only the translations complete enough to ship, and is therefore a *deliberately partial* subset of `_locales/` — locales below the release bar are omitted on purpose. It is maintained by hand: add a locale when its translation is approved for release. Do not "fix" it to match `_locales/`.
 3. **No build system:** There is no bundler or compiler. All JS files are plain ES6 modules loaded directly by the browser engine. **npm is allowed for development tooling only** (today: jsdom, the one pinned `devDependency` of the root `package.json`, for the DOM tests). It is never used for shipped code, and **no runtime code may import anything from `node_modules`**. Adding a dev dependency is a deliberate decision: pin it to an exact version and commit `package-lock.json`.
 4. **Module imports:** Use relative paths with `.js` extension (e.g., `import { foo } from '../js/mzta-utils.js'`). When importing more than one name from the same file, put each name on its own line (4-space indent, no trailing comma) instead of listing them on a single line:
