@@ -30,12 +30,12 @@ On first run a **Setup Wizard** guides you through choosing an AI provider, test
 | ![](images/context_menu/prompt_reply.png) | **Reply** | Draft a reply to the selected email, with a simple or an advanced prompt, or with your own custom instruction |
 | ![](images/context_menu/proofread.png) | **Proofread** | Correct grammar and spelling, then review the result in an **interactive change picker**: original and suggestion side by side, accept or reject each change, or edit manually |
 | ![](images/context_menu/rewrite_polite.png) | **Rewrite** | Rewrite the selected text in a polite or a formal tone, preserving the HTML formatting |
-| ![](images/context_menu/summarize.png) | **Summarize** | Summarize one or more emails, in the chat window or inline in the message pane |
+| ![](images/context_menu/summarize.png) | **Summarize** | Summarize one or more emails, in the chat window or inline in the message pane, optionally always in a chosen language |
 | ![](images/context_menu/translate.png) | **Translate** | Translate an email or the selected text, in the chat window or inline |
 | ![](images/context_menu/autotags.png) | **Add tags** | Let the AI suggest and assign Thunderbird tags |
 | ![](images/context_menu/classify.png) | **Classify** | Classify an email according to your own criteria |
-| ![](images/context_menu/getcalendarevent.png) | **Calendar event** | Extract an event from an email — or from the clipboard — with date, location and description |
-| ![](images/context_menu/gettask.png) | **Task** | Extract a task from an email, with due date and description |
+| ![](images/context_menu/getcalendarevent.png) | **Calendar event** | Extract an event from an email — or from the clipboard — with date, location and description. The AI can also set a reminder following your rules written in natural language, and a link to the original email can be appended (the link is never sent to the AI) |
+| ![](images/context_menu/gettask.png) | **Task** | Extract a task from an email, with due date and description, with the same reminder and link options as calendar events |
 | ![](images/context_menu/prompt_this.png) | **Prompt this** | Send the email or the selected text to the AI with a free-form prompt |
 
 > The **Calendar event** and **Task** actions also require the companion add-on [ThunderAI Sparks](https://addons.thunderbird.net/thunderbird/addon/thunderai-sparks/).
@@ -47,38 +47,43 @@ Using an API integration, ThunderAI can work on incoming mail on its own:
 | | Feature | Description |
 |---|---|---|
 | ![](images/context_menu/autotags.png) | **Auto-tagging** | Tag incoming emails automatically, with an exclusion list and an option for sent mail |
-| ![](images/context_menu/spamfilter.png) | **Spam filter** | Move spam to the junk folder, with a per-message report and a consultable log |
+| ![](images/context_menu/spamfilter.png) | **Spam filter** | Move spam to the junk folder, with a per-message report and a consultable log. A skip list and a block list, of addresses or whole domains (`@domain.com`), decide some senders without asking the AI |
 | ![](images/context_menu/summarize.png) | **Auto-summarize** | Summarize on open, on receive or on demand, with caching and an optional list of senders/domains always summarized |
 | ![](images/context_menu/translate.png) | **Auto-translate** | Translate incoming emails inline, with caching |
 
-Drafts, templates, outbox and sent messages are skipped, so a draft is never processed while you are writing it.
+Drafts, templates, outbox and sent messages are skipped, so a draft is never processed while you are writing it. Several emails can be processed in parallel, and the same feature never runs twice on the same email. When the AI server is temporarily unavailable a request is repeated automatically, and the automatic processing stops by itself when the provider's rate limit or quota is exceeded.
 
 ### Customization
 
-- **Custom prompts** — create, edit, export and import your own prompts, with `{%placeholder%}` highlighting, autocomplete and validation while you type
+- **Custom prompts** — create, edit, export and import your own prompts in a list with a detail editor, or review all of them and their options in a table view, with `{%placeholder%}` highlighting, autocomplete and validation while you type. Every change is saved immediately
 - **Custom data placeholders** — define your own reusable data tokens
 - **Menu order** — drag and drop to choose which prompts appear in the popup and in the context menu, and in which order
-- **Per-prompt integration** — any prompt can use a different AI provider and model than the global one
-- **AI chat window** — conversation turns, the API and model in use, light/dark theme following Thunderbird, per-answer actions and thinking/reasoning blocks
+- **Per-prompt and per-feature integration** — any prompt, and any feature such as Summarize, Translate or the Spam filter, can use a different AI provider, model and advanced options than the global one
+- **AI chat window** — conversation turns, the API and model in use, light/dark theme following Thunderbird, per-answer actions, thinking/reasoning blocks and, optionally, the tokens used by each answer
 - **Quick access** — search box in the popup and the `Ctrl+Alt+A` shortcut
 - **Batch processing** — run a prompt on many emails, with a progress counter and a stop button
 - **Many interface languages**, check [here](https://micz.it/thunderbird-addon-thunderai/translate/) the list
+
+### For administrators
+
+ThunderAI supports the **Thunderbird Enterprise Policies**: with `policies.json` an administrator can pre-configure or enforce any setting, including the AI connections, provide organization prompts, turn off prompt management, hide the built-in prompts and disable the setup wizard. See the [Enterprise Configuration guide](https://micz.it/thunderbird-addon-thunderai/guides/enterprise-configuration/) for where `policies.json` goes, a worked example and the full key reference.
 
 ## Integrations
 
 | Provider | API key | Notes |
 |---|---|---|
-| **ChatGPT Web** | not needed | Works with a free account: the prompt is sent through a ChatGPT window. Supports a specific model, a Project, a Custom GPT and temporary chats |
-| **OpenAI API** | required | Model, developer messages, temperature and conversation storage. On reasoning models you can set the *reasoning summary* and the *effort*, and send extra JSON parameters with every request |
-| **Google Gemini** | required | Model, temperature, *System Instructions* and *thinking budget* — leave the budget empty to let the model decide |
-| **Claude API** | required | Model, system prompt, max tokens, extended thinking budget and *effort*. The request adapts to the selected model, so the options that a model rejects are disabled instead of failing. Requires the permission *"Access your data for sites in the https://anthropic.com domain"* |
-| **Ollama** | not needed | Runs fully locally: model, context size, temperature, thinking and forced JSON output. The server must accept requests from the add-on, adding `OLLAMA_ORIGINS = moz-extension://*` to its environment variables — [more info about CORS](https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/) |
+| **ChatGPT Web** | not needed | Works with a free account: the prompt is sent through a ChatGPT window. Supports a specific model, a Project, a Custom GPT and temporary chats. An optional extended model check makes sure the requested model is selected before sending |
+| **OpenAI API** | required | Model, developer messages, temperature, Top P, max output tokens, verbosity, output format (JSON schema), truncation, prompt cache key, service tier, safety identifier and conversation storage. On reasoning models you can set the *reasoning summary* and the *effort*, and send extra JSON parameters with every request. The options adapt to the selected model |
+| **Google Gemini** | required | Model, temperature, Top P, Top K, max output tokens, *System Instructions*, extra body data and *thinking budget* — leave the budget empty to let the model decide |
+| **Claude API** | required | Model, system prompt, max tokens, temperature, Top P, Top K, stop sequences, extended thinking budget and *effort*. The request adapts to the selected model, so the options that a model rejects are disabled instead of failing. Requires the permission *"Access your data for sites in the https://anthropic.com domain"* |
+| **Ollama** | optional | Runs fully locally: model, context size, temperature, reasoning level, system prompt, keep model loaded, extra options and forced JSON output, adapting to the selected model. The API key is needed only for the hosted API at ollama.com or for a server behind an authenticating proxy. The server must accept requests from the add-on, adding `OLLAMA_ORIGINS = moz-extension://*` to its environment variables — [more info about CORS](https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/) |
 | **OpenAI Compatible** | optional | Any OpenAI-compatible server, local or remote, such as LM Studio. Ready-made configurations for **DeepSeek**, **Grok**, **Mistral**, **OpenRouter** and **Perplexity**, or set the host by hand. The *"v1"* compatibility segment can be turned off, the model name typed manually when the server exposes no models list, and extra JSON parameters sent with every request |
 
 ## Documentation
 
 - [ThunderAI home page](https://micz.it/thunderbird-addon-thunderai/) — features and guides
 - [Setup Guides](https://micz.it/thunderbird-addon-thunderai/guides/) — step-by-step guides to connect ThunderAI to the AI backend of your choice, from ChatGPT to local models with Ollama
+- [Enterprise Configuration](https://micz.it/thunderbird-addon-thunderai/guides/enterprise-configuration/) — deploy ThunderAI across an organization: pre-configure or enforce settings and distribute a shared set of prompts with the Thunderbird Enterprise Policies
 - [Custom Prompt Tutorial](https://micz.it/thunderbird-addon-thunderai/tutorial/) — learn how to build your first custom prompt from scratch, combining placeholders and user input to automate your email replies
 - [ThunderAI Prompt Architect](https://chatgpt.com/g/g-69b6b11c89b88191a6798be6e97025f1-thunder-ai-prompt-architect) — let ChatGPT help you crafting your custom prompts. Thanks to [Paweł](https://github.com/PawelKinczyk) for this tool!
 - [Changelog](CHANGELOG.md) — all of the changes of ThunderAI
@@ -92,13 +97,13 @@ Before opening an issue or a pull request, please read the [contributing guideli
 
 ### Running the tests
 
-The add-on itself has no build step and no dependencies: it is plain JavaScript loaded as it is by Thunderbird. The enterprise managed configuration has an automated test suite in [`tests/`](tests/), in two levels, both run from the repository root with Node's built-in test runner:
+The add-on itself has no build step and no dependencies: it is plain JavaScript loaded as it is by Thunderbird. ThunderAI has an automated test suite in [`tests/`](tests/), covering one area at a time — the enterprise managed configuration, the prompts and placeholders, the API integrations, the settings pages, the AI chat window, what the add-on reads from and writes into a mail, the background, ChatGPT Web and more — in two levels, both run from the repository root with Node's built-in test runner:
 
 ```sh
 # Level 1 - the modules. Node 22 or later, nothing to install
 node --test "tests/**/*.test.mjs"
 
-# Everything, including the DOM tests (the settings pages loaded in jsdom).
+# Everything, including the DOM tests (the pages loaded in jsdom).
 # Node 22.22+ or 24.15+
 npm ci
 npm test
