@@ -127,6 +127,7 @@ ThunderAI is released under the **GNU General Public License v3.0**. See [LICENS
 <h2 style="display:inline">Attributions</h2>
 
 ### Translations
+<!-- translations:start -->
 - Brazilian Portuguese - Português Brasileiro (pt-br): Bruno Pereira de Souza, Generated automatically, [Bruno Scatolin](https://github.com/Brusca) <img src="https://micz.it/weblate/thunderai/pt-br.svg">
 - Chinese (Simplified) - Jiǎntǐ Zhōngwén (简体中文) (zh_Hans): [jeklau](https://github.com/jeklau), [Min9X1n](https://github.com/Min9X1n) <img src="https://micz.it/weblate/thunderai/zh_Hans.svg">
 - Chinese (Traditional) - Fántǐ Zhōngwén (繁體中文) (zh_Hant): [evez](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hant.svg">
@@ -144,6 +145,7 @@ ThunderAI is released under the **GNU General Public License v3.0**. See [LICENS
 - Russian - Russkiy (русский) (ru): [Maksim](https://hosted.weblate.org/user/law820314/), [G S (TAra)](https://hosted.weblate.org/user/gebekovasmobile/), [Konstantin Spirin](https://hosted.weblate.org/user/PouncePanda/) <img src="https://micz.it/weblate/thunderai/ru.svg">
 - Spanish - Español (es): [Gerardo Sobarzo](https://hosted.weblate.org/user/gerardo.sobarzo/), [Andrés Rendón Hernández](https://hosted.weblate.org/user/arendon/), [Erick Limon](https://hosted.weblate.org/user/ErickLimonG/) <img src="https://micz.it/weblate/thunderai/es.svg">
 - Swedish - Svenska (sv): [Andreas Pettersson](https://hosted.weblate.org/user/Andy_tb/), [Luna Jernberg](https://hosted.weblate.org/user/bittin1ddc447d824349b2/) <img src="https://micz.it/weblate/thunderai/sv.svg">
+<!-- translations:end -->
 <br>
 
 Do you want to help translate this addon? [Find out how!](https://micz.it/thunderbird-addon-thunderai/translate/)<br>

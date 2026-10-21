@@ -1,0 +1,106 @@
+name: Sync README translations
+
+# Rebuilds the "Translations" list of README.md from the site's languages.json
+# (micz/micz.github.io, content/thunderbird-addon-thunderai/languages.json), the source of truth
+# for the credits: names, links and "Generated automatically" are curated there.
+# Only the released languages are listed (released: true), sorted by lang_name, one line each:
+#   - <lang_name> (<lang_code>): <credits> <img src="https://micz.it/weblate/thunderai/<lang_code>.svg">
+# A credit is [name](link), or the bare name without a link, or "Generated automatically" for
+# { "generated": true }, in the order of the file. The link is the GitHub profile when the credit
+# has "github", whatever its url says; else its url; else the Weblate profile from "weblate".
+#
+# Only the lines between <!-- translations:start --> and <!-- translations:end --> in README.md
+# are rewritten, on main (the README people read). When they change, the workflow commits them to
+# the branch hotfix/readme-translations (hotfix/ keeps the PR on main, see retarget-pr.yml) and
+# opens a pull request to main, or updates the one already open: nothing is pushed to main itself.
+#
+# Triggers: by hand, weekly, and from the site with a repository_dispatch of event_type
+# "thunderai-readme-languages" after it updates languages.json.
+# Repository setting required: Settings > Actions > General > "Allow GitHub Actions to create and
+# approve pull requests". A PR opened with the workflow token does not start other workflows.
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [thunderai-readme-languages]
+  schedule:
+    - cron: '17 5 * * 1'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: readme-languages
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'micz/ThunderAI'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Rebuild the list and open or update the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LANGUAGES_URL: https://raw.githubusercontent.com/micz/micz.github.io/master/content/thunderbird-addon-thunderai/languages.json
+          BRANCH: hotfix/readme-translations
+          START: '<!-- translations:start -->'
+          END: '<!-- translations:end -->'
+        run: |
+          set -euo pipefail
+
+          curl -fsSL "$LANGUAGES_URL" -o "$RUNNER_TEMP/languages.json"
+
+          # 1. The list, from the released languages (en and the "new language" entry excluded)
+          jq -r '
+            if type != "array" then error("languages.json is not an array") else . end
+            | map(select(.released == true and (.lang_code // "") != "" and .lang_code != "en"))
+            | if length == 0 then error("no released language in languages.json") else . end
+            | sort_by(.lang_name)
+            | .[]
+            | ([(.credits // [])[]
+                | (if (.github // "") != "" then "https://github.com/\(.github)"
+                   elif (.url // "") != "" then .url
+                   elif (.weblate // "") != "" then "https://hosted.weblate.org/user/\(.weblate)/"
+                   else "" end) as $link
+                | if .generated == true then "Generated automatically"
+                  elif (.name // "") == "" then empty
+                  elif $link != "" then "[\(.name)](\($link))"
+                  else .name end] | join(", ")) as $credits
+            | "- \(.lang_name) (\(.lang_code))"
+              + (if $credits != "" then ": \($credits)" else "" end)
+              + " <img src=\"https://micz.it/weblate/thunderai/\(.lang_code).svg\">"' \
+            "$RUNNER_TEMP/languages.json" > "$RUNNER_TEMP/block.md"
+          cat "$RUNNER_TEMP/block.md"
+
+          # 2. Replace the lines between the markers, each present exactly once
+          for m in "$START" "$END"; do
+            if [ "$(grep -cxF "$m" README.md)" != "1" ]; then
+              echo "::error::README.md on main must contain the line '$m' exactly once"; exit 1
+            fi
+          done
+          awk -v start="$START" -v end="$END" -v blk="$RUNNER_TEMP/block.md" '
+            $0 == start { print; while ((getline l < blk) > 0) print l; skip = 1; next }
+            $0 == end   { skip = 0 }
+            !skip' README.md > "$RUNNER_TEMP/README.md"
+          if cmp -s README.md "$RUNNER_TEMP/README.md"; then
+            echo "README.md is already up to date."; exit 0
+          fi
+          cp "$RUNNER_TEMP/README.md" README.md
+          git diff
+
+          # 3. Commit on the branch (rebuilt from main every time) and open the PR if none is open
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -C "$BRANCH"
+          git commit -am 'README: sync translation credits with micz.it'
+          git push --force origin "$BRANCH"
+          if [ -z "$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[].number')" ]; then
+            gh pr create --base main --head "$BRANCH" \
+              --title 'README: sync translation credits with micz.it' \
+              --body "Translations list rebuilt from the released languages of [languages.json](https://github.com/micz/micz.github.io/blob/master/content/thunderbird-addon-thunderai/languages.json) by the \`readme-languages.yml\` workflow."
+          fi
