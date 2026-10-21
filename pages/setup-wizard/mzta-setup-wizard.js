@@ -18,16 +18,38 @@
 
 import { prefs_default } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
-import { setTomSelectBorder, hasNoConnectionSelected } from '../../js/mzta-utils.js';
+import {
+  setTomSelectBorder,
+  hasNoConnectionSelected
+} from '../../js/mzta-utils.js';
 import {
   injectConnectionUI,
   varConnectionUI,
-  showConnectionOptions
+  showConnectionOptions,
+  ensureRestorableOption,
+  checkJsonFields,
+  updateAnthropicModelCapabilityUI,
+  updateOllamaModelCapabilityUI,
+  updateOpenAIModelCapabilityUI
 } from '../_lib/connection-ui.js';
 import {
   isTestableConnection,
-  runConnectionTest
+  runConnectionTest,
+  setConnTestState
 } from '../../js/mzta-connection-test.js';
+import { mztaPrefs } from '../../js/mzta-prefs.js';
+import {
+  applyManagedUI,
+  showManagedBanner,
+  isLockedKey,
+  getManagedState,
+  isSetupWizardDisabled
+} from '../_lib/managed-ui.js';
+import { isPermissionGatedPref } from '../../js/mzta-feature-permissions.js';
+import {
+  bindPermissionToggle,
+  showLockedPermissionWarning
+} from '../_lib/permission-toggle.js';
 
 let taLog = console;
 
@@ -75,6 +97,10 @@ function getSequence() {
 function saveOptions(e) {
   let options = {};
   let element = e.target;
+  // add_tags and spamfilter need optional permissions: written by their own handler, and only
+  // once the permissions are granted (bindPermissionToggle()). Saving them here, as the wizard
+  // used to, left the feature on without its permissions [#962].
+  if (isPermissionGatedPref(element.id)) return;
   switch (element.type) {
     case 'checkbox':
       options[element.id] = element.checked;
@@ -94,7 +120,11 @@ function saveOptions(e) {
       console.error('[ThunderAI] Unhandled input type:', element.type);
       return;
   }
-  browser.storage.sync.set(options);
+  // Guard the default: branch above, which leaves `options` empty — the previous
+  // set(options) wrote nothing in that case, so nothing must be written here either.
+  if (Object.prototype.hasOwnProperty.call(options, element.id)) {
+    mztaPrefs.setPref(element.id, options[element.id]);
+  }
 }
 
 async function restoreOptions() {
@@ -115,6 +145,7 @@ async function restoreOptions() {
         case 'select-one':
           let default_select_value = '';
           if (element.id === 'connection_type') default_select_value = state.provider;
+          ensureRestorableOption(element, result[element.id]);
           element.value = result[element.id] || default_select_value;
           // Nothing chosen yet (fresh install): leave the select unset. It is
           // hidden anyway, and restoring must never persist a provider.
@@ -132,7 +163,7 @@ async function restoreOptions() {
       }
     });
   }
-  let getting = await browser.storage.sync.get(prefs_default);
+  let getting = await mztaPrefs.getAllPrefs();
   setCurrentChoice(getting);
 }
 
@@ -143,36 +174,6 @@ function refreshConnTestVisibility() {
   if (!strip) return;
   strip.style.display = isTestableConnection(state.provider) ? 'flex' : 'none';
   setConnTestState('idle');
-}
-
-function setConnTestState(stateName, message) {
-  let strip = document.getElementById('mzta_conn_test');
-  let textEl = document.getElementById('mzta_conn_test_text');
-  let linkEl = document.getElementById('mzta_conn_test_link');
-  if (!strip || !textEl || !linkEl) return;
-  strip.setAttribute('data-state', stateName);
-  switch (stateName) {
-    case 'loading':
-      textEl.textContent = browser.i18n.getMessage('connTest_testing');
-      linkEl.style.display = 'none';
-      break;
-    case 'ok':
-      textEl.textContent = browser.i18n.getMessage('connTest_ok', [message || '']);
-      linkEl.textContent = browser.i18n.getMessage('connTest_link_retest');
-      linkEl.style.display = '';
-      break;
-    case 'error':
-      textEl.textContent = browser.i18n.getMessage('connTest_error', [message || '']);
-      linkEl.textContent = browser.i18n.getMessage('connTest_link_retry');
-      linkEl.style.display = '';
-      break;
-    case 'idle':
-    default:
-      textEl.textContent = browser.i18n.getMessage('connTest_idle');
-      linkEl.textContent = browser.i18n.getMessage('connTest_link_test');
-      linkEl.style.display = '';
-      break;
-  }
 }
 
 // ---- Per-connection advanced disclosure (mirrors options page) -----------
@@ -196,6 +197,14 @@ function showAdvConnectionOptions() {
 // ---- Provider selection --------------------------------------------------
 
 function selectProvider(id) {
+  // A policy-supplied connection_type is enforced: the provider cards are plain
+  // <button>s, not .option-input controls, so applyManagedUI() cannot reach them and
+  // this is where the lock has to be honoured. Without it a card click would dispatch a
+  // 'change' on the hidden select and drive the whole wizard onto a provider the policy
+  // does not allow - the write guard in js/mzta-prefs.js would refuse to persist it, so
+  // the user would configure a provider that silently reverts on the next read.
+  if (isLockedKey('connection_type') && id !== state.provider) return;
+
   state.provider = id;
 
   // Drive the hidden connection-type <select> so the shared connection UI
@@ -235,6 +244,9 @@ function selectProvider(id) {
 
   refreshConnTestVisibility();
   refreshNextEnabled();
+  // The sequence depends on the provider (ChatGPT Web has no tools step): redraw the
+  // indicator now, or it would keep the old number of dots until the next navigation.
+  renderSteps();
 }
 
 function buildProviderCards() {
@@ -271,6 +283,13 @@ function buildProviderCards() {
     card.appendChild(info);
     card.appendChild(radio);
     card.addEventListener('click', () => selectProvider(p.id));
+    // Under a locked connection_type no card is selectable. They are greyed out rather
+    // than hidden, so the choice the policy made stays visible; the CSS keeps the
+    // selected one at full opacity so it still reads as the enforced provider.
+    if (isLockedKey('connection_type')) {
+      card.disabled = true;
+      card.classList.add('wiz_provider_card_managed');
+    }
     list.appendChild(card);
   });
 }
@@ -350,13 +369,25 @@ function goBack() {
 // ---- Boot ----------------------------------------------------------------
 
 document.addEventListener('DOMContentLoaded', async () => {
-  let prefs = await browser.storage.sync.get({
-    do_debug: prefs_default.do_debug,
-    connection_type: prefs_default.connection_type,
-  });
+  let prefs = await mztaPrefs.getPrefs(['do_debug', 'connection_type']);
   taLog = new taLogger('mzta-setup-wizard', prefs.do_debug);
   // Empty when nothing has been chosen yet: no provider card is preselected.
   state.provider = prefs.connection_type;
+
+  // The policy may forbid the wizard. Every link to it is disabled, so reaching this point
+  // means the page was opened by its direct URL. Check before anything is built: the
+  // wizard writes connection preferences as the user steps through it, and the write guard
+  // in js/mzta-prefs.js only covers the keys the policy actually locks.
+  await getManagedState(prefs.do_debug);
+  if (isSetupWizardDisabled()) {
+    await showManagedBanner('managed_config_banner', true);
+    document.getElementById('wiz_blocked').classList.remove('hidden');
+    document.querySelector('.wiz_step_body').classList.add('hidden');
+    document.getElementById('wiz_steps').classList.add('hidden');
+    document.getElementById('wiz_nav').classList.add('hidden');
+    i18n.updateDocument();
+    return;
+  }
 
   await injectConnectionUI({
     afterTrId: 'connection_ui_anchor',
@@ -373,9 +404,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await restoreOptions();
 
+  // Flag any malformed JSON already stored: restoring assigns .value, which fires no
+  // input event, so the live validation would only run once the field is touched.
+  checkJsonFields();
+
+  // The saved model is in the selects now, so the per-model option availability can
+  // finally be computed (before the restore they would read an empty model).
+  // The Claude one is not optional here: anthropic_effort ships as an EMPTY <select>
+  // and this call is what fills it, so without it the wizard shows a blank control
+  // until the model is touched.
+  updateAnthropicModelCapabilityUI();
+  updateOllamaModelCapabilityUI();
+  updateOpenAIModelCapabilityUI();
+
   varConnectionUI.permission_all_urls = await messenger.permissions.contains({ origins: ['<all_urls>'] });
 
   i18n.updateDocument();
+
+  // After injectConnectionUI() and restoreOptions(): the connection rows must already
+  // exist and the inputs must already hold their resolved values (js/mzta-prefs.js has
+  // folded in the policy) before they are disabled and marked. Same ordering as the
+  // options page. Presentation only - the write guard in js/mzta-prefs.js is what
+  // actually refuses a write to a locked preference.
+  // true, like the options page: these only ever log a failure to reach the background.
+  await showManagedBanner('managed_config_banner', true);
+  await applyManagedUI(document, true);
 
   buildProviderCards();
 
@@ -384,6 +437,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('.option-input').forEach(element => {
     element.addEventListener('change', saveOptions);
   });
+
+  // The offered features that need optional permissions get the same activation flow as the
+  // options page: request first, write true only once granted.
+  for (const key of WIZARD_FEATURES.filter(isPermissionGatedPref)) {
+    const el = document.getElementById(key);
+    bindPermissionToggle(el, key, { taLog: taLog });
+    await showLockedPermissionWarning(el, key);
+  }
 
   // Per-connection advanced disclosure toggle.
   let conn_adv_btn = document.getElementById('mzta_conn_adv_btn');
@@ -411,6 +472,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       setConnTestState('ok', result.apiName);
     } else {
       setConnTestState('error', result.message);
+    }
+    // Same as the options page: a successful test may be what granted the host
+    // permission, so re-probe the model capabilities now that /api/show is reachable.
+    if (state.provider === 'ollama_api' && result.status === 'ok') {
+      updateOllamaModelCapabilityUI();
     }
   });
 

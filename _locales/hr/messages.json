@@ -40,7 +40,7 @@
         "message": "Više informacija"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Zadane upite nije moguće uređivati. Možete ih onemogućiti, a zatim kopirati tekst upita i zalijepiti ga u novi kako biste stvorili modificiranu verziju."
+        "message": "Zadane upite nije moguće uređivati. Za stvaranje izmijenjene verzije koristite \"Dupliciraj i uredi\". Za skrivanje upita iz izbornika koristite postavke redoslijeda izbornika."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Možete uvoziti i izvoziti upite. Postojeći upiti s istim ID-om bit će prebrisani. Dodat će se upiti s novim ID-ovima."
@@ -54,18 +54,6 @@
     "customPrompts_reindexing_list": {
         "message": "Ponovno indeksiranje popisa..."
     },
-    "customPrompts_filtering_prompts": {
-        "message": "Filtriranje upita..."
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "Spremanje zadanih upita..."
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "Spremanje prilagođenih upita..."
-    },
-    "customPrompts_reloading_menus": {
-        "message": "Ponovno učitavanje izbornika..."
-    },
     "customPrompts_saved": {
         "message": "Upiti su spremljeni!"
     },
@@ -77,9 +65,6 @@
     },
     "customPrompts_form_label_Name": {
         "message": "Ime"
-    },
-    "customPrompts_form_label_Text": {
-        "message": "Tekst upita"
     },
     "customPrompts_form_label_Action": {
         "message": "Radnja"
@@ -122,9 +107,6 @@
     },
     "btnNew_string": {
         "message": "Dodaj novo"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Dodaj upit"
     },
     "customPrompts_add_to_menu": {
         "message": "Dodaj u izbornik"
@@ -225,9 +207,6 @@
     "prefs_OptionText_btnManagePrompts": {
         "message": "Upravljaj svojim upitima"
     },
-    "prefsInfoTitle": {
-        "message": "Važne informacije"
-    },
     "prefsInfoDesc_1": {
         "message": "Može se dogoditi da se ChatGPT web sučelje promijeni na način koji pokvari rad dodatka. Provjerite stranicu \"Status usluge\" povezanu na dnu ove stranice. Također, zapamtite da kada prvi put koristite ThunderAI, morate se prijaviti na ChatGPT."
     },
@@ -240,26 +219,8 @@
     "prefsInfoDesc_4": {
         "message": "Za korištenje ove integracije morate postaviti lokalni poslužitelj kompatibilan s OpenAI API-jem, poput LM Studio. Nakon što je poslužitelj pokrenut, unesite njegovu adresu u predviđeno polje unutar aplikacije. Kako biste osigurali ispravnu komunikaciju između ThunderAI i lokalnog poslužitelja, ne zaboravite pravilno postaviti CORS postavke."
     },
-    "prefsInfoDesc_5": {
-        "message": "Ne zaboravite da možete otvoriti izbornik ThunderAI pomoću tipkovničke prečice CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Prečac možete promijeniti pritiskom ikone zupčanika u gornjem desnom kutu ove stranice i odabirom \"Upravljaj tipkovničkim prečacima dodatka\"."
-    },
-    "prefsDonation_1": {
-        "message": "Sviđa li vam se ovaj dodatak?"
-    },
-    "prefsDonation_2": {
-        "message": "Razmislite o davanju donacije!"
-    },
     "backToOptionsText": {
         "message": "Mogućnosti"
-    },
-    "TranslateText": {
-        "message": "Želite li pomoći u prijevodu ovog dodatka?"
-    },
-    "TranslateLink": {
-        "message": "Saznajte kako!"
     },
     "customPrompts_ExportAll": {
         "message": "Izvezi sve upite"
@@ -272,9 +233,6 @@
     },
     "customPrompts_start_import": {
         "message": "Pokretanje uvoza prilagođenih upita..."
-    },
-    "customPrompts_import_completed": {
-        "message": "Uvoz prilagođenih upita dovršen! Morate pritisnuti gumb 'Spremi sve' da biste spremili svoje promjene."
     },
     "importPrompts_invalidFile": {
         "message": "Datoteka koju pokušavate uvesti nije važeća datoteka prilagođenih upita."
@@ -468,9 +426,6 @@
     "chatgpt_btn_model": {
         "message": "Koristi trenutni model"
     },
-    "AllowedValues": {
-        "message": "Dopuštene vrijednosti"
-    },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Možete koristiti dodatna rezervirana mjesta za podatke."
     },
@@ -605,9 +560,6 @@
     },
     "prefs_SurveyLinkText2": {
         "message": "Pritisnite ovdje, traje samo minutu!"
-    },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Ručno umetni model"
     },
     "OpenAIComp_force_model_ask": {
         "message": "Ovdje umetni naziv modela koji želiš koristiti."

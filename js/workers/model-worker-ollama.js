@@ -20,18 +20,62 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { Ollama } from '../api/ollama.js';
+import {
+    Ollama,
+    extractUsage
+} from '../api/ollama.js';
+import { readResponseBody } from '../api/api-retry.js';
 import { taLogger } from '../mzta-logger.js';
+import {
+    initUsageEmitter,
+    nextUsageMessageId,
+    postUsageData
+} from './usage-emitter.js';
 
 let ollama = null;
 let stopStreaming = false;
 let i18nStrings = null;
 let do_debug = false;
 let taLog = null;
+// Set only while waiting for the response headers (including the retry
+// backoff): Stop aborts the request then. Once streaming has started the
+// stopStreaming flag takes over, so a pending reader.read() is never rejected.
+let requestAbort = null;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
 let thinkingAccumulator = '';
+let usageData = null;
+
+// The id the window binds this response's usage badge to. Assigned when the
+// request goes out, so the 'usage' message and the answer it belongs to agree.
+let usageMessageId = null;
+
+// The usage captured for the last completed request. Accumulated here and nowhere
+// else: it is deliberately NOT posted anywhere yet, NOT appended to the response
+// text, and NOT pushed into conversationHistory -- the text the callers receive
+// must stay byte-identical to what it was before this layer existed.
+export function getUsageData() {
+    return usageData;
+}
+
+// Only the provider, the model and the token counts. Never the request URL or the
+// headers: Gemini and some OpenAI-compatible endpoints carry the API key in the
+// query string, and a header map carries it outright.
+function logUsageData(usage) {
+    if (!taLog || !taLog.do_debug || usage === null) return;
+    taLog.log("usage data captured: " + JSON.stringify(usage));
+}
+
+// A turn that fails once the question was sent (an HTTP or network error, an error
+// line or a cut connection in the middle of the stream): the partial answer is
+// dropped and the unanswered question leaves the history, as after an abort, so the
+// next turn does not send it twice. The system prompt, first in the history, stays.
+function abandonTurn() {
+    conversationHistory.pop();
+    assistantResponseAccumulator = '';
+    thinkingAccumulator = '';
+}
 
 self.onmessage = async function(event) {
     switch (event.data.type) {
@@ -43,16 +87,55 @@ self.onmessage = async function(event) {
                     config[newKey] = event.data[key];
                 }
             }
+            // NEVER log `config` (or any header map built from it): it carries
+            // ollama_api_key. Log individual non-secret fields if a debug trace is
+            // ever needed here.
             ollama = new Ollama(config);
+            // Prepended once, here, and never in the chatMessage branch:
+            // conversationHistory is module-level state that survives every turn,
+            // so prepending per message would stack one system message per turn.
+            // The history is still empty at this point, so push() *is* the prepend.
+            if (config.system_prompt && config.system_prompt.trim() !== '') {
+                conversationHistory.push({ role: 'system', content: config.system_prompt });
+            }
             do_debug = event.data.do_debug;
             i18nStrings = event.data.i18nStrings;
             taLog = new taLogger('model-worker-ollama', do_debug);
+            initUsageEmitter(event.data);
             break;  // init
         case 'chatMessage':
             conversationHistory.push({ role: 'user', content: event.data.message });
+            usageData = null;
+            usageMessageId = nextUsageMessageId();
             //console.log(">>>>>>>>>>> conversationHistory: " + JSON.stringify(conversationHistory));
-            const response = await ollama.fetchResponse(conversationHistory); //4096);
+            requestAbort = new AbortController();
+            const response = await ollama.fetchResponse(conversationHistory, {
+                signal: requestAbort.signal,
+                logger: taLog,
+                onRetry: (info) => postMessage({ type: 'newRetryAttempt', payload: info }),
+            });
             postMessage({ type: 'messageSent' });
+
+            // The body of an HTTP error is read while Stop can still abort it (an abort
+            // errors the body), within the time limit of readResponseBody(): a body that
+            // never arrives must not leave the turn hanging.
+            let errorBodyText = '';
+            if (!response.ok && response.is_exception !== true) {
+                errorBodyText = await readResponseBody(response);
+            }
+            const aborted = response.is_aborted === true || requestAbort.signal.aborted;
+            requestAbort = null;
+
+            if (aborted) {
+                // Stopped before any answer arrived, also while the body of an HTTP
+                // error was read: drop the unanswered message, so the next turn does
+                // not send it twice.
+                stopStreaming = false;
+                conversationHistory.pop();
+                taLog.log("Request aborted by the user before the response arrived");
+                postMessage({ type: 'requestAborted' });
+                return;
+            }
 
             if (!response.ok) {
                 let error_message = '';
@@ -65,16 +148,26 @@ self.onmessage = async function(event) {
                     error_text = error_message;
                 }else{
                     try{
-                        const errorJSON = await response.json();
+                        const errorJSON = JSON.parse(errorBodyText);
                         errorDetail = JSON.stringify(errorJSON);
-                        error_message = errorJSON.error.message;
+                        // Ollama's documented error body is {"error": "<message>"}: the
+                        // string itself is the message. An OpenAI-style object (a proxy in
+                        // front of the server) still carries it under error.message.
+                        const errorField = errorJSON.error;
+                        error_message = (typeof errorField === 'string') ? errorField
+                            : (typeof errorField?.message === 'string' ? errorField.message : response.statusText);
                     }catch(e){
                         error_message = response.statusText;
                     }
                     taLog.log("error_message: " + JSON.stringify(error_message));
                     error_text = i18nStrings["ollama_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
                 }
-                postMessage({ type: 'error', payload: error_text });
+                // rateLimited: a 429 still failing after the retries (rate limit or used-up quota),
+                // or a server asking to wait longer than fetchWithRetry() accepts (retryAfterMs,
+                // shown to the user): processEmails() stops the whole batch. False on an is_exception.
+                const retryAfterMs = Number.isFinite(response.retryAfterMs) ? response.retryAfterMs : null;
+                abandonTurn();
+                postMessage({ type: 'error', payload: error_text, rateLimited: response.status === 429 || retryAfterMs !== null, retryAfterMs: retryAfterMs });
                 throw new Error("[ThunderAI] Ollama API request failed: " + error_text);
             }
 
@@ -91,6 +184,8 @@ self.onmessage = async function(event) {
                         taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
                         conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                         assistantResponseAccumulator = '';
+                        // Separate from tokensDone and free of any response text: see usage-emitter.js.
+                        postUsageData(usageData, usageMessageId);
                         postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
                         thinkingAccumulator = '';
 
@@ -102,12 +197,16 @@ self.onmessage = async function(event) {
                         taLog.log("AI full response: " + assistantResponseAccumulator);
                         conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                         assistantResponseAccumulator = '';
+                        // Separate from tokensDone and free of any response text: see usage-emitter.js.
+                        postUsageData(usageData, usageMessageId);
                         postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
                         thinkingAccumulator = '';
                         break;
                     }
                     // lots of low-level Ollama response parsing stuff
-                    const chunk = decoder.decode(value);
+                    // stream: true keeps a multi-byte character split across two chunks
+                    // for the next call instead of replacing it with U+FFFD.
+                    const chunk = decoder.decode(value, { stream: true });
                     buffer += chunk;
                     // No per-chunk dump of `buffer`: taLog.log() only gates the console
                     // call, so the whole unconsumed buffer would be re-concatenated on
@@ -138,7 +237,31 @@ self.onmessage = async function(event) {
                     }
             
                     for (const parsedLine of parsedLines) {
+                        // Only the final chunk (done === true) carries the counters;
+                        // extractUsage() returns null for every other one.
+                        const usage = extractUsage(parsedLine);
+                        if (usage !== null) {
+                            usageData = usage;
+                            logUsageData(usageData);
+                        }
+
+                        // An error in the middle of the stream comes as a line of its own,
+                        // {"error": "<message>"}: the answer is incomplete, so the turn fails
+                        // with the server's message.
+                        if (parsedLine.error) {
+                            const serverError = typeof parsedLine.error === 'string' ? parsedLine.error
+                                : (parsedLine.error.message || JSON.stringify(parsedLine.error));
+                            taLog.error("stream error line: " + serverError);
+                            reader.cancel();
+                            abandonTurn();
+                            postMessage({ type: 'error', payload: i18nStrings["ollama_api_request_failed"] + ": " + serverError });
+                            return;
+                        }
+
                         const { message } = parsedLine;
+                        if (!message || typeof message !== 'object') {
+                            continue;
+                        }
                         const { content, thinking } = message;
                         // Update the UI with the new thinking content
                         if (thinking) {
@@ -153,6 +276,7 @@ self.onmessage = async function(event) {
                     }
                 }
             } catch (error) {
+                abandonTurn();
                 if (error instanceof TypeError && error.message.includes('Error in input stream')) {
                     console.error('[ThudenderAI] The connection to the server was unexpectedly interrupted:', error);
                     postMessage({ type: 'error', payload: i18nStrings['error_connection_interrupted'] + ": " + error.message });
@@ -164,6 +288,7 @@ self.onmessage = async function(event) {
             break; //chatMessage
         case 'stop':
             stopStreaming = true;
+            if (requestAbort) requestAbort.abort();
             break; //stop
      }
 };

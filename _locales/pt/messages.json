@@ -47,9 +47,6 @@
     "customPrompts_reindexing_list": {
         "message": "A redefinir os índices da lista..."
     },
-    "customPrompts_reloading_menus": {
-        "message": "A recarregar menus..."
-    },
     "customPrompts_form_label_ID": {
         "message": "ID"
     },
@@ -126,7 +123,7 @@
         "message": "Gerir prompts"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Os prompts padrão não são editáveis. Podes desativá-los, copiar o texto do prompt e colá-lo num novo, para criar uma versão modificada."
+        "message": "Os prompts padrão não são editáveis. Para criar uma versão modificada, usa \"Duplicar e editar\". Para ocultar um prompt dos menus, usa as definições da ordem do menu."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Podes importar e exportar prompts. Prompts existentes com o mesmo ID serão escritos por cima. Prompts com um ID novo serão adicionados."
@@ -134,20 +131,8 @@
     "customPrompts_start_saving": {
         "message": "A guardar prompts..."
     },
-    "customPrompts_filtering_prompts": {
-        "message": "A filtrar prompts..."
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "A guardar prompts padrão..."
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "A guardar prompts personalizados..."
-    },
     "customPrompts_saved": {
         "message": "Prompts guardados!"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Adicionar o prompt"
     },
     "customPrompts_do_reply": {
         "message": "Responder"
@@ -172,9 +157,6 @@
     },
     "prompt_this": {
         "message": "Prompt isto"
-    },
-    "customPrompts_form_label_Text": {
-        "message": "Texto do Prompt"
     },
     "chatgpt_textarea_not_found_error": {
         "message": "Parece que a página do ChatGPT está a demorar muito para carregar. Se terminar de carregar, clique no botão à direita. Se o problema persistir, por favor, verifique o estado do serviço."
@@ -239,9 +221,6 @@
     "prefs_storage_clear_button": {
         "message": "Limpar armazenamento"
     },
-    "prefsInfoTitle": {
-        "message": "Informações importantes"
-    },
     "prefsInfoDesc_1": {
         "message": "Pode acontecer que a interface web do ChatGPT mude de uma forma que quebre o funcionamento do complemento. Verifique a página de \"Estado do Serviço\" vinculada na parte inferior desta página. Além disso, lembre-se de que, na primeira vez que usar o ThunderAI, precisará fazer login no ChatGPT."
     },
@@ -254,26 +233,8 @@
     "prefsInfoDesc_4": {
         "message": "Para usar esta integração, precisa configurar um servidor local compatível com a API do OpenAI, como o LM Studio. Assim que o servidor estiver em funcionamento, insira o seu endereço no campo designado dentro da aplicação. Para garantir a comunicação adequada entre o ThunderAI e o servidor local, lembre-se de configurar corretamente as definições de CORS."
     },
-    "prefsInfoDesc_5": {
-        "message": "Lembre-se que pode abrir o menu do ThunderAI usando o atalho de teclado CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Pode alterar o atalho a clicar no ícone de engrenagem no canto superior direito desta página e escolher \"Gerir Atalho da Extensão\"."
-    },
-    "prefsDonation_1": {
-        "message": "Gosta deste complemento?"
-    },
-    "prefsDonation_2": {
-        "message": "Considere fazer uma doação!"
-    },
     "backToOptionsText": {
         "message": "Opções"
-    },
-    "TranslateText": {
-        "message": "Quer ajudar a traduzir este complemento?"
-    },
-    "TranslateLink": {
-        "message": "Descubra como!"
     },
     "customPrompts_ExportAll": {
         "message": "Exportar todos os prompts"
@@ -286,9 +247,6 @@
     },
     "customPrompts_start_import": {
         "message": "A iniciar a importação de prompts personalizados..."
-    },
-    "customPrompts_import_completed": {
-        "message": "Importação de prompts personalizados concluída! Precisa clicar no botão 'Gravar tudo' para gravar as suas alterações."
     },
     "importPrompts_invalidFile": {
         "message": "O ficheiro que tenta importar não é um ficheiro de prompts personalizados válido."
@@ -479,9 +437,6 @@
     "chatgpt_btn_model": {
         "message": "Usar o modelo atual"
     },
-    "AllowedValues": {
-        "message": "Valores permitidos"
-    },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Pode usar espaços reservados para dados adicionais."
     },
@@ -613,9 +568,6 @@
     },
     "prefs_SurveyLinkText2": {
         "message": "Clique aqui, leva apenas um minuto!"
-    },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Insira manualmente o modelo"
     },
     "OpenAIComp_force_model_ask": {
         "message": "Insira aqui o nome do modelo que deseja usar."

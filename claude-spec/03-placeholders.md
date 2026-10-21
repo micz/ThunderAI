@@ -52,13 +52,18 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`).
 | `tags_full_list` | All available tags in Thunderbird | 0 | |
 | `thunderai_def_sign` | Default signature name (`default_sign_name` pref) | 0 | |
 | `thunderai_def_lang` | Default response language (`default_chatgpt_lang` pref) | 0 | |
-| `thunderai_translate_lang` | Target translation language (`translate_lang` pref) | 0 | |
+| `thunderai_translate_lang` | Target translation language (`translate_lang` pref, falling back on `default_chatgpt_lang`, the same rule the background uses to decide whether to translate) | 0 | |
 | `thunderai_translate_exclude_lang` | Language to exclude from translation | 0 | |
-| `empty` | Empty string (placeholder that resolves to nothing) | 0 | |
+| `empty` | Empty string: always resolves to nothing, whatever `placeholders_use_default_value` says (special-cased in `replacePlaceholders()`, never left as the literal token) | 0 | |
 | `mail_attachments_info` | Information about the email's attachments | 1 | |
 | `mail_text_body_or_selected` | Plain text body, or selected text if any | 0 | |
 | `mail_html_body_or_selected` | HTML body, or selected HTML if any | 0 | |
 | `mail_plain_text_part` | The original `text/plain` MIME part, verbatim (no HTML conversion) | 1 | |
+
+The newline contracts below are what the model receives: the API chat window posts the prompt to
+its worker as it comes, line breaks as `\n` and no `<br>` added, both for the prompt the background
+sends and for a message the user types (see [01-architecture.md](01-architecture.md) → *Streaming
+data flow*, "The prompt is plain text").
 
 ### Newline contract of the compose placeholders
 
@@ -95,7 +100,9 @@ cleanup rules*.
 | Automatic (background) — auto add-tags, spam filter, on-receive | `htmlBodyToPlainText()` = `normalizePlain(htmlToLines(html))` (`js/mzta-utils.js`) |
 
 Both share **one** projection, `js/lib/mzta-html-lines.js`: `<br>`/`<hr>` → `\n`, a paragraph (`<p>`)
-→ `\n\n`, every other block element → a trailing `\n`, `<td>`/`<th>` → a space, injected into the DOM
+→ `\n\n`, every other block element → a trailing `\n` (and a leading one when inline content precedes it,
+so Gmail's `Hi Bob,<div>thanks</div>` is two lines), `<td>`/`<th>` → a space, while a newline in the
+HTML *source* is whitespace, not a line (outside `<pre>` and inline `white-space: pre*`), injected into the DOM
 **before** the text is read, because `textContent` alone drops every block boundary and `innerText`
 is useless on the detached clone `getCleanBodyHtml()` returns. They had the same bug twice precisely
 because each used to carry its own copy — do not re-fork it.
@@ -218,8 +225,9 @@ reason the output looks different. When the part is missing the value is the emp
 a `||` chain, so an empty string is indistinguishable from "unresolved": with
 `placeholders_use_default_value` on the token becomes `default_value` (`""`), and with it off the
 literal text `{%mail_plain_text_part%}` survives into the prompt. Not fixed deliberately — that
-chain is shared by all 30 built-ins and widening it would change `{%empty%}` and a `junk_score`
-of `0` at the same time.
+chain is shared by all 30 built-ins and widening it would change every one of them, a `junk_score`
+of `0` included, at the same time. `{%empty%}` is the one exception: `replacePlaceholders()` returns
+`''` for it before the chain, so it is never the literal token.
 
 **Known limitation — documented, not fixed.** The `text/plain` alternative is *not* reliable in
 general: newsletters often ship a stub ("view this message in your browser"), a URL-only body, an
@@ -266,7 +274,34 @@ the two above: `from` is a *scalar* that can also be an `{id, type}` reference, 
 
 **Not visible in the calendar-event flow.** `finalizePrompt_get_calendar_event()`
 (`js/mzta-utils-prompt.js`) strips `{%cc_list%}` and `{%recipients%}` out of the prompt entirely for
-that flow, so it is unaffected by any of the above by design.
+that flow — every occurrence, the spaced form `{% id %}` included — so it is unaffected by any of the above by design. It (and `finalizePrompt_get_task()`)
+also appends the reminder instruction and the user's reminder rules (#887, see
+[02-prompts.md](02-prompts.md#calendar-event--task-reminder-887)) — **after** resolution, so
+placeholders written in the reminder rules are not resolved.
+
+### Value formats
+
+What `getPlaceholdersValues()` puts in the prompt for the placeholders whose value is built rather
+than copied from a single field. A value missing at the source is `""`, which then follows the `||`
+chain of `replacePlaceholders()` (see *Placeholder Resolution Order*).
+
+| Placeholder | Value |
+|---|---|
+| `mail_attachments_info` | one line per attachment of `browser.messages.listAttachments(curr_message.id)`: `"<name>" [<contentType>] (<size> KB)`, the size in KB rounded to the nearest integer; lines joined with `\n`. No attachment: `""` |
+| `mail_headers:<name>` | the value of header `<name>` from `browser.messages.getFull()`, the name matched **case-insensitively**; a multi-valued header joined with `", "`. Header absent: `""` |
+| `mail_full_headers` | every header as `<name>: <value>` (multi-valued joined with `", "`), one per line (`\n`), names as Thunderbird returns them |
+| `tags_full_list` | the names of every Thunderbird tag joined with `", "` — the first element of the `getTagsList()` pair, the caller's when it supplies one, otherwise read by `getPlaceholdersValues()` itself |
+| `tags_current_email` | the **names** (not the keys) of the tags on the email, looked up by key in the second element of that pair, joined with `", "`. A key not in the list (a tag deleted from Thunderbird) is kept as its raw key (e.g. `$label5`), with a console warning — legible in the prompt, where a silent omission would hide the tag [#911]; an email with no tags, or a ComposeDetails (no `tags` field: the compose window), gives `""`. Never an error: a failure here would fail the whole prompt |
+| `mail_datetime` | `curr_message.date` converted to a string (for a `Date`, its `toString()`) |
+| `current_datetime` | `new Date().toString()` at resolution time |
+| `junk_score` | `curr_message.junkScore`, as a number (a score of `0` follows the `||` chain like an empty value) |
+| `mail_folder_name` / `mail_folder_path` | `curr_message.folder.name` / `.path` |
+
+**HTML escaping of the address and header values.** `author`, `recipients`, `cc_list`,
+`mail_headers:<name>` and `mail_full_headers` go through `sanitizeMailHeaders()`, which replaces `<`
+with `&lt;` and `>` with `&gt;` — nothing else (`&` and quotes are left alone). So a sender
+`Mic <m@example.com>` reaches the prompt as `Mic &lt;m@example.com&gt;`. No other placeholder is
+escaped: body, selection, subject and HTML placeholders carry their value as it is.
 
 ## Dynamic Placeholders
 
@@ -278,6 +313,57 @@ Dynamic placeholders use a colon separator to pass a parameter:
 ```
 
 The `is_dynamic: "1"` property signals this behavior in the placeholder definition.
+
+**Token syntax.** `{%id:value%}`. Spaces are allowed at the edges of the token and **around the
+colon**: `{% id:value %}`, `{%id: value%}`, `{%id :value%}` and `{% id : value %}` are all the same
+token. Every function that matches a token works on its canonical key, `normalizeTokenKey()` (inner
+text trimmed, the spaces around the **first** colon removed): `findPlaceholder()` — and so the editor
+—, `replacePlaceholders()` (for the token and for the keys of the values it is handed),
+`hasPlaceholder()` and `getPlaceholdersAdditionalTextArray()`. The editor and the runtime therefore
+always agree on whether a token resolves. A fixed placeholder still takes no parameter:
+`{%mail_subject : x%}` matches nothing.
+
+### `additional_text`: the user's input, filled late
+
+`{%additional_text%}` and `{%additional_text:<label>%}` ask the user for text **after** the prompt is
+prepared, in the chat window. They are the deferred half of `skip_additional_text: true`:
+
+1. **`preparePrompt()`** gives each **bare** `{%additional_text%}` its own field, rewriting it to
+   `{%additional_text:#1%}`, `{%additional_text:#2%}`, … in order of appearance, and leaves every
+   `additional_text` token in place (`replacePlaceholders(..., skip_additional_text: true)`). A token
+   with a label is not renumbered: two tokens with the **same** label are one field, and get the same
+   text.
+2. **The menus** (`js/mzta-menus.js`) build `custom_text_array` from the renumbered text with
+   `getPlaceholdersAdditionalTextArray()`: one entry `{placeholder, info}` per **distinct** label, in
+   order of first appearance — `placeholder` is the token as written, `info` the trimmed label (`"#1"`
+   for a bare token). The same label spelled with different spaces around the colon is one field,
+   and every spelling is filled: the late fill keys the answer by the token as written, and
+   `replacePlaceholders()` normalizes both sides.
+3. **The chat window** (`api_webchat/messageInput.js`), when the prompt has `need_custom_text: "1"`,
+   asks one step per entry, showing the label as `[ID: <info>]` and a `n/total` counter when there is
+   more than one. A prompt with `need_custom_text: "1"` and no `additional_text` token asks a single
+   text, which is **appended** to the prompt after a space.
+4. **The late fill** (`api_webchat/controller.js`) replaces each token with its text through
+   `replacePlaceholders()`, keyed by the token's inner text (`additional_text:tone`). An answer the
+   user **gave** is used as it is, an **empty** one included: it becomes `""`, never the literal
+   token, whatever `placeholders_use_default_value` says (the user saw the field and left it blank).
+   Only a token with no answer at all follows the `||` chain of *Placeholder Resolution Order*.
+
+   **The legacy string form.** Before 4.0.0 `api_send_custom_text` carried `custom_text` as a single
+   string instead of the array; the controller still accepts it. With no `additional_text` token in the
+   prompt the string is appended after a space, like a single answer. With tokens, the string becomes
+   the answer to the bare `additional_text` key, and the `||` chain hands it to **every** token: a
+   labelled `{%additional_text:<label>%}` has no answer of its own, so it falls back to the bare id's.
+   The window itself always sends the array, so only an older producer reaches this path.
+
+   **A token missing from the array** (an entry the producer left out; the menus build one per
+   distinct label, so the normal flow never does) also has no answer of its own and follows the
+   chain: the bare id's answer if there is one, else `default_value` with `placeholders_use_default_value`
+   (`ph_def_val=1` in the window's url) on, else the literal token.
+
+The tokens are shown only when `need_custom_text` is `"1"`: the Custom Prompts editor flags
+`need_custom_text` when the text has an `additional_text` token but the flag is off (see
+[05-options.md](05-options.md)).
 
 ## Placeholder Autocomplete
 
@@ -296,12 +382,17 @@ shifted back into command coordinates, so `render()` can slice the command direc
 offers every type-eligible placeholder.
 
 **Type filtering.** A placeholder is offered only if its `type` equals the prompt's selected type, or
-its type is `0` ("always"). The type is read **lazily on every keystroke**, so changing the selector
+its type is `0` ("always"). A placeholder with **no** type (missing, `null` or blank: a custom one
+imported without the field) counts as `0`, the same normalisation as `findPlaceholder()` (see
+*Invalid placeholder feedback*), so the autocomplete offers every token the editor accepts. The type is read **lazily on every keystroke**, so changing the selector
 mid-edit takes effect immediately with no re-registration.
 
 - The 6 single-textarea pages pass an explicit `type_value` (all currently `1`, "reading").
-- The two table-based CRUD pages (customprompts, customdataplaceholders) pass no type and instead
-  resolve it from the row: `textarea.closest('tr')` → `.type_output`. This **must** use `closest()`,
+- The Custom Prompts page passes a **getter function** as `type_value`
+  (`() => detailType.value`): its editor is a single detail pane, not a table row, so there is no
+  `closest('tr')` to search. A function is called on every keystroke, keeping the lazy read.
+- The table-based Data Placeholders page passes no type and instead
+  resolves it from the row: `textarea.closest('tr')` → `.type_output`. This **must** use `closest()`,
   not a fixed `parentNode` chain — the editor markup nests the textarea inside a backdrop wrapper
   (see `claude-spec/05-options.md`), and a fixed chain silently breaks type filtering, throwing on
   every keystroke inside an `input` handler.
@@ -314,7 +405,8 @@ used: it discards the native undo stack and fires no `input` event, which leaves
 mirror painting stale text while the caret advances over glyphs that never get repainted. For the same
 reason the list items handle **`mousedown` with `preventDefault()`**, not `click` — a click lets the
 textarea lose focus and collapse its selection before the insertion runs. Completing a dynamic
-placeholder leaves the caret before the trailing `:%}` so the value can be typed immediately.
+placeholder leaves the caret after the colon, before the closing `%}` (`{%additional_text:|%}`), so the
+value can be typed immediately.
 
 **Positioning.** The dropdown is `position: fixed` and placed at the caret by JS. Fixed, not absolute:
 on the two table pages an absolutely positioned list is clipped by the surrounding `<td>`. The caret
@@ -324,10 +416,11 @@ caret-position library. The list flips above the caret when there is not enough 
 horizontally into the viewport. It **closes** on `scroll`/`resize` rather than repositioning, since a
 fixed element's coordinates go stale as soon as any ancestor scrolls.
 
-**All 9 textareas have a mirror.** Every page that offers the autocomplete also attaches
-`attachEditorHighlight()`, so tokens are highlighted and the list is caret-anchored everywhere — the two
-table pages (add-form + row editor) plus the eight single textareas on the six settings pages (summarize
-has three). `caretRect()` still falls back to the bottom-left of the textarea when no mirror is present,
+**All 11 textareas have a mirror.** Every page that offers the autocomplete also attaches
+`attachEditorHighlight()`, so tokens are highlighted and the list is caret-anchored everywhere — the
+Custom Prompts detail editor, the two textareas on the Custom Data Placeholders page (add-form + row
+editor), and the eight single textareas on the six feature settings pages (summarize has three).
+`caretRect()` still falls back to the bottom-left of the textarea when no mirror is present,
 so a new page that forgets the attach degrades gracefully rather than breaking.
 
 **Lifecycle.** `textareaAutocomplete()` is idempotent, guarded by `textarea._mztaAutocomplete`, and
@@ -373,7 +466,7 @@ them exactly — change one side and the mirror drifts.
 
 The chip colours there come from dedicated `--code` / `--codeBg` tokens, added to both theme blocks of
 `mzta-design.css` with the same values as the two table pages' `--code` / `--code-bg`. Do **not** reach
-for `--accentLight`: it is a 6%-alpha wash (`#0a68ff0f`) intended for large hover surfaces, and a
+for `--accentLight`: it is a 6%-alpha wash (`#2c5e9b0f`) intended for large hover surfaces, and a
 token-sized chip painted with it is invisible (1.09 contrast against `--field`) — which is exactly how
 the first attempt shipped no visible highlight on those six pages. The same caution applies to
 `--warnBg`/`--warnBorder`, which are also low-alpha washes. Fallbacks in the shared
@@ -415,7 +508,7 @@ tier readable in the DOM.
 
 **Telling the two apart costs a second call to the one predicate.** `findPlaceholder()` returns
 `null` for both "unknown id" and "wrong type" and **is deliberately left that way**: widening its
-return type would touch `extractPlaceholders()` (runtime) and `decoratePromptText()`, whose
+return type would touch `extractPlaceholders()` (runtime) and `renderPreviewText()` (Custom Prompts page), whose
 contract is documented in three places. So the resolver asks two questions instead —
 `find(inner, list, null)` ("does this id exist at all", type-less, asked **first**) and, only if
 that matched, `find(inner, list, type)` ("is it usable here"). The second `Array.find` is
@@ -424,18 +517,18 @@ repaint already performs unconditionally. Asking the type-less question first is
 mechanism: reversing the order collapses the tiers back into one.
 
 The first, second and fourth states are also rendered in **read mode** on the Manage Custom
-Prompts page, in the same two tiers: `decoratePromptText()` tests the id with `findPlaceholder(..., null)`
+Prompts page, in the same two tiers: `renderPreviewText()` tests the id with `findPlaceholder(..., null)`
 and marks a missing one `.ph_chip_invalid_read.ph_chip_error_read` (+ `editor_placeholder_missing`), then
 hands the type question to the **same** `classifyPlaceholderType()` the live resolver uses and applies
 `.ph_chip_invalid_read` with whatever title it returns. Sharing that helper is what keeps the type-`0`
-`partial_type` warning identical in both modes. Read mode's `type`
-may legitimately be `null` (no `.type_output`, no `.type` span), and then the second call equals
+`partial_type` warning identical in both modes. Read mode's `type` comes from the item's
+stored `type` value and may legitimately be `null`, and then the second call equals
 the first, so nothing is flagged amber. The unterminated state cannot occur there: that function
 matches only complete `PLACEHOLDER_RE` tokens, so an unterminated `{%` is simply left as plain text.
 
 **One predicate, three call sites — four calls.** `placeholdersUtils.findPlaceholder(inner, activePHs, type = null)` is the
 resolution rule, factored out of `extractPlaceholders()` and called by both, so the editor cannot disagree
-with what the prompt will actually resolve at runtime. `decoratePromptText()` on the Manage Custom Prompts
+with what the prompt will actually resolve at runtime. `renderPreviewText()` on the Manage Custom Prompts
 page is the third caller, so the read-only list, the live editor and the runtime all share one definition
 of a resolvable placeholder. It is **sync** and takes an already-fetched list,
 because the backdrop runs on every keystroke and cannot `await`. The `type` argument is **optional**:
@@ -486,17 +579,22 @@ are viewport coordinates, so the mirror's scroll offset needs no correction.
 that no longer exists; the next `mousemove` re-reads it. Read mode needs none of this — there the chips
 are the hovered elements, which is why `.ph_chip_invalid_read` can simply set `cursor: help`.
 
-**The token under the caret is never flagged.** Typing `{%mail_su` would otherwise flash a warning on
-every keystroke. `chip()` reads `textarea.selectionStart/End` live rather than taking an offset argument,
+**The token being typed is never flagged.** Typing `{%mail_su` would otherwise flash a warning on
+every keystroke. The exemption covers only an **open** token (no closing `%}` yet) with the caret inside
+it: a complete token is judged as soon as it is closed, so an unknown `{%no_such_ph%}` is red even with
+the caret inside it. `chip()` reads `textarea.selectionStart/End` live rather than taking an offset argument,
 because the ordinary repaint path (`refresh()`, on every `input`) passes none.
 
 **Re-validation on type change.** Validity depends on the prompt type, and the mirror caches its render,
-so `attachHighlightWithValidation()` on the two table pages adds a `change` listener to the row's
-`.type_output` (or `#selectTypeNew` in the add-form) that calls `refresh()`. There was no listener on
+so `attachHighlightWithValidation()` on the Data Placeholders table page adds a `change` listener to the
+row's `.type_output` (or `#selectTypeNew` in the add-form) that calls `refresh()`. There was no listener on
 those selectors before — the autocomplete reads the type lazily per keystroke and never needed one.
-The six settings pages pass a constant type `1`, matching the `type_value` they give the autocomplete.
+The Custom Prompts page has a single detail editor, so it attaches the mirror once, installs the resolver
+once with a getter on `#detail_type`, and refreshes on that select's `change`; neither pitfall below can
+arise there. The six settings pages pass a constant type `1`, matching the `type_value` they give the
+autocomplete.
 
-Two details of that function are load-bearing, and getting either wrong makes the **amber tier silently
+Two details of the table-page function are load-bearing, and getting either wrong makes the **amber tier silently
 unreachable** — every wrong-type token renders as a valid chip:
 
 1. **The resolver is re-installed on every call**, not only when the handle is new. `attachEditorHighlight()`
@@ -551,15 +649,36 @@ unsorted, so the dropdown is in declaration order rather than alphabetical.
 ## Custom Placeholders
 
 Users can define their own placeholders via `pages/customdataplaceholders/`. Custom placeholders:
-- Have `is_default: "0"`
+- Have `is_default: "0"` and `is_dynamic: "0"` (a custom placeholder never takes a parameter)
+- Have an `id` that always carries the **`thunderai_custom_` prefix** (`placeholdersUtils.customPrefix`),
+  so the token is `{%thunderai_custom_<name>%}` and can never collide with a built-in id. The page
+  shows and edits the id **without** it (the prefix is a fixed label before the field,
+  `stripCustomDataPH_ID_Prefix()`); `setCustomPlaceholders()`, the one writer, adds it with
+  `validateCustomDataPH_ID()`, only when it is missing (idempotent: an id already prefixed is kept as
+  is), and forces `is_default` / `is_dynamic` to `"0"`. `prepareCustomDataPHsForImport()` gives an
+  imported id the prefix **before** merging it with the stored ones, so a hand-written file with
+  `"id": "sig"` updates `thunderai_custom_sig` instead of adding a duplicate; an entry with no usable
+  id (missing, blank, not a string) is skipped. Only prefixed tokens are custom: they are what
+  `hasCustomPlaceholder()` detects and `replaceCustomPlaceholders()` expands.
 - Have a `text` property containing the replacement value
 - Are stored in `browser.storage.local`
 - Are merged with default placeholders at runtime before prompt processing
+- Can be **disabled** (`enabled: 0`, the page's checkbox). A disabled custom placeholder is treated
+  as if it did not exist: it is not offered by the autocomplete (`getPlaceholders(true)`), the editor
+  flags its token as missing, and `replaceCustomPlaceholders()` does **not** expand it — the token is
+  left in the prompt as written. Both use the same rule, `enabled != 0` (a missing `enabled` counts as
+  enabled).
 
 ## Placeholder Resolution Order
 
 1. Built-in placeholders are defined in `js/mzta-placeholders.js`
-2. Custom placeholders are loaded from storage (expanded first, by `replaceCustomPlaceholders()`)
+2. Custom placeholders are loaded from storage (expanded first, by `replaceCustomPlaceholders()`).
+   Where depends on the path: a menu action expands them into the prompt it holds before any other
+   check (so a built-in token inside a custom placeholder's text is seen by those checks too);
+   `preparePrompt()` expands whatever is left for its other callers; `buildTranslationPrompt()`
+   expands them itself. Any write of `_custom_placeholder` rebuilds the menus (`MENU_RELEVANT_KEYS`),
+   so a changed text takes effect at once (see [02-prompts.md](02-prompts.md), *How the final
+   prompt is built*)
 3. At runtime the calling path gathers the email data and hands it to
    `getPlaceholdersValues()`, which is **demand-driven**: only tokens actually present in the
    prompt get resolved
@@ -573,13 +692,19 @@ source field on the path in question:
 
 | Path | Site | Supplies |
 |---|---|---|
-| Interactive menu (reader, message list, popup, calendar event, task, translate-this) | `js/mzta-menus.js` → `preparePrompt` | everything — the only site passing selection/typed/quoted |
-| Spam filter | `mzta-background.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text`, `tags_full_list` |
-| Auto add-tags (batch loop) | `mzta-background.js` → `preparePrompt` | the same as the spam filter |
-| Summarize, per-mail template | `js/mzta-utils-prompt.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text`, `tags_full_list` |
+| Interactive menu (reader, message list, popup, calendar event, task, translate-this) | `js/mzta-menus.js` → `preparePrompt` | everything — the only site passing selection/typed/quoted/tags |
+| Spam filter | `mzta-background.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text` |
+| Auto add-tags (batch loop) | `mzta-background.js` → `preparePrompt` | the same plus `tags_full_list` |
+| Summarize, per-mail template | `js/mzta-utils-prompt.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text` |
 | Summarize, header + separator prompts | `js/mzta-utils-prompt.js` → `preparePrompt` | only `curr_prompt`/`chatgpt_lang` — every mail placeholder resolves empty |
 | Translation | `js/mzta-utils-prompt.js` → `getPlaceholdersValues` directly | `msg_text`, `mail_subject` — **no `body_text`**, so `{%mail_text_body%}` is empty there |
 | `additional_text` late fill | `api_webchat/controller.js` → `replacePlaceholders` | the deferred half of `skip_additional_text: true` |
+
+**The tag lists are the exception: no path leaves them empty.** When the caller supplies no
+`tags_full_list` pair, `getPlaceholdersValues()` reads it with `getTagsList()` — once per call, and
+only when `{%tags_full_list%}` or `{%tags_current_email%}` is in the prompt (`messagesTagsList` is a
+mandatory permission). A failed read leaves `{%tags_full_list%}` empty and `{%tags_current_email%}`
+with the raw keys.
 
 ## Adding a New Built-in Placeholder
 
@@ -592,10 +717,11 @@ Three things bite when adding one:
 - **The array entry is mandatory.** `replacePlaceholders()` looks the id up in
   `defaultPlaceholders` and returns the raw token when it is absent — so a value produced by
   `getPlaceholdersValues()` with no matching entry is silently dropped.
-- **A value that is only in `getPlaceholdersValues()`' argument list is not enough.** That
-  function is fed by 6 call sites with *uneven* coverage (see the table under *Placeholder
-  Resolution Order*): only `js/mzta-menus.js` passes selection/typed/quoted, and
-  `buildTranslationPrompt()` passes no `body_text` at all. Check the paths your placeholder needs.
+- **A value that is only in `getPlaceholdersValues()`' argument list is not enough.** The
+  function has two call sites, but one of them is `preparePrompt()`, whose own six callers
+  feed it with *uneven* coverage (see the table under *Placeholder Resolution Order*): only
+  `js/mzta-menus.js` passes selection/typed/quoted/tags, and `buildTranslationPrompt()` —
+  the direct call — passes no `body_text` at all. Check the paths your placeholder needs.
 - **`type: 1` means "reading", not "background".** The reader and the message list are reading
   contexts served by the content-script scraper in `js/mzta-menus.js`, which has no access to the
   message's parts. A placeholder that needs part or header data must fetch it there itself —
@@ -603,7 +729,8 @@ Three things bite when adding one:
   *`mail_text_body` vs `mail_plain_text_part`*.
 
 - **An empty string cannot be expressed.** `replacePlaceholders()`' `||` chain treats `''` as
-  unresolved and falls through to `default_value` or the literal token.
+  unresolved and falls through to `default_value` or the literal token. Only `{%empty%}` is
+  special-cased to `''`; a new placeholder that must be able to resolve to nothing needs the same.
 - **Escape `\s` as `\\s` in the two template-string regexes.** `hasPlaceholder()` and
   `hasCustomPlaceholder()` build their pattern with `` new RegExp(`{%\\s*${placeholder}…`) ``. The
   doubled backslash is required: in a template string a single `\s` is eaten, leaving the pattern

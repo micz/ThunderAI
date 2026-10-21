@@ -27,6 +27,7 @@ import { Anthropic } from './api/anthropic.js';
 import { Ollama } from './api/ollama.js';
 import { OpenAIComp } from './api/openai_comp.js';
 import { prepareOriginURL } from './mzta-utils.js';
+import { MANAGED_SECRET_MARKER } from './mzta-managed.js';
 
 const CONN_TEST_TIMEOUT_MS = 10000;
 
@@ -36,46 +37,60 @@ function _val(id) {
 }
 
 // Provider registry: for each testable connection_type, how to build the client from the
-// current form fields, its display-name i18n key, and how to obtain the needed host
+// current form fields (each callback gets the field-id prefix: '' on the options page and
+// in the wizard, e.g. 'summarize_' on the feature pages), its display-name i18n key, the id
+// of its API key field without the prefix (if any), and how to obtain the needed host
 // permission. chatgpt_web is intentionally absent (no testable endpoint).
 const TESTABLE = {
   chatgpt_api: {
     nameKey: 'prefs_Connection_type_ChatGPT_API',
-    makeClient: () => new OpenAI({ apiKey: _val('chatgpt_api_key') }),
+    keyId: 'chatgpt_api_key',
+    makeClient: (p) => new OpenAI({ apiKey: _val(p + 'chatgpt_api_key') }),
     requestPermission: async () =>
       messenger.permissions.request({ origins: ['https://*.openai.com/*'] }),
   },
   google_gemini_api: {
     nameKey: 'prefs_Connection_type_Google_Gemini_API',
-    makeClient: () => new GoogleGemini({ apiKey: _val('google_gemini_api_key') }),
+    keyId: 'google_gemini_api_key',
+    makeClient: (p) => new GoogleGemini({ apiKey: _val(p + 'google_gemini_api_key') }),
     requestPermission: async () =>
       messenger.permissions.request({ origins: ['https://generativelanguage.googleapis.com/*'] }),
   },
   anthropic_api: {
     nameKey: 'prefs_Connection_type_Anthropic_API',
-    makeClient: () => new Anthropic({
-      apiKey: _val('anthropic_api_key'),
-      version: _val('anthropic_version'),
+    keyId: 'anthropic_api_key',
+    makeClient: (p) => new Anthropic({
+      apiKey: _val(p + 'anthropic_api_key'),
+      version: _val(p + 'anthropic_version'),
     }),
     requestPermission: async () =>
       messenger.permissions.request({ origins: ['https://*.anthropic.com/*'] }),
   },
   ollama_api: {
     nameKey: 'prefs_Connection_type_Ollama_API',
-    makeClient: () => new Ollama({ host: _val('ollama_host') }),
-    requestPermission: async () => _requestHostPermission(_val('ollama_host')),
+    keyId: 'ollama_api_key',
+    makeClient: (p) => new Ollama({
+      host: _val(p + 'ollama_host'),
+      api_key: _val(p + 'ollama_api_key'),
+    }),
+    // /api/version rather than the default fetchModels() (/api/tags): it answers
+    // whatever is installed, so it separates "server unreachable / CORS not
+    // configured" from "reachable but no models pulled", which /api/tags conflates.
+    testMethod: 'fetchVersion',
+    requestPermission: async (p) => _requestHostPermission(_val(p + 'ollama_host')),
   },
   openai_comp_api: {
     nameKey: 'prefs_Connection_type_OpenAI_Comp_API',
-    makeClient: () => {
-      const use_v1_el = document.getElementById('openai_comp_use_v1');
+    keyId: 'openai_comp_api_key',
+    makeClient: (p) => {
+      const use_v1_el = document.getElementById(p + 'openai_comp_use_v1');
       return new OpenAIComp({
-        host: _val('openai_comp_host'),
-        apiKey: _val('openai_comp_api_key'),
+        host: _val(p + 'openai_comp_host'),
+        apiKey: _val(p + 'openai_comp_api_key'),
         use_v1: use_v1_el ? use_v1_el.checked : true,
       });
     },
-    requestPermission: async () => _requestHostPermission(_val('openai_comp_host')),
+    requestPermission: async (p) => _requestHostPermission(_val(p + 'openai_comp_host')),
   },
 };
 
@@ -106,28 +121,37 @@ function _mapError(data) {
   if (data && data.is_exception) {
     return browser.i18n.getMessage('connTest_error_network');
   }
-  // HTTP error: data.error holds the raw response body (often JSON with .error.message).
+  // HTTP error: data.error holds the raw response body (often JSON with .error.message;
+  // Ollama's is {"error": "<message>"}), data.status / data.statusText the response's.
   let detail = '';
   try {
     const parsed = JSON.parse(data.error);
-    detail = (parsed && parsed.error && parsed.error.message) ? parsed.error.message : '';
+    if (typeof parsed?.error?.message === 'string') detail = parsed.error.message;
+    else if (typeof parsed?.error === 'string') detail = parsed.error;
   } catch (e) {
     detail = typeof data.error === 'string' ? data.error : '';
   }
-  const lower = (detail || '').toLowerCase();
-  if (lower.includes('api key') || lower.includes('api-key') ||
-      lower.includes('unauthorized') || lower.includes('authentication') ||
-      lower.includes('invalid x-api-key') || lower.includes('permission')) {
+  // A rejected key: a 401, or a message about the key itself (Gemini answers a wrong key
+  // with a 400). Never a 403: that is a valid key without access to the resource (Claude's
+  // "Your API key does not have permission..."), and its own message says so better than
+  // "check your API key".
+  const lower = detail.toLowerCase();
+  const aboutKey = lower.includes('api key') || lower.includes('api-key') ||
+      lower.includes('unauthorized') || lower.includes('authentication');
+  if (data.status === 401 || (data.status !== 403 && aboutKey)) {
     return browser.i18n.getMessage('connTest_error_auth');
   }
-  if (detail) return detail;
+  if (detail.trim()) return detail;
+  // The server answered, with nothing to say: its status, never "unreachable".
+  if (data.status) return ('HTTP ' + data.status + ' ' + (data.statusText || '')).trim();
   return browser.i18n.getMessage('connTest_error_network');
 }
 
-// Runs the connectivity check for the current form values of `connType`.
+// Runs the connectivity check for the current form values of `connType`, read from the
+// fields whose ids start with `idPrefix`.
 // Returns { status: 'ok', apiName } or { status: 'error', message }.
 // Non-destructive: reads form fields only, saves nothing.
-export async function runConnectionTest(connType) {
+export async function runConnectionTest(connType, idPrefix = '') {
   const entry = getTestableConnection(connType);
   if (!entry) {
     return { status: 'error', message: browser.i18n.getMessage('connTest_error_network') };
@@ -135,21 +159,35 @@ export async function runConnectionTest(connType) {
 
   const apiName = browser.i18n.getMessage(entry.nameKey) || connType;
 
+  // A key supplied by the organization's policy never reaches this page: the field holds a
+  // placeholder, which must not be sent to the provider as if it were the key.
+  if (entry.keyId && _val(idPrefix + entry.keyId) === MANAGED_SECRET_MARKER) {
+    return { status: 'error', message: browser.i18n.getMessage('connTest_managed_api_key') };
+  }
+
   // Ensure we have the host permission the request needs (mirrors the fetch-models buttons).
-  const granted = await entry.requestPermission();
+  const granted = await entry.requestPermission(idPrefix);
   if (!granted) {
     return { status: 'error', message: browser.i18n.getMessage('Optional_Permission_Denied_Model_Fetching') };
   }
 
-  const client = entry.makeClient();
+  const client = entry.makeClient(idPrefix);
 
   const timeout = new Promise((resolve) =>
     setTimeout(() => resolve({ __timeout: true }), CONN_TEST_TIMEOUT_MS));
 
+  // Most providers probe with fetchModels(); an entry may name a cheaper or more
+  // precise endpoint instead (Ollama uses fetchVersion()). Every such method shares
+  // the same {ok, error, is_exception} result contract.
+  const probe = entry.testMethod || 'fetchModels';
+
   let data;
   try {
-    // fetchModels() resolves with {ok, error, is_exception}; OpenAIComp may throw on network error.
-    data = await Promise.race([client.fetchModels(), timeout]);
+    // The probe resolves with {ok, error, is_exception}; the catch is a safety net for an unexpected throw.
+    // No automatic retry: the test must report the current state of the
+    // connection right away, well within CONN_TEST_TIMEOUT_MS. fetchVersion()
+    // ignores the argument.
+    data = await Promise.race([client[probe]({ maxRetries: 0, timeoutMs: CONN_TEST_TIMEOUT_MS }), timeout]);
   } catch (error) {
     return { status: 'error', message: browser.i18n.getMessage('connTest_error_network') };
   }
@@ -163,4 +201,37 @@ export async function runConnectionTest(connType) {
   }
 
   return { status: 'error', message: _mapError(data || {}) };
+}
+
+// Update a connection test strip (.conn_test_strip): visual state, status text and
+// action link. `strip` defaults to the single #mzta_conn_test of the options page, the
+// setup wizard and the feature pages; Custom Prompts passes the strip of one form.
+// state: 'idle' | 'loading' | 'ok' | 'error'. message: ok→api name, error→detail.
+export function setConnTestState(state, message, strip = document.getElementById('mzta_conn_test')) {
+  const textEl = strip?.querySelector('.conn_test_text');
+  const linkEl = strip?.querySelector('.conn_test_link');
+  if (!strip || !textEl || !linkEl) return;
+  strip.setAttribute('data-state', state);
+  switch (state) {
+    case 'loading':
+      textEl.textContent = browser.i18n.getMessage('connTest_testing');
+      linkEl.style.display = 'none';
+      break;
+    case 'ok':
+      textEl.textContent = browser.i18n.getMessage('connTest_ok', [message || '']);
+      linkEl.textContent = browser.i18n.getMessage('connTest_link_retest');
+      linkEl.style.display = '';
+      break;
+    case 'error':
+      textEl.textContent = browser.i18n.getMessage('connTest_error', [message || '']);
+      linkEl.textContent = browser.i18n.getMessage('connTest_link_retry');
+      linkEl.style.display = '';
+      break;
+    case 'idle':
+    default:
+      textEl.textContent = browser.i18n.getMessage('connTest_idle');
+      linkEl.textContent = browser.i18n.getMessage('connTest_link_test');
+      linkEl.style.display = '';
+      break;
+  }
 }

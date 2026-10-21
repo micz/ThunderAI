@@ -112,23 +112,38 @@ const DIFF_FNS = {
 // markup-only difference falls through to a replace pair - where the two
 // sides are kept separately and the user can actually choose between them.
 function buildBlockPairs(oldBlocks, newBlocks) {
-    // sep is compared for the SAME reason html is: for a context part jsdiff
-    // keeps one side's objects and discards the other, so two blocks that differ
-    // only in their trailing <br> would collapse to one and reject-all would emit
-    // the ANSWER'S line structure. Comparing it sends that case to a replace pair,
-    // where both sides survive and contextSide can choose between them.
+    // listType is compared for the same reason as html: an item of a <ul>
+    // matched to the same item of an <ol> as context would carry the answer's
+    // list type into reject-all.
+    //
+    // sep and gap are NOT compared (see below): they are the line structure
+    // between blocks, which composeResultBlocksHTML settles for the whole
+    // composition from each side's own values.
     const parts = Diff.diffArrays(oldBlocks, newBlocks, {
         comparator: (a, b) => a.text === b.text && a.tag === b.tag && a.html === b.html
-                              && (a.sep || null) === (b.sep || null),
+                              && (a.listType || null) === (b.listType || null),
     });
     if (!parts) { return null; }
 
+    // sep and gap are deliberately NOT in the comparator. A Body Text original
+    // joins its lines with <br> (sep 'br', an empty line as a gap) where a
+    // markdown answer has one <p> per paragraph (sep null, no gap), and an
+    // original in Paragraph mode carries a gap before many of its paragraphs:
+    // comparing them would make every such block unequal and throw the whole
+    // alignment back on positional pairing. They are line structure, settled for
+    // the whole composition (composeResultBlocksHTML). For that each side's own
+    // values must survive a context part, of which jsdiff keeps one side's
+    // objects only: so the two lists are walked alongside the parts, and a
+    // context pair holds the real block of each side - equal in text, tag, html
+    // and list type, possibly not in sep and gap.
+    let oi = 0;
+    let ni = 0;
     const pairs = [];
     let i = 0;
     while (i < parts.length) {
         if (!parts[i].added && !parts[i].removed) {
-            for (const b of parts[i].value) {
-                pairs.push({ kind: 'context', oldBlock: b, newBlock: b });
+            for (let c = 0; c < parts[i].value.length; c++) {
+                pairs.push({ kind: 'context', oldBlock: oldBlocks[oi++], newBlock: newBlocks[ni++] });
             }
             i++;
             continue;
@@ -138,8 +153,8 @@ function buildBlockPairs(oldBlocks, newBlocks) {
         let removed = [];
         let added = [];
         while (i < parts.length && (parts[i].added || parts[i].removed)) {
-            if (parts[i].added) { added = added.concat(parts[i].value); }
-            else                { removed = removed.concat(parts[i].value); }
+            if (parts[i].added) { added = added.concat(parts[i].value); ni += parts[i].value.length; }
+            else                { removed = removed.concat(parts[i].value); oi += parts[i].value.length; }
             i++;
         }
         // Pair positionally; the surplus on either side is a pure block
@@ -169,10 +184,26 @@ function buildBlockPairs(oldBlocks, newBlocks) {
 //     state: 'accepted' | 'rejected'               // ignored for context
 //   }
 //
-//   ComposedBlock = { kind, tag, listType, hunks }
+//   ComposedBlock = { kind, tag, listType, oldTag, oldListType, oldSep, newSep,
+//                     oldGap, newGap, oldGapTag, newGapTag, hunks }
+//
+// tag/listType are the answer's wrapper, oldTag/oldListType the original's;
+// composeResultBlocksHTML picks one by the side the block shows.
 //
 // Every non-context hunk defaults to 'accepted', so a user who touches nothing
 // gets exactly what they got before the picker existed.
+//
+// oldGap/newGap (and their tags) are each side's empty lines before the block,
+// 0 for a side the block does not exist on; composeResultBlocksHTML picks one.
+function gapsOf(ob, nb) {
+    return {
+        oldGap: ob ? (ob.gap || 0) : 0,
+        newGap: nb ? (nb.gap || 0) : 0,
+        oldGapTag: ob ? (ob.gapTag || null) : null,
+        newGapTag: nb ? (nb.gapTag || null) : null,
+    };
+}
+
 export function buildHunks(originalHtml, newHtml, granularity = 'words') {
     const oldBlocks = segmentBlocks(originalHtml);
     const newBlocks = segmentBlocks(newHtml);
@@ -194,10 +225,13 @@ export function buildHunks(originalHtml, newHtml, granularity = 'words') {
                 kind: pair.kind,
                 tag: b.tag,
                 listType: b.listType,
+                oldTag: b.tag,
+                oldListType: b.listType,
                 // The block exists on one side only, so the other side has no
                 // junction to contribute.
                 oldSep: isInsert ? null : b.sep,
                 newSep: isInsert ? b.sep : null,
+                ...gapsOf(isInsert ? null : b, isInsert ? b : null),
                 hunks: [{
                     id: id++,
                     type: pair.kind,
@@ -223,11 +257,14 @@ export function buildHunks(originalHtml, newHtml, granularity = 'words') {
                 kind: 'context',
                 tag: nb.tag,
                 listType: nb.listType,
+                oldTag: ob.tag,
+                oldListType: ob.listType,
                 // sep IS in the comparator, so a context pair matched on it too:
-                // ob and nb are the same object and these two reads agree by
-                // construction, exactly as they do for text, tag and html.
+                // these two reads agree by construction, exactly as they do for
+                // text, tag and html. The gap is not compared, and may differ.
                 oldSep: ob.sep,
                 newSep: nb.sep,
+                ...gapsOf(ob, nb),
                 hunks: [{
                     id: id++,
                     type: 'context',
@@ -238,6 +275,35 @@ export function buildHunks(originalHtml, newHtml, granularity = 'words') {
                     state: 'accepted',
                 }],
             });
+            continue;
+        }
+
+        // The same words with different markup ("Dear <b>Sir</b>," against
+        // "Dear Sir,"): the text diff below would find nothing, leaving the
+        // block with no hunk at all - nothing for the user to choose, and
+        // reject-all stuck on the answer's markup. The whole block is one
+        // change instead, its two sides the two blocks' own html. Both sides read
+        // the same as text and differ in how they are marked up, which the sides
+        // show, since they render their html.
+        //
+        // Only for a difference in the HTML. Two blocks differing in nothing but
+        // their wrapper (tag, list type) or their separator stay without a hunk:
+        // that is line structure, settled once for the whole composition in
+        // composeResultBlocksHTML, so a <div> body against <p> answer paragraphs
+        // still pairs line by line instead of turning every line into a change.
+        if ((ob.text === nb.text) && (ob.html !== nb.html)) {
+            blocks.push({ kind: 'replace', tag: nb.tag, listType: nb.listType,
+                          oldTag: ob.tag, oldListType: ob.listType,
+                          oldSep: ob.sep, newSep: nb.sep, ...gapsOf(ob, nb),
+                          hunks: [{
+                              id: id++,
+                              type: 'replace',
+                              oldText: ob.text,
+                              newText: nb.text,
+                              oldHtml: ob.html,
+                              newHtml: nb.html,
+                              state: 'accepted',
+                          }] });
             continue;
         }
 
@@ -297,12 +363,15 @@ export function buildHunks(originalHtml, newHtml, granularity = 'words') {
             newPos += ins.length;
         }
 
-        // Both separators are kept, unlike tag/listType which take the new side
-        // unconditionally: composeResultBlocksHTML chooses between them at
-        // compose time, so reject-all can reproduce the original's line
-        // structure instead of the answer's.
+        // Both separators are kept, and both wrappers: composeResultBlocksHTML
+        // chooses between them at compose time, so reject-all can reproduce the
+        // original's line structure and the original's <div>, <ul> or <p>
+        // instead of putting its words in the answer's wrapper. tag/listType are
+        // the answer's, the wrapper the picker body draws the block in;
+        // oldTag/oldListType the original's.
         blocks.push({ kind: 'replace', tag: nb.tag, listType: nb.listType,
-                      oldSep: ob.sep, newSep: nb.sep, hunks });
+                      oldTag: ob.tag, oldListType: ob.listType,
+                      oldSep: ob.sep, newSep: nb.sep, ...gapsOf(ob, nb), hunks });
     }
 
     return blocks;
@@ -358,16 +427,25 @@ export function flatHunks(blocks) {
 // must be the original's too.
 //
 // A block with no changed hunks at all has two sides identical in text and
-// html, so either answer is correct here. That now includes a replace pair the
-// comparator split on the separator alone - same words, same markup, different
-// trailing <br> - because the separator is not chosen here: it is settled once
-// for the whole composition, in composeResultBlocksHTML.
+// html, so either answer is correct here. That includes a replace pair the
+// comparator split on the separator or the wrapper alone - same words, same
+// markup, a different trailing <br>, tag or list type - because neither is
+// chosen here: both are settled once for the whole composition, in
+// composeResultBlocksHTML. (Same words with different MARKUP never get here
+// without a hunk: buildHunks makes the whole block one change.)
 function contextSide(block) {
     for (const h of block.hunks) {
         if (h.type === 'context') { continue; }
         if (h.state === 'accepted') { return 'new'; }
     }
-    return block.hunks.some(h => h.type !== 'context') ? 'old' : 'new';
+    return hasOwnChanges(block) ? 'old' : 'new';
+}
+
+// Whether the block holds a change the user can choose. A block without one is
+// a context block, or a replace pair whose two sides differ only in their
+// wrapper or separator (see buildHunks).
+function hasOwnChanges(block) {
+    return block.hunks.some(h => h.type !== 'context');
 }
 
 export function composeResult(blocks) {
@@ -419,7 +497,22 @@ export function composeResultBlocksHTML(blocks) {
             else                             { html += h.oldHtml; }
         }
         if (html === '') { continue; }
-        rendered.push({ tag: b.tag, listType: b.listType, html: html, sep: null,
+        // The wrapper follows the side the block shows: a block whose changes
+        // are all rejected is the original's block again, so it keeps the
+        // original's <div>, <ul> or <p> - the wrapper is never carried inside a
+        // hunk, so it is chosen here. A block with no change to choose (same
+        // words and markup, a different wrapper) follows the composition's line
+        // structure, exactly as its separator does.
+        const wrap = hasOwnChanges(b) ? ctx : structure;
+        // The empty lines before the block are line structure too, and follow the
+        // composition like the separator - except for a block that exists on one
+        // side only, which can only bring that side's.
+        const gapSide = (b.kind === 'insert') ? 'new' : (b.kind === 'delete') ? 'old' : structure;
+        rendered.push({ tag: (wrap === 'old') ? b.oldTag : b.tag,
+                        listType: (wrap === 'old') ? b.oldListType : b.listType,
+                        gap: (gapSide === 'old') ? (b.oldGap || 0) : (b.newGap || 0),
+                        gapTag: (gapSide === 'old') ? b.oldGapTag : b.newGapTag,
+                        html: html, sep: null,
                         _sep: (structure === 'old') ? (b.oldSep || null) : (b.newSep || null),
                         _kind: b.kind });
     }
@@ -533,6 +626,10 @@ function makeBlock(el, tag, listType = null, sep = null) {
         text: blockTextOfHtml(html),
         html: html,
         sep: sep,
+        // Empty lines BEFORE this block, and the wrapper renderBlocks draws each
+        // of them in (<p><br></p> or <div><br></div>). Set by segmentBlocks.
+        gap: 0,
+        gapTag: null,
     };
 }
 
@@ -640,7 +737,7 @@ function normalizeBlockHtml(html) {
 
 // HTML -> an ordered list of Blocks.
 //
-//   Block = { tag, listType, text, html }   // html is the INNER html, sanitized
+//   Block = { tag, listType, text, html, sep, gap, gapTag }   // html is the INNER html, sanitized
 //
 // This is a NORMALIZATION, the way normalizeForDiff was for whitespace: the
 // invariant is stated against the segmented-and-rendered sides, not against
@@ -657,22 +754,62 @@ export function segmentBlocks(html) {
     const blocks = [];
 
     // Emit one block per <br>-separated run of EL's children (see splitOnBr).
-    // Empty runs have no text and are not emitted, but they still carry meaning:
-    // an empty run BETWEEN two non-empty ones is a blank line (a <br><br> pair),
-    // which is a PARAGRAPH break, so the block before it ends its wrapper
-    // (sep=null) and renderBlocks emits the next run as its own <p>. Only a
-    // SINGLE <br> to an adjacent non-empty run is an in-paragraph line break
-    // (sep='br'). A trailing <br> (empty final run) likewise leaves sep=null, so
-    // the last emitted block of a wrapper never points at a successor belonging
+    // Empty runs have no text and are not emitted. Two runs of one wrapper are
+    // always JOINED (sep='br' on the first), however many <br> lie between them:
+    // a blank line inside a paragraph ("a<br><br>b", Thunderbird's Body Text
+    // mode) is a line break plus an empty line, and stays in that paragraph. It
+    // used to be a paragraph break (two <p>), which turned a Body Text mail into
+    // Paragraph mode the moment the picker wrote it back. The last run of a
+    // wrapper leaves sep=null, so a block never points at a successor belonging
     // to a different wrapper.
+    //
+    // EMPTY LINES are not blocks either, but they are not dropped: they are
+    // counted into the `gap` of the next block emitted (see makeBlock), and the
+    // whole count goes to that block. Each <br> that shows an empty line counts
+    // one: in an element with no text (Thunderbird's Paragraph mode writes an
+    // empty line as <p><br></p>), every <br> it holds; before the first run of a
+    // wrapper, every leading <br>; between two runs, every <br> past the one
+    // that joins them; after the last run, every trailing <br> past the first,
+    // which only ends the line. At body level a <br> that does not join two lines
+    // counts too (see walk). Empty lines after the last block have no block to
+    // carry them and are dropped. renderBlocks writes a gap as <br> inside a
+    // joined run, and as empty wrappers anywhere else.
+    let gap = 0;
+    let gapTag = null;
+    const addGap = (n, tag) => {
+        if (n <= 0) { return; }
+        if (gap === 0) { gapTag = (tag === 'div') ? 'div' : 'p'; }
+        gap += n;
+    };
+    const emit = (block) => {
+        if (gap > 0) { block.gap = gap; block.gapTag = gapTag; }
+        gap = 0;
+        gapTag = null;
+        blocks.push(block);
+    };
     const pushBlocks = (el, tag, listType) => {
         const runs = splitOnBr(el).map(run => makeBlock(run, tag, listType, null));
-        for (let i = 0; i < runs.length; i++) {
-            if (runs[i].text === '') { continue; }
-            const nextNonEmpty = (i + 1 < runs.length) && runs[i + 1].text !== '';
-            runs[i].sep = nextNonEmpty ? 'br' : null;
-            blocks.push(runs[i]);
+        const filled = runs.map(r => r.text !== '');
+        if (!filled.includes(true)) {
+            // An empty list item is not an empty line: it is dropped, as before.
+            if (tag !== 'li') { addGap(runs.length - 1, tag); }
+            return;
         }
+        // Every run after the first is joined to the one before it ('br'), with
+        // the empty lines between them as its gap: "a<br><br>b" is a, then b one
+        // empty line further down, in the SAME wrapper - rendered back as
+        // "a<br><br>b", never as two paragraphs.
+        let empties = 0;
+        let prev = null;
+        for (let i = 0; i < runs.length; i++) {
+            if (!filled[i]) { empties++; continue; }
+            if (prev) { prev.sep = 'br'; }
+            addGap(empties, tag);
+            empties = 0;
+            emit(runs[i]);
+            prev = runs[i];
+        }
+        addGap(empties - 1, tag);
     };
 
     // A run of consecutive inline/text nodes at this level has no block of its
@@ -716,20 +853,18 @@ export function segmentBlocks(html) {
                     continue;
                 }
                 // A <br> between blocks ends the implicit <p> being gathered.
-                // The FIRST <br> after a run is a single-line junction ('br'), so
-                // a bare "A<br>B" at body level comes back as one <p>. A SECOND
-                // consecutive <br> (only whitespace in between) is a blank line, so
-                // it promotes that junction to a paragraph break (sep=null) and the
-                // two runs come back as separate <p> - matching the <br><br> rule
-                // inside a wrapper (see pushBlocks).
+                // The FIRST <br> after a run is the junction ('br'), so a bare
+                // "A<br>B" at body level comes back as one <p>. Every further
+                // <br> - a second in a row, one after a block element, one
+                // opening the body - is an empty line, counted into the next
+                // block's gap: "A<br><br>B" is one <p> with A, an empty line and
+                // B, matching the rule inside a wrapper (see pushBlocks).
                 if (tag === 'br') {
                     const had = (pending !== null);
                     flushPending();
-                    if (blocks.length > 0) {
-                        const lastBlock = blocks[blocks.length - 1];
-                        if (had) { lastBlock.sep = 'br'; }
-                        else if (lastBlock.sep === 'br') { lastBlock.sep = null; }
-                    }
+                    const lastBlock = blocks[blocks.length - 1] || null;
+                    if (had && lastBlock) { lastBlock.sep = 'br'; }
+                    else { addGap(1, 'p'); }
                     continue;
                 }
                 if (BLOCK_TAGS.has(tag)) {
@@ -777,6 +912,20 @@ export function renderBlocks(blocks) {
         // even if some future caller hands over a hand-built block list.
         const joins = ((b.sep === 'br') && next && (next.tag === b.tag)
                        && ((b.tag !== 'li') || ((next.listType || 'ul') === (b.listType || 'ul'))));
+
+        // The empty lines before the block, in the shape segmentBlocks reads back
+        // as the same gap: inside a run this block joins (openRun is still
+        // open), one more <br> each - "a<br><br>b" stays one paragraph; anywhere
+        // else an empty wrapper each (<p><br></p>), after closing an open list.
+        if (b.gap > 0) {
+            if (openRun !== null) {
+                out += '<br>'.repeat(b.gap);
+            } else {
+                if (openList) { out += `</${openList}>`; openList = null; }
+                const t = b.gapTag || 'p';
+                out += `<${t}><br></${t}>`.repeat(b.gap);
+            }
+        }
 
         if (b.tag === 'li') {
             const type = b.listType || 'ul';
@@ -1347,7 +1496,7 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
     }
 
     .picker-body {
-      line-height: 1.5;
+      line-height: 1.55;
       white-space: normal;
     }
 
@@ -1355,7 +1504,9 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
        picker shows the structure it is going to write into the mail. These
        rules only tame the UA defaults; the page's own font and colours are
        inherited. Margins are collapsed to a single trailing gap so a paragraph
-       and a list item sit on the same rhythm.
+       and a list item sit on the same rhythm - the answer's own (.message p in
+       messagesArea.js: 10px, line-height 1.55), so the review shows the text
+       spaced as the answer above it.
 
        The EDITOR is in every selector here too, and that is the point rather
        than tidiness: it holds the same block elements from the same composer, so
@@ -1380,7 +1531,7 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
     .picker-editor h4,
     .picker-editor h5,
     .picker-editor h6 {
-      margin: 0 0 .5em;
+      margin: 0 0 10px;
     }
     .picker-body > :last-child,
     .picker-editor > :last-child {
@@ -1390,7 +1541,7 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
     .picker-body ol,
     .picker-editor ul,
     .picker-editor ol {
-      margin: 0 0 .5em;
+      margin: 0 0 10px;
       padding-inline-start: 1.5em;
     }
     .picker-body li,
@@ -2282,6 +2433,8 @@ class DiffPicker extends HTMLElement {
                 kind: 'context',
                 tag: b.tag,
                 listType: b.listType,
+                oldTag: b.tag,
+                oldListType: b.listType,
                 oldSep: b.sep,
                 newSep: b.sep,
                 hunks: [{
@@ -2324,6 +2477,12 @@ class DiffPicker extends HTMLElement {
     // _chooseSide, _moveCurrent, _focusActiveSide and the keyboard handler are
     // pure index lookups and need no knowledge of blocks at all. Only this
     // method knows the nesting exists.
+    //
+    // Each block is drawn in the ANSWER'S wrapper (block.tag / listType), and is
+    // not redrawn when its changes are rejected, although the composed result
+    // then takes the original's wrapper (composeResultBlocksHTML): redrawing a
+    // wrapper would recreate the side elements inside it, which the surgical
+    // re-render exists to avoid. Same trade-off as the context hunks below.
     _renderAll() {
         this._bodyEl.textContent = '';
         this._hunkEls = [];
@@ -2333,9 +2492,35 @@ class DiffPicker extends HTMLElement {
         let index = 0;
         let openList = null;   // the <ul>/<ol> currently collecting <li> blocks
 
+        // The element the previous block was drawn in, while that block is
+        // joined to the next one by a <br> (its sep): the next block of the same
+        // wrapper is drawn in it too, as renderBlocks writes the run.
+        let runHost = null;
+        let runKey = null;
+
         for (const block of (this._blocks || [])) {
+            // Line structure drawn as the mail will get it: the answer's, like the
+            // wrapper (see above); a block of the original alone (a delete) has
+            // only the original's.
+            const own = (block.kind === 'delete') ? 'old' : 'new';
+            const gap = ((own === 'old') ? block.oldGap : block.newGap) || 0;
+            const sep = ((own === 'old') ? block.oldSep : block.newSep) || null;
+            const key = block.tag + '/' + ((block.tag === 'li') ? (block.listType || 'ul') : '');
             let host;
-            if (block.tag === 'li') {
+            if (runHost && runKey === key) {
+                // Joined: a line break, then the empty lines as more of them.
+                host = runHost;
+                for (let g = 0; g <= gap; g++) { host.appendChild(document.createElement('br')); }
+            } else if (gap > 0) {
+                const gapTag = ((own === 'old') ? block.oldGapTag : block.newGapTag) || 'p';
+                for (let g = 0; g < gap; g++) {
+                    const empty = document.createElement(gapTag);
+                    empty.appendChild(document.createElement('br'));
+                    this._bodyEl.appendChild(empty);
+                }
+                openList = null;
+            }
+            if (!host && block.tag === 'li') {
                 const type = block.listType || 'ul';
                 if (!openList || openList.tagName.toLowerCase() !== type) {
                     openList = document.createElement(type);
@@ -2343,11 +2528,13 @@ class DiffPicker extends HTMLElement {
                 }
                 host = document.createElement('li');
                 openList.appendChild(host);
-            } else {
+            } else if (!host) {
                 openList = null;
                 host = document.createElement(block.tag);
                 this._bodyEl.appendChild(host);
             }
+            runHost = (sep === 'br') ? host : null;
+            runKey = key;
 
             for (const hunk of block.hunks) {
                 const span = document.createElement('span');
@@ -2424,7 +2611,7 @@ class DiffPicker extends HTMLElement {
 
         side.addEventListener('click', (e) => {
             e.preventDefault();
-            this._currentIdx = index;
+            this._setCurrent(index);
             this._chooseSide(index, which);
         });
         return side;
@@ -2643,14 +2830,24 @@ class DiffPicker extends HTMLElement {
         const next = pos + delta;
         if (next < 0 || next >= this._interactive.length) { return; }
 
+        this._setCurrent(this._interactive[next]);
+        this._focusActiveSide(this._currentIdx);
+        this._hunkEls[this._currentIdx].scrollIntoView({ block: 'nearest' });
+    }
+
+    // Make a change the current one: the ONE place that moves the .is-current
+    // ring and repaints the stepper, for the arrows and for a choice made on a
+    // side (click, Enter, Space) alike. A choice used to set _currentIdx alone:
+    // the ring stayed where the arrows had left it (and the next arrow, clearing
+    // it from the clicked change only, left two changes ringed), and choosing
+    // the side already in force repainted nothing, so the stepper still showed
+    // the previous position.
+    _setCurrent(index) {
         if (this._currentIdx >= 0) {
             this._hunkEls[this._currentIdx]?.classList.remove('is-current');
         }
-        this._currentIdx = this._interactive[next];
-        const span = this._hunkEls[this._currentIdx];
-        span.classList.add('is-current');
-        this._focusActiveSide(this._currentIdx);
-        span.scrollIntoView({ block: 'nearest' });
+        this._currentIdx = index;
+        this._hunkEls[index]?.classList.add('is-current');
         // The stepper label IS the position readout, so it has to follow every
         // move - including the j/k keyboard path, which comes through here too.
         this._updateStepper(false);
@@ -2695,7 +2892,7 @@ class DiffPicker extends HTMLElement {
                 if (idx === undefined) { return; }
                 e.preventDefault();   // Space would scroll the transcript
                 const index = Number(idx);
-                this._currentIdx = index;
+                this._setCurrent(index);
                 // Enter/Space on a side means "keep this one". On the side
                 // already in force that would be a no-op, so flip instead -
                 // otherwise the key would appear dead.

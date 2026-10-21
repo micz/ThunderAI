@@ -29,7 +29,9 @@ let custom_text_start_ms = null;
 let custom_text_ms = null;
 let send_button_wait_ms = null;
 let page_timing_logged = false;
-let force_go = false;
+let continue_model_verification = null;
+let proceed_pending = false;
+let prompt_send_started = false;
 let do_force_completion = false;
 let current_message = null;
 let current_action = null;
@@ -47,6 +49,8 @@ let user_selected_composer = null;
 let current_composer_el = null;
 // debug only: message counts taken just before sending, for the completion diagnostics
 let send_baseline = null;
+// user turns, articles and path taken just before sending, to tell a send from a composer re-render
+let verify_baseline = null;
 let last_send_button_strategy = null;
 // ancestor padded so the composer clears the ThunderAI bar, with its original inline style
 let overlap_fix = null;
@@ -765,10 +769,31 @@ function isComposerEmpty(el) {
     return (el.textContent || '').trim() === '';
 }
 
-// Sent when the composer was cleared or re-rendered away, or the stop button (old or new UI) appeared
+// Max times the prompt is written again into a composer the page re-rendered before the send
+const MAX_COMPOSER_REFILLS = 1;
+
+function takeVerifyBaseline() {
+    return {
+        user: countElements('[data-message-author-role="user"]'),
+        article: countElements('main article'),
+        path: location.pathname
+    };
+}
+
+// A new user turn, or the navigation to the new conversation
+function hasSendEvidence() {
+    if (!verify_baseline) return false;
+    return countElements('[data-message-author-role="user"]') > verify_baseline.user
+        || countElements('main article') > verify_baseline.article
+        || location.pathname !== verify_baseline.path;
+}
+
+// Sent when the composer was cleared, the stop button (old or new UI) appeared, or there is
+// send evidence. A composer re-rendered away is not a send by itself: the page can replace it
+// before the send and drop the prompt with it.
 function isSendVerified(el) {
-    if (!el.isConnected || isComposerEmpty(el)) return true;
-    return chatgpt_isGenerating();
+    if (el.isConnected && isComposerEmpty(el)) return true;
+    return chatgpt_isGenerating() || hasSendEvidence();
 }
 
 // Checks isSendVerified() every 100 ms: resolves true as soon as it holds, false after maxMs
@@ -825,13 +850,17 @@ function dispatchEnter(el) {
     el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
 }
 
-// Waits for the button to be enabled, then sends. Resolves 'sent', or 'timeout' after 10 s.
+// Waits for the button to be enabled, then sends. Resolves 'sent', 'replaced' as soon as the
+// composer is no longer in the page (its prompt is gone with it), or 'timeout' after 10 s.
 function sendWithButton(sendButton, composerEl, method) {
     return new Promise(resolve => {
         const startTime = Date.now();
         const delaySend = setInterval(() => {
             try {
-                if (sendButton && sendButton.isConnected && !sendButton.hasAttribute('disabled')) { // send msg
+                if (!composerEl.isConnected) {
+                    clearInterval(delaySend);
+                    resolve('replaced');
+                } else if (sendButton && sendButton.isConnected && !sendButton.hasAttribute('disabled')) { // send msg
                     clearInterval(delaySend);
                     method.toLowerCase() == 'click' ? sendButton.click() : dispatchEnter(composerEl);
                     resolve('sent');
@@ -889,6 +918,24 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
     mztaFixComposerOverlap('composer-found');
     // counting turns is only needed by the completion diagnostics
     send_baseline = mztaDoDebug == 1 ? takeSendBaseline() : null;
+    verify_baseline = takeVerifyBaseline();
+    for (let refills = 0; ; refills++) {
+        fillComposer(textArea, msg);
+        const result = await sendAndVerify(textArea, method, refills < MAX_COMPOSER_REFILLS);
+        if (result === 'sent') return 0;   //everything is ok
+        if (result === 'failed') return -1;
+        // 'replaced': the page re-rendered the composer before the send, the prompt went with it
+        doLog("Composer replaced by the page before the send, filling the new one");
+        textArea = await findPromptInput(5000);
+        if (!textArea) {
+            console.error("[ThunderAI] The prompt could not be sent: no composer after the re-render!");
+            return -1;
+        }
+        current_composer_el = textArea;
+    }
+}
+
+function fillComposer(textArea, msg) {
     if (textArea.tagName === 'TEXTAREA') {
         // native setter, so React's value tracking notices the change
         Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(textArea, htmlToPlainText(msg));
@@ -908,6 +955,13 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
     textArea.dispatchEvent(new Event('input', { bubbles: true }));
     // lengths only, never the prompt itself
     doLog("Prompt input filled: tag " + textArea.tagName.toLowerCase() + ", content length " + (textArea.tagName === 'TEXTAREA' ? textArea.value.length : (textArea.textContent || '').length) + " (prompt length " + msg.length + ")");
+}
+
+// One send of the filled composer: 'sent', 'failed', or 'replaced' (only when canRefill)
+// when the composer left the page with no send evidence, so the caller can fill the new one
+async function sendAndVerify(textArea, method, canRefill) {
+    // before the send (button wait, sendWithButton) a refill is always safe, nothing was sent yet
+    const isReplaced = () => canRefill && !textArea.isConnected && !isSendVerified(textArea);
     //wait for the button to change from the audio button to the send button (from nov-2024),
     //the newer composer renders its submit button only once there is text
     const sendButtonWaitStart = Date.now();
@@ -917,10 +971,12 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
     let diagLogged = false;
     // for the send button diagnostics: the last method used, verified once the outcome is known
     const attempt = { strategy: null, method: null, verified: null };
+    if (isReplaced()) return 'replaced';
     if (sendButton) {
         const outcome = await sendWithButton(sendButton, textArea, method);
         // sendWithButton re-queries the button, so the strategy is read after it
         attempt.strategy = last_send_button_strategy;
+        if (outcome === 'replaced' && isReplaced()) return 'replaced';
         if (outcome === 'sent') {
             attempt.method = method.toLowerCase() == 'click' ? 'click' : 'enter';
         } else {
@@ -935,7 +991,11 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
         diagLogged = true;
         dispatchEnter(textArea);
     }
-    if (!(await waitForSendVerified(textArea, 1500))) {
+    let verified = await waitForSendVerified(textArea, 1500);
+    // a composer gone after the send gets more time to show send evidence: a refill would send twice
+    if (!verified && !textArea.isConnected) verified = await waitForSendVerified(textArea, 1500);
+    if (!verified) {
+        if (isReplaced()) return 'replaced';
         const form = textArea.closest('form');
         if (form && typeof form.requestSubmit === 'function') {
             doLog("Send not verified, trying form.requestSubmit()");
@@ -948,16 +1008,17 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 message not
             await waitForSendVerified(textArea, 1500);
         }
         if (!isSendVerified(textArea)) {
+            if (isReplaced()) return 'replaced';
             console.error("[ThunderAI] The prompt could not be sent!");
             attempt.verified = false;
             if (!diagLogged) logSendButtonDiagnostics(textArea, attempt);
-            return -1;
+            return 'failed';
         }
     }
     doLog("Send verified");
     attempt.verified = true;
     if (mztaDoDebug == 1 && !diagLogged) logSendButtonDiagnostics(textArea, attempt);
-    return 0;   //everything is ok
+    return 'sent';
 }
 
 // Buttons of the last answer turn (copy, thumbs, regenerate...), outside the composer
@@ -1317,6 +1378,8 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     var style = document.createElement('style');
     mzta_ui_style = style;
     style.textContent = ".mzta-header-fixed {position:fixed;bottom:0;left: 0;height:100px;width:100%;background-color: #333;color: white;text-align: center;padding: 10px 0;z-index: 1000;border-top: 3px solid white;}"
+    // The model picker and its portal (both z-index:50) must stay clickable above our bar.
+    style.textContent += "[data-radix-popper-content-wrapper]:has([role='menu'] [data-model-picker-view]),[role='menu']:has([data-model-picker-view]){z-index:1001 !important;}";
     style.textContent += "body {padding-bottom: 100px !important;} [id^='headlessui-dialog-panel-:r']{padding-bottom: 100px !important;} [data-testid='screen-thread']{padding-bottom: 100px !important;} [slot='content']{padding-bottom: 100px !important;}";
     style.textContent += ".mzta-btn {background-color: #007bff;border: none;color: white;padding: 8px 15px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;margin: 4px 2px;transition-duration: 0.4s;cursor: pointer;border-radius: 5px;}";
     style.textContent += ".mzta-btn:hover {background-color:#0056b3;color:white;}";
@@ -1372,8 +1435,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     btn_model.id="mzta-btn_model";
     btn_model.textContent = browser.i18n.getMessage("chatgpt_btn_model");
     btn_model.onclick = async function() {
-        force_go = true;
-        document.getElementById('mzta-model_warn').style.display = 'none';
+        if (continue_model_verification) continue_model_verification();
     };
     modelWarnDiv.appendChild(btn_model);
     
@@ -1970,50 +2032,149 @@ function customTextBtnClick(args) {
     }
 }
 
+// Observed in ChatGPT Web on 2026-10-16. Effort is language-neutral; only the
+// model's proper name is matched, inside the linked menu's selected radio row.
+function getGPTModelMenu(trigger) {
+    return Array.from(document.querySelectorAll('[role="menu"][data-state="open"]')).find(menu =>
+        menu.getAttribute('aria-labelledby') === trigger.id && isElementVisible(menu));
+}
+
+function isGPTModelSelected(trigger, menu, model, effort) {
+    if (!menu || trigger.getAttribute('data-selected-reasoning-effort') !== effort) return false;
+    const selected = menu.querySelectorAll('[role="menuitemradio"][aria-checked="true"][data-model-selected="true"]');
+    if (selected.length !== 1) return false;
+    const row = selected[0];
+    const hiddenAncestor = row.closest('[aria-hidden="true"], [inert]');
+    // Simple view retains the current model selection in its inactive model track.
+    const simpleTrack = menu.querySelector('[data-model-picker-view="simple"] > [data-active="false"][aria-hidden="true"][inert]');
+    if (!isElementVisible(row) || (hiddenAncestor && (hiddenAncestor !== simpleTrack ||
+        simpleTrack.parentElement.closest('[aria-hidden="true"], [inert]')))) return false;
+    const label = row.querySelector('[data-menu-row-content] > span');
+    const expectedName = model.trim().toLowerCase().replace(/-thinking$/, '');
+    return label && label.textContent.trim().toLowerCase() === expectedName;
+}
+
+// The model IDs the extended verification knows, with the effort the composer trigger must show.
+const GPT_MODEL_EFFORTS = { 'gpt-6': 'none', 'gpt-6-thinking': 'medium' };
+// Legacy check: the warning and the manual button after this long without a match.
+const MODEL_CHECK_LEGACY_MS = 2000;
+// Extended verification: its own deadline, started when it begins.
+const MODEL_CHECK_EXTENDED_MS = 15000;
+
+// The newer UI's composer model/reasoning trigger, or null while it is not rendered.
+function getReasoningTrigger() {
+    return Array.from(document.querySelectorAll('button[data-composer-navigation-target="reasoning"]'))
+        .find(el => isElementVisible(el) && !isOwnUiElement(el)) || null;
+}
+
 function checkGPTModel(model) {
-    if(model == '') return Promise.resolve();
-    doLog("checkGPTModel model: " + model);
-  return new Promise((resolve, reject) => {
-    // Set up an interval that shows the warning after 2 seconds
-    const intervalId2 = setTimeout(() => {
-        let modelWarn = document.getElementById('mzta-model_warn');
-        let btnModel = document.getElementById('mzta-btn_model');
-        if (modelWarn) modelWarn.style.display = 'inline-block';
-        if (btnModel) btnModel.style.display = 'inline';
-    }, 2000);
-    // Set up an interval that checks the value every 100 milliseconds
-    const intervalId = setInterval(() => {
-      // Get the '.text-token-text-secondary' element
-     // const element = document.querySelector('div#radix-\\\\:ri2\\\\: > div > span.text-token-text-secondary');
-     const elements = document.querySelectorAll('[id*=radix] span')
+    if (model === '') return Promise.resolve(true);
+    const effort = Object.prototype.hasOwnProperty.call(GPT_MODEL_EFFORTS, model) ? GPT_MODEL_EFFORTS[model] : null;
+    const extendedCheck = mztaGPTExtendedCheck == '1';
+    doLog('checkGPTModel model: ' + model + ', extended check ' + (extendedCheck ? 'on' : 'off'));
+    return new Promise(resolve => {
+        let settled = false;
+        let watching = true;
+        // 'legacy' until the newer UI's trigger is seen (within the legacy window), then 'extended' when it is verified
+        let mode = 'legacy';
+        const openedTriggers = new Set();
+        const previousFocus = document.activeElement;
+        const observer = new MutationObserver(check);
+        let timeout = setTimeout(onTimeout, MODEL_CHECK_LEGACY_MS);
+        // Also check after CSS menu transitions, which need not mutate the DOM.
+        const poll = setInterval(check, 200);
 
-     // If there are no elements, we are using a free account, so go on immediately
-     if (elements.length === 0) {
-        doLog("checkGPTModel no model found in DOM, we are using free account.");
-        clearInterval(intervalId);
-        clearTimeout(intervalId2);
-        resolve('free');
-        return;
-      }
+        function stopWatching() {
+            watching = false;
+            clearTimeout(timeout);
+            clearInterval(poll);
+            observer.disconnect();
+        }
 
-     // Loop through the elements to find the one with the specified text content
-     for(let element of elements){
-      // Check if the element exists and its content is '4' or '4o'
-      doLog("checkGPTModel model found in DOM: " + element.textContent);
-      if ((element && element.textContent === model)||(force_go)) {
-        doLog("The GPT Model is now " + model);
-        clearInterval(intervalId);
-        clearTimeout(intervalId2);
-        resolve(model);
-        break;
-      } else if (!element) {
-        console.error("[ThunderAI | ChatGPT Web] Model string element not found! [" + model + "]");
-        clearInterval(intervalId);
-        reject("Model string element not found: " + model);
-      }
-     }
-    }, 200);
-  });
+        function restoreMenu() {
+            const restoreFocus = Array.from(openedTriggers).some(trigger =>
+                trigger === document.activeElement || getGPTModelMenu(trigger)?.contains(document.activeElement));
+            for (const trigger of openedTriggers) {
+                const menu = getGPTModelMenu(trigger);
+                if (menu) menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }));
+            }
+            if (restoreFocus && previousFocus?.isConnected) previousFocus.focus();
+            openedTriggers.clear();
+        }
+
+        function finish(reason) {
+            if (settled) return;
+            settled = true;
+            stopWatching();
+            restoreMenu();
+            continue_model_verification = null;
+            window.removeEventListener('pagehide', cancel);
+            const warning = document.getElementById('mzta-model_warn');
+            if (warning) warning.style.display = 'none';
+            doLog('checkGPTModel finished: ' + reason);
+            resolve(reason !== 'cancelled');
+        }
+
+        function cancel() { finish('cancelled'); }
+
+        function onTimeout() {
+            if (!watching || settled) return;
+            stopWatching();
+            restoreMenu();
+            doLog('checkGPTModel timed out (' + mode + '): ' + model);
+            // Leave only a one-shot manual continuation; no late DOM match may send.
+            continue_model_verification = () => finish('manual');
+            const warning = document.getElementById('mzta-model_warn');
+            const button = document.getElementById('mzta-btn_model');
+            if (warning) warning.style.display = 'inline-block';
+            if (button) button.style.display = 'inline';
+        }
+
+        function check() {
+            if (!watching || settled) return;
+            if (mode === 'legacy') {
+                // The newer UI's trigger can render late: it is looked for on every check of the legacy window.
+                const newUiTrigger = getReasoningTrigger();
+                if (newUiTrigger && !extendedCheck) {
+                    doLog('checkGPTModel: newer model picker, selected reasoning effort ' + newUiTrigger.getAttribute('data-selected-reasoning-effort') + ', model not verified (extended check off)');
+                    finish('not-verified');
+                    return;
+                }
+                if (newUiTrigger && effort !== null) {
+                    mode = 'extended';
+                    clearTimeout(timeout);
+                    timeout = setTimeout(onTimeout, MODEL_CHECK_EXTENDED_MS);
+                    doLog('checkGPTModel: newer model picker, extended verification');
+                } else {
+                    // The legacy display-name and free-account checks.
+                    const elements = document.querySelectorAll('[id*=radix] span');
+                    if (!elements.length) finish('free');
+                    else if (Array.from(elements).some(el => el.textContent === model)) finish('legacy');
+                    return;
+                }
+            }
+            const triggers = Array.from(document.querySelectorAll('button[data-composer-navigation-target="reasoning"][data-selected-reasoning-effort]'))
+                .filter(el => isElementVisible(el) && !isOwnUiElement(el));
+            if (triggers.length !== 1) return;
+            const trigger = triggers[0];
+            if (!trigger.id || trigger.disabled || trigger.getAttribute('aria-disabled') === 'true') return;
+            if (trigger.getAttribute('data-selected-reasoning-effort') !== effort) return;
+            const menu = getGPTModelMenu(trigger);
+            if (!menu) {
+                if (!openedTriggers.has(trigger) && trigger.getAttribute('aria-expanded') === 'false') {
+                    openedTriggers.add(trigger);
+                    // Radix DropdownMenu opens on keydown/pointerdown, not click.
+                    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true }));
+                }
+                return;
+            }
+            if (isGPTModelSelected(trigger, menu, model, effort)) finish('matched');
+        }
+
+        window.addEventListener('pagehide', cancel);
+        observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, characterData: true });
+        check();
+    });
 }
 
 function operation_done(){
@@ -2066,10 +2227,23 @@ async function doProceed(message, customText = ''){
         console.error("[ThunderAI] doProceed: no message, nothing to send.");
         return;
     }
+    if (proceed_pending || prompt_send_started) {
+        doLog('doProceed: duplicate prompt flow skipped.');
+        return;
+    }
+    proceed_pending = true;
+    try {
+        await proceedWithPrompt(message, customText);
+    } finally {
+        proceed_pending = false;
+    }
+}
+
+async function proceedWithPrompt(message, customText){
     let _gpt_model = mztaGPTModel;
     doLog("doProceed _gpt_model: " + JSON.stringify(_gpt_model));
     if(_gpt_model != ''){
-        await checkGPTModel(_gpt_model);
+        if (!await checkGPTModel(_gpt_model)) return;
     }
     let final_prompt = message.prompt;
 
@@ -2100,6 +2274,7 @@ async function doProceed(message, customText = ''){
         }
     }
 
+    prompt_send_started = true;
     let send_result = await chatgpt_sendMsg(final_prompt,'click');
     if (mztaDoDebug == 1) logPageTiming(performance.now());
     //console.log(">>>>>>>>>>> send_result: " + send_result);
@@ -2111,6 +2286,7 @@ async function doProceed(message, customText = ''){
             // no return: the user is asked to click Send, then the idle wait below catches the answer
             break;
         case -2:    // textarea not found
+            prompt_send_started = false; // No send was attempted; the existing retry may run.
             let curr_model_warn = document.getElementById('mzta-model_warn');
             curr_model_warn.textContent = browser.i18n.getMessage("chatgpt_textarea_not_found_error");
             curr_model_warn.style.display = 'inline-block';

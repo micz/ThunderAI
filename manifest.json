@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "ThunderAI",
     "description": "__MSG_extensionDescription__",
-    "version": "5.0.4",
+    "version": "5.1.0",
     "author": "Mic (m@micz.it)",
     "homepage_url": "https://micz.it/thunderbird-addon-thunderai/",
     "browser_specific_settings": {
@@ -70,6 +70,11 @@
             "matches": ["https://*.chatgpt.com/*"],
             "js": ["js/lib/diff.js"],
             "all_frames": true,
+            "run_at": "document_start"
+        },
+        {
+            "matches": ["https://*.chatgpt.com/*"],
+            "js": ["js/mzta-chatgpt-loader.js"],
             "run_at": "document_start"
         }
     ]

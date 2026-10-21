@@ -16,7 +16,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from "../../options/mzta-options-default.js";
 import {
     getLocalStorageUsedSpace,
     openTab
@@ -33,6 +32,7 @@ import {
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { attachEditorHighlight, getEditorHighlight, makeTokenStateResolver, PLACEHOLDER_RE } from "../../js/mzta-editor-highlight.js";
+import { mztaPrefs } from '../../js/mzta-prefs.js';
 
 let prefs = null;
 var customDataPHsList = null;
@@ -45,7 +45,7 @@ let activePlaceholders = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-    prefs = await browser.storage.sync.get({ do_debug: prefs_default.do_debug });
+    prefs = await mztaPrefs.getPrefs(['do_debug']);
     taLog = new taLogger("mzta-custom-dataplaceholders", prefs.do_debug);
     
     setStorageSpace();
@@ -140,22 +140,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             idnum: idnumMax + 1,
         };
 
-        let newItem = customDataPHsList.add(newItemData);
+        let newItem = customDataPHsList.add(toListValues(newItemData));
         idnumMax++;
-        let curr_idnum = newItem[0].values().idnum;
-        let checkboxes = document.querySelectorAll(`tr[data-idnum="${curr_idnum}"] input[type="checkbox"]`);
-        checkSelectedBoxes(checkboxes);
-        let editBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnEditItem`);
-        //console.log(`>>>>>>>>>>>> tr[data-idnum="${curr_idnum}"] button.btnEditItem`);
-        editBtn.addEventListener('click', handleEditClick);
-        //console.log('>>>>>>>>>>>>> editBtn: ' + JSON.stringify(editBtn));
-        let deleteBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnDeleteItem`);
-        //console.log(`>>>>>>>>>>>> tr[data-idnum="${curr_idnum}"] button.btnDeleteItem`);
-        deleteBtn.addEventListener('click', handleDeleteClick);
-        let okBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnConfirmItem`);
-        okBtn.addEventListener('click', handleConfirmClick);
-        let cancelBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnCancelItem`);
-        cancelBtn.addEventListener('click', handleCancelClick);
+        // Wired on the row just created, not looked up by its idnum: a row number is not
+        // guaranteed unique, and a lookup would wire another row's buttons twice and leave
+        // this one's dead.
+        const tr = newItem[0].elm;
+        checkSelectedBoxes(tr.querySelectorAll('input[type="checkbox"]'));
+        tr.querySelector('button.btnEditItem').addEventListener('click', handleEditClick);
+        tr.querySelector('button.btnDeleteItem').addEventListener('click', handleDeleteClick);
+        tr.querySelector('button.btnConfirmItem').addEventListener('click', handleConfirmClick);
+        tr.querySelector('button.btnCancelItem').addEventListener('click', handleCancelClick);
+        // The enabled switch is clickable straight from the row, a new one included.
+        tr.querySelectorAll('.input_mod').forEach(element => {
+            element.addEventListener('change', handleInputChange);
+        });
         // console.log('>>>>>>>>>>>>> deleteBtn: ' + JSON.stringify(deleteBtn));
         // console.log('>>>>>>>>>>>>> newItem: ' + JSON.stringify(newItem));
         document.getElementById('btnNew').disabled = false;
@@ -359,8 +358,10 @@ function handleDeleteClick(e) {
         return;
     }
     const tr = e.target.parentNode.parentNode;
-    //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
-    customDataPHsList.remove("id", tr.querySelector('span.id').innerText);
+    // Found by its row, then removed by the id the list itself holds: the list keeps the
+    // values escaped (see toListValues()), so the text the row shows may not match them.
+    const item = customDataPHsList.items.find(it => it.elm === tr);
+    if (item) customDataPHsList.remove("id", item.values().id);
     setSomethingChanged();
 }
 
@@ -372,7 +373,7 @@ function handleCancelClick(e) {
 //        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
     tr.querySelector('.btnEditItem').style.display = '';   // Edit btn
     tr.querySelector('.btnDeleteItem').style.display = '';   // Delete btn
-    tr.querySelector('.id_output').value = tr.querySelector('.id_show').innerText.toLocaleUpperCase();
+    tr.querySelector('.id_output').value = tr.querySelector('.id_show').innerText;
     tr.querySelector('.name_output').value = tr.querySelector('.name_show').innerText;
     tr.querySelector('.text_output').value = getTextShowSource(tr.querySelector('.text_show'));
 	tr.querySelector('.type_output').value = tr.querySelector('.type').innerText;
@@ -473,6 +474,29 @@ function updatePlaceholdersCount() {
     el.textContent = browser.i18n.getMessage('customDataPH_placeholdersCount', [String(count)]);
 }
 
+// Escape a value for HTML text or a double-quoted attribute.
+function escapeHtml(value) {
+    return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// The values of one placeholder as the list takes them. List.js writes every class value
+// into its cell with innerHTML, and the row template concatenates them into markup
+// (value="...", the <textarea> content): escaped here, a quote, a "</textarea>", a tag or an
+// entity in the data is shown and edited literally, and read back unchanged by Save All
+// (itemToSave() reads the cells as text). The id is listed without its thunderai_custom_
+// prefix, and a legacy <br> becomes a newline, so the read-only span and the textarea agree.
+function toListValues(ph) {
+    return {
+        ...ph,
+        id: escapeHtml(placeholdersUtils.stripCustomDataPH_ID_Prefix(String(ph.id ?? ''))),
+        name: escapeHtml(ph.name),
+        text: escapeHtml(String(ph.text ?? '').replace(/<br\s*\/?>/gi, "\n")),
+        type: escapeHtml(ph.type),
+        is_default: escapeHtml(ph.is_default),
+    };
+}
+
 function loadCustomDataPHsList(values){
     // console.log('>>>>>>>> loadCustomDataPHsList values: ' + JSON.stringify(values));
     let options = {
@@ -485,12 +509,9 @@ function loadCustomDataPHsList(values){
             'type',
             { name: 'enabled', attr: 'checked_val'}
         ],
+        // The values arrive escaped (toListValues()): they are concatenated into this
+        // markup as they are.
         item: function(values) {
-            values.id = placeholdersUtils.stripCustomDataPH_ID_Prefix(values.id);
-            // Legacy stored values may hold <br> instead of newlines. Normalise once,
-            // here, so the read-only span and the textarea show the same text: List.js
-            // binds .text_show as text and would otherwise render "<br>" literally.
-            values.text = String(values.text).replace(/<br\s*\/?>/gi, "\n");
             let type_output = '';
             switch(String(values.type)){
                 case "0":
@@ -538,7 +559,7 @@ function loadCustomDataPHsList(values){
                </td>
             </tr>`;
             //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
-            idnumMax = Math.max(idnumMax, values.idnum);
+            idnumMax = Math.max(idnumMax, Number(values.idnum) || 0);
             return output;
         }
     };
@@ -546,7 +567,15 @@ function loadCustomDataPHsList(values){
     // console.log('>>>>>>>>>>>>> options: ' + JSON.stringify(options));
     // console.log('>>>>>>>>>>>>> values: ' + JSON.stringify(values));
 
-    customDataPHsList = new List('all_custom_dataplaceholders', options, values);
+    // Every row gets a numeric idnum: a placeholder imported from a file has none (the export
+    // drops it), and a missing one turned idnumMax into NaN, and every later row's into NaN too.
+    let nextIdnum = Math.max(0, ...values.map(v => Number(v.idnum) || 0));
+    const listValues = values.map(v => {
+        const lv = toListValues(v);
+        if (!(Number(lv.idnum) > 0)) lv.idnum = ++nextIdnum;
+        return lv;
+    });
+    customDataPHsList = new List('all_custom_dataplaceholders', options, listValues);
 
     decoratePlaceholderText();
     updatePlaceholdersCount();
@@ -592,9 +621,9 @@ function checkFields() {
         inputSetError('txtIdNew');
         is_error = true;
     } else {
-        let exists = customDataPHsList.get("id", id_value);
-        //console.log('>>>>>>>>>>>>> exists: ' + JSON.stringify(exists));
-        if(exists && exists.length > 0) {
+        // Against the ids the rows show: the list holds them escaped.
+        const listed = customDataPHsList.items.map(it => it.elm.querySelector('.id_show').textContent);
+        if(listed.includes(id_value)) {
             inputSetError('txtIdNew');
             is_error = true;
         } else {
@@ -673,20 +702,48 @@ function checkSelectedBoxes(checkboxes = null) {
     });
 }
 
+// The placeholder to store for one row, as a NEW object read from the row itself.
+// - reIndex() reads every class value with innerHTML, so the read-mode text comes back with
+//   the chip markup decoratePlaceholderText() wrapped around its tokens (and "&" as "&amp;"):
+//   the text, name and id are read as plain text instead, the text from its recorded source.
+// - `enabled` is the switch's live state: List.js reads it from the checked_val attribute,
+//   which ticking the switch never changes.
+// - A copy, never item.values() itself: setCustomPlaceholders() adds the thunderai_custom_
+//   prefix to what it is given, and the list must keep the unprefixed id the row shows, or
+//   Delete and the "already used" check stop matching after a save.
+function itemToSave(item) {
+    const tr = item.elm;
+    const values = { ...item.values() };
+    values.id = tr.querySelector('.id_show').textContent;
+    values.name = tr.querySelector('.name_show').textContent;
+    values.text = getTextShowSource(tr.querySelector('.text_show'));
+    values.type = tr.querySelector('.type').textContent;
+    values.enabled = tr.querySelector('input.enabled').checked ? 1 : 0;
+    return values;
+}
+
 //Save all custom data placeholders
 async function saveAll() {
     setMessage(browser.i18n.getMessage('customDataPH_saving_custom'));
-    setNothingChanged();
+    // Disabled while the write is in flight; the pending state itself is cleared only once
+    // the write has landed, so a failed one keeps the beforeunload warning armed.
+    document.getElementById('btnSaveAll').disabled = true;
     if(customDataPHsList != null) {
         setMessage(browser.i18n.getMessage('customPrompts_reindexing_list'));
         customDataPHsList.reIndex();
-        let newCustomDataPHs = customDataPHsList.items.filter(item => item.values().is_default == 0).map(item => item.values());
+        let newCustomDataPHs = customDataPHsList.items.filter(item => item.values().is_default == 0).map(itemToSave);
         taLog.log('newCustomDataPlaceholders: ' + JSON.stringify(newCustomDataPHs));
-        // newCustomDataPHs.forEach(prompt => {
-        //     console.log('>>>>>>>>>>>>> id: ' + JSON.stringify(prompt));
-        // });
-        //console.log('>>>>>>>>>>>>> saveAll: ' + JSON.stringify(newCustomDataPHs));
-        await setCustomPlaceholders(newCustomDataPHs);
+        try {
+            await setCustomPlaceholders(newCustomDataPHs);
+        } catch (err) {
+            // What is on screen is not in storage: say so, and give Save All back.
+            taLog.error('Saving the custom data placeholders failed: ' + err);
+            somethingChanged = true;
+            document.getElementById('btnSaveAll').disabled = false;
+            setMessage(browser.i18n.getMessage('customDataPH_save_error') + ' ' + err, 'red');
+            return;
+        }
+        setNothingChanged();
         setMessage(browser.i18n.getMessage('customDataPH_saved'),'green');
         msgTimeout = setTimeout(() => {
             clearMessage();

@@ -26,28 +26,48 @@ import { taLogger } from '../js/mzta-logger.js';
 import {
   checkSparksPresence,
   openTab,
+  toWindowCoordinate,
   isAPIKeyValue,
   getConnectionType,
   hasNoConnectionSelected,
   setTomSelectBorder,
   getMiczItUrl,
-  getCacheStorageUsedSpace
+  getCacheStorageUsedSpace,
+  supportsUsageData
 } from '../js/mzta-utils.js';
 import { taStorage } from '../js/mzta-storage.js';
 import {
   injectConnectionUI,
   updateAnthropicModelCapabilityUI,
+  updateOllamaModelCapabilityUI,
+  updateOpenAIModelCapabilityUI,
   varConnectionUI,
   showConnectionOptions,
   updateWarnings,
   hasEmptyValueOption,
+  ensureRestorableOption,
   checkJsonFields,
   getConnectionTypeLabel
 } from '../pages/_lib/connection-ui.js';
 import {
   isTestableConnection,
-  runConnectionTest
+  runConnectionTest,
+  setConnTestState
 } from '../js/mzta-connection-test.js';
+import { mztaPrefs } from '../js/mzta-prefs.js';
+import {
+  applyManagedUI,
+  showManagedBanner,
+  isLockedKey,
+  setDisabledRespectingManaged,
+  isSetupWizardDisabled,
+  disableForManagedRestriction
+} from '../pages/_lib/managed-ui.js';
+import { isPermissionGatedPref } from '../js/mzta-feature-permissions.js';
+import {
+  bindPermissionToggle,
+  showLockedPermissionWarning
+} from '../pages/_lib/permission-toggle.js';
 
 let taLog = new taLogger("mzta-options",true);
 
@@ -55,6 +75,9 @@ function saveOptions(e) {
   e.preventDefault();
   let options = {};
   let element = e.target;
+  // A feature gated by an optional permission is written by its own handler, and only once the
+  // permission is granted (bindPermissionToggle() in pages/_lib/permission-toggle.js).
+  if (isPermissionGatedPref(element.id)) return;
 
     switch (element.type) {
       case 'checkbox':
@@ -85,7 +108,11 @@ function saveOptions(e) {
           console.error("[ThunderAI] Unhandled input type:", element.type);
     }
 
-  browser.storage.sync.set(options);
+  // Guard the default: branch above, which leaves `options` empty — the previous
+  // set(options) wrote nothing in that case, so nothing must be written here either.
+  if (Object.prototype.hasOwnProperty.call(options, element.id)) {
+    mztaPrefs.setPref(element.id, options[element.id]);
+  }
 }
 
 async function restoreOptions() {
@@ -98,10 +125,17 @@ async function restoreOptions() {
           element.checked = result[element.id] || false;
           break;
         case 'number':
+          // The window position has no default: anything that is not a saved coordinate
+          // (the '' default, the null of a cleared field) shows as an empty field, not 0.
+          if(element.id == 'chatgpt_win_top' || element.id == 'chatgpt_win_left'){
+            element.value = toWindowCoordinate(result[element.id]) ?? '';
+            break;
+          }
           let default_number_value = 0;
           if(element.id == 'chatgpt_win_height') default_number_value = prefs_default.chatgpt_win_height;
           if(element.id == 'chatgpt_win_width') default_number_value = prefs_default.chatgpt_win_width;
           if(element.id == 'special_command_timeout') default_number_value = prefs_default.special_command_timeout;
+          if(element.id == 'batch_max_concurrency') default_number_value = prefs_default.batch_max_concurrency;
           element.value = result[element.id] ?? default_number_value;
           break;
         case 'text':
@@ -118,6 +152,7 @@ async function restoreOptions() {
           if(element.id == 'diff_granularity') default_select_value = prefs_default.diff_granularity;
           // No fallback for connection_type: an empty value means "no connection
           // selected yet" and must stay empty, so the placeholder option shows.
+          ensureRestorableOption(element, result[element.id]);
           element.value = result[element.id] || default_select_value;
           // connection_type and the ChatGPT reasoning selects have a dedicated option
           // for the empty value, so let the assignment above select it; every other
@@ -139,7 +174,7 @@ async function restoreOptions() {
     });
   }
 
-  let getting = await browser.storage.sync.get(prefs_default);
+  let getting = await mztaPrefs.getAllPrefs();
   setCurrentChoice(getting);
 }
 
@@ -202,9 +237,46 @@ function disable_MaxPromptLength(){
   let maxPromptLength = document.getElementById('max_prompt_length');
   let conntype_select = document.getElementById("connection_type");
   // API-only setting: irrelevant for ChatGPT Web and until a connection is chosen.
-  maxPromptLength.disabled = (conntype_select.value === "chatgpt_web") || hasNoConnectionSelected(conntype_select.value);
+  const irrelevant = (conntype_select.value === "chatgpt_web") || hasNoConnectionSelected(conntype_select.value);
+  setDisabledRespectingManaged(maxPromptLength, irrelevant);
   let maxPromptLength_tr = document.getElementById('max_prompt_length_tr');
-  maxPromptLength_tr.style.display = (maxPromptLength.disabled) ? 'none' : '';
+  // Follow relevance, not the input's disabled flag: a policy lock also disables the
+  // field, and that must grey it out rather than hide the row it explains.
+  maxPromptLength_tr.style.display = irrelevant ? 'none' : '';
+}
+
+// Show the "Show usage data in chat" row only when at least one integration that
+// could actually report those counts is configured: the global connection, or any
+// per-feature specific integration. A web-only setup (ChatGPT Web and nothing else)
+// never sees the row, because no web interface exposes token counts.
+//
+// The per-feature integrations are included even though they drive the automatic
+// features, which have no chat UI: a feature integration is still a "currently
+// configured integration", and hiding the row while one is set would be arbitrary.
+// prefs_opt is the same snapshot the feature rows read; the live select value wins
+// over its stored connection_type, since this runs in reaction to that select.
+function disable_ChatShowUsageData(prefs_opt){
+  let row = document.getElementById('chat_show_usage_data_tr');
+  if(!row) return;
+  let conntype_select = document.getElementById('connection_type');
+  const global_type = conntype_select ? conntype_select.value : '';
+
+  // Every connection type in play: the global one plus each feature that opted out
+  // of it. getConnectionType() falls back to the global type on its own, so a feature
+  // without a specific integration simply repeats it -- harmless for an "any of" test.
+  const tempPrefs = { ...prefs_opt, connection_type: global_type };
+  const types = [global_type];
+  for(const prefix of special_prompts_with_integration){
+    types.push(getConnectionType(tempPrefs, null, prefix));
+  }
+
+  const visible = types.some(t => supportsUsageData(t));
+  row.style.display = visible ? '' : 'none';
+
+  // The note about server-dependent availability belongs to the OpenAI Compatible
+  // endpoints alone, so it follows the types actually in use rather than the row.
+  let note = document.getElementById('chat_show_usage_data_openai_comp_note');
+  if(note) note.style.display = types.includes('openai_comp_api') ? '' : 'none';
 }
 
 // Show the "Manage settings" link for a feature only when its flag is enabled;
@@ -264,16 +336,21 @@ function disable_ApiFeature(prefs_opt, prefix, manageBtnId){
   // is on their way to configuring a per-feature API, and that page is behind this very
   // toggle — clearing it here used to strand them: the feature switched itself back off
   // between enabling it and finishing the setup.
-  checkbox.checked = state.disabled ? false : checkbox.checked;
+  // Never for a policy-locked flag: a policy-enabled feature with an unusable connection
+  // stays on (see _reconcileFeatureFlags() in mzta-background.js), so the page must keep
+  // showing the enforced value rather than a switch-off the write guard would refuse anyway.
+  if (!isLockedKey(prefix)) {
+    checkbox.checked = state.disabled ? false : checkbox.checked;
+  }
   // With no connection selected the toggle is greyed out: there is nothing to
-  // enable the feature against yet.
-  checkbox.disabled = state.no_connection;
+  // enable the feature against yet. A policy-locked toggle stays disabled regardless.
+  setDisabledRespectingManaged(checkbox, state.no_connection);
 
   setFeatureManageVisibility(document.getElementById(manageBtnId), checkbox.checked);
   setApiWarnVisibility(prefix, state.show_api_warning);
 
   if(checked_original != checkbox.checked){
-    browser.storage.sync.set({[prefix]: checkbox.checked});
+    mztaPrefs.setPref(prefix, checkbox.checked);
   }
 }
 
@@ -313,15 +390,19 @@ async function disable_GetCalendarEvent(prefs_opt){
   setApiWarnVisibility('get_calendar_event', cal_state.show_api_warning);
   setApiWarnVisibility('get_task', task_state.show_api_warning);
   // Sparks presence is an orthogonal requirement: both features live in that add-on.
-  get_calendar_event.disabled = cal_unusable || !(is_spark_present == 1);
-  get_task.disabled = task_unusable || !(is_spark_present == 1);
+  const cal_hidden = cal_unusable || !(is_spark_present == 1);
+  const task_hidden = task_unusable || !(is_spark_present == 1);
+  setDisabledRespectingManaged(get_calendar_event, cal_hidden);
+  setDisabledRespectingManaged(get_task, task_hidden);
+  // Row visibility follows usability, not the input's disabled flag: a policy lock also
+  // disables the control, and that must grey the row out rather than remove it.
   let get_calendar_event_tr_elements = document.querySelectorAll('.get_calendar_event_tr');
   get_calendar_event_tr_elements.forEach(get_calendar_event_tr => {
-    get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : '';
+    get_calendar_event_tr.style.display = cal_hidden ? 'none' : '';
   });
   let get_task_tr_elements = document.querySelectorAll('.get_task_tr');
   get_task_tr_elements.forEach(get_task_tr => {
-    get_task_tr.style.display = get_task.disabled ? 'none' : '';
+    get_task_tr.style.display = task_hidden ? 'none' : '';
   });
   // The "Sparks missing" notice is only worth showing when at least one of the two
   // features could actually run: if both are unusable on their connection anyway,
@@ -423,6 +504,9 @@ function updateConnPanelTint(){
 }
 
 async function openSetupWizard(){
+  // Belt and braces: the links are disabled below, but a restriction must not depend on a
+  // control staying disabled - the wizard page refuses to render as well.
+  if(isSetupWizardDisabled()) return;
   await browser.tabs.create({ url: "../pages/setup-wizard/mzta-setup-wizard.html" });
 }
 
@@ -472,7 +556,7 @@ function showAdvConnectionOptions(){
   });
 }
 
-// ---- Connection test status strip (Options page only) --------------------
+// ---- Connection test status strip ------------------------------------------
 // Non-persistent connectivity check. Reuses the provider fetchModels() logic via
 // js/mzta-connection-test.js; reads the current form values and saves nothing.
 
@@ -490,48 +574,19 @@ function refreshConnTestVisibility(){
   setConnTestState('idle');
 }
 
-// Update the strip's visual state, status text and action link.
-// state: 'idle' | 'loading' | 'ok' | 'error'. message: ok→api name, error→detail.
-function setConnTestState(state, message){
-  let strip = document.getElementById('mzta_conn_test');
-  let textEl = document.getElementById('mzta_conn_test_text');
-  let linkEl = document.getElementById('mzta_conn_test_link');
-  if(!strip || !textEl || !linkEl) return;
-  strip.setAttribute('data-state', state);
-  switch(state){
-    case 'loading':
-      textEl.textContent = browser.i18n.getMessage('connTest_testing');
-      linkEl.style.display = 'none';
-      break;
-    case 'ok':
-      textEl.textContent = browser.i18n.getMessage('connTest_ok', [message || '']);
-      linkEl.textContent = browser.i18n.getMessage('connTest_link_retest');
-      linkEl.style.display = '';
-      break;
-    case 'error':
-      textEl.textContent = browser.i18n.getMessage('connTest_error', [message || '']);
-      linkEl.textContent = browser.i18n.getMessage('connTest_link_retry');
-      linkEl.style.display = '';
-      break;
-    case 'idle':
-    default:
-      textEl.textContent = browser.i18n.getMessage('connTest_idle');
-      linkEl.textContent = browser.i18n.getMessage('connTest_link_test');
-      linkEl.style.display = '';
-      break;
-  }
-}
-
 function resetMaxPromptLength(){
+  // The button being disabled is not the same as the action being unavailable.
+  if (isLockedKey('max_prompt_length')) return;
   let maxPromptLength = document.getElementById('max_prompt_length');
   maxPromptLength.value = prefs_default.max_prompt_length;
-  browser.storage.sync.set({max_prompt_length: prefs_default.max_prompt_length});
+  mztaPrefs.setPref('max_prompt_length', prefs_default.max_prompt_length);
 }
 
 function resetSpecialCommandTimeout(){
+  if (isLockedKey('special_command_timeout')) return;
   let specialCommandTimeout = document.getElementById('special_command_timeout');
   specialCommandTimeout.value = prefs_default.special_command_timeout;
-  browser.storage.sync.set({special_command_timeout: prefs_default.special_command_timeout});
+  mztaPrefs.setPref('special_command_timeout', prefs_default.special_command_timeout);
 }
 
 async function updateCacheSize() {
@@ -576,46 +631,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('link_doc_guides').href = getMiczItUrl('thunderbird-addon-thunderai/guides/');
   document.getElementById('link_doc_tutorial').href = getMiczItUrl('thunderbird-addon-thunderai/tutorial/');
 
+  // After i18n and restoreOptions(): the inputs must already hold their resolved values
+  // (js/mzta-prefs.js has folded in the policy) before they are disabled and marked.
+  // This is presentation only - the write guard in js/mzta-prefs.js is what actually
+  // prevents a locked preference being written.
+  // true, like this page's own taLogger above: these two only ever log a failure to
+  // reach the background page, which is worth seeing whenever it happens.
+  await showManagedBanner('managed_config_banner', true);
+  await applyManagedUI(document, true);
+
   document.querySelectorAll(".option-input").forEach(element => {
     element.addEventListener("change", saveOptions);
   });
   
+  // Both need optional permissions: the preference is written only once they are granted
+  // (pages/_lib/permission-toggle.js), never by saveOptions().
   let addtags_el = document.getElementById('add_tags');
   let addtags_info_btn = document.getElementById('btnManageTagsInfo');
-  addtags_el.addEventListener('click', (event) => {
-    async function _addtags_el_change() {
-      if (event.target.checked) {
-        let granted = false;
-        granted = await messenger.permissions.request({ permissions: ["messagesTags", "messagesUpdate"] });
-        if (!granted) {
-          event.target.checked = false;
-          setFeatureManageVisibility(addtags_info_btn, false);
-          browser.storage.sync.set({add_tags: false});
-        }
-      }
-    }
-    _addtags_el_change();
-    setFeatureManageVisibility(addtags_info_btn, event.target.checked);
+  bindPermissionToggle(addtags_el, 'add_tags', {
+    taLog: taLog,
+    onChange: (checked) => setFeatureManageVisibility(addtags_info_btn, checked),
   });
   setFeatureManageVisibility(addtags_info_btn, addtags_el.checked);
+  await showLockedPermissionWarning(addtags_el, 'add_tags');
 
   let spamfilter_el = document.getElementById('spamfilter');
   let spamfilter_info_btn = document.getElementById('btnManageSpamFilterInfo');
-  spamfilter_el.addEventListener('click', (event) => {
-    async function _spamfilter_el_change() {
-      if (event.target.checked) {
-        let granted = await messenger.permissions.request({ permissions: ["messagesMove", "messagesUpdate"] });
-        if (!granted) {
-          event.target.checked = false;
-          setFeatureManageVisibility(spamfilter_info_btn, false);
-          browser.storage.sync.set({spamfilter: false});
-        }
-      }
-    }
-    _spamfilter_el_change();
-    setFeatureManageVisibility(spamfilter_info_btn, event.target.checked);
+  bindPermissionToggle(spamfilter_el, 'spamfilter', {
+    taLog: taLog,
+    onChange: (checked) => setFeatureManageVisibility(spamfilter_info_btn, checked),
   });
   setFeatureManageVisibility(spamfilter_info_btn, spamfilter_el.checked);
+  await showLockedPermissionWarning(spamfilter_el, 'spamfilter');
 
   let summarize_el = document.getElementById('summarize');
   let summarize_info_btn = document.getElementById('btnManageSummarizeInfo');
@@ -689,9 +736,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  let prefs_opt = await browser.storage.sync.get({
-    ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
-  });
+  let prefs_opt = await mztaPrefs.getPrefs(
+    Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+  );
 
   let conntype_select = document.getElementById("connection_type");
   conntype_select.addEventListener("change", disable_MaxPromptLength);
@@ -700,12 +747,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", () => disable_Summarize(prefs_opt));
   conntype_select.addEventListener("change", () => disable_Translate(prefs_opt));
   conntype_select.addEventListener("change", () => disable_GetCalendarEvent(prefs_opt));
+  conntype_select.addEventListener("change", () => disable_ChatShowUsageData(prefs_opt));
   conntype_select.addEventListener("change", updateDescription);
   conntype_select.addEventListener("change", updateConnPanelTint);
 
   showConnectionOptions(conntype_select);
   showAdvConnectionOptions();
   updateAnthropicModelCapabilityUI();
+  updateOllamaModelCapabilityUI();
+  updateOpenAIModelCapabilityUI();
   checkJsonFields();
   updateDescription();
   updateConnPanelTint();
@@ -716,17 +766,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   disable_Summarize(prefs_opt);
   disable_Translate(prefs_opt);
   disable_GetCalendarEvent(prefs_opt);
+  disable_ChatShowUsageData(prefs_opt);
   updateSpecificApiIndicators(prefs_opt);
 
   browser.storage.onChanged.addListener(async (changes, area) => {
-    if (area !== 'sync') return;
+    // Preferences live in storage.local — see js/mzta-prefs.js.
+    if (area !== 'local') return;
+    // A policy-enforced key cannot have meaningfully changed: whatever was written to
+    // storage.local for it is shadowed on every read by the policy value, so reacting
+    // would recompute the indicators to land on the values already displayed.
     const hasRelevantChange = Object.keys(changes).some(key =>
-      key.endsWith('_use_specific_integration') || key.endsWith('_connection_type')
+      !isLockedKey(key) &&
+      (key.endsWith('_use_specific_integration') || key.endsWith('_connection_type'))
     );
     if (hasRelevantChange) {
-      prefs_opt = await browser.storage.sync.get({
-        ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
-      });
+      prefs_opt = await mztaPrefs.getPrefs(
+        Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+      );
       updateSpecificApiIndicators(prefs_opt);
       // The feature rows are computed from prefs_opt too: configuring a per-feature
       // integration in another tab changes that feature's effective connection, so the
@@ -737,6 +793,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       disable_Summarize(prefs_opt);
       disable_Translate(prefs_opt);
       await disable_GetCalendarEvent(prefs_opt);
+      disable_ChatShowUsageData(prefs_opt);
     }
   });
 
@@ -791,6 +848,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }else{
       setConnTestState('error', result.message);
     }
+    // A successful test may have been the moment the host permission was granted,
+    // so re-probe the model capabilities now that /api/show can actually be reached.
+    if(connType === 'ollama_api' && result.status === 'ok'){
+      updateOllamaModelCapabilityUI();
+    }
   });
 
   document.getElementById('btn_welcome').addEventListener('click', async () => {
@@ -798,6 +860,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   document.getElementById('btn_setup_wizard').addEventListener('click', openSetupWizard);
+
+  // A policy may forbid the setup wizard: the connection is configured centrally, so the
+  // guided setup would only offer to overwrite what the policy already enforces.
+  if(isSetupWizardDisabled()){
+      disableForManagedRestriction(document.getElementById('btn_setup_wizard'));
+      disableForManagedRestriction(document.getElementById('btn_options_setup_wizard'));
+  }
 
   // "No connection selected" banner: shown until a provider is chosen.
   updateNoConnectionBanner();

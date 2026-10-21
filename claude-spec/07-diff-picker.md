@@ -29,11 +29,15 @@ Implemented in `api_webchat/diffPicker.js`. Introduced by
 **blocks**, each holding its own hunks:
 
 ```js
-Block = { tag, listType, text, html }           // segmentBlocks() output; html is INNER html
+Block = { tag, listType, text, html, sep,      // segmentBlocks() output; html is INNER html
+          gap, gapTag }                         // empty lines before it, see "Empty lines"
 
 ComposedBlock = {
   kind: 'context' | 'replace' | 'insert' | 'delete',
-  tag, listType,
+  tag, listType,                                // the answer's wrapper (the original's for a delete)
+  oldTag, oldListType,                          // the original's wrapper (the answer's for an insert)
+  oldSep, newSep,                               // each side's junction, see "Line breaks"
+  oldGap, newGap, oldGapTag, newGapTag,         // each side's empty lines before it, see "Empty lines"
   hunks: Hunk[],
 }
 
@@ -91,20 +95,43 @@ It rests on three properties, each checkable on its own:
   `diffWordsWithSpace` is safe below.
 - **P3 — inner partition.** Inside a paired block the existing text-level argument applies verbatim.
 
-**Context means the words match, not the markup.** Two places would otherwise leak the answer's
-formatting into a rejected result, and both are load-bearing:
+**Context means the words match, not the markup.** Four places would otherwise leak the answer's
+formatting or structure into a rejected result, and all four are load-bearing:
 
-- **`buildBlockPairs`'s comparator matches on `text` *and* `tag` *and* `html`.** For a context part
-  jsdiff keeps only one side's objects and discards which block on the other side it matched, so
-  matching on text alone would give a "context" block carrying the answer's markup — and reject-all
-  would emit it. Requiring `html` to match makes a context block genuinely identical on both sides;
-  a markup-only difference falls through to a `replace` pair, where both sides are kept and the user
-  can choose.
-- **`contextSide(block)` decides which side a context *hunk* contributes.** Inside a `replace` block
-  the two sides can mark the same words up differently, so a context hunk that always emitted
-  `newHtml` would hand back the answer's bold for text the user just rejected. It follows the block:
-  if every changed hunk in the block is rejected, the block is showing the original, so its context
-  must be the original's too.
+- **`buildBlockPairs`'s comparator matches on `text`, `tag`, `listType` and `html`.** For a
+  context part jsdiff keeps only one side's objects and discards which block on the other side it
+  matched, so matching on text alone would give a "context" block carrying the answer's markup — and
+  reject-all would emit it. Requiring all four to match makes a context block genuinely identical on
+  both sides in its content (`listType` included: an item of a `<ul>` matched as context to the same
+  item of an `<ol>` would carry the answer's list type into reject-all). Any other difference falls
+  through to a `replace` pair, where both sides are kept. The line structure between blocks — the
+  separator `sep` and the empty lines `gap` — is **not** compared, so that a Body Text original
+  (lines joined by `<br>`) still aligns block by block with an answer in markdown paragraphs; each
+  side keeps its own, because `buildBlockPairs` walks the two lists alongside the parts and a context
+  pair holds the real block of each side (see *Empty lines: the gap before a block*).
+- **A markup-only difference is a change of its own.** A `replace` pair whose two blocks have the
+  same `text` and a different `html` (`Dear <b>Sir</b>,` against `Dear Sir,`) would get nothing from
+  the text diff, so the block would hold no hunk: nothing for the user to choose, and reject-all stuck
+  on the answer's markup. `buildHunks` makes **the whole block one `replace` hunk** instead, its sides
+  the two blocks' own `text` / `html`. The two sides read the same and differ in how they are marked
+  up, which they show, since a side renders its html. This is what "both sides are kept and the user
+  can choose" means for it.
+- **A block without a changed hunk follows the composition's structure.** Two blocks differing in
+  nothing but their wrapper (`tag`, `listType`) still become a `replace` pair with no hunk (two
+  differing only in `sep` or `gap` are a context pair carrying both sides' values): a `<div>` body against `<p>` answer paragraphs keeps pairing line by line rather
+  than making every line a change. Like the separator, such a block's wrapper is settled once for the
+  whole composition (see *Line breaks* below): the original's when nothing at all is accepted, the
+  answer's otherwise.
+- **`contextSide(block)` decides which side a context *hunk*, and the block's wrapper,
+  contribute.** Inside a `replace` block the two sides can mark the same words up differently, so a
+  context hunk that always emitted `newHtml` would hand back the answer's bold for text the user just
+  rejected. It follows the block: if every changed hunk in the block is rejected, the block is showing
+  the original, so its context must be the original's too. **The wrapper follows the same side**: a
+  composed block carries both wrappers (`tag`/`listType` the answer's, `oldTag`/`oldListType` the
+  original's) and `composeResultBlocksHTML` emits the original's for a block whose changes are all
+  rejected. It used to take the answer's unconditionally, so reject-all put the original's words in
+  the answer's wrapper: a `<div>` came back as `<p>`, a `<ul>` as `<ol>`, a `<p>` as `<h2>` or a list
+  item.
 
 **The single source of truth for offsets.** `block.html` is normalized (`normalizeBlockHtml`) and
 `block.text` is then **read back out of it** (`blockTextOfHtml`). Deriving the text from the html
@@ -112,11 +139,17 @@ rather than computing it separately is load-bearing: `sliceHtmlByText` maps offs
 onto `block.html`, so two independent projections that merely *looked* equivalent would drift on the
 first odd input and every offset after the drift would be silently wrong.
 
-> **Not yet re-verified after the HTML rewrite.** The plain-text model was verified over hand-picked
-> samples plus 8000 fuzz checks with zero failures. The block model's harness exists but has to run
-> in the webchat window's devtools console — it needs `DOMParser` and the `Diff` global, neither of
-> which exists in Node, and this project has no npm — so the numbers above have **not** been
-> reproduced for the HTML path. Run the harness before trusting the invariant.
+> **Verified by the test suite.** The plain-text model was verified over hand-picked samples plus 8000
+> fuzz checks with zero failures. The block model is checked by the `webchat` test area, which runs
+> the real module in jsdom (`npm ci` provides it as a dev dependency):
+> `tests/dom/webchat/webchat-15-picker.dom.mjs` drives `<diff-picker>` through its toolbar on a table of
+> cases (word changes, markup differences, `<br>` lines, lists, tag changes, inserted and deleted
+> blocks, entities, nested `<br>`, reworded sentences) at both granularities, and checks accept all,
+> reject all, the plain-text result and P1. Both directions hold on every case. The two violations
+> the suite found in reject-all (a markup-only block with no hunk to choose, and a replace pair taking
+> its wrapper from the answer only) were fixed as described above.
+>
+> It is a table of cases, not the plain-text model's fuzzing. See `tests/webchat/README.md`.
 
 ### Why `Diff.diffWords()` cannot be used
 
@@ -163,13 +196,14 @@ around newlines dropped, ends trimmed — applied to the block's *text nodes*, l
 **Blank lines are no longer a normalization problem at all.** The old `\n{2,}` → `\n` collapse existed
 because the two sides arrived unequally faithful — `cleanupNewlines()` had already flattened the
 original's blank lines while the answer kept its `\n\n` — so on multi-paragraph mail every paragraph
-break became a hunk. That asymmetry cannot arise now: **a paragraph break is a block boundary and
-never reaches the text diff**. The related cost is likewise gone, since the block list, not a run of
+break became a hunk. That asymmetry cannot arise now: **a paragraph break or a line break is a
+block boundary, and an empty line a block's gap — none of them reaches the text diff**. The related cost is likewise gone, since the block list, not a run of
 `\n`, is what carries paragraph structure.
 
 > The plain-text model was verified with 8058 invariant checks over both granularities, zero
-> failures. **Those numbers do not carry over to the block model** — see the caveat under the
-> invariant above.
+> failures. **Those numbers do not carry over to the block model**, which is checked on a table of
+> cases by the test suite instead — see the note under the invariant above. The whitespace-only case
+> (`"one two"` vs `"one    two"`, zero changes) is one of them.
 
 > An earlier draft of this feature planned `body_text_raw` / `selection_text_raw` fields on
 > `prompt_info` carrying un-normalized text, so the invariant could hold against the byte-exact
@@ -182,18 +216,20 @@ never reaches the text diff**. The related cost is likewise gone, since the bloc
 `fullTextHTMLAtAssignment` — the snapshot the picker diffs — is produced by
 `StreamingMessage.flush()`, and **which pipeline produced it depends on the prompt**:
 
-- **Prompts that send HTML** (`prompt_rewrite_formal`, `prompt_rewrite_polite`) get an HTML answer
-  back. It skips markdown-it and is sanitized with `sanitizeBlockHtml()` instead — see
-  [01-architecture.md](01-architecture.md) → *When the answer is HTML*. This is the case the block
-  model exists for: real markup on both sides.
-- **`prompt_proofread_this` still sends plain text**, so its answer is ordinary markdown rendered by
-  markdown-it, and the ORIGINAL side has no `_html` twin to resolve to.
+- **Prompts that send HTML** — all three shipped picker prompts (`prompt_rewrite_formal`,
+  `prompt_rewrite_polite`, `prompt_proofread_this`) send `{%selected_html%}` and need a selection —
+  get an HTML answer back, sanitized with `sanitizeBlockHtml()`. This is the case the block model
+  exists for: real markup on both sides, the original being the prompt's `selection_html`.
+- **A prompt that sends plain text** — a custom prompt using `{%mail_typed_text%}` or
+  `{%selected_text%}` — gets an ordinary markdown answer, and its ORIGINAL side may carry no
+  structured `_html` twin.
 
-**The `textToBlockHtml()` fallback is therefore not hypothetical — it is proofread's live path.**
-`_buildDiffButton` resolves the original on the text fields, finds no matching HTML field, and wraps
-each line in a `<p>` so the segmenter has blocks to work with. Both shapes are in use at the same
-time and both must keep working; see [02-prompts.md](02-prompts.md) for why the third prompt was left
-on text.
+**The `textToBlockHtml()` fallback is the backstop for that second shape.** `_buildDiffButton`
+resolves the original on the text fields, takes the matching HTML twin, and when that twin has no
+block structure wraps each line of the text in a `<p>` so the segmenter has blocks to work with.
+Both shapes must keep working; see [02-prompts.md](02-prompts.md) → *The picker prompts send HTML*.
+(`prompt_proofread_this` sent `{%mail_typed_text%}` until 3507e368, which made this fallback its live
+path; it no longer is.)
 
 ### Where the original's HTML comes from
 
@@ -260,7 +296,8 @@ on any twin that does carry structure, so the HTML compose path is byte-for-byte
 
 This also means the picker's guard is normally satisfied *before* it is reached: the payload now
 arrives with `<br>`-separated lines, and `hasBlockStructure()` accepts it. The picker-side rebuild
-remains as the backstop for producers that fill only a text field (e.g. `prompt_proofread_this`).
+remains as the backstop for producers that fill only a text field (e.g. a custom prompt on
+`{%mail_typed_text%}` whose twin carries no structure).
 
 No locale file changed — the prompt **wording** is untouched, only the substituted value.
 
@@ -368,7 +405,9 @@ security boundary cannot drift between them. The picker imports the three saniti
 **segmentation** `BLOCK_TAGS` (still `{p,div,li,h1-6,blockquote,pre}` — deliberately narrow, no
 `ul/ol/tr/table`). `blockTextOfHtml`, `segmentBlocks`, `sliceHtmlByText`, `normalizeBlockHtml` and
 `makeBlock` **stay in `diffPicker.js`**: `blockTextOfHtml` is the offset-space anchor
-`sliceHtmlByText` maps against, and moving it risks the P1/P2/P3 invariant that has no harness here.
+`sliceHtmlByText` maps against, and moving it risks the P1/P2/P3 invariant. The `webchat` test area
+(`tests/dom/webchat/webchat-15-picker.dom.mjs`) checks that invariant and P1 on a table of cases, so a
+move would be caught there, but only on the cases it lists.
 
 **`BLOCK_ALLOWED` was widened** (for the renderer, which now emits markdown tables and `hr`) with the
 table family `table, thead, tbody, tr, td, th` and `hr`. That widening is a **separate addend on
@@ -402,7 +441,12 @@ Two details are load-bearing:
 segments to one `<p>` per paragraph — so `buildBlockPairs` pairs nothing and every hunk reads as
 changed. Two live producers hit exactly that shape:
 
-- Thunderbird's HTML compose **"Body Text"** mode separates lines with `<br>` inside one `<div>`.
+- Thunderbird's HTML compose **"Body Text"** mode separates lines with `<br>`, with **no** wrapper:
+  the lines are text and `<br>` directly in the body, the last one followed straight by the signature
+  `<div>` with no bogus `<br>` (captured from a live compose window:
+  `tests/fixtures/compose/captured/html_compose_bodytext_window_live.html`; a message written that way
+  shows the same once sent, straight in `div.moz-text-html`). This used to say "inside one `<div>`";
+  the segmenter handles both.
 - `getMailInlineTextParts()` in `js/mzta-utils.js` builds the html of a **text/plain-only mail**
   from the plain part's `\n` via `mztaLinesToHtml(text, { mode: 'br' })`.
 
@@ -430,22 +474,39 @@ Two independent code paths produce a separator and both set it: `splitOnBr`'s ru
 and a `<br>` between blocks at body level, which closes the implicit `<p>` being gathered and marks
 the block it just flushed.
 
-An empty run is not emitted, but its POSITION decides the junction of the block before it. A
-**single** `<br>` to an adjacent non-empty run is an in-paragraph line break (`sep = 'br'`, the two
-lines re-join into one wrapper). A **blank line** — an empty run between two non-empty ones, i.e.
-`<br><br>` — is a **paragraph break**: the block before it ends its wrapper (`sep = null`) and the
-next run renders as its own `<p>`, so `<p>a<br><br>b</p>` comes back as `<p>a</p><p>b</p>` and the
-blank line survives (this is the fix for the picker importing paragraphs as single-spaced lines). The
-body-level `<br>` walk mirrors this: the first `<br>` after a run sets `sep = 'br'`, a second
-consecutive one (only whitespace between) promotes it to `null`. A **trailing** `<br>` (empty final
-run) leaves `sep = null` on the last emitted block, so a `<br>` can never leave a block pointing at a
-successor belonging to a different wrapper. Verified against P1 and the accept-all / reject-all
-invariant, running the real module in a browser (the harness `07`'s invariant caveat asks for).
+An empty run is not emitted. Two non-empty runs of one wrapper are always **joined** (`sep = 'br'`
+on the first, the two lines re-join into one wrapper), however many `<br>` lie between them: the
+first `<br>` is the line break, every further one an **empty line**, counted into the next run's gap
+(see *Empty lines: the gap before a block*) and written back as one more `<br>` inside the run. So
+`<p>a<br><br>b</p>` comes back as `<p>a<br><br>b</p>`, the empty line in its paragraph. It used to
+be a **paragraph break** (`sep = null`, the next run its own `<p>`: `<p>a</p><p>b</p>`); that kept
+the blank line visible but turned a **Body Text** mail, whose empty lines are exactly `<br><br>`
+between bare lines, into Paragraph mode the moment the picker wrote it back — where "use this
+answer" without the picker inserted the answer's own single `<p>` with its `<br>`. The body-level
+`<br>` walk mirrors the rule: the first `<br>` after a run sets `sep = 'br'`, every further one is an
+empty line. A **trailing** `<br>` (empty final run) leaves `sep = null` on the last emitted block,
+so a `<br>` can never leave a block pointing at a successor belonging to a different wrapper.
+Verified against P1 and the accept-all / reject-all
+invariant, running the real module in a browser, and now pinned by the test suite
+(`tests/dom/webchat/webchat-15-picker.dom.mjs`): `<p>a<br>b</p>` and `<p>a<br><br>b</p>` round trips,
+the body-level `<br>` walk, the trailing `<br>`, and Body Text mode pairing line by line, and
+`<div>` lines against `<p>` answer paragraphs, rejected, coming back in their `<div>`.
 
-**`sep` is part of `buildBlockPairs`' comparator**, for the same reason `html` is: for a context part
+**`sep` is not part of `buildBlockPairs`' comparator.** It used to be, because for a context part
 jsdiff keeps one side's objects and discards the other, so two blocks differing only in their
-trailing `<br>` would collapse into one and reject-all would emit the ANSWER'S line structure.
-Comparing it sends that case to a replace pair, where both sides survive.
+trailing `<br>` collapsed into one and reject-all emitted the ANSWER'S line structure. That is now
+solved where it arises: a context pair holds the real block of each side, so both separators
+survive, and comparing them would only break the alignment of a Body Text original (every line
+`sep = 'br'`) against markdown paragraphs (`sep = null`).
+
+This is why the answer's renderer must not double an echoed `<br>`. A proofread / rewrite answer
+that echoes the original's `<br>` followed by a newline (`Ciao,<br>\ngrazie`) used to render as
+`<br><br>` — an empty line here — while the original's `Ciao,<br>grazie` has none. With anything
+accepted the result follows the answer's line structure, so every echoed line break reached the mail
+with an empty line after it (while `<br><br>` was still a paragraph break: as two paragraphs). The
+render path now turns the newline after a raw `<br>` into plain whitespace (see 01-architecture.md,
+*One render path, no router*), so both sides segment to one line break and the result is
+`<p>Ciao,<br>grazie</p>`.
 
 **Which side's line structure wins is decided ONCE for the whole composition**, not per block: a
 separator joins two blocks, so an accepted hunk in one and a rejected one in the next would leave the
@@ -453,6 +514,11 @@ junction between them undefined. `composeResultBlocksHTML` sets `structure` to `
 all was accepted and `'old'` otherwise — the same rule `contextSide` applies per block. A separator
 then only survives if the block it joined to is still in the output and belongs to that side; a block
 absent from the chosen side (`insert` has no original, `delete` has no answer) ends the run.
+
+The same `structure` gives the wrapper of a block that has **no changed hunk** (a `replace` pair
+split on its wrapper or separator alone, see the invariant): there is no per-block choice to follow,
+so it follows the composition, and reject-all, with nothing accepted, emits the original's `<div>`.
+A block with a changed hunk follows its own `contextSide()`.
 
 P1 (segment → render idempotence) is preserved, and is now a true ROUND TRIP for `<br>`:
 `renderBlocks(segmentBlocks("<p>a<br>b</p>")) === "<p>a<br>b</p>"`. This matters beyond tidiness —
@@ -467,15 +533,69 @@ discard every accept/reject choice.
 `_buildDiffButton`'s old defensive `<br>` → `\n` replacement on the original is still **gone** — the
 segmenter is what handles the original's markup.
 
+### Empty lines: the gap before a block
+
+An empty line is not a block — it has no text to diff — but it is **not dropped** either. It used to
+be: an empty wrapper produced no run with text, so nothing was emitted for it, and Thunderbird's
+**Paragraph mode**, which writes an empty line as `<p><br></p>`, lost every one of them — in the
+picker's display, in accept-all and even in reject-all, which then did not give the mail back as it
+was. The chat's own "use this answer" sends the answer as rendered, so the same line survived there.
+
+`segmentBlocks` now counts empty lines into the **`gap`** of the next block it emits, with the
+wrapper they are drawn in (`gapTag`: `div` for an empty `<div>`, otherwise `p`). Each `<br>` that
+shows an empty line counts one:
+
+- in an element with no text (`<p><br></p>`, `<div><br></div>`), every `<br>` it holds — an element
+  with no `<br>` and no text shows nothing and counts nothing;
+- in a wrapper, every `<br>` before its first run (`<p><br>a</p>`), every `<br>` between two runs past
+  the one that joins them (`a<br><br>b`: a line break and one empty line, Thunderbird's Body Text
+  mode), and every trailing `<br>` past the first, which only ends the line;
+- at body level, every `<br>` that does not join two lines (the first after a run does): a second in
+  a row, one after a block element, one opening the body.
+
+An empty **list item** is still dropped (an empty item, not an empty line). Empty lines after the
+last block have no block to carry them and are dropped too. `renderBlocks` writes a block's gap in
+the shape `segmentBlocks` reads back as the same gap: **inside a run** the block joins (its
+predecessor's `sep` is `'br'`), as that many more `<br>` — `a<br><br>b` stays one paragraph —
+and **anywhere else** as that many empty wrappers before the block (`<p><br></p>`), closing an open
+list first, so two lists separated by an empty line stay two lists. So P1 holds:
+`<p>a</p><p><br></p><p>b</p>`, `<div>a</div><div><br></div><div>b</div>`, `<p>a<br><br>b</p>` and
+`a<br><br>b` → `<p>a<br><br>b</p>` are fixed points; `<p><br>a</p>` (an empty line opening a
+paragraph) comes back as `<p><br></p><p>a</p>`.
+
+**The gap is NOT in `buildBlockPairs`' comparator**, and neither is the separator. An original in
+Paragraph mode carries a gap before many of its paragraphs, a Body Text original joins its lines
+with `<br>`, and a markdown answer has neither: comparing them would make every such block unequal
+and throw the whole alignment onto positional pairing. They are line structure: each composed block
+keeps **both** sides' gaps (`oldGap` / `newGap`) and separators (`oldSep` / `newSep`), and
+`composeResultBlocksHTML` takes the ones of `structure` — the answer's as soon as anything is
+accepted, the original's otherwise — except for a block on one side only (`insert`, `delete`), which
+can only bring its own side's gap. For that, a context pair must hold each side's real block, equal
+in content but maybe not in line structure: jsdiff keeps one side's objects for a common part, so
+`buildBlockPairs` walks the two lists alongside the parts instead of reusing them. Consequence:
+empty lines and line breaks are not a change the user picks; with anything accepted the result has
+the answer's.
+
+The picker draws the line structure it is going to write — the answer's, like the wrapper it draws a
+block in (the original's for a `delete`): a block joined to the previous one by its `sep` is drawn
+in the same element after a `<br>`, its gap as more `<br>`, and a gap anywhere else as empty
+wrappers before the block. So what is on screen is what accept-all writes; it used to draw every
+block in an element of its own, so lines joined by `<br>` looked like separate paragraphs.
+
+`composeResultText()` (plain text, one line per block) does not carry the gap: in a plain text
+window a paragraph boundary is already a blank line (*Into a plain text compose window*).
+
 ### Into a plain text compose window
 
 `composeResultHTML()` emits **`<p>`/`<li>`-wrapped blocks**, structurally the same shape as the
 non-picker render path, and those blocks may contain `<br>` where the chosen side had one. The
 conversion back to text is still **not** the picker's job — it happens downstream, where the target
 window's format is known: `mzta-background.js` detects it with `isPlainTextCompose()` and runs
-`stripHtmlKeepLines()`, and the content script inserts a `Text` node instead of parsing HTML. See
+`stripHtmlKeepLines()`, and the content script inserts it as text (`execCommand('insertText')`, or a
+`Text` node on the fallback) instead of parsing HTML. See
 [01-architecture.md](01-architecture.md) → *Writing into a plain text compose window* for the full
-path and why all of its parts are load-bearing.
+path and why all of its parts are load-bearing, and *Replacing text in a compose window* for the
+insertion through the editor's undo stack.
 
 **`stripHtmlKeepLines()` is now DOM-based, not a regex.** It is a thin shim over the shared rich-text
 layer: `normalizePlain(htmlToLines(html), { keepParagraphs: true })`. `htmlToLines`'s two-tier
@@ -487,8 +607,9 @@ the picker's `<p>`/`<li>`/`<br>` output.
 bug visible: `stripHtmlKeepLines` expected `<p>`-wrapped markdown, and the picker's converted `\n`
 were then re-parsed as collapsible HTML whitespace, collapsing the whole message onto one line. The
 picker's output is now in that function's designed happy path, so **no change was needed in the
-insertion path**. The rest of the #855 machinery (the `Text`-node branch, the `plainTextBody`-aware
-helpers) is still load-bearing for every other producer and is untouched.
+insertion path**. The rest of the #855 machinery (the as-text insertion — `insertText`, or the
+`Text` node of the fallback — and the `plainTextBody`-aware `replaceBody()`) is still load-bearing
+for every other producer.
 
 ## The result indirection
 
@@ -511,13 +632,13 @@ answer's compact toolbar has to keep handing back that picker's current state.
 
 ### Two things the picker deliberately bypasses
 
-- **`removeAloneBRs()`.** It strips every `<br>` with no `<p>` ancestor. **The reason for skipping it
-  has changed, even though the behaviour has not.** It used to be mandatory: `composeResultHTML()`
-  emitted `<br>`-separated text with no `<p>` wrapper, so running it would have deleted *every* line
-  break. Now that the picker emits `<p>`/`<li>`-wrapped blocks, every `<br>` it produces has a block
-  ancestor and the call would be **safe** — it is skipped because it is *pointless*: the picker's
-  output is canonical by construction, and routing it through a cleaner written for the markdown
-  producer only adds a way to go wrong. `removeAloneBRs` still guards the non-picker path.
+- **`trimEdgeBRs()`.** It removes the `<br>` at the very start and end of the snapshot or of the
+  user's selection (01-architecture.md, *Actions on an answer*). The picker's output is canonical by
+  construction (`<p>`/`<li>`-wrapped blocks) and has no edge `<br>` to trim, so it is skipped: routing
+  it through a cleaner written for the snapshot and the selection only adds a way to go wrong. (Its
+  predecessor, `removeAloneBRs()`, stripped every `<br>` with no `<p>` ancestor; skipping it was
+  mandatory when `composeResultHTML()` emitted `<br>`-separated text with no wrapper, since it would
+  have deleted every line break.)
 - **The mouse-selection override.** `getCurrentSelectionHTML()` is not consulted for a turn with a
   picker, and that turn's `.sel_info` hint is hidden: two mechanisms competing over the same output
   would be confusing, and the picker is the explicit one. Turns without a picker keep the override
@@ -551,9 +672,15 @@ Single **inline** view, not two columns — the webchat window is often narrow.
 **Both versions of every change are on screen at once, and you click the one you want to keep.**
 That is the core interaction:
 
-- The body holds **real block elements** — one per segmented block, with `<li>` runs re-wrapped into
-  a single `<ul>`/`<ol>` — so the picker shows the structure it is going to write into the mail
-  instead of a flat wall of text. Context entries render their own sanitized markup.
+- The body holds **real block elements** — one per segmented block, except that blocks joined by a
+  `<br>` share one, with `<li>` runs re-wrapped into a single `<ul>`/`<ol>` and empty lines drawn as
+  `<br>` or empty wrappers (see *Empty lines: the gap before a block*) — so the picker shows the
+  structure it is going to write into the mail
+  instead of a flat wall of text. Context entries render their own sanitized markup. Each block is
+  drawn in the **answer's** wrapper and is not redrawn when its changes are rejected, although the
+  composed result then takes the original's wrapper (see the invariant): redrawing a wrapper would
+  recreate the side elements inside it, which *Surgical re-render* rules out. The same trade-off as
+  a context hunk, which always shows the answer's markup.
 - Each change renders as a wrapper `.hunk` span holding **two** `.hunk-side` spans: the original
   (red, `--err-*`) and the answer's replacement (green, `--ok-*`), in that order.
 - The side currently in force is `.is-active` (full colour, semibold); the other is `.is-inactive`
@@ -610,6 +737,16 @@ gone. Before the user navigates there is no current change, so it shows the tota
 `9 changes` when narrow) rather than a `0 / 9` that claims a position which does not exist. Prev/Next
 are **clamped, not wrapping** — landing back on the first change after the last would lose the user's
 place in a long answer — and disable at the ends.
+
+**Choosing a side is navigation too.** A click on a side, or Enter / Space on one, makes its change
+the current one, so a user who picks their way through the answer keeps their place for the arrows:
+the label reads that change's position (`2 / 3`), Prev/Next disable at its ends, Next moves on to the
+change after it, and the `.is-current` ring moves there. This holds also for a click on the side
+**already** in force, which changes nothing in the text. All of it goes through `_setCurrent(index)`,
+the one place that moves the ring and repaints the stepper, shared with `_moveCurrent()`. A choice
+used to set `_currentIdx` alone: the ring stayed where the arrows had left it (and the next arrow,
+clearing it from the clicked change only, left two changes ringed), and an idempotent click
+repainted nothing, so the stepper kept showing the previous position.
 
 **Overflow menu:** *Accept all* and *Edit manually* always; *Reject all* joins them only on the
 narrow layout, where it leaves the actions row. Dismissed by outside `pointerdown` (registered on
@@ -764,7 +901,8 @@ hint is conditional (*"if you change it"*), matching the behaviour above.
 
 The invariant survives the round-trip: after EDIT → REVIEW, reject-all still yields
 `renderBlocks(segmentBlocks(originalHtml))` — the original side never changed, so P1–P3 hold exactly
-as before. (Verified for the plain-text model; see the caveat under the invariant for the HTML one.)
+as before. (Verified for the plain-text model, and by the test suite for the HTML one on an edit of
+a block's words: `tests/dom/webchat/webchat-15-picker.dom.mjs`, `back-changed`.)
 
 `setContent()` also forces `'review'` and clears the editor: a fresh picker opening into the editor
 would hide the very changes the button was clicked to see.
@@ -920,7 +1058,7 @@ the picker (`prompt_proofread_this`, `prompt_rewrite_formal`, `prompt_rewrite_po
 | `js/mzta-menus.js` | sets `curr_prompt.body_html` (the picker's original side) alongside `body_text` / `selection_html`; `selectionTwin()` derives `selected_text`/`selected_html` from ONE normalization (shared `hasLineStructure` + `htmlToLines`/`linesToHtml`) so the pair agrees; `htmlOrFromText` rebuilds a structure-less html twin from its text; captures `only_typed_html` off the auto-selected range and pairs it onto `selection_html` when `mail_typed_text` is substituted |
 | `_locales/en/messages.json` | `apiwebchat_picker_*`, including the EDIT hint's conditional choice-reset warning |
 | `js/mzta-utils.js` | `isPlainTextCompose`, `stripHtmlKeepLines`, and the `plainTextBody`-aware body helpers |
-| `js/mzta-compose-script.js` | `replaceSelectedText` — the `Text`-node branch that preserves `\n`; the HTML branch inserts a `DocumentFragment` of `doc.body`'s children, never `doc.body` itself, so the `compose_reloadBody` round-trip cannot flatten the picker's `<p>` blocks |
+| `js/mzta-compose-script.js` | `replaceSelectedText` — through the editor's undo stack (spec 01 *Replacing text in a compose window*): `insertText` with the `\n` verbatim in plain text, `insertHTML` of `doc.body`'s children (never `doc.body` itself) in HTML, so the picker's `<p>` blocks survive; the direct-DOM fallback keeps the same two rules (`Text` node, `DocumentFragment`) |
 | `mzta-background.js` | detects the compose format and converts before insertion |
 | `options/mzta-options-default.js` | the global `diff_granularity` preference |
 | `options/mzta-options.html/.js` | the global preference's control in the advanced section |

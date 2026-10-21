@@ -1,0 +1,15 @@
+{
+  "_org_name": "ACME",
+  "_org_id": "acme",
+  "_org_prompts": [
+    { "id": "reply", "name": "ACME formal reply", "text": "Reply formally to {%mail_text_body%}", "type": "1", "action": "1" },
+    { "id": "org_acme_summary", "name": "ACME summary", "text": "Summarize {%mail_text_body%}", "type": "0", "action": "0" },
+    { "id": "with space", "name": "Bad id", "text": "x" },
+    { "name": "No id", "text": "x" },
+    { "id": "noname", "text": "x" },
+    { "id": "notext", "name": "No text" },
+    { "id": "badapi", "name": "Bad api_type", "text": "x", "api_type": "not_a_provider" },
+    { "id": "reply", "name": "Duplicate of reply", "text": "x" },
+    "not an object"
+  ]
+}

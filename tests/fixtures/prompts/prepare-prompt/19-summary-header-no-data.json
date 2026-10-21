@@ -1,0 +1,9 @@
+{
+  "description": "Called with the prompt and the language only (the summarize header): every mail placeholder resolves empty",
+  "spec": ["spec 03 \"Placeholder Resolution Order\", \"Who supplies the values\": Summarize, header + separator prompts - every mail placeholder resolves empty"],
+  "storage": { "placeholders_use_default_value": true },
+  "args": {
+    "curr_prompt": { "id": "prompt_summarize", "text": "Summarize the emails below. [{%mail_subject%}][{%mail_text_body%}]", "need_signature": "0" }
+  },
+  "expected": "Summarize the emails below. [][]"
+}

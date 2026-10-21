@@ -1,0 +1,5 @@
+{
+    "source": "Derived from captured/plaintext_compose_body_live.html (the body of a live plain text compose window, a reply, captured with tabs.executeScript): the same document, with three typed lines and a blank line in place of the two empty lines the capture opens with. The typed lines take the capture's own shape: top-level text and <br> under the white-space: pre-wrap body, the way the capture holds its empty lines and the quote and signature hold theirs.",
+    "typed_html": "line one<br>line two<br><br>line three<br><br>",
+    "replaces": "<br><br>"
+}

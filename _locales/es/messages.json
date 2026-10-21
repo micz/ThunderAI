@@ -42,7 +42,7 @@
         "message": "Más información"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Los prompts predeterminados no son editables. Puedes deshabilitarlos, luego copiar el texto y pegarlo en uno nuevo para crear una versión modificada."
+        "message": "Los prompts predeterminados no son editables. Para crear una versión modificada, usa \"Duplicar y editar\". Para ocultar un prompt de los menús, usa la configuración del orden del menú."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Puedes importar y exportar los prompts. Los prompts existentes con el mismo ID serán sobrescritos. Se agregarán nuevos prompts con nuevos ID."
@@ -56,18 +56,6 @@
     "customPrompts_reindexing_list": {
         "message": "Reindexando lista..."
     },
-    "customPrompts_filtering_prompts": {
-        "message": "Filtrando prompts..."
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "Guardando prompts predeterminados..."
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "Guardando prompts personalizados..."
-    },
-    "customPrompts_reloading_menus": {
-        "message": "Recargando menús..."
-    },
     "customPrompts_saved": {
         "message": "¡Prompts guardados!"
     },
@@ -79,9 +67,6 @@
     },
     "customPrompts_form_label_Name": {
         "message": "Nombre"
-    },
-    "customPrompts_form_label_Text": {
-        "message": "Texto del prompt"
     },
     "customPrompts_form_label_Action": {
         "message": "Acción"
@@ -130,9 +115,6 @@
     },
     "btnNew_string": {
         "message": "Añadir nuevo"
-    },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Añadir el prompt"
     },
     "customPrompts_add_to_menu": {
         "message": "Añadir al menú"
@@ -236,9 +218,6 @@
     "prefs_OptionText_btnManageCustomDataPH": {
         "message": "Administrar los marcadores de posición de datos"
     },
-    "prefsInfoTitle": {
-        "message": "Información importante"
-    },
     "prefsInfoDesc_1": {
         "message": "Podría suceder que la interfaz web de ChatGPT cambie de una manera que interrumpa el funcionamiento del complemento. Consulta la página de \"Estado del servicio\" vinculada al final de esta página. Además, recuerda que la primera vez que uses ThunderAI, debes iniciar sesión en ChatGPT."
     },
@@ -251,26 +230,8 @@
     "prefsInfoDesc_4": {
         "message": "Para usar esta integración, necesitas configurar un servidor local compatible con la API de OpenAI, como LM Studio. Una vez que el servidor esté en funcionamiento, ingresa su dirección en el campo designado dentro de la aplicación. Para garantizar una comunicación adecuada entre ThunderAI y el servidor local, recuerda configurar correctamente los ajustes CORS."
     },
-    "prefsInfoDesc_5": {
-        "message": "Recuerda que puedes abrir el menú de ThunderAI usando el atajo de teclado CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Puedes cambiar el atajo haciendo clic en el ícono de engranaje en la parte superior derecha de esta página y seleccionando \"Administrar atajo de la extensión\"."
-    },
-    "prefsDonation_1": {
-        "message": "¿Te gusta este complemento?"
-    },
-    "prefsDonation_2": {
-        "message": "¡Considera hacer una donación!"
-    },
     "backToOptionsText": {
         "message": "Opciones"
-    },
-    "TranslateText": {
-        "message": "¿Quieres ayudar a traducir este complemento?"
-    },
-    "TranslateLink": {
-        "message": "¡Descubre cómo!"
     },
     "customPrompts_ExportAll": {
         "message": "Exportar todos los prompts"
@@ -283,9 +244,6 @@
     },
     "customPrompts_start_import": {
         "message": "Iniciando la importación de prompts personalizados..."
-    },
-    "customPrompts_import_completed": {
-        "message": "¡Importación de prompts personalizados completada! Necesitas hacer clic en el botón “Guardar todo” para guardar tus cambios."
     },
     "importPrompts_invalidFile": {
         "message": "El archivo que estás intentando importar no es un archivo de prompts personalizados válido."
@@ -500,9 +458,6 @@
     "chatgpt_btn_model": {
         "message": "Usar el modelo actual"
     },
-    "AllowedValues": {
-        "message": "Valores permitidos"
-    },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Puedes usar marcadores de posición de datos adicionales."
     },
@@ -649,9 +604,6 @@
     },
     "prefs_SurveyLinkText2": {
         "message": "Haz clic aquí, ¡solo toma un minuto!"
-    },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Insertar modelo manualmente"
     },
     "OpenAIComp_force_model_ask": {
         "message": "Inserte aquí el nombre del modelo que desea usar."
@@ -920,17 +872,11 @@
     "no_string": {
         "message": "No"
     },
-    "noActiveCalendar": {
-        "message": "¡No se encontró un calendario editable!"
-    },
     "btn_show_differences": {
         "message": "Mostrar diferencias"
     },
     "chatgpt_win_diff_title": {
         "message": "Diferencias entre el texto original y el modificado"
-    },
-    "apiwebchat_you": {
-        "message": "Tu"
     },
     "apiwebchat_info": {
         "message": "Información"
@@ -1021,9 +967,6 @@
     },
     "customPrompts_hide_additional_info": {
         "message": "Ocultar propiedades adicionales"
-    },
-    "customPrompts_show_additional_info_show": {
-        "message": "Propiedades adicionales"
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Si se especifica un proyecto en las opciones o en un prompt, sobrescribirá la configuración del GPT personalizado."
@@ -1120,7 +1063,7 @@
         "message": "Activar el pensamiento"
     },
     "prefs_ollama_think_Info": {
-        "message": "Si está marcado, el modelo pensará antes de responder. Esta opción solo funciona con modelos que admiten la función «think»."
+        "message": "Haz que el modelo razone antes de responder. \"Model default\" no envía nada y deja que el modelo decida, lo que en algunos modelos significa que razona de todos modos: elige \"Off\" para desactivar el razonamiento explícitamente. Los niveles de razonamiento disponibles dependen del modelo seleccionado y se enumeran después de elegir un modelo."
     },
     "chatgpt_win_change_reply_type": {
         "message": "Haz clic para cambiar el tipo de respuesta"
@@ -1181,9 +1124,6 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Tenga en cuenta que cualquier etiqueta <br> en la respuesta de la IA será reemplazada por saltos de línea."
-    },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Borrar lista de modelos"
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "¿Estás seguro de que deseas borrar la lista de modelos? Esta acción no se puede deshacer."
@@ -1380,10 +1320,10 @@
         "message": "Obtener evento de calendario del portapapeles"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "Los correos electrónicos de estas direcciones no se enviarán a la IA para filtrar spam."
+        "message": "Los correos electrónicos de estas direcciones o dominios no se enviarán a la IA para filtrar spam."
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "Agrega una dirección de correo electrónico por línea, o separada por una coma."
+        "message": "Agrega una entrada por línea, o sepáralas con una coma. Una entrada puede ser una dirección de correo electrónico completa (user@domain.com) o un dominio entero (@domain.com)."
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "El remitente está en la lista de omisión antispam de la dirección de correo electrónico."
@@ -1435,20 +1375,8 @@
             }
         }
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Habilitar el resumen automático de IA para previsualizaciones de mensajes"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Si está marcado, ThunderAI generará y mostrará automáticamente resúmenes de IA encima de los mensajes de correo electrónico cuando se abran. Tenga en cuenta que esto significa que todos los mensajes que vea en vista previa se enviarán inmediatamente al servicio de IA configurado."
-    },
-    "auto_summary_title": {
-        "message": "Resumen de ThunderAI"
-    },
-    "auto_summary_generating": {
-        "message": "Generando resumen de IA..."
-    },
-    "auto_summary_failed": {
-        "message": "No se pudo generar el resumen de IA. Por favor, confirme su configuración e inténtelo de nuevo."
     },
     "customPrompts_export_include_api_settings": {
         "message": "¿Desea incluir la configuración de la API en la exportación? ¡Tenga en cuenta que también se guardará la clave de API en el archivo!"
@@ -1461,9 +1389,6 @@
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "El prompt debe contener el marcador de posición {%mail_text_body_or_selected%} o {%mail_html_body_or_selected%} para habilitar esta opción. Por favor, añada uno de estos marcadores de posición al prompt o restablezca a la configuración predeterminada."
-    },
-    "customPrompts_btnCopy": {
-        "message": "Copiar"
     },
     "copy_text": {
         "message": "Copiar"
@@ -1506,9 +1431,6 @@
     },
     "get_ai_summary": {
         "message": "Resumen de IA"
-    },
-    "summarize_collapse": {
-        "message": "Colapsar resumen"
     },
     "summarize_generating": {
         "message": "Generando resumen..."
@@ -1595,7 +1517,7 @@
         "message": "Excluir idiomas"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Lista separada por comas de códigos de idioma (por ejemplo, en, fr, it) para omitir en la traducción automática. Si el correo electrónico está en uno de estos idiomas, no se traducirá automáticamente ni se mostrará el botón manual."
+        "message": "Lista separada por comas de códigos de idioma (por ejemplo, en, fr, it) que no deben traducirse. Si el correo electrónico está en uno de estos idiomas, la IA omite la traducción y la indica como omitida."
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "El prompt que describe la tarea de traducción:"

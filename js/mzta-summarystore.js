@@ -21,6 +21,8 @@ import { taLogger } from './mzta-logger.js';
 
 export class taSummaryStore {
 
+    // In-flight state lives in taJobRegistry (js/mzta-job-registry.js). The prefix is kept
+    // only so clear*() still sweeps keys written to storage.session by older versions.
     _processing_prefix = 'mzta-summary-processing-';
     _max_summaries = 100;
     _storage = null;
@@ -31,26 +33,10 @@ export class taSummaryStore {
         this.taLog = new taLogger('mzta-summarystore', do_debug);
     }
 
-    async setProcessing(data_id) {
-        this.taLog.log("[setProcessing] data_id: " + data_id);
-        const key = this._processing_prefix + data_id;
-        await browser.storage.session.set({ [key]: true });
-    }
-
-    async isProcessing(data_id) {
-        this.taLog.log("[isProcessing] data_id: " + data_id);
-        const key = this._processing_prefix + data_id;
-        let output = await browser.storage.session.get(key);
-        let result = output[key] || false;
-        this.taLog.log("[isProcessing] result: " + result);
-        return result;
-    }
-
     async saveSummary(data, data_id) {
         this.taLog.log("[saveSummary] data_id: " + data_id);
         try {
             await this._storage.writeSummary(data_id, data, true);
-            await browser.storage.session.remove(this._processing_prefix + data_id);
         } catch (e) {
             this.taLog.error("[saveSummary] error: " + e);
             throw e;
@@ -90,7 +76,6 @@ export class taSummaryStore {
     async removeSummary(data_id) {
         this.taLog.log("[removeSummary] data_id: " + data_id);
         await this._storage.deleteSummaryField(data_id);
-        await browser.storage.session.remove(this._processing_prefix + data_id);
     }
 
     async getAllSummaries() {

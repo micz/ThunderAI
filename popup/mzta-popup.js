@@ -16,24 +16,25 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from "../options/mzta-options-default.js";
 import { taLogger } from "../js/mzta-logger.js";
 import { hasNoConnectionSelected } from "../js/mzta-utils.js";
+import { mztaPrefs } from '../js/mzta-prefs.js';
+import { getManagedState, isSetupWizardDisabled } from '../pages/_lib/managed-ui.js';
 
 let menuSendImmediately = false;
 let taLog = console;
 let tabType;
 document.addEventListener('DOMContentLoaded', async () => {
-    let prefs = await browser.storage.sync.get({
-      do_debug: prefs_default.do_debug,
-      dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
-      connection_type: prefs_default.connection_type,
-      chatgpt_api_key: prefs_default.chatgpt_api_key,
-      google_gemini_api_key: prefs_default.google_gemini_api_key,
-      anthropic_api_key: prefs_default.anthropic_api_key,
-      ollama_host: prefs_default.ollama_host,
-      openai_comp_host: prefs_default.openai_comp_host
-    });
+    let prefs = await mztaPrefs.getPrefs([
+      'do_debug',
+      'dynamic_menu_force_enter',
+      'connection_type',
+      'chatgpt_api_key',
+      'google_gemini_api_key',
+      'anthropic_api_key',
+      'ollama_host',
+      'openai_comp_host'
+    ]);
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
 
@@ -43,11 +44,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(!isConnectionConfigured(prefs)){
         document.getElementById("mzta_search_banner").style.display = "none";
         document.getElementById("setup_wizard_prompt").style.display = "block";
-        document.getElementById("btn_popup_setup_wizard").addEventListener("click", async (e) => {
-            e.preventDefault();
-            await browser.tabs.create({ url: "../pages/setup-wizard/mzta-setup-wizard.html" });
-            window.close();
-        });
+        // A policy may forbid the wizard. Then the invitation is a dead end: drop the link
+        // and say who has to configure the connection instead, so the user is not left
+        // clicking something that will never open.
+        await getManagedState(prefs.do_debug);
+        if(isSetupWizardDisabled()){
+            const link = document.getElementById("btn_popup_setup_wizard");
+            link.textContent = browser.i18n.getMessage('managed_restriction_wizard');
+            link.removeAttribute('href');
+            link.classList.add('managed_disabled');
+        }else{
+            document.getElementById("btn_popup_setup_wizard").addEventListener("click", async (e) => {
+                e.preventDefault();
+                await browser.tabs.create({ url: "../pages/setup-wizard/mzta-setup-wizard.html" });
+                window.close();
+            });
+        }
         return;
     }
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
@@ -317,7 +329,12 @@ export function searchPrompt(allPrompts, tabId, tabType, filtering){
 
 async function sendPrompt(prompt_id, tabId){
  taLog.log("sendPrompt: " + prompt_id);
- browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id});
+ // Fire-and-forget: the background handler for "shortcut_do_prompt" returns a
+ // promise that stays pending for the whole prompt action, but we close the
+ // popup right away. Closing tears down the message conduit, so the sender-side
+ // promise rejects ("Actor 'Conduits' destroyed before query 'RuntimeMessage'
+ // was resolved"). Swallow it, as done elsewhere for fire-and-forget messages.
+ browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id}).catch(() => {});
  window.close();
 }
 
