@@ -28,14 +28,20 @@ name: Sync site languages
 #     are not counted.
 #   Excluded: the owner's emails, Weblate's own identities (hosted@ / noreply@weblate.org, i.e.
 #   also anonymous Weblate translations), GitHub and Claude noreply identities, [bot] names.
-#   Deduplicated by email (by name when there is none), sorted by name. Each one is
-#   { name, email, github, weblate, url, first, last } (null when unknown):
+#   Deduplicated by email (by name when there is none), sorted by contribution: strings, then
+#   lines (both descending), then name. Each one is
+#   { name, email, github, weblate, url, first, last, strings, lines } (null when unknown):
 #   - github: the login from a users.noreply.github.com address, else the account GitHub links
 #     to the commit (author only: a trailer's co-author is not the commit's account);
 #   - weblate: the username from a users.noreply.hosted.weblate.org address (Weblate does not
 #     expose the username of any other address);
 #   - url: the profile to link, GitHub first, else Weblate;
-#   - first, last: author dates (YYYY-MM-DD) of their first and latest commit on that locale.
+#   - first, last: author dates (YYYY-MM-DD) of their first and latest commit on that locale;
+#   - strings: the "message" lines of _locales/<dir>/messages.json at the ref whose author is
+#     them (git blame -w): how much of the translation as it is today is theirs. Blame credits the
+#     last one who touched a line, and lines last touched by excluded identities count for nobody;
+#   - lines: lines added to _locales/<dir>/ by their counted commits over the whole history
+#     (all their work, rewritten strings included). A trailer's co-author gets 0 for both.
 #   The emails are already public in the git history; the site keys its overrides on them.
 #
 # REQUIRED SECRET: SITE_DISPATCH_TOKEN
@@ -160,41 +166,57 @@ jobs:
           fi
 
           # 2. Suggested credits, every locale up to $SHA: lines
-          #    "code<TAB>name<TAB>email<TAB>sha<TAB>a|t (commit author or trailer)<TAB>date",
+          #    "code<TAB>name<TAB>email<TAB>sha<TAB>a|t (commit author or trailer)<TAB>date<TAB>email
+          #    as written (the Weblate username keeps its case)<TAB>lines added to the locale",
           #    see the header for the rules
           : > contrib.tsv
           while read -r d; do
-            git -c core.quotePath=false log --full-diff --name-only \
+            git -c core.quotePath=false log --full-diff --numstat \
               --format='%x01%H%x09%aN%x09%aE%x09%cE%x09%as%x09%(trailers:key=Co-authored-by,valueonly,separator=%x02)' \
               "$SHA" -- "_locales/$d/" \
             | awk -v code="$d" -v prefix="_locales/$d/" -v owner=" $OWNER_EMAILS " '
-                function emit(n, e, kind) {
-                  gsub(/^[ \t]+|[ \t]+$/, "", n); e = tolower(e)
+                function emit(n, e, kind, lines,   oe) {
+                  gsub(/^[ \t]+|[ \t]+$/, "", n); oe = e; e = tolower(e)
                   if (n == "" || n ~ /\[bot\]$/ || n == "Hosted Weblate" || n == "Weblate") return
                   if (e != "" && index(tolower(owner), " " e " ")) return
                   if (e == "hosted@weblate.org" || e == "noreply@weblate.org" || \
                       e == "noreply@github.com" || e == "noreply@anthropic.com") return
-                  print code "\t" n "\t" e "\t" h "\t" kind "\t" dt
+                  print code "\t" n "\t" e "\t" h "\t" kind "\t" dt "\t" oe "\t" lines
                 }
                 function flush(   n, i, t, v, nm, em) {
                   if (!started) return
-                  if (ce == "hosted@weblate.org" || (nfiles > 0 && outside == 0)) emit(an, ae, "a")
+                  if (ce == "hosted@weblate.org" || (nfiles > 0 && outside == 0)) emit(an, ae, "a", added)
                   n = split(tr, t, "\002")
                   for (i = 1; i <= n; i++) {
                     v = t[i]
                     if (match(v, /<[^>]*>/)) { nm = substr(v, 1, RSTART - 1); em = substr(v, RSTART + 1, RLENGTH - 2) }
                     else { nm = v; em = "" }
-                    emit(nm, em, "t")
+                    emit(nm, em, "t", 0)
                   }
                 }
                 /^\001/ {
                   flush(); started = 1
                   split(substr($0, 2), f, "\t")
                   h = f[1]; an = f[2]; ae = f[3]; ce = tolower(f[4]); dt = f[5]; tr = f[6]
-                  nfiles = 0; outside = 0; next
+                  nfiles = 0; outside = 0; added = 0; next
                 }
-                NF { nfiles++; if (index($0, prefix) != 1) outside++ }
+                # numstat: added<TAB>deleted<TAB>path ("-" for binary files)
+                NF {
+                  split($0, s, "\t"); nfiles++
+                  if (index(s[3], prefix) == 1) { if (s[1] != "-") added += s[1] } else outside++
+                }
                 END { flush() }' >> contrib.tsv
+          done < locales.txt
+
+          # Current strings per author: "code<TAB>email<TAB>count" from the blame of messages.json
+          : > blame.tsv
+          while read -r d; do
+            git cat-file -e "$SHA:_locales/$d/messages.json" 2>/dev/null || continue
+            git blame -w --line-porcelain "$SHA" -- "_locales/$d/messages.json" \
+            | awk -v code="$d" '
+                /^author-mail / { m = tolower($2); gsub(/^<|>$/, "", m) }
+                /^\t[ \t]*"message"[ \t]*:/ { c[m]++ }
+                END { for (k in c) print code "\t" k "\t" c[k] }' >> blame.tsv
           done < locales.txt
 
           # 3. GitHub login per email: from the noreply address, else the account GitHub links to
@@ -213,11 +235,14 @@ jobs:
           done > logins.tsv
 
           # Every locale is a key (an empty list when nobody is credited)
-          jq -Rn --rawfile locs locales.txt --rawfile logins logins.tsv '
+          jq -Rn --rawfile locs locales.txt --rawfile logins logins.tsv --rawfile blame blame.tsv '
             ($logins | split("\n") | map(select(. != "") | split("\t")
               | {key: .[0], value: (if (.[1] // "") == "" then null else .[1] end)}) | from_entries) as $gh
+            | ($blame | split("\n") | map(select(. != "") | split("\t")
+              | {key: "\(.[0])\t\(.[1])", value: (.[2] | tonumber)}) | from_entries) as $bl
             | ($locs | split("\n") | map(select(. != ""))) as $codes
-            | [inputs | split("\t") | {code: .[0], name: .[1], email: (if .[2] == "" then null else .[2] end), date: .[5]}
+            | [inputs | split("\t") | {code: .[0], name: .[1], email: (if .[2] == "" then null else .[2] end),
+                                       date: .[5], raw: .[6], lines: (.[7] | tonumber)}
                | .key = (.email // (.name | ascii_downcase))] as $rows
             | $codes | map(. as $c | {key: $c, value:
                 ($rows | map(select(.code == $c))
@@ -225,15 +250,18 @@ jobs:
                      if has($r.key) then
                        .[$r.key].first = ([.[$r.key].first, $r.date] | min)
                        | .[$r.key].last = ([.[$r.key].last, $r.date] | max)
+                       | .[$r.key].lines += $r.lines
                      else .[$r.key] = ($r + {first: $r.date, last: $r.date}) end)
                  | [.[] | {name, email,
                            github: (if .email then $gh[.email] else null end),
-                           weblate: (if .email then ((.email | capture("^(?<u>[^@]+)@users\\.noreply\\.hosted\\.weblate\\.org$") | .u) // null) else null end),
-                           first, last}
+                           weblate: (if .email then ((.raw | capture("^(?<u>[^@]+)@users\\.noreply\\.hosted\\.weblate\\.org$"; "i") | .u) // null) else null end),
+                           first, last,
+                           strings: (if .email then ($bl["\($c)\t\(.email)"] // 0) else 0 end),
+                           lines}
                         | .url = (if .github then "https://github.com/\(.github)"
                                   elif .weblate then "https://hosted.weblate.org/user/\(.weblate)/"
                                   else null end)]
-                 | sort_by(.name | ascii_downcase))})
+                 | sort_by(-.strings, -.lines, (.name | ascii_downcase)))})
             | from_entries' contrib.tsv > contributors.json
 
           # 4. Payload and dispatch
