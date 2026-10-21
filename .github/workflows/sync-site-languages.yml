@@ -5,11 +5,13 @@ name: Sync site languages
 # time, never a diff: the site does an idempotent sync.
 #
 #   mode "in_progress"  push to dev touching _locales/**: every directory of _locales/ at the pushed
-#                       commit except en, with suggested credits per locale (contributors).
+#                       commit except en.
 #   mode "release"      stable release published (prereleases skipped): the codes of LANG.md
 #                       (the release packaging allowlist) at the release tag, except en.
+#   Both modes send, for each of those locales, ALL its contributors up to that commit or tag
+#   (also for the languages already published): the site updates their credits every time.
 #
-# client_payload: { mode, locales: [codes], contributors: { code: [names] } (in_progress only),
+# client_payload: { mode, locales: [codes], contributors: { code: [contributor] },
 #                   ref: commit sha | tag, url: commit | release html_url }
 #
 # Locale codes: the directory name IS the code, unchanged. LANG.md and the site are written with
@@ -18,7 +20,7 @@ name: Sync site languages
 # ([a-z]{2,3} optionally followed by _ or - and 2-8 letters/digits) fails the run instead of
 # being guessed. Directories without a messages.json are skipped with a warning.
 #
-# Contributors (suggested credits, in_progress only), per locale, from the log of _locales/<dir>/:
+# Contributors (suggested credits), per locale, from the log of _locales/<dir>/ up to the ref:
 #   - every Co-authored-by trailer;
 #   - the commit author when the commit is a translation: committed by Weblate (Weblate records
 #     the translator as the author, not as a trailer) or touching only files of _locales/<dir>/.
@@ -27,12 +29,13 @@ name: Sync site languages
 #   Excluded: the owner's emails, Weblate's own identities (hosted@ / noreply@weblate.org, i.e.
 #   also anonymous Weblate translations), GitHub and Claude noreply identities, [bot] names.
 #   Deduplicated by email (by name when there is none), sorted by name. Each one is
-#   { name, email, github, weblate, url } (null when unknown):
+#   { name, email, github, weblate, url, first, last } (null when unknown):
 #   - github: the login from a users.noreply.github.com address, else the account GitHub links
 #     to the commit (author only: a trailer's co-author is not the commit's account);
 #   - weblate: the username from a users.noreply.hosted.weblate.org address (Weblate does not
 #     expose the username of any other address);
-#   - url: the profile to link, GitHub first, else Weblate.
+#   - url: the profile to link, GitHub first, else Weblate;
+#   - first, last: author dates (YYYY-MM-DD) of their first and latest commit on that locale.
 #   The emails are already public in the git history; the site keys its overrides on them.
 #
 # REQUIRED SECRET: SITE_DISPATCH_TOKEN
@@ -123,87 +126,14 @@ jobs:
               fi
               echo "$d"
             done | sort -u > locales.txt
-            while read -r c; do check_code "$c"; done < locales.txt
-
-            # 2. Suggested credits: lines "code<TAB>name<TAB>email<TAB>sha<TAB>a|t" (commit author
-            #    or trailer), see the header for the rules
-            : > contrib.tsv
-            while read -r d; do
-              git -c core.quotePath=false log --full-diff --name-only \
-                --format='%x01%H%x09%aN%x09%aE%x09%cE%x09%(trailers:key=Co-authored-by,valueonly,separator=%x02)' \
-                "$SHA" -- "_locales/$d/" \
-              | awk -v code="$d" -v prefix="_locales/$d/" -v owner=" $OWNER_EMAILS " '
-                  function emit(n, e, kind) {
-                    gsub(/^[ \t]+|[ \t]+$/, "", n); e = tolower(e)
-                    if (n == "" || n ~ /\[bot\]$/ || n == "Hosted Weblate" || n == "Weblate") return
-                    if (e != "" && index(tolower(owner), " " e " ")) return
-                    if (e == "hosted@weblate.org" || e == "noreply@weblate.org" || \
-                        e == "noreply@github.com" || e == "noreply@anthropic.com") return
-                    print code "\t" n "\t" e "\t" h "\t" kind
-                  }
-                  function flush(   n, i, t, v, nm, em) {
-                    if (!started) return
-                    if (ce == "hosted@weblate.org" || (nfiles > 0 && outside == 0)) emit(an, ae, "a")
-                    n = split(tr, t, "\002")
-                    for (i = 1; i <= n; i++) {
-                      v = t[i]
-                      if (match(v, /<[^>]*>/)) { nm = substr(v, 1, RSTART - 1); em = substr(v, RSTART + 1, RLENGTH - 2) }
-                      else { nm = v; em = "" }
-                      emit(nm, em, "t")
-                    }
-                  }
-                  /^\001/ {
-                    flush(); started = 1
-                    split(substr($0, 2), f, "\t")
-                    h = f[1]; an = f[2]; ae = f[3]; ce = tolower(f[4]); tr = f[5]
-                    nfiles = 0; outside = 0; next
-                  }
-                  NF { nfiles++; if (index($0, prefix) != 1) outside++ }
-                  END { flush() }' >> contrib.tsv
-            done < locales.txt
-
-            # 3. GitHub login per email: from the noreply address, else the account GitHub links to
-            #    one of the commits authored with that email (empty when not linked to an account)
-            awk -F'\t' '$3 != "" && !seen[$3]++ { print $3 }' contrib.tsv | while read -r e; do
-              login=""
-              if [[ "$e" =~ ^([0-9]+\+)?([^@]+)@users\.noreply\.github\.com$ ]]; then
-                login="${BASH_REMATCH[2]}"
-              else
-                sha=$(awk -F'\t' -v e="$e" '$3 == e && $5 == "a" { print $4; exit }' contrib.tsv)
-                if [ -n "$sha" ]; then
-                  login=$(gh api "repos/$REPO/commits/$sha" --jq '.author.login // ""' || true)
-                fi
-              fi
-              printf '%s\t%s\n' "$e" "$login"
-            done > logins.tsv
-
-            # Every locale is a key (an empty list when nobody is credited)
-            jq -Rn --rawfile locs locales.txt --rawfile logins logins.tsv '
-              ($logins | split("\n") | map(select(. != "") | split("\t")
-                | {key: .[0], value: (if (.[1] // "") == "" then null else .[1] end)}) | from_entries) as $gh
-              | ($locs | split("\n") | map(select(. != ""))) as $codes
-              | [inputs | split("\t") | {code: .[0], name: .[1], email: (if .[2] == "" then null else .[2] end)}
-                 | .key = (.email // (.name | ascii_downcase))] as $rows
-              | $codes | map(. as $c | {key: $c, value:
-                  ($rows | map(select(.code == $c))
-                   | reduce .[] as $r ({}; if has($r.key) then . else .[$r.key] = $r end)
-                   | [.[] | {name, email,
-                             github: (if .email then $gh[.email] else null end),
-                             weblate: (if .email then ((.email | capture("^(?<u>[^@]+)@users\\.noreply\\.hosted\\.weblate\\.org$") | .u) // null) else null end)}
-                          | .url = (if .github then "https://github.com/\(.github)"
-                                    elif .weblate then "https://hosted.weblate.org/user/\(.weblate)/"
-                                    else null end)]
-                   | sort_by(.name | ascii_downcase))})
-              | from_entries' contrib.tsv > contributors.json
 
           elif [ "$MODE" = "release" ]; then
             TAG="${INPUT_REF:-$EVENT_TAG}"
             if [ -z "$TAG" ]; then
               TAG=$(gh api "repos/$REPO/releases/latest" --jq .tag_name)   # latest excludes prereleases
             fi
-            if ! git rev-parse --verify -q "refs/tags/$TAG" >/dev/null; then
-              echo "::error::Unknown tag '$TAG'"; exit 1
-            fi
+            SHA=$(git rev-parse --verify -q "refs/tags/$TAG^{commit}" || true)
+            if [ -z "$SHA" ]; then echo "::error::Unknown tag '$TAG'"; exit 1; fi
             PAYLOAD_REF="$TAG"
             PAYLOAD_URL="$EVENT_URL"
             if [ -z "$PAYLOAD_URL" ] || [ -n "$INPUT_REF" ]; then
@@ -216,28 +146,104 @@ jobs:
               PAYLOAD_URL=$(jq -r .html_url <<< "$REL")
             fi
 
-            # LANG.md at the tag: one code per line, blank lines ignored, en excluded
+            # 1. LANG.md at the tag: one code per line, blank lines ignored, en excluded
             git show "refs/tags/$TAG:LANG.md" | tr -d '\r' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' \
               | grep -v '^$' | grep -vx 'en' | sort -u > locales.txt || true
-            while read -r c; do check_code "$c"; done < locales.txt
-            echo '{}' > contributors.json
 
           else
             echo "::error::Unknown mode '$MODE'"; exit 1
           fi
 
+          while read -r c; do check_code "$c"; done < locales.txt
           if [ ! -s locales.txt ]; then
             echo "::error::Empty locale list: refusing to tell the site to remove every language"; exit 1
           fi
+
+          # 2. Suggested credits, every locale up to $SHA: lines
+          #    "code<TAB>name<TAB>email<TAB>sha<TAB>a|t (commit author or trailer)<TAB>date",
+          #    see the header for the rules
+          : > contrib.tsv
+          while read -r d; do
+            git -c core.quotePath=false log --full-diff --name-only \
+              --format='%x01%H%x09%aN%x09%aE%x09%cE%x09%as%x09%(trailers:key=Co-authored-by,valueonly,separator=%x02)' \
+              "$SHA" -- "_locales/$d/" \
+            | awk -v code="$d" -v prefix="_locales/$d/" -v owner=" $OWNER_EMAILS " '
+                function emit(n, e, kind) {
+                  gsub(/^[ \t]+|[ \t]+$/, "", n); e = tolower(e)
+                  if (n == "" || n ~ /\[bot\]$/ || n == "Hosted Weblate" || n == "Weblate") return
+                  if (e != "" && index(tolower(owner), " " e " ")) return
+                  if (e == "hosted@weblate.org" || e == "noreply@weblate.org" || \
+                      e == "noreply@github.com" || e == "noreply@anthropic.com") return
+                  print code "\t" n "\t" e "\t" h "\t" kind "\t" dt
+                }
+                function flush(   n, i, t, v, nm, em) {
+                  if (!started) return
+                  if (ce == "hosted@weblate.org" || (nfiles > 0 && outside == 0)) emit(an, ae, "a")
+                  n = split(tr, t, "\002")
+                  for (i = 1; i <= n; i++) {
+                    v = t[i]
+                    if (match(v, /<[^>]*>/)) { nm = substr(v, 1, RSTART - 1); em = substr(v, RSTART + 1, RLENGTH - 2) }
+                    else { nm = v; em = "" }
+                    emit(nm, em, "t")
+                  }
+                }
+                /^\001/ {
+                  flush(); started = 1
+                  split(substr($0, 2), f, "\t")
+                  h = f[1]; an = f[2]; ae = f[3]; ce = tolower(f[4]); dt = f[5]; tr = f[6]
+                  nfiles = 0; outside = 0; next
+                }
+                NF { nfiles++; if (index($0, prefix) != 1) outside++ }
+                END { flush() }' >> contrib.tsv
+          done < locales.txt
+
+          # 3. GitHub login per email: from the noreply address, else the account GitHub links to
+          #    one of the commits authored with that email (empty when not linked to an account)
+          awk -F'\t' '$3 != "" && !seen[$3]++ { print $3 }' contrib.tsv | while read -r e; do
+            login=""
+            if [[ "$e" =~ ^([0-9]+\+)?([^@]+)@users\.noreply\.github\.com$ ]]; then
+              login="${BASH_REMATCH[2]}"
+            else
+              sha=$(awk -F'\t' -v e="$e" '$3 == e && $5 == "a" { print $4; exit }' contrib.tsv)
+              if [ -n "$sha" ]; then
+                login=$(gh api "repos/$REPO/commits/$sha" --jq '.author.login // ""' || true)
+              fi
+            fi
+            printf '%s\t%s\n' "$e" "$login"
+          done > logins.tsv
+
+          # Every locale is a key (an empty list when nobody is credited)
+          jq -Rn --rawfile locs locales.txt --rawfile logins logins.tsv '
+            ($logins | split("\n") | map(select(. != "") | split("\t")
+              | {key: .[0], value: (if (.[1] // "") == "" then null else .[1] end)}) | from_entries) as $gh
+            | ($locs | split("\n") | map(select(. != ""))) as $codes
+            | [inputs | split("\t") | {code: .[0], name: .[1], email: (if .[2] == "" then null else .[2] end), date: .[5]}
+               | .key = (.email // (.name | ascii_downcase))] as $rows
+            | $codes | map(. as $c | {key: $c, value:
+                ($rows | map(select(.code == $c))
+                 | reduce .[] as $r ({};
+                     if has($r.key) then
+                       .[$r.key].first = ([.[$r.key].first, $r.date] | min)
+                       | .[$r.key].last = ([.[$r.key].last, $r.date] | max)
+                     else .[$r.key] = ($r + {first: $r.date, last: $r.date}) end)
+                 | [.[] | {name, email,
+                           github: (if .email then $gh[.email] else null end),
+                           weblate: (if .email then ((.email | capture("^(?<u>[^@]+)@users\\.noreply\\.hosted\\.weblate\\.org$") | .u) // null) else null end),
+                           first, last}
+                        | .url = (if .github then "https://github.com/\(.github)"
+                                  elif .weblate then "https://hosted.weblate.org/user/\(.weblate)/"
+                                  else null end)]
+                 | sort_by(.name | ascii_downcase))})
+            | from_entries' contrib.tsv > contributors.json
 
           # 4. Payload and dispatch
           jq -n --arg mode "$MODE" --arg ref "$PAYLOAD_REF" --arg url "$PAYLOAD_URL" \
                 --rawfile locs locales.txt --slurpfile contrib contributors.json '
             { event_type: "thunderai-languages",
-              client_payload: ({ mode: $mode,
-                                 locales: ($locs | split("\n") | map(select(. != ""))),
-                                 ref: $ref, url: $url }
-                               + (if $mode == "in_progress" then { contributors: $contrib[0] } else {} end)) }' \
+              client_payload: { mode: $mode,
+                                locales: ($locs | split("\n") | map(select(. != ""))),
+                                contributors: $contrib[0],
+                                ref: $ref, url: $url } }' \
             > payload.json
           cat payload.json
 
