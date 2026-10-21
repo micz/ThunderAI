@@ -442,6 +442,19 @@ rejected.
 When the policy enforces a text, the feature page shows it read-only (`lockEnforcedPromptText()`
 in `pages/_lib/managed-ui.js`) with the managed marker, and its Save/Reset buttons are inert.
 
+### Add tags: per-account prompts
+
+Each Thunderbird account can have its own Add Tags prompt text, edited in the "Prompts for single accounts" section of `pages/addtags/`. The texts are the declared preference `add_tags_account_prompts` (`{ [accountId]: text }`, read and written through `mztaPrefs` by `js/mzta-addtags-account-prompts.js`); an account without an entry, or with a blank text, uses the global `prompt_add_tags` text. Saving an empty text deletes the entry. The key holds per-profile account ids, so it is excluded from the enterprise policy allowlist.
+
+Only the **text** is per account: connection type, model and every other property still come from the `prompt_add_tags` special prompt, and the page options (`add_tags_maxnum`, `add_tags_force_lang`, tag list, exclusions, ...) apply to all accounts. `finalizePrompt_add_tags()` takes the text actually used as its last argument (it looks for `{%tags_full_list%}` in it), so both callers pass the account text, not the global one.
+
+`addTags_applyAccountPrompt(curr_prompt, accountId)` returns a shallow copy of the prompt with the account text, or `curr_prompt` itself when the account has none. It must be a copy: `preparePrompt()` rewrites `prompt.text` in place, and on the menu path `curr_prompt` is the long-lived menu entry object. The account is `message.folder.accountId`:
+
+- Auto/batch path (`runAddTagsJob()` in `mzta-background.js`): applied per message. `resolveAddTagsSetup()` resolves the prompt once per batch and is memoized, so the account text must never be applied inside it.
+- Menu path (`js/mzta-menus.js`, popup): applied once `curr_message` is known, into `text_prompt` (custom placeholders are expanded on that copy, as `act()` does for the entry's own text), which feeds the `{%mail_plain_text_part%}` presence check, `preparePrompt()` and `finalizePrompt_add_tags()`; `curr_prompt` itself is left untouched. A message without a folder (e.g. an opened `.eml` file) uses the global text.
+
+**Policy:** when `_special_prompts_text` enforces the Add Tags text (the prompt carries `_text_by_policy`, see [08a-managed-prompts.md](08a-managed-prompts.md)), `addTags_applyAccountPrompt()` returns the prompt untouched, so the account prompts cannot bypass it, and the section on the Add Tags page is locked (`lockEnforcedPromptText()`, buttons inert).
+
 ### Missing special prompts
 
 **A removed entry is restored on read.** `getSpecialPrompts()` compares the stored `_special_prompts`

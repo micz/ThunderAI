@@ -230,7 +230,7 @@ stores `'inline'` as before.
 
 ## The allowlist
 
-Derived from `Object.keys(prefs_default)`, minus four exclusion rules. Nothing else is
+Derived from `Object.keys(prefs_default)`, minus five exclusion rules. Nothing else is
 hardcoded — a new preference becomes policy-settable the moment it is declared.
 
 ```
@@ -239,15 +239,16 @@ Object.keys(prefs_default)
   minus  /_enabled_accounts$/   account ids, per profile
   minus  api_webchat_font_scale local UI zoom
   minus  custom_prompts_view    custom prompts page layout, local UI
+  minus  add_tags_account_prompts  prompt texts keyed by account id, per profile
 ```
 
-**137 of 146 keys** are policy-settable. The derivation already covers the generated keys:
+**138 of 148 keys** are policy-settable. The derivation already covers the generated keys:
 the six `{prefix}_use_specific_integration` / `{prefix}_connection_type` pairs (from
 `special_prompts_with_integration`) and the per-provider `{integration}_{key}` connection
 keys (from `integration_options_config`) are all spread into `prefs_default` in
 [`options/mzta-options-default.js`](../options/mzta-options-default.js).
 
-The nine excluded keys are per-machine or per-profile state, not configuration: enforcing
+The ten excluded keys are per-machine or per-profile state, not configuration: enforcing
 them across a fleet would push window coordinates from another screen, a font zoom from
 another display, a page layout the user chose for themselves, or account ids that do not
 exist in this profile.
@@ -495,7 +496,7 @@ overlays read), the page guard of [The connection panel](08b-managed-connections
 
 Either way the administrator key reference on micz.it is now out of date — it is generated
 from `prefs_default` by hand, so a new or newly excluded preference has to be reflected
-there too. So do the "137 of 146" count in [The allowlist](#the-allowlist) and the counts in
+there too. So do the "138 of 148" count in [The allowlist](#the-allowlist) and the counts in
 `tests/managed/04-allowlist-derivation.test.mjs`, which fails until they are updated.
 
 ## Adding a restriction
@@ -581,7 +582,7 @@ locks - or offers as an initial value - every allowlisted key that has an `.opti
 policy. A new preference with a control on one of those pages is covered the moment it is
 declared.
 
-`04-allowlist-derivation` also checks the **137 of 146** count in [The allowlist](#the-allowlist).
+`04-allowlist-derivation` also checks the **138 of 148** count in [The allowlist](#the-allowlist).
 When a preference is added, update that sentence and the test's expected count together.
 
 **Not covered:** the parts of `mzta-background.js` that only run inside its startup - the
