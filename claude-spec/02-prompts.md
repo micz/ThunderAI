@@ -85,6 +85,39 @@ user's storage or deletes the user's shadowed prompt for real. The same split ap
 at startup. `setCustomPrompts()` also drops any `is_org: "1"` entry it is handed, so a writer
 that forgets the filter still cannot store an org prompt.
 
+### Prompt ids
+
+Every shipped prompt id, default or special, starts with `prompt_` (`RESERVED_PROMPT_ID_PREFIX`).
+Organization ids start with `org_`. A custom id is what the user typed, trimmed and lowercased, with
+no prefix added. Much of the code knows a built-in prompt by its id alone: the context menu routing
+(`specialContextMenuActions`), the menu item ids (`mzta-ctx-<id>`) and `menu_listeners`, `loadPrompt()`
+(which returns the built-in first), `isMultiMessagePrompt()`, the permission gates, the icons, and the
+chat window's `prompt_id`. So **a custom prompt must never have a shipped id**. Otherwise it runs as
+the built-in prompt, or hides it.
+
+- **A new or changed custom id may not start with `prompt_`**, ignoring case (`isReservedPromptId()`,
+  checked by `validateDetail()` in `pages/customprompts/`, see [05-options.md](05-options.md)). An
+  existing custom id with the prefix is **kept** while it is left as it is. The Copy of a built-in
+  used to create one (`prompt_reply_copy`, since 4.0.0), and renaming all of them would change
+  prompts that work. Copy and the ID derived from the name now drop the prefix.
+- **An exact shipped id is renamed**, ignoring case, by `renameCollidingPromptIds()`. The new id is
+  the shipped one without `prompt_` (`prompt_summarize` → `summarize`), made unique with `_2`,
+  `_3`, … (`uniquePromptId()`) against every listed id and every shipped id. This happens in two places:
+  - **at every startup**, by `migrateCustomPromptIdCollisions()`, on every entry of `_custom_prompt`.
+    There is no done-flag, because a later version can ship an id a user already has, and the user's
+    prompt must give it back on that version's first start. It writes only when it renames
+    something;
+  - **on import**, in `preparePromptsForImport()`, before the merge, on the file's custom entries
+    (`isImportedCustomPrompt()`: not `is_special`, and either `is_default` off or, with no
+    `is_default`, an id that is not exactly a shipped one). A built-in entry of the file, exported
+    with its exact id and no `is_default`, still merges into the built-in row. Without the rename,
+    a custom `prompt_reply` would turn that row into a custom prompt, and a custom
+    `prompt_summarize` would collide with the special prompt. Importing the same old file twice
+    gives two renamed copies (`summarize`, `summarize_2`), since a renamed id no longer matches
+    the file's.
+- Organization prompts are not affected. Their composed `org_` id never equals a shipped one, and
+  shadowing (above) keeps comparing the custom id as stored.
+
 ## Prompt Properties
 
 ### Base Properties (built-in only)
@@ -554,6 +587,8 @@ Both sections are draggable and act as drop targets; the section the row lands i
 - Special prompts whose base definition has `show_in: "none"` (internal prompts like `prompt_summarize_email_template` and `prompt_summarize_email_separator`) — retrieved via `getHiddenSpecialPromptIds()`
 - Special prompts whose feature is not active — retrieved from background via `get_active_special_ids` message, which calls `getActiveSpecialPromptsIDs()` with current prefs and `_sparks_presence`
 
+Both are chosen among the prompts with `is_special: "1"` only, and taken out of the list by object, never by id. Matched by id, a custom prompt with such an id (see "Prompt ids") was saved into `_special_prompts`, or left out of the list and so deleted from `_custom_prompt` by Save All.
+
 **Cross-tab reload** — the page listens on `browser.storage.onChanged` for changes to `_default_prompts_properties`, `_custom_prompt`, or `_special_prompts`. When one of those keys changes (e.g. user saves from the Custom Prompts page in another tab), the page reloads its data with a 200ms debounce. Any unsaved local changes are discarded to avoid overwriting the other page's work; the reloader calls `markSaved()` so the page also drops its dirty state and does not warn about changes it just threw away.
 
 **Unsaved-changes tracking** — every mutating interaction (drag, icon pick, Reset all) funnels through `markUnsaved()`, which sets the module-level `somethingChanged` flag, enables `#btnSaveAll` and shows the red `customPrompts_unsaved_changes` banner in `#msgDisplay`. `markSaved()` is the inverse (flag cleared, button disabled, banner hidden). A `beforeunload` listener calls `event.preventDefault()` while `somethingChanged` is set, so closing the tab or navigating away with a pending Save All raises Thunderbird's native confirmation dialog — the same mechanism as the Custom Data Placeholders page (Thunderbird 128+ only; the extension supplies no text for that dialog). Note `saveAll()` clears the flag **after** its `await`s complete, so a failed write leaves the warning armed. A failed write is caught: `#msgDisplay` shows `menu_order_save_error` and the error in red, and `#btnSaveAll` (disabled while the write is in flight) is enabled again so the user can retry. While `saveAll()` is writing, `saveInProgress` makes the `storage.onChanged` reloader ignore the page's own writes (and the error path cancels a pending `reloadDebounce`): otherwise a save failing halfway, after one of the three stores was written, would reload the page 200 ms later and discard both the pending changes and the error message.
@@ -582,7 +617,7 @@ The reset is **in-memory only**: it closes any open icon popover, clears the dee
 The `dynamic_menu_order_alphabet` preference (previously a user-facing option) has been retired and removed from the UI, but the key still exists in storage as a one-shot migration flag. At every background startup, `migrateMenuOrderAlphabetic()` in `js/mzta-prompts.js` runs:
 
 1. Reads `dynamic_menu_order_alphabet` from `browser.storage.local` (defaults to `true` if unset)
-2. If `true`: sorts every prompt except the hidden special prompts — special prompts first (alphabetically), then the rest (alphabetically) — and assigns sequential `position_display` = `position_compose` = `position_context` numbers. The hidden special prompts, the ones with `show_in: "none"` in their **base definition** (`getHiddenSpecialPromptIds()`: the summarize email template and separator), are preserved untouched. Every other prompt gets a position, including a prompt the user has hidden (`show_in: "none"`) and a special prompt whose feature is off: while hidden the position is unused (the Menu Order page lists hidden items alphabetically, the menus skip them), and if the prompt is shown again it already has a slot in the alphabetical order instead of none. Organization prompts get a position too, saved in `_default_prompts_properties`, and are never written to `_custom_prompt` (see Organization prompts above).
+2. If `true`: sorts every prompt except the hidden special prompts — special prompts first (alphabetically), then the rest (alphabetically) — and assigns sequential `position_display` = `position_compose` = `position_context` numbers. The hidden special prompts, the ones with `show_in: "none"` in their **base definition** (`getHiddenSpecialPromptIds()`: the summarize email template and separator), are preserved untouched. They are matched by `is_special: "1"` as well as by id, so a custom prompt with one of those ids stays a custom prompt. Every other prompt gets a position, including a prompt the user has hidden (`show_in: "none"`) and a special prompt whose feature is off: while hidden the position is unused (the Menu Order page lists hidden items alphabetically, the menus skip them), and if the prompt is shown again it already has a slot in the alphabetical order instead of none. Organization prompts get a position too, saved in `_default_prompts_properties`, and are never written to `_custom_prompt` (see Organization prompts above).
 3. Persists the new positions via `setDefaultPromptsProperties` / `setCustomPrompts` / `setSpecialPrompts`. The prompts are saved from the normalized view, so a stored prompt may gain the fields it lacked, at the defaults every read already applies: no stored value changes, and every prompt reads back as before, its positions aside. The one visible difference: a field the read view lacked may now hold its empty default `''` (today `custom_icon` of a built-in prompt that was never customized), which every reader treats exactly as the absent field
 4. Sets `dynamic_menu_order_alphabet = false` in `browser.storage.local` so the migration does not run again. The flag is read directly, not through `js/mzta-prefs.js` (it is not a preference), but it must sit in the same area as `PREFS_AREA`, and `migratePrefsToLocal()` carries it across from sync: since its default means "not yet run", reading it from an area the relocation did not fill would rerun the migration and overwrite the user's ordering (see [05-options.md](05-options.md))
 
@@ -723,11 +758,11 @@ action 2  → replace selected text (or insert) in compose window
 
 ## Adding a New Built-in Prompt
 
-1. Add the prompt object to the `defaultPrompts` array in `js/mzta-prompts.js`
+1. Add the prompt object to the `defaultPrompts` array in `js/mzta-prompts.js`, with an id starting with `prompt_`. A custom prompt that already has the same id is renamed at the first start of the new version (see "Prompt ids")
 2. Add the `name` string key to `_locales/en/messages.json`
 3. If the prompt text needs a localized string, add it to `_locales/en/messages.json` as well
 4. Reference any needed placeholders using `{%placeholder_id%}` syntax in the `text` property (the prompt body)
 
 ## Custom Prompts
 
-Custom prompts are stored in `browser.storage.local` and managed via `pages/customprompts/`. They follow the same property structure as built-in prompts but are created/edited/deleted by the user through the UI. Custom placeholders can also be referenced in custom prompt text.
+Custom prompts are stored in `browser.storage.local` and managed via `pages/customprompts/`. They follow the same property structure as built-in prompts but are created/edited/deleted by the user through the UI. Custom placeholders can also be referenced in custom prompt text. Their id may not be a shipped one, and a new one may not start with `prompt_` (see "Prompt ids").

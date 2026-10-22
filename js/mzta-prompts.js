@@ -426,6 +426,73 @@ export function getSpecialPromptIds() {
 }
 
 /**
+ * Prompt ids: the prefix every shipped prompt id starts with, and so the one a new custom id may
+ * not take. Much of the code knows a built-in prompt by its id alone (the context menu routing, the
+ * menu listeners, loadPrompt(), isMultiMessagePrompt(), the permission gates...), so a custom
+ * prompt with a shipped id runs as the built-in one or hides it.
+ *
+ * The prefix is refused only for a NEW or CHANGED id (pages/customprompts/): a custom prompt that
+ * already has one, such as the prompt_reply_copy the Copy of a built-in used to create, keeps it.
+ * What is never kept is an EXACT shipped id: renameCollidingPromptIds() renames it at every startup
+ * (migrateCustomPromptIdCollisions()) and on import, so a built-in added in a later version takes
+ * its id back from the user's prompt on the first start of that version.
+ */
+export const RESERVED_PROMPT_ID_PREFIX = 'prompt_';
+
+/** Whether a custom prompt id is in the namespace of the shipped prompts, ignoring case. */
+export function isReservedPromptId(id) {
+    return String(id ?? '').toLowerCase().startsWith(RESERVED_PROMPT_ID_PREFIX);
+}
+
+/** Whether an id is the id of a shipped prompt, default or special, ignoring case. */
+export function isShippedPromptId(id) {
+    const lower = String(id ?? '').toLowerCase();
+    return defaultPrompts.some(p => p.id === lower) || specialPrompts.some(p => p.id === lower);
+}
+
+// `base`, or `base_2`, `base_3`, ... : the first one not in `taken` (a Set of lowercase ids).
+export function uniquePromptId(base, taken) {
+    let id = base;
+    for (let n = 2; taken.has(id); n++) id = base + '_' + n;
+    return id;
+}
+
+/**
+ * Rename, in place, every prompt of `prompts` that `isCustom(prompt)` says is the user's and whose
+ * id is a shipped id, ignoring case. The new id is the shipped one without RESERVED_PROMPT_ID_PREFIX
+ * (prompt_summarize -> summarize), made unique with _2, _3, ... against `taken` (lowercase ids),
+ * the shipped ids and the other ids of `prompts`. Returns [{from, to}], one per renamed prompt.
+ */
+export function renameCollidingPromptIds(prompts, isCustom, taken = new Set()) {
+    const used = new Set(taken);
+    defaultPrompts.concat(specialPrompts).forEach(p => used.add(p.id));
+    prompts.forEach(p => used.add(String(p.id ?? '').toLowerCase()));
+    const renamed = [];
+    prompts.forEach(prompt => {
+        if (!isCustom(prompt) || !isShippedPromptId(prompt.id)) return;
+        const from = prompt.id;
+        prompt.id = uniquePromptId(String(from).toLowerCase().slice(RESERVED_PROMPT_ID_PREFIX.length), used);
+        used.add(prompt.id);
+        renamed.push({ from, to: prompt.id });
+    });
+    return renamed;
+}
+
+// At every startup, not once: an id can become a shipped one later, when a new version adds a
+// built-in prompt. Writes only when something was renamed, so a normal start reads and writes nothing
+// else. Every entry of _custom_prompt is the user's, whatever its flags say.
+export async function migrateCustomPromptIdCollisions() {
+    const stored = await browser.storage.local.get({ _custom_prompt: null });
+    if (!Array.isArray(stored._custom_prompt)) return [];
+    const renamed = renameCollidingPromptIds(stored._custom_prompt, () => true);
+    if (renamed.length > 0) {
+        await setCustomPrompts(stored._custom_prompt);
+        console.log("[ThunderAI] Custom prompts renamed, their id is a built-in prompt's: " + JSON.stringify(renamed));
+    }
+    return renamed;
+}
+
+/**
  * Whether a prompt can run on several messages at once (a multi-selection, a collapsed thread):
  * the context menu disables the others in that case [#979].
  *
@@ -841,6 +908,12 @@ export async function preparePromptsForImport(prompts){
     // start from the complete set: a prompt missing here is a prompt dropped on import.
     const output = await getPromptsForManagement();
     // console.log(">>>>>>>>>>> preparePromptsForImport output: " + JSON.stringify(output));
+    // A custom prompt of the file with a shipped id is renamed before the merge, as at startup
+    // (migrateCustomPromptIdCollisions()): merged, it would turn the built-in row into a custom one;
+    // appended, it would collide with a special prompt. A built-in entry of the file (its exact id,
+    // exported without is_default) or a special one is left to the merge as before.
+    renameCollidingPromptIds(prompts, isImportedCustomPrompt,
+        new Set(output.map(p => String(p.id).toLowerCase())));
     prompts.forEach(prompt => {
         if(output.some(p => p.id == prompt.id)){
             Object.keys(prompt).forEach(key => {
@@ -863,6 +936,14 @@ export async function preparePromptsForImport(prompts){
     output.sort((a, b) => a.id.localeCompare(b.id));
     // console.log(">>>>>>>>>>> preparePromptsForImport final output: " + JSON.stringify(output));
     return output;
+}
+
+// An entry of an import file that is the user's own prompt: not a special one, and not a built-in
+// one, which is exported with its exact id and without is_default (preparePromptsForExport()).
+function isImportedCustomPrompt(prompt) {
+    if (isPromptFlagOn(prompt.is_special)) return false;
+    if (Object.hasOwn(prompt, 'is_default')) return !isPromptFlagOn(prompt.is_default);
+    return !(defaultPrompts.some(p => p.id === prompt.id) || specialPrompts.some(p => p.id === prompt.id));
 }
 
 // Backward-compat helper: the prompt `enabled` flag has been removed in favour of
@@ -1591,7 +1672,10 @@ export async function migrateMenuOrderAlphabetic() {
     // missing from `ordered` and setCustomPrompts() would delete them for real.
     const allPrompts = await getPromptsForMenuOrder();
     const hiddenSpecialIds = getHiddenSpecialPromptIds();
-    const visiblePrompts = allPrompts.filter(p => !hiddenSpecialIds.includes(p.id));
+    // By the flag as well as the id: a custom prompt with a hidden special's id would otherwise be
+    // written into _special_prompts and dropped from _custom_prompt.
+    const isHiddenSpecial = p => String(p.is_special) === '1' && hiddenSpecialIds.includes(p.id);
+    const visiblePrompts = allPrompts.filter(p => !isHiddenSpecial(p));
 
     const resolveName = (p) => {
         const n = p.name || '';
@@ -1621,7 +1705,7 @@ export async function migrateMenuOrderAlphabetic() {
     const customPromptsToSave = ordered.filter(p =>
         String(p.is_default) === '0' && String(p.is_special) !== '1' && String(p.is_org) !== '1');
     const visibleSpecialsToSave = ordered.filter(p => String(p.is_special) === '1');
-    const hiddenSpecialsToPreserve = allPrompts.filter(p => hiddenSpecialIds.includes(p.id));
+    const hiddenSpecialsToPreserve = allPrompts.filter(isHiddenSpecial);
 
     await setDefaultPromptsProperties(defaultPromptsToSave);
     await setCustomPrompts(customPromptsToSave);

@@ -75,6 +75,7 @@ import {
     migrateMenuOrderAlphabetic,
     migrateEnabledToShowIn,
     migrateCalendarNoSelection,
+    migrateCustomPromptIdCollisions,
     getSpecialPrompts,
     getIgnoredProviderOverrides,
     getReplacedProviderOverrides,
@@ -214,6 +215,10 @@ if (_prefs_migration_ok) await migrateCalendarNoSelection().catch(e => console.e
 // flag lives in storage.local, and reading it before the copy succeeded would find the
 // "not yet run" default and rewrite a value that is not there yet.
 if (_prefs_migration_ok) await migrateOllamaThinkLevel();
+// Renames a custom prompt whose id is a built-in prompt's (claude-spec/02-prompts.md "Prompt ids").
+// Not guarded and with no flag: it runs at every start, since a new version can ship an id a user
+// already has, and it reads only _custom_prompt, which the #129 pair above has already moved.
+await migrateCustomPromptIdCollisions().catch(e => console.error("[ThunderAI] migrateCustomPromptIdCollisions error: " + e));
 
 let _process_incoming = false;
 let _sparks_presence = false;

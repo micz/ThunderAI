@@ -117,8 +117,8 @@ test('on mzta-background.js: the cut is the migration block plus the guarded men
     // Every picked statement calls something of the sequence; together they call each migration once.
     calls.forEach((c, i) => assert.ok(c.length > 0, 'statement at line ' + seq.statements[i].line + ' calls nothing'));
     const all = calls.flat().map(c => c.slice(0, -1)).sort();
-    assert.deepEqual(all, ['isSyncDrained', 'loadManaged', 'migrateCalendarNoSelection', 'migrateCustomPromptsStorage',
-        'migrateDefaultPromptsPropStorage', 'migrateEnabledToShowIn', 'migrateMenuOrderAlphabetic',
+    assert.deepEqual(all, ['isSyncDrained', 'loadManaged', 'migrateCalendarNoSelection', 'migrateCustomPromptIdCollisions',
+        'migrateCustomPromptsStorage', 'migrateDefaultPromptsPropStorage', 'migrateEnabledToShowIn', 'migrateMenuOrderAlphabetic',
         'migrateOllamaThinkLevel', 'migratePrefsToLocal']);
     assert.deepEqual(seq.declared, ['_prefs_migration_ok']);
     for (const st of seq.statements) assert.doesNotThrow(() => compileSequence({ ...seq, statements: [st] }), st.text);

@@ -51,9 +51,12 @@ tests/
     ├── 12-prompt-storage.test.mjs         spec 02 the storage writers, saveSpecialPromptTexts()
     ├── 13a-migration-menu-order.test.mjs  spec 02 "Alphabetic-to-Position Migration" (it runs)
     ├── 13b-migration-menu-order-done.test.mjs   ... (it has run: nothing written)
+    ├── 13c-migration-menu-order-ids.test.mjs    ... (a custom prompt with a hidden special id stays custom)
     ├── 14-migration-enabled.test.mjs      spec 02 "Enabled-to-show_in Migration"
     ├── 15-export-import.test.mjs          spec 02 "Per-Prompt API Override Properties", export / import
     ├── 16-allow-multi.test.mjs            spec 02 "Context Menu", "Built-in-only fields" (allow_multi)
+    ├── 17-prompt-ids.test.mjs             spec 02 "Prompt ids": the reserved prefix, the rename of a shipped
+    │                                      id at startup (migrateCustomPromptIdCollisions()) and on import
     ├── 20-prepare-prompt-golden.test.mjs  spec 02 + 03: preparePrompt(), from the golden fixtures
     ├── 21-finalize-prompts.test.mjs       spec 02 "Add tags: extra prompt statements", "Calendar event /
     │                                      task: reminder (#887)"; spec 03 the calendar address strip

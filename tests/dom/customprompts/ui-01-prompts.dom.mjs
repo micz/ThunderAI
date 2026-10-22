@@ -784,10 +784,11 @@ k.test('duplicate-builtin', S_PAGE, 'Duplicate and edit on a built-in gives an o
     for (const id of ['detail_id', 'detail_name', 'detail_type']) assert.equal($('#' + id).disabled, false, id);
     assert.equal($('#detail_text').readOnly, false);
     await ctx.click($('#btnDetailSave'));
-    const p = storedOf('prompt_classify_' + copy);
+    // Without the prefix of the built-in ids (spec 02 "Prompt ids").
+    const p = storedOf('classify_' + copy);
     assert.ok(p, 'the copy is not among the custom prompts');
     assert.equal(String(p.is_default), '0');
-    assert.equal(rowOf('prompt_classify_' + copy).querySelector('.p-type').textContent, msg('customPrompts_badge_personal'));
+    assert.equal(rowOf('classify_' + copy).querySelector('.p-type').textContent, msg('customPrompts_badge_personal'));
 });
 
 k.test('delete-cancelled', S_PAGE, 'Delete asks first; cancelled, nothing changes', async () => {
