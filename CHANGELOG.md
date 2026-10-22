@@ -3,6 +3,7 @@
 
 <h2>Version 5.2.0 - ??/??/2026</h2>
 <ul>
+  <li>Fix: a prompt using <i>{%mail_typed_text%}</i> in the compose window no longer replaces the text you selected with the whole typed text: the answer now replaces your selection, and the typed text is selected automatically only when nothing is selected [<a href="https://github.com/micz/ThunderAI/issues/978">#978</a>].</li>
   <li>...</li>
 </ul>
 <h2>Version 5.1.0 - 18/10/2026</h2>
