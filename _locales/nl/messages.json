@@ -1,5 +1,50 @@
 {
     "extensionDescription": {
         "message": "Gebruik ChatGPT, Google Gemini, Claude of Ollama om uw emails te verbeteren."
+    },
+    "prompt_translate_this": {
+        "message": "Vertaal"
+    },
+    "prompt_selection_needed": {
+        "message": "Om door te gaan dient u tekst te selecteren!"
+    },
+    "prompt_reply": {
+        "message": "Beantwoord deze e-mail"
+    },
+    "prompt_rewrite_polite": {
+        "message": "Herschrijf beleefd"
+    },
+    "prompt_rewrite_formal": {
+        "message": "Herschrijf formeel"
+    },
+    "more_info_string": {
+        "message": "Meer info"
+    },
+    "customPrompts_start_saving": {
+        "message": "Prompts opslaan..."
+    },
+    "customPrompts_saved": {
+        "message": "Prompts opgeslagen!"
+    },
+    "customPrompts_form_label_ID": {
+        "message": "ID"
+    },
+    "customPrompts_save_error": {
+        "message": "Fout tijdens opslaan van de prompts:"
+    },
+    "customPrompts_reindexing_list": {
+        "message": "Herindexeren lijst..."
+    },
+    "customPrompts_autosave_info": {
+        "message": "Iedere wijziging wordt onmiddellijk opgeslagen."
+    },
+    "prompt_string": {
+        "message": "Prompt"
+    },
+    "customPrompts_import_completed_saved": {
+        "message": "Aangepaste prompts geïmporteerd en opgeslagen!"
+    },
+    "customPrompts_managePrompts": {
+        "message": "Beheer prompts"
     }
 }
