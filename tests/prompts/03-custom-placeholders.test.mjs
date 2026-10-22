@@ -26,7 +26,7 @@ const BUILT_IN_IDS = [
     'mail_text_body_or_selected', 'mail_html_body_or_selected', 'mail_plain_text_part',
 ];
 // The Dyn column of the same table.
-const DYNAMIC_IDS = ['mail_headers', 'additional_text'];
+const DYNAMIC_IDS = ['mail_headers', 'additional_text', 'mail_text_body', 'mail_text_body_or_selected'];
 // The Type column of the same table: every id not listed here is type 0.
 const TYPE_1 = ['mail_folder_name', 'mail_folder_path', 'mail_headers', 'mail_full_headers', 'junk_score',
     'mail_datetime', 'mail_attachments_info', 'mail_plain_text_part'];

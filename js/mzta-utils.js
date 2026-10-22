@@ -569,6 +569,24 @@ export function convertNewlinesToBr(text) {
   return globalThis.mztaLinesToHtml(text, { mode: 'br' });
 }
 
+// Cuts a text to about maxChars characters, preferring a word boundary near the end.
+// Used by the dynamic {%mail_text_body:N%} style placeholders to keep very long
+// emails inside the context window of small (local) models.
+// maxChars <= 0, a non-string input, or a text already within the limit is
+// returned untouched, so an invalid parameter degrades to "no limit".
+export function truncateText(text, maxChars) {
+  if (!(maxChars > 0) || typeof text !== 'string' || text.length <= maxChars) {
+    return text;
+  }
+  let cutPos = text.lastIndexOf(' ', maxChars);
+  // No usable word boundary in the last 10%: cut hard rather than losing the tail
+  // of the allowed window to a much earlier space.
+  if (cutPos < maxChars * 0.9) {
+    cutPos = maxChars;
+  }
+  return text.substring(0, cutPos).trimEnd() + ' [...]';
+}
+
 // Collapses the source newlines of an HTML string without turning them into markup.
 // In HTML the source newlines are not line breaks: the line structure is carried by
 // the tags (<div>, <p>, and any <br> already present in the body), so collapsing them
