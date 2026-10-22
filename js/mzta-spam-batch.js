@@ -53,6 +53,25 @@ export function buildSpamBatchEmails(items) {
 }
 
 /**
+ * Decides what happens with a mail while building the batch spam queue.
+ * @param {object} params
+ * @param {object|null} params.existingReport - Stored spam report of the mail, or null.
+ * @param {object|null} params.cachedSpam - Cached verdict for the sender, or null.
+ * @param {boolean} params.senderCacheEnabled - Whether the sender cache is enabled.
+ * @param {string} params.senderEmail - The sender address ('' when unknown).
+ * @returns {'skip'|'cached'|'queue'}
+ *   skip   — a usable verdict is already stored, the mail is left alone
+ *            (error reports, spamValue < 0, don't count and get retried),
+ *   cached — the sender verdict comes from the cache, no AI call needed,
+ *   queue  — the mail has to be analyzed by the AI.
+ */
+export function spamQueueDecision({ existingReport, cachedSpam, senderCacheEnabled, senderEmail }) {
+    if (existingReport && existingReport.spamValue >= 0) return 'skip';
+    if (senderCacheEnabled && senderEmail && cachedSpam) return 'cached';
+    return 'queue';
+}
+
+/**
  * Parses the AI response of a batched spam check.
  * @param {string} text - the raw AI response
  * @returns {Map<number, {spamValue: number, explanation: string}>|null}

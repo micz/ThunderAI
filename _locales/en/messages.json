@@ -2193,6 +2193,45 @@
           }
       }
   },
+  "spamfilter_progress_collect": {
+      "message": "Scanning mails… $COUNT$",
+      "description": "Progress banner shown while the batch spam filter scans the selected emails",
+      "placeholders": {
+          "count": {
+              "content": "$1"
+          }
+      }
+  },
+  "spamfilter_progress_analyze": {
+      "message": "Spam check: $DONE$/$TOTAL$",
+      "description": "Progress banner shown while the batch spam filter analyzes the selected emails",
+      "placeholders": {
+          "done": {
+              "content": "$1"
+          },
+          "total": {
+              "content": "$2"
+          }
+      }
+  },
+  "spamfilter_progress_done": {
+      "message": "Spam check finished ($COUNT$)",
+      "description": "Progress banner shown when the batch spam filter has finished",
+      "placeholders": {
+          "count": {
+              "content": "$1"
+          }
+      }
+  },
+  "spamfilter_progress_stopped": {
+      "message": "Spam check stopped ($COUNT$)",
+      "description": "Progress banner shown when the batch spam filter was stopped by the user",
+      "placeholders": {
+          "count": {
+              "content": "$1"
+          }
+      }
+  },
   "batch_stop_source": {
       "message": "Batch stop",
       "description": "Source label shown as the prefix of the notice displayed when the user stops the running email processing jobs"

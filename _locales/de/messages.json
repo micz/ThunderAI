@@ -1865,6 +1865,41 @@
             }
         }
     },
+    "spamfilter_progress_collect": {
+        "message": "E-Mails werden gesammelt… $COUNT$",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "spamfilter_progress_analyze": {
+        "message": "Spam-Prüfung: $DONE$/$TOTAL$",
+        "placeholders": {
+            "done": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "spamfilter_progress_done": {
+        "message": "Spam-Prüfung abgeschlossen ($COUNT$)",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "spamfilter_progress_stopped": {
+        "message": "Spam-Prüfung gestoppt ($COUNT$)",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
     "batch_stop_source": {
         "message": "Batch-Stopp"
     }
