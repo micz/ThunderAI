@@ -31,6 +31,7 @@
     0: close button
     1: do reply
     2: substitute text
+    3: insert at the cursor position (compose window, never replaces a selection)
 
     Only if text selected (need_selected attribute):
     0: no selection needed (use all the message body)

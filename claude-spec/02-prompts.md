@@ -128,7 +128,7 @@ the built-in prompt, or hides it.
 | `name` | string | `__MSG_key__` i18n reference or plain text |
 | `text` | string | The prompt template text — usually an i18n key (e.g. `prompt_reply_full_text`); may contain `{%placeholder%}` tokens |
 | `type` | string | `"0"` = always visible, `"1"` = reading email only, `"2"` = composing only |
-| `action` | string | `"0"` = close, `"1"` = reply (open compose), `"2"` = substitute text in-place |
+| `action` | string | `"0"` = close, `"1"` = reply (open compose), `"2"` = substitute text in-place, `"3"` = insert at the cursor position (compose window, nothing replaced, no confirmation). Not validated anywhere (editor, import, export, policy): any value round-trips, and an unknown one behaves as before (`"0"` in the ChatGPT web window, `"2"` in the API chat from a compose window) |
 | `need_selected` | string | `"0"` = use full message body, `"1"` = requires text selection. For `prompt_get_calendar_event` it is **derived**, see below |
 | `need_signature` | string | `"0"` = no signature, `"1"` = include signature |
 | `need_custom_text` | string | `"0"` = no custom input, `"1"` = show custom text input field |
@@ -754,7 +754,15 @@ type 2  → shown only when composing an email
 action 0  → no output, just close (e.g. for tag/spam actions handled in background)
 action 1  → open a reply compose window with AI response
 action 2  → replace selected text (or insert) in compose window
+action 3  → insert at the cursor position in compose window (a selection is kept, the answer goes
+            at its end; no cursor → start of the email, above quote and signature). The cursor is
+            saved when the prompt starts: see 01-architecture.md "Inserting at the cursor in a
+            compose window"
 ```
+
+Like `"2"`, `"3"` is offered for every prompt type in the Custom Prompts editor. In the API chat
+window its button reads "Insert at cursor" (`chatgpt_win_insert_at_cursor`), and it is the one
+action not forced to `"2"` from a compose window; the ChatGPT web window has the same button.
 
 ## Adding a New Built-in Prompt
 

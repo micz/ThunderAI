@@ -191,6 +191,11 @@ export class mzta_Menus {
 
         const getMailBody = async (tabs, do_autoselect = false) => {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+            // Action "3" (insert at cursor): the caret is saved first, before the autoselect of
+            // getOnlyTypedText below can take it away. insertAtCaret reads it back.
+            if ((tabs[0].type === 'messageCompose') && (String(curr_prompt.action) === '3')) {
+                await browser.tabs.sendMessage(tabs[0].id, { command: "saveCaret" });
+            }
             const raw_selection = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" });
             const raw_selection_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" });
             // A message display (a mail tab or a message tab or window): read only the mail's

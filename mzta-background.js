@@ -1023,22 +1023,21 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _replaceSelectedText(tabId, text) {
                     //console.log('chatgpt_replaceSelectedText: [' + tabId +'] ' + text)
                     taLog.log("chatgpt_replaceSelectedText text: " + text);
-                    // The compose format is read from the window itself, not from a
-                    // preference: it is a per-message property, so a global setting
-                    // could never be right for a user who writes in both formats.
-                    let isPlainText = await isPlainTextCompose(tabId);
-                    if(isPlainText){
-                        text = stripHtmlKeepLines(text);
-                    }else{
-                        // The compose script inserts it with execCommand('insertHTML'): only
-                        // sanitized markup may reach it. The ChatGPT web window's HTML is not
-                        // sanitized anywhere else; the API chat's already crossed it.
-                        text = sanitizeBlockHtml(text);
-                    }
-                    await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: text, tabId: tabId, isPlainText: isPlainText });
+                    const prepared = await _prepareComposeAnswer(tabId, text);
+                    await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: prepared.text, tabId: tabId, isPlainText: prepared.isPlainText });
                     return true;
                 }
                 return _replaceSelectedText(message.tabId, message.text);
+            case 'chatgpt_insertAtCaret':
+                // Action "3": the answer goes where the cursor is, never replacing a selection
+                // and never asking for confirmation. Same conversion as the replacement.
+                async function _insertAtCaret(tabId, text) {
+                    taLog.log("chatgpt_insertAtCaret text: " + text);
+                    const prepared = await _prepareComposeAnswer(tabId, text);
+                    await browser.tabs.sendMessage(tabId, { command: "insertAtCaret", text: prepared.text, tabId: tabId, isPlainText: prepared.isPlainText });
+                    return true;
+                }
+                return _insertAtCaret(message.tabId, message.text);
             case 'chatgpt_replyMessage':
                 async function _replyMessage(message) {
                     let paragraphsHtmlString = message.text;
@@ -2316,6 +2315,21 @@ browser.runtime.onMessageExternal.addListener((message, sender, sendResponse) =>
             break;
     }
 });
+
+// The answer as a compose window takes it, for replaceSelectedText and insertAtCaret alike.
+// The compose format is read from the window itself, not from a preference: it is a
+// per-message property, so a global setting could never be right for a user who writes in
+// both formats.
+async function _prepareComposeAnswer(tabId, text) {
+    const isPlainText = await isPlainTextCompose(tabId);
+    if(isPlainText){
+        return { text: stripHtmlKeepLines(text), isPlainText: true };
+    }
+    // The compose script inserts it with execCommand('insertHTML'): only sanitized markup
+    // may reach it. The ChatGPT web window's HTML is not sanitized anywhere else; the API
+    // chat's already crossed it.
+    return { text: sanitizeBlockHtml(text), isPlainText: false };
+}
 
 async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_custom_text = 0, prompt_info = {}) {
     let prefs = await mztaPrefs.getAllPrefs();

@@ -21,7 +21,9 @@ Implemented in `api_webchat/diffPicker.js`. Introduced by
   `js/mzta-chatgpt.js` (fed by `mztaUseDiffViewer` / `mztaOriginalText`, baked into the injected
   pre-script in `mzta-background.js`). It is untouched and still uses `Diff.diffWords()`.
 - Works in the compose-window case too (`promptData.mailMessageId == -1`, where `action` is forced
-  to `"2"`).
+  to `"2"`, except `"3"`, insert at cursor, which keeps its own command; the Custom Prompts editor does
+  not let `use_diff_viewer` be set with it, and a prompt that carries both anyway inserts the
+  picker's result at the cursor).
 
 ## The hunk model
 

@@ -783,6 +783,8 @@ test area, `tests/compose/README.md`):
   when that command fails, the dialog logs it and opens with the defaults — no exclusion, both flags
   off, not locked.
 - **`replaceSelectedText`** (compose window): see *Replacing text in a compose window*.
+- **`saveCaret`** / **`insertAtCaret`** (compose window): see *Inserting at the cursor in a compose
+  window*.
 
 ### Batch cancellation (`taBatchController`)
 
@@ -1684,6 +1686,40 @@ editor.clearUndoRedo();` instead of `editor.rebuildDocumentFromSource(body)`, so
 The reply of `chatgpt_replyMessage` goes through the same editor path (*Writing a reply*); the only
 `setComposeDetails` left is that path's fallback, `replaceBody()`.
 
+### Inserting at the cursor in a compose window
+
+Action `"3"` (spec 02, issue #937): the answer goes **where the cursor is**, never replacing text and
+never asking. `chatgpt_insertAtCaret` (the AI chat window's "Insert at cursor", and the ChatGPT web
+window's) converts the answer exactly as `chatgpt_replaceSelectedText` does — both go through
+`_prepareComposeAnswer()` in `mzta-background.js` (the window's format, `stripHtmlKeepLines()` for
+plain text, `sanitizeBlockHtml()` for HTML) — and sends `insertAtCaret` to the compose tab. The
+insertion is `insertIntoEditor()`, the same editor path, focus handling and fallback as
+*Replacing text in a compose window*, so it is one undo step and the caret ends after the answer.
+
+- **The caret is saved when the prompt starts.** It cannot be read when the answer arrives: a prompt
+  with `{%mail_typed_text%}` autoselects the typed text when it starts (`getOnlyTypedText` with
+  `do_autoselect`), which replaces a collapsed caret with a selection. So `getMailBody()`
+  (`js/mzta-menus.js`) sends `saveCaret` to a compose tab first, before any other read, when the
+  prompt's action is `"3"`; the compose script keeps a clone of the selection's range in
+  `_mztaSavedCaret`. A clone is a live `Range`: it follows the edits made in the meantime. There is
+  one per compose window, so of two Insert prompts running at once from the same window, both
+  insert where the latest one started. A click in the compose window while the chat is open does
+  not move it: the saved caret wins.
+- **Which range** (`insertAtCaret`): the saved one if it is usable, else the current selection's
+  if usable, else the **start of the email** (`startOfBodyRange()`: before the first node that is
+  not one of ThunderAI's own elements, the same point the confirmed Replace uses) — which is above
+  any quote or signature, so the answer never lands inside or in place of them. *Usable*
+  (`usableCaret()`): both ends inside the body and neither inside one of ThunderAI's elements. The
+  saved caret is cleared on use.
+- **A selection is not replaced:** the range is collapsed to its end. A caret right before one of
+  ThunderAI's top-level elements moves after it, so `#mzta-container` stays the body's first child.
+  A caret the user put inside the signature or the quote is respected: only the no-caret case
+  avoids them.
+- The command resolves `true`.
+
+The direct-DOM fallback of `insertIntoEditor()` (shared with Replace) puts the caret after what it
+inserted, as the editor command does.
+
 ### Writing a reply
 
 `chatgpt_replyMessage` opens the reply (`compose.beginReply`, *Writing into a plain text compose
@@ -1816,7 +1852,8 @@ and nothing else:
 | Command | Sent by | Fields besides `command` and `text` | What the background uses |
 |---|---|---|---|
 | `chatgpt_replyMessage` | "use this answer", action `"1"` with a real message | `tabId`, `mailMessageId` (both from `api_send`), `replyType` (`reply_sender` / `reply_all`) | `mailMessageId`, to open the reply (`messages.get` → `compose.beginReply`); `tabId` is not read |
-| `chatgpt_replaceSelectedText` | "use this answer", action `"2"`, or action `"1"` with `mailMessageId` -1 (forced to `"2"`, [07-diff-picker.md](07-diff-picker.md#scope)) | `tabId` (the compose tab), `mailMessageId` (-1 from a compose window) | `tabId`, the compose window it writes into; `mailMessageId` is not read |
+| `chatgpt_replaceSelectedText` | "use this answer", action `"2"`, or any other action but `"3"` with `mailMessageId` -1 (forced to `"2"`, [07-diff-picker.md](07-diff-picker.md#scope)) | `tabId` (the compose tab), `mailMessageId` (-1 from a compose window) | `tabId`, the compose window it writes into; `mailMessageId` is not read |
+| `chatgpt_insertAtCaret` | "Insert at cursor", action `"3"` (never forced, *Inserting at the cursor in a compose window*) | as `chatgpt_replaceSelectedText` | as `chatgpt_replaceSelectedText` |
 | `chatgpt_saveSummary` | Save as Summary, summary sessions only | `headerMessageId` (`prompt_info.headerMessageId`), `tabId` (`prompt_info.summaryTabId`) | `headerMessageId` to store the summary; `tabId` to show it in that tab's message pane if the message is still displayed there |
 
 `chatgpt_saveSummary`'s `tabId` is `summaryTabId`, always set, since the button exists only when it

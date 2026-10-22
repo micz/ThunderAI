@@ -324,6 +324,7 @@ function actionLabel(action) {
         case "0": return browser.i18n.getMessage('customPrompts_close_button');
         case "1": return browser.i18n.getMessage('customPrompts_do_reply');
         case "2": return browser.i18n.getMessage('customPrompts_substitute_text');
+        case "3": return browser.i18n.getMessage('customPrompts_insert_at_cursor');
     }
     return '';
 }

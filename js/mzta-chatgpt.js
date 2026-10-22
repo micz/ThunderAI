@@ -1566,6 +1566,16 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             };
             fixedDiv.appendChild(btn_ok);
             break;
+        case "3":     // insert at cursor
+            disableButton(btn_ok);
+            btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_insert_at_cursor");
+            btn_ok.onclick = async function() {
+                const response = getSelectedHtml();
+                await browser.runtime.sendMessage({command: "chatgpt_insertAtCaret", text: response, tabId: tabId, mailMessageId: mailMessageId});
+                browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId}).catch(() => {});
+            };
+            fixedDiv.appendChild(btn_ok);
+            break;
     }
     btn_ok.style.display = 'none';
 
