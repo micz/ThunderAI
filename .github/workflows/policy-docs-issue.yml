@@ -1,0 +1,133 @@
+name: Policy docs issue
+
+# The administrator key reference published on micz.it is written by hand from prefs_default
+# (claude-spec/08-managed-configuration.md, "Adding a policy-settable preference"), so nothing
+# keeps it in line with the code. When the enterprise policy surface changes - preferences added
+# or removed (generated ones included), defaults changed, structural "_..." policy keys added or
+# removed, exclusion rules changed - this opens an issue on the site repository with a report
+# (.github/scripts/policy-keys-diff.mjs), or comments on the one already open. The reference
+# itself is still updated by hand.
+#
+# Only dev is watched: pull requests are retargeted to dev, and hotfixes made on main reach dev
+# when main is merged back, so every change of the surface passes through dev once.
+# By hand (Actions > Policy docs issue > Run workflow): compares the given base with the
+# selected branch.
+#
+# REQUIRED SECRET: SITE_ISSUES_TOKEN
+#   A fine-grained personal access token with access to the SITE_REPO repository only,
+#   permission "Issues: Read and write". Add it in Settings > Secrets and variables > Actions
+#   of this repository.
+on:
+  push:
+    branches: [dev]
+    paths:
+      - 'options/mzta-options-default.js'
+      - 'js/mzta-managed.js'
+  workflow_dispatch:
+    inputs:
+      base:
+        description: 'Revision to compare with (sha, tag or branch)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  # Runs append to the same issue: keep them in order.
+  group: policy-docs-issue
+  cancel-in-progress: false
+
+env:
+  # CHECK: the site repository. sync-site-languages.yml sends to micz/micz.github.io.
+  SITE_REPO: micz/micz.it
+  ISSUE_LABEL: thunderai-policy
+
+jobs:
+  policy-docs-issue:
+    # On a fork there is no token for the site: nothing to do there.
+    if: github.repository == 'micz/ThunderAI'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history and tags: the base may be any sha, tag or branch
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Resolve the base revision
+        id: base
+        env:
+          BASE: ${{ github.event_name == 'workflow_dispatch' && inputs.base || github.event.before }}
+        run: |
+          set -euo pipefail
+          # A new branch pushes no "before": all zeros.
+          if [ -z "$BASE" ] || [ -z "${BASE//0/}" ]; then
+            echo "No base revision (new branch?): nothing to compare, skipped."
+            echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          SHA=$(git rev-parse --verify -q "$BASE^{commit}" || git rev-parse --verify -q "origin/$BASE^{commit}" || true)
+          if [ -z "$SHA" ]; then
+            # A force push leaves "before" outside the history.
+            echo "::warning::Base revision '$BASE' is not in the history (force push?): nothing to compare, skipped."
+            echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "Comparing $SHA...$GITHUB_SHA"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Compare the policy surface
+        id: diff
+        if: steps.base.outputs.skip != 'true'
+        env:
+          BASE_SHA: ${{ steps.base.outputs.sha }}
+        run: |
+          set -euo pipefail
+          OLD="$RUNNER_TEMP/policy-base"
+          mkdir -p "$OLD/options" "$OLD/js"
+          git show "$BASE_SHA:options/mzta-options-default.js" > "$OLD/options/mzta-options-default.js"
+          # Older revisions have no managed configuration: no policy keys, no exclusions.
+          if git cat-file -e "$BASE_SHA:js/mzta-managed.js" 2>/dev/null; then
+            git show "$BASE_SHA:js/mzta-managed.js" > "$OLD/js/mzta-managed.js"
+          fi
+          # The checkout is the head: its js/mzta-managed.js tells excluded keys apart.
+          node .github/scripts/policy-keys-diff.mjs "$OLD" . "$RUNNER_TEMP/policy-report.md"
+
+      - name: Open or update the issue on the site repository
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.SITE_ISSUES_TOKEN }}
+          BASE_SHA: ${{ steps.base.outputs.sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Secret SITE_ISSUES_TOKEN is not set (see the comment at the top of this workflow)"; exit 1
+          fi
+
+          COMPARE="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/$BASE_SHA...$GITHUB_SHA"
+          BODY="$RUNNER_TEMP/policy-issue.md"
+          {
+            echo "The enterprise policy surface of ThunderAI changed: $COMPARE"
+            echo
+            cat "$RUNNER_TEMP/policy-report.md"
+            echo
+            echo "---"
+            echo
+            echo "- [ ] Update the administrator key reference on the site."
+            echo "- [ ] In ThunderAI, update the allowlist count in \`claude-spec/08-managed-configuration.md\` (\"The allowlist\") and in \`tests/managed/04-allowlist-derivation.test.mjs\`."
+          } > "$BODY"
+
+          gh label create "$ISSUE_LABEL" --repo "$SITE_REPO" --color 5319e7 \
+            --description "ThunderAI enterprise policy reference out of date" || true
+
+          ISSUE=$(gh issue list --repo "$SITE_REPO" --label "$ISSUE_LABEL" --state open \
+            --limit 1 --json number --jq '.[0].number // empty')
+          if [ -n "$ISSUE" ]; then
+            gh issue comment "$ISSUE" --repo "$SITE_REPO" --body-file "$BODY"
+            echo "Commented on $SITE_REPO#$ISSUE"
+          else
+            gh issue create --repo "$SITE_REPO" --label "$ISSUE_LABEL" \
+              --title "ThunderAI: update the enterprise policy reference" --body-file "$BODY"
+          fi
