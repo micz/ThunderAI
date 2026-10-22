@@ -16,6 +16,11 @@ If your change adds or modifies user-facing strings, update only the English fil
 
 More information: [How to translate ThunderAI](https://micz.it/thunderbird-addon-thunderai/translate/).
 
+## Release notes and changelog
+
+Please **do not edit `CHANGELOG.md`**: it is generated automatically from the release notes and committed by a GitHub workflow.
+If your change needs to be mentioned in the release notes, edit only `options/mzta-release-notes.html`.
+
 ## Branches
 
 | Branch | Purpose |
