@@ -182,10 +182,10 @@ original side is the prompt's `selection_html`, the twin of the `selection_text`
 `_buildDiffButton` resolves first (see [07-diff-picker.md](07-diff-picker.md)).
 
 `prompt_proofread_this` used to send `{%mail_typed_text%}`, plain text, because there is no
-`mail_typed_html` placeholder (`getOnlyTypedText` in `js/mzta-compose-script.js` returns text, not
-markup). It was moved to `{%selected_html%}` with `need_selected: "1"` (3507e368), like the two rewrite
+`mail_typed_html` placeholder (`getOnlyTypedText` in `js/mzta-compose-script.js` feeds the
+placeholder text, not markup). It was moved to `{%selected_html%}` with `need_selected: "1"` (3507e368), like the two rewrite
 prompts. A **custom** prompt that uses `{%mail_typed_text%}` still sends text; its picker original
-side is the `only_typed_html` twin that `getMailBody()` reads off the autoselect range (see
+side is the `only_typed_html` twin that `getOnlyTypedText` returns from the typed region's range (see
 [07-diff-picker.md](07-diff-picker.md) → *The `mail_typed_text` substitution must carry its twin*).
 `textToBlockHtml()` remains the backstop for an HTML twin with no block structure.
 
