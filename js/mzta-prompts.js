@@ -280,6 +280,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
+        allow_multi: true,
         show_in: "both",
     },
     {
@@ -344,6 +345,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
+        allow_multi: true,
         show_in: "context",
     },
     {
@@ -361,6 +363,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
+        allow_multi: true,
         show_in: "both",
     },
     {
@@ -412,6 +415,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
+        allow_multi: true,
         show_in: "both",
     }
 ];
@@ -419,6 +423,31 @@ const specialPrompts = [
 /** The ids of every entry in specialPrompts, menu items or not. */
 export function getSpecialPromptIds() {
     return specialPrompts.map(p => p.id);
+}
+
+/**
+ * Whether a prompt can run on several messages at once (a multi-selection, a collapsed thread):
+ * the context menu disables the others in that case [#979].
+ *
+ * allow_multi is a property of the CODE, not of the prompt: these are the prompts the context
+ * menu hands to processEmails() (specialContextMenuActions in mzta-background.js), which takes a
+ * message list, while every other prompt reads the one message shown in the pane. So it is read
+ * only from the shipped definitions above, by id, and never from a prompt object: a custom,
+ * imported or policy prompt cannot claim it. BUILT_IN_ONLY_PROMPT_FIELDS keeps it out of every
+ * prompt object, storage and export anyway.
+ */
+export function isMultiMessagePrompt(promptId) {
+    return specialPrompts.some(p => p.id === promptId && p.allow_multi === true);
+}
+
+// Fields that only the shipped definitions carry, read from them by id (isMultiMessagePrompt()).
+// Removed from every prompt object built from a definition, from storage or from a file, so a
+// stored, imported or policy value never exists anywhere it could be mistaken for the real one.
+const BUILT_IN_ONLY_PROMPT_FIELDS = ['allow_multi'];
+
+function stripBuiltInOnlyFields(prompt) {
+    BUILT_IN_ONLY_PROMPT_FIELDS.forEach(field => delete prompt[field]);
+    return prompt;
 }
 
 /**
@@ -799,6 +828,7 @@ export function preparePromptsForExport(prompts, include_api_settings = false){
         // longer applies.
         // (is_default rows are already covered by the allowedKeys filter above.)
         TRANSIENT_PROMPT_FLAGS.forEach(flag => delete prompt[flag]);
+        stripBuiltInOnlyFields(prompt);
         // Same for the managed API key placeholder: it is not a key.
         stripManagedSecretMarkers(prompt);
     });
@@ -827,6 +857,9 @@ export async function preparePromptsForImport(prompts){
     // used (numbers, strings, or a missing key), and the merge above copies it
     // verbatim -- so collapse the flags to the canonical "0"/"1" here too.
     output.forEach((prompt) => normalizePromptFlags(prompt));
+    // A file can carry any key, and the merge above copies them all: a built-in-only one is
+    // never the file's to set.
+    output.forEach(stripBuiltInOnlyFields);
     output.sort((a, b) => a.id.localeCompare(b.id));
     // console.log(">>>>>>>>>>> preparePromptsForImport final output: " + JSON.stringify(output));
     return output;
@@ -949,6 +982,7 @@ async function getDefaultPrompts_withProps() {
  */
 export function normalizePromptFields(prompt) {
     normalizePromptFlags(prompt);
+    stripBuiltInOnlyFields(prompt);
     if(prompt.chatgpt_web_model === undefined){
         prompt.chatgpt_web_model = "";
     }
@@ -1046,6 +1080,7 @@ function stripTransientFlags(prompts) {
         const copy = Object.assign({}, prompt);
         TRANSIENT_PROMPT_FLAGS.forEach(flag => delete copy[flag]);
         VIEW_PROMPT_FIELDS.forEach(field => delete copy[field]);
+        stripBuiltInOnlyFields(copy);
         stripManagedSecretMarkers(copy);
         return copy;
     });
@@ -1086,6 +1121,7 @@ export async function getSpecialPrompts(){
             // hard-coded built-in icon" (see getBuiltInPromptIcon()).
             prompt.custom_icon = "";
             normalizePromptFlags(prompt);
+            stripBuiltInOnlyFields(prompt);
         })
         await applyCalendarNoSelection(def_specPrompts);
         await applyLockedOffIntegrations(def_specPrompts);
@@ -1097,7 +1133,7 @@ export async function getSpecialPrompts(){
 
         specialPrompts.forEach((defaultPrompt) => {
             if (!updatedPrompts.some((prompt) => prompt.id === defaultPrompt.id)) {
-                let newPrompt = structuredClone(defaultPrompt);
+                let newPrompt = stripBuiltInOnlyFields(structuredClone(defaultPrompt));
                 newPrompt.text = browser.i18n.getMessage(newPrompt.text);
                 updatedPrompts.push(newPrompt);
             }
@@ -1118,6 +1154,7 @@ export async function getSpecialPrompts(){
             // the shipped definition when a saved value is out of domain.
             const builtIn = specialPrompts.find((sp) => sp.id === prompt.id);
             normalizePromptFlags(prompt, builtIn || {});
+            stripBuiltInOnlyFields(prompt);
         });
 
         // console.log(">>>>>>>>>>>>> getSpecialPrompts updatedPrompts: " + JSON.stringify(updatedPrompts));

@@ -53,6 +53,7 @@ tests/
     ├── 13b-migration-menu-order-done.test.mjs   ... (it has run: nothing written)
     ├── 14-migration-enabled.test.mjs      spec 02 "Enabled-to-show_in Migration"
     ├── 15-export-import.test.mjs          spec 02 "Per-Prompt API Override Properties", export / import
+    ├── 16-allow-multi.test.mjs            spec 02 "Context Menu", "Built-in-only fields" (allow_multi)
     ├── 20-prepare-prompt-golden.test.mjs  spec 02 + 03: preparePrompt(), from the golden fixtures
     ├── 21-finalize-prompts.test.mjs       spec 02 "Add tags: extra prompt statements", "Calendar event /
     │                                      task: reminder (#887)"; spec 03 the calendar address strip

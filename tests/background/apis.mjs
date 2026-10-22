@@ -341,6 +341,20 @@ export function installApis(browser, m) {
 
     browser.menus = strict('browser.menus', {
         onClicked: makeEvent(),
+        onShown: makeEvent(),
+        onHidden: makeEvent(),
+        async update(id, props) {
+            rec('menus.update', [id, props]);
+            // Thunderbird rejects an update of an id that does not exist.
+            if (!m.menus.has(id)) {
+                m.menuErrors.push('update of missing id ' + id);
+                throw new Error('Cannot find menu item with id ' + id);
+            }
+            Object.assign(m.menus.get(id), clone(props));
+        },
+        async refresh() {
+            rec('menus.refresh', []);
+        },
         async removeAll() {
             rec('menus.removeAll', []);
             m.menus.clear();
@@ -409,5 +423,5 @@ export function installApis(browser, m) {
 
 /** The menus created, as [{id, title, parentId, icons}] in creation order. */
 export function menuItems(m) {
-    return [...m.menus.values()].map(p => ({ id: p.id, title: p.title, parentId: p.parentId ?? null, icons: p.icons ?? null, contexts: p.contexts }));
+    return [...m.menus.values()].map(p => ({ id: p.id, title: p.title, parentId: p.parentId ?? null, icons: p.icons ?? null, contexts: p.contexts, enabled: p.enabled ?? true }));
 }
