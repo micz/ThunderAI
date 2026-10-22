@@ -3,8 +3,6 @@ name: Update Vendor Libraries
 on:
   workflow_dispatch:
   push:
-    branches:
-      - dev
     paths:
       - 'VENDORS.md'
 
@@ -18,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: dev
+          ref: ${{ github.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v4
@@ -31,7 +29,7 @@ jobs:
       - name: Commit and push to PR branch
         id: commit
         run: |
-          BASE_BRANCH="dev"
+          BASE_BRANCH="${{ github.ref_name }}"
           PR_BRANCH="libs-update-${BASE_BRANCH}"
 
           git config user.name "github-actions[bot]"
