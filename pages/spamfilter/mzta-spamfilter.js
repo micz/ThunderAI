@@ -136,6 +136,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // Spam reports: wipe all stored per-mail verdicts, so the next batch run
+    // re-analyzes every mail instead of skipping the already-tested ones.
+    document.getElementById('btn_clear_spam_reports').addEventListener('click', async () => {
+        if (!confirm(browser.i18n.getMessage('SpamFilter_ClearSpamReports_Confirm'))) {
+            return;
+        }
+        await spamReport.clearReportData();
+        const info = document.getElementById('spam_reports_cleared_info');
+        if (info) {
+            info.style.display = 'inline';
+            setTimeout(() => { info.style.display = 'none'; }, 5000);
+        }
+    });
+
     if(spamfilter_prompt.text === 'prompt_spamfilter_full_text'){
         spamfilter_prompt.text = browser.i18n.getMessage(spamfilter_prompt.text);
     }

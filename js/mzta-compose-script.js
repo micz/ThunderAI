@@ -1124,7 +1124,6 @@ switch (message.command) {
         }
     ], { bg: sc.bg, border: sc.border, text: sc.text });
     spamMenu.style.fontWeight = 'normal';
-    spamMenu.style.display = 'none';
     topRow.appendChild(spamMenu);
 
     badge.appendChild(topRow);
@@ -1160,11 +1159,9 @@ switch (message.command) {
         if (badgeText.scrollWidth > badgeText.clientWidth) {
             chevron.style.display = 'inline';
             branding.style.display = 'none';
-            spamMenu.style.display = 'none';
         } else {
             chevron.style.display = 'none';
             branding.style.display = '';
-            spamMenu.style.display = '';
         }
     };
 

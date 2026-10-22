@@ -1488,6 +1488,18 @@
     "message": "Sender cache cleared.",
     "description": ""
   },
+  "SpamFilter_ClearSpamReports": {
+    "message": "Clear spam reports",
+    "description": ""
+  },
+  "SpamFilter_ClearSpamReports_Confirm": {
+    "message": "Delete all stored spam reports? Mails already classified will be checked again on the next batch run.",
+    "description": ""
+  },
+  "SpamFilter_ClearSpamReports_Done": {
+    "message": "Spam reports cleared.",
+    "description": ""
+  },
   "spamfilter_batch_prompt": {
     "message": "You are an email spam analysis assistant. Analyze each of the following $2 emails and rate for every single one the probability that it is unwanted spam or unsolicited mail (spamValue from 0 to 100), together with a short explanation (one sentence maximum). Judge from the recipient's point of view: would they plausibly want this email?\nImportant criteria:\n- Confirmation / double opt-in emails for newsletter or service registrations the recipient apparently never requested (e.g. wording like \"you (or possibly someone else) just subscribed\") are a strong spam indicator (list bombing): rate them high.\n- A well-known sender or reputable branding does NOT make an email wanted on its own.\n- Marketing / upsell content inside otherwise transactional emails is a moderate spam indicator.\n- Judge every email independently on its own content.\n\n$1\n\nRespond ONLY with a JSON object in exactly this format and nothing else:\n{\"results\":[{\"index\":1,\"spamValue\":0,\"explanation\":\"...\"},{\"index\":2,\"spamValue\":0,\"explanation\":\"...\"}]}\nThe index must match the EMAIL number above. Provide one entry for every email.",
     "description": ""

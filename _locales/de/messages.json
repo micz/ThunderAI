@@ -1408,6 +1408,15 @@
     "spam_check_in_progress": {
         "message": "Spam-Prüfung läuft..."
     },
+    "SpamFilter_ClearSpamReports": {
+        "message": "Spam-Berichte löschen"
+    },
+    "SpamFilter_ClearSpamReports_Confirm": {
+        "message": "Alle gespeicherten Spam-Berichte löschen? Bereits geprüfte Mails werden beim nächsten Batch-Lauf erneut analysiert."
+    },
+    "SpamFilter_ClearSpamReports_Done": {
+        "message": "Spam-Berichte gelöscht."
+    },
     "prefs_THStats_1": {
         "message": "Möchtest du schöne Statistiken zu deinen E-Mails erhalten?"
     },
