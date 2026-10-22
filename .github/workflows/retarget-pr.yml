@@ -1,0 +1,39 @@
+# Moves pull requests opened against `main` to `dev`.
+# Branches named `hotfix/...` are left on `main` (urgent fixes to the released version),
+# and so is `dev` itself (release merges).
+#
+# Security note: this workflow uses `pull_request_target` so it can write to PRs coming
+# from forks. It never checks out or runs code from the pull request, it only calls
+# the GitHub API. Do not add a checkout step here.
+
+name: Retarget PRs to dev
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+    branches: [main]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  retarget:
+    if: >-
+      github.head_ref != 'dev' &&
+      !startsWith(github.head_ref, 'hotfix/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Change base branch to dev
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr edit "$PR_NUMBER" --base dev
+          gh pr comment "$PR_NUMBER" --body "Thanks for your contribution! :tada:
+
+          Development happens on the \`dev\` branch, so this pull request has been automatically retargeted from \`main\` to \`dev\`.
+
+          If GitHub now reports conflicts, please update your branch by merging or rebasing \`dev\` into it.
+
+          If this is an urgent fix for the released version, let me know and I'll move it back to \`main\`. Next time you can name your branch \`hotfix/...\` to keep it on \`main\`. See [CONTRIBUTING.md](https://github.com/${GH_REPO}/blob/main/CONTRIBUTING.md) for details."

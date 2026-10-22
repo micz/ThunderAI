@@ -6,6 +6,7 @@ The active AI provider is controlled by the `connection_type` preference. Possib
 
 | `connection_type` value | Provider |
 |------------------------|----------|
+| `''` (empty) | **No connection selected yet** — the default on a fresh install |
 | `chatgpt_web` | ChatGPT Web (no API key, opens browser window) |
 | `chatgpt_api` | OpenAI API (ChatGPT via API key) |
 | `ollama_api` | Ollama (self-hosted LLM) |
@@ -13,57 +14,804 @@ The active AI provider is controlled by the `connection_type` preference. Possib
 | `google_gemini_api` | Google Gemini API |
 | `anthropic_api` | Claude (Anthropic) API |
 
-The global default is `chatgpt_web`. Each special prompt (`add_tags`, `spamfilter`, etc.) can independently override this via its own `{prefix}_connection_type` pref.
+The global default is the **empty string**: no provider is chosen for a new user, who is instead
+guided to the Setup Wizard. Test it with `hasNoConnectionSelected()` (`js/mzta-utils.js`) rather than
+comparing to `''` inline — and never assume "not `chatgpt_web`" implies "an API is configured". See
+[05-options.md](05-options.md#global-integration-settings) for the full behaviour of the empty state.
+
+Each special prompt (`add_tags`, `spamfilter`, etc.) can independently override this via its own
+`{prefix}_connection_type` pref (whose own default is `chatgpt_api`, applied only when that prompt's
+`use_specific_integration` is on).
 
 ## Provider Configuration
 
 Each provider has its own settings block in `integration_options_config` (`options/mzta-options-default.js`):
 
 ### ChatGPT Web
-Controlled via `js/mzta-chatgpt.js`. Opens a browser window to `chatgpt.com`, injects the prompt via DOM automation, and reads back the response. Settings: `chatgpt_web_model`, `chatgpt_web_tempchat`, `chatgpt_web_project`, `chatgpt_web_custom_gpt`, `chatgpt_web_load_wait_time`.
+Controlled via `js/mzta-chatgpt.js`. Opens a browser window to `chatgpt.com`, injects the prompt via DOM automation, and reads back the response. Settings: `chatgpt_web_model`, `chatgpt_web_model_extended_check`, `chatgpt_web_tempchat`, `chatgpt_web_project`, `chatgpt_web_custom_gpt`, `chatgpt_web_load_wait_time`. Before sending, the requested model is checked on the page: see [Model verification](#model-verification-checkgptmodel) below.
+
+**Loader declaration.** `js/mzta-chatgpt-loader.js` is declared in `manifest.json` under
+`content_scripts` at `document_start` in ChatGPT's top-level frame, replacing the background's
+one-shot asynchronous registration. The separate `diff.js` entry retains injection into all frames.
+
+**Readiness does not wait for the document (issue #924).** ChatGPT can keep the HTML document open for ~20 s while its app is already usable, so every lifecycle event (`document_end`, `load`, `document_idle`) arrives late. The loader `js/mzta-chatgpt-loader.js` is registered at `document_start` and sends `chatgpt_web_ready_<call_id>` once, on the first of: `composer` (a visible `#prompt-textarea.ProseMirror`, `div.ProseMirror[contenteditable="true"]` or `[contenteditable="true"][role="textbox"]` with `document.body` present, via MutationObserver + 250 ms poll; the hidden server-side `textarea[name="prompt-textarea"]` does not count), `load` (or `readyState === "complete"` at start), `timeout` (15 s after navigation start). The message carries `loaderStartMs`, `readySentMs`, `readyReason`, `readyStateAtSend`. The background still waits `chatgpt_web_load_wait_time`, then injects `mzta_script` with `runAt: "document_start"` (the default `document_idle` would wait for the document again). `mzta_script` may therefore start while `readyState` is `"loading"`: `run()` waits for `document.head`/`document.body` (`waitForHeadAndBody()`) and, while the page is incomplete and no composer is visible, `checkLoggedIn()` waits for `findPromptInput()` before checking the login button. `run()` is started only by `chatgpt_send` (there is no retry interval any more) and only once `current_message` is set. `run_pending` drops a second call during that wait, and `prompt_flow_started`, set right before `doProceed()`/`showCustomTextField()` start, makes the prompt flow start at most once per script instance. Each skipped start is logged via `doLog()`. The "user not logged in" alert is shown only once. The debug "Page timing" line includes `readyReason`, `readyStateAtSend` (passed in the pre-script as `mztaReadyReason`/`mztaReadyStateAtSend`), `readyStateAtInject`, `loadWaitMs` (the background wait including the +1000 ms for a project, passed as `mztaLoadWaitMs`) and `sendButtonWaitMs`. The background "Waiting N millisec" log line also shows the `readyReason`.
+
+**ThunderAI's UI stays attached and is never duplicated (issue #924).** ChatGPT's React re-render of `body` can remove nodes it does not own. `addCustomDiv()` keeps module-level references to the only two nodes it inserts into the page, the bar (`mzta_ui_bar`, `.mzta-header-fixed`, appended with `document.body.appendChild()`, not as the first child) and the `<style>` (`mzta_ui_style`). Everything else (custom text box, diff overlay, force-completion hint, retry button) lives inside the bar. A second `addCustomDiv()` call creates nothing: it only re-attaches. `mztaEnsureUiAttached(reason)` re-inserts the SAME nodes when they are not connected: the bar into `document.body`, the style into `document.head` (or `document.documentElement`). Every element reference, listener, textarea value and state therefore stays valid. After a re-attach it logs the reason via `doLog()` and calls `scheduleComposerOverlapFix('ui-reattached')`, whose run re-syncs the ResizeObserver on the bar. It is called from a MutationObserver on `document.documentElement` (`childList`, catches `body`/`head` being replaced), from one on `document.body` (`childList`, no subtree, moved to the new `body` by `watchUiBody()` when `body` is replaced), and from the 2000 ms layout interval as a safety net (e.g. the style removed from inside `head`). `enableButton()`/`disableButton()` ignore a null button, and the `selectionchange` handler returns early while the bar does not exist. `doProceed()` logs an error and returns when called without a message.
 
 Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view support.
+
+**Composer, send and completion selectors use structure, never localized text.** ChatGPT ships in dozens of languages and rolls out UI variants gradually (issues #890, #920, #924), so `aria-label`, placeholder, title and text content are never matched. Button aria-labels may appear in diagnostics, nothing else does. Existing selectors always come first so that older UIs keep working. `mzta_script` is a template literal: no backticks or `${…}` inside it, and backslashes are doubled.
+
+The loader, the pre-script and the model verification are tested by the `chatgptweb` area
+([`tests/chatgptweb/README.md`](../tests/chatgptweb/README.md)); the rest of the content script is
+tested by hand in Thunderbird.
+
+**The composer is located by `findPromptInput(timeoutMs)`, never by a single id lookup.** `chatgpt_sendMsg()` waits up to 15 s for the first *visible* element matching `PROMPT_INPUT_SELECTORS`. The selectors, in priority order:
+1. `#prompt-textarea`
+2. ProseMirror contenteditable with `[data-composer-markdown]`
+3. `[contenteditable][role=textbox][data-virtualkeyboard]`
+4. ProseMirror contenteditable
+5. `form [contenteditable]`
+6. `textarea[name=prompt-textarea]`
+7. `form textarea`
+8. `main [contenteditable]`
+
+- **Lookup:** a MutationObserver plus a 250 ms poll. Only the poll also searches open shadow roots (bounded walk, `SHADOW_WALK_MAX_NODES`/`SHADOW_WALK_MAX_DEPTH`).
+- **Skipped matches:** invisible elements, since ChatGPT keeps a hidden fallback `<textarea>` next to the visible contenteditable, and elements inside ThunderAI's own injected UI (`.mzta-header-fixed`, `[id^="mzta-"]`).
+- **Filling:** a contenteditable receives the prompt HTML nodes. A real `<textarea>` receives `htmlToPlainText()` (one line per block) through the native `value` setter, so React notices the change.
+
+When nothing is found, `logPromptInputDiagnostics()` writes one `console.log("[ThunderAI] Diagnostics: …")` JSON line, even without debug mode. All four diagnostics lines (`Diagnostics`, `Composer`, `Send button`, `Completion`) use `console.log`; only their `… failed` variants use `console.warn`. With debug on, it is also written once when the composer is found (or reused), so every run has it. It holds page structure only, never page text or the prompt, because users paste it on GitHub. Its fields:
+- extension version, URL without query, title
+- readyState, visibility and focus, time since load, viewport size, languages
+- per-selector stats from `getSelectorStats()` (matches / visible / own UI)
+- element counts: contenteditable, textarea, form, main, send button, visible dialogs and alerts, iframes and their origins
+- open shadow root count, and whether the bounded walk was truncated
+- up to 10 custom element tags (the only trace of a closed shadow root)
+- up to 10 candidate inputs: attributes, `getHiddenReason()`, size, form/shadow membership, 3 ancestors
+- login and Cloudflare flags, UA
+
+Each section runs through `diagSection()`, so one failing section does not lose the line. With debug on, `findPromptInput` also logs its start and, every 3 s while waiting, the per-selector stats. After filling the composer, `chatgpt_sendMsg()` logs the tag and content length (never the content).
+
+**If no selector matches, the user points at the composer.** `waitForUserComposerFocus(60000)` shows `chatgpt_composer_click_to_continue` in the panel, then waits:
+- **Detection:** a capture `focusin` listener on `document` takes `composedPath()[0]` and walks up to the editable element via `findEditableHost()`. The walk crosses open shadow boundaries and accepts `isContentEditable` (climbing to the editing host), `<textarea>` or `[role=textbox]`, skipping ThunderAI's own UI. The deep `activeElement` is also checked once at start, because clicking into an element that already has focus fires no `focusin`.
+- **Focus found:** the element becomes `user_selected_composer`, which later retries in the same page reuse while it stays visible.
+- **Timeout:** after 60 s, `-2`.
+- **Diagnostics:** both outcomes emit one `[ThunderAI] Composer diagnostics:` line in any mode (`source` `focus` or `timeout`). With debug on, it is also emitted once when `findPromptInput` succeeds (`source: found`, `selector`: the matched `PROMPT_INPUT_SELECTORS` entry) and when `user_selected_composer` is reused (`source: reused`), so every run has exactly one. For the element: source, selector (null unless `found`), tag/id/name/role, contenteditable, aria-multiline, `data-*` attribute names only, class (150 chars), shadow root mode or a possible closed-shadow host, iframe, ancestors up to the form or 8 levels, and a CSS path from `getSelectorPath()`. For the page: path, title, readyState, forms with button and editable counts, contenteditable/textarea/textbox counts, iframe origins, open shadow hosts, open dialog ids, login/Cloudflare flags and UA.
+
+**Sending and verifying.** With debug on only, `send_baseline` (assistant, user, `main article`, `data-message-id` and `data-turn` counts) is taken before the composer is filled, for the completion diagnostics; with debug off it is null, and every reader handles null. After the input event, `waitForSendButtonReady(composerEl, 1000)` waits 150 ms, then calls `findSendButton()` every 100 ms and resolves with the first enabled button (`!disabled` and `aria-disabled` not `"true"`), or after 1000 ms with whatever the lookup returns (null or disabled); the rest of the flow is unchanged. The debug log records how long it waited and whether the button was enabled. `findSendButton(composerEl)` tries these strategies and returns the first visible match. Each strategy is logged only when it changes:
+1. `existing`: the old testid and SVG-path selectors
+2. `#composer-submit-button`
+3. `form-submit`: `button[type=submit]` in the composer's form
+4. `composer-size-token-submit`: `button.size-token-button-composer[type=submit]` in the composer's form (newer UI)
+5. `ancestor-submit`: without a form, the first of up to 6 ancestors holding one
+
+The send then proceeds as follows (`fillComposer()` writes the prompt, `sendAndVerify()` does one send and returns `sent`, `failed` or `replaced`):
+- **Button found:** `sendWithButton()` waits for it to be enabled, re-querying through `findSendButton()` while it is disabled, then clicks or sends Enter according to `method`. It resolves `replaced` as soon as the composer is no longer connected. After 10 s it gives up and falls back to Enter.
+- **No button:** Enter directly (keydown with key/code `Enter`, keyCode/which 13), whatever `method` is.
+- **Verification:** `verify_baseline` (`takeVerifyBaseline()`: `[data-message-author-role=user]` and `main article` counts, `location.pathname`) is taken in every mode before the composer is filled. `waitForSendVerified(el, 1500)` polls `isSendVerified()` every 100 ms and resolves `true` as soon as it holds, `false` after 1.5 s. `isSendVerified()` is true when the composer is still connected and empty, or `chatgpt_isGenerating()` is true (the old or the new UI stop button), or `hasSendEvidence()` is true (more user turns or articles than the baseline, or a different path, e.g. the new `/c/…` conversation). A disconnected composer is **not** a send by itself: ChatGPT can re-render the composer before the send and drop the prompt with it, while the old element's disappearance looked like a successful send. When the composer is disconnected after the first 1.5 s, the check waits another 1.5 s before concluding, since a refill after a real send would send twice.
+- **Composer replaced:** when the composer left the page with no send evidence (after the button wait, during `sendWithButton()`, or after the verification), `sendAndVerify()` returns `replaced`, logged as "Composer replaced by the page before the send". `chatgpt_sendMsg()` looks the composer up again (`findPromptInput(5000)`), fills it and sends again, at most `MAX_COMPOSER_REFILLS` (1) times; without a new composer it returns `-1`. Once the refills are used up, the flow continues as below on the old element and fails.
+- **Second attempt:** if the send is not verified and a form exists, `requestSubmitGuarded()` calls `form.requestSubmit()`, waits again through `waitForSendVerified(el, 1500)`, and checks again. A bubbling `submit` listener on `window` cancels the submit if the page did not, since a native submit would navigate the popup and drop the script.
+- **Failure:** only a failed second check returns `-1`.
+
+`logSendButtonDiagnostics(composerEl, attempt)` writes `Send button diagnostics:` when no button is found (before sending, so `verified` is null) or the send is not verified; with debug on, also once after a verified send. At most one line per send attempt (a refill is a new attempt). It has `strategy` (the `findSendButton()` strategy that matched, null if none), `method` (the last one used: `click`, `enter` or `requestSubmit`), `verified` (the `isSendVerified()` outcome), `composerEmpty`, the aggregate counts, the testids and the aria-labels, plus `composerButtons`: up to 12 buttons of the composer container, described by `describeButtons()` (index, type, id, testid, disabled, aria-label, data-state, `<use>` href, the first 30 chars of `path d`, visible).
+
+**Completion.** Each `chatgpt_isIdle()` call starts with fresh local state, because it can run more than once in the same page (custom texts). At call start it records two baselines, the only ones used for completion: `actionButtonsAtStart` (`chatgpt_countActionButtons()`) and `regenerateButtonsAtStart` (`chatgpt_countRegenerateButtons()`). No completion condition counts turns or reads page text. With debug on only, it also computes, for the diagnostics, `assistantAtStart`, `minTurnIndex` (from `send_baseline.assistant`, or the assistant count at call start) and, when there are no `[data-message-author-role=assistant]` elements, a `fallbackTurn` (see **Turn selectors** below).
+
+The newer UI (issue #920) has one composer primary button, `button.size-token-button-composer`, with three states: send (`type=submit`), stop (a `path[d^="M4.5 5.75C4.5 5.05964"]`) and voice chat, shown when idle with an empty composer (a `path[d^="M8.22266 2.45825"]`, `type=button`). Because stop and voice chat are both `type=button`, the composer classes alone never mean "generating". `chatgpt_isGenerating()` detects generation language-neutrally, by either stop button: the new UI Stop path (`chatgpt_hasNewUiStopPath()`) or the old UI `[data-testid=stop-button]` (`chatgpt_hasOldUiStopButton()`, a `type=submit` button with a sprite `<use>` icon and no inline path), ThunderAI's own UI excluded. `aria-busy` and the `streaming` classes are not used: in the old UI `streamingClass` stays true after completion. `chatgpt_composerIsIdle()` is true when no Stop path exists and there is either a `size-token-button-composer[type=submit]` or a button with the voice path. `chatgpt_countActionButtons()` counts, page-wide and whatever turn they belong to, the buttons containing the new regenerate (`M14.0219 8.22363`) or copy (`M13.468 11.1216`) path. Each button counts once, and ThunderAI's own UI is excluded. `chatgpt_countRegenerateButtons()` counts the same way the buttons containing the regenerate path only (`getButtonsWithPath(newUiPathSelector(NEW_UI_BUTTON_PATHS.regenerate))`): only completed answers have one, so the copy button of the user's own message (same icon as the answer's copy button) does not change it.
+
+The call resolves on the first of the following, and `doLog()` records which one fired. The name in parentheses is the `condition` in the completion summary:
+1. **Force completion** (`force`).
+2. **Old-UI regenerate button** (`oldRegen`). `chatgpt_getRegenerateButton()` (no parameters) finds it through the old checks only: the `<use>` sprite, the `.cursor-pointer` loop with the path prefixes and the good-response testid, and the read-aloud icon. It no longer looks for the new-UI regenerate/copy buttons: without turn filtering those would match buttons of earlier turns (e.g. the copy button of the user's own message). That case is covered by `actionButtons`. It runs inside the tick's `try`, right after the force check, so an exception is logged (`chatgpt_isIdle:`) instead of silently skipping the tick.
+3. **End of generation** (`safetyNet`). The Stop button was seen during this call and has now been gone for 4 s: 1 s, plus a 3 s safety net. It is evaluated in the same tick branch as the `chatgpt_isGenerating()` tracking, before the two checks below.
+4. **New action buttons** (`actionButtons`). The Stop button was seen during this call and is gone now, and either `chatgpt_countRegenerateButtons()` is above `regenerateButtonsAtStart` (reason `regenerate`), or `chatgpt_countActionButtons()` is at least `actionButtonsAtStart + 2` (reason `total`: the user's copy button plus at least one answer button, in case the regenerate icon changes). A plain "total above baseline" is not enough: the copy button of the new user turn raises it right after sending. Both counts are computed only in the not-generating branch, and only once the Stop button has been seen (with debug on, also before, for the `firstAboveBaselineAtMs` timings). `doLog()` records the reason with both baselines and both current values.
+5. **Idle composer** (`stopGoneComposerIdle`). The Stop button was seen, has been gone for at least 1 s, and `chatgpt_composerIsIdle()` is true.
+
+There is no text-stability fallback any more (it needed a turn to observe). When no stop button is ever seen, completion therefore relies on the old regenerate checks and the force-completion button, as in 5.0.2. In the old UI, `oldRegen` still fires first when present, and `safetyNet` fires 4 s after the `stop-button` disappears otherwise; `actionButtons` and `stopGoneComposerIdle` stay inactive there, since its icons differ and its voice button is a sprite.
+
+**Completion summary.** Every branch resolves through a local `finish(condition)`, which always resolves the promise (in its `finally`) and, only with debug on (`mztaDoDebug == 1`), emits one `console.warn("[ThunderAI] Completion summary: …")` line. It holds timings and signal names only. All times are ms from the call start, and null when the event never happened:
+- `condition`, `actionButtonsReason` (`regenerate` or `total` when `condition` is `actionButtons`, null otherwise), `totalMs`, `generationObserved`;
+- `firstGeneratingAtMs` and `lastGeneratingAtMs`, when `chatgpt_isGenerating()` was first and last true, and `sinceGenerationStoppedMs`;
+- `generatingSignals` at the last true sample. `stopPath` (new UI, `chatgpt_hasNewUiStopPath()`) and `stopButton` (old UI, `chatgpt_hasOldUiStopButton()`) are the two signals that drive `chatgpt_isGenerating()`; `ariaBusy` and `streamingClass` from `getGenerationSignals(null)` are sampled alongside them for information (without a turn, they are always false);
+- `composerIsIdle` at completion, and `composerIdleAfterGenerationAtMs`: the first idle sample after the last generating one;
+- `actionButtons: {baseline, atCompletion, firstAboveBaselineAtMs}` and `regenerateButtons: {baseline, atCompletion, firstAboveBaselineAtMs}`;
+- `uiReattached`: how many times `mztaEnsureUiAttached()` re-attached the bar or the style so far (counted with debug on only).
+
+This tracking never decides completion, and with debug off it is skipped entirely: the 100 ms loop then runs only the checks that decide completion. With debug on, the extra DOM queries run only until each value is recorded. In the not-generating branch `chatgpt_composerIsIdle()` is evaluated lazily, at most once per tick, and shared by the debug timing and the `stopGoneComposerIdle` check. With debug on, `finish()` also emits a `Completion diagnostics:` line just before the summary, with the same fields as the 60 s one. The turn-dependent values (last assistant message, its length, turn counts, turn buttons, copy ancestors) are computed only when one of these two lines is written, never on every tick.
+
+**Force-completion hint.** After a verified send, `doProceed()` waits through `showForceCompletionHint()`, which wraps `chatgpt_isIdle()`:
+- A 250 ms interval shows `#mzta-forcecomp-hint` once `delay_wait_completion` (7 s) has passed with `chatgpt_isGenerating()` false.
+- While generating, the hint is hidden and the countdown restarts.
+- If generation is never seen, the hint appears 7 s after the start, as before.
+- The interval is cleared when `chatgpt_isIdle()` resolves.
+
+**Turn selectors.** Turns are found with `[data-message-author-role=assistant]`, then `main article`. After those, `FALLBACK_TURN_SELECTORS` tries `[data-message-id]` and `[data-turn]`. These two are guesses for a new-UI variant that has neither roles nor articles: harmless if absent. They are used by the debug diagnostics only. `takeSendBaseline()` (debug only) also stores their counts (`messageId`, `turn`). Since they may match user turns too, they are handled like articles:
+- `getNewAssistantMessage()` requires the count to be at least baseline + 2 (without a baseline it returns the last turn).
+- `fallbackTurn.minIndex` is baseline + 1, or, without a baseline, the count at call start.
+
+Stopping early costs little: the panel buttons appear sooner, and the user still picks the text by hand. With debug on, after 60 s of waiting, one `Completion diagnostics:` line is logged (and another one at completion, see **Completion summary**). It holds structure only, never page text, and aria-labels are logged but never matched. It contains:
+- the counts versus the baseline (null with no baseline), the length, `stableMs` (no longer tracked, always null), and the signals;
+- `generationObserved`, `isGeneratingNow`, `assistantAtStart`, `assistantNow` and `minTurnIndex`;
+- `describeButtons(..., extended)` for the last turn and for the composer container. Extended mode adds `ariaHaspopup` and the first 60 chars of the class;
+- `messageId` and `turn` counts, `turnSelector` (the turn selector that matches now, `''` if none) and `fallbackTurn`;
+- `composerIsIdle`, `actionButtons: {baseline, now}` and `regenerateButtons: {baseline, atCompletion, firstAboveBaselineAtMs}` (`atCompletion` is the count at logging time);
+- `pathButtons`: page-wide counts of buttons containing each `NEW_UI_BUTTON_PATHS` prefix. These are regenerate, copy, rate (`M15.3702 10.3242`), share (`M16.6663 10.1681`), stop and voice;
+- `copyAncestors`: the ancestor chain of the last copy button, or of the last regenerate button when there is no copy button, up to `main` or 15 levels. `describeAncestorChain()` gives, for each level, the tag, id, role, the names (not the values) of the `data-*` attributes, and the class cut to 60 chars.
+
+`doProceed()` returns right after showing the retry button on `-2` (nothing was sent), so each retry doesn't add another `chatgpt_isIdle()` loop. On `-1` it deliberately falls through: the prompt is already in the composer, the user is asked to press send by hand, and the idle wait then finishes the operation normally. `doRetry()` shows `chatgpt_win_retrying` for 800 ms before the new attempt, so a retry that fails again is visibly different from a dead button, and it re-sends `_customTextArray` when the user entered custom text.
+
+**Injected UI styles are explicit.** Newer ChatGPT CSS resets `textarea` to a transparent background with no border, and some variants remove its resize handle, so `#mzta-custom_textarea` sets its own background, text and caret colors, border, font, `color-scheme`, `resize: vertical` and `overflow: auto` (the handle needs a non-`visible` overflow). ThunderAI elements must not rely on inherited colors, browser defaults that page CSS can override, or ChatGPT CSS variables.
+
+**The ChatGPT Web setting rows carry unprefixed element ids and are injected only when `no_chatgpt_web` is falsy.** In `injectConnectionUI()` (`pages/_lib/connection-ui.js`) every provider field id is prefixed with `modelId_prefix`, *except* the ChatGPT Web rows (`chatgpt_web_model`, `chatgpt_web_model_extended_check`, `chatgpt_web_project`, `chatgpt_web_custom_gpt`, `chatgpt_web_tempchat`, `chatgpt_web_load_wait_time`, `btnChatGPTWeb_Tab`): on the options page and in the setup wizard the element id **is** the pref key (`saveOptions` writes `options[element.id]`), so prefixing them there would break persistence. Because bare ids can exist only once per page, those rows are emitted only for the two global consumers, which pass no `no_chatgpt_web`. Every per-prompt and per-feature panel passes `no_chatgpt_web: true` — it never offers the `chatgpt_web` option anyway, and the custom prompts page injects once per add-form plus once per edited row, which previously produced N+1 duplicates of those ids (misbound listeners, and one `btnChatGPTWeb_Tab` click opening N+1 tabs). Consequently the three lookups on those ids are guarded (`if (!no_chatgpt_web)` / optional chaining) — an unguarded lookup would throw on null and abort the rest of the injection, breaking every feature page.
+
+Per-prompt ChatGPT Web overrides are a separate, unrelated mechanism: the custom prompts page renders its **own** in-page `chatgpt_web_*` fields (not injected), which are the ones actually persisted onto the prompt and consumed by `openChatGPT()`.
+
+#### Model verification (`checkGPTModel()`)
+
+The model is selected through the URL (`&model=`), which ChatGPT does not always honour, so before
+sending `proceedWithPrompt()` awaits `checkGPTModel(mztaGPTModel)`. `mztaGPTModel` is the prompt's own
+model or `chatgpt_web_model`, as `getGPTWebModelString()` turns it into the page's display string
+(`gpt-5-thinking` → `5 Thinking`, others unchanged). An **empty model** and a **Custom GPT** (the
+pre-script then injects `''`) skip the check: it resolves at once and nothing on the page is read.
+
+**The option.** `chatgpt_web_model_extended_check` (spec 05, default `false`) turns on the extended
+verification. The background passes it in the pre-script built by `handleChatGptWeb()`, as
+`mztaGPTExtendedCheck` (`"1"` or `"0"`), next to `mztaGPTModel`. The script reads it on every check,
+so a retry (`doRetry()` after no composer was found) runs the same check again. It is offered even
+when the global model field is empty, because a prompt's own model can still ask for one.
+
+**Which check runs**, when a model is requested:
+
+| Situation | Option off (default) | Option on |
+|---|---|---|
+| Newer UI: the composer trigger `button[data-composer-navigation-target="reasoning"]` is present | Proceed at once: no verification, no menu interaction. The trigger's `data-selected-reasoning-effort` is logged (`doLog()`). | A model the extended verification knows (`GPT_MODEL_EFFORTS`: today `gpt-6` and `gpt-6-thinking`): the extended verification, 15 s, then the manual button. Any other model: the legacy check, 2 s. |
+| Older UI, or the trigger not present | The legacy check, the manual button after 2 s | The legacy check, the manual button after 2 s |
+| Free account: no model selector (no `[id*=radix] span`, no trigger) | Proceed | Proceed |
+
+"Present" means visible (`isElementVisible()`) and outside ThunderAI's own UI (`getReasoningTrigger()`).
+
+**One watcher, two modes.** The check starts in the legacy mode with a 2 s deadline
+(`MODEL_CHECK_LEGACY_MS`), a MutationObserver on `document.documentElement` (child list, subtree,
+attributes, character data) and a 200 ms poll (CSS menu transitions need not mutate the DOM). Every
+check, the first one included, runs synchronously:
+
+1. **The trigger first.** The newer UI's trigger can render late: it is looked up on every check of
+   the 2 s window, with no fixed wait. Option off: the check ends at once (`not-verified`). Option on
+   and a known model: the check switches to the extended mode, for good; the 2 s deadline is replaced
+   by a 15 s one (`MODEL_CHECK_EXTENDED_MS`) counted **from that moment**.
+2. **Otherwise the legacy check.** No `[id*=radix] span` at all: a free account, the check ends
+   (`free`). A span whose text is exactly the model's display string: the check ends (`legacy`).
+   Anything else: wait. A page that has neither a Radix element nor the trigger at a check is
+   therefore taken for a free account there and then, on every path.
+
+**The extended verification.** `gpt-6` must resolve to GPT-6 / Instant and `gpt-6-thinking` to
+GPT-6 / Medium: the trigger's `data-selected-reasoning-effort` must be `none` or `medium`
+respectively, and with any other effort the menu is not even opened. The trigger must be the only
+visible one, with an id, enabled. Its menu is the open `[role="menu"][data-state="open"]` whose
+`aria-labelledby` is the trigger's id; when none is open and the trigger is not expanded, the check
+opens it once with a keydown Enter (Radix opens on keydown or pointerdown, not on click). In that
+menu exactly one visible `menuitemradio` must carry both `aria-checked="true"` and
+`data-model-selected="true"`, and its `[data-menu-row-content] > span` must equal the requested ID
+with its terminal `-thinking` removed, both trimmed and lower-cased: the full names must match, so
+`GPT-6.1` and `GPT-6 Pro` do not satisfy `gpt-6`. Only the model's name is read as text; localized UI
+labels are not matched. Text elsewhere in the page, a menu the trigger does not own, a hidden row, a
+row checked but not selected, or two selected rows never pass. The two ID-to-effort mappings are
+explicit: a future model is not verified until it is added to `GPT_MODEL_EFFORTS`.
+
+The simple view is never expanded: the check reads the selection the simple view keeps in its
+inactive model track. That exception is limited to the track `[data-active="false"][aria-hidden="true"][inert]`
+that is a direct child of `[data-model-picker-view="simple"]` (itself not hidden); any other hidden
+or inert ancestor rejects the row. The simple view's control only enters the advanced view (it is
+not a toggle back), so it is never used, neither to read nor to restore.
+
+The check changes neither the model, nor the effort, nor the view. It closes (Escape) only the menus
+it opened, and gives the focus back to what had it before only when the focus is still on the
+trigger or in that menu: a focus the user moved elsewhere stays there. A menu the user opened keeps
+its view and its focus, on success and on timeout.
+
+**Deadlines and the manual button.** A match resumes the flow at once. At either deadline the check
+stops observing and polling, closes its own menu, and shows the existing warning
+(`#mzta-model_warn`) and its **Use the current model** button (`#mzta-btn_model`). From then on no
+change of the page can send by itself: the button's one-shot continuation
+(`continue_model_verification`) resumes the flow once, hides the warning, and is cleared; an approval
+is never reused by a later check. `pagehide` cancels the check, or the wait for the button: it
+resolves `false` and nothing is sent. Whichever way it ends, the observer, the poll, the deadline
+and the continuation are gone. `doProceed()` drops a second flow while one is pending or has started
+sending, but lets the retry run when no composer was found and nothing was sent.
+
+**Model menu stacking.** Only menus containing `[data-model-picker-view]` and their
+`[data-radix-popper-content-wrapper]` receive `z-index: 1001 !important`, keeping them above
+ThunderAI's bottom bar at `z-index: 1000`. Other menus retain their existing stacking order.
+
+**Manual checks in Thunderbird** (the page's real layout and behaviour, which the tests model): with
+the option on, automatic sending for both model IDs, the warning after changing the effort to High
+in another ChatGPT session, the manual resume, and that the model menu stays usable above the bar;
+with the option off, that the prompt is sent at once on the newer UI.
 
 ### OpenAI API (`chatgpt_api`)
 - Module: `js/api/openai_responses.js`
 - Worker: `js/workers/model-worker-openai_responses.js`
-- Settings keys: `chatgpt_api_key`, `chatgpt_model`, `chatgpt_developer_messages`, `chatgpt_temperature`, `chatgpt_store`
+- Settings keys: `chatgpt_api_key`, `chatgpt_model`, `chatgpt_developer_messages`, `chatgpt_temperature`, `chatgpt_store`, `chatgpt_reasoning_summary`, `chatgpt_reasoning_effort`, `chatgpt_extra_body`, `chatgpt_max_output_tokens`, `chatgpt_verbosity`, `chatgpt_text_format`, `chatgpt_text_format_schema_name`, `chatgpt_text_format_schema`, `chatgpt_top_p`, `chatgpt_truncation`, `chatgpt_prompt_cache_key`, `chatgpt_service_tier`, `chatgpt_safety_identifier`, `chatgpt_include_encrypted_reasoning`
+- **Extra body data**: see [Extra body data](#extra-body-data).
+- **Capability table** (`js/api/openai_model_capabilities.js`): which parameters a model accepts
+  depends on the model, and sending one it rejects is a hard 400.
+  `getOpenAIModelCapabilities(modelId)` matches by **model ID prefix** (so dated and sized
+  variants such as `o3-2025-04-16` and `gpt-5-mini` resolve to their family, longest prefix
+  first) and returns `{supportsSamplingParams, supportsReasoning, supportsVerbosity}`.
+  The reasoning models (`gpt-5`, `o1`, `o3`, `o4`) reject `temperature` and `top_p`; the chat
+  models (`gpt-4`, `chatgpt-4o`, `gpt-3.5`) have no reasoning stage and reject `reasoning` and
+  `text.verbosity`; `text.verbosity` is understood only by the `gpt-5` family. An unknown ID —
+  users can type any model name — falls back to `OPENAI_PERMISSIVE_CAPABILITIES`, which allows
+  **everything**: a field left enabled at worst produces an API error naming the parameter,
+  while a field wrongly disabled hides a setting the user needs and gives no clue why.
+  **The table must be updated as new models ship.**
+  Unlike Ollama there is no way to probe this at runtime: `GET /v1/models` returns only
+  `{id, object, created, owned_by}` and there is no per-model metadata endpoint, which is why a
+  local table is the only option.
+- **Reasoning**: the request body adds `reasoning: { summary, effort }` with only the sub-properties that are set; when both prefs are empty, or the model has no reasoning support, the key is omitted entirely. `chatgpt_reasoning_summary` (`''` | `auto` | `detailed`) is what makes the API emit a readable summary — without it the reasoning item carries only the opaque `encrypted_content` and no thinking block can be shown. `chatgpt_reasoning_effort` (`''` | `none` | `minimal` | `low` | `medium` | `high` | `xhigh` | `max`) tunes how much the model reasons. Note that older reasoning models (o1-pro, o3-mini) never expose a summary even when one is requested. See [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui).
+- **The `text` object** is built the same defensive way as `reasoning`: `verbosity` and
+  `format` are collected into one object and the key is emitted **only when that object is
+  non-empty**, so a model that rejects `text` keeps exactly the request body it had before
+  these options existed.
+  - `chatgpt_verbosity` (`''` | `low` | `medium` | `high`) is gated on `supportsVerbosity`.
+  - `chatgpt_text_format` (`''` | `json_object` | `json_schema`) selects `text.format.type`.
+    `json_schema` additionally **requires both** `chatgpt_text_format_schema_name` and a
+    `chatgpt_text_format_schema` that parses to a non-null, non-array object. When either is
+    missing the format is dropped **entirely** rather than sent half-built, which would be a
+    400. `parseExtraBody()` is deliberately **not** reused to parse the schema: it falls back
+    to `{}`, and `{}` is itself a valid JSON Schema, so a malformed textarea would silently
+    send an empty schema instead of dropping the format.
+- **Sampling**: `chatgpt_temperature` and `chatgpt_top_p` are both gated on
+  `supportsSamplingParams` and use the `!= '' && !Number.isNaN(parseFloat(…))` double guard.
+  `chatgpt_top_p` is stored as a **string**, so an empty value stays distinguishable from a
+  legitimate `0`.
+- **`chatgpt_max_output_tokens`** is sent only when it parses to `>= OPENAI_MIN_MAX_OUTPUT_TOKENS`
+  (16, exported from `js/api/openai_responses.js`), the API minimum; `0`, empty or a smaller
+  number means "not configured" and the field is omitted. It is a **class property**, like every
+  other option — before 5.1.0 it was a `fetchResponse()` argument that the worker always passed
+  as `0`, so it was never actually sent. The argument is gone; the signature is now
+  `fetchResponse(messages, previous_response_id)`.
+- **`chatgpt_truncation`, `chatgpt_prompt_cache_key`, `chatgpt_service_tier` and
+  `chatgpt_safety_identifier`** are plain pass-through values, sent whenever non-empty and not
+  capability-gated. `safety_identifier` replaces the deprecated `user` parameter.
+- **Chaining turns (`chatgpt_store`)**: the worker keeps the `id` of `response.created` as
+  `previous_response_id`, but uses it only when `chatgpt_store` is on: then it sends just the new
+  user message and `fetchResponse()` adds `previous_response_id`, the earlier turns being stored on
+  the server. With `chatgpt_store` off (the default) nothing is stored, so nothing can be referenced:
+  `fetchResponse()` never sends `previous_response_id` and the worker sends the whole
+  `conversationHistory` with every request, like the other workers.
+- **Content part types**: `fetchResponse()` sends every message as one content part, typed
+  `output_text` for an `assistant` message (an earlier answer resent with the history) and
+  `input_text` for every other role. The API answers a 400 ("Supported values are: 'output_text'
+  and 'refusal'") to an assistant message typed `input_text`, so with `chatgpt_store` off any
+  second turn would fail.
+- **`chatgpt_include_encrypted_reasoning`** adds `include: ['reasoning.encrypted_content']`
+  **only when the checkbox is on** — an empty `include` array is not a valid request. It is
+  only meaningful when `chatgpt_store` is off.
+- **Capability-gated keys are stripped from the extra body too.** The parsed `extra_body` object
+  has `temperature`/`top_p` removed when the model rejects sampling, `reasoning` removed when it
+  has no reasoning stage, and `text` removed when it carries a `verbosity` the model does not
+  support. Without this a stale `extra_body` entry would re-introduce exactly the parameter the
+  table exists to keep out of the request, turning a disabled field back into a 400. Keys the
+  model *does* accept are still honoured — that is the point of the escape hatch — and the
+  managed fields still win, because the object is spread first in the body literal.
+- **Options page gating**: `updateOpenAIModelCapabilityUI()` (`pages/_lib/connection-ui.js`)
+  mirrors the table in the UI, disabling `chatgpt_temperature` / `chatgpt_top_p` /
+  `chatgpt_reasoning_summary` / `chatgpt_reasoning_effort` / `chatgpt_verbosity` with an
+  `_unsupported` note next to each. Stored values are **never rewritten** — the user may switch
+  back to another model — so incompatibility is resolved at request-build time and at display
+  time, exactly like the Claude panel. Unlike `anthropic_effort`, the reasoning effort `<select>`
+  ships its options **statically**: the levels do not vary per model, only whether reasoning is
+  supported at all, so there is no runtime rebuild and no blank-select hazard.
+  It also calls `updateOpenAITextFormatUI()`, which disables the schema name and schema fields
+  unless the format is `json_schema` — a coupling between two fields, not a model capability, so
+  those two carry no `_unsupported` note.
+  Host pages must call it **after their restore**, like the Claude one: `options/mzta-options.js`,
+  `pages/setup-wizard/mzta-setup-wizard.js`, `initializeSpecificIntegrationUI()` (the six
+  per-feature panels) and `pages/customprompts/mzta-custom-prompts.js` (add form + each edited row).
 
 ### Ollama (`ollama_api`)
 - Module: `js/api/ollama.js`
 - Worker: `js/workers/model-worker-ollama.js`
-- Settings keys: `ollama_host`, `ollama_model`, `ollama_num_ctx`, `ollama_temperature`, `ollama_think`, `ollama_format_json`
+- Settings keys: `ollama_host`, `ollama_api_key`, `ollama_model`, `ollama_num_ctx`, `ollama_temperature`,
+  `ollama_think`, `ollama_format_json`, `ollama_keep_alive`, `ollama_system_prompt`, `ollama_extra_options`
 - Requires CORS to be configured on the Ollama server
+- **`ollama_think` is a level, not a flag**, with **three distinct states** — and the difference
+  between the first two is behavioural, not cosmetic:
+
+  | Stored value | Sent | Meaning |
+  |---|---|---|
+  | `''` | *field omitted* | whatever the model does by default |
+  | `'false'` | `think: false` | explicitly off |
+  | `'true'` | `think: true` | explicitly on, no level |
+  | `low`/`medium`/`high`/`max` | `think: "<level>"` | a reasoning level |
+
+  **Omitting the field is not the same as turning thinking off.** A model whose `/api/show`
+  reports `"thinking": {"default": true}` reasons when `think` is absent, so "off" has to be an
+  explicit `false`. Verified against a live server: with the field omitted the reply carries a
+  771-character `message.thinking`; with `think: false` it carries none.
+  `parseThinkValue()` in `js/api/ollama.js` maps the two string keywords back to real JSON
+  booleans and passes a level through unchanged.
+
+  It was a boolean checkbox before, so `normalizeThink()` coerces a legacy `true`/`false` at
+  construction time — to `'true'` and **`'false'`**, never to `''`: unticking the box meant "do
+  not think", which only an explicit `false` still delivers. That coercion is **required, not
+  belt-and-braces**: the config default in `integration_options_config` is a string now, so the
+  `typeof options_config[key] === 'boolean'` branch in `js/mzta-special-commands.js` no longer
+  coerces this key, and a per-prompt override can still hold a real boolean.
+  `migrateOllamaThinkLevel()` (`js/mzta-prefs-migration.js`, one-shot flag
+  `_migrated_ollama_think_level`, called from `mzta-background.js`) applies the same mapping to
+  the **global** pref only, because that is the one loaded into a `<select>`, where a stored
+  boolean would select no option and render the control blank. Prompt objects are deliberately
+  not walked.
+- **The think select is built at runtime**, not in the injected template, by
+  `buildOllamaThinkOptions()` (`pages/_lib/connection-ui.js`), from the **top-level `thinking`
+  object** of `/api/show`:
+
+  ```
+  {"values": [false, true], "default": true}             -> on/off only, no levels
+  {"values": [false, "low", "high"], "default": "low"}   -> these levels
+  null / absent                                          -> not reported
+  ```
+
+  The Model default label includes a usable `thinking.default` in parentheses, using the existing
+  localized On/Off or level label (falling back to the raw level). If no usable default is reported,
+  the label stays unchanged.
+  Only the **string** entries of `values` are levels; `false`/`true` describe the on/off controls.
+  On is shown when no string levels are reported or the current value is `'true'`, preserving its
+  normal localized label for migrated settings. A missing or unusable `thinking` object means
+  *"this server does not report it"*, **not** *"no levels"* — several models carry `thinking` in `capabilities` while
+  leaving this `null` — so the full catalogue (`OLLAMA_THINK_LEVELS`) is offered instead of
+  assuming a restriction. Sending a level to a model that only knows on/off is not an error
+  anyway: Ollama treats it as "on", verified against a live server.
+  As with the Claude effort select, a stored value this model does not offer is kept as a trailing
+  option, so it survives a round trip through another model.
+- **`ollama_keep_alive`** is sent as a top-level `keep_alive` string (`"5m"`, `"30m"`, `-1` to keep
+  the model loaded indefinitely, `0` to unload immediately), omitted when empty. It matters because
+  auto-tagging, the spam filter and auto-summarize run on incoming mail, and the server's 5-minute
+  default unloads the model between messages.
+- **`ollama_system_prompt`** is prepended by the **worker**, not by the API class: in the `init`
+  branch of `js/workers/model-worker-ollama.js`, **once**, not per `chatMessage`. `conversationHistory`
+  is module-level state that survives every turn, so prepending per message would stack one system
+  message per turn. The history is still empty at `init`, so `push()` *is* the prepend. The `Ollama`
+  class still declares the field so the generic `ollama_` config sweep does not drop it.
+- **`ollama_api_key`** is optional and sent as `Authorization: Bearer <key>` on every endpoint via
+  `_headers()`, covering the hosted API at `ollama.com` and self-hosted servers behind an
+  authenticating reverse proxy. The id ends in `_api_key`, so `isAPIKeyValue()` redacts it in the
+  options-page restore log for free. **The worker must never log `config` or any header map built
+  from it.**
+- **Extra options**: see [Extra body data](#extra-body-data).
+- **Model capability detection.** `fetchModelInfo(model)` (POST `/api/show`) returns the server's
+  description of one model: `capabilities` (e.g. `["completion","vision","thinking","tools"]`) and
+  a context length under an **architecture-prefixed** key in `model_info`
+  (`llama.context_length`, `qwen3.context_length`, ...) - so it is read by matching the
+  `.context_length` suffix, never by hardcoding an architecture.
+  `updateOllamaModelCapabilityUI(modelInfo, prefix)` (`pages/_lib/connection-ui.js`) applies it:
+  it disables the think control with a note when the model does not report `thinking`, and shows
+  the real maximum next to `num_ctx`.
+  - **An absent `capabilities` array means "this server does not report them", not "the model
+    cannot think"** - older Ollama builds omit the field. Only an explicit list *lacking*
+    `thinking` disables the control.
+  - **It degrades to "enable everything".** Called with `null` (unreachable server, `/api/show`
+    unsupported, model not pulled) it clears the notes and leaves every control enabled. A failed
+    probe must never block the user.
+  - **Stored values are never rewritten**, exactly like the Claude panel: the user may switch model.
+  - **The think select is an open catalogue.** `buildOllamaThinkOptions()` keeps the value the
+    select holds as a trailing option when the model does not offer it. A page restore assigns
+    the stored value *before* any model was probed, when the select still has only the default
+    levels, so every restore (options page, setup wizard, custom prompts) calls
+    `ensureRestorableOption(element, value)` first, which adds the missing option. Without it
+    the assignment would leave the select at `''`, which the rebuild then keeps: a stored or
+    policy-enforced level such as `"xhigh"` would show as "Default". The feature pages already
+    synthesize missing options in their own restore.
+  - **A policy-supplied `ollama_api_key` is never sent.** On a settings page it is only
+    `MANAGED_SECRET_MARKER`, so the probe treats it like a missing host or model (reset, no
+    request). "Update" and the connection test refuse it the same way as for the other
+    providers (spec 08b).
+  - **The request side is not gated.** `think` is still sent as stored: Ollama ignores it on a
+    non-thinking model, and gating it would mean threading capability data into the Web Worker,
+    which knows nothing about `/api/show`.
+  - **Trigger: every model `change`**, exactly like `updateAnthropicModelCapabilityUI()` - plus the
+    `ollama_host` and `ollama_api_key` `change` events, since those decide *which server* answers.
+    It also runs after a successful "Fetch models", after each page's restore, and after a
+    successful connection test (which may be the moment the host permission was granted).
+    Unlike the Claude one it **fetches its own data**: it reads host/key/model off the form and
+    calls `fetchModelInfo()` itself, so callers pass only the `modelId_prefix` and every panel that
+    injects the connection UI is covered - options, setup wizard, the six per-feature panels and
+    the custom-prompts add form and per-row editors.
+  - **Two guards keep a per-`change` network call cheap**, because unlike the Claude table this one
+    is a round trip:
+    - `_ollamaCapsCache` memoises per `host|api_key|model`, so re-selecting a model already seen
+      costs nothing. A `null` result is cached too - a server that cannot describe a model must not
+      be re-asked on every re-selection.
+    - `_ollamaCapsSeq`, a generation counter, discards the reply of a probe whose selection has
+      since been superseded, so a slow answer can never repaint the panel for a model the user has
+      already moved away from.
+  - **No permission request.** It runs on a plain selection change, where prompting for host
+    permissions would be hostile. Without the permission the fetch simply fails and the panel
+    degrades to "everything enabled"; the user grants it via the CORS button or the connection
+    test, and the next change picks the capabilities up - which is why a successful test re-probes.
 
 ### OpenAI-Compatible (`openai_comp_api`)
 - Module: `js/api/openai_comp.js`
 - Worker: `js/workers/model-worker-openai_comp.js`
-- Settings keys: `openai_comp_host`, `openai_comp_model`, `openai_comp_api_key`, `openai_comp_use_v1`, `openai_comp_chat_name`, `openai_comp_temperature`
-- Pre-configured providers: `js/api/openai_comp_configs.js` (`custom`, Z.ai, DeepSeek, Grok, Mistral, OpenRouter, Perplexity — `custom` is the default/manual entry)
-- **URL building**: both requests (GET `/models`, POST `/chat/completions`) go through `OpenAIComp.buildApiUrl()`. The `/v1` segment is only appended when `use_v1` is true **and** the host doesn't already end with a version segment (`/v<digits>`, e.g. `https://api.z.ai/api/paas/v4`). This prevents malformed paths like `/api/paas/v4/v1/chat/completions`.
-- **Host permission**: before fetching models, the connection UI checks/requests a permission pattern covering the **whole origin** of the host (`getOriginPermissionPattern()` in `js/mzta-utils.js`, e.g. `https://api.z.ai/*`), so all API paths of that host are covered. The same pattern is used by the "give permission" buttons and the CORS-warning permission checks. Failed requests log/emit the final `response.url` so a wrongly assembled path is immediately visible.
+- Settings keys: `openai_comp_host`, `openai_comp_model`, `openai_comp_api_key`, `openai_comp_use_v1`, `openai_comp_chat_name`, `openai_comp_temperature`, `openai_comp_extra_body`
+- Pre-configured providers: `js/api/openai_comp_configs.js` (`custom`, Z.ai, DeepSeek, Grok, Mistral, OpenRouter, Perplexity — `custom` is the default/manual entry). The presets carry only `id`, `name`, `chat_name`, `host`, `use_v1` — there is deliberately no per-preset extra body data.
+- **URL building**: both requests (GET `/models`, POST `/chat/completions`) go through
+  `OpenAIComp.buildApiUrl()`, wrapped in `fetchWithRetry()`. The `/v1` segment is only appended when
+  `use_v1` is true **and** the host doesn't already end with a version segment (`/v<digits>`, e.g.
+  `https://api.z.ai/api/paas/v4`). This prevents malformed paths like `/api/paas/v4/v1/chat/completions`.
+- **Host permission**: before fetching models, the connection UI checks/requests a permission pattern
+  covering the **whole origin** of the host (`getOriginPermissionPattern()` in `js/mzta-utils.js`,
+  e.g. `https://api.z.ai/*`), so all API paths of that host are covered. The same pattern is used by
+  the "give permission" buttons and the CORS-warning permission checks.
+- **Extra body data**: see [Extra body data](#extra-body-data).
+
+### Extra body data
+
+An escape hatch for request parameters ThunderAI does not expose (disabling a server's thinking
+mode, `top_p`, provider-proprietary fields). The pref holds a **raw JSON string** entered by the
+user in the Advanced options of the connection panel; `parseExtraBody()` in
+`js/api/api-utils.js` turns it into an object at request time.
+
+- **Four providers, and they differ in *where* the data goes.** Anthropic builds a
+  differently-shaped body and has no such field.
+
+  | Pref | Spread into |
+  |------|-------------|
+  | `chatgpt_extra_body` | top level of the request body |
+  | `openai_comp_extra_body` | top level of the request body |
+  | `ollama_extra_options` | **the `options` object**, not the top level |
+  | `google_gemini_extra_body` | **both levels**: the top level *and*, separately, the nested `generationConfig` |
+
+  Gemini is a two-level merge because the parameters ThunderAI manages
+  (`thinkingConfig`, `temperature`, `maxOutputTokens`, `topP`, `topK`) live inside
+  `generationConfig`. A single top-level spread would let a user's `generationConfig`
+  silently replace the whole managed object, so `parsedExtraBody.generationConfig` is
+  spread into `generationConfig` first (only when it is a plain object) and the managed
+  keys are applied on top. Root keys such as `safetySettings` or `tools` are therefore
+  accepted, while `contents` and `system_instruction` can never be overridden.
+
+  Ollama is the exception on purpose: `top_p`, `top_k`, `min_p`, `seed`, `num_predict`,
+  `repeat_penalty`, `stop` and `num_keep` all live under `options` in the Ollama API, so spreading
+  them at the top level would put them where the server does not read them.
+- **Core parameters are protected.** The parsed object is spread **first** in the body literal
+  (`openai_comp.js` `fetchResponse`, `openai_responses.js` `request_body`) — or, for Ollama, first
+  inside the `options_obj` literal in `ollama.js` `fetchResponse` — so everything ThunderAI manages
+  always wins: `model`, `messages`/`input`, `stream`, `temperature`, `max_tokens`, `reasoning`,
+  `instructions`, and `num_ctx` on Ollama. A wrong entry cannot change the model or break the
+  streaming. `instructions` in `openai_responses.js` is assigned after the literal, which keeps it
+  protected for the same reason.
+  Note that "protected" means *overridden when ThunderAI sends its own value*. A parameter the
+  user leaves empty is not sent by ThunderAI at all, so an `extra_body` entry for it does reach
+  the API — which is exactly what the escape hatch is for. The one exception is
+  `openai_responses.js`, which additionally **deletes** the capability-gated keys from the parsed
+  object (see the OpenAI API section): there the model would reject the parameter outright, so
+  letting it through would defeat the gating.
+- **Invalid input is ignored, never fatal.** `parseExtraBody()` returns `{}` for a blank string,
+  malformed JSON, or a non-object (array / scalar / `null`), logging a `console.warn`. This is
+  required because the options UI validation is advisory only: `saveOptions` persists the value
+  regardless, so the API class must tolerate garbage.
+- `api-utils.js` must stay free of WebExtension and DOM dependencies — it is pulled into the Web
+  Workers through the API classes. This is why the helper does not live in `js/mzta-utils.js`.
+- UI: a `textarea.option-input.option-textarea.check-json` row marked `conn_adv` in
+  `pages/_lib/connection-ui.js`, followed by a `div.json_error` whose id is the field's id plus
+  `_error`.
+- **Inline error reporting.** `checkJsonField()` writes the reason into that div via
+  `textContent` (never `innerHTML` — Thunderbird review) and toggles its `hidden` attribute, plus
+  the red border. A red border alone cannot tell the user *what* is wrong, so for a parse failure
+  the raw `error.message` is appended to `prefs_extra_body_error_invalid`: it carries the position
+  of the offending character (e.g. a trailing comma in `{"top_p": 0.9,}` reports position 14). A
+  valid-JSON-but-not-an-object value gets `prefs_extra_body_error_not_object` instead. Styling:
+  `.json_error` in `pages/_lib/connection-ui.css`, colored by the `--jsonError` token (defined for
+  both themes in `pages/_lib/mzta-design.css`, red rather than amber `--warning` because the value
+  is unusable, not merely a caveat).
+- Two entry points: `warn_InvalidJson` on `input` (bound with the `.check-number` listeners), and
+  the exported `checkJsonFields()` sweep, which must run **after** the fields are populated —
+  called in `options/mzta-options.js` after `restoreOptions()` and inside
+  `initializeSpecificIntegrationUI()` after its restore callback, so a malformed value saved by an
+  earlier session is flagged on load instead of looking fine until touched.
 
 ### Google Gemini (`google_gemini_api`)
 - Module: `js/api/google_gemini.js`
 - Worker: `js/workers/model-worker-google_gemini.js`
-- Settings keys: `google_gemini_api_key`, `google_gemini_model`, `google_gemini_system_instruction`, `google_gemini_thinking_budget`, `google_gemini_temperature`
+- Settings keys: `google_gemini_api_key`, `google_gemini_model`, `google_gemini_system_instruction`, `google_gemini_thinking_budget`, `google_gemini_temperature`, `google_gemini_max_output_tokens`, `google_gemini_top_p`, `google_gemini_top_k`, `google_gemini_extra_body`
+- `thinking_budget` is coerced with `parseInt` and sent as the integer
+  `thinkingConfig.thinkingBudget`; an empty or unparsable value omits the whole
+  `thinkingConfig` and leaves the choice to the model. See
+  [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui) for the
+  `includeThoughts` flag sent alongside it.
+- `max_output_tokens` maps to `generationConfig.maxOutputTokens` and defaults to `0`,
+  the same "unset" convention as `ollama_num_ctx`: the key is sent only when the parsed
+  integer is `> 0`.
+- `top_p` / `top_k` map to `generationConfig.topP` / `topK` and default to `''`, like
+  `temperature`. They are parsed with `parseFloat` / `parseInt` and sent only when the
+  pref is non-empty and the result is not `NaN`. Ranges are deliberately not validated
+  client-side — an out-of-range value is reported by the API, as with `temperature`.
 
 ### Anthropic / Claude (`anthropic_api`)
 - Module: `js/api/anthropic.js`
 - Worker: `js/workers/model-worker-anthropic.js`
-- Settings keys: `anthropic_api_key`, `anthropic_model`, `anthropic_version`, `anthropic_max_tokens`, `anthropic_system_prompt`, `anthropic_temperature`, `anthropic_extended_thinking_budget`
-- **Extended thinking**: when `anthropic_extended_thinking_budget > 0`, the request body adds `thinking: { type: 'enabled', budget_tokens: N }` and **omits** `temperature` (the Claude API forbids setting temperature with extended thinking). Thinking output arrives in the SSE stream as `content_block_delta` events with `delta.type === 'thinking_delta'` and is forwarded to the webchat UI as `newThinkingToken` messages, captured into a `thinkingAccumulator` in the worker and passed on `tokensDone`.
+- Settings keys: `anthropic_api_key`, `anthropic_model`, `anthropic_version`, `anthropic_max_tokens`, `anthropic_system_prompt`, `anthropic_temperature`, `anthropic_top_p`, `anthropic_top_k`, `anthropic_stop_sequences`, `anthropic_extended_thinking_budget`, `anthropic_effort`
+- **Capability table** (`js/api/anthropic_model_capabilities.js`): which request parameters a Claude
+  model accepts depends on the model, and sending one it rejects is a hard 400 — not a silently
+  ignored field. `getAnthropicModelCapabilities(modelId)` returns `{thinkingModes,
+  supportsBudgetTokens, supportsSamplingParams, supportsEffort, effortLevels, defaultThinking}`,
+  plus `disabledThinkingMaxEffort` on the one model that needs it (Opus 5).
+  - **Matching is boundary-aware**: an entry matches only the **exact** ID or its **dated
+    snapshot** `<prefix>-YYYYMMDD` (e.g. `claude-sonnet-4-5-20250929`). Any other suffix does not
+    match — in particular a point release is *not* covered by its predecessor: `claude-opus-5`
+    does not match `claude-opus-5-5` or a future `claude-opus-5-6`, which fall back instead of
+    inheriting rules that may no longer hold. Every point release therefore needs its own entry
+    (`claude-opus-5-5`, `claude-fable-5-1`, `claude-mythos-5-1`). Aliases with other suffixes
+    (e.g. `-latest`) fall back too.
+  - An unknown ID — users can type any model name — falls back to `ANTHROPIC_MODERN_CAPABILITIES`,
+    deliberately assuming the *modern* contract: a stale setting then degrades to a valid request,
+    whereas assuming the legacy contract would send `temperature`/`budget_tokens` and earn a 400.
+    The fallback's `thinkingModes` is **`['adaptive']` only**, so ThunderAI never sends
+    `thinking: {type:'disabled'}` to an unknown model: newer models (Fable 5.x, Opus 5.5) reject
+    it, whereas omitting `thinking` is always valid. Trade-off: on an unknown model that thinks by
+    default, thinking may consume part of `max_tokens`.
+  - **The table must be updated as new models ship.** The 400 retry below is a safety net, not a
+    substitute.
+- **Settings UI** (`updateAnthropicModelCapabilityUI()` in `pages/_lib/connection-ui.js`): the
+  options the selected model rejects stay visible and populated but disabled, with a note, and
+  the `anthropic_effort` list is narrowed to the model's `effortLevels` while keeping the
+  selected value (a stale level is kept as an extra option). `injectConnectionUI()` fills that
+  select with every level of `ANTHROPIC_EFFORT_LEVELS` right away, before the page's
+  `restoreOptions()` runs: with no `<option>` yet, the restore would have nothing to select and
+  the stored value would be lost on every page (options, setup wizard, feature pages). The
+  disabled state goes through `setDisabledRespectingManaged()`, so a field locked by policy is
+  never re-enabled by a model change.
+- **Request body construction** is entirely driven by that table, and every field is opt-in:
+  - **The thinking decision is made first** (budget checks, then `thinking` enabled / disabled /
+    omitted, see below), and the sampling params are gated on it. `thinkingActive` is true when
+    `thinking` is sent with a type other than `'disabled'` (enabled or adaptive), or when it is
+    omitted on a model whose `defaultThinking` is `'adaptive'`.
+  - `temperature` is sent only when `supportsSamplingParams`, the user set a value, **and thinking
+    is not active**. The API does not allow temperature to be modified while thinking is on
+    (models that accept it at all: Haiku 4.5, Sonnet/Opus 4.5, Sonnet/Opus 4.6, earlier Claude 4);
+    the newer models reject it outright regardless, via `supportsSamplingParams: false`.
+  - `top_p` and `top_k` follow the same rule as `temperature`: gated on `supportsSamplingParams`,
+    parsed with `parseFloat` / `parseInt`, skipped when the pref is `''` or unparsable. While
+    thinking is active `top_k` is never sent, and `top_p` is sent only within
+    `ANTHROPIC_THINKING_TOP_P_MIN`..`MAX` (0.95–1, per "Sampling parameters" in the official
+    thinking docs). Every value dropped this way logs a `[ThunderAI]` `console.warn`, like the
+    thinking-budget warnings; **the stored prefs are never rewritten**, only the request body changes.
+    The params are **sent independently of each other and of `temperature`** — there is
+    deliberately no mutual-exclusion logic. The API accepts the combination and only advises
+    against it, so silently dropping one of two values the user explicitly set would be the more
+    surprising behaviour. Both prefs are stored as **strings**, so an empty value stays
+    distinguishable from a legitimate `0` (which is valid for both and *is* sent).
+  - `stop_sequences` is **not capability-gated** — every Claude model accepts it. The pref holds one
+    sequence per line; the builder splits on newlines (CRLF-safe), trims each entry and drops the
+    empty ones, and adds the field only when the resulting array is non-empty. Blank lines are
+    dropped at request-build time, never at save time, so the user's formatting of the textarea is
+    left alone.
+  - `system` is **omitted entirely when the system prompt is blank**, rather than sent as an empty
+    string: an empty system block carries no instruction and is rejected outright by some model
+    versions.
+  - `thinking: {type:'enabled', budget_tokens: N}` only when `supportsBudgetTokens` **and**
+    `ANTHROPIC_MIN_THINKING_BUDGET <= N < max_tokens`. The API constrains the budget on both sides
+    and violating either is a hard 400 — easy to hit by hand, since the default `max_tokens` is
+    4096. A budget that fails a constraint is treated as "no extended thinking" and **falls through
+    to the disabled/omitted logic below** (it does not short-circuit it, which is what keeps an
+    adaptive-thinking model from silently spending `max_tokens` on reasoning), and a `console.warn`
+    names the constraint that failed. The stored pref is **never** rewritten — the user may raise
+    `max_tokens` later and expect their budget back. `ANTHROPIC_MIN_THINKING_BUDGET` (1024) is
+    exported from `js/api/anthropic.js` and read by the options page too, so the request-side rule
+    and the inline warning cannot drift apart.
+  - `thinking: {type:'disabled'}` only where it changes something — i.e. `defaultThinking === 'adaptive'`
+    (newer models think unless told not to, which silently eats `max_tokens` and truncates the reply).
+    On models that already default to no thinking the field stays omitted, so their request bodies are
+    byte-identical to what they were before the table existed.
+  - `output_config: {effort}` whenever the stored level is **non-empty**, `supportsEffort` holds and
+    the level is in that model's `effortLevels` — **including `high`**. It is omitted only for the
+    empty "Default (decided by the API)" option (`anthropic_effort: ''`, the stored default).
+    ThunderAI **never relies on the API's default effort** to decide what to send: defaults differ
+    per model (Opus 5.5 defaults to `medium`) and can change, so omitting a level that "looks like
+    the default" would silently ignore an explicit choice. There is deliberately no per-model
+    `defaultEffort` field. `ANTHROPIC_DEFAULT_EFFORT` (`high`) survives only as the level *assumed*
+    to be in force when none is sent, for `effortBlocksDisabledThinking()`.
+  - Any other combination omits the field entirely. **A configuration that is impossible for the
+    selected model degrades to a valid request, never to a 400.** Stored prefs are never rewritten:
+    the user may switch back to an older model, so incompatibility is resolved at request-build time
+    (here) and at display time (the options page disables the field with a note).
+- **`anthropic_effort` ships as an EMPTY `<select>`.** The template emits no `<option>`s:
+  `updateAnthropicModelCapabilityUI()` is what fills it, from the model's `effortLevels`. A page
+  that injects the connection UI and never calls it therefore shows a **blank** effort control
+  until the user touches the model select (which fires the `change` listener registered in
+  `injectConnectionUI()`). Every host page must call it **after its restore**, when the saved
+  model is finally in the select — the injection deliberately does not, because at that point the
+  select is still empty and the capabilities would be computed from an empty model ID.
+  Call sites: `options/mzta-options.js`, `pages/setup-wizard/mzta-setup-wizard.js`,
+  `initializeSpecificIntegrationUI()` (the six per-feature panels) and
+  `pages/customprompts/mzta-custom-prompts.js` (add form + each edited row).
+  The same rule applies to `updateOllamaModelCapabilityUI()`, whose think select is likewise
+  built at runtime.
+- **Inline budget validation in the options page.** `checkAnthropicThinkingBudget()`
+  (`pages/_lib/connection-ui.js`) mirrors the request-side rule on
+  `anthropic_extended_thinking_budget`, writing the reason into a
+  `div.json_error` whose id is the field's id plus `_error` (`textContent`, never `innerHTML`) and
+  setting the red border — the same mechanism as `checkJsonField()`. A bare border is not enough
+  here because there are two distinct constraints and the ceiling lives in *another* field, so the
+  listener is bound on `anthropic_max_tokens` as well: lowering it can invalidate a budget that was
+  fine a moment ago. The reason box is a **separate element** from the `_unsupported` capability
+  note — both conditions can hold at once, so sharing one node would have this function and
+  `updateAnthropicModelCapabilityUI()` overwrite each other. It is called from
+  `updateAnthropicModelCapabilityUI()` rather than exported separately, since every host page
+  already calls that after its restore, which is exactly when a value saved by an earlier session
+  must be re-checked. **Advisory only**: `saveOptions` persists the value regardless, which is why
+  the request builder has to tolerate an unusable one.
+- **`top_p` / `top_k` in the options page** reuse the existing
+  `anthropic_note_temperature_unsupported` string for their capability notes — the explanation
+  ("this model uses Effort instead") is identical — via
+  `applyState('anthropic_top_p', caps.supportsSamplingParams)` and the same for `top_k`.
+  `anthropic_stop_sequences` is a plain textarea with no capability note, because it is never gated.
+- **One-shot retry on a 400** (`fetchResponse()` in `js/api/anthropic.js`): when the Messages API
+  answers HTTP 400 and the error message names a parameter that was **actually sent**, the request
+  is repeated **exactly once** without it, and a `console.warn` names the model and the dropped
+  field(s). Matching reuses the needles of `ANTHROPIC_ERROR_HINTS`, each of which also carries the
+  top-level fields to `drop` (`dropRejectedParams()`): `budget_tokens` / `thinking.type` /
+  `thinking` → `thinking`; `effort` / `output_config` → `output_config`; `temperature` / `top_p` /
+  `top_k` → **all three sampling params together** (they share one capability, so dropping them one
+  at a time would waste the single retry). The first entry whose needle matches *and* whose fields
+  are in the body wins; if none qualifies, there is no retry. Only status 400 is retried. The error
+  body is read from `response.clone()`, so the original response stays unread: it is returned as-is
+  when there is nothing to drop, when the retry fails for any reason, or when the retry throws, and
+  the worker then reports the **original** error with the `describeAnthropicError()` hint. The clone
+  is read by `readResponseBody()` (`js/api/api-retry.js`), within its 5 s limit. A clone that gives
+  nothing (a body that never arrives, an unreadable one) means nothing to drop: the original is
+  cancelled too, so the worker's own read of it ends at once instead of waiting 5 s more, and the
+  worker reports the status with the `statusText` as the detail. A user abort during that read
+  ends the request like any abort: the `is_aborted` object (see the
+  [Error contract](#error-contract-between-jsapi-and-workers)). The 400
+  arrives before any stream data, so this works identically for streaming and non-streaming
+  requests. Stored prefs are never touched — the next request rebuilds the full body and may earn
+  the same 400 + retry again, which is why the table still has to be kept current.
+- **400 error hints**: `describeAnthropicError(detail, model, i18nStrings)` inspects a 400 body and,
+  when the message names `budget_tokens` / `thinking.type` / `temperature` / `top_p` / `top_k` /
+  `effort` / `output_config` / `thinking` (checked in that order, first match wins), prepends a
+  localized hint naming the incompatible option; otherwise the raw detail is returned unchanged.
+  It takes `i18nStrings` as a parameter because it runs inside a Web Worker, where `browser.i18n`
+  is unavailable — the same threading already used for `anthropic_api_request_failed`.
+  `api_webchat/controller.js` fills the four `anthropic_err_hint_*` keys only for the `anthropic`
+  integration; a missing key makes the function return the raw detail. Each message declares a
+  `model` placeholder (`$1`), and the controller resolves it with the literal string `$MODEL$`,
+  which the worker then replaces with the model the request was actually sent with. Without the
+  `placeholders` block, Firefox would blank the undeclared `$MODEL$` when it loads the locale.
+
+See [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui) for how the resulting stream is surfaced.
 
 ## Thinking output in the webchat UI
 
-Two provider categories emit reasoning/thinking content:
+**Display is never gated by a preference, but on some providers the request must ask
+for the reasoning in the first place.** Every API worker forwards reasoning content as
+soon as the corresponding field is present in the stream, so a model that reasons on
+its own — without the connection's thinking option being enabled — still shows its
+thinking block. The per-connection prefs (`ollama_think`, `google_gemini_thinking_budget`,
+`anthropic_extended_thinking_budget`, `chatgpt_reasoning_summary`) only *request*
+reasoning from the API; they never decide whether it is displayed. Note `ollama_think`
+is a reasoning **level**, not a flag — see the Ollama section above.
 
-- **OpenAI Compatible**: thinking arrives either inline in the normal token stream wrapped in `<think>…</think>` tags, or as a dedicated `delta.reasoning_content` SSE field (e.g. Z.ai GLM models). The worker forwards `reasoning_content` chunks as `newThinkingToken` messages. `StreamingMessage.flush()` (in `api_webchat/streamingMessage.js`) strips inline `<think>` blocks from the rendered text; `renderThinkingBlock()` (in `api_webchat/thinkingBlock.js`) renders them as a `<details class="thinking-block">` prepended to the answer. If an unterminated `<think>` is detected mid-stream, the flush is deferred until the closing tag arrives. In special commands, `mzta_specialCommand.sendPrompt()` ignores `newThinkingToken` messages (reasoning is not part of the returned result).
-- **Ollama / Anthropic**: thinking is captured in the worker as a dedicated field (`message.thinking` for Ollama, `thinking_delta` events for Anthropic) and posted to the controller as `newThinkingToken`. `StreamingMessage` accumulates it and it is rendered into the same `<details>` block on final flush. Ollama's reasoning is enabled by the `ollama_think` pref, which sets `think: true` on the request.
+Two providers return no readable reasoning unless the request opts in, which makes the
+request side — not the display side — the thing to check when a thinking block never
+appears:
+
+- **OpenAI Responses**: returns nothing readable unless `chatgpt_reasoning_summary` is
+  set, so with that pref empty the thinking block never appears no matter which model
+  is selected.
+- **Google Gemini**: emits `thought: true` parts only when the request carries
+  `generationConfig.thinkingConfig.includeThoughts: true`. Without it the API still
+  reasons and still bills the tokens (visible as `usageMetadata.thoughtsTokenCount`)
+  while the stream carries answer parts only. `js/api/google_gemini.js` sends
+  `includeThoughts` whenever a budget is set and is not `0` (which disables thinking
+  outright). When `google_gemini_thinking_budget` is **empty the entire `thinkingConfig`
+  is omitted**, because models without thinking support (the Gemini 2.0 family) reject
+  the key with an HTTP 400. The trade-off: a thinking-capable model reasoning on its own
+  default is not asked for `includeThoughts`, so its thinking block is not shown unless
+  the user sets a budget.
+  `includeThoughts` is independent of `thinkingBudget`: the budget governs how much the
+  model reasons, the flag whether that reasoning comes back.
+
+Reasoning reaches the UI over two transport paths, which can coexist for the same
+provider and are merged into one block:
+
+**1. Dedicated stream field → `newThinkingToken`.** The worker accumulates the
+content in a `thinkingAccumulator` (also sent on `tokensDone`) and posts each token
+to the controller. `StreamingMessage` accumulates them independently of content
+tokens, so thinking that arrives before the first content token is not lost.
+
+| Provider | Stream field / event |
+|----------|----------------------|
+| Anthropic | `content_block_delta` with `delta.type === 'thinking_delta'` → `delta.thinking` |
+| Ollama | `message.thinking` |
+| OpenAI Compatible | first present of `delta.reasoning_content` (DeepSeek, vLLM, SGLang), `delta.reasoning` (OpenRouter — string *or* object with `.text`), `delta.thinking` (some llama.cpp / LM Studio builds) |
+| Google Gemini | any `parts[]` entry with `thought === true`. **All** parts are iterated, not just `parts[0]`, because a thought part may come first and would otherwise be mixed into the answer. These parts only exist if the request sent `includeThoughts` — see above |
+| OpenAI Responses | `response.reasoning_summary_text.delta` and `response.reasoning_text.delta`; as a fallback, the concatenated `item.summary[].text` of a `response.output_item.done` whose `item.type === 'reasoning'`, for models that deliver the summary in one piece instead of streaming deltas. The fallback only fires while `thinkingAccumulator` is still empty, so a summary already received as deltas is never emitted twice. `item.encrypted_content` is always ignored — it is not readable |
+
+**2. Inline `<think>…</think>` tags in the content stream.** Used by models that
+have no dedicated field (Ollama with `ollama_think` off, several OpenAI-compatible
+servers). `StreamingMessage.flush()` extracts and strips these via the shared
+`stripThinkTags()` helper in `js/mzta-utils.js`. If an unterminated `<think>` is
+detected mid-stream, the flush is deferred until the closing tag arrives (that guard
+lives in `streamingMessage.js`, not in the helper).
+
+The helper's third argument, `trimLeading` (default `false`), drops the whitespace a
+removed block leaves at the start of the text. It is only correct for callers passing
+the **whole** response. The streaming flush passes a single *segment*, so it must leave
+it off: the space opening a segment is interior to the answer once the segments are
+concatenated into `_htmlRawText`, and trimming it welds the last word of the previous
+segment to the first word of this one (`"il"` + `" body"` → `"ilbody"`). Because the
+flush fires on any token containing `\n`, the segment boundary — and therefore the
+damage — lands at positions that depend on the provider's chunking rather than on the
+answer's content, which is what makes such a bug read as intermittent.
+
+Both paths are combined into `combinedThinking` and rendered by
+`renderThinkingBlock()` (`api_webchat/thinkingBlock.js`) as a
+`<details class="thinking-block">` prepended to the answer. Nothing is rendered when
+there is no thinking content.
+
+**A response made only of thinking tokens still shows its block.** Only a content token opens
+the accumulating `.message` element, so such a response reaches `tokensDone` with none:
+`handleTokensDone()` then opens one (`StreamingMessage.hasThinking()`) before the final flush,
+which renders the thinking block alone, with an empty answer.
+
+### Live "Thinking…" indicator
+
+The `<details>` block only materializes at flush time, so a long reasoning phase
+would otherwise leave an empty turn on screen. On every `newThinkingToken`,
+`handleNewThinkingToken()` calls `_showThinkingIndicator()`, which appends a
+`<div class="thinking-live">` to the current bot turn body: the animated
+`images/mzta-thinking.svg` as an `<img>` in the slot the `<summary>` disclosure
+triangle will occupy, followed by `prefs_OptionText_thinking_summary` + a literal
+`...`. All the motion is inside the SVG, so the row itself carries no CSS
+animation (and needs no reduced-motion override). It is a **sibling** of the
+accumulating message, not a child, so the per-`\n` flush cycle cannot orphan or
+duplicate it; re-appending also moves it back to the end when thinking resumes
+after a rendered segment.
+
+The status pill's two in-flight states follow the same pattern, each with its own
+self-animating SVG loaded as an `<img>`: `showWaitingStatus()` uses
+`images/mzta-waiting-server.svg` (a dot emitting expanding rings) and
+`showStreamingStatus()` uses `images/mzta-loading.svg` (three bouncing dots).
+Because the motion lives in the SVG, the pill carries no CSS animation and the
+icon centres itself inside the fixed-size `#statusLoggerIcon` box. Both icons are
+rebuilt only on the transition *into* their state — the show methods can be called
+repeatedly (`showStreamingStatus()` runs on every token), and replacing the node
+each time would restart the SVG's animation and freeze it at frame 0. The static
+states (`done` → check, `error` → alert) use the inline builders in `svgIcons.js`,
+which stroke in `currentColor`. `_setStatusClass()` clears **all** state classes,
+including `status-waiting`, so no in-flight styling can leak onto the done or
+error pill.
+
+`_removeThinkingIndicator()` swaps it out in `flushAccumulatingMessage()`, right
+after the deferred-flush early return (which must keep the indicator alive) and
+before `renderThinkingBlock()`, so the placeholder and the real block are never on
+screen together. It is also called from `handleTokensDone()` (a response with no
+token at all has nothing to flush, see the thinking-only rule above),
+`appendUserMessage()`, and `appendBotMessage()` (error path). `hide_thinking` does
+not affect the indicator — it only governs the final block's initial state.
+Inline-`<think>` models never post `newThinkingToken` and so get no indicator.
 
 See the [API WebChat](01-architecture.md#api-webchat-api_webchat) section for the module structure behind this.
 
-The global `hide_thinking` pref (default `true`) controls the **initial open/collapsed state** of the thinking block: `true` → collapsed, `false` → open. The user can always toggle by clicking. Thinking content is never discarded. Other providers (Google Gemini, OpenAI Responses, ChatGPT Web) are not affected by this UI logic.
+The global `hide_thinking` pref (default `true`) controls **only the initial
+open/collapsed state** of the block: `true` → collapsed, `false` → open. The user can
+always toggle by clicking, and thinking content is never discarded. ChatGPT Web uses
+no API worker and is unaffected.
+
+### Thinking in special commands
+
+Special commands (`mzta_specialCommand`) *parse* the response instead of displaying
+it, so reasoning must never reach the resolved value:
+
+- `newThinkingToken` messages are explicitly discarded and never appended to `full_message`.
+- Inline `<think>` blocks are stripped from `full_message` with
+  `stripThinkTags(text, true, true)` before the promise resolves. The second flag drops
+  a dangling unterminated `<think>` (a truncated reply) rather than handing raw
+  reasoning to the caller's parser. The third enables the leading-whitespace trim, which
+  is safe here because `full_message` is the whole response — unlike the per-segment
+  streaming caller above.
 
 ## Font zoom in the webchat UI
 
@@ -71,7 +819,7 @@ The API webchat window supports keyboard font zoom, handled in `api_webchat/cont
 
 - **Ctrl/Cmd + `+`** (or `=`) increases, **Ctrl/Cmd + `-`** decreases, **Ctrl/Cmd + `0`** resets to 100%.
 - Zoom is applied by setting `document.documentElement.style.fontSize` as a percentage. Because text in the Shadow DOM components (`<messages-area>`, `<message-input>`) is sized in `rem`/`em`, it scales against the root `<html>` font-size across the Shadow DOM boundary. A few chrome elements that previously used absolute `px` font-sizes were converted to `rem` so they scale too.
-- The level is clamped to **0.5–2.5** (step 0.1) and persisted in `browser.storage.sync` under the global `api_webchat_font_scale` pref (default `1.0`, in `options/mzta-options-default.js`). On window open the saved value is read and re-applied, so the zoom survives closing the window and is shared across all webchat windows and providers.
+- The level is clamped to **0.5–2.5** (step 0.1) and persisted in `browser.storage.local` under the global `api_webchat_font_scale` pref (default `1.0`, in `options/mzta-options-default.js`). On window open the saved value is read and re-applied, so the zoom survives closing the window and is shared across all webchat windows and providers.
 - The `keydown` listener is registered on `document`; key events from inside the components bubble up (composed), so no per-component handler is needed.
 
 ## Configuration Validation
@@ -92,18 +840,46 @@ The `isConfigError` flag on the thrown error tells callers in `mzta-background.j
 
 Feature-specific routing of `isConfigError`:
 
-- `summarize` / `translate` / `spamfilter`: the error is shown in their dedicated panel (summary / translation / spam panel) and **not** persisted to storage.
+- `summarize` / `translate` / `spamfilter`: the error is shown in their dedicated panel (summary / translation / spam panel) and **not** persisted to storage. For the spam filter, "not persisted" also means the message is left with **no** report: a check starts by removing the previous one (`spamReport.removeReportData()`, the first step of `_runSpamJob()`, before the configuration is validated), and every other outcome writes a new one. So a Refresh or a context-menu check with a misconfigured connection erases the earlier verdict from the spam log; the next check that runs writes it again.
 - `add_tags`: it has **no dedicated panel**, so the error is routed to the **generic error panel** via `showGenericError(errMsg, source)` in `mzta-background.js`, which broadcasts a `showGenericError` message to all tabs. The content script `js/mzta-compose-script.js` renders it as `#mzta-generic-error` inside `#mzta-container`. The panel is dismissible and reusable by any future feature without its own UI.
 
-For regular prompts (`openChatGPT()`), validation still happens inside the listener callback after the API webchat window is created (unchanged behavior).
+For regular prompts (`openChatGPT()`), validation still happens inside the listener callback after the API webchat window is created. It checks the settings the window will run: `applyPromptConnection(prefs, prompt_info)` (`js/mzta-utils.js`) puts the prompt's own `{integration}_{key}` fields over the global values when `prompt_info.api_type` is the resolved connection. That is the rule `api_webchat/controller.js` applies, so a prompt with its own key no longer fails with "empty API key" because the global one is empty, nor passes because the global one is set. The connection itself is resolved with the prompt's feature prefix, when it is a special prompt (`getSpecialPromptPrefix()` in `js/mzta-prompts.js`, e.g. the summary opened in the chat window). So the `{prefix}_use_specific_integration` / `{prefix}_connection_type` pair counts there exactly as in the caller's usability check.
 
 ## Per-feature provider override (specific integration)
 
-Features in `special_prompts_with_integration` (`add_tags`, `spamfilter`, `summarize`, `get_calendar_event`, `get_task`, `translate`) can use a different provider than the global default. The override is **stored inside the feature's special prompt object** (not in standalone `{feature}_*` prefs): the settings UI (`_updatePrompt()` in `pages/_lib/connection-ui.js`) writes `prompt.api_type` plus prefixed config keys (e.g. `prompt.openai_comp_host`, `prompt.openai_comp_model`) and calls `savePrompt()`.
+Features in `special_prompts_with_integration` (`add_tags`, `spamfilter`, `summarize`, `get_calendar_event`, `get_task`, `translate`) can use a different provider than the global default. The override is **stored inside the feature's special prompt object** (not in standalone `{feature}_*` prefs): the settings UI (`_updatePrompt()` in `pages/_lib/connection-ui.js`) writes `prompt.api_type` plus prefixed config keys (e.g. `prompt.openai_comp_host`, `prompt.openai_comp_model`) and calls `savePrompt()`. The page's text Save must not undo those writes: it saves the text alone with `saveSpecialPromptTexts({id: text})` (`js/mzta-prompts.js`), a load-modify-save on a fresh read. It used to write back the whole array the page loaded at page open, which reverted every connection change saved since. An enterprise policy can hide it ([below](#when-a-policy-locks-the-override-off)) or supply one of its own ([`_special_prompts_connection`](#when-a-policy-supplies-the-override)), both as read-time overlays in `getSpecialPrompts()`.
 
 For the override to take effect at runtime, the caller **must load that prompt object and pass it as `config`** to `mzta_specialCommand` — and pass the same prompt to `getConnectionType(prefs, prompt, '<feature>')`. `initWorker()` only sets `use_specific_api = true` (and therefore reads the prefixed host/model/etc. from `config`) when `config.api_type` is non-empty; otherwise it falls back to the **global** provider prefs. Passing `config: {}` silently ignores the override even when the connection *type* matches.
 
-Helpers: `getSpamFilterPrompt()`, `getSummarizePrompt()`, `getTranslatePrompt()` in `js/mzta-prompts.js` (or `loadPrompt(id)`). The execution paths in `mzta-background.js` (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, add_tags) follow this pattern.
+Helpers: `getAddTagsPrompt()`, `getSpamFilterPrompt()`, `getSummarizePrompt()`, `getTranslatePrompt()` in `js/mzta-prompts.js` (or `loadPrompt(id)`). The execution paths in `mzta-background.js` (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, add_tags) follow this pattern. Special-prompt execution paths must read their prompt object from these helpers (which go through `getSpecialPrompts()`), never from `menus.allPrompts` — that array is filtered by `getActiveSpecialPromptsIDs()` and can omit a feature's prompt (e.g. when no global connection is set or the global connection is ChatGPT Web without a per-feature API override) even while the feature's auto-processing is enabled, which would yield `curr_prompt === undefined`.
+
+### When a policy locks the override off
+
+Because the override is a prompt property and not a preference, the preference write guard cannot stop it: a user override saved *before* a policy locked `{prefix}_use_specific_integration` to `false` would still run — `getConnectionType()` falls through to `prompt.api_type` when the preference is false, and `initWorker()` switches to the specific API whenever `config.api_type` is set.
+
+It is therefore hidden **at read time**, like the derived `need_selected` of the calendar prompt ([02-prompts.md](02-prompts.md)): `applyLockedOffIntegrations()` runs at the end of both branches of `getSpecialPrompts()` and, for every prefix whose `{prefix}_use_specific_integration` is **managed-locked to `false`**, returns that feature's prompts with `api_type: ''` and every `{integration}_{key}` override field removed (the key list is derived from `integration_options_config`). Every runtime path listed above, `menus.allPrompts` (built from `getPrompts()`), `loadPrompt()`, the API chat window and the feature pages all read through `getSpecialPrompts()`, so none of them can see the override.
+
+The prompts per prefix come from `getActiveSpecialPromptsIDs()` in `js/mzta-utils.js` (every feature on, only that prefix usable), the one existing encoding of prefix → prompt ids, rather than a second table. For `summarize` that is `prompt_summarize` alone: the email template and separator prompts are text fragments, never passed as a command's `config` and never edited by the connection panel. For `get_calendar_event` it includes `prompt_get_calendar_event_from_clipboard`, which runs with the same prefix.
+
+**Why read-time only, and why it is restored on write.** The override is the user's own configuration, not something the policy imposed, and it has to come back untouched when the policy is removed. Unlike `need_selected`, persisting the overlay is **not** harmless: every write rewrites the whole `_special_prompts` array from an overlaid read - `savePrompt()`, `clearPromptAPI()` and the feature pages' text Save (`saveSpecialPromptTexts()`) do a load-modify-save, the menu order page writes back the list it loaded - so an overlaid `api_type: ''` reaching storage would erase the override for good. `setSpecialPrompts()`, the single gate into that store, therefore runs `keepStoredOverrides()`: for the locked-off prompts it puts back exactly the override fields storage already holds (and drops any it does not), so every other edit to those prompts is saved while the override cannot be changed or cleared as long as the policy holds.
+
+The gate tests the lock **synchronously** (`mztaManaged.isManagedLocked()` + `getManagedValue()`): the migration block in `mzta-background.js` calls `setSpecialPrompts()` before `loadManaged()`, where awaiting `managedReady()` would make the background message itself. That is safe because an overlaid prompt can only exist in a context where `getSpecialPrompts()` has already awaited `managedReady()`.
+
+**Unmanaged behaviour is unchanged.** Only the locked-off case is overlaid. A legacy profile with `prompt.api_type` set while the preference is `false`, and no policy, still runs its override exactly as before, and `getConnectionType()` itself is untouched.
+
+On the feature page, `initializeSpecificIntegrationUI()` computes `locked_off` the same way: the toggle is kept off, never forced on as mandatory (even over a ChatGPT Web or empty global connection — an administrator misconfiguration to fix, not to override), and `_updatePrompt()` and the toggle's `clearPromptAPI()` path are no-ops. At background startup, `getIgnoredProviderOverrides()` reads the raw store and `taLogger.warn()`s once per locked-off feature that still has a stored `api_type`, so the administrator can see the override exists and is being ignored.
+
+### When a policy supplies the override
+
+The reverse case: the policy key `_special_prompts_connection` enforces (or pre-sets) a feature's connection, `{<prefix>: {api_type, <integration>_<key>: value, "<field>:locked": false}}`. The field names are exactly the prompt properties above, derived from `integration_options_config`, so no translation layer exists. Full treatment in [08b-managed-connections.md](08b-managed-connections.md#enforced-per-feature-connections-_special_prompts_connection). What matters for the runtime paths:
+
+- `applyPolicyConnections()` runs in both branches of `getSpecialPrompts()`, right after `applyLockedOffIntegrations()`. It sets `api_type`, puts every enforced field on the prompt and fills an unlocked field only where the prompt has no value (absent or `''`), and marks the prompt `_connection_by_policy`. The prompts per prefix are the same as for the locked-off overlay (`prompt_summarize` alone; both calendar prompts). So every path listed above — `initWorker()`, `menus.allPrompts`, `loadPrompt()`, the API chat window, the feature pages — sees the policy connection. `initWorker()` gets the real key, because the background holds it; a field neither the policy nor the user sets falls back to the global preference as before.
+- An accepted entry also **implies** `{prefix}_use_specific_integration = true` and `{prefix}_connection_type = api_type`, both locked. `getConnectionType()` reads that pair before `prompt.api_type`, and the callers that pass `prompt = null` (the menu gating, the options feature row) read only the pair. Without it the prompt overlay alone would not be what runs.
+- The overlay is never persisted: `setSpecialPrompts()` runs `keepStoredConnections()` after `keepStoredOverrides()`. Removing the policy restores the user's own override, field by field.
+- On the feature page `initializeSpecificIntegrationUI()` computes `policy_connected`:
+  - there is no page-open seeding or persisting, and no "mandatory" forcing;
+  - enforced fields and a locked type select never trigger `_updatePrompt()`, and it never copies them from the DOM;
+  - a switch re-enabled by hand is forced back on without calling `clearPromptAPI()`.
 
 ## Web Worker Pattern
 
@@ -120,14 +896,97 @@ mzta-background.js
 
 This keeps API calls off the main thread and avoids blocking the Thunderbird UI.
 
+**Reading the stream.** Each worker reads the body with one `TextDecoder` per response and calls
+`decode(chunk, { stream: true })`, so a multi-byte UTF-8 character split across two network chunks
+is kept whole (without it the two halves each become U+FFFD, at positions that depend on the
+provider's chunking). Lines are split on `
+` and the incomplete tail stays in a buffer for the next
+chunk, so an event split across two chunks and a chunk holding several events are both read as
+sent.
+
 ### Worker Lifecycle & Timeout (`mzta_specialCommand`)
 
-`mzta_specialCommand` (`js/mzta-special-commands.js`) creates one Worker per instance in its constructor. Callers (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, auto add-tags in `mzta-background.js`) create a **fresh instance per prompt** — instances are never reused.
+`mzta_specialCommand` (`js/mzta-special-commands.js`) creates one Worker per instance, in `initWorker()`, only once the configuration has passed the [validation](#configuration-validation): the constructor merely checks the connection type and picks the worker file, so a configuration error leaves no Worker behind (`sendPrompt()`, whose `finally` disposes of it, is never reached in that case). Callers (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, auto add-tags in `mzta-background.js`) create a **fresh instance per prompt** — instances are never reused.
 
 - **Termination:** `sendPrompt()` always calls `dispose()` (via `Promise.finally`) once the prompt settles — on success, error, or timeout. `dispose()` calls `worker.terminate()` and nulls the reference. This prevents Worker leaks during batch processing, where one Worker would otherwise be created per message and never freed (a cause of out-of-memory hangs on large selections).
 - **Timeout:** `sendPrompt()` aborts the request if the worker never replies (no `tokensDone`/`error`). The duration comes from the `special_command_timeout` pref (default `120000` ms), with a hardcoded `SPECIAL_COMMAND_TIMEOUT_DEFAULT` fallback. The pref is configurable in the main options page (always shown — see `claude-spec/05-options.md`). On timeout the promise rejects with a clear error and the worker is terminated by the same `finally`.
+- **Strings:** `initWorker()` sends the worker the same `i18nStrings` as the chat window
+  (`<integration>_api_request_failed`, `error_connection_interrupted`, and for Claude the four
+  `anthropic_err_hint_*` with the literal `$MODEL$`): a Web Worker has no `browser.i18n`, and the
+  worker builds every error text from them.
 
-`processEmails()` wraps its whole body in `try/finally` so `taWorkingStatus.stopWorking()` always runs, and wraps each message in `try/catch`+`continue` so one failing message does not abort the batch.
+`processEmails()` wraps its whole body in `try/finally` so `taWorkingStatus.stopWorking()` always runs, and wraps each message in `try/catch`+`continue` so one failing message does not abort the batch. The loop itself only gates messages; the AI work runs in one pipeline per message (spam, add_tags, summary, translate in series), which catches each feature's failures (e.g. `getFull()` on a message a filter just moved) and `runWithConcurrency()` catches and logs anything left, so one failing feature does not skip the others for that message (see [01-architecture.md](01-architecture.md#per-message-pipelines-in-processemails)).
+
+### Error contract between `js/api/*` and workers
+
+The provider classes in `js/api/` return **two different shapes** on failure, and workers must branch on `is_exception` before formatting the message:
+
+- **Network-level exception** (server unreachable, DNS failure, CORS rejection, per-attempt timeout -- once the automatic retries are used up): the `catch` block in `fetchResponse()` does **not** return a `Response`. It returns a plain object `{ok: false, is_exception: true, is_aborted, error}` with **no `status` and no `statusText`**, and `error` already includes the provider name (e.g. `"Ollama API request failed: TypeError: NetworkError…"`).
+- **User abort** (Stop pressed before any response arrived): same shape with `is_aborted: true`. Workers check it **before** the error branch and post `requestAborted` instead of `error` (see [Automatic Retry Handling](#automatic-retry-handling)).
+- **HTTP error** (404, 401, 500…): a real `Response` is returned, so `status`, `statusText` and the JSON body are all available.
+
+Reading `response.status` / `response.statusText` in the exception branch yields a literal `"undefined undefined"` in the user-visible error, and re-prefixing the i18n provider string there duplicates the provider name. All five workers therefore build a single `error_text` variable:
+
+```js
+if(response.is_exception === true){
+    error_message = response.error;
+    error_text = error_message;              // already prefixed; no status/statusText exist
+}else{
+    // …extract error_message / errorDetail from the JSON body (errorBodyText, read
+    // before, see below; unparsable or empty → response.statusText)…
+    // (error.message; Ollama's documented body is {"error": "<message>"}, the string itself)
+    error_text = i18nStrings["<provider>_api_request_failed"] + ": " + response.status + " " + response.statusText
+        + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
+}
+const retryAfterMs = Number.isFinite(response.retryAfterMs) ? response.retryAfterMs : null;
+postMessage({ type: 'error', payload: error_text, rateLimited: response.status === 429 || retryAfterMs !== null, retryAfterMs: retryAfterMs });
+throw new Error("[ThunderAI] <Provider> API request failed: " + error_text);
+```
+
+The `postMessage` payload and the `throw` reuse the same `error_text` so the UI panel and the console message cannot drift apart.
+
+**`fetchModels()` and `fetchVersion()`.** The page-side probes (the "Update list" buttons and the
+connection test, see [05-options.md](05-options.md)) resolve `{ok: true, response}` or the two failure
+shapes above, with the HTTP error as `{ok: false, error: <body text>, status, statusText}` instead of
+the `Response` (the same for `fetchModelInfo()` and Ollama's `fetchRunningModels()`). A
+success means the answer **is** the provider's: a `200` whose JSON is not its model list (a proxy or a
+captive portal answering `{}`) resolves the exception shape, exactly like an answer that is not JSON,
+with `error` naming the provider and saying no list came back. OpenAI, Gemini and Claude check their
+list (`data`, `models`, `data`); Ollama's `fetchVersion()` requires a `version` string. Two answers are
+deliberately not refused: OpenAI Comp turns any other shape into an empty list, and Ollama's
+`fetchModels()` passes its `/api/tags` object on as it is (the page reports "no models" when it holds
+none). Without this a `{}` read as "Connected" on the connection test, and "Update list" threw on the
+missing list, leaving the row on its loading label for good.
+
+**Reading the body of an HTTP error.** Before that branch, a worker that got an HTTP error reads
+its body with `readResponseBody()` (`js/api/api-retry.js`, the same helper as the retry logs), into
+`errorBodyText`:
+- **within 5 s:** a body that never arrives, or cannot be read, is cancelled and gives `''`, so the
+  error is still posted, with its status and `statusText` as the detail. A turn never hangs on an
+  error body: without the limit the chat window waited for ever, and a special command until
+  `special_command_timeout`. `rateLimited` and `retryAfterMs` do not depend on the body (the status,
+  and the value `fetchWithRetry()` set), so a batch still stops on a rate limit.
+- **while Stop can abort it:** `requestAbort` is cleared only after that read (see
+  [Workers and UI](#automatic-retry-handling)). An abort errors the body; the worker then checks
+  `requestAbort.signal.aborted` and, if set, takes the `is_aborted` path instead (the message leaves
+  the history, `stopStreaming` is reset, `requestAborted` is posted, no `error`), even though the
+  status is already known.
+
+`rateLimited` and `retryAfterMs` are siblings of `payload` (which stays a string, so the connection test is unaffected). `retryAfterMs` is set when `fetchWithRetry` gave up because the server asked to wait longer than `retryAfterCapMs` (see [Automatic Retry Handling](#automatic-retry-handling)); such a response is always `rateLimited`, whatever its status. Otherwise `rateLimited` is `true` only for an HTTP 429 returned after the retries are used up or classified as terminal: Gemini `RESOURCE_EXHAUSTED`, OpenAI `rate_limit_exceeded` / `insufficient_quota` and Anthropic `rate_limit_error` are all 429. It is `false` on an `is_exception` (no `status`). 503/529 (overloaded) are deliberately not flagged: they mean no capacity, not no quota. The mid-stream error posts (below) do not set it.
+
+**Failures in the middle of the stream.** Once streaming has started a failure is not retried, but it
+is never silent either: the worker cancels the reader and posts exactly one `error` (and no
+`tokensDone`), whose payload is `i18nStrings["<provider>_api_request_failed"] + ": " + <message>`:
+
+| Provider | Signal | `<message>` |
+|---|---|---|
+| Anthropic | an `event: error` SSE event (e.g. `overloaded_error`) | `error.message` |
+| Ollama | an NDJSON line `{"error": "<message>"}` | the server's string |
+| OpenAI Responses | `response.failed` | `response.error.message` |
+| any | the connection breaks while reading (`reader.read()` rejects) | the error's message; Firefox's `TypeError` "Error in input stream" uses `error_connection_interrupted` instead of the provider string |
+
+The partial answer is dropped and the turn is abandoned like an HTTP error (see
+[Workers and UI](#automatic-retry-handling)).
 
 ### Batch cancellation (user-triggered stop)
 
@@ -136,18 +995,173 @@ This keeps API calls off the main thread and avoids blocking the Thunderbird UI.
 **Runtime messages** (handled in the `messenger.runtime.onMessage` switch in `mzta-background.js`):
 
 - `{ command: "batch_status" }` → returns `taBatchController.getStatus()` = `{ working, processed, cancelRequested }`.
-- `{ command: "cancel_batch" }` → calls `taBatchController.requestCancel()`, returns `{ ok: true }`. The running `processEmails` loop sees `isCancelled()` at its next checkpoint and `break`s out; the outer `finally` still runs `stopWorking()` + `endBatch()`.
+- `{ command: "cancel_batch" }` → calls `taBatchController.requestCancel()`, returns `{ ok: true }`. Every batch active at that moment is flagged (a batch begun later is not); each running `processEmails` sees `isCancelled(batch)` at its next checkpoint and `break`s out; the outer `finally` still runs `stopWorking()` + `endBatch(batch)`.
 
-**Stopped notice:** `endBatch()` returns a snapshot `{ lastExit, cancelled, processed }` taken *before* the counters are reset (`processed` is zeroed on the last-batch reset). When `lastExit && cancelled`, the outer `finally` in `processEmails` shows a `showGenericInfo()` notice (`batch_stopped_notice`, "Email processing stopped. N messages were processed.") reporting how many messages completed before stopping. It renders in the message-display / compose content-script panel.
+**Stopped notice:** `endBatch(batch)` returns a snapshot `{ lastExit, cancelled, processed, reason, retryAfterMs }` taken *before* the counters are reset (`processed` is zeroed on the last-batch reset). When `lastExit && cancelled`, the outer `finally` in `processEmails` shows a `showGenericInfo()` notice (`batch_stopped_notice`, "Email processing stopped. N messages were processed.") reporting how many messages completed before stopping. It renders in the message-display / compose content-script panel.
 
 **Generic panels (`showGenericError` / `showGenericInfo`):** `mzta-background.js` exposes two helpers that broadcast a panel to all tabs (the content script renders it only where injected — message-display / compose):
 - `showGenericError(msg, source)` → `{command: "showGenericError"}` → red panel (⚠), panel id `mzta-generic-error`.
 - `showGenericInfo(msg, source)` → `{command: "showGenericInfo"}` → blue informational panel (ℹ), panel id `mzta-generic-info`.
 Both use the same layout and a dismiss control; colors come from `_getThemeColors()` (`summaryErr` for errors, `info` for info). Cleared via `clearGenericError` / `clearGenericInfo`.
 
-**Popup payload:** `preparePopupMenu(tab)` adds `output.batchStatus = taBatchController.getStatus()` to the response of the existing `popup_menu_ready` message, so the popup gets the initial batch state without an extra round-trip. When `batchStatus.working` is true the popup shows a "Stop processing — N processed" banner and polls `batch_status` every ~1s while open.
+**Popup payload:** `preparePopupMenu(tab)` adds `output.batchStatus = taBatchController.getStatus()` to the response of the existing `popup_menu_ready` message, so the popup gets the initial batch state without an extra round-trip. When `batchStatus.working` is true the popup shows a "Stop processing — N processed" banner and polls `batch_status` every ~1s while open; when a poll reports the batch over, the banner hides and the polling stops. A poll that fails (the message rejected) stops the polling too, but leaves the banner as it was, with its last count: its button still works. Clicking "Stop processing" disables the button, relabels it `batch_stopping`, stops the polling, sends `cancel_batch` and closes the popup (the cancellation is cooperative, so nothing is waited for).
 
-**Interaction with `mzta_specialCommand`:** v1 cancellation is checked *between* messages, so the in-flight worker prompt is allowed to finish first (bounded by `special_command_timeout`). There is no mid-request `dispose()` in v1; a future enhancement could register the active `mzta_specialCommand` with the controller and terminate its worker on cancel for an immediate abort.
+<a id="batch-stop-on-rate-limit"></a>**Automatic stop on a rate limit (#901):** `mzta_specialCommand.sendPrompt()` copies the worker's `rateLimited` flag and `retryAfterMs` onto the rejected Error (`err.rateLimited`, `err.retryAfterMs`). It also records the `status` of each `newRetryAttempt`: long `Retry-After` waits can outlast `special_command_timeout`, so a timeout that fires while the last retried failure was a 429 is flagged too. `processEmails()` stops the whole batch on such an error with `requestCancel('rate_limit')`, and the `finally` shows `showGenericError(batch_stopped_rate_limit)` — or `batch_stopped_retry_after` ("… asks to retry in 1 h") when the provider named a wait, the longest one kept by `requestCancel(reason, retryAfterMs)` — instead of the `batch_stopped_notice` info panel. See [01-architecture.md](01-architecture.md#batch-cancellation-tabatchcontroller) for the check points.
+
+**Interaction with `mzta_specialCommand`:** v1 cancellation is checked *between* messages and between the features of each per-message pipeline, so the in-flight worker prompts (up to `batch_max_concurrency`) are allowed to finish first (bounded by `special_command_timeout`). There is no mid-request `dispose()` in v1; a future enhancement could register the active `mzta_specialCommand` with the controller and terminate its worker on cancel for an immediate abort.
+
+## Automatic Retry Handling
+
+Transient failures (overloaded model, rate limit, gateway error, short network drop) are retried
+automatically instead of surfacing as a hard error. This matters most for the unattended features
+(spamfilter, auto add_tags), where nobody is around to retry by hand.
+
+**Helper.** `fetchWithRetry(url, options, retryConfig)` in `js/api/api-retry.js`. Like
+`api-utils.js` it is worker-safe (its only import is `js/mzta-logger.js`). Every provider class
+uses it for `fetchResponse()` and `fetchModels()`, which both take an optional trailing
+`retryConfig` (for Anthropic, also `_postMessages()`, so the one-shot 400 retry gets transient
+retry too). Ollama's `fetchVersion()`/`fetchModelInfo()` still use plain `fetch()`.
+
+**`retryConfig`:** overrides for `RETRY_DEFAULTS` (`maxRetries` 5, `retryDelaysMs`
+`[5000, 10000, 20000, 30000]`, `retryAfterCapMs` 60000, `timeoutMs` 60000) plus `signal` (user
+abort), `onRetry(info)`, `logger` (a `taLogger`) and `label` (provider name for the logs, set by
+each class).
+
+**Behaviour:**
+- **Retryable statuses:** `RETRYABLE_STATUSES` = 408, 429, 500, 502, 503, 504, 529. Every other
+  status (400, 401, 403, 404...) is returned at once. Network exceptions and per-attempt timeouts
+  are retried too.
+- **Result:** always a `Response` or a throw, never `undefined`. When retries are used up on a
+  retryable status, the **last `Response` is returned unread**, so the workers' existing error
+  formatting (status + JSON detail) is unchanged. On an exception, the last error is rethrown and
+  the class's `catch` turns it into the `is_exception` object.
+- **Backoff:** `retryDelaysMs[attempt]`, the last entry reused once the list runs out, with jitter
+  (random 80-100% of that value): 5 s, 10 s, 20 s, 30 s, 30 s, so up to ~95 s of waiting with the
+  defaults. The schedule is deliberately long: an overloaded model or a rate limit usually lasts
+  tens of seconds, and a short 1-2-4 s schedule gave up before it passed.
+- **Interaction with `special_command_timeout`** (default 120 s): it bounds the whole exchange of a
+  special command, retries included. With the defaults the waits alone take up to ~95 s, so the
+  retries fit only when each attempt fails quickly (the usual 429/503 case). A run of per-attempt
+  timeouts (60 s each) is cut short by `special_command_timeout` first.
+- **`Retry-After`:** when present it replaces the backoff. Both the delta-seconds and the HTTP-date
+  form are accepted (`parseRetryAfter()`, clamped at 0; `fetchWithRetry` calls it with no upper
+  cap). The header is readable because extension requests with host permissions are not subject to
+  CORS header filtering. Without the header, Gemini's `google.rpc.RetryInfo.retryDelay` (body,
+  `"34s"`) is used the same way.
+- **A wait longer than `retryAfterCapMs` (60 s) is not retried:** the response is returned at once,
+  carrying the requested wait as a non-standard expando `response.retryAfterMs`. A per-minute window
+  needs at most ~60 s; a server asking for more (e.g. `Retry-After: 3600`) will not clear the limit
+  within `special_command_timeout` anyway. Earlier versions clamped the wait to the cap and retried,
+  which only repeated a certain failure. The workers forward the value (`retryAfterMs` in the
+  `error` message) and the user is told when to retry, formatted by `formatDuration()`
+  (`js/mzta-utils.js`, `Intl.DurationFormat` short style, the two largest units, no seconds from an
+  hour up: "1 h", "1 h, 30 min"): the webchat adds the `api_retry_after_hint` paragraph under the
+  error (`appendBotMessage(text, 'error', hintText)`), a batch stops with `batch_stopped_retry_after`.
+- **429s that retrying cannot fix are returned at once (#901).** On a 429 that would otherwise be
+  retried, `inspectRateLimitBody()` reads `response.clone()` (so the worker still gets the original
+  body unread) and `classifyRateLimitBody()` recognises, from the providers' documented bodies:
+  OpenAI (and compatible servers) `error.code: "insufficient_quota"` (no credit / monthly budget;
+  `rate_limit_exceeded` stays retryable); Anthropic `error.details.error_code:
+  "enforced_spend_limit_reached"` (monthly spend cap, sent without `retry-after`); Gemini a
+  `google.rpc.QuotaFailure` detail whose `violations[].quotaId` contains `PerDay`/`Daily` (e.g.
+  `GenerateRequestsPerDayPerProjectPerModel-FreeTier`). The daily Gemini 429 still carries a short
+  `RetryInfo` (~34 s), which is why the quotaId, not the delay, decides. An array-wrapped Gemini body
+  (`[{error}]`) is accepted. An unreadable or unrecognised body is retried as before. The worker
+  still flags the returned 429 `rateLimited`, so a running batch stops at the first such message
+  (about 1 s instead of ~95 s of doomed retries).
+- **Per-attempt timeout covers the headers only.** A dedicated `AbortController` + `setTimeout`,
+  combined with the user signal through `AbortSignal.any()`, is cleared as soon as `fetch()`
+  resolves. A bare `AbortSignal.timeout()` would not work: that signal stays attached to the body,
+  so it would cut off any SSE answer that lasts longer than the timeout. Without any timeout a hung
+  connection never produces a 408/504 and no retry would fire. Ollama and OpenAI-compatible chat
+  requests use 300 s (`OLLAMA_CHAT_TIMEOUT_MS`, `OPENAI_COMP_CHAT_TIMEOUT_MS`), because a local
+  server may load the model before sending the headers.
+- **User abort is never retried.** An aborted `signal` stops the loop at once, including during
+  the backoff wait (an abortable sleep).
+- **Only before the body is consumed.** A failure in the middle of an SSE stream is not retried
+  (out of scope).
+- The body of a retried response is needed only for the log lines (below), so it is read only
+  when the logger has debug on (`logger.do_debug === true`). With debug off it is cancelled at
+  once (which frees the connection) and the retry waits exactly its delay, except for a 429, whose
+  body the inspection below reads first.
+  With debug on `readResponseBody()` reads it to the end (which also frees the connection); a body
+  that does not arrive within 5 s (`SERVER_BODY_READ_TIMEOUT_MS`), or cannot be read, is cancelled
+  and gives no message. **That read comes before the wait and adds to it:** `onRetry` is called
+  once the read is over, its `delayMs` is the backoff (or `Retry-After`) alone, and the next attempt
+  starts up to 5 s later than `delayMs`.
+- The 429 inspection above does not depend on debug: `inspectRateLimitBody()` reads its clone
+  whatever the logger, so a terminal 429 and Gemini's `RetryInfo` act the same with debug on and
+  off. It reads it through `readResponseBody()`, with the same 5 s limit: a 429 body that does not
+  arrive in time is cancelled and gives no information, so the 429 is retried with the backoff
+  (and that wait adds to the delay, with debug off too). The text it read is reused for the log
+  lines and the original body is cancelled, so a 429 waits for the limit at most once.
+- **A user abort during a body read** (the 429 inspection or the log read) ends the request with
+  the signal's reason: no retry log line, no `onRetry`, no further attempt. An abort errors the
+  body, and both reads would otherwise take the error for an unreadable body. A body that is merely
+  unreadable or slow, without an abort, is still retried.
+
+**Logging:** each retry is logged through `taLogger.log()`, so it only shows with the debug pref on.
+For a retried HTTP status the line ends with the server's own explanation, ` - server message: ...`
+(e.g. Gemini's "The model is overloaded. Please try again later."), taken by
+`extractErrorMessage()`: `error.message` (also array-wrapped), a string `error` (Ollama), a
+top-level `message`, otherwise the raw text (a proxy's HTML page), whitespace collapsed, cut at
+500 characters. A second line, `<label> response body: ...`, follows with the whole body as
+received (not cut, not reformatted), for every provider that goes through `fetchWithRetry()`.
+Both come from the body, which is read only with debug on: with debug off neither the suffix nor
+the second line is produced, and a body that gave nothing (5 s limit, unreadable) gives neither.
+**The request URL is never logged**: Google Gemini (and some OpenAI-compatible endpoints) carry the
+API key in the query string.
+
+**Workers and UI:**
+- Each worker creates an `AbortController` per `chatMessage`, kept in `requestAbort` only while
+  waiting for the response: the whole `fetchResponse()` call, so the headers, the body reads of a
+  retried response inside `fetchWithRetry()` (the 429 inspection, the log read with debug on) and
+  the backoff, and after it the read of an HTTP error's body (see the
+  [Error contract](#error-contract-between-jsapi-and-workers)). It is cleared before the stream is
+  read. It passes `{signal, logger: taLog, onRetry}` to `fetchResponse()`.
+- `onRetry` posts `{type: 'newRetryAttempt', payload: {attempt, maxRetries, delayMs, status, reason}}`
+  (`reason`: `'http'`, `'network'` or `'timeout'`; `status` is `null` for the last two).
+- On `stop`, the worker aborts `requestAbort` if it is still set. Once streaming has started,
+  `requestAbort` is `null` and the existing `stopStreaming` loop handles Stop, so a pending
+  `reader.read()` is never rejected.
+- An aborted request (`is_aborted`, or Stop while an HTTP error's body was read) removes the
+  unanswered user message from `conversationHistory` (so the next turn does not send it twice) and
+  posts `requestAborted`.
+- A failed request does the same before posting its `error`: an HTTP error, a network error once
+  the retries are used up, and every failure in the middle of the stream (see the
+  [Error contract](#error-contract-between-jsapi-and-workers)). The partial answer, if any, is
+  dropped, not added to the history. The OpenAI Responses worker also goes back to the
+  `previous_response_id` of the last response that completed, so a turn never chains to one that
+  failed.
+- Webchat (`api_webchat/controller.js`): `newRetryAttempt` -> `messageInput.showRetryStatus()`
+  ("Server not available (HTTP 503), retrying in 10 s (attempt 2 of 5)...", or, for a 429,
+  `apiwebchat_retrying_rate_limit`: "Rate limit reached, retrying in 10 s (attempt 2 of 5)..."
+  (kept short: the pill is one line wide), keeping the waiting
+  icon). The seconds count down to the retry (a 250 ms interval, text updated only when the
+  whole-second value changes); at zero the pill returns to `showWaitingStatus()`. The countdown is
+  stopped by `setStatusMessage()` and `hideStatusMessage()`, which every other status goes through,
+  so a late tick can never overwrite a newer status; `requestAborted` -> an `apiwebchat_request_cancelled` info notice and `enableInput(false)`.
+  The Stop button is visible while waiting, so a retry can always be cancelled.
+- `mzta_specialCommand` only logs `newRetryAttempt` (and remembers its `status`, see
+  [Batch cancellation](#batch-stop-on-rate-limit)). The overall `special_command_timeout` still
+  bounds the whole exchange, retries included.
+- A 429 still failing after the retries marks the `error` message `rateLimited`, which stops a
+  running batch (#901): retrying the next message against a used-up daily quota cannot help.
+- The connection test (`js/mzta-connection-test.js`) passes `{maxRetries: 0}`: it must report the
+  current state right away, within its 10 s race.
+
+**Known trade-off:** `fetchResponse()` sends non-idempotent POSTs. Retrying a 500/504 (or a
+timeout) may re-run a generation that actually succeeded server-side, so the tokens can be billed
+twice. Accepted: the alternative is failing an unattended operation that would have succeeded.
+
+**No automatic model fallback (deliberate).** When retries are used up, the error is shown; the
+request is never re-sent to a different model. A fallback would silently replace the model the
+user chose (different quality, different pricing, no indication of which model answered), and any
+hardcoded list would go stale and conflict with the `fetchModels()` design. The failures retry
+covers are time-dependent, not model-dependent; daily quota exhaustion is the only case a fallback
+would address, and there the right answer is to tell the user. If it is ever added, it must be a
+separate opt-in preference with a user-chosen list built from `fetchModels()`, limited to 429/503,
+with the model that actually answered reported in the UI.
 
 ## Optional Permissions
 
@@ -157,9 +1171,231 @@ API calls require host permissions. These are declared as `optional_permissions`
 - `https://*.anthropic.com/*` for Claude
 - `https://*/*` and `http://*/*` for Ollama and OpenAI-compatible endpoints
 
+What is actually requested at run time:
+- **ChatGPT / Claude**: the origins above (the "Update list" buttons and the connection test).
+- **Gemini**: the "Update list" button requests nothing (the API answers CORS requests); the
+  connection test requests `https://generativelanguage.googleapis.com/*`, covered by `https://*/*`.
+- **Ollama / OpenAI Comp**, from the host field, the same rule for the CORS "give permission"
+  buttons and the connection test: a host containing `localhost` or `127.0.0.1` requests
+  `<all_urls>`, any other host its own origin (`prepareOriginURL(host)`: the host followed by `/*`,
+  or `*` when it already ends with `/`). An empty host requests nothing: there is no origin to ask
+  for, and the connection test reports it as a refused permission.
+
+## Token usage data
+
+Every provider reports token counts under a different name and a different shape. `js/api/mzta-api-usage.js`
+normalizes them into one object, so nothing downstream has to know a provider's field names. Like
+`api-utils.js` it is **worker-safe**: no DOM, no `browser.*`/`messenger.*`.
+
+```js
+{
+  provider, model,
+  input_tokens, output_tokens, total_tokens,
+  cached_input_tokens, cache_creation_tokens,
+  reasoning_tokens, tokens_per_second,
+}
+```
+
+**`null` and `0` are not interchangeable, and this distinction carries all the way to the UI:**
+
+- `null` — the provider does **not** expose this metric
+- `0` — the provider reported zero
+
+A missing value is therefore never coerced to `0`. `createUsageData(fields)` defaults every absent key to
+`null` and computes `total_tokens` from the input/output pair **only** when both are numbers and no total was
+reported. `isUsageDataEmpty(usage)` is true when there is no object or every numeric field is `null`.
+`mergeUsageData(a, b)` merges two partial objects with `b`'s non-null values winning, recomputing the total —
+Anthropic needs it, because its input and output counts arrive on two different stream events. A side's total
+counts as *reported* only when it differs from that side's own `input + output`: one equal to the sum is
+indistinguishable from the one `createUsageData()` computed, and keeping it would freeze the total at
+`message_start`'s placeholder `output_tokens: 1`.
+
+**Subset invariant.** Every extractor normalizes so that `cached_input_tokens` and `cache_creation_tokens` are
+**part of** `input_tokens`, and `reasoning_tokens` is **part of** `output_tokens`. OpenAI (both APIs) and Ollama
+report it that way natively; Anthropic and Gemini do not and are adjusted in their extractor (below). The chat
+popover's "of which" rows depend on it.
+
+Display and formatting helpers deliberately live **outside** this module.
+
+### Per-provider support
+
+Each API module exports `supportsUsageData` (boolean) and, when true, `extractUsage(raw)`, which returns a
+normalized object or `null`. **`extractUsage()` must never throw**: it is called per streamed chunk, so a
+partial or unexpected payload must not break the stream it is reading. Every access is guarded and the body is
+wrapped in `try/catch`.
+
+`supportsUsageData(connection_type)` in `js/mzta-utils.js` answers the same question **by connection type**, so
+the UI can query it without importing every provider module. The two must stay in agreement. ChatGPT Web — and
+any other non-API web integration — is `false`: there is no API to report anything.
+
+| Provider | Populated | Always `null` |
+|---|---|---|
+| `chatgpt_api` (`openai_responses`) | input, output, total, cached_input, reasoning | cache_creation, tokens_per_second |
+| `anthropic_api` | input *(incl. cache)*, output, total *(computed)*, cached_input, cache_creation | reasoning, tokens_per_second |
+| `google_gemini_api` | input, output *(incl. thoughts)*, total, cached_input, reasoning | cache_creation, tokens_per_second |
+| `ollama_api` | input, output, total *(computed)*, tokens_per_second | cached_input, cache_creation, reasoning |
+| `openai_comp_api` | input, output, total, cached_input, reasoning *(all best effort)* | cache_creation, tokens_per_second |
+| `chatgpt_web` | — *(no extractor)* | everything |
+
+Where the data comes from, per provider:
+
+- **openai_responses** — `response.usage`. While streaming it exists **only** on the final `response.completed`
+  event, under `event.response.usage`; `extractUsage()` accepts both that event and a plain response body.
+- **anthropic** — split across two events: `message_start` carries the input tokens and both cache counters
+  (under `message.usage`), `message_delta` carries the output tokens (cumulative, so the last one wins). The
+  extractor returns a **partial** object and the worker combines the halves with `mergeUsageData()`.
+  Claude's `input_tokens` **excludes** the cache (documented total input = `input_tokens +
+  cache_read_input_tokens + cache_creation_input_tokens`), so the extractor sums them into `input_tokens` to
+  honour the subset invariant.
+- **google_gemini** — `usageMetadata`, at the top level of a response or a chunk. In a stream it can appear on
+  several chunks and is **cumulative, not per-chunk**, so the last non-empty one replaces the previous. It can
+  ride on a chunk with no `candidates`, so the worker reads it **before** its candidates guard.
+  `thoughtsTokenCount` is reported **separately** from `candidatesTokenCount` (the total is prompt + candidates +
+  thoughts + tool use), so the extractor sets `output_tokens = candidates + thoughts`. `promptTokenCount` is
+  documented as already including `cachedContentTokenCount`.
+- **ollama** — the final chunk of `/api/chat` (`done === true`). `tokens_per_second` is derived from
+  `eval_count / (eval_duration / 1e9)`, rounded to one decimal; a missing or zero duration yields `null`, never
+  `Infinity` or `NaN`.
+- **openai_comp** — `usage` on the response or the final streamed chunk, best effort. **A streamed response
+  emits it only when the request includes `stream_options: { include_usage: true }`**, which `fetchResponse()`
+  adds while streaming. Many compatible backends (llama.cpp, LM Studio, some OpenRouter models) ignore the
+  parameter or never send `usage` — the request must still succeed and `extractUsage()` simply returns `null`.
+  The usage frame is a frame with an **empty `choices` array**, so the worker reads it before its `choices`
+  guard.
+
+### Wiring in the workers
+
+Each worker keeps the accumulated usage in a module-level `usageData`, reset at the start of every
+`chatMessage`, and exposes it through `getUsageData()`.
+
+The value is **never appended to the response text and never pushed into `conversationHistory`** — the text
+callers receive is byte-identical to what it was before this layer existed, and no usage data is ever sent back
+to the API on the next turn. That invariant is the whole contract; everything below only adds a display path.
+
+Capture is logged through `taLog` (debug-gated), carrying the **provider, model and token counts only**. Never
+log request URLs or headers: Gemini and some OpenAI-compatible endpoints carry the API key in the query string.
+
+### Emitting to the chat window
+
+`js/workers/usage-emitter.js` is the single place a worker hands its usage to the chat window. Each worker ends
+a response in two or three different places (end of stream, user stop, a provider-specific terminal event) and
+each of them posts `tokensDone`; routing the usage through one helper is what keeps those ten call sites from
+drifting apart.
+
+- `initUsageEmitter(event.data)` — called from the worker's `init` branch; reads the `chat_show_usage_data`
+  flag the controller puts on the init message.
+- `nextUsageMessageId()` — called once per response, next to the `usageData = null` reset, so the emitted id
+  and the answer it belongs to agree.
+- `postUsageData(usageData, usageMessageId)` — called immediately **before** every `postMessage({type:
+  'tokensDone'})`.
+
+The message is `{ type: 'usage', messageId, payload }`, **separate from `tokensDone` and carrying no text**.
+Nothing is emitted when the option is off, when the provider reported nothing, or when `isUsageDataEmpty()` is
+true — extraction and the debug log still run in all three cases.
+
+Ordering matters: the usage is posted **before** `tokensDone` because the window stores the usage on the
+turn that `tokensDone` then closes. Worker messages are delivered in order, so posting first is sufficient.
+
+### Rendering in the chat window
+
+`api_webchat/usageBadge.js` holds the whole display layer (`js/api/mzta-api-usage.js` must stay DOM-free). The
+only usage chrome is a **chip per answer** in its action bar, with a detail popover that also carries the
+conversation-level figures (context used, session total). There is none in the window header (only the model
+and the API) and none above the input field. The guiding rule is **show only what
+exists**: a null field is omitted entirely, never rendered as `0`, `—` or `n/a`; a reported `0` is printed.
+
+**Duration.** `MessagesArea` measures it itself, from `appendUserMessage()` (every real prompt is appended just
+before it is posted to the worker) to `handleTokensDone()`, with `performance.now()`. It is therefore available
+for every provider, including an endpoint that reports no usage at all.
+
+**Flow.** `handleUsageData()` only stores the usage on the open turn (`turn._mztaUsage`, once per turn) and folds
+it into the session; it draws nothing. `handleTokensDone()` builds the chip from that usage plus the duration
+(`_buildUsageChipForTurn()`, stored as `turn._mztaUsageChip`) **before** `addActionButtons()`, which places it
+as the last action of the bar (after Copy, Save as Summary and Show differences; only Close, right-aligned,
+follows it). When the answer stops being the newest, `_buildTurnTools()` **moves** the same node into the
+compact toolbar, again as its last element, so earlier answers keep their figures. If `addActionButtons()` bails out early, the chip gets
+an `.action-bar` row of its own. Nothing is shown while streaming.
+
+**Chip text**, first applicable: total → `711 tokens`; output only → `611 output tokens`; no tokens → the
+duration, `3.4 s`. Numbers use `toLocaleString()` with the browser locale.
+
+**Popover.** The chip is a button (`aria-haspopup="dialog"`, `aria-expanded`, `aria-controls`) only when there is
+detail beyond the duration; otherwise it is a static label and there is no popover. The popover sits above the
+chip, left-aligned; it closes on a second click, on Esc (focus returns to the chip) and on a `pointerdown`
+anywhere outside it (document-level listeners, `composedPath()` sees through the open shadow roots). At most one
+is open window-wide. Rows, in order, each only if the value exists:
+
+| Row | Field | Condition |
+|---|---|---|
+| Input | `input_tokens` | |
+| &nbsp;&nbsp;of which cached | `cached_input_tokens` | input known |
+| &nbsp;&nbsp;of which written to cache | `cache_creation_tokens` | input known |
+| Output | `output_tokens` | |
+| &nbsp;&nbsp;of which reasoning | `reasoning_tokens` | output known |
+| **Total** | `total_tokens` | input or output known (the total alone would repeat the chip) |
+| Duration | measured | the popover exists; `· N tok/s` appended when a rate exists |
+| Context | `contextTokensOf(usage)` | input+output (else total) known; `711 / 8,192 · 9%` when the window is known, else just the count. At **≥ 80%** the value uses `--warn` and a note row adds `consider starting a new chat` |
+| Session total | session sum at this answer | known and different from this answer's total (so not on the first answer) |
+
+Dividers separate the token rows, the duration and the conversation rows. The popover exists when there is any
+token row or a context count; with the duration alone the chip is static.
+
+**Conversation figures.** `MessagesArea` keeps `sessionUsage.total` (`createSessionUsage()` /
+`addUsageToSession()`), the sum of every answer's `total_tokens`, null until one reports it; one window is one
+chat, so there is nothing to reset. `_buildUsageChipForTurn()` passes `buildUsageChip()` a **snapshot** of this
+answer's context (input + output: what the next request resends, since the workers resend the whole history)
+and of the session total at that answer, so an earlier answer's popover keeps describing the conversation as it
+was then. The context **window** is passed as a getter instead and **the popover is rebuilt on every open**,
+because the window is looked up asynchronously and may arrive after the first answer's chip was built.
+
+The rate is `tokens_per_second` when the provider reports it (Ollama, generation phase only), otherwise
+`output_tokens / (durationMs / 1000)` — a wall-clock figure that includes network and prompt processing.
+
+The "of which" rows rely on the **subset invariant** of the normalized object (see
+[Per-provider support](#per-provider-support)).
+
+The chip lives in the action bar, a **sibling of the `.message` element — never inside it**. That placement is
+the structural half of the guarantee that it cannot be picked up by anything that reads an answer back out of
+the DOM; the `data-mzta-usage` attribute (`USAGE_MARKER_ATTR`), set on the chip and on the popover, is the other
+half.
+
+The extraction paths and why each is safe:
+
+| Path | Source | Why the chip cannot reach it |
+|---|---|---|
+| Copy button | `fullTextHTMLAtAssignment` | An immutable string snapshotted at flush time, never read from the DOM |
+| "Use this answer" / reply | same snapshot, or `picker.composeResultHTML()` | Same; the picker owns content handed to it, in its own shadow root |
+| Save as summary | same snapshot | Same |
+| Diff picker | same snapshot + `prompt_info` | Same |
+| An explicit text selection | `getCurrentSelectionText()` | `user-select: none`, plus the chip's text is subtracted from `selection.toString()` if one was caught anyway |
+| An explicit HTML selection | `getCurrentSelectionHTML()` | `_cloneSelectionWithoutUsage()` removes every `[data-mzta-usage]` node from the cloned range |
+
+`getCurrentSelectionText()` deliberately still returns `selection.toString()` on the normal path rather than
+`textContent` over the scrubbed clone: `toString()` inserts the line breaks between blocks that a bare
+`textContent` would drop, and changing it would alter what the copy button produces for multi-paragraph
+selections.
+
+### Context window
+
+The context window is **only what the provider or the configuration states — never a guess from a per-model
+table**. `api_webchat/contextWindow.js` (`resolveContextWindow(integration, prefs)`, never throws, resolves to a
+positive number or `null`) looks it up; `controller.js` runs it **once, after the first completed answer**, not
+awaited, then calls `messagesArea.setContextWindow()`; popovers opened from then on show the maximum:
+
+| Provider | Source, most authoritative first |
+|---|---|
+| Ollama | `ollama_num_ctx` setting (> 0) → `/api/ps` `context_length` of the loaded model (`fetchRunningModels()`; the model is loaded once an answer came back, which is why the lookup waits for one) → `num_ctx` in the Modelfile `parameters` of `/api/show` → `model_info["<arch>.context_length"]` of `/api/show` (the model maximum; right for `:cloud` models, which `/api/ps` does not list). Tags match with Ollama's implicit `:latest`. |
+| Gemini | `models.get` → `inputTokenLimit` (`GoogleGemini.fetchModelInfo()`) |
+| Claude | `GET /v1/models/{id}` → `max_input_tokens` (`Anthropic.fetchModelInfo()`) |
+| OpenAI, OpenAI-compatible | none exposed → always `null`: the Context row shows the count only |
+
+
+The **automatic features** (spam filter, tagging, …) have no chat UI and are unaffected: their usage stays in
+the `taLog` debug output.
+
 ## Adding a New Provider
 
-1. Create `js/api/<provider>.js` with the API call logic
+1. Create `js/api/<provider>.js` with the API call logic. Use `fetchWithRetry()` (`js/api/api-retry.js`) instead of `fetch()` in `fetchResponse()`/`fetchModels()`, with a trailing `retryConfig` parameter and `is_aborted` in the exception object
 2. Create `js/workers/model-worker-<provider>.js` that imports and calls the API module
 3. Add a new `connection_type` value constant
 4. Add settings keys to `integration_options_config` in `options/mzta-options-default.js`
@@ -167,3 +1403,6 @@ API calls require host permissions. These are declared as `optional_permissions`
 6. Add the new `connection_type` case to the dispatch logic in `mzta-background.js`
 7. Add required host permissions to `manifest.json` optional_permissions
 8. Add i18n strings to `_locales/en/messages.json`
+9. Branch on `is_exception` in the worker's error block — see [Error contract between `js/api/*` and workers](#error-contract-between-jsapi-and-workers) above
+10. Export `supportsUsageData` and, when true, `extractUsage()` from the API module, add the connection type to `USAGE_DATA_SUPPORT` in `js/mzta-utils.js`, and accumulate the result in the worker — see [Token usage data](#token-usage-data) above
+11. Wire the worker to `js/workers/usage-emitter.js`: `initUsageEmitter()` in the `init` branch, `nextUsageMessageId()` beside the `usageData` reset, and `postUsageData()` before **every** `tokensDone` — see [Emitting to the chat window](#emitting-to-the-chat-window) above

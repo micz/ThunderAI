@@ -16,51 +16,55 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {
-  prefs_default,
-  integration_options_config
-} from '../../options/mzta-options-default.js';
+import { prefs_default } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
-import {
-  getSpecialPrompts,
-  setSpecialPrompts
-} from "../../js/mzta-prompts.js";
+import { getSpecialPrompts } from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
-  mapPlaceholderToSuggestion
+  mapPlaceholderToSuggestion,
+  placeholdersUtils
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import {
+  attachEditorHighlight,
+  makeTokenStateResolver
+} from "../../js/mzta-editor-highlight.js";
 import {
   isAPIKeyValue,
   setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import {
-  initializeSpecificIntegrationUI
+  initializeSpecificIntegrationUI,
+  isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
+import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
+import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
+import { initReminderUI } from "../_lib/reminder-ui.js";
+import { mztaPrefs } from '../../js/mzta-prefs.js';
+import { applyManagedUI } from '../_lib/managed-ui.js';
+import {
+    persistPromptConnectionToPrefs,
+    resolveFeatureConnectionPrefs,
+    bindConnPanelTint,
+    bindSpecialPromptEditor
+} from '../_lib/feature-page.js';
 
 let autocompleteSuggestions = [];
+let activePlaceholders = [];
 let taLog = new taLogger("mzta-get-task-page",true);
 
 document.addEventListener('DOMContentLoaded', async () => {
 
+    // Warn before leaving the page with unsaved textarea text.
+    initUnsavedGuard();
+
     let specialPrompts = await getSpecialPrompts();
     let get_task_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_get_task');
 
-    if (get_task_prompt && get_task_prompt.api_type && get_task_prompt.api_type !== '') {
-        let update_prefs = {};
-        update_prefs['get_task_connection_type'] = get_task_prompt.api_type;
-        
-        let integration = get_task_prompt.api_type.replace('_api', '');
-        if (integration_options_config && integration_options_config[integration]) {
-             for (const key of Object.keys(integration_options_config[integration])) {
-                 const propName = `${integration}_${key}`;
-                 if (get_task_prompt[propName] !== undefined) {
-                     update_prefs[`get_task_${propName}`] = get_task_prompt[propName];
-                 }
-             }
-        }
-        await browser.storage.sync.set(update_prefs);
-    }
+    await persistPromptConnectionToPrefs('get_task', get_task_prompt);
+
+    // Must run before restoreOptions(), which is called by initializeSpecificIntegrationUI()
+    initTimezoneSelect(document.getElementById('calendar_timezone'));
 
     await initializeSpecificIntegrationUI({
       prefix: 'get_task',
@@ -71,53 +75,49 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     i18n.updateDocument();
 
+    // Disable and mark every control the enterprise policy enforces. Runs after the
+    // connection panel has been injected above, so its provider rows are covered too.
+    await applyManagedUI(document, taLog.do_debug);
+
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
       });
 
     let get_task_textarea = document.getElementById('get_task_prompt_text');
-    let get_task_save_btn = document.getElementById('btn_save_prompt');
-    let get_task_reset_btn = document.getElementById('btn_reset_prompt');
-    let get_task_use_specific_integration = document.getElementById('get_task_use_specific_integration');
 
-    get_task_textarea.addEventListener('input', (event) => {
-        get_task_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_get_task_full_text'));
-        get_task_save_btn.disabled = (event.target.value === get_task_prompt.text);
-        if(get_task_save_btn.disabled){
-            document.getElementById('get_task_prompt_unsaved').classList.add('hidden');
-        } else {
-            document.getElementById('get_task_prompt_unsaved').classList.remove('hidden');
-        }
+    bindConnPanelTint('get_task');
+
+    await bindSpecialPromptEditor({
+        textarea: get_task_textarea,
+        saveBtn: document.getElementById('btn_save_prompt'),
+        resetBtn: document.getElementById('btn_reset_prompt'),
+        unsavedEl: document.getElementById('get_task_prompt_unsaved'),
+        specialPrompts: specialPrompts,
+        promptIds: ['prompt_get_task'],
+        defaultMsgKey: 'prompt_get_task_full_text',
+        do_debug: taLog.do_debug,
     });
 
-    get_task_use_specific_integration.addEventListener('change', (event) => {
-        if (!event.target.checked) {
-          browser.storage.sync.set({ get_task_connection_type: '' });
-        }
+    // "Let the AI set a reminder" section [#887]. After restoreOptions() (checkbox
+    // state) and after the prompt text is loaded (warning and preview read it).
+    // Kept before the editor decoration below, so a failure there cannot leave it
+    // uninitialized.
+    await initReminderUI({
+        feature: 'task',
+        promptTextarea: get_task_textarea,
+        statementsEl: document.getElementById('get_task_info_additional_statements')
     });
 
-    get_task_reset_btn.addEventListener('click', () => {
-        get_task_textarea.value = browser.i18n.getMessage('prompt_get_task_full_text');
-        get_task_reset_btn.disabled = true;
-        let event = new Event('input', { bubbles: true, cancelable: true });
-        get_task_textarea.dispatchEvent(event);
-    });
-
-    get_task_save_btn.addEventListener('click', () => {
-        specialPrompts.find(prompt => prompt.id === 'prompt_get_task').text = get_task_textarea.value;
-        setSpecialPrompts(specialPrompts);
-        get_task_save_btn.disabled = true;
-        document.getElementById('get_task_prompt_unsaved').classList.add('hidden');
-        browser.runtime.sendMessage({command: "reload_menus"});
-    });
-
-    if(get_task_prompt.text === 'prompt_get_task_full_text'){
-        get_task_prompt.text = browser.i18n.getMessage(get_task_prompt.text);
-    }
-    get_task_textarea.value = get_task_prompt.text;
-    get_task_reset_btn.disabled = (get_task_textarea.value === browser.i18n.getMessage('prompt_get_task_full_text'));
-
-    autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
+    // Full list, kept for token validation. Deliberately NOT filtered like the
+    // suggestions: {%additional_text%} is a real placeholder that this page simply
+    // does not offer, so the editor must not flag it as unknown.
+    activePlaceholders = await getPlaceholders(true);
+    autocompleteSuggestions = activePlaceholders.filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
+    const get_task_textarea_hl = attachEditorHighlight(get_task_textarea);
+    // Flags unknown and unterminated tokens. Type 1 ("reading"),
+    // matching the type_value passed to textareaAutocomplete below.
+    if (get_task_textarea_hl) get_task_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(get_task_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
 });
@@ -149,7 +149,11 @@ function saveOptions(e) {
         console.error("[ThunderAI] Unhandled input type:", element.type);
     }
 
-  browser.storage.sync.set(options);
+  // Guard the default: branch above, which leaves `options` empty — the previous
+  // set(options) wrote nothing in that case, so nothing must be written here either.
+  if (Object.prototype.hasOwnProperty.call(options, element.id)) {
+    mztaPrefs.setPref(element.id, options[element.id]);
+  }
 }
 
 async function restoreOptions() {
@@ -181,14 +185,16 @@ async function restoreOptions() {
             const restoreValue = result[element.id] || default_select_value;
             // Check if option exists
             let optionExists = Array.from(element.options).some(opt => opt.value === restoreValue);
+            // Never synthesize an option for a connection select: its catalogue is closed.
+            let canSynthesize = !isClosedCatalogueSelect(element.id);
             if (element.tomselect) {
-              if (!optionExists && restoreValue !== '') {
+              if (!optionExists && restoreValue !== '' && canSynthesize) {
                 element.tomselect.addOption({ value: restoreValue, text: restoreValue });
               }
               element.tomselect.setValue(restoreValue, true);
               setTomSelectBorder(element.tomselect);
             } else {
-              if (!optionExists && restoreValue !== '') {
+              if (!optionExists && restoreValue !== '' && canSynthesize) {
                 let newOption = new Option(restoreValue, restoreValue);
                 element.add(newOption);
               }
@@ -204,28 +210,11 @@ async function restoreOptions() {
     });
   }
 
-  let getting = await browser.storage.sync.get(prefs_default);
+  let getting = await mztaPrefs.getAllPrefs();
 
   let specialPrompts = await getSpecialPrompts();
-  let get_task_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_get_task');
-
-  if (get_task_prompt) {
-      if (get_task_prompt.api_type && get_task_prompt.api_type !== '') {
-          getting['get_task_connection_type'] = get_task_prompt.api_type;
-      } else {
-          getting['get_task_connection_type'] = getting['connection_type'];
-      }
-      for (const [integration, options] of Object.entries(integration_options_config)) {
-          for (const key of Object.keys(options)) {
-              const propName = `${integration}_${key}`;
-              if (get_task_prompt[propName] !== undefined && get_task_prompt[propName] !== '') {
-                  getting[`get_task_${propName}`] = get_task_prompt[propName];
-              } else {
-                  getting[`get_task_${propName}`] = getting[propName];
-              }
-          }
-      }
-  }
+  resolveFeatureConnectionPrefs(getting,
+      specialPrompts.find(prompt => prompt.id === 'prompt_get_task'), 'get_task');
 
   setCurrentChoice(getting);
 }

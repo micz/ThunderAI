@@ -18,19 +18,30 @@
 
 import './tom-select.base.js';
 import {
-  prefs_default,
-  integration_options_config
+  integration_options_config,
+  valid_connection_types,
+  OLLAMA_THINK_LEVELS
 } from '../../options/mzta-options-default.js';
 import { OpenAI } from '../../js/api/openai_responses.js';
 import { Ollama } from '../../js/api/ollama.js';
 import { OpenAIComp } from '../../js/api/openai_comp.js'
 import { GoogleGemini } from '../../js/api/google_gemini.js';
-import { Anthropic } from '../../js/api/anthropic.js';
+import {
+  Anthropic,
+  ANTHROPIC_MIN_THINKING_BUDGET
+} from '../../js/api/anthropic.js';
+import {
+  getAnthropicModelCapabilities,
+  ANTHROPIC_EFFORT_LEVELS
+} from '../../js/api/anthropic_model_capabilities.js';
+import { getOpenAIModelCapabilities } from '../../js/api/openai_model_capabilities.js';
 import {
   validateCustomData_ChatGPTWeb,
   sanitizeChatGPTModelData,
   sanitizeChatGPTWebCustomData,
   getOriginPermissionPattern,
+  prepareOriginURL,
+  hasNoConnectionSelected,
   setTomSelectBorder
 } from '../../js/mzta-utils.js';
 import { openAICompConfigs } from '../../js/api/openai_comp_configs.js';
@@ -39,11 +50,94 @@ import {
   savePrompt,
   clearPromptAPI
 } from '../../js/mzta-prompts.js';
+import { mztaPrefs } from '../../js/mzta-prefs.js';
+import { mztaManaged } from '../../js/mzta-managed.js';
+import { isManagedSecret, setDisabledRespectingManaged, resolveSpecificIntegrationMode } from './managed-ui.js';
+import {
+  isTestableConnection,
+  runConnectionTest,
+  setConnTestState
+} from '../../js/mzta-connection-test.js';
 
 export const varConnectionUI = {
   permission_all_urls: false,
   permission_ollama_host: false,
   permission_openai_comp_host: false
+}
+
+// Selects that ship their own option for the empty value, either a disabled
+// placeholder (connection_type) or a meaningful entry: "use the API default" for
+// the ChatGPT reasoning ones, "off" for ollama_think. When restoring an empty value
+// these must keep that option selected, unlike every other select which has to show
+// a blank control instead.
+const selects_with_empty_option_suffixes = ['chatgpt_reasoning_summary', 'chatgpt_reasoning_effort', 'ollama_think',
+  'chatgpt_verbosity', 'chatgpt_text_format', 'chatgpt_truncation', 'chatgpt_service_tier'];
+
+export function hasEmptyValueOption(elementId = '') {
+  if (elementId === 'connection_type') return true;
+  // The per-prompt pages prefix every field id with e.g. "summarize_", so match on the suffix.
+  return selects_with_empty_option_suffixes.some((suffix) => elementId === suffix || elementId.endsWith(`_${suffix}`));
+}
+
+// The Ollama think select is an *open* catalogue too: a model may report levels the
+// default list lacks, and buildOllamaThinkOptions() keeps whatever value the select holds
+// when it rebuilds the options. A restore that assigns a level with no <option> yet would
+// leave the select at '' instead, which the rebuild then keeps: the page would show
+// "Default" over the stored (or policy-enforced) level. So the level gets an option first.
+// Call it right before assigning the restored value; a no-op for any other control.
+export function ensureRestorableOption(element, value) {
+  if (!element || element.tagName !== 'SELECT') return;
+  if (!(element.id === 'ollama_think' || element.id.endsWith('_ollama_think'))) return;
+  // String(): a per-prompt value may still be the legacy boolean (see normalizeThink()).
+  const v = (value === undefined || value === null) ? '' : String(value);
+  if (v === '' || Array.from(element.options).some(o => o.value === v)) return;
+  element.add(new Option(v, v));
+}
+
+// Connection-type selects have a *closed* catalogue: their options are built by
+// populateConnectionTypeOptions() and nothing else is valid. Model selects are the
+// opposite — a saved model may legitimately be missing from the fetched list, so
+// restoreOptions() synthesizes an option for it. Applying that fallback to a
+// connection select is what let a stale `chatgpt_web` appear in the per-prompt
+// selects, which deliberately omit it.
+export function isClosedCatalogueSelect(elementId = '') {
+  return elementId === 'connection_type' || elementId.endsWith('_connection_type');
+}
+
+// The connection-type catalogue: single source of truth for both the <option>
+// list built by populateConnectionTypeOptions() and the label lookup below, so a
+// provider can never appear in one and not the other.
+//
+// The values come from valid_connection_types in options/mzta-options-default.js, which
+// is also what the background page validates an enterprise policy against. Only the
+// i18n keys live here, so adding a provider there without a label fails loudly at
+// startup rather than silently rendering an unlabelled option.
+const CONNECTION_TYPE_MSG_KEYS = {
+  chatgpt_web:       'prefs_Connection_type_ChatGPT_Web',
+  chatgpt_api:       'prefs_Connection_type_ChatGPT_API',
+  google_gemini_api: 'prefs_Connection_type_Google_Gemini_API',
+  anthropic_api:     'prefs_Connection_type_Anthropic_API',
+  ollama_api:        'prefs_Connection_type_Ollama_API',
+  openai_comp_api:   'prefs_Connection_type_OpenAI_Comp_API'
+};
+
+const CONNECTION_TYPE_OPTIONS = valid_connection_types.map(value => {
+  const msgKey = CONNECTION_TYPE_MSG_KEYS[value];
+  if (!msgKey) {
+    console.error('[ThunderAI] No label for connection type "' + value +
+      '": add it to CONNECTION_TYPE_MSG_KEYS in pages/_lib/connection-ui.js.');
+  }
+  return { value, msgKey };
+});
+
+// Localized provider name for a connection type. Returns '' for an empty value
+// ("inherit the global connection"), and the raw value for anything unknown, so a
+// stale stored type is still visible rather than silently blank.
+export function getConnectionTypeLabel(value = '') {
+  if (!value) return '';
+  const opt = CONNECTION_TYPE_OPTIONS.find(o => o.value === value);
+  if (!opt) return value;
+  return browser.i18n.getMessage(opt.msgKey) || value;
 }
 
 export async function injectConnectionUI({
@@ -72,25 +166,21 @@ export async function injectConnectionUI({
       .api_key-container { position: relative; display: flex; align-items: center; }
       .toggle-icon { cursor: pointer; margin-left: 5px; }
       .toggle-icon img { width: 16px; height: 16px; vertical-align: middle; }
+      .toggle-icon.managed_secret { cursor: default; }
       .option-input { flex-grow: 1; }
     `;
     document.head.appendChild(style);
   }
 
-  let tpl = `
-  <tr id="${selectId}_tr"${tr_class ? ` class="${tr_class}"` : ''}>
-    <td>
-      <label>
-        <span class="opt_title">__MSG_prefs_Connection_type__</span>
-      </label>
-    </td>
-    <td>
-      <label style="display: flex; align-items: center;">
-        <select id="${selectId}" name="${selectId}" class="option-input"></select>
-        ${customButtonLabel ? `<button id="${modelId_prefix}customButton" style="margin-left: 10px;">${customButtonLabel}</button>` : ''}
-      </label>
-    </td>
-  </tr>
+  // The ChatGPT Web rows carry *unprefixed* ids on purpose: on the options page
+  // and in the setup wizard the element id IS the pref key (saveOptions writes
+  // options[element.id]), so prefixing them there would break persistence.
+  // The flip side is that they can only ever exist once per page, which is why
+  // they are injected only when `no_chatgpt_web` is false — every other consumer
+  // (per-prompt and per-feature panels) passes `no_chatgpt_web: true`, never
+  // offers the `chatgpt_web` option, and would otherwise get N duplicate copies
+  // of these ids from its N injections.
+  const chatgpt_web_rows = `
   <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_apiwebchat_info__</span>
@@ -101,7 +191,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_model__</span>
     </label></td>
@@ -112,7 +202,21 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td><label>
+      <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_model_extended_check__</span>
+    </label></td>
+    <td>
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <label class="mzta_switch">
+          <input type="checkbox" id="chatgpt_web_model_extended_check" name="chatgpt_web_model_extended_check" class="option-input" />
+          <span class="track"></span>
+        </label>
+        <span>__MSG_prefs_OptionText_chatgpt_web_model_extended_check_info__</span>
+      </div>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_project__</span>
       <br><i class="small_info" id="chatgpt_web_project_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b class="lightbold">/g/PROJECT-ID-PROJECT-NAME/project</b>
@@ -125,7 +229,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_custom_gpt__</span>
       <br><i class="small_info" id="chatgpt_web_custom_gpt_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b class="lightbold">/g/CUSTOM-GPT-ID</b>
@@ -139,20 +243,23 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_tempchat__</span>
     </label></td>
     <td>
-      <label>
-        <input type="checkbox" id="chatgpt_web_tempchat" name="chatgpt_web_tempchat" class="option-input" />
-        &nbsp;<span>__MSG_prefs_OptionText_chatgpt_web_tempchat_info__
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <label class="mzta_switch">
+          <input type="checkbox" id="chatgpt_web_tempchat" name="chatgpt_web_tempchat" class="option-input" />
+          <span class="track"></span>
+        </label>
+        <span>__MSG_prefs_OptionText_chatgpt_web_tempchat_info__
           <br>__MSG_prefs_OptionText_Project_No_temporary_chat_warn__
         </span>
-      </label>
+      </div>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_load_wait_time__</span>
     </label></td>
@@ -168,7 +275,22 @@ export async function injectConnectionUI({
         <br><br><button id="btnChatGPTWeb_Tab">__MSG_OpenChatGPTTab__</button>
         <br><br>__MSG_OpenChatGPTTab_Info2__
     </td>
-  </tr>
+  </tr>`;
+
+  let tpl = `
+  <tr id="${selectId}_tr"${tr_class ? ` class="${tr_class}"` : ''}>
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_Connection_type__</span>
+      </label>
+    </td>
+    <td>
+      <label style="display: flex; align-items: center;">
+        <select id="${selectId}" name="${selectId}" class="option-input"></select>
+        ${customButtonLabel ? `<button id="${modelId_prefix}customButton" style="margin-left: 10px;">${customButtonLabel}</button>` : ''}
+      </label>
+    </td>
+  </tr>${no_chatgpt_web ? '' : chatgpt_web_rows}
   <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_ChatGPT_API_Key__</span>
@@ -189,13 +311,17 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateChatGPTModels">__MSG_ChatGPT_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
-      <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" class="option-input"></select>
-      </label>
+      <div class="models_fetch_row">
+        <label class="models_fetch_select">
+          <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" class="option-input"></select>
+        </label>
+        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateChatGPTModels">${MODELS_REFRESH_SVG}<span>__MSG_Models_Fetch__</span></button>
+        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model_fetch_loading" style="display:none">${MODELS_REFRESH_SVG}<span>__MSG_Loading__</span></span>
+      </div>
+      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model_fetch_status" role="status" aria-live="polite" hidden></div>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_api_temperature__</span>
@@ -204,24 +330,69 @@ export async function injectConnectionUI({
     <td>
       <label>
         <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" class="option-input check-number" />
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature_unsupported" class="anthropic_caps_note" style="display:none">__MSG_chatgpt_note_sampling_unsupported__</span>
         <br>__MSG_prefs_chatgpt_api_temperature_Info__
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_ChatGPT_chatgpt_api_store__</span>
       </label>
     </td>
     <td>
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <label class="mzta_switch">
+          <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_store" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_store" class="option-input" />
+          <span class="track"></span>
+        </label>
+        <span>__MSG_ChatGPT_chatgpt_api_store_info__</span>
+      </div>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
       <label>
-        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_store" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_store" class="option-input" />
-        &nbsp;<span>__MSG_ChatGPT_chatgpt_api_store_info__</span>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_reasoning_summary__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_summary" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_summary" class="option-input">
+          <option value="">__MSG_prefs_OptionText_chatgpt_reasoning_disabled__</option>
+          <option value="auto">__MSG_prefs_OptionText_chatgpt_reasoning_summary_auto__</option>
+          <option value="detailed">__MSG_prefs_OptionText_chatgpt_reasoning_summary_detailed__</option>
+        </select>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_summary_unsupported" class="anthropic_caps_note" style="display:none">__MSG_chatgpt_note_reasoning_unsupported__</span>
+        <br>__MSG_prefs_OptionText_chatgpt_reasoning_summary_Info__ <a href="https://platform.openai.com/docs/guides/reasoning">__MSG_more_info_string__</a>
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_reasoning_effort__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_effort" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_effort" class="option-input">
+          <option value="">__MSG_prefs_reasoning_api_default__</option>
+          <option value="none">__MSG_prefs_level_none__</option>
+          <option value="minimal">__MSG_prefs_level_minimal__</option>
+          <option value="low">__MSG_prefs_level_low__</option>
+          <option value="medium">__MSG_prefs_level_medium__</option>
+          <option value="high">__MSG_prefs_level_high__</option>
+          <option value="xhigh">__MSG_prefs_level_xhigh__</option>
+          <option value="max">__MSG_prefs_level_max__</option>
+        </select>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_effort_unsupported" class="anthropic_caps_note" style="display:none">__MSG_chatgpt_note_reasoning_unsupported__</span>
+        <br>__MSG_prefs_OptionText_chatgpt_reasoning_effort_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_ChatGPT_Developer_Messages__</span>
@@ -231,6 +402,185 @@ export async function injectConnectionUI({
       <label>
         <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_developer_messages" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_developer_messages" class="option-input option-textarea"></textarea>
         <br>__MSG_ChatGPT_Developer_Messages_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_extra_body__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_extra_body" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_extra_body" class="option-input option-textarea check-json"></textarea>
+        <div class="json_error" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_extra_body_error" hidden></div>
+        <br>__MSG_prefs_OptionText_chatgpt_extra_body_info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_max_output_tokens__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="number" min="16" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_max_output_tokens" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_max_output_tokens" class="option-input" />
+        <br>__MSG_prefs_OptionText_chatgpt_max_output_tokens_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_top_p__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_top_p" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_top_p" class="option-input check-number" />
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_top_p_unsupported" class="anthropic_caps_note" style="display:none">__MSG_chatgpt_note_sampling_unsupported__</span>
+        <br>__MSG_prefs_OptionText_chatgpt_top_p_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_verbosity__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_verbosity" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_verbosity" class="option-input">
+          <option value="">__MSG_prefs_reasoning_api_default__</option>
+          <option value="low">__MSG_prefs_level_low__</option>
+          <option value="medium">__MSG_prefs_level_medium__</option>
+          <option value="high">__MSG_prefs_level_high__</option>
+        </select>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_verbosity_unsupported" class="anthropic_caps_note" style="display:none">__MSG_chatgpt_note_verbosity_unsupported__</span>
+        <br>__MSG_prefs_OptionText_chatgpt_verbosity_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_text_format__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_text_format" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_text_format" class="option-input">
+          <option value="">__MSG_prefs_reasoning_api_default__</option>
+          <option value="json_object">__MSG_prefs_OptionText_chatgpt_text_format_json_object__</option>
+          <option value="json_schema">__MSG_prefs_OptionText_chatgpt_text_format_json_schema__</option>
+        </select>
+        <br>__MSG_prefs_OptionText_chatgpt_text_format_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_text_format_schema_name__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_text_format_schema_name" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_text_format_schema_name" class="option-input" />
+        <br>__MSG_prefs_OptionText_chatgpt_text_format_schema_name_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_text_format_schema__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_text_format_schema" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_text_format_schema" class="option-input option-textarea check-json"></textarea>
+        <div class="json_error" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_text_format_schema_error" hidden></div>
+        <br>__MSG_prefs_OptionText_chatgpt_text_format_schema_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_truncation__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_truncation" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_truncation" class="option-input">
+          <option value="">__MSG_prefs_reasoning_api_default__</option>
+          <option value="auto">__MSG_prefs_OptionText_chatgpt_truncation_auto__</option>
+          <option value="disabled">__MSG_prefs_OptionText_chatgpt_truncation_disabled__</option>
+        </select>
+        <br>__MSG_prefs_OptionText_chatgpt_truncation_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_service_tier__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_service_tier" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_service_tier" class="option-input">
+          <option value="">__MSG_prefs_reasoning_api_default__</option>
+          <option value="auto">__MSG_prefs_OptionText_chatgpt_service_tier_auto__</option>
+          <option value="default">__MSG_prefs_OptionText_chatgpt_service_tier_default__</option>
+          <option value="flex">__MSG_prefs_OptionText_chatgpt_service_tier_flex__</option>
+          <option value="priority">__MSG_prefs_OptionText_chatgpt_service_tier_priority__</option>
+        </select>
+        <br>__MSG_prefs_OptionText_chatgpt_service_tier_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_prompt_cache_key__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_prompt_cache_key" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_prompt_cache_key" class="option-input" />
+        <br>__MSG_prefs_OptionText_chatgpt_prompt_cache_key_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_safety_identifier__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_safety_identifier" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_safety_identifier" class="option-input" />
+        <br>__MSG_prefs_OptionText_chatgpt_safety_identifier_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_include_encrypted_reasoning__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_include_encrypted_reasoning" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_include_encrypted_reasoning" class="option-input" />
+        &nbsp;<span>__MSG_prefs_OptionText_chatgpt_include_encrypted_reasoning_Info__</span>
       </label>
     </td>
   </tr>
@@ -254,13 +604,17 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateGoogleGeminiModels">__MSG_GoogleGemini_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
-      <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" class="option-input"></select>
-      </label>
+      <div class="models_fetch_row">
+        <label class="models_fetch_select">
+          <select id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" class="option-input"></select>
+        </label>
+        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateGoogleGeminiModels">${MODELS_REFRESH_SVG}<span>__MSG_Models_Fetch__</span></button>
+        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model_fetch_loading" style="display:none">${MODELS_REFRESH_SVG}<span>__MSG_Loading__</span></span>
+      </div>
+      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model_fetch_status" role="status" aria-live="polite" hidden></div>
     </td>
   </tr>
-  <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_api_temperature__</span>
@@ -273,7 +627,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_google_gemini_thinking_budget__</span>
@@ -287,7 +641,60 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_max_output_tokens__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="number" min="1" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_max_output_tokens" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_max_output_tokens" class="option-input" />
+        <br>__MSG_prefs_google_gemini_max_output_tokens_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_top_p__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_top_p" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_top_p" class="option-input check-number"/>
+        <br>__MSG_prefs_google_gemini_top_p_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_top_k__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_top_k" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_top_k" class="option-input check-number"/>
+        <br>__MSG_prefs_google_gemini_top_k_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_extra_body__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_extra_body" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_extra_body" class="option-input option-textarea check-json"></textarea>
+        <div class="json_error" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_extra_body_error" hidden></div>
+        <br>__MSG_prefs_google_gemini_extra_body_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_GoogleGemini_SystemInstruction__</span>
@@ -311,6 +718,21 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
+  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
+    <td><label>
+      <span class="opt_title">__MSG_prefs_Ollama_API_Key__</span>
+      <br><i class="small_info">__MSG_Optional__</i>
+    </label></td>
+    <td>
+      <div class="api_key-container">
+        <label>
+          <input type="password" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_api_key" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_api_key" class="option-input"/>
+        </label>
+        <span class="toggle-icon" id="${modelId_prefix ? `${modelId_prefix}` : ''}toggle_ollama_api_key"><img src="/images/pwd-show.png" id="${modelId_prefix ? `${modelId_prefix}` : ''}pwd-icon_ollama_api_key"></span>
+      </div>
+      <label><br>__MSG_prefs_Ollama_API_Key_Info__</label>
+    </td>
+  </tr>
   <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_api_cors_warning">
     <td colspan="2" style="text-align:center;">
       __MSG_remember_CORS__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]
@@ -327,13 +749,17 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOllamaModels">__MSG_Ollama_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
-      <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" class="option-input"></select>
-      </label>
+      <div class="models_fetch_row">
+        <label class="models_fetch_select">
+          <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" class="option-input"></select>
+        </label>
+        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOllamaModels">${MODELS_REFRESH_SVG}<span>__MSG_Models_Fetch__</span></button>
+        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model_fetch_loading" style="display:none">${MODELS_REFRESH_SVG}<span>__MSG_Loading__</span></span>
+      </div>
+      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model_fetch_status" role="status" aria-live="polite" hidden></div>
     </td>
   </tr>
-   <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
+   <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_api_temperature__</span>
@@ -346,40 +772,79 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_ollama_think__</span>
     </label></td>
     <td>
       <label>
-        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" class="option-input"/>
-        __MSG_prefs_ollama_think_Info__
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" class="option-input"></select>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think_unsupported" class="caps_note" style="display:none">__MSG_ollama_note_thinking_unsupported__</span>
+        <br>__MSG_prefs_ollama_think_Info__
       </label>
     </td>
   </tr>
-  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_ollama_format_json__</span>
     </label></td>
     <td>
-      <label>
-        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_format_json" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_format_json" class="option-input"/>
-        __MSG_prefs_ollama_format_json_Info__
-      </label>
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <label class="mzta_switch">
+          <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_format_json" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_format_json" class="option-input"/>
+          <span class="track"></span>
+        </label>
+        <span>__MSG_prefs_ollama_format_json_Info__</span>
+      </div>
     </td>
   </tr>
-  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_ollama_num_ctx__ <i>[num_ctx]</i></span>
     </label></td>
     <td>
       <label>
         <input type="number" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_num_ctx" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_num_ctx" class="option-input"/>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_num_ctx_max" class="caps_note" style="display:none"></span>
         <br>__MSG_prefs_ollama_num_ctx_Info__
       </label>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td><label>
+      <span class="opt_title">__MSG_prefs_ollama_keep_alive__ <i>[keep_alive]</i></span>
+    </label></td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_keep_alive" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_keep_alive" class="option-input"/>
+        <br>__MSG_prefs_ollama_keep_alive_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td><label>
+      <span class="opt_title">__MSG_Ollama_System_Prompt__</span>
+    </label></td>
+    <td>
+      <label>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_system_prompt" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_system_prompt" class="option-input option-textarea"></textarea>
+        <br>__MSG_Ollama_System_Prompt_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td><label>
+      <span class="opt_title">__MSG_prefs_OptionText_ollama_extra_options__ <i>[options]</i></span>
+    </label></td>
+    <td>
+      <label>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_extra_options" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_extra_options" class="option-input option-textarea check-json"></textarea>
+        <div class="json_error" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_extra_options_error" hidden></div>
+        <br>__MSG_prefs_OptionText_ollama_extra_options_info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OpenAIComp_AvailableServices__</span>
     </label></td>
@@ -411,7 +876,7 @@ export async function injectConnectionUI({
         <br>__MSG_CORS_localhost_warn__
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_openai_comp_use_v1__</span>
     </label></td>
@@ -438,20 +903,27 @@ export async function injectConnectionUI({
   </tr>
   <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
-      <label>
+      <div class="models_label_row">
         <span class="opt_title">__MSG_OpenAIComp_Models__</span>
-        <br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnOpenAICompForceModel" class="btn_small">__MSG_prefs_OpenAIComp_ForceModel__</button>
-      <br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnOpenAICompClearModelsList" class="btn_small">__MSG_prefs_OpenAIComp_ClearModelsList__</button></td>
-      </label>
+        <div class="models_label_actions">
+          <button type="button" id="${modelId_prefix ? `${modelId_prefix}` : ''}btnOpenAICompForceModel" class="models_action_btn models_action_add">${MODELS_PLUS_SVG}<span>__MSG_prefs_OpenAIComp_AddManually__</span></button>
+          <span class="models_action_divider" aria-hidden="true"></span>
+          <button type="button" id="${modelId_prefix ? `${modelId_prefix}` : ''}btnOpenAICompClearModelsList" class="models_action_btn models_action_clear">__MSG_prefs_OpenAIComp_ClearList__</button>
+        </div>
+      </div>
     </td>
     <td>
-      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOpenAICompModels">__MSG_OpenAIComp_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
-      <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" class="option-input"></select>
-      </label>
+      <div class="models_fetch_row">
+        <label class="models_fetch_select">
+          <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" class="option-input"></select>
+        </label>
+        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOpenAICompModels">${MODELS_REFRESH_SVG}<span>__MSG_Models_Fetch__</span></button>
+        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model_fetch_loading" style="display:none">${MODELS_REFRESH_SVG}<span>__MSG_Loading__</span></span>
+      </div>
+      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model_fetch_status" role="status" aria-live="polite" hidden></div>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OpenAIComp_ChatName__</span>
     </label></td>
@@ -462,7 +934,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_api_temperature__</span>
@@ -472,6 +944,20 @@ export async function injectConnectionUI({
       <label>
         <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" class="option-input check-number" />
         <br>__MSG_prefs_openai_comp_temperature_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_extra_body__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_extra_body" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_extra_body" class="option-input option-textarea check-json"></textarea>
+        <div class="json_error" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_extra_body_error" hidden></div>
+        <br>__MSG_prefs_OptionText_openai_comp_extra_body_info__
       </label>
     </td>
   </tr>
@@ -495,13 +981,17 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateAnthropicModels">__MSG_Anthropic_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
-      <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" class="option-input"></select>
-      </label>
+      <div class="models_fetch_row">
+        <label class="models_fetch_select">
+          <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" class="option-input"></select>
+        </label>
+        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateAnthropicModels">${MODELS_REFRESH_SVG}<span>__MSG_Models_Fetch__</span></button>
+        <span class="models_fetch_loading" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model_fetch_loading" style="display:none">${MODELS_REFRESH_SVG}<span>__MSG_Loading__</span></span>
+      </div>
+      <div class="models_fetch_status" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model_fetch_status" role="status" aria-live="polite" hidden></div>
     </td>
   </tr>
-  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_api_temperature__</span>
@@ -510,11 +1000,53 @@ export async function injectConnectionUI({
     <td>
       <label>
         <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" class="option-input check-number" />
-        <br>__MSG_prefs_anthropic_temperature_Info__
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature_unsupported" class="anthropic_caps_note" style="display:none">__MSG_anthropic_note_temperature_unsupported__</span>
+        __MSG_prefs_anthropic_temperature_Info__
       </label>
     </td>
   </tr>
-  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_top_p__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_top_p" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_top_p" class="option-input check-number" />
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_top_p_unsupported" class="anthropic_caps_note" style="display:none">__MSG_anthropic_note_temperature_unsupported__</span>
+        __MSG_prefs_OptionText_anthropic_top_p_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_top_k__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_top_k" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_top_k" class="option-input check-number" />
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_top_k_unsupported" class="anthropic_caps_note" style="display:none">__MSG_anthropic_note_temperature_unsupported__</span>
+        __MSG_prefs_OptionText_anthropic_top_k_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_anthropic_stop_sequences__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_stop_sequences" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_stop_sequences" class="option-input option-textarea"></textarea>
+        <br>__MSG_prefs_OptionText_anthropic_stop_sequences_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_Anthropic_System_Prompt__</span>
@@ -527,7 +1059,37 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td><span class="opt_title">__MSG_prefs_OptionText_anthropic_max_tokens__</span></td>
+    <td>
+      <label>
+        <input type="number" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_max_tokens" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_max_tokens" class="option-input" />
+        <br>__MSG_prefs_OptionText_anthropic_max_tokens_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td><span class="opt_title">__MSG_prefs_OptionText_anthropic_extended_thinking_budget__</span></td>
+    <td>
+      <label>
+        <input type="number" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_extended_thinking_budget" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_extended_thinking_budget" class="option-input" />
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_extended_thinking_budget_unsupported" class="anthropic_caps_note" style="display:none">__MSG_anthropic_note_budget_tokens_unsupported__</span>
+        <div class="json_error" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_extended_thinking_budget_error" hidden></div>
+        __MSG_prefs_OptionText_anthropic_extended_thinking_budget_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td><span class="opt_title">__MSG_prefs_OptionText_anthropic_effort__</span></td>
+    <td>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_effort" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_effort" class="option-input"></select>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_effort_unsupported" class="anthropic_caps_note" style="display:none">__MSG_anthropic_note_effort_unsupported__</span>
+        <br>__MSG_prefs_OptionText_anthropic_effort_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_Anthropic_Version__</span>
@@ -537,24 +1099,6 @@ export async function injectConnectionUI({
       <label>
         <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_version" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_version" class="option-input" />
         <br>__MSG_Anthropic_Version_Info__ <a href="https://docs.anthropic.com/en/api/versioning">https://docs.anthropic.com/en/api/versioning</a>
-      </label>
-    </td>
-  </tr>
-  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
-    <td><span class="opt_title">__MSG_prefs_OptionText_anthropic_max_tokens__</span></td>
-    <td>
-      <label>
-        <input type="number" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_max_tokens" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_max_tokens" class="option-input" />
-        <br>__MSG_prefs_OptionText_anthropic_max_tokens_Info__
-      </label>
-    </td>
-  </tr>
-  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
-    <td><span class="opt_title">__MSG_prefs_OptionText_anthropic_extended_thinking_budget__</span></td>
-    <td>
-      <label>
-        <input type="number" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_extended_thinking_budget" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_extended_thinking_budget" class="option-input" />
-        <br>__MSG_prefs_OptionText_anthropic_extended_thinking_budget_Info__
       </label>
     </td>
   </tr>
@@ -570,11 +1114,18 @@ export async function injectConnectionUI({
 
   const parent = anchorTr.parentElement;
   let last = anchorTr;
+  // Keep the nodes this call inserted: pages may inject more than once (custom
+  // prompts does, one add-form plus one per edited row), so any per-field wiring
+  // below must be scoped to *these* rows. A document-wide querySelectorAll would
+  // re-bind every previously injected field on each new injection.
+  const injectedRows = [];
   rows.forEach(row => {
     const node = document.importNode(row, true);
     parent.insertBefore(node, last.nextSibling);
     last = node;
+    injectedRows.push(node);
   });
+  const queryInjected = (sel) => injectedRows.flatMap(r => [...r.querySelectorAll(sel)]);
 
   const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
 
@@ -591,15 +1142,18 @@ export async function injectConnectionUI({
     console.error('[ThuderAI | injectConnectionUI] Select not found after insertion.');
   }
 
-  conntype_select.addEventListener("change", () => showConnectionOptions(conntype_select));
+  conntype_select.addEventListener("change", () => showConnectionOptions(conntype_select, modelId_prefix));
   conntype_select.addEventListener("change", () => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
   conntype_select.addEventListener("change", () => warn_Ollama_HostEmpty(modelId_prefix));
   conntype_select.addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
   conntype_select.addEventListener("change", () => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
   conntype_select.addEventListener("change", () => warn_Anthropic_APIKeyEmpty(modelId_prefix));
   conntype_select.addEventListener("change", () => warn_Anthropic_VersionEmpty(modelId_prefix));
-  document.getElementById("chatgpt_web_project").addEventListener("input", validateCustomData_ChatGPTWeb);
-  document.getElementById("chatgpt_web_custom_gpt").addEventListener("input", validateCustomData_ChatGPTWeb);
+  // The ChatGPT Web rows exist only when they were injected (see chatgpt_web_rows).
+  if (!no_chatgpt_web) {
+    document.getElementById("chatgpt_web_project").addEventListener("input", validateCustomData_ChatGPTWeb);
+    document.getElementById("chatgpt_web_custom_gpt").addEventListener("input", validateCustomData_ChatGPTWeb);
+  }
   document.getElementById(getPrefixedId("chatgpt_api_key")).addEventListener("change", () => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
   document.getElementById(getPrefixedId("ollama_host")).addEventListener("change", () => warn_Ollama_HostEmpty(modelId_prefix));
   document.getElementById(getPrefixedId("openai_comp_host")).addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
@@ -610,7 +1164,7 @@ export async function injectConnectionUI({
   document.getElementById(getPrefixedId("openai_comp_chat_name")).addEventListener("input", () => resetOpenAICompConfigs(modelId_prefix));
   document.getElementById(getPrefixedId("openai_comp_use_v1")).addEventListener("input", () => resetOpenAICompConfigs(modelId_prefix));
 
-  showConnectionOptions(conntype_select);
+  showConnectionOptions(conntype_select, modelId_prefix);
   loadOpenAICompConfigs(modelId_prefix);
   warn_ChatGPT_APIKeyEmpty(modelId_prefix);
   warn_Ollama_HostEmpty(modelId_prefix);
@@ -624,6 +1178,8 @@ export async function injectConnectionUI({
   const icon_img_chatgpt_api_key = document.getElementById(getPrefixedId('pwd-icon_chatgpt_api_key'));
 
   toggleIcon_chatgpt_api_key.addEventListener('click', () => {
+      // A policy-supplied key is only a placeholder here: nothing to reveal.
+      if (isManagedSecret(passwordField_chatgpt_api_key.value) || toggleIcon_chatgpt_api_key.classList.contains('managed_secret')) return;
       const type = passwordField_chatgpt_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_chatgpt_api_key.setAttribute('type', type);
 
@@ -635,6 +1191,8 @@ export async function injectConnectionUI({
   const icon_img_google_gemini_api_key = document.getElementById(getPrefixedId('pwd-icon_google_gemini_api_key'));
 
   toggleIcon_google_gemini_api_key.addEventListener('click', () => {
+      // A policy-supplied key is only a placeholder here: nothing to reveal.
+      if (isManagedSecret(passwordField_google_gemini_api_key.value) || toggleIcon_google_gemini_api_key.classList.contains('managed_secret')) return;
       const type = passwordField_google_gemini_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_google_gemini_api_key.setAttribute('type', type);
 
@@ -646,10 +1204,25 @@ export async function injectConnectionUI({
   const icon_img_openai_comp_api_key = document.getElementById(getPrefixedId('pwd-icon_openai_comp_api_key'));
 
   toggleIcon_openai_comp_api_key.addEventListener('click', () => {
+      // A policy-supplied key is only a placeholder here: nothing to reveal.
+      if (isManagedSecret(passwordField_openai_comp_api_key.value) || toggleIcon_openai_comp_api_key.classList.contains('managed_secret')) return;
       const type = passwordField_openai_comp_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_openai_comp_api_key.setAttribute('type', type);
 
       icon_img_openai_comp_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
+  });
+
+  const passwordField_ollama_api_key = document.getElementById(getPrefixedId('ollama_api_key'));
+  const toggleIcon_ollama_api_key = document.getElementById(getPrefixedId('toggle_ollama_api_key'));
+  const icon_img_ollama_api_key = document.getElementById(getPrefixedId('pwd-icon_ollama_api_key'));
+
+  toggleIcon_ollama_api_key.addEventListener('click', () => {
+      // A policy-supplied key is only a placeholder here: nothing to reveal.
+      if (isManagedSecret(passwordField_ollama_api_key.value) || toggleIcon_ollama_api_key.classList.contains('managed_secret')) return;
+      const type = passwordField_ollama_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordField_ollama_api_key.setAttribute('type', type);
+
+      icon_img_ollama_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
   });
 
   const passwordField_anthropic_api_key = document.getElementById(getPrefixedId('anthropic_api_key'));
@@ -657,19 +1230,43 @@ export async function injectConnectionUI({
   const icon_img_anthropic_api_key = document.getElementById(getPrefixedId('pwd-icon_anthropic_api_key'));
 
   toggleIcon_anthropic_api_key.addEventListener('click', () => {
+      // A policy-supplied key is only a placeholder here: nothing to reveal.
+      if (isManagedSecret(passwordField_anthropic_api_key.value) || toggleIcon_anthropic_api_key.classList.contains('managed_secret')) return;
       const type = passwordField_anthropic_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordField_anthropic_api_key.setAttribute('type', type);
 
       icon_img_anthropic_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
   });
 
+  // Typing an own key over an unlocked policy key must bring the eye back; a lock applied
+  // later by applyManagedUI() must turn it into the padlock.
+  SECRET_TOGGLE_FIELDS.forEach(field => {
+    const input = document.getElementById(getPrefixedId(field));
+    input?.addEventListener('input', () => syncSecretToggle(field, modelId_prefix));
+    input?.addEventListener('mzta-managed', () => syncSecretToggle(field, modelId_prefix));
+  });
+  updateSecretToggles(modelId_prefix);
+
+  // applyManagedUI() locks a model select after the checks above ran: run them again so
+  // its "Update" button is disabled too (see isManagedModel()).
+  [
+    ['chatgpt_model', [warn_ChatGPT_APIKeyEmpty]],
+    ['google_gemini_model', [warn_GoogleGemini_APIKeyEmpty]],
+    ['ollama_model', [warn_Ollama_HostEmpty]],
+    ['openai_comp_model', [warn_OpenAIComp_HostEmpty]],
+    ['anthropic_model', [warn_Anthropic_APIKeyEmpty, warn_Anthropic_VersionEmpty]],
+  ].forEach(([model, checks]) => {
+    getModelEl(model, modelId_prefix)?.addEventListener('mzta-managed', () => checks.forEach(check => check(modelId_prefix)));
+  });
+
+  // Null when the ChatGPT Web rows were not injected (see chatgpt_web_rows).
   const btnChatGPTWeb_Tab = document.getElementById('btnChatGPTWeb_Tab');
-  btnChatGPTWeb_Tab.addEventListener('click', async () => {
-    let prefs_mod = await browser.storage.sync.get({
-      chatgpt_web_model: prefs_default.chatgpt_web_model,
-      chatgpt_web_project: prefs_default.chatgpt_web_project,
-      chatgpt_web_custom_gpt: prefs_default.chatgpt_web_custom_gpt
-    });
+  btnChatGPTWeb_Tab?.addEventListener('click', async () => {
+    let prefs_mod = await mztaPrefs.getPrefs([
+      'chatgpt_web_model',
+      'chatgpt_web_project',
+      'chatgpt_web_custom_gpt'
+    ]);
     
     let base_url = 'https://chatgpt.com';
     let model_opt = '';
@@ -714,17 +1311,13 @@ export async function injectConnectionUI({
     }
   });
 
-  let prefs = await browser.storage.sync.get({
-    chatgpt_web_model: '',
-    chatgpt_model: '',
-    ollama_model: '',
-    openai_comp_model: '',
-    google_gemini_model: '',
-    anthropic_model: '',
-    anthropic_version: '',
-    chatgpt_win_height: 0,
-    chatgpt_win_width: 0
-  });
+  let prefs = await mztaPrefs.getPrefs([
+    'chatgpt_model',
+    'ollama_model',
+    'openai_comp_model',
+    'google_gemini_model',
+    'anthropic_model'
+  ]);
   
   // OpenAI API ChatGPT model fetching
   let select_chatgpt_model = getModelEl('chatgpt_model', modelId_prefix);
@@ -734,47 +1327,46 @@ export async function injectConnectionUI({
   select_chatgpt_model.appendChild(chatgpt_option);
   select_chatgpt_model.value = prefs.chatgpt_model;
   select_chatgpt_model.addEventListener("change", () => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
+  select_chatgpt_model.addEventListener("change", () => updateOpenAIModelCapabilityUI(modelId_prefix));
+  // Not called here: at injection time the select is still empty, so the
+  // capabilities would be computed from an empty model ID. The host pages call
+  // updateOpenAIModelCapabilityUI() themselves after their restore.
 
   document.getElementById(getPrefixedId('btnUpdateChatGPTModels')).addEventListener('click', async () => {
-    document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'inline';
+    // The organization's key never reaches this page (MANAGED_SECRET_MARKER stands in for
+    // it), so the models cannot be fetched with it from here.
+    if (isManagedSecret(document.getElementById(getPrefixedId("chatgpt_api_key")).value)) return;
+    const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateChatGPTModels', 'chatgpt');
+    fetchUI.loading();
     let openai = new OpenAI({
       apiKey: document.getElementById(getPrefixedId("chatgpt_api_key")).value,
     });
     let granted = await messenger.permissions.request({ origins: ["https://*.openai.com/*"] });
     if(!granted){
-        document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
         taLog.log("OpenAI API permission denied");
-        alert(browser.i18n.getMessage("Optional_Permission_Denied_Model_Fetching"));
+        fetchUI.error(browser.i18n.getMessage("Optional_Permission_Denied_Model_Fetching"));
         return;
     }
-    openai.fetchModels().then((data) => {
-      if(!data.ok){
-        let errorDetail;
-        try {
-          errorDetail = JSON.parse(data.error);
-          errorDetail = errorDetail.error.message;
-        } catch (e) {
-          errorDetail = data.error;
-        }
-        document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
-        console.error("[ThunderAI] " + browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("ChatGPT_Models_Error_fetching")+": " + errorDetail);
-        return;
-      }
-      taLog.log("ChatGPT models: " + JSON.stringify(data));
-      data.response.forEach(model => {
-        if (!Array.from(select_chatgpt_model.options).some(option => option.value === model.id)) {
-          const option = document.createElement('option');
-          option.value = model.id;
-          option.text = model.id;
-          select_chatgpt_model.appendChild(option);
-        }
-      });
-      syncTomSelect(select_chatgpt_model);
-      document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
-    });
-    
     warn_ChatGPT_APIKeyEmpty(modelId_prefix);
+    let data = await fetchModelsWithTimeout(openai);
+    if(!data.ok){
+      console.error("[ThunderAI] " + browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
+      fetchUI.error(browser.i18n.getMessage("ChatGPT_Models_Error_fetching") + ": " + parseModelsFetchError(data.error));
+      return;
+    }
+    taLog.log("ChatGPT models: " + JSON.stringify(data));
+    data.response.forEach(model => {
+      if (!Array.from(select_chatgpt_model.options).some(option => option.value === model.id)) {
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.text = model.id;
+        select_chatgpt_model.appendChild(option);
+      }
+    });
+    syncTomSelect(select_chatgpt_model);
+    autoSelectSingleModel(select_chatgpt_model);
+    updateOpenAIModelCapabilityUI(modelId_prefix);
+    fetchUI.done();
   });
 
   // Google Gemini API model fetching
@@ -787,38 +1379,33 @@ export async function injectConnectionUI({
   select_google_gemini_model.addEventListener("change", () => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateGoogleGeminiModels')).addEventListener('click', async () => {
-    document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'inline';
+    // The organization's key never reaches this page (MANAGED_SECRET_MARKER stands in for
+    // it), so the models cannot be fetched with it from here.
+    if (isManagedSecret(document.getElementById(getPrefixedId("google_gemini_api_key")).value)) return;
+    const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateGoogleGeminiModels', 'google_gemini');
+    fetchUI.loading();
     let google_gemini = new GoogleGemini({
       apiKey: document.getElementById(getPrefixedId("google_gemini_api_key")).value,
     });
-    google_gemini.fetchModels().then((data) => {
-      if(!data.ok){
-        let errorDetail;
-        try {
-          errorDetail = JSON.parse(data.error);
-          errorDetail = errorDetail.error.message;
-        } catch (e) {
-          errorDetail = data.error;
-        }
-        document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'none';
-        console.error("[ThunderAI] " + browser.i18n.getMessage("GoogleGemini_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("GoogleGemini_Models_Error_fetching")+": " + errorDetail);
-        return;
-      }
-      taLog.log("GoogleGemini models: " + JSON.stringify(data));
-      data.response.forEach(model => {
-        if (!Array.from(select_google_gemini_model.options).some(option => option.value === model.name.substring(model.name.lastIndexOf("/") + 1))) {
-          const option = document.createElement('option');
-          option.value = model.name.substring(model.name.lastIndexOf("/") + 1);
-          option.text = model.displayName;
-          select_google_gemini_model.appendChild(option);
-        }
-      });
-      syncTomSelect(select_google_gemini_model);
-      document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'none';
-    });
-    
     warn_GoogleGemini_APIKeyEmpty(modelId_prefix);
+    let data = await fetchModelsWithTimeout(google_gemini);
+    if(!data.ok){
+      console.error("[ThunderAI] " + browser.i18n.getMessage("GoogleGemini_Models_Error_fetching"));
+      fetchUI.error(browser.i18n.getMessage("GoogleGemini_Models_Error_fetching") + ": " + parseModelsFetchError(data.error));
+      return;
+    }
+    taLog.log("GoogleGemini models: " + JSON.stringify(data));
+    data.response.forEach(model => {
+      if (!Array.from(select_google_gemini_model.options).some(option => option.value === model.name.substring(model.name.lastIndexOf("/") + 1))) {
+        const option = document.createElement('option');
+        option.value = model.name.substring(model.name.lastIndexOf("/") + 1);
+        option.text = model.displayName;
+        select_google_gemini_model.appendChild(option);
+      }
+    });
+    syncTomSelect(select_google_gemini_model);
+    autoSelectSingleModel(select_google_gemini_model);
+    fetchUI.done();
   });
 
   // Ollama API Model fetching
@@ -828,58 +1415,64 @@ export async function injectConnectionUI({
   ollama_option.text = prefs.ollama_model;
   select_ollama_model.appendChild(ollama_option);
   select_ollama_model.value = prefs.ollama_model;
+  // Seed the think select with the full catalogue now, while the panel is being
+  // injected: the row ships empty from the template, and every page restores its
+  // saved values (restoreOptions()) BEFORE the first capability probe can narrow the
+  // list down. Without an <option> to attach to, that restore would silently drop the
+  // stored level. The probe later rebuilds the list from what the model reports,
+  // preserving whatever is selected.
+  buildOllamaThinkOptions(document.getElementById(getPrefixedId('ollama_think')), null);
+
   select_ollama_model.addEventListener("change", () => warn_Ollama_HostEmpty(modelId_prefix));
+  select_ollama_model.addEventListener("change", () => updateOllamaModelCapabilityUI(modelId_prefix));
+  // The host and the key change which server answers /api/show, so the capabilities
+  // have to be re-read when either is edited, not just on a model change.
+  document.getElementById(getPrefixedId("ollama_host")).addEventListener("change", () => updateOllamaModelCapabilityUI(modelId_prefix));
+  document.getElementById(getPrefixedId("ollama_api_key")).addEventListener("change", () => updateOllamaModelCapabilityUI(modelId_prefix));
+  // No initial call here: like the Claude one, this runs before restoreOptions() has
+  // written the saved model into the select, so it would probe an empty model. The
+  // pages call updateOllamaModelCapabilityUI() themselves after the restore.
 
   document.getElementById(getPrefixedId('btnUpdateOllamaModels')).addEventListener('click', async () => {
-    document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'inline';
+    // The organization's key never reaches this page (MANAGED_SECRET_MARKER stands in for
+    // it), so the models cannot be fetched with it from here.
+    if (isManagedSecret(document.getElementById(getPrefixedId("ollama_api_key")).value)) return;
+    const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateOllamaModels', 'ollama');
+    fetchUI.loading();
     let ollama = new Ollama({
       host: document.getElementById(getPrefixedId("ollama_host")).value,
+      api_key: document.getElementById(getPrefixedId("ollama_api_key")).value,
     });
-    try {
-      let data = await ollama.fetchModels();
-      if(!data){
-        document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
-        console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-        return;
-      }
-      if(!data.ok){
-        let errorDetail;
-        try {
-          errorDetail = JSON.parse(data.error);
-          errorDetail = errorDetail.error.message;
-        } catch (e) {
-          errorDetail = data.error;
-        }
-        document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
-        console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + errorDetail);
-        return;
-      }
-      if(data.response.models.length == 0){
-        document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
-        console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + browser.i18n.getMessage("API_Models_Error_NoModels"));
-        return;
-      }
-      taLog.log("Ollama models: " + JSON.stringify(data));
-      data.response.models.forEach(model => {
-        if (!Array.from(select_ollama_model.options).some(option => option.value === model.model)) {
-          const option = document.createElement('option');
-          option.value = model.model;
-          option.text = model.name + " (" + model.model + ")";
-          select_ollama_model.appendChild(option);
-        }
-      });
-      syncTomSelect(select_ollama_model);
-      document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
-    } catch (error) {
-      document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
-      taLog.error(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-      alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + error.message);
-    }
-    
     warn_Ollama_HostEmpty(modelId_prefix);
+    let data = await fetchModelsWithTimeout(ollama);
+    if(!data){
+      console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+      fetchUI.error(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+      return;
+    }
+    if(!data.ok){
+      console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+      fetchUI.error(browser.i18n.getMessage("Ollama_Models_Error_fetching") + ": " + parseModelsFetchError(data.error));
+      return;
+    }
+    if(!data.response?.models?.length){
+      console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+      fetchUI.error(browser.i18n.getMessage("Ollama_Models_Error_fetching") + ": " + browser.i18n.getMessage("API_Models_Error_NoModels"));
+      return;
+    }
+    taLog.log("Ollama models: " + JSON.stringify(data));
+    data.response.models.forEach(model => {
+      if (!Array.from(select_ollama_model.options).some(option => option.value === model.model)) {
+        const option = document.createElement('option');
+        option.value = model.model;
+        option.text = model.name + " (" + model.model + ")";
+        select_ollama_model.appendChild(option);
+      }
+    });
+    syncTomSelect(select_ollama_model);
+    autoSelectSingleModel(select_ollama_model);
+    updateOllamaModelCapabilityUI(modelId_prefix);
+    fetchUI.done();
   });
 
   // OpenAI Comp API Model fetching
@@ -892,10 +1485,13 @@ export async function injectConnectionUI({
   select_openai_comp_model.addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateOpenAICompModels')).addEventListener('click', async () => {
-    document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'inline';
-    const openai_comp_host = document.getElementById(getPrefixedId("openai_comp_host")).value;
+    // The organization's key never reaches this page (MANAGED_SECRET_MARKER stands in for
+    // it), so the models cannot be fetched with it from here.
+    if (isManagedSecret(document.getElementById(getPrefixedId("openai_comp_api_key")).value)) return;
+    const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateOpenAICompModels', 'openai_comp');
     // Make sure we may talk to the API host (same pattern as the ChatGPT/Anthropic buttons).
     // Grants cover the whole origin, so all API paths of that host are allowed.
+    const openai_comp_host = document.getElementById(getPrefixedId("openai_comp_host")).value;
     if (openai_comp_host != '' && !openai_comp_host.includes("localhost") && !openai_comp_host.includes("127.0.0.1")) {
       const origin_pattern = getOriginPermissionPattern(openai_comp_host);
       let host_granted = await messenger.permissions.contains({ origins: [origin_pattern] });
@@ -903,45 +1499,36 @@ export async function injectConnectionUI({
         host_granted = await messenger.permissions.request({ origins: [origin_pattern] });
       }
       if (!host_granted) {
-        document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'none';
         taLog.warn("OpenAI Comp API host permission denied");
         alert(browser.i18n.getMessage("Optional_Permission_Denied_Model_Fetching"));
         return;
       }
     }
+    fetchUI.loading();
     let openai_comp = new OpenAIComp({
       host: document.getElementById(getPrefixedId("openai_comp_host")).value,
       apiKey: document.getElementById(getPrefixedId("openai_comp_api_key")).value,
       use_v1: document.getElementById(getPrefixedId("openai_comp_use_v1")).checked,
     });
-    openai_comp.fetchModels().then((data) => {
-      if(!data.ok){
-        let errorDetail;
-        try {
-          errorDetail = JSON.parse(data.error);
-          errorDetail = errorDetail.error.message;
-        } catch (e) {
-          errorDetail = data.error;
-        }
-        document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'none';
-        console.error("[ThunderAI] " + browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching")+": " + errorDetail);
-        return;
-      }
-      taLog.log("OpenAIComp models: " + JSON.stringify(data));
-      data.response.forEach(model => {
-        if (!Array.from(select_openai_comp_model.options).some(option => option.value === model.id)) {
-          const option = document.createElement('option');
-          option.value = model.id;
-          option.text = model.id;
-          select_openai_comp_model.appendChild(option);
-        }
-      });
-      syncTomSelect(select_openai_comp_model);
-      document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'none';
-    });
-    
     warn_OpenAIComp_HostEmpty(modelId_prefix);
+    let data = await fetchModelsWithTimeout(openai_comp);
+    if(!data.ok){
+      console.error("[ThunderAI] " + browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
+      fetchUI.error(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching") + ": " + parseModelsFetchError(data.error));
+      return;
+    }
+    taLog.log("OpenAIComp models: " + JSON.stringify(data));
+    data.response.forEach(model => {
+      if (!Array.from(select_openai_comp_model.options).some(option => option.value === model.id)) {
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.text = model.id;
+        select_openai_comp_model.appendChild(option);
+      }
+    });
+    syncTomSelect(select_openai_comp_model);
+    autoSelectSingleModel(select_openai_comp_model);
+    fetchUI.done();
   });
 
    // Anthropic API model fetching
@@ -953,51 +1540,56 @@ export async function injectConnectionUI({
   select_anthropic_model.value = prefs.anthropic_model;
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_APIKeyEmpty(modelId_prefix));
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_VersionEmpty(modelId_prefix));
+  select_anthropic_model.addEventListener("change", () => updateAnthropicModelCapabilityUI(modelId_prefix));
+  // The effort select gets every level now, before restoreOptions() runs: with no <option>
+  // yet, the restore would find nothing to select and the stored (or enforced) value would
+  // be lost - updateAnthropicModelCapabilityUI() later narrows the list and keeps whatever
+  // is selected by then.
+  fillAnthropicEffortOptions(document.getElementById(getPrefixedId('anthropic_effort')), ANTHROPIC_EFFORT_LEVELS);
+  // No initial call here: this runs before restoreOptions() has written the saved
+  // model into the select, so the capabilities would be computed from an empty
+  // model ID. The page calls updateAnthropicModelCapabilityUI() itself after the
+  // restore, next to showConnectionOptions().
 
   document.getElementById(getPrefixedId('btnUpdateAnthropicModels')).addEventListener('click', async () => {
-    document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'inline';
+    // The organization's key never reaches this page (MANAGED_SECRET_MARKER stands in for
+    // it), so the models cannot be fetched with it from here.
+    if (isManagedSecret(document.getElementById(getPrefixedId("anthropic_api_key")).value)) return;
+    const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateAnthropicModels', 'anthropic');
+    fetchUI.loading();
     let anthropic = new Anthropic({
       apiKey: document.getElementById(getPrefixedId("anthropic_api_key")).value,
       version: document.getElementById(getPrefixedId("anthropic_version")).value,
     });
     let granted = await messenger.permissions.request({ origins: ["https://*.anthropic.com/*"] });
     if(!granted){
-        document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
         taLog.warn("Claude API web permission denied");
-        alert(browser.i18n.getMessage("Optional_Permission_Denied_Model_Fetching"));
+        fetchUI.error(browser.i18n.getMessage("Optional_Permission_Denied_Model_Fetching"));
         return;
     }
-    anthropic.fetchModels().then((data) => {
-      if(!data.ok){
-        let errorDetail;
-        try {
-          errorDetail = JSON.parse(data.error);
-          errorDetail = errorDetail.error.message;
-        } catch (e) {
-          errorDetail = data.error;
-        }
-        document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
-        console.error("[ThunderAI] " + browser.i18n.getMessage("Anthropic_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("Anthropic_Models_Error_fetching")+": " + errorDetail);
-        return;
-      }
-      taLog.log("Anthropic models: " + JSON.stringify(data));
-      data.response.forEach(model => {
-        const existingOption = Array.from(select_anthropic_model.options).find(option => option.value === model.id);
-        if (existingOption) {
-          existingOption.text = model.display_name + " (" + model.id + ")";
-        } else {
-          const option = document.createElement('option');
-          option.value = model.id;
-          option.text = model.display_name + " (" + model.id + ")";
-          select_anthropic_model.appendChild(option);
-        }
-      });
-      syncTomSelect(select_anthropic_model);
-      document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
-    });
-    
     warn_Anthropic_APIKeyEmpty(modelId_prefix);
+    let data = await fetchModelsWithTimeout(anthropic);
+    if(!data.ok){
+      console.error("[ThunderAI] " + browser.i18n.getMessage("Anthropic_Models_Error_fetching"));
+      fetchUI.error(browser.i18n.getMessage("Anthropic_Models_Error_fetching") + ": " + parseModelsFetchError(data.error));
+      return;
+    }
+    taLog.log("Anthropic models: " + JSON.stringify(data));
+    data.response.forEach(model => {
+      const existingOption = Array.from(select_anthropic_model.options).find(option => option.value === model.id);
+      if (existingOption) {
+        existingOption.text = model.display_name + " (" + model.id + ")";
+      } else {
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.text = model.display_name + " (" + model.id + ")";
+        select_anthropic_model.appendChild(option);
+      }
+    });
+    syncTomSelect(select_anthropic_model);
+    autoSelectSingleModel(select_anthropic_model);
+    updateAnthropicModelCapabilityUI(modelId_prefix);
+    fetchUI.done();
   });
 
     document.getElementById(getPrefixedId('btnOpenAICompForceModel')).addEventListener('click', () => {
@@ -1051,10 +1643,31 @@ export async function injectConnectionUI({
       }
     });
 
-   document.querySelectorAll('.check-number').forEach(input => {
+   // Scoped to the rows this call injected (see queryInjected).
+   queryInjected('.check-number').forEach(input => {
     input.addEventListener('input', warn_InvalidNumber);
    });
-  
+
+   queryInjected('.check-json').forEach(input => {
+    input.addEventListener('input', warn_InvalidJson);
+   });
+
+   // Also bound on anthropic_max_tokens: it is the ceiling the budget is checked
+   // against, so lowering it can invalidate a budget that was fine a moment ago.
+   // Scoped to the injected rows like the two sweeps above -- this page may host
+   // several connection forms at once.
+   queryInjected('#' + CSS.escape(getPrefixedId('anthropic_extended_thinking_budget'))
+     + ', #' + CSS.escape(getPrefixedId('anthropic_max_tokens'))).forEach(input => {
+    input.addEventListener('input', () => checkAnthropicThinkingBudget(modelId_prefix));
+   });
+
+   // The schema name and schema fields only apply to the json_schema format, so
+   // they follow the format select. Scoped to the injected rows for the same
+   // reason as the sweeps above.
+   queryInjected('#' + CSS.escape(getPrefixedId('chatgpt_text_format'))).forEach(select => {
+    select.addEventListener('change', () => updateOpenAITextFormatUI(modelId_prefix));
+   });
+
   warn_ChatGPT_APIKeyEmpty(modelId_prefix);
   warn_Ollama_HostEmpty(modelId_prefix);
   warn_OpenAIComp_HostEmpty(modelId_prefix);
@@ -1077,20 +1690,38 @@ export async function injectConnectionUI({
   ['chatgpt_model', 'google_gemini_model', 'ollama_model', 'openai_comp_model', 'anthropic_model'].forEach(id => {
     const el = document.getElementById(getPrefixedId(id));
     if (el && !el.tomselect) {
+      let deleting = false;
       let ts = new TomSelect(el, {
         create: false,
         maxOptions: null,
         maxItems: 1,
+        closeAfterSelect: true,
         sortField: {
           field: "text",
           direction: "asc"
-        }
+        },
+        // Backspace/Delete remove the selected model and fire `change` too, but
+        // there the control must stay open and focused so the user can type a
+        // new search right away. `onDelete` runs before the item is removed, so
+        // it can flag the deletion for the `change` handler below.
+        onDelete: function() { deleting = true; }
       });
       ts.on('change', function() {
         setTomSelectBorder(this);
+        if (deleting) {
+          deleting = false;
+          // Keep the dropdown open with a live caret: Tom Select only shows the
+          // search input while the control is focused.
+          this.open();
+          this.control_input.focus();
+          return;
+        }
+        // Drop the focus right after the selection, so the search input is
+        // hidden and the control goes back to its compact state immediately.
+        this.blur();
       });
       if (el.value) {
-        ts.setValue(el.value);
+        ts.setValue(el.value, true);   // silent, the border is set right below
       }
       setTomSelectBorder(ts);
     }
@@ -1099,6 +1730,145 @@ export async function injectConnectionUI({
   return {
     select: conntype_select,
     onTypeChange: (fn) => { onTypeChange = fn; fn(conntype_select.value, { select: conntype_select }); }
+  };
+}
+
+// Builds a connection test strip (same markup as the static #mzta_conn_test of the
+// options page) right after `afterEl`, for the hosts that create it at runtime: the
+// feature pages and each Custom Prompts form. Any input/change inside `scopeEls`
+// (that form's connection fields) brings it back to idle, and its link runs the
+// non-persistent check on the fields whose ids start with `idPrefix`.
+// `getConnType` returns the connection type currently selected in that form.
+// The strip starts hidden: show it with setConnTestStripVisible().
+export function attachConnTestStrip({ afterEl, scopeEls = [], getConnType, idPrefix = '', id = '' }) {
+  const strip = document.createElement('div');
+  if (id) strip.id = id;
+  strip.className = 'conn_test_strip';
+  strip.style.display = 'none';
+  const dot = document.createElement('span');
+  dot.className = 'conn_test_dot';
+  const text = document.createElement('span');
+  text.className = 'conn_test_text';
+  const link = document.createElement('a');
+  link.href = '#';
+  link.className = 'conn_test_link';
+  strip.append(dot, text, link);
+  afterEl.after(strip);
+  setConnTestState('idle', '', strip);
+
+  scopeEls.forEach(el => {
+    el.addEventListener('input', () => setConnTestState('idle', '', strip));
+    el.addEventListener('change', () => setConnTestState('idle', '', strip));
+  });
+  link.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const connType = getConnType();
+    if (!isTestableConnection(connType)) return;
+    setConnTestState('loading', '', strip);
+    const result = await runConnectionTest(connType, idPrefix);
+    if (result.status === 'ok') {
+      setConnTestState('ok', result.apiName, strip);
+    } else {
+      setConnTestState('error', result.message, strip);
+    }
+    // A successful test may have been the moment the host permission was granted,
+    // so re-probe the model capabilities now that /api/show can actually be reached.
+    if (connType === 'ollama_api' && result.status === 'ok') {
+      updateOllamaModelCapabilityUI(idPrefix);
+    }
+  });
+  return strip;
+}
+
+// Shows the strip only for a testable connection type (an empty "inherit" value and
+// ChatGPT Web are not), and resets it to idle: a previous result no longer applies.
+export function setConnTestStripVisible(strip, connType, visible = true) {
+  if (!strip) return;
+  strip.style.display = (visible && isTestableConnection(connType)) ? 'flex' : 'none';
+  setConnTestState('idle', '', strip);
+}
+
+// Per-connection "Advanced options" disclosure for the feature pages, mirroring
+// the options page (#mzta_conn_adv_btn + #connection_ui_adv_table), followed by
+// the connection test strip (#mzta_conn_test). The button, the table and the
+// strip are built here, so the 6 feature pages need no extra markup.
+// Feature pages host a single connection form, so the document-wide query that
+// moves the .conn_adv rows is safe (unlike custom prompts, see there).
+// The moved rows keep their .specific_integration_sub / conntype_* classes, so
+// the per-provider visibility of _updateVisibility() still reaches them.
+const CONN_ADV_GEAR_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>';
+const CONN_ADV_CHEV_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+
+// Icons of the model fields, used in the injectConnectionUI() template: the
+// "+ Add manually" action (OpenAI Comp) and the "Update list" buttons. Decorative,
+// the buttons carry their own text.
+const MODELS_PLUS_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+const MODELS_REFRESH_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>';
+
+function parseSvg(svgText) {
+  return document.importNode(new DOMParser().parseFromString(svgText, 'image/svg+xml').documentElement, true);
+}
+
+function setupFeatureConnAdv({ getConnType, idPrefix }) {
+  const coreTable = document.getElementById('connection_ui_table');
+  if (!coreTable) return null;
+
+  let btn = document.getElementById('mzta_conn_adv_btn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'mzta_conn_adv_btn';
+    btn.type = 'button';
+    const labelSpan = document.createElement('span');
+    labelSpan.style.cssText = 'display:flex;align-items:center;gap:9px;';
+    labelSpan.appendChild(parseSvg(CONN_ADV_GEAR_SVG));
+    labelSpan.appendChild(document.createTextNode(browser.i18n.getMessage('prefs_advanced_options')));
+    const chev = document.createElement('span');
+    chev.className = 'chev';
+    chev.appendChild(parseSvg(CONN_ADV_CHEV_SVG));
+    btn.appendChild(labelSpan);
+    btn.appendChild(chev);
+    coreTable.after(btn);
+  }
+
+  let advTable = document.getElementById('connection_ui_adv_table');
+  if (!advTable) {
+    advTable = document.createElement('table');
+    advTable.id = 'connection_ui_adv_table';
+    advTable.appendChild(document.createElement('tbody'));
+    btn.after(advTable);
+  }
+  const advBody = advTable.tBodies[0] || advTable.appendChild(document.createElement('tbody'));
+  coreTable.querySelectorAll('tr.conn_adv').forEach(tr => advBody.appendChild(tr));
+
+  // The unprefixed id is safe for the same single-form reason.
+  const testStrip = document.getElementById('mzta_conn_test') || attachConnTestStrip({
+    afterEl: advTable,
+    scopeEls: [coreTable, advTable],
+    getConnType,
+    idPrefix,
+    id: 'mzta_conn_test'
+  });
+
+  const reset = () => {
+    btn.setAttribute('aria-expanded', 'false');
+    advTable.classList.add('hidden');
+  };
+  btn.addEventListener('click', () => {
+    const expanded = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+    advTable.classList.toggle('hidden', expanded);
+  });
+  reset();
+
+  return {
+    reset,
+    // Hidden (and collapsed) while there is nothing to disclose: integration
+    // off, or no provider chosen yet.
+    setVisible: (visible) => {
+      btn.style.display = visible ? '' : 'none';
+      if (!visible) reset();
+    },
+    setTestVisible: (visible) => setConnTestStripVisible(testStrip, getConnType(), visible)
   };
 }
 
@@ -1126,10 +1896,25 @@ export async function initializeSpecificIntegrationUI({
       console.error(`Failed to inject connection UI (${prefix})`, e);
   }
 
+  // Move the advanced rows behind the "Advanced options" disclosure.
+  const connAdv = setupFeatureConnAdv({
+      getConnType: () => document.getElementById(conntype_select_id)?.value,
+      idPrefix: model_prefix
+  });
+
   // 2. Restore Options
   if (restoreOptionsCallback) {
       await restoreOptionsCallback();
   }
+
+  // Flag any malformed JSON already stored: the fields are filled now.
+  checkJsonFields();
+
+  // Same reason: the saved Claude model is in the select now, so the per-model
+  // option availability can finally be computed.
+  updateAnthropicModelCapabilityUI(model_prefix);
+  updateOllamaModelCapabilityUI(model_prefix);
+  updateOpenAIModelCapabilityUI(model_prefix);
 
   // 3. Setup Logic
   const use_specific_integration_el = document.getElementById(use_specific_integration_id);
@@ -1137,23 +1922,53 @@ export async function initializeSpecificIntegrationUI({
   const conntype_row = document.getElementById(conntype_select_id + '_tr');
   const conntype_end_el = document.getElementById('connection_ui_end');
 
+  // The panel's mode, decided once from the policy and the global connection (see
+  // resolveSpecificIntegrationMode() in managed-ui.js): every decision below reads `mode`.
+  // Hydrated by the preference reads above (restoreOptionsCallback), so the synchronous lock
+  // state it reads is reliable.
+  //  - locked_off: the prompt this page loads already has its provider override hidden
+  //    (applyLockedOffIntegrations() in js/mzta-prompts.js), and the stored one must survive
+  //    untouched until the policy is removed: the toggle stays off, is never forced on as
+  //    mandatory, and nothing here writes the prompt;
+  //  - policy: the prompt already carries the policy's connection (applyPolicyConnections()),
+  //    the switch and the type select are locked on by the preferences the entry implies, and
+  //    applyManagedUI() locks every enforced field. Nothing is written on page open, and a user
+  //    change writes only the fields the policy leaves unlocked;
+  //  - locked_on: the switch is the policy's, the connection the user's;
+  //  - mandatory / free: as without a policy.
+  let globalPrefs = await mztaPrefs.getPrefs(['connection_type']);
+  const mode = resolveSpecificIntegrationMode(prefix, globalPrefs.connection_type);
+  if (mode.switchValue !== null) use_specific_integration_el.checked = mode.switchValue;
+
   // Helper to update prompt.
   // Serialized through _updatePromptQueue so concurrent callers can't interleave
   // their load-modify-save and persist a stale/wrong value.
+  // `userField`: the prompt field ({integration}_{key}) whose control the user just changed, if
+  // any. Passed on as the transient _user_fields, so that setSpecialPrompts() saves it even when
+  // it equals the policy default of an unlocked field: the user chose it (spec 08, storage gate).
   let _updatePromptQueue = Promise.resolve();
-  const _updatePrompt = () => {
+  const _updatePrompt = (userField = '') => {
+      if (!mode.writesPrompt) return _updatePromptQueue;
       _updatePromptQueue = _updatePromptQueue.then(async () => {
           let conntype = conntype_el.value;
 
           let prompt = await loadPrompt(promptId);
           if(!prompt) return;
+          if (userField) prompt._user_fields = [userField];
 
-          prompt.api_type = conntype;
+          // A {prefix}_connection_type enforced by the policy is never written into the prompt:
+          // there it would outlive the policy (spec 08 "No seeding from policy values"). The
+          // stored api_type is left as it is; while the lock holds getConnectionType() reads
+          // the enforced preference before it anyway.
+          if (!mode.typeLocked) prompt.api_type = conntype;
 
           for (const [integration, options] of Object.entries(integration_options_config)) {
               for (const key of Object.keys(options)) {
                   let propName = `${integration}_${key}`;
                   let elementId = `${model_prefix}${propName}`;
+                  // A field the policy connection enforces keeps what the prompt holds (the
+                  // policy value, put back to the stored one by setSpecialPrompts()).
+                  if (mztaManaged.isEnforcedConnectionControl(elementId)) continue;
                   let element = document.getElementById(elementId);
                   if (element) {
                       prompt[propName] = (element.type === 'checkbox') ? element.checked : element.value;
@@ -1174,29 +1989,133 @@ export async function initializeSpecificIntegrationUI({
       if (conntype_row) conntype_row.style.display = checked ? 'table-row' : 'none';
       if (conntype_end_el) conntype_end_el.style.display = checked ? 'table-row' : 'none';
       if (conntype_row) changeConnTypeRowColor(conntype_row, conntype_el);
+      if (connAdv) connAdv.setVisible(checked && !hasNoConnectionSelected(conntype_el.value));
+      if (connAdv) connAdv.setTestVisible(checked);
   };
 
-  // Check global connection type
-  let globalPrefs = await browser.storage.sync.get({ connection_type: 'chatgpt_web' });
-  if (globalPrefs.connection_type === 'chatgpt_web') {
+  // Mandatory: the global connection cannot run this prompt (ChatGPT Web) or no connection has
+  // been chosen yet, so a per-prompt specific integration is required.
+  //
+  // The flag is only *forced in the UI* here, never persisted yet: it is worth
+  // nothing on its own, since a specific integration without a connection type
+  // resolves back to the unusable global one (see hasSpecificIntegration()).
+  // It is written to storage by _persistMandatoryIntegration() below, together
+  // with the first usable connection the user picks — otherwise the feature would
+  // read as enabled while still having nothing to run against, and would silently
+  // disappear from the menus on the next reload.
+  //
+  // Never under a switch the policy holds (mode.mandatory is false then): forcing it would
+  // contradict a locked-off policy, and over a locked-on one the managed marker already says
+  // why, so the badge would be a second, wrong explanation. A policy that locks it off over an
+  // unusable global connection leaves the feature with nothing to run against - the
+  // administrator's misconfiguration to fix, as in _reconcileFeatureFlags() in mzta-background.js.
+  if (mode.mandatory) {
       use_specific_integration_el.checked = true;
-      use_specific_integration_el.disabled = true;
+      // Kept enabled: a disabled checkbox is excluded from the page's own
+      // saveOptions() sweep, which is one of the reasons the flag never reached
+      // storage. Making it read-only conveys "mandatory" without that side effect.
+      setDisabledRespectingManaged(use_specific_integration_el, false);
+      use_specific_integration_el.dataset.mandatory = 'true';
+      // Read-only semantics for a checkbox: the `readonly` attribute does nothing,
+      // so swallow the interaction instead.
+      use_specific_integration_el.addEventListener('click', (event) => {
+          if (use_specific_integration_el.dataset.mandatory === 'true') event.preventDefault();
+      });
+
+      // Make the locked state visible: without this the toggle looks like any
+      // other switch while silently ignoring clicks. The badge and the note are
+      // inert markup on every feature page; the note text depends on which of the
+      // two unusable global connections we are in.
+      const _lockedText = browser.i18n.getMessage(mode.mandatoryMsgKey);
+      use_specific_integration_el.title = _lockedText;
+      const _lockedBadge = document.getElementById('specific_integration_locked_badge');
+      if (_lockedBadge) _lockedBadge.classList.add('shown');
+      const _lockedNote = document.getElementById('specific_integration_locked_note');
+      if (_lockedNote) {
+          _lockedNote.textContent = _lockedText;
+          _lockedNote.classList.add('shown');
+      }
   }
+
+  // Persist the connection type currently shown by the select, so the stored pref matches
+  // what the user sees. Only for a usable value: an empty one means "nothing chosen yet".
+  const _persistSelectedConnection = async () => {
+      if (hasNoConnectionSelected(conntype_el.value)) return;
+      // A policy-supplied value (locked or initial) is never persisted from here. The raw
+      // read below cannot see it, so it would find '' and write what the select shows: for
+      // a locked key the write guard refuses it, but an initial value would be stored as the
+      // user's own choice without the user ever touching the select. Reads resolve the
+      // policy value on their own, so nothing is lost by not writing. A real user change
+      // still reaches storage through the page's saveOptions().
+      if (mztaManaged.hasManagedValue(conntype_select_id)) return;
+      // Deliberately NOT routed through mztaPrefs (issue #163): the default here must
+      // stay '' and not prefs_default[conntype_select_id], which is 'chatgpt_api'. This is a
+      // no-op guard comparing the stored value against what the select shows; with the
+      // prefs_default value, a first-time write of exactly 'chatgpt_api' would compare equal
+      // to the substituted default and be skipped, leaving the pref unwritten.
+      // The AREA, however, must match PREFS_AREA in js/mzta-prefs.js — only the default is
+      // special here, and the paired setPref() below writes to the preferences area.
+      const stored = await browser.storage.local.get({ [conntype_select_id]: '' });
+      if (stored[conntype_select_id] === conntype_el.value) return;
+      await mztaPrefs.setPref(conntype_select_id, conntype_el.value);
+      taLog.log(`Stored the connection shown by the ${prefix} select: ${conntype_el.value}`);
+  };
+
+  // Persist `use_specific_integration` only once the pair is actually meaningful,
+  // i.e. once a usable connection type has been chosen.
+  const _persistMandatoryIntegration = async () => {
+      if (!mode.mandatory) return;
+      if (hasNoConnectionSelected(conntype_el.value)) return;
+      const stored = await mztaPrefs.getPrefs([use_specific_integration_id]);
+      if (stored[use_specific_integration_id]) return;
+      await mztaPrefs.setPref(use_specific_integration_id, true);
+      taLog.log(`Specific integration is mandatory for ${prefix}: enabled it alongside ${conntype_el.value}`);
+  };
 
   // Event Listener for Checkbox
   use_specific_integration_el.addEventListener('change', async (event) => {
+      // A switch the policy holds (off, or on with or without a policy connection) can only
+      // change if it was re-enabled from the developer tools: put it back and write nothing.
+      // Turning it off would otherwise reach clearPromptAPI() below, a prompt write no write
+      // guard covers, and wipe the user's stored override.
+      if (mode.switchValue !== null) {
+          event.target.checked = mode.switchValue;
+          _updateVisibility(mode.switchValue);
+          return;
+      }
       _updateVisibility(event.target.checked);
       if (!event.target.checked) {
+          // Clear both halves of the state together. clearPromptAPI() empties the prompt's
+          // api_type, which is what actually runs; leaving {prefix}_connection_type behind
+          // would strand a pref that no longer matches the prompt and that nothing restores
+          // (the page's seeding block only runs for a non-empty api_type), while still being
+          // read by the prompt = null call sites — the menu gating in mzta-background.js and
+          // the feature row in mzta-options.js.
           await clearPromptAPI(promptId);
+          await mztaPrefs.setPref(conntype_select_id, '');
       } else {
           await _updatePrompt();
+          // Persist the value the select is already showing. restoreOptions() pre-fills it
+          // with the global connection (when that one is API-usable), but that is only a DOM
+          // default: accepting it fires no 'change', so without this the pref would stay empty
+          // while the panel claims a provider — and the options page's "Using <provider>" pill,
+          // which reads the pref, would stay hidden on a feature that looks configured.
+          await _persistSelectedConnection();
       }
   });
 
   // Event Listeners for Inputs
   conntype_el.addEventListener('change', async () => {
+      // Reopen closed on every provider change, like the options page.
+      if (connAdv) connAdv.reset();
       _updateVisibility(use_specific_integration_el.checked);
+      // A locked type select can only change if it was re-enabled by hand: nothing to save,
+      // and a save would only rewrite the prompt with what it already holds.
+      if (mode.typeLocked) return;
       if (use_specific_integration_el.checked) await _updatePrompt();
+      // A usable connection may have just been chosen: the mandatory flag becomes
+      // meaningful now, so persist it.
+      await _persistMandatoryIntegration();
   });
 
   // The connection type select already has its own dedicated 'change' listener
@@ -1206,16 +2125,28 @@ export async function initializeSpecificIntegrationUI({
   document.querySelectorAll(".specific_integration_sub .option-input").forEach(element => {
       if (element === conntype_el) return;
       element.addEventListener("change", async () => {
-          if (use_specific_integration_el.checked) await _updatePrompt();
+          // Same for a field the policy connection enforces, re-enabled by hand.
+          if (mztaManaged.isEnforcedConnectionControl(element.id)) return;
+          const field = element.id.startsWith(model_prefix) ? element.id.slice(model_prefix.length) : '';
+          if (use_specific_integration_el.checked) await _updatePrompt(field);
       });
   });
 
   // Initial State Apply
   _updateVisibility(use_specific_integration_el.checked);
-  if (use_specific_integration_el.checked) {
+  // Not with a policy connection (mode.seedsOnOpen): this page-open write exists to seed the
+  // prompt, and what the panel shows is then the policy's connection, not the user's to store.
+  if (use_specific_integration_el.checked && mode.seedsOnOpen) {
       await _updatePrompt();
+      // Same reason as in the checkbox handler, for the flag that was already on when the
+      // page opened (including the mandatory case, where it is forced on here): the select
+      // may be showing an inherited value that was never written to the pref.
+      await _persistSelectedConnection();
   }
-  
+  // Covers the case where a usable connection type was already stored from a previous
+  // visit while the flag itself never got persisted.
+  await _persistMandatoryIntegration();
+
   updateWarnings(model_prefix);
 }
 
@@ -1229,6 +2160,36 @@ export function updateWarnings(modelId_prefix = '') {
   warn_GoogleGemini_APIKeyEmpty(modelId_prefix);
   warn_Anthropic_APIKeyEmpty(modelId_prefix);
   warn_Anthropic_VersionEmpty(modelId_prefix);
+  updateSecretToggles(modelId_prefix);
+}
+
+// The API key fields with a show/hide eye toggle.
+const SECRET_TOGGLE_FIELDS = ['chatgpt_api_key', 'google_gemini_api_key', 'openai_comp_api_key', 'ollama_api_key', 'anthropic_api_key'];
+
+export function updateSecretToggles(modelId_prefix = '') {
+  SECRET_TOGGLE_FIELDS.forEach(field => syncSecretToggle(field, modelId_prefix));
+}
+
+/**
+ * While a key field is managed by the policy (it holds the policy key's placeholder, or it is
+ * locked) the eye has nothing to reveal: show a grey padlock with the default cursor instead.
+ */
+function syncSecretToggle(field, modelId_prefix = '') {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const input = document.getElementById(getPrefixedId(field));
+  const toggle = document.getElementById(getPrefixedId('toggle_' + field));
+  const img = document.getElementById(getPrefixedId('pwd-icon_' + field));
+  if (!input || !toggle || !img) return;
+  const managed = isManagedSecret(input.value) || input.dataset.mztaManaged === '1';
+  toggle.classList.toggle('managed_secret', managed);
+  if (managed) {
+    input.setAttribute('type', 'password');
+    img.src = "/images/pwd-locked.svg";
+    toggle.title = browser.i18n.getMessage('managed_marker_tooltip');
+  } else {
+    img.src = input.getAttribute('type') === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
+    toggle.removeAttribute('title');
+  }
 }
 
 export function changeConnTypeRowColor(conntype_row, conntype_select) {
@@ -1241,7 +2202,12 @@ export function changeConnTypeRowColor(conntype_row, conntype_select) {
 }
 
 export function showConnectionOptions(conntype_select, modelId_prefix = '') {
-  let chatgpt_web_display = 'table-row';
+  // A visible row uses '' (empty) rather than 'table-row' so host pages can
+  // restyle the injected rows via CSS (e.g. the options page renders them as
+  // stacked <div>-like fields). On feature pages the rows sit in a real
+  // <table>, where '' falls back to the default <tr> = table-row. Hidden rows
+  // still use 'none'.
+  let chatgpt_web_display = '';
   let chatgpt_api_display = 'none';
   let ollama_api_display = 'none';
   let openai_comp_api_display = 'none';
@@ -1250,32 +2216,32 @@ export function showConnectionOptions(conntype_select, modelId_prefix = '') {
   let parent = conntype_select.parentElement.parentElement.parentElement;
   changeConnTypeRowColor(parent, conntype_select);
   if (conntype_select.value === "chatgpt_web") {
-    chatgpt_web_display = 'table-row';
+    chatgpt_web_display = '';
   }else{
     chatgpt_web_display = 'none';
   }
   if (conntype_select.value === "chatgpt_api") {
-    chatgpt_api_display = 'table-row';
+    chatgpt_api_display = '';
   }else{
     chatgpt_api_display = 'none';
   }
   if (conntype_select.value === "ollama_api") {
-    ollama_api_display = 'table-row';
+    ollama_api_display = '';
   }else{
     ollama_api_display = 'none';
   }
   if (conntype_select.value === "openai_comp_api") {
-    openai_comp_api_display = 'table-row';
+    openai_comp_api_display = '';
   }else{
     openai_comp_api_display = 'none';
   }
   if (conntype_select.value === "google_gemini_api") {
-    google_gemini_api_display = 'table-row';
+    google_gemini_api_display = '';
   }else{
     google_gemini_api_display = 'none';
   }
   if (conntype_select.value === "anthropic_api") {
-    anthropic_api_display = 'table-row';
+    anthropic_api_display = '';
   }else{
     anthropic_api_display = 'none';
   }
@@ -1309,12 +2275,40 @@ function syncTomSelect(element) {
   }
 }
 
-function toggleTomSelectDisabled(element, disabled) {
-  element.disabled = disabled;
+// If no model is currently selected and the list contains exactly one real
+// (non-empty) option, select it automatically and persist the choice.
+function autoSelectSingleModel(element) {
+  if (!element) return;
+  if (element.value) return;   // an actual model is already selected
+  const realOptions = Array.from(element.options).filter(option => option.value !== '');
+  if (realOptions.length !== 1) return;
+  element.value = realOptions[0].value;
+  syncTomSelect(element);
   if (element.tomselect) {
-    if (disabled) {
+    element.tomselect.setValue(element.value, true);
+    setTomSelectBorder(element.tomselect);
+  }
+  element.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+// A model select the policy locked (applyManagedUI() marks it) stays disabled, whatever the
+// connection checks decide: fetching models for it would be pointless, and re-enabling it
+// would let the user pick a model the write guard then refuses to save.
+function isManagedModel(element) {
+  return !!element && element.dataset.mztaManaged === '1';
+}
+
+// Disables or enables a model select, never changing its value. A missing credential only
+// disables it: the selected model stays shown and stored, so emptying a key or host and typing
+// it back never loses the model. Never clear() here: Tom Select fires a change, and the page's
+// save-on-change listener would store '' - a model erased just by opening the page with an
+// empty credential. A policy-locked model is never re-enabled, whatever the caller asks.
+function toggleTomSelectDisabled(element, disabled) {
+  const off = disabled || isManagedModel(element);
+  element.disabled = off;
+  if (element.tomselect) {
+    if (off) {
       element.tomselect.disable();
-      element.tomselect.clear();
     } else {
       element.tomselect.enable();
     }
@@ -1331,16 +2325,21 @@ function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
 
   const prevValue = conntype_select.value;
 
-  const options = [
-    { value: 'chatgpt_web',        msgKey: 'prefs_Connection_type_ChatGPT_Web' },
-    { value: 'chatgpt_api',        msgKey: 'prefs_Connection_type_ChatGPT_API' },
-    { value: 'google_gemini_api',  msgKey: 'prefs_Connection_type_Google_Gemini_API' },
-    { value: 'anthropic_api',      msgKey: 'prefs_Connection_type_Anthropic_API' },
-    { value: 'ollama_api',         msgKey: 'prefs_Connection_type_Ollama_API' },
-    { value: 'openai_comp_api',    msgKey: 'prefs_Connection_type_OpenAI_Comp_API' }
-  ];
+  const options = CONNECTION_TYPE_OPTIONS;
 
   conntype_select.replaceChildren();
+
+  // Global connection select only (no_chatgpt_web marks the per-prompt ones, where
+  // an empty value already means "inherit the global connection"): add a disabled
+  // placeholder so a fresh install, whose connection_type default is empty, shows
+  // "no connection selected" instead of silently displaying the first provider.
+  if (!no_chatgpt_web) {
+    const placeholderEl = document.createElement('option');
+    placeholderEl.value = "";
+    placeholderEl.disabled = true;
+    placeholderEl.textContent = browser.i18n.getMessage('prefs_Connection_type_none') || '---';
+    conntype_select.appendChild(placeholderEl);
+  }
 
   for (const opt of options.filter(o => !(no_chatgpt_web && o.value === 'chatgpt_web'))) {
     const optionEl = document.createElement('option');
@@ -1349,9 +2348,12 @@ function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
     conntype_select.appendChild(optionEl);
   }
 
-  if (options.some(o => o.value === prevValue)) {
+  // Validate against the options actually rendered, not the full catalogue: on the
+  // per-prompt selects chatgpt_web has no <option>, so accepting it here would leave
+  // the control showing a value it cannot represent.
+  if (options.some(o => o.value === prevValue && !(no_chatgpt_web && o.value === 'chatgpt_web'))) {
     conntype_select.value = prevValue;
-  } else if (no_chatgpt_web) {
+  } else {
     conntype_select.value = "";
   }
 }
@@ -1367,6 +2369,208 @@ function warn_InvalidNumber(event){
   }
 }
 
+// Advisory validation only, consistently with warn_InvalidNumber: the value is
+// saved anyway, and the API classes ignore an unusable one at request time.
+// The reason is reported inline, because a red border alone does not tell the
+// user what is wrong in a JSON snippet: the parser message carries the position
+// of the offending character, which is what makes a typo findable.
+function checkJsonField(field){
+  if(!field) return;
+  const elementValue = field.value;
+  const errorBox = document.getElementById(field.id + '_error');
+  let errorText = '';
+
+  if (elementValue.trim() !== '') {
+    try {
+      const parsed = JSON.parse(elementValue);
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        errorText = browser.i18n.getMessage('prefs_extra_body_error_not_object');
+      }
+    } catch (error) {
+      // error.message already states what was expected and where. Strip the
+      // engine's "JSON.parse:" prefix (SpiderMonkey adds it, V8 does not): the
+      // label already says the value is invalid JSON, repeating it reads badly.
+      const parserMessage = String(error.message).replace(/^\s*JSON\.parse:\s*/, '');
+      errorText = browser.i18n.getMessage('prefs_extra_body_error_invalid') + ' ' + parserMessage;
+    }
+  }
+
+  field.style.border = errorText === '' ? '' : '2px solid red';
+
+  if (errorBox) {
+    errorBox.textContent = errorText;
+    errorBox.hidden = (errorText === '');
+  }
+}
+
+function warn_InvalidJson(event){
+  checkJsonField(event.target);
+}
+
+// Validate the already-saved values: the listeners only fire while typing, so a
+// malformed value stored by a previous session would otherwise look fine until
+// touched. Must be called after the fields have been filled (restoreOptions).
+export function checkJsonFields(){
+  document.querySelectorAll('.check-json').forEach(field => checkJsonField(field));
+}
+
+// Same check, restricted to one form. Needed by pages that host several
+// connection forms at once (custom prompts: the add form plus one per edited
+// row): validating document-wide from one form would repaint — and on empty
+// fields clear — the other forms' error state. `prefix` is the form's
+// modelId_prefix; ids are unique per form, so matching on it is exact.
+export function checkJsonFieldsByPrefix(prefix = ''){
+  document.querySelectorAll('.check-json').forEach(field => {
+    if (field.id.startsWith(prefix)) checkJsonField(field);
+  });
+}
+
+// Advisory validation of the Claude extended thinking budget, mirroring the rule
+// the request builder enforces in js/api/anthropic.js: the API wants a budget of
+// at least ANTHROPIC_MIN_THINKING_BUDGET and strictly below max_tokens, and
+// rejects anything else with a 400.
+//
+// Reported inline rather than with a bare red border, because there are two
+// distinct constraints and the border alone cannot say which one failed -- and
+// the ceiling is whatever the max_tokens field currently holds, which is not
+// visible from the budget field. Writes with textContent, never innerHTML.
+//
+// The reason box is a separate element from the `_unsupported` capability note:
+// both conditions can hold at once (a modern model that ignores the budget, with
+// an out-of-range value stored), so sharing one node would have this function and
+// updateAnthropicModelCapabilityUI() overwrite each other.
+//
+// Advisory only: saveOptions persists the value regardless, exactly like the
+// check-number and check-json fields, which is why the request builder has to
+// tolerate an unusable value at send time.
+function checkAnthropicThinkingBudget(modelId_prefix = ''){
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const field = document.getElementById(getPrefixedId('anthropic_extended_thinking_budget'));
+  if(!field) return;
+  const errorBox = document.getElementById(getPrefixedId('anthropic_extended_thinking_budget_error'));
+  const maxTokensField = document.getElementById(getPrefixedId('anthropic_max_tokens'));
+
+  const budget = parseInt(field.value);
+  const maxTokens = maxTokensField ? parseInt(maxTokensField.value) : NaN;
+  let errorText = '';
+
+  // Nothing to warn about when the selected model ignores the budget outright:
+  // the `_unsupported` note already explains that, and a range warning on top of
+  // it would describe a constraint that cannot apply. applyState() runs before
+  // this, so `disabled` already reflects the current model.
+  // Empty, unparsable or 0 all mean "no extended thinking", which is always valid.
+  if(!field.disabled && !Number.isNaN(budget) && budget > 0) {
+    if(budget < ANTHROPIC_MIN_THINKING_BUDGET) {
+      errorText = browser.i18n.getMessage('anthropic_warn_thinking_budget_min', String(ANTHROPIC_MIN_THINKING_BUDGET));
+    } else if(!Number.isNaN(maxTokens) && budget >= maxTokens) {
+      errorText = browser.i18n.getMessage('anthropic_warn_thinking_budget_max', String(maxTokens));
+    }
+  }
+
+  field.style.border = errorText === '' ? '' : '2px solid red';
+
+  if(errorBox) {
+    errorBox.textContent = errorText;
+    errorBox.hidden = (errorText === '');
+  }
+}
+
+// The fetchModels() implementations go through fetchWithRetry() (js/api/api-retry.js),
+// which has its own per-attempt timeout and automatic retries. fetchModelsWithTimeout()
+// disables the retries on purpose, since the user is waiting for the button result, and
+// aligns the per-attempt timeout with this one, so no request outlives "Loading...".
+const MODELS_FETCH_TIMEOUT_MS = 20000;
+
+// How long the green "list loaded" confirmation stays before fading out. The red
+// errors have no timer: they stay until the next click on the button.
+const MODELS_FETCH_OK_VISIBLE_MS = 30000;
+// Must match the opacity transition of .models_fetch_status.is_fading in connection-ui.css.
+const MODELS_FETCH_OK_FADE_MS = 1000;
+
+// Drives the "Update list" row of a provider: while fetching, the button is hidden
+// and the loading label takes its place (so it cannot be clicked twice). When done
+// the button comes back and the status box below the row says how it went: green
+// on success (fading out after MODELS_FETCH_OK_VISIBLE_MS), red on error.
+function modelsFetchUI(modelId_prefix, btnId, provider) {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const btn = document.getElementById(getPrefixedId(btnId));
+  const loadingEl = document.getElementById(getPrefixedId(`${provider}_model_fetch_loading`));
+  const statusBox = document.getElementById(getPrefixedId(`${provider}_model_fetch_status`));
+  // A new object is built on every click, so the fade timers live on the element:
+  // a click during the 30 seconds must cancel the pending fade of the previous result.
+  const setStatus = (message, isOk = false) => {
+    clearTimeout(statusBox._mztaFadeTimer);
+    clearTimeout(statusBox._mztaHideTimer);
+    statusBox.classList.remove('is_fading');
+    statusBox.classList.toggle('is_ok', isOk);
+    // Unhide before writing: the box is an aria-live region, and a text change
+    // made while it is still hidden may not be announced.
+    statusBox.hidden = (message === '');
+    statusBox.textContent = message;
+    if (isOk) {
+      statusBox._mztaFadeTimer = setTimeout(() => {
+        statusBox.classList.add('is_fading');
+        statusBox._mztaHideTimer = setTimeout(() => setStatus(''), MODELS_FETCH_OK_FADE_MS);
+      }, MODELS_FETCH_OK_VISIBLE_MS);
+    }
+  };
+  const showButton = () => {
+    loadingEl.style.display = 'none';
+    btn.style.display = '';
+  };
+  return {
+    loading: () => {
+      setStatus('');
+      // The label takes the button's place: give it the button's width, text font and
+      // text colour, read while the button is still rendered, so the row does not jump
+      // and the label (with its spinning icon) looks like the button text. Each host
+      // page styles its buttons differently, hence the runtime read instead of CSS.
+      const btnStyle = getComputedStyle(btn);
+      loadingEl.style.width = `${btn.offsetWidth}px`;
+      loadingEl.style.font = btnStyle.font;
+      loadingEl.style.letterSpacing = btnStyle.letterSpacing;
+      loadingEl.style.color = btnStyle.color;
+      btn.style.display = 'none';
+      loadingEl.style.display = 'inline-flex';
+    },
+    done: () => {
+      showButton();
+      setStatus(browser.i18n.getMessage('Models_Fetch_Done'), true);
+    },
+    error: (message) => {
+      showButton();
+      setStatus(message);
+    },
+  };
+}
+
+// Same race as the connection test (js/mzta-connection-test.js). Always resolves:
+// a timeout or an unexpected throw (the fetchModels() implementations catch their
+// own network errors) becomes an {ok: false, error} result like any HTTP failure.
+async function fetchModelsWithTimeout(client) {
+  let timer;
+  const timeout = new Promise((resolve) => {
+    timer = setTimeout(() => resolve({ ok: false, error: browser.i18n.getMessage('connTest_error_timeout') }), MODELS_FETCH_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([client.fetchModels({ maxRetries: 0, timeoutMs: MODELS_FETCH_TIMEOUT_MS }), timeout]);
+  } catch (error) {
+    return { ok: false, error: error?.message || String(error) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// The providers return the raw response body as the error: pull out the
+// {"error": {"message": ...}} message when there is one.
+function parseModelsFetchError(error) {
+  try {
+    return JSON.parse(error).error.message ?? error;
+  } catch (e) {
+    return error;
+  }
+}
+
 function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {
   const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
   let apiKeyInput = document.getElementById(getPrefixedId('chatgpt_api_key'));
@@ -1376,11 +2580,11 @@ function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {
     apiKeyInput.style.border = '2px solid red';
     btnFetchChatGPTModels.disabled = true;
     toggleTomSelectDisabled(modelChatGPT, true);
-    modelChatGPT.selectedIndex = -1;
     modelChatGPT.style.border = '';
   }else{
     apiKeyInput.style.border = '';
-    btnFetchChatGPTModels.disabled = false;
+    // Not with a policy-supplied key: the page only holds its placeholder.
+    btnFetchChatGPTModels.disabled = isManagedSecret(apiKeyInput.value) || isManagedModel(modelChatGPT);
     toggleTomSelectDisabled(modelChatGPT, false);
     if((modelChatGPT.selectedIndex === -1)||(modelChatGPT.value === '')){
       modelChatGPT.style.border = '2px solid red';
@@ -1399,11 +2603,11 @@ function warn_GoogleGemini_APIKeyEmpty(modelId_prefix) {
     apiKeyInput.style.border = '2px solid red';
     btnFetchGoogleGeminiModels.disabled = true;
     toggleTomSelectDisabled(modelGoogleGemini, true);
-    modelGoogleGemini.selectedIndex = -1;
     modelGoogleGemini.style.border = '';
   }else{
     apiKeyInput.style.border = '';
-    btnFetchGoogleGeminiModels.disabled = false;
+    // Not with a policy-supplied key: the page only holds its placeholder.
+    btnFetchGoogleGeminiModels.disabled = isManagedSecret(apiKeyInput.value) || isManagedModel(modelGoogleGemini);
     toggleTomSelectDisabled(modelGoogleGemini, false);
     if((modelGoogleGemini.selectedIndex === -1)||(modelGoogleGemini.value === '')){
       modelGoogleGemini.style.border = '2px solid red';
@@ -1423,12 +2627,15 @@ function warn_Ollama_HostEmpty(modelId_prefix) {
     hostInput.style.border = '2px solid red';
     btnFetchOllamaModels.disabled = true;
     toggleTomSelectDisabled(modelOllama, true);
-    modelOllama.selectedIndex = -1;
     modelOllama.style.border = '';
     btnGiveAllUrlsPermission_ollama_api.disabled = true;
   }else{
     hostInput.style.border = '';
-    btnFetchOllamaModels.disabled = false;
+    // The API key is optional here, but a policy-supplied one is only a placeholder on this
+    // page: the models cannot be fetched with it.
+    const apiKeyOllama = document.getElementById(getPrefixedId('ollama_api_key'));
+    btnFetchOllamaModels.disabled = isManagedModel(modelOllama)
+        || (!!apiKeyOllama && isManagedSecret(apiKeyOllama.value));
     toggleTomSelectDisabled(modelOllama, false);
     if((modelOllama.selectedIndex === -1)||(modelOllama.value === '')){
       modelOllama.style.border = '2px solid red';
@@ -1449,12 +2656,15 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
     hostInput.style.border = '2px solid red';
     btnUpdateOpenAICompModels.disabled = true;
     toggleTomSelectDisabled(modelOpenAIComp, true);
-    modelOpenAIComp.selectedIndex = -1;
     modelOpenAIComp.style.border = '';
     btnGiveAllUrlsPermission_openai_comp_api.disabled = true;
   }else{
     hostInput.style.border = '';
-    btnUpdateOpenAICompModels.disabled = false;
+    // The API key is optional here, but a policy-supplied one is only a placeholder on this
+    // page: the models cannot be fetched with it.
+    const apiKeyOpenAIComp = document.getElementById(getPrefixedId('openai_comp_api_key'));
+    btnUpdateOpenAICompModels.disabled = isManagedModel(modelOpenAIComp)
+        || (!!apiKeyOpenAIComp && isManagedSecret(apiKeyOpenAIComp.value));
     toggleTomSelectDisabled(modelOpenAIComp, false);
     if((modelOpenAIComp.selectedIndex === -1)||(modelOpenAIComp.value === '')){
       modelOpenAIComp.style.border = '2px solid red';
@@ -1463,6 +2673,333 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
     }
     btnGiveAllUrlsPermission_openai_comp_api.disabled = false;
   }
+}
+
+// The OpenAI reasoning models (gpt-5, o1/o3/o4) reject temperature and top_p, and
+// the chat models in turn have no reasoning stage and no verbosity control. Rather
+// than dropping the stored values -- the user may switch back to another model --
+// the fields stay visible and populated and are disabled with a note saying the
+// selected model ignores them. The request builder in js/api/openai_responses.js
+// enforces the same table, so a stale value is never actually sent.
+//
+// Unlike the Claude effort select, the reasoning effort options here are static:
+// the levels do not vary per model, only whether reasoning is supported at all.
+// So there is no runtime rebuild, and no blank-select hazard on a page that
+// forgets to call this.
+export function updateOpenAIModelCapabilityUI(modelId_prefix = '') {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const modelOpenAI = getModelEl('chatgpt_model', modelId_prefix);
+  if(!modelOpenAI) return;
+  const caps = getOpenAIModelCapabilities(modelOpenAI.value);
+
+  const applyState = (fieldId, supported) => {
+    const field = document.getElementById(getPrefixedId(fieldId));
+    const note = document.getElementById(getPrefixedId(fieldId + '_unsupported'));
+    if(field) setDisabledRespectingManaged(field, !supported);
+    if(note) note.style.display = supported ? 'none' : '';
+  };
+
+  // top_p rides on the same capability flag as temperature and reuses its note:
+  // the reasoning models reject both for the same reason.
+  applyState('chatgpt_temperature', caps.supportsSamplingParams);
+  applyState('chatgpt_top_p', caps.supportsSamplingParams);
+  applyState('chatgpt_reasoning_summary', caps.supportsReasoning);
+  applyState('chatgpt_reasoning_effort', caps.supportsReasoning);
+  applyState('chatgpt_verbosity', caps.supportsVerbosity);
+
+  // Piggy-backed on the capability refresh rather than exported separately: every
+  // host page already calls this after its restore, which is exactly when the
+  // schema fields saved by an earlier session must be re-synced with the format.
+  updateOpenAITextFormatUI(modelId_prefix);
+}
+
+// The schema name and the schema itself are only read when the output format is
+// json_schema, so they are disabled otherwise: without this the two fields look
+// like they apply to "JSON object" too, which silently ignores them. This is a
+// coupling between two fields, not a model capability, so it has no
+// `_unsupported` note -- the format select right above says why.
+export function updateOpenAITextFormatUI(modelId_prefix = '') {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const formatEl = document.getElementById(getPrefixedId('chatgpt_text_format'));
+  if(!formatEl) return;
+  const needs_schema = formatEl.value === 'json_schema';
+  ['chatgpt_text_format_schema_name', 'chatgpt_text_format_schema'].forEach((fieldId) => {
+    const field = document.getElementById(getPrefixedId(fieldId));
+    if(field) setDisabledRespectingManaged(field, !needs_schema);
+  });
+}
+
+// Newer Claude models reject options that older ones require (temperature and a
+// manual extended thinking budget), and expose `effort` in their place. Rather
+// than dropping the stored values -- the user may switch back to an older model
+// -- the fields stay visible and populated and are disabled with a note saying
+// the selected model ignores them. The request builder in js/api/anthropic.js
+// enforces the same table, so a stale value is never actually sent.
+export function updateAnthropicModelCapabilityUI(modelId_prefix = '') {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const modelAnthropic = getModelEl('anthropic_model', modelId_prefix);
+  if(!modelAnthropic) return;
+  const caps = getAnthropicModelCapabilities(modelAnthropic.value);
+
+  const applyState = (fieldId, supported) => {
+    const field = document.getElementById(getPrefixedId(fieldId));
+    const note = document.getElementById(getPrefixedId(fieldId + '_unsupported'));
+    // Through the managed-aware setter: this runs on every model change, after
+    // applyManagedUI(), and a plain assignment would re-enable a locked field.
+    if(field) setDisabledRespectingManaged(field, !supported);
+    if(note) note.style.display = supported ? 'none' : '';
+  };
+
+  applyState('anthropic_temperature', caps.supportsSamplingParams);
+  // top_p and top_k ride on the same capability flag as temperature, and reuse
+  // its note: the explanation ("this model uses Effort instead") is identical.
+  applyState('anthropic_top_p', caps.supportsSamplingParams);
+  applyState('anthropic_top_k', caps.supportsSamplingParams);
+  applyState('anthropic_extended_thinking_budget', caps.supportsBudgetTokens);
+  applyState('anthropic_effort', caps.supportsEffort);
+
+  // Piggy-backed on the capability refresh rather than exported separately: every
+  // host page already calls this after its restore, which is exactly when a budget
+  // saved by an earlier session must be re-checked (it would otherwise look fine
+  // until the field is touched).
+  checkAnthropicThinkingBudget(modelId_prefix);
+
+  const effortSelect = document.getElementById(getPrefixedId('anthropic_effort'));
+  if(!effortSelect) return;
+
+  fillAnthropicEffortOptions(effortSelect, caps.supportsEffort ? caps.effortLevels : ANTHROPIC_EFFORT_LEVELS);
+}
+
+// (Re)builds the effort <option> list. Keeps whatever is currently selected even when the
+// new list does not offer it, so the value survives a round trip through a model that
+// cannot use it.
+function fillAnthropicEffortOptions(effortSelect, levels) {
+  const current = effortSelect.value;
+  effortSelect.textContent = '';
+
+  const emptyOption = document.createElement('option');
+  emptyOption.value = '';
+  emptyOption.text = browser.i18n.getMessage('anthropic_effort_default');
+  effortSelect.appendChild(emptyOption);
+
+  levels.forEach((level) => {
+    const option = document.createElement('option');
+    option.value = level;
+    // Fall back to the raw level if the shared prefs_level_* family gains no entry for it.
+    option.text = browser.i18n.getMessage('prefs_level_' + level) || level;
+    effortSelect.appendChild(option);
+  });
+
+  if(current !== '' && !levels.includes(current)) {
+    const staleOption = document.createElement('option');
+    staleOption.value = current;
+    staleOption.text = current;
+    effortSelect.appendChild(staleOption);
+  }
+  effortSelect.value = current;
+}
+
+// Adapt the Ollama panel to what the server reports about the selected model, from
+// the `model_info` payload of POST /api/show (see fetchModelInfo() in js/api/ollama.js).
+//
+// Runs on every model `change`, like updateAnthropicModelCapabilityUI() -- but that one
+// reads a local table while this one needs a network round trip, so two guards keep the
+// traffic down: results are memoised per host+key+model in `_ollamaCapsCache` (a
+// re-selection never re-fetches), and an in-flight request for a superseded selection
+// has its result discarded via the `_ollamaCapsSeq` generation counter, so a slow reply
+// can never overwrite the panel for a model the user has already moved away from.
+//
+// Degrades to "enable everything": when the probe fails (server unreachable, /api/show
+// unsupported, model not pulled, host empty) the notes are cleared and every control is
+// left enabled, so a failed probe never blocks the user. Stored values are never
+// rewritten, exactly like the Claude panel: the user may switch to another model.
+export async function updateOllamaModelCapabilityUI(modelId_prefix = '') {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+
+  const hostEl = document.getElementById(getPrefixedId('ollama_host'));
+  const keyEl = document.getElementById(getPrefixedId('ollama_api_key'));
+  const modelEl = getModelEl('ollama_model', modelId_prefix);
+  if (!hostEl || !modelEl) return;
+
+  const host = (hostEl.value || '').trim();
+  const apiKey = keyEl ? (keyEl.value || '').trim() : '';
+  const model = (modelEl.value || '').trim();
+
+  // Nothing to ask about yet: reset rather than leave a previous model's limits up.
+  // A policy-supplied key is only a placeholder on this page and must never be sent to
+  // the server, so the model cannot be described from here either.
+  if (host === '' || model === '' || isManagedSecret(apiKey)) {
+    _applyOllamaCaps(null, modelId_prefix);
+    return;
+  }
+
+  const cacheKey = `${host}|${apiKey}|${model}`;
+  if (Object.prototype.hasOwnProperty.call(_ollamaCapsCache, cacheKey)) {
+    _applyOllamaCaps(_ollamaCapsCache[cacheKey], modelId_prefix);
+    return;
+  }
+
+  // Only this call's result may touch the panel: any later selection bumps the counter
+  // and invalidates whatever is still in flight here.
+  const seq = ++_ollamaCapsSeq;
+
+  // No permission request here: this runs on a plain selection change, and prompting for
+  // host permissions on every click would be hostile. Without the permission the fetch
+  // simply fails and the panel degrades to "everything enabled" -- the user grants it via
+  // the CORS button or the connection test, and the next change picks the capabilities up.
+  let modelInfo = null;
+  try {
+    const ollama = new Ollama({ host: host, api_key: apiKey });
+    const info = await ollama.fetchModelInfo(model);
+    if (info && info.ok) modelInfo = info.response;
+  } catch (error) {
+    modelInfo = null;
+  }
+
+  _ollamaCapsCache[cacheKey] = modelInfo;
+  if (seq !== _ollamaCapsSeq) return;   // superseded while awaiting
+  _applyOllamaCaps(modelInfo, modelId_prefix);
+}
+
+// Memoised /api/show results, keyed by host+key+model. A null value is cached too: a
+// server that cannot describe a model should not be re-asked on every re-selection.
+const _ollamaCapsCache = {};
+
+// Bumped by each probe so a slow reply for a stale selection can be discarded.
+let _ollamaCapsSeq = 0;
+
+// Paint the panel from a /api/show payload, or reset it when given null.
+function _applyOllamaCaps(modelInfo, modelId_prefix = '') {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+
+  const thinkField = document.getElementById(getPrefixedId('ollama_think'));
+  const thinkNote = document.getElementById(getPrefixedId('ollama_think_unsupported'));
+  const ctxNote = document.getElementById(getPrefixedId('ollama_num_ctx_max'));
+
+  // Nothing usable: restore the neutral state rather than reporting a limit we no
+  // longer know to hold.
+  if (!modelInfo) {
+    if (thinkField) setDisabledRespectingManaged(thinkField, false);
+    if (thinkNote) thinkNote.style.display = 'none';
+    if (ctxNote) {
+      ctxNote.textContent = '';
+      ctxNote.style.display = 'none';
+    }
+    // Still (re)build the select: it ships empty from the template, so without this
+    // a panel that never reached a server would have no options at all.
+    buildOllamaThinkOptions(thinkField, null);
+    return;
+  }
+
+  // Absent `capabilities` means "this server does not report them", not "the model
+  // cannot think" -- older Ollama builds omit the field entirely. Only an explicit
+  // list that lacks "thinking" disables the control.
+  const caps = Array.isArray(modelInfo.capabilities) ? modelInfo.capabilities : null;
+  const supportsThinking = (caps === null) || caps.includes('thinking');
+  if (thinkField) setDisabledRespectingManaged(thinkField, !supportsThinking);
+  if (thinkNote) thinkNote.style.display = supportsThinking ? 'none' : '';
+
+  buildOllamaThinkOptions(thinkField, modelInfo);
+
+  // The context length key is architecture-prefixed ("llama.context_length",
+  // "qwen3.context_length", ...), so it is found by suffix rather than hardcoded.
+  if (ctxNote) {
+    const maxCtx = getOllamaContextLength(modelInfo);
+    if (maxCtx > 0) {
+      ctxNote.textContent = browser.i18n.getMessage('ollama_num_ctx_max_info', [String(maxCtx)]);
+      ctxNote.style.display = '';
+    } else {
+      ctxNote.textContent = '';
+      ctxNote.style.display = 'none';
+    }
+  }
+}
+
+// Fill the think select with the levels the selected model actually accepts.
+//
+// /api/show reports them in a top-level `thinking` object, e.g.
+//   {"values": [false, true], "default": true}          -- on/off only
+//   {"values": [false, "low", "high"], "default": "low"} -- levels
+// so the accepted *shape* is read from `values`: booleans mean this model has no
+// levels, strings are the levels it names. `default` is what the model does when the
+// request omits `think` entirely, which is what the "model default" entry maps to.
+//
+// A missing or unusable `thinking` object means "this server does not report it" --
+// several models carry `thinking` in `capabilities` while leaving this null -- so the
+// full catalogue is offered rather than assuming a restriction. Sending a level to a
+// model that only knows on/off is not an error anyway: Ollama treats it as "on".
+//
+// Like the Claude effort select, a stored value that this model does not offer is kept
+// as a trailing option so it survives a round trip through another model.
+function buildOllamaThinkOptions(thinkField, modelInfo) {
+  if (!thinkField) return;
+
+  const current = thinkField.value;
+
+  const reported = (modelInfo && modelInfo.thinking && typeof modelInfo.thinking === 'object')
+    ? modelInfo.thinking : null;
+  const values = (reported && Array.isArray(reported.values)) ? reported.values : null;
+
+  // Only the string entries are levels; `false`/`true` describe the on/off pair that
+  // every thinking model has and that the Off/On entries below already cover.
+  const levels = values ? values.filter(v => typeof v === 'string') : OLLAMA_THINK_LEVELS;
+
+  const options = [
+    { value: '', labelKey: 'prefs_ollama_think_default' },
+    { value: 'false', labelKey: 'prefs_level_off' }
+  ];
+  if (!values || !values.some(v => typeof v === 'string') || current === 'true') {
+    options.push({ value: 'true', labelKey: 'prefs_level_on' });
+  }
+  levels.forEach(level => options.push({
+    value: level,
+    labelKey: 'prefs_level_' + level,
+    fallbackLabel: level
+  }));
+
+  // What the model does when `think` is omitted, shown next to the "model default"
+  // entry; empty when the model does not report a usable default.
+  const defaultValue = reported ? reported.default : undefined;
+  let defaultSuffix = '';
+  if (typeof defaultValue === 'boolean') {
+    defaultSuffix = browser.i18n.getMessage(defaultValue ? 'prefs_level_on' : 'prefs_level_off') ||
+      String(defaultValue);
+  } else if (typeof defaultValue === 'string' && defaultValue.trim() !== '') {
+    const trimmed = defaultValue.trim();
+    defaultSuffix = browser.i18n.getMessage('prefs_level_' + trimmed) || trimmed;
+  }
+
+  thinkField.textContent = '';
+  options.forEach(opt => {
+    const option = document.createElement('option');
+    option.value = opt.value;
+    option.text = browser.i18n.getMessage(opt.labelKey) || opt.fallbackLabel || opt.value;
+    if (opt.value === '' && defaultSuffix !== '') {
+      option.text += ' (' + defaultSuffix + ')';
+    }
+    thinkField.appendChild(option);
+  });
+
+  // Keep a stored value this model does not offer, rather than silently changing the
+  // user's setting just because they looked at another model.
+  if (current !== '' && !options.some(o => o.value === current)) {
+    const stale = document.createElement('option');
+    stale.value = current;
+    stale.text = current;
+    thinkField.appendChild(stale);
+  }
+  thinkField.value = current;
+}
+
+
+// The model's maximum context length, or 0 when the payload does not report one.
+function getOllamaContextLength(modelInfo) {
+  const info = modelInfo && modelInfo.model_info;
+  if (!info || typeof info !== 'object') return 0;
+  const key = Object.keys(info).find(k => k.endsWith('.context_length'));
+  if (!key) return 0;
+  const value = parseInt(info[key]);
+  return Number.isNaN(value) ? 0 : value;
 }
 
 function warn_Anthropic_APIKeyEmpty(modelId_prefix) {
@@ -1474,11 +3011,11 @@ function warn_Anthropic_APIKeyEmpty(modelId_prefix) {
     apiKeyInput.style.border = '2px solid red';
     btnFetchAnthropicModels.disabled = true;
     toggleTomSelectDisabled(modelAnthropic, true);
-    modelAnthropic.selectedIndex = -1;
     modelAnthropic.style.border = '';
   }else{
     apiKeyInput.style.border = '';
-    btnFetchAnthropicModels.disabled = false;
+    // Not with a policy-supplied key: the page only holds its placeholder.
+    btnFetchAnthropicModels.disabled = isManagedSecret(apiKeyInput.value) || isManagedModel(modelAnthropic);
     toggleTomSelectDisabled(modelAnthropic, false);
     if((modelAnthropic.selectedIndex === -1)||(modelAnthropic.value === '')){
       modelAnthropic.style.border = '2px solid red';
@@ -1497,11 +3034,14 @@ function warn_Anthropic_VersionEmpty(modelId_prefix) {
     versionInput.style.border = '2px solid red';
     btnFetchAnthropicModels.disabled = true;
     toggleTomSelectDisabled(modelAnthropic, true);
-    modelAnthropic.selectedIndex = -1;
     modelAnthropic.style.border = '';
   }else{
     versionInput.style.border = '';
-    btnFetchAnthropicModels.disabled = false;
+    // Runs after warn_Anthropic_APIKeyEmpty(): repeat its key checks rather than undo them,
+    // or a missing or policy-supplied key would get the fetch button back.
+    const apiKeyAnthropic = document.getElementById(getPrefixedId('anthropic_api_key'));
+    btnFetchAnthropicModels.disabled = isManagedModel(modelAnthropic)
+        || !apiKeyAnthropic || apiKeyAnthropic.value === '' || isManagedSecret(apiKeyAnthropic.value);
     toggleTomSelectDisabled(modelAnthropic, false);
     if((modelAnthropic.selectedIndex === -1)||(modelAnthropic.value === '')){
       modelAnthropic.style.border = '2px solid red';

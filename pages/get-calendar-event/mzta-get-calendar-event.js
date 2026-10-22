@@ -17,50 +17,66 @@
  */
 
 import {
-  prefs_default,
-  integration_options_config
+  prefs_default
 } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
 import {
-  getSpecialPrompts,
-  setSpecialPrompts
+  getSpecialPrompts
 } from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
-  mapPlaceholderToSuggestion
+  mapPlaceholderToSuggestion,
+  placeholdersUtils
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import {
+  attachEditorHighlight,
+  makeTokenStateResolver
+} from "../../js/mzta-editor-highlight.js";
 import {
   isAPIKeyValue,
   setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import {
-  initializeSpecificIntegrationUI
+  initializeSpecificIntegrationUI,
+  isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
+import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
+import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
+import { initReminderUI } from "../_lib/reminder-ui.js";
+import { mztaPrefs } from '../../js/mzta-prefs.js';
+import {
+    applyManagedUI,
+    isLockedKey
+} from '../_lib/managed-ui.js';
+import { isPermissionGatedPref } from '../../js/mzta-feature-permissions.js';
+import {
+    bindPermissionToggle,
+    showLockedPermissionWarning
+} from '../_lib/permission-toggle.js';
+import {
+    persistPromptConnectionToPrefs,
+    resolveFeatureConnectionPrefs,
+    bindConnPanelTint,
+    bindSpecialPromptEditor
+} from '../_lib/feature-page.js';
 
 let autocompleteSuggestions = [];
+let activePlaceholders = [];
 let taLog = new taLogger("mzta-get-calendar-event-page",true);
 
 document.addEventListener('DOMContentLoaded', async () => {
 
+    // Warn before leaving the page with unsaved textarea text.
+    initUnsavedGuard();
+
     let specialPrompts = await getSpecialPrompts();
     let get_calendar_event_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event');
 
-    if (get_calendar_event_prompt && get_calendar_event_prompt.api_type && get_calendar_event_prompt.api_type !== '') {
-        let update_prefs = {};
-        update_prefs['get_calendar_event_connection_type'] = get_calendar_event_prompt.api_type;
-        
-        let integration = get_calendar_event_prompt.api_type.replace('_api', '');
-        if (integration_options_config && integration_options_config[integration]) {
-             for (const key of Object.keys(integration_options_config[integration])) {
-                 const propName = `${integration}_${key}`;
-                 if (get_calendar_event_prompt[propName] !== undefined) {
-                     update_prefs[`get_calendar_event_${propName}`] = get_calendar_event_prompt[propName];
-                 }
-             }
-        }
-        await browser.storage.sync.set(update_prefs);
-    }
+    await persistPromptConnectionToPrefs('get_calendar_event', get_calendar_event_prompt);
+
+    // Must run before restoreOptions(), which is called by initializeSpecificIntegrationUI()
+    initTimezoneSelect(document.getElementById('calendar_timezone'));
 
     await initializeSpecificIntegrationUI({
       prefix: 'get_calendar_event',
@@ -71,105 +87,121 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     i18n.updateDocument();
 
+    // Disable and mark every control the enterprise policy enforces. Runs after the
+    // connection panel has been injected above, so its provider rows are covered too.
+    await applyManagedUI(document, taLog.do_debug);
+
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
       });
 
     let get_calendar_event_textarea = document.getElementById('get_calendar_event_prompt_text');
-    let get_calendar_event_save_btn = document.getElementById('btn_save_prompt');
-    let get_calendar_event_reset_btn = document.getElementById('btn_reset_prompt');
-    let get_calendar_event_use_specific_integration = document.getElementById('get_calendar_event_use_specific_integration');
     let get_calendar_event_no_selection = document.getElementById('calendar_no_selection');
     let get_calendar_event_from_clipboard = document.getElementById('get_calendar_event_from_clipboard');
 
-    get_calendar_event_textarea.addEventListener('input', (event) => {
-        get_calendar_event_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_get_calendar_event_full_text'));
-        get_calendar_event_save_btn.disabled = (event.target.value === get_calendar_event_prompt.text);
-        if(get_calendar_event_save_btn.disabled){
-            document.getElementById('get_calendar_event_prompt_unsaved').classList.add('hidden');
-        } else {
-            document.getElementById('get_calendar_event_prompt_unsaved').classList.remove('hidden');
-        }
-    });
+    bindConnPanelTint('get_calendar_event');
 
-    get_calendar_event_use_specific_integration.addEventListener('change', (event) => {
-        if (!event.target.checked) {
-          browser.storage.sync.set({ get_calendar_event_connection_type: '' });
-        }
-    });
-
+    // calendar_no_selection is the single source of truth: need_selected of the calendar
+    // prompt is derived from it on every read (applyCalendarNoSelection() in
+    // js/mzta-prompts.js), so this handler no longer writes the prompt. The preference itself
+    // is stored by saveOptions(), registered above and therefore run first; the background
+    // rebuilds the menus from storage.onChanged, and the explicit reload_menus below only
+    // makes it immediate.
     get_calendar_event_no_selection.addEventListener('change', async (event) => {
         if (event.target.checked) {
             const currentPromptText = get_calendar_event_textarea.value;
-            const hasBodyOrSelected = currentPromptText.includes('{%mail_text_body_or_selected%}') || currentPromptText.includes('{%mail_html_body_or_selected%}');
-            if (!hasBodyOrSelected) {
+            if (!hasBodyPlaceholder(currentPromptText)) {
                 alert(browser.i18n.getMessage('prefs_OptionText_calendar_no_selection_missing_placeholder'));
                 event.target.checked = false;
-                return;
+                // saveOptions() has already stored true: roll the preference back too, or the
+                // switch would come back on at the next visit with the prompt unchanged.
+                await mztaPrefs.setPref('calendar_no_selection', false);
             }
         }
-        specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event').need_selected = event.target.checked ? '0' : '1';
-        await setSpecialPrompts(specialPrompts);
         browser.runtime.sendMessage({command: "reload_menus"});
     });
 
-    get_calendar_event_from_clipboard.addEventListener('change', async (event) => {
-        if (event.target.checked) {
-            // Request clipboardRead permission when enabling the feature
-            try {
-                const granted = await browser.permissions.request({
-                    permissions: ["clipboardRead"]
-                });
+    // A policy can lock the option on without passing through the check above. Say so next
+    // to the switch when the saved prompt cannot work with it (the background also warns).
+    const updateNoSelectionPolicyNote = () => {
+        const note = document.getElementById('calendar_no_selection_policy_note');
+        if (!note) return;
+        const show = isLockedKey('calendar_no_selection') && get_calendar_event_no_selection.checked &&
+            !hasBodyPlaceholder(get_calendar_event_prompt.text);
+        note.textContent = show ? browser.i18n.getMessage('prefs_OptionText_calendar_no_selection_policy_missing_placeholder') : '';
+        note.classList.toggle('shown', show);
+    };
 
-                if (granted) {
-                    // Permission granted, enable the feature
-                    await browser.storage.sync.set({ get_calendar_event_from_clipboard: true });
-                    browser.runtime.sendMessage({command: "reload_menus"});
-                } else {
-                    // Permission denied, uncheck the checkbox
-                    event.target.checked = false;
-                    alert(browser.i18n.getMessage("clipboard_permission_denied"));
-                }
-            } catch (err) {
-                taLog.error("Error requesting clipboard permission:", err);
-                event.target.checked = false;
-                alert(browser.i18n.getMessage("clipboard_permission_error"));
+    // Needs the clipboardRead permission: the shared activation flow requests it first and writes
+    // true only once granted (saveOptions() skips this key), so the clipboard prompt never reaches
+    // the menus without the permission. The menus are rebuilt after every outcome.
+    bindPermissionToggle(get_calendar_event_from_clipboard, 'get_calendar_event_from_clipboard', {
+        taLog: taLog,
+        deniedMsgKey: 'clipboard_permission_denied',
+        errorMsgKey: 'clipboard_permission_error',
+        onChange: () => { browser.runtime.sendMessage({command: "reload_menus"}); },
+    });
+    await showLockedPermissionWarning(get_calendar_event_from_clipboard, 'get_calendar_event_from_clipboard');
+
+    // This textarea saves both calendar prompts, so either one being enforced locks it. The
+    // policy validation gives the clipboard prompt the same text unless it names it too.
+    await bindSpecialPromptEditor({
+        textarea: get_calendar_event_textarea,
+        saveBtn: document.getElementById('btn_save_prompt'),
+        resetBtn: document.getElementById('btn_reset_prompt'),
+        unsavedEl: document.getElementById('get_calendar_event_prompt_unsaved'),
+        specialPrompts: specialPrompts,
+        promptIds: ['prompt_get_calendar_event', 'prompt_get_calendar_event_from_clipboard'],
+        defaultMsgKey: 'prompt_get_calendar_event_full_text',
+        // The same rule the switch enforces when it is turned on, applied from the other
+        // side: with "Do not ask to select text" on, a prompt that does not read the body
+        // would be sent with no message text at all. Reset needs no check of its own - it
+        // only refills the textarea with the default text, which has the placeholder, and
+        // saving goes through here.
+        beforeSave: (text) => {
+            if (get_calendar_event_no_selection.checked && !hasBodyPlaceholder(text)) {
+                alert(browser.i18n.getMessage('prefs_OptionText_calendar_no_selection_save_missing_placeholder'));
+                return false;
             }
-        } else {
-            // Disabling the feature
-            await browser.storage.sync.set({ get_calendar_event_from_clipboard: false });
-            browser.runtime.sendMessage({command: "reload_menus"});
-        }
+            return true;
+        },
+        afterSave: updateNoSelectionPolicyNote,
+        do_debug: taLog.do_debug,
+    });
+    updateNoSelectionPolicyNote();
+
+    // "Let the AI set a reminder" section [#887]. After restoreOptions() (checkbox
+    // state) and after the prompt text is loaded (warning and preview read it).
+    // Kept before the editor decoration below, so a failure there cannot leave it
+    // uninitialized.
+    await initReminderUI({
+        feature: 'calendar',
+        promptTextarea: get_calendar_event_textarea,
+        statementsEl: document.getElementById('get_calendar_event_info_additional_statements')
     });
 
-    get_calendar_event_reset_btn.addEventListener('click', () => {
-        get_calendar_event_textarea.value = browser.i18n.getMessage('prompt_get_calendar_event_full_text');
-        get_calendar_event_reset_btn.disabled = true;
-        let event = new Event('input', { bubbles: true, cancelable: true });
-        get_calendar_event_textarea.dispatchEvent(event);
-    });
-
-    get_calendar_event_save_btn.addEventListener('click', async () => {
-        specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event').text = get_calendar_event_textarea.value;
-        specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event_from_clipboard').text = get_calendar_event_textarea.value;
-        await setSpecialPrompts(specialPrompts);
-        get_calendar_event_save_btn.disabled = true;
-        document.getElementById('get_calendar_event_prompt_unsaved').classList.add('hidden');
-        browser.runtime.sendMessage({command: "reload_menus"});
-    });
-
-    if(get_calendar_event_prompt.text === 'prompt_get_calendar_event_full_text'){
-        get_calendar_event_prompt.text = browser.i18n.getMessage(get_calendar_event_prompt.text);
-    }
-    get_calendar_event_textarea.value = get_calendar_event_prompt.text;
-    get_calendar_event_reset_btn.disabled = (get_calendar_event_textarea.value === browser.i18n.getMessage('prompt_get_calendar_event_full_text'));
-
-    autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
+    // Full list, kept for token validation. Deliberately NOT filtered like the
+    // suggestions: {%additional_text%} is a real placeholder that this page simply
+    // does not offer, so the editor must not flag it as unknown.
+    activePlaceholders = await getPlaceholders(true);
+    autocompleteSuggestions = activePlaceholders.filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
+    const get_calendar_event_textarea_hl = attachEditorHighlight(get_calendar_event_textarea);
+    // Flags unknown and unterminated tokens. Type 1 ("reading"),
+    // matching the type_value passed to textareaAutocomplete below.
+    if (get_calendar_event_textarea_hl) get_calendar_event_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(get_calendar_event_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
 });
 
 
+
+// The calendar_no_selection option sends the whole message body, which only works if the
+// prompt reads it through one of these two placeholders.
+function hasBodyPlaceholder(text) {
+  return (typeof text === 'string') &&
+    (text.includes('{%mail_text_body_or_selected%}') || text.includes('{%mail_html_body_or_selected%}'));
+}
 
 // Methods to manage options, derived from: /options/mzta-options.js
 
@@ -177,6 +209,9 @@ function saveOptions(e) {
   e.preventDefault();
   let options = {};
   let element = e.target;
+  // get_calendar_event_from_clipboard needs an optional permission: written by its own handler,
+  // and only once the permission is granted (bindPermissionToggle()).
+  if (isPermissionGatedPref(element.id)) return;
 
     switch (element.type) {
       case 'checkbox':
@@ -196,7 +231,11 @@ function saveOptions(e) {
         console.error("[ThunderAI] Unhandled input type:", element.type);
     }
 
-  browser.storage.sync.set(options);
+  // Guard the default: branch above, which leaves `options` empty — the previous
+  // set(options) wrote nothing in that case, so nothing must be written here either.
+  if (Object.prototype.hasOwnProperty.call(options, element.id)) {
+    mztaPrefs.setPref(element.id, options[element.id]);
+  }
 }
 
 async function restoreOptions() {
@@ -228,14 +267,16 @@ async function restoreOptions() {
             const restoreValue = result[element.id] || default_select_value;
             // Check if option exists
             let optionExists = Array.from(element.options).some(opt => opt.value === restoreValue);
+            // Never synthesize an option for a connection select: its catalogue is closed.
+            let canSynthesize = !isClosedCatalogueSelect(element.id);
             if (element.tomselect) {
-              if (!optionExists && restoreValue !== '') {
+              if (!optionExists && restoreValue !== '' && canSynthesize) {
                 element.tomselect.addOption({ value: restoreValue, text: restoreValue });
               }
               element.tomselect.setValue(restoreValue, true);
               setTomSelectBorder(element.tomselect);
             } else {
-              if (!optionExists && restoreValue !== '') {
+              if (!optionExists && restoreValue !== '' && canSynthesize) {
                 let newOption = new Option(restoreValue, restoreValue);
                 element.add(newOption);
               }
@@ -251,28 +292,12 @@ async function restoreOptions() {
     });
   }
 
-  let getting = await browser.storage.sync.get(prefs_default);
+  let getting = await mztaPrefs.getAllPrefs();
 
   let specialPrompts = await getSpecialPrompts();
   let get_calendar_event_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event');
 
-  if (get_calendar_event_prompt) {
-      if (get_calendar_event_prompt.api_type && get_calendar_event_prompt.api_type !== '') {
-          getting['get_calendar_event_connection_type'] = get_calendar_event_prompt.api_type;
-      } else {
-          getting['get_calendar_event_connection_type'] = getting['connection_type'];
-      }
-      for (const [integration, options] of Object.entries(integration_options_config)) {
-          for (const key of Object.keys(options)) {
-              const propName = `${integration}_${key}`;
-              if (get_calendar_event_prompt[propName] !== undefined && get_calendar_event_prompt[propName] !== '') {
-                  getting[`get_calendar_event_${propName}`] = get_calendar_event_prompt[propName];
-              } else {
-                  getting[`get_calendar_event_${propName}`] = getting[propName];
-              }
-          }
-      }
-  }
+  resolveFeatureConnectionPrefs(getting, get_calendar_event_prompt, 'get_calendar_event');
 
   setCurrentChoice(getting);
 }

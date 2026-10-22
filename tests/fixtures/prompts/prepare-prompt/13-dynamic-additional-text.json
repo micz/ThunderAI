@@ -1,0 +1,10 @@
+{
+  "description": "{%additional_text:...%} is left in place for the late fill",
+  "spec": ["spec 03 \"Placeholder Resolution Order\", \"Who supplies the values\": the additional_text late fill, the deferred half of skip_additional_text: true"],
+  "storage": { "placeholders_use_default_value": true },
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Rewrite {%mail_text_body%} in a {%additional_text:tone%} tone", "need_signature": "0" },
+    "body_text": "Send it."
+  },
+  "expected": "Rewrite Send it. in a {%additional_text:tone%} tone"
+}

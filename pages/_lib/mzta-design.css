@@ -1,0 +1,1652 @@
+/*
+ *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/* ===========================================================================
+   SHARED DESIGN SYSTEM ("variant 2a")
+   Tokens + reusable components extracted from the options page so multiple
+   settings pages (options, summarize, …) share one visual language.
+   All component selectors are scoped to #mzta_card: wrap a page in
+   <div id="mzta_card"> to opt in.
+   Light values by default; dark values overridden via prefers-color-scheme.
+   =========================================================================== */
+:root {
+    --desk: #eceef2;
+    --panel: #ffffff;
+    --text: #1b1b22;
+    --dim: #6c6c78;
+    --line: rgba(0, 0, 0, .09);
+    --field: #f7f8fa;
+    --fieldLine: rgba(0, 0, 0, .16);
+    --accent: #2c5e9b;
+    --accentLight: #2c5e9b0f;
+    --success: #1f8a5b;
+    --warning: #c9760a;
+
+    /* Inline validation error (malformed JSON in a connection field). Red, not
+       the amber --warning: this is a value the API cannot use, not a caveat. */
+    --jsonError: #b3261e;
+
+    /* Inline note saying the selected Claude model ignores an option (see
+       .anthropic_caps_note). Dark blue, not --jsonError red: nothing is wrong
+       with the stored value, it simply does not apply to this model. */
+    --capsNote: #14448c;
+
+    /* Code-like text: {%placeholder%} chips in the prompt editors. Same values as
+       the --code/--code-bg tokens on the two Custom Prompts / Data Placeholders
+       pages, so a placeholder chip looks the same everywhere in the add-on. */
+    --code: #1d4ed8;
+    --codeBg: #e7efff;
+
+    /* {%placeholder%} chip that exists but is not available for the prompt's
+       type. Opaque, unlike the --warn* disclaimer washes above: a token-sized
+       chip needs real contrast. Same values as the two Custom Prompts / Data
+       Placeholders pages. */
+    --warnChipText: #8a5300;
+    --warnChipBg: #fdf1dc;
+    --warnChipBorder: #e0a44a;
+
+    /* {%placeholder%} chip that does not exist at all, or an unterminated token.
+       Red because no prompt type can make it resolve, where --warnChip* means
+       "real placeholder, wrong context". Opaque for the same reason, and its own
+       triple rather than --jsonError, which is a bare text colour with no
+       background/border pair. Same values as the two table pages' --err-*. */
+    --errChipText: #a52826;
+    --errChipBg: #fbe3e3;
+    --errChipBorder: #d98b8a;
+
+    /* Monospace stack for placeholder tokens and other code-like text. Same
+       name and value as the local token on the two Custom Prompts / Data
+       Placeholders pages, so pages/_lib/autocomplete.css can rely on one name
+       across both design-token systems. Theme-independent, hence not repeated
+       in the dark block below. */
+    --font-mono: ui-monospace, 'Cascadia Code', monospace;
+
+    /* ThunderStats (green) tint */
+    --statsAccent: #1f8a464f;
+    --statsBg: rgba(31, 138, 70, .04);
+    --statsBorder: rgba(31, 138, 70, .30);
+
+    /* Disclaimer (amber) tint */
+    --warnColor: #c9760a;
+    --warnBg: rgba(201, 118, 10, .07);
+    --warnBorder: rgba(201, 118, 10, .28);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --desk: #141319;
+        --panel: #26252f;
+        --text: #f4f4f8;
+        --dim: #9a9aa7;
+        --line: rgba(255, 255, 255, .10);
+        --field: #1c1b23;
+        --fieldLine: rgba(255, 255, 255, .15);
+        --accent: #2c5e9b;
+        --accentLight: #4c9dff21;
+
+        /* Code-like text (see the light block). Opaque, not an alpha wash: a
+           token-sized chip needs real contrast against --field. */
+        --code: #8fb6ff;
+        --codeBg: #1a2740;
+
+        /* Inline validation error (see the light block). Lightened: the light
+           value is too dark to read against --field/--panel here. */
+        --jsonError: #f2837c;
+
+        /* Model-capability note (see the light block). Light blue: the Claude
+           connection rows have a dark bordeaux background here, against which
+           the light-theme dark blue would be unreadable. */
+        --capsNote: #93c0f5;
+
+        /* Wrong-type placeholder chip (see the light block). */
+        --warnChipText: #f0c07a;
+        --warnChipBg: #3a2c14;
+        --warnChipBorder: #7a5a22;
+
+        /* Missing placeholder chip (see the light block). */
+        --errChipText: #f0a3a1;
+        --errChipBg: #3d1b1b;
+        --errChipBorder: #7d3a38;
+
+        /* ThunderStats (green) tint */
+        --statsAccent: #54c07a75;
+        --statsBg: rgba(31, 138, 70, .16);
+        --statsBorder: rgba(31, 138, 70, .45);
+
+        /* Disclaimer (amber) tint */
+        --warnColor: #e6a94a;
+        --warnBg: rgba(201, 118, 10, 0.06);
+        --warnBorder: rgba(201, 118, 10, .40);
+    }
+}
+
+@keyframes mztaspin { to { transform: rotate(360deg); } }
+
+/* ===========================================================================
+   PAGE / CARD SHELL
+   =========================================================================== */
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    background: var(--panel);
+    color: var(--text);
+    box-sizing: border-box;
+    padding: 0;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+input, select, button, textarea { font-family: inherit; }
+::placeholder { color: var(--dim); opacity: .75; }
+
+#mzta_card {
+    width: 100%;
+    margin: 0;
+    background: var(--panel);
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+/* ===========================================================================
+   HEADER BLOCK (variant "1e") — documentation & resources
+   =========================================================================== */
+#mzta_top_links {
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px 22px;
+}
+.mzta_eyebrow {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--dim);
+}
+
+/* Row 1 — heading + feedback */
+.mzta_hdr_row1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+#mzta_survey { font-size: 12px; color: var(--dim); line-height: 1.4; }
+#mzta_survey a { font-weight: 600; }
+
+/* Row 2 — documentation cards */
+/* The four cards stay on a single row; below 500px they wrap two per row
+   (2×2) instead of ever stacking one per row. */
+.mzta_doc_cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+@media (max-width: 500px) {
+    .mzta_doc_cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+.mzta_doc_card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 13px;
+    border: 1px solid var(--fieldLine);
+    background: var(--field);
+    border-radius: 11px;
+    text-decoration: none;
+}
+.mzta_doc_card svg { stroke: var(--accent); }
+.mzta_doc_card_label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text);
+}
+.mzta_doc_card:hover {
+    text-decoration: none;
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--field));
+}
+
+/* Row 3 — ThunderStats promo card */
+#thstats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 11px;
+    border: 1px solid var(--statsBorder);
+    background: var(--statsBg);
+    text-decoration: none;
+}
+#thstats {
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+#thstats:hover {
+    text-decoration: none;
+    border-color: var(--statsAccent);
+    background: color-mix(in srgb, var(--statsAccent) 12%, var(--statsBg));
+}
+.thstats_tile {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--statsAccent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.thstats_tile img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+}
+.thstats_text {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.4;
+}
+.thstats_text_action{
+    font-weight: bold;
+    text-decoration: underline;
+    font-style: italic;
+}
+.thstats_chev {
+    flex: 0 0 auto;
+    stroke: var(--statsAccent);
+}
+
+/* LLM disclaimer line — a quiet inline note, no box; on the options page it
+   shares a row with the keyboard-shortcut strip (see #mzta_info_row). */
+#mzta_disclaimer {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 11.5px;
+    color: var(--dim);
+    line-height: 1.5;
+}
+.mzta_disclaimer_icon {
+    flex: 0 0 auto;
+    stroke: var(--warnColor);
+    margin-top: 1px;
+}
+
+/* Card body — plain block so children always fill the full width */
+#mzta_body {
+    padding: 20px 20px 22px;
+    box-sizing: border-box;
+}
+#mzta_body > * { margin-bottom: 24px; }
+#mzta_body > *:last-child { margin-bottom: 0; }
+
+/* Body sections stretch to full width (avoid flex min-content collapse) */
+.mzta_section { width: 100%; box-sizing: border-box; }
+
+/* connection-ui.css sets a global `label{width:-moz-available}` that is only
+   appropriate inside the injected connection table. Reset it for labels used
+   elsewhere in the card so they don't force full-width / min-content collapse.
+   The connection panel keeps the original behaviour via #connection_ui_table. */
+#mzta_body label:not(#connection_ui_table label):not(.mzta_switch) { width: auto; }
+
+/* Section eyebrow inside body */
+.mzta_section > .mzta_eyebrow,
+.mzta_section > .mzta_prompt_title { margin-bottom: 13px; }
+.mzta_section_sub { font-size: 12px; color: var(--dim); margin-bottom: 6px; line-height: 1.45; }
+
+/* Divider */
+.mzta_divider { height: 1px; background: var(--line); }
+
+/* Generic labels / fields */
+.opt_title { font-size: 12px; font-weight: 700; color: var(--text); }
+/* Section title for the prompt-text blocks — sized like .opt_title. */
+.mzta_prompt_title { font-size: 12px; font-weight: 700; color: var(--text); }
+.mzta_field { display: flex; flex-direction: column; gap: 6px; }
+.mzta_field_row { display: flex; gap: 14px; }
+.mzta_field_row > .mzta_field { flex: 1; }
+.mzta_help { font-size: 11.5px; color: var(--dim); line-height: 1.45; }
+.small_info { font-size: smaller; }
+.lightbold { color: #292929; font-weight: 600; }
+
+/* Text inputs / selects / textareas */
+#mzta_card input[type="text"],
+#mzta_card input[type="password"],
+#mzta_card input[type="number"],
+#mzta_card select,
+#mzta_card textarea {
+    box-sizing: border-box;
+    padding: 9px 11px;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 8px;
+    outline: none;
+}
+#mzta_card input[type="text"],
+#mzta_card select,
+#mzta_card textarea { width: 100%; }
+#mzta_card textarea { min-height: 70px; resize: vertical; }
+
+/* Placeholder-highlighting editor metrics for the pages using this design
+   system. Structure comes from pages/_lib/editor-highlight.css; these are the
+   values it reads, and they MUST match the #mzta_card textarea rules above
+   (padding, font, line-height) or the mirror drifts away from the text.
+   --ed-surface-focus mirrors the focus rule further down, which repaints the
+   field background — the mirror needs that highlight on the wrapper instead. */
+#mzta_card .editor-wrap {
+    --ed-padding: 9px 11px;
+    /* Monospace, matching the Custom Prompts editor: it is what makes a
+       {%placeholder%} chip read as a token rather than as tinted prose. Must be
+       applied to the textarea too (see the rule further down) — setting it on the
+       chip alone would change its advance width and break mirror alignment. */
+    --ed-font: var(--font-mono);
+    /* Matches #mzta_card textarea's default line-height; the feature-page
+       override further down bumps both together. */
+    --ed-line-height: normal;
+    --ed-surface: var(--field);
+    --ed-surface-focus: var(--panel);
+    --ed-border: var(--fieldLine);
+    /* NOT --accentLight: that token is a 6%-alpha wash (#2c5e9b0f) meant for
+       large hover surfaces, and a token-sized chip painted with it is invisible
+       (1.09 contrast against --field). --code/--codeBg are dedicated tokens with
+       per-theme values, since mixing --accent into --field cannot reach a legible
+       tint in dark mode -- the dark --accent is already dim. */
+    --ed-chip-bg: var(--codeBg);
+    --ed-chip-fg: var(--code);
+    /* NOT --warnBg/--warnBorder: like --accentLight those are low-alpha washes
+       (7% / 28%) for large disclaimer panels, and invisible on a token-sized
+       chip. --warnChip* are opaque, with the same values the two Custom Prompts /
+       Data Placeholders pages use. */
+    --ed-warn-bg: var(--warnChipBg);
+    --ed-warn-fg: var(--warnChipText);
+    --ed-warn-border: var(--warnChipBorder);
+    /* Red tier: the id does not exist, or the token is unterminated. Same
+       opaque-not-a-wash caution as --warnChip* above. */
+    --ed-err-bg: var(--errChipBg);
+    --ed-err-fg: var(--errChipText);
+    --ed-err-border: var(--errChipBorder);
+}
+input.win_prop { width: 100px; }
+span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: var(--dim); }
+
+/* Buttons */
+#mzta_card button {
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 9px;
+    padding: 10px 12px;
+    border: 1px solid var(--fieldLine);
+    background: transparent;
+    color: var(--text);
+    font-weight: 600;
+    text-align: center;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+#mzta_card button.btn_primary {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    font-weight: 700;
+}
+#mzta_card button.btn_primary:hover {
+    background: color-mix(in srgb, #000 12%, var(--accent));
+}
+#mzta_card button.btn_secondary {
+    background: var(--accentLight);
+}
+#mzta_card button.btn_secondary:hover {
+    background: color-mix(in srgb, var(--accent) 5%, var(--accentLight));
+}
+#mzta_card button:disabled,
+#mzta_card button:disabled:hover {
+    opacity: .45;
+    cursor: default;
+    background: var(--accentLight);
+    color: var(--dim);
+}
+#mzta_card button.btn_primary:disabled,
+#mzta_card button.btn_primary:disabled:hover {
+    background: var(--fieldLine);
+    color: var(--dim);
+}
+.btn_small {
+    font-size: 0.9em !important;
+    padding: 5px 9px !important;
+    border-radius: 7px !important;
+    font-weight: 600;
+}
+
+.btn_no_border{
+    border: none !important;
+}
+
+/* Manage buttons region */
+.manage_row { display: flex; gap: 10px; flex-wrap: wrap; }
+.manage_row > button { flex: 1; min-width: 150px; }
+
+/* ===========================================================================
+   CONNECTION PANEL (colour-coded per provider)
+   =========================================================================== */
+#mzta_conn_panel {
+    border: 1.5px solid var(--tint-border, var(--fieldLine));
+    background: var(--tint-bg, transparent);
+    border-radius: 12px;
+    padding: 15px 15px 16px;
+    transition: background .2s, border-color .2s;
+}
+#mzta_conn_panel_header {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0 0 13px;
+    flex-wrap: wrap;
+}
+#mzta_conn_pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    color: var(--tint-accent, var(--accent));
+    background: var(--tint-pill, var(--field));
+    border-radius: 999px;
+    padding: 3px 10px;
+}
+#mzta_conn_pill .pill_dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--tint-accent, var(--accent));
+}
+
+/* ---------------------------------------------------------------------------
+   CONNECTION-UI RESTYLE
+   The shared connection-ui.js still emits <tr>/<td> rows (unchanged, so the
+   feature pages that don't opt into the panel keep working). Here — scoped to
+   #connection_ui_table and the advanced-fields table #connection_ui_adv_table
+   (where the conn_adv rows are moved at runtime) — we make those rows *render*
+   as modern stacked fields (label above, full-width field) using CSS display
+   overrides. Nothing structural changes.
+   --------------------------------------------------------------------------- */
+#connection_ui_table,
+#connection_ui_table tbody,
+#connection_ui_adv_table,
+#connection_ui_adv_table tbody {
+    display: block;
+    width: 100%;
+    border-collapse: collapse;
+}
+/* Each injected <tr> becomes a stacked field block with a subtle separator. */
+#connection_ui_table tr,
+#connection_ui_adv_table tr {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px 0;
+    border-top: 1px solid var(--line);
+    background: transparent !important;   /* panel already carries the tint */
+}
+/* Core table: its first row is the always-visible connection-type select, so
+   drop its top border/padding. NOT applied to the advanced table — there the
+   structural first row is hidden for most providers, and the visible first row
+   must keep its top padding to separate it from the disclosure button. */
+#connection_ui_table tr:first-child { border-top: none; padding-top: 0; }
+/* label cell on top, field cell below — both full width */
+#connection_ui_table td,
+#connection_ui_adv_table td {
+    display: block;
+    width: 100% !important;
+    box-sizing: border-box;
+    padding: 0;
+}
+#connection_ui_table td:first-child,
+#connection_ui_adv_table td:first-child { margin-bottom: 6px; }
+/* the connection-type select row keeps label + control readable */
+#connection_ui_table .opt_title,
+#connection_ui_adv_table .opt_title { font-size: 12px; font-weight: 700; color: var(--text); }
+#connection_ui_table .small_info,
+#connection_ui_table i,
+#connection_ui_adv_table .small_info,
+#connection_ui_adv_table i { font-size: 11.5px; color: var(--dim); font-style: normal; }
+/* inputs/selects/textarea full width inside the panel */
+#connection_ui_table input[type="text"],
+#connection_ui_table input[type="password"],
+#connection_ui_table input[type="number"],
+#connection_ui_table select,
+#connection_ui_table textarea,
+#connection_ui_adv_table input[type="text"],
+#connection_ui_adv_table input[type="password"],
+#connection_ui_adv_table input[type="number"],
+#connection_ui_adv_table select,
+#connection_ui_adv_table textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 11px;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 8px;
+    outline: none;
+}
+#connection_ui_table textarea,
+#connection_ui_adv_table textarea { min-height: 70px; resize: vertical; }
+/* connection-ui.css forces label{width:-moz-available}; keep it inside the panel */
+#connection_ui_table label,
+#connection_ui_adv_table label { display: block; }
+/* model-fetch buttons / CORS buttons look like the tinted secondary buttons */
+#connection_ui_table button,
+#connection_ui_adv_table button {
+    background: transparent;
+    color: var(--tint-accent, var(--accent));
+    border: 1px solid var(--tint-border, var(--fieldLine));
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 6px;
+}
+#connection_ui_table .btn_small,
+#connection_ui_adv_table .btn_small {
+    padding: 5px 9px !important;
+    border-radius: 7px !important;
+}
+/* The ghost actions next to a field label (.models_action_btn, connection-ui.css)
+   are not bordered buttons: undo the button rule above, which outranks their
+   class-level rules. Colours and hover states stay in connection-ui.css. */
+#connection_ui_table .models_action_btn,
+#connection_ui_adv_table .models_action_btn {
+    border: none;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 13px;
+    font-weight: 500;
+    margin: 0;
+}
+#connection_ui_table .models_action_add:hover,
+#connection_ui_adv_table .models_action_add:hover {
+    background: color-mix(in srgb, var(--tint-accent, var(--accent)) 10%, transparent);
+}
+#connection_ui_table .models_action_clear,
+#connection_ui_adv_table .models_action_clear {
+    color: var(--dim);
+}
+#connection_ui_table .models_action_clear:hover,
+#connection_ui_adv_table .models_action_clear:hover {
+    color: var(--jsonError);
+}
+/* TomSelect controls match the field look and follow the light/dark theme.
+   The vendored tom-select CSS hardcodes light colors (#fff backgrounds, #303030
+   text) on the control, on the inner <input> that shows the selected item, and
+   on the dropdown, so each of those has to be pointed at the theme tokens. */
+#mzta_card .ts-wrapper { width: 100%; }
+#mzta_card .ts-control,
+#mzta_card .ts-wrapper.single .ts-control,
+#mzta_card .ts-wrapper.single.input-active .ts-control {
+    background: var(--field);
+    background-image: none;     /* the vendored CSS paints a light gradient */
+    box-shadow: none;
+    border: 1px solid var(--fieldLine);
+    border-radius: 8px;
+    min-height: 38px;
+    color: var(--text);
+}
+/* The selected item is rendered in the inner input: without this it keeps the
+   vendored dark-on-light color and disappears against a dark field. */
+#mzta_card .ts-control > input,
+#mzta_card .ts-control > input::placeholder,
+#mzta_card .ts-control .item {
+    color: var(--text);
+}
+#mzta_card .ts-control > input::placeholder { color: var(--dim); }
+#mzta_card .ts-wrapper.single .ts-control:after { border-top-color: var(--dim); }
+#mzta_card .ts-wrapper.single.dropdown-active .ts-control:after { border-bottom-color: var(--dim); }
+#mzta_card .ts-dropdown,
+#mzta_card .ts-dropdown.single {
+    background: var(--panel);
+    border: 1px solid var(--fieldLine);
+    color: var(--text);
+}
+#mzta_card .ts-dropdown .option,
+#mzta_card .ts-dropdown .optgroup-header,
+#mzta_card .ts-dropdown .no-results {
+    background: transparent;
+    color: var(--text);
+}
+#mzta_card .ts-dropdown .active,
+#mzta_card .ts-dropdown .active.create {
+    background: var(--accentLight);
+    color: var(--text);
+}
+#mzta_card .ts-dropdown [data-selectable] .highlight {
+    background: color-mix(in srgb, var(--accent) 35%, transparent);
+    color: inherit;
+}
+#mzta_card .ts-dropdown .optgroup { border-top-color: var(--line); }
+/* Keep the caret on the same line as the selected value.
+   `.ts-control` is `display:flex; flex-wrap:wrap`. In a single select the chosen
+   value is a sibling `div.item` (not the input's own text), and the plugin-free
+   vendored CSS styles `.item` only under `plugin-*` selectors, so here it is an
+   unstyled block flex item. Its `min-width` therefore resolves to `auto` = its
+   min-content width, and a model id such as `claude-sonnet-4-5-20250929` is one
+   unbreakable token, so the item cannot shrink; item + input then exceed the
+   control and `flex-wrap` drops the input — and the caret — to a second row.
+   `min-width:0` is what lets it shrink; without it `max-width` is ignored, since
+   the automatic minimum wins over it in flex sizing. (The vendored 7rem minimum
+   on the input is not the cause: it is not !important and these rules outrank
+   it on specificity.) */
+#mzta_card .ts-wrapper.single.has-items .ts-control { flex-wrap: nowrap; }
+#mzta_card .ts-wrapper.single.has-items .ts-control > .item {
+    min-width: 0;               /* defeat the automatic min-content floor */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 0 1 auto;
+}
+/* The input keeps a small but non-zero width so the caret is always visible
+   sitting just after the value, and grows to take the remaining room (which is
+   also the space it needs once the user starts typing a search). */
+#mzta_card .ts-wrapper.single.has-items .ts-control > input {
+    min-width: 4px;
+    flex: 1 1 4px;
+}
+/* CORS warning rows keep a distinct amber note look */
+#connection_ui_table tr[id$="_cors_warning"] td,
+#connection_ui_adv_table tr[id$="_cors_warning"] td {
+    background: rgba(201, 118, 10, .08);
+    border: 1px solid rgba(201, 118, 10, .28);
+    border-radius: 9px;
+    padding: 11px 12px;
+    font-size: 11.5px;
+    color: var(--warning);
+    line-height: 1.5;
+    text-align: left;
+}
+
+.api_key-container { position: relative; display: flex; align-items: center; }
+.toggle-icon { cursor: pointer; margin-left: 5px; }
+.toggle-icon img { width: 16px; height: 16px; vertical-align: middle; }
+.toggle-icon.managed_secret { cursor: default; }
+
+/* Per-connection advanced toggle button — mirrors the app-level #mzta_adv_toggle
+   (gear icon + "Advanced options" label, chevron on the right) but keeps the
+   per-provider tint accent. The advanced fields expand below it (button stays
+   fixed) via #connection_ui_adv_table. */
+#mzta_conn_adv_btn {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: transparent;
+    border: 1.5px solid var(--tint-border, var(--fieldLine));
+    color: var(--tint-accent, var(--accent));
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 11px 14px;
+    border-radius: 8px;
+    margin-top: 14px;
+}
+/* Advanced fields table sits below the button; hidden while collapsed. */
+#connection_ui_adv_table.hidden { display: none; }
+/* Chevron rotates when the disclosure is expanded. */
+#mzta_conn_adv_btn .chev { display: inline-flex; }
+#mzta_conn_adv_btn .chev svg { transition: transform .2s; }
+#mzta_conn_adv_btn[aria-expanded="true"] .chev svg { transform: rotate(180deg); }
+
+/* Connection test status strip. Matches field styling. */
+.conn_test_strip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+    background: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 9px;
+    padding: 10px 12px;
+    margin-top: 10px;
+    font-size: 12.5px;
+    color: var(--text);
+}
+.conn_test_dot {
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--dim);
+}
+.conn_test_text { flex: 1 1 auto; line-height: 1.4; }
+.conn_test_link {
+    flex: 0 0 auto;
+    color: var(--accent);
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.conn_test_link:hover { text-decoration: underline; }
+/* State variants driven by data-state on the strip */
+.conn_test_strip[data-state="ok"] .conn_test_dot { background: var(--success); }
+.conn_test_strip[data-state="error"] .conn_test_dot { background: #d93025; }
+.conn_test_strip[data-state="error"] .conn_test_text { color: #d93025; }
+/* Loading: turn the dot into a spinner (reuses the mztaspin keyframe). */
+.conn_test_strip[data-state="loading"] .conn_test_dot {
+    background: transparent;
+    border: 2px solid var(--fieldLine);
+    border-top-color: var(--accent);
+    width: 12px;
+    height: 12px;
+    animation: mztaspin .8s linear infinite;
+}
+
+/* --- Provider setup note ------------------------------------------------ */
+/* Last element inside #mzta_conn_panel, below the connection-test strip. It has
+   no heading of its own — the panel header already titles the whole block. Only
+   the body text carries the per-provider colour, as a left accent bar. */
+#miczDescription { margin-top: 14px; }
+#miczDescription p { margin: 0; }
+/* display:block is required here — updateDescription() reveals the active
+   provider's text with style.display = "", falling back to this value. */
+#miczDescription .info_specific {
+    display: block;
+    border-left: 3px solid var(--tint-accent, var(--accent));
+    padding-left: 11px;
+    font-size: 12.5px;
+    color: var(--text);
+    line-height: 1.55;
+    transition: border-color .2s;
+}
+/* Sits inline at the end of the active provider's sentence (moved there by
+   updateDescription()), so it flows with the text rather than breaking below. */
+#mzta_info_guide {
+    margin-left: 5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* ===========================================================================
+   FEATURE TOGGLE SWITCHES
+   The checkbox keeps its id / class="option-input"; it is visually hidden and
+   rendered as a switch. No JS change required.
+   =========================================================================== */
+.feature_row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 13px 0;
+    border-top: 1px solid var(--line);
+    width: 100%;
+    box-sizing: border-box;
+}
+.feature_info { flex: 1 1 auto; min-width: 0; }
+.feature_manage { white-space: nowrap; }
+.feature_name { font-size: 13px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; }
+.feature_desc { font-size: 11.5px; color: var(--dim); margin-top: 2px; line-height: 1.4; }
+.feature_manage { font-size: 11.5px; font-weight: 600; display: inline-block; margin-top: 5px; }
+.feature_manage.btn_small { background: transparent; border: none; color: var(--accent); padding: 0 !important; cursor: pointer; }
+
+/* width:auto overrides the global `label{width:-moz-available}` from connection-ui.css */
+.mzta_switch { flex: none; margin-top: 2px; display: inline-flex; width: auto !important; }
+.mzta_switch input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+}
+.mzta_switch .track {
+    width: 38px;
+    height: 22px;
+    border-radius: 999px;
+    background: rgba(140, 140, 150, .45);
+    position: relative;
+    cursor: pointer;
+    transition: background .18s;
+    display: inline-block;
+}
+.mzta_switch .track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
+    transition: transform .18s;
+}
+.mzta_switch input[type="checkbox"]:checked + .track { background: var(--accent); }
+.mzta_switch input[type="checkbox"]:checked + .track::after { transform: translateX(16px); }
+.mzta_switch input[type="checkbox"]:disabled + .track { opacity: .5; cursor: default; }
+/* A managed toggle is inert on purpose: no pointer affordance on the whole switch, so the
+   label reads as locked rather than as a control that ignores clicks. */
+.mzta_switch input[type="checkbox"][data-mzta-managed="1"] + .track { cursor: not-allowed; }
+/* "Locked on" toggle: forced checked and click-swallowed, but NOT `disabled` — a
+   disabled checkbox is skipped by each page's saveOptions() sweep, so the pref
+   would never be persisted (see connection-ui.js). Lighter than the :disabled
+   treatment above, since the toggle is active rather than inert. */
+.mzta_switch input[type="checkbox"][data-mandatory="true"] + .track { opacity: .75; cursor: not-allowed; }
+
+/* Note under the Features subtitle: explains why every feature toggle is greyed
+   out while no AI connection is selected. Blue/accent (informational, matching
+   #no_connection_banner), not the amber .warn_API_needed treatment. */
+#features_no_connection_note {
+    display: none;              /* shown by JS only when no connection is selected */
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.45;
+    color: var(--accent);
+    margin-bottom: 6px;
+}
+#features_no_connection_note.shown { display: block; }
+
+.warn_API_needed {
+    display: none;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--warning);
+    margin-top: 5px;
+}
+.specific_api_indicator {
+    display: none;
+    font-size: 0.75em;
+    padding: 0.35em 0.5em;
+    border-radius: 0.8em;
+}
+
+/* Feature-page markers for a toggle that is forced on by the global connection.
+   Both are shown by JS (.shown) only in that case; same amber "you must act"
+   treatment as .warn_API_needed. */
+.feature_locked_badge {
+    display: none;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--warning);
+    border: 1px solid var(--warning);
+    padding: 0.2em 0.5em;
+    border-radius: 0.8em;
+    white-space: nowrap;
+}
+.feature_locked_badge.shown { display: inline-block; }
+.feature_locked_note {
+    display: none;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--warning);
+    margin-top: 5px;
+    line-height: 1.4;
+}
+.feature_locked_note.shown { display: block; }
+
+/* Non-blocking amber caveat under a feature row, shown by JS (.shown) — e.g. the
+   reminder warning on the calendar event / task pages. Same look as the note above. */
+.feature_warn_note {
+    display: none;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--warning);
+    margin-top: 5px;
+    line-height: 1.4;
+}
+.feature_warn_note.shown { display: block; }
+
+/* Preview of the reminder text appended to the prompt (calendar event / task
+   pages, ../_lib/reminder-ui.js): the fixed format instruction in the dimmed
+   tone, the user's rules set apart by an accent rule so the two read as
+   different sources. */
+.reminder_statements_box {
+    margin-top: 6px;
+    padding: 10px 12px;
+    background: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 6px;
+}
+.reminder_statements_format {
+    color: var(--dim);
+}
+.reminder_statements_rules {
+    color: var(--text);
+    border-left: 3px solid var(--accent);
+    padding-left: 10px;
+}
+.reminder_statements_format + .reminder_statements_rules {
+    margin-top: 10px;
+}
+
+/* ===========================================================================
+   ADVANCED OPTIONS (app-level disclosure)
+   =========================================================================== */
+#mzta_adv_toggle {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 10px;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+}
+#mzta_adv_toggle .chev { display: inline-flex; transition: transform .2s; }
+#mzta_adv_toggle[aria-expanded="true"] .chev { transform: rotate(180deg); }
+#mzta_adv_panel {
+    border: 1px solid var(--fieldLine);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    margin-top: -6px;
+    padding: 16px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+#mzta_adv_panel.hidden { display: none; }
+/* Behaviour toggle rows: same metrics as .feature_row, but no border/padding since
+   #mzta_adv_panel already supplies the 15px gap between its flex children. */
+.mzta_adv_row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.mzta_adv_info { flex: 1 1 auto; min-width: 0; }
+.mzta_adv_name { font-size: 13px; font-weight: 600; color: var(--text); }
+.mzta_adv_desc { font-size: 11.5px; color: var(--dim); margin-top: 2px; line-height: 1.4; }
+/* Sub-option variant: a toggle that belongs to the .mzta_field it sits inside
+   (e.g. "save window position" under the window Top/Left inputs) rather than
+   being a setting of its own. The label keeps .mzta_help weight, so the switch
+   is scaled down and vertically centred on that single line instead of using
+   the title-height alignment of a full .mzta_adv_row. The indent + left rule
+   mark the row as subordinate to the field; the switch stays in the right-hand
+   column shared by every other toggle. */
+.mzta_adv_row_sub {
+    align-items: center;
+    gap: 10px;
+    padding-left: 10px;
+    border-left: 2px solid var(--fieldLine);
+    margin-top: 1px;
+}
+.mzta_adv_row_sub .mzta_switch { margin-top: 0; transform: scale(.85); transform-origin: right center; }
+.mzta_storage_row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+    font-size: 12px;
+    color: var(--dim);
+}
+
+/* ===========================================================================
+   BOTTOM BLOCK
+   Disclaimer + keyboard-shortcut stack · footer.
+   The wrapper takes the #mzta_body > * rhythm; the parts below space
+   themselves with their own margin-top.
+   =========================================================================== */
+
+/* --- Disclaimer + shortcut stack ---------------------------------------- */
+/* Two centered rows stacked vertically: the disclaimer on a single line, then
+   the shortcut strip below it, each only as wide as its own content. */
+#mzta_info_row {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+/* Sized to its own content so it reads as one line (icon + sentence + privacy
+   link) whenever the card is wide enough; it still wraps instead of overflowing
+   on narrow windows, hence align-items rather than a hard nowrap. */
+#mzta_info_row > #mzta_disclaimer {
+    align-items: center;
+    margin-top: 0;
+    width: fit-content;
+    max-width: 100%;
+    text-align: center;
+}
+
+/* --- Keyboard-shortcut strip -------------------------------------------- */
+/* Shrink-to-fit and centred by the stack above — never full width. */
+#mzta_shortcut_strip {
+    align-self: center;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 13px;
+    background: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 10px;
+}
+.mzta_shortcut_label { font-size: 12.5px; color: var(--dim); }
+#mzta_shortcut_keys { display: flex; gap: 4px; }
+#mzta_shortcut_keys kbd {
+    font: inherit;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--fieldLine);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    padding: 3px 6px;
+}
+
+/* --- Footer — plain centered links -------------------------------------- */
+#mzta_footer {
+    border-top: 1px solid var(--line);
+    margin-top: 20px;
+    padding-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 26px;
+    font-size: 12px;
+    color: var(--dim);
+    line-height: 1.5;
+}
+
+/* ===========================================================================
+   WARNINGS
+   =========================================================================== */
+/* No AI connection selected yet — informational, blue: nothing is broken, the
+   user just has to choose a provider. Deliberately NOT styled like .warning.
+   Sits above #mzta_top_links as a direct child of #mzta_card, which has no
+   padding of its own, hence the explicit margins matching the header block. */
+#no_connection_banner {
+    display: none;              /* shown by JS only when no connection is selected */
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    min-height: 64px;
+    margin: 20px 22px 0;
+    padding: 18px 20px;
+    border: 1px solid var(--accent);
+    border-inline-start: 4px solid var(--accent);
+    border-radius: 10px;
+    background-color: var(--accentLight);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+#no_connection_banner.shown { display: flex; }
+#no_connection_banner a {
+    color: var(--accent);
+    font-weight: bold;
+    text-decoration: none;
+    white-space: nowrap;
+}
+#no_connection_banner a:hover { text-decoration: underline; }
+
+/* Enterprise managed configuration active. Near-identical geometry to
+   #no_connection_banner above, but neutral rather than blue: it states a fact about who
+   controls these settings, it is neither a call to action nor a problem. The lock glyph
+   carries the meaning at a glance.
+   The one deliberate divergence is the wrapping - see the note on flex-wrap below. That
+   banner's two flex items are text and a LINK, which should drop to its own line when
+   cramped; this one's are a glyph and text, which must not come apart.
+   Shown by showManagedBanner() in pages/_lib/managed-ui.js. */
+#managed_config_banner {
+    display: none;              /* shown by JS only when a policy is active */
+    align-items: flex-start;
+    /* NOT flex-wrap: wrap. The padlock and the text are two separate flex items, so
+       wrapping drops the lock onto a line of its own as soon as the text does not fit
+       beside it - which is what happens in the narrow setup-wizard card. The text is a
+       single item that wraps internally instead. */
+    flex-wrap: nowrap;
+    gap: 10px;
+    margin: 20px 22px 0;
+    padding: 14px 18px;
+    border: 1px solid var(--line);
+    border-inline-start: 4px solid var(--dim);
+    border-radius: 10px;
+    background-color: var(--field);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+#managed_config_banner.shown { display: flex; }
+#managed_config_banner::before {
+    content: "🔒";          /* padlock */
+    font-size: 16px;
+    /* Never shrink the glyph and never let it wrap away from the text: it is the icon
+       for the message, not a word in it. The line-height matches the text's so it sits
+       on the first line's baseline rather than above it. */
+    flex: none;
+    line-height: 1.5;
+}
+/* The message itself takes the remaining width and wraps inside its own box, keeping
+   every line aligned under the first one instead of running back under the padlock. */
+#managed_config_banner .managed_banner_text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Marker appended next to every control a policy enforces, so a disabled field reads as
+   "your organization set this" instead of as a bug. */
+.managed_marker {
+    display: inline-flex;
+    align-items: baseline;
+    /* Padlock and text are two separate flex items, so NOT flex-wrap: wrap - same
+       reasoning as #managed_config_banner above. The badge is nowrap anyway. */
+    flex-wrap: nowrap;
+    gap: 4px;
+    margin-inline-start: 8px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--field);
+    border: 1px solid var(--line);
+    color: var(--dim);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.6;
+    white-space: nowrap;
+    vertical-align: middle;
+    cursor: help;
+}
+/* Same padlock the banner and the restriction note use, so every managed surface reads
+   the same way: the glyph says "locked", the text says by whom. It is the icon for the
+   badge, not a word in it, so it never shrinks and never wraps away from the label. */
+.managed_marker::before {
+    content: "\1F512";      /* padlock */
+    flex: none;
+    font-size: 10px;
+    line-height: 1.6;
+}
+
+/* In a feature row the marker is a direct flex child inserted before .mzta_switch, so it
+   needs the same top offset as the switch to line up with the toggle instead of hanging
+   from the row's flex-start baseline. */
+.feature_row > .managed_marker {
+    flex: none;
+    align-self: flex-start;
+    margin-top: 4px;
+    margin-inline-end: 4px;
+}
+
+/* A .mzta_field is a flex COLUMN, so a marker appended as its last child becomes a flex item
+   and `align-items: stretch` blows the chip out to the full field width - and
+   margin-inline-start, a horizontal offset, buys it no vertical separation from the help text
+   above. Shrink it back to its content and give it the row's own breathing room. Same fix as
+   .feature_row > .managed_marker above, for the column layout instead of the row one. */
+.mzta_field > .managed_marker,
+.mzta_field_num_text > .managed_marker {
+    flex: none;
+    align-self: flex-start;
+    margin-inline-start: 0;
+    margin-block: 2px;
+    padding: 3px 8px;
+}
+
+/* A special prompt text enforced by the policy (lockEnforcedPromptText() in managed-ui.js).
+   The editor is readOnly, not disabled, so the text can still be selected and copied - which
+   also means no :disabled styling applies. Drop the editing cues instead. Id-scoped like
+   `#mzta_card .editor-wrap .editor`, which sets caret-color and must lose to this. */
+#mzta_card .editor-wrap .editor[data-mzta-managed="1"] {
+    caret-color: transparent;
+    cursor: default;
+}
+
+/* A link a restriction took away. An <a> has no `disabled` the browser honours, so the
+   inert look is done here; managed-ui.js also strips the href so it cannot be followed. */
+a.managed_disabled {
+    color: var(--dim);
+    text-decoration: none;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Note shown in place of a control set a policy removed entirely (prompt import/export).
+   Quieter than the managed banner: the banner already names the organization at the top of
+   the page, this only explains one missing control. */
+.managed_restriction_note {
+    display: none;
+    /* Padlock and text are two separate flex items, so NOT flex-wrap: wrap - same
+       reasoning as #managed_config_banner above. The text wraps internally instead. */
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin: 10px 0;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--field);
+    color: var(--dim);
+    font-size: 13px;
+    line-height: 1.5;
+}
+.managed_restriction_note.shown { display: flex; }
+.managed_restriction_note::before {
+    content: "\1F512";      /* padlock */
+    font-size: 15px;
+    flex: none;
+    line-height: 1.5;
+}
+
+.warning {
+    color: white;
+    font-style: italic;
+    background-color: #d93025;
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-weight: bold;
+    line-height: 1.4;
+}
+.warning a { background-color: white; padding: 0 3px; border-radius: 4px; }
+
+/* helper */
+.hidden { display: none !important; }
+
+/* ===========================================================================
+   PER-PROVIDER TINT TOKENS (both themes)
+   Derived from ThunderAI's conntype_* base colours; drives the connection
+   panel, provider pill, provider setup note accent bar.
+   lift(v) = round(v + (255-v)*0.55) for the dark-mode accent.
+   =========================================================================== */
+/* Light */
+#mzta_conn_panel.tint_chatgpt_web       { --tint-bg: rgba(180,83,14,.08);  --tint-border: rgba(180,83,14,.40);  --tint-pill: rgba(180,83,14,.14);  --tint-accent: rgb(180,83,14); }
+#mzta_conn_panel.tint_chatgpt_api       { --tint-bg: rgba(10,83,214,.08);  --tint-border: rgba(10,83,214,.40);  --tint-pill: rgba(10,83,214,.14);  --tint-accent: rgb(10,83,214); }
+#mzta_conn_panel.tint_google_gemini_api { --tint-bg: rgba(150,120,12,.08); --tint-border: rgba(150,120,12,.40); --tint-pill: rgba(150,120,12,.14); --tint-accent: rgb(150,120,12); }
+#mzta_conn_panel.tint_anthropic_api     { --tint-bg: rgba(168,20,80,.08);  --tint-border: rgba(168,20,80,.40);  --tint-pill: rgba(168,20,80,.14);  --tint-accent: rgb(168,20,80); }
+#mzta_conn_panel.tint_ollama_api        { --tint-bg: rgba(31,122,46,.08);  --tint-border: rgba(31,122,46,.40);  --tint-pill: rgba(31,122,46,.14);  --tint-accent: rgb(31,122,46); }
+#mzta_conn_panel.tint_openai_comp_api   { --tint-bg: rgba(122,43,191,.08); --tint-border: rgba(122,43,191,.40); --tint-pill: rgba(122,43,191,.14); --tint-accent: rgb(122,43,191); }
+
+/* Provider setup note — only the accent bar is tinted (set on #miczDescription) */
+#miczDescription.tint_chatgpt_web       { --tint-accent: rgb(180,83,14); }
+#miczDescription.tint_chatgpt_api       { --tint-accent: rgb(10,83,214); }
+#miczDescription.tint_google_gemini_api { --tint-accent: rgb(150,120,12); }
+#miczDescription.tint_anthropic_api     { --tint-accent: rgb(168,20,80); }
+#miczDescription.tint_ollama_api        { --tint-accent: rgb(31,122,46); }
+#miczDescription.tint_openai_comp_api   { --tint-accent: rgb(122,43,191); }
+
+@media (prefers-color-scheme: dark) {
+    #mzta_conn_panel.tint_chatgpt_web       { --tint-bg: rgba(180,83,14,.20);  --tint-border: rgba(180,83,14,.55);  --tint-pill: rgba(180,83,14,.30);  --tint-accent: rgb(222,177,140); }
+    #mzta_conn_panel.tint_chatgpt_api       { --tint-bg: rgba(10,83,214,.20);  --tint-border: rgba(10,83,214,.55);  --tint-pill: rgba(10,83,214,.30);  --tint-accent: rgb(120,171,244); }
+    #mzta_conn_panel.tint_google_gemini_api { --tint-bg: rgba(150,120,12,.20); --tint-border: rgba(150,120,12,.55); --tint-pill: rgba(150,120,12,.30); --tint-accent: rgb(208,194,140); }
+    #mzta_conn_panel.tint_anthropic_api     { --tint-bg: rgba(168,20,80,.20);  --tint-border: rgba(168,20,80,.55);  --tint-pill: rgba(168,20,80,.30);  --tint-accent: rgb(216,150,177); }
+    #mzta_conn_panel.tint_ollama_api        { --tint-bg: rgba(31,122,46,.20);  --tint-border: rgba(31,122,46,.55);  --tint-pill: rgba(31,122,46,.30);  --tint-accent: rgb(154,196,161); }
+    #mzta_conn_panel.tint_openai_comp_api   { --tint-bg: rgba(122,43,191,.20); --tint-border: rgba(122,43,191,.55); --tint-pill: rgba(122,43,191,.30); --tint-accent: rgb(195,163,226); }
+
+    #miczDescription.tint_chatgpt_web       { --tint-accent: rgb(222,177,140); }
+    #miczDescription.tint_chatgpt_api       { --tint-accent: rgb(120,171,244); }
+    #miczDescription.tint_google_gemini_api { --tint-accent: rgb(208,194,140); }
+    #miczDescription.tint_anthropic_api     { --tint-accent: rgb(216,150,177); }
+    #miczDescription.tint_ollama_api        { --tint-accent: rgb(154,196,161); }
+    #miczDescription.tint_openai_comp_api   { --tint-accent: rgb(195,163,226); }
+
+    .lightbold { color: #f3f3f3; }
+    .api_key-container .toggle-icon:not(.managed_secret) img { filter: invert(1); }
+}
+
+/* ===========================================================================
+   conntype_* legacy row shading (kept for the injected connection-ui rows).
+   getConnectionTypeColor() in mzta-options.js reads the background-color of
+   tr.conntype_<value>; these keep that working while rows are still <tr>.
+   =========================================================================== */
+tr.conntype_chatgpt_api,       tr.conntype_chatgpt_api2       { background-color: rgb(185, 220, 252); }
+tr.conntype_chatgpt_web,       tr.conntype_chatgpt_web2       { background-color: rgb(255, 209, 183); }
+tr.conntype_ollama_api,        tr.conntype_ollama_api2        { background-color: rgb(177, 238, 169); }
+tr.conntype_openai_comp_api,   tr.conntype_openai_comp_api2   { background-color: rgb(213, 169, 238); }
+tr.conntype_google_gemini_api, tr.conntype_google_gemini_api2 { background-color: rgb(233, 238, 169); }
+tr.conntype_anthropic_api,     tr.conntype_anthropic_api2     { background-color: rgb(255, 168, 204); }
+
+@media (prefers-color-scheme: dark) {
+    tr.conntype_chatgpt_api,       tr.conntype_chatgpt_api2       { background-color: rgb(0, 0, 58); }
+    tr.conntype_chatgpt_web,       tr.conntype_chatgpt_web2       { background-color: rgb(39, 11, 0); }
+    tr.conntype_ollama_api,        tr.conntype_ollama_api2        { background-color: rgb(7, 58, 0); }
+    tr.conntype_openai_comp_api,   tr.conntype_openai_comp_api2   { background-color: rgb(89, 20, 129); }
+    tr.conntype_google_gemini_api, tr.conntype_google_gemini_api2 { background-color: rgb(72, 77, 3); }
+    tr.conntype_anthropic_api,     tr.conntype_anthropic_api2     { background-color: rgb(83, 0, 35); }
+}
+
+/* ===========================================================================
+   FEATURE-PAGE SHELL (opt-in)
+   Feature settings pages (summarize, translate, spamfilter, …) open in their
+   own browser tab. Wrapping their <body> in class="mzta_feature_page" opts
+   into a centered, capped-width column on a light "desk" background with each
+   .mzta_section rendered as a distinct white card. The main options page does
+   NOT carry this class, so every rule here is scoped to body.mzta_feature_page
+   and leaves the options page untouched.
+   Reuses the existing design tokens (--desk, --panel, --line, --accent, …) so
+   dark mode is inherited for free — no hardcoded palette values.
+   =========================================================================== */
+
+/* Page background + centered, capped-width column */
+body.mzta_feature_page {
+    background: var(--desk);
+}
+body.mzta_feature_page #mzta_card {
+    max-width: 760px;
+    margin: 0 auto;
+    background: transparent;
+    padding: 0 24px 32px;
+    box-sizing: border-box;
+    overflow: visible;   /* allow the autocomplete dropdown to escape the card */
+}
+
+/* Below the column cap the padding keeps content off the edges automatically;
+   nothing forces a min-width, so no extra media query is needed. */
+
+/* --- Header block ------------------------------------------------------- */
+body.mzta_feature_page #mzta_top_links {
+    border-bottom: none;
+    gap: 4px;
+    padding: 28px 0 20px;
+}
+body.mzta_feature_page .mzta_hdr_row1 {
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+}
+body.mzta_feature_page .mzta_page_icon {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+/* The app icon is not transparent (filled envelope artwork), so no white tile
+   around it — show it on its own to avoid a double frame. */
+body.mzta_feature_page .mzta_page_icon img {
+    display: block;
+    width: 34px;
+    height: 34px;
+}
+body.mzta_feature_page .mzta_page_title {
+    font-size: 25px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    text-transform: none;
+    color: var(--text);
+    line-height: 1.2;
+}
+body.mzta_feature_page .mzta_page_subtitle {
+    font-size: 13.5px;
+    color: var(--dim);
+    line-height: 1.5;
+    text-wrap: pretty;
+    margin: 0;
+}
+
+/* --- Cards -------------------------------------------------------------- */
+/* Each section becomes a rounded white card. Applies to ANY .mzta_section,
+   so extra sections / fields added later become cards with no special code. */
+body.mzta_feature_page #mzta_body {
+    padding: 0;
+}
+body.mzta_feature_page #mzta_body > * { margin-bottom: 24px; }
+body.mzta_feature_page #mzta_body > *:last-child { margin-bottom: 0; }
+body.mzta_feature_page .mzta_section {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+    box-sizing: border-box;
+}
+
+/* --- Wide sections (opt-in) --------------------------------------------- */
+/* A section carrying .mzta_section_wide breaks out of the column cap and
+   centers itself on the viewport, for content that is genuinely wide — the
+   spam report table, for instance. Every other section keeps the column, so
+   a page opts in one section at a time and the rest is left untouched.
+   The break-out uses symmetric negative margins rather than the usual
+   `margin-left: 50%; transform: translateX(-50%)` pair: a transform would
+   establish a containing block for positioned descendants, which would trap
+   the autocomplete dropdown that #mzta_card's `overflow: visible` exists to
+   let escape. Negative margins just widen the box where it already sits.
+   The bleed is floored at 0, so on a window narrower than the column it
+   resolves to zero and the section renders exactly like every other card —
+   no media query needed, and the page never gains a horizontal scrollbar.
+   Reserving the scrollbar gutter on the page is what makes `100vw` honest
+   here: these pages scroll vertically, and without a stable gutter `100vw`
+   counts the scrollbar width that the layout viewport does not actually
+   have, so the bleed would overhang by half the scrollbar on each side and
+   create the very horizontal scrollbar this is meant to avoid. */
+html:has(> body.mzta_feature_page) {
+    scrollbar-gutter: stable;
+}
+body.mzta_feature_page .mzta_section_wide {
+    /* Column cap and page padding restated from #mzta_card above: a custom
+       property cannot read another rule's used values. */
+    --mzta_wide_cap: 760px;
+    --mzta_wide_pad: 24px;
+    --mzta_wide_max: 1600px;
+    /* How far the section may grow past each side of the column: never past
+       the page padding, never past half the extra width allowed. */
+    --mzta_wide_bleed: max(0px, min(
+        (100vw - 2 * var(--mzta_wide_pad) - var(--mzta_wide_cap)) / 2,
+        (var(--mzta_wide_max) - var(--mzta_wide_cap)) / 2
+    ));
+    /* `.mzta_section` sets `width: 100%`, which pins the used width to the
+       parent and makes negative margins merely shift the box instead of
+       widening it. The width must therefore be restated to include both
+       bleeds, not just cancelled with `auto`. */
+    width: calc(100% + 2 * var(--mzta_wide_bleed));
+    margin-left: calc(-1 * var(--mzta_wide_bleed));
+    margin-right: calc(-1 * var(--mzta_wide_bleed));
+}
+
+/* Section header: uppercase muted eyebrow + 3px vertical accent bar */
+body.mzta_feature_page .mzta_section > .mzta_eyebrow {
+    display: block;
+    border-left: 3px solid var(--accent);
+    padding-left: 9px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+/* Prompt-text section title: same accent-bar treatment as the section
+   eyebrow, but sized like .opt_title (15px/600) instead of 12px/700. */
+body.mzta_feature_page .mzta_section > .mzta_prompt_title {
+    display: block;
+    border-left: 3px solid var(--accent);
+    padding-left: 9px;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+/* Intro help text under a section header (e.g. the prompts section):
+   pull it up under the eyebrow, then space it before the first field. */
+body.mzta_feature_page .mzta_section > .mzta_eyebrow + .mzta_help,
+body.mzta_feature_page .mzta_section > .mzta_prompt_title + .mzta_help {
+    margin: -8px 0 16px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    text-wrap: pretty;
+}
+
+/* --- Row separators ----------------------------------------------------- */
+/* Each stacked setting inside a card reads as a distinct row. The first row
+   after the section header/intro keeps no top border; subsequent rows get a
+   thin divider. .feature_row already carries a top border in the base sheet;
+   normalise its spacing here to match the field rows. */
+body.mzta_feature_page .mzta_section > .mzta_field,
+body.mzta_feature_page .mzta_section > .feature_row {
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+    margin-top: 18px;
+}
+/* First interactive row after the header/intro block: no divider. The
+   :first-child pair covers headerless sections (the settings card on the
+   feature pages has no eyebrow), where the row itself opens the card. */
+body.mzta_feature_page .mzta_section > .mzta_field:first-child,
+body.mzta_feature_page .mzta_section > .feature_row:first-child,
+body.mzta_feature_page .mzta_section > .mzta_eyebrow + .mzta_field,
+body.mzta_feature_page .mzta_section > .mzta_eyebrow + .feature_row,
+body.mzta_feature_page .mzta_section > .mzta_prompt_title + .mzta_field,
+body.mzta_feature_page .mzta_section > .mzta_prompt_title + .feature_row,
+body.mzta_feature_page .mzta_section > .mzta_help + .mzta_field,
+body.mzta_feature_page .mzta_section > .mzta_help + .feature_row {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+}
+/* The connection panel is its own bordered box — no extra divider above it. */
+body.mzta_feature_page .mzta_section > #mzta_conn_panel {
+    margin-top: 18px;
+}
+
+/* --- Typography (scoped up-sizing) ------------------------------------- */
+body.mzta_feature_page .opt_title { font-size: 15px; font-weight: 600; }
+body.mzta_feature_page .opt_title_small { font-size: 13.5px; font-weight: normal; }
+body.mzta_feature_page .mzta_help,
+body.mzta_feature_page .feature_desc {
+    font-size: 13.5px;
+    line-height: 1.5;
+    text-wrap: pretty;
+}
+body.mzta_feature_page .feature_name { font-size: 15px; font-weight: 600; }
+
+/* Advanced connection rows moved into #connection_ui_adv_table by
+   initializeSpecificIntegrationUI(): its _updateVisibility() sets an inline
+   `display:table-row` on the visible ones, which would beat the stacked
+   `display:block` restyle. Same override each feature page CSS applies to
+   #connection_ui_table; hidden rows keep their inline `display:none`. */
+body.mzta_feature_page #connection_ui_adv_table tr[style*="table-row"] {
+    display: block !important;
+}
+
+/* Injected connection rows: match the feature-page text scale.
+   connection-ui.js emits most description text as a bare text node inside
+   <label> (after a <br>), not wrapped in .small_info/<i>, so the .mzta_help
+   rule above never reaches it and it falls back to the browser default
+   (~16px) — visibly larger than the descriptions outside the panel. Setting
+   size/colour on the cell lets those un-wrapped nodes inherit the same scale,
+   and the .opt_title/.small_info rules below restore the feature-page label
+   and description sizes that the 1-1-0 panel rules (see the
+   #connection_ui_table block above) would otherwise shrink.
+   The CORS-warning rows are excluded: their amber note styling is only 1-1-1,
+   so the selector below would otherwise override its `color: var(--warning)`
+   with the muted description colour. */
+body.mzta_feature_page #connection_ui_table tr:not([id$="_cors_warning"]) td,
+body.mzta_feature_page #connection_ui_adv_table tr:not([id$="_cors_warning"]) td {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--dim);
+    text-wrap: pretty;
+}
+body.mzta_feature_page #connection_ui_table .opt_title,
+body.mzta_feature_page #connection_ui_adv_table .opt_title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+}
+body.mzta_feature_page #connection_ui_table .small_info,
+body.mzta_feature_page #connection_ui_table i,
+body.mzta_feature_page #connection_ui_adv_table .small_info,
+body.mzta_feature_page #connection_ui_adv_table i {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--dim);
+}
+
+/* --- Selects / text fields --------------------------------------------- */
+body.mzta_feature_page #mzta_card select {
+    min-height: 40px;
+}
+/* Kept in step with --ed-line-height below: the highlight mirror must use the
+   same line-height as the textarea it sits behind, or the two drift apart. */
+body.mzta_feature_page #mzta_card textarea { line-height: 1.6; }
+body.mzta_feature_page #mzta_card .editor-wrap { --ed-line-height: 1.6; }
+
+/* The highlight mirror needs its textarea transparent so the painted mirror
+   behind it shows through. editor-highlight.css says so on `.editor-wrap .editor`
+   (0,0,2,0), but `#mzta_card textarea` above is (0,1,0,1) and an id beats any
+   number of classes — so without this repetition, scoped to #mzta_card, the
+   textarea stays opaque with black text and hides the mirror completely.
+   Keep in sync with the same declarations in editor-highlight.css. */
+#mzta_card .editor-wrap .editor {
+    background: transparent;
+    color: transparent;
+    caret-color: var(--text);
+    border-color: var(--ed-border);
+    /* Must equal --ed-font above: the mirror reads that token, the textarea reads
+       this declaration, and if the two fonts differ the highlight drifts off the
+       text. Beats `input, select, button, textarea { font-family: inherit }`. */
+    font-family: var(--ed-font);
+}
+
+/* --- Number fields: label/desc left, compact control right ------------- */
+body.mzta_feature_page .mzta_field_num {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+body.mzta_feature_page .mzta_field_num_text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+body.mzta_feature_page .mzta_field_num_ctrl {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+body.mzta_feature_page #mzta_card input[type="number"] {
+    width: 96px;
+    text-align: center;
+    flex: 0 0 auto;
+    max-width: none;   /* override .mzta_inline_row max-width from the page sheet */
+}
+
+/* --- Focus & hover states (new; scoped so options page is untouched) --- */
+body.mzta_feature_page #mzta_card input:focus,
+body.mzta_feature_page #mzta_card select:focus,
+body.mzta_feature_page #mzta_card textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+    background: var(--panel);
+    outline: none;
+    transition: border-color .13s ease, box-shadow .13s ease, background .13s ease;
+}
+
+/* ...except a highlight-mirror textarea, which must stay transparent or it hides
+   the mirror. The focus tint moves to the wrapper (:focus-within) instead. This
+   has to sit AFTER the rule above: same specificity, so source order decides. */
+body.mzta_feature_page #mzta_card .editor-wrap .editor:focus { background: transparent; }

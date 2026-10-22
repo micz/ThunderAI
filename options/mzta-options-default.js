@@ -18,21 +18,67 @@
 
 export const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize', 'get_calendar_event', 'get_task', 'translate'];
 
+// The Ollama reasoning levels offered when the server does not report which ones the
+// selected model accepts (buildOllamaThinkOptions() in pages/_lib/connection-ui.js), also
+// named by the policy validation's warning (js/mzta-managed.js). Here, not in
+// connection-ui.js, for the same reason as valid_connection_types below.
+export const OLLAMA_THINK_LEVELS = ['low', 'medium', 'high', 'max'];
+
+// Every valid value of connection_type / {prefix}_connection_type / prompt.api_type.
+// Lives here rather than in pages/_lib/connection-ui.js because the background page also
+// needs it (enterprise policy validation) and cannot import that module: it pulls in
+// TomSelect and every API client. connection-ui.js builds its <option> catalogue from
+// this list, so the two can never drift.
+// An empty string is NOT in this list: it is the separate "not selected yet" / "inherit
+// the global connection" state.
+export const valid_connection_types = [
+    'chatgpt_web',
+    'chatgpt_api',
+    'google_gemini_api',
+    'anthropic_api',
+    'ollama_api',
+    'openai_comp_api'
+];
+
 export const integration_options_config = {
     chatgpt: {
         api_key: '',
         model: '',
         developer_messages: '',
         temperature: '',
-        store: false
+        store: false,
+        reasoning_summary: '',
+        reasoning_effort: '',
+        extra_body: '',
+        max_output_tokens: 0,
+        verbosity: '',
+        text_format: '',
+        text_format_schema_name: '',
+        text_format_schema: '',
+        // Kept as a string, not a number: an empty pref must stay distinguishable
+        // from a legitimate 0, which is a valid value.
+        top_p: '',
+        truncation: '',
+        prompt_cache_key: '',
+        service_tier: '',
+        safety_identifier: '',
+        include_encrypted_reasoning: false
     },
     ollama: {
         host: '',
+        api_key: '',
         model: '',
         num_ctx: 0,
         temperature: '',
-        think: false,
-        format_json: false
+        // A level, not a flag: '' (off), 'true' (plain boolean true, for models that
+        // take no level), or 'low'|'medium'|'high'|'max'. Declared as a string on
+        // purpose — the boolean branch in mzta-special-commands.js would otherwise
+        // coerce a per-prompt level back to true/false.
+        think: '',
+        format_json: false,
+        keep_alive: '',
+        system_prompt: '',
+        extra_options: ''
     },
     openai_comp: {
         host: '',
@@ -40,14 +86,21 @@ export const integration_options_config = {
         api_key: '',
         use_v1: true,
         chat_name: 'OpenAI Comp',
-        temperature: ''
+        temperature: '',
+        extra_body: ''
     },
     google_gemini: {
         api_key: '',
         model: '',
         system_instruction: '',
         thinking_budget: '',
-        temperature: ''
+        temperature: '',
+        max_output_tokens: 0,
+        // Kept as strings, not numbers: an empty pref must stay distinguishable
+        // from a legitimate 0, which is a valid value for both.
+        top_p: '',
+        top_k: '',
+        extra_body: ''
     },
     anthropic: {
         api_key: '',
@@ -56,7 +109,15 @@ export const integration_options_config = {
         max_tokens: 4096,
         system_prompt: '',
         temperature: '',
-        extended_thinking_budget: 0
+        // Kept as strings, not numbers: an empty pref must stay distinguishable
+        // from a legitimate 0, which is a valid value for both.
+        top_p: '',
+        top_k: '',
+        // One stop sequence per line. Empty lines are dropped at request-build
+        // time, never at save time.
+        stop_sequences: '',
+        extended_thinking_budget: 0,
+        effort: ''
     }
 };
 
@@ -96,6 +157,14 @@ export function getDynamicSettingValue(prefs, prefix, settingName) {
     return prefs[`${prefix}_${settingName}`];
 }
 
+// DEFAULTS MUST BE THE CONSERVATIVE CHOICE: feature off, nothing new sent anywhere.
+// An organization whose enterprise policy sets "_lock_unlisted": true gets every preference
+// its policy does not name locked at the value declared here - including every preference a
+// later version adds, from the first start after the update, before the administrator has
+// read the release notes. A default that turns something on, or sends data to a provider,
+// turns it on for that whole fleet with no way for the user to opt out. If a new default
+// cannot be conservative, say why in the review. See claude-spec/08-managed-configuration.md
+// "Strict mode".
 export const prefs_default = {
     ...global_integration_settings,
     do_debug: false,
@@ -104,46 +173,78 @@ export const prefs_default = {
     chatgpt_win_top: '',
     chatgpt_win_left: '',
     chatgpt_win_save_position: false,
+    // Last view chosen on the Manage Custom Prompts page: 'split' (list + detail editor)
+    // or 'table' (dense overview). UI state only, never read outside that page.
+    custom_prompts_view: 'split',
     default_chatgpt_lang: '',
     default_sign_name: '',
     reply_type: 'reply_all',
-    composing_plain_text: false,
-    connection_type: 'chatgpt_web',     //Other values: 'chatgpt_api', 'ollama_api', 'openai_comp_api', 'google_gemini_api'
+    // Empty means "no AI connection selected yet": a new user is guided to the setup wizard
+    // instead of having a provider forced on them.
+    // Values: 'chatgpt_web', 'chatgpt_api', 'ollama_api', 'openai_comp_api', 'google_gemini_api', 'anthropic_api'
+    connection_type: '',
     chatgpt_web_model: '',
     chatgpt_web_tempchat: false,
+    // Opt-in: verify the model on ChatGPT's newer model picker by opening its menu (see checkGPTModel())
+    chatgpt_web_model_extended_check: false,
     chatgpt_web_project: '',
     chatgpt_web_custom_gpt: '',
     chatgpt_web_load_wait_time: 1000,
     special_command_timeout: 120000,   // ms before a hung special command (API worker) is aborted
+    batch_max_concurrency: 1,   // max messages processed at once by one processEmails() batch (auto add tags / spam filter / summarize / translate, on receive or from the context menu); each message runs its features in series
     dynamic_menu_force_enter: false,
     placeholders_use_default_value: false,
     hide_thinking: true,
+    // Show the token counts the API reports under each answer in the chat, plus a
+    // session total in the header. Off by default: it is extra chrome most users do
+    // not want, and the web-only integrations cannot report it at all.
+    chat_show_usage_data: true,
     api_webchat_font_scale: 1.0,   // font zoom factor for the API webchat (1.0 = 100%)
+    // Default comparison unit of the proofreading change picker: 'words' or
+    // 'sentences'. A prompt can override it; '' on a prompt means "inherit this".
+    diff_granularity: 'words',
     max_prompt_length: 30000,   // max string length for prompt
     add_tags: false,
     add_tags_maxnum: 3,
     add_tags_sender_cache: true,   // reuse the tags of previously analyzed mails from the same sender
+    add_tags_max_messages: 0,   // max messages tagged at once from the context menu (0 = no limit); above this the user is warned and the operation is blocked. Automatic tagging is not capped
     add_tags_hide_exclusions: false,
     add_tags_exclusions_exact_match: false,
+    // Tags never assigned (substring match unless add_tags_exclusions_exact_match). Array of
+    // strings; the storage key predates its declaration here, so existing lists carry over.
+    add_tags_exclusions: [],
     add_tags_first_uppercase: true,
     add_tags_force_lang: true,
     add_tags_auto: false,
     add_tags_auto_force_existing: false,
     add_tags_auto_only_inbox: true,
+    add_tags_auto_include_sent: false,  // Auto tagging normally skips the sent folder, this re-enables it
     add_tags_auto_uselist: false,
     add_tags_auto_uselist_list: '',
     add_tags_enabled_accounts: [],
+    // Policy-only: profile-independent matchers ("user@x", "@x", "*@x", "local") that replace
+    // add_tags_enabled_accounts while a policy supplies them. See resolveEnabledAccounts().
+    add_tags_enabled_accounts_match: [],
     get_calendar_event: true,
     get_calendar_event_from_clipboard: false,  // Enable calendar event from clipboard menu item
     get_task: true,
     calendar_enforce_timezone: false,
     calendar_timezone: '',
     calendar_no_selection: false,   // If true do not ask for selection, but use the full prompt
+    calendar_append_email_link: false,  // Append a mid: link to the source email to the event description (added by code, never sent to the AI)
+    task_append_email_link: false,      // Same, for the task description
+    calendar_reminder_enabled: false,   // Ask the AI for a reminder (reminderMinutes) and send "no reminder" when it returns none. If false, reminderMinutes is always dropped (Thunderbird default reminder)
+    calendar_reminder_rules: '',        // Optional natural-language reminder rules appended to the prompt when calendar_reminder_enabled is true
+    task_reminder_enabled: false,       // Same, for tasks
+    task_reminder_rules: '',            // Same, for tasks
     spamfilter: false,
     spamfilter_threshold: 70,
     spamfilter_enabled_accounts: [],
+    // Policy-only, same as add_tags_enabled_accounts_match above.
+    spamfilter_enabled_accounts_match: [],
     spamfilter_skip_addresses: [],
-    spamfilter_skip_addressbook: true,
+    spamfilter_block_addresses: [],   // Senders always reported as spam (score 100) without asking the AI
+    spamfilter_skip_addressbook: false,
     spamfilter_show_msg_panel: true,
     spamfilter_sender_cache: true,   // reuse the spam verdict of previously analyzed mails from the same sender
     spamfilter_batch_size: 10,       // emails analyzed per AI call during batch spam checks
@@ -154,6 +255,10 @@ export const prefs_default = {
     summarize_max_messages: 20,          // max number of messages summarized at once (webchat mode); above this the user is warned and the operation is blocked
     summarize_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
     summarize_strip_formatting: false,   // strip HTML/markdown formatting from AI summary
+    summarize_force_lang: false,         // always write the summary in summarize_lang (or default_chatgpt_lang)
+    summarize_lang: '',                  // summary language when summarize_force_lang is on, fallback on default_chatgpt_lang
+    summarize_auto_senders: false,       // auto-summarize emails coming from the addresses in the list below
+    summarize_auto_senders_list: [],     // sender addresses or domain patterns ("@domain.com", "*@domain.com")
     translate: true,
     translate_auto: 0,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
     translate_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline

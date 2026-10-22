@@ -1,0 +1,85 @@
+/*
+ *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
+
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/* ===========================================================================
+   Placeholder autocomplete dropdown — shared by all 8 pages that use
+   js/mzta-placeholders-autocomplete.js (customprompts, customdataplaceholders,
+   translate, summarize, addtags, spamfilter, get-task, get-calendar-event).
+
+   These pages use TWO disjoint design-token systems:
+     - Six link pages/_lib/mzta-design.css  (--field, --fieldLine, --dim)
+     - customprompts and customdataplaceholders define their own local :root
+       (--panel, --border2, --muted) and link neither.
+   Every token below therefore uses a fallback chain so one file serves both.
+   Do NOT add mzta-design.css to those two pages: its :root would fight theirs.
+   --text and --accent exist in both systems, so they need no fallback.
+   =========================================================================== */
+
+.autocomplete-container { position: relative; }
+
+/* The list is position:fixed and placed by JS at the caret. Fixed, not
+   absolute: on the two table-based pages an absolutely positioned list is
+   clipped by the surrounding <td>. Because it is fixed, it is positioned
+   against the viewport and no ancestor's overflow can cut it off. */
+.autocomplete-list {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: max-content;
+    min-width: 220px;
+    max-width: 380px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--field, var(--panel));
+    border: 1px solid var(--fieldLine, var(--border2));
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
+    z-index: 1000;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.autocomplete-list li {
+    padding: 6px 10px;
+    cursor: pointer;
+    color: var(--text);
+}
+
+.autocomplete-list li:hover,
+.autocomplete-list li.active {
+    background: var(--accentLight, var(--rowhover));
+}
+
+/* First line: the token itself, monospace so it lines up with the prompt text.
+   The already-typed prefix is wrapped in <b> by the JS. */
+.autocomplete-list .ac_cmd {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+
+.autocomplete-list .ac_cmd b { font-weight: 700; }
+
+/* Second line: what the placeholder resolves to. */
+.autocomplete-list .ac_desc {
+    display: block;
+    margin-top: 1px;
+    font-size: 11px;
+    color: var(--muted, var(--dim));
+}

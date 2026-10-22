@@ -24,10 +24,43 @@ const MZTA_INJECTED_SELECTORS = [
   '#mzta-container',
   '.mzta_dialog',
   '#mzta-spam-batch-banner',
+  // <style>/<script> hold no readable text, but their SOURCE is text: the clone
+  // below is detached, and on a detached node textContent-based extraction reads
+  // stylesheet rules out as if they were body copy. A Word/Outlook mail carries a
+  // long @font-face / .MsoNormal block right at the top of <body>, which is exactly
+  // what was landing in {%mail_text_body%}. Removing them here also keeps them out
+  // of getFullHtml's innerHTML, so the CSS no longer rides along in {%mail_html_body%}
+  // and the diff picker's original side either.
+  'style',
+  'script',
 ];
 
-function getCleanBodyHtml() {
-  const clone = document.body.cloneNode(true);
+// The containers the message display renders a mail's text parts into. Everything else in
+// a displayed body is not the mail: ThunderAI's panels, the header table of the display, the
+// attachment headers, and the banners other add-ons draw from their own message display
+// scripts (an "External sender" or "Possible spoofing" notice), which no selector list of
+// ours could name. Not used in a compose window: a reply or an inline forward can carry
+// these classes inside the quoted text, so there they would cut the body down to the quote.
+const MZTA_DISPLAY_PART_SELECTOR = 'div.moz-text-html, div.moz-text-plain, div.moz-text-flowed';
+
+// The top-level part containers of a displayed body, cloned into a detached <body>; null
+// when there is none (a document not built by the message display), so the caller falls
+// back to the whole body. A container nested in another (an inline forwarded message) is
+// already inside its parent's clone and is not taken twice.
+function cloneDisplayParts() {
+  const parts = Array.from(document.body.querySelectorAll(MZTA_DISPLAY_PART_SELECTOR))
+    .filter(el => !el.parentElement.closest(MZTA_DISPLAY_PART_SELECTOR));
+  if (parts.length === 0) return null;
+  const root = document.body.cloneNode(false);
+  for (const part of parts) root.appendChild(part.cloneNode(true));
+  return root;
+}
+
+// displayOnly: the message display only (see MZTA_DISPLAY_PART_SELECTOR). The caller
+// says so, because only the background knows the tab type: the content script is the
+// same file in both window kinds.
+function getCleanBodyHtml(displayOnly = false) {
+  const clone = (displayOnly && cloneDisplayParts()) || document.body.cloneNode(true);
   for (const selector of MZTA_INJECTED_SELECTORS) {
     for (const el of clone.querySelectorAll(selector)) {
       el.remove();
@@ -43,6 +76,229 @@ function getCleanBodyHtml() {
     table.remove();
   }
   return clone;
+}
+
+// The same clone, with hidden elements (newsletter preheaders, tracking markup)
+// also removed - for the TEXT extractions only.
+//
+// Deliberately NOT folded into getCleanBodyHtml(): getFullHtml reads that clone's
+// innerHTML for {%mail_html_body%} and the diff picker's original side, and the
+// HTML placeholders must keep the markup they were given. Hidden markup is
+// stripped from the TEXT, never from the HTML - on any path. Unlike <style>/
+// <script> in MZTA_INJECTED_SELECTORS (which are noise in both worlds), a hidden
+// element is real markup that an HTML consumer may legitimately want.
+function getTextBodyHtml(displayOnly = false) {
+  return mztaStripHidden(getCleanBodyHtml(displayOnly));
+}
+
+// <p> is Paragraph mode; <div> is Body Text mode. Only <p>-class elements earn a
+// blank line - a <div> is one line - matching how stripHtmlKeepLines() in
+// js/mzta-utils.js treats the same two tags.
+const MZTA_BLOCK_LEVEL_RE = /^(P|BLOCKQUOTE|UL|OL|TABLE|H[1-6]|PRE)$/;
+
+// The typed / quoted walkers read the LIVE body (the autoselect range needs live
+// nodes, so they cannot use the detached getCleanBodyHtml() clone). They skip the
+// add-on's own elements here instead: #mzta-container is always the body's first
+// child and the .mzta_dialog are appended to it, so a top-level check is enough. A
+// skipped node is never firstNode / lastNode, so the autoselect range leaves it out.
+function isInjectedNode(node) {
+  return node instanceof Element && MZTA_INJECTED_SELECTORS.some(selector => node.matches(selector));
+}
+
+// A selection reaching into ThunderAI's own elements (a select-all takes #mzta-container
+// too) must not delete them: the range starts after each of them instead. They are
+// top-level and #mzta-container is the body's first child, so no typed text is lost; a
+// range that lay entirely inside one collapses right after it.
+function keepOutOfInjected(range) {
+  for (const node of Array.from(document.body.childNodes)) {
+    if (isInjectedNode(node) && range.intersectsNode(node)) range.setStartAfter(node);
+  }
+}
+
+// The insertion of replaceSelectedText and insertReply. It goes through the editor
+// (document.execCommand), so it is one transaction of the editor's undo stack: one Ctrl+Z
+// restores the text it replaced, Ctrl+Y / Ctrl+Shift+Z redoes it. A DOM mutation bypasses the transaction
+// manager, and the old way of making it undoable - two compose.setComposeDetails() calls
+// from the background, issue #34 - stopped working in Thunderbird 143 (bug 1975127): there
+// every setComposeDetails({body}) clears the undo history. So nothing may write the body
+// through the compose API after this, or the undo entry just created is gone.
+function insertIntoEditor(range, text, isPlainText) {
+  try {
+    // From the AI chat or the ChatGPT window the compose window is not focused, and an
+    // editor command can then do nothing. Focus it first, then set the selection: focusing
+    // may restore the editor's own saved selection, and execCommand acts on the current one.
+    if (!document.hasFocus()) window.focus();
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    // Plain text: insertText, never a parse - in HTML a bare \n is collapsible whitespace,
+    // which is how the whole message ended up as one line [#855]. One call for the whole
+    // text, so it is one undo step; the plain text editor turns each \n into a line break.
+    // HTML: the serialization of the parsed body's children, never a nested <body>.
+    const ok = isPlainText
+      ? document.execCommand('insertText', false, text)
+      : document.execCommand('insertHTML', false, new DOMParser().parseFromString(text, 'text/html').body.innerHTML);
+    if (ok) return;
+    console.error("[ThunderAI] Compose insertion: the editor refused the insertion, inserting it directly (not undoable)");
+  } catch (e) {
+    console.error("[ThunderAI] Compose insertion: the editor insertion failed, inserting it directly (not undoable): " + e);
+  }
+  // The fallback, so the answer is never lost: a direct DOM mutation, outside the undo stack.
+  range.deleteContents();
+  if (isPlainText) {
+    // The line breaks ARE the \n characters, and the plain text editor renders the body as
+    // preformatted text: a Text node keeps them. [#855]
+    range.insertNode(document.createTextNode(text));
+  } else {
+    const doc = new DOMParser().parseFromString(text, 'text/html');
+    // Insert the parsed NODES, not the <body> element that wraps them: a <body> nested
+    // inside the compose body is invalid markup, which Thunderbird's serializer flattens
+    // when the message is saved or sent - destroying the <p> paragraphs the picker emits.
+    const fragment = document.createDocumentFragment();
+    // Iterate over a copy: appending to the fragment removes each node from the live
+    // childNodes NodeList being walked.
+    Array.from(doc.body.childNodes).forEach(node => fragment.appendChild(node));
+    range.insertNode(fragment);
+  }
+}
+
+// The top-level block a reply's answer goes above: the first quoted mail (reply, or
+// forward when there is no reply prefix) or the signature, whichever comes first (the
+// signature comes first with "signature above the quote"). null with neither. The same
+// choice as insertHtml() in js/mzta-utils.js, which is replyMessage's fallback.
+function firstQuoteOrSignature() {
+  const quote = document.querySelector('.moz-cite-prefix') || document.querySelector('.moz-forward-container');
+  const signature = document.querySelector('.moz-signature');
+  let block = quote && signature
+    ? (quote.compareDocumentPosition(signature) & Node.DOCUMENT_POSITION_FOLLOWING ? quote : signature)
+    : (quote || signature);
+  while (block && block.parentNode !== document.body) block = block.parentNode;
+  return block;
+}
+
+// Does this block already open with a <br> of its own? Thunderbird's signature does
+// (<div class="moz-signature"><br>...), the cite prefix does not: the spacer after a
+// reply's answer is added only when it does not, or the gap is a double blank line.
+// Whitespace-only text nodes are skipped. A copy of startsWithBreak() in
+// js/mzta-utils.js (a module, which this classic script cannot import). [#849]
+function startsWithBreak(element) {
+  if (!element || element.nodeType !== Node.ELEMENT_NODE) return false;
+  for (let node = element.firstChild; node; node = node.nextSibling) {
+    if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '') continue;
+    return node.nodeType === Node.ELEMENT_NODE && node.tagName.toLowerCase() === 'br';
+  }
+  return false;
+}
+
+// One top-level node of the compose body, projected to text with its line
+// structure intact.
+//
+// textContent alone is what flattened the body: it drops <br> entirely, so an
+// HTML compose window's lines ran together [#829]. Cloning and replacing each
+// <br> with a "\n" text node is the projection api_webchat/diffPicker.js
+// (blockTextOfHtml) applies to a block's HTML - reimplemented here on the live
+// node rather than imported, because this file is registered as a CLASSIC
+// content script by composeScripts.register and has no module context.
+//
+// HTML whitespace is not line structure, the same rule as mztaInjectLineBreaks()
+// (js/lib/mzta-html-lines.js, whose helpers this reuses): outside preformatted
+// content a run of spaces, tabs and newlines is one space, and a space at the
+// start of a line goes. A draft reopened in the compose window carries the
+// serializer's indentation, and "-- <br>\n      This" used to give a blank line
+// inside the signature. Preformatted is checked on the LIVE ancestors too: the
+// clone below is detached, and a plain text window's "white-space: pre-wrap" sits
+// on <body>, outside it - there a \n inside a text node (the answer inserted as
+// text [#855]) IS a line.
+//
+// startsLine: the node opens a line (a block, or inline content after a break),
+// so a leading space goes; inline content continuing a line keeps it.
+// inline: the node is part of a line, not a block - its trailing break is real
+// and is kept. A block's trailing break is Thunderbird's bogus <br>, the same one
+// the line joiner adds after every block: keeping both doubles every line.
+function nodeTextKeepLines(node, { startsLine = true, inline = false } = {}) {
+  const livePre = mztaIsPreformatted(node, document.documentElement);
+  if (node.nodeType !== Node.ELEMENT_NODE) {
+    if (node.nodeType !== Node.TEXT_NODE) return '';
+    const text = node.data;
+    if (livePre) return text;
+    const collapsed = text.replace(/[ \t\n\r\f]+/g, ' ');
+    return startsLine ? collapsed.replace(/^ +/, '') : collapsed;
+  }
+  const clone = node.cloneNode(true);
+  if (!livePre) {
+    for (const t of mztaTextNodes(clone)) {
+      if (!mztaIsPreformatted(t, clone)) t.data = t.data.replace(/[ \t\n\r\f]+/g, ' ');
+    }
+  }
+  for (const br of clone.querySelectorAll('br')) {
+    br.replaceWith(document.createTextNode('\n'));
+  }
+  if (!livePre) {
+    let atLineStart = startsLine;
+    for (const t of mztaTextNodes(clone)) {
+      if (atLineStart && !mztaIsPreformatted(t, clone)) t.data = t.data.replace(/^ +/, '');
+      if (t.data !== '') atLineStart = t.data.endsWith('\n');
+    }
+  }
+  const text = clone.textContent || '';
+  return inline ? text : text.replace(/\n+$/, '');
+}
+
+// How a top-level node of the compose body takes part in the lines, as a browser
+// lays it out. The body is a flow, not a list of lines: a plain text window holds
+// its lines as top-level text and <br> (captured live: tests/fixtures/compose/
+// captured/plaintext_compose_body_live.html), and so does HTML typed straight into
+// the body.
+//   break      <br>, <hr>: ends the current line - or, with none open, makes an
+//              empty one
+//   paragraph  MZTA_BLOCK_LEVEL_RE: a line of its own, a blank line around it
+//   line       any other block, or an element with an inline display: block (the
+//              plain text window's quote span): a line of its own
+//   inline     text and inline elements: continue the current line
+const MZTA_LINE_LEVEL_RE = /^(DIV|LI|DL|DT|DD|ADDRESS|CENTER|SECTION|ARTICLE|HEADER|FOOTER|NAV|ASIDE|MAIN|FIGURE|FIGCAPTION|FIELDSET|DETAILS|SUMMARY|FORM)$/;
+const MZTA_DISPLAY_BLOCK_RE = /(?:^|;)\s*display\s*:\s*(?:block|flex|grid|list-item|table)\s*(?:;|!|$)/i;
+
+function topLevelKind(node) {
+  if (node.nodeType !== Node.ELEMENT_NODE) return 'inline';
+  if (node.nodeName === 'BR' || node.nodeName === 'HR') return 'break';
+  if (MZTA_BLOCK_LEVEL_RE.test(node.nodeName)) return 'paragraph';
+  if (MZTA_LINE_LEVEL_RE.test(node.nodeName) ||
+      MZTA_DISPLAY_BLOCK_RE.test(node.getAttribute('style') || '')) return 'line';
+  return 'inline';
+}
+
+// Joins the top-level nodes the typed / quoted walkers accept into text with the
+// contract of {%mail_typed_text%} / {%mail_quoted_text%}: one \n between lines, a
+// blank line around paragraphs. Every top-level node used to be a line of its own,
+// joined with \n: right for <p> and <div>, wrong for a flow - a top-level <br> is a
+// node too, so each line break of a plain text window counted twice, and every
+// line read as a paragraph.
+function createLineJoiner() {
+  let out = '';
+  let lineOpen = false;
+  return {
+    add(node) {
+      const kind = topLevelKind(node);
+      if (kind === 'break') {
+        out += '\n';
+        lineOpen = false;
+        return;
+      }
+      if (kind === 'inline') {
+        const text = nodeTextKeepLines(node, { startsLine: !lineOpen, inline: true });
+        if (text === '') return;
+        out += text;
+        lineOpen = !text.endsWith('\n');
+        return;
+      }
+      if (lineOpen) out += '\n';
+      if (kind === 'paragraph' && out !== '' && !out.endsWith('\n\n')) out += '\n';
+      out += nodeTextKeepLines(node) + '\n';
+      if (kind === 'paragraph') out += '\n';
+      lineOpen = false;
+    },
+    text() { return out; },
+  };
 }
 
 // ── Theme colors ────────────────────────────────────────────────────
@@ -110,8 +366,7 @@ const _TOOLBAR_SLOT_ORDER = ['mzta-toolbar-spam', 'mzta-toolbar-summary', 'mzta-
 
 function _addToolbarItem(id, element) {
     const { toolbar } = _ensureContainer();
-    const existing = document.getElementById(id);
-    if (existing) existing.remove();
+    _detachToolbarItem(document.getElementById(id));
     element.id = id;
 
     const myIndex = _TOOLBAR_SLOT_ORDER.indexOf(id);
@@ -126,9 +381,16 @@ function _addToolbarItem(id, element) {
     _updateToolbarVisibility();
 }
 
+// An item may hold resources that outlive its node (the spam badge's ResizeObserver):
+// it exposes them as _mztaCleanup, released here on every removal or replacement.
+function _detachToolbarItem(el) {
+    if (!el) return;
+    if (el._mztaCleanup) el._mztaCleanup();
+    el.remove();
+}
+
 function _removeToolbarItem(id) {
-    const el = document.getElementById(id);
-    if (el) el.remove();
+    _detachToolbarItem(document.getElementById(id));
     _updateToolbarVisibility();
 }
 
@@ -178,11 +440,37 @@ function _isHtml(text) {
     return /<[a-z][^>]*>/i.test(text);
 }
 
+// Elements that must never reach the message pane from a panel payload: active
+// content, external resources, forms, document-level tags and style sheets (a
+// <style> could restyle the message or hide ThunderAI's own panels).
+const _UNSAFE_PANEL_TAGS = 'script, img, style, link, iframe, frame, frameset, object, embed, form, meta, base, svg, math, template, noscript';
+const _URL_ATTRS = ['href', 'src', 'action', 'formaction', 'xlink:href'];
+const _UNSAFE_URL_RE = /^(javascript|vbscript|data):/i;
+
+// Defense in depth: the background already runs every panel payload through the
+// shared sanitizer (_sanitizePanelPayload() in mzta-background.js), but this is
+// the last step before model HTML enters the pane, so it strips the dangerous
+// parts again on its own. The formatting the panels rely on (paragraphs, lists,
+// bold/italic, line breaks, links) is left alone.
 function _renderSafeHtml(container, html) {
     container.textContent = '';
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
-    doc.querySelectorAll('script, img').forEach(el => el.remove());
+    doc.querySelectorAll(_UNSAFE_PANEL_TAGS).forEach(el => el.remove());
+    // A payload that is only a <frameset> parses with the frameset AS the body, so
+    // removing it leaves no body at all: nothing safe is left to render.
+    if (!doc.body) return;
+    doc.body.querySelectorAll('*').forEach(el => {
+        for (const attr of Array.from(el.attributes)) {
+            const name = attr.name.toLowerCase();
+            // Inline styles too: a model-supplied one can overlay or hide the pane.
+            if (name.startsWith('on') || name === 'style') {
+                el.removeAttribute(attr.name);
+            } else if (_URL_ATTRS.includes(name) && _UNSAFE_URL_RE.test(attr.value.replace(/[\s\u0000-\u001f]/g, ''))) {
+                el.removeAttribute(attr.name);
+            }
+        }
+    });
     while (doc.body.firstChild) {
         container.appendChild(doc.body.firstChild);
     }
@@ -324,6 +612,33 @@ function showSpamBatchProgress(data) {
         ? browser.i18n.getMessage('spamfilter_progress_collect', [String(data.count ?? 0)])
         : browser.i18n.getMessage('spamfilter_progress_analyze', [String(data.done ?? 0), String(data.total ?? 0)]);
 }
+// The headerMessageId of the message this document displays, asked once to the background
+// (null when unknown, e.g. in a compose window). A message display script runs in a fresh
+// document per displayed message, so this never changes for the life of the script.
+// The generating panels and their hide commands carry the headerMessageId they belong to
+// and are checked against it: a panel meant for another message is never drawn here, so it
+// cannot be left spinning when that message's result is (correctly) not delivered to us.
+const _mztaDisplayedMsgId = browser.runtime.sendMessage({ command: "getDisplayedMessageId" }).catch(() => null);
+
+// Accept a panel command only when it names a message and that message is ours (or ours is
+// unknown — then the background's own check is the only guard, as before).
+function _isForThisMessage(headerMessageId, docId) {
+    return !!headerMessageId && (!docId || docId === headerMessageId);
+}
+
+// Those checks wait for _mztaDisplayedMsgId, so they complete asynchronously while the
+// result commands (showSummary, showSummaryButton, ...) act synchronously. Until the lookup
+// resolves, a result arriving after the generating command would otherwise be painted over
+// by the late spinner. Every result command bumps its feature's counter; a generating
+// command that sees the counter moved on the way does nothing.
+const _mztaPanelSeq = { summary: 0, translation: 0 };
+
+// A message change replaces the whole document, so panels never outlive their message. The
+// one document that survives is an already-open tab when the extension is reloaded: the
+// script is injected again (tabs.executeScript in mzta-background.js) into a DOM that may
+// still hold a spinner drawn by the previous instance, whose generation died with it.
+_removePanel('mzta-summary-generating');
+_removePanel('mzta-translation-generating');
 
 browser.runtime.onMessage.addListener((message) => {
 switch (message.command) {
@@ -358,39 +673,76 @@ switch (message.command) {
         return Promise.resolve(false);
       }
     }
-    const r = sel.getRangeAt(0);
-    r.deleteContents();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(message.text, 'text/html');
-    r.insertNode(doc.body);
-    browser.runtime.sendMessage({command: "compose_reloadBody", tabId: message.tabId});
+    // No selection: once the user has confirmed, the answer goes at the start of the
+    // email, above everything but ThunderAI's own elements - wherever the cursor is,
+    // and with no cursor at all (no range, e.g. an editor never clicked into).
+    let r;
+    if (!force_insert) {
+      r = sel.getRangeAt(0).cloneRange();
+      keepOutOfInjected(r);
+    } else {
+      r = document.createRange();
+      let first = document.body.firstChild;
+      while (first && isInjectedNode(first)) first = first.nextSibling;
+      if (first) r.setStartBefore(first);
+      else r.selectNodeContents(document.body);
+      r.collapse(true);
+    }
+    insertIntoEditor(r, message.text, message.isPlainText === true);
     return Promise.resolve(true);
   }
 
-  case "getText": {
-    let t = '';
-    const children = getCleanBodyHtml().childNodes;
-    for (const node of children) {
-      if (node instanceof Element) {
-        if (node.classList.contains('moz-signature')) {
-          continue;
-        }
-      }
-      t += node.textContent;
+  case "insertReply": {
+    // chatgpt_replyMessage: the answer at the top of a reply window just opened, through
+    // the editor like replaceSelectedText, so one Ctrl+Z takes it out again. It used to be
+    // written with compose.setComposeDetails (replaceBody() in js/mzta-utils.js, now the
+    // background's fallback), which cannot be undone and, from Thunderbird 143, clears the
+    // undo history (bug 1975127). Same result as replaceBody():
+    //  - HTML: the answer replaces whatever precedes the first quote or signature (the empty
+    //    lines a new reply opens with), followed by a <br> unless that block starts with one;
+    //  - plain text: the answer goes before everything, with a blank line between when the
+    //    body holds any text.
+    // ThunderAI's own elements stay above it, untouched.
+    let first = document.body.firstChild;
+    while (first && isInjectedNode(first)) first = first.nextSibling;
+    const r = document.createRange();
+    if (first) r.setStartBefore(first);
+    else r.selectNodeContents(document.body);
+    r.collapse(true);
+    if (message.isPlainText) {
+      const hasText = getCleanBodyHtml().textContent.trim() !== '';
+      insertIntoEditor(r, message.text + (hasText ? '\n\n' : ''), true);
+    } else {
+      const block = firstQuoteOrSignature();
+      if (block) r.setEndBefore(block);
+      const following = block || first;
+      const spacer = following && !startsWithBreak(following) ? '<br>' : '';
+      insertIntoEditor(r, new DOMParser().parseFromString(message.text, 'text/html').body.innerHTML + spacer, false);
     }
-    return Promise.resolve(t);
+    return Promise.resolve(true);
   }
 
   case "getTextOnly": {
-      return Promise.resolve(getCleanBodyHtml().innerText);
+      // NOT getCleanBodyHtml().innerText, which is what this was: innerText is
+      // defined in terms of LAYOUT and getCleanBodyHtml() returns a DETACHED
+      // clone, so the engine fell back to textContent behaviour - no break for a
+      // block element, none for <br>. A read mail arrived as one welded line.
+      // mztaHtmlNodeToLines() (js/lib/mzta-html-lines.js) is layout-independent
+      // by construction and is the same projection htmlBodyToPlainText() uses on
+      // the background path.
+      // getTextBodyHtml(), not getCleanBodyHtml(): this is the TEXT side, so
+      // hidden elements go. getFullHtml below keeps them.
+      // message.display: the sender is reading a message display, so only the mail's own
+      // part containers are read - not another add-on's banner drawn in the same body.
+      return Promise.resolve(mztaHtmlNodeToLines(getTextBodyHtml(!!message.display)));
   }
 
   case "getFullHtml": {
-      return Promise.resolve(getCleanBodyHtml().innerHTML);
+      return Promise.resolve(getCleanBodyHtml(!!message.display).innerHTML);
   }
 
   case "getOnlyTypedText": {
-    let t = '';
+    const lines = createLineJoiner();
     const children = window.document.body.childNodes;
     const selection = window.getSelection();
 
@@ -398,6 +750,7 @@ switch (message.command) {
     let lastNode = null;
 
     for (const node of children) {
+      if (isInjectedNode(node)) continue; // ThunderAI's own panels and dialogs
       if (node instanceof Element) {
         if (node.classList.contains('moz-cite-prefix')) { // quoted text in a reply
           break;
@@ -405,8 +758,14 @@ switch (message.command) {
         if (node.classList.contains('moz-forward-container')) { // quoted text in a forward
           break;
         }
+        if (node.classList.contains('moz-signature')) { // the signature is not typed text
+          break;
+        }
       }
-      t += node.textContent + " ";
+      // The line structure of the top-level flow (createLineJoiner): the old " "
+      // join made a multi-line compose body arrive as a single line, a "\n" join
+      // counted a plain text window's every <br> twice.
+      lines.add(node);
 
       // Track the first and last nodes for range
       if (!firstNode) {
@@ -430,11 +789,11 @@ switch (message.command) {
       selection.addRange(range);
     }
 
-    return Promise.resolve(t);
+    return Promise.resolve(lines.text());
   }
 
   case "getOnlyQuotedText": {
-    let t = '';
+    const lines = createLineJoiner();
     const children = window.document.body.childNodes;
     const selection = window.getSelection();
   
@@ -443,6 +802,7 @@ switch (message.command) {
     let foundCitePrefix = false;
   
     for (const node of children) {
+      if (isInjectedNode(node)) continue; // ThunderAI's own panels and dialogs
       if (!foundCitePrefix) {
         if (node instanceof Element && (node.classList.contains('moz-cite-prefix') || node.classList.contains('moz-forward-container'))) {
           foundCitePrefix = true;
@@ -451,8 +811,9 @@ switch (message.command) {
         }
       }
   
-      t += node.textContent + " ";
-  
+      // Same line structure as getOnlyTypedText above.
+      lines.add(node);
+
       if (!firstNode) {
         firstNode = node;
       }
@@ -472,8 +833,8 @@ switch (message.command) {
       selection.removeAllRanges();
       selection.addRange(range);
     }
-  
-    return Promise.resolve(t);
+
+    return Promise.resolve(lines.text());
   }
   
   
@@ -634,17 +995,16 @@ switch (message.command) {
   case "getTags":
     // console.log(">>>>>>>>>>>>>> getTags: " + JSON.stringify(message.tags));
 
-    // ===== These methods are also defined in the file /js/mzta-addtags-exclusion-list.js
-    async function addTags_getExclusionList() {
-      let prefs_excluded_tags = await browser.storage.local.get({add_tags_exclusions: []});
-      // console.log(">>>>>>>>>>>>>>> addTags_getExclusionList prefs_excluded_tags: " + JSON.stringify(prefs_excluded_tags));
-      return prefs_excluded_tags.add_tags_exclusions;
-    }
-
+    // The exclusion list and the two preferences that go with it are read and written
+    // through the background, NOT storage.local: this is a classic content script and cannot
+    // import js/mzta-prefs.js (issue #163), and a direct read would ignore the enterprise
+    // policy while a direct write would bypass its write guard. The background resolves them
+    // through mztaPrefs, so the tag dialog sees exactly what auto-tagging uses.
     function addTags_setExclusionList(add_tags_exclusions) {
-      browser.storage.local.set({add_tags_exclusions: add_tags_exclusions});
+      browser.runtime.sendMessage({ command: "addtags_set_exclusions", list: add_tags_exclusions });
     }
 
+    // ===== This method is also defined in the file /js/mzta-addtags-exclusion-list.js
     function checkExcludedTag(tag, excluded_word, exact_match = false) {
         // Check if the tag is in the exclusion list
         if (excluded_word === '') {
@@ -783,8 +1143,23 @@ switch (message.command) {
         no_submit = true;
       }
 
-      let prefs_tags = await browser.storage.sync.get({add_tags_hide_exclusions: false, add_tags_exclusions_exact_match: false});
-      let add_tags_exclusions_list = await addTags_getExclusionList();
+      // Resolved by the background through js/mzta-prefs.js - see addTags_setExclusionList()
+      // above. Should the round trip fail, fall back to the prefs_default values, which is
+      // what an unmanaged profile with no stored value would get anyway.
+      let prefs_tags = null;
+      try {
+        prefs_tags = await browser.runtime.sendMessage({ command: "addtags_get_exclusion_prefs" });
+      } catch (e) {
+        console.error("[ThunderAI] Could not read the tag exclusion preferences: " + e);
+      }
+      if (!prefs_tags || typeof prefs_tags !== 'object') prefs_tags = {};
+      let add_tags_exclusions_list = Array.isArray(prefs_tags.add_tags_exclusions) ? prefs_tags.add_tags_exclusions : [];
+      prefs_tags.add_tags_hide_exclusions = prefs_tags.add_tags_hide_exclusions === true;
+      prefs_tags.add_tags_exclusions_exact_match = prefs_tags.add_tags_exclusions_exact_match === true;
+      // Locked by the enterprise policy: the list cannot be changed from here, so the
+      // per-tag "exclude" action is not offered at all (the background would refuse the
+      // write anyway).
+      const exclusions_locked = prefs_tags.exclusions_locked === true;
 
       // console.log(">>>>>>>>>>>>> add_tags_exclusions_list: " + JSON.stringify(add_tags_exclusions_list));
 
@@ -821,25 +1196,29 @@ switch (message.command) {
         img.alt = browser.i18n.getMessage("addtags_exclude_tag");
         img.title = browser.i18n.getMessage("addtags_exclude_tag");
         img.className = 'exclude-tag-icon';
-        img.addEventListener('click', () => {
+        if (!exclusions_locked) img.addEventListener('click', () => {
+          // Stored lowercase, like the Add Tags settings page does (normalizeStringList()),
+          // and compared case-insensitively: the match itself ignores case, so "Foo" and
+          // "foo" are the same exclusion, and a stored "foo" must be removable from "Foo".
+          const tag_lc = word.tag.toLowerCase();
           if (!label.classList.contains('tag_excluded')) {
             label.classList.add('tag_excluded');
-            if (!add_tags_exclusions_list.includes(word.tag)) {
-              add_tags_exclusions_list.push(word.tag);
+            if (!add_tags_exclusions_list.some(ex => ex.toLowerCase() === tag_lc)) {
+              add_tags_exclusions_list.push(tag_lc);
               addTags_setExclusionList(add_tags_exclusions_list);
             }
           } else {
             label.classList.remove('tag_excluded');
-            const idx = add_tags_exclusions_list.indexOf(word.tag);
-            if (idx > -1) {
-              add_tags_exclusions_list.splice(idx, 1);
+            const new_list = add_tags_exclusions_list.filter(ex => ex.toLowerCase() !== tag_lc);
+            if (new_list.length !== add_tags_exclusions_list.length) {
+              add_tags_exclusions_list = new_list;
               addTags_setExclusionList(add_tags_exclusions_list);
             }
           }
         });
 
         label.appendChild(checkbox);
-        label.appendChild(img);
+        if (!exclusions_locked) label.appendChild(img);
         label.appendChild(document.createTextNode(` ${word.tag}`));
         if(!word.excluded || (word.excluded && !prefs_tags.add_tags_hide_exclusions)){
           tags_shown++;
@@ -1058,7 +1437,6 @@ switch (message.command) {
     _removeToolbarItem('mzta-toolbar-spam');
 
     const data = message.data;
-    if (document.getElementById('mzta-spam-report-banner')) return Promise.resolve(true);
 
     const colors = _getThemeColors(data.spamValue, data.SpamThreshold);
     const sc = colors.spam;
@@ -1144,7 +1522,9 @@ switch (message.command) {
         badgeText.style.overflow = 'hidden';
         badgeText.style.textOverflow = 'unset';
         topRow.style.alignItems = 'flex-start';
-        spamMenu.style.display = '';
+        // Explicit 'inline-flex': createThreeDotsMenu() declares it inline, and the
+        // 'none' set above overwrote it, so '' would leave a plain block here.
+        spamMenu.style.display = 'inline-flex';
         chevron.style.display = 'none';
         brandingRow.style.maxHeight = '2em';
         brandingRow.style.opacity = '1';
@@ -1154,26 +1534,45 @@ switch (message.command) {
 
     _addToolbarItem('mzta-toolbar-spam', badge);
 
+    // Always judge the overflow in the wider layout (branding + menu), never in the
+    // one currently showing. Measuring the current layout flipped forever when the
+    // text fit beside the chevron but not beside the branding: each layout proved the
+    // other right, and the badge height changed on every flip, which moved the whole
+    // email up and down [#929]. Measured this way, one width gives one answer.
     const _updateSpamVisibility = () => {
         if (badgeText.style.whiteSpace === 'normal') return; // already expanded, don't interfere
+        chevron.style.display = 'none';
+        branding.style.display = '';
+        spamMenu.style.display = 'inline-flex';
+        // The wide layout's row is the taller one (the ⋯ button). Holding the row at
+        // that height means a layout switch never moves the email below it, so it
+        // can't toggle the pane's scrollbar and hand the observer a new width.
+        topRow.style.minHeight = topRow.offsetHeight + 'px';
         if (badgeText.scrollWidth > badgeText.clientWidth) {
             chevron.style.display = 'inline';
             branding.style.display = 'none';
-        } else {
-            chevron.style.display = 'none';
-            branding.style.display = '';
         }
     };
 
     requestAnimationFrame(_updateSpamVisibility);
 
-    const _spamResizeObserver = new ResizeObserver(_updateSpamVisibility);
+    // Only a new width can change the answer. Height changes are this badge's own
+    // layout switch, so they are ignored.
+    let _spamLastWidth = null;
+    const _spamResizeObserver = new ResizeObserver((entries) => {
+        const width = entries[entries.length - 1].contentRect.width;
+        if (width === _spamLastWidth) return;
+        _spamLastWidth = width;
+        _updateSpamVisibility();
+    });
     _spamResizeObserver.observe(badge);
+    badge._mztaCleanup = () => _spamResizeObserver.disconnect();
 
     return Promise.resolve(true);
   }
 
   case "showSummary": {
+    _mztaPanelSeq.summary++;
     _removePanel('mzta-summary-generating');
     _removePanel('mzta-summary-banner');
     _removeToolbarItem('mzta-toolbar-summary');
@@ -1227,20 +1626,10 @@ switch (message.command) {
     summaryText.className = 'thunderai-summary-content';
     const hasHtml = !!summaryData.summary_html && !summaryData.stripFormatting;
 
-    function setSummaryHtml(element, html) {
-        element.textContent = '';
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        while (doc.body.firstChild) {
-            element.appendChild(doc.body.firstChild);
-        }
-        element.querySelectorAll('p').forEach(p => { p.style.marginBlockStart = '0'; });
-    }
-
     if (summaryData.error) {
         summaryText.textContent = summaryData.message || browser.i18n.getMessage("summarize_error");
     } else if (hasHtml) {
-        setSummaryHtml(summaryText, summaryData.summary_html);
+        _renderSafeHtml(summaryText, summaryData.summary_html);
     } else {
         summaryText.textContent = summaryData.summary;
     }
@@ -1359,7 +1748,11 @@ switch (message.command) {
   }
 
   case "showSummaryGenerating": {
-    if (document.getElementById('mzta-summary-generating')) return Promise.resolve(true);
+    const seq = _mztaPanelSeq.summary;
+    return _mztaDisplayedMsgId.then(docId => {
+    if (seq !== _mztaPanelSeq.summary) return false;
+    if (!_isForThisMessage(message.headerMessageId, docId)) return false;
+    if (document.getElementById('mzta-summary-generating')) return true;
 
     _removePanel('mzta-summary-banner');
     _removeToolbarItem('mzta-toolbar-summary');
@@ -1387,10 +1780,24 @@ switch (message.command) {
     genContainer.appendChild(genTitle);
 
     _addPanel('mzta-summary-generating', genContainer);
-    return Promise.resolve(true);
+    return true;
+    });
+  }
+
+  case "hideSummaryGenerating": {
+    // Without a headerMessageId the caller does not know which message it was: clear anyway.
+    return _mztaDisplayedMsgId.then(docId => {
+      if (message.headerMessageId && !_isForThisMessage(message.headerMessageId, docId)) return false;
+      _removePanel('mzta-summary-generating');
+      return true;
+    });
   }
 
   case "showSummaryButton": {
+    _mztaPanelSeq.summary++;
+    // The button replaces any spinner, like showTranslationButton: it is also sent when a
+    // running job was invalidated (summary removed meanwhile) and will show nothing else.
+    _removePanel('mzta-summary-generating');
     if (document.getElementById('mzta-toolbar-summary')) return Promise.resolve(true);
 
     const colors = _getThemeColors();
@@ -1422,6 +1829,7 @@ switch (message.command) {
   }
 
   case "showTranslation": {
+    _mztaPanelSeq.translation++;
     _removePanel('mzta-translation-generating');
     _removePanel('mzta-translation-banner');
     _removeToolbarItem('mzta-toolbar-translation');
@@ -1609,7 +2017,11 @@ switch (message.command) {
   }
 
   case "showTranslationGenerating": {
-    if (document.getElementById('mzta-translation-generating')) return Promise.resolve(true);
+    const seq = _mztaPanelSeq.translation;
+    return _mztaDisplayedMsgId.then(docId => {
+    if (seq !== _mztaPanelSeq.translation) return false;
+    if (!_isForThisMessage(message.headerMessageId, docId)) return false;
+    if (document.getElementById('mzta-translation-generating')) return true;
 
     _removePanel('mzta-translation-banner');
     _removeToolbarItem('mzta-toolbar-translation');
@@ -1636,10 +2048,21 @@ switch (message.command) {
     genContainer.appendChild(genTitle);
 
     _addPanel('mzta-translation-generating', genContainer);
-    return Promise.resolve(true);
+    return true;
+    });
+  }
+
+  case "hideTranslationGenerating": {
+    // Same rule as hideSummaryGenerating.
+    return _mztaDisplayedMsgId.then(docId => {
+      if (message.headerMessageId && !_isForThisMessage(message.headerMessageId, docId)) return false;
+      _removePanel('mzta-translation-generating');
+      return true;
+    });
   }
 
   case "showTranslationButton": {
+    _mztaPanelSeq.translation++;
     _removePanel('mzta-translation-generating');
     if (document.getElementById('mzta-toolbar-translation')) return Promise.resolve(true);
 

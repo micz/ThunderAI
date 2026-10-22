@@ -1,0 +1,6 @@
+{
+  "_org_name": "ACME",
+  "_org_prompts": [
+    { "id": "reply", "name": "ACME formal reply", "text": "Reply formally" }
+  ]
+}

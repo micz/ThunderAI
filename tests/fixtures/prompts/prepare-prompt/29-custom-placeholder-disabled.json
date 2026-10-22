@@ -1,0 +1,14 @@
+{
+  "description": "A disabled custom data placeholder is not expanded: its token stays as written, the enabled one is replaced",
+  "spec": ["spec 03 \"Custom Placeholders\": a disabled custom placeholder is treated as if it did not exist, replaceCustomPlaceholders() does not expand it"],
+  "storage": {
+    "_custom_placeholder": [
+      { "id": "thunderai_custom_sig", "name": "Signature", "text": "Kind regards, Mic", "type": "0", "is_default": "0", "is_dynamic": "0", "enabled": 1 },
+      { "id": "thunderai_custom_old", "name": "Old", "text": "OLD TEXT", "type": "0", "is_default": "0", "is_dynamic": "0", "enabled": 0 }
+    ]
+  },
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Reply. {%thunderai_custom_old%} End with: {%thunderai_custom_sig%}", "need_signature": "0" }
+  },
+  "expected": "Reply. {%thunderai_custom_old%} End with: Kind regards, Mic"
+}

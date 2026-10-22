@@ -21,6 +21,8 @@ import { taLogger } from './mzta-logger.js';
 
 export class taSpamReport {
 
+    // In-flight state lives in taJobRegistry (js/mzta-job-registry.js). The prefix is kept
+    // only so clear*() still sweeps keys written to storage.session by older versions.
     _processing_prefix = 'mzta-spam-processing-';
     _max_reports = 1000;
     _index_key = 'spam_index';
@@ -32,21 +34,6 @@ export class taSpamReport {
         this.taLog = new taLogger('mzta-spamreport', do_debug);
     }
 
-    async setProcessing(data_id) {
-        this.taLog.log("[setProcessing] data_id: " + data_id);
-        const key = this._processing_prefix + data_id;
-        await browser.storage.session.set({ [key]: true });
-    }
-
-    async isProcessing(data_id) {
-        this.taLog.log("[isProcessing] data_id: " + data_id);
-        const key = this._processing_prefix + data_id;
-        let output = await browser.storage.session.get(key);
-        let result = output[key] || false;
-        this.taLog.log("[isProcessing] result: " + result);
-        return result;
-    }
-
     async saveReportData(data, data_id) {
         this.taLog.log("[saveReportData] data_id: " + data_id);
         try {
@@ -54,20 +41,23 @@ export class taSpamReport {
             let index = (await this._loadIndex()) || {};
             index[data_id] = Date.now();
             await this._saveIndex(index);
-            await browser.storage.session.remove(this._processing_prefix + data_id);
         } catch (e) {
             this.taLog.error("[saveReportData] error: " + e);
             throw e;
         }
     }
 
-    async saveError(data_id, error_message) {
+    async saveError(data_id, error_message, metadata = {}) {
         this.taLog.log("[saveError] data_id: " + data_id + ", error_message: " + error_message);
+        // Merge any available message metadata so the spam log entry does not show
+        // blank fields when the message became unreadable during analysis.
         let data = {
             spamValue: -999,
             explanation: error_message,
             report_date: new Date(),
-            headerMessageId: data_id
+            headerMessageId: data_id,
+            moved: false,
+            ...metadata
         };
         await this.saveReportData(data, data_id);
         return data;
@@ -102,7 +92,6 @@ export class taSpamReport {
             delete index[data_id];
             await this._saveIndex(index);
         }
-        await browser.storage.session.remove(this._processing_prefix + data_id);
     }
 
     async getAllReportData() {

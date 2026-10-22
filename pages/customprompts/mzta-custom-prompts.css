@@ -1,393 +1,1324 @@
-@media (prefers-color-scheme: light) {
-    table th {
-        background-color: #ffffff;
-    }
+/*
+ * Manage Custom Prompts — design "2a": one list, two views (Detail / Table).
+ * Colors are CSS custom properties (design tokens) with a light-theme default and a
+ * dark override via @media (prefers-color-scheme: dark). No manual theme toggle — the
+ * page follows the OS/Thunderbird theme like the rest of the extension.
+ */
 
-    #command_palette{
-        background-color: #ffffff; 
-    }
+/* ============================ Design tokens ============================ */
+:root {
+    /* Light theme (default) */
+    --bg:#eef0f4;  --panel:#ffffff;  --panel2:#f6f7f9;
+    --border:#e4e6ea;  --border2:#d3d6dc;  --row-border:#eceef1;
+    --text:#1a1c22;  --body:#2c2f37;  --muted:#6a6d78;  --muted2:#9195a0;
+    --chip-bg:#f1f2f5;  --rowhover:#f7f9fc;
+    --input-bg:#ffffff;  --ro-bg:#f4f5f7;
+    --accent:#2c5e9b;  --accent-ink:#ffffff;  --accent-hover:#275388;
+    --sel-bg:#eaf1ff;  --sel-bar:#2c5e9b;
+    --code:#1d4ed8;  --code-bg:#e7efff;
+    --edit-bg:#e7f0ff;  --edit-text:#155bd4;  --edit-border:#bcd6ff;  --edit-hover:#d8e8ff;
+    --del-text:#c4413f;  --del-border:#f0cccc;  --del-hover-bg:#fdecec;  --del-hover-text:#d13438;
+    --ok-text:#1a7f37;  --ok-bg:#e6f4ea;  --ok-border:#bfe3c9;
+    /* Warning: a placeholder token that exists but is not available for the prompt's
+       type — distinct from --del-*, which means "delete", and from --ok-*. */
+    --warn-text:#8a5300;  --warn-bg:#fdf1dc;  --warn-border:#e0a44a;
+    /* Error: a placeholder token that does not exist at all, or an unterminated one. */
+    --err-text:#a52826;  --err-bg:#fbe3e3;  --err-border:#d98b8a;
+    /* Search hit highlight — its own pair, so a match cannot be misread as a token. */
+    --hit-bg:#fff3a3;  --hit-text:#3a2f00;
+    --icon-hover-bg:#eceef2;  --box:#ffffff;
+    /* Prompt type badges and the read-only (system) info banner. */
+    --sys-text:#1f4f99;  --sys-bg:#e6efff;  --sys-border:#b9cff5;
+    --pers-text:#6b3fb3;  --pers-bg:#f1ebfc;  --pers-border:#d6c6f2;
+    --info-bg:#eef4ff;  --info-border:#c5d8f7;  --info-text:#274a7d;
+    --lock:#5b6f94;
+    /* Switch track of a flag that is on but fixed by the prompt. */
+    --fixed-on:#9fb6dd;
+    /* Row menu (table view). */
+    --menu-bg:#ffffff;  --menu-border:#d3d6dc;  --menu-divider:#e4e6ea;  --menu-hover:#eef0f4;
+    --menu-shadow:0 12px 32px rgba(20,20,40,.18);
+    /* Per-panel identity: ChatGPT Web (warm) vs API (cool). */
+    --cgw-bg:#ffe6d5;  --cgw-hover:#ffd6bd;  --cgw-text:#6b2f0c;  --api-bg:#e0efff;  --api-hover:#c9e2ff;
 
-    table.prompts_list tr:nth-child(even) {
-        background-color: #e9e9e9;
-    }
-
-    table.prompts_list tr:nth-child(odd) {
-        background-color: #f3f3f3;
-    }
-}
-
-table {
-    border-collapse: collapse;
-    border-spacing: 0;
-    border: 1px solid #ccc;
-}
-
-thead {
-    position: sticky;
-    top: 26px;
-    z-index: 90;
-}
-
-#command_palette{
-    position: sticky;
-    top: 0;
-    padding-top: 1px;
-    height: 26px;
-    width: 100%;
-    z-index: 90;
-}
-
-#btnNew{
-    float: right;
-}
-
-#btnSaveAll{
-    float: left;
-}
-
-#msgDisplay{
-    padding-left: 40px;
-}
-
-table tr {
-    border-bottom: 1px solid #ccc;
-}
-
-table.prompts_list th {
-    padding: 8px;
-    text-align: left;
-}
-
-table td {
-    border: 1px solid #ddd;
-    padding: 5px;
-}
-
-table td.w08{
-    width: 8vw;
-}
-
-table td.w17{
-    width: 17vw;
-}
-
-table td.w19{
-    width: 19vw;
-}
-
-table td.w25{
-    width: 25vw;
-}
-
-table td.w40{
-    width: 40vw;
-}
-
-table.prompts_list td.properties{
-    white-space: nowrap;
-}
-
-table .sort {
-    background-image: url(../../images/listjs-arrow-sort-inactive.png);
-    background-repeat: no-repeat;
-    background-position: right center;
-    padding-right: 14px;
-    cursor: pointer;
-    cursor: hand;
-}
-
-table .sort.asc {
-    background-image: url(../../images/listjs-arrow-sort-active-down.png);
-}
-
-table .sort.desc {
-    background-image: url(../../images/listjs-arrow-sort-active-up.png);
-}
-
-tbody.list tr{
-    vertical-align: top;
-}
-
-.hiddendata{
-    display: none;
-}
-
-#formNew{
-    display: none;
-    width: 100%;
-    padding-bottom: 7px;
-}
-
-.text_output{
-    width: 98%;
-    height: 9em;
-}
-
-.go_right_float{
-    float: right;
-}
-
-.go_right{
-    width: 100%;
-    text-align: right;
-}
-
-.width_all{
-    width: 100%;
-}
-
-.small_label{
-    font-size: small;
-    font-style: italic;
-}
-
-.field_title{
-    font-weight: bold;
-}
-
-.field_title_s{
-    font-weight: bold;
-    font-size: small;
-}
-
-.field_title_us{
-    font-weight: bold;
-    font-size: smaller;
-}
-
-label, .id_show, .text_show, .name_show, .type_show, .action_show{
-    font-size: small;
-}
-
-#txtIdNew, .id_output{
-    text-transform: lowercase;
-}
-
-#import_export{
-    position: absolute;
-    right:10px;
-    top:10px;
-    text-align: right;
-}
-
-#btnExportAll{
-    margin-bottom: 3px;
-}
-
-.storage_space{
-    font-size: 0.8em;
-    font-weight: normal;
-    font-style: italic;
-    color: rgb(41, 41, 41);
-    text-align: right;
-    margin-right: 1px;
-}
-
-.page_title{
-    margin-bottom: 0px;
-}
-
-.autocomplete-container {
-    position: relative;
-}
-
-.autocomplete-list {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: white;
-    border: 1px solid #ccc;
-    z-index: 1000;
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 0;
-    margin: 0;
-    list-style: none;
-    font-size: small;
-}
-
-.autocomplete-list li {
-    padding: 8px;
-    cursor: pointer;
-}
-
-.autocomplete-list li:hover {
-    background-color: #f0f0f0;
-}
-
-.autocomplete-list li.active {
-    background-color: #ddd;
-}
-
-.hidden {
-    display: none;
-}
-
-.need_custom_text_span, .need_selected_span{
-    padding-right: 2px;
-}
-
-#chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show{
-    background-color: rgb(255, 209, 183);
-    display:none;
-}
-
-#chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_toggle{
-    cursor: pointer;
-}
-
-#chatgpt_web_additional_info_toggle:hover, .chatgpt_web_additional_info_toggle:hover{
-    background-color: rgb(255, 189, 153);
-    text-decoration: underline;
-}
-
-#chatgpt_web_additional_info_toggle td{
-    text-align: center;
-}
-
-#chatgpt_web_additional_info td{
-    vertical-align: top;
-}
-
-.chatgpt_web_additional_info_toggle{
-    width: -moz-available;
-    text-align: center;
-    padding:5px;
-}
-
-.chatgpt_web_additional_info_show{
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-    padding: 3px;
-    margin-top: 5px;
-}
-
-.chatgpt_web_additional_info_row{
-    display: flex;
-}
-
-.chatgpt_web_additional_info_row span{
-    margin-right: 0.4em;
-}
-
-input.input_additional[type="text"]{
-    width: -moz-available;
-}
-
-.small_info{
-    font-size:smaller;
-}
-
-.conntype_chatgpt_web_option{
-    cursor: pointer;
-}
-
-.api_additional_info{
-    cursor: pointer;
-    text-align: center;
-    background-color: #409df3;
-}
-
-.api_additional_info_toggle{
-    text-align: center;
-    padding: 5px;
-    background-color: #409df3;
-    cursor: pointer;
-    display: none;
-}
-
-.api_additional_info_show{
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-    padding: 3px;
-    margin-top: 5px;
-    background-color: rgb(64, 157, 243);
-}
-
-#api_additional_info_toggle:hover, .api_additional_info_toggle:hover{
-    background-color: rgb(64, 137, 213);
-    text-decoration: underline;
-}
-
-label:has(input[type="checkbox"]) {
-    cursor: pointer;
-}
-
-dialog.export{
-    padding: 20px;
-    border: none;
-    border-radius: 8px;
-    background-color: var(--dialog-bg-color, #fff);
-    color: var(--dialog-text-color, #000);
-    max-width: 400px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    font-family: system-ui, -apple-system, sans-serif;
+    --font-ui: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-mono: ui-monospace, 'Cascadia Code', monospace;
+    --btn-tr: background .12s, border-color .12s, color .12s, box-shadow .12s;
 }
 
 @media (prefers-color-scheme: dark) {
-    body {
-        background-color: #1C1B22;
-        color: rgb(251, 251, 254);
-    }
-    
-    a:link { color: #409EFF; }   
-    a:visited { color: #409EFF; }  
-    a:hover { color: #66B1FF; }   
-    a:active { color: #66B1FF; }
-
-    table {
-        background-color: #1C1B22;
-        border: 1px solid #ccc;
-    }
-
-    table.prompts_list th {
-        background-color: #4c4e58;
-        border: 1px solid rgb(251, 251, 254);
-        color: rgb(194, 194, 194);
-    }
-
-    #command_palette{
-        background-color: inherit; 
-    }
-
-    table.prompts_list tr:nth-child(even) {
-        background-color: #2E2F36;
-    }
-
-    .storage_space{
-        color: rgb(182, 182, 182);
-    }
-
-    .autocomplete-list {
-        background-color: #2E2F36;
-        border: 1px solid #2E2F36;
-    }
-    
-    .autocomplete-list li:hover {
-        background-color: #4c4e58;
-    }
-    
-    .autocomplete-list li.active {
-        background-color: #4c4e58;
-    }
-
-    #chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show{
-        background-color: rgb(39, 11, 0);
-    }
-
-    #chatgpt_web_additional_info_toggle:hover, .chatgpt_web_additional_info_toggle:hover{
-        background-color: rgb(88, 25, 0);
-    }
-
-    .api_additional_info, .api_additional_info_toggle, .api_additional_info_show{
-        background-color: #0f2437;
-    }
-
-    #api_additional_info_toggle:hover, .api_additional_info_toggle:hover{
-        background-color: #1b456d
+    :root {
+        --bg:#14131a;  --panel:#1c1b22;  --panel2:#201f28;
+        --border:#35343f;  --border2:#47465a;  --row-border:#2a2932;
+        --text:#fbfbfe;  --body:#d7d4e3;  --muted:#b8b5c4;  --muted2:#8f8ca3;
+        --chip-bg:#242330;  --rowhover:#201f28;
+        --input-bg:#14131a;  --ro-bg:#191820;
+        --accent:#2c5e9b;  --accent-ink:#ffffff;  --accent-hover:#275388;
+        --sel-bg:#25243a;  --sel-bar:#5b9dff;
+        --code:#8fb6ff;  --code-bg:#1a2740;
+        --edit-bg:#2b2a33;  --edit-text:#d7d4e3;  --edit-border:#47465a;  --edit-hover:#3a3947;
+        --del-text:#f0a3a3;  --del-border:#6b3b3b;  --del-hover-bg:#3a2020;  --del-hover-text:#ffb8b8;
+        --ok-text:#7ddba0;  --ok-bg:#15311f;  --ok-border:#25603c;
+        --warn-text:#f0c07a;  --warn-bg:#3a2c14;  --warn-border:#7a5a22;
+        --err-text:#f0a3a1;  --err-bg:#3d1b1b;  --err-border:#7d3a38;
+        --hit-bg:#6b5a00;  --hit-text:#fff8d0;
+        --icon-hover-bg:#3a3947;  --box:#2b2a33;
+        --sys-text:#9fb8e6;  --sys-bg:#1d2a44;  --sys-border:#2d4573;
+        --pers-text:#c9b5ef;  --pers-bg:#2a2140;  --pers-border:#4a3a6e;
+        --info-bg:#1d2333;  --info-border:#2d4573;  --info-text:#c3d3ef;
+        --lock:#7f8ca8;
+        --fixed-on:#2d4573;
+        --menu-bg:#2b2a33;  --menu-border:#52516a;  --menu-divider:#3f3e4d;  --menu-hover:#3a3947;
+        --menu-shadow:0 12px 32px rgba(0,0,0,.45);
+        --cgw-bg:#270b00;  --cgw-hover:#581900;  --api-bg:#0f2437;  --api-hover:#1b456d;
     }
 }
+
+/* ============================ Page shell ============================ */
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+}
+
+a:link, a:visited { color: var(--accent); }
+a:hover, a:active { color: var(--accent-hover); }
+
+.page_wrap {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 32px 40px 40px;
+}
+
+.page_head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.page_eyebrow {
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted2);
+    font-weight: 600;
+}
+
+.page_title {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    margin: 6px 0 4px;
+}
+
+.page_head p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 780px;
+}
+
+#btnManageCustomDataPH { margin-top: 6px; }
+
+#import_export {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: none;
+    padding-top: 4px;
+}
+
+/* Shown by JS in place of #import_export and next to a disabled "New prompt" when the
+   policy disables prompt management, so the missing buttons read as policy rather than
+   as a bug. This page does not load pages/_lib/mzta-design.css, hence the local copy. */
+.managed_restriction_note {
+    display: none;
+    /* Padlock and text are two separate flex items, so NOT flex-wrap: wrap - wrapping
+       would drop the lock onto a line of its own as soon as the text does not fit. */
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin: 10px 0;
+    padding: 9px 12px;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    background-color: #f5f5f5;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.managed_restriction_note.shown { display: flex; }
+.managed_restriction_note::before {
+    content: "\1F512";      /* padlock */
+    font-size: 15px;
+    flex: none;
+    line-height: 1.5;
+}
+
+@media (prefers-color-scheme: dark) {
+    .managed_restriction_note {
+        border-color: #4a4a4a;
+        background-color: #333333;
+    }
+}
+
+/* ============================ Buttons ============================ */
+button {
+    transition: var(--btn-tr);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--panel2);
+    border: 1px solid var(--border2);
+    padding: 8px 14px;
+    border-radius: 8px;
+}
+
+button:hover:not(:disabled) { background: var(--icon-hover-bg); }
+
+button:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+/* Primary: New prompt, Save, Duplicate and edit, dialog default. */
+#btnNew, .btn_primary {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-color: var(--accent);
+}
+#btnNew:hover:not(:disabled), .btn_primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+}
+
+.btn_ghost {
+    background: transparent;
+    color: var(--body);
+    border-color: var(--border2);
+    font-weight: 500;
+}
+
+.btn_danger {
+    background: transparent;
+    color: var(--del-text);
+    border-color: var(--del-border);
+    font-weight: 500;
+}
+.btn_danger:hover:not(:disabled) {
+    background: var(--del-hover-bg);
+    color: var(--del-hover-text);
+}
+
+/* ============================ Card ============================ */
+/* The List.js container. It fills the viewport height so the list and the detail pane
+   scroll on their own instead of the page. */
+#prompts_card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 48px);
+    min-height: 520px;
+    margin-top: 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* ---- Toolbar ---- */
+#command_palette {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--panel2);
+    border-bottom: 1px solid var(--border);
+}
+
+.toolbar_spacer { flex: 1; }
+
+#search_wrap {
+    position: relative;
+    flex: 0 1 320px;
+    min-width: 160px;
+}
+
+.search_icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted2);
+    font-size: 13px;
+    pointer-events: none;
+}
+
+#prompts_search {
+    width: 100%;
+    padding: 8px 10px 8px 28px;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    background: var(--input-bg);
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+}
+#prompts_search::placeholder { color: var(--muted2); }
+#prompts_search:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+#prompts_count {
+    font-size: 13px;
+    color: var(--muted2);
+    white-space: nowrap;
+}
+
+#msgDisplay {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+/* "List is filtered" badge. Informational palette: a filter is a state, not a problem.
+   It is independent from #msgDisplay, which is owned by the unsaved-changes/save
+   messaging — see updateFilterIndicator(). */
+#filter_badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    padding: 3px 4px 3px 8px;
+    border: 1px solid var(--sys-border);
+    border-radius: 999px;
+    background: var(--sys-bg);
+    color: var(--sys-text);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+/* Both single-class selectors would otherwise tie; make the hidden state explicit. */
+#filter_badge.hiddendata { display: none; }
+#filter_badge > svg { width: 13px; height: 13px; flex: 0 0 auto; }
+
+/* No matches at all: shift to the warning palette, an empty list is a dead end. */
+#filter_badge.filter_badge_empty {
+    border-color: var(--warn-border);
+    background: var(--warn-bg);
+    color: var(--warn-text);
+}
+
+#btnClearFilter {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    padding: 2px 8px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font-size: 11px;
+    font-weight: 600;
+}
+#btnClearFilter > svg { width: 11px; height: 11px; flex: 0 0 auto; }
+#btnClearFilter:hover { background: rgba(128, 128, 128, .22); }
+
+/* ---- View switch (segmented control) ---- */
+#view_switch {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    background: var(--input-bg);
+    border: 1px solid var(--border2);
+    border-radius: 9px;
+}
+#view_switch button {
+    border: none;
+    background: transparent;
+    color: var(--muted2);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+#view_switch button[aria-pressed="true"] {
+    background: var(--border);
+    color: var(--text);
+}
+#view_switch button:hover:not([aria-pressed="true"]) { color: var(--text); }
+
+/* ---- Body: list + detail ---- */
+#card_body {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+}
+#prompts_card.view-split #card_body { grid-template-columns: 340px minmax(0, 1fr); }
+#prompts_card.view-table #card_body { grid-template-columns: minmax(0, 1fr); }
+#prompts_card.view-table #detail_pane { display: none; }
+
+#list_col {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+}
+#prompts_card.view-split #list_col { border-right: 1px solid var(--border); }
+
+#prompts_list {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+/* ============================ Rows ============================ */
+/* The same row DOM is laid out two ways. The table grid is shared by the header row
+   and the body rows so their columns line up. */
+.p_grid {
+    display: grid;
+    gap: 16px;
+}
+#prompts_card.view-table .p_grid {
+    grid-template-columns: minmax(200px,240px) minmax(300px,3fr) minmax(120px,150px) minmax(150px,200px) 110px;
+}
+/* Narrow windows: the design's minimum widths no longer fit, and the header row sits
+   outside the scrolling list, so let the text column give way instead of scrolling. */
+@media (max-width: 1200px) {
+    #prompts_card.view-table .p_grid {
+        grid-template-columns: minmax(150px,210px) minmax(0,3fr) minmax(110px,140px) minmax(130px,180px) 104px;
+        gap: 12px;
+    }
+}
+
+#table_head {
+    display: none;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted2);
+    font-weight: 600;
+}
+#prompts_card.view-table #table_head { display: grid; }
+#table_head .col_actions { text-align: right; }
+
+.p_row {
+    border-bottom: 1px solid var(--row-border);
+    outline: none;
+}
+.p_row:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+
+.p_cell { min-width: 0; }
+.p_cell_prompt { display: flex; flex-direction: column; gap: 3px; }
+
+.p_line1 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.p_name_wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+/* Padlock on read-only prompts: an SVG in currentColor, so it follows the theme
+   token instead of rendering as a coloured emoji. */
+.p_lock {
+    display: inline-flex;
+    color: var(--lock);
+    flex: none;
+}
+.p_lock svg { width: 12px; height: 12px; }
+.p_lock[hidden] { display: none; }
+
+.p-name {
+    font-weight: 600;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mono_id, .p-id {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.p-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+/* Split view: a 3-line master row (name + badge / id / 1-line text). */
+#prompts_card.view-split .p_row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
+    padding: 11px 14px 11px 11px;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+}
+#prompts_card.view-split .p_row:hover { background: var(--rowhover); }
+#prompts_card.view-split .p_row.is_selected {
+    background: var(--sel-bg);
+    border-left-color: var(--sel-bar);
+}
+#prompts_card.view-split .p_line1 { justify-content: space-between; }
+#prompts_card.view-split .p-name { font-size: 13.5px; }
+#prompts_card.view-split .p-text {
+    font-size: 12px;
+    color: var(--muted2);
+    -webkit-line-clamp: 1;
+}
+#prompts_card.view-split .p_cell_menu,
+#prompts_card.view-split .p_cell_chips,
+#prompts_card.view-split .p_cell_actions { display: none; }
+
+/* Table view: 5 columns. */
+#prompts_card.view-table .p_row {
+    padding: 13px 16px;
+    align-items: center;
+}
+#prompts_card.view-table .p_row:hover { background: var(--rowhover); }
+#prompts_card.view-table .p-name { font-size: 14px; }
+#prompts_card.view-table .p-text {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--muted);
+    -webkit-line-clamp: 2;
+}
+
+.p_cell_menu {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 12.5px;
+    color: var(--body);
+}
+.p_action { color: var(--muted2); }
+
+.p_cell_chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.p_cell_actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+}
+.btnRowEdit {
+    padding: 6px 10px;
+    border-radius: 7px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--body);
+    background: var(--edit-bg);
+    border-color: var(--edit-border);
+}
+.btnRowMenu {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 7px;
+    font-size: 13px;
+    color: var(--body);
+    background: var(--edit-bg);
+    border-color: var(--edit-border);
+}
+.btnRowMenu.open {
+    background: var(--menu-hover);
+    border-color: var(--menu-border);
+}
+
+/* Rows made inactive by a policy or an id collision: dimmed, still listed. */
+.p_row.is_dimmed .p_cell { opacity: .6; }
+
+/* ---- Type badge ---- */
+.type_badge {
+    flex: none;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    /* An organization name can be long; keep it from stretching the row. */
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.badge_system { color: var(--sys-text); background: var(--sys-bg); border-color: var(--sys-border); }
+.badge_personal { color: var(--pers-text); background: var(--pers-bg); border-color: var(--pers-border); }
+.badge_org { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+
+/* ---- Option chips (table view, read-only) ---- */
+.flag_chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 7px;
+    border-radius: 5px;
+    border: 1px solid;
+    white-space: nowrap;
+    cursor: default;
+}
+.chip_on { background: var(--ok-bg); color: var(--ok-text); border-color: var(--ok-border); }
+.chip_off { background: var(--chip-bg); color: var(--muted2); border-color: var(--border); }
+
+/* ---- Placeholder chips in the preview text ---- */
+.ph_chip {
+    color: var(--code);
+    background: var(--code-bg);
+    padding: 0 4px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: .95em;
+}
+
+/* Amber: the id exists, but the prompt type cannot use it. Two classes, so it beats
+   .ph_chip regardless of source order. */
+.ph_chip.ph_chip_invalid_read {
+    color: var(--warn-text);
+    background: var(--warn-bg);
+    box-shadow: inset 0 0 0 1px var(--warn-border);
+    cursor: help;
+}
+
+/* Red: the id does not exist at all. Three classes, so it beats the amber rule. */
+.ph_chip.ph_chip_invalid_read.ph_chip_error_read {
+    color: var(--err-text);
+    background: var(--err-bg);
+    box-shadow: inset 0 0 0 1px var(--err-border);
+}
+
+/* Matched substring inside the name / id while the search field is in use. The
+   browser default for <mark> is unreadable in the dark theme, hence the tokens.
+   Metric-neutral so highlighting cannot reflow the row. */
+mark.search_hit {
+    background: var(--hit-bg);
+    color: var(--hit-text);
+    border-radius: 2px;
+    padding: 0;
+    font-weight: 600;
+}
+
+/* ============================ Row menu (table view) ============================ */
+.row_menu_overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+}
+
+.row_menu {
+    position: absolute;
+    z-index: 30;
+    width: 220px;
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+    background: var(--menu-bg);
+    border: 1px solid var(--menu-border);
+    border-radius: 10px;
+    box-shadow: var(--menu-shadow);
+}
+
+.row_menu_item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+}
+.row_menu_item:hover:not(:disabled),
+.row_menu_item:focus-visible { background: var(--menu-hover); outline: none; }
+.row_menu_item.danger { color: var(--del-text); }
+.row_menu_icon { width: 16px; text-align: center; opacity: .85; }
+
+.row_menu_divider {
+    height: 1px;
+    background: var(--menu-divider);
+    margin: 4px 2px;
+}
+
+/* ============================ Detail pane ============================ */
+#detail_pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+}
+
+#detail_empty {
+    margin: auto;
+    padding: 24px;
+    color: var(--muted2);
+    font-size: 13px;
+    text-align: center;
+}
+
+#detail_body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+}
+#detail_body.hiddendata,
+#detail_empty.hiddendata { display: none; }
+
+.detail_head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+}
+
+.detail_title_wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.detail_title_line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+#detail_title {
+    font-size: 15px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.ro_badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: none;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--sys-text);
+    background: var(--sys-bg);
+    border: 1px solid var(--sys-border);
+    padding: 2px 7px;
+    border-radius: 4px;
+}
+.ro_badge svg { width: 10px; height: 10px; }
+
+.detail_actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.detail_actions button { padding: 7px 14px; }
+
+.detail_banner {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 18px;
+    background: var(--info-bg);
+    border-bottom: 1px solid var(--info-border);
+    color: var(--info-text);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+/* A caveat about the user's own data (shadowed, disabled by policy): amber. */
+.detail_banner.banner_warn {
+    background: var(--warn-bg);
+    border-bottom-color: var(--warn-border);
+    color: var(--warn-text);
+}
+
+.detail_error {
+    padding: 8px 18px;
+    background: var(--err-bg);
+    border-bottom: 1px solid var(--err-border);
+    color: var(--err-text);
+    font-size: 12.5px;
+}
+
+.detail_scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+.detail_grid {
+    display: grid;
+    grid-template-columns: minmax(360px, 1fr) 260px;
+    grid-template-rows: auto 1fr;
+    column-gap: 22px;
+    row-gap: 8px;
+    padding: 18px;
+}
+
+/* .detail_conn follows .detail_side in the DOM (tab order: Action, options,
+   connection) but sits under .detail_main, with the options spanning both rows. */
+.detail_main { grid-column: 1; grid-row: 1; }
+.detail_conn { grid-column: 1; grid-row: 2; }
+.detail_side { grid-column: 2; grid-row: 1 / span 2; }
+
+@media (max-width: 1100px) {
+    .detail_grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; row-gap: 22px; }
+    .detail_main,
+    .detail_conn,
+    .detail_side { grid-column: auto; grid-row: auto; }
+}
+
+.detail_main,
+.detail_conn {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.detail_side {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-self: start;
+}
+
+.field_label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted2);
+    font-weight: 600;
+}
+
+.field_pair {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+/* ID and Name: one per row, each input as wide as the text editor below. */
+.field_stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.field_stack .field { width: 100%; }
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 150px;
+}
+
+#detail_body .detail_input {
+    width: 100%;
+    background: var(--input-bg);
+    color: var(--text);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 13px;
+}
+#detail_body .detail_input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+#detail_body .detail_input:disabled {
+    background: var(--ro-bg);
+    color: var(--muted);
+    opacity: 1;
+}
+#detail_id { font-family: var(--font-mono); text-transform: lowercase; }
+
+#detail_body .detail_input.input_error,
+.editor-wrap .editor.input_error { border-color: var(--err-border); }
+
+.small_label { font-size: 11.5px; font-style: italic; color: var(--muted2); }
+.small_info { font-size: smaller; }
+
+/* In the detail header, centred between the title and the action buttons by the two
+   .toolbar_spacer siblings around it. */
+.btnMenuPositionItem {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    padding: 7px 12px;
+    background: var(--edit-bg);
+    color: var(--body);
+    border-color: var(--edit-border);
+    font-weight: 500;
+}
+.btnMenuPositionItem svg { width: 16px; height: 16px; flex-shrink: 0; }
+.btnMenuPositionItem > * { pointer-events: none; }
+
+.conn_readonly {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+    font-size: 13px;
+}
+
+/* ---- Option toggles ---- */
+.flag_row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 10px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: var(--body);
+}
+.flag_row .flag_fixed { display: none; }
+.flag_row.is_fixed {
+    background: var(--ro-bg);
+    opacity: .62;
+    cursor: not-allowed;
+}
+.flag_row.is_fixed .flag_fixed { display: inline; }
+.flag_row:has(input:disabled) { cursor: not-allowed; }
+
+.flag_switch {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    position: relative;
+    flex: none;
+    width: 34px;
+    height: 20px;
+    margin: 0;
+    border-radius: 999px;
+    background: var(--border2);
+    transition: background .15s;
+    cursor: inherit;
+}
+.flag_switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,.35);
+    transition: left .15s;
+}
+.flag_switch:checked { background: var(--accent); }
+.flag_switch:checked::after { left: 16px; }
+.flag_row.is_fixed .flag_switch:checked { background: var(--fixed-on); }
+.flag_switch:disabled:not(:checked) { opacity: .7; }
+.flag_switch:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Validation: a flag that must be on because the prompt text uses the matching
+   placeholder ({%additional_text%} / {%selected_text%}) but isn't. Applied by
+   checkPromptsConfigForPlaceholders(). */
+.flag_switch.invalid_flag {
+    outline: 2px solid var(--del-text);
+    outline-offset: 2px;
+}
+
+/* ============================ Prompt editor (highlighting) =======================
+   Structure lives in pages/_lib/editor-highlight.css, shared with the Data
+   Placeholders page and the six single-textarea settings pages. Only this page's
+   metrics and colours are set here, as the custom properties that file reads.
+   ------------------------------------------------------------------------------ */
+.editor-wrap {
+    --ed-padding: 14px;
+    --ed-font: var(--font-mono);
+    --ed-line-height: 1.65;
+    --ed-surface: var(--input-bg);
+    --ed-border: var(--border2);
+    --ed-chip-bg: var(--code-bg);
+    --ed-chip-fg: var(--code);
+    --ed-warn-bg: var(--warn-bg);
+    --ed-warn-fg: var(--warn-text);
+    --ed-warn-border: var(--warn-border);
+    --ed-err-bg: var(--err-bg);
+    --ed-err-fg: var(--err-text);
+    --ed-err-border: var(--err-border);
+    border-radius: 10px;
+}
+.editor-wrap .editor { min-height: 210px; }
+.editor-wrap .editor:focus { outline: none; border-color: var(--accent); }
+
+/* Read-only prompt: dashed and muted, still selectable. */
+.editor-wrap.is_readonly {
+    --ed-surface: var(--ro-bg);
+}
+.editor-wrap.is_readonly .editor {
+    border-style: dashed;
+    cursor: text;
+}
+.editor-wrap.is_readonly .editor-highlights { color: var(--muted); }
+
+/* The mirror is only shown once attachEditorHighlight() has marked the wrapper. */
+.editor-wrap .editor-backdrop { display: none; }
+.editor-wrap.editor-active .editor-backdrop { display: block; }
+.editor-wrap.editor-active .editor { display: block; }
+
+/* ============================ Connection override sections ============================ */
+.disclosure { margin-top: 6px; }
+
+.disclosure_toggle {
+    display: block;
+    width: 100%;
+    padding: 6px;
+    border: none;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 500;
+    text-align: center;
+    color: var(--text);
+}
+.disclosure_toggle::after { content: ' \25BE'; }
+.disclosure_toggle[aria-expanded="true"]::after { content: ' \25B4'; }
+
+.api_toggle { background: var(--api-bg); }
+.api_toggle:hover:not(:disabled) { background: var(--api-hover); }
+.cgw_toggle { background: var(--cgw-bg); }
+.cgw_toggle:hover:not(:disabled) { background: var(--cgw-hover); }
+
+.disclosure_panel {
+    margin-top: 6px;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+.disclosure_panel.hiddendata { display: none; }
+.api_panel { background: var(--api-bg); }
+.cgw_panel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--cgw-bg);
+}
+
+/* ---- Connection UI inside the API panel ----
+   injectConnectionUI() emits a 2-column <tr> (label | controls). The pane column is
+   narrow for that layout, so it is stacked: label on its own line, controls below. */
+.api_panel table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    text-align: left;
+}
+.api_panel tr { display: block; }
+.api_panel td {
+    display: block;
+    width: auto;
+    padding: 0;
+    border: none;
+}
+.api_panel td:first-child { margin-bottom: 4px; }
+.api_panel label { width: 100%; }
+.api_panel .opt_title { white-space: nowrap; }
+.api_panel tr[class*="conntype_"] {
+    padding: 6px 8px;
+}
+
+/* ---- Provider tint, as on the options page ----
+   connection-ui.css paints every injected conntype_* row with the saturated
+   legacy colour (!important), so the panel read as a stack of loud blocks on
+   top of the blue --api-bg. Here the rows go transparent (thin separators
+   instead) and the whole panel takes a soft tint of the selected provider.
+   The provider is read from the connection-type row (`<selectId>_tr`), the only
+   row whose conntype_* class follows the select (changeConnTypeRowColor); the
+   other rows carry a fixed one, hidden or not, so they can't drive :has().
+   No provider selected (no API override) ⇒ no class ⇒ the plain --api-bg. */
+.api_panel tr[class*="conntype_"] {
+    background: transparent !important;
+    border-radius: 0;
+    border-top: 1px solid var(--tint-line, var(--border2));
+}
+.api_panel tr[id$="_tr"] { border-top: none; }
+
+.api_panel { --tint-line: rgba(0,0,0,.10); }
+.api_panel:has(tr[id$="_tr"].conntype_chatgpt_api)       { background: rgba(10,83,214,.08) !important;  --tint-line: rgba(10,83,214,.25); --tint-border: rgba(10,83,214,.40); --tint-accent: rgb(10,83,214); }
+.api_panel:has(tr[id$="_tr"].conntype_ollama_api)        { background: rgba(31,122,46,.08) !important;  --tint-line: rgba(31,122,46,.25); --tint-border: rgba(31,122,46,.40); --tint-accent: rgb(31,122,46); }
+.api_panel:has(tr[id$="_tr"].conntype_openai_comp_api)   { background: rgba(122,43,191,.08) !important; --tint-line: rgba(122,43,191,.25); --tint-border: rgba(122,43,191,.40); --tint-accent: rgb(122,43,191); }
+.api_panel:has(tr[id$="_tr"].conntype_google_gemini_api) { background: rgba(150,120,12,.08) !important; --tint-line: rgba(150,120,12,.25); --tint-border: rgba(150,120,12,.40); --tint-accent: rgb(150,120,12); }
+.api_panel:has(tr[id$="_tr"].conntype_anthropic_api)     { background: rgba(168,20,80,.08) !important;  --tint-line: rgba(168,20,80,.25); --tint-border: rgba(168,20,80,.40); --tint-accent: rgb(168,20,80); }
+
+@media (prefers-color-scheme: dark) {
+    .api_panel { --tint-line: rgba(255,255,255,.10); }
+    .api_panel:has(tr[id$="_tr"].conntype_chatgpt_api)       { background: rgba(10,83,214,.20) !important;  --tint-line: rgba(10,83,214,.45); --tint-border: rgba(10,83,214,.55); --tint-accent: rgb(120,171,244); }
+    .api_panel:has(tr[id$="_tr"].conntype_ollama_api)        { background: rgba(31,122,46,.20) !important;  --tint-line: rgba(31,122,46,.45); --tint-border: rgba(31,122,46,.55); --tint-accent: rgb(154,196,161); }
+    .api_panel:has(tr[id$="_tr"].conntype_openai_comp_api)   { background: rgba(122,43,191,.20) !important; --tint-line: rgba(122,43,191,.45); --tint-border: rgba(122,43,191,.55); --tint-accent: rgb(195,163,226); }
+    .api_panel:has(tr[id$="_tr"].conntype_google_gemini_api) { background: rgba(150,120,12,.20) !important; --tint-line: rgba(150,120,12,.45); --tint-border: rgba(150,120,12,.55); --tint-accent: rgb(208,194,140); }
+    .api_panel:has(tr[id$="_tr"].conntype_anthropic_api)     { background: rgba(168,20,80,.20) !important;  --tint-line: rgba(168,20,80,.45); --tint-border: rgba(168,20,80,.55); --tint-accent: rgb(216,150,177); }
+}
+
+/* select + Reset share the row; the select takes the slack. min-width:0 is required
+   or the select refuses to shrink below its longest <option>. */
+.api_panel select.option-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* ---- Advanced connection fields disclosure ----
+   The .conn_adv rows are relocated into .conn_adv_table by relocateConnAdvRows(), so
+   the panel opens below this button. `hidden` is set from JS when the provider exposes
+   no advanced field; the attribute alone would lose to the display below.
+   Looks like the options page #mzta_conn_adv_btn (gear + label on the left,
+   chevron on the right, provider-tinted via the --tint-border / --tint-accent
+   set by the provider tint rules above), restated here since this page does
+   not link mzta-design.css. */
+.conn_adv_btn {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 9px 12px;
+    background: transparent;
+    border: 1.5px solid var(--tint-border, var(--border2));
+    border-radius: 8px;
+    color: var(--tint-accent, var(--accent));
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.conn_adv_btn[hidden] { display: none; }
+.conn_adv_btn:hover { border-color: var(--tint-accent, var(--accent)); }
+.conn_adv_btn .chev { display: inline-flex; }
+.conn_adv_btn .chev svg { transition: transform .2s; }
+.conn_adv_btn[aria-expanded="true"] .chev svg { transform: rotate(180deg); }
+.conn_adv_table { margin-top: 6px; }
+
+/* ---- Injected checkboxes as toggle switches (no markup change) ---- */
+.api_panel input.option-input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    position: relative;
+    flex: none;
+    width: 30px;
+    height: 18px;
+    margin: 0;
+    border-radius: 20px;
+    background: var(--border2);
+    transition: background .15s;
+    cursor: pointer;
+    vertical-align: middle;
+}
+.api_panel input.option-input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,.4);
+    transition: left .15s;
+}
+.api_panel input.option-input[type="checkbox"]:checked { background: var(--accent); }
+.api_panel input.option-input[type="checkbox"]:checked::after { left: 14px; }
+.api_panel input.option-input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Text left, switch right, as on the options page. connection-ui.js is shared, so the
+   injected order (<input> then text) is flipped with `order` rather than rewritten. */
+.api_panel label:has(> input.option-input[type="checkbox"]) {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 20px;
+    width: auto;
+}
+.api_panel label:has(> input.option-input[type="checkbox"]) > input.option-input[type="checkbox"] {
+    order: 1;
+    margin-left: auto;
+}
+
+/* ---- Text-like injected fields ---- */
+.api_panel input.option-input[type="text"],
+.api_panel input.option-input[type="password"],
+.api_panel input.option-input[type="number"],
+.api_panel select.option-input,
+.api_panel textarea.option-textarea,
+.cgw_panel input.input_additional {
+    width: 100%;
+    max-width: 100%;
+    background: var(--input-bg);
+    color: var(--text);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+.api_panel input.option-input:focus,
+.api_panel select.option-input:focus,
+.api_panel textarea.option-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* ---- TomSelect (model dropdowns) ----
+   The vendored tom-select.default.min.css paints a light gradient with dark text,
+   unreadable in dark mode. Same treatment the options page applies via #mzta_card. */
+.api_panel .ts-wrapper { width: 100%; }
+
+.api_panel .ts-control,
+.api_panel .ts-wrapper.single .ts-control,
+.api_panel .ts-wrapper.single.input-active .ts-control {
+    background: var(--input-bg);
+    background-image: none;
+    box-shadow: none;
+    /* !important on the border only: setTomSelectBorder() (js/mzta-utils.js) writes an
+       inline `1px solid #d0d0d0` on every change, which would otherwise win. */
+    border: 1px solid var(--border2) !important;
+    border-radius: 8px;
+    min-height: 38px;
+    color: var(--text);
+    font-size: 14.4px;
+}
+
+/* Keep the "no model selected" warning: setTomSelectBorder() marks it with an inline
+   2px red border. Matched on the width, since the engine normalises the colour. */
+.api_panel .ts-control[style*="2px"] {
+    border: 2px solid var(--err-border) !important;
+}
+
+.api_panel .ts-control > input,
+.api_panel .ts-control .item { color: var(--text); }
+.api_panel .ts-control > input::placeholder { color: var(--muted); }
+
+.api_panel .ts-wrapper.single .ts-control:after { border-top-color: var(--muted); }
+.api_panel .ts-wrapper.single.dropdown-active .ts-control:after { border-bottom-color: var(--muted); }
+.api_panel .ts-wrapper.focus .ts-control { border-color: var(--accent); }
+
+.api_panel .ts-dropdown,
+.api_panel .ts-dropdown.single {
+    background: var(--panel);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14.4px;
+}
+.api_panel .ts-dropdown .option,
+.api_panel .ts-dropdown .optgroup-header,
+.api_panel .ts-dropdown .no-results {
+    background: transparent;
+    color: var(--text);
+}
+.api_panel .ts-dropdown .active,
+.api_panel .ts-dropdown .active.create {
+    background: var(--rowhover);
+    color: var(--text);
+}
+.api_panel .ts-dropdown [data-selectable] .highlight {
+    background: var(--hit-bg);
+    color: var(--hit-text);
+}
+.api_panel .ts-dropdown .optgroup { border-top-color: var(--border); }
+
+/* Keep the caret on the same line as the selected value — see pages/_lib/mzta-design.css
+   for the full explanation: `.item` needs min-width:0 or its min-content width (an
+   unbreakable model id) pushes the input and its caret onto a second row. */
+.api_panel .ts-wrapper.single.has-items .ts-control { flex-wrap: nowrap; }
+.api_panel .ts-wrapper.single.has-items .ts-control > .item {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 0 1 auto;
+}
+.api_panel .ts-wrapper.single.has-items .ts-control > input {
+    min-width: 4px;
+    flex: 1 1 4px;
+}
+
+/* ============================ Dialog ============================ */
+dialog.export {
+    padding: 20px;
+    border: none;
+    border-radius: 12px;
+    background: var(--box);
+    color: var(--text);
+    max-width: 440px;
+    box-shadow: 0 12px 28px rgba(0,0,0,.35);
+    font-family: var(--font-ui);
+}
+dialog.export::backdrop { background: rgba(0,0,0,.4); }
+dialog.export .dialog_text {
+    margin: 0 0 20px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+dialog.export .dialog_buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* ============================ Misc ============================ */
+.storage_space {
+    font-size: 0.8em;
+    font-style: italic;
+    color: var(--muted);
+    text-align: right;
+    margin: 8px 1px 0 0;
+}
+
+label:has(input[type="checkbox"]) { cursor: pointer; }
+
+.hiddendata { display: none; }
+.hidden { display: none; }

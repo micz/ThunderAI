@@ -24,7 +24,7 @@ jobs:
           node-version: '20'
 
       - name: Check and update vendor files
-        run: node .github/scripts/tom-select-update.js
+        run: node .github/scripts/tom-select-update.mjs
 
       - name: Commit and push to PR branch
         id: commit

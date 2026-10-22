@@ -1,0 +1,13 @@
+{
+  "_org_name": "ACME",
+  "connection_type": "chatgpt_api",
+  "chatgpt_api_key": "sk-org-SECRET-hydration",
+  "chatgpt_model": "gpt-org",
+  "google_gemini_api_key": "AIza-org-UNLOCKED-hydration",
+  "google_gemini_api_key:locked": false,
+  "default_sign_name": "ACME Staff",
+  "default_sign_name:locked": false,
+  "_special_prompts_text": {
+    "prompt_spamfilter": "ACME spam check of {%mail_html_body%}. Answer as JSON: {\"explanation\": \"why\", \"spamValue\": 0}"
+  }
+}

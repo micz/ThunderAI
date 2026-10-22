@@ -17,21 +17,50 @@
  */
 
 import { taLogger } from '../../js/mzta-logger.js';
-import { prefs_default } from '../../options/mzta-options-default.js';
-import { getMiczItUrl } from '../../js/mzta-utils.js';
+import { getMiczItUrl, hasNoConnectionSelected } from '../../js/mzta-utils.js';
+import { mztaPrefs } from '../../js/mzta-prefs.js';
+import {
+    getManagedState,
+    isSetupWizardDisabled,
+    disableForManagedRestriction
+} from '../_lib/managed-ui.js';
 
 let taLog = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    let prefs = await browser.storage.sync.get({
-        do_debug: prefs_default.do_debug,
-        connection_type: prefs_default.connection_type,
-    });
+    let prefs = await mztaPrefs.getPrefs(['do_debug', 'connection_type']);
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
 
     document.getElementById('link_doc_guides').href = getMiczItUrl('thunderbird-addon-thunderai/guides/');
     document.getElementById('link_doc_tutorial').href = getMiczItUrl('thunderbird-addon-thunderai/tutorial/');
+
+    document.getElementById('btn_launch_wizard').addEventListener('click', async (e) => {
+        e.preventDefault();
+        if(isSetupWizardDisabled()) return;
+        await browser.tabs.create({ url: '/pages/setup-wizard/mzta-setup-wizard.html' });
+    });
+
+    // A policy may forbid the wizard: hide the whole banner rather than disable the link,
+    // since the banner exists only to lead there and has nothing else to say.
+    await getManagedState(prefs.do_debug);
+    if(isSetupWizardDisabled()){
+        disableForManagedRestriction(document.getElementById('btn_launch_wizard'));
+        document.getElementById('wizard_banner').style.display = 'none';
+    }
+
+    // No AI connection chosen yet: give the (blue) wizard banner more prominence.
+    // No permission banner can apply in this state, since none of the checks below match.
+    if(hasNoConnectionSelected(prefs.connection_type) && !isSetupWizardDisabled()){
+        document.getElementById('wizard_banner').classList.add('wizard_banner_urgent');
+    }
+
+    // Closing the tab once a permission has been granted: registered once, not
+    // inside each per-provider branch.
+    document.getElementById("integration_permission_ok").addEventListener("click", async () => {
+        await messenger.tabs.remove((await messenger.tabs.getCurrent()).id);
+    });
+
     if(prefs.connection_type === 'chatgpt_web'){
         let permission_chatgpt = await messenger.permissions.contains({ origins: ["https://*.chatgpt.com/*"] });
         if(permission_chatgpt === false){
@@ -46,14 +75,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     taLog.log("ChatGPT Web permission denied");
                 }
             });
-            document.getElementById("integration_permission_ok").addEventListener("click", async () => {
-                await messenger.tabs.remove((await messenger.tabs.getCurrent()).id);
-            });
         }
     }
     if(prefs.connection_type === 'anthropic_api'){
-        let permission_chatgpt = await messenger.permissions.contains({ origins: ["https://*.anthropic.com/*"] });
-        if(permission_chatgpt === false){
+        let permission_anthropic = await messenger.permissions.contains({ origins: ["https://*.anthropic.com/*"] });
+        if(permission_anthropic === false){
             document.getElementById("anthropic_api_permission").style.display = "block";
             document.getElementById("anthropic_api_permission").addEventListener("click", async () => {
                 let granted = await messenger.permissions.request({ origins: ["https://*.anthropic.com/*"] });
@@ -64,9 +90,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }else{
                     taLog.log("Claude API web permission denied");
                 }
-            });
-            document.getElementById("integration_permission_ok").addEventListener("click", async () => {
-                await messenger.tabs.remove((await messenger.tabs.getCurrent()).id);
             });
         }
     }
@@ -83,9 +106,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }else{
                     taLog.log("OpenAI API permission denied");
                 }
-            });
-            document.getElementById("integration_permission_ok").addEventListener("click", async () => {
-                await messenger.tabs.remove((await messenger.tabs.getCurrent()).id);
             });
         }
     }

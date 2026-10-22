@@ -1,0 +1,10 @@
+{
+  "description": "A signature name made only of spaces counts as none: no signature statement",
+  "spec": ["spec 02 \"How the final prompt is built (`preparePrompt()`)\": default_sign_name empty or whitespace only - nothing"],
+  "storage": { "default_sign_name": "   " },
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Write a reply.", "need_signature": "1" },
+    "body_text": "Hi"
+  },
+  "expected": "Write a reply. \"Hi\""
+}
