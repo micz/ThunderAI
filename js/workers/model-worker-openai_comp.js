@@ -172,8 +172,6 @@ self.onmessage = async function(event) {
                 }catch(e){
                     error_message = response.statusText;
                 }
-                // Include the final request URL so a wrongly assembled path is immediately visible.
-                error_message = "URL: " + response.url + " — " + error_message;
                 taLog.log("error_message: " + JSON.stringify(error_message));
                 error_text = i18nStrings["OpenAIComp_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
             }
