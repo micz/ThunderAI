@@ -129,6 +129,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     // matching the type_value passed to textareaAutocomplete below.
     if (spamfilter_textarea_hl) spamfilter_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
         placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
+
+    // Sender cache: wipe all stored per-sender spam verdicts.
+    document.getElementById('btn_clear_sender_cache').addEventListener('click', async () => {
+        if (!confirm(browser.i18n.getMessage('SpamFilter_ClearSenderCache_Confirm'))) {
+            return;
+        }
+        await browser.storage.local.set({ sender_cache: {} });
+        const info = document.getElementById('sender_cache_cleared_info');
+        if (info) {
+            info.style.display = 'inline';
+            setTimeout(() => { info.style.display = 'none'; }, 5000);
+        }
+    });
+
+    // Spam reports: wipe all stored per-mail verdicts, so the next batch run
+    // re-analyzes every mail instead of skipping the already-tested ones.
+    document.getElementById('btn_clear_spam_reports').addEventListener('click', async () => {
+        if (!confirm(browser.i18n.getMessage('SpamFilter_ClearSpamReports_Confirm'))) {
+            return;
+        }
+        await spamReport.clearReportData();
+        const info = document.getElementById('spam_reports_cleared_info');
+        if (info) {
+            info.style.display = 'inline';
+            setTimeout(() => { info.style.display = 'none'; }, 5000);
+        }
+    });
     textareaAutocomplete(spamfilter_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
     // Skip addresses list

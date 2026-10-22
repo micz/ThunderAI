@@ -24,7 +24,8 @@ export class taSpamReport {
     // In-flight state lives in taJobRegistry (js/mzta-job-registry.js). The prefix is kept
     // only so clear*() still sweeps keys written to storage.session by older versions.
     _processing_prefix = 'mzta-spam-processing-';
-    _max_reports = 100;
+    _max_reports = 1000;
+    _index_key = 'spam_index';
     _storage = null;
     taLog = null;
 
@@ -37,6 +38,9 @@ export class taSpamReport {
         this.taLog.log("[saveReportData] data_id: " + data_id);
         try {
             await this._storage.writeSpam(data_id, data, true);
+            let index = (await this._loadIndex()) || {};
+            index[data_id] = Date.now();
+            await this._saveIndex(index);
         } catch (e) {
             this.taLog.error("[saveReportData] error: " + e);
             throw e;
@@ -83,6 +87,11 @@ export class taSpamReport {
     async removeReportData(data_id) {
         this.taLog.log("[removeReportData] data_id: " + data_id);
         await this._storage.deleteSpamField(data_id);
+        const index = await this._loadIndex();
+        if (index && data_id in index) {
+            delete index[data_id];
+            await this._saveIndex(index);
+        }
     }
 
     async getAllReportData() {
@@ -95,9 +104,8 @@ export class taSpamReport {
         let allSpam = await this._storage.getAllSpamRecords();
         let spamKeys = Object.keys(allSpam);
         this.taLog.log("[clearReportData] deleting " + spamKeys.length + " spam records");
-        for (let messageId of spamKeys) {
-            await this._storage.deleteSpamField(messageId);
-        }
+        await this._storage.deleteSpamFields(spamKeys);
+        await this._saveIndex({});
         let allSession = await browser.storage.session.get(null);
         let keysToDelete = Object.keys(allSession).filter(k => k.startsWith(this._processing_prefix));
         this.taLog.log("[clearReportData] deleting " + keysToDelete.length + " session keys");
@@ -106,20 +114,53 @@ export class taSpamReport {
         }
     }
 
+    // Compact index of the stored spam reports ({headerMessageId -> ts}), so
+    // the truncation can work without scanning the whole record store on
+    // every run. Stores older than the index are picked up by _seedIndex.
+    async _loadIndex() {
+        try {
+            const res = await browser.storage.local.get(this._index_key);
+            return (this._index_key in res) ? res[this._index_key] : null;
+        } catch (e) {
+            this.taLog.error("[_loadIndex] error: " + e);
+            return null;
+        }
+    }
+
+    async _saveIndex(index) {
+        await browser.storage.local.set({ [this._index_key]: index });
+    }
+
+    async _seedIndex() {
+        const all = await this._storage.getAllSpamRecords();
+        const index = {};
+        for (const [id, record] of Object.entries(all)) {
+            index[id] = record.ts || Date.now();
+        }
+        await this._saveIndex(index);
+        this.taLog.log("[_seedIndex] seeded with " + Object.keys(index).length + " entries");
+        return index;
+    }
+
     async truncReportData() {
         this.taLog.log("[truncReportData] checking report count");
-        let data = await this._storage.getAllSpamRecords();
-        let sortedData = this.sortReportsByDate(data);
-        let keys = Object.keys(sortedData);
-        this.taLog.log("[truncReportData] total reports: " + keys.length + ", max: " + this._max_reports);
-
-        if (keys.length > this._max_reports) {
-            let toDelete = keys.length - this._max_reports;
-            this.taLog.log("[truncReportData] truncating " + toDelete + " oldest reports");
-            for (let i = this._max_reports; i < keys.length; i++) {
-                await this._storage.deleteSpamField(keys[i]);
-            }
+        let index = await this._loadIndex();
+        if (index === null) {
+            index = await this._seedIndex();
         }
+        let entries = Object.entries(index);
+        this.taLog.log("[truncReportData] total reports: " + entries.length + ", max: " + this._max_reports);
+        if (entries.length <= this._max_reports) {
+            return;
+        }
+        entries.sort((a, b) => b[1] - a[1]);
+        let toDelete = entries.slice(this._max_reports).map(([id]) => id);
+        this.taLog.log("[truncReportData] truncating " + toDelete.length + " oldest reports");
+        await this._storage.deleteSpamFields(toDelete);
+        for (let id of toDelete) {
+            delete index[id];
+        }
+        await this._saveIndex(index);
     }
 
     sortReportsByDate(data) {

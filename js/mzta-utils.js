@@ -993,6 +993,18 @@ export function prepareOriginURL(url) {
   return url.endsWith('/') ? `${url}*` : `${url}/*`;
 }
 
+// Returns a match pattern covering the WHOLE origin of the given URL
+// (e.g. "https://api.z.ai/api/paas/v4" → "https://api.z.ai/*"), so a granted
+// permission also covers other paths of the same API host. Falls back to
+// prepareOriginURL() when the URL cannot be parsed.
+export function getOriginPermissionPattern(url) {
+  try {
+    return new URL(url).origin + "/*";
+  } catch (e) {
+    return prepareOriginURL(url);
+  }
+}
+
 function generateHexColorForTag() {
   const red = Math.floor(Math.random() * 256);
   const green = Math.floor(Math.random() * 256);

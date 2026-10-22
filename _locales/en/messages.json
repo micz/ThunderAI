@@ -1597,6 +1597,14 @@
     "message": "The automatic processing never runs on the drafts, templates, outbox, junk and trash folders, and it skips the sent folder too. If checked, the AI will also add tags to the emails you send.",
     "description": "Add tags page: help text under the option that extends automatic tagging to sent emails; lists the folders that are always skipped."
   },
+  "prefs_OptionText_add_tags_sender_cache": {
+    "message": "Reuse results from the same sender",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_sender_cache_Info": {
+    "message": "If checked, the tags are requested from the AI only once per sender: further emails from the same sender get the same tags without a new AI call. Cached results are kept for 30 days.",
+    "description": ""
+  },
   "prefs_OptionText_add_tags_use_specific_integration_Info": {
     "message": "If checked, the Model and API specified below will be used for adding tags to emails, regardless the one choosen in the ThunderAI options page.",
     "description": "Add tags page: help text under the 'Use specific Model and API' option, explaining that the connection below overrides the global one for tagging."
@@ -1720,6 +1728,50 @@
   "prefs_OptionText_spamfilter_only_inbox_Info": {
     "message": "When enabled, the automatic spam filter only checks messages received in the inbox folder and ignores mail delivered to other folders.",
     "description": "Spam filter page: help text under the option that limits the automatic spam filter to the inbox."
+  },
+  "prefs_OptionText_spamfilter_sender_cache": {
+    "message": "Reuse results from the same sender",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_sender_cache_Info": {
+    "message": "If checked, the spam check runs only once per sender: further emails from the same sender reuse the stored verdict without a new AI call. Cached results are kept for 30 days.",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_batch_size": {
+    "message": "Emails per AI call",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_batch_size_Info": {
+    "message": "How many emails are analyzed together in a single AI call when checking multiple emails at once (batch mode). Lower values give more detailed explanations, higher values save tokens.",
+    "description": ""
+  },
+  "SpamFilter_ClearSenderCache": {
+    "message": "Clear sender cache",
+    "description": ""
+  },
+  "SpamFilter_ClearSenderCache_Confirm": {
+    "message": "Delete all cached spam results for senders? Future spam checks will ask the AI again for every email.",
+    "description": ""
+  },
+  "SpamFilter_ClearSenderCache_Done": {
+    "message": "Sender cache cleared.",
+    "description": ""
+  },
+  "SpamFilter_ClearSpamReports": {
+    "message": "Clear spam reports",
+    "description": ""
+  },
+  "SpamFilter_ClearSpamReports_Confirm": {
+    "message": "Delete all stored spam reports? Mails already classified will be checked again on the next batch run.",
+    "description": ""
+  },
+  "SpamFilter_ClearSpamReports_Done": {
+    "message": "Spam reports cleared.",
+    "description": ""
+  },
+  "spamfilter_batch_prompt": {
+    "message": "You are an email spam analysis assistant. Analyze each of the following $2 emails and rate for every single one the probability that it is unwanted spam or unsolicited mail (spamValue from 0 to 100), together with a short explanation (one sentence maximum). Judge from the recipient's point of view: would they plausibly want this email?\nImportant criteria:\n- Confirmation / double opt-in emails for newsletter or service registrations the recipient apparently never requested (e.g. wording like \"you (or possibly someone else) just subscribed\") are a strong spam indicator (list bombing): rate them high.\n- A well-known sender or reputable branding does NOT make an email wanted on its own.\n- Marketing / upsell content inside otherwise transactional emails is a moderate spam indicator.\n- Judge every email independently on its own content.\n\n$1\n\nRespond ONLY with a JSON object in exactly this format and nothing else:\n{\"results\":[{\"index\":1,\"spamValue\":0,\"explanation\":\"...\"},{\"index\":2,\"spamValue\":0,\"explanation\":\"...\"}]}\nThe index must match the EMAIL number above. Provide one entry for every email.",
+    "description": ""
   },
   "spamfilter_threshold_too_low": {
     "message": "The spam threshold is too low! You will likely mark too much mails as spam!",
@@ -3328,6 +3380,45 @@
   "batch_stopped_notice": {
       "message": "Email processing stopped. $COUNT$ messages were processed.",
       "description": "Notice shown after the user stopped the running email processing jobs, reporting how many messages were processed before stopping",
+      "placeholders": {
+          "count": {
+              "content": "$1"
+          }
+      }
+  },
+  "spamfilter_progress_collect": {
+      "message": "Scanning mails… $COUNT$",
+      "description": "Progress banner shown while the batch spam filter scans the selected emails",
+      "placeholders": {
+          "count": {
+              "content": "$1"
+          }
+      }
+  },
+  "spamfilter_progress_analyze": {
+      "message": "Spam check: $DONE$/$TOTAL$",
+      "description": "Progress banner shown while the batch spam filter analyzes the selected emails",
+      "placeholders": {
+          "done": {
+              "content": "$1"
+          },
+          "total": {
+              "content": "$2"
+          }
+      }
+  },
+  "spamfilter_progress_done": {
+      "message": "Spam check finished ($COUNT$)",
+      "description": "Progress banner shown when the batch spam filter has finished",
+      "placeholders": {
+          "count": {
+              "content": "$1"
+          }
+      }
+  },
+  "spamfilter_progress_stopped": {
+      "message": "Spam check stopped ($COUNT$)",
+      "description": "Progress banner shown when the batch spam filter was stopped by the user",
       "placeholders": {
           "count": {
               "content": "$1"

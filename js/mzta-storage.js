@@ -199,6 +199,7 @@ export class taStorage {
                     spamValue: spam.spamValue,
                     explanation: spam.explanation,
                     report_date: new Date(spam.ts),
+                    ts: spam.ts,
                     subject: spam.subject,
                     from: spam.from,
                     message_date: spam.message_date,
@@ -239,6 +240,44 @@ export class taStorage {
             }
         } catch (e) {
             this.taLog.error('deleteSpamField error: ' + e);
+        }
+    }
+
+    /**
+     * Delete only the spam field from multiple records in one go, avoiding the
+     * per-record read/write cycle of deleteSpamField. Records with no other
+     * data fields left are removed entirely.
+     * @param {string[]} messageIds - The Message-ID header strings.
+     * @returns {Promise<number>} The number of records found for the given ids.
+     */
+    async deleteSpamFields(messageIds) {
+        this.taLog.log('[deleteSpamFields] count: ' + messageIds.length);
+        if (messageIds.length === 0) return 0;
+        try {
+            const keys = messageIds.map(id => this._buildKey(id));
+            const records = await messenger.storage.local.get(keys);
+            const toUpdate = {};
+            const toRemove = [];
+            for (const [key, record] of Object.entries(records)) {
+                if (!record || !(taStorage.FIELD_SPAM in record)) continue;
+                delete record[taStorage.FIELD_SPAM];
+                const remainingFields = Object.keys(record).filter(k => k !== 'v' && k !== 'ts');
+                if (remainingFields.length === 0) {
+                    toRemove.push(key);
+                } else {
+                    toUpdate[key] = record;
+                }
+            }
+            if (Object.keys(toUpdate).length > 0) {
+                await messenger.storage.local.set(toUpdate);
+            }
+            if (toRemove.length > 0) {
+                await messenger.storage.local.remove(toRemove);
+            }
+            return Object.keys(records).length;
+        } catch (e) {
+            this.taLog.error('deleteSpamFields error: ' + e);
+            return 0;
         }
     }
 

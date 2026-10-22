@@ -866,6 +866,31 @@ The UI trigger lives in the toolbar popup (`popup/mzta-popup.html/.js/.css`); se
 [04-api-integrations.md](04-api-integrations.md) for the `batch_status` / `cancel_batch`
 runtime messages and the `preparePopupMenu` payload.
 
+### Spam check batching and sender cache
+
+Two LLM-efficiency mechanisms reduce the number of AI calls during batch runs:
+
+- **Sender cache** (`js/mzta-sender-cache.js`): the spam verdict and the tags of a mail are
+  stored per sender address in `browser.storage.local` (TTL 30 days, capped to the 500 most
+  recently updated senders). Further mails from the same sender reuse the stored result
+  without an AI call. Enabled via `spamfilter_sender_cache` / `add_tags_sender_cache`
+  (both default `true`), each with a toggle in the feature settings pages. Cache lookups
+  happen after the skip-list checks and before the AI call; fresh results are written back
+  to the cache. The cache never aborts the flow — read/write errors fall back to the
+  normal AI path.
+- **Batched spam check** (`js/mzta-spam-batch.js`): instead of one AI call per email,
+  `processEmails` queues spam candidates during its message loop (after applying the
+  sender-cache and skip-list handling) and analyzes them after the loop in chunks of
+  `spamfilter_batch_size` (default 10, max 50) emails with a **single AI call per chunk**.
+  The batch prompt (`spamfilter_batch_prompt` locale string) sends a numbered list of
+  emails (body excerpts capped at `SPAM_BATCH_BODY_MAX_CHARS` = 4000 chars) and expects a
+  JSON object `{"results":[{"index":N,"spamValue":0-100,"explanation":"..."}]}`.
+  `parseSpamBatchResponse()` maps results back by index; emails missing from the response
+  — or a whole unparsable chunk — fall back to the classic per-mail analysis
+  (`_generateSpamReportForMessage`). Batch results also feed the sender cache.
+  The user-editable spamfilter prompt is still used for single-mail checks; the batch
+  prompt is a built-in locale string because the multi-email response format is fixed.
+
 ## API WebChat (`api_webchat/`)
 
 The interactive chat window used by every API provider (not ChatGPT Web) lives in

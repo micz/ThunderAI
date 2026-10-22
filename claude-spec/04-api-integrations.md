@@ -435,7 +435,15 @@ with the option off, that the prompt is sent at once on the newer UI.
 - Module: `js/api/openai_comp.js`
 - Worker: `js/workers/model-worker-openai_comp.js`
 - Settings keys: `openai_comp_host`, `openai_comp_model`, `openai_comp_api_key`, `openai_comp_use_v1`, `openai_comp_chat_name`, `openai_comp_temperature`, `openai_comp_extra_body`
-- Pre-configured providers: `js/api/openai_comp_configs.js` (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity — `custom` is the default/manual entry). The presets carry only `id`, `name`, `chat_name`, `host`, `use_v1` — there is deliberately no per-preset extra body data.
+- Pre-configured providers: `js/api/openai_comp_configs.js` (`custom`, Z.ai, DeepSeek, Grok, Mistral, OpenRouter, Perplexity — `custom` is the default/manual entry). The presets carry only `id`, `name`, `chat_name`, `host`, `use_v1` — there is deliberately no per-preset extra body data.
+- **URL building**: both requests (GET `/models`, POST `/chat/completions`) go through
+  `OpenAIComp.buildApiUrl()`, wrapped in `fetchWithRetry()`. The `/v1` segment is only appended when
+  `use_v1` is true **and** the host doesn't already end with a version segment (`/v<digits>`, e.g.
+  `https://api.z.ai/api/paas/v4`). This prevents malformed paths like `/api/paas/v4/v1/chat/completions`.
+- **Host permission**: before fetching models, the connection UI checks/requests a permission pattern
+  covering the **whole origin** of the host (`getOriginPermissionPattern()` in `js/mzta-utils.js`,
+  e.g. `https://api.z.ai/*`), so all API paths of that host are covered. The same pattern is used by
+  the "give permission" buttons and the CORS-warning permission checks.
 - **Extra body data**: see [Extra body data](#extra-body-data).
 
 ### Extra body data

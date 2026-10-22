@@ -23,6 +23,7 @@
 const MZTA_INJECTED_SELECTORS = [
   '#mzta-container',
   '.mzta_dialog',
+  '#mzta-spam-batch-banner',
   // <style>/<script> hold no readable text, but their SOURCE is text: the clone
   // below is detached, and on a detached node textContent-based extraction reads
   // stylesheet rules out as if they were body copy. A Word/Outlook mail carries a
@@ -555,6 +556,62 @@ function createThreeDotsMenu(isDark, menuItems, panelColors) {
     return wrapper;
 }
 
+// ── Spam batch progress banner ──────────────────────────────────────
+// A small floating banner pushed by the background while a batch spam
+// check runs: scanning phase, verdict progress and a stop button.
+function _spamBatchBanner() {
+    let banner = document.getElementById('mzta-spam-batch-banner');
+    if (!banner) {
+        const colors = _getThemeColors();
+        banner = document.createElement('div');
+        banner.id = 'mzta-spam-batch-banner';
+        banner.style.cssText = 'position: fixed; bottom: 12px; right: 12px; z-index: 9999; display: flex; align-items: center; gap: 8px;'
+            + 'border-radius: 6px; padding: 8px 12px; font-size: 12px; font-family: sans-serif;'
+            + `background-color: ${colors.spamLoading.bg}; color: ${colors.spamLoading.text}; border: 1px solid ${colors.spamLoading.border};`
+            + 'box-shadow: 0 2px 8px rgba(0,0,0,0.25);';
+        const spinner = document.createElement('img');
+        spinner.id = 'mzta-spam-batch-spinner';
+        spinner.src = browser.runtime.getURL('/images/loading.gif');
+        spinner.style.cssText = 'height: 14px; width: 14px;';
+        banner.appendChild(spinner);
+        const text = document.createElement('span');
+        text.id = 'mzta-spam-batch-text';
+        banner.appendChild(text);
+        const stopBtn = document.createElement('button');
+        stopBtn.id = 'mzta-spam-batch-stop';
+        stopBtn.type = 'button';
+        stopBtn.textContent = browser.i18n.getMessage('batch_stop_processing');
+        stopBtn.style.cssText = 'cursor: pointer; background: transparent; border: 1px solid currentColor; border-radius: 4px; padding: 2px 8px; font-size: 11px; color: inherit;';
+        stopBtn.addEventListener('click', () => {
+            if (banner.dataset.stopRequested === '1') return;
+            banner.dataset.stopRequested = '1';
+            stopBtn.textContent = browser.i18n.getMessage('batch_stopping');
+            stopBtn.disabled = true;
+            browser.runtime.sendMessage({ command: 'cancel_batch' }).catch(() => {});
+        });
+        banner.appendChild(stopBtn);
+        document.body.appendChild(banner);
+    }
+    return banner;
+}
+
+function showSpamBatchProgress(data) {
+    const banner = _spamBatchBanner();
+    const text = document.getElementById('mzta-spam-batch-text');
+    if (!text) return;
+    if (data.phase === 'done') {
+        text.textContent = data.cancelled
+            ? browser.i18n.getMessage('spamfilter_progress_stopped', [String(data.done ?? 0)])
+            : browser.i18n.getMessage('spamfilter_progress_done', [String(data.done ?? 0)]);
+        document.getElementById('mzta-spam-batch-spinner')?.remove();
+        document.getElementById('mzta-spam-batch-stop')?.remove();
+        setTimeout(() => document.getElementById('mzta-spam-batch-banner')?.remove(), 4000);
+        return;
+    }
+    text.textContent = data.phase === 'collect'
+        ? browser.i18n.getMessage('spamfilter_progress_collect', [String(data.count ?? 0)])
+        : browser.i18n.getMessage('spamfilter_progress_analyze', [String(data.done ?? 0), String(data.total ?? 0)]);
+}
 // The headerMessageId of the message this document displays, asked once to the background
 // (null when unknown, e.g. in a compose window). A message display script runs in a fresh
 // document per displayed message, so this never changes for the life of the script.
@@ -1342,6 +1399,18 @@ switch (message.command) {
       return Promise.resolve(true);
     }
 
+    case "reloadSpamReport": {
+      // The background finished (batch-)processing spam checks: re-load the
+      // stored report of the currently displayed message once.
+      browser.runtime.sendMessage({ command: "checkSpamReport" }).catch(() => {});
+      return Promise.resolve(true);
+    }
+
+    case "spamBatchProgress": {
+      showSpamBatchProgress(message.data || {});
+      return Promise.resolve(true);
+    }
+
     case "showSpamCheckInProgress": {
       _removePanel('mzta-spam-report-banner');
       _removeToolbarItem('mzta-toolbar-spam');
@@ -1433,7 +1502,6 @@ switch (message.command) {
         }
     ], { bg: sc.bg, border: sc.border, text: sc.text });
     spamMenu.style.fontWeight = 'normal';
-    spamMenu.style.display = 'none';
     topRow.appendChild(spamMenu);
 
     badge.appendChild(topRow);
@@ -1483,7 +1551,6 @@ switch (message.command) {
         if (badgeText.scrollWidth > badgeText.clientWidth) {
             chevron.style.display = 'inline';
             branding.style.display = 'none';
-            spamMenu.style.display = 'none';
         }
     };
 

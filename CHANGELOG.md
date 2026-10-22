@@ -1,6 +1,17 @@
  # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI Release Notes
 
 
+
+<h2>Unreleased</h2>
+      <ul>
+        <li><i>[OpenAI Comp API]</i> Fix: the API URL is built correctly when the host already contains a version segment (e.g. Z.ai <code>https://api.z.ai/api/paas/v4</code>), no more duplicated <code>/v1</code> path segments.</li>
+        <li><i>[OpenAI Comp API]</i> Added a <b>Z.ai</b> preconfigured service.</li>
+        <li><i>[OpenAI Comp API]</i> Reasoning streamed via the <code>reasoning_content</code> field (e.g. GLM models) is now rendered in the thinking block instead of being discarded.</li>
+        <li><i>[OpenAI Comp API]</i> The host permission for custom APIs now covers the whole origin, and the "update models" button asks for the missing permission automatically.</li>
+        <li>Added a minimal test suite for the OpenAI Comp API URL building, permission patterns and service presets (<code>node --test</code>).</li>
+        <li><i>[Spam Filter]</i> <b>Batched spam check:</b> when processing multiple emails, up to <code>spamfilter_batch_size</code> emails (default 10, configurable) are analyzed in a single AI call instead of one call per email — much faster and far fewer tokens.</li>
+        <li><i>[Spam Filter / Add Tags]</i> <b>Sender cache:</b> the result is requested from the AI only once per sender; further emails from the same sender reuse the stored verdict/tags without a new AI call (kept for 30 days, both features can be disabled in their settings pages).</li>
+      </ul>
 <h2>Version 5.1.0 - 18/10/2026</h2>
 <ul>
   <li>Redesigned the Custom Prompts page: a list with a detail editor, plus a table view of all the prompts and their options. The search also looks in the prompt text, and every change is saved immediately (the "Save All" button is gone) [<a href="https://github.com/micz/ThunderAI/issues/904">#904</a>].</li>

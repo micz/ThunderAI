@@ -50,6 +50,10 @@ export const taBatchController = {
     // The active batch tokens: { cancelled }.
     _batches: new Set(),
     processed: 0,
+    // Spam batch progress: one session per running spam batch, so overlapping
+    // batches (e.g. a manual run plus an incoming-mail run) don't overwrite
+    // each other's counters. The displays aggregate over all active sessions.
+    _spamSessions: new Set(),
 
     // Mark the start of a cancellable batch. Multiple batches may overlap. Returns the
     // batch token to pass to isCancelled() / endBatch().
@@ -109,6 +113,31 @@ export const taBatchController = {
         this.processed++;
     },
 
+    // Track the spam verdict progress (done/total, both in mails), scoped to
+    // one batch run via its session object.
+    beginSpamProgress(total){
+        const session = { done: 0, total: total };
+        this._spamSessions.add(session);
+        return session;
+    },
+
+    spamTick(session){
+        if (session) session.done++;
+    },
+
+    endSpamProgress(session){
+        this._spamSessions.delete(session);
+    },
+
+    getSpamProgress(){
+        let done = 0, total = 0;
+        for (const session of this._spamSessions) {
+            done += session.done;
+            total += session.total;
+        }
+        return { done: done, total: total };
+    },
+
     isWorking(){
         return this._batches.size > 0;
     },
@@ -118,6 +147,7 @@ export const taBatchController = {
         for (const batch of this._batches) {
             if (!batch.cancelled) allCancelled = false;
         }
+        const spam = this.getSpamProgress();
         return {
             working: this.isWorking(),
             processed: this.processed,
@@ -125,6 +155,8 @@ export const taBatchController = {
             // cancel is still a batch the user can stop.
             cancelRequested: allCancelled,
             cancelReason: this._cancelReason,
+            spamDone: spam.done,
+            spamTotal: spam.total,
         };
     },
 };

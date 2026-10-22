@@ -33,6 +33,13 @@ export const openAICompConfigs = [
         use_v1: true,
     },
     {
+        id: 'zai',
+        name: 'Z.ai API',
+        chat_name: 'Z.ai',
+        host: 'https://api.z.ai/api/paas/v4',
+        use_v1: false,
+    },
+    {
         id: 'deepseek',
         name: 'DeepSeek API',
         chat_name: 'DeepSeek',

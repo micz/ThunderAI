@@ -103,6 +103,18 @@ export class OpenAIComp {
   }
 
 
+  // Builds the final API URL. The "/v1" path segment is only appended when
+  // requested AND the host doesn't already end with a version segment
+  // (e.g. "https://api.z.ai/api/paas/v4" or "https://example.com/v1"), so the
+  // path is never duplicated ("/v4/v1/...").
+  buildApiUrl = (endpointPath) => {
+    let base = (this.host || '').trim().replace(/\/+$/, "");
+    if (this.use_v1 && !/\/v\d+$/.test(base)) {
+      base += "/v1";
+    }
+    return base + endpointPath;
+  }
+
   fetchModels = async (retryConfig = {}) => {
     try{
       const curr_headers = {
@@ -117,7 +129,7 @@ export class OpenAIComp {
 
       // Some compatible endpoints take the API key in the query string:
       // fetchWithRetry() never logs the URL.
-      const response = await fetchWithRetry(this.host + (this.use_v1 ? "/v1" : "") + "/models", {
+      const response = await fetchWithRetry(this.buildApiUrl("/models"), {
           method: "GET",
           headers: curr_headers,
       }, { label: 'OpenAI Comp', ...retryConfig });
@@ -168,7 +180,7 @@ export class OpenAIComp {
       if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
 
       try {
-        const response = await fetchWithRetry(this.host + (this.use_v1 ? "/v1" : "") + "/chat/completions", {
+        const response = await fetchWithRetry(this.buildApiUrl("/chat/completions"), {
             method: "POST",
             headers: curr_headers,
             // The user-supplied extra data is spread first on purpose: every

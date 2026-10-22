@@ -39,9 +39,10 @@ import {
   validateCustomData_ChatGPTWeb,
   sanitizeChatGPTModelData,
   sanitizeChatGPTWebCustomData,
+  getOriginPermissionPattern,
   prepareOriginURL,
-  setTomSelectBorder,
-  hasNoConnectionSelected
+  hasNoConnectionSelected,
+  setTomSelectBorder
 } from '../../js/mzta-utils.js';
 import { openAICompConfigs } from '../../js/api/openai_comp_configs.js';
 import {
@@ -1488,6 +1489,21 @@ export async function injectConnectionUI({
     // it), so the models cannot be fetched with it from here.
     if (isManagedSecret(document.getElementById(getPrefixedId("openai_comp_api_key")).value)) return;
     const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateOpenAICompModels', 'openai_comp');
+    // Make sure we may talk to the API host (same pattern as the ChatGPT/Anthropic buttons).
+    // Grants cover the whole origin, so all API paths of that host are allowed.
+    const openai_comp_host = document.getElementById(getPrefixedId("openai_comp_host")).value;
+    if (openai_comp_host != '' && !openai_comp_host.includes("localhost") && !openai_comp_host.includes("127.0.0.1")) {
+      const origin_pattern = getOriginPermissionPattern(openai_comp_host);
+      let host_granted = await messenger.permissions.contains({ origins: [origin_pattern] });
+      if (!host_granted) {
+        host_granted = await messenger.permissions.request({ origins: [origin_pattern] });
+      }
+      if (!host_granted) {
+        taLog.warn("OpenAI Comp API host permission denied");
+        alert(browser.i18n.getMessage("Optional_Permission_Denied_Model_Fetching"));
+        return;
+      }
+    }
     fetchUI.loading();
     let openai_comp = new OpenAIComp({
       host: document.getElementById(getPrefixedId("openai_comp_host")).value,
@@ -1609,7 +1625,7 @@ export async function injectConnectionUI({
         if (ollama_host.includes("localhost") || ollama_host.includes("127.0.0.1")) {
           varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });  
         }else{
-          varConnectionUI.permission_ollama_host = await messenger.permissions.request({ origins: [prepareOriginURL(ollama_host)] });
+          varConnectionUI.permission_ollama_host = await messenger.permissions.request({ origins: [getOriginPermissionPattern(ollama_host)] });
         }
         updateCORSWarnings(modelId_prefix);
       }
@@ -1621,7 +1637,7 @@ export async function injectConnectionUI({
         if (openai_comp_host.includes("localhost") || openai_comp_host.includes("127.0.0.1")) {
           varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });  
         }else{
-          varConnectionUI.permission_openai_comp_host = await messenger.permissions.request({ origins: [prepareOriginURL(openai_comp_host)] });
+          varConnectionUI.permission_openai_comp_host = await messenger.permissions.request({ origins: [getOriginPermissionPattern(openai_comp_host)] });
         }
         updateCORSWarnings(modelId_prefix);
       }
@@ -3053,11 +3069,11 @@ function loadOpenAICompConfigs(modelId_prefix = ''){
 async function loadURLsPermissions(modelId_prefix = ''){
   let ollama_host = document.getElementById((modelId_prefix ? modelId_prefix : '') + "ollama_host")?.value;
   if((ollama_host) && (ollama_host != '')){
-    varConnectionUI.permission_ollama_host = await messenger.permissions.contains({ origins: [prepareOriginURL(ollama_host)] });
+    varConnectionUI.permission_ollama_host = await messenger.permissions.contains({ origins: [getOriginPermissionPattern(ollama_host)] });
   }
   let openai_comp_host = document.getElementById((modelId_prefix ? modelId_prefix : '') + "openai_comp_host")?.value;
   if((openai_comp_host) && (openai_comp_host != '')){
-    varConnectionUI.permission_openai_comp_host = await messenger.permissions.contains({ origins: [prepareOriginURL(openai_comp_host)] });
+    varConnectionUI.permission_openai_comp_host = await messenger.permissions.contains({ origins: [getOriginPermissionPattern(openai_comp_host)] });
   }
   varConnectionUI.permission_all_urls = await messenger.permissions.contains({ origins: ["<all_urls>"] });
 }

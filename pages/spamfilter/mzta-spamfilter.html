@@ -86,6 +86,29 @@
                         <span class="track"></span>
                     </label>
                 </div>
+
+                <!-- sender cache -->
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_spamfilter_sender_cache__</div>
+                        <div class="feature_desc">__MSG_prefs_OptionText_spamfilter_sender_cache_Info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="spamfilter_sender_cache" name="spamfilter_sender_cache" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+
+                <!-- batch size -->
+                <div class="mzta_field mzta_field_num">
+                    <div class="mzta_field_num_text">
+                        <span class="opt_title">__MSG_prefs_OptionText_spamfilter_batch_size__</span>
+                        <span class="mzta_help">__MSG_prefs_OptionText_spamfilter_batch_size_Info__</span>
+                    </div>
+                    <div class="mzta_field_num_ctrl">
+                        <input type="number" id="spamfilter_batch_size" name="spamfilter_batch_size" min="1" max="50" class="option-input" />
+                    </div>
+                </div>
             </div>
 
             <!-- PROMPT -->
@@ -161,6 +184,18 @@
                         <button id="btn_save_block_addresses" class="btn_primary" disabled>__MSG_save__</button>
                     </div>
                 </div>
+            </div>
+
+            <!-- MAINTENANCE: cached verdicts and stored reports -->
+            <div class="mzta_section" id="spamfilter_maintenance_container">
+                <div class="mzta_prompt_title">__MSG_SpamFilter_maintenance_title__</div>
+                <p class="mzta_help">__MSG_SpamFilter_maintenance_infoline__</p>
+                <div class="btn_div" style="justify-content:flex-start;">
+                    <button type="button" id="btn_clear_sender_cache" class="btn_secondary btn_small">__MSG_SpamFilter_ClearSenderCache__</button>
+                    <button type="button" id="btn_clear_spam_reports" class="btn_secondary btn_small">__MSG_SpamFilter_ClearSpamReports__</button>
+                </div>
+                <span class="infoline" id="sender_cache_cleared_info" style="display: none;">__MSG_SpamFilter_ClearSenderCache_Done__</span>
+                <span class="infoline" id="spam_reports_cleared_info" style="display: none;">__MSG_SpamFilter_ClearSpamReports_Done__</span>
             </div>
 
             <!-- REPORTS -->
