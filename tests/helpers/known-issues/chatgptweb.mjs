@@ -43,13 +43,6 @@ const FILE_RE = /^chatgptweb-(\d\d)-.+\.dom\.mjs$/;
 
 /** The known issues, by spec section and case id. */
 export const KNOWN = {
-    'spec 04 "Model verification"': {
-        '04-retry-timeout-button': 'a timeout shows the warning and the "Use the current model" button, '
-            + 'on every check; but when no composer was found (-2), proceedWithPrompt() writes '
-            + 'chatgpt_textarea_not_found_error into #mzta-model_warn with textContent, which removes its '
-            + 'child #mzta-btn_model. A check that times out on the retry then shows that text and no '
-            + 'button: the user cannot resume',
-    },
 };
 
 /** The chatgptweb-NN- files of every tests/dom/<page>/ folder: [{nn, path}], path from tests/dom/. */

@@ -1427,7 +1427,11 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     // Model warning div
     var modelWarnDiv = document.createElement('div');
     modelWarnDiv.id = 'mzta-model_warn';
-    modelWarnDiv.textContent = browser.i18n.getMessage("chatgpt_win_model_warning");
+    // The text has its own span: writing it must not remove the button below.
+    var modelWarnText = document.createElement('span');
+    modelWarnText.id = 'mzta-model_warn_text';
+    modelWarnText.textContent = browser.i18n.getMessage("chatgpt_win_model_warning");
+    modelWarnDiv.appendChild(modelWarnText);
     fixedDiv.appendChild(modelWarnDiv);
 
     // GPT Model Button
@@ -2135,7 +2139,10 @@ function checkGPTModel(model) {
             // Leave only a one-shot manual continuation; no late DOM match may send.
             continue_model_verification = () => finish('manual');
             const warning = document.getElementById('mzta-model_warn');
+            const warningText = document.getElementById('mzta-model_warn_text');
             const button = document.getElementById('mzta-btn_model');
+            // The "no composer" error may have left its own text here.
+            if (warningText) warningText.textContent = browser.i18n.getMessage("chatgpt_win_model_warning");
             if (warning) warning.style.display = 'inline-block';
             if (button) button.style.display = 'inline';
         }
@@ -2298,7 +2305,8 @@ async function proceedWithPrompt(message, customText){
         case -2:    // textarea not found
             prompt_send_started = false; // No send was attempted; the existing retry may run.
             let curr_model_warn = document.getElementById('mzta-model_warn');
-            curr_model_warn.textContent = browser.i18n.getMessage("chatgpt_textarea_not_found_error");
+            document.getElementById('mzta-model_warn_text').textContent = browser.i18n.getMessage("chatgpt_textarea_not_found_error");
+            document.getElementById('mzta-btn_model').style.display = 'none';
             curr_model_warn.style.display = 'inline-block';
             document.getElementById('mzta-curr_msg').textContent = "";
             document.getElementById('mzta-loading').style.display = 'none';
