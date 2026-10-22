@@ -17,51 +17,51 @@
  */
 
 import {
-  prefs_default,
-  integration_options_config
+  prefs_default
 } from '../../options/mzta-options-default.js';
 import { taLogger } from "../../js/mzta-logger.js";
 import {
-    getSpecialPrompts,
-    setSpecialPrompts
+    getSpecialPrompts
 } from "../../js/mzta-prompts.js";
 import {
     getPlaceholders,
-    mapPlaceholderToSuggestion
-} from "../../js/mzta-placeholders.js";
+    mapPlaceholderToSuggestion, placeholdersUtils } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import { attachEditorHighlight, makeTokenStateResolver } from "../../js/mzta-editor-highlight.js";
 import {
   normalizeStringList,
   isAPIKeyValue,
   setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import {
-  initializeSpecificIntegrationUI
+  initializeSpecificIntegrationUI,
+  isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
+import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
+import { mztaPrefs } from '../../js/mzta-prefs.js';
+import {
+    applyManagedUI
+} from '../_lib/managed-ui.js';
+import {
+    persistPromptConnectionToPrefs,
+    resolveFeatureConnectionPrefs,
+    bindConnPanelTint,
+    bindSpecialPromptEditor
+} from '../_lib/feature-page.js';
 
 let autocompleteSuggestions = [];
+let activePlaceholders = [];
 let taLog = new taLogger("mzta-translate-page", true);
 
 document.addEventListener("DOMContentLoaded", async () => {
 
+    // Warn before leaving the page with unsaved textarea text.
+    initUnsavedGuard();
+
     let specialPrompts = await getSpecialPrompts();
     let translate_prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_translate_this');
 
-    if (translate_prompt && translate_prompt.api_type && translate_prompt.api_type !== '') {
-        let update_prefs = {};
-        update_prefs['translate_connection_type'] = translate_prompt.api_type;
-
-        let integration = translate_prompt.api_type.replace('_api', '');
-        if (integration_options_config && integration_options_config[integration]) {
-            for (const key of Object.keys(integration_options_config[integration])) {
-                const propName = `${integration}_${key}`;
-                if (translate_prompt[propName] !== undefined) {
-                    update_prefs[`translate_${propName}`] = translate_prompt[propName];
-                }
-            }
-        }
-        await browser.storage.sync.set(update_prefs);
-    }
+    await persistPromptConnectionToPrefs('translate', translate_prompt);
 
     await initializeSpecificIntegrationUI({
       prefix: 'translate',
@@ -72,46 +72,41 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     i18n.updateDocument();
 
+    // Disable and mark every control the enterprise policy enforces. Runs after the
+    // connection panel has been injected above, so its provider rows are covered too.
+    await applyManagedUI(document, taLog.do_debug);
+
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
     });
+
+    bindConnPanelTint('translate');
+
     let translate_textarea = document.getElementById("translate_prompt_text");
-    let translate_save_btn = document.getElementById("btn_save_prompt");
-    let translate_reset_btn = document.getElementById("btn_reset_prompt");
 
-    // on changing textarea
-    translate_textarea.addEventListener("input", (event) => {
-        translate_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_translate_this_full_text'));
-        translate_save_btn.disabled = (event.target.value === translate_prompt.text);
+    await bindSpecialPromptEditor({
+        textarea: translate_textarea,
+        saveBtn: document.getElementById("btn_save_prompt"),
+        resetBtn: document.getElementById("btn_reset_prompt"),
+        specialPrompts: specialPrompts,
+        promptIds: ['prompt_translate_this'],
+        defaultMsgKey: 'prompt_translate_this_full_text',
+        do_debug: taLog.do_debug,
     });
 
-    // on clicking reset button
-    translate_reset_btn.addEventListener("click", () => {
-        translate_textarea.value = browser.i18n.getMessage("prompt_translate_this_full_text");
-        translate_reset_btn.disabled = true;
-        let event = new Event("input", { bubbles: true, cancelable: true });
-        translate_textarea.dispatchEvent(event);
-    });
-
-    // on clicking save button
-    translate_save_btn.addEventListener("click", () => {
-        specialPrompts.find(prompt => prompt.id === 'prompt_translate_this').text = translate_textarea.value;
-        setSpecialPrompts(specialPrompts);
-        translate_save_btn.disabled = true;
-        browser.runtime.sendMessage({ command: "reload_menus" });
-    });
-
-    if(translate_prompt.text === 'prompt_translate_this_full_text'){
-        translate_prompt.text = browser.i18n.getMessage(translate_prompt.text);
-    }
-
-    translate_textarea.value = translate_prompt.text;
-    translate_reset_btn.disabled = (translate_textarea.value === browser.i18n.getMessage("prompt_translate_this_full_text"));
-
-    autocompleteSuggestions = (await getPlaceholders(true))
+    // Full list, kept for token validation. Deliberately NOT filtered like the
+    // suggestions: {%additional_text%} is a real placeholder that this page simply
+    // does not offer, so the editor must not flag it as unknown.
+    activePlaceholders = await getPlaceholders(true);
+    autocompleteSuggestions = activePlaceholders
         .filter((p) => p.id !== "additional_text")
         .map(mapPlaceholderToSuggestion);
 
+    const translate_textarea_hl = attachEditorHighlight(translate_textarea);
+    // Flags unknown and unterminated tokens. Type 1 ("reading"),
+    // matching the type_value passed to textareaAutocomplete below.
+    if (translate_textarea_hl) translate_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(translate_textarea, autocompleteSuggestions, 1);
 
 });
@@ -135,7 +130,12 @@ function saveOptions(e) {
         break;
       case 'select-one':
         if (element.id === 'translate_auto') {
-          options[element.id] = parseInt(element.value, 10);
+          // An empty select (selectedIndex === -1) parses to NaN, which storage
+          // serializes as null — and a stored null is *not* replaced by the default in
+          // storage.get(), so the value stays outside the 0..3 range forever and
+          // every === comparison downstream silently fails. Fall back to the default.
+          let parsed = parseInt(element.value, 10);
+          options[element.id] = Number.isNaN(parsed) ? prefs_default.translate_auto : parsed;
         } else {
           options[element.id] = element.value;
         }
@@ -147,7 +147,11 @@ function saveOptions(e) {
         console.error("[ThunderAI] Unhandled input type:", element.type);
     }
 
-  browser.storage.sync.set(options);
+  // Guard the default: branch above, which leaves `options` empty — the previous
+  // set(options) wrote nothing in that case, so nothing must be written here either.
+  if (Object.prototype.hasOwnProperty.call(options, element.id)) {
+    mztaPrefs.setPref(element.id, options[element.id]);
+  }
 }
 
 async function restoreOptions() {
@@ -160,7 +164,8 @@ async function restoreOptions() {
           element.checked = result[element.id] || false;
           break;
         case 'number':
-          element.value = result[element.id] ?? 0;
+          let default_number_value = 0;
+          element.value = result[element.id] ?? default_number_value;
           break;
         case 'text':
         case 'textarea':
@@ -177,20 +182,26 @@ async function restoreOptions() {
             }
             const restoreValue = result[element.id] ?? default_select_value;
             let optionExists = Array.from(element.options).some(opt => opt.value === String(restoreValue));
+            // Never synthesize an option for a connection select: its catalogue is closed.
+            let canSynthesize = !isClosedCatalogueSelect(element.id);
             if (element.tomselect) {
-              if (!optionExists && restoreValue !== '') {
+              if (!optionExists && restoreValue !== '' && canSynthesize) {
                 element.tomselect.addOption({ value: String(restoreValue), text: String(restoreValue) });
               }
               element.tomselect.setValue(String(restoreValue), true);
               setTomSelectBorder(element.tomselect);
             } else {
-              if (!optionExists && restoreValue !== '') {
+              if (!optionExists && restoreValue !== '' && canSynthesize) {
                 let newOption = new Option(restoreValue, restoreValue);
                 element.add(newOption);
               }
               element.value = restoreValue;
               if (element.value === '') {
-                element.selectedIndex = 0;
+                // A connection select stays blank (an unset specific integration, or a stale type
+                // it does not offer): preselecting its first option would be stored as a choice
+                // the user never made - on page open, when the integration is mandatory. The
+                // other selects always have a value, and fall back to their first option.
+                element.selectedIndex = canSynthesize ? 0 : -1;
               }
             }
         }else{
@@ -200,28 +211,12 @@ async function restoreOptions() {
     });
   }
 
-  let getting = await browser.storage.sync.get(prefs_default);
+  let getting = await mztaPrefs.getAllPrefs();
 
   let specialPrompts = await getSpecialPrompts();
   let translate_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_translate_this');
 
-  if (translate_prompt) {
-      if (translate_prompt.api_type && translate_prompt.api_type !== '') {
-          getting['translate_connection_type'] = translate_prompt.api_type;
-      } else {
-          getting['translate_connection_type'] = getting['connection_type'];
-      }
-      for (const [integration, options] of Object.entries(integration_options_config)) {
-          for (const key of Object.keys(options)) {
-              const propName = `${integration}_${key}`;
-              if (translate_prompt[propName] !== undefined && translate_prompt[propName] !== '') {
-                  getting[`translate_${propName}`] = translate_prompt[propName];
-              } else {
-                  getting[`translate_${propName}`] = getting[propName];
-              }
-          }
-      }
-  }
+  resolveFeatureConnectionPrefs(getting, translate_prompt, 'translate');
 
   // If translate_lang is empty, show default_chatgpt_lang as placeholder/default
   if (!getting['translate_lang']) {

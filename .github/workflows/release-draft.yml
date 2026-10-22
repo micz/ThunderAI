@@ -1,0 +1,169 @@
+name: Draft release from CHANGELOG
+
+# On every stable tag (v5.1.0, not v5.1.0pre1) creates a DRAFT release whose body is
+# the <ul> of that version taken from CHANGELOG.md, followed by the contributors.
+# Being a draft, it can be reviewed and edited before publishing; the XPI can be attached then.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to draft the release for (e.g. v5.1.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  draft:
+    if: github.repository == 'micz/ThunderAI'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history and tags, needed for the previous tag and the contributors
+
+      - name: Build the notes and create the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+          OWNER: ${{ github.repository_owner }}
+          # Owner's commit emails, excluded from the translators even if not linked to the account
+          OWNER_EMAILS: 'm@micz.it micz@users.noreply.github.com'
+        run: |
+          set -euo pipefail
+          REPO="$GITHUB_REPOSITORY"
+          VER="${TAG#v}"
+
+          if echo "$TAG" | grep -qiE 'pre|rc|beta|alpha|-'; then
+            echo "Pre-release tag $TAG: nothing to do."; exit 0
+          fi
+
+          # 1. The <ul> of this version from CHANGELOG.md, as it is in the tag
+          git show "$TAG:CHANGELOG.md" | awk -v v="$VER" '
+            index($0, "<h2>Version " v " ") { f = 1; next }
+            f && /<ul>/   { p = 1 }
+            p             { print }
+            p && /<\/ul>/ { exit }' > changes.html
+          if [ ! -s changes.html ]; then
+            echo "::error::No '<h2>Version $VER - ...' section in CHANGELOG.md at $TAG"; exit 1
+          fi
+
+          # 2. Previous stable tag (pre-releases excluded)
+          PREV=$(git tag -l 'v*' --sort=-v:refname | grep -viE -- '-|pre|rc|beta|alpha' \
+                 | awk -v t="$TAG" 'f { print; exit } $0 == t { f = 1 }' || true)
+          echo "Previous tag: ${PREV:-none}"
+
+          # 3. Contributors of this release (GitHub logins), owner and bots excluded.
+          #    Weblate translations are listed apart (Translations): Weblate is always the
+          #    committer of its commits, whoever the translator (author) is.
+          : > logins.txt
+          : > others.txt
+          : > translators.md
+          if [ -n "$PREV" ]; then
+            gh api --paginate "repos/$REPO/compare/$PREV...$TAG?per_page=100" \
+              --jq '.commits[]' > all.json
+            jq 'select(.commit.committer.email != "hosted@weblate.org")' all.json > commits.json
+
+            # Translators: Weblate commits "Translated using Weblate (Language)", one line
+            # per translator with their languages; owner and anonymous translations excluded
+            jq -rs --arg owner "$OWNER" --arg owner_emails "$OWNER_EMAILS" '
+              ($owner_emails | ascii_downcase | split(" ")) as $oe |
+              map(select(.commit.committer.email == "hosted@weblate.org"
+                    and (.commit.message | startswith("Translated using Weblate ("))
+                    and ((.author.login // "") | ascii_downcase) != ($owner | ascii_downcase)
+                    and ((.commit.author.email | ascii_downcase) as $e | $oe | index($e) | not)
+                    and .commit.author.email != "noreply@weblate.org"))
+              | map({ email: (.commit.author.email | ascii_downcase),
+                      name:  .commit.author.name,
+                      lang:  (.commit.message | split("\n")[0]
+                              | sub("^Translated using Weblate \\("; "") | sub("\\)$"; "")) })
+              | group_by(.email)
+              | map("* \(.[0].name) (\(map(.lang) | unique | join(", ")))")
+              | sort_by(ascii_downcase) | .[]' all.json > translators.md
+
+            jq -r 'select(.author.login != null) | .author.login' commits.json \
+              | grep -viE "\[bot\]$|^${OWNER}$" | sort -u > logins.txt || true
+
+            # Authors without a linked GitHub account: by name,
+            # only if they never committed before the previous tag
+            jq -r 'select(.author == null) | "\(.commit.author.name)\t\(.commit.author.email)"' commits.json \
+              | grep -viE "\[bot\]" | sort -u > nologin.tsv || true
+            while IFS=$'\t' read -r name email; do
+              [ -z "$name" ] && continue
+              # Weblate translations do not count as a previous contribution
+              if [ "$(git log --format=%cE --author="<$email>" "$PREV" \
+                      | grep -vx 'hosted@weblate.org' | wc -l)" = "0" ]; then
+                echo "$name" >> others.txt
+              fi
+            done < nologin.tsv
+            sort -u -o others.txt others.txt
+          fi
+
+          # 4. New contributors: no commit reachable from the previous tag, Weblate
+          #    translations excluded. The pages are read only until the first
+          #    non-Weblate commit is found.
+          : > new.txt
+          while read -r u; do
+            [ -z "$u" ] && continue
+            page=1; found=0
+            while :; do
+              read -r total other < <(gh api "repos/$REPO/commits?sha=$PREV&author=$u&per_page=100&page=$page" \
+                --jq '"\(length) \([.[] | select(.commit.committer.email != "hosted@weblate.org")] | length)"')
+              if [ "$other" -gt 0 ]; then found=1; break; fi
+              if [ "$total" -lt 100 ]; then break; fi
+              page=$((page + 1))
+            done
+            if [ "$found" = "0" ]; then echo "$u" >> new.txt; fi
+          done < logins.txt
+
+          # 5. Release body
+          {
+            echo "## What's new"
+            echo
+            cat changes.html
+            echo
+            if [ -s logins.txt ] || [ -s others.txt ]; then
+              echo "## Contributors"
+              echo
+              echo "Thanks to everyone who contributed to this release:"
+              echo
+              sed 's/^/* @/' logins.txt
+              cat others.txt | sed 's/^/* /'
+              echo
+            fi
+            if [ -s new.txt ] || [ -s others.txt ]; then
+              echo "### New contributors"
+              echo
+              sed 's/^\(.*\)$/* @\1 made their first contribution/' new.txt
+              sed 's/^\(.*\)$/* \1 made their first contribution/' others.txt
+              echo
+            fi
+            if [ -s translators.md ]; then
+              echo "## Translations"
+              echo
+              echo "Thanks to the translators on Weblate:"
+              echo
+              cat translators.md
+              echo
+            fi
+            if [ -n "$PREV" ]; then
+              echo "**Full Changelog**: https://github.com/$REPO/compare/$PREV...$TAG"
+              echo
+            fi
+            echo "**To use this release download and install the \`thunderai-$TAG.xpi\` file.**"
+          } > notes.md
+          cat notes.md
+
+          # 6. Create the draft, or update it if a release for this tag already exists
+          if gh release view "$TAG" --json isDraft >/dev/null 2>&1; then
+            if [ "$(gh release view "$TAG" --json isDraft -q .isDraft)" = "true" ]; then
+              gh release edit "$TAG" --notes-file notes.md
+            else
+              echo "::warning::Release $TAG is already published, notes left untouched."
+            fi
+          else
+            gh release create "$TAG" --draft --title "v$VER" --notes-file notes.md
+          fi

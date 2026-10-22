@@ -9,8 +9,17 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-// openai_comp_configs.js reads browser.i18n at import time → provide a minimal stub first.
-globalThis.browser = { i18n: { getMessage: (key) => key } };
+// openai_comp_configs.js reads browser.i18n at import time, and mzta-utils.js
+// pulls in mzta-prefs.js which touches browser.storage at import time → provide
+// a minimal stub first.
+globalThis.browser = {
+  i18n: { getMessage: (key) => key },
+  storage: {
+    local: { async get() { return {}; }, async set() {}, async remove() {} },
+    sync: { async get() { return {}; }, async set() {} },
+    onChanged: { addListener() {} },
+  },
+};
 
 const { OpenAIComp } = await import('../js/api/openai_comp.js');
 const { getOriginPermissionPattern } = await import('../js/mzta-utils.js');

@@ -16,10 +16,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from "../../options/mzta-options-default.js";
 import {
     getLocalStorageUsedSpace,
-    sanitizeHtml,
     openTab
 } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
@@ -29,9 +27,12 @@ import {
     getCustomPlaceholders,
     prepareCustomDataPHsForExport,
     prepareCustomDataPHsForImport,
-    placeholdersUtils
+    placeholdersUtils,
+    mapPlaceholderToSuggestion
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import { attachEditorHighlight, getEditorHighlight, makeTokenStateResolver, PLACEHOLDER_RE } from "../../js/mzta-editor-highlight.js";
+import { mztaPrefs } from '../../js/mzta-prefs.js';
 
 let prefs = null;
 var customDataPHsList = null;
@@ -40,10 +41,11 @@ var idnumMax = 0;
 var msgTimeout = null;
 let taLog = null;
 let autocompleteSuggestions = [];
+let activePlaceholders = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-    prefs = await browser.storage.sync.get({ do_debug: prefs_default.do_debug });
+    prefs = await mztaPrefs.getPrefs(['do_debug']);
     taLog = new taLogger("mzta-custom-dataplaceholders", prefs.do_debug);
     
     setStorageSpace();
@@ -91,17 +93,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const textareas = document.querySelectorAll('.editor');
-    autocompleteSuggestions = (await getPlaceholders())
-        .filter(p => p.is_default == "1")
-        .map(p => ({ command: '{%' + p.id + '%}', type: p.type }));
+    // Built-in placeholders only: a custom data placeholder cannot reference
+    // another one. Mapped through the shared mapper rather than built inline, so
+    // the dropdown gets the same descriptions as on the other pages.
+    // Unlike the other pages, the same filtered list drives validation too: the
+    // built-ins-only restriction is semantic, so a token naming a custom data
+    // placeholder really is invalid here and should be flagged.
+    activePlaceholders = (await getPlaceholders()).filter(p => p.is_default == "1");
+    autocompleteSuggestions = activePlaceholders.map(mapPlaceholderToSuggestion);
 
     // console.log('>>>>>>>>>>> suggestions: ' + JSON.stringify(suggestions));
-    
+
+    // One registration per textarea. This used to be a nested pair of loops,
+    // which attached every handler N+1 times for N textareas.
     textareas.forEach(textarea => {
         textareaAutocomplete(textarea, autocompleteSuggestions);
-        textareas.forEach(textarea => {
-            textareaAutocomplete(textarea, autocompleteSuggestions);
-        });
+        // The mirror is attached here only for the add-form textarea (.input_new),
+        // which is permanently in edit mode. Row textareas start hidden in read
+        // mode and get theirs from showItemRowEditor(); attaching one now would
+        // paint a second copy of the text behind every read-mode row.
+        // Note both live inside a <tr>, so closest('tr') cannot tell them apart.
+        if (textarea.classList.contains('input_new')) attachHighlightWithValidation(textarea);
     });
 
     i18n.updateDocument();
@@ -128,22 +140,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             idnum: idnumMax + 1,
         };
 
-        let newItem = customDataPHsList.add(newItemData);
+        let newItem = customDataPHsList.add(toListValues(newItemData));
         idnumMax++;
-        let curr_idnum = newItem[0].values().idnum;
-        let checkboxes = document.querySelectorAll(`tr[data-idnum="${curr_idnum}"] input[type="checkbox"]`);
-        checkSelectedBoxes(checkboxes);
-        let editBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnEditItem`);
-        //console.log(`>>>>>>>>>>>> tr[data-idnum="${curr_idnum}"] button.btnEditItem`);
-        editBtn.addEventListener('click', handleEditClick);
-        //console.log('>>>>>>>>>>>>> editBtn: ' + JSON.stringify(editBtn));
-        let deleteBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnDeleteItem`);
-        //console.log(`>>>>>>>>>>>> tr[data-idnum="${curr_idnum}"] button.btnDeleteItem`);
-        deleteBtn.addEventListener('click', handleDeleteClick);
-        let okBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnConfirmItem`);
-        okBtn.addEventListener('click', handleConfirmClick);
-        let cancelBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnCancelItem`);
-        cancelBtn.addEventListener('click', handleCancelClick);
+        // Wired on the row just created, not looked up by its idnum: a row number is not
+        // guaranteed unique, and a lookup would wire another row's buttons twice and leave
+        // this one's dead.
+        const tr = newItem[0].elm;
+        checkSelectedBoxes(tr.querySelectorAll('input[type="checkbox"]'));
+        tr.querySelector('button.btnEditItem').addEventListener('click', handleEditClick);
+        tr.querySelector('button.btnDeleteItem').addEventListener('click', handleDeleteClick);
+        tr.querySelector('button.btnConfirmItem').addEventListener('click', handleConfirmClick);
+        tr.querySelector('button.btnCancelItem').addEventListener('click', handleCancelClick);
+        // The enabled switch is clickable straight from the row, a new one included.
+        tr.querySelectorAll('.input_mod').forEach(element => {
+            element.addEventListener('change', handleInputChange);
+        });
         // console.log('>>>>>>>>>>>>> deleteBtn: ' + JSON.stringify(deleteBtn));
         // console.log('>>>>>>>>>>>>> newItem: ' + JSON.stringify(newItem));
         document.getElementById('btnNew').disabled = false;
@@ -243,8 +254,8 @@ function handleEditClick(e) {
     const tr = e.target.parentNode.parentNode;
     //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
     e.target.style.display = 'none';    // Edit btn
-    tr.querySelector('.btnConfirmItem').style.display = 'inline';   // Save btn
-    tr.querySelector('.btnCancelItem').style.display = 'inline';   // Cancel btn
+    tr.querySelector('.btnConfirmItem').style.display = 'flex';   // Save btn
+    tr.querySelector('.btnCancelItem').style.display = 'flex';   // Cancel btn
 //        tr.querySelector('.btnEditItem').style.display = 'none';   // Edit btn
     tr.querySelector('.btnDeleteItem').style.display = 'none';   // Delete btn
     showItemRowEditor(tr);
@@ -256,11 +267,70 @@ function showItemRowEditor(tr) {
     tr.querySelector('.name_output').style.display = 'inline';
     tr.querySelector('.name_show').style.display = 'none';
     const text_output = tr.querySelector('.text_output');
-    text_output.style.display = 'inline';
+    // 'block', not 'inline': the highlight backdrop is absolutely positioned
+    // against this box, and an inline textarea would not align with it.
+    text_output.style.display = 'block';
     textareaAutocomplete(text_output, autocompleteSuggestions)
+    // Both calls are idempotent, so re-entering edit mode on the same row does
+    // not stack listeners or mirrors.
+    attachHighlightWithValidation(text_output);
     tr.querySelector('.text_show').style.display = 'none';
 	tr.querySelector('.type_output').style.display = 'inline';
     tr.querySelector('.type_show').style.display = 'none';
+}
+
+/*
+ *  Attaches the highlight mirror plus token validation to a placeholder textarea.
+ *  Mirrors attachHighlightWithValidation() on the Custom Prompts page: the type
+ *  selector is read lazily per token, and a 'change' listener repaints, because
+ *  the mirror caches its render and would otherwise keep stale warnings.
+ */
+function attachHighlightWithValidation(textarea) {
+    const existing = getEditorHighlight(textarea);
+    const handle = existing || attachEditorHighlight(textarea);
+    if (!handle) return null;
+
+    const tr = textarea.closest('tr');
+    const typeSelect = textarea.classList.contains('input_new')
+        ? document.getElementById('selectTypeNew')
+        : (tr ? tr.querySelector('.type_output') : null);
+
+    // Installed on EVERY call, not just the first: `existing` is a handle from a
+    // previous entry into edit mode, and the resolver it carries closed over the
+    // typeSelect *found back then*. On the add-form that select does not exist
+    // until the form is built, and a row's .type_output is only reachable once
+    // the row template has been rendered -- so an early attach captured null and
+    // the resolver then skipped type filtering permanently, leaving a
+    // wrong-type token painted as a valid chip forever. setTokenStateResolver()
+    // also repaints, so re-installing is exactly what makes a type edited since
+    // last time take effect.
+    handle.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder,
+        activePlaceholders,
+        typeSelect ? () => typeSelect.value : null));
+
+    // Re-validate when the "add to menu" type is changed: validity depends on it,
+    // and the mirror caches its render, so without this a token stays painted
+    // with the tier it had under the previous type.
+    //
+    // The listener is registered once per select but must NOT close over
+    // `textarea`: on the add-form #selectTypeNew is a single shared element, and
+    // a row's .type_output outlives any one entry into edit mode, so a captured
+    // textarea can be the wrong one (or detached) by the time the event fires.
+    // It therefore resolves the currently-attached editor from the select itself
+    // and refreshes every mirror it can reach.
+    if (typeSelect && !typeSelect._mztaHighlightSync) {
+        typeSelect._mztaHighlightSync = true;
+        typeSelect.addEventListener('change', (e) => {
+            const sel = e.currentTarget;
+            const scope = sel.closest('tr') || document;
+            scope.querySelectorAll('textarea.editor').forEach(ta => {
+                const h = getEditorHighlight(ta);
+                if (h) h.refresh();
+            });
+        });
+    }
+    return handle;
 }
 
 function hideItemRowEditor(tr) {
@@ -268,7 +338,13 @@ function hideItemRowEditor(tr) {
     tr.querySelector('.id_show').style.display = 'inline';
     tr.querySelector('.name_output').style.display = 'none';
     tr.querySelector('.name_show').style.display = 'inline';
-    tr.querySelector('.text_output').style.display = 'none';
+    const text_output_hide = tr.querySelector('.text_output');
+    const highlight = getEditorHighlight(text_output_hide);
+    if (highlight) highlight.destroy();
+    // The autocomplete must go down with the mirror it reads the caret from,
+    // and its close() drops the row from the shared open-instances set.
+    if (text_output_hide._mztaAutocomplete) text_output_hide._mztaAutocomplete.destroy();
+    text_output_hide.style.display = 'none';
     tr.querySelector('.text_show').style.display = 'inline';
 	tr.querySelector('.type_output').style.display = 'none';
     tr.querySelector('.type_show').style.display = 'inline';
@@ -282,8 +358,10 @@ function handleDeleteClick(e) {
         return;
     }
     const tr = e.target.parentNode.parentNode;
-    //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
-    customDataPHsList.remove("id", tr.querySelector('span.id').innerText);
+    // Found by its row, then removed by the id the list itself holds: the list keeps the
+    // values escaped (see toListValues()), so the text the row shows may not match them.
+    const item = customDataPHsList.items.find(it => it.elm === tr);
+    if (item) customDataPHsList.remove("id", item.values().id);
     setSomethingChanged();
 }
 
@@ -293,11 +371,11 @@ function handleCancelClick(e) {
     e.target.style.display = 'none';    // Cancel btn
     tr.querySelector('.btnConfirmItem').style.display = 'none';   // Save btn
 //        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
-    tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
-    tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
-    tr.querySelector('.id_output').value = tr.querySelector('.id_show').innerText.toLocaleUpperCase();
+    tr.querySelector('.btnEditItem').style.display = '';   // Edit btn
+    tr.querySelector('.btnDeleteItem').style.display = '';   // Delete btn
+    tr.querySelector('.id_output').value = tr.querySelector('.id_show').innerText;
     tr.querySelector('.name_output').value = tr.querySelector('.name_show').innerText;
-    tr.querySelector('.text_output').value = sanitizeHtml(tr.querySelector('.text_show').innerHTML).replace(/<br\s*\/?>/gi, "\n");
+    tr.querySelector('.text_output').value = getTextShowSource(tr.querySelector('.text_show'));
 	tr.querySelector('.type_output').value = tr.querySelector('.type').innerText;
     hideItemRowEditor(tr);
 }
@@ -308,14 +386,21 @@ function handleConfirmClick(e) {
     e.target.style.display = 'none';    // Ok btn
 //        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Ok btn
     tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
-    tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
-    tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+    tr.querySelector('.btnEditItem').style.display = '';   // Edit btn
+    tr.querySelector('.btnDeleteItem').style.display = '';   // Delete btn
     // Update item data
     tr.querySelector('.id_show').innerText = String(tr.querySelector('.id_output').value).toLocaleLowerCase();
     tr.querySelector('.name_show').innerText = tr.querySelector('.name_output').value;
-    tr.querySelector('.text_show').innerText = tr.querySelector('.text_output').value;
+    const text_show = tr.querySelector('.text_show');
+    // textContent, not innerText: innerText normalises whitespace, which would
+    // silently rewrite the value the user just typed.
+    text_show.textContent = tr.querySelector('.text_output').value;
 	tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
     tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
+    // The row is updated in place (no List.js re-render), so clear the decoration
+    // source and re-run it to chip the placeholders in the freshly edited text.
+    delete text_show.dataset.phSource;
+    decoratePlaceholderText();
     // the checkboxes update is handled directly by themselves
     hideItemRowEditor(tr);
     setSomethingChanged();
@@ -329,6 +414,88 @@ function handleInputChange(e) {
 
 //========= handling an item in a row - END
 
+// Wrap {%placeholder%} tokens in the visible placeholder text with a styled chip.
+// Only touches the read-only .text_show spans (never the editable textarea),
+// and is idempotent (skips spans already decorated).
+// Uses PLACEHOLDER_RE, the same pattern the edit-mode backdrop uses, so read
+// mode and edit mode can never disagree on what counts as a token. This also
+// matches values containing '%' (e.g. {%additional_text:50%%}), which the
+// previous /\{%[^%]+%\}/ never did.
+// The chips are built as DOM nodes, never by assigning an HTML string, so the
+// placeholder text can never be parsed as markup.
+// dataset.phSource holds the plain source text the chips were built from: it is
+// both the idempotency guard (re-decorating the same text is a no-op) and the
+// authoritative value getTextShowSource() reads back when leaving edit mode.
+function decoratePlaceholderText() {
+    document.querySelectorAll('#all_custom_dataplaceholders .text_show').forEach(span => {
+        const source = span.textContent;
+        if (span.dataset.phSource === source) return;
+        span.dataset.phSource = source;
+        // PLACEHOLDER_RE carries /g and therefore lastIndex state; reset before
+        // each use so a previous call cannot make this one start mid-string.
+        PLACEHOLDER_RE.lastIndex = 0;
+        if (!PLACEHOLDER_RE.test(source)) return;
+
+        const frag = document.createDocumentFragment();
+        let last = 0;
+        PLACEHOLDER_RE.lastIndex = 0;
+        let match;
+        while ((match = PLACEHOLDER_RE.exec(source)) !== null) {
+            if (match.index > last) {
+                frag.append(source.slice(last, match.index));
+            }
+            const chip = document.createElement('span');
+            chip.className = 'ph_chip';
+            chip.textContent = match[0];
+            frag.append(chip);
+            last = match.index + match[0].length;
+            // A zero-length match would spin forever; step past it.
+            if (match[0].length === 0) PLACEHOLDER_RE.lastIndex++;
+        }
+        if (last < source.length) {
+            frag.append(source.slice(last));
+        }
+        span.replaceChildren(frag);
+    });
+}
+
+// The plain text a .text_show span currently represents, chips and all.
+// Prefers the recorded source so the value survives decoration untouched;
+// textContent is the fallback for spans that were never decorated.
+function getTextShowSource(span) {
+    return (span.dataset.phSource !== undefined) ? span.dataset.phSource : span.textContent;
+}
+
+// Keep the card footer data placeholder count in sync with the rendered list.
+function updatePlaceholdersCount() {
+    const el = document.getElementById('ph_count');
+    if (!el) return;
+    const count = customDataPHsList ? customDataPHsList.items.length : 0;
+    el.textContent = browser.i18n.getMessage('customDataPH_placeholdersCount', [String(count)]);
+}
+
+// Escape a value for HTML text or a double-quoted attribute.
+function escapeHtml(value) {
+    return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// The values of one placeholder as the list takes them. List.js writes every class value
+// into its cell with innerHTML, and the row template concatenates them into markup
+// (value="...", the <textarea> content): escaped here, a quote, a "</textarea>", a tag or an
+// entity in the data is shown and edited literally, and read back unchanged by Save All
+// (itemToSave() reads the cells as text). The id is listed without its thunderai_custom_
+// prefix, and a legacy <br> becomes a newline, so the read-only span and the textarea agree.
+function toListValues(ph) {
+    return {
+        ...ph,
+        id: escapeHtml(placeholdersUtils.stripCustomDataPH_ID_Prefix(String(ph.id ?? ''))),
+        name: escapeHtml(ph.name),
+        text: escapeHtml(String(ph.text ?? '').replace(/<br\s*\/?>/gi, "\n")),
+        type: escapeHtml(ph.type),
+        is_default: escapeHtml(ph.is_default),
+    };
+}
 
 function loadCustomDataPHsList(values){
     // console.log('>>>>>>>> loadCustomDataPHsList values: ' + JSON.stringify(values));
@@ -342,8 +509,9 @@ function loadCustomDataPHsList(values){
             'type',
             { name: 'enabled', attr: 'checked_val'}
         ],
+        // The values arrive escaped (toListValues()): they are concatenated into this
+        // markup as they are.
         item: function(values) {
-            values.id = placeholdersUtils.stripCustomDataPH_ID_Prefix(values.id);
             let type_output = '';
             switch(String(values.type)){
                 case "0":
@@ -361,8 +529,9 @@ function loadCustomDataPHsList(values){
                 <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
                 <td class="w40">
                     <span class="text text_show"></span>
-                    <div class="autocomplete-container">
-                        <textarea class="hiddendata text_output editor">` + values.text.replace(/<br\s*\/?>/gi, "\n") + `</textarea>
+                    <div class="autocomplete-container editor-wrap">
+                        <div class="editor-backdrop" aria-hidden="true"><div class="editor-highlights"></div></div>
+                        <textarea class="hiddendata text_output editor">` + values.text + `</textarea>
                         <ul class="autocomplete-list hidden"></ul>
                     </div>
                 </td>
@@ -382,16 +551,15 @@ function loadCustomDataPHsList(values){
                     <span class="position_compose hiddendata"></span>
                     <span class="position_display hiddendata"></span>
                 </td>
-                <td>
-                <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnEdit__</button>
-                <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnCancel__</button>
-                <br><br>
-                <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnOK__</button>
-                <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnDelete__</button>
+                <td class="actions_cell">
+                <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>__MSG_customPrompts_btnEdit__</span></button>
+                <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>__MSG_customPrompts_btnCancel__</span></button>
+                <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>__MSG_customPrompts_btnOK__</span></button>
+                <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>__MSG_customPrompts_btnDelete__</span></button>
                </td>
             </tr>`;
             //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
-            idnumMax = Math.max(idnumMax, values.idnum);
+            idnumMax = Math.max(idnumMax, Number(values.idnum) || 0);
             return output;
         }
     };
@@ -399,7 +567,22 @@ function loadCustomDataPHsList(values){
     // console.log('>>>>>>>>>>>>> options: ' + JSON.stringify(options));
     // console.log('>>>>>>>>>>>>> values: ' + JSON.stringify(values));
 
-    customDataPHsList = new List('all_custom_dataplaceholders', options, values);
+    // Every row gets a numeric idnum: a placeholder imported from a file has none (the export
+    // drops it), and a missing one turned idnumMax into NaN, and every later row's into NaN too.
+    let nextIdnum = Math.max(0, ...values.map(v => Number(v.idnum) || 0));
+    const listValues = values.map(v => {
+        const lv = toListValues(v);
+        if (!(Number(lv.idnum) > 0)) lv.idnum = ++nextIdnum;
+        return lv;
+    });
+    customDataPHsList = new List('all_custom_dataplaceholders', options, listValues);
+
+    decoratePlaceholderText();
+    updatePlaceholdersCount();
+    customDataPHsList.on('updated', () => {
+        decoratePlaceholderText();
+        updatePlaceholdersCount();
+    });
 
     checkSelectedBoxes();
     let btnEditItem_elements = document.querySelectorAll(".btnEditItem");
@@ -438,9 +621,9 @@ function checkFields() {
         inputSetError('txtIdNew');
         is_error = true;
     } else {
-        let exists = customDataPHsList.get("id", id_value);
-        //console.log('>>>>>>>>>>>>> exists: ' + JSON.stringify(exists));
-        if(exists && exists.length > 0) {
+        // Against the ids the rows show: the list holds them escaped.
+        const listed = customDataPHsList.items.map(it => it.elm.querySelector('.id_show').textContent);
+        if(listed.includes(id_value)) {
             inputSetError('txtIdNew');
             is_error = true;
         } else {
@@ -519,20 +702,48 @@ function checkSelectedBoxes(checkboxes = null) {
     });
 }
 
+// The placeholder to store for one row, as a NEW object read from the row itself.
+// - reIndex() reads every class value with innerHTML, so the read-mode text comes back with
+//   the chip markup decoratePlaceholderText() wrapped around its tokens (and "&" as "&amp;"):
+//   the text, name and id are read as plain text instead, the text from its recorded source.
+// - `enabled` is the switch's live state: List.js reads it from the checked_val attribute,
+//   which ticking the switch never changes.
+// - A copy, never item.values() itself: setCustomPlaceholders() adds the thunderai_custom_
+//   prefix to what it is given, and the list must keep the unprefixed id the row shows, or
+//   Delete and the "already used" check stop matching after a save.
+function itemToSave(item) {
+    const tr = item.elm;
+    const values = { ...item.values() };
+    values.id = tr.querySelector('.id_show').textContent;
+    values.name = tr.querySelector('.name_show').textContent;
+    values.text = getTextShowSource(tr.querySelector('.text_show'));
+    values.type = tr.querySelector('.type').textContent;
+    values.enabled = tr.querySelector('input.enabled').checked ? 1 : 0;
+    return values;
+}
+
 //Save all custom data placeholders
 async function saveAll() {
     setMessage(browser.i18n.getMessage('customDataPH_saving_custom'));
-    setNothingChanged();
+    // Disabled while the write is in flight; the pending state itself is cleared only once
+    // the write has landed, so a failed one keeps the beforeunload warning armed.
+    document.getElementById('btnSaveAll').disabled = true;
     if(customDataPHsList != null) {
         setMessage(browser.i18n.getMessage('customPrompts_reindexing_list'));
         customDataPHsList.reIndex();
-        let newCustomDataPHs = customDataPHsList.items.filter(item => item.values().is_default == 0).map(item => item.values());
+        let newCustomDataPHs = customDataPHsList.items.filter(item => item.values().is_default == 0).map(itemToSave);
         taLog.log('newCustomDataPlaceholders: ' + JSON.stringify(newCustomDataPHs));
-        // newCustomDataPHs.forEach(prompt => {
-        //     console.log('>>>>>>>>>>>>> id: ' + JSON.stringify(prompt));
-        // });
-        //console.log('>>>>>>>>>>>>> saveAll: ' + JSON.stringify(newCustomDataPHs));
-        await setCustomPlaceholders(newCustomDataPHs);
+        try {
+            await setCustomPlaceholders(newCustomDataPHs);
+        } catch (err) {
+            // What is on screen is not in storage: say so, and give Save All back.
+            taLog.error('Saving the custom data placeholders failed: ' + err);
+            somethingChanged = true;
+            document.getElementById('btnSaveAll').disabled = false;
+            setMessage(browser.i18n.getMessage('customDataPH_save_error') + ' ' + err, 'red');
+            return;
+        }
+        setNothingChanged();
         setMessage(browser.i18n.getMessage('customDataPH_saved'),'green');
         msgTimeout = setTimeout(() => {
             clearMessage();

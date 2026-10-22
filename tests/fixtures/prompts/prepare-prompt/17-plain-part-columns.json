@@ -1,0 +1,9 @@
+{
+  "description": "{%mail_plain_text_part%} keeps the column alignment of the text/plain part",
+  "spec": ["spec 03 \"`mail_text_body` vs `mail_plain_text_part`\": blank lines, spaces and tabs preserved; only CRLF/CR, a BOM and trailing whitespace touched"],
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Read the order:\n{%mail_plain_text_part%}", "need_signature": "0" },
+    "msg_text": { "plain_part": "Item      Qty   Price  \r\nWidget      2    9.90\r\n\r\nTotal          19.80\r\n" }
+  },
+  "expected": "Read the order:\nItem      Qty   Price\nWidget      2    9.90\n\nTotal          19.80"
+}

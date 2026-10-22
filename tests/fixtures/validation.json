@@ -1,0 +1,33 @@
+{
+  "_org_name": "ACME",
+  "_not_a_structural_key": 1,
+
+  "chatgpt_win_width": 1200,
+  "chatgpt_win_save_position": true,
+  "spamfilter_enabled_accounts": ["account1"],
+  "add_tags_enabled_accounts": ["account2"],
+  "api_webchat_font_scale": 1.5,
+  "custom_prompts_view": "table",
+  "no_such_pref": true,
+
+  "spamfilter": "true",
+  "spamfilter_threshold": "80",
+  "calendar_timezone": null,
+  "google_gemini_api_key": ["AIza-LEAK-in-a-wrong-type"],
+  "summarize_auto_senders_list": ["boss@acme.example", 5],
+  "spamfilter_skip_addresses": "noreply@acme.example",
+
+  "add_tags_maxnum": 4,
+  "add_tags_exclusions": ["Important", "Work"],
+  "spamfilter_enabled_accounts_match": ["@acme.example"],
+  "connection_type": "chatgpt_api",
+
+  "default_sign_name": "ACME Staff",
+  "reply_type": "reply_sender",
+  "reply_type:locked": false,
+  "translate_lang": "German",
+  "translate_lang:locked": true,
+  "hide_thinking": false,
+  "hide_thinking:locked": "no",
+  "diff_granularity:locked": false
+}

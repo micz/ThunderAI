@@ -19,21 +19,47 @@
 import { placeholdersUtils } from './mzta-placeholders.js';
 import {
     extractJsonObject,
-    getMailBody,
-    htmlBodyToPlainText
+    getMailInlineTextParts,
+    htmlBodyToPlainText,
+    cleanupNewlines,
+    intersectTagsLists
 } from './mzta-utils.js';
 import { getSpecialPrompts } from './mzta-prompts.js';
-import { prefs_default } from '../options/mzta-options-default.js';
+import { mztaPrefs } from './mzta-prefs.js';
+
+// Per-feature settings of the AI reminder [#887]: same logic for calendar events
+// and tasks, only the prefs and the format instruction (reference date) differ.
+export const REMINDER_FEATURES = {
+    calendar: {
+        enabledPref: 'calendar_reminder_enabled',
+        rulesPref: 'calendar_reminder_rules',
+        formatMsgId: 'prompt_calendar_reminder_format'
+    },
+    task: {
+        enabledPref: 'task_reminder_enabled',
+        rulesPref: 'task_reminder_rules',
+        formatMsgId: 'prompt_task_reminder_format'
+    }
+};
+
+// The built-in prompts that rewrite or proofread the user's own text: with define_response_lang
+// on they always get "reply in the same language", never the default language (claude-spec/02-prompts.md).
+export const SAME_LANGUAGE_PROMPT_IDS = ['prompt_rewrite_polite', 'prompt_rewrite_formal', 'prompt_proofread_this'];
+
+// A user value closing a statement: a full stop is added unless it already ends with one (or ! ?).
+function endSentence(value) {
+    return /[.!?]$/.test(value) ? value : value + ".";
+}
 
 export const taPromptUtils = {
 
     async getDefaultSignature(){
-        let prefs = await browser.storage.sync.get({ default_sign_name: prefs_default.default_sign_name });
-        if(prefs.default_sign_name===''){
+        let prefs = await mztaPrefs.getPrefs(['default_sign_name']);
+        const name = String(prefs.default_sign_name ?? '').trim();
+        if(name === ''){
             return '';
-        }else{
-            return browser.i18n.getMessage("sign_msg_as") + " " + prefs.default_sign_name + ".";
         }
+        return browser.i18n.getMessage("sign_msg_as") + " " + endSentence(name);
     },
 
     async preparePrompt(args){
@@ -54,10 +80,12 @@ export const taPromptUtils = {
         let fullPrompt = '';
         
         if(!placeholdersUtils.hasPlaceholder(curr_prompt.text)){
-            // no placeholders, do as usual
+            // no placeholders: the content (the selection if any, else the body) is appended in
+            // quotes, and the signature and language statements come last, as in the placeholder
+            // branch below - the prompt always ends with the instructions (claude-spec/02-prompts.md)
             const signature = String(curr_prompt.need_signature) === "1" ? await taPromptUtils.getDefaultSignature() : "";
             const content = selection_text || body_text;
-            fullPrompt = [curr_prompt.text, signature, chatgpt_lang, content ? `"${content}"` : ""].filter(Boolean).join(" ");
+            fullPrompt = [curr_prompt.text, content ? `"${content}"` : "", signature, chatgpt_lang].filter(Boolean).join(" ");
         }else{
             // we have at least a placeholder, do the magic!
             // check if we have custom placeholders
@@ -83,7 +111,7 @@ export const taPromptUtils = {
                 selection_html: selection_html,
                 tags_full_list: tags_full_list
             });
-            let prefs_ph = await browser.storage.sync.get({ placeholders_use_default_value: prefs_default.placeholders_use_default_value });
+            let prefs_ph = await mztaPrefs.getPrefs(['placeholders_use_default_value']);
             fullPrompt = (placeholdersUtils.replacePlaceholders({
                 text: curr_prompt.text,
                 replacements: finalSubs,
@@ -95,50 +123,134 @@ export const taPromptUtils = {
         return fullPrompt;
     },
 
-    finalizePrompt_add_tags(fullPrompt, add_tags_maxnum, add_tags_force_lang, default_chatgpt_lang, add_tags_auto_uselist = false, add_tags_auto_uselist_list = ''){
+    finalizePrompt_add_tags(fullPrompt, add_tags_maxnum, add_tags_force_lang, default_chatgpt_lang, add_tags_auto_uselist = false, add_tags_auto_uselist_list = '', add_tags_force_existing = false, existing_tags_list = '', prompt_text_raw = ''){
         if(add_tags_maxnum > 0){
             fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + add_tags_maxnum +".";
         }
-        if(add_tags_force_lang && default_chatgpt_lang !== ''){
+        // With force existing the language is dictated by the existing tags [#926]
+        if(!add_tags_force_existing && add_tags_force_lang && default_chatgpt_lang !== ''){
             fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + default_chatgpt_lang + ".";
         }
-        if(add_tags_auto_uselist && add_tags_auto_uselist_list && add_tags_auto_uselist_list.length > 0){
+        let uselist_active = add_tags_auto_uselist && add_tags_auto_uselist_list && add_tags_auto_uselist_list.length > 0;
+        if(add_tags_force_existing){
+            // The model must see the existing tags, otherwise it invents new ones that
+            // are then all filtered out [#926]
+            if(uselist_active){
+                let tags_intersection = intersectTagsLists(add_tags_auto_uselist_list, existing_tags_list);
+                if(tags_intersection !== ''){
+                    fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_force_existing") + ": " + tags_intersection + ".";
+                }else{
+                    console.warn("[ThunderAI] Add tags: none of the tags in the use list exists, and force existing tags is active. No tags list sent to the AI.");
+                }
+            }else if(existing_tags_list && existing_tags_list.length > 0 && !String(prompt_text_raw || '').includes("{%tags_full_list%}")){
+                fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_force_existing") + ": " + existing_tags_list + ".";
+            }
+        }else if(uselist_active){
             fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_use_list") + ": " + add_tags_auto_uselist_list + ".";
         }
 
         return fullPrompt;
     },
 
-    finalizePrompt_get_calendar_event(fullPrompt){
-        fullPrompt = fullPrompt.replace("{%cc_list%}", "");
-        fullPrompt = fullPrompt.replace("{%recipients%}", "");
+    finalizePrompt_get_calendar_event(fullPrompt, promptTemplate = '', reminder_enabled = false, reminder_rules = ''){
+        // Every occurrence, in the spaced form {% id %} too, like the placeholder regex itself.
+        fullPrompt = fullPrompt.replace(/{%\s*(cc_list|recipients)\s*%}/g, "");
 
-        return fullPrompt;
-    },   
-
-    async getDefaultLang(curr_prompt){
-        let chatgpt_lang = '';
-        if(String(curr_prompt.define_response_lang) == "1"){
-            let prefs = await browser.storage.sync.get({ default_chatgpt_lang: prefs_default.default_chatgpt_lang });
-            chatgpt_lang = prefs.default_chatgpt_lang;
-            if(chatgpt_lang === ''){
-                chatgpt_lang = browser.i18n.getMessage("reply_same_lang");
-            }else{
-                chatgpt_lang = browser.i18n.getMessage("prompt_lang") + " " + chatgpt_lang + ".";
-            }
-        }
-
-        return chatgpt_lang;
+        return taPromptUtils.appendReminderStatements(fullPrompt, 'calendar', promptTemplate, reminder_enabled, reminder_rules);
     },
 
-    
+    finalizePrompt_get_task(fullPrompt, promptTemplate = '', reminder_enabled = false, reminder_rules = ''){
+        return taPromptUtils.appendReminderStatements(fullPrompt, 'task', promptTemplate, reminder_enabled, reminder_rules);
+    },
+
+    // Text appended to the calendar event / task prompt to ASK the AI for a
+    // reminderMinutes value; '' when the feature's reminder checkbox is off. The
+    // same checkbox gates accepting the value: with it off, normalizeReminderMinutes()
+    // in mzta-utils.js always drops it. Also used by the settings pages for the live preview.
+    // promptTemplate is the prompt text as saved (curr_prompt.text), NOT the
+    // resolved prompt: an email body mentioning "reminderMinutes" must not
+    // suppress the format instruction, and the settings page checks the same text.
+    // The rules are appended after placeholder resolution, so they are sent verbatim.
+    getReminderPromptStatements(feature, promptTemplate, reminder_enabled, reminder_rules){
+        const parts = taPromptUtils.getReminderPromptParts(feature, promptTemplate, reminder_enabled, reminder_rules);
+        let statements = [];
+        if(parts.format !== '') statements.push(parts.format);
+        if(parts.rules !== '') statements.push(parts.rulesIntro + "\n" + parts.rules);
+        return statements.join(" \n");
+    },
+
+    // The pieces getReminderPromptStatements() joins, kept apart so the settings
+    // pages can render the fixed instruction and the user's rules differently.
+    // Each field is '' when that piece is not appended.
+    getReminderPromptParts(feature, promptTemplate, reminder_enabled, reminder_rules){
+        let parts = { format: '', rulesIntro: '', rules: '' };
+        if(!reminder_enabled) return parts;
+        if(!String(promptTemplate ?? '').includes('reminderMinutes')){
+            parts.format = browser.i18n.getMessage(REMINDER_FEATURES[feature].formatMsgId);
+        }
+        let rules = String(reminder_rules ?? '').trim();
+        if(rules !== ''){
+            parts.rulesIntro = browser.i18n.getMessage("prompt_reminder_rules_intro");
+            parts.rules = rules;
+        }
+        return parts;
+    },
+
+    appendReminderStatements(fullPrompt, feature, promptTemplate, reminder_enabled, reminder_rules){
+        let statements = taPromptUtils.getReminderPromptStatements(feature, promptTemplate, reminder_enabled, reminder_rules);
+        if(statements !== ''){
+            fullPrompt += " \n" + statements;
+        }
+        return fullPrompt;
+    },
+
+    async getDefaultLang(curr_prompt){
+        if(String(curr_prompt?.define_response_lang) != "1"){
+            return '';
+        }
+        // A prompt that rewrites or proofreads the user's own text answers in the language of
+        // that text: the default language would ask the AI to translate it.
+        if(SAME_LANGUAGE_PROMPT_IDS.includes(curr_prompt.id)){
+            return browser.i18n.getMessage("reply_same_lang");
+        }
+        let prefs = await mztaPrefs.getPrefs(['default_chatgpt_lang']);
+        const lang = String(prefs.default_chatgpt_lang ?? '').trim();
+        if(lang === ''){
+            return browser.i18n.getMessage("reply_same_lang");
+        }
+        return browser.i18n.getMessage("prompt_lang") + " " + endSentence(lang);
+    },
+
+    // Language statements for the summary prompt:
+    // - chatgpt_lang: passed to every preparePrompt() call, as it has always been.
+    //   With summarize_force_lang off it is exactly getDefaultLang(prompt), so a
+    //   define_response_lang set on prompt_summarize is still honoured; with it on
+    //   it is '', so it can't contradict the forced language.
+    // - force_lang_statement: appended ONCE at the very end of the whole prompt,
+    //   on its own line. Not after each email: preparePrompt() glues chatgpt_lang to
+    //   the email body with a space, where it reads as part of the email.
+    //   The language is summarize_lang, falling back on default_chatgpt_lang; if
+    //   both are empty nothing is forced. getDefaultLang() is deliberately not used
+    //   here: its reply_same_lang fallback is the opposite of forcing a language.
+    async getSummaryLang(curr_prompt){
+        let prefs = await mztaPrefs.getPrefs(['summarize_force_lang', 'summarize_lang', 'default_chatgpt_lang']);
+        if(!prefs.summarize_force_lang){
+            return { chatgpt_lang: await taPromptUtils.getDefaultLang(curr_prompt), force_lang_statement: '' };
+        }
+        let lang = String(prefs.summarize_lang ?? '').trim() || String(prefs.default_chatgpt_lang ?? '').trim();
+        if(lang === ''){
+            return { chatgpt_lang: '', force_lang_statement: '' };
+        }
+        return { chatgpt_lang: '', force_lang_statement: browser.i18n.getMessage("prompt_summarize_force_lang") + " " + lang + "." };
+    },
+
     async buildSummaryPrompt(messageDataArray) {
         const specialPrompts = await getSpecialPrompts();
         const prompt = specialPrompts.find(p => p.id === 'prompt_summarize');
         const prompt_email = specialPrompts.find(p => p.id === 'prompt_summarize_email_template');
         const prompt_email_separator = specialPrompts.find(p => p.id === 'prompt_summarize_email_separator');
 
-        const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
+        const { chatgpt_lang, force_lang_statement } = await taPromptUtils.getSummaryLang(prompt);
 
         const prompt_string = await taPromptUtils.preparePrompt({
             curr_prompt: prompt,
@@ -151,10 +263,22 @@ export const taPromptUtils = {
 
         const messages_list = [];
         for (let entry of messageDataArray) {
-            const bodyHtml = await getMailBody(entry.fullMessage);
+            // entry.message is REQUIRED: its .id is what reads the body now that
+            // getMailInlineTextParts() asks the API directly, instead of walking the
+            // fullMessage the caller used to supply. An entry carrying only
+            // { fullMessage } - the shape this loop silently accepted before - would
+            // sail past getMailInlineTextParts()'s own try/catch and summarize an EMPTY
+            // body, with the subject still there so the result reads as plausible.
+            // Say so instead of degrading in silence, and skip the entry rather than
+            // contribute a bodyless block to the prompt.
+            if (!entry?.message?.id) {
+                console.error('[ThunderAI] buildSummaryPrompt: skipping an entry with no message.id - the body cannot be read without it. Entry:', entry);
+                continue;
+            }
+            const bodyHtml = await getMailInlineTextParts(entry.message.id);
             let bodyText = htmlBodyToPlainText(bodyHtml.html);
             if (bodyText.length === 0) {
-                bodyText = bodyHtml.text || '';
+                bodyText = cleanupNewlines(bodyHtml.text || '');
             }
 
             messages_list.push(await taPromptUtils.preparePrompt({
@@ -168,12 +292,17 @@ export const taPromptUtils = {
         }
 
         const messages_string = messages_list.join(prompt_email_separator_string);
-        const promptText = prompt_string + prompt_email_separator_string + messages_string;
+        let promptText = prompt_string + prompt_email_separator_string + messages_string;
+        if (force_lang_statement !== '') {
+            promptText += "\n\n" + force_lang_statement;
+        }
 
         return { promptText, promptInfo: prompt };
     },
 
-    async buildTranslationPrompt(fullMessage) {
+    // messageId is needed for the body: getMailInlineTextParts() asks the API for
+    // the inline text parts directly. fullMessage stays for the subject header.
+    async buildTranslationPrompt(fullMessage, messageId) {
         const specialPrompts = await getSpecialPrompts();
         const prompt = specialPrompts.find(p => p.id === 'prompt_translate_this');
 
@@ -181,8 +310,21 @@ export const taPromptUtils = {
         if (promptText === 'prompt_translate_this_full_text') {
             promptText = browser.i18n.getMessage('prompt_translate_this_full_text');
         }
+        // This prompt does not go through preparePrompt(), so its custom placeholders are
+        // expanded here, first, as everywhere else (claude-spec/03-placeholders.md).
+        if (placeholdersUtils.hasCustomPlaceholder(promptText)) {
+            promptText = await placeholdersUtils.replaceCustomPlaceholders(promptText);
+        }
 
-        const bodyHtml = await getMailBody(fullMessage);
+        // No messageId means no body: getMailInlineTextParts() would throw on an
+        // undefined id and swallow it in its own try/catch, returning {text:'',html:''}.
+        // The translation would then be built from the SUBJECT alone and cached as a
+        // valid result - the failure is invisible downstream, so it is named here.
+        if (!messageId) {
+            console.error('[ThunderAI] buildTranslationPrompt: called with no messageId - the message body will be empty. The caller must pass it alongside fullMessage.');
+        }
+
+        const bodyHtml = await getMailInlineTextParts(messageId);
         const mailSubject = fullMessage.headers?.subject?.[0] || '';
 
         const finalSubs = await placeholdersUtils.getPlaceholdersValues({
@@ -191,10 +333,14 @@ export const taPromptUtils = {
             mail_subject: mailSubject,
         });
 
+        // Always the default values (all "" for these placeholders), whatever
+        // placeholders_use_default_value says: this is a feature prompt with a fixed structure,
+        // where a literal token is never useful - with the default empty exclusion list it would
+        // send "{%thunderai_translate_exclude_lang%}" to the AI as if it were a language.
         const fullPrompt = placeholdersUtils.replacePlaceholders({
             text: promptText,
             replacements: finalSubs,
-            use_default_value: false,
+            use_default_value: true,
         });
 
         return { promptText: fullPrompt, promptInfo: prompt };
@@ -215,24 +361,48 @@ export const taPromptUtils = {
      */
     getTagsFromResponse(response_text, filter_tags = false, filter_tags_list = ''){
         let tags = [];
-        if(response_text && response_text.length > 0){
-            try {
-                // Try to parse the response text as JSON
-                let response_json = extractJsonObject(response_text.trim());
-                if(response_json && Array.isArray(response_json.tags)){
-                    tags = response_json.tags;
-                } else if(response_json && response_json.tags && typeof response_json.tags === 'string'){
-                    // If tags is a string, split it by commas
-                    tags = response_json.tags.split(/,\s*/).map(tag => tag.trim());
+        if(typeof response_text === 'string' && response_text.trim().length > 0){
+            if(/[{}]/.test(response_text)){
+                // A JSON answer. When it does not parse, there is no tag: splitting it by commas
+                // would turn the raw JSON, or a whole sentence, into a tag name.
+                try {
+                    let response_json = extractJsonObject(response_text.trim());
+                    if(response_json && Array.isArray(response_json.tags)){
+                        tags = response_json.tags;
+                    } else if(response_json && typeof response_json.tags === 'string'){
+                        // If tags is a string, split it by commas
+                        tags = response_json.tags.split(',');
+                    }
+                } catch (e) {
+                    console.warn("[ThunderAI] Add tags: the AI answer holds a malformed JSON object, no tag taken from it.");
+                    tags = [];
                 }
-            } catch (e) {
-                // If parsing fails, fallback to splitting by commas
-                tags = response_text.split(/,\s*/).map(tag => tag.trim());
+            } else {
+                // Backwards compatibility: a plain comma separated list. An item spanning
+                // several lines is prose, not a tag.
+                tags = response_text.split(',').filter(tag => !/[\r\n]/.test(tag.trim()));
             }
         }
+        // Only non-empty strings, trimmed, each once (ignoring case: the first spelling wins).
+        const seen = new Set();
+        tags = tags
+            .filter(tag => typeof tag === 'string')
+            .map(tag => tag.trim())
+            .filter(tag => {
+                if(tag === '' || seen.has(tag.toLowerCase())) return false;
+                seen.add(tag.toLowerCase());
+                return true;
+            });
         if(filter_tags && filter_tags_list && filter_tags_list.length > 0){
-            const allowedTags = filter_tags_list.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0);
-            tags = tags.filter(tag => allowedTags.includes(tag.toLowerCase()));
+            // Matched ignoring case, and returned as the user wrote it in the allow-list.
+            const allowedTags = new Map(String(filter_tags_list).split(',')
+                .map(tag => tag.trim()).filter(tag => tag.length > 0)
+                .map(tag => [tag.toLowerCase(), tag]));
+            const kept = new Set();
+            tags = tags
+                .filter(tag => allowedTags.has(tag.toLowerCase()))
+                .map(tag => allowedTags.get(tag.toLowerCase()))
+                .filter(tag => !kept.has(tag) && kept.add(tag));
         }
         return tags;
     }

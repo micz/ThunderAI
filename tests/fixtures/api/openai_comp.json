@@ -1,0 +1,43 @@
+{
+  "_about": "Inputs as OpenAI-compatible Chat Completions servers send them. Values are illustrative; the fields follow the documentation each entry cites. No expected value lives here.",
+
+  "deepseek_reasoner_stream": {
+    "source": "DeepSeek reasoning model streaming (https://api-docs.deepseek.com/guides/reasoning_model): delta.reasoning_content, then delta.content; final usage frame with an empty choices array as requested by stream_options.include_usage (https://platform.openai.com/docs/api-reference/chat/streaming)",
+    "chunks": [
+      { "id": "fake-0001", "object": "chat.completion.chunk", "created": 1738000000, "model": "deepseek-reasoner", "system_fingerprint": "fp_fake", "choices": [ { "index": 0, "delta": { "role": "assistant", "content": null, "reasoning_content": "" }, "logprobs": null, "finish_reason": null } ] },
+      { "id": "fake-0001", "object": "chat.completion.chunk", "created": 1738000000, "model": "deepseek-reasoner", "system_fingerprint": "fp_fake", "choices": [ { "index": 0, "delta": { "content": null, "reasoning_content": "The user greets me." }, "logprobs": null, "finish_reason": null } ] },
+      { "id": "fake-0001", "object": "chat.completion.chunk", "created": 1738000000, "model": "deepseek-reasoner", "system_fingerprint": "fp_fake", "choices": [ { "index": 0, "delta": { "content": null, "reasoning_content": " Answer briefly." }, "logprobs": null, "finish_reason": null } ] },
+      { "id": "fake-0001", "object": "chat.completion.chunk", "created": 1738000000, "model": "deepseek-reasoner", "system_fingerprint": "fp_fake", "choices": [ { "index": 0, "delta": { "content": "Hi", "reasoning_content": null }, "logprobs": null, "finish_reason": null } ] },
+      { "id": "fake-0001", "object": "chat.completion.chunk", "created": 1738000000, "model": "deepseek-reasoner", "system_fingerprint": "fp_fake", "choices": [ { "index": 0, "delta": { "content": " there!", "reasoning_content": null }, "logprobs": null, "finish_reason": null } ] },
+      { "id": "fake-0001", "object": "chat.completion.chunk", "created": 1738000000, "model": "deepseek-reasoner", "system_fingerprint": "fp_fake", "choices": [ { "index": 0, "delta": { "content": "" }, "logprobs": null, "finish_reason": "stop" } ] },
+      { "id": "fake-0001", "object": "chat.completion.chunk", "created": 1738000000, "model": "deepseek-reasoner", "system_fingerprint": "fp_fake", "choices": [], "usage": { "prompt_tokens": 13, "completion_tokens": 200, "total_tokens": 213, "prompt_tokens_details": { "cached_tokens": 0 }, "completion_tokens_details": { "reasoning_tokens": 150 }, "prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 13 } }
+    ]
+  },
+
+  "openrouter_stream": {
+    "source": "OpenRouter streaming (https://openrouter.ai/docs/api-reference/streaming): SSE comment lines ': OPENROUTER PROCESSING' while waiting, delta.reasoning (https://openrouter.ai/docs/use-cases/reasoning-tokens), usage on the last chunk",
+    "comment": ": OPENROUTER PROCESSING",
+    "chunks": [
+      { "id": "gen-fake-0002", "provider": "OpenAI", "model": "openai/o4-mini", "object": "chat.completion.chunk", "created": 1750000000, "choices": [ { "index": 0, "delta": { "role": "assistant", "content": "", "reasoning": "Thinking about it." }, "finish_reason": null, "native_finish_reason": null, "logprobs": null } ] },
+      { "id": "gen-fake-0002", "provider": "OpenAI", "model": "openai/o4-mini", "object": "chat.completion.chunk", "created": 1750000000, "choices": [ { "index": 0, "delta": { "role": "assistant", "content": "Hello", "reasoning": null }, "finish_reason": null, "native_finish_reason": null, "logprobs": null } ] },
+      { "id": "gen-fake-0002", "provider": "OpenAI", "model": "openai/o4-mini", "object": "chat.completion.chunk", "created": 1750000000, "choices": [ { "index": 0, "delta": { "role": "assistant", "content": "" }, "finish_reason": "stop", "native_finish_reason": "stop", "logprobs": null } ], "usage": { "prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30 } }
+    ]
+  },
+
+  "plain_stream_no_usage": {
+    "source": "Chat Completions streaming without a usage frame, as llama.cpp / LM Studio answer when they ignore stream_options (spec 04 'Per-provider support', openai_comp); chunk shape from https://platform.openai.com/docs/api-reference/chat/streaming",
+    "chunks": [
+      { "id": "chatcmpl-fake3", "object": "chat.completion.chunk", "created": 1750000000, "model": "local-model", "choices": [ { "index": 0, "delta": { "role": "assistant", "content": "Ciao" }, "finish_reason": null } ] },
+      { "id": "chatcmpl-fake3", "object": "chat.completion.chunk", "created": 1750000000, "model": "local-model", "choices": [ { "index": 0, "delta": {}, "finish_reason": "stop" } ] }
+    ]
+  },
+
+  "error_401": {
+    "source": "OpenAI error object (https://platform.openai.com/docs/guides/error-codes), as compatible servers return it",
+    "body": { "error": { "message": "Incorrect API key provided: sk-fake***********1234.", "type": "invalid_request_error", "param": null, "code": "invalid_api_key" } }
+  },
+  "models_bare_array": {
+    "source": "GET /models answered with a bare array, as some compatible servers do (comment in js/api/openai_comp.js; not asserted from spec)",
+    "body": [ { "id": "local-model", "object": "model" } ]
+  }
+}

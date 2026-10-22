@@ -1,0 +1,10 @@
+{
+  "description": "A prompt with no placeholder and need_selected 0, run with text selected: the selection is the content, not the body",
+  "spec": ["spec 02 \"How the final prompt is built (`preparePrompt()`)\": content is selection_text when non-empty, for every prompt, need_selected \"0\" ones included"],
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Reply to this email.", "need_selected": "0", "need_signature": "0" },
+    "selection_text": "Can you send the invoice?",
+    "body_text": "Hi,\nCan you send the invoice?\nThanks"
+  },
+  "expected": "Reply to this email. \"Can you send the invoice?\""
+}

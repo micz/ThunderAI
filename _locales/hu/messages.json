@@ -45,7 +45,7 @@
         "message": "Utasítás (Prompt)"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "Az alapértelmezett utasítások nem szerkeszthetők. Letilthatja őket, majd a szövegüket kimásolva és egy új utasításba beillesztve létrehozhat egy módosított verziót."
+        "message": "Az alapértelmezett utasítások nem szerkeszthetők. Módosított verzió létrehozásához használja a „Duplikálás és szerkesztés” lehetőséget. Ha el szeretne rejteni egy utasítást a menükből, használja a menüsorrend beállításait."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Az utasításokat importálhatja és exportálhatja. Az azonos azonosítóval (ID) rendelkező meglévő utasítások felülíródnak. Az új azonosítóval rendelkezők hozzáadásra kerülnek."
@@ -59,18 +59,6 @@
     "customPrompts_reindexing_list": {
         "message": "Lista újraindexelése..."
     },
-    "customPrompts_filtering_prompts": {
-        "message": "Utasítások szűrése..."
-    },
-    "customPrompts_saving_default_prompts": {
-        "message": "Alapértelmezett utasítások mentése..."
-    },
-    "customPrompts_saving_custom_prompts": {
-        "message": "Egyedi utasítások mentése..."
-    },
-    "customPrompts_reloading_menus": {
-        "message": "Menük újratöltése..."
-    },
     "customPrompts_saved": {
         "message": "Utasítások elmentve!"
     },
@@ -82,9 +70,6 @@
     },
     "customPrompts_form_label_Name": {
         "message": "Név"
-    },
-    "customPrompts_form_label_Text": {
-        "message": "Utasítás szövege"
     },
     "customPrompts_form_label_Action": {
         "message": "Művelet"
@@ -134,9 +119,6 @@
     "btnNew_string": {
         "message": "Új hozzáadása"
     },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Utasítás hozzáadása"
-    },
     "customPrompts_add_to_menu": {
         "message": "Hozzáadás a menühöz"
     },
@@ -148,18 +130,6 @@
     },
     "customPrompts_add_to_menu_composing": {
         "message": "E-mail írásakor"
-    },
-    "show_in": {
-        "message": "Megjelenítés itt"
-    },
-    "show_in_popup": {
-        "message": "Csak felugró ablakban (Popup)"
-    },
-    "show_in_context": {
-        "message": "Csak a helyi menüben"
-    },
-    "show_in_both": {
-        "message": "Mindkettőben"
     },
     "customPrompts_close_button": {
         "message": "Bezárás gomb"
@@ -280,9 +250,6 @@
             }
         }
     },
-    "prefsInfoTitle": {
-        "message": "Fontos információ"
-    },
     "prefsInfoDesc_1": {
         "message": "Előfordulhat, hogy a ChatGPT webes felülete úgy változik, ami megszakítja a kiegészítő működését. Ellenőrizze az oldal alján található \"Szolgáltatás állapota\" linket. Ne feledje, hogy a ThunderAI első használatakor be kell jelentkeznie a ChatGPT-be."
     },
@@ -295,32 +262,14 @@
     "prefsInfoDesc_4": {
         "message": "Az integráció használatához be kell állítania egy OpenAI API-kompatibilis helyi szervert, mint például az LM Studio. Ha a szerver fut, adja meg a címét a kijelölt mezőben. A ThunderAI és a helyi szerver közötti megfelelő kommunikáció érdekében ügyeljen a CORS-beállítások helyes konfigurálására."
     },
-    "prefsInfoDesc_5": {
-        "message": "Ne feledje, hogy a ThunderAI menüt a CTRL+ALT+A billentyűkombinációval is megnyithatja."
-    },
-    "prefsInfoDesc_6": {
-        "message": "A billentyűkombinációt módosíthatja, ha az oldal jobb felső sarkában lévő fogaskerék ikonra kattint, majd a \"Bővítmény billentyűparancsainak kezelése\" lehetőséget választja."
-    },
     "prefsInfoDesc_7": {
         "message": "A Google Gemini API használatához egy Google Gemini API-kulcsra van szükség, valamint ki kell választania egy modellt."
     },
     "prefsInfoDesc_8": {
         "message": "A Claude API használatához egy Anthropic Claude API-kulcsra van szükség, valamint ki kell választania egy modellt."
     },
-    "prefsDonation_1": {
-        "message": "Tetszik ez a kiegészítő?"
-    },
-    "prefsDonation_2": {
-        "message": "Fontolja meg a támogatását egy adománnyal!"
-    },
     "backToOptionsText": {
         "message": "Beállítások"
-    },
-    "TranslateText": {
-        "message": "Szeretne segíteni a kiegészítő lefordításában?"
-    },
-    "TranslateLink": {
-        "message": "Tudja meg, hogyan!"
     },
     "customPrompts_ExportAll": {
         "message": "Összes utasítás exportálása"
@@ -333,9 +282,6 @@
     },
     "customPrompts_start_import": {
         "message": "Egyedi utasítások importálásának indítása..."
-    },
-    "customPrompts_import_completed": {
-        "message": "Egyedi utasítások importálása befejeződött! A módosítások mentéséhez kattintson az 'Összes mentése' gombra."
     },
     "importPrompts_invalidFile": {
         "message": "Az importálni kívánt fájl nem érvényes egyedi utasításfájl."
@@ -363,9 +309,6 @@
     },
     "ChatGPT_Models": {
         "message": "ChatGPT modellek"
-    },
-    "ChatGPT_Models_Fetch": {
-        "message": "ChatGPT modellek listájának frissítése"
     },
     "ChatGPT_Models_Error_fetching": {
         "message": "Hiba történt a ChatGPT modellek lekérése során"
@@ -403,9 +346,6 @@
     "Ollama_Models": {
         "message": "Ollama modellek"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Ollama modellek listájának frissítése"
-    },
     "Ollama_Models_Error_fetching": {
         "message": "Hiba történt az Ollama modellek lekérése során"
     },
@@ -435,9 +375,6 @@
     },
     "OpenAIComp_Models": {
         "message": "OpenAI kompatibilis API modellek"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "OpenAI kompatibilis modellek listájának frissítése"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Hiba történt az OpenAI kompatibilis modellek lekérése során"
@@ -580,9 +517,6 @@
     "chatgpt_btn_model": {
         "message": "Aktuális modell használata"
     },
-    "AllowedValues": {
-        "message": "Megengedett értékek"
-    },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "További adat-helyőrzőket is használhat."
     },
@@ -617,10 +551,10 @@
         "message": "Válaszolj a következő e-mailre: \\\"{%mail_text_body%}\\\". Kiegészítő utasítás: {%additional_text%}. A válasz kizárólag a szükséges szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül."
     },
     "prompt_rewrite_full_text": {
-        "message": "Fogalmazd át a következő szöveget udvariasabb stílusban. A válasz kizárólag az átírt szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül."
+        "message": "Fogalmazd át a következő szöveget udvariasabb stílusban. A válasz kizárólag az átírt szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Fogalmazd át a következő szöveget hivatalosabb stílusban. A válasz kizárólag az átírt szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül."
+        "message": "Fogalmazd át a következő szöveget hivatalosabb stílusban. A válasz kizárólag az átírt szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül. {%selected_html%}"
     },
     "prompt_classify_full_text": {
         "message": "Kategorizáld a következő szöveget az Udvariasság (Politeness), Kedvesség (Warmth), Hivatalos stílus (Formality), Határozottság (Assertiveness) és Sértő tartalom (Offensiveness) szempontjából, százalékos értéket adva mindegyik kategóriára. A válasz kizárólag a kategóriákat és a pontszámokat tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül."
@@ -647,7 +581,7 @@
         "message": "E-mail ellenőrzése (Korrektúra)"
     },
     "prompt_proofread_this_full_text": {
-        "message": "Olvasd át a következő e-mailt, és javítsd ki a helyesírási vagy nyelvtani hibákat. A válasz kizárólag a javított szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül.\n\n\"{%mail_typed_text%}\""
+        "message": "Olvasd át a következő e-mailt, és javítsd ki a helyesírási vagy nyelvtani hibákat. A válasz kizárólag a javított szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül.\n\n\"{%selected_html%}\""
     },
     "placeholder_tags_current_email": {
         "message": "Levél címkéi"
@@ -727,9 +661,6 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "Ha be van jelölve, a címkék kisbetűsek lesznek, kivéve a legelső betűt, ami nagybetűvé válik."
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "Címkézési opciók"
-    },
     "prefs_SurveyLinkText": {
         "message": "Ossza meg visszajelzését és segítsen a ThunderAI fejlesztésében!"
     },
@@ -747,9 +678,6 @@
     },
     "prefs_doc_open_welcome": {
         "message": "Üdvözlőoldal megnyitása"
-    },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Modell kézi megadása"
     },
     "OpenAIComp_force_model_ask": {
         "message": "Adja meg a használni kívánt modell nevét."
@@ -771,9 +699,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Google Gemini API modellek"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Google Gemini modellek listájának frissítése"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Hiba történt a Google Gemini modellek lekérése során"
@@ -812,7 +737,7 @@
         "message": "Új naptári esemény hozzáadása"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf the event is a full day event, endDate must be one day after startDate with time set to \"T000000\".\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%mail_text_body_or_selected%}\""
+        "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Event Description (a concise summary of the email context, key topics/agenda, action items, and any video call links or access details)\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Location (if mentioned, specific building, room, or online with link)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf the event is a full day event, endDate must be one day after startDate with time set to \"T000000\".\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"description\": \"Detailed event description including agenda, action items and relevant notes from the email.\",\n\"forceAllDay\": false,\n\"location\": \"Location or URL here\",\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%mail_text_body_or_selected%}\""
     },
     "prompt_get_calendar_event_from_clipboard": {
         "message": "Naptári esemény hozzáadása a vágólapról"
@@ -834,9 +759,6 @@
     },
     "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
         "message": "Egy extra menüpont megjelenítése, amellyel a vágólapra másolt szövegből naptári esemény hozható létre."
-    },
-    "Summarize_prompt_prefs_title": {
-        "message": "Összefoglalási opciók"
     },
     "prompt_summarize": {
         "message": "Összefoglalás"
@@ -860,7 +782,7 @@
         "message": "Új feladat hozzáadása"
     },
     "prompt_get_task_full_text": {
-        "message": "Extract all relevant details required to generate a task from the following text. The extracted information should include:\n- Due Date and Time (including timezone, if specified)\n- Task summary\n- Initial Date and Time (including timezone, if specified)\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a task.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Task summary here\"\n}\nIf there are no information about the dates, remove them.\nHere's the text:\"{%selected_text%}\""
+        "message": "Extract all relevant details required to generate a task from the following text. The extracted information should include:\n- Initial Date and Time (including timezone, if specified)\n- Due Date and Time (including timezone, if specified)\n- Task summary\n- Task Description (a concise summary of the email context, key topics and action items)\n- Location (if mentioned, specific building, room, or online with link)\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a task.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"initialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Task summary here\",\n\"description\": \"Detailed task description including action items and relevant notes from the email.\",\n\"location\": \"Location or URL here\"\n}\nIf there are no information about the dates, remove them.\nHere's the text:\"{%selected_text%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Új naptári esemény létrehozása a kijelölt szövegből"
@@ -868,17 +790,11 @@
     "prefs_OptionText_get_calendar_event_Info": {
         "message": "Ha be van jelölve, a menü tartalmazni fog egy elemet a naptári információk kijelölt szövegből történő kinyeréséhez."
     },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "Naptári események opciói"
-    },
     "prefs_OptionText_get_task": {
         "message": "Új feladat hozzáadása a kijelölt szövegből"
     },
     "prefs_OptionText_get_task_Info": {
         "message": "Ha be van jelölve, a menü tartalmazni fog egy elemet a feladat-információk kijelölt szövegből történő kinyeréséhez."
-    },
-    "get_task_prompt_prefs_title": {
-        "message": "Feladatok opciói"
     },
     "Select_your_timezone": {
         "message": "Válassza ki az időzónáját"
@@ -1009,7 +925,7 @@
     "placeholder_mail_attachments_info": {
         "message": "Információk az e-mailben található mellékletekről"
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "Ez a helyőrző nem ad hozzá szöveget, de megakadályozza, hogy a levéltörzs automatikusan a prompt végére legyen fűzve."
     },
     "prefs_OptionText_spamfilter": {
@@ -1047,9 +963,6 @@
     },
     "prompt_spamfilter_full_text": {
         "message": "Analyze the following email and determine if it is spam or not. Consider factors such as suspicious keywords, excessive promotional language, misleading subject lines, requests for personal information, and unusual sender addresses.\nProvide a value from 0 (not spam) to 100 (spam) and an explanation of no more than 10 words.\nIn case of missing message data, set the value to 0 (not spam), and give the reason.\nGenerate a response in JSON format only. Do not include any additional text or explanation; provide only the JSON. Here is the format to be used:\n{\n\"explanation\": \"Brief explanation of your reasoning\",\n\"spamValue\": <integer from 0 to 100>\n}\nHere there are the mail information:\nSender: \"{%author%}\"\nSubject: \"{%mail_subject%}\"\nHtml body: \"{%mail_html_body%}\""
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "Spamszűrő opciói"
     },
     "Summarize_PageTitle": {
         "message": "Összefoglalási beállítások kezelése"
@@ -1091,10 +1004,10 @@
         "message": "Kihagyandó e-mail címek listája"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "Az itt szereplő címekről érkező e-mailek nem lesznek elküldve az AI-nak spamszűrésre."
+        "message": "Az itt szereplő címekről vagy domainekről érkező e-mailek nem lesznek elküldve az AI-nak spamszűrésre."
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "Soronként egy e-mail címet adjon meg, vagy vesszővel elválasztva."
+        "message": "Soronként egy bejegyzést adjon meg, vagy vesszővel elválasztva. Egy bejegyzés lehet teljes e-mail cím (user@domain.com) vagy egy teljes domain (@domain.com)."
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "A feladó szerepel a spamszűrésből kihagyandó címek listáján."
@@ -1150,17 +1063,11 @@
     "no_string": {
         "message": "Nem"
     },
-    "noActiveCalendar": {
-        "message": "Nem található szerkeszthető naptár!"
-    },
     "btn_show_differences": {
         "message": "Eltérések mutatása"
     },
     "chatgpt_win_diff_title": {
         "message": "Különbségek az eredeti és a módosított szöveg között"
-    },
-    "apiwebchat_you": {
-        "message": "Ön"
     },
     "apiwebchat_info": {
         "message": "Információ"
@@ -1200,12 +1107,6 @@
     },
     "CORS_localhost_warn": {
         "message": "Ha a localhost vagy 127.0.0.1 címeket használja, mert az AI szerver a saját PC-jén fut, az <all_urls> jogosultság szükséges."
-    },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "Írás sima szöveges (plain text) formátumban"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "Jelölje be ezt az opciót, ha az e-maileket nem HTML, hanem sima szöveges formátumban írja."
     },
     "Replace_No_Selected_Text": {
         "message": "Nincs kijelölt szöveg. Szeretné beilleszteni az AI válaszát az e-mail elejére?"
@@ -1270,9 +1171,6 @@
     "customPrompts_hide_additional_info": {
         "message": "További tulajdonságok elrejtése"
     },
-    "customPrompts_show_additional_info_show": {
-        "message": "Kiegészítő tulajdonságok"
-    },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Ha egy projekt (Project) van megadva a beállításokban vagy egy promptban, az felülírja a Custom GPT beállítást."
     },
@@ -1287,9 +1185,6 @@
     },
     "Anthropic_Models": {
         "message": "Claude modellek"
-    },
-    "Anthropic_Models_Fetch": {
-        "message": "Claude modellek listájának frissítése"
     },
     "Anthropic_Models_Error_fetching": {
         "message": "Hiba történt a Claude modellek lekérése során"
@@ -1310,7 +1205,7 @@
         "message": "Kiterjesztett gondolkodási keret (tokenek)"
     },
     "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
-        "message": "Azon tokenek maximális száma, amit a modell kiterjesztett gondolkodásra (extended thinking) fordíthat. Állítsa 0-ra a kikapcsolásához. Ha engedélyezve van, a Claude API figyelmen kívül hagyja a temperature (hőmérséklet) értéket."
+        "message": "Azon tokenek maximális száma, amit a modell kiterjesztett gondolkodásra (extended thinking) fordíthat. Állítsa 0-ra a kikapcsolásához. Az értéknek kisebbnek kell lennie, mint a Max Tokens. Az újabb Claude modellek nem fogadnak el kézi keretet, helyette az Erőfeszítés beállítást használják: ha ilyen modell van kiválasztva, ez a mező le van tiltva, és az értéke nem kerül elküldésre."
     },
     "anthropic_empty_apikey": {
         "message": "Nem adott meg API-kulcsot a Claude API-hoz. Kérjük, illesszen be egyet a beállítások oldalon."
@@ -1377,7 +1272,7 @@
         "message": "Gondolkodás engedélyezése"
     },
     "prefs_ollama_think_Info": {
-        "message": "Ha be van jelölve, a modell átgondolja a választ a kiküldés előtt. Ez a funkció csak az olyan modellekkel működik, amelyek támogatják a 'think' tulajdonságot."
+        "message": "Kényszerítse a modellt arra, hogy gondolkodjon a válaszadás előtt. A „Model default” (Modell alapértelmezett) opció nem küld semmit, és a modellre bízza a döntést, ami egyes modelleknél azt jelenti, hogy mindenképpen gondolkodni fog: válassza az „Off” (Ki) lehetőséget a gondolkodás kifejezett kikapcsolásához. A elérhető gondolkodási szintek a kiválasztott modelltől függenek, és a modell kiválasztása után jelennek meg."
     },
     "prefs_ollama_format_json": {
         "message": "JSON kimenet kényszerítése"
@@ -1445,9 +1340,6 @@
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Kérjük, vegye figyelembe, hogy az AI válaszában található <br> tagek soremeléssel lesznek helyettesítve."
     },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Modell-lista törlése"
-    },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Biztosan törölni szeretné a modellek listáját? Ez a művelet nem vonható vissza."
     },
@@ -1493,25 +1385,13 @@
         "message": "Javíthatja a Claude teljesítményét egy Rendszerprompt használatával, amellyel szerepkört adhat neki. Ez a technika (szerep-promptolás) a leghatékonyabb módja a Claude irányításának. A megfelelő szerepkörrel a Claude egy általános asszisztensből az Ön virtuális szakértőjévé válhat."
     },
     "prefs_anthropic_temperature_Info": {
-        "message": "A válaszba vitt véletlenszerűség mértéke. Alapértelmezése 1.0. Értéke 0.0 és 1.0 között mozoghat. Használjon 0.0-hoz közeli értéket analitikus / feleletválasztós feladatokhoz, és 1.0-hoz közelit a kreatív és generatív feladatokhoz. Megjegyzés: a kimenet még 0.0-s értéknél sem lesz teljesen determinisztikus."
+        "message": "A válaszba vitt véletlenszerűség mértéke. Értéke 0.0 és 1.0 között mozoghat; ha a mezőt üresen hagyja, az alapértelmezett 1.0 érték lép életbe. Az újabb Claude modellek egyáltalán nem fogadják el ezt a beállítást, helyette az Erőfeszítés beállítást használják: ha ilyen modell van kiválasztva, ez a mező le van tiltva, és az értéke nem kerül elküldésre."
     },
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Megtagadta a modellek lekéréséhez szükséges opcionális jogosultságot ehhez az integrációhoz."
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Automatikus AI-összefoglalás engedélyezése az üzenet-előnézeteknél"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Ha be van jelölve, a ThunderAI automatikusan generálja és megjeleníti az AI-összefoglalókat az e-mailek felett, amikor megnyitja őket. Vegye figyelembe, hogy ez azt jelenti, hogy minden megtekintett üzenet azonnal elküldésre kerül a beállított AI szolgáltatásnak."
-    },
-    "auto_summary_title": {
-        "message": "ThunderAI Összefoglaló"
-    },
-    "auto_summary_generating": {
-        "message": "AI-összefoglaló generálása..."
-    },
-    "auto_summary_failed": {
-        "message": "Nem sikerült az AI-összefoglaló generálása. Kérjük, ellenőrizze a beállításokat, majd próbálja újra."
     },
     "customPrompts_export_include_api_settings": {
         "message": "Szeretné az API-beállításokat is belefoglalni az exportálásba? Vegye figyelembe, hogy az API-kulcs is mentésre kerül a fájlban!"
@@ -1524,9 +1404,6 @@
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "Az utasításnak tartalmaznia kell a {%mail_text_body_or_selected%} vagy a {%mail_html_body_or_selected%} helyőrzőt a funkció engedélyezéséhez. Kérjük, adja hozzá az egyik helyőrzőt a promthoz, vagy állítsa vissza az alapértelmezettre."
-    },
-    "customPrompts_btnCopy": {
-        "message": "Másolás"
     },
     "copy_text": {
         "message": "másolás"
@@ -1569,9 +1446,6 @@
     },
     "get_ai_summary": {
         "message": "AI Összefoglaló"
-    },
-    "summarize_collapse": {
-        "message": "Összefoglaló összecsukása"
     },
     "summarize_generating": {
         "message": "Összefoglaló generálása..."
@@ -1621,9 +1495,6 @@
     "Translate_prompt_text_title": {
         "message": "Aktuális utasítás szövege"
     },
-    "Translate_prompt_prefs_title": {
-        "message": "Fordítási opciók"
-    },
     "prefs_OptionText_translate_auto": {
         "message": "Üzenetek automatikus fordítása"
     },
@@ -1667,7 +1538,7 @@
         "message": "Kizárt nyelvek"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Vesszővel elválasztott nyelvügynökségi kódok listája (pl. en, fr, it), amelyeket ki kell hagyni az automatikus fordításból. Ha az e-mail a felsorolt nyelvek egyikén íródott, nem lesz automatikusan lefordítva, illetve a manuális gomb sem jelenik meg."
+        "message": "Vesszővel elválasztott nyelvkódok listája (pl. en, fr, it), amelyeket nem kell lefordítani. Ha az e-mail a felsorolt nyelvek egyikén íródott, az MI kihagyja a fordítást, és kihagyottként jelzi."
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "A fordítási feladatot leíró utasítás:"
@@ -1794,5 +1665,139 @@
     },
     "menu_order_icon_none": {
         "message": "(nincs)"
+    },
+    "onboarding_wizard_banner_text": {
+        "message": "Új a ThunderAI felhasználója? Hagyja, hogy a beállító varázsló végigvezesse az AI csatlakoztatásán."
+    },
+    "onboarding_wizard_banner_link": {
+        "message": "Beállító varázsló indítása"
+    },
+    "onboarding_tab_title": {
+        "message": "Üdvözli a ThunderAI!"
+    },
+    "onboarding_welcome_2": {
+        "message": "Ez a kiegészítő az e-mailek kezelésének javítására lett tervezve az AI erejével."
+    },
+    "onboarding_welcome_3": {
+        "message": "A ThunderAI segítségével rendszerezheti a beérkező leveleit, intelligens válaszokat készíthet, összefoglalhatja az e-maileket, automatikusan címkéket adhat hozzá, szűrheti a spamet és sok mást is, mindezt a mesterséges intelligencia segítségével."
+    },
+    "onboarding_welcome_4": {
+        "message": "Ezen az oldalon áttekintést talál a legfontosabb funkciókról, amelyek segítségével a legtöbbet hozhatja ki a ThunderAI-ból."
+    },
+    "onboarding_welcome_5": {
+        "message": "Készüljön fel egy okosabb és hatékonyabb módra az e-mailek kezelésére!"
+    },
+    "onboarding_welcome_6": {
+        "message": "Nézzük meg, hogyan használhatja a legtöbbet ebből a kiegészítőből!"
+    },
+    "onboarding_using_prompts_title": {
+        "message": "Promptok használata"
+    },
+    "onboarding_using_prompts_alt": {
+        "message": "Promptmenü gombja"
+    },
+    "onboarding_using_prompts_1": {
+        "message": "Minden üzenetnél talál egy gombot, amellyel megnyithatja a promptmenüt."
+    },
+    "onboarding_using_prompts_2": {
+        "message": "Itt többféleképpen választhatja ki a promptot:"
+    },
+    "onboarding_using_prompts_li1_b": {
+        "message": "Keresőmező"
+    },
+    "onboarding_using_prompts_li1": {
+        "message": "Ezzel a prompt egy részére kereshet."
+    },
+    "onboarding_using_prompts_li2_b": {
+        "message": "Lefelé/Felfelé nyíl"
+    },
+    "onboarding_using_prompts_li2": {
+        "message": "Lépegetés a promptok között."
+    },
+    "onboarding_using_prompts_li3_b": {
+        "message": "Nyomjon meg egy számot"
+    },
+    "onboarding_using_prompts_li3": {
+        "message": "Nyomjon meg egy számot a billentyűzeten a megfelelő prompt kiválasztásához."
+    },
+    "onboarding_using_prompts_li4_b": {
+        "message": "Enter"
+    },
+    "onboarding_using_prompts_li4": {
+        "message": "Ha kiválasztotta a kívánt promptot, nyomja meg az Enter gombot a futtatásához."
+    },
+    "onboarding_using_prompts_3": {
+        "message": "A ThunderAI beállítási oldalán talál néhány, erre a menüre vonatkozó beállítást."
+    },
+    "onboarding_using_prompts_4": {
+        "message": "Az első két prompt különleges, és csak API-integráció használatakor érhető el. Közvetlenül működnek, anélkül, hogy megnyitnák az AI Chat weboldalát."
+    },
+    "onboarding_custom_prompts_title": {
+        "message": "Saját promptok meghatározása"
+    },
+    "onboarding_custom_prompts_alt": {
+        "message": "Saját promptok kezelése"
+    },
+    "onboarding_custom_prompts_p1_1": {
+        "message": "A beállítási oldalról megnyithatja a saját promptok oldalát."
+    },
+    "onboarding_custom_prompts_p1_3": {
+        "message": "Ott hozzáadhatja a saját promptjait, és letilthatja az alapértelmezetteket is."
+    },
+    "onboarding_custom_prompts_p1_4": {
+        "message": "További információt itt talál."
+    },
+    "onboarding_custom_prompts_p2_1": {
+        "message": "Saját promptok meghatározásakor használhat"
+    },
+    "onboarding_custom_prompts_bold_dp": {
+        "message": "adat-placeholdereket"
+    },
+    "onboarding_custom_prompts_p2_2": {
+        "message": " is, amelyek a prompt használatakor a megfelelő információra lesznek helyettesítve."
+    },
+    "onboarding_custom_prompts_p3": {
+        "message": "Például használhatja a $PH_SUBJECT$ placeholdert az e-mail tárgyára való hivatkozáshoz, vagy a $PH_TAGS$ placeholdert az aktuális e-mail címkéire való hivatkozásához.",
+        "placeholders": {
+            "ph_subject": {
+                "content": "{%mail_subject%}"
+            },
+            "ph_tags": {
+                "content": "{%tags_current_email%}"
+            }
+        }
+    },
+    "onboarding_automatic_features_title": {
+        "message": "Automatikus funkciók"
+    },
+    "onboarding_automatic_features_alt": {
+        "message": "Automatikus spamszűrő"
+    },
+    "onboarding_automatic_features_1": {
+        "message": "Két automatikus funkció is elérhető API-integráció használatakor, amelyek a beállítási oldalról aktiválhatók:"
+    },
+    "onboarding_automatic_features_li1_b": {
+        "message": "Automatikus spamszűrő"
+    },
+    "onboarding_automatic_features_li1": {
+        "message": "automatikusan áthelyezi az e-mailt a spam mappába, ha spamként észlel."
+    },
+    "onboarding_automatic_features_li2_b": {
+        "message": "Automatikus címkézés"
+    },
+    "onboarding_automatic_features_li2": {
+        "message": "automatikusan címkéket rendel az e-mailhez."
+    },
+    "onboarding_automatic_features_2": {
+        "message": "Ezen funkciók mindegyikéhez tartozik egy beállítási oldal, ahol megadhatja a beállításokat és a használni kívánt egyéni promptot."
+    },
+    "onboarding_footer_1": {
+        "message": "Ha kérdése vagy javaslata van, nyisson egy issue-t a GitHub oldalon."
+    },
+    "onboarding_footer_3": {
+        "message": "Tetszik a ThunderAI?"
+    },
+    "prefs_footer_donate": {
+        "message": "Adományozás"
     }
 }

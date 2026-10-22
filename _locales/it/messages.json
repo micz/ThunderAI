@@ -1,4 +1,23 @@
 {
+    "prefs_api_extra_body": {
+        "message": "Dati aggiuntivi"
+    },
+    "prefs_google_gemini_max_output_tokens_Info": {
+        "message": "Il numero massimo di token che possono essere generati nella risposta. Lascia vuoto o a 0 per lasciare decidere il modello.",
+        "description": "Connection panel (Google Gemini): help text under the Max output tokens field."
+    },
+    "prefs_google_gemini_top_p_Info": {
+        "message": "Nucleus sampling: il modello considera solo i token la cui probabilità cumulativa raggiunge questo valore. L'intervallo accettato e il valore predefinito variano a seconda del modello. Lascia vuoto per non impostare il parametro nella chiamata API.",
+        "description": "Connection panel (Google Gemini): help text under the Top P field, explaining nucleus sampling."
+    },
+    "prefs_google_gemini_top_k_Info": {
+        "message": "Campiona solo tra le K opzioni più probabili per ogni token successivo, eliminando le risposte poco probabili della \"coda lunga\". Non tutti i modelli supportano questo parametro. Lascia vuoto per non impostare il parametro nella chiamata API.",
+        "description": "Connection panel (Google Gemini): help text under the Top K field."
+    },
+    "prefs_google_gemini_extra_body_Info": {
+        "message": "Parametri aggiuntivi da inviare con ogni chiamata API, come oggetto JSON. Utile per opzioni che l'API Gemini supporta ma ThunderAI non espone, come {\"safetySettings\": []} o {\"generationConfig\": {\"seed\": 42}}. Le chiavi all'interno di \"generationConfig\" vengono unite a quelle costruite da ThunderAI. I parametri gestiti da ThunderAI (contenuti, istruzione di sistema, thinking, temperatura, token massimi di output, top P, top K) non possono essere sovrascritti qui. Un valore non valido viene ignorato.",
+        "description": "Connection panel (Google Gemini): help text under the Extra body data field. Keep the JSON examples and key names (safetySettings, generationConfig, seed) unchanged."
+    },
     "extensionDescription": {
         "message": "Usa ChatGPT, Google Gemini, Claude oppure Ollama per migliorare le tue email!",
         "description": "Description of the extension."
@@ -40,7 +59,7 @@
         "message": "Informazioni"
     },
     "customPrompts_managePrompts_info_default": {
-        "message": "I prompt predefiniti non sono modificabili. Puoi disattivarli, quindi copiare il testo del prompt e incollarlo in uno nuovo per crearne una versione modificata."
+        "message": "I prompt predefiniti non sono modificabili. Per crearne una versione modificata, usa \"Duplica e modifica\". Per nascondere un prompt dai menu, usa le impostazioni dell'ordine dei menu."
     },
     "customPrompts_managePrompts_info_default_2": {
         "message": "Puoi importare ed esportare i prompt. I prompt esistenti con lo stesso ID verranno sovrascritti. I prompt con nuovi ID verranno aggiunti."
@@ -54,17 +73,21 @@
     "customPrompts_reindexing_list": {
         "message": "Indicizzazione lista..."
     },
-    "customPrompts_filtering_prompts": {
-        "message": "Applicazione filtro in corso..."
+    "customPrompts_autosave_info": {
+        "message": "Ogni modifica viene salvata immediatamente.",
+        "description": "Note on the Custom Prompts page: there is no Save All button"
     },
-    "customPrompts_saving_default_prompts": {
-        "message": "Salvataggio prompt di base..."
+    "customPrompts_import_saved_now": {
+        "message": "I prompt importati verranno salvati immediatamente.",
+        "description": "Line of the confirmation shown before importing custom prompts"
     },
-    "customPrompts_saving_custom_prompts": {
-        "message": "Salvataggio prompt personalizzati..."
+    "customPrompts_import_completed_saved": {
+        "message": "Prompt personalizzati importati e salvati!",
+        "description": "Custom prompts page: success status message shown after prompts have been imported from a file and saved."
     },
-    "customPrompts_reloading_menus": {
-        "message": "Caricamento menu aggiornati..."
+    "customPrompts_save_error": {
+        "message": "Errore durante il salvataggio dei prompt:",
+        "description": "Followed by the error message"
     },
     "customPrompts_saved": {
         "message": "Prompt salvati!"
@@ -77,9 +100,6 @@
     },
     "customPrompts_form_label_Name": {
         "message": "Nome"
-    },
-    "customPrompts_form_label_Text": {
-        "message": "Testo del prompt"
     },
     "customPrompts_form_label_Action": {
         "message": "Azione"
@@ -123,9 +143,6 @@
     "btnNew_string": {
         "message": "Aggiungi Nuovo"
     },
-    "customPrompts_btnAddNewCommit": {
-        "message": "Aggiungi il Prompt"
-    },
     "customPrompts_add_to_menu": {
         "message": "Aggiungi al menu"
     },
@@ -167,6 +184,14 @@
     },
     "chatgpt_btn_retry": {
         "message": "Riprova"
+    },
+    "chatgpt_win_retrying": {
+        "message": "Nuovo tentativo…",
+        "description": "Shown in the ChatGPT window panel for a moment after the Retry button is clicked"
+    },
+    "chatgpt_composer_click_to_continue": {
+        "message": "Impossibile trovare la casella dei messaggi di ChatGPT. Fai clic al suo interno per continuare.",
+        "description": "Shown in the ChatGPT window panel when the ChatGPT message input cannot be found automatically"
     },
     "chatgpt_sendbutton_not_found_error": {
         "message": "Premi il pulsante per inviare il prompt."
@@ -225,9 +250,6 @@
     "prefs_OptionText_btnManagePrompts": {
         "message": "Gestisci i tuoi prompts"
     },
-    "prefsInfoTitle": {
-        "message": "Informazioni Importanti"
-    },
     "prefsInfoDesc_1": {
         "message": "È possibile che l'interfaccia web di ChatGPT cambi in modo tale da compromettere il funzionamento dell'addon. Controlla la pagina \"Stato del servizio\" collegata in fondo a questa pagina. Ricorda inoltre che la prima volta che utilizzi ThunderAI, devi effettuare l'accesso a ChatGPT."
     },
@@ -240,26 +262,8 @@
     "prefsInfoDesc_4": {
         "message": "Per utilizzare questa integrazione, è necessario configurare un server locale compatibile con l'API di OpenAI, come LM Studio. Una volta avviato il server, inserisci il suo indirizzo nella pagina delle opzioni. Per garantire una corretta comunicazione tra ThunderAI e il server locale, ricorda di configurare correttamente le impostazioni CORS."
     },
-    "prefsInfoDesc_5": {
-        "message": "Ricorda che puoi aprire il menu di ThunderAI utilizzando la combinazione di tasti CTRL+ALT+A."
-    },
-    "prefsInfoDesc_6": {
-        "message": "Puoi modificare la scorciatoia cliccando sull'icona a forma di ingranaggio in alto a destra di questa pagina e scegliendo \"Gestisci scorciatoie da tastiera\"."
-    },
-    "prefsDonation_1": {
-        "message": "Ti piace questo componente aggiuntivo?"
-    },
-    "prefsDonation_2": {
-        "message": "Considera di fare una donazione!"
-    },
     "backToOptionsText": {
         "message": "Opzioni"
-    },
-    "TranslateText": {
-        "message": "Vuoi aiutare a tradurre questo addon?"
-    },
-    "TranslateLink": {
-        "message": "Scopri come!"
     },
     "customPrompts_ExportAll": {
         "message": "Esporta tutti i prompt"
@@ -267,14 +271,202 @@
     "customPrompts_Import": {
         "message": "Importa i nuovi prompt"
     },
+    "customPrompts_promptsCount": {
+        "message": "$COUNT$ prompt",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "customPrompts_promptsCount_filtered": {
+        "message": "$SHOWN$ di $TOTAL$ prompt",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_search_placeholder": {
+        "message": "Cerca per nome, ID o testo…"
+    },
+    "customPrompts_filter_active": {
+        "message": "Filtrati: $SHOWN$ di $TOTAL$",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_filter_noMatches": {
+        "message": "Nessun prompt corrispondente"
+    },
+    "customPrompts_filter_clear": {
+        "message": "Rimuovi filtro"
+    },
+    "customPrompts_view_detail": {
+        "message": "Dettaglio",
+        "description": "View switch button: list on the left, editor on the right"
+    },
+    "customPrompts_view_table": {
+        "message": "Tabella",
+        "description": "View switch button: dense table of all prompts"
+    },
+    "customPrompts_view_switch": {
+        "message": "Vista",
+        "description": "Accessible label of the Detail/Table view switch"
+    },
+    "customPrompts_new_prompt": {
+        "message": "+ Nuovo prompt",
+        "description": "Toolbar button that starts a new prompt in the editor"
+    },
+    "customPrompts_badge_system": {
+        "message": "Sistema",
+        "description": "Badge on a built-in prompt"
+    },
+    "customPrompts_badge_personal": {
+        "message": "Personale",
+        "description": "Badge on a prompt created by the user"
+    },
+    "customPrompts_badge_readonly": {
+        "message": "Sola lettura",
+        "description": "Badge in the editor header of a prompt whose text cannot be changed"
+    },
+    "customPrompts_system_tooltip": {
+        "message": "Prompt di sistema, in sola lettura",
+        "description": "Tooltip of the lock glyph shown on read-only prompts in the list"
+    },
+    "customPrompts_system_banner": {
+        "message": "Prompt di sistema: il suo testo non può essere modificato. Duplicalo per creare una tua versione.",
+        "description": "Banner in the editor for a built-in prompt"
+    },
+    "customPrompts_org_banner": {
+        "message": "Prompt dell'organizzazione: è gestito dai criteri di configurazione della tua organizzazione e non può essere modificato. Duplicalo per creare una tua versione.",
+        "description": "Banner in the editor for a prompt supplied by the enterprise policy"
+    },
+    "customPrompts_btnDuplicate": {
+        "message": "Duplica",
+        "description": "Button that creates a copy of the selected prompt"
+    },
+    "customPrompts_btnDuplicateEdit": {
+        "message": "Duplica e modifica",
+        "description": "Button that creates an editable personal copy of a read-only prompt"
+    },
+    "customPrompts_btnSavePrompt": {
+        "message": "Salva",
+        "description": "Button in the editor that saves the edits to the selected prompt"
+    },
+    "customPrompts_btnExport": {
+        "message": "Esporta",
+        "description": "Row menu item that exports a single prompt to a file"
+    },
+    "customPrompts_btnOpen": {
+        "message": "Apri",
+        "description": "Table row button that opens a read-only prompt in the detail view"
+    },
+    "customPrompts_more_actions": {
+        "message": "Altre azioni",
+        "description": "Tooltip of the row menu button in the table view"
+    },
+    "customPrompts_col_prompt": {
+        "message": "Prompt",
+        "description": "Table view column header"
+    },
+    "customPrompts_col_text": {
+        "message": "Testo",
+        "description": "Table view column header"
+    },
+    "customPrompts_col_menu": {
+        "message": "Menu",
+        "description": "Table view column header"
+    },
+    "customPrompts_col_options": {
+        "message": "Opzioni",
+        "description": "Table view column header"
+    },
+    "customPrompts_col_actions": {
+        "message": "Azioni",
+        "description": "Table view column header"
+    },
+    "customPrompts_label_text": {
+        "message": "Testo del prompt",
+        "description": "Label of the prompt text field in the editor"
+    },
+    "customPrompts_label_options": {
+        "message": "Opzioni",
+        "description": "Label of the options column in the editor"
+    },
+    "customPrompts_label_connection": {
+        "message": "Connessione",
+        "description": "Label of the per-prompt connection override section in the editor"
+    },
+    "customPrompts_chip_need_selected": {
+        "message": "Selezione",
+        "description": "Short label of the 'Text selection needed' option chip"
+    },
+    "customPrompts_chip_need_signature": {
+        "message": "Firma",
+        "description": "Short label of the 'Always add the signature' option chip"
+    },
+    "customPrompts_chip_need_custom_text": {
+        "message": "Testo extra",
+        "description": "Short label of the 'Ask for additional text' option chip"
+    },
+    "customPrompts_chip_define_response_lang": {
+        "message": "Lingua",
+        "description": "Short label of the 'Define the response language' option chip"
+    },
+    "customPrompts_chip_use_diff_viewer": {
+        "message": "Confronto",
+        "description": "Short label of the 'Enable the text comparison viewer' option chip"
+    },
+    "customPrompts_flag_fixed_suffix": {
+        "message": "fissato dal prompt",
+        "description": "Suffix after an option that cannot be changed on a read-only prompt"
+    },
+    "customPrompts_new_prompt_title": {
+        "message": "Nuovo prompt",
+        "description": "Editor header while creating a prompt"
+    },
+    "customPrompts_no_selection": {
+        "message": "Seleziona un prompt dall'elenco o creane uno nuovo.",
+        "description": "Editor placeholder when no prompt is selected"
+    },
+    "customPrompts_dirty_confirm": {
+        "message": "Il prompt che stai modificando ha delle modifiche non ancora applicate. Cosa vuoi fare?",
+        "description": "Dialog shown when leaving a prompt with unapplied edits"
+    },
+    "customPrompts_dirty_apply": {
+        "message": "Applica le modifiche",
+        "description": "Dialog button: apply the pending edits and continue"
+    },
+    "customPrompts_dirty_discard": {
+        "message": "Scarta le modifiche",
+        "description": "Dialog button: throw away the pending edits and continue"
+    },
+    "customPrompts_error_id": {
+        "message": "L'ID è obbligatorio, non può contenere spazi e deve essere univoco.",
+        "description": "Validation message for the prompt ID"
+    },
+    "customPrompts_error_required": {
+        "message": "Il nome e il testo del prompt sono obbligatori.",
+        "description": "Validation message for the name and text fields"
+    },
+    "customPrompts_error_name_percent": {
+        "message": "Il nome non può contenere il carattere %.",
+        "description": "Custom prompts page: validation message when the prompt name contains a percent sign"
+    },
     "importPrompts_confirmText": {
         "message": "Stai per importare nuovi prompt."
     },
     "customPrompts_start_import": {
         "message": "Inizio importazione dei prompt personalizzati..."
-    },
-    "customPrompts_import_completed": {
-        "message": "Importazione dei prompt personalizzati completata! È necessario fare clic sul pulsante 'Salva Tutto' per salvare le modifiche."
     },
     "importPrompts_invalidFile": {
         "message": "Il file che stai cercando di importare non è un file valido di prompt personalizzati."
@@ -302,9 +494,6 @@
     },
     "ChatGPT_Models": {
         "message": "Modelli ChatGPT"
-    },
-    "ChatGPT_Models_Fetch": {
-        "message": "Aggiorna l'elenco dei modelli ChatGPT"
     },
     "ChatGPT_Models_Error_fetching": {
         "message": "Errore durante il recupero dei modelli di ChatGPT"
@@ -342,11 +531,15 @@
     "Ollama_Models": {
         "message": "Modelli Ollama"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Aggiorna la lista dei modelli Ollama"
+    "Models_Fetch": {
+        "message": "Aggiorna elenco"
     },
     "Ollama_Models_Error_fetching": {
         "message": "Errore nel tentativo di recuperare i modelli Ollama"
+    },
+    "Models_Fetch_Done": {
+        "message": "Elenco dei modelli caricato",
+        "description": "Confirmation shown in green under the models select after the 'Update list' button has fetched the models list successfully. It fades out after a few seconds."
     },
     "API_Models_Error_NoModels": {
         "message": "Nessun modello trovato"
@@ -374,9 +567,6 @@
     },
     "OpenAIComp_Models": {
         "message": "Modelli dell'API compatibile con OpenAI"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "Aggiorna la lista dei modelli dell'API compatibile con OpenAI"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Errore durante il tentativo di recuperare i modelli dell'API compatibile con OpenAI"
@@ -450,11 +640,26 @@
     "placeholder_author": {
         "message": "Autore"
     },
+    "placeholder_mail_plain_text_part": {
+        "message": "Parte in testo semplice originale della mail, senza alcuna conversione della parte HTML (ideale per mail aziendali e automatizzate; può essere vuota o un stub nelle newsletter)"
+    },
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "Segnaposti: usa valore predefinito"
     },
     "prefs_OptionText_placeholders_use_default_value_info": {
         "message": "Se selezionato, i segnaposti saranno riempiti con i valori predefiniti quando non viene fornito alcun valore. Altrimenti, i segnaposti rimarranno visibili nel testo."
+    },
+    "prefs_OptionText_diff_granularity": {
+        "message": "Confronta le modifiche per"
+    },
+    "prefs_OptionText_diff_granularity_info": {
+        "message": "Come il selettore delle modifiche confronta il testo originale con la risposta. \"Parole\" è adatto per correggere ortografia e grammatica; \"Frasi\" è più leggibile quando la risposta riscrive intere frasi. Nota che su un testo composto da una sola frase, \"Frasi\" mostra l'intero testo come un'unica modifica. Puoi anche passare da una all'altra mentre esamini le modifiche."
+    },
+    "prefs_OptionText_diff_granularity_words": {
+        "message": "Parole"
+    },
+    "prefs_OptionText_diff_granularity_sentences": {
+        "message": "Frasi"
     },
     "prefs_OptionText_max_prompt_length": {
         "message": "Lunghezza massima del prompt"
@@ -468,6 +673,12 @@
     "prefs_OptionText_chatgpt_web_model_info": {
         "message": "Questo è il Modello che verrà utilizzato nell'interfaccia Web di ChatGPT. Se non viene specificato o ne viene fornito uno errato, ChatGPT imposterà il modello predefinito sulla pagina Web. Questa impostazione non funziona con un account gratuito di ChatGPT."
     },
+    "prefs_OptionText_chatgpt_web_model_extended_check": {
+        "message": "Verifica estesa del modello"
+    },
+    "prefs_OptionText_chatgpt_web_model_extended_check_info": {
+        "message": "Se selezionato, ThunderAI apre brevemente il menu dei modelli di ChatGPT per leggere quale modello è selezionato prima di inviare il prompt. Vengono verificati solo i modelli conosciuti (attualmente gpt-6 e gpt-6-thinking). Questa verifica potrebbe smettere di funzionare se ChatGPT modifica la sua pagina."
+    },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "Chat temporanea di ChatGPT"
     },
@@ -477,11 +688,17 @@
     "chatgpt_btn_model": {
         "message": "Usa il modello corrente"
     },
-    "AllowedValues": {
-        "message": "Valori consentiti"
-    },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Puoi utilizzare segnaposto per dati aggiuntivi."
+    },
+    "prefs_extra_body_error_invalid": {
+        "message": "JSON non valido:"
+    },
+    "prefs_extra_body_error_not_object": {
+        "message": "Il valore deve essere un oggetto JSON, racchiuso tra parentesi graffe."
+    },
+    "prefs_OptionText_openai_comp_extra_body_info": {
+        "message": "Parametri aggiuntivi da inviare a ogni chiamata API, come oggetto JSON. Utile per le opzioni supportate da questo servizio ma non esposte da ThunderAI, come disattivare la modalità di ragionamento: {\"chat_template_kwargs\": {\"thinking\": false}} oppure {\"top_p\": 0.9}. I parametri gestiti da ThunderAI (model, messages, streaming, temperature) non possono essere sovrascritti qui. Un valore non valido viene ignorato."
     },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Mantieni la compatibilità con \"v1\""
@@ -508,10 +725,10 @@
         "message": "Rispondi alla seguente email \"{%selected_text%}\", considerando che questo è l'intero thread di email \"{%mail_html_body%}\". Rispondi solo con il testo necessario, senza commenti aggiuntivi o altro testo."
     },
     "prompt_rewrite_full_text": {
-        "message": "Riformula il seguente testo per renderlo più cortese. Rispondi solo con il testo riformulato, senza commenti aggiuntivi o altro testo."
+        "message": "Riformula il seguente testo per renderlo più cortese. Rispondi solo con il testo riformulato, senza commenti aggiuntivi o altro testo. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Riformula il seguente testo per renderlo più formale. Rispondi solo con il testo riformulato, senza commenti aggiuntivi o altro testo."
+        "message": "Riformula il seguente testo per renderlo più formale. Rispondi solo con il testo riformulato, senza commenti aggiuntivi o altro testo. {%selected_html%}"
     },
     "prompt_classify_full_text": {
         "message": "Classifica il seguente testo in termini di Cortesia, Calore, Formalità, Assertività, Offensività, indicando una percentuale per ciascuna categoria. Rispondi solo con la categoria e il punteggio, senza commenti aggiuntivi o altro testo."
@@ -545,6 +762,10 @@
     },
     "prefs_OptionText_add_tags_maxnum_Info": {
         "message": "Il numero massimo di tag proposti dall'IA. Imposta a 0 se non vuoi limitare il numero di tag."
+    },
+    "prefs_OptionText_add_tags_max_messages_Info": {
+        "message": "Il numero massimo di messaggi selezionati a cui si possono aggiungere tag in una volta sola dal menu contestuale. Utile con i fornitori di IA che hanno una quota giornaliera di richieste. L'aggiunta automatica di tag ai messaggi in arrivo non è limitata. Imposta 0 per nessun limite.",
+        "description": "Add tags page: help text under the field limiting how many selected messages can be tagged at once from the context menu."
     },
     "prompt_add_tags_maxnum": {
         "message": "Limita il numero di tag a"
@@ -609,17 +830,11 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "Se selezionato, l'etichetta dei tag sarà impostata in lettere minuscole con solo la prima lettera maiuscola."
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "Opzioni per aggiungere tag"
-    },
     "prefs_SurveyLinkText": {
-        "message": "Condividi il tuo feedback e aiuta a migliorare ThunderAI!"
+        "message": "Ti sta piacendo ThunderAI?"
     },
     "prefs_SurveyLinkText2": {
-        "message": "Clicca qui, ci vuole solo un minuto!"
-    },
-    "prefs_OpenAIComp_ForceModel": {
-        "message": "Inserisci manualmente il modello"
+        "message": "Condividi il tuo feedback"
     },
     "OpenAIComp_force_model_ask": {
         "message": "Inserisci qui il nome del modello che vuoi utilizzare."
@@ -641,9 +856,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Modelli API Google Gemini"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Aggiorna l'elenco dei modelli Google Gemini"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Errore durante il tentativo di recuperare i modelli Google Gemini"
@@ -679,7 +891,7 @@
         "message": "Aggiungi un nuovo evento al calendario"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Estrai tutti i dettagli rilevanti necessari per generare un evento del calendario dal seguente testo. Le informazioni estratte devono includere:\n- Titolo dell'evento\n- Data e ora di inizio (incluso il fuso orario, se specificato)\n- Data e ora di fine (incluso il fuso orario, se specificato)\n- Giornata intera (se menzionato)\n- I partecipanti\nAssicurati che i dati siano formattati in modo chiaro e coerente in modo che possano essere utilizzati direttamente per creare un evento del calendario.\nSe ci sono riferimenti temporali relativi, considera che la data e l'ora dell'email sono \"{%mail_datetime%}\". Calcola la data e l'ora di inizio in base a questo riferimento. Se la data e l'ora di inizio calcolate sono precedenti a \"{%current_datetime%}\", ricalcolale utilizzando \"{%current_datetime%}\" come base.\nSe la durata non è specificata, impostala a un'ora.\nQuesti sono i partecipanti: {%author%}, {%recipients%}, {%cc_list%}. Se presente, escludi il mio indirizzo: {%account_email_address%}.\nSe l'evento dura tutto il giorno, endDate deve essere il giorno successivo a startDate con l'orario impostato su \"T000000\".\nSe non riesci a ottenere una o più delle informazioni richieste, rispondi con una stringa vuota.\nGenera una risposta solo in formato JSON. Non includere testo o spiegazioni aggiuntive; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Riassunto evento calendario qui\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nEcco il testo: \"{%mail_text_body_or_selected%}\""
+        "message": "Estrai tutti i dettagli rilevanti necessari per generare un evento del calendario dal seguente testo. Le informazioni estratte devono includere:\n- Titolo dell'evento\n- Descrizione dell'evento (un riassunto conciso del contesto dell'email, degli argomenti chiave/agenda, delle azioni da intraprendere e di eventuali link di videochiamata o dettagli di accesso)\n- Data e ora di inizio (incluso il fuso orario, se specificato)\n- Data e ora di fine (incluso il fuso orario, se specificato)\n- Giornata intera (se menzionato)\n- Luogo (se menzionato, edificio specifico, stanza o online con link)\n- I partecipanti\nAssicurati che i dati siano formattati in modo chiaro e coerente in modo che possano essere utilizzati direttamente per creare un evento del calendario.\nSe ci sono riferimenti temporali relativi, considera che la data e l'ora dell'email sono \"{%mail_datetime%}\". Calcola la data e l'ora di inizio in base a questo riferimento. Se la data e l'ora di inizio calcolate sono precedenti a \"{%current_datetime%}\", ricalcolale utilizzando \"{%current_datetime%}\" come base.\nSe la durata non è specificata, impostala a un'ora.\nQuesti sono i partecipanti: {%author%}, {%recipients%}, {%cc_list%}. Se presente, escludi il mio indirizzo: {%account_email_address%}.\nSe l'evento dura tutto il giorno, endDate deve essere il giorno successivo a startDate con l'orario impostato su \"T000000\".\nSe non riesci a ottenere una o più delle informazioni richieste, rispondi con una stringa vuota.\nGenera una risposta solo in formato JSON. Non includere testo o spiegazioni aggiuntive; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Riassunto evento calendario qui\",\n\"description\": \"Descrizione dettagliata dell'evento, inclusi agenda, azioni da intraprendere e note rilevanti dall'email.\",\n\"forceAllDay\": false,\n\"location\": \"Luogo o URL qui\",\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nEcco il testo: \"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Aggiungi un nuovo evento al calendario dal testo selezionato"
@@ -725,9 +937,6 @@
     },
     "Report_Date": {
         "message": "Data del Report"
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "Opzioni del filtro antispam"
     },
     "prefs_OptionText_spamfilter": {
         "message": "Filtro Antispam Automatico"
@@ -798,6 +1007,12 @@
     "prefs_OptionText_add_tags_auto_only_inbox_Info": {
         "message": "Se selezionato, l'IA aggiungerà i tag solo alle email ricevute nella cartella della posta in arrivo."
     },
+    "prefs_OptionText_add_tags_auto_include_sent": {
+        "message": "Aggiungi i tag anche alle email inviate"
+    },
+    "prefs_OptionText_add_tags_auto_include_sent_Info": {
+        "message": "L'elaborazione automatica non viene mai eseguita nelle cartelle bozze, modelli, posta in uscita, indesiderata e cestino, e salta anche la cartella della posta inviata. Se selezionato, l'IA aggiungerà i tag anche alle email che invii."
+    },
     "SpamFilter_PageTitle": {
         "message": "Gestisci le impostazioni del filtro antispam"
     },
@@ -828,23 +1043,149 @@
     "placeholder_account_email_address": {
         "message": "Indirizzo email dell'account"
     },
-    "noActiveCalendar": {
-        "message": "Non è stato trovato alcun calendario modificabile!"
-    },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "Opzioni Eventi del Calendario"
-    },
     "btn_show_differences": {
         "message": "Mostra le differenze"
     },
     "apiwebchat_error": {
         "message": "Errore"
     },
-    "apiwebchat_you": {
-        "message": "Tu"
-    },
     "chatgpt_win_diff_title": {
         "message": "Differenze tra il testo originale e quello modificato"
+    },
+    "apiwebchat_picker_title": {
+        "message": "Esamina le modifiche"
+    },
+    "apiwebchat_picker_toolbar": {
+        "message": "Azioni del selettore delle modifiche"
+    },
+    "apiwebchat_picker_counter": {
+        "message": "$ACCEPTED$ di $TOTAL$ modifiche accettate",
+        "placeholders": {
+            "accepted": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_counter_all": {
+        "message": "Tutte le $TOTAL$ modifiche accettate",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_step_short": {
+        "message": "$CURRENT$ / $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_long": {
+        "message": "Modifica $CURRENT$ di $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_total": {
+        "message": "$TOTAL$ modifiche",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_more_actions": {
+        "message": "Altre azioni"
+    },
+    "apiwebchat_picker_edit": {
+        "message": "Modifica manualmente"
+    },
+    "apiwebchat_picker_review": {
+        "message": "Torna alle modifiche"
+    },
+    "apiwebchat_picker_editor": {
+        "message": "Testo modificato"
+    },
+    "apiwebchat_picker_edit_hint": {
+        "message": "Stai modificando il testo manualmente. Se lo cambi, tornando alle modifiche il testo che hai scritto verrà nuovamente confrontato con quello originale e ogni scelta sarà azzerata."
+    },
+    "apiwebchat_picker_granularity": {
+        "message": "Confronta per"
+    },
+    "apiwebchat_picker_granularity_words": {
+        "message": "Parole"
+    },
+    "apiwebchat_picker_granularity_sentences": {
+        "message": "Frasi"
+    },
+    "apiwebchat_picker_accept_all": {
+        "message": "Accetta tutto"
+    },
+    "apiwebchat_picker_reject_all": {
+        "message": "Rifiuta tutto"
+    },
+    "apiwebchat_picker_prev": {
+        "message": "Modifica precedente"
+    },
+    "apiwebchat_picker_next": {
+        "message": "Modifica successiva"
+    },
+    "apiwebchat_picker_no_changes": {
+        "message": "La risposta è identica al testo originale: non c'è nulla da esaminare."
+    },
+    "apiwebchat_picker_diff_failed": {
+        "message": "Non è stato possibile confrontare i due testi. La risposta viene mostrata invariata."
+    },
+    "apiwebchat_picker_side_old_active": {
+        "message": "Testo originale, mantenuto: $TEXT$",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_old_inactive": {
+        "message": "Testo originale, scartato: $TEXT$. Attiva per mantenere questo al suo posto.",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_active": {
+        "message": "Testo suggerito, mantenuto: $TEXT$",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_inactive": {
+        "message": "Testo suggerito, scartato: $TEXT$. Attiva per mantenere questo al suo posto.",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_empty_active": {
+        "message": "Nessun testo qui: questa parte viene esclusa. Attiva l'altra versione per mantenerne il testo."
+    },
+    "apiwebchat_picker_side_empty_inactive": {
+        "message": "Nessun testo qui. Attiva per escludere questa parte."
     },
     "prefs_OptionText_calendar_enforce_timezone": {
         "message": "Forza il fuso orario specificato"
@@ -861,11 +1202,133 @@
     "prefs_OptionText_calendar_enforce_timezone_Info": {
         "message": "Se selezionato, il fuso orario specificato verrà applicato agli eventi del calendario e alle attività."
     },
+    "prefs_OptionText_append_email_link": {
+        "message": "Aggiungi un link all'email originale",
+        "description": "Get calendar event page and Get task page: label of the option that appends a link to the original email to the description."
+    },
+    "prefs_OptionText_calendar_append_email_link_Info": {
+        "message": "Se selezionata, alla fine della descrizione dell'evento viene aggiunto un link all'email originale. Se l'IA non restituisce alcuna descrizione, la descrizione conterrà solo il link. Non disponibile quando l'evento viene creato dagli appunti.",
+        "description": "Get calendar event page: help text under the 'Append a link to the original email' option."
+    },
+    "prefs_OptionText_task_append_email_link_Info": {
+        "message": "Se selezionata, alla fine della descrizione dell'attività viene aggiunto un link all'email originale. Se l'IA non restituisce alcuna descrizione, la descrizione conterrà solo il link.",
+        "description": "Get task page: help text under the 'Append a link to the original email' option."
+    },
+    "calendar_email_link_label": {
+        "message": "Email originale:",
+        "description": "Label written before the link to the original email in the description of the calendar events and the tasks."
+    },
+    "prompt_calendar_reminder_format": {
+        "message": "Oltre ai campi descritti sopra, aggiungi all'oggetto JSON un campo \"reminderMinutes\", che deve avere uno di questi tre valori: un numero intero, il numero di minuti prima dell'inizio dell'evento in cui va impostato il promemoria, seguendo le regole per il promemoria indicate in questo prompt; null, se sono indicate regole per il promemoria ma nessuna di esse si applica; la stringa \"default\", se non è indicata alcuna regola per il promemoria.",
+        "description": "Appended to the calendar event prompt sent to the AI when the reminder option is enabled. Do not translate \"reminderMinutes\", \"null\" and \"default\"."
+    },
+    "prompt_task_reminder_format": {
+        "message": "Oltre ai campi descritti sopra, aggiungi all'oggetto JSON un campo \"reminderMinutes\", che deve avere uno di questi tre valori: un numero intero, il numero di minuti prima della scadenza dell'attività (o prima della sua data di inizio, se non c'è una scadenza) in cui va impostato il promemoria, seguendo le regole per il promemoria indicate in questo prompt; null, se sono indicate regole per il promemoria ma nessuna di esse si applica; la stringa \"default\", se non è indicata alcuna regola per il promemoria.",
+        "description": "Appended to the task prompt sent to the AI when the reminder option is enabled. Do not translate \"reminderMinutes\", \"null\" and \"default\"."
+    },
+    "prompt_reminder_rules_intro": {
+        "message": "Regole per il promemoria:",
+        "description": "Sent to the AI before the reminder rules written by the user."
+    },
+    "prefs_OptionText_reminder_enabled": {
+        "message": "Lascia che l'IA imposti un promemoria",
+        "description": "Get calendar event page and Get task page: label of the option that lets the AI set a reminder; keep it short."
+    },
+    "prefs_OptionText_calendar_reminder_enabled_Info": {
+        "message": "Se selezionata, all'IA viene chiesto di impostare un promemoria, rispetto all'inizio dell'evento, seguendo le regole per il promemoria. Le regole possono essere scritte nel campo qui sotto o direttamente nel prompt principale: in entrambi i casi questa opzione deve essere selezionata. Se nessuna regola si applica, l'evento viene creato senza promemoria. Se non è scritta alcuna regola, né qui sotto né nel prompt principale, si applicano le impostazioni predefinite dei promemoria di Thunderbird. Se non selezionata, si applicano sempre le impostazioni predefinite dei promemoria di Thunderbird.",
+        "description": "Get calendar event page: help text under the 'Let the AI set a reminder' option explaining how reminder rules work."
+    },
+    "prefs_OptionText_task_reminder_enabled_Info": {
+        "message": "Se selezionata, all'IA viene chiesto di impostare un promemoria, rispetto alla scadenza dell'attività (o alla sua data di inizio, se non c'è una scadenza), seguendo le regole per il promemoria. Le regole possono essere scritte nel campo qui sotto o direttamente nel prompt principale: in entrambi i casi questa opzione deve essere selezionata. Se nessuna regola si applica, l'attività viene creata senza promemoria. Se non è scritta alcuna regola, né qui sotto né nel prompt principale, si applicano le impostazioni predefinite dei promemoria di Thunderbird. Se non selezionata, si applicano sempre le impostazioni predefinite dei promemoria di Thunderbird.",
+        "description": "Get task page: help text under the 'Let the AI set a reminder' option explaining how reminder rules work."
+    },
+    "prefs_OptionText_reminder_rules_title": {
+        "message": "Regole per il promemoria",
+        "description": "Get calendar event page and Get task page: heading of the text field where the user writes reminder rules."
+    },
+    "prefs_OptionText_reminder_rules_Info": {
+        "message": "Scrivi le regole in linguaggio naturale. Questo campo è facoltativo: se è vuoto, le regole vengono prese dal prompt principale qui sopra.",
+        "description": "Get calendar event page and Get task page: help text under the 'Reminder rules' heading."
+    },
+    "prefs_OptionText_calendar_reminder_rules_example": {
+        "message": "Esempio: \"Se l'evento è di mattina nell'edificio A o B, imposta il promemoria 45 minuti prima. Se è di pomeriggio, 15 minuti prima. Altrimenti, nessun promemoria.\"",
+        "description": "Get calendar event page: example of reminder rules shown under the 'Reminder rules' field; translate the quoted example naturally."
+    },
+    "prefs_OptionText_task_reminder_rules_example": {
+        "message": "Esempio: \"Se l'attività riguarda un pagamento, imposta il promemoria un giorno prima della scadenza. Se riguarda un report, due ore prima. Altrimenti, nessun promemoria.\"",
+        "description": "Get task page: example of reminder rules shown under the 'Reminder rules' field; translate the quoted example naturally."
+    },
+    "reminder_prompt_warning": {
+        "message": "Il prompt principale contiene \"reminderMinutes\", ma \"Lascia che l'IA imposti un promemoria\" non è selezionata: le istruzioni sul promemoria nel prompt principale vengono ignorate e si applica il promemoria predefinito di Thunderbird, finché l'opzione non viene selezionata.",
+        "description": "Do not translate \"reminderMinutes\"."
+    },
     "customPrompts_form_label_use_diff_viewer": {
         "message": "Abilita il visualizzatore di confronto del testo"
     },
     "apiwebchat_stopping": {
         "message": "Interruzione in corso"
+    },
+    "apiwebchat_retrying": {
+        "message": "Server non disponibile ($REASON$), nuovo tentativo tra $SECONDS$ s (tentativo $ATTEMPT$ di $MAX$)",
+        "description": "API webchat status bar while a failed request is retried automatically; $REASON$ is e.g. 'HTTP 503' or 'network error'",
+        "placeholders": {
+            "reason": {
+                "content": "$1",
+                "example": "HTTP 503"
+            },
+            "seconds": {
+                "content": "$2",
+                "example": "2"
+            },
+            "attempt": {
+                "content": "$3",
+                "example": "1"
+            },
+            "max": {
+                "content": "$4",
+                "example": "3"
+            }
+        }
+    },
+    "apiwebchat_retrying_rate_limit": {
+        "message": "Limite di frequenza raggiunto, nuovo tentativo tra $SECONDS$ s (tentativo $ATTEMPT$ di $MAX$)",
+        "description": "API webchat status bar while a request refused with HTTP 429 (too many requests: the provider's rate limit) is retried automatically",
+        "placeholders": {
+            "seconds": {
+                "content": "$1",
+                "example": "10"
+            },
+            "attempt": {
+                "content": "$2",
+                "example": "2"
+            },
+            "max": {
+                "content": "$3",
+                "example": "5"
+            }
+        }
+    },
+    "apiwebchat_retry_reason_network": {
+        "message": "errore di rete",
+        "description": "Reason shown in apiwebchat_retrying when the server could not be reached"
+    },
+    "apiwebchat_retry_reason_timeout": {
+        "message": "timeout",
+        "description": "Reason shown in apiwebchat_retrying when the server did not answer in time"
+    },
+    "apiwebchat_unknown_connection": {
+        "message": "Tipo di connessione sconosciuto \"$TYPE$\": questa finestra di chat non può inviare nulla. Apri le impostazioni di ThunderAI e scegli un fornitore di IA.",
+        "description": "API webchat: error shown when the window was opened for a connection type it has no worker for (e.g. a stale or mistyped value). $TYPE$ is the raw connection type.",
+        "placeholders": {
+            "type": {
+                "content": "$1",
+                "example": "foo_api"
+            }
+        }
+    },
+    "apiwebchat_request_cancelled": {
+        "message": "Richiesta annullata.",
+        "description": "API webchat notice shown when the user stops a request before any answer arrived"
     },
     "apiwebchat_receiving_data": {
         "message": "Ricezione dati"
@@ -882,12 +1345,6 @@
     "maybe_CORS_openai_comp": {
         "message": "L'utilizzo di un'API compatibile con OpenAI potrebbe richiedere la configurazione delle impostazioni CORS sul server."
     },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "Composizione in testo semplice"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "Seleziona questa opzione se stai scrivendo le email in formato testo semplice."
-    },
     "prefs_ollama_num_ctx": {
         "message": "Numero di token del contesto"
     },
@@ -898,7 +1355,7 @@
         "message": "Nessun testo selezionato, vuoi inserire la risposta dell'IA all'inizio dell'email?"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "Il visualizzatore di confronto del testo può essere selezionato quando l'azione è impostata su \"Sostituisci testo\"."
+        "message": "Disponibile quando l'azione è impostata su \"Sostituisci testo\"."
     },
     "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
         "message": "Per utilizzare le funzionalità di eventi del calendario e delle attività, installa una versione aggiornata del componente aggiuntivo ThunderAI Sparks."
@@ -914,6 +1371,14 @@
     },
     "AccountSelector_Spamfilter": {
         "message": "Scegli gli account per i quali è attivo il filtro antispam"
+    },
+    "AccountSelector_managed_note": {
+        "message": "Gli account sono selezionati dai criteri di configurazione della tua organizzazione e non possono essere modificati qui.",
+        "description": "Note above the account checkboxes (Spam Filter and Add Tags settings pages) when an enterprise policy decides which accounts the automatic feature runs on"
+    },
+    "AccountSelector_managed_none": {
+        "message": "I criteri di configurazione della tua organizzazione limitano questa funzionalità ad account che non esistono in questo profilo, quindi non viene eseguita automaticamente su nessun account.",
+        "description": "Note above the account checkboxes (Spam Filter and Add Tags settings pages) when the enterprise policy's account list matches no account of the user"
     },
     "prefs_OptionText_chatgpt_web_custom_data_info2": {
         "message": "Puoi trovare il valore corretto nel campo URL del browser quando apri la pagina ChatGPT corrispondente."
@@ -933,7 +1398,7 @@
     "prefs_OptionText_add_tags_auto_Info2": {
         "message": "Scegli per quale account attivare questa funzionalità in fondo a questa pagina."
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "Questo segnaposto non aggiunge testo, ma impedisce che il corpo dell'email venga automaticamente aggiunto alla fine del prompt."
     },
     "prompt_get_task": {
@@ -944,9 +1409,6 @@
     },
     "prefs_OptionText_get_task_Info": {
         "message": "Se selezionato, verrà aggiunto un elemento nel menu per ottenere informazioni sull'attività dal testo selezionato."
-    },
-    "get_task_prompt_prefs_title": {
-        "message": "Opzioni delle attività"
     },
     "GetTask_PageTitle": {
         "message": "Gestisci le impostazioni delle attività"
@@ -970,7 +1432,7 @@
         "message": "Correggi questa email"
     },
     "prompt_proofread_this_full_text": {
-        "message": "Correggi la seguente email e correggi anche eventuali errori di ortografia o grammatica. Rispondi solo con il testo corretto e senza commenti o altro testo aggiuntivo.\n\n\"{%mail_typed_text%}\""
+        "message": "Correggi la seguente email e correggi anche eventuali errori di ortografia o grammatica. Rispondi solo con il testo corretto e senza commenti o altro testo aggiuntivo.\n\n\"{%selected_html%}\""
     },
     "prefs_OptionText_chatgpt_web_project": {
         "message": "Progetto ChatGPT Web"
@@ -996,14 +1458,11 @@
     "customPrompts_hide_additional_info": {
         "message": "Nascondi proprietà aggiuntive"
     },
-    "customPrompts_show_additional_info_show": {
-        "message": "Proprietà aggiuntive"
-    },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Se un Progetto è specificato nelle opzioni o in un prompt, sostituirà l'impostazione del GPT personalizzato."
     },
     "prompt_get_task_full_text": {
-        "message": "Estrai tutti i dettagli rilevanti necessari per generare un'attività dal testo seguente. Le informazioni estratte devono includere:\n- Data e ora di scadenza (incluso il fuso orario, se specificato)\n- Riepilogo dell'attività\n- Data e ora di inizio (incluso il fuso orario, se specificato)\nAssicurati che i dati siano formattati in modo chiaro e coerente, così da poter essere utilizzati direttamente per creare un'attività.\nSe ci sono riferimenti temporali relativi, considera che la data e l'ora dell’email sono \"{%mail_datetime%}\". Calcola la data e l'ora di inizio basandoti su questo riferimento. Se la data e ora di inizio calcolate risultano precedenti a \"{%current_datetime%}\", ricalcola la data e ora di inizio utilizzando \"{%current_datetime%}\" come riferimento.\nSe non riesci a ottenere una o più delle informazioni richieste, rispondi con una stringa vuota.\nGenera una risposta solo in formato JSON. Non includere alcun testo o spiegazione aggiuntiva; fornisci solo il JSON. Questo è il formato da utilizzare:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Riepilogo dell'attività\"\n}\nSe non ci sono informazioni sulle date, rimuovile.\nEcco il testo: \"{%selected_text%}\""
+        "message": "Estrai tutti i dettagli rilevanti necessari per generare un'attività dal testo seguente. Le informazioni estratte devono includere:\n- Data e ora di inizio (incluso il fuso orario, se specificato)\n- Data e ora di scadenza (incluso il fuso orario, se specificato)\n- Riepilogo dell'attività\n- Descrizione dell'attività (un riassunto conciso del contesto dell'email, degli argomenti chiave e delle azioni da intraprendere)\n- Luogo (se menzionato, edificio specifico, stanza o online con link)\nAssicurati che i dati siano formattati in modo chiaro e coerente, così da poter essere utilizzati direttamente per creare un'attività.\nSe ci sono riferimenti temporali relativi, considera che la data e l'ora dell’email sono \"{%mail_datetime%}\". Calcola la data e l'ora di inizio basandoti su questo riferimento. Se la data e ora di inizio calcolate risultano precedenti a \"{%current_datetime%}\", ricalcola la data e ora di inizio utilizzando \"{%current_datetime%}\" come riferimento.\nSe non riesci a ottenere una o più delle informazioni richieste, rispondi con una stringa vuota.\nGenera una risposta solo in formato JSON. Non includere alcun testo o spiegazione aggiuntiva; fornisci solo il JSON. Questo è il formato da utilizzare:\n{\n\"initialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Riepilogo dell'attività\",\n\"description\": \"Descrizione dettagliata dell'attività, inclusi le azioni da intraprendere e le note rilevanti dall'email.\",\n\"location\": \"Luogo o URL qui\"\n}\nSe non ci sono informazioni sulle date, rimuovile.\nEcco il testo: \"{%selected_text%}\""
     },
     "placeholder_mail_quoted_text": {
         "message": "Testo citato nel corpo dell'email"
@@ -1029,9 +1488,6 @@
     "Anthropic_Models": {
         "message": "Modelli di Claude"
     },
-    "Anthropic_Models_Fetch": {
-        "message": "Aggiorna l'elenco dei modelli di Claude"
-    },
     "Anthropic_Models_Error_fetching": {
         "message": "Errore durante il tentativo di recupero dei modelli di Claude"
     },
@@ -1053,6 +1509,40 @@
     "prefs_OptionText_anthropic_max_tokens_Info": {
         "message": "Il numero massimo di token da generare nell'elaborazione. Il conteggio dei token del tuo prompt, sommato a max_tokens, non può superare la lunghezza di contesto del modello."
     },
+    "prefs_OptionText_anthropic_top_p_Info": {
+        "message": "Nucleus sampling: il modello considera solo i token la cui probabilità cumulativa raggiunge questo valore. Va da 0.0 a 1.0. Lascia vuoto per usare il valore predefinito del modello. Anthropic consiglia di regolare la Temperatura oppure il Top P, ma non entrambi. I modelli Claude più recenti non accettano affatto questa impostazione e usano invece l'impostazione Effort: quando ne è selezionato uno, questo campo è disattivato e il suo valore non viene inviato.",
+        "description": "Connection panel (Claude API, advanced): help text under the Top P field, explaining nucleus sampling and that newer models disable the field. 'Temperature', 'Top P' and 'Effort' are names of other fields."
+    },
+    "prefs_OptionText_anthropic_top_k_Info": {
+        "message": "Campiona solo tra le K opzioni più probabili per ogni token successivo, eliminando le risposte poco probabili della \"coda lunga\". Lascia vuoto per usare il valore predefinito del modello. I modelli Claude più recenti non accettano affatto questa impostazione e usano invece l'impostazione Effort: quando ne è selezionato uno, questo campo è disattivato e il suo valore non viene inviato.",
+        "description": "Connection panel (Claude API, advanced): help text under the Top K field, explaining the setting and that newer models disable it. 'Effort' is the name of another field."
+    },
+    "prefs_OptionText_anthropic_stop_sequences": {
+        "message": "Sequenze di arresto",
+        "description": "Connection panel (Claude API, advanced) and AI chat window settings summary: label of the stop sequences setting (texts that make the model stop generating). Keep short."
+    },
+    "prefs_OptionText_anthropic_stop_sequences_Info": {
+        "message": "Sequenze di testo personalizzate che fanno interrompere la generazione del modello. Inserisci una sequenza per riga; le righe vuote vengono ignorate. Lascia vuoto per disattivare. Questa impostazione è accettata da tutti i modelli Claude.",
+        "description": "Connection panel (Claude API, advanced): help text under the stop sequences text area, explaining one sequence per line."
+    },
+    "anthropic_warn_thinking_budget_min": {
+        "message": "Il budget per il pensiero esteso deve essere di almeno $MIN$ token. Il valore attuale non verrà inviato e il pensiero esteso non verrà richiesto.",
+        "description": "Inline advisory warning shown under the Claude extended thinking budget field when the value is below the API minimum. The value is still saved.",
+        "placeholders": {
+            "min": {
+                "content": "$1"
+            }
+        }
+    },
+    "anthropic_warn_thinking_budget_max": {
+        "message": "Il budget per il pensiero esteso deve essere inferiore al numero massimo di token ($MAX$). Il valore attuale non verrà inviato e il pensiero esteso non verrà richiesto.",
+        "description": "Inline advisory warning shown under the Claude extended thinking budget field when the value is not lower than the Max Tokens field. The value is still saved.",
+        "placeholders": {
+            "max": {
+                "content": "$1"
+            }
+        }
+    },
     "anthropic_empty_apikey": {
         "message": "Non hai aggiunto una chiave per l'API di Claude. Inseriscila nella pagina delle opzioni."
     },
@@ -1068,20 +1558,10 @@
         }
     },
     "_api_connecting_model": {
-        "message": "Modello",
-        "placeholders": {
-            "model": {
-                "content": "$1"
-            }
-        }
+        "message": "Modello"
     },
     "_api_connecting_host": {
-        "message": "Host",
-        "placeholders": {
-            "api_host": {
-                "content": "$1"
-            }
-        }
+        "message": "Host"
     },
     "prefs_OpenAIComp_AvailableServices": {
         "message": "Servizi Disponibili"
@@ -1101,12 +1581,7 @@
         "message": "Se selezioni del testo, verrà considerata solo quella parte."
     },
     "_api_connecting_version": {
-        "message": "Versione",
-        "placeholders": {
-            "api_version": {
-                "content": "$1"
-            }
-        }
+        "message": "Versione"
     },
     "anthropic_api_request_failed": {
         "message": "Richiesta all'API di Claude non riuscita"
@@ -1124,7 +1599,57 @@
         "message": "Abilita il thinking"
     },
     "prefs_ollama_think_Info": {
-        "message": "Se selezionato, il Modello rifletterà prima di rispondere. Questa opzione funziona solo con i modelli che supportano la funzione \"think\"."
+        "message": "Permette che il modello ragioni prima di rispondere. Il \"Predefinito del modello\" non invia nulla e lascia decidere al modello, il che su alcuni significa che ragiona comunque: scegli \"Disattivato\" per disattivare esplicitamente il ragionamento. I livelli di ragionamento disponibili dipendono dal modello selezionato e vengono elencati dopo averlo scelto."
+    },
+    "prefs_ollama_think_default": {
+        "message": "Predefinito del modello",
+        "description": "Ollama thinking option: send no 'think' field and let the model do whatever it does by default"
+    },
+    "ollama_note_thinking_unsupported": {
+        "message": "Il modello selezionato non dichiara il supporto al thinking, quindi questa impostazione viene ignorata.",
+        "description": "Connection panel (Ollama API): note shown next to the thinking selector when the selected model does not report thinking support."
+    },
+    "ollama_num_ctx_max_info": {
+        "message": "Questo modello supporta fino a $MAX$ token di contesto.",
+        "description": "Hint next to the Ollama context size field, after a connection test; $MAX$ is the maximum the model reports",
+        "placeholders": {
+            "max": {
+                "content": "$1",
+                "example": "131072"
+            }
+        }
+    },
+    "prefs_Ollama_API_Key": {
+        "message": "Chiave API Ollama",
+        "description": "Connection panel (Ollama API): label of the optional API key field; keep 'Ollama' and 'API' unchanged, keep short."
+    },
+    "prefs_Ollama_API_Key_Info": {
+        "message": "Necessaria solo per l'API ospitata su ollama.com, o per un server self-hosted dietro un proxy che richiede l'autenticazione. Lascia vuoto per un'installazione locale standard di Ollama.",
+        "description": "Connection panel (Ollama API): help text under the API key field explaining when a key is needed; keep 'ollama.com' unchanged."
+    },
+    "prefs_ollama_keep_alive": {
+        "message": "Mantieni il modello caricato",
+        "description": "Connection panel (Ollama API, advanced) and AI chat window settings summary: label of the setting for how long the model stays loaded in memory, followed by the parameter name [keep_alive]. Keep short."
+    },
+    "prefs_ollama_keep_alive_Info": {
+        "message": "Per quanto tempo Ollama mantiene il modello in memoria dopo una richiesta: una durata come 5m o 30m, -1 per mantenerlo caricato a tempo indeterminato, o 0 per scaricarlo subito. Lascia vuoto per usare il valore predefinito del server (5 minuti). Aumentarlo è utile quando l'aggiunta automatica di tag, il filtro antispam o il riassunto automatico vengono eseguiti sulla posta in arrivo, perché altrimenti il modello verrebbe ricaricato per ogni messaggio.",
+        "description": "Connection panel (Ollama API, advanced): help text under the keep-alive field. Keep the values 5m, 30m, -1 and 0 unchanged."
+    },
+    "Ollama_System_Prompt": {
+        "message": "Prompt di sistema",
+        "description": "Connection panel (Ollama API, advanced) and AI chat window settings summary: label of the system prompt text area. Keep short."
+    },
+    "Ollama_System_Prompt_Info": {
+        "message": "Inviato come messaggio di sistema all'inizio di ogni conversazione, per dare al modello un ruolo o delle istruzioni permanenti.",
+        "description": "Connection panel (Ollama API, advanced): help text under the System Prompt text area."
+    },
+    "prefs_OptionText_ollama_extra_options": {
+        "message": "Opzioni aggiuntive",
+        "description": "Connection panel (Ollama API, advanced) and AI chat window settings summary: label of the extra options JSON field, followed by the parameter name [options]. Keep short."
+    },
+    "prefs_OptionText_ollama_extra_options_info": {
+        "message": "Parametri aggiuntivi da inviare nell'oggetto 'options' di Ollama, come oggetto JSON. Utile per opzioni che ThunderAI non espone, come {\"top_p\": 0.9, \"seed\": 42} o {\"num_predict\": 512}. I parametri gestiti da ThunderAI (numero di token di contesto, temperatura) non possono essere sovrascritti qui. Un valore non valido viene ignorato.",
+        "description": "Connection panel (Ollama API, advanced): help text under the extra options JSON text area. Keep 'options' and the JSON examples unchanged."
     },
     "prefs_OptionText_btnManageCustomDataPH": {
         "message": "Gestisci i segnaposti dei tuoi dati"
@@ -1141,6 +1666,14 @@
     "customDataPH_manageDataPH": {
         "message": "Gestisci i segnaposto dei dati"
     },
+    "customDataPH_placeholdersCount": {
+        "message": "$COUNT$ segnaposto dati",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
     "customDataPH_manageDataPH_info_default": {
         "message": "In questa pagina è possibile definire segnaposto di dati personalizzati da utilizzare nei tuoi prompt personalizzati."
     },
@@ -1149,6 +1682,10 @@
     },
     "customDataPH_saved": {
         "message": "Segnaposto di dati personalizzati salvati!"
+    },
+    "customDataPH_save_error": {
+        "message": "Errore durante il salvataggio dei segnaposto di dati personalizzati:",
+        "description": "Custom data placeholders page: shown in red when Save All fails. Followed by the error message"
     },
     "customDataPH_saving_custom": {
         "message": "Salvataggio dei segnaposto di dati personalizzati in corso..."
@@ -1195,8 +1732,13 @@
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Ricorda che eventuali tag <br> nella risposta dell'IA verranno sostituiti con interruzioni di riga."
     },
-    "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Svuota l'elenco dei modelli"
+    "prefs_OpenAIComp_AddManually": {
+        "message": "Aggiungi manualmente",
+        "description": "Small button next to the OpenAI Compatible API models label: asks for a model name and adds it to the list. It is preceded by a plus icon."
+    },
+    "prefs_OpenAIComp_ClearList": {
+        "message": "Svuota elenco",
+        "description": "Small button next to the OpenAI Compatible API models label: removes all the models from the list, after a confirmation."
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Sei sicuro di voler cancellare l’elenco dei modelli? Questa azione non può essere annullata."
@@ -1212,6 +1754,10 @@
     },
     "prompt_add_tags_use_list": {
         "message": "Usa solo i tag in questo elenco separato da virgole"
+    },
+    "prompt_add_tags_force_existing": {
+        "message": "Scegli i tag SOLO da questo elenco di tag esistenti separati da virgole, usandoli esattamente come sono scritti, e non inventarne di nuovi",
+        "description": "Instruction sent to the AI model in the Add tags prompt, followed by a colon and the list of existing tags; also previewed on the Add tags page."
     },
     "prefs_OptionText_add_tags_use_specific_integration_Info": {
         "message": "Se selezionato, il Modello e l’API specificati qui sotto verranno utilizzati per aggiungere tag alle email, indipendentemente da quello scelto nella pagina delle opzioni di ThunderAI."
@@ -1236,6 +1782,18 @@
     },
     "prefs_google_gemini_thinking_budget_Info": {
         "message": "Definisci il numero di token da utilizzare per il ragionamento. Lascia questo campo vuoto se il modello selezionato non supporta il ragionamento o se desideri utilizzare il metodo predefinito. Inserisci 0 per disabilitare il ragionamento oppure -1 per abilitarlo in modo dinamico."
+    },
+    "prefs_api_max_output_tokens": {
+        "message": "Token massimi di output",
+        "description": "Connection panel: label of the field for the maximum number of tokens the model may generate; also used as a parameter label in the AI chat window's settings summary. Technical API term."
+    },
+    "prefs_api_top_p": {
+        "message": "Top P",
+        "description": "Connection panel: label of the Top P sampling parameter field; also used as a parameter label in the AI chat window's settings summary. Technical API term, usually kept as is."
+    },
+    "prefs_api_top_k": {
+        "message": "Top K",
+        "description": "Connection panel: label of the Top K sampling parameter field; also used as a parameter label in the AI chat window's settings summary. Technical API term, usually kept as is."
     },
     "SelectAll": {
         "message": "Seleziona tutto"
@@ -1264,6 +1822,175 @@
     "prefs_chatgpt_api_temperature_Info": {
         "message": "Quale temperatura di campionamento utilizzare, tra 0 e 2. Valori più alti come 0,8 renderanno l'output più casuale, mentre valori più bassi come 0,2 lo renderanno più focalizzato e deterministico."
     },
+    "prefs_OptionText_chatgpt_reasoning_summary": {
+        "message": "Riassunto del ragionamento"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_Info": {
+        "message": "Richiede all'API un riassunto del ragionamento del modello, mostrato nella chat come blocco richiudibile. Lo supportano solo i modelli di ragionamento recenti, come gpt-5, o3 e o4-mini: quelli più vecchi come o1-pro e o3-mini ragionano internamente ma non espongono mai un riassunto, quindi il blocco resta nascosto. Lascia disattivato per i modelli senza supporto al ragionamento."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort": {
+        "message": "Livello di ragionamento"
+    },
+    "prefs_OptionText_chatgpt_extra_body_info": {
+        "message": "Parametri aggiuntivi da inviare a ogni chiamata API, come oggetto JSON, ad esempio {\"top_p\": 0.9}. Utile per le opzioni supportate dall'API di OpenAI ma non esposte da ThunderAI. I parametri gestiti da ThunderAI (model, input, streaming, temperature, reasoning, instructions) non possono essere sovrascritti qui. Un valore non valido viene ignorato."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_Info": {
+        "message": "Quanto impegno il modello dedica al ragionamento prima di rispondere. Valori più bassi danno risposte più rapide ed economiche, valori più alti risposte più accurate. Lascia sul valore predefinito dell'API per far decidere a OpenAI. Ignorato dai modelli senza supporto al ragionamento."
+    },
+    "prefs_OptionText_chatgpt_reasoning_disabled": {
+        "message": "Disattivato"
+    },
+    "prefs_reasoning_api_default": {
+        "message": "Predefinito"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_auto": {
+        "message": "Automatico"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
+        "message": "Dettagliato"
+    },
+    "prefs_OptionText_chatgpt_max_output_tokens_Info": {
+        "message": "Un limite massimo al numero di token che il modello può generare per una risposta, compresi i token di ragionamento nei modelli di ragionamento. Il valore minimo accettato è 16. Lascia vuoto o a 0 per lasciare decidere l'API.",
+        "description": "Connection panel (OpenAI API, advanced): help text under the maximum output tokens field."
+    },
+    "prefs_OptionText_chatgpt_verbosity": {
+        "message": "Verbosità",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the selector for answer length/detail. Noun, keep short."
+    },
+    "prefs_OptionText_chatgpt_verbosity_Info": {
+        "message": "Quanto deve essere lunga e dettagliata la risposta, senza modificare il prompt. È supportata solo dalla famiglia gpt-5: con qualsiasi altro modello questo campo è disattivato e il suo valore non viene inviato.",
+        "description": "Connection panel (OpenAI API, advanced): help text under the Verbosity selector; keep 'gpt-5' unchanged."
+    },
+    "prefs_OptionText_chatgpt_text_format": {
+        "message": "Formato di output",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the selector for the answer output format (text, JSON object, JSON schema). Keep short."
+    },
+    "prefs_OptionText_chatgpt_text_format_Info": {
+        "message": "Obbliga il modello a rispondere con JSON valido. \"Oggetto JSON\" garantisce solo che la risposta sia JSON valido, quindi il prompt deve comunque descrivere la struttura desiderata, mentre \"Schema JSON\" fa anche seguire alla risposta lo schema qui sotto. Nota che in questo modo la risposta mostrata nella finestra di chat diventa JSON grezzo.",
+        "description": "Connection panel (OpenAI API, advanced): help text under the output format selector. \"JSON object\" and \"JSON schema\" are option names of the selector; translate them as in those options."
+    },
+    "prefs_OptionText_chatgpt_text_format_json_object": {
+        "message": "Oggetto JSON",
+        "description": "Option for the OpenAI output format dropdown: any valid JSON object."
+    },
+    "prefs_OptionText_chatgpt_text_format_json_schema": {
+        "message": "Schema JSON",
+        "description": "Option for the OpenAI output format dropdown: JSON following the schema given below."
+    },
+    "prefs_OptionText_chatgpt_text_format_schema_name": {
+        "message": "Nome dello schema JSON",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the field for the JSON schema name. Keep short."
+    },
+    "prefs_OptionText_chatgpt_text_format_schema_name_Info": {
+        "message": "Un nome per lo schema qui sotto, richiesto dall'API. Usa solo lettere, numeri, trattini bassi e trattini. Se questo campo è vuoto, il formato di output non viene inviato affatto.",
+        "description": "Connection panel (OpenAI API, advanced): help text under the JSON schema name field, explaining the allowed characters."
+    },
+    "prefs_OptionText_chatgpt_text_format_schema": {
+        "message": "Schema JSON",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the text area for the JSON schema. Keep short."
+    },
+    "prefs_OptionText_chatgpt_text_format_schema_Info": {
+        "message": "Lo schema JSON che la risposta deve seguire, come oggetto JSON. Usato solo quando il formato di output qui sopra è impostato su \"Schema JSON\". Un valore non valido viene ignorato e il formato di output non viene inviato.",
+        "description": "Connection panel (OpenAI API, advanced): help text under the JSON schema text area. \"JSON schema\" is an option name of the output format selector."
+    },
+    "prefs_OptionText_chatgpt_top_p_Info": {
+        "message": "Nucleus sampling: il modello considera solo i token la cui probabilità cumulativa raggiunge questo valore. Va da 0.0 a 1.0. Lascia vuoto per usare il valore predefinito del modello. OpenAI consiglia di regolare la Temperatura oppure il Top P, ma non entrambi. I modelli di ragionamento non accettano questa impostazione: quando ne è selezionato uno, questo campo è disattivato e il suo valore non viene inviato.",
+        "description": "Connection panel (OpenAI API, advanced): help text under the Top P field explaining nucleus sampling. 'Temperature' and 'Top P' are field names."
+    },
+    "prefs_OptionText_chatgpt_truncation": {
+        "message": "Troncamento",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the selector for how long conversations are truncated. Noun, keep short."
+    },
+    "prefs_OptionText_chatgpt_truncation_Info": {
+        "message": "Cosa fare quando una conversazione supera la finestra di contesto del modello. \"Automatico\" elimina messaggi dalla parte centrale della conversazione per farla rientrare, mentre \"Disattivato\" fa invece fallire la richiesta con un errore.",
+        "description": "Connection panel (OpenAI API, advanced): help text under the Truncation selector. \"Auto\" and \"Disabled\" are option names of the selector; translate them as in those options."
+    },
+    "prefs_OptionText_chatgpt_truncation_auto": {
+        "message": "Automatico",
+        "description": "Option for the OpenAI truncation dropdown: drop messages from the middle of the conversation to fit the context window."
+    },
+    "prefs_OptionText_chatgpt_truncation_disabled": {
+        "message": "Disattivato",
+        "description": "Option for the OpenAI truncation dropdown: fail with an error instead of truncating."
+    },
+    "prefs_OptionText_chatgpt_prompt_cache_key": {
+        "message": "Chiave della cache del prompt",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the field for the prompt cache key. Keep short."
+    },
+    "prefs_OptionText_chatgpt_prompt_cache_key_Info": {
+        "message": "Le richieste che condividono la stessa chiave possono riutilizzare la cache dei prompt di OpenAI, riducendo il costo e la latenza dei prompt ripetuti. Va bene qualsiasi stringa: usa la stessa per le richieste che iniziano con lo stesso testo.",
+        "description": "Connection panel (OpenAI API, advanced): help text under the prompt cache key field."
+    },
+    "prefs_OptionText_chatgpt_service_tier": {
+        "message": "Livello di servizio",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the selector for the OpenAI processing tier. Keep short."
+    },
+    "prefs_OptionText_chatgpt_service_tier_Info": {
+        "message": "Il livello di elaborazione da usare per la richiesta. \"Flex\" e \"Priorità\" sono disponibili solo con alcuni piani e modelli, e l'API torna al livello predefinito quando quello scelto non può essere usato.",
+        "description": "Connection panel (OpenAI API, advanced): help text under the service tier selector. \"Flex\" and \"Priority\" are option names of the selector."
+    },
+    "prefs_OptionText_chatgpt_service_tier_auto": {
+        "message": "Automatico",
+        "description": "Option for the OpenAI service tier dropdown: let the API choose the tier."
+    },
+    "prefs_OptionText_chatgpt_service_tier_default": {
+        "message": "Predefinito",
+        "description": "Option for the OpenAI service tier dropdown: the standard tier."
+    },
+    "prefs_OptionText_chatgpt_service_tier_flex": {
+        "message": "Flex",
+        "description": "Option for the OpenAI service tier dropdown: cheaper and slower processing."
+    },
+    "prefs_OptionText_chatgpt_service_tier_priority": {
+        "message": "Priorità",
+        "description": "Option for the OpenAI service tier dropdown: faster and more expensive processing."
+    },
+    "prefs_OptionText_chatgpt_safety_identifier": {
+        "message": "Identificativo di sicurezza",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the field for the end-user safety identifier. Keep short."
+    },
+    "prefs_OptionText_chatgpt_safety_identifier_Info": {
+        "message": "Un identificativo stabile dell'utente finale, che aiuta OpenAI a rilevare abusi provenienti da un singolo utente. Non usare un indirizzo email né altri dati personali: calcolane un hash, oppure usa un'altra stringa che resti uguale in tutte le tue richieste. Sostituisce il parametro deprecato \"user\".",
+        "description": "Connection panel (OpenAI API, advanced): help text under the safety identifier field. Keep \"user\" unchanged: it is an API parameter name."
+    },
+    "prefs_OptionText_chatgpt_include_encrypted_reasoning": {
+        "message": "Includi il ragionamento cifrato",
+        "description": "Connection panel (OpenAI API, advanced) and AI chat window settings summary: label of the option to receive the model's reasoning in encrypted form. Keep short."
+    },
+    "prefs_OptionText_chatgpt_include_encrypted_reasoning_Info": {
+        "message": "Chiede all'API di restituire il ragionamento del modello in forma cifrata, così da poterlo riutilizzare tra una richiesta e l'altra senza che venga memorizzato da OpenAI. Ha senso solo quando \"Usa lo storage\" qui sopra è disattivato, e solo con i modelli di ragionamento.",
+        "description": "Connection panel (OpenAI API, advanced): text next to the encrypted reasoning checkbox. \"Use storage\" is the label of another option; translate it as there."
+    },
+    "chatgpt_note_sampling_unsupported": {
+        "message": "Il modello selezionato non accetta questa impostazione e ignora questo campo. Usa invece l'impostazione Livello di ragionamento. Il valore viene conservato nel caso tu torni a un altro modello.",
+        "description": "Shown next to the OpenAI Temperature and Top P fields when a reasoning model is selected."
+    },
+    "chatgpt_note_reasoning_unsupported": {
+        "message": "Il modello selezionato non supporta il ragionamento, quindi questa impostazione non viene inviata. Il valore viene conservato nel caso tu torni a un modello di ragionamento.",
+        "description": "Shown next to the OpenAI Reasoning summary and Reasoning effort fields when a non-reasoning model is selected."
+    },
+    "chatgpt_note_verbosity_unsupported": {
+        "message": "Il modello selezionato non supporta l'impostazione Verbosità, quindi non viene inviata. Il valore viene conservato nel caso tu torni a un modello che la supporta.",
+        "description": "Shown next to the OpenAI Verbosity field when a model without verbosity support is selected."
+    },
+    "prefs_level_minimal": {
+        "message": "Minimo"
+    },
+    "prefs_level_low": {
+        "message": "Basso"
+    },
+    "prefs_level_medium": {
+        "message": "Medio"
+    },
+    "prefs_level_high": {
+        "message": "Alto"
+    },
+    "prefs_level_xhigh": {
+        "message": "Molto alto"
+    },
+    "prefs_level_max": {
+        "message": "Massimo"
+    },
     "prefs_ollama_temperature_Info": {
         "message": "La temperatura del modello. Aumentare la temperatura farà sì che il modello risponda in modo più creativo. Il valore predefinito è 0,8. Si consiglia di utilizzare valori compresi tra 0 e 1."
     },
@@ -1277,7 +2004,7 @@
         "message": "Questo parametro deve essere un numero compreso tra 0.0 e 2.0. Questo valore controlla la casualità dell'output. Il valore predefinito varia a seconda del modello. Lascialo vuoto per evitare di impostare il parametro nella chiamata API."
     },
     "prefs_anthropic_temperature_Info": {
-        "message": "Quantità di casualità iniettata nella risposta. Il valore predefinito è 1,0. L'intervallo va da 0,0 a 1,0. Utilizza una temperatura più vicina a 0,0 per compiti analitici o a scelta multipla, e più vicina a 1,0 per compiti creativi e generativi. Nota che, anche con una temperatura di 0,0, i risultati non saranno completamente deterministici."
+        "message": "Quantità di casualità iniettata nella risposta. L'intervallo va da 0,0 a 1,0; se il campo viene lasciato vuoto, viene usato il valore predefinito 1,0. I modelli Claude più recenti non accettano affatto questa impostazione e usano al suo posto l'impostazione Sforzo: quando è selezionato uno di essi, questo campo viene disabilitato e il suo valore non viene inviato."
     },
     "placeholder_mail_text_body_or_selected": {
         "message": "Corpo dell'email o testo selezionato"
@@ -1311,9 +2038,6 @@
     },
     "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
         "message": "Mostra una voce di menu aggiuntiva per creare eventi di calendario dal contenuto di testo negli appunti."
-    },
-    "Summarize_prompt_prefs_title": {
-        "message": "Impostazioni riassunto"
     },
     "prompt_summarize": {
         "message": "Riassumi"
@@ -1399,9 +2123,6 @@
     "prefs_OptionText_calendar_no_selection_Info": {
         "message": "Se questa opzione viene attivata, non sarà necessario selezionare del testo. Verrà utilizzato l'intero corpo del messaggio per creare l'evento di calendario."
     },
-    "customPrompts_btnCopy": {
-        "message": "Copia"
-    },
     "copy_text": {
         "message": "copia"
     },
@@ -1412,10 +2133,100 @@
         "message": "Desideri delle belle statistiche sulle tue email?"
     },
     "prefs_THStats_2": {
-        "message": "Clicca qui! Prova ThunderStats!"
+        "message": "Prova ThunderStats!"
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "Il prompt deve contenere il segnaposto {%mail_text_body_or_selected%} o {%mail_html_body_or_selected%} per abilitare questa opzione. Per favore, aggiungi uno di questi segnaposto al prompt o ripristina quello predefinito."
+    },
+    "prefs_OptionText_calendar_no_selection_save_missing_placeholder": {
+        "message": "L'opzione \"Non chiedere di selezionare del testo\" è attiva, quindi il prompt deve contenere il segnaposto {%mail_text_body_or_selected%} o {%mail_html_body_or_selected%}. Per favore, aggiungi uno di questi segnaposto al prompt o ripristina quello predefinito."
+    },
+    "prefs_OptionText_calendar_no_selection_policy_missing_placeholder": {
+        "message": "La tua organizzazione ha attivato questa opzione, ma il prompt non contiene né {%mail_text_body_or_selected%} né {%mail_html_body_or_selected%}, quindi il corpo del messaggio non viene inviato all'IA. Aggiungi uno di questi segnaposto al prompt o ripristina quello predefinito."
+    },
+    "managed_banner": {
+        "message": "Alcune impostazioni sono gestite dalla tua organizzazione e non possono essere modificate.",
+        "description": "Banner shown when an enterprise policy is active but sets no organization name"
+    },
+    "managed_banner_org": {
+        "message": "Alcune impostazioni sono gestite da $ORG$ e non possono essere modificate.",
+        "description": "Banner shown when an enterprise policy is active, naming the organization",
+        "placeholders": {
+            "org": {
+                "content": "$1",
+                "example": "ACME Corp"
+            }
+        }
+    },
+    "managed_marker": {
+        "message": "Gestita",
+        "description": "Marker next to a setting enforced by the enterprise policy"
+    },
+    "managed_marker_org": {
+        "message": "Gestita da $ORG$",
+        "description": "Marker next to a setting enforced by the enterprise policy, naming the organization",
+        "placeholders": {
+            "org": {
+                "content": "$1",
+                "example": "ACME Corp"
+            }
+        }
+    },
+    "managed_marker_tooltip": {
+        "message": "Questa impostazione è definita dai criteri di configurazione della tua organizzazione e non può essere modificata qui.",
+        "description": "Tooltip on the managed marker"
+    },
+    "managed_prompt_text_tooltip": {
+        "message": "Il testo di questo prompt è definito dai criteri di configurazione della tua organizzazione e non può essere modificato qui. Puoi comunque selezionarlo e copiarlo.",
+        "description": "Tooltip on a special prompt text editor (Spam Filter, Add Tags, Summarize, Translate, Calendar Event, Task settings pages) whose text is enforced by an enterprise policy"
+    },
+    "managed_restriction_tooltip": {
+        "message": "Questa azione è disattivata dai criteri di configurazione della tua organizzazione.",
+        "description": "Tooltip on a button or link disabled by an enterprise policy restriction"
+    },
+    "managed_restriction_prompts": {
+        "message": "La gestione dei prompt è disattivata dai criteri di configurazione della tua organizzazione. Non è possibile creare, copiare, importare o esportare prompt, e i tuoi prompt esistenti sono in sola lettura e non sono disponibili nei menu.",
+        "description": "Note shown on the custom prompts page when the policy disables prompt management"
+    },
+    "customPrompts_policy_inert_note": {
+        "message": "In sola lettura e non disponibile nei menu: i criteri di configurazione della tua organizzazione disattivano la gestione dei prompt. Il tuo prompt non viene eliminato.",
+        "description": "Note on a custom prompt row made read-only by the prompt management policy"
+    },
+    "managed_restriction_default_prompts": {
+        "message": "I prompt predefiniti sono disattivati dai criteri di configurazione della tua organizzazione. Sono ancora elencati qui, ma non sono disponibili nei menu.",
+        "description": "Note shown on the custom prompts page when the policy disables the built-in prompts"
+    },
+    "customPrompts_policy_default_inert_note": {
+        "message": "Non disponibile nei menu: i criteri di configurazione della tua organizzazione disattivano i prompt predefiniti.",
+        "description": "Note on a built-in prompt row taken out of the menus by the policy"
+    },
+    "menu_order_badge_policy_inactive": {
+        "message": "Disattivato dai criteri",
+        "description": "Badge on a prompt that an enterprise policy has made unavailable"
+    },
+    "menu_order_badge_shadowed": {
+        "message": "Disattivato: ID duplicato",
+        "description": "Badge on a custom prompt hidden by an organization prompt with the same ID"
+    },
+    "managed_restriction_wizard": {
+        "message": "La configurazione guidata è disattivata dai criteri di configurazione della tua organizzazione. La tua connessione all'IA è configurata centralmente.",
+        "description": "Shown in place of the setup wizard, and instead of the wizard link in the popup, when the policy disables it"
+    },
+    "managed_restriction_wizard_title": {
+        "message": "Configurazione guidata non disponibile",
+        "description": "Title shown in place of the setup wizard when the policy disables it"
+    },
+    "customPrompts_org_badge": {
+        "message": "Organizzazione",
+        "description": "Badge on a prompt supplied by the enterprise policy, when no organization name is configured"
+    },
+    "customPrompts_org_shadowing_note": {
+        "message": "Uno dei tuoi prompt usa questo stesso ID ed è disattivato finché questo prompt dell'organizzazione è attivo.",
+        "description": "Shown under an organization prompt that is hiding a custom prompt with the same ID"
+    },
+    "customPrompts_shadowed_note": {
+        "message": "Disattivato: un prompt dell'organizzazione usa questo stesso ID. Il tuo prompt viene conservato e tornerà a funzionare se il prompt dell'organizzazione verrà rimosso.",
+        "description": "Shown under a custom prompt hidden by an organization prompt with the same ID"
     },
     "antispam_by": {
         "message": "Antispam di"
@@ -1446,18 +2257,6 @@
     },
     "prefs_chatgpt_win_position_info": {
         "message": "Lascia vuoto per usare la posizione di default."
-    },
-    "show_in": {
-        "message": "Mostra in"
-    },
-    "show_in_popup": {
-        "message": "Solo popup"
-    },
-    "show_in_context": {
-        "message": "Solo menu contestuale"
-    },
-    "show_in_both": {
-        "message": "Entrambi"
     },
     "webchat_save_as_summary": {
         "message": "Salva come Riepilogo"
@@ -1491,6 +2290,18 @@
     "prefsInfoDesc_8": {
         "message": "Per utilizzare le API di Claude, è necessario avere una chiave API (API Key) di Anthropic Claude e scegliere un modello."
     },
+    "prefs_full_guide": {
+        "message": "Guida completa"
+    },
+    "prefs_shortcut_label": {
+        "message": "Apri il menu di ThunderAI con"
+    },
+    "prefs_disclaimer_short": {
+        "message": "I modelli LLM possono generare informazioni errate e i tuoi dati potrebbero essere usati dal fornitore per addestrare nuovi modelli."
+    },
+    "prefs_footer_translate": {
+        "message": "Traduci l'addon"
+    },
     "placeholder_mail_full_headers": {
         "message": "Tutte le intestazioni email"
     },
@@ -1503,6 +2314,18 @@
     "prefs_OptionText_hide_thinking_info": {
         "message": "Controlla lo stato iniziale del ragionamento visualizzato sopra la risposta. Se selezionato, il ragionamento è compresso di default e può essere aperto con un clic. Se deselezionato, è invece aperto di default e può essere compresso con un clic. Il contenuto del ragionamento viene sempre conservato."
     },
+    "prefs_OptionText_chat_show_usage_data": {
+        "message": "Mostra i dati di utilizzo nella chat",
+        "description": "Options page, advanced section: name of the option that shows token usage data in the AI chat window."
+    },
+    "prefs_OptionText_chat_show_usage_data_info": {
+        "message": "Il numero di token indicato dall'API viene mostrato accanto ai pulsanti di ogni risposta. Un clic apre i dettagli, compresa la parte del contesto del modello occupata dalla conversazione e il totale dell'intera sessione di chat.",
+        "description": "Options page, advanced section: description of the option showing token counts next to each AI response in the chat window."
+    },
+    "prefs_OptionText_chat_show_usage_data_openai_comp_note": {
+        "message": "Con un'API compatibile OpenAI, la disponibilità dipende dalla specifica implementazione del server: alcuni server non indicano mai l'utilizzo dei token.",
+        "description": "Options page, advanced section: note appended to the usage data option description when the OpenAI Compatible API is in use."
+    },
     "placeholder_thunderai_translate_lang": {
         "message": "La lingua da utilizzare nella traduzioni delle email."
     },
@@ -1513,13 +2336,29 @@
         "message": "Elenco di esclusione indirizzi email"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "Le email provenienti da questi indirizzi non saranno inviate all'IA per l'analisi antispam."
+        "message": "Le email provenienti da questi indirizzi o domini non saranno inviate all'IA per l'analisi antispam."
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "Aggiungi un indirizzo email per riga, oppure separali con una virgola."
+        "message": "Aggiungi una voce per riga, oppure separale con una virgola. Una voce può essere un indirizzo email completo (user@domain.com) o un intero dominio (@domain.com)."
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "Il mittente è incluso nell'elenco di esclusione antispam degli indirizzi email."
+    },
+    "SpamFilter_block_addresses_title": {
+        "message": "Elenco di blocco indirizzi email",
+        "description": "Spam filter page: heading of the section listing sender addresses or domains always reported as spam (block list)."
+    },
+    "SpamFilter_block_addresses_infoline": {
+        "message": "Le email provenienti da questi indirizzi o domini verranno sempre segnalate come spam, senza inviarle all'IA. Quando il filtro antispam viene eseguito automaticamente, vengono spostate nella cartella della posta indesiderata.",
+        "description": "Spam filter page: help text under the block list heading."
+    },
+    "SpamFilter_address_lists_precedence": {
+        "message": "Se un mittente è presente in entrambi gli elenchi, vince la voce più specifica (un indirizzo completo prevale su un dominio); se entrambe le voci sono ugualmente specifiche, vince l'elenco di esclusione. Entrambi gli elenchi vengono controllati prima delle rubriche.",
+        "description": "Spam filter page: help text under the skip and block lists explaining which list wins when a sender matches both."
+    },
+    "spamfilter_block_addresses_explanation": {
+        "message": "Il mittente è incluso nell'elenco di blocco antispam degli indirizzi email.",
+        "description": "Explanation stored in the spam report (and shown in the message spam panel) when the sender matched the block list, so the email was marked spam without the AI."
     },
     "prefs_OptionText_spamfilter_skip_addressbook": {
         "message": "Salta gli indirizzi in rubrica"
@@ -1530,26 +2369,195 @@
     "spamfilter_skip_addressbook_explanation": {
         "message": "Il mittente è un contatto presente in rubrica."
     },
+    "spamfilter_prompt_missing_explanation": {
+        "message": "Il prompt speciale del Filtro Spam è mancante. Se hai modificato i prompt speciali, prova a ripristinare il prompt predefinito del Filtro Spam."
+    },
     "addressbook_permission_denied": {
         "message": "Il permesso di accesso alla rubrica è stato negato. Abilita nuovamente la funzione per concedere il permesso."
     },
     "addressbook_permission_error": {
         "message": "Errore durante la richiesta del permesso per la rubrica. Per favore, riprova."
     },
+    "feature_permission_missing": {
+        "message": "\"$FEATURE$\" non può funzionare: Thunderbird non ha concesso a ThunderAI l'autorizzazione necessaria. Per concederla, apri le impostazioni di ThunderAI, disattiva questa opzione e riattivala.",
+        "description": "Error shown when a feature that needs an optional Thunderbird permission (tags, moving messages, address books, clipboard) runs without it. $FEATURE$ is the name of the option as shown in the settings, e.g. 'Add tags to emails'. Turning the option off and on again is what makes Thunderbird ask for the permission.",
+        "placeholders": {
+            "feature": {
+                "content": "$1",
+                "example": "Add tags to emails"
+            }
+        }
+    },
+    "feature_permission_missing_managed": {
+        "message": "\"$FEATURE$\" è attivata dalla tua organizzazione, ma Thunderbird non ha concesso a ThunderAI l'autorizzazione necessaria, quindi non può funzionare. Contatta il tuo amministratore.",
+        "description": "Error and settings-page warning shown when an option enforced by the organization's managed configuration lacks the Thunderbird permission it needs; the user cannot change the option. $FEATURE$ is the name of the option as shown in the settings.",
+        "placeholders": {
+            "feature": {
+                "content": "$1",
+                "example": "Automatic Spam Filter"
+            }
+        }
+    },
+    "feature_permission_denied": {
+        "message": "Thunderbird non ha concesso l'autorizzazione necessaria a \"$FEATURE$\", quindi l'opzione resta disattivata.",
+        "description": "Settings pages: alert shown when the user refuses the Thunderbird permission requested while turning an option on. $FEATURE$ is the name of the option.",
+        "placeholders": {
+            "feature": {
+                "content": "$1",
+                "example": "Add tags to emails"
+            }
+        }
+    },
+    "feature_permission_error": {
+        "message": "Errore durante la richiesta dell'autorizzazione necessaria a \"$FEATURE$\". Riprova.",
+        "description": "Settings pages: alert shown when requesting the Thunderbird permission of an option fails with an error. $FEATURE$ is the name of the option.",
+        "placeholders": {
+            "feature": {
+                "content": "$1",
+                "example": "Add tags to emails"
+            }
+        }
+    },
+    "spamfilter_addressbook_permission_missing": {
+        "message": "Il filtro antispam non ha controllato le rubriche, perché Thunderbird non ha concesso a ThunderAI l'accesso ad esse; i messaggi sono stati comunque analizzati. Per concederlo, disattiva e riattiva \"$FEATURE$\" nelle impostazioni del filtro antispam.",
+        "description": "Notice shown once per run when the spam filter's address book check is enabled but the address book permission is missing. $FEATURE$ is the name of the option, e.g. 'Skip address books addresses'.",
+        "placeholders": {
+            "feature": {
+                "content": "$1",
+                "example": "Skip address books addresses"
+            }
+        }
+    },
     "apiwebchat_done": {
         "message": "Fatto!"
+    },
+    "apiwebchat_copy": {
+        "message": "Copia"
+    },
+    "apiwebchat_copied": {
+        "message": "Copiato"
+    },
+    "apiwebchat_copy_failed": {
+        "message": "Copia non riuscita"
+    },
+    "apiwebchat_status_error": {
+        "message": "Errore"
+    },
+    "apiwebchat_show_options": {
+        "message": "Mostra le opzioni"
+    },
+    "apiwebchat_turn_tools": {
+        "message": "Azioni sulla risposta"
+    },
+    "apiwebchat_usage_label": {
+        "message": "Utilizzo dei token",
+        "description": "Accessible label of the token usage details popover opened from the chip next to an answer in the AI chat window"
+    },
+    "apiwebchat_usage_input": {
+        "message": "Input",
+        "description": "Row label of the usage details popover in the AI chat window: tokens sent to the model"
+    },
+    "apiwebchat_usage_output": {
+        "message": "Output",
+        "description": "Row label of the usage details popover in the AI chat window: tokens generated by the model"
+    },
+    "apiwebchat_usage_total": {
+        "message": "Totale",
+        "description": "Row label of the usage details popover in the AI chat window: total tokens"
+    },
+    "apiwebchat_usage_chip_tokens": {
+        "message": "$COUNT$ token",
+        "description": "Usage chip next to an answer in the AI chat window: total tokens of that answer",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_chip_output_tokens": {
+        "message": "$COUNT$ token di output",
+        "description": "Usage chip next to an answer in the AI chat window, when the provider reports only the generated tokens",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_of_which_cached": {
+        "message": "di cui in cache",
+        "description": "Indented row of the usage details popover in the AI chat window: part of the input tokens read from the provider cache"
+    },
+    "apiwebchat_usage_of_which_cache_write": {
+        "message": "di cui scritti in cache",
+        "description": "Indented row of the usage details popover in the AI chat window: part of the input tokens written to the provider cache"
+    },
+    "apiwebchat_usage_of_which_reasoning": {
+        "message": "di cui ragionamento",
+        "description": "Indented row of the usage details popover in the AI chat window: part of the output tokens spent on reasoning/thinking"
+    },
+    "apiwebchat_usage_duration": {
+        "message": "Durata",
+        "description": "Row label of the usage details popover in the AI chat window: time from sending the request to the end of the answer"
+    },
+    "apiwebchat_usage_speed": {
+        "message": "$RATE$ tok/s",
+        "description": "Generation speed in the usage details popover of the AI chat window (tokens per second)",
+        "placeholders": {
+            "rate": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_context": {
+        "message": "Contesto",
+        "description": "Row label of the usage details popover in the AI chat window: tokens the conversation occupies in the model context after this answer"
+    },
+    "apiwebchat_usage_context_value": {
+        "message": "$USED$ / $MAX$ · $PCT$%",
+        "description": "Value of the Context row of the usage details popover in the AI chat window: tokens used / model context window · percentage",
+        "placeholders": {
+            "used": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            },
+            "pct": {
+                "content": "$3"
+            }
+        }
+    },
+    "apiwebchat_usage_context_warn": {
+        "message": "valuta di iniziare una nuova chat",
+        "description": "Note under the Context row of the usage details popover in the AI chat window, shown when the context is at least 80% full"
+    },
+    "apiwebchat_usage_session_total": {
+        "message": "Totale sessione",
+        "description": "Row label of the usage details popover in the AI chat window: sum of the tokens of every answer in the chat so far"
+    },
+    "apiwebchat_scroll_to_latest": {
+        "message": "Vai all'ultima"
     },
     "prefs_OptionText_anthropic_extended_thinking_budget": {
         "message": "Budget per il pensiero esteso (token)"
     },
     "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
-        "message": "Numero massimo di token che il modello può utilizzare per il pensiero esteso. Imposta a 0 per disabilitare. Quando abilitato, il valore della temperatura viene ignorato dall'API di Claude."
+        "message": "Numero massimo di token che il modello può utilizzare per il pensiero esteso. Imposta a 0 per disabilitare. Deve essere inferiore a Max Tokens. I modelli Claude più recenti non accettano un budget manuale e usano al suo posto l'impostazione Sforzo: quando è selezionato uno di essi, questo campo viene disabilitato e il suo valore non viene inviato."
     },
     "prefs_ollama_format_json": {
         "message": "Forza output JSON"
     },
     "prefs_ollama_format_json_Info": {
         "message": "Se selezionato, Ollama sarà forzato a restituire una risposta JSON valida. Questa opzione funziona solo con i modelli che supportano l'output strutturato."
+    },
+    "specific_integration_mandatory_badge": {
+        "message": "Obbligatoria"
+    },
+    "specific_integration_mandatory_chatgpt_web": {
+        "message": "Questa opzione è obbligatoria e non può essere disattivata: l'integrazione ChatGPT Web selezionata come connessione globale non può eseguire questa funzionalità. Scegli una API specifica qui sotto."
+    },
+    "specific_integration_mandatory_no_connection": {
+        "message": "Questa opzione è obbligatoria e non può essere disattivata: non è ancora stata selezionata nessuna connessione IA globale. Scegli una API specifica qui sotto, oppure configura una connessione globale nelle impostazioni di ThunderAI."
     },
     "prefs_specific_api_indicator": {
         "message": "Utilizzando $1",
@@ -1559,20 +2567,8 @@
             }
         }
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Abilita riassunto IA automatico per l'anteprima messaggi"
-    },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Se selezionato, ThunderAI genererà e visualizzerà automaticamente dei riassunti IA sopra i messaggi quando vengono aperti. Nota: questo comporterà l'invio immediato di ogni messaggio visualizzato al servizio IA configurato."
-    },
-    "auto_summary_title": {
-        "message": "Riassunto ThunderAI"
-    },
-    "auto_summary_generating": {
-        "message": "Generazione riassunto IA..."
-    },
-    "auto_summary_failed": {
-        "message": "Impossibile generare il riassunto IA. Verifica le impostazioni e riprova."
     },
     "prefs_OptionText_summarize_auto": {
         "message": "Riassumi messaggi automaticamente"
@@ -1598,6 +2594,50 @@
     "prefs_OptionText_summarize_strip_formatting_Info": {
         "message": "Rimuove la formattazione HTML e Markdown dal riassunto generato dall'IA, mostrando solo testo semplice."
     },
+    "prefs_OptionText_summarize_force_lang": {
+        "message": "Forza la lingua del riassunto",
+        "description": "Summarize page: name of the option that forces summaries to be written in a chosen language."
+    },
+    "prefs_OptionText_summarize_force_lang_Info": {
+        "message": "Se selezionata, il riassunto viene sempre scritto nella lingua selezionata, indipendentemente dalla lingua delle email. I riassunti già generati non vengono aggiornati: usa \"Aggiorna riassunto\" per generarli di nuovo.",
+        "description": "Summarize page: description under the 'Force summary language' option; 'Refresh summary' must match the translation of the summary banner's refresh action."
+    },
+    "prefs_OptionText_summarize_lang_Info": {
+        "message": "Lingua del riassunto. Lascia vuoto per usare la lingua predefinita impostata nelle opzioni di ThunderAI. Se sono vuote entrambe, non viene forzata alcuna lingua.",
+        "description": "Summarize page: help text under the summary language text field, shown when 'Force summary language' is checked."
+    },
+    "prompt_summarize_force_lang": {
+        "message": "Il riassunto deve essere scritto in",
+        "description": "Instruction sent to the AI model, appended to the summarize prompt and followed by a space, the language name and a period (e.g. 'The summary must be written in Italian.')."
+    },
+    "summarize_info_additional_statements": {
+        "message": "Questa istruzione verrà aggiunta alla fine del prompt:",
+        "description": "Summarize page: note under the prompt text, followed by the quoted language instruction that is appended to the prompt sent to the AI."
+    },
+    "Summarize_auto_senders_title": {
+        "message": "Elenco mittenti per il riassunto automatico"
+    },
+    "Summarize_auto_senders_infoline": {
+        "message": "Le email provenienti da questi mittenti vengono riassunte automaticamente, senza alcun clic. Il riassunto viene generato alla ricezione dell'email, oppure alla sua apertura se non è stata elaborata alla ricezione."
+    },
+    "Summarize_auto_senders_infoline2": {
+        "message": "Aggiungi un indirizzo email per riga, oppure separati da una virgola. Usa \"@dominio.com\" per includere tutti i mittenti di un intero dominio."
+    },
+    "Summarize_auto_senders_notice": {
+        "message": "Il riassunto automatico è disattivato, ma per i mittenti nell'elenco qui sotto il riassunto viene comunque generato automaticamente."
+    },
+    "Summarize_auto_senders_disabled_note": {
+        "message": "Non disponibile quando il riassunto automatico è impostato per generare il riassunto alla ricezione dell'email: in quella modalità ogni email in arrivo viene già riassunta."
+    },
+    "prefs_OptionText_summarize_auto_senders": {
+        "message": "Riassumi automaticamente questi mittenti"
+    },
+    "prefs_OptionText_summarize_auto_senders_Info": {
+        "message": "Se attivato, le email provenienti dai mittenti elencati qui sotto vengono riassunte automaticamente, anche quando il riassunto automatico è disattivato qui sopra."
+    },
+    "prefs_OptionText_summarize_auto_senders_list_Info": {
+        "message": "Indirizzi dei mittenti da riassumere automaticamente:"
+    },
     "summarize_see_more": {
         "message": "Mostra altro"
     },
@@ -1609,9 +2649,6 @@
     },
     "get_ai_summary": {
         "message": "Riassunto IA"
-    },
-    "summarize_collapse": {
-        "message": "Comprimi riassunto"
     },
     "summarize_generating": {
         "message": "Generazione riassunto..."
@@ -1661,9 +2698,6 @@
     "Translate_prompt_text_title": {
         "message": "Testo del prompt attuale"
     },
-    "Translate_prompt_prefs_title": {
-        "message": "Opzioni Traduzione"
-    },
     "prefs_OptionText_translate_auto": {
         "message": "Traduci messaggi automaticamente"
     },
@@ -1707,7 +2741,7 @@
         "message": "Escludi lingue"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Elenco di codici lingua separati da virgola (es. en, fr, it) da saltare per la traduzione automatica. Se l'email è in una di queste lingue, non verrà tradotta automaticamente o il pulsante manuale non sarà mostrato."
+        "message": "Elenco di codici lingua separati da virgola (es. en, fr, it) che non devono essere tradotti. Se l'email è in una di queste lingue, l'IA non esegue la traduzione e la segnala come ignorata."
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "Prompt che descrive l'attività di traduzione:"
@@ -1769,11 +2803,24 @@
     "menu_order_saved": {
         "message": "Ordine menu salvato!"
     },
+    "menu_order_save_error": {
+        "message": "Errore durante il salvataggio dell'ordine dei menu:",
+        "description": "Menu Order page: shown in red when Save All fails. Followed by the error message"
+    },
+    "menu_order_reset_all": {
+        "message": "Ripristina tutto"
+    },
+    "menu_order_reset_all_tooltip": {
+        "message": "Ripristina l'ordine, la visibilità e le icone predefinite per tutti gli elementi del menu. Premi Salva tutto per applicare."
+    },
     "menu_order_tab_reading": {
         "message": "Lettura"
     },
     "menu_order_tab_composing": {
         "message": "Composizione"
+    },
+    "menu_order_tab_dot_tooltip": {
+        "message": "Il prompt selezionato compare anche in questo elenco"
     },
     "menu_order_badge_default": {
         "message": "Predefinito"
@@ -1783,6 +2830,10 @@
     },
     "menu_order_badge_custom": {
         "message": "Personalizzato"
+    },
+    "menu_order_badge_org": {
+        "message": "Organizzazione",
+        "description": "Badge on a prompt supplied by the enterprise policy, in the menu order page"
     },
     "menu_order_type_reading": {
         "message": "Lettura"
@@ -1796,8 +2847,11 @@
     "menu_order_btn_label": {
         "message": "Gestisci impostazioni ordine menu"
     },
+    "menu_position_btn_label": {
+        "message": "Posizione del menu"
+    },
     "menu_order_info": {
-        "message": "Trascina gli elementi per riordinarli. Usa l'interruttore per mostrare o nascondere gli elementi in ogni menu."
+        "message": "Trascina e rilascia gli elementi per riordinarli, oppure trascinali tra le sezioni Visibile e Nascosto per mostrarli o nasconderli in ciascun menu. Un prompt nascosto in ogni menu rimane disabilitato finché non lo rendi nuovamente visibile."
     },
     "menu_order_active_items": {
         "message": "Elementi visibili"
@@ -1811,6 +2865,193 @@
     "menu_order_icon_none": {
         "message": "(nessuna)"
     },
+    "menu_order_icon_default": {
+        "message": "Icona predefinita"
+    },
+    "menu_order_legend_type": {
+        "message": "Quando è mostrato:"
+    },
+    "menu_order_legend_type_always": {
+        "message": "Mostrato sia in lettura che in composizione"
+    },
+    "menu_order_legend_type_reading": {
+        "message": "Mostrato solo durante la lettura di un messaggio"
+    },
+    "menu_order_legend_type_composing": {
+        "message": "Mostrato solo durante la composizione di un messaggio"
+    },
+    "menu_order_legend_source": {
+        "message": "Tipo di prompt:"
+    },
+    "menu_order_legend_source_default": {
+        "message": "Prompt integrato incluso in ThunderAI"
+    },
+    "menu_order_legend_source_special": {
+        "message": "Prompt collegato a una funzione (es. tag, calendario)"
+    },
+    "menu_order_legend_source_custom": {
+        "message": "Prompt creato da te"
+    },
+    "prefs_ConnectionSettingsTitle": {
+        "message": "Impostazioni di connessione"
+    },
+    "prefs_BasicSettingsTitle": {
+        "message": "Impostazioni di base"
+    },
+    "prefs_FeaturesTitle": {
+        "message": "Funzionalità"
+    },
+    "prefs_FeaturesSubtitle": {
+        "message": "Attiva quelle che ti servono. Puoi regolarne i dettagli dalla schermata delle impostazioni di ciascuna."
+    },
+    "prefs_FeaturesNoConnection": {
+        "message": "Seleziona una connessione IA qui sopra per abilitare queste funzionalità."
+    },
+    "prefs_advanced_options": {
+        "message": "Opzioni avanzate"
+    },
+    "prefs_privacy_more_info": {
+        "message": "Clicca qui per maggiori informazioni sulla privacy"
+    },
+    "connTest_idle": {
+        "message": "Connessione non ancora testata"
+    },
+    "connTest_testing": {
+        "message": "Test della connessione in corso…"
+    },
+    "connTest_ok": {
+        "message": "Connesso — $API$ raggiungibile",
+        "placeholders": {
+            "api": {
+                "content": "$1",
+                "example": "Anthropic Claude"
+            }
+        }
+    },
+    "connTest_error": {
+        "message": "Errore — $DETAIL$",
+        "placeholders": {
+            "detail": {
+                "content": "$1",
+                "example": "401 — invalid API key"
+            }
+        }
+    },
+    "connTest_error_auth": {
+        "message": "Autenticazione non riuscita — controlla la tua chiave API"
+    },
+    "connTest_error_network": {
+        "message": "Errore di rete — endpoint non raggiungibile"
+    },
+    "connTest_error_timeout": {
+        "message": "Tempo scaduto — nessuna risposta dall'endpoint"
+    },
+    "connTest_managed_api_key": {
+        "message": "La chiave API è impostata dalla tua organizzazione e non può essere testata da qui",
+        "description": "Connection test status strip: shown instead of running the test when the API key is supplied by the enterprise policy, which never passes the real key to the settings page"
+    },
+    "connTest_link_test": {
+        "message": "Prova ora"
+    },
+    "connTest_link_retest": {
+        "message": "Riprova il test"
+    },
+    "connTest_link_retry": {
+        "message": "Riprova"
+    },
+    "wizard_title": {
+        "message": "Configurazione guidata"
+    },
+    "wizard_step_provider_title": {
+        "message": "Scegli la tua IA"
+    },
+    "wizard_step_provider_sub": {
+        "message": "Ogni servizio ha il suo colore e lo ritroverai nel resto della configurazione."
+    },
+    "wizard_step_connect_sub": {
+        "message": "Inserisci le credenziali qui sotto e scegli un modello, poi prova la connessione."
+    },
+    "wizard_step_connect_sub_web": {
+        "message": "Qui non c'è quasi nulla da configurare."
+    },
+    "wizard_step_tools_title": {
+        "message": "Scegli i tuoi strumenti"
+    },
+    "wizard_step_tools_sub": {
+        "message": "Puoi cambiare tutto questo in seguito dalle Impostazioni."
+    },
+    "wizard_done_title": {
+        "message": "È tutto pronto"
+    },
+    "wizard_done_body": {
+        "message": "ThunderAI è pronto. Fai clic destro su un messaggio o apri la finestra di composizione per provarlo. Puoi modificare qualsiasi cosa in seguito dalle Impostazioni."
+    },
+    "wizard_run_again": {
+        "message": "Esegui di nuovo"
+    },
+    "wizard_connect_heading": {
+        "message": "Connetti $PROVIDER$",
+        "placeholders": {
+            "provider": {
+                "content": "$1",
+                "example": "Claude API"
+            }
+        }
+    },
+    "wizard_back": {
+        "message": "Indietro"
+    },
+    "wizard_continue": {
+        "message": "Continua"
+    },
+    "wizard_finish": {
+        "message": "Completa la configurazione"
+    },
+    "wizard_provider_tag_chatgpt_web": {
+        "message": "Nessuna chiave API — accedi al primo utilizzo"
+    },
+    "wizard_provider_tag_chatgpt_api": {
+        "message": "Richiede chiave API + modello"
+    },
+    "wizard_provider_tag_google_gemini_api": {
+        "message": "Richiede chiave API + modello"
+    },
+    "wizard_provider_tag_anthropic_api": {
+        "message": "Richiede chiave API, modello e versione"
+    },
+    "wizard_provider_tag_ollama_api": {
+        "message": "Indirizzo del server locale + modello"
+    },
+    "wizard_provider_tag_openai_comp_api": {
+        "message": "Indirizzo del server + modello"
+    },
+    "onboarding_wizard_banner_text": {
+        "message": "Non conosci ancora ThunderAI? Lascia che la configurazione guidata ti accompagni nel collegamento della tua IA."
+    },
+    "onboarding_wizard_banner_link": {
+        "message": "Avvia la configurazione guidata"
+    },
+    "prefs_doc_setup_wizard_launch": {
+        "message": "Configurazione guidata"
+    },
+    "popup_setup_wizard_text": {
+        "message": "ThunderAI non è ancora collegato a un'IA."
+    },
+    "popup_setup_wizard_link": {
+        "message": "Avvia la configurazione guidata"
+    },
+    "prefs_Connection_type_none": {
+        "message": "— Seleziona una connessione IA —"
+    },
+    "options_no_connection_text": {
+        "message": "Nessuna connessione IA ancora selezionata. ThunderAI ne ha bisogno per funzionare."
+    },
+    "options_no_connection_link": {
+        "message": "Avvia la configurazione guidata"
+    },
+    "msg_no_connection_selected": {
+        "message": "Nessuna connessione IA selezionata. Apri le opzioni di ThunderAI ed esegui la configurazione guidata per sceglierne una."
+    },
     "prefs_OptionText_spamfilter_only_inbox": {
         "message": "Esegui solo nella cartella della posta in arrivo"
     },
@@ -1823,8 +3064,16 @@
     "prefs_OptionText_special_command_timeout_Info": {
         "message": "Tempo in millisecondi prima che una richiesta AI bloccata (aggiunta automatica di tag, filtro spam, riassunto, traduzione) venga interrotta. Aumenta questo valore se utilizzi modelli locali lenti. Si applica solo alle connessioni basate su API, non all'interfaccia web di ChatGPT."
     },
-    "prefs_OptionText_summarize_max_messages": {
-        "message": "Massimo numeri di messaggi"
+    "prefs_OptionText_batch_max_concurrency": {
+        "message": "Email elaborate in parallelo",
+        "description": "Label of the option limiting how many emails the automatic features (add tags, spam filter, summarize, translate) process at the same time"
+    },
+    "prefs_OptionText_batch_max_concurrency_Info": {
+        "message": "Numero massimo di email elaborate contemporaneamente quando più email vengono gestite insieme, ad esempio all'arrivo di nuova posta o quando sono selezionate più email. Ogni email passa attraverso le sue funzionalità (filtro antispam, aggiunta di tag, riassunto, traduzione) una dopo l'altra, quindi questo è anche il numero massimo di richieste all'IA inviate contemporaneamente. Valori più alti sono più veloci, ma possono superare i limiti di frequenza del tuo fornitore di IA o sovraccaricare un modello locale come Ollama.",
+        "description": "Options page: help text under the field setting how many emails are processed by AI features in parallel."
+    },
+    "prefs_OptionText_max_messages": {
+        "message": "Max messaggi"
     },
     "prefs_OptionText_summarize_max_messages_Info": {
         "message": "Numero massimo di messaggi che possono essere riassunti contemporaneamente nella modalità webchat. Al di sopra di questo limite l'operazione viene bloccata con un messaggio di avviso. Imposta a 0 per nessun limite."
@@ -1867,5 +3116,235 @@
     },
     "batch_stop_source": {
         "message": "Interruzione"
+    },
+    "batch_stopped_rate_limit": {
+        "message": "Elaborazione delle email interrotta dopo $COUNT$ messaggi: è stato superato il limite di frequenza o la quota del fornitore di IA. Riprova più tardi.",
+        "description": "Error shown when the running email processing jobs were stopped automatically because the AI provider refused further requests (HTTP 429: rate limit or daily quota exhausted), reporting how many messages were processed before stopping",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stopped_retry_after": {
+        "message": "Elaborazione delle email interrotta dopo $COUNT$ messaggi: il fornitore di IA non accetta richieste e chiede di riprovare tra $WAIT$.",
+        "description": "Error shown when the running email processing jobs were stopped automatically because the AI provider asked to wait longer than ThunderAI waits on its own. $WAIT$ is a localized duration such as '1 h' or '1 h, 30 min'",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            },
+            "wait": {
+                "content": "$2"
+            }
+        }
+    },
+    "api_retry_after_hint": {
+        "message": "Il fornitore di IA chiede di riprovare tra $WAIT$.",
+        "description": "Shown under an API error in the chat window when the provider asked to wait longer than ThunderAI waits on its own. $WAIT$ is a localized duration such as '1 h' or '1 h, 30 min'",
+        "placeholders": {
+            "wait": {
+                "content": "$1"
+            }
+        }
+    },
+    "add_tags_too_many_messages": {
+        "message": "Hai selezionato $SELECTED$ messaggi, ma puoi aggiungere tag al massimo a $MAX$ alla volta. Seleziona meno messaggi.",
+        "description": "Shown when the user tries to add tags to more messages than the configured limit",
+        "placeholders": {
+            "selected": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            }
+        }
+    },
+    "onboarding_tab_title": {
+        "message": "Benvenuto in ThunderAI!"
+    },
+    "onboarding_welcome_2": {
+        "message": "Questo componente aggiuntivo è pensato per migliorare la gestione della tua posta con la potenza dell'IA."
+    },
+    "onboarding_welcome_3": {
+        "message": "Con ThunderAI puoi semplificare la tua casella di posta, generare risposte intelligenti, riassumere le email, aggiungere automaticamente etichette e filtrare lo spam, e molto altro, tutto con l'aiuto dell'intelligenza artificiale."
+    },
+    "onboarding_welcome_4": {
+        "message": "In questa pagina troverai una panoramica delle funzionalità chiave per sfruttare al meglio ThunderAI."
+    },
+    "onboarding_welcome_5": {
+        "message": "Preparati a scoprire un modo più intelligente ed efficiente di gestire le tue email!"
+    },
+    "onboarding_welcome_6": {
+        "message": "Vediamo come sfruttare al meglio questo componente aggiuntivo!"
+    },
+    "onboarding_using_prompts_title": {
+        "message": "Usare i prompt"
+    },
+    "onboarding_using_prompts_alt": {
+        "message": "Pulsante del menu dei prompt"
+    },
+    "onboarding_using_prompts_1": {
+        "message": "In ogni messaggio è presente un pulsante che ti permette di aprire il menu dei prompt."
+    },
+    "onboarding_using_prompts_2": {
+        "message": "Qui puoi scegliere il prompt in diversi modi:"
+    },
+    "onboarding_using_prompts_li1_b": {
+        "message": "Casella di ricerca"
+    },
+    "onboarding_using_prompts_li1": {
+        "message": "usala per cercare parte del prompt."
+    },
+    "onboarding_using_prompts_li2_b": {
+        "message": "Frecce Giù/Su"
+    },
+    "onboarding_using_prompts_li2": {
+        "message": "scorri i prompt."
+    },
+    "onboarding_using_prompts_li3_b": {
+        "message": "Premi un numero"
+    },
+    "onboarding_using_prompts_li3": {
+        "message": "premi un numero sulla tastiera per scegliere il prompt corrispondente."
+    },
+    "onboarding_using_prompts_li4_b": {
+        "message": "Invio"
+    },
+    "onboarding_using_prompts_li4": {
+        "message": "una volta scelto il prompt desiderato, premi Invio per eseguirlo."
+    },
+    "onboarding_using_prompts_3": {
+        "message": "Nella pagina delle opzioni di ThunderAI puoi trovare alcune impostazioni relative a questo menu."
+    },
+    "onboarding_using_prompts_4": {
+        "message": "I primi due prompt sono speciali e sono disponibili solo quando si usa un'integrazione API. Funzionano direttamente senza aprire la pagina web dell'IA Chat."
+    },
+    "onboarding_custom_prompts_title": {
+        "message": "Definire i tuoi prompt personalizzati"
+    },
+    "onboarding_custom_prompts_alt": {
+        "message": "Gestione dei prompt personalizzati"
+    },
+    "onboarding_custom_prompts_p1_1": {
+        "message": "Dalla pagina delle opzioni puoi aprire la pagina dei Prompt personalizzati."
+    },
+    "onboarding_custom_prompts_p1_3": {
+        "message": "Da lì puoi aggiungere i tuoi prompt e anche disattivare quelli predefiniti."
+    },
+    "onboarding_custom_prompts_p1_4": {
+        "message": "Puoi trovare maggiori informazioni qui."
+    },
+    "onboarding_custom_prompts_p2_1": {
+        "message": "Mentre definisci i tuoi prompt puoi anche usare dei"
+    },
+    "onboarding_custom_prompts_bold_dp": {
+        "message": "segnaposto di dati"
+    },
+    "onboarding_custom_prompts_p2_2": {
+        "message": ", che verranno sostituiti con le informazioni corrispondenti quando usi il prompt."
+    },
+    "onboarding_custom_prompts_p3": {
+        "message": "Ad esempio, puoi usare il segnaposto $PH_SUBJECT$ per fare riferimento all'oggetto dell'email oppure $PH_TAGS$ per fare riferimento alle etichette dell'email corrente.",
+        "placeholders": {
+            "ph_subject": {
+                "content": "{%mail_subject%}"
+            },
+            "ph_tags": {
+                "content": "{%tags_current_email%}"
+            }
+        }
+    },
+    "onboarding_automatic_features_title": {
+        "message": "Funzioni automatiche"
+    },
+    "onboarding_automatic_features_alt": {
+        "message": "Filtro spam automatico"
+    },
+    "onboarding_automatic_features_1": {
+        "message": "Sono disponibili anche due funzioni automatiche quando si usa un'integrazione API, che possono essere attivate dalla pagina delle opzioni:"
+    },
+    "onboarding_automatic_features_li1_b": {
+        "message": "Filtro spam automatico"
+    },
+    "onboarding_automatic_features_li1": {
+        "message": "sposta automaticamente l'email nella cartella spam se viene rilevata come spam."
+    },
+    "onboarding_automatic_features_li2_b": {
+        "message": "Assegnazione automatica delle etichette"
+    },
+    "onboarding_automatic_features_li2": {
+        "message": "assegna automaticamente le etichette all'email."
+    },
+    "onboarding_automatic_features_2": {
+        "message": "Per ognuna di queste funzioni è presente una pagina delle opzioni per specificare le impostazioni e il prompt personalizzato da utilizzare."
+    },
+    "onboarding_footer_1": {
+        "message": "Per qualsiasi domanda o suggerimento, apri una issue sulla pagina GitHub."
+    },
+    "onboarding_footer_3": {
+        "message": "Ti piace ThunderAI?"
+    },
+    "editor_placeholder_missing": {
+        "message": "Questo placeholder non esiste"
+    },
+    "editor_placeholder_partial_type": {
+        "message": "Questo placeholder funziona solo in uno dei contesti in cui viene eseguito questo prompt: resta vuoto nell'altro"
+    },
+    "editor_placeholder_wrong_type": {
+        "message": "Questo placeholder non è disponibile per questo tipo di prompt"
+    },
+    "editor_placeholder_unterminated": {
+        "message": "Segnaposto non terminato: manca la chiusura %}"
+    },
+    "prefs_footer_donate": {
+        "message": "Fai una donazione"
+    },
+    "anthropic_err_hint_temperature": {
+        "message": "Il modello Claude selezionato ($MODEL$) non accetta l'impostazione Temperatura. Svuota il campo Temperatura oppure usa l'impostazione Effort."
+    },
+    "anthropic_err_hint_budget_tokens": {
+        "message": "Il modello Claude selezionato ($MODEL$) non accetta un budget per il pensiero esteso impostato manualmente. Imposta il Budget per il pensiero esteso a 0 e usa invece l'impostazione Effort."
+    },
+    "anthropic_err_hint_thinking_type": {
+        "message": "Il modello Claude selezionato ($MODEL$) non accetta questa configurazione del pensiero. Controlla le impostazioni Budget per il pensiero esteso ed Effort."
+    },
+    "anthropic_err_hint_effort": {
+        "message": "Il modello Claude selezionato ($MODEL$) non accetta questo livello di Effort. Scegli un livello diverso nella pagina delle opzioni."
+    },
+    "prefs_OptionText_anthropic_effort": {
+        "message": "Effort"
+    },
+    "prefs_OptionText_anthropic_effort_Info": {
+        "message": "Quanto impegno di ragionamento il modello deve dedicare a una richiesta. I livelli più alti forniscono risposte migliori nelle attività complesse, ma costano più token e richiedono più tempo. Lascia il valore predefinito per far decidere all'API di Claude. I modelli Claude più vecchi non supportano questa impostazione."
+    },
+    "anthropic_effort_default": {
+        "message": "Predefinito (deciso dall'API)"
+    },
+    "prefs_level_off": {
+        "message": "Disattivato",
+        "description": "Shared reasoning/thinking level label: reasoning explicitly turned off."
+    },
+    "prefs_level_none": {
+        "message": "Nessuno",
+        "description": "Shared reasoning/thinking level label: no reasoning, requested explicitly rather than by leaving the setting empty."
+    },
+    "prefs_level_on": {
+        "message": "Attivato",
+        "description": "Shared reasoning/thinking level label: reasoning explicitly turned on."
+    },
+    "anthropic_note_temperature_unsupported": {
+        "message": "Il modello selezionato non accetta un valore di Temperatura e ignora questo campo. Usa invece l'impostazione Effort. Il valore viene conservato nel caso in cui tornassi a un modello più vecchio."
+    },
+    "anthropic_note_budget_tokens_unsupported": {
+        "message": "Il modello selezionato non accetta un budget per il pensiero esteso impostato manualmente e ignora questo campo. Usa invece l'impostazione Effort. Il valore viene conservato nel caso in cui tornassi a un modello più vecchio."
+    },
+    "anthropic_note_effort_unsupported": {
+        "message": "Il modello selezionato non supporta l'impostazione Effort. Usa invece il Budget per il pensiero esteso."
+    },
+    "summarize_error_no_message_id": {
+        "message": "Non è stato possibile leggere il messaggio: il riassunto sarebbe stato generato solo dall'oggetto."
+    },
+    "translate_error_no_message_id": {
+        "message": "Non è stato possibile leggere il messaggio: la traduzione sarebbe stata generata solo dall'oggetto."
     }
 }

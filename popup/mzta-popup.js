@@ -16,22 +16,59 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from "../options/mzta-options-default.js";
 import { taLogger } from "../js/mzta-logger.js";
+import { hasNoConnectionSelected } from "../js/mzta-utils.js";
+import { mztaPrefs } from '../js/mzta-prefs.js';
+import { getManagedState, isSetupWizardDisabled } from '../pages/_lib/managed-ui.js';
 
 let menuSendImmediately = false;
 let taLog = console;
 let tabType;
-
 document.addEventListener('DOMContentLoaded', async () => {
-    let prefs = await browser.storage.sync.get({
-      do_debug: prefs_default.do_debug,
-      dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
-      connection_type: prefs_default.connection_type
-    });
+    let prefs = await mztaPrefs.getPrefs([
+      'do_debug',
+      'dynamic_menu_force_enter',
+      'connection_type',
+      'chatgpt_api_key',
+      'google_gemini_api_key',
+      'anthropic_api_key',
+      'ollama_host',
+      'openai_comp_host'
+    ]);
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
+
+    // If the selected connection has no credentials yet, offer the setup wizard
+    // instead of the prompts list. (ChatGPT Web needs only a host permission,
+    // handled by the dedicated permission banner below.)
+    if(!isConnectionConfigured(prefs)){
+        document.getElementById("mzta_search_banner").style.display = "none";
+        document.getElementById("setup_wizard_prompt").style.display = "block";
+        // A policy may forbid the wizard. Then the invitation is a dead end: drop the link
+        // and say who has to configure the connection instead, so the user is not left
+        // clicking something that will never open.
+        await getManagedState(prefs.do_debug);
+        if(isSetupWizardDisabled()){
+            const link = document.getElementById("btn_popup_setup_wizard");
+            link.textContent = browser.i18n.getMessage('managed_restriction_wizard');
+            link.removeAttribute('href');
+            link.classList.add('managed_disabled');
+        }else{
+            document.getElementById("btn_popup_setup_wizard").addEventListener("click", async (e) => {
+                e.preventDefault();
+                await browser.tabs.create({ url: "../pages/setup-wizard/mzta-setup-wizard.html" });
+                window.close();
+            });
+        }
+        return;
+    }
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
+    if (!reponse || typeof reponse !== 'object') {
+        const loadingEl = document.getElementById("mzta_autocomplete-items-loading");
+        if (loadingEl) loadingEl.style.display = "none";
+        taLog.log("No active tab ready for popup menu");
+        return;
+    }
     taLog.log("Preparing data to load the popup menu: " + JSON.stringify(reponse));
 
     // If a batch email processing job is running, show a "Stop processing" banner.
@@ -44,7 +81,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     taLog.log("_prompts_data: " + JSON.stringify(_prompts_data));
     let active_prompts = filterPromptsForTab(_prompts_data, filtering);
     active_prompts.forEach(item => {
-        item.label = new DOMParser().parseFromString(item.label, "text/html").documentElement.textContent;
+        if (item && item.label) {
+            item.label = new DOMParser().parseFromString(item.label, "text/html").documentElement.textContent;
+        }
     });
     taLog.log("active_prompts: " + JSON.stringify(active_prompts));
     menuSendImmediately = prefs.dynamic_menu_force_enter;
@@ -83,14 +122,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 }, { once: true });
 
-async function searchPrompt(allPrompts, tabId, tabType, filtering){
+// Returns true when the selected connection type has the credentials it needs
+// to work. Used to offer the setup wizard from the popup when nothing has been
+// configured yet. ChatGPT Web has no credential (only a host permission, shown
+// by its own banner), so it's treated as "configured" here.
+function isConnectionConfigured(prefs){
+    // No connection chosen at all (fresh install): the wizard is the way in.
+    if(hasNoConnectionSelected(prefs.connection_type)){
+        return false;
+    }
+    switch(prefs.connection_type){
+        case 'chatgpt_api':        return !!(prefs.chatgpt_api_key || '').trim();
+        case 'google_gemini_api':  return !!(prefs.google_gemini_api_key || '').trim();
+        case 'anthropic_api':      return !!(prefs.anthropic_api_key || '').trim();
+        case 'ollama_api':         return !!(prefs.ollama_host || '').trim();
+        case 'openai_comp_api':    return !!(prefs.openai_comp_host || '').trim();
+        case 'chatgpt_web':
+        default:                   return true;
+    }
+}
+
+export function searchPrompt(allPrompts, tabId, tabType, filtering){
  taLog.log("tabType: " + tabType);
+
+ allPrompts = Array.isArray(allPrompts) ? allPrompts : [];
 
  // Sort by position: use position_display for reading (filtering=1), position_compose for composing (filtering=2)
  const posKey = filtering === 2 ? 'position_compose' : 'position_display';
  allPrompts.sort((a, b) => (a[posKey] || 9999) - (b[posKey] || 9999));
-
- // console.log(">>>>>>>>> allPrompts: " + JSON.stringify(allPrompts));
 
  let input = document.getElementById('mzta_search_input');
  let autocompleteList = document.getElementById('mzta_autocomplete-items');
@@ -103,24 +162,17 @@ async function searchPrompt(allPrompts, tabId, tabType, filtering){
  let selectedId = null; // Tracks the ID of the selected item
 
  // Function to filter and display autocomplete suggestions
- input.addEventListener('input', function() {
-   const query = this.value.trim().toLowerCase();
-  // console.log(">>>>>>>>>>>> query: " + query);
+ input.addEventListener('input', function () {
+   const q = (this.value || '').trim().toLowerCase();
    autocompleteList.innerHTML = ''; // Clear previous suggestions
-   currentFocus = -1; // Reset the highlighted index
-   selectedId = null; // Reset the selected ID since input has changed
+   currentFocus = -1; // Reset highlighted index
+   selectedId = null; // Reset selected ID
 
-   // Uncomment the following lines if you want to hide suggestions when input is empty
-   /*
-   if (query === '') {
-       autocompleteList.style.display = 'none';
-       return;
-   }
-   */
+   autocompleteListLoading.style.display = 'none';
 
    // Filter data based on the query
    let filteredData = allPrompts.filter(item => 
-     item.label.toLowerCase().includes(query)
+     item && item.label && item.label.toLowerCase().includes(q)
    );
    taLog.log("filteredData: " + JSON.stringify(filteredData));
 
@@ -130,32 +182,41 @@ async function searchPrompt(allPrompts, tabId, tabType, filtering){
        return;
    }
 
-
-   // Prepend numbers to the first 10 items
-   Array.from(filteredData).slice(0, 10).forEach((item, index) => {
-     if (!item.numberPrepended) {
-         item.label = `${index}. ${item.label}`;
-         item.numberPrepended = 'true';
-     }
-   });
-
-  //  console.log(">>>>>>>>>>>>> filteredData: " + JSON.stringify(filteredData));
-
    // Create a div for each filtered result
-   filteredData.forEach(item => {
+   filteredData.forEach((item, index) => {
        const itemDiv = document.createElement('div');
        itemDiv.classList.add('mzta_autocomplete-item');
-       itemDiv.textContent = item.label;
-       itemDiv.setAttribute('data-id', item.id);
-       if(item.is_special == "1"){
-         itemDiv.className += ' special_prompt';
+
+       // Icon slot: always present so every row keeps the same left offset.
+       // Icons are display-only here; they are chosen in the Menu Order page.
+       const itemIcon = document.createElement('img');
+       itemIcon.classList.add('mzta_item_icon');
+       itemIcon.alt = '';
+       itemIcon.draggable = false;   // don't let a native image drag swallow the click
+       if (item.custom_icon) {
+           // getContextMenuIcon() returns a "moz-extension:"-prefixed path; the popup
+           // lives one level deep, so a single "../" makes it usable from here.
+           itemIcon.src = '../' + item.custom_icon.replace(/^moz-extension:/, '');
+       } else {
+           itemIcon.classList.add('mzta_item_icon_empty');
        }
+       itemDiv.appendChild(itemIcon);
+
+       // Number shortcut prefix: 1-9 for indices 0-8, 0 for index 9
+       const prefix = index < 9 ? `${index + 1}. ` : (index === 9 ? '0. ' : '');
+       const itemLabel = document.createElement('span');
+       itemLabel.classList.add('mzta_item_label');
+       itemLabel.textContent = prefix + item.label;
+       itemDiv.appendChild(itemLabel);
+
+       itemDiv.setAttribute('data-id', item.id);
 
        // Add a mousedown event to select the item
        itemDiv.addEventListener('mousedown', function(e) { // Use mousedown instead of click
            e.preventDefault(); // Prevents the input from losing focus
            input.value = item.label;
            selectedId = item.id; // Store the selected item's ID
+           currentFocus = -1;
            taLog.log('mousedown selectedId:', selectedId);
            autocompleteList.style.display = 'none';
            _spacer_div.style.display = 'none';
@@ -164,33 +225,31 @@ async function searchPrompt(allPrompts, tabId, tabType, filtering){
 
        // Add a select_prompt event to select the item
        itemDiv.addEventListener('select_prompt', function(e) { // Use select_prompt instead of click
-        e.preventDefault(); // Prevents the input from losing focus
-        input.value = item.label;
-        selectedId = item.id; // Store the selected item's ID
-        // console.log('>>>>>>>>>>>>> select_prompt selectedId:', selectedId);
-        autocompleteList.style.display = 'none';
-        _spacer_div.style.display = 'none';
-        if(menuSendImmediately){
-            sendPrompt(selectedId, tabId);
-        }
-    });
+           e.preventDefault(); // Prevents the input from losing focus
+           input.value = item.label;
+           selectedId = item.id; // Store the selected item's ID
+           currentFocus = -1;
+           autocompleteList.style.display = 'none';
+           _spacer_div.style.display = 'none';
+           if(menuSendImmediately){
+               sendPrompt(selectedId, tabId);
+           }
+       });
 
        autocompleteList.appendChild(itemDiv);
    });
 
-   autocompleteListLoading.style.display = 'none';
    autocompleteList.style.display = 'block';
    _spacer_div.style.display = 'block';
  });
 
  // Add a keydown event listener to handle arrow navigation and selection
  input.addEventListener('keydown', async function (e) {
-
    const items = autocompleteList.getElementsByClassName('mzta_autocomplete-item');
    if ((autocompleteList.style.display === 'none' || items.length === 0)
          && (e.key !== 'Enter')
          && !['1','2','3','4','5','6','7','8','9','0'].includes(e.key)) 
-       {
+   {
        return; // Do nothing if the autocomplete list is not visible
    }
 
@@ -198,9 +257,6 @@ async function searchPrompt(allPrompts, tabId, tabType, filtering){
    if (['1','2','3','4','5','6','7','8','9','0'].includes(e.key)) {
      // Map '1' to index 0, '2' to 1, ..., '9' to 8, '0' to 9
      let numIndex = (e.key === '0') ? 9 : parseInt(e.key, 10) - 1;
-     if(checkDoAddTags()){
-      numIndex = parseInt(e.key, 10);
-     }
 
      if (items[numIndex]) {
          e.preventDefault(); // Prevent any default behavior
@@ -212,36 +268,34 @@ async function searchPrompt(allPrompts, tabId, tabType, filtering){
 
    if (e.key === 'ArrowDown') {
        // Navigate down the list
+       selectedId = null;
        currentFocus++;
        if (currentFocus >= items.length) currentFocus = 0; // Wrap to the first item
        addActive(items);
        e.preventDefault(); // Prevent cursor from moving to the end
    } else if (e.key === 'ArrowUp') {
        // Navigate up the list
+       selectedId = null;
        currentFocus--;
        if (currentFocus < 0) currentFocus = items.length - 1; // Wrap to the last item
        addActive(items);
        e.preventDefault(); // Prevent cursor from moving to the start
    } else if (e.key === 'Enter') {
-      //  console.log(">>>>>>>>>>>>>> keydown == enter selectedId: " + selectedId);
        if (selectedId) {
-         // If an item is already selected, call sendPrompt with the selected ID
-         e.preventDefault();
-         sendPrompt(selectedId, tabId); // Call your sendPrompt function
-         //banner.remove(); // Remove the banner after sending the prompt
-     } else {
-       // If no item is selected yet, select the highlighted item
-       // Select the highlighted item, or the first item if none is highlighted
-       e.preventDefault(); // Prevent form submission if inside a form
-       if (currentFocus > -1) {
-           if (items[currentFocus]) {
-               items[currentFocus].dispatchEvent(new Event('select_prompt')); // Trigger the select_prompt event
+           // If an item is already selected, call sendPrompt with the selected ID
+           e.preventDefault();
+           sendPrompt(selectedId, tabId);
+       } else {
+           // If no item is selected yet, select the highlighted item
+           e.preventDefault();
+           if (currentFocus > -1) {
+               if (items[currentFocus]) {
+                   items[currentFocus].dispatchEvent(new Event('select_prompt'));
+               }
+           } else if (items.length > 0) {
+               items[0].dispatchEvent(new Event('select_prompt'));
            }
-       } else if (items.length > 0) {
-           // If no item is highlighted, select the first item
-           items[0].dispatchEvent(new Event('select_prompt'));
        }
-     }
    }
  });
 
@@ -265,7 +319,7 @@ async function searchPrompt(allPrompts, tabId, tabType, filtering){
      }
  }
 
-document.body.insertBefore(banner, document.body.firstChild);
+ document.body.insertBefore(banner, document.body.firstChild);
  setTimeout(() => {
    input.dispatchEvent(new InputEvent('input', { bubbles: true }));
    input.focus();
@@ -275,7 +329,12 @@ document.body.insertBefore(banner, document.body.firstChild);
 
 async function sendPrompt(prompt_id, tabId){
  taLog.log("sendPrompt: " + prompt_id);
- browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id});
+ // Fire-and-forget: the background handler for "shortcut_do_prompt" returns a
+ // promise that stays pending for the whole prompt action, but we close the
+ // popup right away. Closing tears down the message conduit, so the sender-side
+ // promise rejects ("Actor 'Conduits' destroyed before query 'RuntimeMessage'
+ // was resolved"). Swallow it, as done elsewhere for fire-and-forget messages.
+ browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id}).catch(() => {});
  window.close();
 }
 
@@ -334,7 +393,7 @@ function setupBatchStopBanner(batchStatus){
 
 function filterPromptsForTab(prompts_data, filtering){
  // Filter by show_in: only show prompts visible in the popup
- let filtered = prompts_data.filter(prompt => {
+ let filtered = (prompts_data || []).filter(prompt => {
    const showIn = prompt.show_in || "popup";
    return showIn === "popup" || showIn === "both";
  });

@@ -1,0 +1,9 @@
+{
+  "description": "A prompt with no placeholder and only a selection: the selection is the content appended",
+  "spec": ["spec 02 \"How the final prompt is built (`preparePrompt()`)\": content is selection_text when non-empty"],
+  "args": {
+    "curr_prompt": { "id": "prompt_user", "text": "Rewrite this politely.", "need_signature": "0" },
+    "selection_text": "send me the file now"
+  },
+  "expected": "Rewrite this politely. \"send me the file now\""
+}

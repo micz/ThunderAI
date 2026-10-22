@@ -1,0 +1,8 @@
+{
+  "description": "A text with no placeholder and no content is not trimmed: the summarize separator reaches the result intact",
+  "spec": ["spec 02 \"How the final prompt is built (`preparePrompt()`)\": nothing is trimmed on the no-placeholder branch"],
+  "args": {
+    "curr_prompt": { "id": "prompt_summarize_email_separator", "text": "\n\n---------- NEXT EMAIL ----------\n\n", "need_signature": "0" }
+  },
+  "expected": "\n\n---------- NEXT EMAIL ----------\n\n"
+}

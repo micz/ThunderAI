@@ -21,7 +21,9 @@
     prefs_default,
     integration_options_config
  } from "../options/mzta-options-default.js";
+import { mztaPrefs } from './mzta-prefs.js';
  import { taLogger } from './mzta-logger.js';
+ import { stripThinkTags } from './mzta-utils.js';
 
  // Fallback timeout (ms) for a special command if the special_command_timeout
  // preference is unavailable. Kept generous to accommodate slow local models.
@@ -58,8 +60,10 @@
     
     prompt = "";
     worker = null;
+    worker_path = "";
     llm = "";
     full_message = "";
+    thinking_message = "";
     logger = null;
     do_debug = false;
     config = {};
@@ -86,9 +90,11 @@
             anthropic_api: './workers/model-worker-anthropic.js',
         };
 
+        // The Worker itself is created only by initWorker(), once the configuration
+        // is known to be usable: a configuration error then leaves nothing to terminate.
         const worker_path = worker_path_map[this.llm];
         if (worker_path) {
-            this.worker = new Worker(new URL(worker_path, import.meta.url), { type: 'module' });
+            this.worker_path = worker_path;
         } else {
             this.logger.log("Invalid LLM type: " + this.llm);
             throw new Error("Invalid LLM type: " + this.llm);
@@ -122,10 +128,10 @@
             prefsToGet[prefKey] = prefs_default[prefKey];
         }
 
-        const prefs_api = await browser.storage.sync.get(prefsToGet);
+        const prefs_api = await mztaPrefs.getPrefs(Object.keys(prefsToGet));
 
         // Load the configurable timeout used to abort a hung worker in sendPrompt().
-        const prefs_timeout = await browser.storage.sync.get({ special_command_timeout: prefs_default.special_command_timeout });
+        const prefs_timeout = await mztaPrefs.getPrefs(['special_command_timeout']);
         if (Number.isFinite(prefs_timeout.special_command_timeout) && prefs_timeout.special_command_timeout > 0) {
             this.timeout_ms = prefs_timeout.special_command_timeout;
         }
@@ -139,10 +145,25 @@
             }
         }
 
+        // The strings the worker builds its error texts from: a Web Worker has no
+        // browser.i18n. Same set as api_webchat/controller.js; without it an HTTP error
+        // would read "undefined: 429 ...".
+        const i18n_msg_key = integration === 'openai_comp' ? 'OpenAIComp_api_request_failed' : `${integration}_api_request_failed`;
+        const i18nStrings = {
+            [i18n_msg_key]: browser.i18n.getMessage(i18n_msg_key),
+            error_connection_interrupted: browser.i18n.getMessage('error_connection_interrupted'),
+        };
+        if (integration === 'anthropic') {
+            // describeAnthropicError() replaces the literal $MODEL$ with the model actually sent.
+            for (const key of ['anthropic_err_hint_temperature', 'anthropic_err_hint_budget_tokens', 'anthropic_err_hint_thinking_type', 'anthropic_err_hint_effort']) {
+                i18nStrings[key] = browser.i18n.getMessage(key, ['$MODEL$']);
+            }
+        }
+
         let workerInitMessage = {
             type: 'init',
             do_debug: this.do_debug,
-            i18nStrings: ''
+            i18nStrings: i18nStrings
         };
 
         for (const key of configKeys) {
@@ -164,16 +185,23 @@
             workerInitMessage[prefKey] = value;
         }
 
+        this.worker = new Worker(new URL(this.worker_path, import.meta.url), { type: 'module' });
         this.worker.postMessage(workerInitMessage);
     }
 
     sendPrompt(){
         const promise = new Promise((resolve, reject) => {
+            // HTTP status of the last retried failure. Long Retry-After waits can outlast
+            // special_command_timeout, so a request still retrying a 429 when the timer
+            // fires is reported as rate limited too, not as a plain timeout.
+            let lastRetryStatus = null;
             // Abort the worker if it never replies (e.g. a hung network connection),
             // so the caller's queue is not stuck waiting forever. Cleared on any outcome.
             let timeoutId = setTimeout(() => {
                 this.logger.error("Special command timed out after " + this.timeout_ms + " ms");
-                reject(new Error(`[ThunderAI] Special command timed out after ${this.timeout_ms} ms`));
+                const err = new Error(`[ThunderAI] Special command timed out after ${this.timeout_ms} ms`);
+                if (lastRetryStatus === 429) err.rateLimited = true;
+                reject(err);
             }, this.timeout_ms);
             const clearTimer = () => { clearTimeout(timeoutId); };
 
@@ -184,23 +212,47 @@
                 switch (type) {
                     case 'messageSent':
                         break;
+                    case 'newRetryAttempt':
+                        // Transient failure being retried by the worker: nothing to
+                        // show, the overall special_command_timeout still applies.
+                        this.logger.log("Retrying the API request: " + JSON.stringify(payload));
+                        lastRetryStatus = payload?.status ?? null;
+                        break;
                     case 'newToken':
                         this.full_message += payload.token;
                         break;
                     case 'newThinkingToken':
-                        // Reasoning tokens are only rendered in the API webchat window;
-                        // ignore them here so the log stays clean (same as the Ollama worker).
+                        // A special command's response is parsed, not displayed, so the
+                        // model's reasoning must never reach full_message. Kept apart here
+                        // for the providers that stream it in a dedicated field: it is only
+                        // written to the debug log, never handed to the caller.
+                        this.thinking_message += payload.token;
                         break;
-                    case 'tokensDone':
+                    case 'tokensDone': {
                         clearTimer();
-                        this.logger.log("tokensDone: " + this.full_message);
-                        resolve(this.full_message); // Resolve the promise with the full message
+                        // Models that emit their reasoning inline instead (<think> blocks in
+                        // the content stream) need it stripped for the same reason. An
+                        // unterminated block means a truncated reply: drop the leftover too,
+                        // rather than handing raw reasoning to the caller's parser.
+                        // The whole response is passed here, so the leading whitespace a
+                        // removed block leaves behind is safe to trim (third argument).
+                        const cleaned = stripThinkTags(this.full_message, true, true).text;
+                        this.logger.log("tokensDone: " + cleaned);
+                        resolve(cleaned); // Resolve the promise with the full message
                         break;
-                    case 'error':
+                    }
+                    case 'error': {
                         clearTimer();
                         console.error('[ThunderAI] Error from API worker:', payload);
-                        reject(new Error(`[ThunderAI] Error from API worker: ${payload}`)); // Use a single error object
+                        const err = new Error(`[ThunderAI] Error from API worker: ${payload}`); // Use a single error object
+                        // Set by the workers on a 429 that outlived the retries: the
+                        // batch loop in processEmails() stops on it.
+                        if (event.data.rateLimited === true) err.rateLimited = true;
+                        // The wait the provider asked for, when too long to retry: shown to the user.
+                        if (Number.isFinite(event.data.retryAfterMs)) err.retryAfterMs = event.data.retryAfterMs;
+                        reject(err);
                         break;
+                    }
                     default:
                         console.error('[ThunderAI] Unknown event type from API worker:', type);
                 }
@@ -219,6 +271,7 @@
 
         try {
             // console.log('[ThunderAI] Sending prompt to worker:', this.prompt);
+            this.logger.log("fullPrompt: " + this.prompt)
             this.worker.postMessage({ type: 'chatMessage', message: this.prompt });
         } catch (error) {
             clearTimer();
