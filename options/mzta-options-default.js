@@ -217,6 +217,8 @@ export const prefs_default = {
     connection_type: '',
     chatgpt_web_model: '',
     chatgpt_web_tempchat: false,
+    // Opt-in: verify the model on ChatGPT's newer model picker by opening its menu (see checkGPTModel())
+    chatgpt_web_model_extended_check: false,
     chatgpt_web_project: '',
     chatgpt_web_custom_gpt: '',
     chatgpt_web_load_wait_time: 1000,

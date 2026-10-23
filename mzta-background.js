@@ -416,13 +416,6 @@ messenger.messageDisplayScripts.register({
     js: [{ file: "js/lib/mzta-html-lines.js" }, { file: "js/mzta-compose-script.js" }]
 });
 
-browser.contentScripts.register({
-    matches: ["https://*.chatgpt.com/*"],
-    js: [{file: "js/mzta-chatgpt-loader.js"}],
-    // the loader waits for the composer itself, ChatGPT can keep the document loading for ~20 s (issue #924)
-    runAt: "document_start"
-  });
-
 // Listen for shortcut command
 messenger.commands.onCommand.addListener((command, tab) => {
     if (command === "_thunderai__do_action") {
@@ -2453,6 +2446,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     let mztaPromptName=`+ JSON.stringify('[' + (webProcessing.enabled ? browser.i18n.getMessage('ai_processing') : i18nConditionalGet(prompt_name)) + ']') +`;
                     let mztaPhDefVal="`+(prefs.placeholders_use_default_value?'1':'0')+`";
                     let mztaGPTModel="`+ (_custom_gpt_set ? '' : _gpt_model) +`";
+                    let mztaGPTExtendedCheck="`+(prefs.chatgpt_web_model_extended_check?'1':'0')+`";
                     let mztaDoDebug="`+(prefs.do_debug?'1':'0')+`";
                     let mztaUseDiffViewer="`+(prompt_info.use_diff_viewer=='1'?'1':'0')+`";
                     let mztaOriginalText=`+ JSON.stringify(webProcessing.enabled ? '' : (originalText || '')) +`;

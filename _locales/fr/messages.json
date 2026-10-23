@@ -15,7 +15,7 @@
         "description": "Connection panel (Google Gemini): help text under the Top K field."
     },
     "prefs_google_gemini_extra_body_Info": {
-        "message": "Paramètres supplémentaires à envoyer avec chaque appel API, sous forme d'objet JSON. Utile pour les options que l'API Gemini prend en charge mais que ThunderAI ne propose pas, comme {\"safetySettings\": []} ou {\"generationConfig\": {\"seed\": 42}}. Les clés à l'intérieur de \"generationConfig\" sont fusionnées avec celles construites par ThunderAI. Les paramètres gérés par ThunderAI (contenus, instruction système, réflexion, température, tokens de sortie max., top P, top K) ne peuvent pas être remplacés ici. Une valeur non valide est ignorée.",
+        "message": "Paramètres supplémentaires à envoyer avec chaque appel API, sous forme d'objet JSON. Utile pour les options que l'API Gemini prend en charge mais que ThunderAI ne propose pas, comme {\"safetySettings\" : []} ou {\"generationConfig\" : {\"seed\" : 42}}. Les clés à l'intérieur de \"generationConfig\" sont fusionnées avec celles construites par ThunderAI. Les paramètres gérés par ThunderAI (contenus, instruction système, réflexion, température, tokens de sortie max., top P, top K) ne peuvent pas être remplacés ici. Une valeur non valide est ignorée.",
         "description": "Connection panel (Google Gemini): help text under the Extra body data field. Keep the JSON examples and key names (safetySettings, generationConfig, seed) unchanged."
     },
     "extensionDescription": {
@@ -466,6 +466,12 @@
     },
     "prefs_OptionText_chatgpt_web_model_info": {
         "message": "C'est le Modèle qui sera appliqué pour l'interface Web de ChatGPT. Si aucun n'est spécifié ou si un modèle incorrect est fourni, le modèle par défaut sera défini par ChatGPT sur la page Web. Ce paramètre ne fonctionnera pas avec un compte ChatGPT gratuit."
+    },
+    "prefs_OptionText_chatgpt_web_model_extended_check": {
+        "message": "Vérification étendue du modèle"
+    },
+    "prefs_OptionText_chatgpt_web_model_extended_check_info": {
+        "message": "Si cette option est cochée, ThunderAI ouvre brièvement le menu des modèles de ChatGPT pour lire quel modèle est sélectionné avant d'envoyer le prompt. Seuls les modèles connus sont vérifiés (actuellement gpt-6 et gpt-6-thinking). Cette vérification peut cesser de fonctionner si ChatGPT modifie sa page."
     },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "Chat temporaire Web ChatGPT"
@@ -1249,7 +1255,7 @@
         "message": "Si cette option est cochée, vos conversations seront enregistrées par OpenAI."
     },
     "prefs_ollama_think_Info": {
-        "message": "Si cette option est cochée, le Modèle réfléchira avant de répondre. Cette option fonctionne uniquement avec les modèles qui prennent en charge la fonction « réfléchir »."
+        "message": "Rendre le modèle capable de raisonner avant de répondre. « Valeur par défaut du modèle » n'envoie rien et laisse le choix au modèle, ce qui, sur certains modèles, signifie qu'il raisonne quand même : choisissez « Désactivé » pour désactiver explicitement le raisonnement. Les niveaux de raisonnement disponibles dépendent du modèle sélectionné et sont affichés après la sélection d'un modèle."
     },
     "prefs_ollama_think_default": {
         "message": "Valeur par défaut du modèle",
@@ -1298,7 +1304,7 @@
         "description": "Connection panel (Ollama API, advanced) and AI chat window settings summary: label of the extra options JSON field, followed by the parameter name [options]. Keep short."
     },
     "prefs_OptionText_ollama_extra_options_info": {
-        "message": "Paramètres supplémentaires à envoyer dans l'objet 'options' d'Ollama, sous forme d'objet JSON. Utile pour les options que ThunderAI ne propose pas, comme {\"top_p\": 0.9, \"seed\": 42} ou {\"num_predict\": 512}. Les paramètres gérés par ThunderAI (nombre de tokens de contexte, température) ne peuvent pas être remplacés ici. Une valeur non valide est ignorée.",
+        "message": "Paramètres supplémentaires à envoyer dans l'objet 'options' d'Ollama, sous forme d'objet JSON. Utile pour les options que ThunderAI ne propose pas, comme {\"top_p\" : 0.9, \"seed\" : 42} ou {\"num_predict\" : 512}. Les paramètres gérés par ThunderAI (nombre de tokens de contexte, température) ne peuvent pas être remplacés ici. Une valeur non valide est ignorée.",
         "description": "Connection panel (Ollama API, advanced): help text under the extra options JSON text area. Keep 'options' and the JSON examples unchanged."
     },
     "chatgpt_win_change_reply_type": {
@@ -1426,7 +1432,7 @@
         "message": "Définissez le nombre de jetons à utiliser pour le raisonnement. Laissez ce champ vide si le modèle sélectionné ne prend pas en charge le raisonnement ou si vous souhaitez utiliser la méthode par défaut. Entrez 0 pour désactiver le raisonnement, ou -1 pour l’activer de manière dynamique."
     },
     "prefs_api_max_output_tokens": {
-        "message": "Tokens de sortie max.",
+        "message": "Tokens de sortie max",
         "description": "Connection panel: label of the field for the maximum number of tokens the model may generate; also used as a parameter label in the AI chat window's settings summary. Technical API term."
     },
     "prefs_api_top_p": {
@@ -1873,7 +1879,7 @@
         "description": "Summarize page: help text under the summary language text field, shown when 'Force summary language' is checked."
     },
     "prompt_summarize_force_lang": {
-        "message": "Le résumé doit être rédigé dans la langue suivante :",
+        "message": "Le résumé doit être rédigé en",
         "description": "Instruction sent to the AI model, appended to the summarize prompt and followed by a space, the language name and a period (e.g. 'The summary must be written in Italian.')."
     },
     "summarize_info_additional_statements": {
@@ -2206,7 +2212,7 @@
         "description": "Options page: help text under the field setting how many emails are processed by AI features in parallel."
     },
     "prefs_OptionText_max_messages": {
-        "message": "Messages max."
+        "message": "Messages max"
     },
     "prefs_OptionText_summarize_max_messages_Info": {
         "message": "Nombre maximum de messages pouvant être résumés en une seule fois en mode webchat. Au-delà de cette limite, l'opération est bloquée et un avertissement s'affiche. Définissez sur 0 pour n'appliquer aucune limite."
@@ -2458,7 +2464,7 @@
         }
     },
     "customPrompts_search_placeholder": {
-        "message": "Rechercher par nom ou ID"
+        "message": "Rechercher par nom, ID ou texte…"
     },
     "customPrompts_filter_active": {
         "message": "Filtré : $SHOWN$ sur $TOTAL$",

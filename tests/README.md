@@ -3,7 +3,7 @@
 Automated tests for ThunderAI. Today they cover the enterprise managed configuration
 ([`managed/README.md`](managed/README.md)), the static consistency of the locales and the
 preferences ([`static/README.md`](static/README.md)), the prompt and placeholder systems
-([`prompts/README.md`](prompts/README.md)), the API integrations ([`api/README.md`](api/README.md)), and what the settings pages do with no policy ([`ui/README.md`](ui/README.md), the options page, the six feature settings pages, the three prompt management pages, the setup wizard, the welcome page and the popup), and the API chat window with its diff picker ([`webchat/README.md`](webchat/README.md), being built group by group), and the one-time storage migrations run at startup ([`migration/README.md`](migration/README.md)), and what the add-on reads from a mail and writes into it, with the message-display panels ([`compose/README.md`](compose/README.md)), and what the background does on its own with no page open - special commands, the automatic processing of incoming mail, batches and their cancellation, the per-message storage, the preference snapshot and the menus ([`background/README.md`](background/README.md)); the infrastructure is built to extend to the whole
+([`prompts/README.md`](prompts/README.md)), the API integrations ([`api/README.md`](api/README.md)), and what the settings pages do with no policy ([`ui/README.md`](ui/README.md), the options page, the six feature settings pages, the three prompt management pages, the setup wizard, the welcome page and the popup), and the API chat window with its diff picker ([`webchat/README.md`](webchat/README.md), being built group by group), and the one-time storage migrations run at startup ([`migration/README.md`](migration/README.md)), and what the add-on reads from a mail and writes into it, with the message-display panels ([`compose/README.md`](compose/README.md)), and what the background does on its own with no page open - special commands, the automatic processing of incoming mail, batches and their cancellation, the per-message storage, the preference snapshot and the menus ([`background/README.md`](background/README.md)), and ChatGPT Web - the page loader, the pre-script the background injects and the model verification of the content script, with its extended check option ([`chatgptweb/README.md`](chatgptweb/README.md)), and the CI script that reports a change of the enterprise policy surface ([`ci/README.md`](ci/README.md)); the infrastructure is built to extend to the whole
 add-on, one **area** at a time. Each area adds its own files - tests, fixtures, a plugin, its
 known issues - and never edits the shared ones.
 
@@ -14,7 +14,7 @@ There are two levels:
 
 | Level | Where | What it loads | Needs |
 |---|---|---|---|
-| **1** | `tests/<area>/*.test.mjs` (today `tests/managed/`, `tests/static/`, `tests/prompts/`, `tests/api/`, `tests/ui/`, `tests/webchat/`, `tests/migration/`, `tests/compose/`, `tests/background/`) | the shipped modules, imported as they are | Node 22+, **nothing to install** |
+| **1** | `tests/<area>/*.test.mjs` (today `tests/managed/`, `tests/static/`, `tests/prompts/`, `tests/api/`, `tests/ui/`, `tests/webchat/`, `tests/migration/`, `tests/compose/`, `tests/background/`, `tests/chatgptweb/`, `tests/ci/`) | the shipped modules, imported as they are | Node 22+, **nothing to install** |
 | **DOM** | `tests/dom/<page>/*.dom.mjs` | each page's real HTML and script (or a given document with given scripts), in [jsdom](https://github.com/jsdom/jsdom) | Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`, `npm ci` |
 
 Both use only Node's built-in runner (`node:test`, `node:assert/strict`). jsdom is the
@@ -51,9 +51,10 @@ test.
 CI runs on demand, never on every commit
 ([`.github/workflows/tests.yml`](../.github/workflows/tests.yml), Node 22 and 24): by hand
 (Actions → Tests → Run workflow, or `gh workflow run tests.yml --ref <branch>`, on any
-branch), or by adding the `run-tests` label to a pull request. The label is removed when
-the run ends, so adding it again runs the suite again (except on a pull request from a fork,
-whose token is read-only: there the label stays, and only that step is allowed to fail). Level 1 runs first, **before**
+branch), or by adding the `run-tests` label to a pull request. The label is removed as
+soon as it is added, by [`.github/workflows/tests-unlabel.yml`](../.github/workflows/tests-unlabel.yml)
+(on `pull_request_target`, so it works on pull requests from forks too, and never checks out
+their code), so adding it again runs the suite again. Level 1 runs first, **before**
 installing anything (which proves it still needs no install), then `npm ci && npm test`.
 
 Nothing waits forever: node:test has no default timeout, so `npm test`, `npm run test:dom` and
@@ -92,10 +93,10 @@ tests/
 │   │   ├── known-issues.mjs    the known-issue mechanism: knownTest(), runKnown()
 │   │   └── dom-harness.mjs     DOM harness: openPage(), openDocument(), the strict browser proxy,
 │   │                           settle() (the only core file that imports jsdom)
-│   ├── plugins/<area>.mjs      an area's hooks into the core (today: managed.mjs)
+│   ├── plugins/<area>.mjs      an area's hooks into the core (today: managed.mjs, chatgptweb.mjs)
 │   ├── known-issues/<area>.mjs an area's known issues and their shape (today: managed.mjs,
 │   │                           static.mjs, prompts.mjs, api.mjs, ui.mjs, webchat.mjs, migration.mjs,
-│   │                           compose.mjs, background.mjs)
+│   │                           compose.mjs, background.mjs, chatgptweb.mjs)
 │   │
 │   └── *.mjs                   the managed layer: load.mjs, dom-page.mjs, browser-mock.mjs,
 │                               dom-known-issues.mjs re-export the core with the managed
@@ -114,6 +115,9 @@ tests/
 │                               mail documents, the safety check, level-1 harness test
 ├── background/                 level 1 of the background (its code cut out of mzta-background.js and run
 │                               as one scope, the API models, the fake Worker), and its README
+├── chatgptweb/                 the ChatGPT Web area (its DOM files are dom/<page>/chatgptweb-*): README, the
+│                               controlled clock, the pre-script cut, the ChatGPT page, level 1 (loader, pre-script)
+├── ci/                         level 1 of the CI scripts (today the policy surface report), and its README
 ├── <area>/                     level 1 of another area
 └── dom/<page>/                 DOM: one file per page × scenario, shared by every area
 ```
@@ -372,4 +376,5 @@ rules are in [`managed/README.md`](managed/README.md#potential-bugs-todo-tests).
   what the webchat area leaves out in [`webchat/README.md`](webchat/README.md#what-is-not-covered),
   what the migration area leaves out in [`migration/README.md`](migration/README.md#what-is-not-covered),
   what the compose area leaves out in [`compose/README.md`](compose/README.md#what-is-not-covered),
-  what the background area leaves out in [`background/README.md`](background/README.md#what-is-not-covered).
+  what the background area leaves out in [`background/README.md`](background/README.md#what-is-not-covered),
+  what the chatgptweb area leaves out in [`chatgptweb/README.md`](chatgptweb/README.md#what-is-not-covered).

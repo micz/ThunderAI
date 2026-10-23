@@ -188,6 +188,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `reply_type` | `'reply_all'` | Default reply type |
 | `chatgpt_web_model` | `''` | ChatGPT Web model override |
 | `chatgpt_web_tempchat` | `false` | Use temporary chat |
+| `chatgpt_web_model_extended_check` | `false` | Opt-in extended model verification on ChatGPT Web: on the newer UI, the model menu is opened briefly to read the selected model before sending. Only known models are verified (today `gpt-6` and `gpt-6-thinking`); any other model gets the legacy check, and with the option off the newer UI sends without verification. It may stop working when ChatGPT changes its page. Read by the background into the pre-script (`mztaGPTExtendedCheck`), never by the page itself: see [04 "Model verification"](04-api-integrations.md#model-verification-checkgptmodel). A `.mzta_switch` toggle in the advanced ChatGPT Web rows of the shared connection template, right after the model row, unprefixed id (options page and setup wizard only). **Never disabled**, an empty model field included: a prompt's own model can still ask for one. Boolean, so policy-settable with no extra rule. |
 | `chatgpt_web_project` | `''` | ChatGPT Web project |
 | `chatgpt_web_custom_gpt` | `''` | Custom GPT URL |
 | `chatgpt_web_load_wait_time` | `1000` | Wait time (ms) for ChatGPT page |
@@ -430,7 +431,7 @@ The summarize settings page provides:
    - `'webchat'` — opens the AI chat window
    - Note: `summarize_auto = 2` and `summarize_auto = 3` always generate inline regardless of this setting. Context menu summarize with multiple messages always falls back to webchat.
 4. **Max display length** (`summarize_max_display_length`) — number input, limits inline summary text to N characters. `0` = no limit. When truncated, a "See more"/"See less" toggle link is appended.
-5. **Max messages** (`summarize_max_messages`) — number input (`min="0"`, so `0` can be picked as well as typed), caps how many messages can be summarized at once in webchat mode. Above the limit the operation is blocked with the `summarize_too_many_messages` warning. `0` = no limit. Its **Reset** button (`#reset_summarize_max_messages`, `data-mzta-companion-of` the field) puts the `prefs_default` value (20) back in the field and stores it with `setPref()`, as a number, firing no `change`; for a policy-locked key it does nothing (`isLockedKey()`), as the options page's Reset buttons.
+5. **Max messages** (`summarize_max_messages`) — number input (`min="0"`, so `0` can be picked as well as typed), caps how many messages can be summarized at once in webchat mode. Above the limit the operation is blocked with the `summarize_too_many_messages` warning. `0` = no limit. Its **Reset** button (`#reset_summarize_max_messages`, `data-mzta-companion-of` the field) puts the `prefs_default` value (20) back in the field and stores it with `setPref()`, as a number, firing no `change`; for a policy-locked key it does nothing (`isLockedKey()`), as the options page's Reset buttons. On `change`, `saveOptions()` never stores what the field cannot mean: an emptied field (`valueAsNumber` is `NaN`, which storage would serialize as `null`) stores the `prefs_default` value and writes it back into the field, so the page and the effective limit agree; a negative value is clamped to `0` and a fractional one rounded to an integer, and the field shows the stored value. The null handling stays on the page, not in `mzta-prefs.js` (see the comment on `getPrefs()`).
 6. **Strip formatting** (`summarize_strip_formatting`) — checkbox, removes HTML/Markdown formatting from AI summary responses, displaying plain text only. Default: off.
    - **Force summary language** (`summarize_force_lang`) — checkbox, followed by the `summarize_lang` text field inside `#summarize_lang_container`, which `updateForceLangState()` hides while the toggle is off (on load, on toggle change, at the end of `restoreOptions()`). Below the main prompt editor, `#summarize_info_additional_statements` previews the statement that will be appended, computed by the same `taPromptUtils.getSummaryLang()` used by `buildSummaryPrompt()`, and is hidden when nothing is appended. It is refreshed from `browser.storage.onChanged` (keys `summarize_force_lang`, `summarize_lang`, `default_chatgpt_lang`), not from the controls' `change` event, because `saveOptions()` does not await `setPref()`. The two other `.summarize_info_additional_statements` divs (email template, separator) are unused.
 7. **Automatic summary sender list** — its own `.mzta_section` card (see the visual-design note below), holding the `summarize_auto_senders` toggle and the `summarize_auto_senders_list` textarea. The textarea carries **no** `.option-input` class: like the spamfilter skip list it is saved explicitly by its own Save button through `normalizeStringList(value, 2)`, with the `#auto_senders_unsaved` indicator handled exactly as in `pages/spamfilter/mzta-spamfilter.js`. `updateAutoSendersState()` disables the textarea and its Save button when the toggle is off, and disables the **whole card** (plus showing an explanatory note) when `summarize_auto === 3`, since that mode already summarizes every incoming message; it is called on load, on every toggle change, and from `updateDisplayModeConstraint()`.
@@ -668,9 +669,10 @@ are **not injected at all**, because they pass `no_chatgpt_web: true` (see
 [04-api-integrations.md](04-api-integrations.md), ChatGPT Web section, for why those
 rows must keep unprefixed ids and therefore exist only once per page).
 
-**Toggle inside the shared template.** The `chatgpt_web_tempchat` row renders its
-checkbox as the design-system `.mzta_switch` toggle (the only checkbox in the shared
-template; every other injected checkbox is still a plain one). The switch label is
+**Toggles inside the shared template.** The `chatgpt_web_model_extended_check` and
+`chatgpt_web_tempchat` rows render their checkboxes as the design-system `.mzta_switch`
+toggle (the only two in the shared template; every other injected checkbox is still a
+plain one), with the same markup. The switch label is
 wrapped in a flex `<div>` shared with the info text, not left inline: the
 connection-table restyle sets `label { display: block }` on every label inside
 `#connection_ui_table` / `#connection_ui_adv_table`, and that selector (1 id + 1 type)
@@ -679,7 +681,7 @@ the label is a flex item — `block` is what a flex item gets anyway — and
 `.mzta_switch`'s `width: auto !important` keeps it at the 38px track width, so only
 the switch is clickable. Without the wrapper the block label would stretch across the
 whole cell and toggle from a click anywhere in the row. Both pages that ever show the
-row (options + setup wizard) link `mzta-design.css`, so the toggle styles are always
+rows (options + setup wizard) link `mzta-design.css`, so the toggle styles are always
 present.
 
 **Prefix propagation invariant.** `showConnectionOptions(conntype_select, modelId_prefix)`
@@ -1337,7 +1339,9 @@ the default 70 instead. `getSpamThreshold()` in `mzta-background.js` now guards 
 number input stores — falls back. The other numeric prefs (`add_tags_maxnum`, `add_tags_max_messages`,
 `summarize_max_messages`, `summarize_max_display_length`, `translate_max_display_length`) are
 already safe at their consumers, either via `Number.isFinite()` or because `|| 0` / `> 0` is the
-intended behaviour for them; their `saveOptions()` cases are deliberately left untouched.
+intended behaviour for them; their `saveOptions()` cases are deliberately left untouched, except
+`summarize_max_messages`, whose page also falls back to `prefs_default` on `NaN` (and clamps to a
+non-negative integer) so that the field never shows empty while a limit of 20 applies.
 
 **No user-facing notification** is emitted when a flag is auto-disabled — only a `console.log`.
 `disable_ApiFeature()` is likewise silent; notifying only from the background would make the same

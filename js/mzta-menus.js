@@ -188,19 +188,18 @@ export class mzta_Menus {
             this.logger.log("getMailBody raw_selection: " + JSON.stringify(raw_selection));
             this.logger.log("getMailBody raw_selection_html: " + JSON.stringify(raw_selection_html));
 
-            // Hoisted out of the object literal below, because the ORDER of the
-            // next two calls is load-bearing.
-            const raw_only_typed_text = await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect });
-            // getOnlyTypedText with do_autoselect has just put a range around the
-            // typed region: read its markup while that range is in force. The
-            // getSelectedHtml above ran BEFORE it, when rangeCount was still 0, so
-            // it returned '' - which left selection_html empty while selection_text
-            // was substituted with the typed text, handing the diff picker a
-            // mismatched text/html pair. Must stay ahead of getOnlyQuotedText,
-            // which has an autoselect branch of its own. [#829]
-            const raw_only_typed_html = do_autoselect
-                ? await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" })
-                : '';
+            // with_html: the typed text comes back with its html twin, read from the
+            // typed region's own range. It used to be read with a second getSelectedHtml
+            // after the autoselect, which only worked if the range was in the live
+            // selection - and the autoselect replaced the user's selection to get it
+            // there [#829]. getOnlyTypedText now autoselects only when the user has no
+            // selection (the same case in which selection_text is substituted with the
+            // typed text below), so the user's selection is never lost and the twins
+            // no longer depend on the order of the calls. [#978]
+            const raw_only_typed = await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect, with_html: true });
+            const raw_only_typed_text = raw_only_typed.text;
+            const raw_only_typed_html = raw_only_typed.html;
+            this.logger.log("getMailBody raw_only_typed_text: " + JSON.stringify(raw_only_typed_text));
             this.logger.log("getMailBody raw_only_typed_html: " + JSON.stringify(raw_only_typed_html));
             // Paragraph-preserving: these carry the mail the user typed, and the
             // blank line between greeting and body is part of it. Computed once:

@@ -982,6 +982,14 @@
     "message": "This is the Model that will be enforced for the ChatGPT Web Interface. If none is specified or an incorrect one is provided, the default model will be set by ChatGPT on the webpage. This setting will not work with a ChatGPT free account.",
     "description": "Connection panel (ChatGPT Web): help text under the model field, explaining how the model is enforced on the ChatGPT web page."
   },
+  "prefs_OptionText_chatgpt_web_model_extended_check": {
+    "message": "Extended model check",
+    "description": "Connection panel (ChatGPT Web, advanced): label of the toggle that turns on the extended verification of the model selected on the ChatGPT page."
+  },
+  "prefs_OptionText_chatgpt_web_model_extended_check_info": {
+    "message": "If checked, ThunderAI briefly opens the ChatGPT model menu to read which model is selected before sending the prompt. Only known models are verified (currently gpt-6 and gpt-6-thinking). This check may stop working when ChatGPT changes its page.",
+    "description": "Connection panel (ChatGPT Web): text next to the extended model check toggle. 'gpt-6' and 'gpt-6-thinking' are model identifiers: do not translate them."
+  },
   "prefs_OptionText_chatgpt_web_tempchat": {
     "message": "ChatGPT Web temporary chat",
     "description": "Connection panel (ChatGPT Web, advanced): label of the toggle that uses ChatGPT's temporary chat mode."

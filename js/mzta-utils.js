@@ -1180,11 +1180,51 @@ export function supportsUsageData(connection_type){
   return USAGE_DATA_SUPPORT[connection_type] === true;
 }
 
+// Models often write a multi-line value with raw line breaks inside the JSON string,
+// which JSON.parse rejects ("Bad control character in string literal"). Escape the
+// control characters found inside strings only; outside them they are whitespace.
+function escapeControlCharsInJsonStrings(text) {
+  let out = '';
+  let inString = false;
+  let escaped = false;
+  for (const ch of text) {
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === '\\') {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      } else if (ch < ' ') {
+        const named = { '\n': '\\n', '\r': '\\r', '\t': '\\t', '\b': '\\b', '\f': '\\f' }[ch];
+        out += named ?? '\\u' + ch.charCodeAt(0).toString(16).padStart(4, '0');
+        continue;
+      }
+    } else if (ch === '"') {
+      inString = true;
+    }
+    out += ch;
+  }
+  return out;
+}
+
+function parseJsonTolerant(text) {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    try {
+      return JSON.parse(escapeControlCharsInJsonStrings(text));
+    } catch {
+      throw error;
+    }
+  }
+}
+
 export function extractJsonObject(inputString) {
   try {
     const jsonMatch = inputString.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      const jsonObject = JSON.parse(jsonMatch[0]);
+      const jsonObject = parseJsonTolerant(jsonMatch[0]);
       // console.log(">>>>>>>>>> Extracted JSON object:", jsonObject);
       return jsonObject;
     } else {

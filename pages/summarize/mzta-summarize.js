@@ -340,7 +340,17 @@ function saveOptions(e) {
         options[element.id] = element.checked;
         break;
       case 'number':
-        options[element.id] = element.valueAsNumber;
+        if (element.id === 'summarize_max_messages') {
+          // An empty field gives NaN, which storage serializes as null: fall back to the
+          // default and show it, so the field and the effective limit agree. Negative
+          // or fractional values are brought back to a non-negative integer.
+          let value = element.valueAsNumber;
+          value = Number.isNaN(value) ? prefs_default.summarize_max_messages : Math.max(0, Math.round(value));
+          element.value = value;
+          options[element.id] = value;
+        } else {
+          options[element.id] = element.valueAsNumber;
+        }
         break;
       case 'text':
       case 'password':

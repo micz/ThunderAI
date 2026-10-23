@@ -1,0 +1,279 @@
+name: Sync site languages
+
+# Tells the site repository (micz/micz.github.io) which UI languages ThunderAI has, through a
+# repository_dispatch with event_type "thunderai-languages". The FULL current list is sent every
+# time, never a diff: the site does an idempotent sync.
+#
+#   mode "in_progress"  push to dev touching _locales/**: every directory of _locales/ at the pushed
+#                       commit except en.
+#   mode "release"      stable release published (prereleases skipped): the codes of LANG.md
+#                       (the release packaging allowlist) at the release tag, except en.
+#   Both modes send, for each of those locales, ALL its contributors up to that commit or tag
+#   (also for the languages already published): the site updates their credits every time.
+#
+# client_payload: { mode, locales: [codes], contributors: { code: [contributor] },
+#                   ref: commit sha | tag, url: commit | release html_url }
+#
+# Locale codes: the directory name IS the code, unchanged. LANG.md and the site are written with
+# the directory names themselves (pt-br, zh_Hans, zh_Hant, nb_NO are literal directory names), so
+# no conversion is applied: a name that does not look like a locale code
+# ([a-z]{2,3} optionally followed by _ or - and 2-8 letters/digits) fails the run instead of
+# being guessed. Directories without a messages.json are skipped with a warning.
+#
+# Contributors (suggested credits), per locale, from the log of _locales/<dir>/ up to the ref:
+#   - every Co-authored-by trailer;
+#   - the commit author when the commit is a translation: committed by Weblate (Weblate records
+#     the translator as the author, not as a trailer) or touching only files of _locales/<dir>/.
+#     Authors of commits that also change other files (code changes adding a key everywhere)
+#     are not counted.
+#   Excluded: the owner's emails, Weblate's own identities (hosted@ / noreply@weblate.org, i.e.
+#   also anonymous Weblate translations), GitHub and Claude noreply identities, [bot] names.
+#   Deduplicated by email (by name when there is none), sorted by contribution: strings, then
+#   lines (both descending), then name. Each one is
+#   { name, email, github, weblate, url, first, last, strings, lines } (null when unknown):
+#   - github: the login from a users.noreply.github.com address, else the account GitHub links
+#     to the commit (author only: a trailer's co-author is not the commit's account);
+#   - weblate: the username from a users.noreply.hosted.weblate.org address (Weblate does not
+#     expose the username of any other address);
+#   - url: the profile to link, GitHub first, else Weblate;
+#   - first, last: author dates (YYYY-MM-DD) of their first and latest commit on that locale;
+#   - strings: the "message" lines of _locales/<dir>/messages.json at the ref whose author is
+#     them (git blame -w): how much of the translation as it is today is theirs. Blame credits the
+#     last one who touched a line, and lines last touched by excluded identities count for nobody;
+#   - lines: lines added to _locales/<dir>/ by their counted commits over the whole history
+#     (all their work, rewritten strings included). A trailer's co-author gets 0 for both.
+#   The emails are already public in the git history; the site keys its overrides on them.
+#
+# REQUIRED SECRET: SITE_DISPATCH_TOKEN
+#   A fine-grained personal access token with access to the micz/micz.github.io repository only,
+#   permission "Contents: Read and write" (required by the repository_dispatch endpoint).
+#   Add it in Settings > Secrets and variables > Actions of this repository.
+on:
+  push:
+    branches: [dev]
+    paths:
+      - '_locales/**'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'What to send'
+        type: choice
+        options:
+          - in_progress
+          - release
+        default: in_progress
+      ref:
+        description: 'in_progress: commit/branch (default: the selected branch). release: tag (default: the latest stable release)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  # Each run sends the full list: a newer run makes an older one of the same mode useless.
+  group: sync-site-languages-${{ inputs.mode || (github.event_name == 'release' && 'release') || 'in_progress' }}
+  cancel-in-progress: true
+
+jobs:
+  notify:
+    # On a fork there is no token for the site: nothing to do there. Prereleases are skipped.
+    if: >-
+      github.repository == 'micz/ThunderAI' &&
+      (github.event_name != 'release' || !github.event.release.prerelease)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history and tags: the contributors and any ref/tag given by hand
+
+      - name: Build the payload and notify the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SITE_DISPATCH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
+          SITE_REPO: micz/micz.github.io
+          MODE: ${{ inputs.mode || (github.event_name == 'release' && 'release') || 'in_progress' }}
+          INPUT_REF: ${{ inputs.ref }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          EVENT_URL: ${{ github.event.release.html_url }}
+          # Owner's commit emails, never suggested as translators
+          OWNER_EMAILS: 'm@micz.it micz@users.noreply.github.com'
+        run: |
+          set -euo pipefail
+          REPO="$GITHUB_REPOSITORY"
+          CODE_RE='^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$'
+
+          if [ -z "$SITE_DISPATCH_TOKEN" ]; then
+            echo "::error::Secret SITE_DISPATCH_TOKEN is not set (see the comment at the top of this workflow)"; exit 1
+          fi
+
+          check_code() {
+            if ! printf '%s\n' "$1" | grep -qE "$CODE_RE"; then
+              echo "::error::'$1' does not look like a locale code: add an explicit mapping to this workflow"; exit 1
+            fi
+          }
+
+          : > locales.txt
+          if [ "$MODE" = "in_progress" ]; then
+            REF="${INPUT_REF:-$GITHUB_SHA}"
+            SHA=$(git rev-parse --verify -q "$REF^{commit}" || git rev-parse --verify -q "origin/$REF^{commit}" || true)
+            if [ -z "$SHA" ]; then echo "::error::Unknown commit or branch '$REF'"; exit 1; fi
+            PAYLOAD_REF="$SHA"
+            PAYLOAD_URL="$GITHUB_SERVER_URL/$REPO/commit/$SHA"
+
+            # 1. The directories of _locales/ at that commit, en excluded
+            git ls-tree -d --name-only "$SHA" _locales/ | sed 's|^_locales/||' | while read -r d; do
+              [ -z "$d" ] || [ "$d" = "en" ] && continue
+              if ! git cat-file -e "$SHA:_locales/$d/messages.json" 2>/dev/null; then
+                echo "::warning::_locales/$d has no messages.json, skipped"; continue
+              fi
+              echo "$d"
+            done | sort -u > locales.txt
+
+          elif [ "$MODE" = "release" ]; then
+            TAG="${INPUT_REF:-$EVENT_TAG}"
+            if [ -z "$TAG" ]; then
+              TAG=$(gh api "repos/$REPO/releases/latest" --jq .tag_name)   # latest excludes prereleases
+            fi
+            SHA=$(git rev-parse --verify -q "refs/tags/$TAG^{commit}" || true)
+            if [ -z "$SHA" ]; then echo "::error::Unknown tag '$TAG'"; exit 1; fi
+            PAYLOAD_REF="$TAG"
+            PAYLOAD_URL="$EVENT_URL"
+            if [ -z "$PAYLOAD_URL" ] || [ -n "$INPUT_REF" ]; then
+              if ! REL=$(gh api "repos/$REPO/releases/tags/$TAG" 2>/dev/null); then
+                echo "::error::No published release for tag '$TAG'"; exit 1
+              fi
+              if [ "$(jq -r .prerelease <<< "$REL")" = "true" ]; then
+                echo "::error::Release '$TAG' is a prerelease: nothing to send"; exit 1
+              fi
+              PAYLOAD_URL=$(jq -r .html_url <<< "$REL")
+            fi
+
+            # 1. LANG.md at the tag: one code per line, blank lines ignored, en excluded
+            git show "refs/tags/$TAG:LANG.md" | tr -d '\r' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' \
+              | grep -v '^$' | grep -vx 'en' | sort -u > locales.txt || true
+
+          else
+            echo "::error::Unknown mode '$MODE'"; exit 1
+          fi
+
+          while read -r c; do check_code "$c"; done < locales.txt
+          if [ ! -s locales.txt ]; then
+            echo "::error::Empty locale list: refusing to tell the site to remove every language"; exit 1
+          fi
+
+          # 2. Suggested credits, every locale up to $SHA: lines
+          #    "code<TAB>name<TAB>email<TAB>sha<TAB>a|t (commit author or trailer)<TAB>date<TAB>email
+          #    as written (the Weblate username keeps its case)<TAB>lines added to the locale",
+          #    see the header for the rules
+          : > contrib.tsv
+          while read -r d; do
+            git -c core.quotePath=false log --full-diff --numstat \
+              --format='%x01%H%x09%aN%x09%aE%x09%cE%x09%as%x09%(trailers:key=Co-authored-by,valueonly,separator=%x02)' \
+              "$SHA" -- "_locales/$d/" \
+            | awk -v code="$d" -v prefix="_locales/$d/" -v owner=" $OWNER_EMAILS " '
+                function emit(n, e, kind, lines,   oe) {
+                  gsub(/^[ \t]+|[ \t]+$/, "", n); oe = e; e = tolower(e)
+                  if (n == "" || n ~ /\[bot\]$/ || n == "Hosted Weblate" || n == "Weblate") return
+                  if (e != "" && index(tolower(owner), " " e " ")) return
+                  if (e == "hosted@weblate.org" || e == "noreply@weblate.org" || \
+                      e == "noreply@github.com" || e == "noreply@anthropic.com") return
+                  print code "\t" n "\t" e "\t" h "\t" kind "\t" dt "\t" oe "\t" lines
+                }
+                function flush(   n, i, t, v, nm, em) {
+                  if (!started) return
+                  if (ce == "hosted@weblate.org" || (nfiles > 0 && outside == 0)) emit(an, ae, "a", added)
+                  n = split(tr, t, "\002")
+                  for (i = 1; i <= n; i++) {
+                    v = t[i]
+                    if (match(v, /<[^>]*>/)) { nm = substr(v, 1, RSTART - 1); em = substr(v, RSTART + 1, RLENGTH - 2) }
+                    else { nm = v; em = "" }
+                    emit(nm, em, "t", 0)
+                  }
+                }
+                /^\001/ {
+                  flush(); started = 1
+                  split(substr($0, 2), f, "\t")
+                  h = f[1]; an = f[2]; ae = f[3]; ce = tolower(f[4]); dt = f[5]; tr = f[6]
+                  nfiles = 0; outside = 0; added = 0; next
+                }
+                # numstat: added<TAB>deleted<TAB>path ("-" for binary files)
+                NF {
+                  split($0, s, "\t"); nfiles++
+                  if (index(s[3], prefix) == 1) { if (s[1] != "-") added += s[1] } else outside++
+                }
+                END { flush() }' >> contrib.tsv
+          done < locales.txt
+
+          # Current strings per author: "code<TAB>email<TAB>count" from the blame of messages.json
+          : > blame.tsv
+          while read -r d; do
+            git cat-file -e "$SHA:_locales/$d/messages.json" 2>/dev/null || continue
+            git blame -w --line-porcelain "$SHA" -- "_locales/$d/messages.json" \
+            | awk -v code="$d" '
+                /^author-mail / { m = tolower($2); gsub(/^<|>$/, "", m) }
+                /^\t[ \t]*"message"[ \t]*:/ { c[m]++ }
+                END { for (k in c) print code "\t" k "\t" c[k] }' >> blame.tsv
+          done < locales.txt
+
+          # 3. GitHub login per email: from the noreply address, else the account GitHub links to
+          #    one of the commits authored with that email (empty when not linked to an account)
+          awk -F'\t' '$3 != "" && !seen[$3]++ { print $3 }' contrib.tsv | while read -r e; do
+            login=""
+            if [[ "$e" =~ ^([0-9]+\+)?([^@]+)@users\.noreply\.github\.com$ ]]; then
+              login="${BASH_REMATCH[2]}"
+            else
+              sha=$(awk -F'\t' -v e="$e" '$3 == e && $5 == "a" { print $4; exit }' contrib.tsv)
+              if [ -n "$sha" ]; then
+                login=$(gh api "repos/$REPO/commits/$sha" --jq '.author.login // ""' || true)
+              fi
+            fi
+            printf '%s\t%s\n' "$e" "$login"
+          done > logins.tsv
+
+          # Every locale is a key (an empty list when nobody is credited)
+          jq -Rn --rawfile locs locales.txt --rawfile logins logins.tsv --rawfile blame blame.tsv '
+            ($logins | split("\n") | map(select(. != "") | split("\t")
+              | {key: .[0], value: (if (.[1] // "") == "" then null else .[1] end)}) | from_entries) as $gh
+            | ($blame | split("\n") | map(select(. != "") | split("\t")
+              | {key: "\(.[0])\t\(.[1])", value: (.[2] | tonumber)}) | from_entries) as $bl
+            | ($locs | split("\n") | map(select(. != ""))) as $codes
+            | [inputs | split("\t") | {code: .[0], name: .[1], email: (if .[2] == "" then null else .[2] end),
+                                       date: .[5], raw: .[6], lines: (.[7] | tonumber)}
+               | .key = (.email // (.name | ascii_downcase))] as $rows
+            | $codes | map(. as $c | {key: $c, value:
+                ($rows | map(select(.code == $c))
+                 | reduce .[] as $r ({};
+                     if has($r.key) then
+                       .[$r.key].first = ([.[$r.key].first, $r.date] | min)
+                       | .[$r.key].last = ([.[$r.key].last, $r.date] | max)
+                       | .[$r.key].lines += $r.lines
+                     else .[$r.key] = ($r + {first: $r.date, last: $r.date}) end)
+                 | [.[] | {name, email,
+                           github: (if .email then $gh[.email] else null end),
+                           weblate: (if .email then ((.raw | capture("^(?<u>[^@]+)@users\\.noreply\\.hosted\\.weblate\\.org$"; "i") | .u) // null) else null end),
+                           first, last,
+                           strings: (if .email then ($bl["\($c)\t\(.email)"] // 0) else 0 end),
+                           lines}
+                        | .url = (if .github then "https://github.com/\(.github)"
+                                  elif .weblate then "https://hosted.weblate.org/user/\(.weblate)/"
+                                  else null end)]
+                 | sort_by(-.strings, -.lines, (.name | ascii_downcase)))})
+            | from_entries' contrib.tsv > contributors.json
+
+          # 4. Payload and dispatch
+          jq -n --arg mode "$MODE" --arg ref "$PAYLOAD_REF" --arg url "$PAYLOAD_URL" \
+                --rawfile locs locales.txt --slurpfile contrib contributors.json '
+            { event_type: "thunderai-languages",
+              client_payload: { mode: $mode,
+                                locales: ($locs | split("\n") | map(select(. != ""))),
+                                contributors: $contrib[0],
+                                ref: $ref, url: $url } }' \
+            > payload.json
+          cat payload.json
+
+          GH_TOKEN="$SITE_DISPATCH_TOKEN" gh api --method POST "repos/$SITE_REPO/dispatches" --input payload.json
+          echo "Sent $(grep -c . locales.txt) locales ($MODE) to $SITE_REPO"

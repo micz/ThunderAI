@@ -723,16 +723,36 @@ switch (message.command) {
       lastNode = firstNode;
     }
 
-    //if(message.do_autoselect && selection.isCollapsed && firstNode && lastNode) {
-      if(message.do_autoselect && firstNode && lastNode) {
-      const range = document.createRange();
+    // The typed region as a detached range: its markup is read from it directly, so the
+    // html twin no longer depends on the range being put in the live selection. [#978]
+    let range = null;
+    if (firstNode && lastNode) {
+      range = document.createRange();
       range.setStartBefore(firstNode);
       range.setEndAfter(lastNode);
+    }
+
+    // Autoselect only when the user has no meaningful selection: the same case in which the
+    // background substitutes selection_text with the typed text (selection_text === '' after
+    // whitespace normalization and trim, mzta-menus.js). A real selection is left untouched,
+    // so the prompt and the replacement work on the same range. [#978]
+    const noUserSelection = !selection || selection.rangeCount === 0 || selection.isCollapsed
+      || selection.toString().trim() === '';
+    if (message.do_autoselect && range && noUserSelection) {
       selection.removeAllRanges();
       selection.addRange(range);
     }
 
-    return Promise.resolve(lines.text());
+    if (!message.with_html) {
+      return Promise.resolve(lines.text());
+    }
+    let html = '';
+    if (range) {
+      const div = document.createElement('div');
+      div.appendChild(range.cloneContents());
+      html = div.innerHTML;
+    }
+    return Promise.resolve({ text: lines.text(), html: html });
   }
 
   case "getOnlyQuotedText": {

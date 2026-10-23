@@ -203,6 +203,20 @@ export async function injectConnectionUI({
   </tr>
   <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
+      <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_model_extended_check__</span>
+    </label></td>
+    <td>
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <label class="mzta_switch">
+          <input type="checkbox" id="chatgpt_web_model_extended_check" name="chatgpt_web_model_extended_check" class="option-input" />
+          <span class="track"></span>
+        </label>
+        <span>__MSG_prefs_OptionText_chatgpt_web_model_extended_check_info__</span>
+      </div>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_project__</span>
       <br><i class="small_info" id="chatgpt_web_project_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b class="lightbold">/g/PROJECT-ID-PROJECT-NAME/project</b>
         <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>

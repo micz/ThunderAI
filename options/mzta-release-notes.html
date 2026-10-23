@@ -12,8 +12,10 @@
         <li>Added async content-processing hooks for the separate ThunderAI Privacy companion. Privacy settings, model downloads and local processing live in the companion; ThunderAI does not bundle its runtime.</li>
         <li>Active processing failures block the operation. Locally restored replies never enter provider conversation history or ChatGPT's page; Web input and restored previews/diffs open in the companion.</li>
         <li>If an active companion is disabled or removed, AI requests stay blocked. Disable processing in the companion before uninstalling it to resume unprocessed requests. ThunderAI Privacy currently requires Thunderbird 153 or later, 64-bit.</li>
+        <li>Fix: a prompt using <i>{%mail_typed_text%}</i> in the compose window no longer replaces the text you selected with the whole typed text: the answer now replaces your selection, and the typed text is selected automatically only when nothing is selected [<a href="https://github.com/micz/ThunderAI/issues/978">#978</a>].</li>
+        <li>...</li>
       </ul>
-      <h2>Version 5.1.0 - ??/??/2026</h2>
+      <h2>Version 5.1.0 - 18/10/2026</h2>
       <ul>
         <li>Redesigned the Custom Prompts page: a list with a detail editor, plus a table view of all the prompts and their options. The search also looks in the prompt text, and every change is saved immediately (the "Save All" button is gone) [<a href="https://github.com/micz/ThunderAI/issues/904">#904</a>].</li>
         <li>Added support for the Thunderbird Enterprise Policies: with <i>policies.json</i> an administrator can pre-configure or enforce any setting, provide organization prompts, turn off prompt management, hide the built-in prompts and disable the setup wizard [<a href="https://github.com/micz/ThunderAI/issues/880">#880</a>].</li>
@@ -29,6 +31,8 @@
         <li><i>[Claude API]</i> Fix: some combinations of <i>Extended thinking budget</i>, Temperature, Top P/K and Max Tokens no longer make every request fail; the <i>Effort</i> drop-down is no longer empty in the Setup Wizard and the custom prompts page; an empty System Prompt is no longer sent.</li>
         <li><i>[OpenAI API]</i> Expanded options that adapt to the selected model: Max output tokens, Top P, Verbosity, Output format (JSON schema), Truncation, Prompt cache key, Service tier, Safety identifier, Include encrypted reasoning, and more Reasoning effort levels, also per prompt [<a href="https://github.com/micz/ThunderAI/issues/501">#501</a>].</li>
         <li><i>[Google Gemini API]</i> Added the <i>Max output tokens</i>, <i>Top P</i>, <i>Top K</i> and <i>Extra body data</i> options, also per prompt [<a href="https://github.com/micz/ThunderAI/issues/500">#500</a>].</li>
+        <li><i>[ChatGPT Web]</i> Added the <i>Extended model check</i> option, off by default: before sending, ThunderAI briefly opens the ChatGPT model menu to make sure the requested model is selected. It currently verifies <i>gpt-6</i> and <i>gpt-6-thinking</i>, thanks to <a href="https://github.com/dwchoo">dwchoo</a>. With the option off, on the new ChatGPT interface the prompt is sent at once without checking the model [<a href="https://github.com/micz/ThunderAI/issues/964">#964</a>].</li>
+        <li><i>[ChatGPT Web]</i> When the selected model cannot be verified, the prompt now waits for the "Use the current model" button: it is no longer sent by itself if the model changes on the page after the warning appears [<a href="https://github.com/micz/ThunderAI/issues/964">#964</a>].</li>
         <li><i>[All APIs]</i> Added the <i>Show usage data in chat</i> option: each answer shows the tokens used, with details on click [<a href="https://github.com/micz/ThunderAI/issues/496">#496</a>].</li>
         <li><i>[All APIs]</i> When the AI server is temporarily unavailable, the request is automatically repeated up to 5 times, with a countdown in the chat window. The automatic processing of emails stops by itself when the provider's rate limit or quota is exceeded [<a href="https://github.com/micz/ThunderAI/issues/879">#879</a>, <a href="https://github.com/micz/ThunderAI/issues/902">#902</a>].</li>
         <li><i>[All APIs]</i> The automatic features can process several emails in parallel (new <i>Emails processed in parallel</i> option). The same feature never runs twice on the same email: an email opened while it is being processed joins the running request [<a href="https://github.com/micz/ThunderAI/issues/908">#908</a>, <a href="https://github.com/micz/ThunderAI/issues/909">#909</a>].</li>
@@ -40,7 +44,21 @@
         <li>Fix: on the feature settings pages, saving the prompt no longer undoes the connection changes, ChatGPT Web no longer silently sets the OpenAI API as the feature connection, and a summary shown in the chat window always uses the Summarize connection.</li>
         <li>Many improvements.</li>
         <li>Some minor bugs fixed.</li>
-        <li>...</li>
+      </ul>
+      <h2>Version 5.0.4 - 30/09/2026</h2>
+      <ul>
+        <li><i>[Claude API]</i> Added support for Claude Opus 5.5, Fable 5.1 and Mythos 5.1. The requests are now more resilient to new Claude models: a model not yet known to ThunderAI no longer inherits the rules of an older version with a similar name, extended thinking is never turned off on an unknown model (the newer ones reject it), and if a model rejects a parameter the request is automatically repeated once without it. The selected <i>Effort</i> level is now always sent, so it is honoured even on models whose default level is different; leave it on <i>Default</i> to let the API decide [<a href="https://github.com/micz/ThunderAI/issues/936">#936</a>].</li>
+        <li><i>[ChatGPT Web]</i> The prompt is now sent to ChatGPT faster. The ThunderAI bar stays attached to the page and is never shown twice, and the prompt is sent only once. More detailed logs help adapt ThunderAI to future changes of the ChatGPT interface.</li>
+      </ul>
+      <h2>Version 5.0.3 - 28/09/2026</h2>
+      <ul>
+        <li><i>[ChatGPT Web]</i> Fix: ThunderAI works again with the new ChatGPT interface. If the message box can't be found, ThunderAI asks you to click inside it and then continues. The Retry button now shows that a new attempt is in progress [<a href="https://github.com/micz/ThunderAI/issues/924">#924</a>].</li>
+        <li>Fix: the spam badge in the message pane no longer jitters, and it no longer makes the message body jump up and down [<a href="https://github.com/micz/ThunderAI/issues/929">#929</a>].</li>
+      </ul>
+      <h2>Version 5.0.2 - 22/09/2026</h2>
+      <ul>
+        <li>Fix: the <i>{%tags_current_email%}</i> placeholder no longer breaks the summarize and the spam filter prompts, and the tags are now correctly resolved to their current names [<a href="https://github.com/micz/ThunderAI/issues/911">#911</a>].</li>
+        <li>Fix: the ThunderAI actions no longer fail silently when the message pane is not visible, like when it is hidden with F8, when no email is displayed or when more emails are selected. The summarize command from the context menu now opens the AI chat window in that case, the add tags command no longer assigns the tags without showing the confirmation dialog, and the other actions stop cleanly instead of leaving the working indicator spinning [<a href="https://github.com/micz/ThunderAI/issues/901">#901</a>].</li>
       </ul>
       <h2>Version 5.0.1 - 16/09/2026</h2>
       <ul>

@@ -182,10 +182,10 @@ original side is the prompt's `selection_html`, the twin of the `selection_text`
 `_buildDiffButton` resolves first (see [07-diff-picker.md](07-diff-picker.md)).
 
 `prompt_proofread_this` used to send `{%mail_typed_text%}`, plain text, because there is no
-`mail_typed_html` placeholder (`getOnlyTypedText` in `js/mzta-compose-script.js` returns text, not
-markup). It was moved to `{%selected_html%}` with `need_selected: "1"` (3507e368), like the two rewrite
+`mail_typed_html` placeholder (`getOnlyTypedText` in `js/mzta-compose-script.js` feeds the
+placeholder text, not markup). It was moved to `{%selected_html%}` with `need_selected: "1"` (3507e368), like the two rewrite
 prompts. A **custom** prompt that uses `{%mail_typed_text%}` still sends text; its picker original
-side is the `only_typed_html` twin that `getMailBody()` reads off the autoselect range (see
+side is the `only_typed_html` twin that `getOnlyTypedText` returns from the typed region's range (see
 [07-diff-picker.md](07-diff-picker.md) → *The `mail_typed_text` substitution must carry its twin*).
 `textToBlockHtml()` remains the backstop for an HTML twin with no block structure.
 
@@ -406,7 +406,12 @@ The response is still filtered afterwards as a safety net: `checkIfTagLabelExist
 Both flows read the tags with it (the automatic one passes the use list as `filter_tags` /
 `filter_tags_list`, the manual one no filter).
 - **A JSON answer** — any answer holding `{` or `}` — is parsed with `extractJsonObject()`, so a code
-  fence or text around the object does not matter. `tags` is the array, or a comma separated
+  fence or text around the object does not matter. `extractJsonObject()` (`js/mzta-utils.js`, shared
+  by every feature that parses a JSON answer: tags, spam filter, calendar event, task, translation)
+  takes the text from the first `{` to the last `}`; when `JSON.parse` rejects it, it retries once
+  with the control characters found **inside strings** escaped (`\n`, `\r`, `\t`, …), because
+  models often write a multi-line value with raw line breaks. If the retry fails too, the
+  original parse error is thrown. `tags` is the array, or a comma separated
   string split on the commas; any other shape gives no tag. A malformed object gives **no tag** (and
   a `console.warn`): it is never split by commas, which would turn the raw JSON, or a whole
   sentence, into a tag name — one the automatic flow would then create with `create_new_tags` on.
@@ -668,6 +673,9 @@ The translate feature uses a single special prompt (`prompt_translate_this`) for
 - The AI response is a JSON object: `{ "subject": "...", "body": "...", "status": "1"|"-1" }`
   - `status = "1"`: translation completed, subject and body are displayed
   - `status = "-1"`: translation skipped (excluded/target language), a "skipped" message is shown
+  - It is read with `extractJsonObject()` (raw line breaks inside the strings tolerated, see
+    "Reading the answer" in "Add tags: extra prompt statements"). An answer that still does not
+    parse is shown whole as the body, with no subject and no status
 - Target language is determined by `translate_lang` pref, falling back to `default_chatgpt_lang`
 - Does **not** support `chatgpt_web` connection type (shows error if configured)
 - Result is rendered as a styled banner (green/teal theme) in the message body via `mzta-compose-script.js`

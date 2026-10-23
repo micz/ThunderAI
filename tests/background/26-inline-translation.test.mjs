@@ -95,6 +95,17 @@ k.test('skipped-status', 'status "-1" (the language is excluded, or already the 
     assert.equal(ctx.m.sentTo(7, 'showTranslation')[0].data.translation_status, '-1');
 });
 
+k.test('raw-newlines', 'a body with raw line breaks inside the JSON string is still read: the translation, never the raw answer', async () => {
+    answers['rn1@x'] = '{ "subject": "Quick reminder", "body": "\nHi, just a brief reminder.\tSee you soon!\r\n\n", "status": "1" }';
+    show(7, 'rn1@x');
+    reset();
+    await fromTab(ctx, 7, { command: 'triggerTranslationGeneration', headerMessageId: 'rn1@x' });
+    const t = record(ctx, 'rn1@x').translation;
+    assert.equal(t.translated_text, '\nHi, just a brief reminder.\tSee you soon!\r\n\n');
+    assert.equal(t.translated_subject, 'Quick reminder');
+    assert.equal(t.translation_status, '1');
+});
+
 k.test('html-sanitized', 'an HTML translation crosses the sanitizer on its way to the tab; the stored one is untouched', async () => {
     answers['h1@x'] = JSON.stringify({ subject: 'S', body: '<p>Hallo <b>Welt</b></p>', status: '1' });
     show(7, 'h1@x');

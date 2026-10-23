@@ -1626,7 +1626,7 @@
         "message": "Włącz myślenie"
     },
     "prefs_ollama_think_Info": {
-        "message": "Jeśli zaznaczone, model pomyśli przed udzieleniem odpowiedzi. Ta opcja działa tylko z modelami obsługującymi funkcję „think“."
+        "message": "Spraw, aby model przemyślał odpowiedź przed jej udzieleniem. Opcja „Model default” nie wysyła niczego i pozwala modelowi zdecydować, co w przypadku niektórych modeli oznacza, że i tak będzie przemyśliwał odpowiedź: wybierz „Off”, aby jawnie wyłączyć rozumowanie. Dostępne poziomy rozumowania zależą od wybranego modelu i zostaną wyświetlone po jego wybraniu."
     },
     "prefs_ollama_format_json": {
         "message": "Wymuś wyjście JSON"

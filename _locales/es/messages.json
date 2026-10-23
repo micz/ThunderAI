@@ -1063,7 +1063,7 @@
         "message": "Activar el pensamiento"
     },
     "prefs_ollama_think_Info": {
-        "message": "Si está marcado, el modelo pensará antes de responder. Esta opción solo funciona con modelos que admiten la función «think»."
+        "message": "Haz que el modelo razone antes de responder. \"Model default\" no envía nada y deja que el modelo decida, lo que en algunos modelos significa que razona de todos modos: elige \"Off\" para desactivar el razonamiento explícitamente. Los niveles de razonamiento disponibles dependen del modelo seleccionado y se enumeran después de elegir un modelo."
     },
     "chatgpt_win_change_reply_type": {
         "message": "Haz clic para cambiar el tipo de respuesta"

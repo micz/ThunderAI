@@ -132,6 +132,16 @@ const EXCLUDED_KEYS = new Set([
     'custom_prompts_view',    // custom prompts page layout (split/table), local UI
 ]);
 
+/**
+ * True when a preference key is matched by an exclusion rule above, so a policy may never set
+ * it. The one place the rules are applied: buildAllowlist() uses it, and so does the CI script
+ * that reports a change of the policy surface (.github/scripts/policy-keys-diff.mjs), which
+ * imports this module in plain Node - keep it pure.
+ */
+export function isPolicyExcludedKey(key) {
+    return EXCLUDED_KEYS.has(key) || EXCLUDED_KEY_PATTERNS.some(re => re.test(key));
+}
+
 // {feature}_enabled_accounts_match: the fleet-wide counterpart of the excluded
 // {feature}_enabled_accounts. Its entries name accounts by what is the same on every machine
 // (an identity address, a domain, or ACCOUNT_MATCH_LOCAL for Local Folders), and the account
@@ -175,9 +185,7 @@ export function isAccountMatcherEntry(entry) {
 function buildAllowlist() {
     const allowed = new Set();
     Object.keys(prefs_default).forEach(key => {
-        if (EXCLUDED_KEYS.has(key)) return;
-        if (EXCLUDED_KEY_PATTERNS.some(re => re.test(key))) return;
-        allowed.add(key);
+        if (!isPolicyExcludedKey(key)) allowed.add(key);
     });
     return allowed;
 }

@@ -323,23 +323,26 @@ deletes.
 That repair works on `body_html`, via `htmlOrFromText()`; the `mail_typed_text` path never reaches
 the body pair, so a plain text compose window was fixed while an HTML one was not.
 
-**The twin comes from the range `do_autoselect` already creates.** `getOnlyTypedText`
-(`js/mzta-compose-script.js`) computes the typed region's node range and selects it — the same
-range whose `cloneContents()` markup `getSelectedHtml` returns. `getMailBody()` therefore reads
-`getSelectedHtml` a **second** time, immediately after `getOnlyTypedText`, and returns it as
-`only_typed_html`. No new content-script command and no new placeholder.
+**The twin comes from the typed region's own range.** `getOnlyTypedText`
+(`js/mzta-compose-script.js`) builds the typed region's node range (`setStartBefore(firstNode)` /
+`setEndAfter(lastNode)`) as a **detached** `Range`. Called with `with_html: true` — as
+`getMailBody()` does — it returns `{ text, html }`, the html being that range's `cloneContents()`
+markup; without the flag it returns the text alone, as before. `getMailBody()` returns the html as
+`only_typed_html`. No new placeholder.
 
-Three ordering facts hold it together, and all three are load-bearing:
+**The autoselect respects the user's selection [#978].** The range is put in the live selection
+only when `do_autoselect` is true **and** the user has no meaningful selection: no range, a
+collapsed one, or one whose `toString()` is whitespace-only. That is the same case in which
+`curr_menu_entry.act` substitutes `selection_text` (empty after the `[ \t]+` squeeze and `trim()`)
+with the typed text, and `selection_html` with `only_typed_html` — the two sides must agree, or the
+prompt would work on one range while the replacement works on another. Before #978 the autoselect
+ran regardless of the selection (the `isCollapsed` guard was commented out): the prompt read the
+user's selection, but the answer replaced the whole typed text.
 
-- The **first** `getSelectedHtml` (top of `getMailBody`) runs while `rangeCount` is 0 and returns
-  `''`. That is why an empty-check on the twin never rescued this case — the value is not stale,
-  it is correct for the moment it was taken.
-- The second read must stay **after** `getOnlyTypedText` (the range must exist) and **before**
-  `getOnlyQuotedText`, which has a `do_autoselect` branch of its own. It is called without the
-  argument today, so that branch is inert — but the read is placed ahead of it rather than relying
-  on that.
-- It is skipped entirely when `do_autoselect` is false: with no auto-select there is no typed-region
-  range, and re-reading would return the user's own selection, which the caller already has.
+Reading the html from the range itself removed the ordering dependency of the [#829] fix, which
+read `getSelectedHtml` a second time right after the autoselect and had to stay ahead of
+`getOnlyQuotedText`. `getOnlyQuotedText` still has an autoselect branch of its own (with no
+selection guard), but no caller passes `do_autoselect` to it, so that branch is inert.
 
 `only_typed_html` goes through the same `htmlOrFromText()` as the other two twins, so a **plain
 text** compose window — whose cloned range carries no markup — still gets its line breaks rebuilt
@@ -1058,7 +1061,7 @@ the picker (`prompt_proofread_this`, `prompt_rewrite_formal`, `prompt_rewrite_po
 | `api_webchat/messagesArea.js` | `_buildDiffButton` (resolves both sides' HTML), `hasBlockStructure` (the original-side canonicalization guard), `appendDiffPicker`, the `_mztaPicker` indirection, `_onPickerResize` |
 | `api_webchat/svgIcons.js` | `buildHunkMarkerIcon` (the empty-side placeholder); the toolbar's chevron / circle-check / check / cross / pencil / overflow icons |
 | `js/lib/diff.js` | jsdiff; provides the `Diff` global (classic script, loaded before the modules). `diffArrays` pairs blocks, `diffWordsWithSpace`/`diffSentences` diff within one |
-| `js/mzta-menus.js` | sets `curr_prompt.body_html` (the picker's original side) alongside `body_text` / `selection_html`; `selectionTwin()` derives `selected_text`/`selected_html` from ONE normalization (shared `hasLineStructure` + `htmlToLines`/`linesToHtml`) so the pair agrees; `htmlOrFromText` rebuilds a structure-less html twin from its text; captures `only_typed_html` off the auto-selected range and pairs it onto `selection_html` when `mail_typed_text` is substituted |
+| `js/mzta-menus.js` | sets `curr_prompt.body_html` (the picker's original side) alongside `body_text` / `selection_html`; `selectionTwin()` derives `selected_text`/`selected_html` from ONE normalization (shared `hasLineStructure` + `htmlToLines`/`linesToHtml`) so the pair agrees; `htmlOrFromText` rebuilds a structure-less html twin from its text; takes `only_typed_html` from `getOnlyTypedText` (`with_html: true`, read off the typed region's detached range) and pairs it onto `selection_html` when `mail_typed_text` is substituted |
 | `_locales/en/messages.json` | `apiwebchat_picker_*`, including the EDIT hint's conditional choice-reset warning |
 | `js/mzta-utils.js` | `isPlainTextCompose`, `stripHtmlKeepLines`, and the `plainTextBody`-aware body helpers |
 | `js/mzta-compose-script.js` | `replaceSelectedText` — through the editor's undo stack (spec 01 *Replacing text in a compose window*): `insertText` with the `\n` verbatim in plain text, `insertHTML` of `doc.body`'s children (never `doc.body` itself) in HTML, so the picker's `<p>` blocks survive; the direct-DOM fallback keeps the same two rules (`Text` node, `DocumentFragment`) |

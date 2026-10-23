@@ -1556,7 +1556,10 @@ line.
 The node-walking logic is unchanged — the `moz-cite-prefix` / `moz-forward-container` breaks, the
 `firstNode`/`lastNode` tracking and the `do_autoselect` range all behave exactly as before. In
 particular `lastNode` is still keyed off `node.textContent`, **not** the new projection, so the
-autoselect range is provably identical.
+autoselect range is provably identical. Since [#978] `getOnlyTypedText` puts that range in the live
+selection only when the user has no meaningful selection (none, collapsed or whitespace-only), and
+with `with_html: true` returns `{ text, html }`, the html read from the detached range itself (see
+[07-diff-picker.md](07-diff-picker.md) → *The `mail_typed_text` substitution must carry its twin*).
 
 **The add-on's own elements and the signature, on the live body.** The walkers cannot use
 `getCleanBodyHtml()`: it returns a detached clone, and the autoselect range needs live nodes. So they

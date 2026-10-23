@@ -467,6 +467,12 @@
     "prefs_OptionText_chatgpt_web_model_info": {
         "message": "Dies ist das Modell, das für die ChatGPT-Webschnittstelle festgelegt wird. Wenn keines angegeben ist oder ein falsches Modell bereitgestellt wird, wird das Standardmodell von ChatGPT auf der Webseite festgelegt. Diese Einstellung funktioniert nicht mit einem kostenlosen ChatGPT-Konto."
     },
+    "prefs_OptionText_chatgpt_web_model_extended_check": {
+        "message": "Erweiterte Modellprüfung"
+    },
+    "prefs_OptionText_chatgpt_web_model_extended_check_info": {
+        "message": "Wenn aktiviert, öffnet ThunderAI kurz das Modellmenü von ChatGPT, um vor dem Senden des Prompts auszulesen, welches Modell ausgewählt ist. Nur bekannte Modelle werden überprüft (derzeit gpt-6 und gpt-6-thinking). Diese Prüfung kann nicht mehr funktionieren, wenn ChatGPT seine Seite ändert."
+    },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "ChatGPT Web temporärer Chat"
     },
@@ -1249,7 +1255,7 @@
         "message": "Wenn markiert, werden deine Chats bei OpenAI gespeichert."
     },
     "prefs_ollama_think_Info": {
-        "message": "Wenn markiert, wird das Modell nachdenken bevor es antwortet. Diese Option funtioniert nur mit Modellen, die das \"think\" Feature unterstützen."
+        "message": "Lassen Sie das Modell nachdenken, bevor es antwortet. „Modell-Standard“ sendet nichts und überlässt die Entscheidung dem Modell – was bei einigen Modellen bedeutet, dass sie trotzdem nachdenken: Wählen Sie „Aus“, um das Nachdenken explizit zu deaktivieren. Die verfügbaren Nachdenk-Stufen hängen vom ausgewählten Modell ab und werden angezeigt, sobald ein Modell gewählt wurde."
     },
     "prefs_ollama_think_default": {
         "message": "Modellstandard",
@@ -1963,7 +1969,7 @@
         "description": "Summarize page: help text under the summary language text field, shown when 'Force summary language' is checked."
     },
     "prompt_summarize_force_lang": {
-        "message": "Die Zusammenfassung muss in folgender Sprache geschrieben werden:",
+        "message": "Die Zusammenfassung muss verfasst werden in",
         "description": "Instruction sent to the AI model, appended to the summarize prompt and followed by a space, the language name and a period (e.g. 'The summary must be written in Italian.')."
     },
     "summarize_info_additional_statements": {
@@ -2482,7 +2488,7 @@
         }
     },
     "customPrompts_search_placeholder": {
-        "message": "Nach Name oder ID suchen"
+        "message": "Nach Name, ID oder Text suchen…"
     },
     "customPrompts_filter_active": {
         "message": "Gefiltert: $SHOWN$ von $TOTAL$",
