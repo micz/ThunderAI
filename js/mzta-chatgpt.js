@@ -1574,8 +1574,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_insert_at_cursor");
             btn_ok.onclick = async function() {
                 const response = getSelectedHtml();
-                await browser.runtime.sendMessage({command: "chatgpt_insertAtCaret", text: response, tabId: tabId, mailMessageId: mailMessageId});
-                browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId}).catch(() => {});
+                await applySelectedResponse({command: "chatgpt_insertAtCaret", text: response, tabId: tabId, mailMessageId: mailMessageId, processingActive: mztaProcessingEnabled});
             };
             fixedDiv.appendChild(btn_ok);
             break;

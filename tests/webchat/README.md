@@ -306,7 +306,7 @@ choice made on a side now moves the `.is-current` ring and repaints the stepper,
 already in force (spec 07 "The toolbar", `webchat-15`).
 ## Companion processing
 
-`tests/dom/webchat/webchat-19-processing.dom.mjs` checks prepared prompts, the visible
+`tests/dom/webchat/webchat-20-processing.dom.mjs` checks prepared prompts, the visible
 busy-message notice and buffered/restored answers in the actual chat components.
 Its background stub implements active hooks; the real transport and validation are
 tested in `tests/background/11-ai-processing.test.mjs` and `12-processing-worker.test.mjs`.

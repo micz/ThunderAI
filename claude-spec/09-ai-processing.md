@@ -50,7 +50,7 @@ instead of session placeholders, including top-level extra-body overrides. They 
 stable across sessions/restarts without transmitting originals. Invalid JSON blocks
 in the companion, independent of ThunderAI's provider parsers.
 Output: `{content: string, thinking: string, error?: string}`.
-Format: `text` (chat), `json` (special commands), `html` (Web reply/replace).
+Format: `text` (chat), `json` (special commands), `html` (Web reply/replace/insert at cursor).
 For local Web previews, optional `view: {original: string, diff: boolean}` asks the
 companion to display the postprocessed result in its own window. `collectInput`
 accepts field descriptions (`[{info: string}]`) and returns entered strings for
@@ -116,6 +116,11 @@ startup; only processing calls await its registration-state read.
   Postprocessed replies are UI/action-only and never sent as subsequent history.
   Usage/retry metadata passes through unchanged. A provider's `requestAborted`
   releases the pending turn, allowing a new send with the same processing session.
+- Web reply, replace and insert at cursor (`chatgpt_replyMessage`,
+  `chatgpt_replaceSelectedText`, `chatgpt_insertAtCaret`) all go through
+  `processWebAction()`: the answer is restored and written to the session's target
+  tab, not the `tabId` the page names. The page sends `processingActive`, so an
+  expired session returns an error and writes nothing instead of protected text.
 - With active processing, Web input and response previews remain in companion-owned
   windows. Original prompt text, diff baselines and restored answers never enter
   the provider DOM. Direct manual website use is outside ThunderAI's scope.
@@ -125,8 +130,9 @@ startup; only processing calls await its registration-state read.
 ## Manual verification
 
 Committed hook tests: `tests/background/11-ai-processing.test.mjs`,
-`tests/background/12-processing-worker.test.mjs` and
-`tests/dom/webchat/webchat-19-processing.dom.mjs`, with field coverage in
+`tests/background/12-processing-worker.test.mjs`,
+`tests/background/35-compose-commands.test.mjs` (Web compose actions) and
+`tests/dom/webchat/webchat-20-processing.dom.mjs`, with field coverage in
 `tests/static/06-processing-content-fields.test.mjs`. Hook tests use a scripted companion,
 not inference/model downloads, and cover inactive forwarding, active hook transforms,
 response/history isolation, Web HTML actions, trust/result validation, restart,
@@ -136,7 +142,7 @@ behavior still require manual testing.
 
 Load both repositories as temporary Thunderbird add-ons. Download/enable the model
 in Privacy; use fictional data for chat/follow-up, structured special commands and
-Web reply/replace/view/diff. Check CPU and WebGPU, long chunked inputs, Stop, timeout,
+Web reply/replace/insert at cursor/view/diff. Check CPU and WebGPU, long chunked inputs, Stop, timeout,
 companion restart/disable/uninstall, and missing-model errors. Inspect outbound bodies
 and confirm restored replies are absent from follow-up history. Without the companion
 and with no prior active registration, verify unchanged streaming/settings behavior.

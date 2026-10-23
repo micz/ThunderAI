@@ -78,6 +78,43 @@ k.test('insert-plain', 'insert at cursor on a plain text window: converted to te
     assert.equal(sent[0].text, 'PLAIN:' + HTML);
 });
 
+// Spec 09 "Lifecycle and failure policy": from a ChatGPT Web tab with a processing session, the
+// answer is restored (the after hook) and goes to the session's compose tab, whatever tabId the
+// page names; with processingActive and no session left, nothing reaches the compose window. The
+// session is a stand-in (12-processing-worker drives the real companion through the hook).
+const CHATGPT = { id: 'thunderai@micz.it', url: 'https://chatgpt.com/', frameId: 0, tab: { id: 800, type: 'content' } };
+const PROTECTED = '<p>Hello [PRIVATE]</p>';
+async function fromChatGpt(message) {
+    const answer = await ctx.ctl.dispatchMessage(message, CHATGPT);
+    await flush(60);
+    return answer;
+}
+for (const [command, sentCommand] of [['chatgpt_insertAtCaret', 'insertAtCaret'], ['chatgpt_replaceSelectedText', 'replaceSelectedText']]) {
+    k.test(`${sentCommand}-processing`, `${command} from a ChatGPT tab with a processing session: the restored answer goes to the session's compose tab`, async (t) => {
+        const web = await import('../../js/mzta-processing-web.js');
+        const session = { onAfterReceiveFromProvider: async ({ content }) => ({ content: content.replaceAll('[PRIVATE]', 'Alice') }), dispose() {} };
+        web.registerProcessingWeb(800, { prompt: '', targetTabId: 20, mailMessageId: -1 }, { createSession: () => session });
+        t.after(() => web.disposeProcessingWeb(800));
+        const before = ctx.standIns.sanitizeBlockHtml.length;
+        const wrong = ctx.m.sentTo(21, sentCommand).length;
+        const sends = ctx.m.sentTo(20, sentCommand).length;
+        assert.equal(await fromChatGpt({ command, text: PROTECTED, tabId: 21, mailMessageId: -1, processingActive: true }), true);
+        assert.deepEqual(ctx.standIns.sanitizeBlockHtml.slice(before), ['<p>Hello Alice</p>']);
+        const sent = ctx.m.sentTo(20, sentCommand).slice(sends);
+        assert.equal(sent.length, 1);
+        assert.equal(sent[0].text, '<!--sanitized--><p>Hello Alice</p>');
+        assert.equal(ctx.m.sentTo(21, sentCommand).length, wrong);
+    });
+
+    k.test(`${sentCommand}-processing-expired`, `${command} with processingActive and no session left: an error, nothing sent to the compose tab`, async () => {
+        const sends = ctx.m.sentTo(20, sentCommand).length;
+        const answer = await fromChatGpt({ command, text: PROTECTED, tabId: 20, mailMessageId: -1, processingActive: true });
+        assert.equal(answer.ok, false);
+        assert.ok(answer.error);
+        assert.equal(ctx.m.sentTo(20, sentCommand).length, sends);
+    });
+}
+
 // The caret is saved when the prompt starts, before getMailBody() reads anything (the autoselect
 // of getOnlyTypedText would take it away): saveCaret first, on a compose tab, for action "3" only.
 // The run is stopped at the first read (getSelectedText rejects): only the order matters here.
