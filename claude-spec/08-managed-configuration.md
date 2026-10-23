@@ -540,8 +540,8 @@ npm test                            # both levels
 
 Run from the repository root. CI runs level 1 **before** installing anything, then
 `npm ci && npm test`, on demand only: by hand (`workflow_dispatch`, any branch) or when the
-`run-tests` label is added to a pull request, which the run then removes
-(`.github/workflows/tests.yml`). How it
+`run-tests` label is added to a pull request, which `.github/workflows/tests-unlabel.yml`
+removes right away (`.github/workflows/tests.yml`). How it
 works: [`tests/README.md`](../tests/README.md); how to add a managed scenario or a page:
 [`tests/managed/README.md`](../tests/managed/README.md).
 

@@ -51,9 +51,10 @@ test.
 CI runs on demand, never on every commit
 ([`.github/workflows/tests.yml`](../.github/workflows/tests.yml), Node 22 and 24): by hand
 (Actions → Tests → Run workflow, or `gh workflow run tests.yml --ref <branch>`, on any
-branch), or by adding the `run-tests` label to a pull request. The label is removed when
-the run ends, so adding it again runs the suite again (except on a pull request from a fork,
-whose token is read-only: there the label stays, and only that step is allowed to fail). Level 1 runs first, **before**
+branch), or by adding the `run-tests` label to a pull request. The label is removed as
+soon as it is added, by [`.github/workflows/tests-unlabel.yml`](../.github/workflows/tests-unlabel.yml)
+(on `pull_request_target`, so it works on pull requests from forks too, and never checks out
+their code), so adding it again runs the suite again. Level 1 runs first, **before**
 installing anything (which proves it still needs no install), then `npm ci && npm test`.
 
 Nothing waits forever: node:test has no default timeout, so `npm test`, `npm run test:dom` and
