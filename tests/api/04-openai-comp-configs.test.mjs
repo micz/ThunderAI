@@ -15,8 +15,8 @@ installBrowserMock({ policy: null });
 const { k } = areaFile('04-openai-comp-configs');
 const { openAICompConfigs } = await import('../../js/api/openai_comp_configs.js');
 
-k.test('ids', 'the presets are custom, DeepSeek, Grok, Mistral, OpenRouter and Perplexity', () => {
-    assert.deepEqual(openAICompConfigs.map(c => c.id).sort(), ['custom', 'deepseek', 'grok', 'mistral', 'openrouter', 'perplexity']);
+k.test('ids', 'the presets are custom, DeepSeek, Grok, Mistral, OpenRouter, Perplexity and Z.ai', () => {
+    assert.deepEqual(openAICompConfigs.map(c => c.id).sort(), ['custom', 'deepseek', 'grok', 'mistral', 'openrouter', 'perplexity', 'zai']);
 });
 
 k.test('fields', 'each preset carries exactly id, name, chat_name, host, use_v1 (no extra body data)', () => {

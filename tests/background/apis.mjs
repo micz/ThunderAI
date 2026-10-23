@@ -113,6 +113,8 @@ export function mailModel(o = {}) {
         calls: [],
         tabSends: [],
         icons: [],
+        /** Last badge state per action namespace ({text, color}), e.g. the spam batch counter. */
+        badges: new Map(),
         unmodelled: [],
         permissions: new Set(o.permissions ?? DEFAULT_PERMISSIONS),
         contacts: clone(o.contacts ?? []),
@@ -335,6 +337,16 @@ export function installApis(browser, m) {
     const icon = which => ({
         setIcon(details) { m.icons.push({ which, path: details.path }); return Promise.resolve(); },
         openPopup() { rec(which + '.openPopup', []); return Promise.resolve(); },
+        setBadgeText(details) {
+            rec(which + '.setBadgeText', [details]);
+            m.badges.set(which, { ...(m.badges.get(which) ?? {}), text: details?.text ?? '' });
+            return Promise.resolve();
+        },
+        setBadgeBackgroundColor(details) {
+            rec(which + '.setBadgeBackgroundColor', [details]);
+            m.badges.set(which, { ...(m.badges.get(which) ?? {}), color: details?.color });
+            return Promise.resolve();
+        },
     });
     browser.messageDisplayAction = strict('browser.messageDisplayAction', icon('messageDisplayAction'), u);
     browser.composeAction = strict('browser.composeAction', icon('composeAction'), u);

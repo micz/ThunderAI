@@ -26,11 +26,47 @@ export function messageOf(prompt) {
 export function featureOf(prompt) {
     const p = String(prompt);
     if (p.startsWith('SUMMARIZE ')) return 'summary';
+    if (/Analyze each of the following \d+ emails/.test(p)) return 'spam';
     if (/determine if it is spam/.test(p)) return 'spam';
     if (/generate a JSON array of tags/.test(p)) return 'add_tags';
     if (/^Translate the email below/.test(p)) return 'translation';
     return 'unknown';
 }
+
+/**
+ * The default answer for a prompt (featureResponder's table, shared with the flow files'
+ * own responders): a batched spam prompt is answered for every "### EMAIL n" block in the
+ * results[] format the batch parser expects, the per-mail spam fn provides each verdict.
+ * A per-mail fn that answers garbage makes the whole batch answer garbage, the way a
+ * confused model would — the caller falls back to the per-mail analysis.
+ */
+export function defaultAnswerFor(prompt, perMail = {}) {
+    const f = featureOf(prompt);
+    const hid = messageOf(prompt);
+    if (f === 'spam' && /Analyze each of the following \d+ emails/.test(String(prompt))) {
+        const mails = [...String(prompt).matchAll(/### EMAIL (\d+)[\s\S]*?Body of <([^>]+)>/g)];
+        if (mails.length === 0) throw new Error('defaultAnswerFor: a batched spam prompt without EMAIL blocks');
+        try {
+            return JSON.stringify({
+                results: mails.map(m => {
+                    const v = JSON.parse(perMail.spam(m[2], prompt));
+                    return { index: parseInt(m[1], 10), spamValue: v.spamValue, explanation: v.explanation };
+                }),
+            });
+        } catch {
+            return perMail.spam(mails[0].hid, prompt);
+        }
+    }
+    return perMail[f] ? perMail[f](hid, prompt) : DEFAULTS[f](hid, prompt);
+}
+
+/** The default per-mail answers, per feature. */
+export const DEFAULTS = {
+    spam: () => '{"spamValue": 5, "explanation": "ok"}',
+    add_tags: () => '{"tags": ["Work"]}',
+    summary: hid => 'Summary ' + hid,
+    translation: hid => JSON.stringify({ subject: 'S', body: 'B ' + hid, status: '1' }),
+};
 
 /** Default answers, per feature. `over` replaces one: {spam: (hid, prompt) => answer}. */
 export function featureResponder(over = {}) {
@@ -42,6 +78,27 @@ export function featureResponder(over = {}) {
     };
     return answering(prompt => {
         const f = featureOf(prompt);
+        // The batched spam check (one prompt, many "### EMAIL n" blocks): answer every block
+        // with the per-mail spam fn, wrapped in the results[] format the batch parser expects.
+        // A per-mail fn that does not answer valid JSON breaks this too: the batch is left
+        // without a usable response and falls back to the per-mail analysis, as in Thunderbird.
+        if (f === 'spam' && /Analyze each of the following \d+ emails/.test(String(prompt))) {
+            const fn = over.spam || def.spam;
+            const mails = [...String(prompt).matchAll(/### EMAIL (\d+)[\s\S]*?Body of <([^>]+)>/g)];
+            if (mails.length === 0) throw new Error('featureResponder: a batched spam prompt without EMAIL blocks');
+            try {
+                return JSON.stringify({
+                    results: mails.map(m => {
+                        const v = JSON.parse(fn(m[2], prompt));
+                        return { index: parseInt(m[1], 10), spamValue: v.spamValue, explanation: v.explanation };
+                    }),
+                });
+            } catch {
+                // The per-mail fn answered garbage: the batch answer is garbage too, the way
+                // a confused model answers — the caller falls back to the per-mail analysis.
+                return fn(mails[0].hid, prompt);
+            }
+        }
         const fn = over[f] || def[f];
         if (!fn) throw new Error('featureResponder: no answer for a prompt of feature ' + f + ': ' + String(prompt).slice(0, 80));
         return fn(messageOf(prompt), prompt);

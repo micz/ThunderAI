@@ -165,6 +165,8 @@ k.test('spam-legacy', 'a spam report written before the log kept subject, sender
 });
 
 k.test('spam-trunc', 'truncReportData() keeps the 100 newest reports', async () => {
+    // The shipped default is higher (1000, batch runs accumulate more reports); this case pins its own.
+    spam._max_reports = 100;
     for (let i = 0; i < 100; i++) {
         await spam.saveReportData({ spamValue: i, explanation: '' }, 'pp' + i + '@x');
     }

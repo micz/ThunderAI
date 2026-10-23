@@ -39,6 +39,12 @@ const verdicts = {};
 const ctx = await bgContext({
     local: {
         ...API,
+        // Per-mail job semantics (joins, per-message rate limits and panels): every
+        // mail gets its own spam AI call (the batched check has its own files, 22/23).
+        spamfilter_batch_size: 1,
+        // Per-mail verdicts: every message of the model shares one sender, so the
+        // sender cache would leak verdicts across the cases.
+        spamfilter_sender_cache: false,
         add_tags: true,
         add_tags_auto: true,
         add_tags_exclusions: ['newsletter'],

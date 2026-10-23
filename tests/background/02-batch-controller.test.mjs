@@ -8,7 +8,8 @@
 //  - retryAfterMs: the longest one kept; a 'rate_limit' reason is never overwritten by a later
 //    'user' one;
 //  - tick() / processed: the "N processed" counter;
-//  - isWorking() / getStatus(): {working, processed, cancelRequested, cancelReason};
+//  - isWorking() / getStatus(): {working, processed, cancelRequested, cancelReason}
+//    plus spamDone/spamTotal, the aggregate of the running spam progress sessions;
 //    cancelRequested is true only when every active batch is cancelled;
 //  - endBatch() returns {lastExit, cancelled, processed, reason, retryAfterMs}, a snapshot taken
 //    before the reset;
@@ -26,7 +27,7 @@ const k = caseTests('02-batch-controller');
 
 k.test('idle', 'with no batch: not working, nothing processed, no cancel requested', () => {
     assert.equal(bc.isWorking(), false);
-    assert.deepEqual(bc.getStatus(), { working: false, processed: 0, cancelRequested: false, cancelReason: null });
+    assert.deepEqual(bc.getStatus(), { working: false, processed: 0, cancelRequested: false, cancelReason: null, spamDone: 0, spamTotal: 0 });
 });
 
 k.test('token', 'beginBatch() returns a token that is not cancelled, and the controller is working', () => {
@@ -54,13 +55,13 @@ k.test('cancel-flags-active', 'requestCancel() flags every batch active at that 
     bc.requestCancel();
     assert.equal(bc.isCancelled(a), true);
     assert.equal(bc.isCancelled(b), true);
-    assert.deepEqual(bc.getStatus(), { working: true, processed: 0, cancelRequested: true, cancelReason: 'user' });
+    assert.deepEqual(bc.getStatus(), { working: true, processed: 0, cancelRequested: true, cancelReason: 'user', spamDone: 0, spamTotal: 0 });
     const ra = bc.endBatch(a);
     assert.equal(ra.lastExit, false, 'b is still active');
     assert.equal(ra.cancelled, true);
     const rb = bc.endBatch(b);
     assert.deepEqual(rb, { lastExit: true, cancelled: true, processed: 0, reason: 'user', retryAfterMs: null });
-    assert.deepEqual(bc.getStatus(), { working: false, processed: 0, cancelRequested: false, cancelReason: null }, 'reset on the last exit');
+    assert.deepEqual(bc.getStatus(), { working: false, processed: 0, cancelRequested: false, cancelReason: null, spamDone: 0, spamTotal: 0 }, 'reset on the last exit');
 });
 
 k.test('later-batch-unaffected', 'a batch begun after the cancel request is not cancelled by it', () => {

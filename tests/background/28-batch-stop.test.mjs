@@ -142,7 +142,7 @@ k.test('notice', 'the blue "stopped" notice, with the number of messages process
 });
 
 k.test('ended-clean', 'after the batch: no batch working, nothing in flight, the counter reset', async () => {
-    assert.deepEqual(await popup({ command: 'batch_status' }), { working: false, processed: 0, cancelRequested: false, cancelReason: null });
+    assert.deepEqual(await popup({ command: 'batch_status' }), { working: false, processed: 0, cancelRequested: false, cancelReason: null, spamDone: 0, spamTotal: 0 });
     assert.equal(taWorkingStatus.WorkingLevel, 0);
 });
 

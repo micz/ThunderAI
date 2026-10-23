@@ -149,7 +149,14 @@ export function installFetchModel() {
                         violate(err);
                         settle(reject, err);
                     } else {
-                        settle(resolve, signal ? abortableBody(r, signal) : r);
+                        const response = signal ? abortableBody(r, signal) : r;
+                        // Real fetch fills response.url with the final request URL; the
+                        // scripted Responses are built without one, so it goes on here —
+                        // error details name the URL (the Z.ai fix relies on it).
+                        if (!response.url) {
+                            try { Object.defineProperty(response, 'url', { value: url }); } catch { /* a frozen response stays unnamed */ }
+                        }
+                        settle(resolve, response);
                     }
                 },
                 e => settle(reject, e),

@@ -135,7 +135,7 @@ k.test('popup-ready-mail', 'popup_menu_ready, from a mail tab: reading filter, t
     assert.equal(out.lastShortcutTabType, 'mail');
     assert.equal(out.lastShortcutFiltering, 1);
     assert.deepEqual(out.lastShortcutPromptsData.map(e => e.id), shortcut().map(e => e.id));
-    assert.deepEqual(out.batchStatus, { working: false, processed: 0, cancelRequested: false, cancelReason: null });
+    assert.deepEqual(out.batchStatus, { working: false, processed: 0, cancelRequested: false, cancelReason: null, spamDone: 0, spamTotal: 0 });
 });
 
 k.test('prepare-filtering', 'preparePopupMenu(): 1 for a reading tab, 2 for a compose tab, 0 for any other', () => {

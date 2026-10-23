@@ -112,7 +112,8 @@ k.test('http-401', 'a 401: status, statusText and the provider message in the er
     const t = startTurn(w, 'q');
     await assert.rejects(t.done, e => e.message.endsWith(errorOf(t)[0].payload));
     const [err] = errorOf(t);
-    assert.ok(err.payload.startsWith(FAILED + ': 401 Unauthorized, Detail: Incorrect API key provided: sk-fake***********1234.'), err.payload);
+    // The Z.ai fix names the final request URL, so a wrongly assembled path is visible.
+    assert.ok(err.payload.startsWith(FAILED + ': 401 Unauthorized, Detail: URL: ' + CHAT + ' — Incorrect API key provided: sk-fake***********1234.'), err.payload);
     assert.equal(err.rateLimited, false);
     assert.equal(err.retryAfterMs, null);
 });
@@ -169,7 +170,7 @@ k.test('error-body-stalled', 'an HTTP error whose body never arrives: after 5 s 
     assert.equal(s.cancelled, true, 'the body was cancelled');
     const errs = errorOf(turn);
     assert.equal(errs.length, 1);
-    assert.equal(errs[0].payload, FAILED + ': 401 Unauthorized, Detail: Unauthorized', 'the statusText stands in for the detail');
+    assert.equal(errs[0].payload, FAILED + ': 401 Unauthorized, Detail: URL: ' + CHAT + ' — Unauthorized', 'the statusText stands in for the detail');
     assert.equal(errs[0].rateLimited, false);
     assert.equal(turn.posted().some(m => m.type === 'requestAborted'), false);
 });

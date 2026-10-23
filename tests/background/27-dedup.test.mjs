@@ -21,6 +21,7 @@ import {
     API,
     featureOf,
     messageOf,
+    defaultAnswerFor,
     sentPrompts,
     receive,
     record,
@@ -33,6 +34,12 @@ import { caseTests } from '../helpers/known-issues/background.mjs';
 const ctx = await bgContext({
     local: {
         ...API,
+        // Per-mail job semantics (joins, per-message rate limits and panels): every
+        // mail gets its own spam AI call (the batched check has its own files, 22/23).
+        spamfilter_batch_size: 1,
+        // Per-mail verdicts: every message of the model shares one sender, so the
+        // sender cache would leak verdicts across the cases.
+        spamfilter_sender_cache: false,
         summarize: true, summarize_auto: 3, summarize_display_mode: 'inline',
         translate: true, translate_auto: 3, default_chatgpt_lang: 'Italian',
         spamfilter: true, spamfilter_skip_addressbook: false, spamfilter_threshold: 70,
@@ -65,6 +72,8 @@ const DEFAULT_ANSWER = {
     summary: hid => 'Summary ' + hid,
     translation: hid => JSON.stringify({ subject: 'S', body: 'B ' + hid, status: '1' }),
 };
+// The answer for a held prompt: batched spam prompts get the results[] format.
+const answerFor = h => defaultAnswerFor(h.prompt, DEFAULT_ANSWER);
 /** Answer every held prompt with the default answer of its feature, until the promise settles. */
 async function autoAnswer(promise, answers = {}) {
     let settled = false;
@@ -73,7 +82,9 @@ async function autoAnswer(promise, answers = {}) {
         for (const h of hold.held.filter(x => !x.done)) {
             const f = featureOf(h.prompt);
             const hid = messageOf(h.prompt);
-            answer(h, (answers[f] || DEFAULT_ANSWER[f])(hid));
+            answer(h, f === 'spam' && /Analyze each of the following \d+ emails/.test(String(h.prompt))
+                ? answerFor(h)
+                : (answers[f] || DEFAULT_ANSWER[f])(hid));
         }
         await new Promise(r => setImmediate(r));
     }
@@ -101,7 +112,7 @@ k.test('batch-joins-manual-summary', 'a summary started from the panel while the
 async function autoAnswerUntil(cond, keep = []) {
     for (let i = 0; i < 400 && !cond(); i++) {
         for (const h of hold.held.filter(x => !x.done && !keep.includes(x))) {
-            answer(h, DEFAULT_ANSWER[featureOf(h.prompt)](messageOf(h.prompt)));
+            answer(h, answerFor(h));
         }
         await new Promise(r => setImmediate(r));
     }
@@ -169,7 +180,7 @@ k.test('spam-check-joins', 'opening the message while its analysis runs (checkSp
     ctx.m.tabSends.length = 0;
     const check = fromTab(ctx, 8, { command: 'checkSpamReport' }, { type: 'messageDisplay', turns: 20 });
     await check;
-    answer(sp, '{"spamValue": 10, "explanation": "fine"}');
+    answer(sp, JSON.stringify({ results: [{ index: 1, spamValue: 10, explanation: 'fine' }] }));
     await autoAnswer(batch);
     await turns();
     const cmds = ctx.m.commandsTo(8).filter(c => c.startsWith('showSpam'));

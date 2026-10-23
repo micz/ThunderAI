@@ -14,6 +14,9 @@
 // Spec 01 "In-flight jobs": config errors are broadcast and not stored - so a rate-limited failure,
 // which is not one, leaves an error record on the message it failed on, and on that one only.
 // One batch per scenario, each with its own messages; batch_max_concurrency 1 (the default).
+// The batched spam check screens the whole queue BEFORE the per-message pipeline runs, so a
+// stop in the pipeline leaves the messages behind it their spam verdict (and the "N messages
+// processed" of the red panel counts every verdict the flush applied).
 
 import assert from 'node:assert/strict';
 import { bgContext } from './context.mjs';
@@ -32,6 +35,12 @@ import { caseTests } from '../helpers/known-issues/background.mjs';
 const ctx = await bgContext({
     local: {
         ...API,
+        // Per-mail job semantics (joins, per-message rate limits and panels): every
+        // mail gets its own spam AI call (the batched check has its own files, 22/23).
+        spamfilter_batch_size: 1,
+        // Per-mail verdicts: every message of the model shares one sender, so the
+        // sender cache would leak verdicts across the cases.
+        spamfilter_sender_cache: false,
         spamfilter: true, spamfilter_skip_addressbook: false,
         add_tags: true, add_tags_auto: true,
         summarize: true, summarize_auto: 3,
@@ -49,15 +58,34 @@ let fail = null;
 ctx.workers.respond = answering(prompt => {
     const f = featureOf(prompt);
     const hid = messageOf(prompt);
-    if (fail && fail.feature === f && fail.message === hid) {
-        return { error: 'OpenAI API request failed: 429 Too Many Requests', extra: { rateLimited: true, retryAfterMs: fail.retryAfterMs ?? null } };
+    const answerFor = id => {
+        if (fail && fail.feature === f && fail.message === id) {
+            return { error: 'OpenAI API request failed: 429 Too Many Requests', extra: { rateLimited: true, retryAfterMs: fail.retryAfterMs ?? null } };
+        }
+        return {
+            spam: '{"spamValue": 5, "explanation": "ok"}',
+            add_tags: '{"tags": ["Work"]}',
+            summary: 'Summary ' + id,
+            translation: JSON.stringify({ subject: 'S', body: 'B ' + id, status: '1' }),
+        }[f];
+    };
+    // A batched spam prompt (one "### EMAIL n" block per mail): the provider refuses
+    // the WHOLE call when one of its mails is the failing one, otherwise every mail
+    // is answered in the results[] format the batch parser expects.
+    if (f === 'spam' && /Analyze each of the following \d+ emails/.test(String(prompt))) {
+        const mails = [...String(prompt).matchAll(/### EMAIL (\d+)[\s\S]*?Body of <([^>]+)>/g)];
+        for (const m of mails) {
+            const one = answerFor(m[2]);
+            if (one && one.error) return one;
+        }
+        return JSON.stringify({
+            results: mails.map(m => {
+                const v = JSON.parse(answerFor(m[2]));
+                return { index: parseInt(m[1], 10), spamValue: v.spamValue, explanation: v.explanation };
+            }),
+        });
     }
-    return {
-        spam: '{"spamValue": 5, "explanation": "ok"}',
-        add_tags: '{"tags": ["Work"]}',
-        summary: 'Summary ' + hid,
-        translation: JSON.stringify({ subject: 'S', body: 'B ' + hid, status: '1' }),
-    }[f];
+    return answerFor(hid);
 });
 
 const batch = prefix => [1, 2, 3, 4].map(i => ctx.m.addMessage({ headerMessageId: prefix + i + '@x' }));
@@ -73,8 +101,9 @@ k.test('summary-stops', 'a rate limit on the summary of message 2: message 1 com
     await receive(ctx, hs);
     assert.deepEqual(prompted('su1@x'), ['spam', 'add_tags', 'summary', 'translation']);
     assert.deepEqual(prompted('su2@x'), ['spam', 'add_tags', 'summary'], 'no translation after the rate limit');
-    assert.deepEqual(prompted('su3@x'), []);
-    assert.deepEqual(prompted('su4@x'), []);
+    // the spam phase screened them before the pipeline reached the failing summary
+    assert.deepEqual(prompted('su3@x'), ['spam']);
+    assert.deepEqual(prompted('su4@x'), ['spam']);
 });
 
 k.test('summary-stored', 'what is stored: message 1 everything, message 2 its spam report and an error summary, 3 and 4 nothing', () => {
@@ -85,13 +114,17 @@ k.test('summary-stored', 'what is stored: message 1 everything, message 2 its sp
     assert.ok(r2.spam);
     assert.equal(r2.summary.error, true);
     assert.equal(r2.translation, undefined);
-    assert.equal(record(ctx, 'su3@x'), null);
-    assert.equal(record(ctx, 'su4@x'), null);
+    // screened by the spam phase, nothing else
+    assert.ok(record(ctx, 'su3@x').spam);
+    assert.equal(record(ctx, 'su3@x').summary, undefined);
+    assert.ok(record(ctx, 'su4@x').spam);
+    assert.equal(record(ctx, 'su4@x').summary, undefined);
     assert.equal(labels('su2@x').length, 1, 'message 2 was tagged before its summary failed');
 });
 
 k.test('red-panel', 'the red panel says the provider refused, with the number of messages processed, on every tab', () => {
-    const expected = ctx.ctl.browser.i18n.getMessage('batch_stopped_rate_limit', ['2']);
+    // all four spam verdicts were in, the stop hit the summary of message 2
+    const expected = ctx.ctl.browser.i18n.getMessage('batch_stopped_rate_limit', ['4']);
     for (const tab of [7, 10]) assert.equal(lastError(tab).data.message, expected, 'tab ' + tab);
     assert.equal(lastError(7).data.source, ctx.ctl.browser.i18n.getMessage('batch_stop_source'));
     assert.deepEqual(ctx.m.sentTo(7, 'showGenericInfo'), [], 'not the blue notice');
@@ -124,7 +157,8 @@ k.test('tags-stop', 'a rate limit on add_tags: no tag is assigned to that messag
     assert.deepEqual(prompted('tg2@x'), ['spam', 'add_tags']);
     assert.deepEqual(labels('tg2@x'), []);
     assert.equal(record(ctx, 'tg2@x').summary, undefined);
-    assert.deepEqual(prompted('tg3@x'), []);
+    // screened by the spam phase before the pipeline reached the failing add_tags
+    assert.deepEqual(prompted('tg3@x'), ['spam']);
 });
 
 k.test('translation-stops', 'a rate limit on the translation of message 2: 3 and 4 never start', async () => {
@@ -133,7 +167,8 @@ k.test('translation-stops', 'a rate limit on the translation of message 2: 3 and
     reset();
     await receive(ctx, hs);
     assert.deepEqual(prompted('tr2@x'), ['spam', 'add_tags', 'summary', 'translation']);
-    assert.deepEqual(prompted('tr3@x'), []);
+    // screened by the spam phase before the pipeline reached the failing translation
+    assert.deepEqual(prompted('tr3@x'), ['spam']);
     assert.equal(record(ctx, 'tr2@x').translation.error, true);
 });
 
@@ -142,10 +177,12 @@ k.test('retry-after', 'when the provider names a wait, the red panel says when t
     fail = { feature: 'summary', message: 'ra1@x', retryAfterMs: 3600000 };
     reset();
     await receive(ctx, hs);
-    const expected = ctx.ctl.browser.i18n.getMessage('batch_stopped_retry_after', ['1', ctx.utils.formatDuration(3600000)]);
+    // all four spam verdicts were in, the stop hit the very first summary
+    const expected = ctx.ctl.browser.i18n.getMessage('batch_stopped_retry_after', ['4', ctx.utils.formatDuration(3600000)]);
     assert.equal(lastError(7).data.message, expected);
     assert.match(lastError(7).data.message, /1 h/);
-    assert.deepEqual(prompted('ra2@x'), []);
+    // screened by the spam phase before the pipeline reached the failing summary
+    assert.deepEqual(prompted('ra2@x'), ['spam']);
 });
 
 k.test('no-leak', 'no worker left alive, no unmodelled API touched, no unhandled rejection', () => {

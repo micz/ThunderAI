@@ -43,6 +43,9 @@ const ctx = await bgContext({
     local: {
         ...API,
         spamfilter: true,
+        // Per-mail verdicts: every message of the model shares one sender, so the
+        // sender cache would leak verdicts across the cases.
+        spamfilter_sender_cache: false,
         spamfilter_threshold: 70,
         spamfilter_enabled_accounts: ['acc1', 'acc-nojunk'],
         spamfilter_skip_addressbook: false,
@@ -109,17 +112,21 @@ k.test('at-threshold', 'a verdict equal to the threshold is spam', async () => {
     assert.equal(record(ctx, 's3@x').spam.moved, true);
 });
 
-k.test('panel-broadcast', 'every tab displaying the message gets the in-progress badge, then the report', async () => {
+k.test('panel-broadcast', 'the batch stores the report and tells the active tab once, at the end, to reload it', async () => {
     const h = mail('s4@x', 'f-inbox', 5);
     ctx.m.tab(7).displayed = h.id;
     ctx.m.tab(8).displayed = h.id;
     ctx.m.tabSends.length = 0;
     await receive(ctx, [h]);
+    // The batched spam check does not push a panel per result (they flicker on large
+    // batches): the reports are stored, and the active tab gets one reloadSpamReport
+    // after the whole batch, on which it reloads the displayed message's report.
+    const r = record(ctx, 's4@x').spam;
+    assert.equal(r.spamValue, 5);
     for (const tab of [7, 8]) {
-        const cmds = ctx.m.commandsTo(tab).filter(c => c.startsWith('showSpam'));
-        assert.deepEqual(cmds, ['showSpamCheckInProgress', 'showSpamReport'], 'tab ' + tab);
-        assert.equal(ctx.m.sentTo(tab, 'showSpamReport')[0].data.spamValue, 5);
+        assert.deepEqual(ctx.m.commandsTo(tab).filter(c => c.startsWith('showSpam')), [], 'tab ' + tab);
     }
+    assert.deepEqual(ctx.m.commandsTo(7).filter(c => c === 'reloadSpamReport'), ['reloadSpamReport']);
 });
 
 k.test('no-junk-folder', 'an account with no junk folder: the move fails quietly, the verdict is saved with moved = false', async () => {
@@ -155,7 +162,7 @@ k.test('reread-gone', 'a message moved by a filter during the analysis is gone a
     for (let i = 0; i < 60 && hold.held.length === 0; i++) await new Promise(r => setImmediate(r));
     assert.equal(hold.held.length, 1);
     ctx.m.moveTo(h.id, 'f-lists');          // a user filter moved it: new id
-    hold.held[0].answer('{"spamValue": 10, "explanation": "fine"}');
+    hold.held[0].answer(JSON.stringify({ results: [{ index: 1, spamValue: 10, explanation: 'fine' }] }));
     await batch;
     assert.equal(record(ctx, 'gone@x').spam.spamValue, 10, 'the verdict is stored');
     assert.equal(record(ctx, 'gone@x').summary, undefined, 'no summary for a message that is gone');

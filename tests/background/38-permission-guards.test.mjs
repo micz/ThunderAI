@@ -37,6 +37,9 @@ const verdicts = {};
 const ctx = await bgContext({
     local: {
         ...API,
+        // Per-mail job semantics (joins, per-message rate limits and panels): every
+        // mail gets its own spam AI call (the batched check has its own files, 22/23).
+        spamfilter_batch_size: 1,
         add_tags: true,
         add_tags_auto: true,
         add_tags_max_messages: 0,

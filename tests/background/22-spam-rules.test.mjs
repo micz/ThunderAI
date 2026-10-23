@@ -44,6 +44,9 @@ const ctx = await bgContext({
     local: {
         ...API,
         spamfilter: true,
+        // Per-mail verdicts: every message of the model shares one sender, so the
+        // sender cache would leak verdicts across the cases.
+        spamfilter_sender_cache: false,
         spamfilter_threshold: 0,
         spamfilter_skip_addresses: ['friend@corp.test', '@trusted.test', 'boss@evil.test', 'x@both.test', '@dual.test'],
         spamfilter_block_addresses: ['@evil.test', 'scam@trusted.test', 'x@both.test', '*@dual.test'],
