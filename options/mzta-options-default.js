@@ -121,6 +121,38 @@ export const integration_options_config = {
     }
 };
 
+// Every string option must have an explicit privacy-boundary decision. The
+// static coverage test rejects additions that are not classified here. This is
+// metadata only: it changes no preference defaults, policy values or settings UI.
+export const integration_content_fields = {
+    chatgpt: {
+        text: ['developer_messages', 'text_format_schema_name', 'prompt_cache_key', 'safety_identifier'],
+        json: ['extra_body', 'text_format_schema'],
+        nonContent: ['api_key', 'model', 'temperature', 'reasoning_summary', 'reasoning_effort',
+            'verbosity', 'text_format', 'top_p', 'truncation', 'service_tier']
+    },
+    ollama: {
+        text: ['system_prompt'],
+        json: ['extra_options'],
+        nonContent: ['host', 'api_key', 'model', 'temperature', 'think', 'keep_alive']
+    },
+    openai_comp: {
+        text: [],
+        json: ['extra_body'],
+        nonContent: ['host', 'model', 'api_key', 'chat_name', 'temperature']
+    },
+    google_gemini: {
+        text: ['system_instruction'],
+        json: ['extra_body'],
+        nonContent: ['api_key', 'model', 'thinking_budget', 'temperature', 'top_p', 'top_k']
+    },
+    anthropic: {
+        text: ['system_prompt', 'stop_sequences'],
+        json: [],
+        nonContent: ['api_key', 'model', 'version', 'temperature', 'top_p', 'top_k', 'effort']
+    }
+};
+
 const integration_settings_template = {
     use_specific_integration: false,
     connection_type: 'chatgpt_api',

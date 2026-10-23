@@ -113,7 +113,8 @@ export class mzta_Menus {
     //{ id: 'ItemD', label: 'LabelD' },
     ];
 
-    constructor(openChatGPT, do_debug = false) {
+    constructor(openChatGPT, do_debug = false, processingClient) {
+        this.processingClient = processingClient;
         this.menu_context_compose = getMenuContextCompose();
         this.menu_context_display = getMenuContextDisplay();
         this.openChatGPT = openChatGPT;
@@ -487,6 +488,7 @@ export class mzta_Menus {
                         // console.log(">>>>>>>>>>>>>> prefs_at.connection_type: " + JSON.stringify(prefs_at.connection_type));
                         // console.log(">>>>>>>>>>>>>> def_conntype: " + JSON.stringify(def_conntype));
                         let cmd_addTags = new mzta_specialCommand({
+                            processingClient: this.processingClient,
                             prompt: fullPrompt,
                             llm: def_conntype,
                             custom_model: curr_prompt.model ? curr_prompt.model : '',
@@ -595,6 +597,7 @@ export class mzta_Menus {
                         fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt, curr_prompt.text, prefs_at.calendar_reminder_enabled, prefs_at.calendar_reminder_rules);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_GetCalendarEvent = new mzta_specialCommand({
+                            processingClient: this.processingClient,
                             prompt: fullPrompt,
                             llm: def_conntype,
                             do_debug: true,
@@ -698,6 +701,7 @@ export class mzta_Menus {
                         fullPrompt = taPromptUtils.finalizePrompt_get_task(fullPrompt, curr_prompt.text, prefs_at.task_reminder_enabled, prefs_at.task_reminder_rules);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_GetTask = new mzta_specialCommand({
+                            processingClient: this.processingClient,
                             prompt: fullPrompt,
                             llm: def_conntype,
                             do_debug: true,

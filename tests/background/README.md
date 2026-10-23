@@ -272,3 +272,12 @@ says how (fixed, documented as it is, or left to a separate job).
     panel more than once - the panel buttons, Refresh, the context-menu inline Summarize, a click
     joining a running job - and that the content script draws one. `33-context-menu` asserts the
     two sends of the context-menu path.)*
+## AI processing companion hooks
+
+`11-ai-processing.test.mjs` and `12-processing-worker.test.mjs` cover the contract
+in `claude-spec/09-ai-processing.md` against `processing-companion.mjs`, a scripted
+external add-on, not a detector. They run the real broker/adapter: discovery,
+validation, fail-closed receipts, progress/timeout, Stop, inactive forwarding,
+response buffering, provider/UI isolation and Web HTML postprocessing. `bgContext`
+models Privacy absent independently of Sparks' `external` stub; use `processor`
+to opt in to a fake Privacy responder. No runtime/model dependency is needed.
