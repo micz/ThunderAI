@@ -1,6 +1,6 @@
 {
     "extensionDescription": {
-        "message": "Gebruik ChatGPT, Google Gemini, Claude of Ollama om uw emails te verbeteren."
+        "message": "Gebruik ChatGPT, Google Gemini, Claude of Ollama om uw e-mails te verbeteren!"
     },
     "prompt_translate_this": {
         "message": "Vertaal"
@@ -440,5 +440,11 @@
     },
     "prefs_OptionText_action_auto_automatic": {
         "message": "Wanneer de e-mail geopend wordt"
+    },
+    "menu_title": {
+        "message": "ThunderAI"
+    },
+    "prompt_reply_custom_command": {
+        "message": "Beantwoord met commando..."
     }
 }
