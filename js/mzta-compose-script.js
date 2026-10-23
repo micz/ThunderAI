@@ -114,7 +114,7 @@ function keepOutOfInjected(range) {
   }
 }
 
-// The insertion of replaceSelectedText and insertReply. It goes through the editor
+// The insertion of replaceSelectedText, insertAtCaret and insertReply. It goes through the editor
 // (document.execCommand), so it is one transaction of the editor's undo stack: one Ctrl+Z
 // restores the text it replaced, Ctrl+Y / Ctrl+Shift+Z redoes it. A DOM mutation bypasses the transaction
 // manager, and the old way of making it undoable - two compose.setComposeDetails() calls
@@ -159,6 +159,43 @@ function insertIntoEditor(range, text, isPlainText) {
     Array.from(doc.body.childNodes).forEach(node => fragment.appendChild(node));
     range.insertNode(fragment);
   }
+  // The caret after the inserted text, where the editor command leaves it. insertNode() on a
+  // collapsed range (deleteContents() above collapsed it) moves its end past what it inserted.
+  range.collapse(false);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+// A collapsed range at the start of the email: before everything but ThunderAI's own
+// elements, so above any quote or signature. With an empty body, inside it.
+function startOfBodyRange() {
+  let first = document.body.firstChild;
+  while (first && isInjectedNode(first)) first = first.nextSibling;
+  const r = document.createRange();
+  if (first) r.setStartBefore(first);
+  else r.selectNodeContents(document.body);
+  r.collapse(true);
+  return r;
+}
+
+// The caret an "insert at cursor" prompt (action "3") started from, saved by saveCaret before
+// anything else of the prompt runs. It cannot be read when the answer arrives: a prompt with
+// {%mail_typed_text%} autoselects the typed text when it starts (getOnlyTypedText), which takes
+// the caret away. A clone of the selection's range is a live Range: it follows the edits made
+// to the body in the meantime. One per compose window, so the latest prompt's wins.
+let _mztaSavedCaret = null;
+
+// The range itself when it is a usable place to insert at: inside the body (not, say, at the
+// document's root) and not inside one of ThunderAI's own elements. null otherwise.
+function usableCaret(range) {
+  if (!range) return null;
+  const body = document.body;
+  if (!body.contains(range.startContainer) || !body.contains(range.endContainer)) return null;
+  for (const node of Array.from(body.childNodes)) {
+    if (isInjectedNode(node) && (node.contains(range.startContainer) || node.contains(range.endContainer))) return null;
+  }
+  return range;
 }
 
 // The top-level block a reply's answer goes above: the first quoted mail (reply, or
@@ -624,12 +661,41 @@ switch (message.command) {
       r = sel.getRangeAt(0).cloneRange();
       keepOutOfInjected(r);
     } else {
-      r = document.createRange();
-      let first = document.body.firstChild;
-      while (first && isInjectedNode(first)) first = first.nextSibling;
-      if (first) r.setStartBefore(first);
-      else r.selectNodeContents(document.body);
-      r.collapse(true);
+      r = startOfBodyRange();
+    }
+    insertIntoEditor(r, message.text, message.isPlainText === true);
+    return Promise.resolve(true);
+  }
+
+  case "saveCaret": {
+    const sel = window.getSelection();
+    _mztaSavedCaret = (sel && sel.rangeCount) ? sel.getRangeAt(0).cloneRange() : null;
+    return Promise.resolve(true);
+  }
+
+  case "insertAtCaret": {
+    // Action "3": the answer goes where the cursor was when the prompt started, with no
+    // confirmation and replacing nothing. In order: the caret saved by saveCaret, the current
+    // one, and with neither (an editor never clicked into) the start of the email, which is
+    // above any quote or signature. A selection is not replaced: the answer goes at its end.
+    const sel = window.getSelection();
+    const saved = usableCaret(_mztaSavedCaret);
+    _mztaSavedCaret = null;
+    const current = saved ? null : usableCaret((sel && sel.rangeCount) ? sel.getRangeAt(0) : null);
+    let r;
+    if (saved || current) {
+      r = (saved || current).cloneRange();
+      r.collapse(false);
+      // A caret right before one of ThunderAI's own top-level elements goes after it:
+      // #mzta-container must stay the body's first child.
+      let next = r.startContainer === document.body ? document.body.childNodes[r.startOffset] : null;
+      while (next && isInjectedNode(next)) {
+        r.setStartAfter(next);
+        r.collapse(true);
+        next = next.nextSibling;
+      }
+    } else {
+      r = startOfBodyRange();
     }
     insertIntoEditor(r, message.text, message.isPlainText === true);
     return Promise.resolve(true);

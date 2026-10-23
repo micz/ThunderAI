@@ -20,7 +20,8 @@
  *  API browser.tabs.foo") and is recorded in `unmodelled`, so a background path the model
  *  does not cover fails loudly instead of reading undefined.
  *
- *  What the background sends a tab is recorded in `tabSends` ({tabId, message}); a send to a tab
+ *  What the background sends a tab is recorded in `tabSends` ({tabId, message}) and answered
+ *  `true`, or what `tabAnswer(tabId, message)` returns (or throws) when a test sets it; a send to a tab
  *  that is not `reachable` rejects with Thunderbird's #901 TypeError, a send to a missing tab
  *  with "Invalid tab ID". Moves give the message a NEW id, as Thunderbird does, so the old id no
  *  longer resolves.
@@ -112,6 +113,8 @@ export function mailModel(o = {}) {
         /** Every call to the modelled APIs, in order: {api, args}. */
         calls: [],
         tabSends: [],
+        /** (tabId, message) => what tabs.sendMessage() answers, after recording it (null: true). */
+        tabAnswer: null,
         icons: [],
         unmodelled: [],
         permissions: new Set(o.permissions ?? DEFAULT_PERMISSIONS),
@@ -329,7 +332,7 @@ export function installApis(browser, m) {
             if (!t) throw new Error('Invalid tab ID: ' + tabId);
             if (!t.reachable) throw new TypeError('(intermediate value).getAttribute is not a function');
             m.tabSends.push({ tabId, message: clone(message) });
-            return true;
+            return m.tabAnswer ? m.tabAnswer(tabId, message) : true;
         },
     }, u);
 
@@ -342,6 +345,20 @@ export function installApis(browser, m) {
 
     browser.menus = strict('browser.menus', {
         onClicked: makeEvent(),
+        onShown: makeEvent(),
+        onHidden: makeEvent(),
+        async update(id, props) {
+            rec('menus.update', [id, props]);
+            // Thunderbird rejects an update of an id that does not exist.
+            if (!m.menus.has(id)) {
+                m.menuErrors.push('update of missing id ' + id);
+                throw new Error('Cannot find menu item with id ' + id);
+            }
+            Object.assign(m.menus.get(id), clone(props));
+        },
+        async refresh() {
+            rec('menus.refresh', []);
+        },
         async removeAll() {
             rec('menus.removeAll', []);
             m.menus.clear();
@@ -411,5 +428,5 @@ export function installApis(browser, m) {
 
 /** The menus created, as [{id, title, parentId, icons}] in creation order. */
 export function menuItems(m) {
-    return [...m.menus.values()].map(p => ({ id: p.id, title: p.title, parentId: p.parentId ?? null, icons: p.icons ?? null, contexts: p.contexts }));
+    return [...m.menus.values()].map(p => ({ id: p.id, title: p.title, parentId: p.parentId ?? null, icons: p.icons ?? null, contexts: p.contexts, enabled: p.enabled ?? true }));
 }

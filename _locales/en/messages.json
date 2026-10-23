@@ -124,6 +124,10 @@
     "message": "Must be unique, lowercase and without spaces",
     "description": "Custom prompts and Custom data placeholders pages: small hint under the ID field listing the rules an ID must follow."
   },
+  "customPrompts_form_label_ID_rules_prompt": {
+    "message": "Must be unique, lowercase and without spaces, and cannot start with prompt_",
+    "description": "Custom prompts page: small hint under the ID field listing the rules an ID must follow. Keep 'prompt_' untranslated: it is the literal start of the IDs of the built-in prompts."
+  },
   "customPrompts_form_label_Name": {
     "message": "Name",
     "description": "Label of the Name field and column on the Custom prompts and Custom data placeholders pages; a noun, keep it short."
@@ -220,6 +224,10 @@
     "message": "Substitute text",
     "description": "Custom prompts page: option of the Action dropdown meaning the answer replaces the selected text in the compose window; short option label."
   },
+  "customPrompts_insert_at_cursor": {
+    "message": "Insert at cursor position",
+    "description": "Custom prompts page: option of the Action dropdown meaning the answer is inserted where the cursor is in the compose window, without replacing any text; short option label."
+  },
   "chatgpt_win_working": {
     "message": "Work in progress...",
     "description": "ChatGPT Web window: status message shown while the AI is generating the answer."
@@ -235,6 +243,10 @@
   "chatgpt_win_get_answer": {
     "message": "Use the selected answer",
     "description": "ChatGPT Web window: label of the action button that uses the selected answer (for a reply or to replace text); keep it short."
+  },
+  "chatgpt_win_insert_at_cursor": {
+    "message": "Insert at cursor",
+    "description": "Label and tooltip of the button, in the ChatGPT Web window and the AI chat window, that inserts the answer where the cursor is in the email being written; keep it short."
   },
   "chatgpt_win_close": {
     "message": "Close",
@@ -617,6 +629,10 @@
   "customPrompts_error_id": {
     "message": "The ID is required, cannot contain spaces and must be unique.",
     "description": "Validation message for the prompt ID"
+  },
+  "customPrompts_error_id_reserved": {
+    "message": "The ID cannot start with prompt_: it is reserved for the built-in prompts.",
+    "description": "Custom prompts page: validation message when a new or changed prompt ID starts with 'prompt_'. Keep 'prompt_' untranslated: it is the literal start of the IDs of the built-in prompts."
   },
   "customPrompts_error_required": {
     "message": "Name and prompt text are required.",

@@ -82,6 +82,7 @@ import {
     migrateMenuOrderAlphabetic,
     migrateEnabledToShowIn,
     migrateCalendarNoSelection,
+    migrateCustomPromptIdCollisions,
     getSpecialPrompts,
     getIgnoredProviderOverrides,
     getReplacedProviderOverrides,
@@ -225,6 +226,10 @@ if (_prefs_migration_ok) await migrateCalendarNoSelection().catch(e => console.e
 // flag lives in storage.local, and reading it before the copy succeeded would find the
 // "not yet run" default and rewrite a value that is not there yet.
 if (_prefs_migration_ok) await migrateOllamaThinkLevel();
+// Renames a custom prompt whose id is a built-in prompt's (claude-spec/02-prompts.md "Prompt ids").
+// Not guarded and with no flag: it runs at every start, since a new version can ship an id a user
+// already has, and it reads only _custom_prompt, which the #129 pair above has already moved.
+await migrateCustomPromptIdCollisions().catch(e => console.error("[ThunderAI] migrateCustomPromptIdCollisions error: " + e));
 
 let _process_incoming = false;
 let _sparks_presence = false;
@@ -1032,22 +1037,22 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _replaceSelectedText(tabId, text) {
                     //console.log('chatgpt_replaceSelectedText: [' + tabId +'] ' + text)
                     taLog.log("chatgpt_replaceSelectedText text: " + text);
-                    // The compose format is read from the window itself, not from a
-                    // preference: it is a per-message property, so a global setting
-                    // could never be right for a user who writes in both formats.
-                    let isPlainText = await isPlainTextCompose(tabId);
-                    if(isPlainText){
-                        text = stripHtmlKeepLines(text);
-                    }else{
-                        // The compose script inserts it with execCommand('insertHTML'): only
-                        // sanitized markup may reach it. The ChatGPT web window's HTML is not
-                        // sanitized anywhere else; the API chat's already crossed it.
-                        text = sanitizeBlockHtml(text);
-                    }
-                    await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: text, tabId: tabId, isPlainText: isPlainText });
+                    const prepared = await _prepareComposeAnswer(tabId, text);
+                    await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: prepared.text, tabId: tabId, isPlainText: prepared.isPlainText });
                     return true;
                 }
                 return processWebAction(message, sender).then(processed => _replaceSelectedText(processed.tabId, processed.text))
+                    .catch(error => ({ ok: false, error: error.message }));
+            case 'chatgpt_insertAtCaret':
+                // Action "3": the answer goes where the cursor is, never replacing a selection
+                // and never asking for confirmation. Same conversion as the replacement.
+                async function _insertAtCaret(tabId, text) {
+                    taLog.log("chatgpt_insertAtCaret text: " + text);
+                    const prepared = await _prepareComposeAnswer(tabId, text);
+                    await browser.tabs.sendMessage(tabId, { command: "insertAtCaret", text: prepared.text, tabId: tabId, isPlainText: prepared.isPlainText });
+                    return true;
+                }
+                return processWebAction(message, sender).then(processed => _insertAtCaret(processed.tabId, processed.text))
                     .catch(error => ({ ok: false, error: error.message }));
             case 'chatgpt_replyMessage':
                 async function _replyMessage(message) {
@@ -2329,6 +2334,21 @@ browser.runtime.onMessageExternal.addListener((message, sender, sendResponse) =>
             break;
     }
 });
+
+// The answer as a compose window takes it, for replaceSelectedText and insertAtCaret alike.
+// The compose format is read from the window itself, not from a preference: it is a
+// per-message property, so a global setting could never be right for a user who writes in
+// both formats.
+async function _prepareComposeAnswer(tabId, text) {
+    const isPlainText = await isPlainTextCompose(tabId);
+    if(isPlainText){
+        return { text: stripHtmlKeepLines(text), isPlainText: true };
+    }
+    // The compose script inserts it with execCommand('insertHTML'): only sanitized markup
+    // may reach it. The ChatGPT web window's HTML is not sanitized anywhere else; the API
+    // chat's already crossed it.
+    return { text: sanitizeBlockHtml(text), isPlainText: false };
+}
 
 async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_custom_text = 0, prompt_info = {}) {
     let prefs = await mztaPrefs.getAllPrefs();

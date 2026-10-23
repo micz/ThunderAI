@@ -397,6 +397,30 @@ k.test('diff-viewer', S_PAGE, 'use_diff_viewer is selectable only with "substitu
     assert.equal($('#detail_use_diff_viewer').checked, false, 'left on with another action');
 });
 
+k.test('action-options', S_PAGE, 'the Action select offers close, reply, substitute text and insert at cursor position ("0"-"3"), for every prompt type', async () => {
+    const options = [...$('#detail_action').options].map(o => [o.value, o.textContent]);
+    assert.deepEqual(options, [
+        ['0', msg('customPrompts_close_button')],
+        ['1', msg('customPrompts_do_reply')],
+        ['2', msg('customPrompts_substitute_text')],
+        ['3', msg('customPrompts_insert_at_cursor')],
+    ]);
+    for (const type of ['0', '1', '2']) {
+        await choose($('#detail_type'), type);
+        assert.equal([...$('#detail_action').options].find(o => o.value === '3').disabled, false, 'type ' + type);
+    }
+});
+
+k.test('diff-viewer-insert', S_PAGE, 'insert at cursor position: use_diff_viewer is off and not selectable, with the hint', async () => {
+    await choose($('#detail_action'), '2');
+    await ctx.click($('#detail_use_diff_viewer'));
+    await choose($('#detail_action'), '3');
+    assert.equal($('#detail_use_diff_viewer').disabled, true);
+    assert.equal($('#detail_use_diff_viewer').checked, false);
+    assert.equal(hidden('detail_diff_hint'), false);
+    await choose($('#detail_action'), '0');
+});
+
 k.test('flag-ring', S_PAGE, 'a placeholder needing a flag that is off rings the flag', async () => {
     const ta = $('#detail_text');
     await typeIn(ta, 'Use {%additional_text%} and {%selected_text%}');
@@ -784,10 +808,11 @@ k.test('duplicate-builtin', S_PAGE, 'Duplicate and edit on a built-in gives an o
     for (const id of ['detail_id', 'detail_name', 'detail_type']) assert.equal($('#' + id).disabled, false, id);
     assert.equal($('#detail_text').readOnly, false);
     await ctx.click($('#btnDetailSave'));
-    const p = storedOf('prompt_classify_' + copy);
+    // Without the prefix of the built-in ids (spec 02 "Prompt ids").
+    const p = storedOf('classify_' + copy);
     assert.ok(p, 'the copy is not among the custom prompts');
     assert.equal(String(p.is_default), '0');
-    assert.equal(rowOf('prompt_classify_' + copy).querySelector('.p-type').textContent, msg('customPrompts_badge_personal'));
+    assert.equal(rowOf('classify_' + copy).querySelector('.p-type').textContent, msg('customPrompts_badge_personal'));
 });
 
 k.test('delete-cancelled', S_PAGE, 'Delete asks first; cancelled, nothing changes', async () => {
@@ -962,7 +987,7 @@ k.test('export-all', S_PAGE, 'Export All with API settings: every prompt, built-
 });
 
 const FILE = JSON.stringify({ id: 'thunderai-prompts', addon_version: '1', prompts: [
-    { id: 'mine_alpha', name: 'Alpha imported', text: 'Imported text', type: '1', action: '0', is_default: '0' },
+    { id: 'mine_alpha', name: 'Alpha imported', text: 'Imported text', type: '1', action: '3', is_default: '0' },
     { id: 'imported_one', name: 'Imported one', text: 'Hello', type: '0', action: '0', is_default: '0', enabled: 0,
       need_signature: 1 },
 ] });
@@ -990,6 +1015,15 @@ k.test('import', S_PAGE, 'Import merges the file into the list and saves it at o
     assert.equal($('#msgDisplay').style.color, 'green');
     assert.ok(ctx.ctl.sent.slice(before).some(m => m.command === 'reload_menus'));
     assert.equal(ids().length, 12);
+});
+
+k.test('import-insert-action', S_PAGE, 'an imported action "3" (insert at cursor position) is kept, labelled, and exported again as it is', async () => {
+    assert.equal(storedOf('mine_alpha').action, '3');
+    assert.equal(rowOf('mine_alpha').querySelector('.p_action').textContent, msg('customPrompts_insert_at_cursor'));
+    await ctx.click($('#btnExportAll'));
+    await dialogs.choose(msg('no_string'));
+    const { json } = await lastDownload(ctx);
+    assert.equal(json.prompts.find(p => p.id === 'mine_alpha').action, '3');
 });
 
 k.test('import-legacy', S_CUSTOM, 'an imported legacy enabled 0 becomes show_in "none", and its flags are canonical', () => {

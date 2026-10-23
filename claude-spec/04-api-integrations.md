@@ -210,7 +210,10 @@ its view and its focus, on success and on timeout.
 
 **Deadlines and the manual button.** A match resumes the flow at once. At either deadline the check
 stops observing and polling, closes its own menu, and shows the existing warning
-(`#mzta-model_warn`) and its **Use the current model** button (`#mzta-btn_model`). From then on no
+(`#mzta-model_warn`) and its **Use the current model** button (`#mzta-btn_model`). The warning's
+text lives in its own `#mzta-model_warn_text`, which the timeout resets to `chatgpt_win_model_warning`:
+the "no composer" error (`-2`) writes `chatgpt_textarea_not_found_error` there and hides the button,
+so a check timing out on the retry still shows its own text and button. From then on no
 change of the page can send by itself: the button's one-shot continuation
 (`continue_model_verification`) resumes the flow once, hides the warning, and is cleared; an approval
 is never reused by a later check. `pagehide` cancels the check, or the wait for the button: it

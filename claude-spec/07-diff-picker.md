@@ -22,7 +22,9 @@ Implemented in `api_webchat/diffPicker.js`. Introduced by
    pre-script in `mzta-background.js`). It uses `Diff.diffWords()`; with active companion processing,
    its diff opens in a companion-owned window instead of exposing originals to ChatGPT.
 - Works in the compose-window case too (`promptData.mailMessageId == -1`, where `action` is forced
-  to `"2"`).
+  to `"2"`, except `"3"`, insert at cursor, which keeps its own command; the Custom Prompts editor does
+  not let `use_diff_viewer` be set with it, and a prompt that carries both anyway inserts the
+  picker's result at the cursor).
 - With companion processing active, API responses are postprocessed before reaching the
   picker, so its baseline, proposed text and composed result use original values.
 
