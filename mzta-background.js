@@ -1957,6 +1957,24 @@ function _enqueueJunkMove(fn) {
 // options.messageData: { message, fullMessage, body_text, msg_text } — pass pre-fetched data to avoid re-querying
 // Saves a rule-decided non-spam report (allow list) for a mail handled at
 // queue time, outside the per-message job. Returns the saved report data.
+// Whether the sender is in an address book: the spamfilter_skip_addressbook rule at queue
+// time. Without the optional permission the rule cannot run: false (the run was told about
+// that once when it checked the rule's setup, see processEmails()).
+async function _queueSenderInAddressBook(senderEmail) {
+    try {
+        if (!(await hasFeaturePermissions('spamfilter_skip_addressbook'))) return false;
+        const matchingContacts = await browser.contacts.quickSearch({ searchString: senderEmail });
+        return matchingContacts.some(contact => {
+            const props = contact.properties;
+            return (props.PrimaryEmail && props.PrimaryEmail.toLowerCase() === senderEmail) ||
+                   (props.SecondEmail && props.SecondEmail.toLowerCase() === senderEmail);
+        });
+    } catch (err) {
+        taLog.error("Error checking address book for sender: " + err);
+        return false; // Fail open — continue with the AI check
+    }
+}
+
 async function _saveQueueRuleReport(message, curr_fullMessage, verdict, prefs) {
     let report_data = {};
     report_data.report_date = new Date();
@@ -2047,70 +2065,144 @@ async function _processSpamBatchQueue(queue, prefs, spamSession, batch) {
     for (let i = 0; i < queue.length; i += chunkSize) {
         if (taBatchController.isCancelled(batch)) break;
         const chunk = queue.slice(i, i + chunkSize);
-        await _analyzeSpamChunk(chunk, prefs, spamSession);
-        taBatchController.tick();
+        await _analyzeSpamChunk(chunk, prefs, spamSession, batch);
     }
 }
 
 async function _analyzeSpamChunk(chunk, prefs, spamSession, batch) {
-    const curr_prompt_spamfilter = await getSpamFilterPrompt();
-    const prompt = browser.i18n.getMessage('spamfilter_batch_prompt', [
-        buildSpamBatchEmails(chunk),
-        String(chunk.length),
-    ]);
-    const cmd = new mzta_specialCommand({
-        prompt: prompt,
-        llm: getConnectionType(prefs, curr_prompt_spamfilter, 'spamfilter'),
-        custom_model: curr_prompt_spamfilter.model ? curr_prompt_spamfilter.model : '',
-        do_debug: prefs.do_debug,
-        config: curr_prompt_spamfilter
-    });
-
-    let results = null;
-    try {
-        await cmd.initWorker();
-        const aiResponse = await cmd.sendPrompt();
-        taLog.log("[ThunderAI | SpamFilter batch] Response received for " + chunk.length + " emails.");
-        results = parseSpamBatchResponse(aiResponse);
-    } catch (err) {
-        taLog.error("[ThunderAI | SpamFilter batch] AI call failed: " + err);
+    // Spec 01 "In-flight jobs": every mail of the chunk is a registered spam job while
+    // the chunk call runs, so a manual check (panel, context menu, message open) joins
+    // it instead of starting a second analysis. A mail a manual job is already
+    // screening is left out of the chunk: that job owns the verdict — the batch only
+    // asks for the move through entry.wantsMove, the way an autoMove run would.
+    const owned = [];
+    const joined = [];
+    for (const item of chunk) {
+        const running = taJobRegistry.get('spam', item.message.headerMessageId);
+        if (running) {
+            running.wantsMove = true;
+            item._joinedPromise = running.promise;
+            joined.push(item);
+        } else {
+            owned.push(item);
+        }
+    }
+    // Register the owned mails: each job settles when the chunk's verdict for the mail
+    // is applied, or as an error when the mail falls back to the per-mail analysis
+    // (which then registers and runs its own job).
+    for (const item of owned) {
+        item._resolveSpamJob = null;
+        item._job = new Promise(resolve => { item._resolveSpamJob = resolve; });
+        taJobRegistry.start('spam', item.message.headerMessageId, async (entry) => {
+            const report = await item._job;
+            return report
+                ? { status: 'ok', success: true, moved: !!report.moved, data: { report: report }, rateLimited: false, retryAfterMs: null }
+                : { status: 'error', success: false, errorMessage: 'the batched check fell back to the per-mail analysis', rateLimited: false, retryAfterMs: null };
+        });
     }
 
-    const fallback = [];
-    if (results) {
-        for (let i = 0; i < chunk.length; i++) {
-            const item = chunk[i];
-            const verdict = results.get(i + 1);
-            if (!verdict) {
-                fallback.push(item);
-                continue;
+    if (owned.length > 0 && !taBatchController.isCancelled(batch)) {
+        const curr_prompt_spamfilter = await getSpamFilterPrompt();
+        const prompt = browser.i18n.getMessage('spamfilter_batch_prompt', [
+            buildSpamBatchEmails(owned),
+            String(owned.length),
+        ]);
+        const cmd = new mzta_specialCommand({
+            prompt: prompt,
+            llm: getConnectionType(prefs, curr_prompt_spamfilter, 'spamfilter'),
+            custom_model: curr_prompt_spamfilter.model ? curr_prompt_spamfilter.model : '',
+            do_debug: prefs.do_debug,
+            config: curr_prompt_spamfilter
+        });
+
+        let results = null;
+        try {
+            await cmd.initWorker();
+            const aiResponse = await cmd.sendPrompt();
+            taLog.log("[ThunderAI | SpamFilter batch] Response received for " + owned.length + " emails.");
+            results = parseSpamBatchResponse(aiResponse);
+        } catch (err) {
+            taLog.error("[ThunderAI | SpamFilter batch] AI call failed: " + err);
+            if (err.rateLimited) {
+                // The provider refused the whole chunk: per-mail retries would be refused
+                // again, so there is no fallback — every mail of the chunk gets its error
+                // report (an error counts as untested and is retried on the next run) and
+                // the batch stops (the outer finally tells the user why).
+                for (const item of owned) {
+                    let err_data = null;
+                    try {
+                        err_data = await spamReport.saveError(item.message.headerMessageId, err.message || String(err), _buildReportMetadata(item.message, item.fullMessage));
+                    } catch (e) {
+                        taLog.error("[ThunderAI | SpamFilter batch] Error report failed: " + e);
+                    }
+                    if (item._resolveSpamJob) item._resolveSpamJob(err_data);
+                    taBatchController.tick();
+                    await _spamProgressTick(spamSession);
+                }
+                taBatchController.requestCancel('rate_limit', err.retryAfterMs ?? null);
             }
-            await _applySpamVerdict(item, verdict.spamValue, verdict.explanation, prefs);
+        }
+
+        const fallback = [];
+        if (results) {
+            for (let i = 0; i < owned.length; i++) {
+                const item = owned[i];
+                const verdict = results.get(i + 1);
+                if (!verdict) {
+                    fallback.push(item);
+                    continue;
+                }
+                const report_data = await _applySpamVerdict(item, verdict.spamValue, verdict.explanation, prefs);
+                if (item._resolveSpamJob) item._resolveSpamJob(report_data);
+                taBatchController.tick();
+                await _spamProgressTick(spamSession);
+                try {
+                    await setCachedSenderData(item.senderEmail, 'spam', { spamValue: verdict.spamValue, explanation: verdict.explanation });
+                } catch (err) {
+                    taLog.error("[ThunderAI | SpamFilter batch] Sender cache write failed: " + err);
+                }
+            }
+        } else if (!taBatchController.isCancelled(batch)) {
+            taLog.warn("[ThunderAI | SpamFilter batch] No usable batch response, falling back to the per-mail analysis.");
+            fallback.push(...owned);
+        }
+
+        for (const item of fallback) {
+            if (taBatchController.isCancelled(batch)) break;
+            // The placeholder job ends here: the per-message job registers its own.
+            if (item._resolveSpamJob) item._resolveSpamJob(null);
+            taJobRegistry.drop('spam', item.message.headerMessageId);
+            // The sender rules were already applied when queueing; the per-message
+            // job re-checks them from the stored lists anyway.
+            const outcome = await _generateSpamReportForMessage(item.message.headerMessageId, {
+                messageData: { message: item.message, fullMessage: item.fullMessage, body_text: item.body_text, msg_text: item.msg_text },
+                prefs: prefs,
+                autoMove: true,
+            });
+            taBatchController.tick();
             await _spamProgressTick(spamSession);
+            if (outcome?.rateLimited) {
+                // The provider refused more requests: stop the whole batch (the
+                // finally block turns the reason into the "why" notice).
+                taBatchController.requestCancel('rate_limit', outcome.retryAfterMs);
+            }
+        }
+    }
+
+    // The joined jobs: their verdicts count for the batch too (progress and processed),
+    // and a rate limit they ran into stops the batch the same way.
+    for (const item of joined) {
+        const outcome = await item._joinedPromise;
+        if (outcome?.data?.report) {
             try {
-                await setCachedSenderData(item.senderEmail, 'spam', { spamValue: verdict.spamValue, explanation: verdict.explanation });
+                await setCachedSenderData(item.senderEmail, 'spam', { spamValue: outcome.data.report.spamValue, explanation: outcome.data.report.explanation });
             } catch (err) {
                 taLog.error("[ThunderAI | SpamFilter batch] Sender cache write failed: " + err);
             }
         }
-    } else {
-        taLog.warn("[ThunderAI | SpamFilter batch] No usable batch response, falling back to the per-mail analysis.");
-        fallback.push(...chunk);
-    }
-
-    for (const item of fallback) {
-        if (taBatchController.isCancelled(batch)) break;
-        // The sender rules were already applied when queueing; the per-message
-        // job re-checks them from the stored lists anyway.
-        const outcome = await _generateSpamReportForMessage(item.message.headerMessageId, {
-            messageData: { message: item.message, fullMessage: item.fullMessage, body_text: item.body_text, msg_text: item.msg_text },
-            prefs: prefs,
-            autoMove: true,
-        });
+        taBatchController.tick();
         await _spamProgressTick(spamSession);
         if (outcome?.rateLimited) {
-            // The provider refused more requests: stop the whole batch (the
-            // finally block turns the reason into the "why" notice).
             taBatchController.requestCancel('rate_limit', outcome.retryAfterMs);
         }
     }
@@ -2401,7 +2493,6 @@ async function _runSpamJob(entry, headerMessageId, options) {
         }
         taLog.log("spamfilter_result: " + spamfilter_result);
 
-        let jsonObj = {};
         taLog.log("Decoding the AI response...");
         try {
             jsonObj = extractJsonObject(spamfilter_result);
@@ -3446,6 +3537,9 @@ async function processEmails(args) {
         // Mails whose sender verdict is already in the sender cache: their
         // verdict is applied directly after the loop, with no AI call at all.
         const spamCached = [];
+        // Messages the spam flush will count as processed (when their verdict is
+        // applied): the collection loop and the pipeline must not count them too.
+        const spamFlushIds = new Set();
 
         // Cap on a manual Add tags run (context menu), like summarize_max_messages: a large
         // selection launched by mistake could never fit in a free-tier daily quota. Automatic
@@ -3601,6 +3695,25 @@ async function processEmails(args) {
                     }
                 }
                 if (!skipSpamFilter) {
+                    // The sender rules and the batched check need the parsed body: fetch it
+                    // here, once, the way every feature fetches its own data (a getFull()
+                    // failure is feature-local: the spam check is skipped for this message,
+                    // its other features still run).
+                    let curr_fullMessage = null;
+                    let msg_text = null;
+                    let body_text = '';
+                    let spam_body_failed = false;
+                    try {
+                        curr_fullMessage = await browser.messages.getFull(message.id);
+                        msg_text = await getMailInlineTextParts(message.id);
+                        body_text = htmlBodyToPlainText(msg_text.html);
+                        if (body_text.length == 0) {
+                            body_text = cleanupNewlines(msg_text.text);
+                        }
+                    } catch (err) {
+                        taLog.error("[ThunderAI | SpamFilter] Could not read the message body, skipping the spam check for [" + message.headerMessageId + "]: " + err);
+                        spam_body_failed = true;
+                    }
                     // Sender-based rules and the queue decision — no AI call here. Blocked
                     // senders get their verdict at once, as a cached-style item the flush
                     // applies (moving at flush time, not while the list is still iterating).
@@ -3608,12 +3721,22 @@ async function processEmails(args) {
                     const allowMatch = hasAddressListEntries(spamfilter_skip_addresses) ? matchAddressListType(message.author, spamfilter_skip_addresses) : null;
                     const blockMatch = hasAddressListEntries(spamfilter_block_addresses) ? matchAddressListType(message.author, spamfilter_block_addresses) : null;
                     const blocked = (blockMatch !== null) && ((allowMatch === null) || (blockMatch === 'exact' && allowMatch === 'domain'));
-                    if (allowMatch !== null && !blocked) {
+                    if (spam_body_failed) {
+                        // Handled above as a feature-local fetch failure: nothing is queued
+                        // and the per-message pipeline step (target.spam) stays off.
+                        skipSpamFilter = true;
+                    } else if (allowMatch !== null && !blocked) {
                         taLog.log("Sender " + spamSenderEmail + " is in the skip addresses list (" + allowMatch + " match), skipping spam filter.");
                         await _saveQueueRuleReport(message, curr_fullMessage, { spamValue: 0, explanation: browser.i18n.getMessage('spamfilter_skip_addresses_explanation'), isSpam: false }, prefs_aats);
+                        spamFlushIds.add(message.headerMessageId);
                     } else if (blocked) {
                         taLog.log("Sender " + spamSenderEmail + " is in the block addresses list (" + blockMatch + " match), reporting as spam without the AI.");
                         spamCached.push({ message, fullMessage: curr_fullMessage, msg_text, body_text, senderEmail: spamSenderEmail, cachedSpam: { spamValue: 100, explanation: browser.i18n.getMessage('spamfilter_block_addresses_explanation') } });
+                        spamFlushIds.add(message.headerMessageId);
+                    } else if (prefs_aats.spamfilter_skip_addressbook && spamSenderEmail && await _queueSenderInAddressBook(spamSenderEmail)) {
+                        taLog.log("Sender " + spamSenderEmail + " is in the address book, skipping spam filter.");
+                        await _saveQueueRuleReport(message, curr_fullMessage, { spamValue: 0, explanation: browser.i18n.getMessage('spamfilter_skip_addressbook_explanation'), isSpam: false }, prefs_aats);
+                        spamFlushIds.add(message.headerMessageId);
                     } else {
                         // Queue decision: mails with a stored verdict are skipped so
                         // a second run only analyzes new mails (error reports count
@@ -3639,9 +3762,11 @@ async function processEmails(args) {
                         } else if (decision === 'cached') {
                             taLog.log("[ThunderAI | SpamFilter] Sender cache hit at queue time for " + spamSenderEmail + ", no AI call needed.");
                             spamCached.push({ message, fullMessage: curr_fullMessage, msg_text, body_text, senderEmail: spamSenderEmail, cachedSpam });
+                            spamFlushIds.add(message.headerMessageId);
                         } else {
                             // Queued for the batched spam check (one AI call per chunk).
                             spamQueue.push({ message, fullMessage: curr_fullMessage, msg_text, body_text, senderEmail: spamSenderEmail });
+                            spamFlushIds.add(message.headerMessageId);
                         }
                     }
                     // Handled by the batched check below either way: the per-message
@@ -3693,7 +3818,7 @@ async function processEmails(args) {
             // its pipeline, so a batch stopped before it starts does not count it.
             if (target.spam || target.addTags || target.summarize || target.translate) {
                 targets.push(target);
-            } else {
+            } else if (!spamFlushIds.has(message.headerMessageId)) {
                 taBatchController.tick();
             }
 
@@ -3728,6 +3853,7 @@ async function processEmails(args) {
                 if (taBatchController.isCancelled(batch)) break;
                 const rd = await _applySpamVerdict(item, item.cachedSpam.spamValue, item.cachedSpam.explanation, prefs_aats);
                 if (rd?.moved) spamMovedIds.add(item.message.headerMessageId);
+                taBatchController.tick();
                 await _spamProgressTick(spamSession);
             }
             if (spamQueue.length > 0 && !taBatchController.isCancelled(batch)) {
@@ -3992,7 +4118,9 @@ async function processEmails(args) {
                     }
                 }
             } finally {
-                taBatchController.tick();
+                // The spam flush already counted the messages it applied a verdict to.
+                // (message, not curr: the finally runs outside curr's scope.)
+                if (!spamFlushIds.has(message.headerMessageId)) taBatchController.tick();
             }
         };
 

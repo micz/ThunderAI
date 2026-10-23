@@ -3499,5 +3499,49 @@
     },
     "translate_error_no_message_id": {
         "message": "Die Nachricht konnte nicht gelesen werden: Die Übersetzung wäre nur aus dem Betreff erstellt worden."
+    },
+    "prefs_OptionText_add_tags_sender_cache": {
+        "message": "Ergebnisse vom selben Absender wiederverwenden"
+    },
+    "prefs_OptionText_add_tags_sender_cache_Info": {
+        "message": "Wenn aktiviert, werden die Tags nur einmal pro Absender bei der KI angefragt: Weitere E-Mails desselben Absenders erhalten dieselben Tags ohne neue KI-Anfrage. Zwischengespeicherte Ergebnisse bleiben 30 Tage erhalten."
+    },
+    "prefs_OptionText_spamfilter_sender_cache": {
+        "message": "Ergebnisse vom selben Absender wiederverwenden"
+    },
+    "prefs_OptionText_spamfilter_sender_cache_Info": {
+        "message": "Wenn aktiviert, läuft die Spam-Prüfung nur einmal pro Absender: Weitere E-Mails desselben Absenders übernehmen das gespeicherte Urteil ohne neue KI-Anfrage. Zwischengespeicherte Ergebnisse bleiben 30 Tage erhalten."
+    },
+    "prefs_OptionText_spamfilter_batch_size": {
+        "message": "E-Mails pro KI-Aufruf"
+    },
+    "prefs_OptionText_spamfilter_batch_size_Info": {
+        "message": "Wie viele E-Mails bei einer gleichzeitigen Prüfung mehrerer E-Mails (Stapelmodus) in einem einzigen KI-Aufruf gemeinsam analysiert werden. Niedrigere Werte liefern ausführlichere Erklärungen, höhere Werte sparen Token."
+    },
+    "SpamFilter_ClearSenderCache": {
+        "message": "Absender-Cache leeren"
+    },
+    "SpamFilter_ClearSenderCache_Confirm": {
+        "message": "Alle zwischengespeicherten Spam-Ergebnisse für Absender löschen? Künftige Spam-Prüfungen fragen für jede E-Mail erneut die KI."
+    },
+    "SpamFilter_ClearSenderCache_Done": {
+        "message": "Absender-Cache geleert."
+    },
+    "SpamFilter_maintenance_title": {
+        "message": "Wartung"
+    },
+    "SpamFilter_maintenance_infoline": {
+        "message": "Zwischengespeicherte Absender-Urteile und gespeicherte Spam-Berichte beschleunigen wiederholte Spam-Prüfungen. Über die Buttons unten löschen Sie sie — der Spam-Filter analysiert die betroffenen E-Mails beim nächsten Lauf erneut."
+    },
+    "spamfilter_batch_prompt": {
+        "message": "Sie sind ein Assistent zur Spam-Analyse von E-Mails. Analysieren Sie jede der folgenden $COUNT$ E-Mails und bewerten Sie für jede einzelne die Wahrscheinlichkeit, dass es sich um unerwünschten Spam oder unverlangte Post handelt (spamValue von 0 bis 100), jeweils mit einer kurzen Erklärung (maximal ein Satz). Urteilen Sie aus der Sicht des Empfängers: Wäre diese E-Mail für ihn plausibel erwünscht?\nWichtige Kriterien:\n- Bestätigungs-/Double-Opt-in-E-Mails für Newsletter- oder Dienst-Anmeldungen, die der Empfänger offenbar nie angefordert hat (z. B. Formulierungen wie „Sie (oder eventuell jemand anderes) haben gerade Folgendes abonniert“), sind ein starkes Spam-Signal (List Bombing): Bewerten Sie sie mit hohen Werten.\n- Ein bekannter Absender oder eine seriöse Marke macht eine E-Mail allein für sich NICHT erwünscht.\n- Marketing-/Upsell-Inhalte in ansonsten rein transaktionalen E-Mails sind ein moderates Spam-Signal.\n- Beurteilen Sie jede E-Mail unabhängig voneinander allein anhand ihres Inhalts.\n\n$EMAILS$\n\nAntworten Sie AUSSCHLIESSLICH mit einem JSON-Objekt in genau diesem Format und nichts anderem:\n{\"results\":[{\"index\":1,\"spamValue\":0,\"explanation\":\"...\"},{\"index\":2,\"spamValue\":0,\"explanation\":\"...\"}]}\nDer Index muss zur Nummer der EMAIL oben passen. Liefern Sie für jede E-Mail genau einen Eintrag.",
+        "placeholders": {
+            "count": {
+                "content": "$2"
+            },
+            "emails": {
+                "content": "$1"
+            }
+        }
     }
 }

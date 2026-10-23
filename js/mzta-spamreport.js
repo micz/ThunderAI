@@ -148,6 +148,14 @@ export class taSpamReport {
         if (index === null) {
             index = await this._seedIndex();
         }
+        // Reconcile with the store: records written before the index existed (an old
+        // installation's log, a raw write) are invisible to an index-only truncation
+        // and would never be deleted. Their record ts puts them where they belong.
+        for (const [id, record] of Object.entries(await this._storage.getAllSpamRecords())) {
+            if (!(id in index)) {
+                index[id] = record?.spam?.ts ?? Date.parse(record?.spam?.report_date) ?? Date.now();
+            }
+        }
         let entries = Object.entries(index);
         this.taLog.log("[truncReportData] total reports: " + entries.length + ", max: " + this._max_reports);
         if (entries.length <= this._max_reports) {

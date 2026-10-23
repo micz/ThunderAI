@@ -87,6 +87,18 @@ export const taJobRegistry = {
         return entry;
     },
 
+    // Synchronous removal, for a caller that ends its placeholder job and hands the
+    // message over to another registered job (the batched spam check falling back to
+    // the per-mail analysis, which registers its own job). The dropped entry's promise
+    // still settles for whoever already joined it; the deletion guard in start() keeps
+    // this from removing the replacement job.
+    drop(kind, id){
+        const key = this._key(kind, id);
+        const entry = this._jobs.get(key);
+        if (this._jobs.delete(key)) this.taLog.log("[taJobs] drop " + key);
+        return entry || null;
+    },
+
     // Log a join, for the manual tests ("exactly one start").
     logJoin(entry){
         this.taLog.log("[taJobs] join " + this._key(entry.kind, entry.id));
