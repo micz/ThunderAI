@@ -238,6 +238,10 @@ export const prefs_default = {
     // Mask personal data through the ThunderAI Privacy companion. The one activation
     // switch: the companion's settings page only mirrors it (claude-spec/09-ai-processing.md).
     ai_processing_enabled: false,
+    // No UI, meant for a policy: when ThunderAI Privacy is installed without its model,
+    // ask it to download the model (once per start of either add-on). Off by default:
+    // the model is a large download from Hugging Face, made by every machine.
+    ai_processing_model_autodownload: false,
     max_prompt_length: 30000,   // max string length for prompt
     add_tags: false,
     add_tags_maxnum: 3,

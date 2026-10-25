@@ -18,15 +18,42 @@ The one activation switch is ThunderAI's `ai_processing_enabled` preference ("Us
 ThunderAI Privacy", advanced section of the options page, right before Debug). It is an
 ordinary `prefs_default` boolean, so a policy can set or lock it. The companion's own
 switch is a mirror: it reads and writes this preference through `getSetting` /
-`setSetting`, and is kept in step by `settingChanged`. The companion owns readiness:
-it refuses to ask for activation on an unsupported platform or without its model, while
-ThunderAI's own switch is not gated (a missing model then blocks with the companion's error).
+`setSetting`, and is kept in step by `settingChanged`. Both switches can be turned on
+only once the companion's model is ready (see "Model readiness"); both can always be
+turned off. A policy that forces the switch on is not gated: without the model, requests
+block with the companion's `MODEL_NOT_READY` error.
 
 The options page row is shown when `probe` finds a compatible companion, and also while
 the switch is on, so a missing companion can still be switched off. Otherwise a notice
 (`#no_privacy`, "not installed" or "incompatible") links to the add-on, as `#no_sparks`
 does for Sparks. The page probes again on focus and follows the preference through
 `storage.onChanged`.
+
+## Model readiness
+
+The companion keeps a cached readiness (64-bit platform and complete model cache, no
+deletion running), checked at its startup, after a download and after a deletion, so
+discovery never starts a model worker. An evicted cache still blocks at the first mask.
+Status and `readinessChanged` carry `{ready, downloading, progress, error}` (`progress`
+an integer percent while downloading, `error` the companion's localized message of the
+last failed download).
+
+The download runs in the companion's background: its Hugging Face hosts are required
+manifest permissions, so no user gesture is needed and either add-on can start it. In
+ThunderAI's row (`renderPrivacyCompanion()` in `options/mzta-options.js`), while the
+companion is installed without its model: the switch is disabled unless already on, a
+note (`#ai_processing_model`) and a "Download the model" button (`downloadModel`) show,
+then the progress relayed by the background (`ai_processing_readiness`, from
+`readinessChanged`). "Open ThunderAI Privacy settings" (`openSettings`) shows whenever a
+compatible companion answers. The companion refuses to delete its model while the switch
+is on or a download runs.
+
+`ai_processing_model_autodownload` (policy-oriented, no UI) asks the companion for the
+download when it reports `ready: false` and is not downloading: at ThunderAI startup
+(one `hello`) and on every `readinessChanged`, which the companion sends at its own
+startup too. One attempt per companion `instanceId`: a failed download is retried only
+after either add-on restarts. Each machine downloads the model from Hugging Face.
+Combined with `ai_processing_enabled` locked on, requests block until the model is ready.
 
 ## Session facade
 
@@ -79,6 +106,8 @@ All v1 actions use `action: 'aiProcessing.<operation>'` and `protocol: 1`.
 |---|---|---|
 | `hello` | protocol | status |
 | `settingChanged` | protocol, enabled, locked | acknowledgement |
+| `downloadModel` | protocol | `{ready, downloading, progress, error}`, the download running in the companion |
+| `openSettings` | protocol | acknowledgement; the companion opens its settings page |
 | `createSession` | instanceId, sessionId, callId | acknowledgement |
 | `before` | instanceId, sessionId, callId, requestId, input | input, context |
 | `after` | instanceId, sessionId, callId, requestId, context, output, format, optional view | output |
@@ -86,7 +115,8 @@ All v1 actions use `action: 'aiProcessing.<operation>'` and `protocol: 1`.
 | `cancel` | instanceId, sessionId, callId, requestId | acknowledgement |
 | `disposeSession` | instanceId, sessionId, callId | acknowledgement |
 
-Status: `{ok: true, protocol: 1, instanceId, version}`. Activation is not part of it.
+Status: `{ok: true, protocol: 1, instanceId, version, ready, downloading, progress, error}`.
+Activation is not part of it; `ready` and `downloading` are required boolean fields.
 The companion generates a fresh instance ID each background startup. Active v1
 processing buffers responses and keeps Web input/results outside the provider DOM.
 Normal replies include `{ok: true, protocol: 1, instanceId, callId, ...result}`;
@@ -98,6 +128,7 @@ The companion sends ThunderAI, with `protocol: 1`:
 |---|---|---|
 | `getSetting` | protocol | `{ok, protocol, enabled, locked}` |
 | `setSetting` | protocol, enabled (boolean) | `{ok, protocol, enabled, locked}`, or `ai_processing_setting_locked` when a policy locks it |
+| `readinessChanged` | protocol, instanceId, ready, downloading, progress, error | `{ok, protocol}`; relayed to pages as `ai_processing_readiness` |
 | `progress` | see below | `{ok}` |
 
 `settingChanged` goes the other way whenever `ai_processing_enabled` changes in
@@ -110,7 +141,9 @@ Discovery (`status`, and before every new session) never contacts the companion 
 the switch is off. While it is on, an absent companion (`ai_processing_unavailable`), a
 discovery timeout or an incompatible reply (`ai_processing_incompatible`) blocks.
 `probe` (the options page only) sends `hello` whatever the switch and returns
-`{installed, compatible, version?}`; it never throws.
+`{installed, compatible}`, plus `version` and the model fields when compatible; it
+never throws. The page's `downloadModel` and `openSettings` operations are bounded to 5 s
+like discovery.
 
 Progress travels companion → ThunderAI as `progress` with protocol, instanceId,
 sessionId, requestId, callId and `{phase, current, total}`. Only matching in-flight,
@@ -165,8 +198,10 @@ timeout/progress, page-to-broker transport/listener cleanup, session concurrency
 raw-worker selection, busy notices and Stop. Real detection and Thunderbird IPC/platform
 behavior still require manual testing.
 
-Load both repositories as temporary Thunderbird add-ons. Download the model in Privacy
-and switch it on from either settings page (check that the other follows); use fictional data for chat/follow-up, structured special commands and
+Load both repositories as temporary Thunderbird add-ons. Check that neither switch can
+be turned on before the model is downloaded; download it from ThunderAI's row and from
+Privacy (progress in both pages), check the autodownload policy, then switch it on from
+either settings page (check that the other follows) and that deletion is refused while on; use fictional data for chat/follow-up, structured special commands and
 Web reply/replace/insert at cursor/view/diff. Check CPU and WebGPU, long chunked inputs, Stop, timeout,
 companion restart/disable/uninstall, and missing-model errors. Inspect outbound bodies
 and confirm restored replies are absent from follow-up history. Without the companion

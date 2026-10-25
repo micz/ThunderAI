@@ -278,7 +278,9 @@ says how (fixed, documented as it is, or left to a separate job).
 in `claude-spec/09-ai-processing.md` against `processing-companion.mjs`, a scripted
 external add-on, not a detector. They run the real broker/adapter: the activation
 switch (`ai_processing_enabled`, set by the fake's `activate()`; `getSetting` /
-`setSetting` / `settingChanged`, the policy lock), discovery and `probe`, validation,
+`setSetting` / `settingChanged`, the policy lock), the model readiness (`readinessChanged`
+from the fake's `readinessChanged()`, `downloadModel` / `openSettings`, the
+`ai_processing_model_autodownload` policy once per instance), discovery and `probe`, validation,
 fail-closed blocking while switched on, progress/timeout, Stop, inactive forwarding,
 response buffering, provider/UI isolation and Web HTML postprocessing. `bgContext`
 models Privacy absent independently of Sparks' `external` stub; use `processor`

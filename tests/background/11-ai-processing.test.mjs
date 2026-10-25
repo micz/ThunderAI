@@ -24,6 +24,8 @@ const getAIProcessingStatus = () => client.getStatus();
 const input = () => ({ message: 'Alice', instructions: { system: 'Alice rules' }, extraBody: { body: '{"name":"Alice"}' } });
 beforeEach(async () => {
     companion.handle = null; companion.available = true;
+    Object.assign(companion.model, { ready: true, downloading: false, progress: null, error: null });
+    await ctx.ctl.browser.storage.local.set({ ai_processing_model_autodownload: false });
     await companion.activate(false);
     await flush(2);
     companion.calls.length = 0;
@@ -44,12 +46,73 @@ test('probe reports a missing, incompatible or compatible companion whatever the
     companion.available = false;
     assert.deepEqual(await client.probe(), { installed: false, compatible: false });
     companion.available = true;
-    for (const status of [null, '99.0.0', { ok: true, protocol: 99, instanceId: 'x' }]) {
+    for (const status of [null, '99.0.0', { ok: true, protocol: 99, instanceId: 'x' },
+        { ok: true, protocol: 1, instanceId: 'x', version: '0.9.0' }]) { // no readiness: an older build
         companion.handle = m => m.action === 'aiProcessing.hello' ? Promise.resolve(status) : undefined;
         assert.deepEqual(await client.probe(), { installed: true, compatible: false });
     }
     companion.handle = null;
-    assert.deepEqual(await client.probe(), { installed: true, compatible: true, version: '1.0.0' });
+    assert.deepEqual(await client.probe(), { installed: true, compatible: true, version: '1.0.0',
+        ready: true, downloading: false, progress: null, error: null });
+    companion.model.ready = false;
+    assert.equal((await client.probe()).ready, false, 'switched off, readiness is still reported');
+});
+
+test('the options page buttons reach the companion: download the model, open its settings', async () => {
+    companion.handle = m => m.action === 'aiProcessing.downloadModel'
+        ? { ...companion.status(), ready: false, downloading: true, progress: 0 } : undefined;
+    assert.deepEqual(await client.downloadModel(), { ready: false, downloading: true, progress: 0, error: null });
+    assert.deepEqual(companion.calls.map(m => [m.action, m.protocol]), [['aiProcessing.downloadModel', 1]]);
+    companion.handle = m => m.action === 'aiProcessing.openSettings' ? { ok: false, error: { code: 'X', message: 'cannot open' } } : undefined;
+    await assert.rejects(client.openSettings(), /cannot open/);
+    companion.available = false;
+    await assert.rejects(client.downloadModel(), /unavailable/);
+});
+
+test('readinessChanged is relayed to the pages; a malformed or foreign one is refused', async () => {
+    const relayed = () => ctx.ctl.sent.filter(m => m?.command === 'ai_processing_readiness');
+    const before = relayed().length;
+    assert.deepEqual(await companion.readinessChanged({ ready: false, downloading: true, progress: 12 }), { ok: true, protocol: 1 });
+    assert.equal((await externalProcessingMessage({ action: 'aiProcessing.readinessChanged', protocol: 1, instanceId: 'x', ready: 'no', downloading: false })).ok, false);
+    assert.equal((await externalProcessingMessage({ action: 'aiProcessing.readinessChanged', ...companion.status() }, 'wrong-id')).ok, false);
+    await flush(3);
+    assert.deepEqual(relayed().slice(before), [{ command: 'ai_processing_readiness', ready: false, downloading: true, progress: 12, error: null }]);
+});
+
+test('the autodownload policy asks once per companion instance, only when the model is missing', async () => {
+    const downloads = () => companion.calls.filter(m => m.action === 'aiProcessing.downloadModel').length;
+    await companion.readinessChanged({ ready: false }, 'instance-a');
+    await flush(4);
+    assert.equal(downloads(), 0, 'off by default');
+    await ctx.ctl.browser.storage.local.set({ ai_processing_model_autodownload: true });
+    await companion.readinessChanged({ ready: false }, 'instance-b');
+    await flush(4);
+    assert.equal(downloads(), 1);
+    await companion.readinessChanged({ ready: false, error: 'failed' }, 'instance-b');
+    await flush(4);
+    assert.equal(downloads(), 1, 'a failed download is not retried by the same instance');
+    await companion.readinessChanged({ ready: false, downloading: true }, 'instance-c');
+    await companion.readinessChanged({ ready: true }, 'instance-d');
+    await flush(4);
+    assert.equal(downloads(), 1, 'never while downloading or ready');
+    await companion.readinessChanged({ ready: false, downloading: false, error: null }, 'instance-e');
+    await flush(4);
+    assert.equal(downloads(), 2, 'a restarted companion gets a new attempt');
+});
+
+test('the autodownload policy also asks at ThunderAI startup, when the companion started first', async () => {
+    await ctx.ctl.browser.storage.local.set({ ai_processing_model_autodownload: true });
+    companion.model.ready = false;
+    companion.instanceId = 'startup-instance';
+    try {
+        const broker = createAIProcessingBroker();
+        await broker.ready;
+        await flush(6);
+        broker.dispose();
+    } finally {
+        companion.instanceId = 'processor-instance';
+    }
+    assert.deepEqual(companion.calls.map(m => m.action), ['aiProcessing.hello', 'aiProcessing.downloadModel']);
 });
 
 test('switched on, an incompatible or missing processor blocks', async () => {

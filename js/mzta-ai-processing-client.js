@@ -168,6 +168,12 @@ export function createAIProcessingClient(transport = createRuntimeProcessingTran
         },
         probe() {
             return transport('probe', { callId: crypto.randomUUID() });
+        },
+        downloadModel() {
+            return transport('downloadModel', { callId: crypto.randomUUID() });
+        },
+        openSettings() {
+            return transport('openSettings', { callId: crypto.randomUUID() });
         }
     };
 }

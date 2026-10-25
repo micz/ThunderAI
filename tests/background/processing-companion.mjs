@@ -3,7 +3,8 @@
 export function fakeProcessingCompanion() {
     const fake = {
         available: true, instanceId: 'processor-instance', calls: [], handle: null,
-        status() { return { ok: true, protocol: 1, instanceId: fake.instanceId, version: '1.0.0' }; },
+        model: { ready: true, downloading: false, progress: null, error: null },
+        status() { return { ok: true, protocol: 1, instanceId: fake.instanceId, version: '1.0.0', ...fake.model }; },
         async receive(message) {
             fake.calls.push(structuredClone(message));
             if (!fake.available) throw new Error('Could not establish connection. Receiving end does not exist.');
@@ -23,6 +24,11 @@ export function fakeProcessingCompanion() {
             return fake.reply(message);
         },
         reply(message, result = {}) { return { ...fake.status(), callId: message.callId, ...result }; },
+        // The companion's model changed (spec 09 "Model readiness"): what it sends ThunderAI.
+        readinessChanged(model = {}, instanceId = fake.instanceId) {
+            Object.assign(fake.model, model);
+            return externalProcessingMessage({ action: 'aiProcessing.readinessChanged', protocol: 1, instanceId, ...fake.model });
+        },
         // ThunderAI's own switch (spec 09 "Activation switch"), as its options page writes it.
         async activate(enabled = true) {
             await browser.storage.local.set({ ai_processing_enabled: enabled });

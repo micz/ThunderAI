@@ -10,14 +10,28 @@ import {
 // The one activation switch, shared with the companion's settings page through
 // aiProcessing.getSetting / setSetting / settingChanged.
 const ENABLED_PREF = 'ai_processing_enabled';
+// Policy-oriented, no UI: ask the companion to download its model when it is not ready.
+const AUTODOWNLOAD_PREF = 'ai_processing_model_autodownload';
 const NO_PROGRESS = () => {};
 
 function validateStatus(status) {
     if (!status?.ok ||
         status.protocol !== AI_PROCESSING_PROTOCOL ||
-        typeof status.instanceId !== 'string') {
+        typeof status.instanceId !== 'string' ||
+        typeof status.ready !== 'boolean' ||
+        typeof status.downloading !== 'boolean') {
         throw processingError('ai_processing_incompatible');
     }
+}
+
+// What the options page shows about the companion's model.
+function modelFields(status) {
+    return {
+        ready: status.ready,
+        downloading: status.downloading,
+        progress: Number.isFinite(status.progress) ? status.progress : null,
+        error: typeof status.error === 'string' ? status.error : null
+    };
 }
 
 async function settingState() {
@@ -100,7 +114,50 @@ export function createAIProcessingBroker() {
         } catch {
             return { installed: true, compatible: false };
         }
-        return { installed: true, compatible: true, version: status.version };
+        return { installed: true, compatible: true, version: status.version, ...modelFields(status) };
+    }
+
+    // A short request to the companion outside any session (options page buttons,
+    // autodownload). Bounded like discovery.
+    async function ask(action) {
+        let timer;
+        let reply;
+        try {
+            reply = await Promise.race([
+                browser.runtime.sendMessage(AI_PROCESSOR_ID, { action, protocol: AI_PROCESSING_PROTOCOL }),
+                new Promise((_, reject) => {
+                    timer = setTimeout(() => reject(processingError('ai_processing_timeout')), 5000);
+                })
+            ]);
+        } catch (error) {
+            throw error.code === 'ai_processing_timeout' ? error : processingError('ai_processing_unavailable');
+        } finally {
+            clearTimeout(timer);
+        }
+        if (!reply?.ok) {
+            throw new Error(reply?.error?.message || browser.i18n.getMessage('ai_processing_failed'));
+        }
+        return reply;
+    }
+
+    // One attempt per companion instance: a failed download is not retried in a loop,
+    // only when the companion (or ThunderAI) starts again.
+    const autodownloaded = new Set();
+    async function autodownload(status) {
+        if (status.ready || status.downloading || autodownloaded.has(status.instanceId) ||
+            await mztaPrefs.getPref(AUTODOWNLOAD_PREF) !== true) {
+            return;
+        }
+        autodownloaded.add(status.instanceId);
+        await ask('aiProcessing.downloadModel');
+    }
+    async function autodownloadAtStartup() {
+        if (await mztaPrefs.getPref(AUTODOWNLOAD_PREF) !== true) {
+            return;
+        }
+        const status = await hello();
+        validateStatus(status);
+        await autodownload(status);
     }
 
     function notify(message) {
@@ -171,6 +228,13 @@ export function createAIProcessingBroker() {
         }
         if (operation === 'probe') {
             return probe();
+        }
+        if (operation === 'downloadModel') {
+            return modelFields(await ask('aiProcessing.downloadModel'));
+        }
+        if (operation === 'openSettings') {
+            await ask('aiProcessing.openSettings');
+            return {};
         }
         if (operation === 'createSession') {
             const status = await discover();
@@ -289,6 +353,23 @@ export function createAIProcessingBroker() {
         if (message.action === 'aiProcessing.setSetting') {
             return ready.then(() => setSetting(message.enabled));
         }
+        // Sent at companion startup and whenever its model changes (download progress,
+        // completion, deletion): refresh open pages, and the autodownload policy.
+        if (message.action === 'aiProcessing.readinessChanged') {
+            try {
+                validateStatus({ ...message, ok: true });
+            } catch {
+                return Promise.resolve({ ok: false });
+            }
+            void browser.runtime.sendMessage({
+                command: 'ai_processing_readiness',
+                ...modelFields(message)
+            }).catch(NO_PROGRESS);
+            void ready.then(() => autodownload(message)).catch(error => {
+                console.warn('[ThunderAI] ThunderAI Privacy model autodownload failed:', error.message);
+            });
+            return Promise.resolve({ ok: true, protocol: AI_PROCESSING_PROTOCOL });
+        }
         if (message.action === 'aiProcessing.progress') {
             const entry = pending.get(message.callId);
             const progress = message.progress;
@@ -355,6 +436,8 @@ export function createAIProcessingBroker() {
     browser.runtime.onMessageExternal.addListener(onExternalMessage);
     browser.tabs.onRemoved.addListener(onTabRemoved);
     browser.storage.onChanged.addListener(onStorageChanged);
+    // A companion that started first announced itself before this listener existed.
+    void ready.then(autodownloadAtStartup).catch(NO_PROGRESS);
     return {
         ready,
         dispatch,
