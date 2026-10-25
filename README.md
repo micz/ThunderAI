@@ -53,6 +53,10 @@ Using an API integration, ThunderAI can work on incoming mail on its own:
 
 Drafts, templates, outbox and sent messages are skipped, so a draft is never processed while you are writing it. Several emails can be processed in parallel, and the same feature never runs twice on the same email. When the AI server is temporarily unavailable a request is repeated automatically, and the automatic processing stops by itself when the provider's rate limit or quota is exceeded.
 
+### Privacy
+
+With the companion add-on [ThunderAI Privacy](https://addons.thunderbird.net/thunderbird/addon/thunderai-privacy/), personal data is masked locally before it is sent to the AI provider and restored in the answer. Download its local model (also from ThunderAI's advanced options), then turn on **Use ThunderAI Privacy**: the switch is the same in both add-ons. While it is on, AI requests are blocked if ThunderAI Privacy is not available, so unfiltered data is never sent by mistake. ThunderAI Privacy requires Thunderbird 153 or later, 64-bit.
+
 ### Customization
 
 - **Custom prompts** — create, edit, export and import your own prompts in a list with a detail editor, or review all of them and their options in a table view, with `{%placeholder%}` highlighting, autocomplete and validation while you type. Every change is saved immediately
@@ -66,7 +70,7 @@ Drafts, templates, outbox and sent messages are skipped, so a draft is never pro
 
 ### For administrators
 
-ThunderAI supports the **Thunderbird Enterprise Policies**: with `policies.json` an administrator can pre-configure or enforce any setting, including the AI connections, provide organization prompts, turn off prompt management, hide the built-in prompts and disable the setup wizard. See the [Enterprise Configuration guide](https://micz.it/thunderbird-addon-thunderai/guides/enterprise-configuration/) for where `policies.json` goes, a worked example and the full key reference.
+ThunderAI supports the **Thunderbird Enterprise Policies**: with `policies.json` an administrator can pre-configure or enforce any setting, including the AI connections, provide organization prompts, turn off prompt management, hide the built-in prompts and disable the setup wizard. They can also enforce ThunderAI Privacy and have its local model downloaded automatically. See the [Enterprise Configuration guide](https://micz.it/thunderbird-addon-thunderai/guides/enterprise-configuration/) for where `policies.json` goes, a worked example and the full key reference.
 
 ## Integrations
 
