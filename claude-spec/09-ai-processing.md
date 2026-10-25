@@ -91,10 +91,8 @@ instead of session placeholders, including top-level extra-body overrides. They 
 stable across sessions/restarts without transmitting originals. Invalid JSON blocks
 in the companion, independent of ThunderAI's provider parsers.
 Output: `{content: string, thinking: string, error?: string}`.
-Format: `text` (chat) or `json` (special commands). The companion also accepts
-`html`, an optional `view` on `after` and a `collectInput` operation (its own
-input/result windows), kept in protocol 1 for a ChatGPT Web integration ThunderAI
-does not ship: see "ChatGPT Web" below. No input/result window code lives in ThunderAI.
+Format: `text` (chat) or `json` (special commands). Protocol 1 has no HTML format,
+input form or result window: see "ChatGPT Web" below.
 
 ## ChatGPT Web
 
@@ -103,8 +101,8 @@ shown in ThunderAI's own chat window. ChatGPT Web cannot be covered acceptably: 
 restored text must never be written into the site's DOM, so the page would show the
 masked placeholders and the originals only in a separate window, with a different
 custom-input flow, on the most fragile integration. The integration was built and then
-removed before 5.2.0; its companion side (`collectInput`, `view`, the `html` format)
-stays in protocol 1, unused by ThunderAI.
+removed from both add-ons before 5.2.0, with its `html` format, the `view` option of
+`after` and the `collectInput` operation, which the companion now rejects.
 
 What ThunderAI does instead is fail-closed, like a missing companion on the API
 workers: `openChatGPT()` (`mzta-background.js`), on the `chatgpt_web` branch, reads
@@ -126,8 +124,7 @@ All v1 actions use `action: 'aiProcessing.<operation>'` and `protocol: 1`.
 | `openSettings` | protocol | acknowledgement; the companion opens its settings page |
 | `createSession` | instanceId, sessionId, callId | acknowledgement |
 | `before` | instanceId, sessionId, callId, requestId, input | input, context |
-| `after` | instanceId, sessionId, callId, requestId, context, output, format, optional view | output |
-| `collectInput` | instanceId, sessionId, callId, requestId, fields | values (not issued by ThunderAI, see "ChatGPT Web") |
+| `after` | instanceId, sessionId, callId, requestId, context, output, format | output |
 | `cancel` | instanceId, sessionId, callId, requestId | acknowledgement |
 | `disposeSession` | instanceId, sessionId, callId | acknowledgement |
 
