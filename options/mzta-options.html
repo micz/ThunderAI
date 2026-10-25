@@ -373,7 +373,9 @@
                  when none answers. Both hidden until updatePrivacyCompanion() runs. -->
             <div class="mzta_adv_row" id="ai_processing_tr" style="display:none;">
               <div class="mzta_adv_info">
-                <div class="mzta_adv_name">__MSG_prefs_OptionText_ai_processing_enabled__</div>
+                <div class="mzta_adv_name" id="ai_processing_name">__MSG_prefs_OptionText_ai_processing_enabled__
+                  <button type="button" id="btnAiProcessingDownload" class="btn_small" style="display:none;">__MSG_prefs_OptionText_ai_processing_download_model__</button>
+                </div>
                 <div class="mzta_adv_desc">__MSG_prefs_OptionText_ai_processing_enabled_info__</div>
                 <!-- The companion's model: while it is missing the switch cannot be turned on. -->
                 <div id="ai_processing_model" class="mzta_adv_desc" style="display:none;">
@@ -383,7 +385,6 @@
                   <span id="ai_processing_model_error"></span>
                 </div>
                 <div id="ai_processing_actions" style="display:none;">
-                  <button type="button" id="btnAiProcessingDownload" class="btn_small">__MSG_prefs_OptionText_ai_processing_download_model__</button>
                   <button type="button" id="btnAiProcessingOpenSettings" class="btn_no_border btn_small feature_manage">__MSG_prefs_OptionText_ai_processing_open_settings__ &rsaquo;</button>
                 </div>
               </div>

@@ -31,6 +31,7 @@
 /* options-specific warnings */
 #owl_warning, #hyprland_warning { display: none; }
 
+#ai_processing_name { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 #ai_processing_model { margin-top: 6px; }
 #ai_processing_model > span { display: block; }
 #ai_processing_model_error { color: var(--warning); }
