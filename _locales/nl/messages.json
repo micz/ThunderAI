@@ -48,7 +48,7 @@
         "message": "Beheer prompts"
     },
     "customPrompts_managePrompts_info_default_3": {
-        "message": "Indien alles correct is, klik op de 'Alles opslaan' knop na het importeren."
+        "message": "Indien alles correct is, klik op de 'Alles opslaan'-knop na het importeren."
     },
     "customPrompts_import_saved_now": {
         "message": "De geïmporteerde prompts worden onmiddellijk opgeslagen."
@@ -458,5 +458,11 @@
     },
     "prompt_this": {
         "message": "Dit prompten"
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Je kunt prompts importeren en exporteren. Bestaande prompts met dezelfde ID worden overschreven. Prompts met een nieuwe ID worden toegevoegd."
+    },
+    "customPrompts_form_label_ID_rules_prompt": {
+        "message": "Dient uniek te zijn, kleine letters, zonder spaties en mag niet beginnen met prompt_"
     }
 }
