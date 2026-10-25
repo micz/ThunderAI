@@ -445,6 +445,18 @@
         "message": "ThunderAI"
     },
     "prompt_reply_custom_command": {
-        "message": "Beantwoord met commando..."
+        "message": "Reageer met commando..."
+    },
+    "prompt_lang": {
+        "message": "Beantwoord in het"
+    },
+    "prompt_reply_advanced": {
+        "message": "Reageer in deze thread"
+    },
+    "prompt_classify": {
+        "message": "Indelen"
+    },
+    "prompt_this": {
+        "message": "Dit prompten"
     }
 }
