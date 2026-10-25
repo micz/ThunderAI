@@ -1,5 +1,5 @@
 // Spec 04 "OpenAI-Compatible (openai_comp_api)" and "Extra body data": the pre-configured
-// providers of js/api/openai_comp_configs.js are custom, DeepSeek, Grok, Mistral, OpenRouter and
+// providers of js/api/openai_comp_configs.js are custom, DeepSeek, Gisoo, Grok, Mistral, OpenRouter and
 // Perplexity, `custom` being the default/manual entry. The presets carry only id, name,
 // chat_name, host, use_v1: there is deliberately no per-preset extra body data.
 //
@@ -15,8 +15,8 @@ installBrowserMock({ policy: null });
 const { k } = areaFile('04-openai-comp-configs');
 const { openAICompConfigs } = await import('../../js/api/openai_comp_configs.js');
 
-k.test('ids', 'the presets are custom, DeepSeek, Grok, Mistral, OpenRouter and Perplexity', () => {
-    assert.deepEqual(openAICompConfigs.map(c => c.id).sort(), ['custom', 'deepseek', 'grok', 'mistral', 'openrouter', 'perplexity']);
+k.test('ids', 'the presets are custom, DeepSeek, Gisoo, Grok, Mistral, OpenRouter and Perplexity', () => {
+    assert.deepEqual(openAICompConfigs.map(c => c.id).sort(), ['custom', 'deepseek', 'gisoo', 'grok', 'mistral', 'openrouter', 'perplexity']);
 });
 
 k.test('fields', 'each preset carries exactly id, name, chat_name, host, use_v1 (no extra body data)', () => {

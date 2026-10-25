@@ -438,7 +438,7 @@ with the option off, that the prompt is sent at once on the newer UI.
 - Module: `js/api/openai_comp.js`
 - Worker: `js/workers/model-worker-openai_comp.js`
 - Settings keys: `openai_comp_host`, `openai_comp_model`, `openai_comp_api_key`, `openai_comp_use_v1`, `openai_comp_chat_name`, `openai_comp_temperature`, `openai_comp_extra_body`
-- Pre-configured providers: `js/api/openai_comp_configs.js` (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity — `custom` is the default/manual entry). The presets carry only `id`, `name`, `chat_name`, `host`, `use_v1` — there is deliberately no per-preset extra body data.
+- Pre-configured providers: `js/api/openai_comp_configs.js` (`custom`, DeepSeek, Gisoo, Grok, Mistral, OpenRouter, Perplexity — `custom` is the default/manual entry). The presets carry only `id`, `name`, `chat_name`, `host`, `use_v1` — there is deliberately no per-preset extra body data.
 - **Extra body data**: see [Extra body data](#extra-body-data).
 
 ### Extra body data

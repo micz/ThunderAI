@@ -40,6 +40,13 @@ export const openAICompConfigs = [
         use_v1: false,
     },
     {
+        id: 'gisoo',
+        name: 'Gisoo API',
+        chat_name: 'Gisoo',
+        host: 'https://gisoo.pro/api',
+        use_v1: true,
+    },
+    {
         id: 'grok',
         name: 'Grok API',
         chat_name: 'Grok',
