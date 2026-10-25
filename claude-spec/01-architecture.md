@@ -43,9 +43,9 @@ js/mzta-compose-script.js  (inserts text into Thunderbird compose window and dis
 
 API chat and special-command workers use `js/mzta-processing-worker.js`:
 async companion hooks precede dispatch and UI actions, parsing and storage.
-Inactive hooks preserve content and streaming. ChatGPT Web uses a background
-session and companion-owned input/result windows so locally processed originals do
-not enter the site's DOM. See [Async content processing](04-api-integrations.md#async-content-processing)
+Inactive hooks preserve content and streaming. ChatGPT Web is not covered: with the
+switch on, a prompt on that connection is blocked with an alert before any tab opens.
+See [Async content processing](04-api-integrations.md#async-content-processing)
 for boundaries and failure behavior.
 
 ### Data Flow: Inline Summary on Message Display

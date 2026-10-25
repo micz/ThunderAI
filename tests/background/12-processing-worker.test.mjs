@@ -1,7 +1,5 @@
 // Spec 09: provider transparency, active buffering, busy notification and Stop.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { runInThisContext } from 'node:vm';
 import {
     test,
     beforeEach,
@@ -147,18 +145,4 @@ test('Stop during after suppresses late restored results', async () => {
     assert.ok(release);
     worker.postMessage({ type: 'stop' }); release(); await flush(3);
     assert.equal(output.some(m => m.type === 'newToken'), false);
-});
-
-test('ChatGPT Web reply/replace runs the after hook on extracted HTML', async () => {
-    runInThisContext(readFileSync(new URL('../../js/lib/mzta-html-lines.js', import.meta.url), 'utf8'));
-    const web = await import('../../js/mzta-processing-web.js');
-    web.registerProcessingWeb(7, { prompt: 'Hello Alice', targetTabId: 9, mailMessageId: 10 }, ctx.processingClient);
-    const sender = { tab: { id: 7 }, url: 'https://chatgpt.com/', frameId: 0 };
-    try {
-        const prompt = await web.handleProcessingWebMessage({ command: 'processing_web_prompt' }, sender);
-        assert.equal(prompt.ok, true, prompt.error); assert.ok(!prompt.text.includes('Alice'));
-        const result = await web.processWebAction({ text: '<p>[PRIVATE]</p>', processingActive: true }, sender);
-        assert.equal(result.text, '<p>Alice</p>'); assert.equal(result.tabId, 9);
-        assert.equal(companion.calls.find(m => m.action === 'aiProcessing.after').format, 'html');
-    } finally { web.disposeProcessingWeb(7); }
 });

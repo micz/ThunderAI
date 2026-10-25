@@ -182,9 +182,6 @@ export function createAIProcessingBroker() {
             const reply = await new Promise((resolve, reject) => {
                 const renew = () => {
                     clearTimeout(timer);
-                    if (operation === 'collectInput') {
-                        return; // A person completing a form has no inference deadline.
-                    }
                     timer = setTimeout(() => {
                         cancel();
                         reject(processingError('ai_processing_timeout'));
@@ -308,14 +305,6 @@ export function createAIProcessingBroker() {
                 throw processingError('ai_processing_invalid_result');
             }
             return { output };
-        }
-        if (operation === 'collectInput') {
-            if (!Array.isArray(reply.values) ||
-                reply.values.length !== data.payload.fields.length ||
-                reply.values.some(value => typeof value !== 'string')) {
-                throw processingError('ai_processing_invalid_result');
-            }
-            return { values: reply.values };
         }
         return {};
     }

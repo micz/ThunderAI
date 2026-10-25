@@ -34,7 +34,6 @@ let proceed_pending = false;
 let prompt_send_started = false;
 let do_force_completion = false;
 let current_message = null;
-let processing_web_preparing = false;
 let current_action = null;
 let current_tabId = null;
 let current_mailMessageId = null;
@@ -1522,7 +1521,8 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
                 const response = getSelectedHtml();
                 const currentReplyType = btn_ok.getAttribute('data-reply-type');
                 // console.log(">>>>>>>>>> btn_ok reply type: " + JSON.stringify(currentReplyType));
-                await applySelectedResponse({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId, replyType: currentReplyType, processingActive: mztaProcessingEnabled});
+                await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId, replyType: currentReplyType});
+                browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId}).catch(() => {});
             });
             btn_ok.classList.add('mzta-btn_reply');
             // change reply type button
@@ -1565,7 +1565,8 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             btn_ok.onclick = async function() {
                 const response = getSelectedHtml();
                 //console.log('replace text: '+tabId)
-                await applySelectedResponse({command: "chatgpt_replaceSelectedText", text: response, tabId: tabId, mailMessageId: mailMessageId, processingActive: mztaProcessingEnabled});
+                await browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: response, tabId: tabId, mailMessageId: mailMessageId});
+                browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId}).catch(() => {});
             };
             fixedDiv.appendChild(btn_ok);
             break;
@@ -1574,27 +1575,13 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_insert_at_cursor");
             btn_ok.onclick = async function() {
                 const response = getSelectedHtml();
-                await applySelectedResponse({command: "chatgpt_insertAtCaret", text: response, tabId: tabId, mailMessageId: mailMessageId, processingActive: mztaProcessingEnabled});
+                await browser.runtime.sendMessage({command: "chatgpt_insertAtCaret", text: response, tabId: tabId, mailMessageId: mailMessageId});
+                browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId}).catch(() => {});
             };
             fixedDiv.appendChild(btn_ok);
             break;
     }
     btn_ok.style.display = 'none';
-
-    if (mztaProcessingEnabled) {
-        const view = document.createElement('button');
-        view.id = 'mzta-processing-view';
-        view.classList.add('mzta-btn');
-        view.textContent = browser.i18n.getMessage('ai_processing_view');
-        view.style.display = 'none';
-        view.addEventListener('mousedown', event => event.preventDefault());
-        view.onclick = async function() {
-            const response = getSelectedHtml() || getNewAssistantMessage()?.el.innerHTML || '';
-            const result = await browser.runtime.sendMessage({ command: 'processing_web_view', text: response });
-            if (!result?.ok) document.getElementById('mzta-curr_msg').textContent = result?.error || browser.i18n.getMessage('ai_processing_session_expired');
-        };
-        fixedDiv.appendChild(view);
-    }
 
     if(mztaUseDiffViewer == '1'){
         // diff overlay div
@@ -1637,11 +1624,6 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
         btn_diff.style.display = 'none';
         disableButton(btn_diff);
         btn_diff.onclick = async function() {
-            if (mztaProcessingEnabled) {
-                const result = await browser.runtime.sendMessage({ command: 'processing_web_view', text: getSelectedHtml(), diff: true });
-                if (!result?.ok) document.getElementById('mzta-curr_msg').textContent = result?.error || browser.i18n.getMessage('ai_processing_session_expired');
-                return;
-            }
             diffContent.innerHTML = '';
             const response = getSelectedHtml();
             const wordDiff = Diff.diffWords(mztaOriginalText, response.replace(/<\\/?[^>]+(>|$)/g, ''));
@@ -2212,19 +2194,6 @@ function checkGPTModel(model) {
     });
 }
 
-async function applySelectedResponse(message) {
-    const fallback = browser.i18n.getMessage(mztaProcessingEnabled ? 'ai_processing_session_expired' : 'error_connection_interrupted');
-    try {
-        const result = await browser.runtime.sendMessage(message);
-        if (!result || result.ok === false) throw new Error(result?.error || fallback);
-        browser.runtime.sendMessage({ command: 'chatgpt_close', window_id: mztaWinId }).catch(() => {});
-    } catch (error) {
-        const status = document.getElementById('mzta-curr_msg');
-        status.textContent = error.message || fallback;
-        status.style.display = 'block';
-    }
-}
-
 function operation_done(){
     let curr_msg = document.getElementById('mzta-curr_msg');
     curr_msg.textContent = browser.i18n.getMessage("chatgpt_win_job_completed");
@@ -2233,8 +2202,6 @@ function operation_done(){
     }
     curr_msg.style.display = 'block';
     document.getElementById('mzta-btn_ok').style.display = 'inline';
-    const processingView = document.getElementById('mzta-processing-view');
-    if (processingView) processingView.style.display = 'inline';
     if(current_action == '1'){
         document.getElementById('mzta-btn_change_reply_type').style.display = 'inline';
     }
@@ -2324,30 +2291,6 @@ async function proceedWithPrompt(message, customText){
         }
     }
 
-    if (mztaProcessingEnabled) {
-        processing_web_preparing = true;
-        document.getElementById('mzta-curr_msg').textContent = browser.i18n.getMessage('ai_processing');
-        try {
-            const result = await browser.runtime.sendMessage({ command: 'processing_web_prompt' });
-            if (!result?.ok) throw new Error(result?.error || browser.i18n.getMessage('ai_processing_session_expired'));
-            final_prompt = result.text;
-        } catch (error) {
-            processing_web_preparing = false;
-            document.getElementById('mzta-curr_msg').textContent = error.message;
-            document.getElementById('mzta-loading').style.display = 'none';
-            if (!document.getElementById('mzta-btn_retry')) {
-                const retry = document.createElement('button');
-                retry.id = 'mzta-btn_retry';
-                retry.classList.add('mzta-btn');
-                retry.textContent = browser.i18n.getMessage('chatgpt_btn_retry');
-                retry.onclick = doRetry;
-                mzta_ui_bar.appendChild(retry);
-            }
-            return;
-        }
-        processing_web_preparing = false;
-        document.getElementById('mzta-curr_msg').textContent = browser.i18n.getMessage('chatgpt_win_working');
-    }
     prompt_send_started = true;
     let send_result = await chatgpt_sendMsg(final_prompt,'click');
     if (mztaDoDebug == 1) logPageTiming(performance.now());
@@ -2707,7 +2650,7 @@ async function run() {
         addCustomDiv(current_action,current_tabId,current_mailMessageId);
         prompt_flow_started = true;
         (async () => {
-            if(mztaDoCustomText === "1" && !mztaProcessingEnabled){
+            if(mztaDoCustomText === "1"){
                 showCustomTextField();
             } else {
                 await doProceed(current_message);
@@ -2737,15 +2680,6 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case "chatgpt_alive":
             sendResponse({isAlive: true});
             break;
-        case 'processing_web_status': {
-            const status = document.getElementById('mzta-curr_msg');
-            if (status && mztaProcessingEnabled && processing_web_preparing) {
-                status.textContent = message.progress?.total > 1 ?
-                    browser.i18n.getMessage('ai_processing_chunks', [String(message.progress.current), String(message.progress.total)]) :
-                    browser.i18n.getMessage(message.waitingForInput ? 'ai_processing_waiting_for_input' : 'ai_processing');
-            }
-            break;
-        }
     }
 });
 

@@ -105,7 +105,7 @@ export function createAIProcessingClient(transport = createRuntimeProcessingTran
                     return result;
                 });
             },
-            onAfterReceiveFromProvider(output, { format = 'text', view, onProgress } = {}) {
+            onAfterReceiveFromProvider(output, { format = 'text', onProgress } = {}) {
                 return runHook(async () => {
                     if (session.active && !request) {
                         throw processingError('ai_processing_session_expired');
@@ -117,7 +117,6 @@ export function createAIProcessingClient(transport = createRuntimeProcessingTran
                             payload: {
                                 output,
                                 format,
-                                view,
                                 requestId: currentRequest?.requestId,
                                 context: currentRequest?.context
                             }
@@ -126,20 +125,6 @@ export function createAIProcessingClient(transport = createRuntimeProcessingTran
                     } finally {
                         if (currentRequest) currentRequest.pending = false;
                     }
-                });
-            },
-            collectInput(fields) {
-                return runHook(async () => {
-                    if (!session.active) {
-                        throw processingError('ai_processing_unavailable');
-                    }
-                    if (request?.pending) {
-                        throw processingError('ai_processing_busy');
-                    }
-                    const result = await call('collectInput', {
-                        payload: { fields, requestId: crypto.randomUUID() }
-                    });
-                    return result.values;
                 });
             },
             cancel() {

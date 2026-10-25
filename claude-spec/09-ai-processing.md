@@ -58,8 +58,7 @@ Combined with `ai_processing_enabled` locked on, requests block until the model 
 ## Session facade
 
 `createAIProcessingClient(transport).createSession()` provides `ready()`, `onBeforeSendToProvider(input)`,
-`onAfterReceiveFromProvider(output, {format, view})`, `collectInput(fields)`,
-`cancel()` and `dispose()`.
+`onAfterReceiveFromProvider(output, {format})`, `cancel()` and `dispose()`.
 The facade generates a conversation `sessionId`, individual `requestId`s and
 per-message `callId`s. Its opaque `context` is returned to the companion, never
 interpreted. No processor: input/output are returned unchanged. Active processor:
@@ -75,7 +74,7 @@ separate from the adapter's `onprocessingstatus` callback.
 An active send while busy displays a localized unsent-message notice. A session
 allows one pending provider turn and no overlapping hooks; violations reject with
 `ai_processing_busy` without replacing its request/context. Restoration may be
-repeated for selections/previews of the same response after the turn finishes.
+repeated for the same response after the turn finishes.
 Cancellation invalidates that context and suppresses late results.
 
 Input: `{message: string, instructions: {[key]: string}, extraBody: {[key]: string}}`.
@@ -92,11 +91,28 @@ instead of session placeholders, including top-level extra-body overrides. They 
 stable across sessions/restarts without transmitting originals. Invalid JSON blocks
 in the companion, independent of ThunderAI's provider parsers.
 Output: `{content: string, thinking: string, error?: string}`.
-Format: `text` (chat), `json` (special commands), `html` (Web reply/replace/insert at cursor).
-For local Web previews, optional `view: {original: string, diff: boolean}` asks the
-companion to display the postprocessed result in its own window. `collectInput`
-accepts field descriptions (`[{info: string}]`) and returns entered strings for
-ThunderAI's prompt assembly. No input/result window code lives in ThunderAI.
+Format: `text` (chat) or `json` (special commands). The companion also accepts
+`html`, an optional `view` on `after` and a `collectInput` operation (its own
+input/result windows), kept in protocol 1 for a ChatGPT Web integration ThunderAI
+does not ship: see "ChatGPT Web" below. No input/result window code lives in ThunderAI.
+
+## ChatGPT Web
+
+ThunderAI Privacy covers only the API connections, where the restored answer can be
+shown in ThunderAI's own chat window. ChatGPT Web cannot be covered acceptably: the
+restored text must never be written into the site's DOM, so the page would show the
+masked placeholders and the originals only in a separate window, with a different
+custom-input flow, on the most fragile integration. The integration was built and then
+removed before 5.2.0; its companion side (`collectInput`, `view`, the `html` format)
+stays in protocol 1, unused by ThunderAI.
+
+What ThunderAI does instead is fail-closed, like a missing companion on the API
+workers: `openChatGPT()` (`mzta-background.js`), on the `chatgpt_web` branch, reads
+the policy-resolved `ai_processing_enabled` and, while it is on, shows the
+`ai_processing_chatgpt_web_unsupported` alert in the current tab (the same `sendAlert`
+path as `msg_prompt_too_long`) and returns: no ChatGPT tab is opened and nothing is sent.
+The switch is never bypassed silently. Special prompts that use an API through their
+own integration are processed as usual even when the global connection is ChatGPT Web.
 
 ## Cross-extension messages
 
@@ -111,7 +127,7 @@ All v1 actions use `action: 'aiProcessing.<operation>'` and `protocol: 1`.
 | `createSession` | instanceId, sessionId, callId | acknowledgement |
 | `before` | instanceId, sessionId, callId, requestId, input | input, context |
 | `after` | instanceId, sessionId, callId, requestId, context, output, format, optional view | output |
-| `collectInput` | instanceId, sessionId, callId, requestId, fields | values |
+| `collectInput` | instanceId, sessionId, callId, requestId, fields | values (not issued by ThunderAI, see "ChatGPT Web") |
 | `cancel` | instanceId, sessionId, callId, requestId | acknowledgement |
 | `disposeSession` | instanceId, sessionId, callId | acknowledgement |
 
@@ -168,32 +184,25 @@ startup; only processing calls await its registration-state read.
   recreate a mapless session or fall back to plaintext inside an existing chat.
 - Stop cancels pending hook work and suppresses late provider dispatch/results.
   Dispose closes only the corresponding session. Chat windows and commands dispose
-  on teardown; Web tabs dispose on close/reload. Companion idle sessions expire at
+  on teardown. Companion idle sessions expire at
   24 h; its shared classifier shuts down 60 s after its last lease is released.
 - Providers retain processed history, including original raw model responses.
   Postprocessed replies are UI/action-only and never sent as subsequent history.
   Usage/retry metadata passes through unchanged. A provider's `requestAborted`
   releases the pending turn, allowing a new send with the same processing session.
-- Web reply, replace and insert at cursor (`chatgpt_replyMessage`,
-  `chatgpt_replaceSelectedText`, `chatgpt_insertAtCaret`) all go through
-  `processWebAction()`: the answer is restored and written to the session's target
-  tab, not the `tabId` the page names. The page sends `processingActive`, so an
-  expired session returns an error and writes nothing instead of protected text.
-- With active processing, Web input and response previews remain in companion-owned
-  windows. Original prompt text, diff baselines and restored answers never enter
-  the provider DOM. Direct manual website use is outside ThunderAI's scope.
+- ChatGPT Web is not covered: while the switch is on, a prompt on that connection is
+  blocked with an alert before any tab opens (see "ChatGPT Web").
 - Diagnostics stay inside the companion's hooks. ThunderAI does not intercept HTTP
   requests or relay serialized provider bodies; inspect those in developer tools.
 
 ## Manual verification
 
 Committed hook tests: `tests/background/11-ai-processing.test.mjs`,
-`tests/background/12-processing-worker.test.mjs`,
-`tests/background/35-compose-commands.test.mjs` (Web compose actions) and
+`tests/background/12-processing-worker.test.mjs` and
 `tests/dom/webchat/webchat-20-processing.dom.mjs`, with field coverage in
 `tests/static/06-processing-content-fields.test.mjs`. Hook tests use a scripted companion,
 not inference/model downloads, and cover inactive forwarding, active hook transforms,
-response/history isolation, Web HTML actions, trust/result validation, restart,
+response/history isolation, trust/result validation, restart,
 timeout/progress, page-to-broker transport/listener cleanup, session concurrency,
 raw-worker selection, busy notices and Stop. Real detection and Thunderbird IPC/platform
 behavior still require manual testing.
@@ -201,8 +210,9 @@ behavior still require manual testing.
 Load both repositories as temporary Thunderbird add-ons. Check that neither switch can
 be turned on before the model is downloaded; download it from ThunderAI's row and from
 Privacy (progress in both pages), check the autodownload policy, then switch it on from
-either settings page (check that the other follows) and that deletion is refused while on; use fictional data for chat/follow-up, structured special commands and
-Web reply/replace/insert at cursor/view/diff. Check CPU and WebGPU, long chunked inputs, Stop, timeout,
+either settings page (check that the other follows) and that deletion is refused while on; use fictional data for chat/follow-up and structured special commands.
+With the switch on and ChatGPT Web as the global connection, check that a prompt shows the
+alert and opens no tab. Check CPU and WebGPU, long chunked inputs, Stop, timeout,
 companion restart/disable/uninstall, and missing-model errors. Inspect outbound bodies
 and confirm restored replies are absent from follow-up history. Without the companion
 and with the switch off, verify unchanged streaming/settings behavior and the

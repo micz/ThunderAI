@@ -73,7 +73,6 @@ export function buildPreScript({
     const deps = {
         createdTab: { id: 70, windowId },
         browser,
-        webProcessing: { enabled: false },
         do_custom_text: doCustomText,
         i18nConditionalGet: utils.i18nConditionalGet,
         prompt_name: promptName,

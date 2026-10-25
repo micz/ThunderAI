@@ -842,12 +842,9 @@ Inactive processing preserves the provider's normal init-before-first-prompt
 lifecycle. Active processing defers init until content-bearing configuration is
 processed. Usage, retry and abort events retain their existing UI/batch behavior.
 
-`js/mzta-processing-web.js` applies the same hooks before ChatGPT DOM injection
-and after extracting responses for Thunderbird actions/local views. With an active
-processor, custom input and previews/diffs use the companion's own windows, not
-ThunderAI pages or the provider's DOM. The site receives only the preprocessed prompt; postprocessed text
-is never written back to the site. Manual site input, existing history and project/
-custom-GPT content are outside these hooks. Closing/reloading disposes the session.
+ChatGPT Web is not covered: while the switch is on, `openChatGPT()` blocks a prompt on
+that connection with the `ai_processing_chatgpt_web_unsupported` alert instead of opening
+the site, so nothing is ever sent unprocessed (see [09 "ChatGPT Web"](09-ai-processing.md#chatgpt-web)).
 
 Sessions pin their processing mode/companion instance, so changing activation affects
 new chats/commands. Stop and timeout suppress late dispatch/results. A remembered
