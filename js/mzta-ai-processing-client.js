@@ -165,6 +165,9 @@ export function createAIProcessingClient(transport = createRuntimeProcessingTran
         createSession,
         getStatus() {
             return transport('status', { callId: crypto.randomUUID() });
+        },
+        probe() {
+            return transport('probe', { callId: crypto.randomUUID() });
         }
     };
 }

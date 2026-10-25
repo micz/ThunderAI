@@ -55,6 +55,7 @@ import {
   setConnTestState
 } from '../js/mzta-connection-test.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
+import { pageProcessingClient } from '../js/mzta-ai-processing-client.js';
 import {
   applyManagedUI,
   showManagedBanner,
@@ -415,6 +416,25 @@ async function disable_GetCalendarEvent(prefs_opt){
   wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
 }
 
+// The ThunderAI Privacy switch is offered only when a compatible companion answers, but it
+// stays visible while it is on: with the companion gone, every AI request is blocked and
+// switching it off here is the way out. The notice follows the companion alone.
+async function updatePrivacyCompanion(){
+  let companion;
+  try {
+    companion = await pageProcessingClient.probe();
+  } catch (error) {
+    companion = null;
+  }
+  const usable = !!(companion?.installed && companion?.compatible);
+  const enabled = document.getElementById('ai_processing_enabled').checked;
+  document.getElementById('ai_processing_tr').style.display = (usable || enabled) ? '' : 'none';
+  // Explicit 'block' because the CSS keeps the notice hidden by default, as #no_sparks.
+  document.getElementById('no_privacy').style.display = usable ? 'none' : 'block';
+  document.getElementById('no_privacy_text').style.display = companion?.installed ? 'none' : 'inline';
+  document.getElementById('wrong_privacy_text').style.display = companion?.installed ? 'inline' : 'none';
+}
+
 const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
 
 // Documentation page behind the "Full guide" link of the provider setup callout.
@@ -768,10 +788,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   disable_GetCalendarEvent(prefs_opt);
   disable_ChatShowUsageData(prefs_opt);
   updateSpecificApiIndicators(prefs_opt);
+  updatePrivacyCompanion();
+  // The companion may be installed, removed or updated while this page is open.
+  window.addEventListener('focus', updatePrivacyCompanion);
 
   browser.storage.onChanged.addListener(async (changes, area) => {
     // Preferences live in storage.local — see js/mzta-prefs.js.
     if (area !== 'local') return;
+    // The ThunderAI Privacy settings page writes the same switch.
+    if (Object.hasOwn(changes, 'ai_processing_enabled')) {
+      document.getElementById('ai_processing_enabled').checked = await mztaPrefs.getPref('ai_processing_enabled');
+      updatePrivacyCompanion();
+    }
     // A policy-enforced key cannot have meaningfully changed: whatever was written to
     // storage.local for it is shadowed on every read by the policy value, so reacting
     // would recompute the indicators to land on the values already displayed.

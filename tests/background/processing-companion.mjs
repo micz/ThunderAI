@@ -2,8 +2,8 @@
 // and worker adapter against this external transport boundary.
 export function fakeProcessingCompanion() {
     const fake = {
-        enabled: true, available: true, instanceId: 'processor-instance', calls: [], handle: null,
-        status() { return { ok: true, protocol: 1, instanceId: fake.instanceId, enabled: fake.enabled, version: '1.0.0' }; },
+        available: true, instanceId: 'processor-instance', calls: [], handle: null,
+        status() { return { ok: true, protocol: 1, instanceId: fake.instanceId, version: '1.0.0' }; },
         async receive(message) {
             fake.calls.push(structuredClone(message));
             if (!fake.available) throw new Error('Could not establish connection. Receiving end does not exist.');
@@ -23,9 +23,9 @@ export function fakeProcessingCompanion() {
             return fake.reply(message);
         },
         reply(message, result = {}) { return { ...fake.status(), callId: message.callId, ...result }; },
-        async announce(enabled = true) {
-            fake.enabled = enabled;
-            return externalProcessingMessage({ action: 'aiProcessing.register', ...fake.status() });
+        // ThunderAI's own switch (spec 09 "Activation switch"), as its options page writes it.
+        async activate(enabled = true) {
+            await browser.storage.local.set({ ai_processing_enabled: enabled });
         },
     };
     return fake;

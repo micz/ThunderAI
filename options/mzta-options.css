@@ -31,7 +31,7 @@
 /* options-specific warnings */
 #owl_warning, #hyprland_warning { display: none; }
 
-#no_sparks {
+#no_sparks, #no_privacy {
     display: none;
     text-align: center;
     padding: 1em;

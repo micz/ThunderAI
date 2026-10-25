@@ -305,7 +305,8 @@ helpers ([`compose/README.md`](compose/README.md)).
   template literals, comments and regex literals (a quote or backtick inside a regex must not
   open a string); `tests/managed/99-harness-tokenizer` pins it down, on small cases and on the
   real files;
-- `reload_menus`, `get_active_special_ids`, `popup_menu_ready`: a fixed minimal answer
+- `reload_menus`, `get_active_special_ids`, `popup_menu_ready`, and the `probe` operation of
+  `ai_processing` (no ThunderAI Privacy installed): a fixed minimal answer
   (`defaultCommands()` in `helpers/core/dom-harness.mjs`), which plugins extend and
   `opts.commands` overrides;
 - anything else: a recorded violation.

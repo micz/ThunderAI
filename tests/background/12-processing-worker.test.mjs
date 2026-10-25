@@ -24,7 +24,7 @@ const { createProviderWorker, ProcessingWorker } = await import('../../js/mzta-p
 const adapters = [];
 beforeEach(async () => {
     companion.available = true; companion.handle = null;
-    await companion.announce(); companion.calls.length = 0;
+    await companion.activate(); companion.calls.length = 0;
 });
 afterEach(async () => { for (const adapter of adapters.splice(0)) adapter.terminate(); await flush(2); });
 async function adapter() {
@@ -40,7 +40,7 @@ async function adapter() {
 }
 
 test('inactive adapter forwards all prompts, even before init settles or while a turn is pending', async () => {
-    await companion.announce(false);
+    await companion.activate(false);
     const { worker, provider, output } = await adapter();
     assert.equal(worker, provider);
     assert.equal(worker instanceof ProcessingWorker, false);

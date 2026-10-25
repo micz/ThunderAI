@@ -235,6 +235,9 @@ export const prefs_default = {
     // Default comparison unit of the proofreading change picker: 'words' or
     // 'sentences'. A prompt can override it; '' on a prompt means "inherit this".
     diff_granularity: 'words',
+    // Mask personal data through the ThunderAI Privacy companion. The one activation
+    // switch: the companion's settings page only mirrors it (claude-spec/09-ai-processing.md).
+    ai_processing_enabled: false,
     max_prompt_length: 30000,   // max string length for prompt
     add_tags: false,
     add_tags_maxnum: 3,

@@ -1,4 +1,4 @@
-// Spec 09: discovery, trust, constrained hook replies and fail-closed lifecycle.
+// Spec 09: the activation switch, discovery, trust, constrained hook replies and fail-closed lifecycle.
 import assert from 'node:assert/strict';
 import {
     test,
@@ -24,38 +24,44 @@ const getAIProcessingStatus = () => client.getStatus();
 const input = () => ({ message: 'Alice', instructions: { system: 'Alice rules' }, extraBody: { body: '{"name":"Alice"}' } });
 beforeEach(async () => {
     companion.handle = null; companion.available = true;
-    await companion.announce(false);
+    await companion.activate(false);
+    await flush(2);
     companion.calls.length = 0;
 });
+const settingChanges = () => companion.calls.filter(m => m.action === 'aiProcessing.settingChanged');
 
-test('missing/inactive companion preserves content; absence is briefly cached', async () => {
-    companion.available = false;
+test('switched off, the companion is never contacted and content is unchanged', async () => {
     const session = createAIProcessingSession();
     const original = input();
     assert.deepEqual((await session.onBeforeSendToProvider(original)).input, original);
     assert.deepEqual(await session.onAfterReceiveFromProvider({ content: 'answer', thinking: '' }), { content: 'answer', thinking: '' });
-    await getAIProcessingStatus();
-    assert.equal(companion.calls.filter(m => m.action === 'aiProcessing.hello').length, 1);
+    assert.equal((await getAIProcessingStatus()).enabled, false);
+    assert.deepEqual(companion.calls, []);
     session.dispose();
 });
 
-test('legacy/malformed inactive replies do not require a never-enabled processor', async () => {
-    for (const status of [null, '99.0.0', { enabled: false, protocol: 99 }]) {
+test('probe reports a missing, incompatible or compatible companion whatever the switch, and never throws', async () => {
+    companion.available = false;
+    assert.deepEqual(await client.probe(), { installed: false, compatible: false });
+    companion.available = true;
+    for (const status of [null, '99.0.0', { ok: true, protocol: 99, instanceId: 'x' }]) {
         companion.handle = m => m.action === 'aiProcessing.hello' ? Promise.resolve(status) : undefined;
-        assert.equal((await getAIProcessingStatus()).enabled, false);
+        assert.deepEqual(await client.probe(), { installed: true, compatible: false });
     }
+    companion.handle = null;
+    assert.deepEqual(await client.probe(), { installed: true, compatible: true, version: '1.0.0' });
 });
 
-test('incompatible enabled processor blocks and persists its active receipt', async () => {
-    companion.handle = m => m.action === 'aiProcessing.hello' ? { enabled: true, protocol: 99 } : undefined;
+test('switched on, an incompatible or missing processor blocks', async () => {
+    await companion.activate();
+    companion.handle = m => m.action === 'aiProcessing.hello' ? { ok: true, protocol: 99, instanceId: 'x' } : undefined;
     await assert.rejects(getAIProcessingStatus(), /incompatible/);
-    assert.equal(ctx.ctl.localData().aiProcessingRegistration.expected, true);
     companion.available = false;
     await assert.rejects(getAIProcessingStatus(), /unavailable/);
 });
 
 test('active hooks transform input/response and return opaque context', async () => {
-    await companion.announce();
+    await companion.activate();
     const session = createAIProcessingSession();
     const result = await session.onBeforeSendToProvider(input());
     assert.equal(result.input.message, '[PRIVATE]');
@@ -67,15 +73,38 @@ test('active hooks transform input/response and return opaque context', async ()
     session.dispose(); await flush(2);
 });
 
-test('incompatible active registration cannot be mistaken for an absent processor', async () => {
-    await assert.rejects(externalProcessingMessage({ action: 'aiProcessing.register', ...companion.status(), enabled: true, protocol: 99 }), /incompatible/);
-    assert.equal(ctx.ctl.localData().aiProcessingRegistration.expected, true);
-    companion.available = false;
-    await assert.rejects(getAIProcessingStatus(), /unavailable/);
+test('the companion reads and writes the switch; every write is mirrored back with settingChanged', async () => {
+    assert.deepEqual(await externalProcessingMessage({ action: 'aiProcessing.getSetting', protocol: 1 }),
+        { ok: true, protocol: 1, enabled: false, locked: false });
+    assert.deepEqual(await externalProcessingMessage({ action: 'aiProcessing.setSetting', protocol: 1, enabled: true }),
+        { ok: true, protocol: 1, enabled: true, locked: false });
+    assert.equal(ctx.ctl.localData().ai_processing_enabled, true);
+    await flush(3);
+    assert.deepEqual(settingChanges().map(m => [m.protocol, m.enabled, m.locked]), [[1, true, false]]);
+    await companion.activate(false); // the options page
+    await flush(3);
+    assert.deepEqual(settingChanges().map(m => m.enabled), [true, false]);
+    for (const bad of [{ enabled: 'yes' }, { enabled: true, protocol: 99 }]) {
+        assert.equal((await externalProcessingMessage({ action: 'aiProcessing.setSetting', protocol: 1, ...bad })).ok, false);
+    }
+    assert.equal(ctx.ctl.localData().ai_processing_enabled, false);
+});
+
+test('a switch locked by policy is reported and cannot be changed by the companion', async t => {
+    const { mztaManaged } = await import('../../js/mzta-managed.js');
+    const locked = key => key === 'ai_processing_enabled';
+    t.mock.method(mztaManaged, 'isManagedLocked', locked);
+    t.mock.method(mztaManaged, 'getManagedValue', key => locked(key) ? true : undefined);
+    assert.deepEqual(await externalProcessingMessage({ action: 'aiProcessing.getSetting', protocol: 1 }),
+        { ok: true, protocol: 1, enabled: true, locked: true });
+    const refused = await externalProcessingMessage({ action: 'aiProcessing.setSetting', protocol: 1, enabled: false });
+    assert.equal(refused.ok, false);
+    assert.equal(refused.error.code, 'ai_processing_setting_locked');
+    assert.equal(ctx.ctl.localData().ai_processing_enabled, false, 'nothing written');
 });
 
 test('before rejects added/removed keys and non-string values', async () => {
-    await companion.announce();
+    await companion.activate();
     for (const mutate of [x => { x.instructions.extra = 'injected'; }, x => { delete x.instructions.system; },
         x => { x.instructions.system = 42; }, x => { x.extraBody.body = {}; }]) {
         companion.handle = m => {
@@ -90,7 +119,7 @@ test('before rejects added/removed keys and non-string values', async () => {
 });
 
 test('wrong reply instance/call IDs and invalid output are rejected', async () => {
-    await companion.announce();
+    await companion.activate();
     for (const change of [{ instanceId: 'other' }, { callId: 'other' }]) {
         companion.handle = m => m.action === 'aiProcessing.before' ? companion.reply(m, { input: m.input, context: {}, ...change }) : undefined;
         const session = createAIProcessingSession();
@@ -105,15 +134,15 @@ test('wrong reply instance/call IDs and invalid output are rejected', async () =
     session.dispose(); await flush(2);
 });
 
-test('untrusted registration and non-extension broker requests are rejected', async () => {
-    assert.equal((await externalProcessingMessage({ action: 'aiProcessing.register', ...companion.status(), enabled: true }, 'wrong-id')).ok, false);
-    assert.equal(ctx.ctl.localData().aiProcessingRegistration.expected, false);
+test('untrusted setting writes and non-extension broker requests are rejected', async () => {
+    assert.equal((await externalProcessingMessage({ action: 'aiProcessing.setSetting', protocol: 1, enabled: true }, 'wrong-id')).ok, false);
+    assert.equal(ctx.ctl.localData().ai_processing_enabled, false);
     await assert.rejects(ctx.ctl.dispatchMessage({ command: 'ai_processing', operation: 'status', data: {} },
         { id: browser.runtime.id, url: 'https://chatgpt.com/', tab: { id: 1 } }), /trusted extension/);
 });
 
-test('missing previously active processor fails closed, including after restart', async () => {
-    await companion.announce(); companion.available = false;
+test('a missing processor fails closed while switched on, including after restart', async () => {
+    await companion.activate(); companion.available = false;
     await assert.rejects(createAIProcessingSession().onBeforeSendToProvider(input()), /unavailable/);
     ctx.processingBroker.dispose();
     ctx.processingBroker = createAIProcessingBroker();
@@ -123,7 +152,7 @@ test('missing previously active processor fails closed, including after restart'
 });
 
 test('timeout cancels work; only matching, advancing progress renews its budget', async t => {
-    await companion.announce();
+    await companion.activate();
     const session = createAIProcessingSession(); await session.ready();
     let request;
     companion.handle = m => {
@@ -151,14 +180,11 @@ test('importing broker/client registers no listeners', async () => {
     assert.deepEqual([browser.runtime.onMessage._listeners.length, browser.runtime.onMessageExternal._listeners.length], before);
 });
 
-test('a never-enabled slow hello is optional; an expected slow hello fails with a stable code even without locale text', async t => {
+test('switched off a slow companion is never waited for; switched on a slow hello fails with a stable code even without locale text', async t => {
     companion.handle = m => m.action === 'aiProcessing.hello' ? new Promise(() => {}) : undefined;
+    assert.equal((await getAIProcessingStatus()).enabled, false);
+    await companion.activate();
     t.mock.timers.enable({ apis: ['setTimeout'] });
-    const inactive = getAIProcessingStatus();
-    await flush(2);
-    t.mock.timers.tick(5000);
-    assert.equal((await inactive).enabled, false);
-    await companion.announce();
     const original = browser.i18n.getMessage;
     browser.i18n.getMessage = () => '';
     try {
@@ -172,7 +198,7 @@ test('a never-enabled slow hello is optional; an expected slow hello fails with 
 });
 
 test('page transport routes through the broker, lazily relays matching progress, and removes its listener', async () => {
-    await companion.announce();
+    await companion.activate();
     const pageClient = createAIProcessingClient(createRuntimeProcessingTransport());
     const session = pageClient.createSession();
     const listenerCount = browser.runtime.onMessage._listeners.length;
@@ -199,7 +225,7 @@ test('page transport routes through the broker, lazily relays matching progress,
 });
 
 test('page transport cleans up progress listeners on failure and cancellation', async () => {
-    await companion.announce();
+    await companion.activate();
     const pageClient = createAIProcessingClient(createRuntimeProcessingTransport());
     const listenerCount = browser.runtime.onMessage._listeners.length;
     for (const cancel of [false, true]) {
@@ -215,7 +241,7 @@ test('page transport cleans up progress listeners on failure and cancellation', 
 });
 
 test('one active session cannot replace a pending request or overlap restoration hooks', async () => {
-    await companion.announce();
+    await companion.activate();
     const session = createAIProcessingSession();
     await session.onBeforeSendToProvider(input());
     const calls = companion.calls.filter(m => m.action === 'aiProcessing.before').length;

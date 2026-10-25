@@ -9,9 +9,24 @@ ThunderAI supports Thunderbird
 ThunderAI (`thunderai@micz.it`) talks only to
 `thunderai-privacy@micz.it`, with exact sender-ID validation in both directions.
 Internal broker requests accept only ThunderAI extension pages, not content scripts.
-No privacy setting, model/runtime, placeholder parser or restoration map lives in
-ThunderAI. Settings and mappings belong solely to the companion. Only a local
-registration receipt (`aiProcessingRegistration.expected`) persists in ThunderAI.
+No model/runtime, placeholder parser or restoration map lives in ThunderAI; model
+management, diagnostics and mappings belong solely to the companion.
+
+## Activation switch
+
+The one activation switch is ThunderAI's `ai_processing_enabled` preference ("Use
+ThunderAI Privacy", advanced section of the options page, right before Debug). It is an
+ordinary `prefs_default` boolean, so a policy can set or lock it. The companion's own
+switch is a mirror: it reads and writes this preference through `getSetting` /
+`setSetting`, and is kept in step by `settingChanged`. The companion owns readiness:
+it refuses to ask for activation on an unsupported platform or without its model, while
+ThunderAI's own switch is not gated (a missing model then blocks with the companion's error).
+
+The options page row is shown when `probe` finds a compatible companion, and also while
+the switch is on, so a missing companion can still be switched off. Otherwise a notice
+(`#no_privacy`, "not installed" or "incompatible") links to the add-on, as `#no_sparks`
+does for Sparks. The page probes again on focus and follows the preference through
+`storage.onChanged`.
 
 ## Session facade
 
@@ -63,6 +78,7 @@ All v1 actions use `action: 'aiProcessing.<operation>'` and `protocol: 1`.
 | Operation | Fields | Result |
 |---|---|---|
 | `hello` | protocol | status |
+| `settingChanged` | protocol, enabled, locked | acknowledgement |
 | `createSession` | instanceId, sessionId, callId | acknowledgement |
 | `before` | instanceId, sessionId, callId, requestId, input | input, context |
 | `after` | instanceId, sessionId, callId, requestId, context, output, format, optional view | output |
@@ -70,29 +86,38 @@ All v1 actions use `action: 'aiProcessing.<operation>'` and `protocol: 1`.
 | `cancel` | instanceId, sessionId, callId, requestId | acknowledgement |
 | `disposeSession` | instanceId, sessionId, callId | acknowledgement |
 
-Status: `{ok: true, protocol: 1, instanceId, enabled, version}`.
+Status: `{ok: true, protocol: 1, instanceId, version}`. Activation is not part of it.
 The companion generates a fresh instance ID each background startup. Active v1
 processing buffers responses and keeps Web input/results outside the provider DOM.
 Normal replies include `{ok: true, protocol: 1, instanceId, callId, ...result}`;
 failure is `{ok: false, error: {code, message}}`, never a success-shaped passthrough.
 
-The companion sends `register` with its status at startup and after settings changes;
-ThunderAI acknowledges `{ok: true, protocol: 1}`. Discovery also happens before new
-sessions, covering either startup order. `checkPresence` remains a version-string
-compatibility endpoint, not the processing handshake.
-Absent companions are cached for 2 seconds; registration invalidates that cache.
-An incompatible inactive/legacy reply is ignored with a generic warning only when
-no active receipt exists. An incompatible reply reporting `enabled: true` records
-the active requirement and blocks, as does any incompatible reply after activation.
+The companion sends ThunderAI, with `protocol: 1`:
+
+| Action | Fields | Result |
+|---|---|---|
+| `getSetting` | protocol | `{ok, protocol, enabled, locked}` |
+| `setSetting` | protocol, enabled (boolean) | `{ok, protocol, enabled, locked}`, or `ai_processing_setting_locked` when a policy locks it |
+| `progress` | see below | `{ok}` |
+
+`settingChanged` goes the other way whenever `ai_processing_enabled` changes in
+`storage.local`, whoever wrote it (options page, companion, settings import), carrying
+the policy-resolved value. It is fire-and-forget: an absent companion is ignored.
+`checkPresence` remains a version-string compatibility endpoint, not the processing
+handshake.
+
+Discovery (`status`, and before every new session) never contacts the companion while
+the switch is off. While it is on, an absent companion (`ai_processing_unavailable`), a
+discovery timeout or an incompatible reply (`ai_processing_incompatible`) blocks.
+`probe` (the options page only) sends `hello` whatever the switch and returns
+`{installed, compatible, version?}`; it never throws.
 
 Progress travels companion → ThunderAI as `progress` with protocol, instanceId,
 sessionId, requestId, callId and `{phase, current, total}`. Only matching in-flight,
 monotonically advancing progress renews the timeout. The default timeout is 120 s,
 using `special_command_timeout`; discovery is bounded to 5 s. Expired calls cancel
 companion work. Stalled startup/queueing cannot keep a request alive indefinitely.
-A discovery timeout is treated as inactive only when no active receipt exists
-(including registrations received during discovery); otherwise it blocks. Local
-timeout decisions use stable error codes, not translated message comparisons.
+Local timeout decisions use stable error codes, not translated message comparisons.
 The timeout uses `mztaPrefs`, respecting local storage and enforced enterprise values.
 User input forms have no processing deadline; closing the form or disposing its
 session cancels the wait. Bridge initialization does not delay unrelated background
@@ -102,10 +127,10 @@ startup; only processing calls await its registration-state read.
 
 - New sessions snapshot activation and pin the companion instance. Explicitly
   disabling affects new sessions; existing protected sessions retain restoration.
-- An unavailable previously active companion blocks operations, including after a
-  ThunderAI restart. Re-enable it, or reinstall it and explicitly disable processing
-  in its settings to resume unprocessed new sessions. Uninstall is not inferred as
-  consent to bypass protection. There is no second activation control in ThunderAI.
+- While the switch is on, an unavailable companion blocks operations, including after
+  a ThunderAI restart. Re-enable or reinstall it, or switch processing off in
+  ThunderAI's options to resume unprocessed new sessions. Uninstall is not inferred as
+  consent to bypass protection.
 - Companion restart invalidates old sessions. Start a new chat/command; do not
   recreate a mapless session or fall back to plaintext inside an existing chat.
 - Stop cancels pending hook work and suppresses late provider dispatch/results.
@@ -140,9 +165,10 @@ timeout/progress, page-to-broker transport/listener cleanup, session concurrency
 raw-worker selection, busy notices and Stop. Real detection and Thunderbird IPC/platform
 behavior still require manual testing.
 
-Load both repositories as temporary Thunderbird add-ons. Download/enable the model
-in Privacy; use fictional data for chat/follow-up, structured special commands and
+Load both repositories as temporary Thunderbird add-ons. Download the model in Privacy
+and switch it on from either settings page (check that the other follows); use fictional data for chat/follow-up, structured special commands and
 Web reply/replace/insert at cursor/view/diff. Check CPU and WebGPU, long chunked inputs, Stop, timeout,
 companion restart/disable/uninstall, and missing-model errors. Inspect outbound bodies
 and confirm restored replies are absent from follow-up history. Without the companion
-and with no prior active registration, verify unchanged streaming/settings behavior.
+and with the switch off, verify unchanged streaming/settings behavior and the
+"not installed" notice; with the switch on, verify that requests block.

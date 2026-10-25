@@ -1,21 +1,41 @@
 // Background-only trust boundary. Importing this module registers no listeners.
 import { mztaPrefs } from './mzta-prefs.js';
+import { mztaManaged } from './mzta-managed.js';
 import {
     AI_PROCESSOR_ID,
     AI_PROCESSING_PROTOCOL,
     processingError
 } from './mzta-ai-processing-protocol.js';
 
-const STATE_KEY = 'aiProcessingRegistration';
+// The one activation switch, shared with the companion's settings page through
+// aiProcessing.getSetting / setSetting / settingChanged.
+const ENABLED_PREF = 'ai_processing_enabled';
 const NO_PROGRESS = () => {};
 
 function validateStatus(status) {
     if (!status?.ok ||
         status.protocol !== AI_PROCESSING_PROTOCOL ||
-        typeof status.instanceId !== 'string' ||
-        typeof status.enabled !== 'boolean') {
+        typeof status.instanceId !== 'string') {
         throw processingError('ai_processing_incompatible');
     }
+}
+
+async function settingState() {
+    const enabled = await mztaPrefs.getPref(ENABLED_PREF) === true;
+    return { enabled, locked: mztaManaged.isManagedLocked(ENABLED_PREF) };
+}
+
+function hello() {
+    let timer;
+    return Promise.race([
+        browser.runtime.sendMessage(AI_PROCESSOR_ID, {
+            action: 'aiProcessing.hello',
+            protocol: AI_PROCESSING_PROTOCOL
+        }),
+        new Promise((_, reject) => {
+            timer = setTimeout(() => reject(processingError('ai_processing_timeout')), 5000);
+        })
+    ]).finally(() => clearTimeout(timer));
 }
 
 function validateInput(input, original) {
@@ -43,62 +63,44 @@ function validateInput(input, original) {
 export function createAIProcessingBroker() {
     const sessions = new Map();
     const pending = new Map();
-    let expected = false;
-    let absentUntil = 0;
-    const ready = browser.storage.local.get(STATE_KEY).then(data => {
-        expected = !!data[STATE_KEY]?.expected;
-    });
+    // whenLoaded(), not managedReady(): the background creates the broker before it
+    // loads the policy, and managedReady() there would hydrate from itself. Every
+    // preference read below waits for this, external messages included.
+    const ready = mztaManaged.whenLoaded();
 
-    async function remember(enabled) {
-        absentUntil = 0;
-        expected = enabled;
-        await browser.storage.local.set({ [STATE_KEY]: { expected: enabled } });
-    }
-
+    // Switched off, the companion is never contacted. Switched on, a missing, slow
+    // or incompatible companion blocks: uninstalling it is not consent to bypass.
     async function discover() {
-        if (!expected && Date.now() < absentUntil) {
+        if (!(await settingState()).enabled) {
             return { enabled: false };
         }
-        let timer;
         let status;
         try {
-            status = await Promise.race([
-                browser.runtime.sendMessage(AI_PROCESSOR_ID, {
-                    action: 'aiProcessing.hello',
-                    protocol: AI_PROCESSING_PROTOCOL
-                }),
-                new Promise((_, reject) => {
-                    timer = setTimeout(() => reject(processingError('ai_processing_timeout')), 5000);
-                })
-            ]);
+            status = await hello();
         } catch (error) {
-            if (expected) {
-                if (error.code === 'ai_processing_timeout') {
-                    throw error;
-                }
-                throw processingError('ai_processing_unavailable');
+            if (error.code === 'ai_processing_timeout') {
+                throw error;
             }
-            // A slow, never-enabled legacy companion is optional, just like an
-            // absent one. A registration received during discovery sets expected.
-            absentUntil = Date.now() + 2000;
-            return { enabled: false };
-        } finally {
-            clearTimeout(timer);
+            throw processingError('ai_processing_unavailable');
         }
-        if (status?.enabled === true) {
-            await remember(true);
+        validateStatus(status);
+        return { ...status, enabled: true };
+    }
+
+    // For the settings page, whatever the switch: is a compatible companion installed?
+    async function probe() {
+        let status;
+        try {
+            status = await hello();
+        } catch {
+            return { installed: false, compatible: false };
         }
         try {
             validateStatus(status);
-        } catch (error) {
-            if (expected) {
-                throw error;
-            }
-            console.warn('[ThunderAI] Ignoring an incompatible inactive content processor.');
-            return { enabled: false };
+        } catch {
+            return { installed: true, compatible: false };
         }
-        await remember(status.enabled);
-        return status;
+        return { installed: true, compatible: true, version: status.version };
     }
 
     function notify(message) {
@@ -166,6 +168,9 @@ export function createAIProcessingBroker() {
         await ready;
         if (operation === 'status') {
             return discover();
+        }
+        if (operation === 'probe') {
+            return probe();
         }
         if (operation === 'createSession') {
             const status = await discover();
@@ -275,18 +280,14 @@ export function createAIProcessingBroker() {
         if (sender.id !== AI_PROCESSOR_ID) {
             return Promise.resolve({ ok: false });
         }
-        if (message.action === 'aiProcessing.register') {
-            return ready.then(async () => {
-                if (message.enabled === true) {
-                    await remember(true);
-                }
-                validateStatus({ ...message, ok: true });
-                await remember(message.enabled);
-                return { ok: true, protocol: AI_PROCESSING_PROTOCOL };
-            });
-        }
         if (message.protocol !== AI_PROCESSING_PROTOCOL) {
             return Promise.resolve({ ok: false });
+        }
+        if (message.action === 'aiProcessing.getSetting') {
+            return ready.then(settingState).then(state => ({ ok: true, protocol: AI_PROCESSING_PROTOCOL, ...state }));
+        }
+        if (message.action === 'aiProcessing.setSetting') {
+            return ready.then(() => setSetting(message.enabled));
         }
         if (message.action === 'aiProcessing.progress') {
             const entry = pending.get(message.callId);
@@ -312,6 +313,33 @@ export function createAIProcessingBroker() {
         }
     }
 
+    // The companion's settings page writes the switch through here. Its own
+    // readiness (platform, model) is checked there before it asks to enable.
+    async function setSetting(enabled) {
+        if (typeof enabled !== 'boolean') {
+            return { ok: false, error: { code: 'ai_processing_invalid_request' } };
+        }
+        if ((await settingState()).locked) {
+            const error = processingError('ai_processing_setting_locked');
+            return { ok: false, error: { code: error.code, message: error.message } };
+        }
+        await mztaPrefs.setPref(ENABLED_PREF, enabled);
+        return { ok: true, protocol: AI_PROCESSING_PROTOCOL, ...await settingState() };
+    }
+
+    // Every writer (options page, companion, settings import) reaches storage, so the
+    // companion's mirror of the switch is refreshed from here.
+    function onStorageChanged(changes, area) {
+        if (area !== 'local' || !Object.hasOwn(changes, ENABLED_PREF)) {
+            return;
+        }
+        void ready.then(settingState).then(state => notify({
+            action: 'aiProcessing.settingChanged',
+            protocol: AI_PROCESSING_PROTOCOL,
+            ...state
+        })).catch(NO_PROGRESS);
+    }
+
     function onTabRemoved(tabId) {
         for (const record of sessions.values()) {
             if (record.ownerTabId === tabId) {
@@ -326,6 +354,7 @@ export function createAIProcessingBroker() {
     browser.runtime.onMessage.addListener(onMessage);
     browser.runtime.onMessageExternal.addListener(onExternalMessage);
     browser.tabs.onRemoved.addListener(onTabRemoved);
+    browser.storage.onChanged.addListener(onStorageChanged);
     return {
         ready,
         dispatch,
@@ -333,6 +362,7 @@ export function createAIProcessingBroker() {
             browser.runtime.onMessage.removeListener(onMessage);
             browser.runtime.onMessageExternal.removeListener(onExternalMessage);
             browser.tabs.onRemoved.removeListener(onTabRemoved);
+            browser.storage.onChanged.removeListener(onStorageChanged);
             for (const entry of pending.values()) {
                 entry.cancel();
             }

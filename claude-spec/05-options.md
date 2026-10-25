@@ -204,11 +204,12 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 
 ### Companion processing
 
-ThunderAI's settings have no privacy controls. ThunderAI Privacy owns activation,
-model management and diagnostics. The bridge's local `aiProcessingRegistration`
-receipt is operational state, not a user preference or mapping store. It prevents
-an unexpectedly missing active companion from silently bypassing processing.
-See [09-ai-processing.md](09-ai-processing.md).
+| Key | Default | Description |
+|-----|---------|-------------|
+| `ai_processing_enabled` | `false` | "Use ThunderAI Privacy": mask content through the ThunderAI Privacy companion. The **one** activation switch: the companion's settings page mirrors it through cross-extension messages. While on, a missing companion blocks every AI request (never a silent bypass). A `.option-input` toggle in the advanced section right before Debug; `updatePrivacyCompanion()` in `options/mzta-options.js` shows its row (`#ai_processing_tr`) when a compatible companion answers or while the switch is on, and the `#no_privacy` notice otherwise. Boolean, so policy-settable with no extra rule; a lock also disables the companion's mirror. |
+
+ThunderAI Privacy owns model management and diagnostics. See
+[09-ai-processing.md](09-ai-processing.md).
 
 ### Feature Flags
 
@@ -1476,7 +1477,8 @@ The app-level "Advanced options" disclosure is the `#mzta_adv_toggle` button and
 `#mzta_adv_panel` it opens below itself (the connection panel's own disclosure mirrors it, see
 "Connection Settings Panel — Advanced Options Disclosure"). The panel holds the chat window size and
 position, `max_prompt_length`, `special_command_timeout`, `batch_max_concurrency`, the behaviour
-switches, `diff_granularity`, `do_debug` and the cache block below.
+switches, `diff_granularity`, `ai_processing_enabled` (or its `#no_privacy` notice), `do_debug` and
+the cache block below.
 
 - **Collapsed on every open.** The page opens with `aria-expanded="false"` and `.hidden` on the
   panel; a click flips both. The state is purely local UI: **no preference is persisted**.
