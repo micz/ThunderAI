@@ -1225,7 +1225,9 @@ class MessagesArea extends HTMLElement {
     // composed text wins over the raw answer.
     handleUseThisAnswerButtonClick(promptData, replyType, fullTextHTMLAtAssignment, ownerTurn = null){
         return async () => {
-            if(promptData.mailMessageId == -1) {    // we are using the reply from the compose window!
+            // we are using the reply from the compose window! Every action but "insert at
+            // cursor" replaces the text there.
+            if((promptData.mailMessageId == -1) && (promptData.action != "3")) {
                 promptData.action = "2"; // replace text
             }
             let finalText = null;
@@ -1272,6 +1274,11 @@ class MessagesArea extends HTMLElement {
                 case "2":     // replace text
                     //  console.log("[ThunderAI] (replace text) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
                     await browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: finalText, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
+                    // Fire-and-forget: see the note above in the reply case.
+                    browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id}).catch(() => {});
+                    break;
+                case "3":     // insert at cursor
+                    await browser.runtime.sendMessage({command: "chatgpt_insertAtCaret", text: finalText, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
                     // Fire-and-forget: see the note above in the reply case.
                     browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id}).catch(() => {});
                     break;
@@ -1411,7 +1418,7 @@ class MessagesArea extends HTMLElement {
         if(promptData.action != "0") {
             const useBtn = this._makeIconButton(
                 buildUseAnswerIcon(13),
-                browser.i18n.getMessage("apiwebchat_use_this_answer"),
+                useThisAnswerLabel(promptData),
             );
             useBtn.addEventListener('click',
                 this.handleUseThisAnswerButtonClick(promptData, replyType, fullTextHTMLAtAssignment, ownerTurn));
@@ -1513,7 +1520,7 @@ class MessagesArea extends HTMLElement {
         const isReplyToMessage = (promptData.action == "1") && (promptData.mailMessageId != -1);
 
         splitButton.setMainButton({
-            line1: browser.i18n.getMessage("apiwebchat_use_this_answer"),
+            line1: useThisAnswerLabel(promptData),
             line2: isReplyToMessage
                 ? (reply_type_pref.reply_type == 'reply_all' ? browser.i18n.getMessage("prefs_OptionText_reply_all") : browser.i18n.getMessage("prefs_OptionText_reply_sender"))
                 : null,
@@ -1861,6 +1868,13 @@ class MessagesArea extends HTMLElement {
 
 customElements.define('messages-area', MessagesArea);
 
+// The label of the "use this answer" button: "Insert at cursor" when that is what it does
+// (action "3"), so the user knows nothing will be replaced.
+function useThisAnswerLabel(promptData) {
+    return (promptData.action == "3")
+        ? browser.i18n.getMessage("chatgpt_win_insert_at_cursor")
+        : browser.i18n.getMessage("apiwebchat_use_this_answer");
+}
 
 // Does this HTML carry any line structure of its own?
 //

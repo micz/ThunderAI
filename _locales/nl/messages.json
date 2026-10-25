@@ -1,6 +1,6 @@
 {
     "extensionDescription": {
-        "message": "Gebruik ChatGPT, Google Gemini, Claude of Ollama om uw emails te verbeteren."
+        "message": "Gebruik ChatGPT, Google Gemini, Claude of Ollama om uw e-mails te verbeteren!"
     },
     "prompt_translate_this": {
         "message": "Vertaal"
@@ -46,5 +46,405 @@
     },
     "customPrompts_managePrompts": {
         "message": "Beheer prompts"
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "Indien alles correct is, klik op de 'Alles opslaan' knop na het importeren."
+    },
+    "customPrompts_import_saved_now": {
+        "message": "De geïmporteerde prompts worden onmiddellijk opgeslagen."
+    },
+    "customPrompts_btnEdit": {
+        "message": "Bewerk"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "Naam"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "Dient uniek te zijn, kleine letters en zonder spaties"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "De standaardprompts zijn niet aan te passen. Om een aangepaste versie te creëren, gebruik \"Kopieer en bewerk\". Om een prompt te verbergen, gebruik de instellingen voor menuvolgorde."
+    },
+    "customPrompts_form_label_Action": {
+        "message": "Actie"
+    },
+    "customPrompts_form_required_fields": {
+        "message": "Verplichte velden"
+    },
+    "customPrompts_btnCancel": {
+        "message": "Annuleren"
+    },
+    "customPrompts_btnOK": {
+        "message": "OK"
+    },
+    "customPrompts_btnDelete": {
+        "message": "Verwijder"
+    },
+    "btnSaveAll_string": {
+        "message": "Alles opslaan"
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "Er zijn niet-opgeslagen wijzigingen!"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "Weet je zeker dat je dit onderdeel wilt verwijderen?"
+    },
+    "btnNew_string": {
+        "message": "Voeg nieuw toe"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "Voeg aan menu toe"
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "Voeg de handtekening altijd toe"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "Geselecteerde tekst benodigd"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "Altijd"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "Lezen van e-mail"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "Opstellen van e-mail"
+    },
+    "customPrompts_close_button": {
+        "message": "Sluit knop"
+    },
+    "chatgpt_win_close": {
+        "message": "Sluiten"
+    },
+    "chatgpt_win_get_answer": {
+        "message": "Gebruik het geselecteerde antwoord"
+    },
+    "customPrompts_substitute_text": {
+        "message": "Vervang tekst"
+    },
+    "chatgpt_btn_retry": {
+        "message": "Probeer opnieuw"
+    },
+    "chatgpt_win_retrying": {
+        "message": "Opnieuw proberen…"
+    },
+    "chatgpt_win_job_completed": {
+        "message": "Klaar!"
+    },
+    "chatgpt_win_send": {
+        "message": "Verstuur"
+    },
+    "prefs_OptionText_chatgpt_win_height": {
+        "message": "Hoogte"
+    },
+    "prefs_OptionText_chatgpt_win_width": {
+        "message": "Breedte"
+    },
+    "prefs_OptionText_btnManagePrompts": {
+        "message": "Beheer je prompts"
+    },
+    "prefs_storage_title": {
+        "message": "Opslag"
+    },
+    "prefs_storage_info": {
+        "message": "De opslag wordt gebruikt om informatie over de spamscore, samenvattingen en vertalingen van ieder bericht op te slaan."
+    },
+    "prefs_storage_size": {
+        "message": "Opslagcapaciteit"
+    },
+    "prefs_OptionText_chatgpt_win_text": {
+        "message": "Afmetingen AI chat venster"
+    },
+    "prefs_status_page": {
+        "message": "Service status"
+    },
+    "prefs_storage_clear_confirm": {
+        "message": "Weet je zeker dat je alle opgeslagen data (samenvattingen, spamrapporten, vertalingen) wil verwijderen? Deze actie kan niet ongedaan gemaakt worden."
+    },
+    "prefs_storage_clear_done": {
+        "message": "$COUNT$ records verwijderd.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "backToOptionsText": {
+        "message": "Opties"
+    },
+    "prefs_footer_translate": {
+        "message": "Vertaal de add-on"
+    },
+    "prefs_footer_donate": {
+        "message": "Doneer"
+    },
+    "customPrompts_view_detail": {
+        "message": "Detail"
+    },
+    "customPrompts_view_table": {
+        "message": "Tabel"
+    },
+    "customPrompts_new_prompt": {
+        "message": "+ Nieuwe prompt"
+    },
+    "customPrompts_badge_system": {
+        "message": "Systeem"
+    },
+    "customPrompts_badge_personal": {
+        "message": "Persoonlijk"
+    },
+    "customPrompts_btnSavePrompt": {
+        "message": "Opslaan"
+    },
+    "customPrompts_btnOpen": {
+        "message": "Open"
+    },
+    "customPrompts_btnExport": {
+        "message": "Exporteer"
+    },
+    "customPrompts_chip_need_signature": {
+        "message": "Handtekening"
+    },
+    "customPrompts_col_menu": {
+        "message": "Menu"
+    },
+    "customPrompts_col_text": {
+        "message": "Tekst"
+    },
+    "customPrompts_col_prompt": {
+        "message": "Prompt"
+    },
+    "customPrompts_more_actions": {
+        "message": "Meer acties"
+    },
+    "customPrompts_view_switch": {
+        "message": "Bekijk"
+    },
+    "customPrompts_ExportAll": {
+        "message": "Exporteer alle prompts"
+    },
+    "customPrompts_Import": {
+        "message": "Importeer nieuwe prompts"
+    },
+    "customPrompts_promptsCount": {
+        "message": "$COUNT$ prompts",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "customPrompts_filter_clear": {
+        "message": "Wis filter"
+    },
+    "customPrompts_badge_readonly": {
+        "message": "Alleen lezen"
+    },
+    "customPrompts_col_options": {
+        "message": "Opties"
+    },
+    "customPrompts_col_actions": {
+        "message": "Acties"
+    },
+    "customPrompts_label_options": {
+        "message": "Opties"
+    },
+    "customPrompts_label_text": {
+        "message": "Prompt tekst"
+    },
+    "customPrompts_new_prompt_title": {
+        "message": "Nieuwe prompt"
+    },
+    "customPrompts_chip_define_response_lang": {
+        "message": "Taal"
+    },
+    "customPrompts_label_connection": {
+        "message": "Verbinding"
+    },
+    "customPrompts_chip_need_selected": {
+        "message": "Selectie"
+    },
+    "customPrompts_chip_need_custom_text": {
+        "message": "Extra tekst"
+    },
+    "customPrompts_chip_use_diff_viewer": {
+        "message": "Vergelijk"
+    },
+    "customPrompts_no_selection": {
+        "message": "Selecteer een prompt uit de lijst of creëer een nieuwe."
+    },
+    "customPrompts_dirty_apply": {
+        "message": "Wijzigingen doorvoeren"
+    },
+    "customPrompts_dirty_discard": {
+        "message": "Wijzigingen verwerpen"
+    },
+    "customPrompts_error_required": {
+        "message": "Naam en prompt-tekst zijn verplicht."
+    },
+    "customPrompts_error_name_percent": {
+        "message": "De naam kan geen %-karakter bevatten."
+    },
+    "importPrompts_confirmText": {
+        "message": "Nieuwe prompts worden geïmporteerd."
+    },
+    "customPrompts_start_import": {
+        "message": "Aangepaste prompts worden geïmporteerd…"
+    },
+    "prefs_Connection_type_ChatGPT_Web": {
+        "message": "ChatGPT Web Interface"
+    },
+    "prefs_Connection_type_ChatGPT_API": {
+        "message": "ChatGPT OpenAI API"
+    },
+    "prefs_ChatGPT_API_Key": {
+        "message": "ChatGPT API Key"
+    },
+    "ChatGPT_Models": {
+        "message": "ChatGPT Modellen"
+    },
+    "error": {
+        "message": "ThunderAI fout!"
+    },
+    "chatgpt_empty_apikey": {
+        "message": "Er is nog geen API-sleutel voor de ChatGPT API ingesteld. Voeg er één toe op de instellingenpagina."
+    },
+    "Debug": {
+        "message": "Debug"
+    },
+    "prefs_Connection_type_Ollama_API": {
+        "message": "Ollama API (Lokaal LLM)"
+    },
+    "prefs_API_Host": {
+        "message": "Host adres"
+    },
+    "prefs_OptionText_do_debug_info": {
+        "message": "Activeer het debug systeem"
+    },
+    "chagpt_api_send_button": {
+        "message": "Gebruikt model"
+    },
+    "Ollama_Models": {
+        "message": "Ollama Modellen"
+    },
+    "Models_Fetch": {
+        "message": "Lijst bijwerken"
+    },
+    "chatgpt_empty_model": {
+        "message": "Er is nog geen model voor de ChatGPT API gekozen. Selecteer één op de instellingenpagina."
+    },
+    "Optional": {
+        "message": "Optioneel"
+    },
+    "SearchPrompt": {
+        "message": "Zoek prompts"
+    },
+    "prefs_OpenAIComp_ChatName": {
+        "message": "Chat naam"
+    },
+    "placeholder_folder_name": {
+        "message": "Map naam"
+    },
+    "placeholder_folder_path": {
+        "message": "Map pad"
+    },
+    "placeholder_selected_text": {
+        "message": "Geselecteerde tekst"
+    },
+    "placeholder_mail_headers": {
+        "message": "Berichten headers"
+    },
+    "placeholder_mail_full_headers": {
+        "message": "Alle berichten headers"
+    },
+    "placeholder_selected_html": {
+        "message": "Geselecteerde HTML"
+    },
+    "prefs_OptionText_diff_granularity_words": {
+        "message": "woorden"
+    },
+    "prefs_OptionText_diff_granularity_sentences": {
+        "message": "zinnen"
+    },
+    "placeholder_additional_text": {
+        "message": "Aanvullende tekst"
+    },
+    "prefs_OptionText_thinking_summary": {
+        "message": "Nadenken"
+    },
+    "chatgpt_btn_model": {
+        "message": "Gebruik het huidige model"
+    },
+    "prefs_OptionText_chatgpt_web_model": {
+        "message": "ChatGPT Web Model"
+    },
+    "prefs_OptionText_openai_comp_use_v1": {
+        "message": "Behoud \"v1\" compatibiliteit"
+    },
+    "prefs_extra_body_error_invalid": {
+        "message": "Ongeldige JSON:"
+    },
+    "prefs_extra_body_error_not_object": {
+        "message": "De waarde dient een JSON-object te zijn, tussen accolades geplaatst."
+    },
+    "sign_msg_as": {
+        "message": "Onderteken het bericht als"
+    },
+    "onboarding_automatic_features_alt": {
+        "message": "Automatisch spam filter"
+    },
+    "onboarding_custom_prompts_p1_4": {
+        "message": "Je kunt hier meer informatie vinden."
+    },
+    "onboarding_using_prompts_li4_b": {
+        "message": "Enter"
+    },
+    "onboarding_using_prompts_li3_b": {
+        "message": "Toets een nummer"
+    },
+    "onboarding_tab_title": {
+        "message": "Welkom bij ThunderAI!"
+    },
+    "wizard_provider_tag_chatgpt_api": {
+        "message": "API-sleutel + model benodigd"
+    },
+    "wizard_provider_tag_google_gemini_api": {
+        "message": "API-sleutel + model benodigd"
+    },
+    "wizard_provider_tag_anthropic_api": {
+        "message": "API-sleutel, model & versie benodigd"
+    },
+    "wizard_back": {
+        "message": "Terug"
+    },
+    "connTest_link_test": {
+        "message": "Nu testen"
+    },
+    "prefs_FeaturesTitle": {
+        "message": "Eigenschappen"
+    },
+    "menu_order_icon_label": {
+        "message": "Kies een icoon"
+    },
+    "menu_order_badge_default": {
+        "message": "Standaard"
+    },
+    "prefs_OptionText_action_auto_batch": {
+        "message": "Wanneer de e-mail ontvangen is"
+    },
+    "summary_by": {
+        "message": "Samenvatting door"
+    },
+    "translate_generating": {
+        "message": "Aan het vertalen..."
+    },
+    "prefs_OptionText_action_auto_automatic": {
+        "message": "Wanneer de e-mail geopend wordt"
+    },
+    "menu_title": {
+        "message": "ThunderAI"
+    },
+    "prompt_reply_custom_command": {
+        "message": "Beantwoord met commando..."
     }
 }
