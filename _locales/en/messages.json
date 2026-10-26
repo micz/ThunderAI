@@ -2173,6 +2173,10 @@
       }
     }
   },
+  "apiwebchat_privacy_active": {
+    "message": "ThunderAI Privacy is on: personal data is masked before it is sent to the AI provider.",
+    "description": "API webchat: tooltip of the shield badge shown on the header logo while the ThunderAI Privacy switch is on; 'ThunderAI Privacy' is a product name."
+  },
   "apiwebchat_request_cancelled": {
     "message": "Request cancelled.",
     "description": "API webchat notice shown when the user stops a request before any answer arrived"

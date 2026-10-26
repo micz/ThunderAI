@@ -121,6 +121,29 @@ export function buildChatBubbleIcon() {
     return svg;
 }
 
+// Shield with a check — badge on the header logo while ThunderAI Privacy is on.
+export function buildShieldIcon(size = 12) {
+    const svg = el('svg', {
+        width: String(size),
+        height: String(size),
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        'aria-hidden': 'true',
+    });
+    svg.appendChild(el('path', {
+        d: 'M12 2.5l8 3v6c0 5-3.4 8.9-8 10-4.6-1.1-8-5-8-10v-6l8-3Z',
+        fill: 'currentColor',
+    }));
+    svg.appendChild(el('path', {
+        d: 'M8.5 12.2l2.4 2.4 4.6-4.8',
+        stroke: '#fff',
+        'stroke-width': '2.4',
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+    }));
+    return svg;
+}
+
 // Copy to clipboard (two overlapping sheets).
 export function buildCopyIcon(size = 15) {
     const svg = el('svg', {

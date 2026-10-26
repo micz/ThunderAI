@@ -401,6 +401,17 @@ await (async () => {
 taWorkingStatus.taLog = taLog;
 taBatchController.taLog = taLog;
 taJobRegistry.taLog = taLog;
+// While the ThunderAI Privacy switch is on, the toolbar buttons show the companion's icon.
+// The policy-resolved value is read, at startup and on every write of the switch.
+function syncPrivacyIcon() {
+    mztaPrefs.getPref('ai_processing_enabled')
+        .then(enabled => taWorkingStatus.setPrivacy(enabled === true))
+        .catch(e => taLog.error("Could not read the ThunderAI Privacy switch: " + e));
+}
+syncPrivacyIcon();
+browser.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && Object.hasOwn(changes, 'ai_processing_enabled')) syncPrivacyIcon();
+});
 let spamReport = new taSpamReport(prefs_init.do_debug);
 let summaryStore = new taSummaryStore(prefs_init.do_debug);
 let translationStore = new taTranslationStore(prefs_init.do_debug);

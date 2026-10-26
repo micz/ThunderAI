@@ -29,6 +29,21 @@ the switch is on, so a missing companion can still be switched off. Otherwise a 
 does for Sparks. The page probes again on focus and follows the preference through
 `storage.onChanged`.
 
+While the switch is on (policy-resolved value, read at startup and on every
+`storage.onChanged` of the key) ThunderAI shows it in two places:
+
+- **Toolbar buttons.** The message display and compose buttons show the companion's icon
+  (`images/privacy-icon-32px.png`, a copy of the companion's `icon-32px.png`) instead of
+  ThunderAI's. `mzta-background.js` (`syncPrivacyIcon()`) calls
+  `taWorkingStatus.setPrivacy()`, which sets the idle icon both buttons return to; the
+  loading icon still wins while anything works, and the new idle icon shows once
+  `WorkingLevel` drops back to zero.
+- **API chat window.** A shield badge (`#appHeaderShield`, `buildShieldIcon()`, 14px)
+  covers the top-right quarter of the header logo; the whole brand (`#appHeaderBrand`,
+  logo and name) carries the `apiwebchat_privacy_active` tooltip, removed when the switch
+  is off.
+  The window follows the switch for as long as it stays open.
+
 ## Model readiness
 
 The companion keeps a cached readiness (64-bit platform and complete model cache, no

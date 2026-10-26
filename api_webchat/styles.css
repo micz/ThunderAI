@@ -175,6 +175,22 @@ messages-area {
     justify-content: center;
     flex-shrink: 0;
     color: #fff;
+    position: relative;
+}
+
+/* ThunderAI Privacy badge: 14px from (11, -3) to (25, 11), so it covers the
+   logo's top-right quarter and spills just past its corner. */
+#appHeaderShield {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    display: flex;
+    color: #2e9b5b;
+    filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);
+}
+
+#appHeaderShield[hidden] {
+    display: none;
 }
 
 #appHeaderName {

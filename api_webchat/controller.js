@@ -31,7 +31,10 @@ import {
     supportsUsageData
 } from '../js/mzta-utils.js';
 import { loadPrompt } from '../js/mzta-prompts.js';
-import { buildChatBubbleIcon } from './svgIcons.js';
+import {
+    buildChatBubbleIcon,
+    buildShieldIcon
+} from './svgIcons.js';
 import { resolveContextWindow } from './contextWindow.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
 import {
@@ -233,6 +236,23 @@ if (worker) {
         // belongs to the status pill above the input, so there is only one
         // thing to keep in sync with the request lifecycle.
         document.getElementById('appHeaderLogo').appendChild(buildChatBubbleIcon());
+        // A shield on the logo while the ThunderAI Privacy switch is on (policy-resolved),
+        // kept in step with the switch for as long as the window stays open. The tooltip
+        // sits on the whole brand (logo and name), not on the small badge alone.
+        const shield = document.getElementById('appHeaderShield');
+        const brand = document.getElementById('appHeaderBrand');
+        shield.appendChild(buildShieldIcon(14));
+        const privacy_tooltip = browser.i18n.getMessage('apiwebchat_privacy_active');
+        const syncPrivacyShield = () => mztaPrefs.getPref('ai_processing_enabled')
+            .then(enabled => {
+                shield.hidden = enabled !== true;
+                brand.title = enabled === true ? privacy_tooltip : '';
+            })
+            .catch(e => console.error('[ThunderAI] Could not read the ThunderAI Privacy switch:', e));
+        syncPrivacyShield();
+        browser.storage.onChanged.addListener((changes, areaName) => {
+            if (areaName === 'local' && Object.hasOwn(changes, 'ai_processing_enabled')) syncPrivacyShield();
+        });
         const apiChip = document.getElementById('appHeaderApi');
         if (api_strings[integration]) {
             document.getElementById('appHeaderApiName').textContent = api_strings[integration];
