@@ -241,7 +241,7 @@ if (worker) {
         // sits on the whole brand (logo and name), not on the small badge alone.
         const shield = document.getElementById('appHeaderShield');
         const brand = document.getElementById('appHeaderBrand');
-        shield.appendChild(buildShieldIcon(14));
+        shield.appendChild(buildShieldIcon());
         const privacy_tooltip = browser.i18n.getMessage('apiwebchat_privacy_active');
         const syncPrivacyShield = () => mztaPrefs.getPref('ai_processing_enabled')
             .then(enabled => {

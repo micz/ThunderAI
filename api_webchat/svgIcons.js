@@ -122,16 +122,27 @@ export function buildChatBubbleIcon() {
 }
 
 // Shield with a check — badge on the header logo while ThunderAI Privacy is on.
-export function buildShieldIcon(size = 12) {
+// The viewBox is padded by 2 units per side for the white halo: the same shield
+// drawn first with a wide white stroke, then filled on top, so the halo is a
+// crisp edge that sets the badge apart from the logo under it. At the default
+// 25px the shield itself is 17px tall and the halo 1.5px wide.
+export function buildShieldIcon(size = 25) {
+    const shield = 'M12 2.5l8 3v6c0 5-3.4 8.9-8 10-4.6-1.1-8-5-8-10v-6l8-3Z';
     const svg = el('svg', {
         width: String(size),
         height: String(size),
-        viewBox: '0 0 24 24',
+        viewBox: '-2 -2 28 28',
         fill: 'none',
         'aria-hidden': 'true',
     });
     svg.appendChild(el('path', {
-        d: 'M12 2.5l8 3v6c0 5-3.4 8.9-8 10-4.6-1.1-8-5-8-10v-6l8-3Z',
+        d: shield,
+        stroke: '#fff',
+        'stroke-width': '3.35',
+        'stroke-linejoin': 'round',
+    }));
+    svg.appendChild(el('path', {
+        d: shield,
         fill: 'currentColor',
     }));
     svg.appendChild(el('path', {

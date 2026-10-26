@@ -38,8 +38,9 @@ While the switch is on (policy-resolved value, read at startup and on every
   `taWorkingStatus.setPrivacy()`, which sets the idle icon both buttons return to; the
   loading icon still wins while anything works, and the new idle icon shows once
   `WorkingLevel` drops back to zero.
-- **API chat window.** A shield badge (`#appHeaderShield`, `buildShieldIcon()`, 14px)
-  covers the top-right quarter of the header logo; the whole brand (`#appHeaderBrand`,
+- **API chat window.** A shield badge (`#appHeaderShield`, `buildShieldIcon()`: a
+  17px dark green shield with a white check and a 1.5px white halo) covers the top-right half
+  of the header logo and spills past its corner; the whole brand (`#appHeaderBrand`,
   logo and name) carries the `apiwebchat_privacy_active` tooltip, removed when the switch
   is off.
   The window follows the switch for as long as it stays open.
