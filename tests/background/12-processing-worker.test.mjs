@@ -68,6 +68,18 @@ test('active companion transforms instructions and buffers/restores content/thin
     assert.ok(!JSON.stringify(provider.posted).includes('Alice'));
 });
 
+test('active usage reaches the chat after the restored content and before tokensDone', async () => {
+    const { worker, provider, output } = await adapter();
+    worker.postMessage({ type: 'chatMessage', message: 'Alice' }); await flush(3);
+    provider.deliver(token('Hi [PRIVATE]'), { type: 'usage', messageId: 'm1', payload: { total_tokens: 7 } });
+    await flush(2);
+    assert.equal(output.some(m => m.type === 'usage'), false);
+    provider.deliver(done()); await flush(3);
+    assert.deepEqual(output.filter(m => ['newToken', 'usage', 'tokensDone'].includes(m.type)).map(m => m.type),
+        ['newToken', 'usage', 'tokensDone']);
+    assert.deepEqual(output.find(m => m.type === 'usage'), { type: 'usage', messageId: 'm1', payload: { total_tokens: 7 } });
+});
+
 test('active busy sends produce a notification without disturbing the current turn', async () => {
     const { worker, provider, output, statuses } = await adapter();
     worker.postMessage({ type: 'chatMessage', message: 'Alice' }); await flush(3);

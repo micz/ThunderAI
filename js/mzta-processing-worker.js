@@ -59,6 +59,7 @@ export class ProcessingWorker {
         this.session = session;
         this.format = format;
         this.generation = 0;
+        this.usage = [];
         this.receiveQueue = Promise.resolve();
         worker.onmessage = ({ data }) => {
             this.receiveQueue = this.receiveQueue.then(() => this.receive(data)).catch(error => {
@@ -128,6 +129,7 @@ export class ProcessingWorker {
             }
             this.response = '';
             this.thinking = '';
+            this.usage = [];
             this.preparing = false;
             this.status('complete');
             this.worker.postMessage({ ...data, message: prepared.input.message });
@@ -148,10 +150,16 @@ export class ProcessingWorker {
             this.busy = false;
             this.response = '';
             this.thinking = '';
+            this.usage = [];
         } else if (data.type === 'newToken' || data.type === 'newThinkingToken') {
             if (!this.response && !this.thinking) this.status('receiving');
             if (data.type === 'newToken') this.response += data.payload.token;
             else this.thinking += data.payload.token;
+            return;
+        } else if (data.type === 'usage') {
+            // The chat opens the answer's turn on its first token, and drops a usage
+            // that arrives with no turn open: hold it until the restored content.
+            this.usage.push(data);
             return;
         } else if (data.type === 'tokensDone' || data.type === 'error') {
             const generation = this.generation;
@@ -173,8 +181,10 @@ export class ProcessingWorker {
             if (this.disposed || generation !== this.generation) return;
             if (output.thinking) this.emit({ type: 'newThinkingToken', payload: { token: output.thinking } });
             if (output.content) this.emit({ type: 'newToken', payload: { token: output.content, thinkingSeparated: true } });
+            for (const usage of this.usage) this.emit(usage);
             this.response = '';
             this.thinking = '';
+            this.usage = [];
             this.busy = false;
             data = data.type === 'error' ? { ...data, payload: output.error || data.payload } :
                 { ...data, payload: { ...data.payload, thinking: output.thinking } };

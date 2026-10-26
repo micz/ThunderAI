@@ -200,7 +200,10 @@ startup; only processing calls await its registration-state read.
   24 h; its shared classifier shuts down 60 s after its last lease is released.
 - Providers retain processed history, including original raw model responses.
   Postprocessed replies are UI/action-only and never sent as subsequent history.
-  Usage/retry metadata passes through unchanged. A provider's `requestAborted`
+  Usage/retry metadata passes through unchanged; `usage` is held with the buffered
+  turn and emitted after the restored content, right before `tokensDone`, because
+  the chat opens the answer's turn on its first token and drops a usage that
+  arrives with no turn open. A provider's `requestAborted`
   releases the pending turn, allowing a new send with the same processing session.
 - ChatGPT Web is not covered: while the switch is on, a prompt on that connection is
   blocked with an alert before any tab opens (see "ChatGPT Web").
