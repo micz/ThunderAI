@@ -42,6 +42,17 @@ policy is reflected at the next start and nothing of the user's is ever touched.
   `position_display`, `position_compose`, `position_context`, `show_in`, `custom_icon`,
   `need_custom_text`, `api_type`, `chatgpt_web_model`, `chatgpt_web_project`,
   `chatgpt_web_custom_gpt` — never the prompt text.
+  On the way back, `getOrgPrompts()` applies only the **display** fields of the entry stored
+  under the org prompt's composed id (`applyOrgPromptDisplayProperties()`, whitelist
+  `ORG_PROMPT_DISPLAY_FIELDS`): `position_display`, `position_compose`, `position_context`,
+  `show_in`, `custom_icon`. They override what the policy says (the policy has no way to lock
+  them), each only when in domain (a number or numeric string, one of the four `show_in`
+  values, a string); a missing or malformed entry or field leaves the policy value, or the
+  `normalizePromptFields()` default. The other five fields, and anything else an entry holds,
+  are ignored: `need_custom_text`, `api_type` and the ChatGPT Web fields of an org prompt stay
+  the policy's. An entry whose id the policy no longer supplies (a removed prompt, a changed
+  `_org_id`) is never applied, and disappears at the next Save of either prompt page, which
+  rewrites the whole store from what it lists.
 
 **Three getters, deliberately.** All three are thin views over `buildPromptSet()`, which
 merges the four sets once and **marks** the three reasons a prompt can be inactive —

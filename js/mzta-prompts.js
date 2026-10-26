@@ -629,7 +629,52 @@ async function getOrgPrompts() {
     // selection_text and custom_text_array, buildPromptSet() sets the transient flags - would
     // otherwise change the cached prompt for the rest of the session (a custom placeholder
     // expanded once would stay frozen at that value until Thunderbird restarts).
-    return structuredClone(await loadOrgPrompts());
+    const prompts = structuredClone(await loadOrgPrompts());
+    if (prompts.length === 0) return prompts;
+    // Read on every call, not cached with the policy: the user changes them while the session
+    // runs (pages/menu_order/, pages/customprompts/).
+    const prefs = await browser.storage.local.get({_default_prompts_properties: null});
+    prompts.forEach(prompt => applyOrgPromptDisplayProperties(prompt, prefs._default_prompts_properties));
+    return prompts;
+}
+
+// The fields of a stored _default_prompts_properties entry an organization prompt takes back:
+// its menu positions, its visibility and its icon, the user's own display preferences.
+// setDefaultPromptsProperties() writes the same entry for an org prompt as for a built-in
+// (keyed by its composed id), so the entry also holds need_custom_text, api_type and the
+// ChatGPT Web fields: those stay what the policy says, as does anything else an entry holds.
+const ORG_PROMPT_DISPLAY_FIELDS = {
+    position_display: isStoredPosition,
+    position_compose: isStoredPosition,
+    position_context: isStoredPosition,
+    show_in: v => ['popup', 'context', 'both', 'none'].includes(v),
+    custom_icon: v => typeof v === 'string',
+};
+
+// A position as setDefaultPromptsProperties() writes it: a number, or a numeric string. ""
+// is what it writes for a prompt that had none, so it leaves the policy value in place.
+function isStoredPosition(v) {
+    if (typeof v === 'number') return Number.isFinite(v);
+    return typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v));
+}
+
+/**
+ * Apply the user's stored display properties to an organization prompt, in place.
+ *
+ * Only the ORG_PROMPT_DISPLAY_FIELDS, and each only when its stored value is in domain: a
+ * missing or malformed entry, or field, leaves the policy value (or the normalised default).
+ * An entry for an org prompt the policy no longer supplies (or supplies under another
+ * _org_id) is simply never looked up; the next Save of either page drops it, as it rewrites
+ * the whole store from the prompts it lists.
+ */
+function applyOrgPromptDisplayProperties(prompt, storedProps) {
+    if (!storedProps || typeof storedProps !== 'object' || Array.isArray(storedProps)) return;
+    if (!Object.prototype.hasOwnProperty.call(storedProps, prompt.id)) return;
+    const entry = storedProps[prompt.id];
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return;
+    for (const [field, isValid] of Object.entries(ORG_PROMPT_DISPLAY_FIELDS)) {
+        if (isValid(entry[field])) prompt[field] = entry[field];
+    }
 }
 
 async function loadOrgPrompts() {
