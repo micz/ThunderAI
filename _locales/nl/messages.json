@@ -473,5 +473,17 @@
     },
     "customPrompts_form_label_use_diff_viewer": {
         "message": "Vergelijkingsweergave inschakelen"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "Beschikbaar als \"Actie\" op \"Vervang tekst\" staat."
+    },
+    "customPrompts_do_reply": {
+        "message": "Antwoord maken"
+    },
+    "customPrompts_insert_at_cursor": {
+        "message": "Invoegen bij cursorpositie"
+    },
+    "chatgpt_win_working": {
+        "message": "Wordt aan gewerkt..."
     }
 }
