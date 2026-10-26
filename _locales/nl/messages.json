@@ -464,5 +464,14 @@
     },
     "customPrompts_form_label_ID_rules_prompt": {
         "message": "Dient uniek te zijn, kleine letters, zonder spaties en mag niet beginnen met prompt_"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Ingeschakeld"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "Vraag om extra tekst"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Vergelijkingsweergave inschakelen"
     }
 }
