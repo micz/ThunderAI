@@ -366,7 +366,7 @@
         "message": "要使用 ChatGPT API，您需要一个 OpenAI ChatGPT API 密钥并且必须选择一个模型。"
     },
     "importPrompts_confirmText": {
-        "message": "您即将导入新的提示。"
+        "message": "您即将导入新的提示词。"
     },
     "customPrompts_start_import": {
         "message": "开始导入自定义提示词..."
@@ -1020,5 +1020,44 @@
     },
     "CORS_localhost_warn": {
         "message": "如果您使用 localhost 或 127.0.0.1，因为 AI 服务器托管在您的 PC 上，则需要 <all_urls> 权限。"
+    },
+    "customPrompts_error_id_reserved": {
+        "message": "ID 不能以 prompt_ 开头：因为该前缀是保留给内置提示符的。"
+    },
+    "customPrompts_error_required": {
+        "message": "名字和提示词文字为必填项。"
+    },
+    "customPrompts_error_name_percent": {
+        "message": "名称中不能包含百分号 (%)。"
+    },
+    "customPrompts_autosave_info": {
+        "message": "所有更改都会立即保存。"
+    },
+    "customPrompts_import_saved_now": {
+        "message": "导入的提示词将立即保存。"
+    },
+    "customPrompts_import_completed_saved": {
+        "message": "自定义提示词已导入并保存！"
+    },
+    "customPrompts_save_error": {
+        "message": "保存提示词时出错："
+    },
+    "customPrompts_form_label_ID_rules_prompt": {
+        "message": "必须唯一，全部小写，不含空格，且不能以 prompt_ 开头"
+    },
+    "customPrompts_insert_at_cursor": {
+        "message": "在光标位置插入"
+    },
+    "chatgpt_win_insert_at_cursor": {
+        "message": "在光标处插入"
+    },
+    "chatgpt_win_retrying": {
+        "message": "正在重试…"
+    },
+    "chatgpt_composer_click_to_continue": {
+        "message": "找不到 ChatGPT 消息框。请点击消息框内继续。"
+    },
+    "prefs_full_guide": {
+        "message": "完整指南"
     }
 }
