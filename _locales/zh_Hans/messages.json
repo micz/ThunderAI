@@ -1059,5 +1059,41 @@
     },
     "prefs_full_guide": {
         "message": "完整指南"
+    },
+    "customPrompts_view_table": {
+        "message": "表格"
+    },
+    "customPrompts_view_switch": {
+        "message": "视图"
+    },
+    "customPrompts_new_prompt": {
+        "message": "+ 新的提示词"
+    },
+    "customPrompts_badge_system": {
+        "message": "系统"
+    },
+    "customPrompts_badge_personal": {
+        "message": "个人的"
+    },
+    "customPrompts_badge_readonly": {
+        "message": "只读"
+    },
+    "customPrompts_system_tooltip": {
+        "message": "系统提示词，只读"
+    },
+    "customPrompts_system_banner": {
+        "message": "系统提示词：其文本无法更改。复制此提示词即可创建您自己的版本。"
+    },
+    "customPrompts_org_banner": {
+        "message": "组织提示词：此提示词由您所在组织的配置策略管理，无法更改。您可以复制此提示词以创建自己的版本。"
+    },
+    "customPrompts_btnDuplicate": {
+        "message": "复制"
+    },
+    "customPrompts_btnDuplicateEdit": {
+        "message": "复制并编辑"
+    },
+    "customPrompts_btnSavePrompt": {
+        "message": "保存"
     }
 }
