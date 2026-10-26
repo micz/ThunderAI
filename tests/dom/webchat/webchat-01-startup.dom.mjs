@@ -24,7 +24,9 @@ import {
     after,
 } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { assertHarnessClean } from '../../helpers/core/dom-harness.mjs';
+import { REPO } from '../../helpers/core/load.mjs';
 import { webchatTests } from '../../helpers/known-issues/webchat.mjs';
 import {
     openWebchat,
@@ -301,7 +303,11 @@ k.test('zoom-reset', S_ZOOM, 'Ctrl + "0" resets to 100%, persisted as 1', async 
 });
 
 k.test('zoom-components-rem', S_ZOOM, 'the components scale with the root: the input field is sized in rem, not px', () => {
-    const style = sq(ctx.document, 'message-input', 'style').textContent;
+    // The component's CSS is an adopted stylesheet, not a <style> (the page's CSP). Read as its
+    // module writes it: jsdom's CSSOM drops a longhand that follows a `font` shorthand, so the
+    // sheet's parsed rules would lose the very font-size checked here.
+    assert.equal(sq(ctx.document, 'message-input').shadowRoot.adoptedStyleSheets.length, 1);
+    const style = readFileSync(new URL('api_webchat/messageInput.js', REPO), 'utf8');
     assert.match(style, /#messageInputField\s*\{[^}]*font-size:\s*[\d.]+rem/);
 });
 

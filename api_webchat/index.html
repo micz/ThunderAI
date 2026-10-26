@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- Defense in depth for the model output shown in the transcript (issue #1001), on top of
+         the sanitizer and of the manifest's default CSP. connect-src allows any http(s) host:
+         the context-window lookup (contextWindow.js) fetches from this page, at a user-defined
+         host for Ollama. No inline style either: the components use adoptedStyleSheets. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self' http: https:; worker-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
     <meta charset="utf-8">
     <title>ThunderAI</title>
     <link rel="stylesheet" type="text/css" href="styles.css">
@@ -16,7 +21,7 @@
             <span id="appHeaderApi" hidden><span class="pill_dot"></span><span id="appHeaderApiName"></span></span>
         </div>
         <messages-area></messages-area>
-        <message-input style="position:relative;"></message-input>
+        <message-input></message-input>
     </div>
 
     <!-- Include the JavaScript files at bottom to avoid blocking UI -->

@@ -41,6 +41,7 @@ export async function openWebchat({
     local = {},
     commands = {},
     permissions,
+    openDefaultBrowser,
 } = {}) {
     // An llm with no worker (an unknown connection type) expects none: any construction throws.
     const worker = expectWorker(Object.hasOwn(WORKER_FILES, llm) ? WORKER_FILES[llm] : null);
@@ -55,6 +56,8 @@ export async function openWebchat({
         query,
         local,
         permissions,
+        // The outcome of windows.openDefaultBrowser(url) (the webchat plugin).
+        openDefaultBrowser,
         commands: { [ready]: () => true, ...commands },
     });
     return { ctx, worker, ready };

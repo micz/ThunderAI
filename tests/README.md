@@ -93,7 +93,8 @@ tests/
 │   │   ├── known-issues.mjs    the known-issue mechanism: knownTest(), runKnown()
 │   │   └── dom-harness.mjs     DOM harness: openPage(), openDocument(), the strict browser proxy,
 │   │                           settle() (the only core file that imports jsdom)
-│   ├── plugins/<area>.mjs      an area's hooks into the core (today: managed.mjs, chatgptweb.mjs)
+│   ├── plugins/<area>.mjs      an area's hooks into the core (today: managed.mjs, chatgptweb.mjs,
+│   │                           webchat.mjs)
 │   ├── known-issues/<area>.mjs an area's known issues and their shape (today: managed.mjs,
 │   │                           static.mjs, prompts.mjs, api.mjs, ui.mjs, webchat.mjs, migration.mjs,
 │   │                           compose.mjs, background.mjs, chatgptweb.mjs)
@@ -235,7 +236,7 @@ does, in the browser's order:
 1. parses the page's **real HTML file** at its `moz-extension://` URL;
 2. exposes the jsdom window's globals (`window`, `document`, `navigator`, `Event` and the
    other event classes, `HTMLElement` and friends, `DOMParser`, `XPathResult`, `Option`,
-   `customElements`, `ShadowRoot`, `NodeFilter`…) on
+   `customElements`, `ShadowRoot`, `NodeFilter`, `CSSStyleSheet`…) on
    `globalThis`, where the page's module code looks them up. The list is explicit: copying
    the whole window would shadow Node's own `URL`, timers and so on;
 3. installs the browser mock through `startPage()`, extended with the page-side APIs

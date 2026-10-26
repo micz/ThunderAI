@@ -100,6 +100,8 @@ const WINDOW_GLOBALS = [
     'FileReader', 'DataTransfer',
     // The webchat page is built from custom elements with open shadow roots.
     'customElements', 'ShadowRoot', 'NodeFilter',
+    // Constructable stylesheets, for a shadow root's adoptedStyleSheets.
+    'CSSStyleSheet',
 ];
 
 /**
