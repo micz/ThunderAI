@@ -21,7 +21,7 @@ const policy = (orgId = 'acme') => ({
         { id: 'reply', name: 'ACME reply', text: 'Reply to {%mail_text_body%}', type: '1', action: '1',
           show_in: 'context', custom_icon: 'clock.png', position_display: 7, position_compose: 7, position_context: 7 },
         { id: 'summary', name: 'ACME summary', text: 'Summarize {%mail_text_body%}', type: '0', action: '0',
-          show_in: 'both', custom_icon: 'clock.png' },
+          show_in: 'both', custom_icon: 'clock.png', api_type: 'chatgpt_api' },
         { id: 'plain', name: 'ACME plain', text: 'Plain {%mail_text_body%}', type: '0', action: '0',
           show_in: 'both', custom_icon: 'clock.png', position_display: 9 },
         { id: 'nostore', name: 'ACME not stored', text: 'x {%mail_text_body%}', type: '0', action: '0' },
@@ -147,6 +147,45 @@ test('a new _org_id composes new ids: the stored preferences of the old ones do 
     assert.equal(inv.org_acme2_reply.show_in, 'context');
     assert.equal(inv.org_acme2_reply.position_display, 7);
     assert.equal(inv.org_acme2_nostore.show_in, 'popup');
+});
+
+// savePrompt() (and clearPromptAPI(), which goes through it) used to take an org prompt for a
+// custom one, by its is_default "0": setCustomPrompts() then dropped it and nothing was saved.
+
+test('savePrompt() with an org prompt stores its display preferences, never the prompt', async () => {
+    const p = await ctx.prompts.loadPrompt('org_acme_summary');
+    Object.assign(p, { show_in: 'context', custom_icon: 'airport.png', position_context: 2,
+        text: 'HIJACKED', api_type: 'ollama_api' });
+    await ctx.prompts.savePrompt(p);
+    const local = ctx.ctl.localData();
+    assert.equal((local._custom_prompt || []).some(c => c.id === 'org_acme_summary'), false);
+    assert.equal(local._default_prompts_properties.org_acme_summary.show_in, 'context');
+    const back = org(await ctx.prompts.getPromptsForMenuOrder()).org_acme_summary;
+    assert.equal(back.show_in, 'context');
+    assert.equal(back.custom_icon, 'airport.png');
+    assert.equal(back.position_context, 2);
+    assert.equal(back.text, 'Summarize {%mail_text_body%}');
+    assert.equal(back.api_type, 'chatgpt_api', 'the policy api_type stays');
+});
+
+test('clearPromptAPI() on an org prompt leaves the policy connection and the display preferences', async () => {
+    await ctx.prompts.clearPromptAPI('org_acme_summary');
+    const back = org(await ctx.prompts.getPromptsForMenuOrder()).org_acme_summary;
+    assert.equal(back.api_type, 'chatgpt_api');
+    assert.equal(back.show_in, 'context');
+    assert.equal((ctx.ctl.localData()._custom_prompt || []).some(c => String(c.is_org) === '1'), false);
+});
+
+test('savePrompt() with a built-in keeps the org prompts\' entries', async () => {
+    const before = structuredClone(ctx.ctl.localData()._default_prompts_properties);
+    const builtIn = await ctx.prompts.loadPrompt('prompt_reply');
+    builtIn.custom_icon = 'clock.png';
+    await ctx.prompts.savePrompt(builtIn);
+    const after = ctx.ctl.localData()._default_prompts_properties;
+    assert.equal(after.prompt_reply.custom_icon, 'clock.png');
+    for (const id of Object.keys(before).filter(id => id.startsWith('org_'))) {
+        assert.deepEqual(after[id], before[id], id);
+    }
 });
 
 test('a malformed _default_prompts_properties store breaks nothing', async () => {

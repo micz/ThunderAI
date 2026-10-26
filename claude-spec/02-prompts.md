@@ -53,6 +53,11 @@ policy is reflected at the next start and nothing of the user's is ever touched.
   the policy's. An entry whose id the policy no longer supplies (a removed prompt, a changed
   `_org_id`) is never applied, and disappears at the next Save of either prompt page, which
   rewrites the whole store from what it lists.
+  `savePrompt()` routes an org prompt (`is_default: "0"` like a custom one) to the built-ins'
+  branch, not to `setCustomPrompts()`: it writes that prompt's entry and every built-in's,
+  **keeping** the other entries of the store, so saving one prompt never erases the org
+  prompts' preferences. `clearPromptAPI()` on an org prompt therefore changes nothing that is
+  read back: its `api_type` and connection fields are the policy's.
 
 **Three getters, deliberately.** All three are thin views over `buildPromptSet()`, which
 merges the four sets once and **marks** the three reasons a prompt can be inactive —
