@@ -39,7 +39,7 @@
         "message": "ThunderAI"
     },
     "prompt_translate_this": {
-        "message": "翻译这个"
+        "message": "翻译"
     },
     "prompt_this": {
         "message": "提示这个"
@@ -57,7 +57,7 @@
         "message": "默认的提示词无法直接编辑。要创建修改后的版本，请使用“复制并编辑”。要在菜单中隐藏提示词，请使用菜单顺序设置。"
     },
     "customPrompts_managePrompts_info_default_2": {
-        "message": "你可以导入和导出提示。具有相同ID的现有提示将会被覆盖。具有新ID的提示会被添加。"
+        "message": "你可以导入和导出提示。具有相同 ID 的现有提示将会被覆盖。具有新 ID 的提示会被添加。"
     },
     "customPrompts_btnDelete": {
         "message": "删除"
@@ -108,7 +108,7 @@
         "message": "排除标签"
     },
     "spamfilter_no_reports": {
-        "message": "尚未筛选出垃圾邮件。此处您只能找到当前会话的最近 100 条垃圾邮件报告的列表。"
+        "message": "还没有邮件经过垃圾邮件筛查。此处会显示最近 100 条垃圾邮件报告的列表。"
     },
     "SpamReport_Title": {
         "message": "垃圾邮件过滤报告"
@@ -132,13 +132,13 @@
         "message": "必须是唯一的、小写且没有空格"
     },
     "customPrompts_reindexing_list": {
-        "message": "重新索引列表..."
+        "message": "重新索引列表…"
     },
     "customPrompts_form_label_enabled": {
         "message": "启用"
     },
     "customPrompts_start_saving": {
-        "message": "正在保存提示词..."
+        "message": "正在保存提示词…"
     },
     "customPrompts_managePrompts_info_default_3": {
         "message": "如果一切正确，在导入完成后点击“保存所有”按钮。"
@@ -192,7 +192,7 @@
         "message": "替换文本"
     },
     "chatgpt_win_working": {
-        "message": "工作正在进行中..."
+        "message": "工作正在进行中…"
     },
     "prompt_spamfilter": {
         "message": "检测垃圾邮件"
@@ -207,19 +207,19 @@
         "message": "自动添加标签"
     },
     "prefs_OptionText_spamfilter_Info": {
-        "message": "如果选中，ThunderAI将自动将垃圾邮件移至垃圾邮件文件夹。"
+        "message": "如果选中，ThunderAI 将自动将垃圾邮件移至垃圾邮件文件夹。"
     },
     "chatgpt_textarea_not_found_error": {
         "message": "看起来 ChatGPT 页面加载时间太长。如果加载完成，请点击右边的按钮。如果问题仍然存在，请检查服务状态。"
     },
     "prefs_OptionText_add_tags_auto_Info": {
-        "message": "如果选中，AI将自动为新收到的电子邮件添加标签。"
+        "message": "如果选中，AI 将自动为新收到的电子邮件添加标签。"
     },
     "prefs_OptionText_add_tags_auto_force_existing_Info": {
-        "message": "如果选中，AI 将仅向新收到的电子邮件添加现有标签，而不会创建新标签。"
+        "message": "如果选中，AI 将只添加现有标签，不会创建新标签。"
     },
     "prefs_OptionText_add_tags_auto_only_inbox": {
-        "message": "仅向收件箱电子邮件添加标签"
+        "message": "仅对收件箱中的邮件添加标签"
     },
     "placeholder_thunderai_def_sign": {
         "message": "ThunderAI 选项中定义的默认签名。"
@@ -231,7 +231,7 @@
         "message": "主题"
     },
     "chatgpt_user_not_logged_in": {
-        "message": "您尚未登录ChatGPT。请使用您的凭据登录，关闭ChatGPT窗口，然后重复您尝试的操作。随后您将保持登录状态。"
+        "message": "您尚未登录 ChatGPT。请使用您的凭据登录，关闭 ChatGPT 窗口，然后重复您尝试的操作。随后您将保持登录状态。"
     },
     "prefs_OptionText_default_chatgpt_lang": {
         "message": "默认回复语言"
@@ -294,7 +294,7 @@
         "message": "回复发件人"
     },
     "chatgpt_force_completion_title": {
-        "message": "如果ChatGPT已完成处理但按钮未显示，请点击此处启用“使用最后答案”按钮。"
+        "message": "如果 ChatGPT 已完成处理但按钮未显示，请点击此处启用“使用最后答案”按钮。"
     },
     "prefs_ChatGPT_API_Key": {
         "message": "ChatGPT API 密钥"
@@ -330,7 +330,7 @@
         "message": "选定的文本"
     },
     "placeholder_account_email_address": {
-        "message": "帐户电子邮件地址"
+        "message": "账户电子邮件地址"
     },
     "chatgpt_force_completion": {
         "message": "强制完成"
@@ -345,7 +345,7 @@
         "message": "您尝试导入的文件不是有效的自定义提示文件。"
     },
     "prefsInfoDesc_4": {
-        "message": "若要使用此集成功能，您需要搭建一台兼容OpenAI API的本地服务器（如LM Studio）。服务器启动后，请在应用程序中的指定字段填入其地址。为确保ThunderAI与本地服务器之间通信正常，请务必正确配置CORS设置。"
+        "message": "若要使用此集成功能，您需要搭建一台兼容 OpenAI API 的本地服务器（如 LM Studio）。服务器启动后，请在应用程序中的指定字段填入其地址。为确保 ThunderAI 与本地服务器之间通信正常，请务必正确配置 CORS 设置。"
     },
     "prefs_OptionText_chatgpt_win_text": {
         "message": "AI 聊天窗口尺寸"
@@ -354,7 +354,7 @@
         "message": "宽度"
     },
     "prefsInfoDesc_3": {
-        "message": "若要使用与Ollama的集成功能，您需要先搭建本地Ollama服务器。服务器运行后，在应用程序中的指定字段输入其地址。为确保ThunderAI与Ollama服务器之间通信正常，请记得设置环境变量OLLAMA_ORIGINS=moz-extension://*。"
+        "message": "若要使用与 Ollama 的集成功能，您需要先搭建本地 Ollama 服务器。服务器运行后，在应用程序中的指定字段输入其地址。为确保 ThunderAI 与 Ollama 服务器之间通信正常，请记得设置环境变量 OLLAMA_ORIGINS=moz-extension://*。"
     },
     "importPrompts_invalidPrompts": {
         "message": "您尝试导入的文件不包含任何有效提示词。"
@@ -369,7 +369,7 @@
         "message": "您即将导入新的提示词。"
     },
     "customPrompts_start_import": {
-        "message": "开始导入自定义提示词..."
+        "message": "开始导入自定义提示词…"
     },
     "prefs_Connection_type": {
         "message": "连接类型"
@@ -381,10 +381,10 @@
         "message": "您提供的文本太长。您需要缩短它。"
     },
     "Loading": {
-        "message": "加载中..."
+        "message": "加载中…"
     },
     "prefsInfoDesc_1": {
-        "message": "有时，ChatGPT的网页界面可能会发生更改，导致插件功能无法正常运行。请查看本页底部的“服务状态”页面链接以获取最新信息。此外，请记住，首次使用ThunderAI时，您需要先登录ChatGPT。"
+        "message": "有时，ChatGPT 的网页界面可能会发生更改，导致插件功能无法正常运行。请查看本页底部的“服务状态”页面链接以获取最新信息。此外，请记住，首次使用 ThunderAI 时，您需要先登录 ChatGPT。"
     },
     "prefs_OptionText_do_debug_info": {
         "message": "激活调试系统"
@@ -429,7 +429,7 @@
         "message": "将以下电子邮件翻译成 {%thunderai_translate_lang%}。\n\n规则：\n- 翻译主题和正文。\n- 以包含三个字段（“subject”、“body”和“status”）的 JSON 对象形式返回结果。\n- 如果翻译已完成，则状态等于 1。\n- 如果电子邮件是以这些语言“{%thunderai_translate_exclude_lang%}”之一或 {%thunderai_translate_lang%} 语言编写的，请为主体和主题返回空字符串，并将状态设置为 -1。\n- 请勿在 JSON 之外添加解释、注释或任何文本。\n\n邮件主题：{%mail_subject%}\n\n邮件正文：{%mail_html_body%}\n\n仅以 JSON 格式生成响应。输出应仅为一个 JSON 对象。以下是要使用的 JSON 格式示例：\n\n{\n\n\"subject\": \"主题翻译\",\n\"body\": \"正文翻译\",\n\"status\": \"状态结果\"\n}"
     },
     "prompt_add_tags": {
-        "message": "为这封电子邮件添加标签"
+        "message": "添加标签"
     },
     "prefs_OptionText_add_tags_maxnum_Info": {
         "message": "AI 建议的最大标签数量。如果不想限制标签数量，请设置为 0。"
@@ -546,7 +546,7 @@
         "message": "ThunderAI 警告"
     },
     "prefs_SurveyLinkText2": {
-        "message": "单击此处，只需一分钟！"
+        "message": "分享您的反馈"
     },
     "prompt_add_tags_full_text": {
         "message": "分析以下邮件正文，并生成一个总结其内容的 JSON 标签数组。使用主题、关键话题和相关描述符作为标签。确保标签简洁且与邮件内容相关。\n邮件正文：{%mail_text_body%}\n考虑以下背景详情：\n- 发件人：{%author%}\n- 收件人：{%recipients%}\n- 抄送列表：{%cc_list%}\n- 邮件主题：{%mail_subject%}\n请根据邮件的正文和背景信息生成标签，忽略不必要的信息或琐碎的细节。\n仅以 JSON 格式生成响应。输出应仅为标签的 JSON 数组，不含任何额外注释或文本。以下是要使用的 JSON 格式示例：\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
@@ -639,7 +639,7 @@
         "message": "使用排除列表过滤后，未找到有效标签。"
     },
     "prefs_SurveyLinkText": {
-        "message": "分享您的反馈并帮助改进 ThunderAI！"
+        "message": "您觉得 ThunderAI 好用吗？"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "尝试获取 Google Gemini 模型时出错"
@@ -648,7 +648,7 @@
         "message": "开发者消息"
     },
     "prefs_OptionText_download_now": {
-        "message": "立即下载ThunderAI Sparks！"
+        "message": "立即下载 ThunderAI Sparks！"
     },
     "thunderai_error_title": {
         "message": "ThunderAI 错误"
@@ -681,7 +681,7 @@
         "message": "管理垃圾邮件过滤器设置"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "从以下文本中提取生成日历事件所需的所有相关细节。提取的信息应包括：\n- 事件标题\n- 事件描述（对邮件背景、关键主题/议程、行动事项以及任何视频通话链接或访问详情的简要总结）\n- 开始日期和时间（如果指定时区，则包括时区）\n- 结束日期和时间（如果指定时区，则包括时区）\n- 全天事件（如果提及）\n- 地点（如果提及，具体建筑、房间或在线链接）\n- 参与者 \n确保数据格式清晰且一致，以便可以直接用于创建日历事件。\n如果存在相对时间的引用，请注意邮件的日期和时间为“{%mail_datetime%}”。基于此参考计算开始日期和时间。如果计算出的开始日期和时间早于“{%current_datetime%}”，则使用“{%current_datetime%}”作为基准重新计算开始日期和时间。\n如果未指定持续时间，请将其设置为一小时。\n以下是参与者：{%author%}, {%recipients%}, {%cc_list%}。如有，请排除我的地址：{%account_email_address%}。\n如果该活动为全天活动，endDate 必须为 startDate 的后一天，且时间设置为 \"T000000\"。\n如果无法获取一个或多个所需信息，请以空字符串响应。\n仅以 JSON 格式生成响应。不要包含任何额外的文本或说明，仅提供 JSON。以下是使用的格式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"日历事件摘要\",\n\"description\": \"详细的事件描述，包括议程、行动事项和邮件中的相关注释。\",\n\"forceAllDay\": false,\n\"location\": \"地点或URL在此\",\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\n以下是文本：“{%mail_text_body_or_selected%}”"
+        "message": "从以下文本中提取生成日历事件所需的所有相关细节。提取的信息应包括：\n- 事件标题\n- 事件描述（对邮件背景、关键主题/议程、行动事项以及任何视频通话链接或访问详情的简要总结）\n- 开始日期和时间（如果指定时区，则包括时区）\n- 结束日期和时间（如果指定时区，则包括时区）\n- 全天事件（如果提及）\n- 地点（如果提及，具体建筑、房间或在线链接）\n- 参与者 \n确保数据格式清晰且一致，以便可以直接用于创建日历事件。\n如果存在相对时间的引用，请注意邮件的日期和时间为“{%mail_datetime%}”。基于此参考计算开始日期和时间。如果计算出的开始日期和时间早于“{%current_datetime%}”，则使用“{%current_datetime%}”作为基准重新计算开始日期和时间。\n如果未指定持续时间，请将其设置为一小时。\n以下是参与者：{%author%}, {%recipients%}, {%cc_list%}。如有，请排除我的地址：{%account_email_address%}。\n如果该活动为全天活动，endDate 必须为 startDate 的后一天，且时间设置为 \"T000000\"。\n如果无法获取一个或多个所需信息，请以空字符串响应。\n仅以 JSON 格式生成响应。不要包含任何额外的文本或说明，仅提供 JSON。以下是使用的格式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"日历事件摘要\",\n\"description\": \"详细的事件描述，包括议程、行动事项和邮件中的相关注释。\",\n\"forceAllDay\": false,\n\"location\": \"地点或 URL 在此\",\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\n以下是文本：“{%mail_text_body_or_selected%}”"
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "从所选文本添加新日历事件"
@@ -696,7 +696,7 @@
         "message": "在此页面中，您可以修改用于从选定文本获取日历事件的默认提示。"
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "在自动标记或使用上下文菜单时强制使用现有标签"
+        "message": "强制使用现有标签"
     },
     "prefs_OptionText_add_tags_auto_only_inbox_Info": {
         "message": "如果选中，AI 将仅向收件箱文件夹中收到的电子邮件添加标签。"
@@ -705,7 +705,7 @@
         "message": "管理日历活动设置"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
-        "message": "要使用日历事件功能，请安装 ThunderAI Sparks 插件。"
+        "message": "要使用日历事件和任务功能，请安装 ThunderAI Sparks 插件。"
     },
     "placeholder_mail_datetime": {
         "message": "电子邮件的日期和时间"
@@ -726,7 +726,7 @@
         "message": "获取日历事件数据时出错"
     },
     "prompt_spamfilter_full_text": {
-        "message": "分析以下邮件并判断它是否为垃圾邮件。考虑因素包括可疑关键词、过多的宣传语言、误导性的主题行、索取个人信息的请求以及异常的发件人地址。\n提供一个从 0（非垃圾邮件）到 100（垃圾邮件）的值，并附上不超过 10 个单词的解释。\n如果消息数据缺失，将数值设为0（非垃圾邮件），并说明原因。\n仅以 JSON 格式生成响应。不要包含任何额外文本或解释；仅提供 JSON。以下是使用的格式：\n{\n\"explanation\": \"简要说明您的判断理由\",\n\"spamValue\": <0 到 100 的整数>\n}\n以下是邮件信息：\n发件人：“{%author%}”\n主题：“{%mail_subject%}”\nHTML 正文：“{%mail_html_body%}”"
+        "message": "分析以下邮件并判断它是否为垃圾邮件。考虑因素包括可疑关键词、过多的宣传语言、误导性的主题行、索取个人信息的请求以及异常的发件人地址。\n提供一个从 0（非垃圾邮件）到 100（垃圾邮件）的值，并附上不超过 10 个单词的解释。\n如果消息数据缺失，将数值设为 0（非垃圾邮件），并说明原因。\n仅以 JSON 格式生成响应。不要包含任何额外文本或解释；仅提供 JSON。以下是使用的格式：\n{\n\"explanation\": \"简要说明您的判断理由\",\n\"spamValue\": <0 到 100 的整数>\n}\n以下是邮件信息：\n发件人：“{%author%}”\n主题：“{%mail_subject%}”\nHTML 正文：“{%mail_html_body%}”"
     },
     "prefs_OptionText_spamfilter_threshold_Info": {
         "message": "如果 AI 返回的值高于此阈值，电子邮件将被移至垃圾邮件文件夹。"
@@ -759,7 +759,7 @@
         "message": "强制指定的时区"
     },
     "prefs_OptionText_calendar_enforce_timezone_Info": {
-        "message": "如果选中，将强制对日历事件使用指定的时区。"
+        "message": "如果选中，将强制对日历事件和任务使用指定的时区。"
     },
     "btn_show_differences": {
         "message": "显示差异"
@@ -789,10 +789,10 @@
         "message": "说明"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "当操作设置为“替换文本”时，可以选择文本差异查看器。"
+        "message": "仅在“操作”为“替换文本”时可用。"
     },
     "prompt_reply_custom_command": {
-        "message": "使用附加的提示词指令..."
+        "message": "使用附加的提示词指令…"
     },
     "prompt_string": {
         "message": "提示词"
@@ -911,7 +911,7 @@
         "message": "显示一个额外的菜单项，用于根据剪贴板文本内容创建日历事件。"
     },
     "prompt_summarize": {
-        "message": "总结这封或这些邮件"
+        "message": "生成摘要"
     },
     "prompt_summarize_full_text": {
         "message": "请提供以下电子邮件的简明摘要。摘要应不超过 3-5 句话，并概括要点。请使用纯段落格式，不要使用项目符号、列表或 Markdown 格式。\n\n"
@@ -932,7 +932,7 @@
         "message": "添加新任务"
     },
     "prompt_get_task_full_text": {
-        "message": "从以下文本中提取生成任务所需的所有相关详细信息。提取的信息应包括：\n- 开始日期和时间（如果指定，包括时区）\n- 截止日期和时间（如果指定，包括时区）\n- 任务摘要\n- 任务描述（对邮件背景、关键主题和行动事项的简要总结）\n- 地点（如果提及，具体建筑、房间或在线链接）\n- 确保数据格式清晰且一致，以便直接用于创建任务。\n如果存在相对时间引用，请认为电子邮件的日期和时间为“{%mail_datetime%}”。根据此参考计算开始日期和时间。如果计算出的开始日期和时间早于“{%current_datetime%}”，请使用“{%current_datetime%}”作为基准重新计算开始日期和时间。\n如果您无法获取一项或多项所需信息，请回复空字符串。\n仅以 JSON 格式生成响应。不要包含任何额外的文本或说明；仅提供 JSON。以下是要使用的格式：\n{\n\"initialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"在此处填写任务摘要\",\n\"description\": \"详细的任务描述，包括行动事项和邮件中的相关注释。\",\n\"location\": \"地点或URL在此\"\n}\n如果没有关于日期的信息，请将其删除。\n以下是文本：“{%selected_text%}”"
+        "message": "从以下文本中提取生成任务所需的所有相关详细信息。提取的信息应包括：\n- 开始日期和时间（如果指定，包括时区）\n- 截止日期和时间（如果指定，包括时区）\n- 任务摘要\n- 任务描述（对邮件背景、关键主题和行动事项的简要总结）\n- 地点（如果提及，具体建筑、房间或在线链接）\n- 确保数据格式清晰且一致，以便直接用于创建任务。\n如果存在相对时间引用，请认为电子邮件的日期和时间为“{%mail_datetime%}”。根据此参考计算开始日期和时间。如果计算出的开始日期和时间早于“{%current_datetime%}”，请使用“{%current_datetime%}”作为基准重新计算开始日期和时间。\n如果您无法获取一项或多项所需信息，请回复空字符串。\n仅以 JSON 格式生成响应。不要包含任何额外的文本或说明；仅提供 JSON。以下是要使用的格式：\n{\n\"initialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"在此处填写任务摘要\",\n\"description\": \"详细的任务描述，包括行动事项和邮件中的相关注释。\",\n\"location\": \"地点或 URL 在此\"\n}\n如果没有关于日期的信息，请将其删除。\n以下是文本：“{%selected_text%}”"
     },
     "prefs_OptionText_get_task": {
         "message": "从选定文本添加新任务"
@@ -974,7 +974,7 @@
         "message": "未收到来自 AI 的有效数据。"
     },
     "prefs_OptionText_add_tags_auto_Info2": {
-        "message": "请在页面底部选择要为其激活此功能的帐户。"
+        "message": "请在页面底部选择要为其激活此功能的账户。"
     },
     "prefs_OptionText_add_tags_auto_uselist": {
         "message": "仅使用这些标签"
@@ -1010,7 +1010,7 @@
         "message": "使用 OpenAI 兼容 API 可能需要在服务器上设置 CORS 设置。"
     },
     "CORS_alternative_1": {
-        "message": "CORS设置有问题吗？"
+        "message": "CORS 设置有问题吗？"
     },
     "CORS_alternative_2_new": {
         "message": "点击下方按钮授予当前主机权限，以避免任何 CORS 问题。"
@@ -1118,7 +1118,7 @@
         "message": "选项"
     },
     "customPrompts_col_actions": {
-        "message": "行动"
+        "message": "操作"
     },
     "customPrompts_label_text": {
         "message": "提示词文本"
@@ -1131,5 +1131,2061 @@
     },
     "customPrompts_chip_need_signature": {
         "message": "签名"
+    },
+    "prefs_shortcut_label": {
+        "message": "打开 ThunderAI 菜单的快捷键"
+    },
+    "prefs_disclaimer_short": {
+        "message": "LLM 模型可能生成不正确的信息，您的数据也可能被服务提供商用于训练新模型。"
+    },
+    "prefs_footer_translate": {
+        "message": "翻译本插件"
+    },
+    "prefs_footer_donate": {
+        "message": "捐赠支持"
+    },
+    "customPrompts_promptsCount": {
+        "message": "$COUNT$ 条提示词",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "customPrompts_promptsCount_filtered": {
+        "message": "显示 $SHOWN$ 条，共 $TOTAL$ 条提示词",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_search_placeholder": {
+        "message": "按名称、ID 或文本搜索…"
+    },
+    "customPrompts_filter_active": {
+        "message": "已筛选：$SHOWN$ / $TOTAL$",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_filter_noMatches": {
+        "message": "没有匹配的提示词"
+    },
+    "customPrompts_filter_clear": {
+        "message": "清除筛选"
+    },
+    "customPrompts_view_detail": {
+        "message": "详情"
+    },
+    "customPrompts_label_connection": {
+        "message": "连接方式"
+    },
+    "customPrompts_chip_need_custom_text": {
+        "message": "补充文字"
+    },
+    "customPrompts_chip_define_response_lang": {
+        "message": "语言"
+    },
+    "customPrompts_chip_use_diff_viewer": {
+        "message": "对比"
+    },
+    "customPrompts_flag_fixed_suffix": {
+        "message": "已由提示词固定"
+    },
+    "customPrompts_new_prompt_title": {
+        "message": "新建提示词"
+    },
+    "customPrompts_no_selection": {
+        "message": "请从列表中选择一条提示词，或新建一条。"
+    },
+    "customPrompts_dirty_confirm": {
+        "message": "您正在编辑的提示词有尚未应用的更改。您想如何处理？"
+    },
+    "customPrompts_dirty_apply": {
+        "message": "应用更改"
+    },
+    "customPrompts_dirty_discard": {
+        "message": "放弃更改"
+    },
+    "customPrompts_error_id": {
+        "message": "ID 为必填项，不能包含空格，且必须唯一。"
+    },
+    "Models_Fetch": {
+        "message": "更新列表"
+    },
+    "Models_Fetch_Done": {
+        "message": "模型列表已加载"
+    },
+    "placeholder_mail_full_headers": {
+        "message": "邮件的全部邮件头"
+    },
+    "placeholder_mail_plain_text_part": {
+        "message": "邮件原始的纯文本部分，不由 HTML 部分转换而来（最适合商务邮件和自动化邮件；在订阅邮件中可能为空或只有占位内容）"
+    },
+    "prefs_OptionText_diff_granularity": {
+        "message": "更改比较粒度"
+    },
+    "prefs_OptionText_diff_granularity_info": {
+        "message": "更改选择器如何将原文与 AI 回答进行比较。“单词”适合纠正拼写和语法；当回答重写了整句话时，用“句子”更易读。请注意，对于只有一句话的文本，“句子”会把整段文本显示为一处更改。您在审阅更改时也可以在两者之间切换。"
+    },
+    "prefs_OptionText_diff_granularity_words": {
+        "message": "单词"
+    },
+    "prefs_OptionText_diff_granularity_sentences": {
+        "message": "句子"
+    },
+    "prefs_OptionText_hide_thinking": {
+        "message": "默认折叠思考块"
+    },
+    "prefs_OptionText_hide_thinking_info": {
+        "message": "控制回答上方所显示的思考块的初始状态。如果选中，该块默认折叠，单击可展开。如果未选中，该块默认展开，单击可折叠。思考内容始终会保留。"
+    },
+    "prefs_OptionText_chat_show_usage_data": {
+        "message": "在聊天中显示用量数据"
+    },
+    "prefs_OptionText_chat_show_usage_data_info": {
+        "message": "API 报告的 Token 数量会显示在每条回答的按钮旁边。单击可打开详细信息，包括本次对话占用的模型上下文比例，以及整个聊天会话的合计数量。"
+    },
+    "prefs_OptionText_chat_show_usage_data_openai_comp_note": {
+        "message": "使用 OpenAI 兼容的 API 时，是否可用取决于具体的服务器实现：某些服务器从不报告 Token 用量。"
+    },
+    "prefs_OptionText_thinking_summary": {
+        "message": "思考"
+    },
+    "prefs_OptionText_special_command_timeout": {
+        "message": "特殊命令超时（ms）"
+    },
+    "prefs_OptionText_special_command_timeout_Info": {
+        "message": "挂起的 AI 请求（自动添加标签、垃圾邮件过滤、摘要、翻译）在被中止前等待的毫秒数。如果您使用的是速度较慢的本地模型，请调大此值。此项仅适用于基于 API 的连接方式，不适用于 ChatGPT Web 界面。"
+    },
+    "prefs_OptionText_batch_max_concurrency": {
+        "message": "并行处理的邮件数"
+    },
+    "prefs_OptionText_batch_max_concurrency_Info": {
+        "message": "一次处理多封邮件时同时处理的邮件数量上限，例如收到新邮件或选中多封邮件时。每封邮件会依次经过它的各项功能（垃圾邮件过滤、添加标签、摘要、翻译），因此这也是同时发出的 AI 请求数量上限。数值越大速度越快，但可能触发 AI 服务提供商的速率限制，或使 Ollama 等本地模型过载。"
+    },
+    "prefs_OptionText_chatgpt_web_model_extended_check": {
+        "message": "扩展模型检查"
+    },
+    "prefs_OptionText_chatgpt_web_model_extended_check_info": {
+        "message": "如果选中，ThunderAI 会在发送提示词前短暂打开 ChatGPT 的模型菜单，读取当前选定的模型。仅校验已知的模型（目前为 gpt-6 和 gpt-6-thinking）。当 ChatGPT 更改其页面后，此检查可能失效。"
+    },
+    "prefs_extra_body_error_invalid": {
+        "message": "JSON 无效："
+    },
+    "prefs_extra_body_error_not_object": {
+        "message": "该值必须是用花括号包裹的 JSON 对象。"
+    },
+    "prefs_OptionText_openai_comp_extra_body_info": {
+        "message": "以 JSON 对象形式随每次 API 调用一同发送的附加参数。适用于本服务支持但 ThunderAI 未提供的选项，例如禁用思考模式：{\"chat_template_kwargs\": {\"thinking\": false}} 或 {\"top_p\": 0.9}。由 ThunderAI 管理的参数（model、messages、streaming、temperature）无法在此覆盖。无效的值会被忽略。"
+    },
+    "prefs_OptionText_add_tags_max_messages_Info": {
+        "message": "可从上下文菜单一次性添加标签的所选邮件最大数量。对于设有每日请求配额的 AI 服务提供商很有用。对来信的自动添加标签不受限制。设置为 0 表示不限制。"
+    },
+    "prefs_OptionText_append_email_link": {
+        "message": "附加原始邮件的链接"
+    },
+    "prefs_OptionText_calendar_append_email_link_Info": {
+        "message": "如果选中，会在事件描述的末尾添加原始邮件的链接。如果 AI 未返回描述，描述中将只包含该链接。当事件由剪贴板创建时此选项不可用。"
+    },
+    "prefs_OptionText_task_append_email_link_Info": {
+        "message": "如果选中，会在任务描述的末尾添加原始邮件的链接。如果 AI 未返回描述，描述中将只包含该链接。"
+    },
+    "calendar_email_link_label": {
+        "message": "原始邮件："
+    },
+    "prompt_calendar_reminder_format": {
+        "message": "除上述字段外，还要在 JSON 对象中添加一个 \"reminderMinutes\" 字段，它的值必须是以下三种之一：整数，按本提示词中给出的提醒规则，提醒需要设置在事件开始前多少分钟；null，表示给出了提醒规则但没有一条规则适用；字符串 \"default\"，表示完全没有给出提醒规则。"
+    },
+    "prompt_task_reminder_format": {
+        "message": "除上述字段外，还要在 JSON 对象中添加一个 \"reminderMinutes\" 字段，它的值必须是以下三种之一：整数，按本提示词中给出的提醒规则，提醒需要设置在任务截止时间前（若无截止时间，则在其起始时间前）多少分钟；null，表示给出了提醒规则但没有一条规则适用；字符串 \"default\"，表示完全没有给出提醒规则。"
+    },
+    "prompt_reminder_rules_intro": {
+        "message": "提醒规则："
+    },
+    "prefs_OptionText_reminder_enabled": {
+        "message": "让 AI 设置提醒"
+    },
+    "prefs_OptionText_calendar_reminder_enabled_Info": {
+        "message": "如果选中，将要求 AI 按照提醒规则设置提醒，提醒时间相对于事件开始时间。规则可以写在下面的字段中，也可以直接写在主提示词中：两种情况下都必须选中此选项。如果没有规则适用，则创建的事件不带提醒。如果下面的字段和主提示词中都没有编写规则，则应用 Thunderbird 的默认提醒设置。如果未选中，则始终应用 Thunderbird 的默认提醒设置。"
+    },
+    "prefs_OptionText_task_reminder_enabled_Info": {
+        "message": "如果选中，将要求 AI 按照提醒规则设置提醒，提醒时间相对于任务的截止时间（若没有截止时间，则相对于其起始时间）。规则可以写在下面的字段中，也可以直接写在主提示词中：两种情况下都必须选中此选项。如果没有规则适用，则创建的任务不带提醒。如果下面的字段和主提示词中都没有编写规则，则应用 Thunderbird 的默认提醒设置。如果未选中，则始终应用 Thunderbird 的默认提醒设置。"
+    },
+    "prefs_OptionText_reminder_rules_title": {
+        "message": "提醒规则"
+    },
+    "prefs_OptionText_reminder_rules_Info": {
+        "message": "请用自然语言编写规则。此字段为可选项：如果留空，规则将取自上方的主提示词。"
+    },
+    "prefs_OptionText_calendar_reminder_rules_example": {
+        "message": "示例：“如果事件在上午举行且地点在 A 楼或 B 楼，就把提醒设在提前 45 分钟。如果在下午，就提前 15 分钟。其他情况不设置提醒。”"
+    },
+    "prefs_OptionText_task_reminder_rules_example": {
+        "message": "示例：“如果任务与付款有关，就把提醒设在截止时间前一天。如果与报告有关，就提前两小时。其他情况不设置提醒。”"
+    },
+    "reminder_prompt_warning": {
+        "message": "主提示词中包含 \"reminderMinutes\"，但未选中“让 AI 设置提醒”：主提示词中的提醒指令会被忽略，在该选项被选中之前将应用 Thunderbird 的默认提醒。"
+    },
+    "prompt_add_tags_force_existing": {
+        "message": "只能从下面这个以逗号分隔的现有标签列表中选择标签，原样使用其中的写法，不得自行编造新标签"
+    },
+    "prefs_OptionText_add_tags_auto_include_sent": {
+        "message": "也为已发送的邮件添加标签"
+    },
+    "prefs_OptionText_add_tags_auto_include_sent_Info": {
+        "message": "自动处理从不会在草稿箱、模板、发件箱、垃圾邮件箱和废纸篓文件夹中运行，也会跳过已发送邮件文件夹。如果选中，AI 还会为您发送的邮件添加标签。"
+    },
+    "prefs_OptionText_get_calendar_event_use_specific_integration_Info": {
+        "message": "如果选中，创建日历事件时将使用下面指定的模型和 API，而不管在 ThunderAI 选项页面中选择的是哪一个。"
+    },
+    "placeholder_thunderai_translate_lang": {
+        "message": "邮件翻译中要使用的语言。"
+    },
+    "placeholder_thunderai_translate_exclude_lang": {
+        "message": "遇到时不予翻译的语言代码。"
+    },
+    "placeholder_mail_attachments_info": {
+        "message": "邮件中附件的信息"
+    },
+    "placeholder_empty": {
+        "message": "此占位符不会添加任何文本，但可阻止邮件正文被自动追加到提示词末尾。"
+    },
+    "prefs_OptionText_summarize": {
+        "message": "邮件摘要"
+    },
+    "prefs_OptionText_summarize_use_specific_integration_Info": {
+        "message": "如果选中，生成邮件摘要时将使用下面指定的模型和 API，而不管在 ThunderAI 选项页面中选择的是哪一个。"
+    },
+    "prefs_OptionText_summarize_Info": {
+        "message": "如果选中，将在上下文菜单中添加一项，用于对邮件生成摘要。"
+    },
+    "prefs_OptionText_btnManageSummarizeInfo": {
+        "message": "管理摘要设置"
+    },
+    "Summarize_PageTitle": {
+        "message": "管理摘要设置"
+    },
+    "Summarize_info_default": {
+        "message": "在此页面中，您可以修改用于生成邮件摘要的默认提示词。"
+    },
+    "Summarize_prompt_text_title": {
+        "message": "当前提示词文本"
+    },
+    "prefs_OptionText_use_specific_integration": {
+        "message": "使用指定的模型和 API"
+    },
+    "prefs_OptionText_spamfilter_use_specific_integration_Info": {
+        "message": "如果选中，垃圾邮件过滤将使用下面指定的模型和 API，而不管在 ThunderAI 选项页面中选择的是哪一个。"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel": {
+        "message": "显示垃圾邮件报告面板"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel_Info": {
+        "message": "如果选中，将在邮件上方显示包含垃圾邮件报告的面板。"
+    },
+    "prefs_OptionText_spamfilter_only_inbox": {
+        "message": "仅在收件箱中运行"
+    },
+    "prefs_OptionText_spamfilter_only_inbox_Info": {
+        "message": "启用后，自动垃圾邮件过滤器只检查收件箱文件夹中收到的邮件，忽略投递到其他文件夹的邮件。"
+    },
+    "SpamFilter_skip_addresses_title": {
+        "message": "邮件地址跳过列表"
+    },
+    "SpamFilter_skip_addresses_infoline": {
+        "message": "来自这些地址或域名的邮件不会发送给 AI 做垃圾邮件过滤。"
+    },
+    "SpamFilter_block_addresses_title": {
+        "message": "邮件地址屏蔽列表"
+    },
+    "SpamFilter_block_addresses_infoline": {
+        "message": "来自这些地址或域名的邮件将始终被报告为垃圾邮件，不会发送给 AI。自动运行垃圾邮件过滤时，它们会被移至垃圾邮件箱。"
+    },
+    "SpamFilter_address_lists_precedence": {
+        "message": "如果某个发件人同时出现在两个列表中，以更具体的条目为准（完整地址优先于域名）；如果两个条目同样具体，则以跳过列表为准。两个列表都会先于地址簿进行检查。"
+    },
+    "spamfilter_block_addresses_explanation": {
+        "message": "发件人已在反垃圾邮件屏蔽列表中。"
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook": {
+        "message": "跳过通讯录中的地址"
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook_Info": {
+        "message": "如果选中，来自您通讯录中发件人的邮件将不会发送给 AI 进行垃圾邮件过滤。"
+    },
+    "spamfilter_skip_addressbook_explanation": {
+        "message": "发件人是通讯录中的联系人。"
+    },
+    "spamfilter_prompt_missing_explanation": {
+        "message": "缺少垃圾邮件过滤器的专用提示词。如果您修改过专用提示词，请尝试恢复默认的垃圾邮件过滤器提示词。"
+    },
+    "addressbook_permission_denied": {
+        "message": "通讯录权限被拒绝。请重新启用该功能以授予权限。"
+    },
+    "addressbook_permission_error": {
+        "message": "请求通讯录权限时出错，请重试。"
+    },
+    "feature_permission_missing": {
+        "message": "“$FEATURE$”无法工作：Thunderbird 尚未授予 ThunderAI 所需的权限。要授予该权限，请打开 ThunderAI 设置，将此选项关闭后重新开启。",
+        "placeholders": {
+            "feature": {
+                "content": "$1",
+                "example": "Add tags to emails"
+            }
+        }
+    },
+    "feature_permission_missing_managed": {
+        "message": "“$FEATURE$”已由您的组织启用，但 Thunderbird 尚未授予 ThunderAI 所需的权限，因此无法工作。请联系您的管理员。",
+        "placeholders": {
+            "feature": {
+                "content": "$1",
+                "example": "Automatic Spam Filter"
+            }
+        }
+    },
+    "feature_permission_denied": {
+        "message": "Thunderbird 未授予“$FEATURE$”所需的权限，因此该选项保持关闭。",
+        "placeholders": {
+            "feature": {
+                "content": "$1",
+                "example": "Add tags to emails"
+            }
+        }
+    },
+    "feature_permission_error": {
+        "message": "请求“$FEATURE$”所需的权限时出错，请重试。",
+        "placeholders": {
+            "feature": {
+                "content": "$1",
+                "example": "Add tags to emails"
+            }
+        }
+    },
+    "spamfilter_addressbook_permission_missing": {
+        "message": "垃圾邮件过滤器未检查通讯录，因为 Thunderbird 尚未授予 ThunderAI 访问通讯录的权限；这些邮件仍照常进行了分析。要授予权限，请在垃圾邮件过滤器设置中将“$FEATURE$”关闭后重新开启。",
+        "placeholders": {
+            "feature": {
+                "content": "$1",
+                "example": "Skip address books addresses"
+            }
+        }
+    },
+    "Spam": {
+        "message": "垃圾邮件"
+    },
+    "apiwebchat_picker_title": {
+        "message": "审阅更改"
+    },
+    "apiwebchat_picker_toolbar": {
+        "message": "更改选择器操作"
+    },
+    "apiwebchat_picker_counter": {
+        "message": "已接受 $TOTAL$ 项更改中的 $ACCEPTED$ 项",
+        "placeholders": {
+            "accepted": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_counter_all": {
+        "message": "已接受全部 $TOTAL$ 项更改",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_step_short": {
+        "message": "$CURRENT$ / $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_long": {
+        "message": "第 $CURRENT$ 项更改，共 $TOTAL$ 项",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_total": {
+        "message": "$TOTAL$ 项更改",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_more_actions": {
+        "message": "更多操作"
+    },
+    "apiwebchat_picker_edit": {
+        "message": "手动编辑"
+    },
+    "apiwebchat_picker_review": {
+        "message": "返回更改审阅"
+    },
+    "apiwebchat_picker_editor": {
+        "message": "编辑后的文本"
+    },
+    "apiwebchat_picker_edit_hint": {
+        "message": "您正在手动编辑文本。如果您修改了文本，返回更改审阅时会再次将您编写的内容与原文进行比较，并且所有选择都会被重置。"
+    },
+    "apiwebchat_picker_granularity": {
+        "message": "比较方式"
+    },
+    "apiwebchat_picker_granularity_words": {
+        "message": "单词"
+    },
+    "apiwebchat_picker_granularity_sentences": {
+        "message": "句子"
+    },
+    "apiwebchat_picker_accept_all": {
+        "message": "全部接受"
+    },
+    "apiwebchat_picker_reject_all": {
+        "message": "全部拒绝"
+    },
+    "apiwebchat_picker_prev": {
+        "message": "上一处更改"
+    },
+    "apiwebchat_picker_next": {
+        "message": "下一处更改"
+    },
+    "apiwebchat_picker_no_changes": {
+        "message": "回答与原始文本完全相同：没有需要审阅的内容。"
+    },
+    "apiwebchat_picker_diff_failed": {
+        "message": "无法比较这两个文本。回答将以原样显示。"
+    },
+    "apiwebchat_picker_side_old_active": {
+        "message": "原文，已保留：$TEXT$",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_old_inactive": {
+        "message": "原文，已弃用：$TEXT$。激活以改为保留该项。",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_active": {
+        "message": "建议文本，已保留：$TEXT$",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_inactive": {
+        "message": "建议文本，已弃用：$TEXT$。激活以改为保留该项。",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_empty_active": {
+        "message": "此处没有文本：这部分将被省略。激活另一版本以保留其文本。"
+    },
+    "apiwebchat_picker_side_empty_inactive": {
+        "message": "此处没有文本。激活以省略这部分。"
+    },
+    "apiwebchat_retrying": {
+        "message": "服务器不可用（$REASON$），$SECONDS$ 秒后重试（第 $ATTEMPT$ 次尝试，共 $MAX$ 次）",
+        "placeholders": {
+            "reason": {
+                "content": "$1",
+                "example": "HTTP 503"
+            },
+            "seconds": {
+                "content": "$2",
+                "example": "2"
+            },
+            "attempt": {
+                "content": "$3",
+                "example": "1"
+            },
+            "max": {
+                "content": "$4",
+                "example": "3"
+            }
+        }
+    },
+    "apiwebchat_retrying_rate_limit": {
+        "message": "已达到速率限制，$SECONDS$ 秒后重试（第 $ATTEMPT$ 次尝试，共 $MAX$ 次）",
+        "placeholders": {
+            "seconds": {
+                "content": "$1",
+                "example": "10"
+            },
+            "attempt": {
+                "content": "$2",
+                "example": "2"
+            },
+            "max": {
+                "content": "$3",
+                "example": "5"
+            }
+        }
+    },
+    "apiwebchat_retry_reason_network": {
+        "message": "网络错误"
+    },
+    "apiwebchat_retry_reason_timeout": {
+        "message": "请求超时"
+    },
+    "apiwebchat_unknown_connection": {
+        "message": "未知的连接类型“$TYPE$”：此聊天窗口无法发送任何内容。请打开 ThunderAI 设置并选择一个 AI 服务。",
+        "placeholders": {
+            "type": {
+                "content": "$1",
+                "example": "foo_api"
+            }
+        }
+    },
+    "apiwebchat_request_cancelled": {
+        "message": "请求已取消。"
+    },
+    "apiwebchat_done": {
+        "message": "完成！"
+    },
+    "apiwebchat_copy": {
+        "message": "复制"
+    },
+    "apiwebchat_copied": {
+        "message": "已复制"
+    },
+    "apiwebchat_copy_failed": {
+        "message": "复制失败"
+    },
+    "apiwebchat_status_error": {
+        "message": "错误"
+    },
+    "apiwebchat_show_options": {
+        "message": "显示选项"
+    },
+    "apiwebchat_turn_tools": {
+        "message": "回答操作"
+    },
+    "apiwebchat_usage_label": {
+        "message": "Token 用量"
+    },
+    "apiwebchat_usage_input": {
+        "message": "输入"
+    },
+    "apiwebchat_usage_output": {
+        "message": "输出"
+    },
+    "apiwebchat_usage_total": {
+        "message": "总计"
+    },
+    "apiwebchat_usage_chip_tokens": {
+        "message": "$COUNT$ 个 Token",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_chip_output_tokens": {
+        "message": "$COUNT$ 个输出 Token",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_of_which_cached": {
+        "message": "其中已缓存"
+    },
+    "apiwebchat_usage_of_which_cache_write": {
+        "message": "其中写入缓存"
+    },
+    "apiwebchat_usage_of_which_reasoning": {
+        "message": "其中推理"
+    },
+    "apiwebchat_usage_duration": {
+        "message": "耗时"
+    },
+    "apiwebchat_usage_speed": {
+        "message": "$RATE$ tok/s",
+        "placeholders": {
+            "rate": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_usage_context": {
+        "message": "上下文"
+    },
+    "apiwebchat_usage_context_value": {
+        "message": "$USED$ / $MAX$ · $PCT$%",
+        "placeholders": {
+            "used": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            },
+            "pct": {
+                "content": "$3"
+            }
+        }
+    },
+    "apiwebchat_usage_context_warn": {
+        "message": "可考虑新建一个聊天"
+    },
+    "apiwebchat_usage_session_total": {
+        "message": "会话总计"
+    },
+    "apiwebchat_scroll_to_latest": {
+        "message": "滚动到最新内容"
+    },
+    "Replace_No_Selected_Text": {
+        "message": "未选定文本，是否要在邮件开头插入 AI 的回答？"
+    },
+    "prefs_ollama_num_ctx": {
+        "message": "上下文 Token 数量"
+    },
+    "prefs_ollama_num_ctx_Info": {
+        "message": "Ollama API 使用的上下文 Token 数量。如果不想将其作为参数传递给服务器，请设为 0。"
+    },
+    "ask_chatgptweb_permission_1": {
+        "message": "要使用 ChatGPT Web 集成，您需要授予所需的权限。"
+    },
+    "ask_anthropic_api_permission_1": {
+        "message": "要使用 Claude API 集成，您需要授予所需的权限。"
+    },
+    "ask_openai_api_permission_1": {
+        "message": "要使用 OpenAI API 集成，您需要授予所需的权限。"
+    },
+    "ask_integration_permission_2_popup": {
+        "message": "点击此处打开新标签页，并按说明操作。"
+    },
+    "ask_integration_permission_2": {
+        "message": "点击此处继续。"
+    },
+    "ask_integration_permission_ok": {
+        "message": "权限已授予。您可以点击此处关闭此标签页并返回主窗口。"
+    },
+    "AccountSelector_AutoTags": {
+        "message": "选择启用自动添加标签的账户"
+    },
+    "AccountSelector_AutoTags_infoline": {
+        "message": "每项更改都会立即保存。"
+    },
+    "AccountSelector_Spamfilter": {
+        "message": "选择启用自动垃圾邮件过滤的账户"
+    },
+    "AccountSelector_managed_note": {
+        "message": "这些账户由您所在组织的配置策略选定，无法在此处更改。"
+    },
+    "AccountSelector_managed_none": {
+        "message": "您所在组织的配置策略将此功能限制在此配置文件中不存在的账户上，因此该功能不会在任何账户上自动运行。"
+    },
+    "prefs_OptionText_chatgpt_web_project": {
+        "message": "ChatGPT Web 项目"
+    },
+    "prefs_OptionText_chatgpt_web_project_info": {
+        "message": "这是将强制用于 ChatGPT Web 界面的项目。"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt": {
+        "message": "ChatGPT Web 自定义 GPT"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt_info": {
+        "message": "这是将强制用于 ChatGPT Web 界面的自定义 GPT。"
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info": {
+        "message": "必须采用以下格式："
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info2": {
+        "message": "打开相关的 ChatGPT 页面后，您可以在浏览器地址栏中找到正确的值。"
+    },
+    "customPrompts_Properties": {
+        "message": "属性"
+    },
+    "customPrompts_show_additional_info": {
+        "message": "显示附加属性"
+    },
+    "customPrompts_hide_additional_info": {
+        "message": "隐藏附加属性"
+    },
+    "prefs_OptionText_CustomGPT_Warn": {
+        "message": "如果在选项或提示词中指定了项目，它将覆盖自定义 GPT 设置。"
+    },
+    "prefs_OptionText_Project_No_temporary_chat_warn": {
+        "message": "如果在选项或提示词中指定了项目，将不会使用临时聊天。"
+    },
+    "prefs_Anthropic_API_Key": {
+        "message": "Claude API 密钥"
+    },
+    "prefs_Connection_type_Anthropic_API": {
+        "message": "Claude API"
+    },
+    "Anthropic_Models": {
+        "message": "Claude 模型"
+    },
+    "Anthropic_Models_Error_fetching": {
+        "message": "尝试获取 Claude 模型时出错"
+    },
+    "Anthropic_Version": {
+        "message": "Claude API 版本"
+    },
+    "Anthropic_Version_Info": {
+        "message": "必需。除非您清楚自己在做什么，否则请勿更改此值。更多信息请参阅："
+    },
+    "prefs_OptionText_anthropic_max_tokens": {
+        "message": "最大 Token 数"
+    },
+    "prefs_OptionText_anthropic_max_tokens_Info": {
+        "message": "生成的回答中最大的 Token 数量。提示词的 Token 数加上 max_tokens 不能超过模型的上下文长度。"
+    },
+    "prefs_OptionText_anthropic_top_p_Info": {
+        "message": "核采样：模型只考虑累积概率达到此值的 Token。取值范围为 0.0 到 1.0。留空则使用模型默认值。Anthropic 建议只调整 Temperature 或 Top P 中的一项，不要同时调整两者。较新的 Claude 模型完全不接受此设置，而是改用推理强度设置：选中其中任一模型时，此字段会被禁用，其值不会发送。"
+    },
+    "prefs_OptionText_anthropic_top_k_Info": {
+        "message": "每个后续 Token 只从前 K 个选项中进行采样，剔除长尾的低概率回复。留空则使用模型默认值。较新的 Claude 模型完全不接受此设置，而是改用推理强度设置：选中其中任一模型时，此字段会被禁用，其值不会发送。"
+    },
+    "prefs_OptionText_anthropic_stop_sequences": {
+        "message": "停止序列"
+    },
+    "prefs_OptionText_anthropic_stop_sequences_Info": {
+        "message": "会让模型停止生成的自定义文本序列。每行输入一个序列；空行会被忽略。留空则禁用。所有 Claude 模型都接受此设置。"
+    },
+    "anthropic_warn_thinking_budget_min": {
+        "message": "扩展思考预算必须至少为 $MIN$ 个 Token。当前值不会发送，也不会请求扩展思考。",
+        "placeholders": {
+            "min": {
+                "content": "$1"
+            }
+        }
+    },
+    "anthropic_warn_thinking_budget_max": {
+        "message": "扩展思考预算必须低于最大 Token 数（$MAX$）。当前值不会发送，也不会请求扩展思考。",
+        "placeholders": {
+            "max": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget": {
+        "message": "扩展思考预算（Token 数）"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
+        "message": "模型可用于扩展思考的最大 Token 数。设为 0 以禁用扩展思考。必须低于最大 Token 数。较新的 Claude 模型不接受手动设置预算，而是改用推理强度设置：选中其中任一模型时，此字段会被禁用，其值不会发送。"
+    },
+    "anthropic_empty_apikey": {
+        "message": "您尚未为 Claude API 添加 API 密钥。请在选项页面中添加。"
+    },
+    "anthropic_empty_model": {
+        "message": "您尚未为 Claude API 选择模型。请在选项页面中选择。"
+    },
+    "anthropic_empty_version": {
+        "message": "您尚未为 Claude API 添加版本字符串。请在选项页面中添加。"
+    },
+    "anthropic_api_request_failed": {
+        "message": "Claude API 请求失败"
+    },
+    "anthropic_err_hint_temperature": {
+        "message": "所选的 Claude 模型（$MODEL$）不接受 Temperature 设置。请清空 Temperature 字段，或改用推理强度设置。",
+        "placeholders": {
+            "model": {
+                "content": "$1"
+            }
+        }
+    },
+    "anthropic_err_hint_budget_tokens": {
+        "message": "所选的 Claude 模型（$MODEL$）不接受手动设置扩展思考预算。请将扩展思考预算设为 0，改用推理强度设置。",
+        "placeholders": {
+            "model": {
+                "content": "$1"
+            }
+        }
+    },
+    "anthropic_err_hint_thinking_type": {
+        "message": "所选的 Claude 模型（$MODEL$）不接受此思考配置。请检查扩展思考预算和推理强度设置。",
+        "placeholders": {
+            "model": {
+                "content": "$1"
+            }
+        }
+    },
+    "anthropic_err_hint_effort": {
+        "message": "所选的 Claude 模型（$MODEL$）不接受此推理强度级别。请在选项页面中选择其他级别。",
+        "placeholders": {
+            "model": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_OptionText_anthropic_effort": {
+        "message": "推理强度"
+    },
+    "prefs_OptionText_anthropic_effort_Info": {
+        "message": "模型处理请求时应投入的推理强度。级别越高，复杂任务的回答越好，但消耗的 Token 更多、耗时也更长。保持默认即可让 Claude API 自行决定。较旧的 Claude 模型不支持此设置。"
+    },
+    "anthropic_effort_default": {
+        "message": "默认（由 API 决定）"
+    },
+    "prefs_level_off": {
+        "message": "关闭"
+    },
+    "prefs_level_none": {
+        "message": "无"
+    },
+    "prefs_level_on": {
+        "message": "开启"
+    },
+    "prefs_level_minimal": {
+        "message": "最低"
+    },
+    "prefs_level_low": {
+        "message": "低"
+    },
+    "prefs_level_medium": {
+        "message": "中"
+    },
+    "prefs_level_high": {
+        "message": "高"
+    },
+    "prefs_level_xhigh": {
+        "message": "极高"
+    },
+    "prefs_level_max": {
+        "message": "最高"
+    },
+    "anthropic_note_temperature_unsupported": {
+        "message": "所选模型不接受 Temperature 值，会忽略此字段。请改用推理强度设置。此值会保留，以备您切换回较旧的模型。"
+    },
+    "anthropic_note_budget_tokens_unsupported": {
+        "message": "所选模型不接受手动设置扩展思考预算，会忽略此字段。请改用推理强度设置。此值会保留，以备您切换回较旧的模型。"
+    },
+    "anthropic_note_effort_unsupported": {
+        "message": "所选模型不支持推理强度设置。请改用扩展思考预算。"
+    },
+    "_api_connecting": {
+        "message": "正在尝试使用以下配置连接到 $api_string$…",
+        "placeholders": {
+            "api_string": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_model": {
+        "message": "模型"
+    },
+    "_api_connecting_host": {
+        "message": "主机"
+    },
+    "_api_connecting_version": {
+        "message": "版本"
+    },
+    "prefs_OpenAIComp_AvailableServices": {
+        "message": "可用服务"
+    },
+    "prefs_OpenAIComp_AvailableServices_Info": {
+        "message": "为 OpenAI 兼容的 API 选择一个可用的服务，或手动添加一个。"
+    },
+    "Custom": {
+        "message": "自定义"
+    },
+    "OpenAIComp_Configs_ConfirmApply": {
+        "message": "确定要应用“$config_name$”配置吗？",
+        "placeholders": {
+            "config_name": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_selection_info": {
+        "message": "如果您选中了一部分文本，则只处理选中的内容。"
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": "使用存储"
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": "如果选中，您的对话将由 OpenAI 存储。"
+    },
+    "prefs_chatgpt_api_temperature_Info": {
+        "message": "使用多大的采样 Temperature，取值范围为 0 到 2。较高的值（如 0.8）会让输出更随机，较低的值（如 0.2）会让输出更聚焦、更确定。"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary": {
+        "message": "推理摘要"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_Info": {
+        "message": "向 API 请求模型推理过程的摘要，在聊天中以可折叠区块显示。只有较新的推理模型支持此功能，例如 gpt-5、o3 和 o4-mini；o1-pro 和 o3-mini 等较早的模型会在内部推理，但从不公开摘要，因此该区块保持隐藏。对于不支持推理的模型，请保持禁用。"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort": {
+        "message": "推理强度"
+    },
+    "prefs_OptionText_chatgpt_extra_body_info": {
+        "message": "以 JSON 对象形式随每次 API 调用一并发送的附加参数，例如 {\"top_p\": 0.9}。适用于 OpenAI API 支持但 ThunderAI 未提供的选项。ThunderAI 管理的参数（model、input、streaming、temperature、reasoning、instructions）无法在此覆盖。无效的值会被忽略。"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_Info": {
+        "message": "模型在回答之前投入多少精力进行推理。较低的值回复更快、成本更低，较高的值回复更周密。保持 API 默认值即可让 OpenAI 自行决定。不支持推理的模型会忽略此设置。"
+    },
+    "prefs_OptionText_chatgpt_reasoning_disabled": {
+        "message": "禁用"
+    },
+    "prefs_reasoning_api_default": {
+        "message": "API 默认"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_auto": {
+        "message": "自动"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
+        "message": "详细"
+    },
+    "prefs_OptionText_chatgpt_max_output_tokens_Info": {
+        "message": "模型为单次回答可生成的 Token 数上限，推理模型还包括推理 Token。可接受的最小值是 16。留空或保持为 0 即可让 API 自行决定。"
+    },
+    "prefs_OptionText_chatgpt_verbosity": {
+        "message": "详尽程度"
+    },
+    "prefs_OptionText_chatgpt_verbosity_Info": {
+        "message": "在不改变提示词的前提下，回答应有多长、多详细。只有 gpt-5 系列支持此设置：使用其他模型时此字段会被禁用，其值不会发送。"
+    },
+    "prefs_OptionText_chatgpt_text_format": {
+        "message": "输出格式"
+    },
+    "prefs_OptionText_chatgpt_text_format_Info": {
+        "message": "强制模型以有效的 JSON 作答。“JSON object”只保证回答是有效的 JSON，因此提示词仍需描述您想要的结构；而“JSON schema”还会让回答遵循下方的模式。请注意，这会使聊天窗口中显示的回答变成原始 JSON。"
+    },
+    "prefs_OptionText_chatgpt_text_format_json_object": {
+        "message": "JSON object"
+    },
+    "prefs_OptionText_chatgpt_text_format_json_schema": {
+        "message": "JSON schema"
+    },
+    "prefs_OptionText_chatgpt_text_format_schema_name": {
+        "message": "JSON 模式名称"
+    },
+    "prefs_OptionText_chatgpt_text_format_schema_name_Info": {
+        "message": "为下方的模式指定一个名称，API 要求必须提供。只能使用字母、数字、下划线和连字符。此项为空时，输出格式完全不会发送。"
+    },
+    "prefs_OptionText_chatgpt_text_format_schema": {
+        "message": "JSON schema"
+    },
+    "prefs_OptionText_chatgpt_text_format_schema_Info": {
+        "message": "回答必须遵循的 JSON Schema，以 JSON 对象形式给出。仅在上方输出格式设为“JSON schema”时使用。无效的值会被忽略，并且不发送输出格式。"
+    },
+    "prefs_OptionText_chatgpt_top_p_Info": {
+        "message": "核采样：模型只考虑累积概率达到此值的 Token。取值范围为 0.0 到 1.0。留空则使用模型默认值。OpenAI 建议只调整 Temperature 或 Top P 中的一项，不要同时调整两者。推理模型不接受此设置：选中推理模型时，此字段会被禁用，其值不会发送。"
+    },
+    "prefs_OptionText_chatgpt_truncation": {
+        "message": "截断"
+    },
+    "prefs_OptionText_chatgpt_truncation_Info": {
+        "message": "当对话超出模型的上下文窗口时的处理方式。“自动”会丢弃对话中间的消息使其能够容纳，“禁用”则让请求直接报错失败。"
+    },
+    "prefs_OptionText_chatgpt_truncation_auto": {
+        "message": "自动"
+    },
+    "prefs_OptionText_chatgpt_truncation_disabled": {
+        "message": "禁用"
+    },
+    "prefs_OptionText_chatgpt_prompt_cache_key": {
+        "message": "提示词缓存密钥"
+    },
+    "prefs_OptionText_chatgpt_prompt_cache_key_Info": {
+        "message": "使用相同密钥的请求可以复用 OpenAI 的提示词缓存，从而降低重复提示词的成本和延迟。您可以选择任意字符串：在以相同文本开头的请求中使用同一个密钥。"
+    },
+    "prefs_OptionText_chatgpt_service_tier": {
+        "message": "服务层级"
+    },
+    "prefs_OptionText_chatgpt_service_tier_Info": {
+        "message": "请求使用哪个处理层级。“Flex”和“Priority”仅在部分套餐和模型上可用；当所选层级无法使用时，API 会回退到默认层级。"
+    },
+    "prefs_OptionText_chatgpt_service_tier_auto": {
+        "message": "自动"
+    },
+    "prefs_OptionText_chatgpt_service_tier_default": {
+        "message": "默认"
+    },
+    "prefs_OptionText_chatgpt_service_tier_flex": {
+        "message": "Flex"
+    },
+    "prefs_OptionText_chatgpt_service_tier_priority": {
+        "message": "Priority"
+    },
+    "prefs_OptionText_chatgpt_safety_identifier": {
+        "message": "安全标识符"
+    },
+    "prefs_OptionText_chatgpt_safety_identifier_Info": {
+        "message": "用于标识最终用户的稳定标识符，可帮助 OpenAI 检测来自单个用户的滥用行为。请勿使用电子邮件地址或任何其他个人数据：对其进行哈希处理，或使用在您各次请求中保持不变的任意字符串。此项取代已弃用的 “user” 参数。"
+    },
+    "prefs_OptionText_chatgpt_include_encrypted_reasoning": {
+        "message": "包含加密的推理内容"
+    },
+    "prefs_OptionText_chatgpt_include_encrypted_reasoning_Info": {
+        "message": "请求 API 以加密形式返回模型的推理内容，使其可以在多次请求之间复用，而无需由 OpenAI 存储。仅在上方“使用存储”关闭时才有意义，且仅适用于推理模型。"
+    },
+    "chatgpt_note_sampling_unsupported": {
+        "message": "所选模型不接受此设置，会忽略此字段。请改用推理强度设置。此值会保留，以备您切换回其他模型。"
+    },
+    "chatgpt_note_reasoning_unsupported": {
+        "message": "所选模型不支持推理功能，因此不会发送此设置。此值会保留，以备您切换回支持推理的模型。"
+    },
+    "chatgpt_note_verbosity_unsupported": {
+        "message": "所选模型不支持详尽程度设置，因此不会发送。此值会保留，以备您切换回支持该设置的模型。"
+    },
+    "prefs_ollama_temperature_Info": {
+        "message": "模型的 Temperature。提高该值会让模型的回答更具创造性。默认值为 0.8。建议使用 0 到 1 之间的值。"
+    },
+    "prefs_ollama_think": {
+        "message": "启用思考"
+    },
+    "prefs_ollama_think_Info": {
+        "message": "让模型在回答前先进行推理。“模型默认”不发送任何值，由模型自行决定，某些模型因此仍会进行推理；请选择“关闭”以明确关闭推理。可用的推理级别取决于所选模型，选定模型后会列出。"
+    },
+    "prefs_ollama_think_default": {
+        "message": "模型默认"
+    },
+    "ollama_note_thinking_unsupported": {
+        "message": "所选模型未报告支持思考功能，因此此设置会被忽略。"
+    },
+    "ollama_num_ctx_max_info": {
+        "message": "此模型最多支持 $MAX$ 个上下文 Token。",
+        "placeholders": {
+            "max": {
+                "content": "$1",
+                "example": "131072"
+            }
+        }
+    },
+    "prefs_Ollama_API_Key": {
+        "message": "Ollama API 密钥"
+    },
+    "prefs_Ollama_API_Key_Info": {
+        "message": "仅在使用 ollama.com 的托管 API，或位于需要身份验证的代理之后的自建服务器时才需要。本地标准 Ollama 安装请留空。"
+    },
+    "prefs_ollama_keep_alive": {
+        "message": "保持模型加载"
+    },
+    "prefs_ollama_keep_alive_Info": {
+        "message": "请求结束后 Ollama 将模型保留在内存中的时长：可以是 5m 或 30m 这样的时长、-1 表示无限期保持加载、0 表示立即卸载。留空则使用服务器默认值（5 分钟）。当自动添加标签、垃圾邮件过滤器或自动摘要会在收到的邮件上运行时，调高此值很有用，否则每封邮件都要重新加载模型。"
+    },
+    "Ollama_System_Prompt": {
+        "message": "系统提示词"
+    },
+    "Ollama_System_Prompt_Info": {
+        "message": "在每次对话开始时作为系统消息发送，用于为模型设定角色或持久的指令。"
+    },
+    "prefs_OptionText_ollama_extra_options": {
+        "message": "额外选项"
+    },
+    "prefs_OptionText_ollama_extra_options_info": {
+        "message": "以 JSON 对象形式写入 Ollama “options” 对象的附加参数。适用于 ThunderAI 未提供的选项，例如 {\"top_p\": 0.9, \"seed\": 42} 或 {\"num_predict\": 512}。ThunderAI 管理的参数（上下文 Token 数量、temperature）无法在此覆盖。无效的值会被忽略。"
+    },
+    "prefs_ollama_format_json": {
+        "message": "强制 JSON 输出"
+    },
+    "prefs_ollama_format_json_Info": {
+        "message": "如果选中，将强制 Ollama 返回有效的 JSON 响应。此选项仅适用于支持结构化输出的模型。"
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": "点击以更改回复类型"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": "排除词精确匹配"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": "如果选中，排除列表中的词语将与标签完全匹配。否则，只要标签中包含这些词语也会匹配。"
+    },
+    "customDataPH_manageDataPH": {
+        "message": "管理数据占位符"
+    },
+    "customDataPH_placeholdersCount": {
+        "message": "$COUNT$ 个数据占位符",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": "您还可以像编写自定义提示词一样，使用带自动补全的默认数据占位符。"
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": "在此页面中，您可以定义在自定义提示词中使用的自定义数据占位符。"
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": "ID 相同的现有数据占位符将被覆盖，使用新 ID 的占位符将被添加。"
+    },
+    "customDataPH_ExportAll": {
+        "message": "导出所有自定义数据占位符"
+    },
+    "customDataPH_Import": {
+        "message": "导入新数据占位符"
+    },
+    "customDataPH_form_label_Text": {
+        "message": "数据占位符文本"
+    },
+    "customDataPH_saving_custom": {
+        "message": "正在保存自定义数据占位符…"
+    },
+    "customDataPH_saved": {
+        "message": "自定义数据占位符已保存！"
+    },
+    "customDataPH_save_error": {
+        "message": "保存自定义数据占位符时出错："
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": "添加数据占位符"
+    },
+    "importCustomDataPH_confirmText": {
+        "message": "您即将导入新的自定义数据占位符。"
+    },
+    "importCustomDataPH_start_import": {
+        "message": "开始导入自定义数据占位符…"
+    },
+    "importCustomDataPH_import_completed": {
+        "message": "自定义数据占位符导入完成！您需要点击“保存所有变动”按钮以保存您的更改。"
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": "您尝试导入的文件不是有效的自定义数据占位符文件。"
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": "您尝试导入的文件不包含任何有效的自定义数据占位符。"
+    },
+    "customDataPH_add_to_menu": {
+        "message": "可用于添加到菜单的提示词"
+    },
+    "prefs_OptionText_chatgpt_web_br_replace_info": {
+        "message": "请注意，AI 响应中的所有 <br> 标签都会被替换为换行符。"
+    },
+    "prefs_OpenAIComp_AddManually": {
+        "message": "手动添加"
+    },
+    "prefs_OpenAIComp_ClearList": {
+        "message": "清除列表"
+    },
+    "OpenAIComp_ClearModelsList_Confirm": {
+        "message": "您确定要清除模型列表吗？此操作无法撤销。"
+    },
+    "prefs_api_temperature": {
+        "message": "Temperature"
+    },
+    "prefs_openai_comp_temperature_Info": {
+        "message": "使用多大的采样 Temperature，取值范围为 0 到 2。较高的值（如 0.8）会让输出更随机，较低的值（如 0.2）会让输出更聚焦、更确定。"
+    },
+    "chatgpt_click_force_completion": {
+        "message": "似乎无法判断 ChatGPT 是否已完成回答。点击此处强制完成该任务。"
+    },
+    "warn_API_needed": {
+        "message": "要使用此功能，您需要一个 API 集成（服务），而不是 ChatGPT Web 集成（服务）。您可以先勾选上方的复选框，然后点击左侧的按钮，在功能设置页面中定义一个特定的 API。"
+    },
+    "specific_integration_mandatory_badge": {
+        "message": "必需"
+    },
+    "specific_integration_mandatory_chatgpt_web": {
+        "message": "此选项为必需项，无法关闭：作为全局连接方式选择的 ChatGPT Web 集成（服务）无法运行此功能。请在下方选择一个特定的 API。"
+    },
+    "specific_integration_mandatory_no_connection": {
+        "message": "此选项为必需项，无法关闭：尚未选择全局 AI 连接方式。请在下方选择一个特定的 API，或在 ThunderAI 设置中配置一个全局连接方式。"
+    },
+    "prefs_specific_api_indicator": {
+        "message": "使用 $1",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_google_gemini_thinking_budget": {
+        "message": "Thinking Budget"
+    },
+    "prefs_google_gemini_thinking_budget_Info": {
+        "message": "定义用于思考的 Token 数量。如果所选模型不支持思考，或您想使用默认方法，请将此字段留空。输入 0 可禁用思考，输入 -1 可启用动态思考。"
+    },
+    "prefs_api_max_output_tokens": {
+        "message": "最大输出 Token 数"
+    },
+    "prefs_api_top_p": {
+        "message": "Top P"
+    },
+    "prefs_api_top_k": {
+        "message": "Top K"
+    },
+    "prefs_api_extra_body": {
+        "message": "附加请求体数据"
+    },
+    "prefs_google_gemini_max_output_tokens_Info": {
+        "message": "响应中可生成的最大 Token 数。留空或设为 0 以让模型自行决定。"
+    },
+    "prefs_google_gemini_top_p_Info": {
+        "message": "核采样（Nucleus sampling）：模型仅考虑累计概率达到此值的 Token。可接受的范围和默认值因模型而异。留空可在 API 调用中不设置该参数。"
+    },
+    "prefs_google_gemini_top_k_Info": {
+        "message": "每个后续 Token 只从前 K 个选项中进行采样，剔除长尾的低概率回复。并非所有模型都支持此参数。留空则不在 API 调用中设置该参数。"
+    },
+    "prefs_google_gemini_extra_body_Info": {
+        "message": "每次 API 调用时作为 JSON 对象发送的附加参数。这对于启用 Gemini API 支持但 ThunderAI 未提供的选项非常有用，例如 {\"safetySettings\": []} 或 {\"generationConfig\": {\"seed\": 42}}。\"generationConfig\" 中的键会与 ThunderAI 构建的键合并。ThunderAI 管理的参数（contents、system instruction、thinking、temperature、max output tokens、top P、top K）无法在此处覆盖。无效的值将被忽略。"
+    },
+    "prefs_google_gemini_temperature_Info": {
+        "message": "此参数必须是介于 0.0 到 2.0 之间的数值，用于控制输出的随机性。默认值因模型而异。留空可在 API 调用中不设置该参数。"
+    },
+    "SelectAll": {
+        "message": "全选"
+    },
+    "DeselectAll": {
+        "message": "取消全选"
+    },
+    "Anthropic_System_Prompt": {
+        "message": "系统提示词"
+    },
+    "Anthropic_System_Prompt_Info": {
+        "message": "您可以通过使用系统提示词为 Claude 设定角色来提升其表现。这种称为角色提示（role prompting）的技术，是在 Claude 中使用系统提示词最强大的方式。合适的角色能让 Claude 从一个通用助手变成您的虚拟领域专家。"
+    },
+    "prefs_anthropic_temperature_Info": {
+        "message": "注入响应中的随机程度。取值范围为 0.0 到 1.0，留空时默认为 1.0。较新的 Claude 模型完全不接受此设置，而改用 Effort 设置：选中此类模型时，此字段将被禁用，其值也不会发送。"
+    },
+    "Optional_Permission_Denied_Model_Fetching": {
+        "message": "您已拒绝获取此集成模型列表所需的可选权限。"
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "如果选中，ThunderAI 将在您打开邮件时自动在其上方生成并显示 AI 摘要。请注意，这意味着您预览的所有邮件都会立即发送到已配置的 AI 服务。"
+    },
+    "customPrompts_export_include_api_settings": {
+        "message": "是否要在导出中包含 API 设置？请注意，API 密钥也将保存在文件中！"
+    },
+    "prefs_OptionText_calendar_no_selection": {
+        "message": "不要求选择文本"
+    },
+    "prefs_OptionText_calendar_no_selection_Info": {
+        "message": "如果选中，则无需选择文本。将使用完整的邮件正文来获取日历事件。"
+    },
+    "prefs_OptionText_calendar_no_selection_missing_placeholder": {
+        "message": "提示词必须包含占位符 {%mail_text_body_or_selected%} 或 {%mail_html_body_or_selected%} 才能启用此选项。请向提示词中添加其中一个占位符，或将其重置为默认值。"
+    },
+    "prefs_OptionText_calendar_no_selection_save_missing_placeholder": {
+        "message": "已启用“不要求选择文本”选项，因此提示词必须包含占位符 {%mail_text_body_or_selected%} 或 {%mail_html_body_or_selected%}。请向提示词中添加其中一个占位符，或将其重置为默认值。"
+    },
+    "prefs_OptionText_calendar_no_selection_policy_missing_placeholder": {
+        "message": "您的组织已启用此选项，但提示词既不包含 {%mail_text_body_or_selected%}，也不包含 {%mail_html_body_or_selected%}，因此邮件正文不会发送给 AI。请向提示词中添加其中一个占位符，或将其重置为默认值。"
+    },
+    "managed_banner": {
+        "message": "某些设置由您所在组织管理，无法更改。"
+    },
+    "managed_banner_org": {
+        "message": "某些设置由 $ORG$ 管理，无法更改。",
+        "placeholders": {
+            "org": {
+                "content": "$1",
+                "example": "ACME Corp"
+            }
+        }
+    },
+    "managed_marker": {
+        "message": "已管理"
+    },
+    "managed_marker_org": {
+        "message": "由 $ORG$ 管理",
+        "placeholders": {
+            "org": {
+                "content": "$1",
+                "example": "ACME Corp"
+            }
+        }
+    },
+    "managed_marker_tooltip": {
+        "message": "此设置由您所在组织的配置策略设定，无法在此处更改。"
+    },
+    "managed_prompt_text_tooltip": {
+        "message": "此提示词文本由您所在组织的配置策略设定，无法在此处更改。您仍可以选中并复制它。"
+    },
+    "managed_restriction_tooltip": {
+        "message": "此操作已由您所在组织的配置策略禁用。"
+    },
+    "managed_restriction_prompts": {
+        "message": "提示词管理已由您所在组织的配置策略禁用。无法创建、复制、导入或导出提示词，且您已有的提示词为只读状态，也不会显示在菜单中。"
+    },
+    "customPrompts_policy_inert_note": {
+        "message": "只读且不在菜单中显示：您所在组织的配置策略已禁用提示词管理。您的提示词未被删除。"
+    },
+    "managed_restriction_default_prompts": {
+        "message": "内置提示词已由您所在组织的配置策略禁用。它们仍在此处列出，但不会显示在菜单中。"
+    },
+    "customPrompts_policy_default_inert_note": {
+        "message": "不在菜单中显示：您所在组织的配置策略已禁用内置提示词。"
+    },
+    "menu_order_badge_policy_inactive": {
+        "message": "已由策略禁用"
+    },
+    "menu_order_badge_shadowed": {
+        "message": "已禁用：ID 重复"
+    },
+    "managed_restriction_wizard": {
+        "message": "设置向导已由您所在组织的配置策略禁用。您的 AI 连接采用集中配置。"
+    },
+    "managed_restriction_wizard_title": {
+        "message": "设置向导不可用"
+    },
+    "customPrompts_org_badge": {
+        "message": "组织"
+    },
+    "customPrompts_org_shadowing_note": {
+        "message": "您的某个提示词使用了相同的 ID，在此组织提示词处于启用状态时会被禁用。"
+    },
+    "customPrompts_shadowed_note": {
+        "message": "已禁用：某个组织提示词使用了相同的 ID。您的提示词已保留，如果移除该组织提示词，它将恢复正常工作。"
+    },
+    "copy_text": {
+        "message": "副本"
+    },
+    "spam_check_in_progress": {
+        "message": "正在检查垃圾邮件…"
+    },
+    "prefs_OptionText_summarize_auto": {
+        "message": "自动摘要邮件"
+    },
+    "prefs_OptionText_summarize_auto_Info": {
+        "message": "选择是否在查看邮件时自动生成摘要。需要基于 API 的连接（而非 ChatGPT Web）。"
+    },
+    "prefs_OptionText_summarize_display_mode": {
+        "message": "摘要显示于"
+    },
+    "prefs_OptionText_summarize_display_mode_Info": {
+        "message": "选择摘要结果显示的位置。内联模式会在邮件窗格中直接显示一个摘要横幅。聊天窗口模式会打开 AI 聊天窗口。"
+    },
+    "prefs_OptionText_summarize_max_display_length": {
+        "message": "最大显示长度"
+    },
+    "prefs_OptionText_summarize_max_display_length_Info": {
+        "message": "内联摘要中显示的最大字符数。设为 0 表示不限制。"
+    },
+    "prefs_OptionText_max_messages": {
+        "message": "最大邮件数"
+    },
+    "prefs_OptionText_summarize_max_messages_Info": {
+        "message": "webchat 模式下一次可摘要的最大邮件数。超过此限制时，操作将被阻止并显示警告。设为 0 表示不限制。"
+    },
+    "prefs_OptionText_summarize_strip_formatting": {
+        "message": "去除格式"
+    },
+    "prefs_OptionText_summarize_strip_formatting_Info": {
+        "message": "从 AI 生成的摘要中去除 HTML 和 Markdown 格式，仅显示纯文本。"
+    },
+    "prefs_OptionText_summarize_force_lang": {
+        "message": "强制摘要语言"
+    },
+    "prefs_OptionText_summarize_force_lang_Info": {
+        "message": "如果选中，无论邮件使用何种语言，摘要始终以所选语言编写。已生成的摘要不会更新：请使用“刷新摘要”重新生成。"
+    },
+    "prefs_OptionText_summarize_lang_Info": {
+        "message": "摘要的语言。留空则使用 ThunderAI 选项中设置的默认语言。如果两者都留空，则不强制使用任何语言。"
+    },
+    "prompt_summarize_force_lang": {
+        "message": "摘要必须使用"
+    },
+    "summarize_info_additional_statements": {
+        "message": "该声明将添加到提示词的末尾："
+    },
+    "Summarize_auto_senders_title": {
+        "message": "自动摘要发件人列表"
+    },
+    "Summarize_auto_senders_infoline": {
+        "message": "来自这些发件人的邮件会自动生成摘要，无需任何点击。摘要会在收到邮件时生成；如果接收时未能生成，则会在您打开邮件时生成。"
+    },
+    "Summarize_auto_senders_infoline2": {
+        "message": "每行添加一个电子邮件地址，或用逗号分隔。使用“@domain.com”可匹配整个域名的所有发件人。"
+    },
+    "Summarize_auto_senders_notice": {
+        "message": "自动摘要已禁用，但仍会为下列列表中的发件人自动生成摘要。"
+    },
+    "Summarize_auto_senders_disabled_note": {
+        "message": "当自动摘要设置为在收到邮件时生成摘要时，此功能不可用：在该模式下，每封收到的邮件都已生成摘要。"
+    },
+    "prefs_OptionText_summarize_auto_senders": {
+        "message": "自动摘要这些发件人"
+    },
+    "prefs_OptionText_summarize_auto_senders_Info": {
+        "message": "如果启用，即使上方禁用了自动摘要，也会自动为以下列出的发件人的邮件生成摘要。"
+    },
+    "prefs_OptionText_summarize_auto_senders_list_Info": {
+        "message": "需要自动摘要的发件人地址："
+    },
+    "summarize_see_more": {
+        "message": "查看更多"
+    },
+    "summarize_see_less": {
+        "message": "收起"
+    },
+    "summarize_title": {
+        "message": "ThunderAI 概览"
+    },
+    "summarize_too_many_messages": {
+        "message": "您选中了 $SELECTED$ 封邮件，但一次最多只能摘要 $MAX$ 封。请减少选中的邮件数量。",
+        "placeholders": {
+            "selected": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            }
+        }
+    },
+    "get_ai_summary": {
+        "message": "AI 摘要"
+    },
+    "batch_stop_processing": {
+        "message": "停止处理"
+    },
+    "batch_stopping": {
+        "message": "正在停止…"
+    },
+    "batch_stop_tooltip": {
+        "message": "停止正在运行的邮件处理任务（自动添加标签、垃圾邮件过滤、摘要、翻译）"
+    },
+    "batch_progress_x": {
+        "message": "已处理 $COUNT$ 封邮件",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stopped_notice": {
+        "message": "邮件处理已停止。共处理了 $COUNT$ 封邮件。",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stop_source": {
+        "message": "批量停止"
+    },
+    "batch_stopped_rate_limit": {
+        "message": "已处理 $COUNT$ 封邮件后停止邮件处理：超出了 AI 服务提供商的速率限制或配额。请稍后重试。",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stopped_retry_after": {
+        "message": "已处理 $COUNT$ 封邮件后停止邮件处理：AI 服务提供商暂不接受请求，要求在 $WAIT$ 后重试。",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            },
+            "wait": {
+                "content": "$2"
+            }
+        }
+    },
+    "api_retry_after_hint": {
+        "message": "AI 服务提供商要求在 $WAIT$ 后重试。",
+        "placeholders": {
+            "wait": {
+                "content": "$1"
+            }
+        }
+    },
+    "add_tags_too_many_messages": {
+        "message": "您选中了 $SELECTED$ 封邮件，但一次最多只能标记 $MAX$ 封。请减少选中的邮件数量。",
+        "placeholders": {
+            "selected": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            }
+        }
+    },
+    "summarize_generating": {
+        "message": "正在生成摘要…"
+    },
+    "summarize_error": {
+        "message": "生成摘要失败"
+    },
+    "summarize_error_no_message_id": {
+        "message": "无法读取该邮件：将仅根据主题生成摘要。"
+    },
+    "summarize_click_to_generate": {
+        "message": "点击此处生成摘要"
+    },
+    "summarize_chatgpt_web_not_supported": {
+        "message": "自动摘要需要基于 API 的连接方式。请在 ThunderAI 设置中配置 API 连接。"
+    },
+    "summarize_refresh": {
+        "message": "刷新摘要"
+    },
+    "spamfilter_refresh": {
+        "message": "刷新垃圾邮件报告"
+    },
+    "spamfilter_delete": {
+        "message": "删除垃圾邮件报告"
+    },
+    "summarize_delete": {
+        "message": "删除摘要"
+    },
+    "generic_error_dismiss": {
+        "message": "忽略"
+    },
+    "prefs_OptionText_translate": {
+        "message": "翻译邮件"
+    },
+    "prefs_OptionText_translate_use_specific_integration_Info": {
+        "message": "如果选中，翻译邮件时将使用下面指定的模型和 API，而不论在 ThunderAI 选项页面中选择了哪个。"
+    },
+    "prefs_OptionText_translate_Info": {
+        "message": "如果选中，会在邮件正文中添加一个翻译按钮。"
+    },
+    "prefs_OptionText_btnManageTranslateInfo": {
+        "message": "管理翻译设置"
+    },
+    "Translate_PageTitle": {
+        "message": "管理翻译设置"
+    },
+    "Translate_info_default": {
+        "message": "您可以在此页面修改用于翻译邮件的默认提示词。"
+    },
+    "Translate_prompt_text_title": {
+        "message": "当前提示词文本"
+    },
+    "prefs_OptionText_translate_auto": {
+        "message": "自动翻译邮件"
+    },
+    "prefs_OptionText_action_auto_disabled": {
+        "message": "已禁用"
+    },
+    "prefs_OptionText_action_auto_manual": {
+        "message": "仅手动按钮"
+    },
+    "prefs_OptionText_action_auto_automatic": {
+        "message": "打开邮件时"
+    },
+    "prefs_OptionText_translate_auto_Info": {
+        "message": "选择何时翻译邮件：禁用、仅在点击按钮时，或在打开邮件时自动进行。"
+    },
+    "prefs_OptionText_display_mode_inline": {
+        "message": "邮件窗格（内嵌）"
+    },
+    "prefs_OptionText_display_mode_webchat": {
+        "message": "聊天窗口"
+    },
+    "prefs_OptionText_translate_max_display_length": {
+        "message": "显示翻译的最大长度"
+    },
+    "prefs_OptionText_translate_max_display_length_Info": {
+        "message": "内嵌翻译中显示的最大字符数。0 = 不限制。设置后，较长的文本会被截断，并提供“查看更多”切换开关。"
+    },
+    "translate_see_more": {
+        "message": "查看更多"
+    },
+    "translate_see_less": {
+        "message": "收起"
+    },
+    "prefs_OptionText_translate_lang": {
+        "message": "翻译目标语言"
+    },
+    "prefs_OptionText_translate_lang_Info": {
+        "message": "将邮件翻译成的语言。如果留空，则使用默认语言设置。"
+    },
+    "prefs_OptionText_translate_exclude_lang": {
+        "message": "排除语言"
+    },
+    "prefs_OptionText_translate_exclude_lang_Info": {
+        "message": "以逗号分隔的、不进行翻译的语言代码列表（例如 en、fr、it）。如果邮件属于其中某种语言，AI 会跳过翻译并将其报告为已跳过。"
+    },
+    "prefs_OptionText_Translate_main_prompt": {
+        "message": "描述翻译任务的提示词："
+    },
+    "translate_generating": {
+        "message": "正在翻译…"
+    },
+    "translate_click_to_generate": {
+        "message": "点击此处翻译此邮件"
+    },
+    "get_ai_translation": {
+        "message": "AI 翻译"
+    },
+    "translate_chatgpt_web_not_supported": {
+        "message": "自动翻译需要基于 API 的连接方式。请在 ThunderAI 设置中配置 API 连接。"
+    },
+    "translate_refresh": {
+        "message": "刷新翻译"
+    },
+    "translate_delete": {
+        "message": "删除翻译"
+    },
+    "translate_banner_title": {
+        "message": "AI 翻译"
+    },
+    "translate_error": {
+        "message": "翻译失败。"
+    },
+    "translate_error_no_message_id": {
+        "message": "无法读取该邮件：将仅根据主题生成翻译。"
+    },
+    "translate_no_language_configured": {
+        "message": "尚未配置翻译语言。请在翻译设置中设置语言，或在常规设置中设置默认语言。"
+    },
+    "translate_skipped": {
+        "message": "已跳过翻译：语言被排除或与目标语言相同。"
+    },
+    "antispam_by": {
+        "message": "反垃圾邮件："
+    },
+    "spam_badge_tooltip": {
+        "message": "垃圾邮件分数 — 点击查看说明"
+    },
+    "summary_by": {
+        "message": "摘要："
+    },
+    "translate_by": {
+        "message": "译文："
+    },
+    "prefs_THStats_1": {
+        "message": "想要查看关于您邮件的精美统计信息吗？"
+    },
+    "prefs_THStats_2": {
+        "message": "立即试用 ThunderStats！"
+    },
+    "prefs_OptionText_chatgpt_win_pos_text": {
+        "message": "AI 聊天窗口位置"
+    },
+    "prefs_OptionText_chatgpt_win_top": {
+        "message": "顶部"
+    },
+    "prefs_OptionText_chatgpt_win_left": {
+        "message": "左侧"
+    },
+    "prefs_chatgpt_win_save_position": {
+        "message": "使用关闭按钮关闭窗口时，自动保存窗口位置。"
+    },
+    "prefs_chatgpt_win_position_info": {
+        "message": "留空以使用默认位置。"
+    },
+    "prefs_OptionText_action_auto_batch": {
+        "message": "收到邮件时"
+    },
+    "placeholder_string": {
+        "message": "占位符"
+    },
+    "menu_order_title": {
+        "message": "菜单顺序"
+    },
+    "menu_order_popup_list_title": {
+        "message": "弹出菜单"
+    },
+    "menu_order_context_list_title": {
+        "message": "上下文菜单"
+    },
+    "menu_order_saved": {
+        "message": "菜单顺序已保存！"
+    },
+    "menu_order_save_error": {
+        "message": "保存菜单顺序时出错："
+    },
+    "menu_order_reset_all": {
+        "message": "全部重置"
+    },
+    "menu_order_reset_all_tooltip": {
+        "message": "将所有菜单项恢复为默认的显示顺序、可见性和图标。请按“全部保存”应用。"
+    },
+    "menu_order_tab_reading": {
+        "message": "阅读"
+    },
+    "menu_order_tab_composing": {
+        "message": "撰写"
+    },
+    "menu_order_tab_dot_tooltip": {
+        "message": "所选的提示词也出现在此列表中"
+    },
+    "menu_order_badge_default": {
+        "message": "默认"
+    },
+    "menu_order_badge_special": {
+        "message": "特殊"
+    },
+    "menu_order_badge_custom": {
+        "message": "自定义"
+    },
+    "menu_order_badge_org": {
+        "message": "组织"
+    },
+    "menu_order_type_reading": {
+        "message": "阅读"
+    },
+    "menu_order_type_composing": {
+        "message": "撰写"
+    },
+    "menu_order_type_always": {
+        "message": "始终"
+    },
+    "menu_order_btn_label": {
+        "message": "管理菜单顺序设置"
+    },
+    "menu_position_btn_label": {
+        "message": "菜单位置"
+    },
+    "menu_order_info": {
+        "message": "拖动并放置项目以重新排序，或将其在“显示”和“隐藏”区域之间拖动，以在每个菜单中显示或隐藏。在所有菜单中都隐藏的提示词将被禁用，直到您重新将其设为可见。"
+    },
+    "menu_order_active_items": {
+        "message": "显示的项目"
+    },
+    "menu_order_hidden_items": {
+        "message": "隐藏的项目"
+    },
+    "menu_order_icon_label": {
+        "message": "选择图标"
+    },
+    "menu_order_icon_none": {
+        "message": "（无）"
+    },
+    "menu_order_icon_default": {
+        "message": "默认图标"
+    },
+    "menu_order_legend_type": {
+        "message": "显示时机："
+    },
+    "menu_order_legend_type_always": {
+        "message": "在阅读和撰写时均显示"
+    },
+    "menu_order_legend_type_reading": {
+        "message": "仅在阅读邮件时显示"
+    },
+    "menu_order_legend_type_composing": {
+        "message": "仅在撰写邮件时显示"
+    },
+    "menu_order_legend_source": {
+        "message": "提示词类型："
+    },
+    "menu_order_legend_source_default": {
+        "message": "ThunderAI 内置的提示词"
+    },
+    "menu_order_legend_source_special": {
+        "message": "由具体功能提供的提示词（例如标签、日历）"
+    },
+    "menu_order_legend_source_custom": {
+        "message": "您创建的提示词"
+    },
+    "prefs_ConnectionSettingsTitle": {
+        "message": "连接设置"
+    },
+    "prefs_BasicSettingsTitle": {
+        "message": "基本设置"
+    },
+    "prefs_FeaturesTitle": {
+        "message": "功能"
+    },
+    "prefs_FeaturesSubtitle": {
+        "message": "开启您需要的功能，并可在各自的设置界面中逐项微调。"
+    },
+    "prefs_FeaturesNoConnection": {
+        "message": "请在上方选择一种 AI 连接方式以启用这些功能。"
+    },
+    "prefs_advanced_options": {
+        "message": "高级选项"
+    },
+    "prefs_privacy_more_info": {
+        "message": "点击此处了解更多隐私信息"
+    },
+    "connTest_idle": {
+        "message": "尚未测试连接"
+    },
+    "connTest_testing": {
+        "message": "正在测试连接…"
+    },
+    "connTest_ok": {
+        "message": "已连接 — $API$ 可访问",
+        "placeholders": {
+            "api": {
+                "content": "$1",
+                "example": "Anthropic Claude"
+            }
+        }
+    },
+    "connTest_error": {
+        "message": "错误 — $DETAIL$",
+        "placeholders": {
+            "detail": {
+                "content": "$1",
+                "example": "401 — invalid API key"
+            }
+        }
+    },
+    "connTest_error_auth": {
+        "message": "身份验证失败 — 请检查您的 API 密钥"
+    },
+    "connTest_error_network": {
+        "message": "网络错误 — 无法访问端点"
+    },
+    "connTest_error_timeout": {
+        "message": "请求超时 — 端点无响应"
+    },
+    "connTest_managed_api_key": {
+        "message": "该 API 密钥由您的组织设置，无法在此处测试"
+    },
+    "connTest_link_test": {
+        "message": "立即测试"
+    },
+    "connTest_link_retest": {
+        "message": "重新测试"
+    },
+    "connTest_link_retry": {
+        "message": "重试"
+    },
+    "wizard_title": {
+        "message": "设置向导"
+    },
+    "wizard_step_provider_title": {
+        "message": "选择您的 AI"
+    },
+    "wizard_step_provider_sub": {
+        "message": "每个服务都有自己的颜色——您会在接下来的设置中看到它贯穿始终。"
+    },
+    "wizard_step_connect_sub": {
+        "message": "在下方输入凭据并选择一个模型，然后测试连接。"
+    },
+    "wizard_step_connect_sub_web": {
+        "message": "这里几乎不需要设置什么。"
+    },
+    "wizard_step_tools_title": {
+        "message": "选择您的工具"
+    },
+    "wizard_step_tools_sub": {
+        "message": "您之后可以在设置中更改这些选项。"
+    },
+    "wizard_done_title": {
+        "message": "一切就绪"
+    },
+    "wizard_done_body": {
+        "message": "ThunderAI 已准备就绪。右键点击一封邮件或打开撰写窗口即可试用。之后可在设置中随意调整。"
+    },
+    "wizard_run_again": {
+        "message": "再次运行"
+    },
+    "wizard_connect_heading": {
+        "message": "连接 $PROVIDER$",
+        "placeholders": {
+            "provider": {
+                "content": "$1",
+                "example": "Claude API"
+            }
+        }
+    },
+    "wizard_back": {
+        "message": "返回"
+    },
+    "wizard_continue": {
+        "message": "继续"
+    },
+    "wizard_finish": {
+        "message": "完成设置"
+    },
+    "wizard_provider_tag_chatgpt_web": {
+        "message": "无需 API 密钥 — 首次使用时登录"
+    },
+    "wizard_provider_tag_chatgpt_api": {
+        "message": "需要 API 密钥 + 模型"
+    },
+    "wizard_provider_tag_google_gemini_api": {
+        "message": "需要 API 密钥 + 模型"
+    },
+    "wizard_provider_tag_anthropic_api": {
+        "message": "需要 API 密钥、模型和版本"
+    },
+    "wizard_provider_tag_ollama_api": {
+        "message": "本地服务器地址 + 模型"
+    },
+    "wizard_provider_tag_openai_comp_api": {
+        "message": "服务器地址 + 模型"
+    },
+    "onboarding_wizard_banner_text": {
+        "message": "初次使用 ThunderAI？让设置向导引导您完成 AI 的连接。"
+    },
+    "onboarding_wizard_banner_link": {
+        "message": "启动设置向导"
+    },
+    "prefs_doc_setup_wizard_launch": {
+        "message": "设置向导"
+    },
+    "popup_setup_wizard_text": {
+        "message": "ThunderAI 尚未连接到任何 AI。"
+    },
+    "popup_setup_wizard_link": {
+        "message": "运行设置向导"
+    },
+    "prefs_Connection_type_none": {
+        "message": "— 请选择一种 AI 连接方式 —"
+    },
+    "options_no_connection_text": {
+        "message": "尚未选择 AI 连接方式。ThunderAI 需要它才能工作。"
+    },
+    "options_no_connection_link": {
+        "message": "运行设置向导"
+    },
+    "msg_no_connection_selected": {
+        "message": "未选择 AI 连接方式。请打开 ThunderAI 选项并运行设置向导以选择一个。"
+    },
+    "onboarding_tab_title": {
+        "message": "欢迎使用 ThunderAI！"
+    },
+    "onboarding_welcome_2": {
+        "message": "本插件旨在借助 AI 的强大能力，提升您的邮件管理体验。"
+    },
+    "onboarding_welcome_3": {
+        "message": "借助人工智能，您可以使用 ThunderAI 精简收件箱、生成智能回复、生成邮件摘要、自动添加标签并过滤垃圾邮件，还有更多功能。"
+    },
+    "onboarding_welcome_4": {
+        "message": "在本页面，您可以了解各项主要功能的概览，帮助您充分利用 ThunderAI。"
+    },
+    "onboarding_welcome_5": {
+        "message": "准备好体验更智能、更高效的邮件处理方式吧！"
+    },
+    "onboarding_welcome_6": {
+        "message": "让我们来看看如何充分利用这个插件吧！"
+    },
+    "onboarding_using_prompts_title": {
+        "message": "使用提示词"
+    },
+    "onboarding_using_prompts_alt": {
+        "message": "提示词菜单按钮"
+    },
+    "onboarding_using_prompts_1": {
+        "message": "每封邮件上都有一个按钮，可以让您打开提示词菜单。"
+    },
+    "onboarding_using_prompts_2": {
+        "message": "在这里，您可以通过以下几种方式选择提示词："
+    },
+    "onboarding_using_prompts_li1_b": {
+        "message": "搜索框"
+    },
+    "onboarding_using_prompts_li1": {
+        "message": "用它来搜索提示词的部分内容。"
+    },
+    "onboarding_using_prompts_li2_b": {
+        "message": "下/上方向键"
+    },
+    "onboarding_using_prompts_li2": {
+        "message": "在各提示词之间移动。"
+    },
+    "onboarding_using_prompts_li3_b": {
+        "message": "按数字键"
+    },
+    "onboarding_using_prompts_li3": {
+        "message": "按键盘上的数字键选择对应的提示词。"
+    },
+    "onboarding_using_prompts_li4_b": {
+        "message": "Enter 键"
+    },
+    "onboarding_using_prompts_li4": {
+        "message": "选好您想要的提示词后，按 Enter 键即可执行。"
+    },
+    "onboarding_using_prompts_3": {
+        "message": "在 ThunderAI 选项页面中，您可以找到与此菜单相关的某些选项。"
+    },
+    "onboarding_using_prompts_4": {
+        "message": "前两个提示词比较特殊，仅在使用 API 集成时可用。它们无需打开 AI 聊天网页即可直接运行。"
+    },
+    "onboarding_custom_prompts_title": {
+        "message": "定义您的自定义提示词"
+    },
+    "onboarding_custom_prompts_alt": {
+        "message": "管理自定义提示词"
+    },
+    "onboarding_custom_prompts_p1_1": {
+        "message": "您可以从选项页面打开自定义提示词页面。"
+    },
+    "onboarding_custom_prompts_p1_3": {
+        "message": "在那里，您可以添加自己的提示词，也可以禁用默认提示词。"
+    },
+    "onboarding_custom_prompts_p1_4": {
+        "message": "您可以在此处查看更多信息。"
+    },
+    "onboarding_custom_prompts_p2_1": {
+        "message": "在定义您自己的提示词时，您还可以使用"
+    },
+    "onboarding_custom_prompts_bold_dp": {
+        "message": "数据占位符"
+    },
+    "onboarding_custom_prompts_p2_2": {
+        "message": "，在使用提示词时会被替换为相应的信息。"
+    },
+    "onboarding_custom_prompts_p3": {
+        "message": "例如，您可以使用占位符 $PH_SUBJECT$ 指代邮件的主题，或使用 $PH_TAGS$ 指代当前邮件的标签。",
+        "placeholders": {
+            "ph_subject": {
+                "content": "{%mail_subject%}"
+            },
+            "ph_tags": {
+                "content": "{%tags_current_email%}"
+            }
+        }
+    },
+    "onboarding_automatic_features_title": {
+        "message": "自动化功能"
+    },
+    "onboarding_automatic_features_alt": {
+        "message": "自动垃圾邮件过滤"
+    },
+    "onboarding_automatic_features_1": {
+        "message": "使用 API 集成时，还有两项自动化功能可在选项页面中开启："
+    },
+    "onboarding_automatic_features_li1_b": {
+        "message": "自动垃圾邮件过滤器"
+    },
+    "onboarding_automatic_features_li1": {
+        "message": "检测到邮件为垃圾邮件时，自动将其移至垃圾邮件文件夹。"
+    },
+    "onboarding_automatic_features_li2_b": {
+        "message": "自动打标签"
+    },
+    "onboarding_automatic_features_li2": {
+        "message": "自动为邮件添加标签。"
+    },
+    "onboarding_automatic_features_2": {
+        "message": "每个功能都有各自的选项页面，用于设置相关选项并指定要使用的自定义提示词。"
+    },
+    "onboarding_footer_1": {
+        "message": "如有任何疑问或建议，请在 GitHub 页面上提交一个 issue。"
+    },
+    "onboarding_footer_3": {
+        "message": "您喜欢 ThunderAI 吗？"
+    },
+    "editor_placeholder_missing": {
+        "message": "此占位符不存在"
+    },
+    "editor_placeholder_partial_type": {
+        "message": "此占位符只在该提示词运行的部分场景中有效：它在另一个场景中会保持为空"
+    },
+    "editor_placeholder_wrong_type": {
+        "message": "此占位符不适用于该提示词类型"
+    },
+    "editor_placeholder_unterminated": {
+        "message": "未闭合的占位符：缺少结尾的 %}"
     }
 }
