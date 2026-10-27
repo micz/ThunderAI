@@ -21,7 +21,8 @@
 // (blank lines ignored). Node built-ins only (Node 22+). Any failed download exits with code 1.
 //   node .github/scripts/weblate_update_status.mjs "https://hosted.weblate.org/widget/thunderai/-/" \
 //     .github/scripts/thunderai_languages.txt <path-to-micz.github.io>/static/weblate/thunderai/
-// Run by .github/workflows/update-weblate-badges.yml on every stable release.
+// Run by the workflow thunderai-weblate-badges.yml of micz/micz.github.io, which
+// .github/workflows/update-weblate-badges.yml starts on every stable release.
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';

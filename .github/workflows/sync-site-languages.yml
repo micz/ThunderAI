@@ -47,7 +47,6 @@ name: Sync site languages
 # REQUIRED SECRET: SITE_DISPATCH_TOKEN
 #   A fine-grained personal access token with access to the micz/micz.github.io repository only,
 #   permission "Contents: Read and write" (required by the repository_dispatch endpoint).
-#   update-weblate-badges.yml uses the same token and also needs "Pull requests: Read and write".
 #   Add it in Settings > Secrets and variables > Actions of this repository.
 on:
   push:

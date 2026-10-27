@@ -1,11 +1,16 @@
 name: Update Weblate badges
 
-# Refreshes the Weblate translation status badges shown on the site (micz/micz.github.io,
-# static/weblate/thunderai/<lang>.svg) on every stable release, and by hand. The badges of the
-# languages listed in .github/scripts/thunderai_languages.txt are downloaded by
-# .github/scripts/weblate_update_status.mjs (a failed download fails the run: no partial PR), then
-# a pull request is opened on the site from the fixed branch thunderai-weblate-badges, or the one
-# already open is updated. No changes, no PR.
+# Asks the site repository (micz/micz.github.io) to refresh the Weblate translation status badges
+# (static/weblate/thunderai/<lang>.svg), through a repository_dispatch with event_type
+# "thunderai-weblate-badges", on every stable release and by hand.
+#
+# client_payload: { ref: release tag | branch of the manual run, url: release html_url | run url }
+#
+# The site's thunderai-weblate-badges.yml checks out this repository at ref, downloads the badges
+# of the languages listed in .github/scripts/thunderai_languages.txt with
+# .github/scripts/weblate_update_status.mjs (a failed download fails the run: no partial PR), and
+# opens a pull request on the site from the branch thunderai-weblate-badges with its own token,
+# or updates the one already open. No changes, no PR.
 #
 # The "released" release event fires only for stable releases, including a prerelease promoted to
 # stable. It fires only when the release is published by a user (web UI, gh, or a personal access
@@ -13,9 +18,8 @@ name: Update Weblate badges
 #
 # REQUIRED SECRET: SITE_DISPATCH_TOKEN (the same token as sync-site-languages.yml)
 #   A fine-grained personal access token with access to the micz/micz.github.io repository only,
-#   permissions "Contents: Read and write" and "Pull requests: Read and write" (this workflow
-#   needs the second one too). Add it in Settings > Secrets and variables > Actions of this
-#   repository. The token expires: renew it (and update the secret) before its expiration date.
+#   permission "Contents: Read and write" (required by the repository_dispatch endpoint).
+#   Add it in Settings > Secrets and variables > Actions of this repository.
 on:
   release:
     types: [released]
@@ -24,48 +28,26 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: update-weblate-badges
-  cancel-in-progress: false
-
 jobs:
-  update:
+  notify:
     # On a fork there is no token for the site: nothing to do there.
     if: github.repository == 'micz/ThunderAI'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7
-        with:
-          path: thunderai
-
-      - uses: actions/checkout@v7
-        with:
-          repository: micz/micz.github.io
-          path: site
-          token: ${{ secrets.SITE_DISPATCH_TOKEN }}
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-
-      - name: Download the badges
-        run: >-
-          node thunderai/.github/scripts/weblate_update_status.mjs
-          "https://hosted.weblate.org/widget/thunderai/-/"
-          thunderai/.github/scripts/thunderai_languages.txt
-          site/static/weblate/thunderai/
-
-      - name: Open or update the pull request on the site
-        uses: peter-evans/create-pull-request@v8
-        with:
-          path: site
-          token: ${{ secrets.SITE_DISPATCH_TOKEN }}
-          branch: thunderai-weblate-badges
-          delete-branch: true
-          commit-message: 'ThunderAI: update Weblate translation badges (${{ github.event.release.tag_name || ''manual run'' }})'
-          title: 'ThunderAI: update Weblate translation badges (${{ github.event.release.tag_name || ''manual run'' }})'
-          body: |
-            Automatic update of the ThunderAI Weblate translation status badges, opened by the `update-weblate-badges` workflow of micz/ThunderAI.
-
-            Triggered by: ${{ github.event.release.html_url || 'manual run' }}
+      - name: Notify the site
+        env:
+          GH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
+          SITE_REPO: micz/micz.github.io
+          REF: ${{ github.event.release.tag_name || github.ref_name }}
+          URL: ${{ github.event.release.html_url || format('{0}/{1}/actions/runs/{2}', github.server_url, github.repository, github.run_id) }}
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Secret SITE_DISPATCH_TOKEN is not set (see the comment at the top of this workflow)"; exit 1
+          fi
+          jq -n --arg ref "$REF" --arg url "$URL" \
+            '{ event_type: "thunderai-weblate-badges", client_payload: { ref: $ref, url: $url } }' \
+            | tee payload.json
+          gh api --method POST "repos/$SITE_REPO/dispatches" --input payload.json
+          echo "Asked $SITE_REPO to update the Weblate badges at $REF"
