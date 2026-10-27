@@ -1095,5 +1095,41 @@
     },
     "customPrompts_btnSavePrompt": {
         "message": "保存"
+    },
+    "customPrompts_btnExport": {
+        "message": "导出"
+    },
+    "customPrompts_btnOpen": {
+        "message": "打开"
+    },
+    "customPrompts_more_actions": {
+        "message": "更多操作"
+    },
+    "customPrompts_col_prompt": {
+        "message": "提示词"
+    },
+    "customPrompts_col_text": {
+        "message": "文本"
+    },
+    "customPrompts_col_menu": {
+        "message": "菜单"
+    },
+    "customPrompts_col_options": {
+        "message": "选项"
+    },
+    "customPrompts_col_actions": {
+        "message": "行动"
+    },
+    "customPrompts_label_text": {
+        "message": "提示词文本"
+    },
+    "customPrompts_label_options": {
+        "message": "选项"
+    },
+    "customPrompts_chip_need_selected": {
+        "message": "选择"
+    },
+    "customPrompts_chip_need_signature": {
+        "message": "签名"
     }
 }
