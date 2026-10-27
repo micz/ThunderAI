@@ -21,6 +21,10 @@ import {
 } from './harness.mjs';
 import { NET } from './fetch-model.mjs';
 import {
+    IDLE,
+    idleTimeoutCases
+} from './idle-cases.mjs';
+import {
     assertNoBrowser,
     flush,
     initMessage,
@@ -48,7 +52,7 @@ const INTERRUPTED = 'The connection to the server was unexpectedly interrupted';
 const isStream = c => c.url.includes(':streamGenerateContent');
 
 await w.send(initMessage({ google_gemini_api_key: 'FAKE-KEY', google_gemini_model: 'gemini-2.5-flash' },
-    { chat_show_usage_data: false, i18nStrings: { google_gemini_api_request_failed: FAILED, error_connection_interrupted: INTERRUPTED } }));
+    { chat_show_usage_data: false, i18nStrings: { google_gemini_api_request_failed: FAILED, error_connection_interrupted: INTERRUPTED, error_stream_idle_timeout: IDLE } }));
 
 const errorOf = t => t.posted().filter(m => m.type === 'error');
 
@@ -204,6 +208,15 @@ k.test('stop-during-error-body', 'Stop while the body of an HTTP error is read: 
     assert.deepEqual(errorOf(turn), []);
     assert.equal(s.cancelled, true, 'the body was cancelled');
     // history-after-errors, at the end of the file, checks that 'q' left the history.
+});
+
+// Spec 04 "Stream idle timeout": the default 120 s, keep-alives, a Stop during the stall (idle-cases.mjs).
+idleTimeoutCases(k, {
+    w, net, match: isStream, failed: FAILED,
+    open: () => manualStream(),
+    first: sse(FX.stream_thoughts.chunks[0]) + sse(FX.stream_thoughts.chunks[1]),
+    rest: FX.stream_thoughts.chunks.slice(2).map(c => sse(c)).join(''),
+    keepAlive: '\n',   // an empty line
 });
 
 k.test('history-after-errors', 'failed turns leave nothing in the history: no failed question, no partial answer', async () => {

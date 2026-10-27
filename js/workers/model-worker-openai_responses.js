@@ -24,6 +24,12 @@ import {
     OpenAI,
     extractUsage
 } from '../api/openai_responses.js';
+import {
+    createIdleTimer,
+    idleTimeoutMessage,
+    idleTimeoutReason,
+    resolveIdleTimeoutMs
+} from '../api/api-idle-timer.js';
 import { readResponseBody } from '../api/api-retry.js';
 import { taLogger } from '../mzta-logger.js';
 import {
@@ -41,6 +47,8 @@ let taLog = null;
 // backoff): Stop aborts the request then. Once streaming has started the
 // stopStreaming flag takes over, so a pending reader.read() is never rejected.
 let requestAbort = null;
+// ms without any data before a stream is given up (api_stream_idle_timeout, 0 = never).
+let idleTimeoutMs = 0;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
@@ -102,6 +110,11 @@ function streamErrorText(error) {
     return i18nStrings["chatgpt_api_request_failed"] + ": " + (error && error.message ? error.message : String(error));
 }
 
+// The text of a stream cut by the idle timeout.
+function idleTimeoutText() {
+    return i18nStrings["chatgpt_api_request_failed"] + ": " + idleTimeoutMessage(i18nStrings, idleTimeoutMs);
+}
+
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
         let config = { stream: true };
@@ -116,6 +129,7 @@ self.onmessage = async function(event) {
         openai = new OpenAI(config);
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
+        idleTimeoutMs = resolveIdleTimeoutMs(event.data.api_stream_idle_timeout);
         taLog = new taLogger('model-worker-openai_responses', do_debug);
         initUsageEmitter(event.data);
         previous_response_id = null;
@@ -138,6 +152,8 @@ self.onmessage = async function(event) {
         }
 
         requestAbort = new AbortController();
+        // Kept past `requestAbort = null`: the idle timeout of the stream aborts it.
+        const turnAbort = requestAbort;
         const response = await openai.fetchResponse(messagesToSend, previous_response_id, {
             signal: requestAbort.signal,
             logger: taLog,
@@ -195,6 +211,12 @@ self.onmessage = async function(event) {
             throw new Error("[ThunderAI] OpenAI ChatGPT API request failed: " + error_text);
         }
 
+        // The idle timeout of the stream (#999). Started only now: until the headers the
+        // per-attempt timeout and the retries of fetchWithRetry() apply, and a stall from
+        // here on is never retried. When it fires, the turn's controller is aborted with its
+        // own reason, which errors the pending reader.read() (a Stop never does).
+        const idle = createIdleTimer(idleTimeoutMs, () => turnAbort.abort(idleTimeoutReason(idleTimeoutMs)));
+        idle.start();
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let buffer = '';
@@ -216,6 +238,8 @@ self.onmessage = async function(event) {
                     break;
                 }
                 const { done, value } = await reader.read();
+                // Any bytes are activity, keep-alives (pings, comments, empty lines) included.
+                idle.touch();
                 if (done) {
                     taLog.log("AI full reasoning: " + thinkingAccumulator);
                     taLog.log("AI full response: " + assistantResponseAccumulator);
@@ -303,10 +327,19 @@ self.onmessage = async function(event) {
                 if (streamError) break;
             }
         } catch (error) {
-            // The connection broke while reading: report it, never end the turn silently.
+            // The connection broke while reading, or the idle timeout cut it: report it,
+            // never end the turn silently.
             console.error('[ThunderAI] OpenAI stream interrupted:', error);
             abandonTurn();
-            postMessage({ type: 'error', payload: streamErrorText(error) });
+            if (idle.fired) {
+                // A Stop pressed during the stall found no read to end: it is spent here.
+                stopStreaming = false;
+                postMessage({ type: 'error', payload: idleTimeoutText() });
+            } else {
+                postMessage({ type: 'error', payload: streamErrorText(error) });
+            }
+        } finally {
+            idle.stop();
         }
     } else if (event.data.type === 'stop') {
         stopStreaming = true;

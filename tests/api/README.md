@@ -38,6 +38,7 @@ tests/
     ├── fetch-model.mjs            the scripted global fetch (see below)
     ├── worker-realm.mjs           the Web Worker realm: loadWorker(), startTurn(), shape()
     ├── wire.mjs                   responses and streams (SSE, NDJSON, manual), fixture and capture readers
+    ├── idle-cases.mjs             the stream idle timeout cases, declared by every -errors file
     └── NN-*.test.mjs              the tests (table below)
 ```
 
@@ -52,6 +53,7 @@ Helper modules have no `.test.mjs` suffix, so the level-1 glob never runs them.
 | `05-usage-data` | "Token usage data", "Per-provider support" (every `extractUsage()`) |
 | `06-usage-support-by-type` | "Per-provider support": `supportsUsageData(connection_type)` agrees with the modules |
 | `07-retry-helpers` | "Automatic Retry Handling": constants, `parseRetryAfter()`, `classifyRateLimitBody()`; "Logging": `extractErrorMessage()` |
+| `08-idle-timer` | "Stream idle timeout": `js/api/api-idle-timer.js` alone (`resolveIdleTimeoutMs()`, the timer, the abort reason, the user text) |
 | `10-fetch-with-retry` | "Automatic Retry Handling": `fetchWithRetry()` whole (the retried body read only with debug on, the 5 s limit of that read and of the 429 inspection, a user abort during a body read), "Logging" |
 | `20-anthropic-request` | "Anthropic / Claude": request body construction |
 | `21-anthropic-400-retry` | "Anthropic / Claude": one-shot retry on a 400 (its clone read within 5 s, a user abort during it), 400 error hints |
@@ -78,6 +80,12 @@ worker posts `requestAborted` and no `newRetryAttempt`, and the next turn (`afte
 the message. It also reads an HTTP error whose body never arrives (`error-body-stalled`: the error
 after 5 s, with the `statusText` as detail) and stops a turn during that read (`stop-during-error-body`:
 `requestAborted`, no `error`).
+Every `-errors` file also declares the stream idle timeout cases of `api/idle-cases.mjs` (spec 04 "Stream
+idle timeout", the default 120 s on mock timers): `idle-timeout` (one `error` after 120 s of silence once
+streaming, the request aborted with the `IdleTimeoutError` reason, no retry), `idle-keepalive` (the
+provider's keep-alive, a ping event, an SSE comment or an empty line, keeps the stream open),
+`idle-stop-during-stall` (a Stop during the stall: the idle error, and the next turn is not stopped) and
+`idle-cleared` (a completed turn leaves no timer behind).
 
 ## The fetch model
 

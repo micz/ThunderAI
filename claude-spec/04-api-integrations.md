@@ -906,9 +906,11 @@ sent.
 - **Termination:** `sendPrompt()` always calls `dispose()` (via `Promise.finally`) once the prompt settles — on success, error, or timeout. `dispose()` calls `worker.terminate()` and nulls the reference. This prevents Worker leaks during batch processing, where one Worker would otherwise be created per message and never freed (a cause of out-of-memory hangs on large selections).
 - **Timeout:** `sendPrompt()` aborts the request if the worker never replies (no `tokensDone`/`error`). The duration comes from the `special_command_timeout` pref (default `120000` ms), with a hardcoded `SPECIAL_COMMAND_TIMEOUT_DEFAULT` fallback. The pref is configurable in the main options page (always shown — see `claude-spec/05-options.md`). On timeout the promise rejects with a clear error and the worker is terminated by the same `finally`.
 - **Strings:** `initWorker()` sends the worker the same `i18nStrings` as the chat window
-  (`<integration>_api_request_failed`, `error_connection_interrupted`, and for Claude the four
-  `anthropic_err_hint_*` with the literal `$MODEL$`): a Web Worker has no `browser.i18n`, and the
-  worker builds every error text from them.
+  (`<integration>_api_request_failed`, `error_connection_interrupted`, `error_stream_idle_timeout`
+  with the literal `$SECONDS$`, and for Claude the four `anthropic_err_hint_*` with the literal
+  `$MODEL$`): a Web Worker has no `browser.i18n`, and the worker builds every error text from them.
+  The init message also carries `api_stream_idle_timeout` (see
+  [Stream idle timeout](#stream-idle-timeout)).
 
 `processEmails()` wraps its whole body in `try/finally` so `taWorkingStatus.stopWorking()` always runs, and wraps each message in `try/catch`+`continue` so one failing message does not abort the batch. The loop itself only gates messages; the AI work runs in one pipeline per message (spam, add_tags, summary, translate in series), which catches each feature's failures (e.g. `getFull()` on a message a filter just moved) and `runWithConcurrency()` catches and logs anything left, so one failing feature does not skip the others for that message (see [01-architecture.md](01-architecture.md#per-message-pipelines-in-processemails)).
 
@@ -979,9 +981,45 @@ is never silent either: the worker cancels the reader and posts exactly one `err
 | Ollama | an NDJSON line `{"error": "<message>"}` | the server's string |
 | OpenAI Responses | `response.failed` | `response.error.message` |
 | any | the connection breaks while reading (`reader.read()` rejects) | the error's message; Firefox's `TypeError` "Error in input stream" uses `error_connection_interrupted` instead of the provider string |
+| any | no data for `api_stream_idle_timeout` ms (see [Stream idle timeout](#stream-idle-timeout)) | `error_stream_idle_timeout`, its `$SECONDS$` filled in with the timeout |
 
 The partial answer is dropped and the turn is abandoned like an HTTP error (see
 [Workers and UI](#automatic-retry-handling)).
+
+### Stream idle timeout
+
+`fetchWithRetry()` times each attempt only until the response headers arrive (a timer on the body
+would cut off any long answer), so without more a server that goes silent in the middle of the
+stream (a dropped connection no one notices, an overloaded local server, a proxy) would leave the
+worker on `reader.read()` for ever. Every worker therefore bounds the **silence** of the stream
+(#999), with the shared helper `js/api/api-idle-timer.js` (worker-safe, no import):
+
+- **Value:** the hidden preference `api_stream_idle_timeout` (ms, default `120000`, `0` = no idle
+  timeout; no control in the options page, settable in storage or by policy), sent in the `init`
+  message by the chat window and by `mzta_specialCommand`. The worker reads it with
+  `resolveIdleTimeoutMs()`: anything that is not a non-negative finite number (a string holding one
+  is accepted) falls back to the default. Generous on purpose: a reasoning model, or Ollama loading
+  a model, can be silent for a long time while working.
+- **When it runs:** `createIdleTimer()` is armed once `fetchResponse()` has returned an ok response,
+  right before the stream is read, never earlier: until the headers the per-attempt timeout and the
+  retries of `fetchWithRetry()` apply (a timer there would also cut a legitimate backoff or
+  `Retry-After` wait). A stall caught by it is therefore never retried, a partial answer is never
+  re-requested.
+- **What counts as activity:** every `reader.read()` that returns, before any parsing, so
+  keep-alives (Anthropic's `ping` events, SSE comments such as OpenRouter's, empty lines) keep the
+  stream alive.
+- **When it fires:** the turn's `AbortController` (the one `requestAbort` held, kept in a local
+  `turnAbort` after `requestAbort` is cleared) is aborted with its own reason, a `DOMException`
+  named `IdleTimeoutError`. The abort errors the pending read; the worker's `catch` tells it from
+  any other failure by the timer's `fired` flag, abandons the turn and posts one `error` whose
+  payload is `i18nStrings["<provider>_api_request_failed"] + ": " + error_stream_idle_timeout`.
+  A Stop pressed during the stall (which only sets `stopStreaming`, see below) is reset there, so it
+  does not stop the next turn.
+- **Always disarmed:** `stop()` runs in the `finally` of the stream loop, so the end of the stream,
+  `message_stop`, a mid-stream error event, a Stop and a read error all clear it. Before the loop
+  (an HTTP error, an abort, a network error) it was never armed.
+- In a special command the overall `special_command_timeout` (same default) still bounds the whole
+  exchange; whichever fires first ends it.
 
 ### Batch cancellation (user-triggered stop)
 
@@ -1118,7 +1156,8 @@ API key in the query string.
   (`reason`: `'http'`, `'network'` or `'timeout'`; `status` is `null` for the last two).
 - On `stop`, the worker aborts `requestAbort` if it is still set. Once streaming has started,
   `requestAbort` is `null` and the existing `stopStreaming` loop handles Stop, so a pending
-  `reader.read()` is never rejected.
+  `reader.read()` is never rejected by a Stop (only by the
+  [stream idle timeout](#stream-idle-timeout)).
 - An aborted request (`is_aborted`, or Stop while an HTTP error's body was read) removes the
   unanswered user message from `conversationHistory` (so the next turn does not send it twice) and
   posts `requestAborted`.

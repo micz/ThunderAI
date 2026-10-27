@@ -22,6 +22,10 @@ import {
 } from './harness.mjs';
 import { NET } from './fetch-model.mjs';
 import {
+    IDLE,
+    idleTimeoutCases
+} from './idle-cases.mjs';
+import {
     assertNoBrowser,
     flush,
     initMessage,
@@ -50,7 +54,7 @@ const INTERRUPTED = 'The connection to the server was unexpectedly interrupted';
 
 await w.send(initMessage({ ollama_host: HOST, ollama_model: 'llama3.2', ollama_system_prompt: '' }, {
     chat_show_usage_data: false,
-    i18nStrings: { ollama_api_request_failed: FAILED, error_connection_interrupted: INTERRUPTED },
+    i18nStrings: { ollama_api_request_failed: FAILED, error_connection_interrupted: INTERRUPTED, error_stream_idle_timeout: IDLE },
 }));
 
 const errorOf = t => t.posted().filter(m => m.type === 'error');
@@ -194,6 +198,15 @@ k.test('stop-during-error-body', 'Stop while the body of an HTTP error is read: 
     assert.deepEqual(errorOf(turn), []);
     assert.equal(s.cancelled, true, 'the body was cancelled');
     // history-after-errors, at the end of the file, checks that 'q' left the history.
+});
+
+// Spec 04 "Stream idle timeout": the default 120 s, keep-alives, a Stop during the stall (idle-cases.mjs).
+idleTimeoutCases(k, {
+    w, net, match: CHAT, failed: FAILED,
+    open: () => manualStream({ contentType: 'application/x-ndjson' }),
+    first: ndjson(FX.content_chunks.chunks[0]),
+    rest: [...FX.content_chunks.chunks.slice(1), FX.final_chunk_with_durations.chunk].map(ndjson).join(''),
+    keepAlive: '\n',   // an empty line
 });
 
 k.test('history-after-errors', 'failed turns leave nothing in the history: no failed question, no partial answer', async () => {

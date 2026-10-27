@@ -25,6 +25,10 @@ import {
 } from './harness.mjs';
 import { NET } from './fetch-model.mjs';
 import {
+    IDLE,
+    idleTimeoutCases
+} from './idle-cases.mjs';
+import {
     assertNoBrowser,
     flush,
     initMessage,
@@ -62,6 +66,7 @@ await w.send(initMessage({
     i18nStrings: {
         anthropic_api_request_failed: FAILED,
         error_connection_interrupted: INTERRUPTED,
+        error_stream_idle_timeout: IDLE,
         anthropic_err_hint_temperature: 'HINT-SAMPLING for $MODEL$.',
         anthropic_err_hint_budget_tokens: 'HINT-BUDGET for $MODEL$.',
         anthropic_err_hint_thinking_type: 'HINT-THINKING for $MODEL$.',
@@ -263,6 +268,15 @@ k.test('stop-during-error-body', 'Stop while the body of an HTTP error is read: 
     assert.deepEqual(errorOf(turn), []);
     assert.equal(s.cancelled, true, 'the body was cancelled');
     // history-after-errors, at the end of the file, checks that 'q' left the history.
+});
+
+// Spec 04 "Stream idle timeout": the default 120 s, keep-alives, a Stop during the stall (idle-cases.mjs).
+idleTimeoutCases(k, {
+    w, net, match: MSG_URL, failed: FAILED,
+    open: () => manualStream(),
+    first: wire([FX.stream_text.events[0], FX.stream_text.events[3]]),
+    rest: wire(FX.stream_text.events.slice(4)),
+    keepAlive: wire([FX.stream_text.events[2]]),   // event: ping
 });
 
 k.test('history-after-errors', 'failed turns leave nothing in the history: no failed question, no partial answer', async () => {

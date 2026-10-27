@@ -745,6 +745,16 @@
     "message": "The connection to the server was unexpectedly interrupted",
     "description": "Error shown in the AI chat window when the streaming connection to the AI server drops unexpectedly; followed by a colon and the technical error message."
   },
+  "error_stream_idle_timeout": {
+    "message": "The server stopped responding: no data received for $SECONDS$ seconds",
+    "description": "Error shown in the AI chat window when the AI server stops sending the answer in the middle of it and the request is given up; preceded by the 'API request failed' text of the provider and a colon. $SECONDS$ is the number of seconds waited.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1",
+        "example": "120"
+      }
+    }
+  },
   "ollama_api_request_failed": {
     "message": "Ollama API request failed",
     "description": "Error shown in the AI chat window when a request to the Ollama API fails; followed by a colon and the HTTP status or error detail."

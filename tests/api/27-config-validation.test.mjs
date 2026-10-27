@@ -11,7 +11,8 @@
 //    credentials come from the prompt config, not the global prefs);
 //  - one module Web Worker per provider: js/workers/model-worker-<provider>.js, created in
 //    initWorker() once the configuration has passed ("Worker Lifecycle & Timeout"), which also
-//    sends it the i18nStrings its error texts are built from ("Strings").
+//    sends it the i18nStrings its error texts are built from ("Strings", error_stream_idle_timeout
+//    with the literal $SECONDS$ included) and api_stream_idle_timeout ("Stream idle timeout").
 //
 // Reached at level 1 without touching shipped code: a background context (the module reads the
 // preferences through mztaPrefs, so the core browser mock is installed - this is not a worker
@@ -81,6 +82,7 @@ for (const [llm, fields] of Object.entries(REQUIRED)) {
         const init = cmd.worker.posted[0];
         assert.equal(init.type, 'init');
         for (const f of fields) assert.equal(init[f], VALUE[f] ?? 'some-model', f);
+        assert.equal(init.api_stream_idle_timeout, 120000, 'the stream idle timeout, its default');
     });
 
     k.test(`strings-${llm.replace(/_/g, '-')}`, `${llm}: the init message carries the i18n strings the worker builds its errors from`, async () => {
@@ -94,6 +96,8 @@ for (const [llm, fields] of Object.entries(REQUIRED)) {
         assert.equal(strings[key], browser.i18n.getMessage(key));
         assert.notEqual(strings[key], '');
         assert.equal(strings.error_connection_interrupted, browser.i18n.getMessage('error_connection_interrupted'));
+        assert.ok(typeof strings.error_stream_idle_timeout === 'string' && strings.error_stream_idle_timeout.includes('$SECONDS$'),
+            'error_stream_idle_timeout with the literal $SECONDS$');
         if (integration === 'anthropic') {
             for (const hint of ['anthropic_err_hint_temperature', 'anthropic_err_hint_budget_tokens', 'anthropic_err_hint_thinking_type', 'anthropic_err_hint_effort']) {
                 assert.ok(typeof strings[hint] === 'string' && strings[hint].includes('$MODEL$'), hint + ' with the literal $MODEL$');

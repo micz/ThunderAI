@@ -19,6 +19,10 @@ import {
 } from './harness.mjs';
 import { NET } from './fetch-model.mjs';
 import {
+    IDLE,
+    idleTimeoutCases
+} from './idle-cases.mjs';
+import {
     assertNoBrowser,
     flush,
     initMessage,
@@ -46,7 +50,7 @@ const INTERRUPTED = 'The connection to the server was unexpectedly interrupted';
 const wire = events => events.map(e => sse(e, e.type)).join('');
 
 await w.send(initMessage({ chatgpt_api_key: 'sk-FAKE-0000', chatgpt_model: 'gpt-4.1-nano', chatgpt_store: false },
-    { chat_show_usage_data: false, i18nStrings: { chatgpt_api_request_failed: FAILED, error_connection_interrupted: INTERRUPTED } }));
+    { chat_show_usage_data: false, i18nStrings: { chatgpt_api_request_failed: FAILED, error_connection_interrupted: INTERRUPTED, error_stream_idle_timeout: IDLE } }));
 
 const errorOf = t => t.posted().filter(m => m.type === 'error');
 
@@ -210,6 +214,15 @@ k.test('stop-during-error-body', 'Stop while the body of an HTTP error is read: 
     assert.deepEqual(errorOf(turn), []);
     assert.equal(s.cancelled, true, 'the body was cancelled');
     // history-after-errors, at the end of the file, checks that 'q' left the history.
+});
+
+// Spec 04 "Stream idle timeout": the default 120 s, keep-alives, a Stop during the stall (idle-cases.mjs).
+idleTimeoutCases(k, {
+    w, net, match: URL_, failed: FAILED,
+    open: () => manualStream(),
+    first: wire(FX.reasoning_stream.events.slice(0, 4)),
+    rest: wire(FX.reasoning_stream.events.slice(4)),
+    keepAlive: ': keep-alive\n\n',   // an SSE comment
 });
 
 k.test('history-after-errors', 'failed turns leave nothing in the history: no failed question, no partial answer', async () => {

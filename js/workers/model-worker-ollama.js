@@ -24,6 +24,12 @@ import {
     Ollama,
     extractUsage
 } from '../api/ollama.js';
+import {
+    createIdleTimer,
+    idleTimeoutMessage,
+    idleTimeoutReason,
+    resolveIdleTimeoutMs
+} from '../api/api-idle-timer.js';
 import { readResponseBody } from '../api/api-retry.js';
 import { taLogger } from '../mzta-logger.js';
 import {
@@ -41,6 +47,8 @@ let taLog = null;
 // backoff): Stop aborts the request then. Once streaming has started the
 // stopStreaming flag takes over, so a pending reader.read() is never rejected.
 let requestAbort = null;
+// ms without any data before a stream is given up (api_stream_idle_timeout, 0 = never).
+let idleTimeoutMs = 0;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
@@ -77,6 +85,11 @@ function abandonTurn() {
     thinkingAccumulator = '';
 }
 
+// The text of a stream cut by the idle timeout.
+function idleTimeoutText() {
+    return i18nStrings["ollama_api_request_failed"] + ": " + idleTimeoutMessage(i18nStrings, idleTimeoutMs);
+}
+
 self.onmessage = async function(event) {
     switch (event.data.type) {
         case 'init':
@@ -100,6 +113,7 @@ self.onmessage = async function(event) {
             }
             do_debug = event.data.do_debug;
             i18nStrings = event.data.i18nStrings;
+            idleTimeoutMs = resolveIdleTimeoutMs(event.data.api_stream_idle_timeout);
             taLog = new taLogger('model-worker-ollama', do_debug);
             initUsageEmitter(event.data);
             break;  // init
@@ -109,6 +123,8 @@ self.onmessage = async function(event) {
             usageMessageId = nextUsageMessageId();
             //console.log(">>>>>>>>>>> conversationHistory: " + JSON.stringify(conversationHistory));
             requestAbort = new AbortController();
+            // Kept past `requestAbort = null`: the idle timeout of the stream aborts it.
+            const turnAbort = requestAbort;
             const response = await ollama.fetchResponse(conversationHistory, {
                 signal: requestAbort.signal,
                 logger: taLog,
@@ -171,6 +187,12 @@ self.onmessage = async function(event) {
                 throw new Error("[ThunderAI] Ollama API request failed: " + error_text);
             }
 
+            // The idle timeout of the stream (#999). Started only now: until the headers the
+            // per-attempt timeout and the retries of fetchWithRetry() apply, and a stall from
+            // here on is never retried. When it fires, the turn's controller is aborted with its
+            // own reason, which errors the pending reader.read() (a Stop never does).
+            const idle = createIdleTimer(idleTimeoutMs, () => turnAbort.abort(idleTimeoutReason(idleTimeoutMs)));
+            idle.start();
             const reader = response.body.getReader();
             const decoder = new TextDecoder("utf-8");
             let buffer= '';
@@ -192,6 +214,8 @@ self.onmessage = async function(event) {
                         break;
                     }
                     const { done, value } = await reader.read();
+                    // Any bytes are activity, keep-alives (pings, comments, empty lines) included.
+                    idle.touch();
                     if (done) {
                         taLog.log("AI full reasoning: " + thinkingAccumulator);
                         taLog.log("AI full response: " + assistantResponseAccumulator);
@@ -277,13 +301,20 @@ self.onmessage = async function(event) {
                 }
             } catch (error) {
                 abandonTurn();
-                if (error instanceof TypeError && error.message.includes('Error in input stream')) {
+                if (idle.fired) {
+                    console.error('[ThunderAI] Ollama stream stalled:', error);
+                    // A Stop pressed during the stall found no read to end: it is spent here.
+                    stopStreaming = false;
+                    postMessage({ type: 'error', payload: idleTimeoutText() });
+                } else if (error instanceof TypeError && error.message.includes('Error in input stream')) {
                     console.error('[ThudenderAI] The connection to the server was unexpectedly interrupted:', error);
                     postMessage({ type: 'error', payload: i18nStrings['error_connection_interrupted'] + ": " + error.message });
                 } else {
                     console.error('[ThudenderAI] Ollama API request failed:', error);
                     postMessage({ type: 'error', payload: i18nStrings["ollama_api_request_failed"] + ": " + error.message });
                 }
+            } finally {
+                idle.stop();
             }
             break; //chatMessage
         case 'stop':
