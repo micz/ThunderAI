@@ -11,11 +11,11 @@ name: Update Weblate badges
 # stable. It fires only when the release is published by a user (web UI, gh, or a personal access
 # token): a release published by another workflow with GITHUB_TOKEN does not trigger it.
 #
-# REQUIRED SECRET: MICZ_SITE_TOKEN
+# REQUIRED SECRET: SITE_DISPATCH_TOKEN (the same token as sync-site-languages.yml)
 #   A fine-grained personal access token with access to the micz/micz.github.io repository only,
-#   permissions "Contents: Read and write" and "Pull requests: Read and write".
-#   Add it in Settings > Secrets and variables > Actions of this repository.
-#   The token expires: renew it (and update the secret) before its expiration date.
+#   permissions "Contents: Read and write" and "Pull requests: Read and write" (this workflow
+#   needs the second one too). Add it in Settings > Secrets and variables > Actions of this
+#   repository. The token expires: renew it (and update the secret) before its expiration date.
 on:
   release:
     types: [released]
@@ -43,7 +43,7 @@ jobs:
         with:
           repository: micz/micz.github.io
           path: site
-          token: ${{ secrets.MICZ_SITE_TOKEN }}
+          token: ${{ secrets.SITE_DISPATCH_TOKEN }}
 
       - uses: actions/setup-node@v7
         with:
@@ -60,7 +60,7 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           path: site
-          token: ${{ secrets.MICZ_SITE_TOKEN }}
+          token: ${{ secrets.SITE_DISPATCH_TOKEN }}
           branch: thunderai-weblate-badges
           delete-branch: true
           commit-message: 'ThunderAI: update Weblate translation badges (${{ github.event.release.tag_name || ''manual run'' }})'
