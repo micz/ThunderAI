@@ -119,6 +119,8 @@ tests/
 ├── chatgptweb/                 the ChatGPT Web area (its DOM files are dom/<page>/chatgptweb-*): README, the
 │                               controlled clock, the pre-script cut, the ChatGPT page, level 1 (loader, pre-script)
 ├── ci/                         level 1 of the CI scripts (today the policy surface report), and its README
+├── _stall_server/              not a test: a local AI server that stalls mid-answer, for testing the
+│                               stream idle timeout and Stop by hand in Thunderbird, and its README
 ├── <area>/                     level 1 of another area
 └── dom/<page>/                 DOM: one file per page × scenario, shared by every area
 ```
@@ -368,6 +370,10 @@ rules are in [`managed/README.md`](managed/README.md#potential-bugs-todo-tests).
   updating that area's locators.
 - Real layout and CSS. jsdom has no layout engine: the DOM tests check **where** an element is
   inserted, not what it looks like.
+- A real stalled stream. The api area runs the stream idle timeout on mock timers and a mock
+  fetch; in Thunderbird it is tested by hand with the stall server in
+  [`_stall_server/`](_stall_server/README.md) (spec 04 "Stream idle timeout"), which is the one to
+  use and to update when that behaviour changes.
 - Everything outside the areas listed above is still tested by hand in Thunderbird. What the
   managed configuration leaves out is in [`managed/README.md`](managed/README.md#what-is-not-covered),
   what the static checks leave out in [`static/README.md`](static/README.md#what-is-not-covered),

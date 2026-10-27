@@ -224,7 +224,11 @@ aligned where it contradicted itself:
 - **`fetchModelInfo()` of Gemini and Claude**, and the shape of a successful `fetchModels()` result
   beyond its list: spec 04 says they go through `fetchWithRetry()` and that a success carries the list
   ("`fetchModels()` and `fetchVersion()`"), which `26` checks.
-- **Anything requiring a live provider.**
+- **Anything requiring a live provider.** For the stream idle timeout and a Stop during a stall,
+  the manual check in Thunderbird uses the stall server in
+  [`../_stall_server/`](../_stall_server/README.md), a local OpenAI-compatible and Ollama server
+  that stalls after a few tokens: the idle cases here prove the worker's logic, not that Firefox
+  fails the pending read when the request is aborted after the headers.
 
 ## Under-specified
 

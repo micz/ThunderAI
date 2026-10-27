@@ -1028,6 +1028,12 @@ worker on `reader.read()` for ever. Every worker therefore bounds the **silence*
   (an HTTP error, an abort, a network error) it was never armed.
 - In a special command the overall `special_command_timeout` (same default) still bounds the whole
   exchange; whichever fires first ends it.
+- **Testing by hand:** the automated tests (the `-errors` files of `tests/api/`) run the timer on
+  mock timers and a mock fetch. In Thunderbird the idle timeout and a Stop during a stall are tested
+  with the stall server in `tests/_stall_server/` (`stall-server.mjs`, instructions in its
+  `README.md`): a local OpenAI-compatible and Ollama server that stalls after a few tokens, with
+  optional keep-alives and resume. Use that one, not an ad hoc server, and update it (and its
+  README) when this behaviour changes.
 
 ### Batch cancellation (user-triggered stop)
 
