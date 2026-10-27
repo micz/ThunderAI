@@ -135,6 +135,7 @@ async function restoreOptions() {
           if(element.id == 'chatgpt_win_height') default_number_value = prefs_default.chatgpt_win_height;
           if(element.id == 'chatgpt_win_width') default_number_value = prefs_default.chatgpt_win_width;
           if(element.id == 'special_command_timeout') default_number_value = prefs_default.special_command_timeout;
+          if(element.id == 'api_stream_idle_timeout') default_number_value = prefs_default.api_stream_idle_timeout;
           if(element.id == 'batch_max_concurrency') default_number_value = prefs_default.batch_max_concurrency;
           element.value = result[element.id] ?? default_number_value;
           break;
@@ -589,6 +590,13 @@ function resetSpecialCommandTimeout(){
   mztaPrefs.setPref('special_command_timeout', prefs_default.special_command_timeout);
 }
 
+function resetApiStreamIdleTimeout(){
+  if (isLockedKey('api_stream_idle_timeout')) return;
+  let apiStreamIdleTimeout = document.getElementById('api_stream_idle_timeout');
+  apiStreamIdleTimeout.value = prefs_default.api_stream_idle_timeout;
+  mztaPrefs.setPref('api_stream_idle_timeout', prefs_default.api_stream_idle_timeout);
+}
+
 async function updateCacheSize() {
   let size = await getCacheStorageUsedSpace();
   document.getElementById('cache_storage_size').textContent = size;
@@ -799,6 +807,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('reset_max_prompt_length').addEventListener('click', resetMaxPromptLength);
   document.getElementById('reset_special_command_timeout').addEventListener('click', resetSpecialCommandTimeout);
+  document.getElementById('reset_api_stream_idle_timeout').addEventListener('click', resetApiStreamIdleTimeout);
 
   // App-level "Advanced options" disclosure (purely UI, no pref persisted)
   let adv_toggle = document.getElementById('mzta_adv_toggle');

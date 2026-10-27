@@ -29,7 +29,9 @@ import {
     createIdleTimer,
     idleTimeoutMessage,
     idleTimeoutReason,
-    resolveIdleTimeoutMs
+    isUserStopReason,
+    resolveIdleTimeoutMs,
+    userStopReason
 } from '../api/api-idle-timer.js';
 import { readResponseBody } from '../api/api-retry.js';
 import { mergeUsageData } from '../api/mzta-api-usage.js';
@@ -46,9 +48,12 @@ let i18nStrings = null;
 let do_debug = false;
 let taLog = null;
 // Set only while waiting for the response headers (including the retry
-// backoff): Stop aborts the request then. Once streaming has started the
-// stopStreaming flag takes over, so a pending reader.read() is never rejected.
+// backoff): Stop aborts the request then, and the turn ends as requestAborted.
 let requestAbort = null;
+// The turn's controller while its stream is read: Stop aborts it with
+// userStopReason(), which ends a pending reader.read() at once, a stall
+// included, and the turn ends as a Stop (stopTurn()).
+let streamAbort = null;
 // ms without any data before a stream is given up (api_stream_idle_timeout, 0 = never).
 let idleTimeoutMs = 0;
 
@@ -93,6 +98,21 @@ function streamErrorText(error) {
         return i18nStrings['error_connection_interrupted'] + ": " + error.message;
     }
     return i18nStrings["anthropic_api_request_failed"] + ": " + (error && error.message ? error.message : String(error));
+}
+
+// A turn stopped by the user once streaming, between two chunks (the stopStreaming
+// flag) or during a pending read (userStopReason()): the partial answer stays in the
+// history and the turn ends with tokensDone, as a completed one.
+function stopTurn() {
+    stopStreaming = false;
+    taLog.log("AI full reasoning [STOPPED]: " + thinkingAccumulator);
+    taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
+    conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
+    assistantResponseAccumulator = '';
+    // Separate from tokensDone and free of any response text: see usage-emitter.js.
+    postUsageData(usageData, usageMessageId);
+    postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+    thinkingAccumulator = '';
 }
 
 // The text of a stream cut by the idle timeout.
@@ -191,9 +211,11 @@ self.onmessage = async function(event) {
         // The idle timeout of the stream (#999). Started only now: until the headers the
         // per-attempt timeout and the retries of fetchWithRetry() apply, and a stall from
         // here on is never retried. When it fires, the turn's controller is aborted with its
-        // own reason, which errors the pending reader.read() (a Stop never does).
+        // own reason, which errors the pending reader.read(); a Stop does the same with another
+        // reason (streamAbort), so the catch below tells the three endings apart.
         const idle = createIdleTimer(idleTimeoutMs, () => turnAbort.abort(idleTimeoutReason(idleTimeoutMs)));
         idle.start();
+        streamAbort = turnAbort;
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let buffer = '';
@@ -201,16 +223,8 @@ self.onmessage = async function(event) {
         try {
             while (true) {
                 if (stopStreaming) {
-                    stopStreaming = false;
                     reader.cancel();
-                    taLog.log("AI full reasoning [STOPPED]: " + thinkingAccumulator);
-                    taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
-                    conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
-                    assistantResponseAccumulator = '';
-                    // Separate from tokensDone and free of any response text: see usage-emitter.js.
-                    postUsageData(usageData, usageMessageId);
-                    postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
-                    thinkingAccumulator = '';
+                    stopTurn();
                     break;
                 }
                 const { done, value } = await reader.read();
@@ -325,22 +339,28 @@ self.onmessage = async function(event) {
 
             }
         } catch (error) {
-            // The connection broke while reading, or the idle timeout cut it: report it,
-            // never end the turn silently.
-            console.error('[ThunderAI] Claude stream interrupted:', error);
-            abandonTurn();
-            if (idle.fired) {
-                // A Stop pressed during the stall found no read to end: it is spent here.
-                stopStreaming = false;
-                postMessage({ type: 'error', payload: idleTimeoutText() });
+            if (isUserStopReason(turnAbort.signal.reason)) {
+                // Stop ended the pending read, a stall included: the turn ends as after
+                // a Stop between two chunks, with no error.
+                stopTurn();
             } else {
-                postMessage({ type: 'error', payload: streamErrorText(error) });
+                // The connection broke while reading, or the idle timeout cut it: report it,
+                // never end the turn silently.
+                console.error('[ThunderAI] Claude stream interrupted:', error);
+                abandonTurn();
+                if (idle.fired) {
+                    postMessage({ type: 'error', payload: idleTimeoutText() });
+                } else {
+                    postMessage({ type: 'error', payload: streamErrorText(error) });
+                }
             }
         } finally {
             idle.stop();
+            streamAbort = null;
         }
     } else if (event.data.type === 'stop') {
         stopStreaming = true;
         if (requestAbort) requestAbort.abort();
+        if (streamAbort) streamAbort.abort(userStopReason());
     }
 };

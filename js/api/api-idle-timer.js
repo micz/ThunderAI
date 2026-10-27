@@ -82,6 +82,19 @@ export function idleTimeoutReason(timeoutMs) {
 }
 
 /**
+ * The abort reason of a stream cut by a user Stop: it ends a pending reader.read() at once,
+ * a stall included, and tells the stream loop's catch that the turn was stopped, not broken.
+ */
+export function userStopReason() {
+    return new DOMException("Stopped by the user", 'StopError');
+}
+
+/** True for the abort reason of userStopReason(). */
+export function isUserStopReason(reason) {
+    return reason instanceof DOMException && reason.name === 'StopError';
+}
+
+/**
  * The user-visible text of an idle timeout, from the error_stream_idle_timeout
  * string the worker received with the literal $SECONDS$ (a worker has no browser.i18n).
  */

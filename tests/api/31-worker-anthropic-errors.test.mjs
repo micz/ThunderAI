@@ -26,6 +26,7 @@ import {
 import { NET } from './fetch-model.mjs';
 import {
     IDLE,
+    idleStopCase,
     idleTimeoutCases
 } from './idle-cases.mjs';
 import {
@@ -114,7 +115,7 @@ k.test('after-abort', 'the next turn does not resend the aborted message; with t
     assert.deepEqual(shape(t.posted()), [['newToken', 'Hello'], ['newToken', '! How can I help?'], ['tokensDone', '']]);
 });
 
-k.test('stop-mid-stream', 'Stop once streaming: the stream is cancelled and the turn closes with tokensDone', async () => {
+k.test('stop-mid-stream', 'Stop once streaming: the pending read ends at once, the stream is cancelled and the turn closes with tokensDone', async () => {
     const s = manualStream();
     net.expect(MSG_URL, () => s.response);
     const t = startTurn(w, 'Long answer please');
@@ -122,9 +123,9 @@ k.test('stop-mid-stream', 'Stop once streaming: the stream is cancelled and the 
     s.push(sse(ev[0].data, ev[0].event) + sse(ev[3].data, ev[3].event));
     await until(() => t.posted().some(m => m.type === 'newToken'), 'the first token');
     await w.send({ type: 'stop' });
-    s.push(sse(ev[4].data, ev[4].event));           // the pending read resolves: it is never rejected
-    await t.done;
+    await t.done;   // no further chunk: the Stop ends the pending read itself
     assert.equal(s.cancelled, true, 'the reader was cancelled');
+    assert.equal(net.calls[0].signal.reason.name, 'StopError', 'the request was aborted with the Stop reason');
     const types = t.posted().map(m => m.type);
     assert.equal(types.filter(x => x === 'tokensDone').length, 1);
     assert.equal(types.at(-1), 'tokensDone');
@@ -270,7 +271,7 @@ k.test('stop-during-error-body', 'Stop while the body of an HTTP error is read: 
     // history-after-errors, at the end of the file, checks that 'q' left the history.
 });
 
-// Spec 04 "Stream idle timeout": the default 120 s, keep-alives, a Stop during the stall (idle-cases.mjs).
+// Spec 04 "Stream idle timeout": the default 120 s, keep-alives, no timer left behind (idle-cases.mjs).
 idleTimeoutCases(k, {
     w, net, match: MSG_URL, failed: FAILED,
     open: () => manualStream(),
@@ -286,8 +287,19 @@ k.test('history-after-errors', 'failed turns leave nothing in the history: no fa
     const msgs = net.calls[0].json().messages;
     assert.deepEqual(msgs.at(-1), { role: 'user', content: 'After the errors' });
     assert.equal(msgs.filter(m => m.role === 'user' && m.content === 'q').length, 0, 'no failed question resent');
-    assert.equal(msgs.some(m => m.role === 'assistant' && m.content === 'Hello'), false, 'no partial answer');
+    // The one partial answer left is the stopped one of stop-mid-stream: a Stop keeps it (spec 04 "Workers and UI").
+    assert.deepEqual(msgs.flatMap((m, i) => m.role === 'assistant' && m.content === 'Hello' ? [msgs[i - 1].content] : []), ['Long answer please'], 'no partial answer of a failed turn');
     msgs.forEach((m, i) => assert.equal(m.role, i % 2 === 0 ? 'user' : 'assistant', 'roles alternate at ' + i));
+});
+
+// Spec 04 "Stream idle timeout": a Stop during the stall ends the turn at once and keeps its partial
+// answer, as any Stop: declared after history-after-errors, which wants no partial answer (idle-cases.mjs).
+idleStopCase(k, {
+    w, net, match: MSG_URL,
+    open: () => manualStream(),
+    first: wire([FX.stream_text.events[0], FX.stream_text.events[3]]),
+    rest: wire(FX.stream_text.events.slice(4)),
+    history: call => call.json().messages.map(m => [m.role, m.content]),
 });
 
 k.test('no-browser', 'no browser global was needed', () => {

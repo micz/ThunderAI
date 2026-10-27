@@ -994,8 +994,9 @@ stream (a dropped connection no one notices, an overloaded local server, a proxy
 worker on `reader.read()` for ever. Every worker therefore bounds the **silence** of the stream
 (#999), with the shared helper `js/api/api-idle-timer.js` (worker-safe, no import):
 
-- **Value:** the hidden preference `api_stream_idle_timeout` (ms, default `120000`, `0` = no idle
-  timeout; no control in the options page, settable in storage or by policy), sent in the `init`
+- **Value:** the preference `api_stream_idle_timeout` (ms, default `120000`, `0` = no idle
+  timeout; a field of the advanced options, min 1000, so `0` comes only from storage or a policy,
+  see [05-options.md](05-options.md)), sent in the `init`
   message by the chat window and by `mzta_specialCommand`. The worker reads it with
   `resolveIdleTimeoutMs()`: anything that is not a non-negative finite number (a string holding one
   is accepted) falls back to the default. Generous on purpose: a reasoning model, or Ollama loading
@@ -1010,13 +1011,20 @@ worker on `reader.read()` for ever. Every worker therefore bounds the **silence*
   stream alive.
 - **When it fires:** the turn's `AbortController` (the one `requestAbort` held, kept in a local
   `turnAbort` after `requestAbort` is cleared) is aborted with its own reason, a `DOMException`
-  named `IdleTimeoutError`. The abort errors the pending read; the worker's `catch` tells it from
-  any other failure by the timer's `fired` flag, abandons the turn and posts one `error` whose
-  payload is `i18nStrings["<provider>_api_request_failed"] + ": " + error_stream_idle_timeout`.
-  A Stop pressed during the stall (which only sets `stopStreaming`, see below) is reset there, so it
-  does not stop the next turn.
-- **Always disarmed:** `stop()` runs in the `finally` of the stream loop, so the end of the stream,
-  `message_stop`, a mid-stream error event, a Stop and a read error all clear it. Before the loop
+  named `IdleTimeoutError`. The abort errors the pending read. The worker's `catch` tells the three
+  endings apart: the abort reason `StopError` on the controller's signal is a Stop (see below,
+  `stopTurn()`, no error); otherwise the timer's `fired` flag means the idle timeout, which abandons
+  the turn and posts one `error` whose payload is
+  `i18nStrings["<provider>_api_request_failed"] + ": " + error_stream_idle_timeout`; anything else
+  is a stream error, as in the table above.
+- **Stop during a stall:** the same controller is reachable from the `stop` handler while the stream
+  is read (`streamAbort`, see [Workers and UI](#automatic-retry-handling)), so Stop does not wait for
+  the timer: it ends the turn at once, with the partial answer kept and `tokensDone`, exactly as a
+  Stop between two chunks. The two reasons are distinct, so a Stop is never reported as a stall and
+  a stall never as a Stop; the first abort wins (aborting an aborted controller keeps its reason).
+- **Always disarmed:** `stop()` runs in the `finally` of the stream loop, which also clears
+  `streamAbort`, so the end of the stream, `message_stop`, a mid-stream error event, a Stop and a
+  read error all clear it, and a later Stop or timer cannot touch a finished turn. Before the loop
   (an HTTP error, an abort, a network error) it was never armed.
 - In a special command the overall `special_command_timeout` (same default) still bounds the whole
   exchange; whichever fires first ends it.
@@ -1154,10 +1162,21 @@ API key in the query string.
   read. It passes `{signal, logger: taLog, onRetry}` to `fetchResponse()`.
 - `onRetry` posts `{type: 'newRetryAttempt', payload: {attempt, maxRetries, delayMs, status, reason}}`
   (`reason`: `'http'`, `'network'` or `'timeout'`; `status` is `null` for the last two).
-- On `stop`, the worker aborts `requestAbort` if it is still set. Once streaming has started,
-  `requestAbort` is `null` and the existing `stopStreaming` loop handles Stop, so a pending
-  `reader.read()` is never rejected by a Stop (only by the
-  [stream idle timeout](#stream-idle-timeout)).
+- On `stop`, the worker sets `stopStreaming` and aborts `requestAbort` if it is still set (the
+  `is_aborted` path below). Once streaming has started `requestAbort` is `null`, and the same
+  controller is held in `streamAbort` instead, from the moment the
+  [stream idle timer](#stream-idle-timeout) is armed to the `finally` that disarms it: Stop aborts
+  it with `userStopReason()` (`js/api/api-idle-timer.js`), a `DOMException` named `StopError`. The
+  abort errors the pending `reader.read()`, so Stop acts **at once**, even while the stream is
+  silent (before #999 a Stop during a stall waited for the next chunk, or for the idle timeout).
+  The loop's `catch` recognises the reason on the controller's `signal` (checked first) and calls
+  `stopTurn()`, the same function as the loop's `if (stopStreaming)` branch (which still covers a
+  Stop seen between two chunks, after `reader.cancel()`): it logs the `[STOPPED]` accumulators,
+  pushes the partial answer into `conversationHistory`, posts the usage and `tokensDone` with the
+  thinking received so far, resets the accumulators and `stopStreaming`. No `error`: the turn ends
+  as a completed one, and the window's `tokensDone` handling (`enableInput()`) clears the
+  "Stopping..." state of the button. A chunk that had not been read yet when Stop arrived is never
+  processed.
 - An aborted request (`is_aborted`, or Stop while an HTTP error's body was read) removes the
   unanswered user message from `conversationHistory` (so the next turn does not send it twice) and
   posts `requestAborted`.

@@ -41,6 +41,7 @@ export const COMPANIONS = {
     // "Reset to default" buttons of number inputs.
     max_prompt_length: ['reset_max_prompt_length'],
     special_command_timeout: ['reset_special_command_timeout'],
+    api_stream_idle_timeout: ['reset_api_stream_idle_timeout'],
     summarize_max_messages: ['reset_summarize_max_messages'],
 };
 

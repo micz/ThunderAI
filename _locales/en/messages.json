@@ -975,6 +975,14 @@
     "message": "Time in milliseconds before a hung AI request (auto add-tags, spam filter, summarize, translate) is aborted. Increase it if you use slow local models. This applies only to API-based connections, not to the ChatGPT Web Interface.",
     "description": "Options page: help text under the special command timeout field, explaining when automatic AI requests are aborted."
   },
+  "prefs_OptionText_api_stream_idle_timeout" : {
+    "message": "API stream idle timeout (ms)",
+    "description": "Options page: label of the number field for the time, in milliseconds, an AI answer may stay silent before the request is given up. Keep '(ms)' as the milliseconds unit."
+  },
+  "prefs_OptionText_api_stream_idle_timeout_Info" : {
+    "message": "Time in milliseconds without any data, once the answer has started, before the request is given up with an error. Reasoning models and slow local models can stay silent for a long time while still working: increase it if their answers are cut off. This applies only to API-based connections, not to the ChatGPT Web Interface.",
+    "description": "Options page: help text under the API stream idle timeout field, explaining when a silent AI answer is given up."
+  },
   "prefs_OptionText_batch_max_concurrency": {
     "message": "Emails processed in parallel",
     "description": "Label of the option limiting how many emails the automatic features (add tags, spam filter, summarize, translate) process at the same time"

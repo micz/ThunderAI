@@ -53,7 +53,7 @@ Helper modules have no `.test.mjs` suffix, so the level-1 glob never runs them.
 | `05-usage-data` | "Token usage data", "Per-provider support" (every `extractUsage()`) |
 | `06-usage-support-by-type` | "Per-provider support": `supportsUsageData(connection_type)` agrees with the modules |
 | `07-retry-helpers` | "Automatic Retry Handling": constants, `parseRetryAfter()`, `classifyRateLimitBody()`; "Logging": `extractErrorMessage()` |
-| `08-idle-timer` | "Stream idle timeout": `js/api/api-idle-timer.js` alone (`resolveIdleTimeoutMs()`, the timer, the abort reason, the user text) |
+| `08-idle-timer` | "Stream idle timeout": `js/api/api-idle-timer.js` alone (`resolveIdleTimeoutMs()`, the timer, the idle and Stop abort reasons, the user text) |
 | `10-fetch-with-retry` | "Automatic Retry Handling": `fetchWithRetry()` whole (the retried body read only with debug on, the 5 s limit of that read and of the 429 inspection, a user abort during a body read), "Logging" |
 | `20-anthropic-request` | "Anthropic / Claude": request body construction |
 | `21-anthropic-400-retry` | "Anthropic / Claude": one-shot retry on a 400 (its clone read within 5 s, a user abort during it), 400 error hints |
@@ -83,9 +83,13 @@ after 5 s, with the `statusText` as detail) and stops a turn during that read (`
 Every `-errors` file also declares the stream idle timeout cases of `api/idle-cases.mjs` (spec 04 "Stream
 idle timeout", the default 120 s on mock timers): `idle-timeout` (one `error` after 120 s of silence once
 streaming, the request aborted with the `IdleTimeoutError` reason, no retry), `idle-keepalive` (the
-provider's keep-alive, a ping event, an SSE comment or an empty line, keeps the stream open),
-`idle-stop-during-stall` (a Stop during the stall: the idle error, and the next turn is not stopped) and
-`idle-cleared` (a completed turn leaves no timer behind).
+provider's keep-alive, a ping event, an SSE comment or an empty line, keeps the stream open) and
+`idle-cleared` (a completed turn leaves no timer behind). After `history-after-errors` (which wants no
+partial answer of a failed turn), `idleStopCase()` adds `idle-stop-during-stall`: a Stop during the stall
+ends the turn at once, with no timer and no further data (`tokensDone`, no `error`, the request aborted
+with the `StopError` reason), keeps the partial answer in the history the next turn sends, leaves no timer
+behind, and does not stop the next turn. `stop-mid-stream` checks the same while tokens arrive: the
+turn closes without any chunk pushed after the Stop.
 
 ## The fetch model
 
@@ -245,8 +249,9 @@ are not asserted (or only the part the spec fixes is), and they are input for sp
 8. *(resolved: spec 04 "Workers and UI" now says a failed request removes the unanswered message and
    drops the partial answer, like an abort; `history-after-errors` in every `-errors` file, and `40`
    for the Responses chain.)*
-9. **Tokens after Stop**: the chunk whose read was pending when Stop arrived is still processed (its
-   tokens are posted) before the turn closes.
+9. *(resolved: spec 04 "Workers and UI" now says a Stop once streaming aborts the pending read with the
+   `StopError` reason, so a chunk not yet read is never processed (#999); `stop-mid-stream` and
+   `idle-stop-during-stall` in every `-errors` file.)*
 10. *(resolved: spec 04 "Reading the stream" now requires `decode(chunk, { stream: true })`; `utf8-split`
     in every `-stream` file.)*
 11. *(resolved: spec 04 "Worker Lifecycle & Timeout" now says what `initWorker()` sends; `27` tests it.)*

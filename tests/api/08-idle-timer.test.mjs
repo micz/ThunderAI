@@ -4,6 +4,7 @@
 //  - createIdleTimer(): fires once after timeoutMs without a touch(), touch() pushes the deadline
 //    back, stop() disarms it (a touch() after it does not re-arm it), 0 never fires;
 //  - idleTimeoutReason(): a DOMException named IdleTimeoutError;
+//  - userStopReason() / isUserStopReason(): a DOMException named StopError, and its check;
 //  - idleTimeoutMessage(): error_stream_idle_timeout with $SECONDS$ filled in.
 // Worker-safe: no browser global.
 
@@ -21,7 +22,9 @@ const {
     createIdleTimer,
     idleTimeoutMessage,
     idleTimeoutReason,
-    resolveIdleTimeoutMs
+    isUserStopReason,
+    resolveIdleTimeoutMs,
+    userStopReason
 } = await import('../../js/api/api-idle-timer.js');
 
 k.test('default', 'the default is 120000 ms', () => {
@@ -111,6 +114,20 @@ k.test('reason', 'the abort reason is a DOMException named IdleTimeoutError, nev
     assert.ok(r instanceof DOMException);
     assert.equal(r.name, 'IdleTimeoutError');
     assert.match(r.message, /120 s/);
+});
+
+k.test('stop-reason', 'the Stop reason is a DOMException named StopError, told apart from the idle reason and from a plain abort', () => {
+    const r = userStopReason();
+    assert.ok(r instanceof DOMException);
+    assert.equal(r.name, 'StopError');
+    assert.equal(isUserStopReason(r), true);
+    assert.equal(isUserStopReason(idleTimeoutReason(120000)), false);
+    const plain = new AbortController();
+    plain.abort();
+    assert.equal(isUserStopReason(plain.signal.reason), false, 'an AbortError');
+    for (const v of [undefined, null, 'StopError', { name: 'StopError' }]) {
+        assert.equal(isUserStopReason(v), false, String(v));
+    }
 });
 
 k.test('message', 'the user text fills $SECONDS$ with the timeout in seconds; a missing string gives no "undefined"', () => {
