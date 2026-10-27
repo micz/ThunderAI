@@ -1,0 +1,71 @@
+name: Update Weblate badges
+
+# Refreshes the Weblate translation status badges shown on the site (micz/micz.github.io,
+# static/weblate/thunderai/<lang>.svg) on every stable release, and by hand. The badges of the
+# languages listed in .github/scripts/thunderai_languages.txt are downloaded by
+# .github/scripts/weblate_update_status.mjs (a failed download fails the run: no partial PR), then
+# a pull request is opened on the site from the fixed branch thunderai-weblate-badges, or the one
+# already open is updated. No changes, no PR.
+#
+# The "released" release event fires only for stable releases, including a prerelease promoted to
+# stable. It fires only when the release is published by a user (web UI, gh, or a personal access
+# token): a release published by another workflow with GITHUB_TOKEN does not trigger it.
+#
+# REQUIRED SECRET: MICZ_SITE_TOKEN
+#   A fine-grained personal access token with access to the micz/micz.github.io repository only,
+#   permissions "Contents: Read and write" and "Pull requests: Read and write".
+#   Add it in Settings > Secrets and variables > Actions of this repository.
+#   The token expires: renew it (and update the secret) before its expiration date.
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-weblate-badges
+  cancel-in-progress: false
+
+jobs:
+  update:
+    # On a fork there is no token for the site: nothing to do there.
+    if: github.repository == 'micz/ThunderAI'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: thunderai
+
+      - uses: actions/checkout@v7
+        with:
+          repository: micz/micz.github.io
+          path: site
+          token: ${{ secrets.MICZ_SITE_TOKEN }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Download the badges
+        run: >-
+          node thunderai/.github/scripts/weblate_update_status.mjs
+          "https://hosted.weblate.org/widget/thunderai/-/"
+          thunderai/.github/scripts/thunderai_languages.txt
+          site/static/weblate/thunderai/
+
+      - name: Open or update the pull request on the site
+        uses: peter-evans/create-pull-request@v8
+        with:
+          path: site
+          token: ${{ secrets.MICZ_SITE_TOKEN }}
+          branch: thunderai-weblate-badges
+          delete-branch: true
+          commit-message: 'ThunderAI: update Weblate translation badges (${{ github.event.release.tag_name || ''manual run'' }})'
+          title: 'ThunderAI: update Weblate translation badges (${{ github.event.release.tag_name || ''manual run'' }})'
+          body: |
+            Automatic update of the ThunderAI Weblate translation status badges, opened by the `update-weblate-badges` workflow of micz/ThunderAI.
+
+            Triggered by: ${{ github.event.release.html_url || 'manual run' }}
