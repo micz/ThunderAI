@@ -7,8 +7,8 @@ name: Update Weblate badges
 # client_payload: { ref: release tag | branch of the manual run, url: release html_url | run url }
 #
 # The site's thunderai-weblate-badges.yml checks out this repository at ref, downloads the badges
-# of the languages listed in .github/scripts/thunderai_languages.txt with
-# .github/scripts/weblate_update_status.mjs (a failed download fails the run: no partial PR), and
+# of every directory of _locales/ (en excluded) with .github/scripts/weblate_update_status.mjs
+# (a failed download fails the run: no partial PR), and
 # opens a pull request on the site from the branch thunderai-weblate-badges with its own token,
 # or updates the one already open. No changes, no PR.
 #

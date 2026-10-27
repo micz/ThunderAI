@@ -17,23 +17,27 @@
  */
 
 // Downloads the Weblate translation status badge of each language: <baseurl><lang>/svg-badge.svg
-// into <output-dir>/<lang>.svg, for the language codes listed one per line in <languages-file>
-// (blank lines ignored). Node built-ins only (Node 22+). Any failed download exits with code 1.
+// into <output-dir>/<lang>.svg, for every directory of <locales-dir> that has a messages.json,
+// except en (the source language). The directory name is the code, unchanged (pt-br, zh_Hans).
+// Node built-ins only (Node 22+). Any failed download exits with code 1.
 //   node .github/scripts/weblate_update_status.mjs "https://hosted.weblate.org/widget/thunderai/-/" \
-//     .github/scripts/thunderai_languages.txt <path-to-micz.github.io>/static/weblate/thunderai/
+//     _locales <path-to-micz.github.io>/static/weblate/thunderai/
 // Run by the workflow thunderai-weblate-badges.yml of micz/micz.github.io, which
 // .github/workflows/update-weblate-badges.yml starts on every stable release.
 
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { mkdir, readdir, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const [baseUrl, languagesFile, outputDir] = process.argv.slice(2);
+const [baseUrl, localesDir, outputDir] = process.argv.slice(2);
 
 async function run() {
   try {
-    const languages = (await readFile(languagesFile, 'utf8'))
-      .split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const languages = (await readdir(localesDir, { withFileTypes: true }))
+      .filter(d => d.isDirectory() && d.name !== 'en' && existsSync(join(localesDir, d.name, 'messages.json')))
+      .map(d => d.name).sort();
+    if (languages.length === 0) throw new Error(`no locale directories in ${localesDir}`);
     await mkdir(outputDir, { recursive: true });
     for (const lang of languages) {
       const url = `${baseUrl}${lang}/svg-badge.svg`;
@@ -48,8 +52,8 @@ async function run() {
   }
 }
 
-if (!baseUrl || !languagesFile || !outputDir) {
-  console.error(`Usage: node ${basename(fileURLToPath(import.meta.url))} <baseurl> <languages-file> <output-dir>`);
+if (!baseUrl || !localesDir || !outputDir) {
+  console.error(`Usage: node ${basename(fileURLToPath(import.meta.url))} <baseurl> <locales-dir> <output-dir>`);
   process.exit(1);
 }
 
