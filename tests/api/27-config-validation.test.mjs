@@ -11,7 +11,10 @@
 //    credentials come from the prompt config, not the global prefs);
 //  - one module Web Worker per provider: js/workers/model-worker-<provider>.js, created in
 //    initWorker() once the configuration has passed ("Worker Lifecycle & Timeout"), which also
-//    sends it the i18nStrings its error texts are built from ("Strings").
+//    sends it the i18nStrings its error texts are built from ("Strings");
+//  - "Custom endpoint policy": the host of a custom endpoint (global or the prompt's own) is
+//    checked before the worker exists; refused, a config error with the localized message, and
+//    no question (nobody may be looking); allowed, the init carries approved_insecure_origins.
 //
 // Reached at level 1 without touching shipped code: a background context (the module reads the
 // preferences through mztaPrefs, so the core browser mock is installed - this is not a worker
@@ -133,12 +136,61 @@ k.test('specific-api-skips', 'use_specific_api (config.api_type set): no validat
     await setPrefs({ ollama_host: '', ollama_model: '' });
     const cmd = new mzta_specialCommand({
         llm: 'ollama_api',
-        config: { api_type: 'ollama_api', ollama_host: 'http://gpu-box:11434', ollama_model: 'qwen3:8b' },
+        config: { api_type: 'ollama_api', ollama_host: 'https://gpu-box:11434', ollama_model: 'qwen3:8b' },
     });
     await cmd.initWorker();
     const init = cmd.worker.posted[0];
-    assert.equal(init.ollama_host, 'http://gpu-box:11434');
+    assert.equal(init.ollama_host, 'https://gpu-box:11434');
     assert.equal(init.ollama_model, 'qwen3:8b');
+});
+
+// ---- spec 04 "Custom endpoint policy" [#1000]: checked before the worker exists, never asked --
+
+const APPROVALS = '_approved_insecure_origins';
+
+for (const [llm, field] of [['ollama_api', 'ollama_host'], ['openai_comp_api', 'openai_comp_host']]) {
+    const slug = llm.replace(/_/g, '-');
+    k.test(`insecure-${slug}`, `${llm}: an unencrypted remote server not yet allowed is a config error, with no question and no worker`, async () => {
+        await setPrefs({ [field]: 'http://192.168.1.10:11434' });
+        await ctx.ctl.browser.storage.local.set({ [APPROVALS]: [] });
+        const before = created.length;
+        const cmd = new mzta_specialCommand({ llm, config: {} });
+        await assert.rejects(cmd.initWorker(), e => e.isConfigError === true
+            && e.message === browser.i18n.getMessage('endpoint_insecure_not_confirmed', ['http://192.168.1.10:11434']));
+        assert.equal(created.length, before);
+    });
+
+    k.test(`approved-${slug}`, `${llm}: once allowed, the worker gets the allowed origins in its init message`, async () => {
+        await setPrefs({ [field]: 'http://192.168.1.10:11434/' });
+        await ctx.ctl.browser.storage.local.set({ [APPROVALS]: ['http://192.168.1.10:11434'] });
+        const cmd = new mzta_specialCommand({ llm, config: {} });
+        await cmd.initWorker();
+        assert.deepEqual(cmd.worker.posted[0].approved_insecure_origins, ['http://192.168.1.10:11434']);
+        await ctx.ctl.browser.storage.local.set({ [APPROVALS]: [] });
+    });
+
+    k.test(`credentials-${slug}`, `${llm}: a user name or password in the address is a config error`, async () => {
+        await setPrefs({ [field]: 'https://user:s3cr3t@api.example.test' });
+        const cmd = new mzta_specialCommand({ llm, config: {} });
+        await assert.rejects(cmd.initWorker(), e => e.isConfigError === true
+            && e.message === browser.i18n.getMessage('endpoint_error_credentials'));
+    });
+}
+
+k.test('insecure-specific-api', "the prompt's own host (use_specific_api) is checked too", async () => {
+    await setPrefs();
+    const cmd = new mzta_specialCommand({
+        llm: 'ollama_api',
+        config: { api_type: 'ollama_api', ollama_host: 'http://gpu-box:11434', ollama_model: 'qwen3:8b' },
+    });
+    await assert.rejects(cmd.initWorker(), e => e.isConfigError === true);
+});
+
+k.test('strings-redirect', 'the init message carries the redirect text the workers report a redirect with', async () => {
+    await setPrefs();
+    const cmd = new mzta_specialCommand({ llm: 'chatgpt_api', config: {} });
+    await cmd.initWorker();
+    assert.equal(cmd.worker.posted[0].i18nStrings.api_error_redirect, browser.i18n.getMessage('api_error_redirect'));
 });
 
 k.coverage();

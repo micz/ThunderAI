@@ -19,8 +19,15 @@
 // Some original methods derived from https://github.com/ali-raheem/Aify/blob/4ece286095ea7a6cf89d696902e6b81b5d1c3a4b/plugin/html/API.js
 
 import { parseExtraBody } from './api-utils.js';
-import { fetchWithRetry } from './api-retry.js';
+import {
+    fetchWithRetry,
+    isRedirectRefused
+} from './api-retry.js';
 import { createUsageData } from './mzta-api-usage.js';
+import {
+    checkEndpoint,
+    endpointProblemText
+} from '../mzta-endpoint-policy.js';
 
 // Local servers (LM Studio, vLLM, llama.cpp...) may load the model before they
 // send the response headers, so a chat request gets a longer per-attempt timeout.
@@ -83,6 +90,7 @@ export class OpenAIComp {
   stream = false;
   temperature = '';
   extra_body = '';
+  approved_insecure_origins = [];
 
   constructor({
     host = '',
@@ -92,6 +100,7 @@ export class OpenAIComp {
     use_v1 = true,
     temperature = '',
     extra_body = '',
+    approved_insecure_origins = [],
   } = {}) {
     this.host = (host || '').trim().replace(/\/+$/, "");
     this.model = model;
@@ -100,11 +109,27 @@ export class OpenAIComp {
     this.use_v1 = use_v1;
     this.temperature = temperature;
     this.extra_body = extra_body;
+    // The unencrypted origins the caller confirmed (js/mzta-endpoint-approvals.js):
+    // the endpoint is checked against them before every request [#1000].
+    this.approved_insecure_origins = Array.isArray(approved_insecure_origins) ? approved_insecure_origins : [];
+  }
+
+  // The error result of a request that must not be sent, or null. Same contract as a
+  // network failure, so every caller already handles it; the callers that can show a
+  // localized message check the endpoint themselves before getting here.
+  _endpointRefused = () => {
+    const check = checkEndpoint(this.host, this.approved_insecure_origins);
+    if (check.ok) return null;
+    console.error("[ThunderAI] OpenAI Comp API request not sent: " + endpointProblemText(check.problem));
+    return { ok: false, is_exception: true, is_aborted: false, endpoint_problem: check.problem,
+      error: "OpenAI Comp API request not sent: " + endpointProblemText(check.problem) };
   }
 
 
   fetchModels = async (retryConfig = {}) => {
     try{
+      const refused = this._endpointRefused();
+      if (refused) return refused;
       const curr_headers = {
         "Content-Type": "application/json",
       };
@@ -153,6 +178,7 @@ export class OpenAIComp {
       console.error("[ThunderAI] OpenAI Comp API request failed: " + error);
       let output = {};
       output.is_exception = true;
+      output.is_redirect = isRedirectRefused(error);
       output.ok = false;
       output.error = "OpenAI Comp API request failed: " + error;
       return output;
@@ -161,6 +187,8 @@ export class OpenAIComp {
 
   fetchResponse = async (messages, maxTokens = 0, retryConfig = {}) => {
     try{
+      const refused = this._endpointRefused();
+      if (refused) return refused;
       const tempFloat = parseFloat(this.temperature);
       const curr_headers = {
         "Content-Type": "application/json",
@@ -197,6 +225,7 @@ export class OpenAIComp {
           console.error("[ThunderAI] OpenAI Comp API request failed: " + error);
           let output = {};
           output.is_exception = true;
+          output.is_redirect = isRedirectRefused(error);
           output.is_aborted = retryConfig.signal?.aborted === true;
           output.ok = false;
           output.error = "OpenAI Comp API request failed: " + error;
@@ -206,6 +235,7 @@ export class OpenAIComp {
         console.error("[ThunderAI] OpenAI Comp API request failed: " + error);
         let output = {};
         output.is_exception = true;
+        output.is_redirect = isRedirectRefused(error);
         output.ok = false;
         output.error = "OpenAI Comp API request failed: " + error;
         return output;

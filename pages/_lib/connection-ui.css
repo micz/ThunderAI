@@ -39,6 +39,17 @@ textarea.option-textarea{
     overflow-wrap: break-word;
 }
 
+/* Why a custom endpoint address cannot be used, under its host field, filled by
+   checkEndpointField(): credentials in the address, a scheme other than
+   http/https, or an unencrypted server the user did not allow. Hidden via the
+   [hidden] attribute when the address is usable. */
+.endpoint_note{
+    margin-top: 4px;
+    line-height: 1.4;
+    color: var(--jsonError, #b3261e);
+    overflow-wrap: break-word;
+}
+
 /* Inline note shown when the selected model does not accept an option, or to
    report a model-reported limit. On Claude that is temperature / extended
    thinking budget / effort (updateAnthropicModelCapabilityUI()); on Ollama the

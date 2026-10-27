@@ -6,7 +6,8 @@ message protocol of the five model workers. The contract is
 [`claude-spec/04-api-integrations.md`](../../claude-spec/04-api-integrations.md), as everywhere in the
 suite: each test file names the spec 04 sections it covers in its opening comment.
 
-The modules under test are everything in `js/api/` and `js/workers/`, plus the `mzta_specialCommand`
+The modules under test are everything in `js/api/` and `js/workers/`, the address rules of
+`js/mzta-endpoint-policy.js`, plus the `mzta_specialCommand`
 half of "Configuration Validation" (`js/mzta-special-commands.js`) and `supportsUsageData()` of
 `js/mzta-utils.js`. How to run the suite, the two levels, the mock and the known-issue mechanism are in
 the general [`tests/README.md`](../README.md). Paths below are relative to `tests/`.
@@ -52,7 +53,10 @@ Helper modules have no `.test.mjs` suffix, so the level-1 glob never runs them.
 | `05-usage-data` | "Token usage data", "Per-provider support" (every `extractUsage()`) |
 | `06-usage-support-by-type` | "Per-provider support": `supportsUsageData(connection_type)` agrees with the modules |
 | `07-retry-helpers` | "Automatic Retry Handling": constants, `parseRetryAfter()`, `classifyRateLimitBody()`; "Logging": `extractErrorMessage()` |
+| `08-endpoint-policy` | "Custom endpoint policy": the pure rules of `js/mzta-endpoint-policy.js` (schemes, credentials, loopback, per-origin approval, credential masking) |
 | `10-fetch-with-retry` | "Automatic Retry Handling": `fetchWithRetry()` whole (the retried body read only with debug on, the 5 s limit of that read and of the 429 inspection, a user abort during a body read), "Logging" |
+| `11-redirects` | "Redirects": `redirect: 'error'` everywhere, the one redirect check after a network failure, `fetchNoRedirect()`, `is_redirect` on the classes' result |
+| `12-endpoint-guard` | "Custom endpoint policy": the Ollama and OpenAI Comp classes refuse an unusable or unapproved endpoint before `fetch()`; the worker takes `approved_insecure_origins` from its init; "Redirects": the worker's redirect text |
 | `20-anthropic-request` | "Anthropic / Claude": request body construction |
 | `21-anthropic-400-retry` | "Anthropic / Claude": one-shot retry on a 400 (its clone read within 5 s, a user abort during it), 400 error hints |
 | `22-gemini-request` | "Google Gemini", "Extra body data" (two-level merge), includeThoughts |
@@ -60,7 +64,7 @@ Helper modules have no `.test.mjs` suffix, so the level-1 glob never runs them.
 | `24-openai-comp-request` | "OpenAI-Compatible", "Extra body data", stream_options; 300 s timeout |
 | `25-openai-responses-request` | "OpenAI API": reasoning, text, sampling, limits, pass-through, extra-body gating |
 | `26-client-error-contract` | "Error contract between js/api/* and workers" (the classes); fetchModels through the retry; "`fetchModels()` and `fetchVersion()`" (an HTTP error with its `status` / `statusText`; a `200` with no model list or no Ollama version is an exception; OpenAI Comp's empty list, Ollama's `/api/tags` object) |
-| `27-config-validation` | "Configuration Validation", "Web Worker Pattern" (module worker per provider) |
+| `27-config-validation` | "Configuration Validation" (with the custom endpoint check, no question asked), "Web Worker Pattern" (module worker per provider) |
 | `30`/`31-worker-anthropic-*` | "Web Worker Pattern", "Thinking output…", "Per-provider support", "Wiring in the workers", "Emitting to the chat window", "Workers and UI", "Error contract…" |
 | `32`/`33-worker-gemini-*` | the same, Gemini (turn 1 replays the capture) |
 | `34`/`35-worker-ollama-*` | the same, Ollama (system prompt once; turn 1 replays the capture) |
@@ -93,7 +97,7 @@ k.test('case-id', 'what spec 04 says', async () => {
     net.expect(url, NET.networkError());   // a rejected fetch (Firefox's TypeError)
     net.expect(url, NET.hang);             // never answers; rejects with the reason once aborted
     ...
-    net.calls[0].json();                   // the recorded request: url, method, headers (lower-cased), body, signal, t
+    net.calls[0].json();                   // the recorded request: url, method, headers (lower-cased), body, redirect, credentials, signal, t
 });
 ```
 

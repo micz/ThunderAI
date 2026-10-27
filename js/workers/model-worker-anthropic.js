@@ -146,6 +146,10 @@ self.onmessage = async function(event) {
                 // Network-level failure: no status/statusText exist on the returned object,
                 // and error_message already carries the provider name.
                 error_text = error_message;
+                // A redirect refused by fetchWithRetry() [#1000]: say so, and how to fix it.
+                if (response.is_redirect === true && i18nStrings?.api_error_redirect) {
+                    error_text = i18nStrings.api_error_redirect;
+                }
             }else{
                 try{
                     const errorJSON = JSON.parse(errorBodyText);

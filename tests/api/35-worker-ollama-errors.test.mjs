@@ -146,7 +146,11 @@ k.test('stream-cut', 'a connection cut mid-stream: one error, connection interru
 
 k.test('network', 'a network failure after the retries: the exception text as is, not rateLimited', async (t) => {
     const timers = fakeTime(t);
-    for (let i = 0; i < 6; i++) net.expect(CHAT, NET.networkError('NetworkError when attempting to fetch resource.'));
+    // The first failure is followed by the redirect check (spec 04 "Redirects"): not one,
+    // so the five retries follow.
+    net.expect(CHAT, NET.networkError('NetworkError when attempting to fetch resource.'));
+    net.expect({ method: 'GET', url: CHAT }, NET.networkError());
+    for (let i = 0; i < 5; i++) net.expect(CHAT, NET.networkError('NetworkError when attempting to fetch resource.'));
     const turn = startTurn(w, 'q');
     await assert.rejects(drive(turn.done, timers));
     const [err] = errorOf(turn);

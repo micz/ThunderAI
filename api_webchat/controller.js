@@ -34,6 +34,7 @@ import { loadPrompt } from '../js/mzta-prompts.js';
 import { buildChatBubbleIcon } from './svgIcons.js';
 import { resolveContextWindow } from './contextWindow.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
+import { resolveEndpointAccess } from '../js/mzta-endpoint-approvals.js';
 
 // Get the LLM to be used
 const urlParams = new URLSearchParams(window.location.search);
@@ -167,10 +168,21 @@ if (worker) {
             }
         }
 
+        // A custom endpoint is checked before anything is sent to it [#1000]. This window
+        // is in front of the user, so an unencrypted remote server not yet confirmed is
+        // asked about here; refused, the window stays inert: no init, no ready message.
+        // An empty host is left to the background's own check, which says so.
+        let endpointAccess = { ok: true, approvedOrigins: [] };
+        const endpointHost = prefs_api[`${integration_prefix}_host`];
+        if ((integration === 'ollama' || integration === 'openai_comp') && (endpointHost ?? '').trim() !== '') {
+            endpointAccess = await resolveEndpointAccess(endpointHost, { ask: true });
+        }
+
         let i18nStrings = {};
         const i18n_msg_key = integration === 'openai_comp' ? 'OpenAIComp_api_request_failed' : `${integration}_api_request_failed`;
         i18nStrings[i18n_msg_key] = browser.i18n.getMessage(i18n_msg_key);
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
+        i18nStrings["api_error_redirect"] = browser.i18n.getMessage('api_error_redirect');
         if (integration === 'anthropic') {
             // 400 hints for describeAnthropicError(). The literal "$MODEL$" is passed
             // as the substitution so the worker can fill in the model it actually sent.
@@ -238,14 +250,15 @@ if (worker) {
             // Gates the 'usage' message at the source: with this false the worker
             // still extracts and debug-logs the usage, but emits nothing.
             chat_show_usage_data: show_usage,
+            approved_insecure_origins: endpointAccess.ok ? endpointAccess.approvedOrigins : [],
         };
 
         for (const key in options_config) {
             const prefKey = `${integration_prefix}_${key}`;
             workerInitMessage[prefKey] = prefs_api[prefKey];
         }
-        
-        worker.postMessage(workerInitMessage);
+
+        if (endpointAccess.ok) worker.postMessage(workerInitMessage);
 
         const additional_messages_config = {
             chatgpt: [
@@ -354,10 +367,16 @@ if (worker) {
         
         //console.log(`>>>>>>>>>>>>> command: ${llm}_ready_${call_id}`,)
 
-        browser.runtime.sendMessage({
-            command: `${llm}_ready_${call_id}`,
-            window_id: (await browser.windows.getCurrent()).id
-        });
+        if (endpointAccess.ok) {
+            browser.runtime.sendMessage({
+                command: `${llm}_ready_${call_id}`,
+                window_id: (await browser.windows.getCurrent()).id
+            });
+        } else {
+            messagesArea.appendBotMessage(endpointAccess.message, 'error');
+            messageInput.disableInput();
+            messageInput.showErrorStatus();
+        }
     }
 }
 

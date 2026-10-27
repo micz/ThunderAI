@@ -1014,6 +1014,22 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     font-size: 12px;
     color: var(--dim);
 }
+/* The unencrypted servers the user allowed, one per line with its Remove button. */
+.mzta_insecure_origins_list {
+    list-style: none;
+    margin: 6px 0 0 0;
+    padding: 0;
+    font-size: 12px;
+    color: var(--dim);
+}
+.mzta_insecure_origins_list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 2px 0;
+    overflow-wrap: anywhere;
+}
 
 /* ===========================================================================
    BOTTOM BLOCK

@@ -87,6 +87,9 @@ self.onmessage = async function(event) {
                     config[newKey] = event.data[key];
                 }
             }
+            // Checked again by the class before every request: a worker has no UI to ask
+            // with, so it only knows the origins the window or the background approved.
+            config.approved_insecure_origins = event.data.approved_insecure_origins;
             // NEVER log `config` (or any header map built from it): it carries
             // ollama_api_key. Log individual non-secret fields if a debug trace is
             // ever needed here.
@@ -146,6 +149,10 @@ self.onmessage = async function(event) {
                     // Network-level failure: no status/statusText exist on the returned object,
                     // and error_message already carries the provider name.
                     error_text = error_message;
+                    // A redirect refused by fetchWithRetry() [#1000]: say so, and how to fix it.
+                    if (response.is_redirect === true && i18nStrings?.api_error_redirect) {
+                        error_text = i18nStrings.api_error_redirect;
+                    }
                 }else{
                     try{
                         const errorJSON = JSON.parse(errorBodyText);

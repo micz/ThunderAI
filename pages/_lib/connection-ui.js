@@ -51,6 +51,11 @@ import {
 } from '../../js/mzta-prompts.js';
 import { mztaPrefs } from '../../js/mzta-prefs.js';
 import { mztaManaged } from '../../js/mzta-managed.js';
+import {
+    resolveEndpointAccess,
+    getApprovedInsecureOrigins
+} from '../../js/mzta-endpoint-approvals.js';
+import { ENDPOINT_PROBLEM } from '../../js/mzta-endpoint-policy.js';
 import { isManagedSecret, setDisabledRespectingManaged, resolveSpecificIntegrationMode } from './managed-ui.js';
 import {
   isTestableConnection,
@@ -715,6 +720,7 @@ export async function injectConnectionUI({
       <label>
         <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_host" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_host" class="option-input"/>
       </label>
+      <div id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_host_endpoint_note" class="endpoint_note" hidden></div>
     </td>
   </tr>
   <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
@@ -864,6 +870,7 @@ export async function injectConnectionUI({
         <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_host" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_host" class="option-input" />
         <br>__MSG_prefs_OptionText_openai_comp_info_remote__
       </label>
+      <div id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_host_endpoint_note" class="endpoint_note" hidden></div>
     </td>
   </tr>
   <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_api_cors_warning">
@@ -1156,6 +1163,8 @@ export async function injectConnectionUI({
   document.getElementById(getPrefixedId("chatgpt_api_key")).addEventListener("change", () => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
   document.getElementById(getPrefixedId("ollama_host")).addEventListener("change", () => warn_Ollama_HostEmpty(modelId_prefix));
   document.getElementById(getPrefixedId("openai_comp_host")).addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("ollama_host")).addEventListener("change", () => checkEndpointField(modelId_prefix, 'ollama'));
+  document.getElementById(getPrefixedId("openai_comp_host")).addEventListener("change", () => checkEndpointField(modelId_prefix, 'openai_comp'));
   document.getElementById(getPrefixedId("google_gemini_api_key")).addEventListener("change", () => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
   document.getElementById(getPrefixedId("anthropic_api_key")).addEventListener("change", () => warn_Anthropic_APIKeyEmpty(modelId_prefix));
   document.getElementById(getPrefixedId("anthropic_version")).addEventListener("change", () => warn_Anthropic_VersionEmpty(modelId_prefix));
@@ -1437,10 +1446,18 @@ export async function injectConnectionUI({
     // it), so the models cannot be fetched with it from here.
     if (isManagedSecret(document.getElementById(getPrefixedId("ollama_api_key")).value)) return;
     const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateOllamaModels', 'ollama');
+    // Asked before anything is sent: an unusable address, or an unencrypted server the
+    // user does not allow, ends here [#1000].
+    const access = await resolveEndpointAccess(document.getElementById(getPrefixedId("ollama_host")).value, { ask: true });
+    if (!access.ok) {
+      fetchUI.error(access.message);
+      return;
+    }
     fetchUI.loading();
     let ollama = new Ollama({
       host: document.getElementById(getPrefixedId("ollama_host")).value,
       api_key: document.getElementById(getPrefixedId("ollama_api_key")).value,
+      approved_insecure_origins: access.approvedOrigins,
     });
     warn_Ollama_HostEmpty(modelId_prefix);
     let data = await fetchModelsWithTimeout(ollama);
@@ -1488,11 +1505,19 @@ export async function injectConnectionUI({
     // it), so the models cannot be fetched with it from here.
     if (isManagedSecret(document.getElementById(getPrefixedId("openai_comp_api_key")).value)) return;
     const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateOpenAICompModels', 'openai_comp');
+    // Asked before anything is sent: an unusable address, or an unencrypted server the
+    // user does not allow, ends here [#1000].
+    const access = await resolveEndpointAccess(document.getElementById(getPrefixedId("openai_comp_host")).value, { ask: true });
+    if (!access.ok) {
+      fetchUI.error(access.message);
+      return;
+    }
     fetchUI.loading();
     let openai_comp = new OpenAIComp({
       host: document.getElementById(getPrefixedId("openai_comp_host")).value,
       apiKey: document.getElementById(getPrefixedId("openai_comp_api_key")).value,
       use_v1: document.getElementById(getPrefixedId("openai_comp_use_v1")).checked,
+      approved_insecure_origins: access.approvedOrigins,
     });
     warn_OpenAIComp_HostEmpty(modelId_prefix);
     let data = await fetchModelsWithTimeout(openai_comp);
@@ -2537,7 +2562,10 @@ async function fetchModelsWithTimeout(client) {
     timer = setTimeout(() => resolve({ ok: false, error: browser.i18n.getMessage('connTest_error_timeout') }), MODELS_FETCH_TIMEOUT_MS);
   });
   try {
-    return await Promise.race([client.fetchModels({ maxRetries: 0, timeoutMs: MODELS_FETCH_TIMEOUT_MS }), timeout]);
+    const result = await Promise.race([client.fetchModels({ maxRetries: 0, timeoutMs: MODELS_FETCH_TIMEOUT_MS }), timeout]);
+    // A refused redirect is a network failure to fetch(): say what it was, and the fix.
+    if (result?.is_redirect === true) result.error = browser.i18n.getMessage('api_error_redirect');
+    return result;
   } catch (error) {
     return { ok: false, error: error?.message || String(error) };
   } finally {
@@ -2657,6 +2685,31 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
     }
     btnGiveAllUrlsPermission_openai_comp_api.disabled = false;
   }
+}
+
+// The address in a custom endpoint field (Ollama, OpenAI Compatible), checked when the
+// user leaves the field [#1000]. An address that cannot be used (credentials in it, a
+// scheme other than http/https) is explained under the field. An unencrypted (http:)
+// server on another machine is asked about once, and the answer remembered per origin
+// (js/mzta-endpoint-approvals.js); declined, the note says nothing will be sent to it.
+// Saving is never blocked: the requests are, until the address is usable.
+async function checkEndpointField(modelId_prefix, integration) {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const hostInput = document.getElementById(getPrefixedId(`${integration}_host`));
+  const note = document.getElementById(getPrefixedId(`${integration}_host_endpoint_note`));
+  // A host the policy locked is the administrator's choice, approved without asking: a
+  // change to it (only possible by re-enabling the field by hand) must store nothing.
+  if (!hostInput || !note || hostInput.dataset.mztaManaged === '1') return;
+  let message = '';
+  if (hostInput.value.trim() !== '') {
+    const access = await resolveEndpointAccess(hostInput.value, { ask: true });
+    if (!access.ok) {
+      message = access.problem === ENDPOINT_PROBLEM.INSECURE
+        ? browser.i18n.getMessage('endpoint_insecure_note') : access.message;
+    }
+  }
+  note.textContent = message;
+  note.hidden = (message === '');
 }
 
 // The OpenAI reasoning models (gpt-5, o1/o3/o4) reject temperature and top_p, and
@@ -2833,7 +2886,9 @@ export async function updateOllamaModelCapabilityUI(modelId_prefix = '') {
   // the CORS button or the connection test, and the next change picks the capabilities up.
   let modelInfo = null;
   try {
-    const ollama = new Ollama({ host: host, api_key: apiKey });
+    // Never a question here, for the same reason as above: an unencrypted server not yet
+    // allowed is simply not asked, and the panel degrades like a failed probe.
+    const ollama = new Ollama({ host: host, api_key: apiKey, approved_insecure_origins: await getApprovedInsecureOrigins() });
     const info = await ollama.fetchModelInfo(model);
     if (info && info.ok) modelInfo = info.response;
   } catch (error) {

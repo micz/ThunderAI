@@ -861,6 +861,26 @@ A successful Ollama test also re-runs `updateOllamaModelCapabilityUI()`, because
 host permission through the test is often what makes `/api/show` reachable in the first place
 — see [04-api-integrations.md](04-api-integrations.md#ollama-ollama_api).
 
+### Connection Settings Panel — Custom Endpoint Address
+
+The address of the two custom endpoints (`{prefix}ollama_host`, `{prefix}openai_comp_host`) follows
+the rules of [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy)
+[#1000]. In the panel:
+
+- **On `change` of the field** (`checkEndpointField(modelId_prefix, integration)`): a non-empty
+  address goes through `resolveEndpointAccess(host, {ask: true})`. An unencrypted server on another
+  machine that is not yet allowed gets the `endpoint_insecure_confirm` dialog, once per origin.
+  When the address cannot be used, `#{prefix}{integration}_host_endpoint_note` (`.endpoint_note`,
+  red, `[hidden]` otherwise) says why: the localized `endpoint_error_*` message, or
+  `endpoint_insecure_note` when the user declined. Saving is never blocked; the requests are. A
+  field the policy locked (`data-mzta-managed="1"`) is skipped: its host is approved without asking,
+  and a change to it, possible only by re-enabling the field by hand, stores nothing.
+- **"Test now" and "Update list"** check the address the same way, with the dialog, before anything
+  is requested; refused, their own error shows the message, and nothing is sent. An empty host keeps
+  its previous behaviour (the disabled button; the connection test's permission error).
+- **The Ollama capability probe** never asks: an unencrypted server not yet allowed is simply not
+  probed, like an unreachable one.
+
 ### Connection Settings Panel — "Update list" Model Fetch Buttons
 
 Each API provider's model row in `injectConnectionUI()` (`.models_fetch_row`) holds the model
@@ -1489,6 +1509,14 @@ switches, `diff_granularity`, `do_debug` and the cache block below.
   happens; confirmed, `taStorage.clearAllRecords()` removes every `msg:` record - never a preference
   or any other key - then an `alert()` reports the count (`prefs_storage_clear_done`) and the size is
   read again.
+- **Allowed unencrypted servers.** `#insecure_origins_list` lists the user's own approvals
+  (`getUserApprovedInsecureOrigins()`, see
+  [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy)),
+  one origin per line with a "Remove" button (`revokeInsecureOrigin()`), or
+  `prefs_insecure_origins_empty`. Removed, the next request to that server is blocked until it is
+  allowed again. The hosts the policy sets are not listed: they are never asked about. The list is
+  rendered at load and again on every `storage.local` change of `_approved_insecure_origins`, so an
+  approval given in the connection panel of the same page shows at once.
 
 ### Owl for Exchange Warning (`#owl_warning`)
 
@@ -1695,6 +1723,10 @@ case for nearly every user and is swallowed silently.
   key uses either prefix, and each of the five `storage.local.get(null)` enumerations in
   `js/mzta-storage.js` filters on `msg:` before touching a record — including
   `clearAllRecords()`, which would otherwise delete every preference.
+- **The approved unencrypted servers** (`_approved_insecure_origins` in `storage.local`, see
+  [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy))
+  are not a preference: no `prefs_default` entry, no policy key, read and written only by
+  `js/mzta-endpoint-approvals.js`. The leading underscore keeps it out of every preference scan.
 - **The two #129 legacy reads** in `js/mzta-utils.js` (`migrateCustomPromptsStorage()`,
   `migrateDefaultPromptsPropStorage()`) keep pointing at `storage.sync` on purpose: their job is
   to drain old data *out* of it. They always end with the key removed from sync: when

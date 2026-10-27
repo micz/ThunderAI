@@ -24,6 +24,7 @@
 import { mztaPrefs } from './mzta-prefs.js';
  import { taLogger } from './mzta-logger.js';
  import { stripThinkTags } from './mzta-utils.js';
+ import { resolveEndpointAccess } from './mzta-endpoint-approvals.js';
 
  // Fallback timeout (ms) for a special command if the special_command_timeout
  // preference is unavailable. Kept generous to accommodate slow local models.
@@ -152,6 +153,7 @@ import { mztaPrefs } from './mzta-prefs.js';
         const i18nStrings = {
             [i18n_msg_key]: browser.i18n.getMessage(i18n_msg_key),
             error_connection_interrupted: browser.i18n.getMessage('error_connection_interrupted'),
+            api_error_redirect: browser.i18n.getMessage('api_error_redirect'),
         };
         if (integration === 'anthropic') {
             // describeAnthropicError() replaces the literal $MODEL$ with the model actually sent.
@@ -183,6 +185,20 @@ import { mztaPrefs } from './mzta-prefs.js';
             }
 
             workerInitMessage[prefKey] = value;
+        }
+
+        // A custom endpoint is checked before the worker exists [#1000]. Nobody may be
+        // looking (the automatic processing of incoming mail), so nothing is asked here:
+        // an unencrypted server not yet confirmed fails like a missing setting, and the
+        // message sends the user to the settings, where the confirmation is asked.
+        if (Object.prototype.hasOwnProperty.call(options_config, 'host')) {
+            const access = await resolveEndpointAccess(workerInitMessage[`${integration}_host`]);
+            if (!access.ok) {
+                const err = new Error(access.message);
+                err.isConfigError = true;
+                throw err;
+            }
+            workerInitMessage.approved_insecure_origins = access.approvedOrigins;
         }
 
         this.worker = new Worker(new URL(this.worker_path, import.meta.url), { type: 'module' });

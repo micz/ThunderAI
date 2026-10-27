@@ -76,6 +76,8 @@ const PROVIDERS = {
 for (const [id, P] of Object.entries(PROVIDERS)) {
     k.test(id + '-network', `${id}: a network exception gives {ok:false, is_exception:true, is_aborted:false, error} and no status`, async () => {
         net.expect(P.chatUrl, NET.networkError('NetworkError when attempting to fetch resource.'));
+        // The redirect check that follows a network failure (spec 04 "Redirects"): not one.
+        net.expect({ method: 'GET', url: P.chatUrl }, NET.networkError());
         const r = await P.chat(P.make(), { maxRetries: 0 });
         assert.equal(r instanceof Response, false);
         assert.equal(r.ok, false);

@@ -831,6 +831,8 @@ For special prompts (`mzta_specialCommand`), required fields are validated in `i
 
 Validation is skipped when `use_specific_api = true` (i.e., the prompt's own `api_type` overrides the global setting — credentials come from the prompt config, not global prefs).
 
+The host of a custom endpoint (`ollama`, `openai_comp`) is then checked in every case, global or the prompt's own, after the `{integration}_{key}` values are resolved and before the worker is created: `resolveEndpointAccess(host)` without `ask` (see [Custom endpoint policy](#custom-endpoint-policy)). Refused, it throws the same `isConfigError` error, with its localized message (`endpoint_error_*`, or `endpoint_insecure_not_confirmed` for an unencrypted server not yet allowed). Allowed, the init message carries `approved_insecure_origins`.
+
 The `isConfigError` flag on the thrown error tells callers in `mzta-background.js` to display the error in the panel **without saving it to storage** — so the user can fix settings and retry cleanly.
 
 Feature-specific routing of `isConfigError`:
@@ -918,6 +920,8 @@ The provider classes in `js/api/` return **two different shapes** on failure, an
 
 - **Network-level exception** (server unreachable, DNS failure, CORS rejection, per-attempt timeout -- once the automatic retries are used up): the `catch` block in `fetchResponse()` does **not** return a `Response`. It returns a plain object `{ok: false, is_exception: true, is_aborted, error}` with **no `status` and no `statusText`**, and `error` already includes the provider name (e.g. `"Ollama API request failed: TypeError: NetworkError…"`).
 - **User abort** (Stop pressed before any response arrived): same shape with `is_aborted: true`. Workers check it **before** the error branch and post `requestAborted` instead of `error` (see [Automatic Retry Handling](#automatic-retry-handling)).
+- **Refused redirect**: same shape with `is_redirect: true` (every class sets the flag in every such `catch`, `false` for any other exception). The workers then post `i18nStrings.api_error_redirect` instead of `error`, and the pages show `api_error_redirect` (see [Redirects](#redirects)).
+- **Refused endpoint** (Ollama and OpenAI Comp only): same shape with `endpoint_problem` set, returned before any `fetch()` (see [Custom endpoint policy](#custom-endpoint-policy)).
 - **HTTP error** (404, 401, 500…): a real `Response` is returned, so `status`, `statusText` and the JSON body are all available.
 
 Reading `response.status` / `response.statusText` in the exception branch yields a literal `"undefined undefined"` in the user-visible error, and re-prefixing the i18n provider string there duplicates the provider name. All five workers therefore build a single `error_text` variable:
@@ -1015,7 +1019,9 @@ automatically instead of surfacing as a hard error. This matters most for the un
 `api-utils.js` it is worker-safe (its only import is `js/mzta-logger.js`). Every provider class
 uses it for `fetchResponse()` and `fetchModels()`, which both take an optional trailing
 `retryConfig` (for Anthropic, also `_postMessages()`, so the one-shot 400 retry gets transient
-retry too). Ollama's `fetchVersion()`/`fetchModelInfo()` still use plain `fetch()`.
+retry too). The direct probes (Ollama's `fetchVersion()` / `fetchModelInfo()` / `fetchRunningModels()`,
+the `fetchModelInfo()` of Gemini and Claude) are not retried: they call `fetchNoRedirect()`, the same
+redirect rule without the retry (see [Redirects](#redirects)).
 
 **`retryConfig`:** overrides for `RETRY_DEFAULTS` (`maxRetries` 5, `retryDelaysMs`
 `[5000, 10000, 20000, 30000]`, `retryAfterCapMs` 60000, `timeoutMs` 60000) plus `signal` (user
@@ -1157,6 +1163,84 @@ covers are time-dependent, not model-dependent; daily quota exhaustion is the on
 would address, and there the right answer is to tell the user. If it is ever added, it must be a
 separate opt-in preference with a user-chosen list built from `fetchModels()`, limited to 429/503,
 with the model that actually answered reported in the UI.
+
+## Redirects
+
+No API request ever follows a redirect [#1000]: `fetch()` would forward the body (the email content)
+and the custom headers (`x-api-key`) to wherever it points. Browsers drop only `Authorization` on a
+cross-origin redirect.
+
+- **Every request is sent with `redirect: 'error'`.** `fetchWithRetry()` sets it over whatever the
+  caller passed, and the direct probes use `fetchNoRedirect(url, options)`, a single `fetch()` with the
+  same rule. Both live in `js/api/api-retry.js`. This covers every provider and every call: the chat
+  and completion requests, the model lists, the connection tests and the model info.
+- **Recognising a redirect.** A refused redirect rejects with the same `TypeError` as an unreachable
+  server. So after the **first** network failure of a call (not a per-attempt timeout, not a user
+  abort), `answersWithRedirect(url, signal)` asks the URL again once: a `GET` with
+  `redirect: 'manual'`, `credentials: 'omit'`, no headers (no API key), no body (no email), and a 5 s
+  limit. A `3xx` answer, or an `opaqueredirect` one (what a browser returns for `manual`), means a
+  redirect: a `RedirectRefusedError` is thrown at once, **with no retry**, since retrying cannot
+  change it. Any other answer, a failure or the limit means "not a redirect": the original error
+  goes on as before (retried, then rethrown). The check is never repeated within the same call. It
+  is logged without the URL.
+- **What the user sees.** The classes flag the error result with `is_redirect`
+  (`isRedirectRefused(error)`). The workers post `i18nStrings.api_error_redirect` (sent by the chat
+  window and by `initWorker()`), and the pages show `api_error_redirect`: the connection test
+  (`_mapError()`) and "Update list" (`fetchModelsWithTimeout()`). The message tells the user to enter
+  the final address directly.
+
+## Custom endpoint policy
+
+The two connections whose address the user types, Ollama and OpenAI Compatible, follow these rules
+before any request is sent to them [#1000]:
+
+| Address | Result |
+|---|---|
+| not a URL, or empty | refused (`endpoint_error_invalid`) |
+| a scheme other than `http:` / `https:` (`ftp://`, `file://`, `localhost:11434`) | refused (`endpoint_error_scheme`) |
+| a user name or a password in it (`https://user:pass@host/`, `https://user@host/`, `http://:pass@localhost/`) | refused (`endpoint_error_credentials`), on any host |
+| `https:` | allowed |
+| `http:` to a loopback host: `localhost` (any case, with or without the trailing dot), any `127.0.0.0/8` address, `[::1]` | allowed |
+| `http:` to any other host, `0.0.0.0`, the private LAN ranges and `*.local` included | allowed only once the user approved its **origin** (`URL.origin`), or the policy sets it |
+
+- **The rules**, in `js/mzta-endpoint-policy.js`: pure functions with no WebExtension or DOM
+  dependency, since the API classes run in the workers. These are `parseEndpoint()`,
+  `isLoopbackHost()`, `needsInsecureConfirmation()`, `endpointOrigin()`, `checkEndpoint(value,
+  approvedOrigins)` and `maskUrlCredentials()`. Credentials are never logged:
+  `mztaPrefs._logValue()` and `mztaManaged._logValue()` mask the user info of every `*_host` value.
+- **The approvals**, in `js/mzta-endpoint-approvals.js`, for the pages and the background only:
+  - The user's approvals live in `storage.local` under `_approved_insecure_origins`, an array of
+    origins in the order they were approved. `getUserApprovedInsecureOrigins()`,
+    `approveInsecureOrigin()` and `revokeInsecureOrigin()` manage it.
+  - `getApprovedInsecureOrigins()` adds the `http:` origins of every host the enterprise policy
+    sets: the global `*_host`, the `_special_prompts_connection` fields and the organization
+    prompts. The administrator chose them, so the user is never asked about them.
+  - Approvals are per origin, not per provider or per field. A different host, port or scheme is
+    asked about again. Nothing is approved automatically: an existing remote `http:` setup gets the
+    question, or the message, on its first request after the update.
+- **`resolveEndpointAccess(host, {ask})`** is the one entry point. It returns
+  `{ok: true, approvedOrigins}` or `{ok: false, problem, message}`, with `message` localized. With
+  `ask` (a page in front of the user) an unapproved `http:` origin gets a native `confirm()`
+  (`endpoint_insecure_confirm`), which stores the origin when accepted. Without it, the request is
+  refused with `endpoint_insecure_not_confirmed`, which tells the user where to allow the server.
+- **Where it is checked**, always before anything is sent:
+
+  | Caller | `ask` | Refused |
+  |---|---|---|
+  | API chat window (`api_webchat/controller.js`), on a non-empty host | yes | the message in the transcript, input locked; no `init` to the worker, no `_ready_` to the background, so nothing is ever sent |
+  | Background special commands (`initWorker()`, see [Configuration Validation](#configuration-validation)) | no: nobody may be looking (incoming mail) | `isConfigError` with the message |
+  | Connection test (`runConnectionTest()`), on a non-empty host | yes | the test's error |
+  | "Update list" (Ollama, OpenAI Comp) | yes | the red status under the button |
+  | Host field `change` (`checkEndpointField()`), see [05-options.md](05-options.md) | yes | a note under the field |
+  | Ollama capability probe, context-window lookup | no | the probe fails like an unreachable server |
+
+- **The classes are the last line of defence.** `Ollama` and `OpenAIComp` take
+  `approved_insecure_origins` in their constructor, and every request method runs `checkEndpoint()`
+  before `fetch()`. A refused endpoint returns the network-failure shape with `endpoint_problem`, and
+  an English `error` from `endpointProblemText()`, since a worker has no `browser.i18n`. The workers
+  pass the init message's `approved_insecure_origins` to the class. A worker only knows what the
+  window or the background approved when it was created, so an approval revoked while a chat window
+  is open applies to the next window.
 
 ## Optional Permissions
 
@@ -1390,7 +1474,7 @@ the `taLog` debug output.
 
 ## Adding a New Provider
 
-1. Create `js/api/<provider>.js` with the API call logic. Use `fetchWithRetry()` (`js/api/api-retry.js`) instead of `fetch()` in `fetchResponse()`/`fetchModels()`, with a trailing `retryConfig` parameter and `is_aborted` in the exception object
+1. Create `js/api/<provider>.js` with the API call logic. Use `fetchWithRetry()` (`js/api/api-retry.js`) instead of `fetch()` in `fetchResponse()`/`fetchModels()`, with a trailing `retryConfig` parameter and `is_aborted` in the exception object (and `fetchNoRedirect()` for any other direct call, never a bare `fetch()`: see [Redirects](#redirects); `is_redirect` in the exception object; a user-typed address goes through [Custom endpoint policy](#custom-endpoint-policy))
 2. Create `js/workers/model-worker-<provider>.js` that imports and calls the API module
 3. Add a new `connection_type` value constant
 4. Add settings keys to `integration_options_config` in `options/mzta-options-default.js`

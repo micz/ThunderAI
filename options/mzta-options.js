@@ -68,6 +68,10 @@ import {
   bindPermissionToggle,
   showLockedPermissionWarning
 } from '../pages/_lib/permission-toggle.js';
+import {
+  getUserApprovedInsecureOrigins,
+  revokeInsecureOrigin
+} from '../js/mzta-endpoint-approvals.js';
 
 let taLog = new taLogger("mzta-options",true);
 
@@ -592,7 +596,36 @@ function resetSpecialCommandTimeout(){
 async function updateCacheSize() {
   let size = await getCacheStorageUsedSpace();
   document.getElementById('cache_storage_size').textContent = size;
-}  
+}
+
+// The unencrypted (http:) servers the user allowed [#1000], each with a button that
+// withdraws the permission: the next request to it is blocked until confirmed again.
+// Only the user's own: the servers the enterprise policy sets are never asked about.
+async function renderInsecureOrigins() {
+  const list = document.getElementById('insecure_origins_list');
+  const origins = await getUserApprovedInsecureOrigins();
+  list.replaceChildren();
+  if (origins.length === 0) {
+    const empty = document.createElement('li');
+    empty.textContent = browser.i18n.getMessage('prefs_insecure_origins_empty');
+    list.appendChild(empty);
+    return;
+  }
+  for (const origin of origins) {
+    const item = document.createElement('li');
+    const name = document.createElement('span');
+    name.textContent = origin;
+    const btn = document.createElement('button');
+    btn.className = 'btn_small';
+    btn.textContent = browser.i18n.getMessage('prefs_insecure_origins_remove');
+    btn.addEventListener('click', async () => {
+      await revokeInsecureOrigin(origin);
+      await renderInsecureOrigins();
+    });
+    item.append(name, btn);
+    list.appendChild(item);
+  }
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   await injectConnectionUI({
@@ -874,6 +907,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btn_options_setup_wizard').addEventListener('click', async (e) => {
       e.preventDefault();
       await openSetupWizard();
+  });
+
+  // Unencrypted servers the user allowed: refreshed when a connection panel of this page
+  // (or any other page) adds or removes one.
+  renderInsecureOrigins();
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && Object.prototype.hasOwnProperty.call(changes, '_approved_insecure_origins')) {
+      renderInsecureOrigins();
+    }
   });
 
   // Cache management

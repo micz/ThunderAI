@@ -191,7 +191,11 @@ k.test('overloaded-not-rate-limited', 'a 529 after the retries is not flagged ra
 
 k.test('network', 'a network failure after the retries: the exception text as is, no status, not rateLimited', async (t) => {
     const timers = fakeTime(t);
-    for (let i = 0; i < 6; i++) net.expect(MSG_URL, NET.networkError('NetworkError when attempting to fetch resource.'));
+    // The first failure is followed by the redirect check (spec 04 "Redirects"): not one,
+    // so the five retries follow.
+    net.expect(MSG_URL, NET.networkError('NetworkError when attempting to fetch resource.'));
+    net.expect({ method: 'GET', url: MSG_URL }, NET.networkError());
+    for (let i = 0; i < 5; i++) net.expect(MSG_URL, NET.networkError('NetworkError when attempting to fetch resource.'));
     const turn = startTurn(w, 'q');
     await assert.rejects(drive(turn.done, timers), e => e.message.endsWith(errorOf(turn)[0].payload));
     const [err] = errorOf(turn);

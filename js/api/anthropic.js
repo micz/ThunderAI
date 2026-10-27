@@ -25,6 +25,8 @@ import {
 } from './anthropic_model_capabilities.js';
 import {
     fetchWithRetry,
+    fetchNoRedirect,
+    isRedirectRefused,
     readResponseBody
 } from './api-retry.js';
 import {
@@ -159,7 +161,7 @@ export class Anthropic {
    */
   fetchModelInfo = async (model) => {
     try{
-      const response = await fetch("https://api.anthropic.com/v1/models/" + encodeURIComponent(model), {
+      const response = await fetchNoRedirect("https://api.anthropic.com/v1/models/" + encodeURIComponent(model), {
           method: "GET",
           headers: {
               "Content-Type": "application/json",
@@ -187,6 +189,7 @@ export class Anthropic {
       console.error("[ThunderAI] Claude API request failed: " + error);
       let output = {};
       output.is_exception = true;
+      output.is_redirect = isRedirectRefused(error);
       output.ok = false;
       output.error = "Claude API request failed: " + error;
       return output;
@@ -229,6 +232,7 @@ export class Anthropic {
       console.error("[ThunderAI] Claude API request failed: " + error);
       let output = {};
       output.is_exception = true;
+      output.is_redirect = isRedirectRefused(error);
       output.ok = false;
       output.error = "Claude API request failed: " + error;
       return output;
@@ -414,6 +418,7 @@ export class Anthropic {
         console.error("[ThunderAI] Claude API request failed: " + error);
         let output = {};
         output.is_exception = true;
+        output.is_redirect = isRedirectRefused(error);
         output.is_aborted = retryConfig.signal?.aborted === true;
         output.ok = false;
         output.error = "Claude API request failed: " + error;

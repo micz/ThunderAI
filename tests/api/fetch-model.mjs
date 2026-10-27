@@ -3,8 +3,9 @@
  *
  *  Every network call of js/api/* goes through fetchWithRetry() (js/api/api-retry.js), which
  *  calls the global `fetch` at call time; a few probes (Ollama fetchVersion/fetchModelInfo, the
- *  fetchModelInfo of Gemini and Claude) call it directly. Both reach this model once it is
- *  installed on globalThis.
+ *  fetchModelInfo of Gemini and Claude) call it through fetchNoRedirect(). Both reach this model
+ *  once it is installed on globalThis. A network failure is followed by the redirect check of
+ *  answersWithRedirect(): a GET to the same URL, which a test scripts like any other call.
  *
  *  A test scripts the calls it expects, in order:
  *
@@ -109,6 +110,10 @@ export function installFetchModel() {
             method: (init.method || 'GET').toUpperCase(),
             headers: headerObject(init.headers),
             body,
+            // The redirect mode and the credentials mode, as passed ('error' on every API
+            // request, 'manual' and 'omit' on the redirect check): spec 04 "Redirects".
+            redirect: init.redirect ?? null,
+            credentials: init.credentials ?? null,
             signal: init.signal || null,
             t: Date.now(),
             json() { return JSON.parse(body); },

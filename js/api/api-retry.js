@@ -54,6 +54,10 @@ const defaultLogger = new taLogger('api-retry', false);
  * body reports a used-up quota or spend limit (see classifyRateLimitBody()), or
  * any response asking for a wait longer than retryAfterCapMs.
  *
+ * Redirects are never followed (redirect: 'error'). After the first network
+ * failure of a call, answersWithRedirect() checks whether a redirect caused it:
+ * if so a RedirectRefusedError is thrown at once, with no retry.
+ *
  * Always either returns a Response (possibly a non-ok one, unread, when the
  * status is not retryable or the retries are used up) or throws.
  *
@@ -74,6 +78,7 @@ export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
     const logger = cfg.logger || defaultLogger;
     const maxRetries = Math.max(0, parseInt(cfg.maxRetries) || 0);
     let lastError = null;
+    let probed = false;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         if (signal?.aborted) throw signal.reason;
@@ -92,12 +97,26 @@ export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
         let response = null;
         let reason = 'http';
         try {
-            response = await fetch(url, { ...options, signal: attemptSignal });
+            // A redirect is never followed [#1000]: the body (the email content) and the
+            // custom headers would go along to wherever it points. It fails instead.
+            response = await fetch(url, { ...options, redirect: 'error', signal: attemptSignal });
         } catch (error) {
+            clearTimeout(timer);
             if (signal?.aborted) throw error;
-            lastError = timeoutCtrl.signal.aborted ? timeoutCtrl.signal.reason : error;
+            const timedOut = timeoutCtrl.signal.aborted;
+            lastError = timedOut ? timeoutCtrl.signal.reason : error;
+            // A refused redirect looks like any network failure. Asked once per call: a
+            // redirect will not go away by retrying, so it ends the request at once.
+            if (!timedOut && !probed) {
+                probed = true;
+                if (await answersWithRedirect(url, signal)) {
+                    logger.log(label + " request failed: the server answered with a redirect, not followed");
+                    throw new RedirectRefusedError();
+                }
+                if (signal?.aborted) throw signal.reason;
+            }
             if (attempt === maxRetries) throw lastError;
-            reason = timeoutCtrl.signal.aborted ? 'timeout' : 'network';
+            reason = timedOut ? 'timeout' : 'network';
         } finally {
             clearTimeout(timer);
         }
@@ -175,6 +194,69 @@ export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
     // Unreachable: the last attempt always returns or throws. Kept so a future
     // change to the loop can never make the caller receive undefined.
     throw lastError ?? new Error(label + " request failed after " + maxRetries + " retries");
+}
+
+/**
+ * Thrown instead of the network error when the request failed because the server
+ * answered with a redirect, which ThunderAI never follows. The provider classes
+ * flag their error result with is_redirect (see isRedirectRefused()), so the user
+ * is told to enter the final address instead of "network error".
+ */
+export class RedirectRefusedError extends Error {
+    constructor() {
+        super("the server answered with a redirect, which is not followed: use the final URL directly");
+        this.name = 'RedirectRefusedError';
+    }
+}
+
+export function isRedirectRefused(error) {
+    return error instanceof RedirectRefusedError;
+}
+
+// Longest wait for the redirect check of answersWithRedirect().
+const REDIRECT_PROBE_TIMEOUT_MS = 5000;
+
+/**
+ * Whether the URL answers with a redirect. fetch() with redirect: 'error' rejects a
+ * redirect with the same TypeError as an unreachable server, so after such a failure
+ * the URL is asked again, this time as a bare GET: no headers (no API key), no body
+ * (no email content), no credentials, and redirect: 'manual', so the redirect is
+ * reported and not followed. A browser reports it as an 'opaqueredirect' response.
+ * Never throws: any failure, timeout or other answer means "not a redirect".
+ */
+export async function answersWithRedirect(url, signal = null) {
+    const probeCtrl = new AbortController();
+    const timer = setTimeout(() => probeCtrl.abort(), REDIRECT_PROBE_TIMEOUT_MS);
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            redirect: 'manual',
+            credentials: 'omit',
+            cache: 'no-store',
+            signal: signal ? AbortSignal.any([signal, probeCtrl.signal]) : probeCtrl.signal,
+        });
+        response.body?.cancel().catch(() => {});
+        return response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400);
+    } catch (e) {
+        return false;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+/**
+ * A single fetch() with no retry, for the direct probes of the provider classes
+ * (Ollama's /api/version, /api/show, /api/ps; the model info of Claude and Gemini):
+ * the same redirect rule as fetchWithRetry().
+ */
+export async function fetchNoRedirect(url, options = {}) {
+    try {
+        return await fetch(url, { ...options, redirect: 'error' });
+    } catch (error) {
+        if (options.signal?.aborted) throw error;
+        if (await answersWithRedirect(url, options.signal)) throw new RedirectRefusedError();
+        throw error;
+    }
 }
 
 /**

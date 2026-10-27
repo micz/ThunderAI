@@ -28,6 +28,7 @@ import { Ollama } from './api/ollama.js';
 import { OpenAIComp } from './api/openai_comp.js';
 import { prepareOriginURL } from './mzta-utils.js';
 import { MANAGED_SECRET_MARKER } from './mzta-managed.js';
+import { resolveEndpointAccess } from './mzta-endpoint-approvals.js';
 
 const CONN_TEST_TIMEOUT_MS = 10000;
 
@@ -39,7 +40,8 @@ function _val(id) {
 // Provider registry: for each testable connection_type, how to build the client from the
 // current form fields (each callback gets the field-id prefix: '' on the options page and
 // in the wizard, e.g. 'summarize_' on the feature pages), its display-name i18n key, the id
-// of its API key field without the prefix (if any), and how to obtain the needed host
+// of its API key field without the prefix (if any), the id of its host field for a custom
+// endpoint (checked by js/mzta-endpoint-approvals.js), and how to obtain the needed host
 // permission. chatgpt_web is intentionally absent (no testable endpoint).
 const TESTABLE = {
   chatgpt_api: {
@@ -69,9 +71,11 @@ const TESTABLE = {
   ollama_api: {
     nameKey: 'prefs_Connection_type_Ollama_API',
     keyId: 'ollama_api_key',
-    makeClient: (p) => new Ollama({
+    hostId: 'ollama_host',
+    makeClient: (p, approvedOrigins) => new Ollama({
       host: _val(p + 'ollama_host'),
       api_key: _val(p + 'ollama_api_key'),
+      approved_insecure_origins: approvedOrigins,
     }),
     // /api/version rather than the default fetchModels() (/api/tags): it answers
     // whatever is installed, so it separates "server unreachable / CORS not
@@ -82,12 +86,14 @@ const TESTABLE = {
   openai_comp_api: {
     nameKey: 'prefs_Connection_type_OpenAI_Comp_API',
     keyId: 'openai_comp_api_key',
-    makeClient: (p) => {
+    hostId: 'openai_comp_host',
+    makeClient: (p, approvedOrigins) => {
       const use_v1_el = document.getElementById(p + 'openai_comp_use_v1');
       return new OpenAIComp({
         host: _val(p + 'openai_comp_host'),
         apiKey: _val(p + 'openai_comp_api_key'),
         use_v1: use_v1_el ? use_v1_el.checked : true,
+        approved_insecure_origins: approvedOrigins,
       });
     },
     requestPermission: async (p) => _requestHostPermission(_val(p + 'openai_comp_host')),
@@ -117,6 +123,10 @@ export function isTestableConnection(connType) {
 
 // Interpret a fetchModels() result / thrown error into a user-facing message key.
 function _mapError(data) {
+  // A redirect, which is never followed: say so, and what to enter instead.
+  if (data && data.is_redirect) {
+    return browser.i18n.getMessage('api_error_redirect');
+  }
   // Network / CORS / thrown exception (no HTTP response reached us).
   if (data && data.is_exception) {
     return browser.i18n.getMessage('connTest_error_network');
@@ -165,13 +175,23 @@ export async function runConnectionTest(connType, idPrefix = '') {
     return { status: 'error', message: browser.i18n.getMessage('connTest_managed_api_key') };
   }
 
+  // A custom endpoint must be usable before anything is asked or sent [#1000]: the test is
+  // the user's explicit action, so an unencrypted remote server is asked about here. An
+  // empty host is left to the permission step below, which reports it as before.
+  let approvedOrigins = [];
+  if (entry.hostId && _val(idPrefix + entry.hostId).trim() !== '') {
+    const access = await resolveEndpointAccess(_val(idPrefix + entry.hostId), { ask: true });
+    if (!access.ok) return { status: 'error', message: access.message };
+    approvedOrigins = access.approvedOrigins;
+  }
+
   // Ensure we have the host permission the request needs (mirrors the fetch-models buttons).
   const granted = await entry.requestPermission(idPrefix);
   if (!granted) {
     return { status: 'error', message: browser.i18n.getMessage('Optional_Permission_Denied_Model_Fetching') };
   }
 
-  const client = entry.makeClient(idPrefix);
+  const client = entry.makeClient(idPrefix, approvedOrigins);
 
   const timeout = new Promise((resolve) =>
     setTimeout(() => resolve({ __timeout: true }), CONN_TEST_TIMEOUT_MS));

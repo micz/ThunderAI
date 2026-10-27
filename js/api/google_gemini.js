@@ -18,7 +18,11 @@
 
 
 import { parseExtraBody } from './api-utils.js';
-import { fetchWithRetry } from './api-retry.js';
+import {
+    fetchWithRetry,
+    fetchNoRedirect,
+    isRedirectRefused
+} from './api-retry.js';
 import {
   createUsageData,
   toUsageNumber
@@ -159,6 +163,7 @@ export class GoogleGemini {
       console.error("[ThunderAI] Google Gemini API request failed: " + error);
       let output = {};
       output.is_exception = true;
+      output.is_redirect = isRedirectRefused(error);
       output.ok = false;
       output.error = "Google Gemini API request failed: " + error;
       return output;
@@ -172,7 +177,7 @@ export class GoogleGemini {
    */
   fetchModelInfo = async (model) => {
     try{
-      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + "?key=" + this.apiKey, {
+      const response = await fetchNoRedirect("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + "?key=" + this.apiKey, {
           method: "GET",
           headers: {
               "Content-Type": "application/json"
@@ -199,6 +204,7 @@ export class GoogleGemini {
       console.error("[ThunderAI] Google Gemini API request failed: " + error);
       let output = {};
       output.is_exception = true;
+      output.is_redirect = isRedirectRefused(error);
       output.ok = false;
       output.error = "Google Gemini API request failed: " + error;
       return output;
@@ -304,6 +310,7 @@ export class GoogleGemini {
         console.error("[ThunderAI] Google Gemini API request failed: " + error);
         let output = {};
         output.is_exception = true;
+        output.is_redirect = isRedirectRefused(error);
         output.is_aborted = retryConfig.signal?.aborted === true;
         output.ok = false;
         output.error = "Google Gemini API request failed: " + error;

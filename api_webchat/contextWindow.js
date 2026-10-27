@@ -27,6 +27,7 @@
 import { Ollama } from '../js/api/ollama.js';
 import { GoogleGemini } from '../js/api/google_gemini.js';
 import { Anthropic } from '../js/api/anthropic.js';
+import { getApprovedInsecureOrigins } from '../js/mzta-endpoint-approvals.js';
 
 function positive(value) {
     const n = Number(value);
@@ -56,7 +57,10 @@ async function resolveOllama(prefs) {
     const configured = positive(prefs.ollama_num_ctx);
     if (configured !== null) return configured;
 
-    const api = new Ollama({ host: prefs.ollama_host, api_key: prefs.ollama_api_key, model: prefs.ollama_model });
+    // The chat window confirmed the endpoint before the first message: only the approved
+    // origins are needed here, never a new question.
+    const api = new Ollama({ host: prefs.ollama_host, api_key: prefs.ollama_api_key, model: prefs.ollama_model,
+        approved_insecure_origins: await getApprovedInsecureOrigins() });
     const model = prefs.ollama_model;
 
     const ps = await api.fetchRunningModels();

@@ -48,6 +48,7 @@
 import { prefs_default } from '../options/mzta-options-default.js';
 import { taLogger } from './mzta-logger.js';
 import { mztaManaged, MANAGED_SECRET_MARKER } from './mzta-managed.js';
+import { maskUrlCredentials } from './mzta-endpoint-policy.js';
 
 // Preferences live in storage.local, NOT storage.sync. They were moved there because
 // storage.sync has a narrow quota — the same reason the large prompt payloads were moved
@@ -87,8 +88,10 @@ export const mztaPrefs = {
     // Mask API key values in the log output. Same rule as isAPIKeyValue() in
     // js/mzta-utils.js, inlined rather than imported: that module pulls in
     // mzta-custom-menu-icons.js, a dependency this one has no other use for.
+    // A host may hold a user name and password, which are never logged either [#1000].
     _logValue(pref_id, value) {
-        return pref_id.endsWith('_api_key') ? '****************' : value;
+        if (pref_id.endsWith('_api_key')) return '****************';
+        return pref_id.endsWith('_host') ? maskUrlCredentials(value) : value;
     },
 
     _logWarning(msg) {
