@@ -865,21 +865,51 @@ host permission through the test is often what makes `/api/show` reachable in th
 
 The address of the two custom endpoints (`{prefix}ollama_host`, `{prefix}openai_comp_host`) follows
 the rules of [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy)
-[#1000]. In the panel:
+[#1000]. Each host field has two notes under it, in every panel `injectConnectionUI()` builds
+(options page, feature pages, custom prompts, setup wizard). The two integrations are
+`ENDPOINT_INTEGRATIONS`.
 
-- **On `change` of the field** (`checkEndpointField(modelId_prefix, integration)`): a non-empty
-  address goes through `resolveEndpointAccess(host, {ask: true})`. An unencrypted server on another
-  machine that is not yet allowed gets the `endpoint_insecure_confirm` dialog, once per origin.
-  When the address cannot be used, `#{prefix}{integration}_host_endpoint_note` (`.endpoint_note`,
-  red, `[hidden]` otherwise) says why: the localized `endpoint_error_*` message, or
-  `endpoint_insecure_note` when the user declined. Saving is never blocked; the requests are. A
-  field the policy locked (`data-mzta-managed="1"`) is skipped: its host is approved without asking,
-  and a change to it, possible only by re-enabling the field by hand, stores nothing.
-- **"Test now" and "Update list"** check the address the same way, with the dialog, before anything
-  is requested; refused, their own error shows the message, and nothing is sent. An empty host keeps
-  its previous behaviour (the disabled button; the connection test's permission error).
+- **The red note** (`#{prefix}{integration}_host_endpoint_note`, `.endpoint_note`, `[hidden]` when
+  empty), filled by `checkEndpointField(modelId_prefix, integration)`: a non-empty address goes
+  through `resolveEndpointAccess(host)` **without `ask`**, so the field never shows a dialog. When the
+  address cannot be used the note says why: the localized `endpoint_error_*` message, or
+  `endpoint_insecure_note` for an unencrypted server on another machine not yet allowed. It runs:
+  - at page load, for the restored values: `updateEndpointNotes(modelId_prefix)`, called by
+    `updateWarnings()` (options page, feature pages, custom prompts when a prompt is loaded into
+    the form) and by the setup wizard after its `restoreOptions()`. A user with a remote `http:`
+    Ollama not yet allowed sees the note at once;
+  - on `change` of the field;
+  - on every `storage.local` change of `_approved_insecure_origins`, so the note goes away as soon
+    as the user allows the server with "Test now" or "Update list" (here or on another page).
+
+  Saving is never blocked; the requests are. A field the policy locked (`data-mzta-managed="1"`) is
+  skipped: its host is approved without asking.
+- **The amber note** (`#{prefix}{integration}_host_redirect_note`, `.endpoint_note.endpoint_note_warning`,
+  the `--warnColor` of `mzta-design.css`), filled by `showEndpointRedirectNote()` from the stored
+  redirect of the address in the field (`getEndpointRedirect()`, see
+  [04-api-integrations.md "Redirects"](04-api-integrations.md#redirects)):
+  - a redirect that was followed: `endpoint_redirect_note`, naming the destination `to`;
+  - a redirect that failed: `endpoint_redirect_failed_note_to` naming `to` when it is known,
+    `endpoint_redirect_failed_note` otherwise;
+  - no entry: hidden.
+
+  It is filled at page load (`updateEndpointNotes()`) and on every `storage.local` change of
+  `_endpoint_redirects`, so a redirect found by a request made meanwhile (the chat, a feature, the
+  buttons of the panel) shows at once. It **stays until the value of the field changes**: on
+  `change`, `onEndpointHostChange()` removes the stored redirect of the previous address
+  (`clearEndpointRedirect()`, the value the field held when its notes were last filled) and hides
+  the note; the storage change then shows the entry of the new address, if it has one. An address
+  that only gained or lost spaces or trailing slashes is the same host, and keeps both. No buttons.
+- **"Test now" and "Update list"** check the address with `resolveEndpointAccess(host, {ask: true})`
+  before anything is sent: an unencrypted server on another machine not yet allowed gets the
+  `endpoint_insecure_confirm` dialog, once per origin. "Test now" asks it after the host permission:
+  `permissions.request()` is only allowed from a user input handler, so it must be the first `await`
+  of the click, before anything reads the storage; an unusable address (not a URL, credentials in
+  it) is refused before it with the synchronous `parseEndpoint()`, so it asks for nothing. Refused, their own error shows the message,
+  and nothing is sent. An empty host keeps its previous behaviour (the disabled button; the
+  connection test's permission error). After the request, both save its redirect outcome.
 - **The Ollama capability probe** never asks: an unencrypted server not yet allowed is simply not
-  probed, like an unreachable one.
+  probed, like an unreachable one. It saves its redirect outcome too.
 
 ### Connection Settings Panel — "Update list" Model Fetch Buttons
 
@@ -1727,6 +1757,10 @@ case for nearly every user and is swallowed silently.
   [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy))
   are not a preference: no `prefs_default` entry, no policy key, read and written only by
   `js/mzta-endpoint-approvals.js`. The leading underscore keeps it out of every preference scan.
+- **The redirects of the custom endpoints** (`_endpoint_redirects` in `storage.local`, see
+  [04-api-integrations.md "Redirects"](04-api-integrations.md#redirects)) are not a preference
+  either: one entry per configured host, read and written only by `js/mzta-endpoint-redirects.js`,
+  with the same leading underscore.
 - **The two #129 legacy reads** in `js/mzta-utils.js` (`migrateCustomPromptsStorage()`,
   `migrateDefaultPromptsPropStorage()`) keep pointing at `storage.sync` on purpose: their job is
   to drain old data *out* of it. They always end with the key removed from sync: when

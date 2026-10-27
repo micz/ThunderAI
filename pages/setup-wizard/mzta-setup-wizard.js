@@ -30,7 +30,8 @@ import {
   checkJsonFields,
   updateAnthropicModelCapabilityUI,
   updateOllamaModelCapabilityUI,
-  updateOpenAIModelCapabilityUI
+  updateOpenAIModelCapabilityUI,
+  updateEndpointNotes
 } from '../_lib/connection-ui.js';
 import {
   isTestableConnection,
@@ -416,6 +417,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateAnthropicModelCapabilityUI();
   updateOllamaModelCapabilityUI();
   updateOpenAIModelCapabilityUI();
+
+  // The notes under the custom endpoint host fields, for the restored addresses: an
+  // unencrypted server not yet allowed, a server known to redirect.
+  updateEndpointNotes();
 
   varConnectionUI.permission_all_urls = await messenger.permissions.contains({ origins: ['<all_urls>'] });
 

@@ -4173,12 +4173,34 @@
     }
   },
   "endpoint_insecure_note": {
-    "message": "Unencrypted connection (http://) not allowed: ThunderAI will send nothing to this server. Click \"Test now\" or \"Update list\" to be asked again, or use an https:// address.",
-    "description": "Note under the server address field of a connection panel, after the user declined the unencrypted connection to that server. \"Test now\" and \"Update list\" must match connTest_link_test and Models_Fetch."
+    "message": "Unencrypted connection (http://) not allowed yet: ThunderAI sends nothing to this server until you allow it. Click \"Test now\" or \"Update list\" to allow it, or use an https:// address.",
+    "description": "Note under the server address field of a connection panel, shown while the address is a server on another computer reached over plain http:// that the user has not allowed (never asked, or declined). \"Test now\" and \"Update list\" must match connTest_link_test and Models_Fetch."
   },
   "api_error_redirect": {
-    "message": "The server answered with a redirect to another address. For your security ThunderAI does not follow redirects: enter the final address of the server directly in the settings.",
-    "description": "Error when an AI provider request failed because the server redirected it (HTTP 301/302/307/308). Shown in the API chat window, for the automatic features, in the connection test and next to the Update list button."
+    "message": "The server answered with a redirect that could not be followed: enter the final address of the server directly in the settings.",
+    "description": "Error when a request to a custom AI server (Ollama, OpenAI Compatible) failed because of a redirect (HTTP 301/302/307/308): the new address could not be reached, or it answered with an error. Shown in the API chat window, for the automatic features, in the connection test and next to the Update list button."
+  },
+  "endpoint_redirect_note": {
+    "message": "This server redirects the requests to $to$. ThunderAI follows the redirect, but it is better to enter that address directly.",
+    "description": "Warning under the server address field of a connection panel (Ollama, OpenAI Compatible), after a request to that server was redirected and worked. $to$ is the new address, e.g. 'https://ai.example.com'.",
+    "placeholders": {
+        "to": {
+            "content": "$1"
+        }
+    }
+  },
+  "endpoint_redirect_failed_note": {
+    "message": "The server answers with a redirect that cannot be followed: the requests fail until you enter the final address of the server.",
+    "description": "Warning under the server address field of a connection panel (Ollama, OpenAI Compatible), after a request to that server failed because of a redirect whose new address is not known."
+  },
+  "endpoint_redirect_failed_note_to": {
+    "message": "The server answers with a redirect to $to$ that cannot be followed: the requests fail until you enter the final address of the server.",
+    "description": "Warning under the server address field of a connection panel (Ollama, OpenAI Compatible), after a request to that server failed because of a redirect. $to$ is the new address, e.g. 'https://ai.example.com'.",
+    "placeholders": {
+        "to": {
+            "content": "$1"
+        }
+    }
   },
   "prefs_insecure_origins_title": {
     "message": "Allowed unencrypted servers",

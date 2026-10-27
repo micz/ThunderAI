@@ -28,7 +28,12 @@ import { Ollama } from './api/ollama.js';
 import { OpenAIComp } from './api/openai_comp.js';
 import { prepareOriginURL } from './mzta-utils.js';
 import { MANAGED_SECRET_MARKER } from './mzta-managed.js';
-import { resolveEndpointAccess } from './mzta-endpoint-approvals.js';
+import {
+    endpointProblemMessage,
+    resolveEndpointAccess
+} from './mzta-endpoint-approvals.js';
+import { parseEndpoint } from './mzta-endpoint-policy.js';
+import { saveEndpointRedirect } from './mzta-endpoint-redirects.js';
 
 const CONN_TEST_TIMEOUT_MS = 10000;
 
@@ -123,7 +128,8 @@ export function isTestableConnection(connType) {
 
 // Interpret a fetchModels() result / thrown error into a user-facing message key.
 function _mapError(data) {
-  // A redirect, which is never followed: say so, and what to enter instead.
+  // A redirect that could not be followed, or that ended in an error: say so, and what
+  // to enter instead.
   if (data && data.is_redirect) {
     return browser.i18n.getMessage('api_error_redirect');
   }
@@ -175,20 +181,31 @@ export async function runConnectionTest(connType, idPrefix = '') {
     return { status: 'error', message: browser.i18n.getMessage('connTest_managed_api_key') };
   }
 
-  // A custom endpoint must be usable before anything is asked or sent [#1000]: the test is
-  // the user's explicit action, so an unencrypted remote server is asked about here. An
-  // empty host is left to the permission step below, which reports it as before.
-  let approvedOrigins = [];
-  if (entry.hostId && _val(idPrefix + entry.hostId).trim() !== '') {
-    const access = await resolveEndpointAccess(_val(idPrefix + entry.hostId), { ask: true });
-    if (!access.ok) return { status: 'error', message: access.message };
-    approvedOrigins = access.approvedOrigins;
+  // A custom endpoint that cannot be used at all (not a URL, credentials in it) ends here,
+  // before anything is asked or sent [#1000]. Synchronous on purpose: see below. An empty
+  // host is left to the permission step, which reports it as before.
+  const host = entry.hostId ? _val(idPrefix + entry.hostId) : '';
+  const hostSet = host.trim() !== '';
+  if (hostSet) {
+    const parsed = parseEndpoint(host);
+    if (!parsed.ok) return { status: 'error', message: endpointProblemMessage(parsed.problem) };
   }
 
   // Ensure we have the host permission the request needs (mirrors the fetch-models buttons).
+  // permissions.request() is only allowed from a user input handler: it must be the first
+  // await after the click, so nothing that reads the storage may come before it.
   const granted = await entry.requestPermission(idPrefix);
   if (!granted) {
     return { status: 'error', message: browser.i18n.getMessage('Optional_Permission_Denied_Model_Fetching') };
+  }
+
+  // The test is the user's explicit action, so an unencrypted remote server not yet
+  // allowed is asked about here, still before anything is sent [#1000].
+  let approvedOrigins = [];
+  if (hostSet) {
+    const access = await resolveEndpointAccess(host, { ask: true });
+    if (!access.ok) return { status: 'error', message: access.message };
+    approvedOrigins = access.approvedOrigins;
   }
 
   const client = entry.makeClient(idPrefix, approvedOrigins);
@@ -211,6 +228,10 @@ export async function runConnectionTest(connType, idPrefix = '') {
   } catch (error) {
     return { status: 'error', message: browser.i18n.getMessage('connTest_error_network') };
   }
+
+  // A custom endpoint reports whether it redirected [#1000]: saved for the note under its
+  // host field, which the panel shows from the storage.
+  if (entry.hostId) await saveEndpointRedirect(client.host, client.redirect_info);
 
   if (data && data.__timeout) {
     return { status: 'error', message: browser.i18n.getMessage('connTest_error_timeout') };

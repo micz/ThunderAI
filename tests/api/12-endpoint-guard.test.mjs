@@ -6,19 +6,28 @@
 //    endpoint_problem;
 //  - the workers pass the init message's approved_insecure_origins to the class: a worker has no
 //    UI, it only knows what the window or the background approved;
-//  - a redirect is reported by the workers with i18nStrings.api_error_redirect ("Redirects").
+//  - "Redirects": a failed redirect is reported by the workers with i18nStrings.api_error_redirect,
+//    and every redirect outcome of a request is posted as an 'endpoint_redirect' message (the host
+//    and the outcome, never the API key) for the owner of the worker to save.
 // The other providers have fixed https hosts: the rule does not apply to them.
 
 import assert from 'node:assert/strict';
 import { areaFile } from './harness.mjs';
-import { NET } from './fetch-model.mjs';
+import {
+    NET,
+    redirectedTo
+} from './fetch-model.mjs';
 import {
     assertNoBrowser,
     initMessage,
     loadWorker,
     startTurn
 } from './worker-realm.mjs';
-import { jsonResponse } from './wire.mjs';
+import {
+    jsonResponse,
+    ndjson,
+    streamResponse
+} from './wire.mjs';
 
 assertNoBrowser();
 const { k, net } = areaFile('12-endpoint-guard');
@@ -104,18 +113,48 @@ k.test('worker-approved', 'worker: with the origin in approved_insecure_origins 
     const turn = startTurn(w, 'q');
     await assert.rejects(turn.done);
     assert.equal(net.calls.length, 1);
-    assert.equal(net.calls[0].redirect, 'error');
+    assert.equal(net.calls[0].redirect, null, 'redirects are followed');
 });
 
-k.test('worker-redirect', 'worker: a refused redirect is reported with i18nStrings.api_error_redirect', async () => {
-    await w.send(initMessage({ ollama_host: 'http://localhost:11434', ollama_model: 'm', ollama_system_prompt: '' },
-        { i18nStrings: strings }));
-    const CHAT = 'http://localhost:11434/api/chat';
+const redirectsOf = t => t.posted().filter(m => m.type === 'endpoint_redirect');
+const KEYED = { ollama_host: 'http://localhost:11434/', ollama_model: 'm', ollama_system_prompt: '', ollama_api_key: 'ol-SECRET' };
+const CHAT = 'http://localhost:11434/api/chat';
+
+k.test('worker-redirect', 'worker: a redirect that could not be followed is reported with i18nStrings.api_error_redirect, and posted', async () => {
+    await w.send(initMessage(KEYED, { i18nStrings: strings }));
     net.expect(CHAT, NET.networkError())
         .expect({ method: 'GET', url: CHAT }, () => new Response(null, { status: 301, headers: { location: 'https://x.example/' } }));
     const turn = startTurn(w, 'q');
     await assert.rejects(turn.done);
     assert.deepEqual(errorOf(turn).map(m => m.payload), [REDIRECT]);
+    assert.deepEqual(redirectsOf(turn).map(m => m.payload),
+        [{ host: 'http://localhost:11434', info: { redirected: true, url: '', failed: true } }]);
+});
+
+k.test('worker-redirect-followed', 'worker: a followed redirect is posted with its final address, and the answer flows', async () => {
+    await w.send(initMessage(KEYED, { i18nStrings: strings }));
+    net.expect(CHAT, () => redirectedTo('http://127.0.0.1:11434/api/chat',
+        streamResponse([ndjson({ message: { role: 'assistant', content: 'hi' }, done: false }), ndjson({ done: true })])));
+    const turn = startTurn(w, 'q');
+    await turn.done;
+    assert.deepEqual(errorOf(turn), []);
+    const [msg] = redirectsOf(turn);
+    assert.deepEqual(msg.payload, { host: 'http://localhost:11434', info: { redirected: true, url: 'http://127.0.0.1:11434/api/chat', failed: false } });
+    assert.equal(JSON.stringify(msg).includes('ol-SECRET'), false, 'never the API key');
+    assert.ok(turn.posted().findIndex(m => m.type === 'endpoint_redirect') < turn.posted().findIndex(m => m.type === 'messageSent'),
+        'posted before messageSent');
+});
+
+k.test('worker-no-redirect', 'worker: a success with no redirect is posted too (the owner forgets the stored redirect); an HTTP error is not', async () => {
+    await w.send(initMessage(KEYED, { i18nStrings: strings }));
+    net.expect(CHAT, () => streamResponse([ndjson({ message: { role: 'assistant', content: 'hi' }, done: false }), ndjson({ done: true })]));
+    const ok = startTurn(w, 'q');
+    await ok.done;
+    assert.deepEqual(redirectsOf(ok).map(m => m.payload.info), [{ redirected: false }]);
+    net.expect(CHAT, () => jsonResponse({ error: 'no model' }, { status: 404 }));
+    const failed = startTurn(w, 'q2');
+    await assert.rejects(failed.done);
+    assert.deepEqual(redirectsOf(failed), []);
 });
 
 k.coverage();

@@ -108,9 +108,10 @@ export function endpointProblemMessage(problem, origin = '') {
 /**
  * Check an endpoint before a request is sent to it.
  *
- * With `ask` (a page the user is looking at: the settings, the API chat window) an
- * unapproved unencrypted origin is asked about with a confirmation dialog, and
- * remembered when accepted. Without it (the background) the request is simply refused.
+ * With `ask` (an explicit user action: "Test now" and "Update list" in the settings,
+ * opening the API chat window) an unapproved unencrypted origin is asked about with a
+ * confirmation dialog, and remembered when accepted. Without it (the background, the
+ * notes under the host fields, the probes) the request is simply refused.
  * Nothing about the URL is logged here: it may carry a user name and password.
  *
  * @param {string} host the endpoint as configured

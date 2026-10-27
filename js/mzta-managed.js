@@ -237,7 +237,8 @@ export const mztaManaged = {
     // A host may hold a user name and password, which are never logged either [#1000].
     _logValue(key, value) {
         if (key.endsWith('_api_key')) return '****************';
-        return key.endsWith('_host') ? maskUrlCredentials(JSON.stringify(value)) : JSON.stringify(value);
+        return key.endsWith('_host') && typeof value === 'string'
+            ? maskUrlCredentials(JSON.stringify(value)) : JSON.stringify(value);
     },
 
     /**

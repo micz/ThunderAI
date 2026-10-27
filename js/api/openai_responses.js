@@ -20,10 +20,7 @@
 
 import { parseExtraBody } from './api-utils.js';
 import { getOpenAIModelCapabilities } from './openai_model_capabilities.js';
-import {
-    fetchWithRetry,
-    isRedirectRefused
-} from './api-retry.js';
+import { fetchWithRetry } from './api-retry.js';
 import { createUsageData } from './mzta-api-usage.js';
 
 // The Responses API reports token usage on every response.
@@ -223,7 +220,6 @@ export class OpenAI {
       console.error("[ThunderAI] OpenAI API request failed: " + error);
       let output = {};
       output.is_exception = true;
-      output.is_redirect = isRedirectRefused(error);
       output.ok = false;
       output.error = "OpenAI API request failed: " + error;
       return output;
@@ -330,7 +326,6 @@ export class OpenAI {
         console.error("[ThunderAI] OpenAI Responses API request failed: " + error);
         let output = {};
         output.is_exception = true;
-        output.is_redirect = isRedirectRefused(error);
         output.is_aborted = retryConfig.signal?.aborted === true;
         output.ok = false;
         output.error = "OpenAI Responses API request failed: " + error;

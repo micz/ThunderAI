@@ -24,9 +24,14 @@ const requests = [];
 const fetches = [];
 let nextAnswer = null;      // () => Response for the next fetch only
 const realFetch = globalThis.fetch;
+// The Ollama hosts of the form below are unencrypted servers on other machines: this user allowed
+// them earlier (spec 04 "Custom endpoint policy"), so runConnectionTest() asks nothing, and the
+// approvals reach the client as runConnectionTest() passes them to makeClient().
+const APPROVED = ['http://ollama-global.example:11434', 'http://ollama-feature.example:11434'];
 
 before(async () => {
     ctx = await startBackground();
+    await ctx.ctl.browser.storage.local.set({ _approved_insecure_origins: APPROVED });
     ({ valid_connection_types } = await import(new URL('options/mzta-options-default.js', REPO).href));
     ctx.ctl.browser.permissions = {
         async request(q) { requests.push(q.origins); return true; },
@@ -114,7 +119,7 @@ async function probe(type, prefix) {
     useForm();
     const entry = ct.getTestableConnection(type);
     const from = fetches.length;
-    const result = await entry.makeClient(prefix)[entry.testMethod || 'fetchModels']({ maxRetries: 0, timeoutMs: 1000 });
+    const result = await entry.makeClient(prefix, APPROVED)[entry.testMethod || 'fetchModels']({ maxRetries: 0, timeoutMs: 1000 });
     assert.equal(result.ok, true, type + ': ' + JSON.stringify(result));
     assert.equal(fetches.length - from, 1, type);
     return fetches.at(-1);
@@ -128,7 +133,7 @@ for (const [prefix, tag] of [['', 'global'], ['summarize_', 'feature']]) {
         const openai = await probe('chatgpt_api', prefix);
         assert.equal(openai.headers.get('authorization'), 'Bearer sk-' + tag);
         const gemini = await probe('google_gemini_api', prefix);
-        assert.equal(new URL(gemini.url).searchParams.get('key'), 'gm-' + tag);
+        assert.equal(gemini.headers.get('x-goog-api-key'), 'gm-' + tag);
     });
 
     test(`makeClient("${prefix}"): Claude's key and API version come from ${form}`, async () => {
@@ -251,6 +256,45 @@ for (const [type, field] of [['ollama_api', 'ollama_host'], ['openai_comp_api', 
             assert.equal(fetches.length, sent);
         } finally {
             FIELDS[field].value = saved;
+        }
+    });
+
+    test(`runConnectionTest(): ${type} with credentials in the host asks for nothing, sends nothing, and says why`, async () => {
+        useForm();
+        const saved = FIELDS[field].value;
+        FIELDS[field].value = 'https://user:s3cr3t@llm.example.com';
+        try {
+            const asked = requests.length;
+            const sent = fetches.length;
+            const r = await ct.runConnectionTest(type, '');
+            assert.deepEqual(r, { status: 'error', message: msg('endpoint_error_credentials') });
+            assert.equal(requests.length, asked);
+            assert.equal(fetches.length, sent);
+        } finally {
+            FIELDS[field].value = saved;
+        }
+    });
+}
+
+// permissions.request() may only be called from a user input handler: Thunderbird refuses it once
+// the click handler has awaited anything else (reading the storage included). The mock records
+// whether the "click" was still being handled, i.e. whether runConnectionTest() had not yielded yet.
+for (const type of API_TYPES) {
+    test(`runConnectionTest(): ${type} requests the host permission before its first await, while the click is handled`, async () => {
+        useForm();
+        const permissions = ctx.ctl.browser.permissions;
+        const original = permissions.request;
+        let handlingClick = false;
+        const fromClick = [];
+        permissions.request = async q => { fromClick.push(handlingClick); return original(q); };
+        try {
+            handlingClick = true;
+            const pending = ct.runConnectionTest(type, '');
+            handlingClick = false;
+            assert.deepEqual(await pending, { status: 'ok', apiName: msg(ct.getTestableConnection(type).nameKey) });
+            assert.deepEqual(fromClick, [true]);
+        } finally {
+            permissions.request = original;
         }
     });
 }

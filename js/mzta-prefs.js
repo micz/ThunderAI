@@ -91,7 +91,7 @@ export const mztaPrefs = {
     // A host may hold a user name and password, which are never logged either [#1000].
     _logValue(pref_id, value) {
         if (pref_id.endsWith('_api_key')) return '****************';
-        return pref_id.endsWith('_host') ? maskUrlCredentials(value) : value;
+        return pref_id.endsWith('_host') && typeof value === 'string' ? maskUrlCredentials(value) : value;
     },
 
     _logWarning(msg) {

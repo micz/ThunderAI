@@ -40,13 +40,15 @@ const PROVIDERS = {
         make: () => new GoogleGemini({ apiKey: 'FAKE-KEY', model: 'gemini-2.5-flash', stream: true }),
         chat: (c, rc) => c.fetchResponse([{ role: 'user', parts: [{ text: 'Hi' }] }], rc),
         chatUrl: /:streamGenerateContent\?/,
-        modelsUrl: /\/v1beta\/models\?key=/,
+        modelsUrl: /\/v1beta\/models$/,
         models: apiFixture('google_gemini.json').models.body,
         error: apiFixture('google_gemini.json').error_400_key.body,
     },
     ollama: {
         name: /Ollama/,
         make: () => new Ollama({ host: 'http://localhost:11434', model: 'llama3.2', stream: true }),
+        // A custom endpoint: its first network failure is checked for a redirect (spec 04 "Redirects").
+        custom: true,
         chat: (c, rc) => c.fetchResponse(MSG, rc),
         chatUrl: 'http://localhost:11434/api/chat',
         modelsUrl: 'http://localhost:11434/api/tags',
@@ -56,6 +58,7 @@ const PROVIDERS = {
     openai_comp: {
         name: /OpenAI Comp/,
         make: () => new OpenAIComp({ host: 'https://api.example.test', model: 'm', apiKey: 'sk-FAKE', stream: true }),
+        custom: true,
         chat: (c, rc) => c.fetchResponse(MSG, 0, rc),
         chatUrl: 'https://api.example.test/v1/chat/completions',
         modelsUrl: 'https://api.example.test/v1/models',
@@ -76,8 +79,9 @@ const PROVIDERS = {
 for (const [id, P] of Object.entries(PROVIDERS)) {
     k.test(id + '-network', `${id}: a network exception gives {ok:false, is_exception:true, is_aborted:false, error} and no status`, async () => {
         net.expect(P.chatUrl, NET.networkError('NetworkError when attempting to fetch resource.'));
-        // The redirect check that follows a network failure (spec 04 "Redirects"): not one.
-        net.expect({ method: 'GET', url: P.chatUrl }, NET.networkError());
+        // The redirect check that follows a network failure on a custom endpoint (spec 04
+        // "Redirects"): not one. The other providers never check.
+        if (P.custom) net.expect({ method: 'GET', url: P.chatUrl }, NET.networkError());
         const r = await P.chat(P.make(), { maxRetries: 0 });
         assert.equal(r instanceof Response, false);
         assert.equal(r.ok, false);

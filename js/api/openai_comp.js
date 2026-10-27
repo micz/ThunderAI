@@ -21,7 +21,7 @@
 import { parseExtraBody } from './api-utils.js';
 import {
     fetchWithRetry,
-    isRedirectRefused
+    isRedirectFailed
 } from './api-retry.js';
 import { createUsageData } from './mzta-api-usage.js';
 import {
@@ -91,6 +91,11 @@ export class OpenAIComp {
   temperature = '';
   extra_body = '';
   approved_insecure_origins = [];
+  // The redirect outcome of the last request (see checkRedirected() in api-retry.js):
+  // null when it says nothing, {redirected: false} for a success with no redirect, or
+  // {redirected: true, url, failed}. The caller saves it (js/mzta-endpoint-redirects.js);
+  // the worker forwards it with an 'endpoint_redirect' message.
+  redirect_info = null;
 
   constructor({
     host = '',
@@ -125,9 +130,17 @@ export class OpenAIComp {
       error: "OpenAI Comp API request not sent: " + endpointProblemText(check.problem) };
   }
 
+  // Starts a request: forgets the previous redirect outcome and returns the onRedirect
+  // callback that records the new one.
+  _trackRedirect = () => {
+    this.redirect_info = null;
+    return (info) => { this.redirect_info = info; };
+  }
+
 
   fetchModels = async (retryConfig = {}) => {
     try{
+      const onRedirect = this._trackRedirect();
       const refused = this._endpointRefused();
       if (refused) return refused;
       const curr_headers = {
@@ -145,7 +158,7 @@ export class OpenAIComp {
       const response = await fetchWithRetry(this.host + (this.use_v1 ? "/v1" : "") + "/models", {
           method: "GET",
           headers: curr_headers,
-      }, { label: 'OpenAI Comp', ...retryConfig });
+      }, { label: 'OpenAI Comp', ...retryConfig, onRedirect });
 
       if (!response.ok) {
           const errorDetail = await response.text();
@@ -178,7 +191,7 @@ export class OpenAIComp {
       console.error("[ThunderAI] OpenAI Comp API request failed: " + error);
       let output = {};
       output.is_exception = true;
-      output.is_redirect = isRedirectRefused(error);
+      output.is_redirect = isRedirectFailed(error);
       output.ok = false;
       output.error = "OpenAI Comp API request failed: " + error;
       return output;
@@ -187,6 +200,7 @@ export class OpenAIComp {
 
   fetchResponse = async (messages, maxTokens = 0, retryConfig = {}) => {
     try{
+      const onRedirect = this._trackRedirect();
       const refused = this._endpointRefused();
       if (refused) return refused;
       const tempFloat = parseFloat(this.temperature);
@@ -219,13 +233,13 @@ export class OpenAIComp {
                 ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {}),
                 ...(this.temperature != '' && !Number.isNaN(tempFloat) ? { 'temperature': tempFloat } : {})
             }),
-        }, { label: 'OpenAI Comp', timeoutMs: OPENAI_COMP_CHAT_TIMEOUT_MS, ...retryConfig });
+        }, { label: 'OpenAI Comp', timeoutMs: OPENAI_COMP_CHAT_TIMEOUT_MS, ...retryConfig, onRedirect });
         return response;
       }catch (error) {
           console.error("[ThunderAI] OpenAI Comp API request failed: " + error);
           let output = {};
           output.is_exception = true;
-          output.is_redirect = isRedirectRefused(error);
+          output.is_redirect = isRedirectFailed(error);
           output.is_aborted = retryConfig.signal?.aborted === true;
           output.ok = false;
           output.error = "OpenAI Comp API request failed: " + error;
@@ -235,7 +249,7 @@ export class OpenAIComp {
         console.error("[ThunderAI] OpenAI Comp API request failed: " + error);
         let output = {};
         output.is_exception = true;
-        output.is_redirect = isRedirectRefused(error);
+        output.is_redirect = isRedirectFailed(error);
         output.ok = false;
         output.error = "OpenAI Comp API request failed: " + error;
         return output;

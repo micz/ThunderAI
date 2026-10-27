@@ -93,8 +93,7 @@ for (const s of [400, 401, 403, 404, 422]) {
 
 k.test('network-retried', 'a network exception is retried: reason network, status null', async (t) => {
     const timers = fakeTime(t);
-    // The network failure is followed by the redirect check (spec 04 "Redirects"): not one.
-    net.expect(URL_, NET.networkError()).expect({ method: 'GET', url: URL_ }, NET.networkError()).expect(URL_, OK);
+    net.expect(URL_, NET.networkError()).expect(URL_, OK);
     const { retries, result } = run(timers);
     assert.equal((await result).status, 200);
     assert.equal(retries.length, 1);
@@ -104,12 +103,10 @@ k.test('network-retried', 'a network exception is retried: reason network, statu
 
 k.test('network-rethrown', 'after the last attempt the last network error is rethrown', async (t) => {
     const timers = fakeTime(t);
-    net.expect(URL_, NET.networkError('first'))
-        .expect({ method: 'GET', url: URL_ }, NET.networkError('check'))   // the redirect check: not one
-        .expect(URL_, NET.networkError('last'));
+    net.expect(URL_, NET.networkError('first')).expect(URL_, NET.networkError('last'));
     const { result } = run(timers, { maxRetries: 1 });
     await assert.rejects(result, e => e instanceof TypeError && e.message === 'last');
-    assert.equal(net.calls.length, 3, 'the redirect check runs once per call, not after every failure');
+    assert.equal(net.calls.length, 2);
 });
 
 k.test('timeout-retried', 'a per-attempt timeout is retried: reason timeout, status null, fired after timeoutMs', async (t) => {
@@ -376,9 +373,7 @@ k.test('log-server-message', 'a retried status logs " - server message: ..." and
 
 k.test('log-no-url', 'the request URL (and the key in its query string) is never logged', async (t) => {
     const timers = fakeTime(t);
-    net.expect(GEMINI_URL, status(503)).expect(GEMINI_URL, NET.networkError())
-        .expect(GEMINI_URL, NET.networkError())     // the redirect check (spec 04 "Redirects"): not one
-        .expect(GEMINI_URL, NET.hang)
+    net.expect(GEMINI_URL, status(503)).expect(GEMINI_URL, NET.networkError()).expect(GEMINI_URL, NET.hang)
         .expect(GEMINI_URL, status(429, apiFixture('google_gemini.json').error_429_daily.body));
     const logger = new taLogger('model-worker-google_gemini', true);
     await drive(fetchWithRetry(GEMINI_URL, {}, { logger, label: 'Google Gemini', timeoutMs: 1000 }), timers);

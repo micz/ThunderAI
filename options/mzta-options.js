@@ -64,6 +64,7 @@ import {
   disableForManagedRestriction
 } from '../pages/_lib/managed-ui.js';
 import { isPermissionGatedPref } from '../js/mzta-feature-permissions.js';
+import { maskUrlCredentials } from '../js/mzta-endpoint-policy.js';
 import {
   bindPermissionToggle,
   showLockedPermissionWarning
@@ -94,7 +95,9 @@ function saveOptions(e) {
         break;
       case 'text':
         options[element.id] = element.value.trim();
-        taLog.log('Saving option: ' + element.id + ' = ' + element.value);
+        // A host field may hold a user name and password: never logged (spec 04 "Custom endpoint policy").
+        taLog.log('Saving option: ' + element.id + ' = ' +
+            (element.id.endsWith('_host') ? maskUrlCredentials(element.value) : element.value));
         break;
       case 'password':
         options[element.id] = element.value.trim();

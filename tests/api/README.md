@@ -7,7 +7,7 @@ message protocol of the five model workers. The contract is
 suite: each test file names the spec 04 sections it covers in its opening comment.
 
 The modules under test are everything in `js/api/` and `js/workers/`, the address rules of
-`js/mzta-endpoint-policy.js`, plus the `mzta_specialCommand`
+`js/mzta-endpoint-policy.js`, the stored redirects of `js/mzta-endpoint-redirects.js`, plus the `mzta_specialCommand`
 half of "Configuration Validation" (`js/mzta-special-commands.js`) and `supportsUsageData()` of
 `js/mzta-utils.js`. How to run the suite, the two levels, the mock and the known-issue mechanism are in
 the general [`tests/README.md`](../README.md). Paths below are relative to `tests/`.
@@ -55,11 +55,12 @@ Helper modules have no `.test.mjs` suffix, so the level-1 glob never runs them.
 | `07-retry-helpers` | "Automatic Retry Handling": constants, `parseRetryAfter()`, `classifyRateLimitBody()`; "Logging": `extractErrorMessage()` |
 | `08-endpoint-policy` | "Custom endpoint policy": the pure rules of `js/mzta-endpoint-policy.js` (schemes, credentials, loopback, per-origin approval, credential masking) |
 | `10-fetch-with-retry` | "Automatic Retry Handling": `fetchWithRetry()` whole (the retried body read only with debug on, the 5 s limit of that read and of the 429 inspection, a user abort during a body read), "Logging" |
-| `11-redirects` | "Redirects": `redirect: 'error'` everywhere, the one redirect check after a network failure, `fetchNoRedirect()`, `is_redirect` on the classes' result |
-| `12-endpoint-guard` | "Custom endpoint policy": the Ollama and OpenAI Comp classes refuse an unusable or unapproved endpoint before `fetch()`; the worker takes `approved_insecure_origins` from its init; "Redirects": the worker's redirect text |
+| `11-redirects` | "Redirects": redirects followed everywhere; with `onRedirect` (Ollama, OpenAI Comp) the outcome reported, a followed redirect ending in an error failed at once, the one 2 s redirect check after a network failure (not after a timeout or an abort); `fetchDirect()`; `redirect_info` and `is_redirect` on the two classes, none of it on OpenAI, Claude and Gemini |
+| `12-endpoint-guard` | "Custom endpoint policy": the Ollama and OpenAI Comp classes refuse an unusable or unapproved endpoint before `fetch()`; the worker takes `approved_insecure_origins` from its init; "Redirects": the Ollama worker's redirect text and its `endpoint_redirect` message |
+| `13-endpoint-redirects` | "Redirects": the stored redirects of `js/mzta-endpoint-redirects.js` (destination, write only on change, removal on a direct success or a field change, no credentials) |
 | `20-anthropic-request` | "Anthropic / Claude": request body construction |
 | `21-anthropic-400-retry` | "Anthropic / Claude": one-shot retry on a 400 (its clone read within 5 s, a user abort during it), 400 error hints |
-| `22-gemini-request` | "Google Gemini", "Extra body data" (two-level merge), includeThoughts |
+| `22-gemini-request` | "Google Gemini" (the key in `x-goog-api-key`, never in the URL), "Extra body data" (two-level merge), includeThoughts |
 | `23-ollama-request` | "Ollama": think levels, keep_alive, options, Bearer on every endpoint; 300 s timeout |
 | `24-openai-comp-request` | "OpenAI-Compatible", "Extra body data", stream_options; 300 s timeout |
 | `25-openai-responses-request` | "OpenAI API": reasoning, text, sampling, limits, pass-through, extra-body gating |

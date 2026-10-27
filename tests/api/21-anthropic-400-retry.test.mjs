@@ -111,8 +111,7 @@ k.test('exactly-once', 'a second 400 is not retried again: the ORIGINAL response
 });
 
 k.test('retry-throws', 'when the retry throws, the original response is returned', async () => {
-    net.expect(MSG_URL, bad('error_400_temperature')).expect(MSG_URL, NET.networkError())
-        .expect({ method: 'GET', url: MSG_URL }, NET.networkError());    // the redirect check: not one
+    net.expect(MSG_URL, bad('error_400_temperature')).expect(MSG_URL, NET.networkError());
     const r = await client(SAMPLING).fetchResponse(MESSAGES, { maxRetries: 0 });
     assert.equal(r.status, 400);
     assert.deepEqual(await r.json(), FX.error_400_temperature.body);

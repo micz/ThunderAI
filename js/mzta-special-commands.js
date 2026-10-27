@@ -25,6 +25,7 @@ import { mztaPrefs } from './mzta-prefs.js';
  import { taLogger } from './mzta-logger.js';
  import { stripThinkTags } from './mzta-utils.js';
  import { resolveEndpointAccess } from './mzta-endpoint-approvals.js';
+ import { saveEndpointRedirect } from './mzta-endpoint-redirects.js';
 
  // Fallback timeout (ms) for a special command if the special_command_timeout
  // preference is unavailable. Kept generous to accommodate slow local models.
@@ -233,6 +234,12 @@ import { mztaPrefs } from './mzta-prefs.js';
                         // show, the overall special_command_timeout still applies.
                         this.logger.log("Retrying the API request: " + JSON.stringify(payload));
                         lastRetryStatus = payload?.status ?? null;
+                        break;
+                    case 'endpoint_redirect':
+                        // The redirect outcome of a request to a custom endpoint [#1000]:
+                        // saved for the note under the host field of the connection panels.
+                        // Not awaited: a storage write must not delay the answer.
+                        saveEndpointRedirect(payload.host, payload.info);
                         break;
                     case 'newToken':
                         this.full_message += payload.token;

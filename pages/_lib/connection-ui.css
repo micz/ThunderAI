@@ -50,6 +50,14 @@ textarea.option-textarea{
     overflow-wrap: break-word;
 }
 
+/* The same place, amber: the server at that address redirects the requests,
+   filled from the stored redirects by showEndpointRedirectNote(). A caveat, not
+   an unusable value, hence the warning color and not --jsonError. Hidden via
+   [hidden] until a redirect is known, and again once the address is changed. */
+.endpoint_note.endpoint_note_warning{
+    color: var(--warnColor, #c9760a);
+}
+
 /* Inline note shown when the selected model does not accept an option, or to
    report a model-reported limit. On Claude that is temperature / extended
    thinking budget / effort (updateAnthropicModelCapabilityUI()); on Ollama the

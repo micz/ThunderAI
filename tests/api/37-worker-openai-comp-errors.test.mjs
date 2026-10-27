@@ -8,7 +8,9 @@
 //    abort it (Stop then: requestAborted, no error);
 //  - "Error contract between js/api/* and workers": the error_text forms, rateLimited (an
 //    insufficient_quota 429, returned at once, is rateLimited; is_exception is not), the same
-//    text posted and thrown.
+//    text posted and thrown;
+//  - "Redirects": a followed redirect ending in an error is posted as an 'endpoint_redirect'
+//    message (host and outcome) and fails the turn without the meaningless HTTP error.
 // Inputs: fixtures/api/openai_comp.json and the OpenAI error bodies compatible servers return
 // (fixtures/api/openai_responses.json). Realm: no browser global.
 
@@ -18,7 +20,10 @@ import {
     drive,
     fakeTime
 } from './harness.mjs';
-import { NET } from './fetch-model.mjs';
+import {
+    NET,
+    redirectedTo
+} from './fetch-model.mjs';
 import {
     assertNoBrowser,
     flush,
@@ -141,6 +146,18 @@ k.test('network', 'a network failure after the retries: the exception text as is
     assert.equal(err.payload.split('request failed').length - 1, 1);
     assert.equal(err.rateLimited, false);
     assert.equal(err.retryAfterMs, null);
+});
+
+k.test('redirect-failed', 'a followed redirect ending in a 405: endpoint_redirect posted with its final address, no HTTP error text', async () => {
+    net.expect(CHAT, () => redirectedTo('https://llm.example.test/v1/chat/completions',
+        jsonResponse({ error: { message: 'Method Not Allowed' } }, { status: 405, statusText: 'Method Not Allowed' })));
+    const turn = startTurn(w, 'q');
+    await assert.rejects(turn.done);
+    assert.deepEqual(turn.posted().filter(m => m.type === 'endpoint_redirect').map(m => m.payload),
+        [{ host: HOST, info: { redirected: true, url: 'https://llm.example.test/v1/chat/completions', failed: true } }]);
+    const [err] = errorOf(turn);
+    assert.equal(err.payload.includes('405'), false, err.payload);
+    assert.equal(err.rateLimited, false);
 });
 
 k.test('stream-cut', 'a connection cut mid-stream: one error, connection interrupted, no tokensDone', async () => {

@@ -18,11 +18,7 @@
 
 
 import { parseExtraBody } from './api-utils.js';
-import {
-    fetchWithRetry,
-    fetchNoRedirect,
-    isRedirectRefused
-} from './api-retry.js';
+import { fetchWithRetry } from './api-retry.js';
 import {
   createUsageData,
   toUsageNumber
@@ -129,11 +125,12 @@ export class GoogleGemini {
 
   fetchModels = async (retryConfig = {}) => {
     try{
-      // The API key travels in the query string: fetchWithRetry() never logs the URL.
-      const response = await fetchWithRetry("https://generativelanguage.googleapis.com/v1beta/models?key=" + this.apiKey, {
+      // The API key travels in the x-goog-api-key header, never in the URL.
+      const response = await fetchWithRetry("https://generativelanguage.googleapis.com/v1beta/models", {
           method: "GET",
           headers: {
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
+              "x-goog-api-key": this.apiKey
           },
       }, { label: 'Google Gemini', ...retryConfig });
 
@@ -163,7 +160,6 @@ export class GoogleGemini {
       console.error("[ThunderAI] Google Gemini API request failed: " + error);
       let output = {};
       output.is_exception = true;
-      output.is_redirect = isRedirectRefused(error);
       output.ok = false;
       output.error = "Google Gemini API request failed: " + error;
       return output;
@@ -177,16 +173,16 @@ export class GoogleGemini {
    */
   fetchModelInfo = async (model) => {
     try{
-      const response = await fetchNoRedirect("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + "?key=" + this.apiKey, {
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model), {
           method: "GET",
           headers: {
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
+              "x-goog-api-key": this.apiKey
           },
       });
 
       if (!response.ok) {
           const errorDetail = await response.text();
-          // No URL in the log: it carries the API key.
           console.error("[ThunderAI] Google Gemini API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
           let output = {};
           output.ok = false;
@@ -204,7 +200,6 @@ export class GoogleGemini {
       console.error("[ThunderAI] Google Gemini API request failed: " + error);
       let output = {};
       output.is_exception = true;
-      output.is_redirect = isRedirectRefused(error);
       output.ok = false;
       output.error = "Google Gemini API request failed: " + error;
       return output;
@@ -298,10 +293,11 @@ export class GoogleGemini {
 
       //  console.log(">>>>>>>>>>>>>>>>> [ThunderAI] Google Gemini API request: " + JSON.stringify(google_gemini_body));
 
-      const response = await fetchWithRetry("https://generativelanguage.googleapis.com/v1beta/models/" + this.model + ":" + (this.stream ? 'streamGenerateContent?alt=sse&' : 'generateContent?') + "key=" + this.apiKey, {
+      const response = await fetchWithRetry("https://generativelanguage.googleapis.com/v1beta/models/" + this.model + ":" + (this.stream ? 'streamGenerateContent?alt=sse' : 'generateContent'), {
           method: "POST",
-          headers: { 
-              "Content-Type": "application/json"
+          headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": this.apiKey
           },
           body: JSON.stringify(google_gemini_body),
       }, { label: 'Google Gemini', ...retryConfig });
@@ -310,7 +306,6 @@ export class GoogleGemini {
         console.error("[ThunderAI] Google Gemini API request failed: " + error);
         let output = {};
         output.is_exception = true;
-        output.is_redirect = isRedirectRefused(error);
         output.is_aborted = retryConfig.signal?.aborted === true;
         output.ok = false;
         output.error = "Google Gemini API request failed: " + error;

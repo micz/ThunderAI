@@ -35,6 +35,7 @@ import { buildChatBubbleIcon } from './svgIcons.js';
 import { resolveContextWindow } from './contextWindow.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
 import { resolveEndpointAccess } from '../js/mzta-endpoint-approvals.js';
+import { saveEndpointRedirect } from '../js/mzta-endpoint-redirects.js';
 
 // Get the LLM to be used
 const urlParams = new URLSearchParams(window.location.search);
@@ -406,6 +407,12 @@ if (worker) worker.onmessage = async function(event) {
         case 'newThinkingToken':
             messagesArea.handleNewThinkingToken(payload.token);
             messageInput.showStreamingStatus();
+            break;
+        case 'endpoint_redirect':
+            // The redirect outcome of a request to a custom endpoint [#1000]: saved for the
+            // note under the host field of the connection panels. Nothing shown here: a
+            // redirect that failed also comes as an 'error'.
+            await saveEndpointRedirect(payload.host, payload.info);
             break;
         case 'usage':
             // A message of its own, carrying no response text. Handled BEFORE the
