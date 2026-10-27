@@ -130,7 +130,7 @@ export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
         let serverBody = '';
         let serverMessage = '';
         if (response !== null) {
-            if (typeof onRedirect === 'function') checkRedirected(response, onRedirect, logger, label);
+            if (typeof onRedirect === 'function') checkRedirected(response, url, options.method, onRedirect, logger, label);
             if (!RETRYABLE_STATUSES.includes(response.status) || attempt === maxRetries) {
                 return response;
             }
@@ -233,17 +233,28 @@ function reportRedirect(onRedirect, info, logger) {
 
 /**
  * The redirect outcome of a response, reported through onRedirect:
- * - {redirected: true, url, failed} when fetch() followed a redirect, url being the
- *   final address (response.url) and failed telling whether the answer is an error;
- *   an error throws a RedirectFailedError, as retrying cannot help;
+ * - {redirected: true, url, from, method, failed} when fetch() followed a redirect,
+ *   url being the final address (response.url), from the address requested (the
+ *   stored destination is worked out from both, see redirectTarget() in
+ *   js/mzta-endpoint-redirects.js), method the request's (a 301/302/303 turns a POST
+ *   into a GET with no body, a 307/308 keeps it, and the code is never visible: only
+ *   a POST tells whether the requests that carry a body survive the redirect) and
+ *   failed telling whether the answer is an error; an error throws a
+ *   RedirectFailedError, as retrying cannot help;
  * - {redirected: false} for a success with no redirect: the server no longer
  *   redirects;
  * - nothing for an error with no redirect, which says nothing either way.
  * The probe of answersWithRedirect() reports {redirected: true, url: '', failed: true}.
  */
-function checkRedirected(response, onRedirect, logger, label) {
+function checkRedirected(response, requestUrl, method, onRedirect, logger, label) {
     if (response.redirected === true) {
-        reportRedirect(onRedirect, { redirected: true, url: response.url || '', failed: !response.ok }, logger);
+        reportRedirect(onRedirect, {
+            redirected: true,
+            url: response.url || '',
+            from: String(requestUrl ?? ''),
+            method: String(method || 'GET').toUpperCase(),
+            failed: !response.ok,
+        }, logger);
         if (!response.ok) {
             response.body?.cancel().catch(() => {});
             logger.log(label + " request failed (HTTP " + response.status + " after a redirect): the redirect could not be followed");
@@ -309,7 +320,7 @@ export async function fetchDirect(url, options = {}, { onRedirect, logger = defa
         }
         throw error;
     }
-    if (typeof onRedirect === 'function') checkRedirected(response, onRedirect, logger, label);
+    if (typeof onRedirect === 'function') checkRedirected(response, url, options.method, onRedirect, logger, label);
     return response;
 }
 

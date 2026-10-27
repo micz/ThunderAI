@@ -9,7 +9,10 @@
 //    in the field (_endpoint_redirects, spec 04 "Redirects"): endpoint_redirect_note naming the
 //    destination, endpoint_redirect_failed_note / _to for a failed one; it follows the storage,
 //    and stays until the field changes: then the entry of the previous address is removed and
-//    the note hidden.
+//    the note hidden;
+//  - spec 05 "Connection Test Status Strip": a test answered through a redirect is amber and names
+//    the destination; a GET only tells where the server redirects, so the note says the chat may
+//    not work through it (endpoint_redirect_note_unverified), and never replaces a failure.
 // Initial state: Ollama on a LAN http:// address not allowed, an OpenAI Comp host known to
 // redirect. The tests run in order on one page; each builds on the previous one's field values.
 
@@ -21,6 +24,8 @@ import assert from 'node:assert/strict';
 import { openPage, assertHarnessClean } from '../../helpers/core/dom-harness.mjs';
 import { uiTests } from '../../helpers/known-issues/ui.mjs';
 import {
+    json,
+    scriptFetch,
     shown,
     userSets,
     until
@@ -37,7 +42,7 @@ const ctx = await openPage('options', {
         ollama_model: 'llama3.2',
         openai_comp_host: COMP + '/',
         openai_comp_model: 'm',
-        _endpoint_redirects: { [COMP]: { to: NEW, failed: false, at: 1 } },
+        _endpoint_redirects: { [COMP]: { to: NEW, failed: false, method: 'POST', at: 1 } },
     },
 });
 after(() => ctx.close());
@@ -49,6 +54,7 @@ const confirms = () => ctx.dialogs.filter(d => d.kind === 'confirm').length;
 // The OpenAI Comp rows are hidden (the connection is Ollama): their notes are read by their own flag.
 const visible = note => note.hidden === false && note.textContent !== '';
 const redirects = async () => (await ctx.ctl.browser.storage.local.get('_endpoint_redirects'))._endpoint_redirects ?? {};
+const net = scriptFetch(ctx);
 
 k.test('red-at-load', S, 'a remote http:// host not yet allowed shows the red note at load, with no question', () => {
     const note = $('#ollama_host_endpoint_note');
@@ -75,7 +81,7 @@ k.test('amber-failed', S, 'a failed redirect: endpoint_redirect_failed_note, or 
     await until(ctx, () => note.textContent === msg('endpoint_redirect_failed_note_to', [NEW]), 'the failed note with its destination');
     await ctx.ctl.browser.storage.local.set({ _endpoint_redirects: {} });
     await until(ctx, () => !visible(note), 'the note hidden once the entry is gone');
-    await ctx.ctl.browser.storage.local.set({ _endpoint_redirects: { [COMP]: { to: NEW, failed: false, at: 4 } } });
+    await ctx.ctl.browser.storage.local.set({ _endpoint_redirects: { [COMP]: { to: NEW, failed: false, method: 'POST', at: 4 } } });
     await until(ctx, () => visible(note), 'the note back');
 });
 
@@ -116,6 +122,44 @@ k.test('amber-gone-on-change', S, 'a change of the field hides the amber note an
     await userSets(ctx, $('#openai_comp_host'), NEW);
     await until(ctx, () => !visible(note), 'the amber note hidden');
     assert.equal(COMP in await redirects(), false, 'the entry of the previous address removed');
+});
+
+const LOCAL = 'http://localhost:11434';
+const strip = () => $('#mzta_conn_test');
+const runTest = async () => {
+    await ctx.click($('#mzta_conn_test_link'));
+    await until(ctx, () => strip().getAttribute('data-state') !== 'loading', 'the test to end');
+};
+// /api/version answered from /v2/api/version: a redirect the test (a GET) went through.
+const versionThroughRedirect = () => {
+    net.answer(LOCAL + '/api/version', () => Object.defineProperties(json({ version: '0.6.0' }), {
+        redirected: { value: true },
+        url: { value: LOCAL + '/v2/api/version' },
+    }));
+};
+
+k.test('test-redirect-amber', 'spec 05 "Connection Settings Panel — Connection Test Status Strip"', 'a test answered through a redirect is amber and names the new base address', async () => {
+    await userSets(ctx, $('#ollama_host'), LOCAL);
+    versionThroughRedirect();
+    await runTest();
+    assert.equal(strip().getAttribute('data-state'), 'warning');
+    assert.equal($('#mzta_conn_test_text').textContent,
+        msg('connTest_ok_redirect', [msg('prefs_Connection_type_Ollama_API'), LOCAL + '/v2']));
+    const note = $('#ollama_host_redirect_note');
+    await until(ctx, () => note.textContent === msg('endpoint_redirect_note_unverified', [LOCAL + '/v2']), 'the unverified amber note');
+    assert.equal((await redirects())[LOCAL].method, 'GET');
+});
+
+k.test('get-keeps-failure', S, 'a GET through the redirect never replaces a failure a POST recorded', async () => {
+    const note = $('#ollama_host_redirect_note');
+    await ctx.ctl.browser.storage.local.set({ _endpoint_redirects: { [LOCAL]: { to: LOCAL + '/v2', failed: true, method: 'POST', at: 5 } } });
+    await until(ctx, () => note.textContent === msg('endpoint_redirect_failed_note_to', [LOCAL + '/v2']), 'the failed note');
+    versionThroughRedirect();
+    await runTest();
+    assert.equal(strip().getAttribute('data-state'), 'warning', 'the test still says it went through a redirect');
+    assert.equal((await redirects())[LOCAL].failed, true);
+    assert.equal(note.textContent, msg('endpoint_redirect_failed_note_to', [LOCAL + '/v2']));
+    assert.deepEqual(net.pending(), []);
 });
 
 k.coverage();

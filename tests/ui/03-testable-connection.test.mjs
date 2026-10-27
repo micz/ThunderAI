@@ -291,10 +291,25 @@ for (const type of API_TYPES) {
             handlingClick = true;
             const pending = ct.runConnectionTest(type, '');
             handlingClick = false;
-            assert.deepEqual(await pending, { status: 'ok', apiName: msg(ct.getTestableConnection(type).nameKey) });
+            assert.deepEqual(await pending, { status: 'ok', apiName: msg(ct.getTestableConnection(type).nameKey), redirectTo: '' });
             assert.deepEqual(fromClick, [true]);
         } finally {
             permissions.request = original;
         }
+    });
+}
+
+// Spec 05 "Connection Test Status Strip": a custom endpoint answering through a redirect gives the
+// address to enter instead (redirectTo), which the strip shows in amber; no redirect gives ''.
+for (const [type, field, api] of [['ollama_api', 'ollama_host', '/api/version'], ['openai_comp_api', 'openai_comp_host', '/v1/models']]) {
+    test(`runConnectionTest(): ${type} answered through a redirect reports the new base address`, async () => {
+        useForm();
+        const host = FIELDS[field].value;
+        nextAnswer = () => Object.defineProperties(
+            new Response(JSON.stringify({ data: [], version: '0.6.0' }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+            { redirected: { value: true }, url: { value: host + '/v2' + api } });
+        const r = await ct.runConnectionTest(type, '');
+        assert.equal(nextAnswer, null, 'the scripted answer was not used');
+        assert.deepEqual(r, { status: 'ok', apiName: msg(ct.getTestableConnection(type).nameKey), redirectTo: host + '/v2' });
     });
 }

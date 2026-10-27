@@ -2,9 +2,14 @@
 // (js/mzta-endpoint-redirects.js, storage.local _endpoint_redirects):
 //  - one entry per configured host, normalized like the classes do (trimmed, trailing slashes
 //    removed): {to, failed, at};
-//  - `to` is the origin of the final address, or the whole final address when it stays on the
-//    configured origin (a redirect of the path only), '' when unknown; never a user name or
-//    password, and a host with credentials is never stored;
+//  - `to` is the address to enter instead: the origin of the final address for another server;
+//    on the same server the new base, i.e. the final address without the API path the class
+//    added to the host, the same whichever endpoint was called (the final address without its
+//    query when it does not end with that path); '' when unknown or the host itself; never a
+//    user name, a password or a query, and a host with credentials is never stored;
+//  - `method` is the one of the request the entry comes from: a GET through the redirect only
+//    tells where it goes (a 301/302 turns a POST into a GET, and the code is never visible), so
+//    it never replaces a failure, nor a POST success to the same destination;
 //  - {redirected: false} (a success with no redirect) removes the entry; null changes nothing;
 //  - the storage is written only when the entry changes: every chat message reports an outcome;
 //  - clearEndpointRedirect() removes the entry of a host (its field changed).
@@ -51,6 +56,19 @@ k.test('target', 'the destination: the origin of another server, the whole addre
     assert.equal(redirectTarget(HOST, 'file:///etc/passwd'), '');
 });
 
+k.test('target-base', 'the same server: the new base, without the API path that was requested, whatever the endpoint', () => {
+    for (const api of ['/api/version', '/api/show', '/api/chat', '/api/tags']) {
+        assert.equal(redirectTarget(HOST, HOST + '/_redirected' + api, HOST + api), HOST + '/_redirected', api);
+    }
+    assert.equal(redirectTarget('https://llm.example.test/v1/', 'https://llm.example.test/new/v1/models', 'https://llm.example.test/v1/models'),
+        'https://llm.example.test/new/v1', 'a host with a path keeps it');
+    assert.equal(redirectTarget('https://llm.example.test', 'https://llm.example.test/other/?key=s3cr3t', 'https://llm.example.test/v1/models'),
+        'https://llm.example.test/other', 'not ending with the API path: the final address, with no query');
+    assert.equal(redirectTarget(HOST, HOST + '/api/chat?x=1', HOST + '/api/chat'), '', 'the host itself: nothing to enter');
+    assert.equal(redirectTarget(HOST, 'https://ollama.example.test/_r/api/chat', HOST + '/api/chat'), 'https://ollama.example.test',
+        'another server: its origin');
+});
+
 k.test('save-followed', 'a followed redirect is stored under the normalized host, with the destination', async () => {
     await reset();
     await saveEndpointRedirect(' http://localhost:11434/ ', { redirected: true, url: 'https://new.example.test/api/chat', failed: false });
@@ -78,9 +96,42 @@ k.test('write-on-change', 'the storage is written only when the entry changes', 
     await saveEndpointRedirect(HOST, info);
     await saveEndpointRedirect(HOST, { ...info, url: 'https://new.example.test/api/tags' });
     assert.equal(writes() - before, 1, 'the same destination and state: no write');
+    await saveEndpointRedirect(HOST, { ...info, url: HOST + '/v2/api/chat', from: HOST + '/api/chat' });
+    await saveEndpointRedirect(HOST, { ...info, url: HOST + '/v2/api/version', from: HOST + '/api/version' });
+    await saveEndpointRedirect(HOST, { ...info, url: HOST + '/v2/api/show', from: HOST + '/api/show' });
+    assert.equal(writes() - before, 2, 'the same new base from another endpoint: no write');
+    assert.equal((await getEndpointRedirect(HOST)).to, HOST + '/v2');
+    await saveEndpointRedirect(HOST, info);
+    assert.equal(writes() - before, 3);
     await saveEndpointRedirect(HOST, { ...info, failed: true });
-    assert.equal(writes() - before, 2, 'failed changed: written');
+    assert.equal(writes() - before, 4, 'failed changed: written');
     assert.equal((await getEndpointRedirect(HOST)).failed, true);
+});
+
+k.test('method-get', 'a GET through the redirect never replaces a failure nor a POST success; a POST success does', async () => {
+    await reset();
+    const base = HOST + '/v2';
+    const get = { redirected: true, url: base + '/api/version', from: HOST + '/api/version', method: 'GET', failed: false };
+    const post = { redirected: true, url: base + '/api/chat', from: HOST + '/api/chat', method: 'POST', failed: false };
+    await saveEndpointRedirect(HOST, get);
+    assert.deepEqual({ ...await getEndpointRedirect(HOST), at: 0 }, { to: base, failed: false, method: 'GET', at: 0 }, 'nothing known: stored');
+    await saveEndpointRedirect(HOST, { ...post, method: 'POST', failed: true });
+    assert.equal((await getEndpointRedirect(HOST)).failed, true, 'a POST that failed replaces it');
+    const before = writes();
+    await saveEndpointRedirect(HOST, get);
+    await saveEndpointRedirect(HOST, { ...get, url: 'https://other.example.test/api/version' });
+    assert.equal(writes(), before, 'a GET never replaces a failure');
+    assert.equal((await getEndpointRedirect(HOST)).failed, true);
+    await saveEndpointRedirect(HOST, post);
+    assert.deepEqual({ ...await getEndpointRedirect(HOST), at: 0 }, { to: base, failed: false, method: 'POST', at: 0 }, 'a POST success replaces it');
+    const after = writes();
+    await saveEndpointRedirect(HOST, get);
+    assert.equal(writes(), after, 'a GET to the same destination keeps the POST success');
+    await saveEndpointRedirect(HOST, { ...get, url: 'https://other.example.test/api/version' });
+    assert.deepEqual({ ...await getEndpointRedirect(HOST), at: 0 }, { to: 'https://other.example.test', failed: false, method: 'GET', at: 0 },
+        'a GET to another destination: the server moved');
+    await saveEndpointRedirect(HOST, { ...get, failed: true });
+    assert.equal((await getEndpointRedirect(HOST)).failed, true, 'a GET that failed is a failure too');
 });
 
 k.test('remove-on-success', 'a success with no redirect removes the entry; with none stored, nothing is written', async () => {

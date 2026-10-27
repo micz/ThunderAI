@@ -67,13 +67,13 @@ k.test('follow-mode', 'no redirect mode is set: fetch() follows redirects, with 
     assert.deepEqual(net.calls.map(c => c.redirect), [null, null]);
 });
 
-k.test('followed-ok', 'a followed redirect that succeeds: reported with the final address, the response returned, no check', async () => {
+k.test('followed-ok', 'a followed redirect that succeeds: reported with the final and the requested address, the response returned, no check', async () => {
     const r = recorder();
     net.expect(URL_, () => redirectedTo(FINAL, jsonResponse({ ok: true })));
     const res = await fetchWithRetry(URL_, { method: 'POST' }, { maxRetries: 0, onRedirect: r.onRedirect });
     assert.equal(res.status, 200);
     assert.deepEqual(await res.json(), { ok: true });
-    assert.deepEqual(r.seen, [{ redirected: true, url: FINAL, failed: false }]);
+    assert.deepEqual(r.seen, [{ redirected: true, url: FINAL, from: URL_, method: 'POST', failed: false }]);
     assert.equal(net.calls.length, 1);
 });
 
@@ -86,7 +86,7 @@ for (const status of [404, 405, 503]) {
         const p = fetchWithRetry(URL_, { method: 'POST', body: '{"mail":"text"}' },
             { onRedirect: r.onRedirect, onRetry: info => retries.push(info) });
         await assert.rejects(drive(p, timers), e => e instanceof RedirectFailedError && isRedirectFailed(e));
-        assert.deepEqual(r.seen, [{ redirected: true, url: FINAL, failed: true }]);
+        assert.deepEqual(r.seen, [{ redirected: true, url: FINAL, from: URL_, method: 'POST', failed: true }]);
         assert.equal(retries.length, 0);
         assert.equal(net.calls.length, 1);
     });
@@ -243,8 +243,8 @@ k.test('direct-probe', 'fetchDirect(): redirects followed and reported, the same
         e => e instanceof TypeError && e.message === 'down');
     assert.deepEqual(r.seen, [
         { redirected: false },
-        { redirected: true, url: FINAL, failed: false },
-        { redirected: true, url: FINAL, failed: true },
+        { redirected: true, url: FINAL, from: URL_, method: 'GET', failed: false },
+        { redirected: true, url: FINAL, from: URL_, method: 'GET', failed: true },
         { redirected: true, url: '', failed: true },
     ]);
 });
@@ -260,7 +260,7 @@ k.test('class-ollama-followed', 'Ollama fetchResponse(): a followed redirect lea
     net.expect(OLLAMA + '/api/chat', () => redirectedTo('http://127.0.0.1:11434/api/chat', jsonResponse({ done: true })));
     const r = await ollama.fetchResponse([], { maxRetries: 0 });
     assert.equal(r.ok, true);
-    assert.deepEqual(ollama.redirect_info, { redirected: true, url: 'http://127.0.0.1:11434/api/chat', failed: false });
+    assert.deepEqual(ollama.redirect_info, { redirected: true, url: 'http://127.0.0.1:11434/api/chat', from: OLLAMA + '/api/chat', method: 'POST', failed: false });
     net.expect(OLLAMA + '/api/chat', () => jsonResponse({ done: true }));
     await ollama.fetchResponse([], { maxRetries: 0 });
     assert.deepEqual(ollama.redirect_info, { redirected: false }, 'each call reports its own outcome');
@@ -282,7 +282,7 @@ k.test('class-ollama-version', 'Ollama fetchVersion(), a direct probe: a redirec
     const r = await ollama.fetchVersion();
     assert.equal(net.calls[0].redirect, null);
     assert.equal(r.is_redirect, true);
-    assert.deepEqual(ollama.redirect_info, { redirected: true, url: 'https://ollama.example/api/version', failed: true });
+    assert.deepEqual(ollama.redirect_info, { redirected: true, url: 'https://ollama.example/api/version', from: OLLAMA + '/api/version', method: 'GET', failed: true });
 });
 
 k.test('class-comp-models', 'OpenAI Comp fetchModels(): is_redirect; a plain network error is not one', async () => {

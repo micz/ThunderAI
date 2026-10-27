@@ -36,7 +36,8 @@ import {
 import {
   isTestableConnection,
   runConnectionTest,
-  setConnTestState
+  setConnTestState,
+  showConnTestResult
 } from '../../js/mzta-connection-test.js';
 import { mztaPrefs } from '../../js/mzta-prefs.js';
 import {
@@ -473,11 +474,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!isTestableConnection(state.provider)) return;
     setConnTestState('loading');
     let result = await runConnectionTest(state.provider);
-    if (result.status === 'ok') {
-      setConnTestState('ok', result.apiName);
-    } else {
-      setConnTestState('error', result.message);
-    }
+    showConnTestResult(result);
     // Same as the options page: a successful test may be what granted the host
     // permission, so re-probe the model capabilities now that /api/show is reachable.
     if (state.provider === 'ollama_api' && result.status === 'ok') {

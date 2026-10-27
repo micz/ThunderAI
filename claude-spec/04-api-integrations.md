@@ -1179,7 +1179,12 @@ Claude and Gemini get none of this: their redirects are followed silently, with 
   label})` (Ollama's `/api/version`, `/api/show`, `/api/ps`: a single `fetch()` with no retry and no
   timeout). Both live in `js/api/api-retry.js`. Without `onRedirect` neither looks at redirects.
 - **A redirect that was followed** (`response.redirected === true`) reports
-  `{redirected: true, url: response.url, failed: !response.ok}`, whatever the status.
+  `{redirected: true, url: response.url, from: <the requested URL>, method, failed: !response.ok}`,
+  whatever the status. `method` matters because of the fetch standard: a 301, 302 or 303 turns a
+  `POST` into a `GET` with no body, while a 307 or 308 keeps it, and a `GET` survives any of them.
+  The code itself is never visible (neither on a followed redirect nor on an `opaqueredirect`), so
+  a `GET` that went through only tells where the server redirects; only a `POST` (the chat,
+  `/api/show`) tells whether the requests that carry content survive it.
   - `ok`: the request goes on normally and the user sees no error.
   - not `ok`: typically a 301/302 turned the POST into a GET with no body, and the final server
     answers 404 or 405. Its error means nothing to the user, so the response is dropped and a
@@ -1210,14 +1215,27 @@ Claude and Gemini get none of this: their redirects are followed silently, with 
     (`pages/_lib/connection-ui.js`), the context-window lookup (`api_webchat/contextWindow.js`).
 - **The stored redirects**, in `storage.local` under `_endpoint_redirects` (not a preference, see
   [05-options.md](05-options.md)), one entry per configured host, the host normalized like the
-  classes do (trimmed, trailing slashes removed): `{to, failed, at}`.
-  - `to` is the origin of the final address, or the whole final address when it is on the
-    configured origin (a redirect of the path only), or `''` when unknown (the probe). The user
-    name and password are always removed, and a host that is not a usable address (credentials
-    in it, see [Custom endpoint policy](#custom-endpoint-policy)) is never stored.
+  classes do (trimmed, trailing slashes removed): `{to, failed, method, at}`, `method` being the
+  one of the request the entry comes from.
+  - `to` is the address to enter instead of the host (`redirectTarget(host, url, from)`):
+    - another server: the origin of the final address;
+    - the same server: the new base, i.e. the final address without the API path the class added
+      to the host (requested `http://h/api/version`, answered from `http://h/v2/api/version`:
+      `http://h/v2`). It is the same whichever endpoint was called, so the chat, the test and the
+      probes do not rewrite it in turn. A final path that does not end with that API path gives
+      the final address without its query; a final address that is the host itself gives `''`;
+    - `''` when unknown (the probe).
+
+    The user name, the password and the query are always removed, and a host that is not a usable
+    address (credentials in it, see [Custom endpoint policy](#custom-endpoint-policy)) is never
+    stored.
+  - A failure (`failed: true`, any method) and a `POST` success always store the entry. A
+    success of another method (a `GET`) stores it only when nothing is known: it **never replaces
+    a failure**, nor a `POST` success to the same destination, since it cannot tell whether the
+    chat works through the redirect.
   - `{redirected: false}` removes the entry: the warning must not stay forever once the server
     stops redirecting.
-  - The storage is written only when the entry changes (`to` or `failed`): every chat message
+  - The storage is written only when the entry changes (`to`, `failed` or `method`): every chat message
     reports an outcome, and must not produce a write. `at` is the time of the last change.
   - `getEndpointRedirect(host)` reads an entry, `clearEndpointRedirect(host)` removes it (the host
     field changed, see [05-options.md](05-options.md)).
@@ -1225,8 +1243,10 @@ Claude and Gemini get none of this: their redirects are followed silently, with 
   (`isRedirectFailed(error)`). The two workers post `i18nStrings.api_error_redirect` (sent by the
   chat window and by `initWorker()`), and the pages show `api_error_redirect`: the connection test
   (`_mapError()`) and "Update list" (`fetchModelsWithTimeout()`). The message tells the user to enter
-  the final address directly. Every redirect, followed or failed, also shows the amber note under
-  the host field of the connection panels ([05-options.md](05-options.md)).
+  the final address directly. A connection test that succeeds through a redirect is amber, not
+  green (`runConnectionTest()` returns `redirectTo`, the stored `to`). Every redirect, followed or
+  failed, also shows the amber note under the host field of the connection panels
+  ([05-options.md](05-options.md)).
 - No `webRequest`, no extra permission: everything comes from the `Response` and the probe.
 
 ## Custom endpoint policy

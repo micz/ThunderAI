@@ -67,7 +67,8 @@ import { isManagedSecret, setDisabledRespectingManaged, resolveSpecificIntegrati
 import {
   isTestableConnection,
   runConnectionTest,
-  setConnTestState
+  setConnTestState,
+  showConnTestResult
 } from '../../js/mzta-connection-test.js';
 
 export const varConnectionUI = {
@@ -1801,11 +1802,7 @@ export function attachConnTestStrip({ afterEl, scopeEls = [], getConnType, idPre
     if (!isTestableConnection(connType)) return;
     setConnTestState('loading', '', strip);
     const result = await runConnectionTest(connType, idPrefix);
-    if (result.status === 'ok') {
-      setConnTestState('ok', result.apiName, strip);
-    } else {
-      setConnTestState('error', result.message, strip);
-    }
+    showConnTestResult(result, strip);
     // A successful test may have been the moment the host permission was granted,
     // so re-probe the model capabilities now that /api/show can actually be reached.
     if (connType === 'ollama_api' && result.status === 'ok') {
@@ -2771,8 +2768,10 @@ async function checkEndpointField(modelId_prefix, integration) {
 
 // The amber note under a custom endpoint field: the server at the address in the field
 // is known to redirect (js/mzta-endpoint-redirects.js, saved after every request). A
-// redirect that was followed names its destination; one that failed says the requests
-// fail until the final address is entered, naming it when it is known.
+// redirect that a POST went through names its destination; one only a GET went through
+// names it too, but cannot tell whether the chat works through it (a 301/302 turns the
+// POST into a GET); one that failed says the requests fail until the final address is
+// entered, naming it when it is known.
 async function showEndpointRedirectNote(modelId_prefix, integration) {
   const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
   const hostInput = document.getElementById(getPrefixedId(`${integration}_host`));
@@ -2785,7 +2784,7 @@ async function showEndpointRedirectNote(modelId_prefix, integration) {
       ? browser.i18n.getMessage('endpoint_redirect_failed_note_to', [entry.to])
       : browser.i18n.getMessage('endpoint_redirect_failed_note');
   } else if (entry !== null && entry.to !== '') {
-    message = browser.i18n.getMessage('endpoint_redirect_note', [entry.to]);
+    message = browser.i18n.getMessage(entry.method === 'POST' ? 'endpoint_redirect_note' : 'endpoint_redirect_note_unverified', [entry.to]);
   }
   note.textContent = message;
   note.hidden = (message === '');

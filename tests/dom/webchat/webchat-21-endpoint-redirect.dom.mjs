@@ -49,7 +49,7 @@ k.test('same-outcome-no-write', S, 'the same outcome again (the next message of 
 
 k.test('failed', S, 'a redirect that failed is saved as failed', async () => {
     await report({ redirected: true, url: '', failed: true });
-    assert.deepEqual({ ...(await stored())[HOST], at: 0 }, { to: '', failed: true, at: 0 });
+    assert.deepEqual({ ...(await stored())[HOST], at: 0 }, { to: '', failed: true, method: '', at: 0 });
 });
 
 k.test('removed', S, 'a success with no redirect removes the entry', async () => {

@@ -139,7 +139,7 @@ k.test('worker-redirect-followed', 'worker: a followed redirect is posted with i
     await turn.done;
     assert.deepEqual(errorOf(turn), []);
     const [msg] = redirectsOf(turn);
-    assert.deepEqual(msg.payload, { host: 'http://localhost:11434', info: { redirected: true, url: 'http://127.0.0.1:11434/api/chat', failed: false } });
+    assert.deepEqual(msg.payload, { host: 'http://localhost:11434', info: { redirected: true, url: 'http://127.0.0.1:11434/api/chat', from: CHAT, method: 'POST', failed: false } });
     assert.equal(JSON.stringify(msg).includes('ol-SECRET'), false, 'never the API key');
     assert.ok(turn.posted().findIndex(m => m.type === 'endpoint_redirect') < turn.posted().findIndex(m => m.type === 'messageSent'),
         'posted before messageSent');

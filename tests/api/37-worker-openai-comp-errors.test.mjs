@@ -154,7 +154,7 @@ k.test('redirect-failed', 'a followed redirect ending in a 405: endpoint_redirec
     const turn = startTurn(w, 'q');
     await assert.rejects(turn.done);
     assert.deepEqual(turn.posted().filter(m => m.type === 'endpoint_redirect').map(m => m.payload),
-        [{ host: HOST, info: { redirected: true, url: 'https://llm.example.test/v1/chat/completions', failed: true } }]);
+        [{ host: HOST, info: { redirected: true, url: 'https://llm.example.test/v1/chat/completions', from: CHAT, method: 'POST', failed: true } }]);
     const [err] = errorOf(turn);
     assert.equal(err.payload.includes('405'), false, err.payload);
     assert.equal(err.rateLimited, false);

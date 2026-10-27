@@ -33,7 +33,10 @@ import {
     resolveEndpointAccess
 } from './mzta-endpoint-approvals.js';
 import { parseEndpoint } from './mzta-endpoint-policy.js';
-import { saveEndpointRedirect } from './mzta-endpoint-redirects.js';
+import {
+    redirectTarget,
+    saveEndpointRedirect
+} from './mzta-endpoint-redirects.js';
 
 const CONN_TEST_TIMEOUT_MS = 10000;
 
@@ -165,7 +168,9 @@ function _mapError(data) {
 
 // Runs the connectivity check for the current form values of `connType`, read from the
 // fields whose ids start with `idPrefix`.
-// Returns { status: 'ok', apiName } or { status: 'error', message }.
+// Returns { status: 'ok', apiName, redirectTo } or { status: 'error', message };
+// redirectTo is the address a custom endpoint redirected to ('' when it did not).
+// showConnTestResult() shows it on a strip.
 // Non-destructive: reads form fields only, saves nothing.
 export async function runConnectionTest(connType, idPrefix = '') {
   const entry = getTestableConnection(connType);
@@ -238,16 +243,33 @@ export async function runConnectionTest(connType, idPrefix = '') {
   }
 
   if (data && data.ok) {
-    return { status: 'ok', apiName };
+    // Reached through a redirect [#1000]: the test is a GET, which every redirect keeps,
+    // so it cannot tell whether the chat (a POST) survives it: the strip says so.
+    const info = entry.hostId ? client.redirect_info : null;
+    const redirectTo = info?.redirected === true ? redirectTarget(client.host, info.url, info.from) : '';
+    return { status: 'ok', apiName, redirectTo };
   }
 
   return { status: 'error', message: _mapError(data || {}) };
 }
 
+// Show the result of runConnectionTest() on a strip: green when the server answered,
+// amber when it answered through a redirect, red otherwise.
+export function showConnTestResult(result, strip = document.getElementById('mzta_conn_test')) {
+  if (result.status !== 'ok') {
+    setConnTestState('error', result.message, strip);
+  } else if (result.redirectTo) {
+    setConnTestState('warning', browser.i18n.getMessage('connTest_ok_redirect', [result.apiName, result.redirectTo]), strip);
+  } else {
+    setConnTestState('ok', result.apiName, strip);
+  }
+}
+
 // Update a connection test strip (.conn_test_strip): visual state, status text and
 // action link. `strip` defaults to the single #mzta_conn_test of the options page, the
 // setup wizard and the feature pages; Custom Prompts passes the strip of one form.
-// state: 'idle' | 'loading' | 'ok' | 'error'. message: ok→api name, error→detail.
+// state: 'idle' | 'loading' | 'ok' | 'warning' | 'error'. message: ok→api name,
+// warning→the whole text, error→detail.
 export function setConnTestState(state, message, strip = document.getElementById('mzta_conn_test')) {
   const textEl = strip?.querySelector('.conn_test_text');
   const linkEl = strip?.querySelector('.conn_test_link');
@@ -260,6 +282,11 @@ export function setConnTestState(state, message, strip = document.getElementById
       break;
     case 'ok':
       textEl.textContent = browser.i18n.getMessage('connTest_ok', [message || '']);
+      linkEl.textContent = browser.i18n.getMessage('connTest_link_retest');
+      linkEl.style.display = '';
+      break;
+    case 'warning':
+      textEl.textContent = message || '';
       linkEl.textContent = browser.i18n.getMessage('connTest_link_retest');
       linkEl.style.display = '';
       break;

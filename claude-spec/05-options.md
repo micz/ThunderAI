@@ -797,7 +797,14 @@ except `chatgpt_web` (which has no API endpoint). `refreshConnTestVisibility()` 
 `pages/_lib/mzta-design.css`): `idle` (grey dot, "Connection not tested yet", link "Test
 now"), `loading` (dot becomes a spinner via the `mztaspin` keyframe, "Testing
 connection…", link hidden), `ok` (green dot, "Connected — <API> reachable", link
-"Re-test"), `error` (red dot + red text with the error detail, link "Retry").
+"Re-test"), `warning` (amber dot + amber text, `connTest_ok_redirect`, link "Re-test": a
+custom endpoint answered through a redirect; it names the address to enter instead, and says the
+chat may not work through it, since the test is a GET and only a POST shows whether a redirect
+keeps the content of the requests, see [04-api-integrations.md "Redirects"](04-api-integrations.md#redirects)),
+`error` (red dot + red text with the error detail, link "Retry").
+`showConnTestResult(result, strip)` shows a `runConnectionTest()` result: `error` when it failed,
+`warning` when it carries a `redirectTo`, `ok` otherwise; the options page, the wizard and the
+strips of `connection-ui.js` all call it.
 `setConnTestState(state, message, strip)`, exported by `js/mzta-connection-test.js` and
 shared by every host, updates dot/text/link of `strip` (found via `.conn_test_text` /
 `.conn_test_link`; it defaults to `#mzta_conn_test`); i18n keys are `connTest_*` in
@@ -888,7 +895,10 @@ the rules of [04-api-integrations.md "Custom endpoint policy"](04-api-integratio
   the `--warnColor` of `mzta-design.css`), filled by `showEndpointRedirectNote()` from the stored
   redirect of the address in the field (`getEndpointRedirect()`, see
   [04-api-integrations.md "Redirects"](04-api-integrations.md#redirects)):
-  - a redirect that was followed: `endpoint_redirect_note`, naming the destination `to`;
+  - a redirect that a POST went through (`method: 'POST'`, a 307/308): `endpoint_redirect_note`,
+    naming the destination `to`;
+  - a redirect only a GET went through (the test, the model list): `endpoint_redirect_note_unverified`,
+    naming `to` and saying the chat may not work through it;
   - a redirect that failed: `endpoint_redirect_failed_note_to` naming `to` when it is known,
     `endpoint_redirect_failed_note` otherwise;
   - no entry: hidden.

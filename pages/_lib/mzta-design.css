@@ -757,6 +757,8 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 .conn_test_link:hover { text-decoration: underline; }
 /* State variants driven by data-state on the strip */
 .conn_test_strip[data-state="ok"] .conn_test_dot { background: var(--success); }
+.conn_test_strip[data-state="warning"] .conn_test_dot { background: var(--warning); }
+.conn_test_strip[data-state="warning"] .conn_test_text { color: var(--warning); }
 .conn_test_strip[data-state="error"] .conn_test_dot { background: #d93025; }
 .conn_test_strip[data-state="error"] .conn_test_text { color: #d93025; }
 /* Loading: turn the dot into a spinner (reuses the mztaspin keyframe). */

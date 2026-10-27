@@ -52,7 +52,8 @@ import {
 import {
   isTestableConnection,
   runConnectionTest,
-  setConnTestState
+  setConnTestState,
+  showConnTestResult
 } from '../js/mzta-connection-test.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
 import {
@@ -879,11 +880,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(!isTestableConnection(connType)) return;
     setConnTestState('loading');
     let result = await runConnectionTest(connType);
-    if(result.status === 'ok'){
-      setConnTestState('ok', result.apiName);
-    }else{
-      setConnTestState('error', result.message);
-    }
+    showConnTestResult(result);
     // A successful test may have been the moment the host permission was granted,
     // so re-probe the model capabilities now that /api/show can actually be reached.
     if(connType === 'ollama_api' && result.status === 'ok'){

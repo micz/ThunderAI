@@ -3802,6 +3802,20 @@
       }
     }
   },
+  "connTest_ok_redirect": {
+    "message": "Connected — $API$ reachable, but the server redirects to $TO$: enter that address directly. Some redirects drop the content of the requests, and then the chat does not work.",
+    "description": "Connection test status strip: success through a redirect (Ollama, OpenAI Compatible), shown in amber; $API$ is the provider name, $TO$ the new address",
+    "placeholders": {
+      "api": {
+        "content": "$1",
+        "example": "Ollama API"
+      },
+      "to": {
+        "content": "$2",
+        "example": "http://localhost:11434/v2"
+      }
+    }
+  },
   "connTest_error": {
     "message": "Error — $DETAIL$",
     "description": "Connection test status strip: error state; $DETAIL$ is the error message",
@@ -4182,7 +4196,16 @@
   },
   "endpoint_redirect_note": {
     "message": "This server redirects the requests to $to$. ThunderAI follows the redirect, but it is better to enter that address directly.",
-    "description": "Warning under the server address field of a connection panel (Ollama, OpenAI Compatible), after a request to that server was redirected and worked. $to$ is the new address, e.g. 'https://ai.example.com'.",
+    "description": "Warning under the server address field of a connection panel (Ollama, OpenAI Compatible), after a request that sends content (a chat message) to that server was redirected and worked. $to$ is the new address, e.g. 'https://ai.example.com'.",
+    "placeholders": {
+        "to": {
+            "content": "$1"
+        }
+    }
+  },
+  "endpoint_redirect_note_unverified": {
+    "message": "This server redirects the requests to $to$. Enter that address directly: some redirects drop the content of the requests, and then the chat does not work.",
+    "description": "Warning under the server address field of a connection panel (Ollama, OpenAI Compatible), after a request that sends no content (the connection test, the model list) to that server was redirected and worked: whether a chat message survives the redirect is not known yet. $to$ is the new address, e.g. 'https://ai.example.com'.",
     "placeholders": {
         "to": {
             "content": "$1"
@@ -4194,7 +4217,7 @@
     "description": "Warning under the server address field of a connection panel (Ollama, OpenAI Compatible), after a request to that server failed because of a redirect whose new address is not known."
   },
   "endpoint_redirect_failed_note_to": {
-    "message": "The server answers with a redirect to $to$ that cannot be followed: the requests fail until you enter the final address of the server.",
+    "message": "This server redirects the requests to $to$, and they fail after the redirect (it may drop their content): enter that address instead.",
     "description": "Warning under the server address field of a connection panel (Ollama, OpenAI Compatible), after a request to that server failed because of a redirect. $to$ is the new address, e.g. 'https://ai.example.com'.",
     "placeholders": {
         "to": {
