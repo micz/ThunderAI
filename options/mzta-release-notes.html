@@ -15,6 +15,7 @@
         <li><i>[ChatGPT Web]</i> Fix: after a Retry following "message box not found", if the model cannot be verified the warning and the "Use the current model" button are shown again, so the prompt can still be sent.</li>
         <li>API chat: links in the answers now open in the default browser, and only when they are plain <i>http</i> or <i>https</i> addresses without a user name or password; any other link (<i>mailto:</i>, relative links, other schemes) does nothing, and links can no longer be dragged out of the chat. The chat window also has a stricter Content Security Policy, as an extra safeguard against remote content in the answers [<a href="https://github.com/micz/ThunderAI/issues/1001">#1001</a>].</li>
         <li>Fix: the position, visibility and icon chosen for the organization prompts on the Menu Order page are now kept after a restart, instead of going back to the ones set by the policy. The text and the other options of an organization prompt still come from the policy only [<a href="https://github.com/micz/ThunderAI/issues/990">#990</a>].</li>
+        <li>Fix: opening the AI chat window no longer leaves a background listener behind when the window is closed before it is ready or when the connection is not fully configured: a small leak that grew each time the window was opened.</li>
         <li>...</li>
       </ul>
       <h2>Version 5.1.0 - 18/10/2026</h2>
