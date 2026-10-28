@@ -54,6 +54,13 @@ const defaultLogger = new taLogger('api-retry', false);
  * body reports a used-up quota or spend limit (see classifyRateLimitBody()), or
  * any response asking for a wait longer than retryAfterCapMs.
  *
+ * Redirects are followed. A caller that passes onRedirect (the custom endpoints,
+ * Ollama and OpenAI Compatible) is told the redirect outcome of the call (see
+ * checkRedirected()); for it a followed redirect that ends in an error, and a
+ * network failure that answersWithRedirect() finds to be a redirect (asked once
+ * per call, before the first retry), throw a RedirectFailedError at once, with
+ * no retry.
+ *
  * Always either returns a Response (possibly a non-ok one, unread, when the
  * status is not retryable or the retries are used up) or throws.
  *
@@ -64,16 +71,19 @@ const defaultLogger = new taLogger('api-retry', false);
  * @param {object} retryConfig overrides for RETRY_DEFAULTS, plus:
  *   signal  - AbortSignal of a user-initiated abort; it is never retried
  *   onRetry - called before each wait with {attempt, maxRetries, delayMs, status, reason}
+ *   onRedirect - the custom endpoints only: called with the redirect outcome of the
+ *             call, see checkRedirected()
  *   logger  - a taLogger
  *   label   - provider name used in the log lines
  * @returns {Promise<Response>}
  */
 export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
     const cfg = { ...RETRY_DEFAULTS, ...retryConfig };
-    const { signal, onRetry, label = 'API' } = cfg;
+    const { signal, onRetry, onRedirect, label = 'API' } = cfg;
     const logger = cfg.logger || defaultLogger;
     const maxRetries = Math.max(0, parseInt(cfg.maxRetries) || 0);
     let lastError = null;
+    let probed = false;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         if (signal?.aborted) throw signal.reason;
@@ -94,10 +104,24 @@ export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
         try {
             response = await fetch(url, { ...options, signal: attemptSignal });
         } catch (error) {
+            clearTimeout(timer);
             if (signal?.aborted) throw error;
-            lastError = timeoutCtrl.signal.aborted ? timeoutCtrl.signal.reason : error;
+            const timedOut = timeoutCtrl.signal.aborted;
+            lastError = timedOut ? timeoutCtrl.signal.reason : error;
+            // A redirect that could not be followed (a target that is unreachable or does
+            // not allow CORS) looks like any network failure. Asked once per call: a
+            // redirect will not go away by retrying, so it ends the request at once.
+            if (typeof onRedirect === 'function' && !timedOut && !probed) {
+                probed = true;
+                if (await answersWithRedirect(url, signal)) {
+                    logger.log(label + " request failed: the server answered with a redirect that could not be followed");
+                    reportRedirect(onRedirect, { redirected: true, url: '', failed: true }, logger);
+                    throw new RedirectFailedError();
+                }
+                if (signal?.aborted) throw signal.reason;
+            }
             if (attempt === maxRetries) throw lastError;
-            reason = timeoutCtrl.signal.aborted ? 'timeout' : 'network';
+            reason = timedOut ? 'timeout' : 'network';
         } finally {
             clearTimeout(timer);
         }
@@ -106,6 +130,7 @@ export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
         let serverBody = '';
         let serverMessage = '';
         if (response !== null) {
+            if (typeof onRedirect === 'function') checkRedirected(response, url, options.method, onRedirect, logger, label);
             if (!RETRYABLE_STATUSES.includes(response.status) || attempt === maxRetries) {
                 return response;
             }
@@ -175,6 +200,128 @@ export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
     // Unreachable: the last attempt always returns or throws. Kept so a future
     // change to the loop can never make the caller receive undefined.
     throw lastError ?? new Error(label + " request failed after " + maxRetries + " retries");
+}
+
+/**
+ * Thrown, for a caller that tracks redirects (onRedirect), instead of the network
+ * error or the error response when the request failed because of a redirect: one
+ * that could not be followed, or one that ended in an error (a 301/302 turns the
+ * POST into a GET with no body, which the final server rejects). The provider
+ * classes flag their error result with is_redirect (see isRedirectFailed()), so
+ * the user is told to enter the final address instead of a meaningless error.
+ */
+export class RedirectFailedError extends Error {
+    constructor() {
+        super("the server answered with a redirect that could not be followed: use the final URL directly");
+        this.name = 'RedirectFailedError';
+    }
+}
+
+export function isRedirectFailed(error) {
+    return error instanceof RedirectFailedError;
+}
+
+// Hand the redirect outcome of a call to the caller's onRedirect. A failing callback
+// never breaks the request.
+function reportRedirect(onRedirect, info, logger) {
+    try {
+        onRedirect(info);
+    } catch (e) {
+        logger.warn("onRedirect callback failed: " + e);
+    }
+}
+
+/**
+ * The redirect outcome of a response, reported through onRedirect:
+ * - {redirected: true, url, from, method, failed} when fetch() followed a redirect,
+ *   url being the final address (response.url), from the address requested (the
+ *   stored destination is worked out from both, see redirectTarget() in
+ *   js/mzta-endpoint-redirects.js), method the request's (a 301/302/303 turns a POST
+ *   into a GET with no body, a 307/308 keeps it, and the code is never visible: only
+ *   a POST tells whether the requests that carry a body survive the redirect) and
+ *   failed telling whether the answer is an error; an error throws a
+ *   RedirectFailedError, as retrying cannot help;
+ * - {redirected: false} for a success with no redirect: the server no longer
+ *   redirects;
+ * - nothing for an error with no redirect, which says nothing either way.
+ * The probe of answersWithRedirect() reports {redirected: true, url: '', failed: true}.
+ */
+function checkRedirected(response, requestUrl, method, onRedirect, logger, label) {
+    if (response.redirected === true) {
+        reportRedirect(onRedirect, {
+            redirected: true,
+            url: response.url || '',
+            from: String(requestUrl ?? ''),
+            method: String(method || 'GET').toUpperCase(),
+            failed: !response.ok,
+        }, logger);
+        if (!response.ok) {
+            response.body?.cancel().catch(() => {});
+            logger.log(label + " request failed (HTTP " + response.status + " after a redirect): the redirect could not be followed");
+            throw new RedirectFailedError();
+        }
+    } else if (response.ok) {
+        reportRedirect(onRedirect, { redirected: false }, logger);
+    }
+}
+
+// Longest wait for the redirect check of answersWithRedirect().
+const REDIRECT_PROBE_TIMEOUT_MS = 2000;
+
+/**
+ * Whether the URL answers with a redirect. A redirect fetch() could not follow (a
+ * target that is unreachable, or that does not allow CORS) rejects with the same
+ * TypeError as an unreachable server, so after such a failure the URL is asked
+ * again, this time as a bare GET: no headers (no API key), no body (no email
+ * content), no credentials, and redirect: 'manual', so the redirect is reported and
+ * not followed. A browser reports it as an 'opaqueredirect' response.
+ * Never throws: any failure, timeout or other answer means "not a redirect".
+ */
+export async function answersWithRedirect(url, signal = null) {
+    const probeCtrl = new AbortController();
+    const timer = setTimeout(() => probeCtrl.abort(), REDIRECT_PROBE_TIMEOUT_MS);
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            redirect: 'manual',
+            credentials: 'omit',
+            cache: 'no-store',
+            signal: signal ? AbortSignal.any([signal, probeCtrl.signal]) : probeCtrl.signal,
+        });
+        response.body?.cancel().catch(() => {});
+        return response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400);
+    } catch (e) {
+        return false;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+/**
+ * A single fetch() with no retry and no timeout, for the direct probes of Ollama
+ * (/api/version, /api/show, /api/ps), with the same redirect tracking as
+ * fetchWithRetry(): onRedirect is told the outcome, and a redirect that could not be
+ * followed or ended in an error throws a RedirectFailedError.
+ *
+ * @param {string} url
+ * @param {object} options the fetch() options
+ * @param {{onRedirect: Function, logger?: object, label?: string}} redirectConfig
+ */
+export async function fetchDirect(url, options = {}, { onRedirect, logger = defaultLogger, label = 'API' } = {}) {
+    let response;
+    try {
+        response = await fetch(url, options);
+    } catch (error) {
+        if (options.signal?.aborted || typeof onRedirect !== 'function') throw error;
+        if (await answersWithRedirect(url, options.signal)) {
+            logger.log(label + " request failed: the server answered with a redirect that could not be followed");
+            reportRedirect(onRedirect, { redirected: true, url: '', failed: true }, logger);
+            throw new RedirectFailedError();
+        }
+        throw error;
+    }
+    if (typeof onRedirect === 'function') checkRedirected(response, url, options.method, onRedirect, logger, label);
+    return response;
 }
 
 /**

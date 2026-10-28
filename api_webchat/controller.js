@@ -34,6 +34,8 @@ import { loadPrompt } from '../js/mzta-prompts.js';
 import { buildChatBubbleIcon } from './svgIcons.js';
 import { resolveContextWindow } from './contextWindow.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
+import { resolveEndpointAccess } from '../js/mzta-endpoint-approvals.js';
+import { saveEndpointRedirect } from '../js/mzta-endpoint-redirects.js';
 
 // Get the LLM to be used
 const urlParams = new URLSearchParams(window.location.search);
@@ -168,12 +170,23 @@ if (worker) {
             }
         }
 
+        // A custom endpoint is checked before anything is sent to it [#1000]. This window
+        // is in front of the user, so an unencrypted remote server not yet confirmed is
+        // asked about here; refused, the window stays inert: no init, no ready message.
+        // An empty host is left to the background's own check, which says so.
+        let endpointAccess = { ok: true, approvedOrigins: [] };
+        const endpointHost = prefs_api[`${integration_prefix}_host`];
+        if ((integration === 'ollama' || integration === 'openai_comp') && (endpointHost ?? '').trim() !== '') {
+            endpointAccess = await resolveEndpointAccess(endpointHost, { ask: true });
+        }
+
         let i18nStrings = {};
         const i18n_msg_key = integration === 'openai_comp' ? 'OpenAIComp_api_request_failed' : `${integration}_api_request_failed`;
         i18nStrings[i18n_msg_key] = browser.i18n.getMessage(i18n_msg_key);
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         // The literal "$SECONDS$" is filled in by the worker with the timeout it applies.
         i18nStrings["error_stream_idle_timeout"] = browser.i18n.getMessage('error_stream_idle_timeout', ['$SECONDS$']);
+        i18nStrings["api_error_redirect"] = browser.i18n.getMessage('api_error_redirect');
         if (integration === 'anthropic') {
             // 400 hints for describeAnthropicError(). The literal "$MODEL$" is passed
             // as the substitution so the worker can fill in the model it actually sent.
@@ -242,14 +255,15 @@ if (worker) {
             // still extracts and debug-logs the usage, but emits nothing.
             chat_show_usage_data: show_usage,
             api_stream_idle_timeout: prefs_api.api_stream_idle_timeout,
+            approved_insecure_origins: endpointAccess.ok ? endpointAccess.approvedOrigins : [],
         };
 
         for (const key in options_config) {
             const prefKey = `${integration_prefix}_${key}`;
             workerInitMessage[prefKey] = prefs_api[prefKey];
         }
-        
-        worker.postMessage(workerInitMessage);
+
+        if (endpointAccess.ok) worker.postMessage(workerInitMessage);
 
         const additional_messages_config = {
             chatgpt: [
@@ -358,10 +372,16 @@ if (worker) {
         
         //console.log(`>>>>>>>>>>>>> command: ${llm}_ready_${call_id}`,)
 
-        browser.runtime.sendMessage({
-            command: `${llm}_ready_${call_id}`,
-            window_id: (await browser.windows.getCurrent()).id
-        });
+        if (endpointAccess.ok) {
+            browser.runtime.sendMessage({
+                command: `${llm}_ready_${call_id}`,
+                window_id: (await browser.windows.getCurrent()).id
+            });
+        } else {
+            messagesArea.appendBotMessage(endpointAccess.message, 'error');
+            messageInput.disableInput();
+            messageInput.showErrorStatus();
+        }
     }
 }
 
@@ -391,6 +411,12 @@ if (worker) worker.onmessage = async function(event) {
         case 'newThinkingToken':
             messagesArea.handleNewThinkingToken(payload.token);
             messageInput.showStreamingStatus();
+            break;
+        case 'endpoint_redirect':
+            // The redirect outcome of a request to a custom endpoint [#1000]: saved for the
+            // note under the host field of the connection panels. Nothing shown here: a
+            // redirect that failed also comes as an 'error'.
+            await saveEndpointRedirect(payload.host, payload.info);
             break;
         case 'usage':
             // A message of its own, carrying no response text. Handled BEFORE the

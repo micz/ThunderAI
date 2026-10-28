@@ -51,11 +51,24 @@ import {
 } from '../../js/mzta-prompts.js';
 import { mztaPrefs } from '../../js/mzta-prefs.js';
 import { mztaManaged } from '../../js/mzta-managed.js';
+import {
+    resolveEndpointAccess,
+    getApprovedInsecureOrigins
+} from '../../js/mzta-endpoint-approvals.js';
+import { ENDPOINT_PROBLEM } from '../../js/mzta-endpoint-policy.js';
+import {
+    ENDPOINT_REDIRECTS_KEY,
+    clearEndpointRedirect,
+    getEndpointRedirect,
+    normalizeEndpointHost,
+    saveEndpointRedirect
+} from '../../js/mzta-endpoint-redirects.js';
 import { isManagedSecret, setDisabledRespectingManaged, resolveSpecificIntegrationMode } from './managed-ui.js';
 import {
   isTestableConnection,
   runConnectionTest,
-  setConnTestState
+  setConnTestState,
+  showConnTestResult
 } from '../../js/mzta-connection-test.js';
 
 export const varConnectionUI = {
@@ -715,6 +728,8 @@ export async function injectConnectionUI({
       <label>
         <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_host" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_host" class="option-input"/>
       </label>
+      <div id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_host_endpoint_note" class="endpoint_note" hidden></div>
+      <div id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_host_redirect_note" class="endpoint_note endpoint_note_warning" hidden></div>
     </td>
   </tr>
   <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
@@ -864,6 +879,8 @@ export async function injectConnectionUI({
         <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_host" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_host" class="option-input" />
         <br>__MSG_prefs_OptionText_openai_comp_info_remote__
       </label>
+      <div id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_host_endpoint_note" class="endpoint_note" hidden></div>
+      <div id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_host_redirect_note" class="endpoint_note endpoint_note_warning" hidden></div>
     </td>
   </tr>
   <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_api_cors_warning">
@@ -1156,6 +1173,23 @@ export async function injectConnectionUI({
   document.getElementById(getPrefixedId("chatgpt_api_key")).addEventListener("change", () => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
   document.getElementById(getPrefixedId("ollama_host")).addEventListener("change", () => warn_Ollama_HostEmpty(modelId_prefix));
   document.getElementById(getPrefixedId("openai_comp_host")).addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
+  for (const integration of ENDPOINT_INTEGRATIONS) {
+    const hostInput = document.getElementById(getPrefixedId(`${integration}_host`));
+    hostInput.addEventListener("change", () => checkEndpointField(modelId_prefix, integration));
+    hostInput.addEventListener("change", () => onEndpointHostChange(modelId_prefix, integration));
+  }
+  // The notes under the two host fields follow the storage [#1000]: an approval given with
+  // "Test now" or "Update list" (here or on another page) clears the red one, a redirect
+  // found by any request shows the amber one.
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local') return;
+    const approvals = Object.prototype.hasOwnProperty.call(changes, '_approved_insecure_origins');
+    const redirects = Object.prototype.hasOwnProperty.call(changes, ENDPOINT_REDIRECTS_KEY);
+    for (const integration of ENDPOINT_INTEGRATIONS) {
+      if (approvals) checkEndpointField(modelId_prefix, integration);
+      if (redirects) showEndpointRedirectNote(modelId_prefix, integration);
+    }
+  });
   document.getElementById(getPrefixedId("google_gemini_api_key")).addEventListener("change", () => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
   document.getElementById(getPrefixedId("anthropic_api_key")).addEventListener("change", () => warn_Anthropic_APIKeyEmpty(modelId_prefix));
   document.getElementById(getPrefixedId("anthropic_version")).addEventListener("change", () => warn_Anthropic_VersionEmpty(modelId_prefix));
@@ -1437,13 +1471,22 @@ export async function injectConnectionUI({
     // it), so the models cannot be fetched with it from here.
     if (isManagedSecret(document.getElementById(getPrefixedId("ollama_api_key")).value)) return;
     const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateOllamaModels', 'ollama');
+    // Asked before anything is sent: an unusable address, or an unencrypted server the
+    // user does not allow, ends here [#1000].
+    const access = await resolveEndpointAccess(document.getElementById(getPrefixedId("ollama_host")).value, { ask: true });
+    if (!access.ok) {
+      fetchUI.error(access.message);
+      return;
+    }
     fetchUI.loading();
     let ollama = new Ollama({
       host: document.getElementById(getPrefixedId("ollama_host")).value,
       api_key: document.getElementById(getPrefixedId("ollama_api_key")).value,
+      approved_insecure_origins: access.approvedOrigins,
     });
     warn_Ollama_HostEmpty(modelId_prefix);
     let data = await fetchModelsWithTimeout(ollama);
+    await saveEndpointRedirect(ollama.host, ollama.redirect_info);
     if(!data){
       console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
       fetchUI.error(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
@@ -1488,14 +1531,23 @@ export async function injectConnectionUI({
     // it), so the models cannot be fetched with it from here.
     if (isManagedSecret(document.getElementById(getPrefixedId("openai_comp_api_key")).value)) return;
     const fetchUI = modelsFetchUI(modelId_prefix, 'btnUpdateOpenAICompModels', 'openai_comp');
+    // Asked before anything is sent: an unusable address, or an unencrypted server the
+    // user does not allow, ends here [#1000].
+    const access = await resolveEndpointAccess(document.getElementById(getPrefixedId("openai_comp_host")).value, { ask: true });
+    if (!access.ok) {
+      fetchUI.error(access.message);
+      return;
+    }
     fetchUI.loading();
     let openai_comp = new OpenAIComp({
       host: document.getElementById(getPrefixedId("openai_comp_host")).value,
       apiKey: document.getElementById(getPrefixedId("openai_comp_api_key")).value,
       use_v1: document.getElementById(getPrefixedId("openai_comp_use_v1")).checked,
+      approved_insecure_origins: access.approvedOrigins,
     });
     warn_OpenAIComp_HostEmpty(modelId_prefix);
     let data = await fetchModelsWithTimeout(openai_comp);
+    await saveEndpointRedirect(openai_comp.host, openai_comp.redirect_info);
     if(!data.ok){
       console.error("[ThunderAI] " + browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
       fetchUI.error(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching") + ": " + parseModelsFetchError(data.error));
@@ -1750,11 +1802,7 @@ export function attachConnTestStrip({ afterEl, scopeEls = [], getConnType, idPre
     if (!isTestableConnection(connType)) return;
     setConnTestState('loading', '', strip);
     const result = await runConnectionTest(connType, idPrefix);
-    if (result.status === 'ok') {
-      setConnTestState('ok', result.apiName, strip);
-    } else {
-      setConnTestState('error', result.message, strip);
-    }
+    showConnTestResult(result, strip);
     // A successful test may have been the moment the host permission was granted,
     // so re-probe the model capabilities now that /api/show can actually be reached.
     if (connType === 'ollama_api' && result.status === 'ok') {
@@ -2145,6 +2193,27 @@ export function updateWarnings(modelId_prefix = '') {
   warn_Anthropic_APIKeyEmpty(modelId_prefix);
   warn_Anthropic_VersionEmpty(modelId_prefix);
   updateSecretToggles(modelId_prefix);
+  updateEndpointNotes(modelId_prefix);
+}
+
+/**
+ * The notes under the two custom endpoint host fields, for the values just loaded into
+ * them [#1000]: the red one when the address cannot be used (checkEndpointField()), the
+ * amber one when the server at that address is known to redirect
+ * (showEndpointRedirectNote()). Called by updateWarnings() after a page restores its
+ * values, and by the setup wizard, which has no updateWarnings() call.
+ */
+export async function updateEndpointNotes(modelId_prefix = '') {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  await Promise.all(ENDPOINT_INTEGRATIONS.map(async (integration) => {
+    const hostInput = document.getElementById(getPrefixedId(`${integration}_host`));
+    if (!hostInput) return;
+    endpointHostShown.set(hostInput.id, hostInput.value);
+    await Promise.all([
+      checkEndpointField(modelId_prefix, integration),
+      showEndpointRedirectNote(modelId_prefix, integration),
+    ]);
+  }));
 }
 
 // The API key fields with a show/hide eye toggle.
@@ -2537,7 +2606,11 @@ async function fetchModelsWithTimeout(client) {
     timer = setTimeout(() => resolve({ ok: false, error: browser.i18n.getMessage('connTest_error_timeout') }), MODELS_FETCH_TIMEOUT_MS);
   });
   try {
-    return await Promise.race([client.fetchModels({ maxRetries: 0, timeoutMs: MODELS_FETCH_TIMEOUT_MS }), timeout]);
+    const result = await Promise.race([client.fetchModels({ maxRetries: 0, timeoutMs: MODELS_FETCH_TIMEOUT_MS }), timeout]);
+    // A redirect that could not be followed, or that ended in an error: say what it was,
+    // and the fix.
+    if (result?.is_redirect === true) result.error = browser.i18n.getMessage('api_error_redirect');
+    return result;
   } catch (error) {
     return { ok: false, error: error?.message || String(error) };
   } finally {
@@ -2657,6 +2730,81 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
     }
     btnGiveAllUrlsPermission_openai_comp_api.disabled = false;
   }
+}
+
+// The integrations whose address the user types: their host fields carry the endpoint
+// notes [#1000].
+const ENDPOINT_INTEGRATIONS = ['ollama', 'openai_comp'];
+
+// The value each host field held when its notes were last filled, by field id: a change
+// of the field removes the stored redirect of that previous address.
+const endpointHostShown = new Map();
+
+// The address in a custom endpoint field (Ollama, OpenAI Compatible), checked when the
+// page loads its values, when the user leaves the field and when the approvals change
+// [#1000]. An address that cannot be used (credentials in it, a scheme other than
+// http/https) is explained under the field, and so is an unencrypted (http:) server on
+// another machine not yet allowed. Nothing is asked here: the confirmation comes from
+// "Test now", "Update list" and the chat window (js/mzta-endpoint-approvals.js).
+// Saving is never blocked: the requests are, until the address is usable.
+async function checkEndpointField(modelId_prefix, integration) {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const hostInput = document.getElementById(getPrefixedId(`${integration}_host`));
+  const note = document.getElementById(getPrefixedId(`${integration}_host_endpoint_note`));
+  // A host the policy locked is the administrator's choice, approved without asking: it
+  // is never checked here, not even after the field was re-enabled by hand.
+  if (!hostInput || !note || hostInput.dataset.mztaManaged === '1') return;
+  let message = '';
+  if (hostInput.value.trim() !== '') {
+    const access = await resolveEndpointAccess(hostInput.value);
+    if (!access.ok) {
+      message = access.problem === ENDPOINT_PROBLEM.INSECURE
+        ? browser.i18n.getMessage('endpoint_insecure_note') : access.message;
+    }
+  }
+  note.textContent = message;
+  note.hidden = (message === '');
+}
+
+// The amber note under a custom endpoint field: the server at the address in the field
+// is known to redirect (js/mzta-endpoint-redirects.js, saved after every request). A
+// redirect that a POST went through names its destination; one only a GET went through
+// names it too, but cannot tell whether the chat works through it (a 301/302 turns the
+// POST into a GET); one that failed says the requests fail until the final address is
+// entered, naming it when it is known.
+async function showEndpointRedirectNote(modelId_prefix, integration) {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const hostInput = document.getElementById(getPrefixedId(`${integration}_host`));
+  const note = document.getElementById(getPrefixedId(`${integration}_host_redirect_note`));
+  if (!hostInput || !note) return;
+  const entry = hostInput.value.trim() !== '' ? await getEndpointRedirect(hostInput.value) : null;
+  let message = '';
+  if (entry !== null && entry.failed) {
+    message = entry.to !== ''
+      ? browser.i18n.getMessage('endpoint_redirect_failed_note_to', [entry.to])
+      : browser.i18n.getMessage('endpoint_redirect_failed_note');
+  } else if (entry !== null && entry.to !== '') {
+    message = browser.i18n.getMessage(entry.method === 'POST' ? 'endpoint_redirect_note' : 'endpoint_redirect_note_unverified', [entry.to]);
+  }
+  note.textContent = message;
+  note.hidden = (message === '');
+}
+
+// The user changed the address in a custom endpoint field: what was stored about the
+// previous address no longer applies to this field, so its redirect is forgotten and
+// the amber note hidden. An address that only gained or lost a trailing slash or a space
+// is the same server, and keeps both.
+async function onEndpointHostChange(modelId_prefix, integration) {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const hostInput = document.getElementById(getPrefixedId(`${integration}_host`));
+  const note = document.getElementById(getPrefixedId(`${integration}_host_redirect_note`));
+  if (!hostInput || !note) return;
+  const previous = endpointHostShown.get(hostInput.id);
+  endpointHostShown.set(hostInput.id, hostInput.value);
+  if (previous !== undefined && normalizeEndpointHost(previous) === normalizeEndpointHost(hostInput.value)) return;
+  note.textContent = '';
+  note.hidden = true;
+  if (previous !== undefined && previous.trim() !== '') await clearEndpointRedirect(previous);
 }
 
 // The OpenAI reasoning models (gpt-5, o1/o3/o4) reject temperature and top_p, and
@@ -2833,8 +2981,11 @@ export async function updateOllamaModelCapabilityUI(modelId_prefix = '') {
   // the CORS button or the connection test, and the next change picks the capabilities up.
   let modelInfo = null;
   try {
-    const ollama = new Ollama({ host: host, api_key: apiKey });
+    // Never a question here, for the same reason as above: an unencrypted server not yet
+    // allowed is simply not asked, and the panel degrades like a failed probe.
+    const ollama = new Ollama({ host: host, api_key: apiKey, approved_insecure_origins: await getApprovedInsecureOrigins() });
     const info = await ollama.fetchModelInfo(model);
+    await saveEndpointRedirect(ollama.host, ollama.redirect_info);
     if (info && info.ok) modelInfo = info.response;
   } catch (error) {
     modelInfo = null;

@@ -3820,6 +3820,20 @@
       }
     }
   },
+  "connTest_ok_redirect": {
+    "message": "Connected — $API$ reachable, but the server redirects to $TO$: enter that address directly. Some redirects drop the content of the requests, and then the chat does not work.",
+    "description": "Connection test status strip: success through a redirect (Ollama, OpenAI Compatible), shown in amber; $API$ is the provider name, $TO$ the new address",
+    "placeholders": {
+      "api": {
+        "content": "$1",
+        "example": "Ollama API"
+      },
+      "to": {
+        "content": "$2",
+        "example": "http://localhost:11434/v2"
+      }
+    }
+  },
   "connTest_error": {
     "message": "Error — $DETAIL$",
     "description": "Connection test status strip: error state; $DETAIL$ is the error message",
@@ -4159,5 +4173,90 @@
   "editor_placeholder_unterminated": {
     "message": "Unterminated placeholder: missing the closing %}",
     "description": "Tooltip on a highlighted placeholder token in the prompt editor when the token opens with {% but never closes with %}"
+  },
+  "endpoint_error_invalid": {
+    "message": "The server address is not valid. Enter the full address, for example http://localhost:11434 or https://api.example.com.",
+    "description": "Error for a custom API server address (Ollama, OpenAI Compatible) that is not a valid URL. Shown under the address field, in the connection test, in the API chat window and for the automatic features; nothing was sent."
+  },
+  "endpoint_error_scheme": {
+    "message": "The server address must start with http:// or https://.",
+    "description": "Error for a custom API server address (Ollama, OpenAI Compatible) that uses another scheme, such as ftp:// or file://. Shown in the same places as endpoint_error_invalid; nothing was sent."
+  },
+  "endpoint_error_credentials": {
+    "message": "The server address contains a user name or password. For your security ThunderAI does not accept them in the address: remove them, and use the API key field if the server needs one.",
+    "description": "Error for a custom API server address (Ollama, OpenAI Compatible) with credentials in it, such as https://user:password@host/. Shown in the same places as endpoint_error_invalid; nothing was sent."
+  },
+  "endpoint_insecure_confirm": {
+    "message": "The server $origin$ uses an unencrypted connection (http://).\n\nThe content of your emails and your API key would travel over the network as plain text: anyone on the network between you and the server could read or change them. Use https:// whenever the server supports it.\n\nDo you want to allow the unencrypted connection to this server anyway?",
+    "description": "Confirmation dialog shown once per server, when a custom API server (Ollama, OpenAI Compatible) on another computer is reached over plain http://. $origin$ is the server, e.g. 'http://192.168.1.10:11434'. Keep the line breaks.",
+    "placeholders": {
+        "origin": {
+            "content": "$1"
+        }
+    }
+  },
+  "endpoint_insecure_not_confirmed": {
+    "message": "Nothing was sent to $origin$: this server uses an unencrypted connection (http://) that has not been allowed. To allow it, open the ThunderAI settings of this connection and click \"Test now\" or \"Update list\". Otherwise use an https:// address.",
+    "description": "Error when a request to a custom API server over plain http:// was blocked because the user has not allowed that server yet (or declined). Shown in the API chat window, for the automatic features and in the connection test. $origin$ is the server, e.g. 'http://192.168.1.10:11434'. \"Test now\" and \"Update list\" must match connTest_link_test and Models_Fetch.",
+    "placeholders": {
+        "origin": {
+            "content": "$1"
+        }
+    }
+  },
+  "endpoint_insecure_note": {
+    "message": "Unencrypted connection (http://) not allowed yet: ThunderAI sends nothing to this server until you allow it. Click \"Test now\" or \"Update list\" to allow it, or use an https:// address.",
+    "description": "Note under the server address field of a connection panel, shown while the address is a server on another computer reached over plain http:// that the user has not allowed (never asked, or declined). \"Test now\" and \"Update list\" must match connTest_link_test and Models_Fetch."
+  },
+  "api_error_redirect": {
+    "message": "The server answered with a redirect that could not be followed: enter the final address of the server directly in the settings.",
+    "description": "Error when a request to a custom AI server (Ollama, OpenAI Compatible) failed because of a redirect (HTTP 301/302/307/308): the new address could not be reached, or it answered with an error. Shown in the API chat window, for the automatic features, in the connection test and next to the Update list button."
+  },
+  "endpoint_redirect_note": {
+    "message": "This server redirects the requests to $to$. ThunderAI follows the redirect, but it is better to enter that address directly.",
+    "description": "Warning under the server address field of a connection panel (Ollama, OpenAI Compatible), after a request that sends content (a chat message) to that server was redirected and worked. $to$ is the new address, e.g. 'https://ai.example.com'.",
+    "placeholders": {
+        "to": {
+            "content": "$1"
+        }
+    }
+  },
+  "endpoint_redirect_note_unverified": {
+    "message": "This server redirects the requests to $to$. Enter that address directly: some redirects drop the content of the requests, and then the chat does not work.",
+    "description": "Warning under the server address field of a connection panel (Ollama, OpenAI Compatible), after a request that sends no content (the connection test, the model list) to that server was redirected and worked: whether a chat message survives the redirect is not known yet. $to$ is the new address, e.g. 'https://ai.example.com'.",
+    "placeholders": {
+        "to": {
+            "content": "$1"
+        }
+    }
+  },
+  "endpoint_redirect_failed_note": {
+    "message": "The server answers with a redirect that cannot be followed: the requests fail until you enter the final address of the server.",
+    "description": "Warning under the server address field of a connection panel (Ollama, OpenAI Compatible), after a request to that server failed because of a redirect whose new address is not known."
+  },
+  "endpoint_redirect_failed_note_to": {
+    "message": "This server redirects the requests to $to$, and they fail after the redirect (it may drop their content): enter that address instead.",
+    "description": "Warning under the server address field of a connection panel (Ollama, OpenAI Compatible), after a request to that server failed because of a redirect. $to$ is the new address, e.g. 'https://ai.example.com'.",
+    "placeholders": {
+        "to": {
+            "content": "$1"
+        }
+    }
+  },
+  "prefs_insecure_origins_title": {
+    "message": "Allowed unencrypted servers",
+    "description": "Options page, advanced section: title of the list of custom API servers the user allowed to reach over plain http://."
+  },
+  "prefs_insecure_origins_info": {
+    "message": "Servers you allowed to be reached over an unencrypted connection (http://). Remove one to be asked again the next time it is used.",
+    "description": "Options page, advanced section: explanation under prefs_insecure_origins_title."
+  },
+  "prefs_insecure_origins_empty": {
+    "message": "None",
+    "description": "Options page, advanced section: shown in the list of allowed unencrypted servers when it is empty."
+  },
+  "prefs_insecure_origins_remove": {
+    "message": "Remove",
+    "description": "Options page, advanced section: button next to an allowed unencrypted server, which withdraws the permission."
   }
 }

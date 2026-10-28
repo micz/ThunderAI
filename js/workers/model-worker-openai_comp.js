@@ -73,7 +73,7 @@ export function getUsageData() {
 }
 
 // Only the provider, the model and the token counts. Never the request URL or the
-// headers: Gemini and some OpenAI-compatible endpoints carry the API key in the
+// headers: some OpenAI-compatible endpoints carry the API key in the
 // query string, and a header map carries it outright.
 function logUsageData(usage) {
     if (!taLog || !taLog.do_debug || usage === null) return;
@@ -149,6 +149,9 @@ self.onmessage = async function(event) {
                 config[newKey] = event.data[key];
             }
         }
+        // Checked again by the class before every request: a worker has no UI to ask
+        // with, so it only knows the origins the window or the background approved.
+        config.approved_insecure_origins = event.data.approved_insecure_origins;
         openai_comp = new OpenAIComp(config);
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
@@ -168,6 +171,12 @@ self.onmessage = async function(event) {
             logger: taLog,
             onRetry: (info) => postMessage({ type: 'newRetryAttempt', payload: info }),
         });
+        // The redirect outcome of the request, saved by whoever owns this worker
+        // (js/mzta-endpoint-redirects.js): a worker has no browser.storage [#1000].
+        // The host and the outcome only, never the API key.
+        if (openai_comp.redirect_info !== null) {
+            postMessage({ type: 'endpoint_redirect', payload: { host: openai_comp.host, info: openai_comp.redirect_info } });
+        }
         postMessage({ type: 'messageSent' });
 
         // The body of an HTTP error is read while Stop can still abort it (an abort
@@ -200,6 +209,11 @@ self.onmessage = async function(event) {
                 // Network-level failure: no status/statusText exist on the returned object,
                 // and error_message already carries the provider name.
                 error_text = error_message;
+                // A redirect that could not be followed, or that ended in an error [#1000]:
+                // say so, and how to fix it.
+                if (response.is_redirect === true && i18nStrings?.api_error_redirect) {
+                    error_text = i18nStrings.api_error_redirect;
+                }
             }else{
                 try{
                     const errorJSON = JSON.parse(errorBodyText);

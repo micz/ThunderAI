@@ -509,6 +509,8 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
 ### Google Gemini (`google_gemini_api`)
 - Module: `js/api/google_gemini.js`
 - Worker: `js/workers/model-worker-google_gemini.js`
+- The API key travels in the `x-goog-api-key` header of all three requests (model list, model info,
+  chat), never in the URL.
 - Settings keys: `google_gemini_api_key`, `google_gemini_model`, `google_gemini_system_instruction`, `google_gemini_thinking_budget`, `google_gemini_temperature`, `google_gemini_max_output_tokens`, `google_gemini_top_p`, `google_gemini_top_k`, `google_gemini_extra_body`
 - `thinking_budget` is coerced with `parseInt` and sent as the integer
   `thinkingConfig.thinkingBudget`; an empty or unparsable value omits the whole
@@ -831,6 +833,8 @@ For special prompts (`mzta_specialCommand`), required fields are validated in `i
 
 Validation is skipped when `use_specific_api = true` (i.e., the prompt's own `api_type` overrides the global setting — credentials come from the prompt config, not global prefs).
 
+The host of a custom endpoint (`ollama`, `openai_comp`) is then checked in every case, global or the prompt's own, after the `{integration}_{key}` values are resolved and before the worker is created: `resolveEndpointAccess(host)` without `ask` (see [Custom endpoint policy](#custom-endpoint-policy)). Refused, it throws the same `isConfigError` error, with its localized message (`endpoint_error_*`, or `endpoint_insecure_not_confirmed` for an unencrypted server not yet allowed). Allowed, the init message carries `approved_insecure_origins`.
+
 The `isConfigError` flag on the thrown error tells callers in `mzta-background.js` to display the error in the panel **without saving it to storage** — so the user can fix settings and retry cleanly.
 
 Feature-specific routing of `isConfigError`:
@@ -920,6 +924,8 @@ The provider classes in `js/api/` return **two different shapes** on failure, an
 
 - **Network-level exception** (server unreachable, DNS failure, CORS rejection, per-attempt timeout -- once the automatic retries are used up): the `catch` block in `fetchResponse()` does **not** return a `Response`. It returns a plain object `{ok: false, is_exception: true, is_aborted, error}` with **no `status` and no `statusText`**, and `error` already includes the provider name (e.g. `"Ollama API request failed: TypeError: NetworkError…"`).
 - **User abort** (Stop pressed before any response arrived): same shape with `is_aborted: true`. Workers check it **before** the error branch and post `requestAborted` instead of `error` (see [Automatic Retry Handling](#automatic-retry-handling)).
+- **Failed redirect** (Ollama and OpenAI Comp only): same shape with `is_redirect: true` (the two classes set the flag in every such `catch`, `false` for any other exception). The two workers then post `i18nStrings.api_error_redirect` instead of `error`, and the pages show `api_error_redirect` (see [Redirects](#redirects)). The other three classes never set it.
+- **Refused endpoint** (Ollama and OpenAI Comp only): same shape with `endpoint_problem` set, returned before any `fetch()` (see [Custom endpoint policy](#custom-endpoint-policy)).
 - **HTTP error** (404, 401, 500…): a real `Response` is returned, so `status`, `statusText` and the JSON body are all available.
 
 Reading `response.status` / `response.statusText` in the exception branch yields a literal `"undefined undefined"` in the user-visible error, and re-prefixing the i18n provider string there duplicates the provider name. All five workers therefore build a single `error_text` variable:
@@ -1067,11 +1073,14 @@ automatically instead of surfacing as a hard error. This matters most for the un
 `api-utils.js` it is worker-safe (its only import is `js/mzta-logger.js`). Every provider class
 uses it for `fetchResponse()` and `fetchModels()`, which both take an optional trailing
 `retryConfig` (for Anthropic, also `_postMessages()`, so the one-shot 400 retry gets transient
-retry too). Ollama's `fetchVersion()`/`fetchModelInfo()` still use plain `fetch()`.
+retry too). The direct probes are not retried: Ollama's `fetchVersion()` / `fetchModelInfo()` /
+`fetchRunningModels()` call `fetchDirect()`, a single `fetch()` with the redirect tracking of
+[Redirects](#redirects), and the `fetchModelInfo()` of Gemini and Claude a plain `fetch()`.
 
 **`retryConfig`:** overrides for `RETRY_DEFAULTS` (`maxRetries` 5, `retryDelaysMs`
 `[5000, 10000, 20000, 30000]`, `retryAfterCapMs` 60000, `timeoutMs` 60000) plus `signal` (user
-abort), `onRetry(info)`, `logger` (a `taLogger`) and `label` (provider name for the logs, set by
+abort), `onRetry(info)`, `onRedirect(info)` (the custom endpoints only, see
+[Redirects](#redirects)), `logger` (a `taLogger`) and `label` (provider name for the logs, set by
 each class).
 
 **Behaviour:**
@@ -1156,8 +1165,8 @@ top-level `message`, otherwise the raw text (a proxy's HTML page), whitespace co
 received (not cut, not reformatted), for every provider that goes through `fetchWithRetry()`.
 Both come from the body, which is read only with debug on: with debug off neither the suffix nor
 the second line is produced, and a body that gave nothing (5 s limit, unreadable) gives neither.
-**The request URL is never logged**: Google Gemini (and some OpenAI-compatible endpoints) carry the
-API key in the query string.
+**The request URL is never logged**: some OpenAI-compatible endpoints carry the API key in the
+query string.
 
 **Workers and UI:**
 - Each worker creates an `AbortController` per `chatMessage`, kept in `requestAbort` only while
@@ -1221,6 +1230,144 @@ covers are time-dependent, not model-dependent; daily quota exhaustion is the on
 would address, and there the right answer is to tell the user. If it is ever added, it must be a
 separate opt-in preference with a user-chosen list built from `fetchModels()`, limited to 429/503,
 with the model that actually answered reported in the UI.
+
+## Redirects
+
+Every API request follows redirects (`redirect: 'follow'`, the `fetch()` default). For the two
+custom endpoints, Ollama and OpenAI Compatible, whose address the user types, ThunderAI also tells
+the user when the server redirects, so the final address can be entered directly [#1000]. OpenAI,
+Claude and Gemini get none of this: their redirects are followed silently, with no check and no flag.
+
+- **Tracking is opt-in, through `retryConfig.onRedirect(info)`.** Only `Ollama` and `OpenAIComp`
+  pass it, to `fetchWithRetry()` (chat, model list) and to `fetchDirect(url, options, {onRedirect,
+  label})` (Ollama's `/api/version`, `/api/show`, `/api/ps`: a single `fetch()` with no retry and no
+  timeout). Both live in `js/api/api-retry.js`. Without `onRedirect` neither looks at redirects.
+- **A redirect that was followed** (`response.redirected === true`) reports
+  `{redirected: true, url: response.url, from: <the requested URL>, method, failed: !response.ok}`,
+  whatever the status. `method` matters because of the fetch standard: a 301, 302 or 303 turns a
+  `POST` into a `GET` with no body, while a 307 or 308 keeps it, and a `GET` survives any of them.
+  The code itself is never visible (neither on a followed redirect nor on an `opaqueredirect`), so
+  a `GET` that went through only tells where the server redirects; only a `POST` (the chat,
+  `/api/show`) tells whether the requests that carry content survive it.
+  - `ok`: the request goes on normally and the user sees no error.
+  - not `ok`: typically a 301/302 turned the POST into a GET with no body, and the final server
+    answers 404 or 405. Its error means nothing to the user, so the response is dropped and a
+    `RedirectFailedError` is thrown at once, **with no retry**: the class result carries
+    `is_redirect: true`.
+- **A success with no redirect** reports `{redirected: false}`: the server no longer redirects. An
+  error with no redirect reports nothing, since it says nothing either way.
+- **A redirect that could not be followed** (a target that is unreachable or does not allow CORS)
+  rejects with the same `TypeError` as an unreachable server. So after the **first** network failure
+  of a call (not a per-attempt timeout, not a user abort), and only with `onRedirect`,
+  `answersWithRedirect(url, signal)` asks the URL again once, before the first retry: a `GET` with
+  `redirect: 'manual'`, `credentials: 'omit'`, no headers (no API key), no body (no email), and a 2 s
+  limit. A `3xx` answer, or an `opaqueredirect` one (what a browser returns for `manual`), means a
+  redirect: it reports `{redirected: true, url: '', failed: true}` (the destination cannot be known
+  here) and throws a `RedirectFailedError` at once, with no retry. Any other answer, a failure or
+  the limit means "not a redirect": the original error goes on as before (retried, then rethrown).
+  The check is never repeated within the same call, and logged without the URL.
+- **The outcome of the last call** is kept by the class in `redirect_info` (`null` before any
+  report; reset by every request method). Whoever made the call saves it with
+  `saveEndpointRedirect(host, info)` of `js/mzta-endpoint-redirects.js`:
+  - a worker has no `browser.storage`: after `fetchResponse()` the Ollama and OpenAI Comp workers
+    post `{type: 'endpoint_redirect', payload: {host, info}}` (never the API key) when
+    `redirect_info` is not `null`, and the owner saves it: the chat window
+    (`api_webchat/controller.js`) and the special commands (`sendPrompt()` of
+    `js/mzta-special-commands.js`, on the worker `initWorker()` created);
+  - where the class is used directly, the caller saves it after the call: the connection test
+    (`runConnectionTest()`), "Update list" and the Ollama capability probe
+    (`pages/_lib/connection-ui.js`), the context-window lookup (`api_webchat/contextWindow.js`).
+- **The stored redirects**, in `storage.local` under `_endpoint_redirects` (not a preference, see
+  [05-options.md](05-options.md)), one entry per configured host, the host normalized like the
+  classes do (trimmed, trailing slashes removed): `{to, failed, method, at}`, `method` being the
+  one of the request the entry comes from.
+  - `to` is the address to enter instead of the host (`redirectTarget(host, url, from)`):
+    - another server: the origin of the final address;
+    - the same server: the new base, i.e. the final address without the API path the class added
+      to the host (requested `http://h/api/version`, answered from `http://h/v2/api/version`:
+      `http://h/v2`). It is the same whichever endpoint was called, so the chat, the test and the
+      probes do not rewrite it in turn. A final path that does not end with that API path gives
+      the final address without its query; a final address that is the host itself gives `''`;
+    - `''` when unknown (the probe).
+
+    The user name, the password and the query are always removed, and a host that is not a usable
+    address (credentials in it, see [Custom endpoint policy](#custom-endpoint-policy)) is never
+    stored.
+  - A failure (`failed: true`, any method) and a `POST` success always store the entry. A
+    success of another method (a `GET`) stores it only when nothing is known: it **never replaces
+    a failure**, nor a `POST` success to the same destination, since it cannot tell whether the
+    chat works through the redirect.
+  - `{redirected: false}` removes the entry: the warning must not stay forever once the server
+    stops redirecting.
+  - The storage is written only when the entry changes (`to`, `failed` or `method`): every chat message
+    reports an outcome, and must not produce a write. `at` is the time of the last change.
+  - `getEndpointRedirect(host)` reads an entry, `clearEndpointRedirect(host)` removes it (the host
+    field changed, see [05-options.md](05-options.md)).
+- **What the user sees.** A failed redirect flags the class result with `is_redirect`
+  (`isRedirectFailed(error)`). The two workers post `i18nStrings.api_error_redirect` (sent by the
+  chat window and by `initWorker()`), and the pages show `api_error_redirect`: the connection test
+  (`_mapError()`) and "Update list" (`fetchModelsWithTimeout()`). The message tells the user to enter
+  the final address directly. A connection test that succeeds through a redirect is amber, not
+  green (`runConnectionTest()` returns `redirectTo`, the stored `to`). Every redirect, followed or
+  failed, also shows the amber note under the host field of the connection panels
+  ([05-options.md](05-options.md)).
+- No `webRequest`, no extra permission: everything comes from the `Response` and the probe.
+
+## Custom endpoint policy
+
+The two connections whose address the user types, Ollama and OpenAI Compatible, follow these rules
+before any request is sent to them [#1000]:
+
+| Address | Result |
+|---|---|
+| not a URL, or empty | refused (`endpoint_error_invalid`) |
+| a scheme other than `http:` / `https:` (`ftp://`, `file://`, `localhost:11434`) | refused (`endpoint_error_scheme`) |
+| a user name or a password in it (`https://user:pass@host/`, `https://user@host/`, `http://:pass@localhost/`) | refused (`endpoint_error_credentials`), on any host |
+| `https:` | allowed |
+| `http:` to a loopback host: `localhost` (any case, with or without the trailing dot), any `127.0.0.0/8` address, `[::1]` | allowed |
+| `http:` to any other host, `0.0.0.0`, the private LAN ranges and `*.local` included | allowed only once the user approved its **origin** (`URL.origin`), or the policy sets it |
+
+- **The rules**, in `js/mzta-endpoint-policy.js`: pure functions with no WebExtension or DOM
+  dependency, since the API classes run in the workers. These are `parseEndpoint()`,
+  `isLoopbackHost()`, `needsInsecureConfirmation()`, `endpointOrigin()`, `checkEndpoint(value,
+  approvedOrigins)` and `maskUrlCredentials()`. Credentials are never logged:
+  `mztaPrefs._logValue()` and `mztaManaged._logValue()` mask the user info of every `*_host` value
+  that is a string (any other value is logged as it is), and so does the options page's own
+  "Saving option" log line for a `*_host` field.
+- **The approvals**, in `js/mzta-endpoint-approvals.js`, for the pages and the background only:
+  - The user's approvals live in `storage.local` under `_approved_insecure_origins`, an array of
+    origins in the order they were approved. `getUserApprovedInsecureOrigins()`,
+    `approveInsecureOrigin()` and `revokeInsecureOrigin()` manage it.
+  - `getApprovedInsecureOrigins()` adds the `http:` origins of every host the enterprise policy
+    sets: the global `*_host`, the `_special_prompts_connection` fields and the organization
+    prompts. The administrator chose them, so the user is never asked about them.
+  - Approvals are per origin, not per provider or per field. A different host, port or scheme is
+    asked about again. Nothing is approved automatically: an existing remote `http:` setup gets the
+    question, or the message, on its first request after the update.
+- **`resolveEndpointAccess(host, {ask})`** is the one entry point. It returns
+  `{ok: true, approvedOrigins}` or `{ok: false, problem, message}`, with `message` localized. With
+  `ask` an unapproved `http:` origin gets a native `confirm()` (`endpoint_insecure_confirm`), which
+  stores the origin when accepted. Only an explicit user action asks: "Test now", "Update list" and
+  opening the API chat window. Without `ask`, the request is refused with
+  `endpoint_insecure_not_confirmed`, which tells the user where to allow the server.
+- **Where it is checked**, always before anything is sent:
+
+  | Caller | `ask` | Refused |
+  |---|---|---|
+  | API chat window (`api_webchat/controller.js`), on a non-empty host | yes | the message in the transcript, input locked; no `init` to the worker, no `_ready_` to the background, so nothing is ever sent |
+  | Background special commands (`initWorker()`, see [Configuration Validation](#configuration-validation)) | no: nobody may be looking (incoming mail) | `isConfigError` with the message |
+  | Connection test (`runConnectionTest()`), on a non-empty host: `parseEndpoint()` before the host permission, `resolveEndpointAccess()` after it (`permissions.request()` must be the click's first `await`) | yes | the test's error |
+  | "Update list" (Ollama, OpenAI Comp) | yes | the red status under the button |
+  | Host field (`checkEndpointField()`): page load, `change`, approvals changed; see [05-options.md](05-options.md) | no | the red note under the field |
+  | Ollama capability probe, context-window lookup | no | the probe fails like an unreachable server |
+
+- **The classes are the last line of defence.** `Ollama` and `OpenAIComp` take
+  `approved_insecure_origins` in their constructor, and every request method runs `checkEndpoint()`
+  before `fetch()`. A refused endpoint returns the network-failure shape with `endpoint_problem`, and
+  an English `error` from `endpointProblemText()`, since a worker has no `browser.i18n`. The workers
+  pass the init message's `approved_insecure_origins` to the class. A worker only knows what the
+  window or the background approved when it was created, so an approval revoked while a chat window
+  is open applies to the next window.
 
 ## Optional Permissions
 
@@ -1332,7 +1479,7 @@ callers receive is byte-identical to what it was before this layer existed, and 
 to the API on the next turn. That invariant is the whole contract; everything below only adds a display path.
 
 Capture is logged through `taLog` (debug-gated), carrying the **provider, model and token counts only**. Never
-log request URLs or headers: Gemini and some OpenAI-compatible endpoints carry the API key in the query string.
+log request URLs or headers: some OpenAI-compatible endpoints carry the API key in the query string, and a header map carries it outright.
 
 ### Emitting to the chat window
 
@@ -1454,7 +1601,7 @@ the `taLog` debug output.
 
 ## Adding a New Provider
 
-1. Create `js/api/<provider>.js` with the API call logic. Use `fetchWithRetry()` (`js/api/api-retry.js`) instead of `fetch()` in `fetchResponse()`/`fetchModels()`, with a trailing `retryConfig` parameter and `is_aborted` in the exception object
+1. Create `js/api/<provider>.js` with the API call logic. Use `fetchWithRetry()` (`js/api/api-retry.js`) instead of `fetch()` in `fetchResponse()`/`fetchModels()`, with a trailing `retryConfig` parameter and `is_aborted` in the exception object. A provider whose address the user types also goes through [Custom endpoint policy](#custom-endpoint-policy), and tracks its redirects like Ollama and OpenAI Comp (see [Redirects](#redirects)): `onRedirect` to `fetchWithRetry()` / `fetchDirect()`, `redirect_info` on the class, `is_redirect` in the exception object, the `endpoint_redirect` message from its worker, and its host field among the two of `ENDPOINT_INTEGRATIONS` in `pages/_lib/connection-ui.js`
 2. Create `js/workers/model-worker-<provider>.js` that imports and calls the API module
 3. Add a new `connection_type` value constant
 4. Add settings keys to `integration_options_config` in `options/mzta-options-default.js`

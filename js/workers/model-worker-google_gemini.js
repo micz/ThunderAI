@@ -74,7 +74,7 @@ export function getUsageData() {
 }
 
 // Only the provider, the model and the token counts. Never the request URL or the
-// headers: Gemini and some OpenAI-compatible endpoints carry the API key in the
+// headers: some OpenAI-compatible endpoints carry the API key in the
 // query string, and a header map carries it outright.
 function logUsageData(usage) {
     if (!taLog || !taLog.do_debug || usage === null) return;

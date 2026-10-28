@@ -24,6 +24,8 @@
 import { mztaPrefs } from './mzta-prefs.js';
  import { taLogger } from './mzta-logger.js';
  import { stripThinkTags } from './mzta-utils.js';
+ import { resolveEndpointAccess } from './mzta-endpoint-approvals.js';
+ import { saveEndpointRedirect } from './mzta-endpoint-redirects.js';
 
  // Fallback timeout (ms) for a special command if the special_command_timeout
  // preference is unavailable. Kept generous to accommodate slow local models.
@@ -154,6 +156,7 @@ import { mztaPrefs } from './mzta-prefs.js';
             error_connection_interrupted: browser.i18n.getMessage('error_connection_interrupted'),
             // The worker fills in the literal $SECONDS$ with the timeout it applies.
             error_stream_idle_timeout: browser.i18n.getMessage('error_stream_idle_timeout', ['$SECONDS$']),
+            api_error_redirect: browser.i18n.getMessage('api_error_redirect'),
         };
         if (integration === 'anthropic') {
             // describeAnthropicError() replaces the literal $MODEL$ with the model actually sent.
@@ -189,6 +192,20 @@ import { mztaPrefs } from './mzta-prefs.js';
             workerInitMessage[prefKey] = value;
         }
 
+        // A custom endpoint is checked before the worker exists [#1000]. Nobody may be
+        // looking (the automatic processing of incoming mail), so nothing is asked here:
+        // an unencrypted server not yet confirmed fails like a missing setting, and the
+        // message sends the user to the settings, where the confirmation is asked.
+        if (Object.prototype.hasOwnProperty.call(options_config, 'host')) {
+            const access = await resolveEndpointAccess(workerInitMessage[`${integration}_host`]);
+            if (!access.ok) {
+                const err = new Error(access.message);
+                err.isConfigError = true;
+                throw err;
+            }
+            workerInitMessage.approved_insecure_origins = access.approvedOrigins;
+        }
+
         this.worker = new Worker(new URL(this.worker_path, import.meta.url), { type: 'module' });
         this.worker.postMessage(workerInitMessage);
     }
@@ -221,6 +238,12 @@ import { mztaPrefs } from './mzta-prefs.js';
                         // show, the overall special_command_timeout still applies.
                         this.logger.log("Retrying the API request: " + JSON.stringify(payload));
                         lastRetryStatus = payload?.status ?? null;
+                        break;
+                    case 'endpoint_redirect':
+                        // The redirect outcome of a request to a custom endpoint [#1000]:
+                        // saved for the note under the host field of the connection panels.
+                        // Not awaited: a storage write must not delay the answer.
+                        saveEndpointRedirect(payload.host, payload.info);
                         break;
                     case 'newToken':
                         this.full_message += payload.token;

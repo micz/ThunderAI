@@ -798,7 +798,14 @@ except `chatgpt_web` (which has no API endpoint). `refreshConnTestVisibility()` 
 `pages/_lib/mzta-design.css`): `idle` (grey dot, "Connection not tested yet", link "Test
 now"), `loading` (dot becomes a spinner via the `mztaspin` keyframe, "Testing
 connection…", link hidden), `ok` (green dot, "Connected — <API> reachable", link
-"Re-test"), `error` (red dot + red text with the error detail, link "Retry").
+"Re-test"), `warning` (amber dot + amber text, `connTest_ok_redirect`, link "Re-test": a
+custom endpoint answered through a redirect; it names the address to enter instead, and says the
+chat may not work through it, since the test is a GET and only a POST shows whether a redirect
+keeps the content of the requests, see [04-api-integrations.md "Redirects"](04-api-integrations.md#redirects)),
+`error` (red dot + red text with the error detail, link "Retry").
+`showConnTestResult(result, strip)` shows a `runConnectionTest()` result: `error` when it failed,
+`warning` when it carries a `redirectTo`, `ok` otherwise; the options page, the wizard and the
+strips of `connection-ui.js` all call it.
 `setConnTestState(state, message, strip)`, exported by `js/mzta-connection-test.js` and
 shared by every host, updates dot/text/link of `strip` (found via `.conn_test_text` /
 `.conn_test_link`; it defaults to `#mzta_conn_test`); i18n keys are `connTest_*` in
@@ -861,6 +868,59 @@ The two optional registry fields:
 A successful Ollama test also re-runs `updateOllamaModelCapabilityUI()`, because granting the
 host permission through the test is often what makes `/api/show` reachable in the first place
 — see [04-api-integrations.md](04-api-integrations.md#ollama-ollama_api).
+
+### Connection Settings Panel — Custom Endpoint Address
+
+The address of the two custom endpoints (`{prefix}ollama_host`, `{prefix}openai_comp_host`) follows
+the rules of [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy)
+[#1000]. Each host field has two notes under it, in every panel `injectConnectionUI()` builds
+(options page, feature pages, custom prompts, setup wizard). The two integrations are
+`ENDPOINT_INTEGRATIONS`.
+
+- **The red note** (`#{prefix}{integration}_host_endpoint_note`, `.endpoint_note`, `[hidden]` when
+  empty), filled by `checkEndpointField(modelId_prefix, integration)`: a non-empty address goes
+  through `resolveEndpointAccess(host)` **without `ask`**, so the field never shows a dialog. When the
+  address cannot be used the note says why: the localized `endpoint_error_*` message, or
+  `endpoint_insecure_note` for an unencrypted server on another machine not yet allowed. It runs:
+  - at page load, for the restored values: `updateEndpointNotes(modelId_prefix)`, called by
+    `updateWarnings()` (options page, feature pages, custom prompts when a prompt is loaded into
+    the form) and by the setup wizard after its `restoreOptions()`. A user with a remote `http:`
+    Ollama not yet allowed sees the note at once;
+  - on `change` of the field;
+  - on every `storage.local` change of `_approved_insecure_origins`, so the note goes away as soon
+    as the user allows the server with "Test now" or "Update list" (here or on another page).
+
+  Saving is never blocked; the requests are. A field the policy locked (`data-mzta-managed="1"`) is
+  skipped: its host is approved without asking.
+- **The amber note** (`#{prefix}{integration}_host_redirect_note`, `.endpoint_note.endpoint_note_warning`,
+  the `--warnColor` of `mzta-design.css`), filled by `showEndpointRedirectNote()` from the stored
+  redirect of the address in the field (`getEndpointRedirect()`, see
+  [04-api-integrations.md "Redirects"](04-api-integrations.md#redirects)):
+  - a redirect that a POST went through (`method: 'POST'`, a 307/308): `endpoint_redirect_note`,
+    naming the destination `to`;
+  - a redirect only a GET went through (the test, the model list): `endpoint_redirect_note_unverified`,
+    naming `to` and saying the chat may not work through it;
+  - a redirect that failed: `endpoint_redirect_failed_note_to` naming `to` when it is known,
+    `endpoint_redirect_failed_note` otherwise;
+  - no entry: hidden.
+
+  It is filled at page load (`updateEndpointNotes()`) and on every `storage.local` change of
+  `_endpoint_redirects`, so a redirect found by a request made meanwhile (the chat, a feature, the
+  buttons of the panel) shows at once. It **stays until the value of the field changes**: on
+  `change`, `onEndpointHostChange()` removes the stored redirect of the previous address
+  (`clearEndpointRedirect()`, the value the field held when its notes were last filled) and hides
+  the note; the storage change then shows the entry of the new address, if it has one. An address
+  that only gained or lost spaces or trailing slashes is the same host, and keeps both. No buttons.
+- **"Test now" and "Update list"** check the address with `resolveEndpointAccess(host, {ask: true})`
+  before anything is sent: an unencrypted server on another machine not yet allowed gets the
+  `endpoint_insecure_confirm` dialog, once per origin. "Test now" asks it after the host permission:
+  `permissions.request()` is only allowed from a user input handler, so it must be the first `await`
+  of the click, before anything reads the storage; an unusable address (not a URL, credentials in
+  it) is refused before it with the synchronous `parseEndpoint()`, so it asks for nothing. Refused, their own error shows the message,
+  and nothing is sent. An empty host keeps its previous behaviour (the disabled button; the
+  connection test's permission error). After the request, both save its redirect outcome.
+- **The Ollama capability probe** never asks: an unencrypted server not yet allowed is simply not
+  probed, like an unreachable one. It saves its redirect outcome too.
 
 ### Connection Settings Panel — "Update list" Model Fetch Buttons
 
@@ -1492,6 +1552,14 @@ switches, `diff_granularity`, `do_debug` and the cache block below.
   happens; confirmed, `taStorage.clearAllRecords()` removes every `msg:` record - never a preference
   or any other key - then an `alert()` reports the count (`prefs_storage_clear_done`) and the size is
   read again.
+- **Allowed unencrypted servers.** `#insecure_origins_list` lists the user's own approvals
+  (`getUserApprovedInsecureOrigins()`, see
+  [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy)),
+  one origin per line with a "Remove" button (`revokeInsecureOrigin()`), or
+  `prefs_insecure_origins_empty`. Removed, the next request to that server is blocked until it is
+  allowed again. The hosts the policy sets are not listed: they are never asked about. The list is
+  rendered at load and again on every `storage.local` change of `_approved_insecure_origins`, so an
+  approval given in the connection panel of the same page shows at once.
 
 ### Owl for Exchange Warning (`#owl_warning`)
 
@@ -1698,6 +1766,14 @@ case for nearly every user and is swallowed silently.
   key uses either prefix, and each of the five `storage.local.get(null)` enumerations in
   `js/mzta-storage.js` filters on `msg:` before touching a record — including
   `clearAllRecords()`, which would otherwise delete every preference.
+- **The approved unencrypted servers** (`_approved_insecure_origins` in `storage.local`, see
+  [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy))
+  are not a preference: no `prefs_default` entry, no policy key, read and written only by
+  `js/mzta-endpoint-approvals.js`. The leading underscore keeps it out of every preference scan.
+- **The redirects of the custom endpoints** (`_endpoint_redirects` in `storage.local`, see
+  [04-api-integrations.md "Redirects"](04-api-integrations.md#redirects)) are not a preference
+  either: one entry per configured host, read and written only by `js/mzta-endpoint-redirects.js`,
+  with the same leading underscore.
 - **The two #129 legacy reads** in `js/mzta-utils.js` (`migrateCustomPromptsStorage()`,
   `migrateDefaultPromptsPropStorage()`) keep pointing at `storage.sync` on purpose: their job is
   to drain old data *out* of it. They always end with the key removed from sync: when
