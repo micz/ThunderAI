@@ -609,6 +609,87 @@ export function checkSpecialPromptText(id, text) {
     return result;
 }
 
+/**
+ * Whether the feature of special prompt `id` parses a JSON answer, so its text must carry the
+ * JSON response format: the ids with responseKeys in SPECIAL_PROMPT_TEXT_CONTRACT.
+ */
+export function specialPromptNeedsJson(id) {
+    return (SPECIAL_PROMPT_TEXT_CONTRACT[id]?.responseKeys || []).length > 0;
+}
+
+// Index of the brace closing the {...} block opened at `start`, or -1 when the text ends first.
+// Braces count outside JSON strings only; a {%placeholder%} outside a string is skipped whole,
+// its braces are not the format's.
+function findJsonBlockEnd(text, start) {
+    let depth = 0;
+    let inString = false;
+    for (let i = start; i < text.length; i++) {
+        const c = text[i];
+        if (inString) {
+            if (c === '\\') i++;
+            else if (c === '"') inString = false;
+            continue;
+        }
+        if (c === '"') {
+            inString = true;
+        } else if (c === '{') {
+            if (text[i + 1] === '%') {
+                const close = text.indexOf('%}', i + 2);
+                if (close < 0) return -1;
+                i = close + 1;
+            } else {
+                depth++;
+            }
+        } else if (c === '}') {
+            if (--depth === 0) return i;
+        }
+    }
+    return -1;
+}
+
+/**
+ * Check the JSON response format inside a special prompt text, which also holds the
+ * instructions around it (the settings pages, for the ids of specialPromptNeedsJson()).
+ *
+ * The candidates are the top-level {...} blocks of the text (findJsonBlockEnd()); a block
+ * left open runs to the end of the text, and nothing after its opening brace is a candidate of
+ * its own: an inner object must not pass for the format when the outer one lost its closing
+ * brace. The text is fine when one candidate is strict JSON (JSON.parse).
+ *
+ *   found - the text has at least one {...} block
+ *   error - '' when a candidate parses, otherwise the parser message for the longest candidate
+ *           (the likeliest to be the format), without the "JSON.parse:" prefix SpiderMonkey adds
+ */
+export function checkPromptTextJson(text) {
+    const candidates = [];
+    for (let i = 0; i < text.length; i++) {
+        if (text[i] !== '{' || text[i + 1] === '%') continue;
+        const end = findJsonBlockEnd(text, i);
+        if (end < 0) {
+            candidates.push(text.slice(i));
+            break;
+        }
+        candidates.push(text.slice(i, end + 1));
+        i = end;
+    }
+    if (candidates.length === 0) return { found: false, error: '' };
+
+    let error = '';
+    let errorLength = -1;
+    for (const candidate of candidates) {
+        try {
+            JSON.parse(candidate);
+            return { found: true, error: '' };
+        } catch (e) {
+            if (candidate.length > errorLength) {
+                errorLength = candidate.length;
+                error = String(e.message).replace(/^\s*JSON\.parse:\s*/, '');
+            }
+        }
+    }
+    return { found: true, error: error };
+}
+
 
 // The organization prompts supplied by an enterprise policy: the fourth prompt set,
 // alongside defaultPrompts, _custom_prompt and _special_prompts.
