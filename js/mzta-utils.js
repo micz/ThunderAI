@@ -23,11 +23,15 @@ import {
 
 import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js'
 import { mztaPrefs } from './mzta-prefs.js';
-import { mztaManaged, managedReady, ACCOUNT_MATCH_LOCAL } from './mzta-managed.js';
+import {
+  mztaManaged,
+  managedReady,
+  ACCOUNT_MATCH_LOCAL
+} from './mzta-managed.js';
 import { taLogger } from './mzta-logger.js';
 
 const sparks_min = '3.1.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
-const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
+const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it', 'ja'];
 
 export const getMenuContextCompose = () => 'compose_action_menu';
 export const getMenuContextDisplay = () => 'message_display_action_menu';
