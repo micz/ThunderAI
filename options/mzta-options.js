@@ -426,12 +426,15 @@ async function disable_GetCalendarEvent(prefs_opt){
 
 const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
 
-// Documentation page behind the "Full guide" link of the provider setup callout.
-// Sparse on purpose: only these providers have a dedicated page, so the link is
-// hidden for the others rather than pointing somewhere generic.
+// Setup guide on micz.it behind the "Full guide" link of the provider setup callout.
+// Every provider has one, translated in all the micz.it languages.
 const CONN_GUIDE_PATH = {
-  chatgpt_web: 'thunderbird-addon-thunderai/status/',
-  ollama_api:  'thunderbird-addon-thunderai/ollama-cors-information/',
+  chatgpt_web:       'thunderbird-addon-thunderai/guides/chatgpt-web/',
+  chatgpt_api:       'thunderbird-addon-thunderai/guides/openai-api/',
+  ollama_api:        'thunderbird-addon-thunderai/guides/ollama/',
+  openai_comp_api:   'thunderbird-addon-thunderai/guides/openai-compatible-api/',
+  google_gemini_api: 'thunderbird-addon-thunderai/guides/google-gemini/',
+  anthropic_api:     'thunderbird-addon-thunderai/guides/claude-api/',
 };
 
 function updateDescription(){

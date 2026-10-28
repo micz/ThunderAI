@@ -1451,10 +1451,13 @@ things per provider, all driven by the existing `change` listener on `#connectio
 (plus one call at init): toggles the `.conntype_*` span visibility via inline `display`,
 toggles the `tint_*` class on `#miczDescription`, and moves `#mzta_info_guide` into the
 active span (idempotent — it only re-appends when the parent differs) while pointing it at
-`getMiczItUrl(CONN_GUIDE_PATH[conntype])`. `CONN_GUIDE_PATH` is **sparse on purpose** —
-only `chatgpt_web` (status page) and `ollama_api` (CORS page) have a dedicated
-documentation page, and the link is hidden (`display:none`) for the other four rather
-than falling back to a generic page.
+`getMiczItUrl(CONN_GUIDE_PATH[conntype])`, the provider's setup guide on micz.it
+(`thunderbird-addon-thunderai/guides/<provider>/`: `chatgpt-web`, `openai-api`, `ollama`,
+`openai-compatible-api`, `google-gemini`, `claude-api`). Every provider has one, translated in
+all the languages of `getMiczItUrl()`, so the link is always shown; a provider without an entry
+would get the link hidden (`display:none`) rather than pointed somewhere generic. Only pages
+that micz.it translates may go through `getMiczItUrl()`: the status page, for one, exists only
+in English (a language prefix gives a 404).
 
 Note `.info_specific` must keep `display: block` in CSS, because `updateDescription()`
 reveals the active provider's text with `style.display = ""`, which falls back to the

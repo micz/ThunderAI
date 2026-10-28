@@ -311,12 +311,15 @@ k.test('pick-api-strip', S_TEST, 'with a testable provider the strip shows, idle
     assert.equal($('#mzta_conn_test_link').textContent, msg('connTest_link_test'));
 });
 
-k.test('pick-api-note', S_NOTE, 'only the selected provider\'s text shows, tinted, and OpenAI has no guide link', () => {
+k.test('pick-api-note', S_NOTE, 'only the selected provider\'s text shows, tinted, with the OpenAI guide link inside it', () => {
     for (const span of ctx.$$('#miczDescription .info_specific')) {
         assert.equal(span.style.display !== 'none', span.classList.contains('conntype_chatgpt_api'), span.className);
     }
     assert.equal($('#miczDescription').classList.contains('tint_chatgpt_api'), true);
-    assert.equal($('#mzta_info_guide').style.display, 'none');
+    const link = $('#mzta_info_guide');
+    assert.notEqual(link.style.display, 'none');
+    assert.equal(link.parentElement, $('#miczDescription .conntype_chatgpt_api.info_specific'));
+    assert.match(link.href, /\/thunderbird-addon-thunderai\/guides\/openai-api\/$/);
 });
 
 k.test('pick-web-rows', S_ROWS, 'with ChatGPT Web the rows stay clickable and show the API hint', async () => {
@@ -337,11 +340,11 @@ k.test('pick-web-max-prompt', S_ADVSEC, 'with ChatGPT Web max_prompt_length is d
     assert.equal(maxRowShown(), false);
 });
 
-k.test('pick-web-guide', S_NOTE, 'ChatGPT Web gets the status-page guide link, inline in its own text', () => {
+k.test('pick-web-guide', S_NOTE, 'ChatGPT Web gets its setup guide link, inline in its own text', () => {
     const link = $('#mzta_info_guide');
     assert.notEqual(link.style.display, 'none');
     assert.equal(link.parentElement, $('#miczDescription .conntype_chatgpt_web.info_specific'));
-    assert.match(link.href, /^https:\/\/micz\.it\/(\w+\/)?thunderbird-addon-thunderai\/status\/$/);
+    assert.match(link.href, /^https:\/\/micz\.it\/(\w+\/)?thunderbird-addon-thunderai\/guides\/chatgpt-web\/$/);
     assert.equal($('#miczDescription').classList.contains('tint_chatgpt_web'), true);
     assert.equal($('#miczDescription').classList.contains('tint_chatgpt_api'), false);
 });
@@ -353,12 +356,12 @@ k.test('pick-web-sparks', S_ROWS, 'with ChatGPT Web and no Sparks the calendar r
     assert.equal($('#wrong_sparks_text').style.display, 'none');
 });
 
-k.test('pick-ollama-guide', S_NOTE, 'Ollama gets the CORS guide link, moved into its own text', async () => {
+k.test('pick-ollama-guide', S_NOTE, 'Ollama gets its setup guide link, moved into its own text', async () => {
     await pick('ollama_api');
     const link = $('#mzta_info_guide');
     assert.notEqual(link.style.display, 'none');
     assert.equal(link.parentElement, $('#miczDescription .conntype_ollama_api.info_specific'));
-    assert.match(link.href, /\/thunderbird-addon-thunderai\/ollama-cors-information\/$/);
+    assert.match(link.href, /\/thunderbird-addon-thunderai\/guides\/ollama\/$/);
 });
 
 k.test('switch-collapses-adv', S_ADV, 'a provider switch collapses an expanded disclosure', async () => {
