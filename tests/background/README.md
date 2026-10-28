@@ -14,7 +14,8 @@ The contract is the spec, as everywhere in the suite:
   … on Message Display" flows; "Per-message pipelines in `processEmails()`", "Resolving a message",
   "Stale-result guard", "In-flight jobs (`taJobRegistry`)", "Context-menu actions", "Unreachable
   message pane", "Batch cancellation (`taBatchController`)"; "Background Preference Snapshot and
-  Menu Invalidation" (its four invariants) and "Per-Message Data Storage";
+  Menu Invalidation" (its four invariants), "Per-Message Data Storage" and, in "API WebChat", the
+  background's side of the "Ready handshake";
 - [`claude-spec/02-prompts.md`](../../claude-spec/02-prompts.md): "Menu System" ("Popup Menu",
   "Context Menu", "Special Prompt Visibility Dependencies"), "Missing special prompts", "Add tags:
   extra prompt statements" (which tags land where), "Summarize" and "Translate";
@@ -70,6 +71,7 @@ time: the debounce, the worker timeout and the batch yield points run on node:te
 | `37-permission-reconcile` | the permission map; the reconciliation's permission rule for every gated preference (missing → off, granted → on, at startup and on a storage change), with a specific integration, the sub-option alone, Sparks absent, locked keys skipped (simulated by stubbing `mztaManaged`), the log line; `permissions.onRemoved` (a shared permission, `addressBooks`, `clipboardRead`, host permissions only, a locked key) | 01 "Feature permissions" |
 | `38-permission-guards` | the runtime guards: automatic and context-menu add_tags / spam filter without their permissions (one red panel per run, the other features go on), the address book rule skipped with one blue notice (batch and Refresh), `assign_tags` blocked and a tag that cannot be created, `createTag()` / `assignTagsToMessage()` rejecting, the popup Add tags and calendar-from-clipboard menu actions refused with their alert | 01 "Feature permissions" |
 | `39-context-menu-multi` | several messages in the context menu: items created enabled, only the four multi-message prompts kept enabled with two messages or a paginated MessageList (pages not fetched), all enabled again with one, update and refresh only on a change, other contexts left alone, a closed or replaced showing not refreshed, the parent disabled when no item is left enabled, a custom prompt saved with `allow_multi` still disabled | 02 "Context Menu" ("Several messages", "Built-in-only fields") |
+| `40-chat-window-ready` | the chat window's ready listener (`addReadyListener()` in `openChatGPT()`, an extra root): for each of the five API providers and ChatGPT Web, one `runtime.onMessage` and one `windows.onRemoved` listener while the window has not answered, both removed on a usable configuration (`api_send` / `chatgpt_send`), on each empty required field (`api_error`), and on the window closed first (a late ready message is then not answered); another window closing changes nothing; two windows waiting at once | 01 "Ready handshake" |
 | `99-harness-known-issues` | the shape of `helpers/known-issues/background.mjs` | harness |
 | `99-harness-scope` | the statement splitter and the cut (small cases and the real file), the fake Worker, the strict API models | harness |
 
@@ -173,7 +175,9 @@ modules, then loads the policy with no policy installed, as the background does)
   pane, "Invalid tab ID" on a missing tab), `messageDisplay.getDisplayedMessage`,
   `compose.getComposeDetails` (a `messageCompose` tab's `isPlainText`) and `compose.beginReply` (a
   loaded reply tab of the model's `replyPlainText` format, recorded in `replies`),
-  `mailTabs.getSelectedMessages`, the two action icons, `windows.create` (the chat window opening);
+  `mailTabs.getSelectedMessages`, the two action icons, `windows.create` (the chat window opening)
+  and `windows.onRemoved` (a test closes a window by calling its listeners), `tabs.executeScript`
+  (the ChatGPT Web injection: recorded in `calls`, never run);
 - **menus**: `removeAll`, `create` (with its callback; a duplicate id is recorded in `menuErrors`,
   which is how an interleaved rebuild would show), `update` (sets the item's props; a missing id
   rejects and is recorded in `menuErrors`), `refresh`, `onClicked`, `onShown`, `onHidden`;
@@ -221,7 +225,9 @@ None today.
   the sanitizer and `buildSummaryPrompt()`'s own body reading need a DOM (compose area). The model's
   messages have a text/plain part only.
 - **The chat window** (`openChatGPT()` past `windows.create`, `api_webchat/`): the webchat area; here
-  only that the window opens, for which messages. The regular prompts' menu actions
+  only that the window opens, for which messages, and the lifetime of its ready listener
+  (`40-chat-window-ready`: what the background answers the ready message, not what the window does
+  with it). The regular prompts' menu actions
   (`executeMenuAction()`) and the popup's Add tags dialog path (`act()` in `js/mzta-menus.js`, the
   `getTags` confirmation) are not run.
 - **The compose-window commands** past what they send the compose tab (`35-compose-commands`):
