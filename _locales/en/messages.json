@@ -745,6 +745,16 @@
     "message": "The connection to the server was unexpectedly interrupted",
     "description": "Error shown in the AI chat window when the streaming connection to the AI server drops unexpectedly; followed by a colon and the technical error message."
   },
+  "error_stream_idle_timeout": {
+    "message": "The server stopped responding: no data received for $SECONDS$ seconds",
+    "description": "Error shown in the AI chat window when the AI server stops sending the answer in the middle of it and the request is given up; preceded by the 'API request failed' text of the provider and a colon. $SECONDS$ is the number of seconds waited.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1",
+        "example": "120"
+      }
+    }
+  },
   "ollama_api_request_failed": {
     "message": "Ollama API request failed",
     "description": "Error shown in the AI chat window when a request to the Ollama API fails; followed by a colon and the HTTP status or error detail."
@@ -964,6 +974,14 @@
   "prefs_OptionText_special_command_timeout_Info" : {
     "message": "Time in milliseconds before a hung AI request (auto add-tags, spam filter, summarize, translate) is aborted. Increase it if you use slow local models. This applies only to API-based connections, not to the ChatGPT Web Interface.",
     "description": "Options page: help text under the special command timeout field, explaining when automatic AI requests are aborted."
+  },
+  "prefs_OptionText_api_stream_idle_timeout" : {
+    "message": "API stream idle timeout (ms)",
+    "description": "Options page: label of the number field for the time, in milliseconds, an AI answer may stay silent before the request is given up. Keep '(ms)' as the milliseconds unit."
+  },
+  "prefs_OptionText_api_stream_idle_timeout_Info" : {
+    "message": "Time in milliseconds without any data, once the answer has started, before the request is given up with an error. Reasoning models and slow local models can stay silent for a long time while still working: increase it if their answers are cut off. This applies only to API-based connections, not to the ChatGPT Web Interface.",
+    "description": "Options page: help text under the API stream idle timeout field, explaining when a silent AI answer is given up."
   },
   "prefs_OptionText_batch_max_concurrency": {
     "message": "Emails processed in parallel",

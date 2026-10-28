@@ -191,6 +191,9 @@ export const prefs_default = {
     chatgpt_web_custom_gpt: '',
     chatgpt_web_load_wait_time: 1000,
     special_command_timeout: 120000,   // ms before a hung special command (API worker) is aborted
+    // ms without any data before an API stream is given up (#999); 0 = no idle timeout. No UI:
+    // set it in storage or by policy. Read by the workers through resolveIdleTimeoutMs().
+    api_stream_idle_timeout: 120000,
     batch_max_concurrency: 1,   // max messages processed at once by one processEmails() batch (auto add tags / spam filter / summarize / translate, on receive or from the context menu); each message runs its features in series
     dynamic_menu_force_enter: false,
     placeholders_use_default_value: false,

@@ -133,7 +133,7 @@ import { mztaPrefs } from './mzta-prefs.js';
         const prefs_api = await mztaPrefs.getPrefs(Object.keys(prefsToGet));
 
         // Load the configurable timeout used to abort a hung worker in sendPrompt().
-        const prefs_timeout = await mztaPrefs.getPrefs(['special_command_timeout']);
+        const prefs_timeout = await mztaPrefs.getPrefs(['special_command_timeout', 'api_stream_idle_timeout']);
         if (Number.isFinite(prefs_timeout.special_command_timeout) && prefs_timeout.special_command_timeout > 0) {
             this.timeout_ms = prefs_timeout.special_command_timeout;
         }
@@ -154,6 +154,8 @@ import { mztaPrefs } from './mzta-prefs.js';
         const i18nStrings = {
             [i18n_msg_key]: browser.i18n.getMessage(i18n_msg_key),
             error_connection_interrupted: browser.i18n.getMessage('error_connection_interrupted'),
+            // The worker fills in the literal $SECONDS$ with the timeout it applies.
+            error_stream_idle_timeout: browser.i18n.getMessage('error_stream_idle_timeout', ['$SECONDS$']),
             api_error_redirect: browser.i18n.getMessage('api_error_redirect'),
         };
         if (integration === 'anthropic') {
@@ -166,7 +168,9 @@ import { mztaPrefs } from './mzta-prefs.js';
         let workerInitMessage = {
             type: 'init',
             do_debug: this.do_debug,
-            i18nStrings: i18nStrings
+            i18nStrings: i18nStrings,
+            // Validated by the worker (resolveIdleTimeoutMs()), like in the chat window.
+            api_stream_idle_timeout: prefs_timeout.api_stream_idle_timeout,
         };
 
         for (const key of configKeys) {

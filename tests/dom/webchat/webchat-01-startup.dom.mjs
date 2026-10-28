@@ -15,7 +15,8 @@
 // api_webchat/controller.js applies"), "Anthropic / Claude (`anthropic_api`)" (the four 400 hints
 // only for the anthropic integration), "Emitting to the chat window" (the chat_show_usage_data
 // flag on the init message), "Rendering in the chat window" (no usage chrome in the header),
-// "Font zoom in the webchat UI".
+// "Font zoom in the webchat UI", "Stream idle timeout" (the preference and the string on the init
+// message).
 //
 // The tests run in order on one window: the zoom tests come last and leave the zoom at 100%.
 
@@ -74,6 +75,7 @@ const S_CLAUDE = 'spec 04 "Anthropic / Claude (`anthropic_api`)"';
 const S_EMIT = 'spec 04 "Emitting to the chat window"';
 const S_USAGE = 'spec 04 "Rendering in the chat window"';
 const S_ZOOM = 'spec 04 "Font zoom in the webchat UI"';
+const S_IDLE = 'spec 04 "Stream idle timeout"';
 
 const init = () => worker.posted.find(m => m.type === 'init');
 
@@ -103,6 +105,12 @@ k.test('init-usage-flag', S_EMIT, 'chat_show_usage_data is on (its default) and 
 k.test('no-claude-hints', S_CLAUDE, 'the four anthropic_err_hint_* strings are filled only for the anthropic integration: none for ChatGPT API', () => {
     const keys = Object.keys(init().i18nStrings || {});
     assert.deepEqual(keys.filter(key => key.startsWith('anthropic_err_hint_')), []);
+});
+
+k.test('init-idle-timeout', S_IDLE, 'the init message carries api_stream_idle_timeout (its default, 120000 ms) and error_stream_idle_timeout with the literal $SECONDS$', () => {
+    assert.equal(init().api_stream_idle_timeout, 120000);
+    const text = init().i18nStrings.error_stream_idle_timeout;
+    assert.ok(typeof text === 'string' && text.includes('$SECONDS$'), String(text));
 });
 
 k.test('header-model', S_USAGE, 'the header shows the model in use (the prompt\'s own) and the API', () => {

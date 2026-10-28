@@ -927,6 +927,28 @@ from `windows.getCurrent()`). The background listener registered for that `call_
 sending the window `api_send` (the prompt), or `api_error` when the configuration is unusable
 (an empty key or model). Nothing is sent to the worker before that answer.
 
+**The background's ready listener and its lifetime.** `openChatGPT()` waits for the ready message
+through `addReadyListener(command, onReady)` (`mzta-background.js`), the same for the five API
+providers and for ChatGPT Web (whose loader sends `chatgpt_web_ready_<call_id>`, see
+[04-api-integrations.md](04-api-integrations.md)):
+
+- **Registered** before the window is opened: one `runtime.onMessage` listener that calls
+  `onReady(message, sender.tab)` for exactly that command and returns `false` for any other. Then
+  `openWindow(win_options)` calls `windows.create()` and, with the id it returns, registers one
+  `windows.onRemoved` listener for that window.
+- **Removed**, both listeners together by the one `cleanup()`, on whichever end comes first:
+  1. the ready message answered with `api_send` (or `chatgpt_send`, after the script injection);
+  2. the ready message answered with `api_error` (an empty key, model, host or version): each
+     branch calls `cleanup()` before its `return`;
+  3. the window closed before any ready message was answered: the window never got ready, the user
+     closed it first, or the page refused to start (an unknown `llm`, see above).
+  `windows.create()` rejecting removes the message listener too. When the ready message is answered
+  while `windows.create()` is still pending, the `onRemoved` listener is never registered.
+
+So no listener outlives its window: before, the message listener was removed only on the
+`api_send` path, and every other opening left one behind for the rest of the session.
+`tests/background/40-chat-window-ready` checks the three ends for every provider.
+
 **Startup notice.** The first turn is an info notice (`.turn-info > .message.info`) built by
 `getAPIsInitMessageString()` (`js/mzta-utils.js`): the API, the model, the host, the version, the
 prompt (`[id] name`) and the provider's non-empty text settings. The window parses it as HTML (its

@@ -25,6 +25,11 @@ import {
     redirectedTo
 } from './fetch-model.mjs';
 import {
+    IDLE,
+    idleStopCase,
+    idleTimeoutCases
+} from './idle-cases.mjs';
+import {
     assertNoBrowser,
     flush,
     initMessage,
@@ -54,7 +59,7 @@ const INTERRUPTED = 'The connection to the server was unexpectedly interrupted';
 const DONE = 'data: [DONE]\n\n';
 
 await w.send(initMessage({ openai_comp_host: HOST, openai_comp_model: 'local-model', openai_comp_api_key: '', openai_comp_use_v1: true },
-    { chat_show_usage_data: false, i18nStrings: { OpenAIComp_api_request_failed: FAILED, error_connection_interrupted: INTERRUPTED } }));
+    { chat_show_usage_data: false, i18nStrings: { OpenAIComp_api_request_failed: FAILED, error_connection_interrupted: INTERRUPTED, error_stream_idle_timeout: IDLE } }));
 
 const errorOf = t => t.posted().filter(m => m.type === 'error');
 
@@ -96,17 +101,17 @@ k.test('after-abort', 'the next turn does not resend the aborted message; with t
     assert.equal(shape(t.posted()).at(-1)[0], 'tokensDone');
 });
 
-k.test('stop-mid-stream', 'Stop once streaming: the stream is cancelled and the turn closes with tokensDone', async () => {
+k.test('stop-mid-stream', 'Stop once streaming: the pending read ends at once, the stream is cancelled and the turn closes with tokensDone', async () => {
     const s = manualStream();
     net.expect(CHAT, () => s.response);
     const t = startTurn(w, 'Long answer');
-    const [c0, c1] = FX.plain_stream_no_usage.chunks;
+    const [c0] = FX.plain_stream_no_usage.chunks;
     s.push(sse(c0));
     await until(() => t.posted().some(m => m.type === 'newToken'), 'the first token');
     await w.send({ type: 'stop' });
-    s.push(sse(c1));
-    await t.done;
+    await t.done;   // no further chunk: the Stop ends the pending read itself
     assert.equal(s.cancelled, true);
+    assert.equal(net.calls[0].signal.reason.name, 'StopError', 'the request was aborted with the Stop reason');
     const types = t.posted().map(m => m.type);
     assert.equal(types.filter(x => x === 'tokensDone').length, 1);
     assert.equal(types.at(-1), 'tokensDone');
@@ -210,6 +215,15 @@ k.test('stop-during-error-body', 'Stop while the body of an HTTP error is read: 
     // history-after-errors, at the end of the file, checks that 'q' left the history.
 });
 
+// Spec 04 "Stream idle timeout": the default 120 s, keep-alives, no timer left behind (idle-cases.mjs).
+idleTimeoutCases(k, {
+    w, net, match: CHAT, failed: FAILED,
+    open: () => manualStream(),
+    first: sse(FX.plain_stream_no_usage.chunks[0]),
+    rest: FX.plain_stream_no_usage.chunks.slice(1).map(c => sse(c)).join('') + DONE,
+    keepAlive: ': OPENROUTER PROCESSING\n\n',   // OpenRouter's SSE comment
+});
+
 k.test('history-after-errors', 'failed turns leave nothing in the history: no failed question, no partial answer', async () => {
     net.expect(CHAT, () => streamResponse([FX.plain_stream_no_usage.chunks.map(c => sse(c)).join('') + DONE]));
     const t = startTurn(w, 'After the errors');
@@ -219,6 +233,16 @@ k.test('history-after-errors', 'failed turns leave nothing in the history: no fa
     assert.equal(msgs.filter(m => m.role === 'user' && m.content === 'q').length, 0, 'no failed question resent');
     assert.equal(msgs.some(m => m.role === 'assistant' && m.content === 'Hi'), false, 'no partial answer');
     msgs.forEach((m, i) => assert.equal(m.role, i % 2 === 0 ? 'user' : 'assistant', 'roles alternate at ' + i));
+});
+
+// Spec 04 "Stream idle timeout": a Stop during the stall ends the turn at once and keeps its partial
+// answer, as any Stop: declared after history-after-errors, which wants no partial answer (idle-cases.mjs).
+idleStopCase(k, {
+    w, net, match: CHAT,
+    open: () => manualStream(),
+    first: sse(FX.plain_stream_no_usage.chunks[0]),
+    rest: FX.plain_stream_no_usage.chunks.slice(1).map(c => sse(c)).join('') + DONE,
+    history: call => call.json().messages.map(m => [m.role, m.content]),
 });
 
 k.test('no-browser', 'no browser global was needed', () => {

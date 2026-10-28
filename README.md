@@ -111,6 +111,8 @@ npm test
 
 `npm` is used for development tooling only: [jsdom](https://github.com/jsdom/jsdom) is the one development dependency, and nothing in `package.json` or `node_modules` is part of the add-on or ends up in the XPI. The tests run in CI on demand only — manually from the Actions tab, or by adding the `run-tests` label to a pull request — not on every commit. How they work, and how to add a scenario or a page, is explained in [`tests/README.md`](tests/README.md).
 
+Some behaviours are still checked by hand in Thunderbird. For the API answers that stop arriving in the middle (the stream idle timeout and the Stop button during a stall), use the stall server in [`tests/_stall_server/`](tests/_stall_server/): a small local OpenAI-compatible and Ollama server, with no dependency, that sends a few tokens and then goes silent. How to start it, point ThunderAI at it and what to check is explained in [`tests/_stall_server/README.md`](tests/_stall_server/README.md).
+
 ## Privacy and Permissions
 
 You can find all the information on [this page](https://micz.it/thunderbird-addon-thunderai/privacy-permissions/).
