@@ -200,6 +200,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `diff_granularity` | `'words'` | Comparison unit the proofreading change picker **opens with**: `'words'` or `'sentences'`. The picker's own toolbar toggle changes it for the current review; there is no per-prompt override — see [07-diff-picker.md](07-diff-picker.md). Rendered as a `<select>` in the advanced section; needs an explicit entry in `restoreOptions()`'s `select-one` branch, since a select restoring to `''` would render blank. |
 | `max_prompt_length` | `30000` | Max prompt string length |
 | `special_command_timeout` | `120000` | Timeout (ms) before a hung special-command API worker is aborted (`js/mzta-special-commands.js`). Exposed in the main options page as a number input; **always shown** (not hidden for ChatGPT Web), because a single special prompt may use a specific API even when the global `connection_type` is `chatgpt_web`. Has no effect on ChatGPT Web connections, which use no API worker. |
+| `api_stream_idle_timeout` | `120000` | Idle timeout (ms) of an API stream: with no data for this long once the answer has started, the worker gives the request up and shows `error_stream_idle_timeout` (#999). `0` = no idle timeout. Exposed in the advanced options of the main options page, right after `special_command_timeout`, as a number input (`min="1000"`, `step="1000"`) with a reset button; **always shown**, like `special_command_timeout` and for the same reason (a special prompt may use an API while the global `connection_type` is `chatgpt_web`). The field's `min` is UI only: `0` comes from storage or a policy, which accepts any non-negative integer (the general number rule, so no `PREF_NUMBER_RANGES` entry, see [08-managed-configuration.md](08-managed-configuration.md)). The workers validate it with `resolveIdleTimeoutMs()` (`js/api/api-idle-timer.js`): a value that is not a non-negative number (the `null` of an emptied field included) falls back to the default. Has no effect on ChatGPT Web connections, which stream through no API worker. Sent in the workers' `init` message by `api_webchat/controller.js` and `js/mzta-special-commands.js`. See [04-api-integrations.md](04-api-integrations.md#stream-idle-timeout). |
 | `batch_max_concurrency` | `1` | Maximum messages processed at once by one `processEmails()` call (auto add tags, spam filter, summarize and translate — on receive and from the context menu). Each message runs its features in series (spam, add_tags, summary, translate), so this is also the maximum number of AI requests in flight. There are no per-feature caps. Overlapping calls (several accounts) can exceed it. A value that is not a finite number ≥ 1 (a cleared field is saved as `NaN`) falls back to the default. Number input (`min="1"`) in the advanced section of the main options page, with its default wired into `restoreOptions()`. Does not affect the context-menu summarize flow. See [01-architecture.md](01-architecture.md#per-message-pipelines-in-processemails). |
 
 ### Feature Flags
@@ -1467,7 +1468,8 @@ the "leave retired keys in place" handling of the older keys above.
 The app-level "Advanced options" disclosure is the `#mzta_adv_toggle` button and the
 `#mzta_adv_panel` it opens below itself (the connection panel's own disclosure mirrors it, see
 "Connection Settings Panel — Advanced Options Disclosure"). The panel holds the chat window size and
-position, `max_prompt_length`, `special_command_timeout`, `batch_max_concurrency`, the behaviour
+position, `max_prompt_length`, `special_command_timeout`, `api_stream_idle_timeout`,
+`batch_max_concurrency`, the behaviour
 switches, `diff_granularity`, `do_debug` and the cache block below.
 
 - **Collapsed on every open.** The page opens with `aria-expanded="false"` and `.hidden` on the
@@ -1476,9 +1478,10 @@ switches, `diff_granularity`, `do_debug` and the cache block below.
   hides its row (`#max_prompt_length_tr`) while the global select holds `chatgpt_web` or nothing,
   and shows and enables it for any API; it runs at load and on every `connection_type` change. The
   row follows *relevance*, not the field's `disabled` flag: a policy lock disables the field too, and
-  that must grey it out, never hide the row it explains. `special_command_timeout` is always shown
-  (see its row in "UI & Feature Preferences").
-- **Reset buttons.** `#reset_max_prompt_length` and `#reset_special_command_timeout` (each marked
+  that must grey it out, never hide the row it explains. `special_command_timeout` and
+  `api_stream_idle_timeout` are always shown (see their rows in "UI & Feature Preferences").
+- **Reset buttons.** `#reset_max_prompt_length`, `#reset_special_command_timeout` and
+  `#reset_api_stream_idle_timeout` (each marked
   `data-mzta-companion-of` its field) put the `prefs_default` value back in the field and store it
   with `setPref()`, as a number. They fire no `change`. For a policy-locked key they do nothing
   (`isLockedKey()`), without relying on the button being disabled. `batch_max_concurrency` has none.

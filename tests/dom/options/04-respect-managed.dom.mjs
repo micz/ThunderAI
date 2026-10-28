@@ -12,9 +12,9 @@ import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { openPage, assertHarnessClean } from '../../helpers/dom-page.mjs';
 
-const LOCKED = ['spamfilter', 'summarize', 'get_task', 'max_prompt_length'];
+const LOCKED = ['spamfilter', 'summarize', 'get_task', 'max_prompt_length', 'api_stream_idle_timeout'];
 const ctx = await openPage('options', {
-    policy: { spamfilter: true, summarize: true, get_task: true, max_prompt_length: 5000 },
+    policy: { spamfilter: true, summarize: true, get_task: true, max_prompt_length: 5000, api_stream_idle_timeout: 0 },
     local: { connection_type: 'chatgpt_api', chatgpt_api_key: 'sk-user-own' },
 });
 after(() => ctx.close());
@@ -71,6 +71,16 @@ test('with no connection selected, a policy-enabled feature is still shown on', 
     for (const id of ['spamfilter', 'summarize']) {
         assert.equal(ctx.$('#' + id).checked, true, id + ' shown switched off, the policy says on');
     }
+});
+
+test('a policy 0 for api_stream_idle_timeout (no idle timeout) is shown, below the field\'s UI min, and its Reset stays inert', async () => {
+    assert.equal(ctx.$('#api_stream_idle_timeout').value, '0');
+    const reset = ctx.$('#reset_api_stream_idle_timeout');
+    assert.equal(reset.disabled, true, 'the Reset button is locked with its key');
+    reset.disabled = false;
+    await ctx.click(reset);
+    reset.disabled = true;
+    assert.equal(ctx.$('#api_stream_idle_timeout').value, '0', 'Reset replaced the policy value');
 });
 
 test('no locked value reached storage', () => {

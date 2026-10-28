@@ -141,6 +141,7 @@ if (worker) {
             do_debug: prefs_default.do_debug,
             hide_thinking: prefs_default.hide_thinking,
             chat_show_usage_data: prefs_default.chat_show_usage_data,
+            api_stream_idle_timeout: prefs_default.api_stream_idle_timeout,
         };
         for (const key in options_config) {
             prefsToGet[`${integration_prefix}_${key}`] = prefs_default[`${integration_prefix}_${key}`];
@@ -171,6 +172,8 @@ if (worker) {
         const i18n_msg_key = integration === 'openai_comp' ? 'OpenAIComp_api_request_failed' : `${integration}_api_request_failed`;
         i18nStrings[i18n_msg_key] = browser.i18n.getMessage(i18n_msg_key);
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
+        // The literal "$SECONDS$" is filled in by the worker with the timeout it applies.
+        i18nStrings["error_stream_idle_timeout"] = browser.i18n.getMessage('error_stream_idle_timeout', ['$SECONDS$']);
         if (integration === 'anthropic') {
             // 400 hints for describeAnthropicError(). The literal "$MODEL$" is passed
             // as the substitution so the worker can fill in the model it actually sent.
@@ -238,6 +241,7 @@ if (worker) {
             // Gates the 'usage' message at the source: with this false the worker
             // still extracts and debug-logs the usage, but emits nothing.
             chat_show_usage_data: show_usage,
+            api_stream_idle_timeout: prefs_api.api_stream_idle_timeout,
         };
 
         for (const key in options_config) {

@@ -45,6 +45,7 @@ const STORED = {
     chatgpt_win_left: null,
     max_prompt_length: 12345,
     special_command_timeout: 30000,
+    api_stream_idle_timeout: 240000,
     batch_max_concurrency: 4,
     do_debug: true,
     hide_thinking: false,
@@ -107,7 +108,7 @@ k.test('restore-ui', S_UI, 'every stored preference is shown at load', () => {
     for (const id of ['default_sign_name', 'default_chatgpt_lang', 'reply_type', 'diff_granularity']) {
         assert.equal($('#' + id).value, STORED[id], id);
     }
-    for (const id of ['chatgpt_win_height', 'chatgpt_win_width', 'max_prompt_length', 'special_command_timeout', 'batch_max_concurrency']) {
+    for (const id of ['chatgpt_win_height', 'chatgpt_win_width', 'max_prompt_length', 'special_command_timeout', 'api_stream_idle_timeout', 'batch_max_concurrency']) {
         assert.equal($('#' + id).valueAsNumber, STORED[id], id);
     }
     for (const id of ['do_debug', 'hide_thinking', 'chat_show_usage_data', 'dynamic_menu_force_enter', 'placeholders_use_default_value', 'chatgpt_win_save_position']) {
