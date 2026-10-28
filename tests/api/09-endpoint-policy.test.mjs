@@ -12,7 +12,7 @@ import { areaFile } from './harness.mjs';
 import { assertNoBrowser } from './worker-realm.mjs';
 
 assertNoBrowser();
-const { k } = areaFile('08-endpoint-policy');
+const { k } = areaFile('09-endpoint-policy');
 const {
     ENDPOINT_PROBLEM,
     parseEndpoint,
