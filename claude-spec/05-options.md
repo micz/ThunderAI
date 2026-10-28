@@ -1442,22 +1442,33 @@ unchanged so `updateDescription()` keeps working.
 
 The note itself is **untinted**: only the body text carries the provider colour, as a 3px
 `--tint-accent` left bar on the `.conntype_<provider> .info_specific` spans
-(`prefsInfoDesc_1/2/3/4/7/8`). The single `#mzta_info_guide` link (`prefs_full_guide`) is
-**moved inside the active provider's span** by `updateDescription()`, so it reads inline at
-the end of that sentence instead of breaking onto its own line below the accent bar.
+(`prefsInfoDesc_1/2/3/4/7/8`). The provider's links sit in one row, `#mzta_info_links`,
+**moved inside the active provider's span** by `updateDescription()`, so it stays within the
+accent bar. The row holds two links: `#mzta_info_guide` (`prefs_full_guide`) and
+`#mzta_info_extra`, a second page for the providers that have one. They are **chips centred on
+their own line below the text** (the row is a centred, wrapping flex; each chip has a pill
+border and a light background mixed from `--tint-accent`, so it takes the provider colour
+too). Like `.info_specific`, the row and the chips must keep their `display` in CSS:
+`updateDescription()` reveals them with `style.display = ""`.
 
 **Provider reactivity.** `updateDescription()` (`options/mzta-options.js`) does three
 things per provider, all driven by the existing `change` listener on `#connection_type`
 (plus one call at init): toggles the `.conntype_*` span visibility via inline `display`,
-toggles the `tint_*` class on `#miczDescription`, and moves `#mzta_info_guide` into the
-active span (idempotent — it only re-appends when the parent differs) while pointing it at
-`getMiczItUrl(CONN_GUIDE_PATH[conntype])`, the provider's setup guide on micz.it
-(`thunderbird-addon-thunderai/guides/<provider>/`: `chatgpt-web`, `openai-api`, `ollama`,
-`openai-compatible-api`, `google-gemini`, `claude-api`). Every provider has one, translated in
-all the languages of `getMiczItUrl()`, so the link is always shown; a provider without an entry
-would get the link hidden (`display:none`) rather than pointed somewhere generic. Only pages
-that micz.it translates may go through `getMiczItUrl()`: the status page, for one, exists only
-in English (a language prefix gives a 404).
+toggles the `tint_*` class on `#miczDescription`, and fills `#mzta_info_links` and moves it into
+the active span (idempotent — it only re-appends when the parent differs).
+- `#mzta_info_guide` points at `getMiczItUrl(CONN_GUIDE_PATH[conntype])`, the provider's setup
+  guide on micz.it (`thunderbird-addon-thunderai/guides/<provider>/`: `chatgpt-web`, `openai-api`,
+  `ollama`, `openai-compatible-api`, `google-gemini`, `claude-api`). Every provider has one,
+  translated in all the languages of `getMiczItUrl()`, so it is always shown.
+- `#mzta_info_extra` comes from `CONN_EXTRA_LINK[conntype]` (its text from the entry's message,
+  plus ` ›`), and is hidden for the providers without an entry. **ChatGPT Web** gets
+  `prefs_chatgpt_web_status` → `https://micz.it/thunderbird-addon-thunderai/status/`, always the
+  English page; **Ollama** gets `prefs_cors_information` → the CORS page through `getMiczItUrl()`.
+
+A provider with neither link would get the whole row hidden (`display:none`) rather than
+pointed somewhere generic; with nothing selected the row is hidden too. Only pages that micz.it
+translates may go through `getMiczItUrl()`: the status page, for one, exists only in English (a
+language prefix gives a 404).
 
 Note `.info_specific` must keep `display: block` in CSS, because `updateDescription()`
 reveals the active provider's text with `style.display = ""`, which falls back to the

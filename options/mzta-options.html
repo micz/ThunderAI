@@ -105,9 +105,12 @@
                 <span class="conntype_openai_comp_api info_specific">__MSG_prefsInfoDesc_4__</span>
                 <span class="conntype_google_gemini_api info_specific">__MSG_prefsInfoDesc_7__</span>
                 <span class="conntype_anthropic_api info_specific">__MSG_prefsInfoDesc_8__</span>
-                <!-- Moved inline into the active provider's span by updateDescription(),
-                     which also sets the href and hides it when there is no guide. -->
-                <a id="mzta_info_guide" href="#" style="display:none;">__MSG_prefs_full_guide__ &rsaquo;</a>
+                <!-- Moved into the active provider's span by updateDescription(), which
+                     also sets each href and hides the links the provider does not have. -->
+                <span id="mzta_info_links" style="display:none;">
+                  <a id="mzta_info_guide" href="#" style="display:none;">__MSG_prefs_full_guide__ &rsaquo;</a>
+                  <a id="mzta_info_extra" href="#" style="display:none;"></a>
+                </span>
               </p>
             </div>
           </div>

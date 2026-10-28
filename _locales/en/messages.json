@@ -396,6 +396,14 @@
     "message": "Full guide",
     "description": "Link in the provider setup callout, opening the documentation page for the selected provider."
   },
+  "prefs_chatgpt_web_status": {
+    "message": "ChatGPT Web status",
+    "description": "Options page: link in the provider setup callout, shown for ChatGPT Web next to 'Full guide'; opens the online page telling whether the ChatGPT Web integration currently works. 'ChatGPT Web' is a product name."
+  },
+  "prefs_cors_information": {
+    "message": "CORS information",
+    "description": "Options page: link in the provider setup callout, shown for Ollama next to 'Full guide'; opens the page explaining how to set up CORS on the Ollama server. Keep 'CORS' unchanged, it is a technical term."
+  },
   "prefs_shortcut_label": {
     "message": "Open the ThunderAI menu with",
     "description": "Label preceding the keyboard shortcut keys, at the bottom of the options page."

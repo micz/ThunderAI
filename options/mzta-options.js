@@ -437,6 +437,13 @@ const CONN_GUIDE_PATH = {
   anthropic_api:     'thunderbird-addon-thunderai/guides/claude-api/',
 };
 
+// Second link next to "Full guide", only for the providers that have one more page.
+// url is already final: the CORS page is translated on micz.it, the status page is English only.
+const CONN_EXTRA_LINK = {
+  chatgpt_web: { msg: 'prefs_chatgpt_web_status', url: () => 'https://micz.it/thunderbird-addon-thunderai/status/' },
+  ollama_api:  { msg: 'prefs_cors_information', url: () => getMiczItUrl('thunderbird-addon-thunderai/ollama-cors-information/') },
+};
+
 function updateDescription(){
   let conntype_select = document.getElementById("connection_type");
   let conntype = conntype_select.value;
@@ -450,21 +457,36 @@ function updateDescription(){
   for(let t of CONN_TYPES){
     desc.classList.toggle("tint_" + t, conntype === t);
   }
-  // Point the "Full guide" link at the selected provider's page, or hide it.
-  // It is moved inside the active provider's span so it flows inline with that
-  // text (and stays within the tinted accent bar) instead of sitting below it.
+  // Point the provider's links at its pages, hiding the ones it does not have.
+  // Their row is moved inside the active provider's span, so it sits below that
+  // text and still within the tinted accent bar.
+  let links = document.getElementById("mzta_info_links");
   let guide_link = document.getElementById("mzta_info_guide");
-  if(guide_link){
+  let extra_link = document.getElementById("mzta_info_extra");
+  if(links && guide_link && extra_link){
     let guide_path = CONN_GUIDE_PATH[conntype];
+    let extra = CONN_EXTRA_LINK[conntype];
     if(guide_path){
-      let active_span = desc.querySelector(".conntype_" + conntype + ".info_specific");
-      if(active_span && guide_link.parentElement !== active_span){
-        active_span.appendChild(guide_link);
-      }
       guide_link.href = getMiczItUrl(guide_path);
       guide_link.style.display = "";
     }else{
       guide_link.style.display = "none";
+    }
+    if(extra){
+      extra_link.href = extra.url();
+      extra_link.textContent = browser.i18n.getMessage(extra.msg) + " ›";
+      extra_link.style.display = "";
+    }else{
+      extra_link.style.display = "none";
+    }
+    let active_span = desc.querySelector(".conntype_" + conntype + ".info_specific");
+    if((guide_path || extra) && active_span){
+      if(links.parentElement !== active_span){
+        active_span.appendChild(links);
+      }
+      links.style.display = "";
+    }else{
+      links.style.display = "none";
     }
   }
 }
