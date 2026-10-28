@@ -813,6 +813,10 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     text-decoration: none;
     transition: background .15s;
 }
+/* Some chip texts reuse a lowercase string (prefs_status_page): capitalise them on screen only. */
+#mzta_info_links a::first-letter {
+    text-transform: uppercase;
+}
 #mzta_info_links a:hover {
     background: color-mix(in srgb, var(--tint-accent, var(--accent)) 18%, transparent);
 }

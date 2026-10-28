@@ -293,7 +293,7 @@
   },
   "prefs_status_page": {
     "message": "service status",
-    "description": "ChatGPT Web window: lowercase link text that opens the online ChatGPT Web service status page; keep it short."
+    "description": "Lowercase link text that opens the online ChatGPT Web service status page; keep it short. Used in the ChatGPT Web window and, on the options page, as a link next to 'Full guide' in the ChatGPT Web setup callout."
   },
   "prefs_OptionText_chatgpt_win_text": {
     "message": "AI chat window dimensions",
@@ -395,14 +395,6 @@
   "prefs_full_guide": {
     "message": "Full guide",
     "description": "Link in the provider setup callout, opening the documentation page for the selected provider."
-  },
-  "prefs_chatgpt_web_status": {
-    "message": "ChatGPT Web status",
-    "description": "Options page: link in the provider setup callout, shown for ChatGPT Web next to 'Full guide'; opens the online page telling whether the ChatGPT Web integration currently works. 'ChatGPT Web' is a product name."
-  },
-  "prefs_cors_information": {
-    "message": "CORS information",
-    "description": "Options page: link in the provider setup callout, shown for Ollama next to 'Full guide'; opens the page explaining how to set up CORS on the Ollama server. Keep 'CORS' unchanged, it is a technical term."
   },
   "prefs_shortcut_label": {
     "message": "Open the ThunderAI menu with",
@@ -2321,7 +2313,7 @@
   },
   "CORS_alternative_1": {
     "message": "Problems setting CORS?",
-    "description": "Connection panel (Ollama and OpenAI Compatible API): bold short question introducing the host-permission alternative to configuring CORS."
+    "description": "Short question about CORS problems. Used in the connection panel (Ollama and OpenAI Compatible API) in bold, introducing the host-permission alternative to configuring CORS, and on the options page as the text of the link to the Ollama CORS information page, next to 'Full guide' in the Ollama setup callout."
   },
   "CORS_alternative_2_new": {
     "message": "Press the button below to give the permission to the current host to avoid any CORS problem.",

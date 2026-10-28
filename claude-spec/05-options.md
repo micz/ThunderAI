@@ -1462,8 +1462,10 @@ the active span (idempotent — it only re-appends when the parent differs).
   translated in all the languages of `getMiczItUrl()`, so it is always shown.
 - `#mzta_info_extra` comes from `CONN_EXTRA_LINK[conntype]` (its text from the entry's message,
   plus ` ›`), and is hidden for the providers without an entry. **ChatGPT Web** gets
-  `prefs_chatgpt_web_status` → `https://micz.it/thunderbird-addon-thunderai/status/`, always the
-  English page; **Ollama** gets `prefs_cors_information` → the CORS page through `getMiczItUrl()`.
+  `prefs_status_page` (the same lowercase text as the link in the ChatGPT Web window; the chip
+  capitalises its first letter in CSS, `#mzta_info_links a::first-letter`) → `https://micz.it/thunderbird-addon-thunderai/status/`, always the
+  English page; **Ollama** gets `CORS_alternative_1` ("Problems setting CORS?", the same text as in the
+  connection panel) → the CORS page through `getMiczItUrl()`.
 
 A provider with neither link would get the whole row hidden (`display:none`) rather than
 pointed somewhere generic; with nothing selected the row is hidden too. Only pages that micz.it

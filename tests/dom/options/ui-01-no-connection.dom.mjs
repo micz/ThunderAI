@@ -350,7 +350,7 @@ k.test('pick-web-guide', S_NOTE, 'ChatGPT Web gets its setup guide and status li
     assert.match($('#mzta_info_guide').href, /^https:\/\/micz\.it\/(\w+\/)?thunderbird-addon-thunderai\/guides\/chatgpt-web\/$/);
     const extra = $('#mzta_info_extra');
     assert.notEqual(extra.style.display, 'none');
-    assert.equal(extra.textContent, msg('prefs_chatgpt_web_status') + ' ›');
+    assert.equal(extra.textContent, msg('prefs_status_page') + ' ›');
     // The status page exists only in English on micz.it: never a language prefix.
     assert.equal(extra.href, 'https://micz.it/thunderbird-addon-thunderai/status/');
     assert.equal($('#miczDescription').classList.contains('tint_chatgpt_web'), true);
@@ -373,7 +373,7 @@ k.test('pick-ollama-guide', S_NOTE, 'Ollama gets its setup guide and CORS links,
     assert.match($('#mzta_info_guide').href, /\/thunderbird-addon-thunderai\/guides\/ollama\/$/);
     const extra = $('#mzta_info_extra');
     assert.notEqual(extra.style.display, 'none');
-    assert.equal(extra.textContent, msg('prefs_cors_information') + ' ›');
+    assert.equal(extra.textContent, msg('CORS_alternative_1') + ' ›');
     assert.match(extra.href, /^https:\/\/micz\.it\/(\w+\/)?thunderbird-addon-thunderai\/ollama-cors-information\/$/);
 });
 

@@ -440,8 +440,8 @@ const CONN_GUIDE_PATH = {
 // Second link next to "Full guide", only for the providers that have one more page.
 // url is already final: the CORS page is translated on micz.it, the status page is English only.
 const CONN_EXTRA_LINK = {
-  chatgpt_web: { msg: 'prefs_chatgpt_web_status', url: () => 'https://micz.it/thunderbird-addon-thunderai/status/' },
-  ollama_api:  { msg: 'prefs_cors_information', url: () => getMiczItUrl('thunderbird-addon-thunderai/ollama-cors-information/') },
+  chatgpt_web: { msg: 'prefs_status_page', url: () => 'https://micz.it/thunderbird-addon-thunderai/status/' },
+  ollama_api:  { msg: 'CORS_alternative_1', url: () => getMiczItUrl('thunderbird-addon-thunderai/ollama-cors-information/') },
 };
 
 function updateDescription(){
