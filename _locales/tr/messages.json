@@ -3077,14 +3077,6 @@
         "description": "Takvim etkinliği al sayfası ve Görev al sayfası: 'Özel Model ve API kullan' seçeneğinin altındaki, aşağıdaki bağlantının genel olanı geçersiz kıldığını açıklayan yardım metni.",
         "message": "İşaretlenirse, ThunderAI seçenekler sayfasında seçilenden bağımsız olarak takvim etkinliği oluşturmak için aşağıda belirtilen Model ve API kullanılacaktır."
     },
-    "menu_title": {
-        "description": "Mesaj görüntüleme ve oluşturma pencerelerindeki ThunderAI araç çubuğu düğmesinin ipucu; eklenti adı, genellikle çevrilmeden bırakılır.",
-        "message": "ThunderAI"
-    },
-    "customPrompts_managePrompts_info_default": {
-        "description": "Özel istemler sayfası: başlık altındaki yardım metni, yerleşik istemlerin düzenlenemeyeceğini, 'Çoğalt ve düzenle' seçeneğinin düzenlenebilir bir kopya oluşturduğunu ve istemlerin Menü Sırası sayfasındaki menülerden gizlendiğini açıklar. 'Çoğalt ve düzenle', o düğme etiketinin çevirisiyle eşleşmelidir.",
-        "message": "Varsayılan istemler düzenlenemez. Değiştirilmiş bir sürüm oluşturmak için \"Çoğalt ve düzenle\" seçeneğini kullanın. Bir istemi menülerden gizlemek için Menü Sırası ayarlarını kullanın."
-    },
     "prefs_OptionText_get_task": {
         "description": "Seçenekler sayfası: seçilen metinden bir görev oluşturmak için menü ögesini etkinleştiren onay kutusunun etiketi.",
         "message": "Seçilen metinden yeni bir görev ekle"
