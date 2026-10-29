@@ -1,0 +1,53 @@
+name: Update Weblate badges
+
+# Asks the site repository (micz/micz.github.io) to refresh the Weblate translation status badges
+# (static/weblate/thunderai/<lang>.svg), through a repository_dispatch with event_type
+# "thunderai-weblate-badges", on every stable release and by hand.
+#
+# client_payload: { ref: release tag | branch of the manual run, url: release html_url | run url }
+#
+# The site's thunderai-weblate-badges.yml checks out this repository at ref, downloads the badges
+# of every directory of _locales/ (en excluded) with .github/scripts/weblate_update_status.mjs
+# (a failed download fails the run: no partial PR), and
+# opens a pull request on the site from the branch thunderai-weblate-badges with its own token,
+# or updates the one already open. No changes, no PR.
+#
+# The "released" release event fires only for stable releases, including a prerelease promoted to
+# stable. It fires only when the release is published by a user (web UI, gh, or a personal access
+# token): a release published by another workflow with GITHUB_TOKEN does not trigger it.
+#
+# REQUIRED SECRET: SITE_DISPATCH_TOKEN (the same token as sync-site-languages.yml)
+#   A fine-grained personal access token with access to the micz/micz.github.io repository only,
+#   permission "Contents: Read and write" (required by the repository_dispatch endpoint).
+#   Add it in Settings > Secrets and variables > Actions of this repository.
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    # On a fork there is no token for the site: nothing to do there.
+    if: github.repository == 'micz/ThunderAI'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Notify the site
+        env:
+          GH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
+          SITE_REPO: micz/micz.github.io
+          REF: ${{ github.event.release.tag_name || github.ref_name }}
+          URL: ${{ github.event.release.html_url || format('{0}/{1}/actions/runs/{2}', github.server_url, github.repository, github.run_id) }}
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Secret SITE_DISPATCH_TOKEN is not set (see the comment at the top of this workflow)"; exit 1
+          fi
+          jq -n --arg ref "$REF" --arg url "$URL" \
+            '{ event_type: "thunderai-weblate-badges", client_payload: { ref: $ref, url: $url } }' \
+            | tee payload.json
+          gh api --method POST "repos/$SITE_REPO/dispatches" --input payload.json
+          echo "Asked $SITE_REPO to update the Weblate badges at $REF"
