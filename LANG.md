@@ -14,5 +14,6 @@ pt
 pt-br
 ru
 sv
+tr
 zh_Hans
 zh_Hant
