@@ -961,7 +961,9 @@ So no listener outlives its window: before, the message listener was removed onl
 
 **Startup notice.** The first turn is an info notice (`.turn-info > .message.info`) built by
 `getAPIsInitMessageString()` (`js/mzta-utils.js`): the API, the model, the host, the version, the
-prompt (`[id] name`) and the provider's non-empty text settings. The window parses it as HTML (its
+prompt (`[id] name`) and the provider's non-empty text settings. A setting given as a section
+(`{label, items}`, today the OpenAI Comp extra headers) takes a line for its label and one
+indented `label: value` line per item. The window parses it as HTML (its
 own `<i>`/`<span>` labels, newlines → `<br>`), so **every value is escaped** with
 `mztaEscapeHtml()`: a prompt name, a model or a system prompt holding markup is shown as text and
 never becomes an element. The three values always there are the most exposed: the prompt name (the
@@ -2203,7 +2205,7 @@ Each file handles HTTP communication for one provider:
 | `openai_comp.js` | OpenAI-compatible APIs |
 | `openai_comp_configs.js` | Pre-configured providers (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity) |
 | `openai_responses.js` | OpenAI Responses API |
-| `api-utils.js` | Shared worker-safe helpers (`parseExtraBody()`) |
+| `api-utils.js` | Shared worker-safe helpers (`parseExtraBody()`, `parseExtraHeaders()`, `extraHeaderProblem()`, `mergeHeaders()`, `isCredentialHeader()`) |
 | `api-retry.js` | `fetchWithRetry()`: automatic retry with backoff, see [04-api-integrations.md](04-api-integrations.md#automatic-retry-handling) |
 
 ## Web Workers (`js/workers/`)

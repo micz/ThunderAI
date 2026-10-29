@@ -18,7 +18,11 @@
 
 // Some original methods derived from https://github.com/ali-raheem/Aify/blob/4ece286095ea7a6cf89d696902e6b81b5d1c3a4b/plugin/html/API.js
 
-import { parseExtraBody } from './api-utils.js';
+import {
+    mergeHeaders,
+    parseExtraBody,
+    parseExtraHeaders
+} from './api-utils.js';
 import {
     fetchWithRetry,
     isRedirectFailed
@@ -90,6 +94,7 @@ export class OpenAIComp {
   stream = false;
   temperature = '';
   extra_body = '';
+  extra_headers = '';
   approved_insecure_origins = [];
   // The redirect outcome of the last request (see checkRedirected() in api-retry.js):
   // null when it says nothing, {redirected: false} for a success with no redirect, or
@@ -105,6 +110,7 @@ export class OpenAIComp {
     use_v1 = true,
     temperature = '',
     extra_body = '',
+    extra_headers = '',
     approved_insecure_origins = [],
   } = {}) {
     this.host = (host || '').trim().replace(/\/+$/, "");
@@ -114,6 +120,7 @@ export class OpenAIComp {
     this.use_v1 = use_v1;
     this.temperature = temperature;
     this.extra_body = extra_body;
+    this.extra_headers = extra_headers;
     // The unencrypted origins the caller confirmed (js/mzta-endpoint-approvals.js):
     // the endpoint is checked against them before every request [#1000].
     this.approved_insecure_origins = Array.isArray(approved_insecure_origins) ? approved_insecure_origins : [];
@@ -137,6 +144,11 @@ export class OpenAIComp {
     return (info) => { this.redirect_info = info; };
   }
 
+  // The headers of a request: the user's extra headers, under the ones ThunderAI
+  // manages, which always win. Never log the result: it may carry secrets (the API
+  // key, or an extra header such as Azure's api-key).
+  _headers = (managed) => mergeHeaders(parseExtraHeaders(this.extra_headers), managed);
+
 
   fetchModels = async (retryConfig = {}) => {
     try{
@@ -157,7 +169,7 @@ export class OpenAIComp {
       // fetchWithRetry() never logs the URL.
       const response = await fetchWithRetry(this.host + (this.use_v1 ? "/v1" : "") + "/models", {
           method: "GET",
-          headers: curr_headers,
+          headers: this._headers(curr_headers),
       }, { label: 'OpenAI Comp', ...retryConfig, onRedirect });
 
       if (!response.ok) {
@@ -212,7 +224,7 @@ export class OpenAIComp {
       try {
         const response = await fetchWithRetry(this.host + (this.use_v1 ? "/v1" : "") + "/chat/completions", {
             method: "POST",
-            headers: curr_headers,
+            headers: this._headers(curr_headers),
             // The user-supplied extra data is spread first on purpose: every
             // parameter ThunderAI manages must win over it, so a wrong entry
             // cannot change the model or break the streaming.

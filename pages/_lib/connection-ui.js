@@ -44,6 +44,7 @@ import {
   hasNoConnectionSelected
 } from '../../js/mzta-utils.js';
 import { openAICompConfigs } from '../../js/api/openai_comp_configs.js';
+import { extraHeaderProblem } from '../../js/api/api-utils.js';
 import {
   loadPrompt,
   savePrompt,
@@ -977,6 +978,20 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
+  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_extra_headers__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_extra_headers" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_extra_headers" class="option-input option-textarea check-json check-json-headers"></textarea>
+        <div class="json_error" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_extra_headers_error" hidden></div>
+        <br>__MSG_prefs_OptionText_openai_comp_extra_headers_info__
+      </label>
+    </td>
+  </tr>
   <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_Anthropic_API_Key__</span>
@@ -1543,6 +1558,7 @@ export async function injectConnectionUI({
       host: document.getElementById(getPrefixedId("openai_comp_host")).value,
       apiKey: document.getElementById(getPrefixedId("openai_comp_api_key")).value,
       use_v1: document.getElementById(getPrefixedId("openai_comp_use_v1")).checked,
+      extra_headers: document.getElementById(getPrefixedId("openai_comp_extra_headers")).value,
       approved_insecure_origins: access.approvedOrigins,
     });
     warn_OpenAIComp_HostEmpty(modelId_prefix);
@@ -2438,6 +2454,8 @@ function checkJsonField(field){
       const parsed = JSON.parse(elementValue);
       if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
         errorText = browser.i18n.getMessage('prefs_extra_body_error_not_object');
+      } else if (field.classList.contains('check-json-headers')) {
+        errorText = extraHeadersErrorText(parsed);
       }
     } catch (error) {
       // error.message already states what was expected and where. Strip the
@@ -2454,6 +2472,24 @@ function checkJsonField(field){
     errorBox.textContent = errorText;
     errorBox.hidden = (errorText === '');
   }
+}
+
+// The first header of an extra headers object that would not be sent, with the
+// same rules parseExtraHeaders() applies at request time. Names the header, never
+// its value: it may carry a secret.
+const EXTRA_HEADER_ERROR_KEYS = {
+  invalid_name: 'prefs_extra_headers_error_name',
+  forbidden: 'prefs_extra_headers_error_forbidden',
+  not_string: 'prefs_extra_headers_error_not_string',
+  invalid_value: 'prefs_extra_headers_error_value',
+};
+
+function extraHeadersErrorText(headers){
+  for (const [name, value] of Object.entries(headers)) {
+    const problem = extraHeaderProblem(name, value);
+    if (problem !== '') return browser.i18n.getMessage(EXTRA_HEADER_ERROR_KEYS[problem], name);
+  }
+  return '';
 }
 
 function warn_InvalidJson(event){

@@ -43,6 +43,10 @@ import {
 } from '../js/mzta-processing-worker.js';
 import { resolveEndpointAccess } from '../js/mzta-endpoint-approvals.js';
 import { saveEndpointRedirect } from '../js/mzta-endpoint-redirects.js';
+import {
+    isCredentialHeader,
+    parseExtraHeaders
+} from '../js/api/api-utils.js';
 
 // Get the LLM to be used
 const urlParams = new URLSearchParams(window.location.search);
@@ -345,7 +349,8 @@ if (worker) {
             ],
             openai_comp: [
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
-                { key: 'extra_body', labelKey: 'prefs_api_extra_body', type: 'string' }
+                { key: 'extra_body', labelKey: 'prefs_api_extra_body', type: 'string' },
+                { key: 'extra_headers', labelKey: 'prefs_api_extra_headers', type: 'headers' }
             ],
             anthropic: [
                 { key: 'system_prompt', labelKey: 'Anthropic_System_Prompt', type: 'string' },
@@ -369,6 +374,7 @@ if (worker) {
 
                 if (value !== undefined && value !== null && value !== '') {
                     let displayValue;
+                    let displayItems;
                     let shouldAdd = false;
 
                     switch (item.type) {
@@ -388,9 +394,21 @@ if (worker) {
                                 shouldAdd = true;
                             }
                             break;
+                        case 'headers': {
+                            // One line per header actually sent, never the raw JSON: the
+                            // entries parseExtraHeaders() drops are not listed. The value of
+                            // a header that looks like a credential is hidden.
+                            displayItems = Object.entries(parseExtraHeaders(value))
+                                .map(([name, headerValue]) => ({ label: name,
+                                    value: isCredentialHeader(name) ? '****************' : headerValue }));
+                            shouldAdd = displayItems.length > 0;
+                            break;
+                        }
                     }
                     if (shouldAdd) {
-                        messages.push({ label: browser.i18n.getMessage(item.labelKey), value: displayValue });
+                        messages.push(displayItems
+                            ? { label: browser.i18n.getMessage(item.labelKey), items: displayItems }
+                            : { label: browser.i18n.getMessage(item.labelKey), value: displayValue });
                     }
                 }
             }

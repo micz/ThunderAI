@@ -790,7 +790,7 @@ export class mzta_Menus {
             }else{  // Classic prompts for the API webchat
                 this.logger.log("fullPrompt: " + fullPrompt);
                 this.logger.log("curr_prompt: " + JSON.stringify(curr_prompt, (key, value) => {
-                    if (typeof key === 'string' && key.endsWith('_api_key')) {
+                    if (typeof key === 'string' && (key.endsWith('_api_key') || key.endsWith('_extra_headers'))) {
                         return '****************';
                     }
                     return value;

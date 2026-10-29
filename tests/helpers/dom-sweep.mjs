@@ -90,6 +90,7 @@ export function sweepValues(c, key = c.key) {
     }
     if (typeof d === 'string') {
         if (/_extra_body$|_extra_options$|_text_format_schema$/.test(key)) return { P: '{"policy": 1}', U: '{"user": 1}' };
+        if (/_extra_headers$/.test(key)) return { P: '{"x-policy": "1"}', U: '{"x-user": "1"}' };
         if (/_top_p$/.test(key)) return { P: '0.3', U: '0.7' };
         if (/_top_k$/.test(key)) return { P: '20', U: '40' };
         if (/_keep_alive$/.test(key)) return { P: '30m', U: '5m' };

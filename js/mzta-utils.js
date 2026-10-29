@@ -1070,7 +1070,12 @@ export function getAPIsInitMessageString(args = {}) {
   }
   let additional_message = '';
   if (additional_messages.length > 0) {
-    additional_message = additional_messages.map(msg => "<span class='info_obj'>" + esc(msg.label) + ":</span> " + esc(msg.value)).join("\n");
+    // A message with `items` is a section: its label on a line of its own, then one
+    // indented "label: value" line per item.
+    const line = (msg, indent = '') => indent + "<span class='info_obj'>" + esc(msg.label) + ":</span> " + esc(msg.value);
+    additional_message = additional_messages.map(msg => Array.isArray(msg.items)
+      ? ["<span class='info_obj'>" + esc(msg.label) + ":</span>", ...msg.items.map(item => line(item, '    '))].join("\n")
+      : line(msg)).join("\n");
   }
   if (additional_message !== '') {
     output += "\n" + additional_message;
@@ -1315,8 +1320,10 @@ export function normalizeReminderMinutes(data_obj, reminder_enabled, logger = nu
   logger?.log("reminderMinutes: raw = " + JSON.stringify(raw) + ", final = " + JSON.stringify(data_obj.reminderMinutes));
 }
 
+// The values never logged: the API keys, and the extra request headers, which may
+// carry one (e.g. Azure's api-key).
 export function isAPIKeyValue(id){
-  return id.endsWith('_api_key');
+  return id.endsWith('_api_key') || id.endsWith('_extra_headers');
 }
 
 export function getConnectionType(prefs, prompt, prefix = null) {

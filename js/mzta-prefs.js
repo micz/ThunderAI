@@ -89,8 +89,9 @@ export const mztaPrefs = {
     // js/mzta-utils.js, inlined rather than imported: that module pulls in
     // mzta-custom-menu-icons.js, a dependency this one has no other use for.
     // A host may hold a user name and password, which are never logged either [#1000].
+    // The extra request headers may carry a key too.
     _logValue(pref_id, value) {
-        if (pref_id.endsWith('_api_key')) return '****************';
+        if (pref_id.endsWith('_api_key') || pref_id.endsWith('_extra_headers')) return '****************';
         return pref_id.endsWith('_host') && typeof value === 'string' ? maskUrlCredentials(value) : value;
     },
 

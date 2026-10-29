@@ -101,6 +101,7 @@ const TESTABLE = {
         host: _val(p + 'openai_comp_host'),
         apiKey: _val(p + 'openai_comp_api_key'),
         use_v1: use_v1_el ? use_v1_el.checked : true,
+        extra_headers: _val(p + 'openai_comp_extra_headers'),
         approved_insecure_origins: approvedOrigins,
       });
     },

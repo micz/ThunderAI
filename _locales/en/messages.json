@@ -1077,6 +1077,50 @@
     "message": "Additional parameters to send with every API call, as a JSON object. Useful for options this service supports but ThunderAI doesn't expose, like disabling the thinking mode: {\"chat_template_kwargs\": {\"thinking\": false}} or {\"top_p\": 0.9}. The parameters managed by ThunderAI (model, messages, streaming, temperature) can't be overridden here. An invalid value is ignored.",
     "description": "Connection panel (OpenAI Compatible API): help text under the extra body JSON field. Keep the JSON examples and parameter names unchanged."
   },
+  "prefs_OptionText_openai_comp_extra_headers_info": {
+    "message": "Additional HTTP headers to send with every request to this service, as a JSON object of text values, like {\"x-opencode-session\": \"thunderai\"} or {\"api-key\": \"your-key\"}. Useful for services and gateways that require their own headers. The headers set by ThunderAI (Content-Type, and Authorization when an API key is set) can't be overridden here. An invalid header is ignored.",
+    "description": "Connection panel (OpenAI Compatible API): help text under the extra headers JSON field. Keep the JSON examples and the header names (x-opencode-session, api-key, Content-Type, Authorization) unchanged."
+  },
+  "prefs_extra_headers_error_name": {
+    "message": "\"$header_name$\" is not a valid header name: use only letters, digits and characters such as - or _.",
+    "description": "Connection panel: validation error shown under the extra headers JSON field when a key is not a valid HTTP header name.",
+    "placeholders": {
+        "header_name": {
+            "content": "$1",
+            "example": "my header"
+        }
+    }
+  },
+  "prefs_extra_headers_error_forbidden": {
+    "message": "The header \"$header_name$\" can't be set by an add-on: Thunderbird ignores it.",
+    "description": "Connection panel: validation error shown under the extra headers JSON field for a header the browser engine does not allow to be set, such as Host or Cookie.",
+    "placeholders": {
+        "header_name": {
+            "content": "$1",
+            "example": "Host"
+        }
+    }
+  },
+  "prefs_extra_headers_error_not_string": {
+    "message": "The value of the header \"$header_name$\" must be text, enclosed in double quotes.",
+    "description": "Connection panel: validation error shown under the extra headers JSON field when a header value is a number, boolean, object or other non-text JSON value.",
+    "placeholders": {
+        "header_name": {
+            "content": "$1",
+            "example": "x-retry-count"
+        }
+    }
+  },
+  "prefs_extra_headers_error_value": {
+    "message": "The value of the header \"$header_name$\" must not contain line breaks.",
+    "description": "Connection panel: validation error shown under the extra headers JSON field when a header value contains a line break or a NUL character.",
+    "placeholders": {
+        "header_name": {
+            "content": "$1",
+            "example": "x-session"
+        }
+    }
+  },
   "prefs_OptionText_openai_comp_use_v1" : {
     "message": "Keep the \"v1\" compatibility",
     "description": "Connection panel (OpenAI Compatible API, advanced): label of the checkbox that keeps the 'v1' segment in API URLs. Keep 'v1' unchanged."
@@ -3091,6 +3135,10 @@
   "prefs_api_extra_body": {
     "message": "Extra body data",
     "description": "Connection panel: label of the field for additional JSON parameters added to every API request body; also used as a parameter label in the AI chat window's settings summary."
+  },
+  "prefs_api_extra_headers": {
+    "message": "Extra headers",
+    "description": "Connection panel: label of the field for additional HTTP headers, as a JSON object, added to every API request; also used as a section label in the AI chat window's settings summary, followed by one line per header."
   },
   "prefs_google_gemini_max_output_tokens_Info": {
     "message": "The maximum number of tokens that can be generated in the response. Leave it empty or at 0 to let the model decide.",

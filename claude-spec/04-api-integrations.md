@@ -437,9 +437,10 @@ with the option off, that the prompt is sent at once on the newer UI.
 ### OpenAI-Compatible (`openai_comp_api`)
 - Module: `js/api/openai_comp.js`
 - Worker: `js/workers/model-worker-openai_comp.js`
-- Settings keys: `openai_comp_host`, `openai_comp_model`, `openai_comp_api_key`, `openai_comp_use_v1`, `openai_comp_chat_name`, `openai_comp_temperature`, `openai_comp_extra_body`
+- Settings keys: `openai_comp_host`, `openai_comp_model`, `openai_comp_api_key`, `openai_comp_use_v1`, `openai_comp_chat_name`, `openai_comp_temperature`, `openai_comp_extra_body`, `openai_comp_extra_headers`
 - Pre-configured providers: `js/api/openai_comp_configs.js` (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity — `custom` is the default/manual entry). The presets carry only `id`, `name`, `chat_name`, `host`, `use_v1` — there is deliberately no per-preset extra body data.
 - **Extra body data**: see [Extra body data](#extra-body-data).
+- **Extra headers**: see [Extra headers](#extra-headers).
 
 ### Extra body data
 
@@ -505,6 +506,56 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
   called in `options/mzta-options.js` after `restoreOptions()` and inside
   `initializeSpecificIntegrationUI()` after its restore callback, so a malformed value saved by an
   earlier session is flagged on load instead of looking fine until touched.
+
+### Extra headers
+
+The header counterpart of the extra body data [#977], for services and gateways that require
+headers of their own: OpenCode Go rejects a chat request without `x-opencode-session` (while its
+`/models` answers without it), Azure OpenAI takes the key in `api-key`, proxies want routing or
+auth headers. **OpenAI-compatible only** today (`openai_comp_extra_headers`); the helpers in
+`js/api/api-utils.js` take no provider argument, so another integration can reuse them.
+
+- **Format.** A raw JSON string holding an object of header name → **string** value, in the
+  Advanced options of the connection panel, right below the extra body data. Values are never
+  coerced: `{"x-n": 1}` is reported, not sent as `"1"`, so what the field shows is what is sent.
+- **Every request of the connection.** `OpenAIComp._headers()` builds the headers of both
+  requests, `fetchModels()` (`GET /models`, also used by the models "Update list" button and the
+  connection test, which therefore read the field from the form) and `fetchResponse()`
+  (`POST /chat/completions`, the chat worker and the special commands, which get the pref like any
+  other `openai_comp_*` field).
+- **Managed headers win.** `mergeHeaders(extra, managed)` puts the extra headers first and the ones
+  ThunderAI sets on top, comparing names **case-insensitively**: an extra `authorization` or
+  `CONTENT-TYPE` neither replaces nor duplicates `Authorization` / `Content-Type` (nor OpenRouter's
+  `HTTP-Referer` / `X-Title` on the models request). As with the extra body, "managed" means *sent
+  by ThunderAI*: with no API key there is no `Authorization`, so an extra one is sent.
+- **Unusable entries are dropped one by one, never fatal.** `parseExtraHeaders()` returns `{}` for
+  a blank string, malformed JSON or a non-object (with a `console.warn`, like `parseExtraBody()`),
+  and drops on its own each entry `extraHeaderProblem(name, value)` rejects, keeping the others:
+
+  | Problem | Rule |
+  |---|---|
+  | `invalid_name` | the name is not an HTTP token (RFC 9110 §5.1: letters, digits and ``!#$%&'*+-.^_`~`` or the vertical bar) |
+  | `forbidden` | a [forbidden request header](https://fetch.spec.whatwg.org/#forbidden-request-header) (`Host`, `Cookie`, `Content-Length`, `Origin`, `Referer`...) or a `Proxy-` / `Sec-` name: `fetch()` drops it silently, so it is filtered out and reported rather than looking accepted |
+  | `not_string` | the value is not a string |
+  | `invalid_value` | the value holds CR, LF or NUL, on which `fetch()` throws and would fail the request |
+
+- **Secrets.** A header may carry a key, so its value is never logged: the parser's warnings name
+  the header only, and every log path that masks `*_api_key` masks `*_extra_headers` too
+  (`isAPIKeyValue()`, `mztaPrefs._logValue()`, `mztaManaged._logValue()`, the prompt dump of
+  `mzta-menus.js`). It is a `nonContent` field for the privacy companion. It is **not** a managed
+  secret (only `*_api_key` is): a policy value is visible in the settings page.
+- UI: the same `check-json` textarea and `_error` div as the extra body, plus the
+  `check-json-headers` class, on which `checkJsonField()` also reports the first entry
+  `extraHeaderProblem()` rejects (`prefs_extra_headers_error_name` / `_forbidden` / `_not_string` /
+  `_value`, naming the header, never its value). Advisory only, as for the extra body.
+- The API chat window's startup notice (`additional_messages_config` in
+  `api_webchat/controller.js`, type `headers`) shows it as a section, never as the raw JSON: the
+  label on a line of its own, then one indented `name: value` line per header
+  `parseExtraHeaders()` keeps, so it lists exactly what is sent. The value of a header whose name
+  looks like a credential (`isCredentialHeader()`: `auth`, `key`, `token`, `secret`, `passw`,
+  `credential`, `signature`, `cookie`, any case) is shown as `****************`; the others are
+  shown as they are. A name-based heuristic for display only: the logs mask every
+  `*_extra_headers` value whatever its header names.
 
 ### Google Gemini (`google_gemini_api`)
 - Module: `js/api/google_gemini.js`

@@ -18,6 +18,7 @@
       "openai_comp_temperature": "hot",
       "openai_comp_use_v1": "true",
       "openai_comp_extra_body": "[1, 2]",
+      "openai_comp_extra_headers": "{\"Host\": \"evil.example\"}",
       "openai_comp_chat_name": "Gateway",
       "openai_comp_chat_name:locked": "no"
     },

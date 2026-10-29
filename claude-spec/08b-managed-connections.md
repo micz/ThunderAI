@@ -150,6 +150,7 @@ still applies.
   | `*_temperature` | `''` or a finite number ≥ 0 |
   | `google_gemini_thinking_budget` | `''` or an integer (`-1` is Gemini's "dynamic") |
   | `*_extra_body` | `''` or JSON that parses to a plain object, the `parseExtraBody()` contract |
+  | `openai_comp_extra_headers` | `''`, or a JSON object every entry of which `extraHeaderProblem()` accepts: stricter than `parseExtraHeaders()`, which drops a bad entry and keeps the rest. The warning names the header, never the value (`_logValue()` masks the whole value) |
 
   A policy host on plain `http:` to another machine is accepted, and counts as approved: its
   origin is in `getApprovedInsecureOrigins()`, so the user is never asked about it (see

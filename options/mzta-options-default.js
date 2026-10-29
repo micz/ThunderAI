@@ -87,7 +87,9 @@ export const integration_options_config = {
         use_v1: true,
         chat_name: 'OpenAI Comp',
         temperature: '',
-        extra_body: ''
+        extra_body: '',
+        // A JSON object of request headers, sent with every request of the connection.
+        extra_headers: ''
     },
     google_gemini: {
         api_key: '',
@@ -139,7 +141,8 @@ export const integration_content_fields = {
     openai_comp: {
         text: [],
         json: ['extra_body'],
-        nonContent: ['host', 'model', 'api_key', 'chat_name', 'temperature']
+        // Request headers carry no mail content, and may carry a secret.
+        nonContent: ['host', 'model', 'api_key', 'chat_name', 'temperature', 'extra_headers']
     },
     google_gemini: {
         text: ['system_instruction'],

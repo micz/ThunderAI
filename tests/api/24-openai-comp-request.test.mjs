@@ -6,6 +6,10 @@
 //  - while streaming, the request includes stream_options: {include_usage: true} (the usage frame
 //    exists only then);
 //  - OpenAI-compatible chat requests use a 300 s per-attempt timeout (OPENAI_COMP_CHAT_TIMEOUT_MS).
+//  - "Extra headers": openai_comp_extra_headers is sent with every request, the models one
+//    (fetchModels) and the chat one (fetchResponse); the headers ThunderAI sets (Content-Type,
+//    Authorization when a key is set) win whatever the case of the extra names, and are never
+//    duplicated; with no extra headers the request is unchanged.
 // Request: <host>[/v1]/chat/completions (openai_comp_use_v1 keeps the v1 path segment), the API
 // key as `Authorization: Bearer` as in the OpenAI API they are compatible with
 // (https://platform.openai.com/docs/api-reference/authentication), only when a key is set.
@@ -98,6 +102,54 @@ k.test('extra-unmanaged-honoured', 'an extra entry for a parameter ThunderAI lea
 
 k.test('extra-invalid', 'an invalid extra body is ignored', async () => {
     assert.deepEqual(await send({ extra_body: '{"a":' }), { model: 'deepseek-chat', messages: MESSAGES, stream: true, stream_options: { include_usage: true } });
+});
+
+async function sendModels(cfg) {
+    net.expect(u => u.method === 'GET' && u.url.endsWith('/models'), () => jsonResponse({ data: [] }));
+    await new OpenAIComp({ host: HOST, apiKey: KEY, ...cfg }).fetchModels({ maxRetries: 0 });
+    return net.calls.at(-1).headers;
+}
+
+const EXTRA_HEADERS = JSON.stringify({ 'x-opencode-session': 'thunderai-abc123', 'api-key': 'azure-FAKE' });
+
+k.test('headers-chat', 'the extra headers are sent with the chat completions request', async () => {
+    await send({ extra_headers: EXTRA_HEADERS });
+    const h = net.calls[0].headers;
+    assert.equal(h['x-opencode-session'], 'thunderai-abc123');
+    assert.equal(h['api-key'], 'azure-FAKE');
+    assert.equal(h['content-type'], 'application/json');
+    assert.equal(h.authorization, 'Bearer ' + KEY);
+});
+
+k.test('headers-models', 'the extra headers are sent with the models request', async () => {
+    const h = await sendModels({ extra_headers: EXTRA_HEADERS });
+    assert.equal(h['x-opencode-session'], 'thunderai-abc123');
+    assert.equal(h['api-key'], 'azure-FAKE');
+    assert.equal(h.authorization, 'Bearer ' + KEY);
+});
+
+k.test('headers-managed-win', 'Content-Type and Authorization win over the extra headers, whatever their case, never duplicated', async () => {
+    const extra_headers = JSON.stringify({ authorization: 'Bearer evil', 'CONTENT-TYPE': 'text/plain', 'x-a': '1' });
+    await send({ extra_headers });
+    for (const h of [net.calls.at(-1).headers, await sendModels({ extra_headers })]) {
+        // A duplicate would reach the wire combined, as "Bearer evil, Bearer <key>".
+        assert.equal(h.authorization, 'Bearer ' + KEY);
+        assert.equal(h['content-type'], 'application/json');
+        assert.equal(h['x-a'], '1');
+    }
+});
+
+k.test('headers-unmanaged-honoured', 'with no key, an extra Authorization header is sent: ThunderAI sets none', async () => {
+    await send({ apiKey: '', extra_headers: '{"Authorization": "Bearer own"}' });
+    assert.equal(net.calls[0].headers.authorization, 'Bearer own');
+});
+
+k.test('headers-none', 'no extra headers, or unusable ones: the headers are unchanged', async () => {
+    for (const extra_headers of [undefined, '', '{"a":', '{"Host": "evil.example", "x-n": 1}']) {
+        await send({ extra_headers });
+        assert.deepEqual(net.calls.at(-1).headers, { 'content-type': 'application/json', authorization: 'Bearer ' + KEY });
+        assert.deepEqual(await sendModels({ extra_headers }), { 'content-type': 'application/json', authorization: 'Bearer ' + KEY });
+    }
 });
 
 k.test('chat-timeout-300s', 'a chat request waits 300 s for the headers, not the default 60 s', async (t) => {

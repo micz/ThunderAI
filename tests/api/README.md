@@ -47,7 +47,7 @@ Helper modules have no `.test.mjs` suffix, so the level-1 glob never runs them.
 
 | File | Spec 04 section(s) |
 |---|---|
-| `01-api-utils` | "Extra body data" (`parseExtraBody()`, worker-safe) |
+| `01-api-utils` | "Extra body data" (`parseExtraBody()`, worker-safe), "Extra headers" (`parseExtraHeaders()`, `extraHeaderProblem()`, `mergeHeaders()`, `isCredentialHeader()`) |
 | `02-anthropic-capabilities` | "Anthropic / Claude": capability table, boundary-aware matching, fallback |
 | `03-openai-capabilities` | "OpenAI API": capability table, prefix matching, permissive fallback |
 | `04-openai-comp-configs` | "OpenAI-Compatible": the presets, no per-preset extra body |
@@ -64,7 +64,7 @@ Helper modules have no `.test.mjs` suffix, so the level-1 glob never runs them.
 | `21-anthropic-400-retry` | "Anthropic / Claude": one-shot retry on a 400 (its clone read within 5 s, a user abort during it), 400 error hints |
 | `22-gemini-request` | "Google Gemini" (the key in `x-goog-api-key`, never in the URL), "Extra body data" (two-level merge), includeThoughts |
 | `23-ollama-request` | "Ollama": think levels, keep_alive, options, Bearer on every endpoint; 300 s timeout |
-| `24-openai-comp-request` | "OpenAI-Compatible", "Extra body data", stream_options; 300 s timeout |
+| `24-openai-comp-request` | "OpenAI-Compatible", "Extra body data", "Extra headers" (models and chat requests), stream_options; 300 s timeout |
 | `25-openai-responses-request` | "OpenAI API": reasoning, text, sampling, limits, pass-through, extra-body gating |
 | `26-client-error-contract` | "Error contract between js/api/* and workers" (the classes); fetchModels through the retry; "`fetchModels()` and `fetchVersion()`" (an HTTP error with its `status` / `statusText`; a `200` with no model list or no Ollama version is an exception; OpenAI Comp's empty list, Ollama's `/api/tags` object) |
 | `27-config-validation` | "Configuration Validation" (with the custom endpoint check, no question asked), "Web Worker Pattern" (module worker per provider) |
