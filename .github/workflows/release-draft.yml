@@ -28,6 +28,10 @@ jobs:
       - name: Build the notes and create the draft
         env:
           GH_TOKEN: ${{ github.token }}
+          # Owner's fine-grained PAT (Contents: read and write on this repository only):
+          # the release author is whoever creates it, so with this token the draft is the
+          # owner's and not github-actions[bot]'s. Without the secret the bot creates it.
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           TAG: ${{ inputs.tag || github.ref_name }}
           OWNER: ${{ github.repository_owner }}
           # Owner's commit emails, excluded from the translators even if not linked to the account
@@ -158,6 +162,11 @@ jobs:
           cat notes.md
 
           # 6. Create the draft, or update it if a release for this tag already exists
+          if [ -n "$RELEASE_TOKEN" ]; then
+            export GH_TOKEN="$RELEASE_TOKEN"
+          else
+            echo "::warning::No RELEASE_TOKEN secret: the draft is created by github-actions[bot]."
+          fi
           if gh release view "$TAG" --json isDraft >/dev/null 2>&1; then
             if [ "$(gh release view "$TAG" --json isDraft -q .isDraft)" = "true" ]; then
               gh release edit "$TAG" --notes-file notes.md
