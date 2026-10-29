@@ -200,6 +200,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `diff_granularity` | `'words'` | Comparison unit the proofreading change picker **opens with**: `'words'` or `'sentences'`. The picker's own toolbar toggle changes it for the current review; there is no per-prompt override — see [07-diff-picker.md](07-diff-picker.md). Rendered as a `<select>` in the advanced section; needs an explicit entry in `restoreOptions()`'s `select-one` branch, since a select restoring to `''` would render blank. |
 | `max_prompt_length` | `30000` | Max prompt string length |
 | `special_command_timeout` | `120000` | Timeout (ms) for special commands (`js/mzta-special-commands.js`). Active companion progress renews the processing budget; provider dispatch starts a fresh response budget. Stalled initialization/queueing also times out. Without active processing, it bounds the whole request. **Always shown**, because a special prompt can use an API even when the global connection is ChatGPT Web; it does not time out ChatGPT Web automation itself. |
+| `api_stream_idle_timeout` | `120000` | Idle timeout (ms) of an API stream: with no data for this long once the answer has started, the worker gives the request up and shows `error_stream_idle_timeout` (#999). `0` = no idle timeout. Exposed in the advanced options of the main options page, right after `special_command_timeout`, as a number input (`min="1000"`, `step="1000"`) with a reset button; **always shown**, like `special_command_timeout` and for the same reason (a special prompt may use an API while the global `connection_type` is `chatgpt_web`). The field's `min` is UI only: `0` comes from storage or a policy, which accepts any non-negative integer (the general number rule, so no `PREF_NUMBER_RANGES` entry, see [08-managed-configuration.md](08-managed-configuration.md)). The workers validate it with `resolveIdleTimeoutMs()` (`js/api/api-idle-timer.js`): a value that is not a non-negative number (the `null` of an emptied field included) falls back to the default. Has no effect on ChatGPT Web connections, which stream through no API worker. Sent in the workers' `init` message by `api_webchat/controller.js` and `js/mzta-special-commands.js`. See [04-api-integrations.md](04-api-integrations.md#stream-idle-timeout). |
 | `batch_max_concurrency` | `1` | Maximum messages processed at once by one `processEmails()` call (auto add tags, spam filter, summarize and translate — on receive and from the context menu). Each message runs its features in series (spam, add_tags, summary, translate), so this is also the maximum number of AI requests in flight. There are no per-feature caps. Overlapping calls (several accounts) can exceed it. A value that is not a finite number ≥ 1 (a cleared field is saved as `NaN`) falls back to the default. Number input (`min="1"`) in the advanced section of the main options page, with its default wired into `restoreOptions()`. Does not affect the context-menu summarize flow. See [01-architecture.md](01-architecture.md#per-message-pipelines-in-processemails). |
 
 ### Companion processing
@@ -807,7 +808,14 @@ except `chatgpt_web` (which has no API endpoint). `refreshConnTestVisibility()` 
 `pages/_lib/mzta-design.css`): `idle` (grey dot, "Connection not tested yet", link "Test
 now"), `loading` (dot becomes a spinner via the `mztaspin` keyframe, "Testing
 connection…", link hidden), `ok` (green dot, "Connected — <API> reachable", link
-"Re-test"), `error` (red dot + red text with the error detail, link "Retry").
+"Re-test"), `warning` (amber dot + amber text, `connTest_ok_redirect`, link "Re-test": a
+custom endpoint answered through a redirect; it names the address to enter instead, and says the
+chat may not work through it, since the test is a GET and only a POST shows whether a redirect
+keeps the content of the requests, see [04-api-integrations.md "Redirects"](04-api-integrations.md#redirects)),
+`error` (red dot + red text with the error detail, link "Retry").
+`showConnTestResult(result, strip)` shows a `runConnectionTest()` result: `error` when it failed,
+`warning` when it carries a `redirectTo`, `ok` otherwise; the options page, the wizard and the
+strips of `connection-ui.js` all call it.
 `setConnTestState(state, message, strip)`, exported by `js/mzta-connection-test.js` and
 shared by every host, updates dot/text/link of `strip` (found via `.conn_test_text` /
 `.conn_test_link`; it defaults to `#mzta_conn_test`); i18n keys are `connTest_*` in
@@ -870,6 +878,59 @@ The two optional registry fields:
 A successful Ollama test also re-runs `updateOllamaModelCapabilityUI()`, because granting the
 host permission through the test is often what makes `/api/show` reachable in the first place
 — see [04-api-integrations.md](04-api-integrations.md#ollama-ollama_api).
+
+### Connection Settings Panel — Custom Endpoint Address
+
+The address of the two custom endpoints (`{prefix}ollama_host`, `{prefix}openai_comp_host`) follows
+the rules of [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy)
+[#1000]. Each host field has two notes under it, in every panel `injectConnectionUI()` builds
+(options page, feature pages, custom prompts, setup wizard). The two integrations are
+`ENDPOINT_INTEGRATIONS`.
+
+- **The red note** (`#{prefix}{integration}_host_endpoint_note`, `.endpoint_note`, `[hidden]` when
+  empty), filled by `checkEndpointField(modelId_prefix, integration)`: a non-empty address goes
+  through `resolveEndpointAccess(host)` **without `ask`**, so the field never shows a dialog. When the
+  address cannot be used the note says why: the localized `endpoint_error_*` message, or
+  `endpoint_insecure_note` for an unencrypted server on another machine not yet allowed. It runs:
+  - at page load, for the restored values: `updateEndpointNotes(modelId_prefix)`, called by
+    `updateWarnings()` (options page, feature pages, custom prompts when a prompt is loaded into
+    the form) and by the setup wizard after its `restoreOptions()`. A user with a remote `http:`
+    Ollama not yet allowed sees the note at once;
+  - on `change` of the field;
+  - on every `storage.local` change of `_approved_insecure_origins`, so the note goes away as soon
+    as the user allows the server with "Test now" or "Update list" (here or on another page).
+
+  Saving is never blocked; the requests are. A field the policy locked (`data-mzta-managed="1"`) is
+  skipped: its host is approved without asking.
+- **The amber note** (`#{prefix}{integration}_host_redirect_note`, `.endpoint_note.endpoint_note_warning`,
+  the `--warnColor` of `mzta-design.css`), filled by `showEndpointRedirectNote()` from the stored
+  redirect of the address in the field (`getEndpointRedirect()`, see
+  [04-api-integrations.md "Redirects"](04-api-integrations.md#redirects)):
+  - a redirect that a POST went through (`method: 'POST'`, a 307/308): `endpoint_redirect_note`,
+    naming the destination `to`;
+  - a redirect only a GET went through (the test, the model list): `endpoint_redirect_note_unverified`,
+    naming `to` and saying the chat may not work through it;
+  - a redirect that failed: `endpoint_redirect_failed_note_to` naming `to` when it is known,
+    `endpoint_redirect_failed_note` otherwise;
+  - no entry: hidden.
+
+  It is filled at page load (`updateEndpointNotes()`) and on every `storage.local` change of
+  `_endpoint_redirects`, so a redirect found by a request made meanwhile (the chat, a feature, the
+  buttons of the panel) shows at once. It **stays until the value of the field changes**: on
+  `change`, `onEndpointHostChange()` removes the stored redirect of the previous address
+  (`clearEndpointRedirect()`, the value the field held when its notes were last filled) and hides
+  the note; the storage change then shows the entry of the new address, if it has one. An address
+  that only gained or lost spaces or trailing slashes is the same host, and keeps both. No buttons.
+- **"Test now" and "Update list"** check the address with `resolveEndpointAccess(host, {ask: true})`
+  before anything is sent: an unencrypted server on another machine not yet allowed gets the
+  `endpoint_insecure_confirm` dialog, once per origin. "Test now" asks it after the host permission:
+  `permissions.request()` is only allowed from a user input handler, so it must be the first `await`
+  of the click, before anything reads the storage; an unusable address (not a URL, credentials in
+  it) is refused before it with the synchronous `parseEndpoint()`, so it asks for nothing. Refused, their own error shows the message,
+  and nothing is sent. An empty host keeps its previous behaviour (the disabled button; the
+  connection test's permission error). After the request, both save its redirect outcome.
+- **The Ollama capability probe** never asks: an unencrypted server not yet allowed is simply not
+  probed, like an unreachable one. It saves its redirect outcome too.
 
 ### Connection Settings Panel — "Update list" Model Fetch Buttons
 
@@ -1391,19 +1452,35 @@ unchanged so `updateDescription()` keeps working.
 
 The note itself is **untinted**: only the body text carries the provider colour, as a 3px
 `--tint-accent` left bar on the `.conntype_<provider> .info_specific` spans
-(`prefsInfoDesc_1/2/3/4/7/8`). The single `#mzta_info_guide` link (`prefs_full_guide`) is
-**moved inside the active provider's span** by `updateDescription()`, so it reads inline at
-the end of that sentence instead of breaking onto its own line below the accent bar.
+(`prefsInfoDesc_1/2/3/4/7/8`). The provider's links sit in one row, `#mzta_info_links`,
+**moved inside the active provider's span** by `updateDescription()`, so it stays within the
+accent bar. The row holds two links: `#mzta_info_guide` (`prefs_full_guide`) and
+`#mzta_info_extra`, a second page for the providers that have one. They are **chips centred on
+their own line below the text** (the row is a centred, wrapping flex; each chip has a pill
+border and a light background mixed from `--tint-accent`, so it takes the provider colour
+too). Like `.info_specific`, the row and the chips must keep their `display` in CSS:
+`updateDescription()` reveals them with `style.display = ""`.
 
 **Provider reactivity.** `updateDescription()` (`options/mzta-options.js`) does three
 things per provider, all driven by the existing `change` listener on `#connection_type`
 (plus one call at init): toggles the `.conntype_*` span visibility via inline `display`,
-toggles the `tint_*` class on `#miczDescription`, and moves `#mzta_info_guide` into the
-active span (idempotent — it only re-appends when the parent differs) while pointing it at
-`getMiczItUrl(CONN_GUIDE_PATH[conntype])`. `CONN_GUIDE_PATH` is **sparse on purpose** —
-only `chatgpt_web` (status page) and `ollama_api` (CORS page) have a dedicated
-documentation page, and the link is hidden (`display:none`) for the other four rather
-than falling back to a generic page.
+toggles the `tint_*` class on `#miczDescription`, and fills `#mzta_info_links` and moves it into
+the active span (idempotent — it only re-appends when the parent differs).
+- `#mzta_info_guide` points at `getMiczItUrl(CONN_GUIDE_PATH[conntype])`, the provider's setup
+  guide on micz.it (`thunderbird-addon-thunderai/guides/<provider>/`: `chatgpt-web`, `openai-api`,
+  `ollama`, `openai-compatible-api`, `google-gemini`, `claude-api`). Every provider has one,
+  translated in all the languages of `getMiczItUrl()`, so it is always shown.
+- `#mzta_info_extra` comes from `CONN_EXTRA_LINK[conntype]` (its text from the entry's message,
+  plus ` ›`), and is hidden for the providers without an entry. **ChatGPT Web** gets
+  `prefs_status_page` (the same lowercase text as the link in the ChatGPT Web window; the chip
+  capitalises its first letter in CSS, `#mzta_info_links a::first-letter`) → `https://micz.it/thunderbird-addon-thunderai/status/`, always the
+  English page; **Ollama** gets `CORS_alternative_1` ("Problems setting CORS?", the same text as in the
+  connection panel) → the CORS page through `getMiczItUrl()`.
+
+A provider with neither link would get the whole row hidden (`display:none`) rather than
+pointed somewhere generic; with nothing selected the row is hidden too. Only pages that micz.it
+translates may go through `getMiczItUrl()`: the status page, for one, exists only in English (a
+language prefix gives a 404).
 
 Note `.info_specific` must keep `display: block` in CSS, because `updateDescription()`
 reveals the active provider's text with `style.display = ""`, which falls back to the
@@ -1477,9 +1554,9 @@ the "leave retired keys in place" handling of the older keys above.
 The app-level "Advanced options" disclosure is the `#mzta_adv_toggle` button and the
 `#mzta_adv_panel` it opens below itself (the connection panel's own disclosure mirrors it, see
 "Connection Settings Panel — Advanced Options Disclosure"). The panel holds the chat window size and
-position, `max_prompt_length`, `special_command_timeout`, `batch_max_concurrency`, the behaviour
-switches, `diff_granularity`, `ai_processing_enabled` (or its `#no_privacy` notice), `do_debug` and
-the cache block below.
+position, `max_prompt_length`, `special_command_timeout`, `api_stream_idle_timeout`,
+`batch_max_concurrency`, the behaviour switches, `diff_granularity`, `ai_processing_enabled` (or
+its `#no_privacy` notice), `do_debug` and the cache block below.
 
 - **Collapsed on every open.** The page opens with `aria-expanded="false"` and `.hidden` on the
   panel; a click flips both. The state is purely local UI: **no preference is persisted**.
@@ -1487,9 +1564,10 @@ the cache block below.
   hides its row (`#max_prompt_length_tr`) while the global select holds `chatgpt_web` or nothing,
   and shows and enables it for any API; it runs at load and on every `connection_type` change. The
   row follows *relevance*, not the field's `disabled` flag: a policy lock disables the field too, and
-  that must grey it out, never hide the row it explains. `special_command_timeout` is always shown
-  (see its row in "UI & Feature Preferences").
-- **Reset buttons.** `#reset_max_prompt_length` and `#reset_special_command_timeout` (each marked
+  that must grey it out, never hide the row it explains. `special_command_timeout` and
+  `api_stream_idle_timeout` are always shown (see their rows in "UI & Feature Preferences").
+- **Reset buttons.** `#reset_max_prompt_length`, `#reset_special_command_timeout` and
+  `#reset_api_stream_idle_timeout` (each marked
   `data-mzta-companion-of` its field) put the `prefs_default` value back in the field and store it
   with `setPref()`, as a number. They fire no `change`. For a policy-locked key they do nothing
   (`isLockedKey()`), without relying on the button being disabled. `batch_max_concurrency` has none.
@@ -1500,6 +1578,14 @@ the cache block below.
   happens; confirmed, `taStorage.clearAllRecords()` removes every `msg:` record - never a preference
   or any other key - then an `alert()` reports the count (`prefs_storage_clear_done`) and the size is
   read again.
+- **Allowed unencrypted servers.** `#insecure_origins_list` lists the user's own approvals
+  (`getUserApprovedInsecureOrigins()`, see
+  [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy)),
+  one origin per line with a "Remove" button (`revokeInsecureOrigin()`), or
+  `prefs_insecure_origins_empty`. Removed, the next request to that server is blocked until it is
+  allowed again. The hosts the policy sets are not listed: they are never asked about. The list is
+  rendered at load and again on every `storage.local` change of `_approved_insecure_origins`, so an
+  approval given in the connection panel of the same page shows at once.
 
 ### Owl for Exchange Warning (`#owl_warning`)
 
@@ -1706,6 +1792,14 @@ case for nearly every user and is swallowed silently.
   key uses either prefix, and each of the five `storage.local.get(null)` enumerations in
   `js/mzta-storage.js` filters on `msg:` before touching a record — including
   `clearAllRecords()`, which would otherwise delete every preference.
+- **The approved unencrypted servers** (`_approved_insecure_origins` in `storage.local`, see
+  [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy))
+  are not a preference: no `prefs_default` entry, no policy key, read and written only by
+  `js/mzta-endpoint-approvals.js`. The leading underscore keeps it out of every preference scan.
+- **The redirects of the custom endpoints** (`_endpoint_redirects` in `storage.local`, see
+  [04-api-integrations.md "Redirects"](04-api-integrations.md#redirects)) are not a preference
+  either: one entry per configured host, read and written only by `js/mzta-endpoint-redirects.js`,
+  with the same leading underscore.
 - **The two #129 legacy reads** in `js/mzta-utils.js` (`migrateCustomPromptsStorage()`,
   `migrateDefaultPromptsPropStorage()`) keep pointing at `storage.sync` on purpose: their job is
   to drain old data *out* of it. They always end with the key removed from sync: when

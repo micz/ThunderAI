@@ -757,6 +757,8 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 .conn_test_link:hover { text-decoration: underline; }
 /* State variants driven by data-state on the strip */
 .conn_test_strip[data-state="ok"] .conn_test_dot { background: var(--success); }
+.conn_test_strip[data-state="warning"] .conn_test_dot { background: var(--warning); }
+.conn_test_strip[data-state="warning"] .conn_test_text { color: var(--warning); }
 .conn_test_strip[data-state="error"] .conn_test_dot { background: #d93025; }
 .conn_test_strip[data-state="error"] .conn_test_text { color: #d93025; }
 /* Loading: turn the dot into a spinner (reuses the mztaspin keyframe). */
@@ -786,12 +788,37 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     line-height: 1.55;
     transition: border-color .2s;
 }
-/* Sits inline at the end of the active provider's sentence (moved there by
-   updateDescription()), so it flows with the text rather than breaking below. */
-#mzta_info_guide {
-    margin-left: 5px;
+/* The provider's links, as chips centred on their own line below the active
+   provider's text. The row is moved inside that span by updateDescription(), so
+   it stays within the accent bar. Row and chips must keep their display value
+   here — updateDescription() reveals them with style.display = "", falling back
+   to these values. */
+#mzta_info_links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 8px 0 2px;
+}
+#mzta_info_links a {
+    display: inline-block;
+    padding: 3px 12px;
+    border: 1px solid color-mix(in srgb, var(--tint-accent, var(--accent)) 40%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--tint-accent, var(--accent)) 10%, transparent);
+    color: var(--tint-accent, var(--accent));
+    font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
+    text-decoration: none;
+    transition: background .15s;
+}
+/* Some chip texts reuse a lowercase string (prefs_status_page): capitalise them on screen only. */
+#mzta_info_links a::first-letter {
+    text-transform: uppercase;
+}
+#mzta_info_links a:hover {
+    background: color-mix(in srgb, var(--tint-accent, var(--accent)) 18%, transparent);
 }
 
 /* ===========================================================================
@@ -1013,6 +1040,22 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     padding-top: 12px;
     font-size: 12px;
     color: var(--dim);
+}
+/* The unencrypted servers the user allowed, one per line with its Remove button. */
+.mzta_insecure_origins_list {
+    list-style: none;
+    margin: 6px 0 0 0;
+    padding: 0;
+    font-size: 12px;
+    color: var(--dim);
+}
+.mzta_insecure_origins_list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 2px 0;
+    overflow-wrap: anywhere;
 }
 
 /* ===========================================================================

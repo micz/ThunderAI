@@ -334,6 +334,12 @@ export function installApis(browser, m) {
             m.tabSends.push({ tabId, message: clone(message) });
             return m.tabAnswer ? m.tabAnswer(tabId, message) : true;
         },
+        // The ChatGPT Web window's script injection: recorded in `calls`, never run.
+        async executeScript(tabId, details) {
+            rec('tabs.executeScript', [tabId, { ...details, code: '(' + String(details?.code ?? '').length + ' chars)' }]);
+            if (!m.tab(tabId)) throw new Error('Invalid tab ID: ' + tabId);
+            return [];
+        },
     }, u);
 
     const icon = which => ({
@@ -377,7 +383,8 @@ export function installApis(browser, m) {
     }, u);
 
     // Only what opening the API chat window takes (openChatGPT()): the window itself is the
-    // webchat area's. Each window gets one tab, whose content never answers.
+    // webchat area's. Each window gets one tab, whose content never answers. onRemoved is the
+    // event the ready listener watches (a test closes a window by calling its listeners).
     browser.windows = strict('browser.windows', {
         onRemoved: makeEvent(),
         async create(opts) {

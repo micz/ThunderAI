@@ -93,7 +93,8 @@ tests/
 │   │   ├── known-issues.mjs    the known-issue mechanism: knownTest(), runKnown()
 │   │   └── dom-harness.mjs     DOM harness: openPage(), openDocument(), the strict browser proxy,
 │   │                           settle() (the only core file that imports jsdom)
-│   ├── plugins/<area>.mjs      an area's hooks into the core (today: managed.mjs, chatgptweb.mjs)
+│   ├── plugins/<area>.mjs      an area's hooks into the core (today: managed.mjs, chatgptweb.mjs,
+│   │                           webchat.mjs)
 │   ├── known-issues/<area>.mjs an area's known issues and their shape (today: managed.mjs,
 │   │                           static.mjs, prompts.mjs, api.mjs, ui.mjs, webchat.mjs, migration.mjs,
 │   │                           compose.mjs, background.mjs, chatgptweb.mjs)
@@ -118,6 +119,8 @@ tests/
 ├── chatgptweb/                 the ChatGPT Web area (its DOM files are dom/<page>/chatgptweb-*): README, the
 │                               controlled clock, the pre-script cut, the ChatGPT page, level 1 (loader, pre-script)
 ├── ci/                         level 1 of the CI scripts (today the policy surface report), and its README
+├── _stall_server/              not a test: a local AI server that stalls mid-answer, for testing the
+│                               stream idle timeout and Stop by hand in Thunderbird, and its README
 ├── <area>/                     level 1 of another area
 └── dom/<page>/                 DOM: one file per page × scenario, shared by every area
 ```
@@ -235,7 +238,7 @@ does, in the browser's order:
 1. parses the page's **real HTML file** at its `moz-extension://` URL;
 2. exposes the jsdom window's globals (`window`, `document`, `navigator`, `Event` and the
    other event classes, `HTMLElement` and friends, `DOMParser`, `XPathResult`, `Option`,
-   `customElements`, `ShadowRoot`, `NodeFilter`…) on
+   `customElements`, `ShadowRoot`, `NodeFilter`, `CSSStyleSheet`…) on
    `globalThis`, where the page's module code looks them up. The list is explicit: copying
    the whole window would shadow Node's own `URL`, timers and so on;
 3. installs the browser mock through `startPage()`, extended with the page-side APIs
@@ -368,6 +371,10 @@ rules are in [`managed/README.md`](managed/README.md#potential-bugs-todo-tests).
   updating that area's locators.
 - Real layout and CSS. jsdom has no layout engine: the DOM tests check **where** an element is
   inserted, not what it looks like.
+- A real stalled stream. The api area runs the stream idle timeout on mock timers and a mock
+  fetch; in Thunderbird it is tested by hand with the stall server in
+  [`_stall_server/`](_stall_server/README.md) (spec 04 "Stream idle timeout"), which is the one to
+  use and to update when that behaviour changes.
 - Everything outside the areas listed above is still tested by hand in Thunderbird. What the
   managed configuration leaves out is in [`managed/README.md`](managed/README.md#what-is-not-covered),
   what the static checks leave out in [`static/README.md`](static/README.md#what-is-not-covered),

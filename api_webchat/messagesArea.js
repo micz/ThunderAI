@@ -27,7 +27,8 @@ import { renderThinkingBlock } from './thinkingBlock.js';
 import { StreamingMessage } from './streamingMessage.js';
 import {
     SHARED_BASE_CSS,
-    BUTTON_CSS
+    BUTTON_CSS,
+    buildStyleSheet
 } from './sharedStyles.js';
 import {
     buildSparkleIcon,
@@ -53,8 +54,7 @@ import {
 } from './usageBadge.js';
 const messagesAreaTemplate = document.createElement('template');
 
-const messagesAreaStyle = document.createElement('style');
-messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + USAGE_CHIP_CSS + `
+const messagesAreaSheet = buildStyleSheet(SHARED_BASE_CSS + BUTTON_CSS + USAGE_CHIP_CSS + `
     /* Exactly one box here scrolls, and it is #messages. The host must not:
        a wheel event over #messages bubbles up to it, so if both declared
        overflow the transcript could end up scrolling in a box whose scrollTop
@@ -425,8 +425,7 @@ messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + USAGE_CHIP_CSS + 
             display: none;
         }
     }
-`;
-messagesAreaTemplate.content.appendChild(messagesAreaStyle);
+`);
 
 const messagesDiv = document.createElement('div');
 messagesDiv.id = 'messages';
@@ -522,8 +521,11 @@ class MessagesArea extends HTMLElement {
         this._onMessagesScroll = this._onMessagesScroll.bind(this);
         this._onUserScrollIntent = this._onUserScrollIntent.bind(this);
         this._onPickerResize = this._onPickerResize.bind(this);
+        this._onLinkActivate = this._onLinkActivate.bind(this);
+        this._onLinkDragStart = this._onLinkDragStart.bind(this);
 
         const shadowRoot = this.attachShadow({ mode: 'open' });
+        shadowRoot.adoptedStyleSheets = [messagesAreaSheet];
         shadowRoot.appendChild(messagesAreaTemplate.content.cloneNode(true));
 
         this.messages = shadowRoot.querySelector('#messages');
@@ -554,6 +556,10 @@ class MessagesArea extends HTMLElement {
         // from inside any picker's shadow root and there is nothing to tear down
         // per turn.
         this.messages.addEventListener('mzta-picker-resize', this._onPickerResize, { passive: true });
+        // Links in the transcript never navigate; see _onLinkActivate().
+        this.messages.addEventListener('click', this._onLinkActivate);
+        this.messages.addEventListener('auxclick', this._onLinkActivate);
+        this.messages.addEventListener('dragstart', this._onLinkDragStart);
         // Window resizing and font zoom change scrollHeight without firing a
         // scroll event: realign if we are still following.
         this._resizeObs = new ResizeObserver(() => {
@@ -586,6 +592,9 @@ class MessagesArea extends HTMLElement {
         this.messages.removeEventListener('wheel', this._onUserScrollIntent);
         this.messages.removeEventListener('keydown', this._onUserScrollIntent);
         this.messages.removeEventListener('mzta-picker-resize', this._onPickerResize);
+        this.messages.removeEventListener('click', this._onLinkActivate);
+        this.messages.removeEventListener('auxclick', this._onLinkActivate);
+        this.messages.removeEventListener('dragstart', this._onLinkDragStart);
         this._resizeObs?.disconnect();
         this._contentObs?.disconnect();
         if (this._scrollRaf) {
@@ -633,6 +642,49 @@ class MessagesArea extends HTMLElement {
     // changing size under the user's own hands.
     _onPickerResize() {
         this._updateJumpButton();
+    }
+
+    // Links in the transcript (issue #1001). Model output is untrusted - a
+    // prompt injection in a mail can make the model write any link - so no link
+    // is ever left to the page's default action, which Thunderbird decides and
+    // which could navigate this window itself. Every activation of an anchor is
+    // cancelled; an http(s) link with no credentials in it is then opened in the
+    // system's default browser, and anything else (mailto:, a relative URL, a
+    // fragment, another scheme, a malformed href) stays inert.
+    //
+    // 'click' covers the left button and Enter on a focused link (the browser
+    // turns that key into a click), with or without Ctrl/Cmd/Shift; 'auxclick'
+    // the middle button, which Gecko does not report as a click. Listening on
+    // #messages covers every turn - answers, user bubbles, notices - and the
+    // picker's shadow root too, since both events are composed: the anchor is
+    // found on composedPath(), the target being retargeted to the <diff-picker>.
+    _onLinkActivate(event) {
+        const path = event.composedPath();
+        const anchor = linkInPath(path, this.messages);
+        if (!anchor) { return; }
+        event.preventDefault();
+        // Only the primary click and the middle button open: a right button's
+        // auxclick is the context menu's business, and a click Gecko might still
+        // report for the middle button is left to its auxclick, so the link is
+        // not opened twice.
+        const opens = (event.type === 'click') ? event.button === 0 : event.button === 1;
+        // Inside the diff picker a click chooses a side (REVIEW) or places the
+        // caret (EDIT): the link it lands on is part of the text being picked,
+        // not something to follow.
+        if (!opens || path.some(el => el.localName === 'diff-picker')) { return; }
+        const url = openableLinkUrl(anchor.getAttribute('href'));
+        if (!url) { return; }
+        browser.windows.openDefaultBrowser(url).catch((e) => {
+            console.error("[ThunderAI] Unable to open the link in the default browser:", e);
+        });
+    }
+
+    // Dragging a link carries its URL to wherever it is dropped, which may load
+    // it (this window, a Thunderbird tab): a link cannot be dragged at all.
+    _onLinkDragStart(event) {
+        if (linkInPath(event.composedPath(), this.messages)) {
+            event.preventDefault();
+        }
     }
 
     // Pure state. The jump button no longer keys off this flag - it is decided
@@ -1961,6 +2013,33 @@ async function copyTextToClipboard(text) {
             return false;
         }
     }
+}
+
+// The first <a> on an event's composed path, looked up only below `boundary`
+// (#messages): the path goes on up to the window, and nothing outside the
+// transcript is a link of the transcript.
+function linkInPath(path, boundary) {
+    for (const el of path) {
+        if (el === boundary) { return null; }
+        if (el.localName === 'a') { return el; }
+    }
+    return null;
+}
+
+// The URL to open for a transcript link's href, or null when it must stay
+// inert. Parsed with no base, so a relative URL or a bare fragment throws and
+// is refused; only http: and https: are opened, and never with a user name or
+// a password in them (https://user:pass@host can disguise the real host).
+function openableLinkUrl(href) {
+    let url;
+    try {
+        url = new URL(href);
+    } catch (e) {
+        return null;
+    }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') { return null; }
+    if (url.username !== '' || url.password !== '') { return null; }
+    return url.href;
 }
 
 // The user's message, as TEXT: every line break (\n) becomes a <br> element,

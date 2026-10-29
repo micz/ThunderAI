@@ -42,6 +42,22 @@ policy is reflected at the next start and nothing of the user's is ever touched.
   `position_display`, `position_compose`, `position_context`, `show_in`, `custom_icon`,
   `need_custom_text`, `api_type`, `chatgpt_web_model`, `chatgpt_web_project`,
   `chatgpt_web_custom_gpt` — never the prompt text.
+  On the way back, `getOrgPrompts()` applies only the **display** fields of the entry stored
+  under the org prompt's composed id (`applyOrgPromptDisplayProperties()`, whitelist
+  `ORG_PROMPT_DISPLAY_FIELDS`): `position_display`, `position_compose`, `position_context`,
+  `show_in`, `custom_icon`. They override what the policy says (the policy has no way to lock
+  them), each only when in domain (a number or numeric string, one of the four `show_in`
+  values, a string); a missing or malformed entry or field leaves the policy value, or the
+  `normalizePromptFields()` default. The other five fields, and anything else an entry holds,
+  are ignored: `need_custom_text`, `api_type` and the ChatGPT Web fields of an org prompt stay
+  the policy's. An entry whose id the policy no longer supplies (a removed prompt, a changed
+  `_org_id`) is never applied, and disappears at the next Save of either prompt page, which
+  rewrites the whole store from what it lists.
+  `savePrompt()` routes an org prompt (`is_default: "0"` like a custom one) to the built-ins'
+  branch, not to `setCustomPrompts()`: it writes that prompt's entry and every built-in's,
+  **keeping** the other entries of the store, so saving one prompt never erases the org
+  prompts' preferences. `clearPromptAPI()` on an org prompt therefore changes nothing that is
+  read back: its `api_type` and connection fields are the policy's.
 
 **Three getters, deliberately.** All three are thin views over `buildPromptSet()`, which
 merges the four sets once and **marks** the three reasons a prompt can be inactive —
@@ -471,6 +487,36 @@ it. It is used for texts enforced by an enterprise policy, which the user cannot
 the feature pages do not apply it to the user's own edits. **A change to a shipped text's
 output format, or to a parser, must update that table**, or valid policies start being
 rejected.
+
+**The feature pages check that the JSON format is still there and valid.** For a special
+prompt whose parser reads a JSON answer — `specialPromptNeedsJson(id)`, i.e. the ids with
+`responseKeys` in the contract: spam filter, add tags, both calendar ids, task, translate —
+`bindSpecialPromptEditor()` (`pages/_lib/feature-page.js`) runs `checkPromptTextJson(text)`
+(`js/mzta-prompts.js`) on load, on every input and on Reset. The text is the whole prompt,
+instructions included, so the check looks for the format **inside** it:
+
+- the candidates are the **top-level** `{...}` blocks, braces matched outside JSON strings; a
+  `{%placeholder%}` outside a string is skipped whole (its braces are not the format's), one
+  inside a string is just string content. A block left open runs to the end of the text and
+  nothing after its opening brace is a candidate of its own, so an inner object never passes
+  for the format when the outer one lost its closing brace;
+- the text is fine when one candidate is **strict JSON** (`JSON.parse`): straight double
+  quotes, ASCII whitespace only, no `<...>` or unquoted example values;
+- no block at all → `prompt_json_error_missing`; blocks but none valid →
+  `prompt_json_error_invalid` followed by the parser message of the longest candidate (its
+  position is relative to the block), without SpiderMonkey's `JSON.parse:` prefix.
+
+The reason goes into a `div.json_error` (id: the textarea id + `_json_error`) created right
+after the `.editor-wrap`, via `textContent`, and the textarea gets a red **border-color**
+(`--jsonError`) inline — never a wider border, which would shift the text off the placeholder
+highlight mirror (same 1px border box). **Advisory only**, like the connection panel's JSON
+fields: Save stays available and the text is saved as typed. A text enforced by the policy is
+not flagged (the user cannot fix it; the policy validation has its own contract). Every shipped
+`en` text passes; that is why the spam filter example reads `"spamValue": 0` (the range stated
+in the sentence before it) and the calendar `attendees` example is an array of quoted strings.
+A user text saved before that change, still holding the old examples, is flagged until edited
+or reset. Translations that do not pass are fixed through Weblate (the five
+`prompt_*_full_text` descriptions say the example must stay valid JSON).
 
 When the policy enforces a text, the feature page shows it read-only (`lockEnforcedPromptText()`
 in `pages/_lib/managed-ui.js`) with the managed marker, and its Save/Reset buttons are inert.

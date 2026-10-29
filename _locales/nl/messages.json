@@ -1,6 +1,6 @@
 {
     "extensionDescription": {
-        "message": "Gebruik ChatGPT, Google Gemini, Claude of Ollama om uw emails te verbeteren."
+        "message": "Gebruik ChatGPT, Google Gemini, Claude of Ollama om uw e-mails te verbeteren!"
     },
     "prompt_translate_this": {
         "message": "Vertaal"
@@ -48,7 +48,7 @@
         "message": "Beheer prompts"
     },
     "customPrompts_managePrompts_info_default_3": {
-        "message": "Indien alles correct is, klik op de 'Alles opslaan' knop na het importeren."
+        "message": "Indien alles correct is, klik op de 'Alles opslaan'-knop na het importeren."
     },
     "customPrompts_import_saved_now": {
         "message": "De geïmporteerde prompts worden onmiddellijk opgeslagen."
@@ -440,5 +440,50 @@
     },
     "prefs_OptionText_action_auto_automatic": {
         "message": "Wanneer de e-mail geopend wordt"
+    },
+    "menu_title": {
+        "message": "ThunderAI"
+    },
+    "prompt_reply_custom_command": {
+        "message": "Reageer met commando..."
+    },
+    "prompt_lang": {
+        "message": "Beantwoord in het"
+    },
+    "prompt_reply_advanced": {
+        "message": "Reageer in deze thread"
+    },
+    "prompt_classify": {
+        "message": "Indelen"
+    },
+    "prompt_this": {
+        "message": "Dit prompten"
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Je kunt prompts importeren en exporteren. Bestaande prompts met dezelfde ID worden overschreven. Prompts met een nieuwe ID worden toegevoegd."
+    },
+    "customPrompts_form_label_ID_rules_prompt": {
+        "message": "Dient uniek te zijn, kleine letters, zonder spaties en mag niet beginnen met prompt_"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Ingeschakeld"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "Vraag om extra tekst"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Vergelijkingsweergave inschakelen"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "Beschikbaar als \"Actie\" op \"Vervang tekst\" staat."
+    },
+    "customPrompts_do_reply": {
+        "message": "Antwoord maken"
+    },
+    "customPrompts_insert_at_cursor": {
+        "message": "Invoegen bij cursorpositie"
+    },
+    "chatgpt_win_working": {
+        "message": "Wordt aan gewerkt..."
     }
 }

@@ -220,7 +220,7 @@ startup; only processing calls await its registration-state read.
 
 Committed hook tests: `tests/background/11-ai-processing.test.mjs`,
 `tests/background/12-processing-worker.test.mjs` and
-`tests/dom/webchat/webchat-20-processing.dom.mjs`, with field coverage in
+`tests/dom/webchat/webchat-22-processing.dom.mjs`, with field coverage in
 `tests/static/06-processing-content-fields.test.mjs`. Hook tests use a scripted companion,
 not inference/model downloads, and cover inactive forwarding, active hook transforms,
 response/history isolation, trust/result validation, restart,

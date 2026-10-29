@@ -40,12 +40,14 @@ The area is built group by group:
 | B | rendering the stream | done (`webchat-05` to `09`) |
 | C | actions on an answer | done (`webchat-10` to `12`) |
 | D | the diff picker (spec 07) | done (`webchat-13` to `15`) |
+| E | links in the transcript and the page's CSP (issue #1001) | done (`webchat-20`) |
 
 ## Layout
 
 ```
 tests/
 ├── helpers/known-issues/webchat.mjs   the known issues, their shape (validateKnown()), and webchatTests()
+├── helpers/plugins/webchat.mjs        the plugin: browser.windows.openDefaultBrowser() on the pages
 ├── fixtures/webchat/                  sanitizer-payloads.json: the answers that probe the sanitizer
 ├── webchat/
 │   ├── README.md                      this file
@@ -61,8 +63,10 @@ tests/
 The area **imports only the core** (`helpers/core/`): `openPage()` and `assertHarnessClean()` from
 `helpers/core/dom-harness.mjs`, `knownTest()` through `helpers/known-issues/webchat.mjs`, `EXT_ORIGIN`
 from `helpers/core/browser-mock.mjs`. It never imports the managed layer (`helpers/*.mjs`) nor another
-area's helpers, and has **no plugin**. Every file runs with no policy and ends with
-`assertHarnessClean(ctx)`.
+area's helpers. Its plugin, `helpers/plugins/webchat.mjs`, adds one page-side API the core does not
+model, `browser.windows.openDefaultBrowser()` (the links of the transcript); `openWebchat({openDefaultBrowser})`
+decides its outcome, and the call is read back with `ctx.apiCalls('browser.windows.openDefaultBrowser')`.
+Every file runs with no policy and ends with `assertHarnessClean(ctx)`.
 
 One file is **one initial state** (the query string, the stored preferences, the background's
 `api_send`): its tests run in order on one opened window, and a later test builds on what an earlier
@@ -91,6 +95,9 @@ one did (each file says so).
 | `dom/webchat/webchat-17-info-notice` | spec 01 "Component structure" ("Startup notice": an Ollama API window whose prompt name, model and host each hold every sanitizer payload; the three values shown as written, as text; no element in the notice but its own `<i>`, `<span class="info_obj">` and `<br>`; nothing executable in the notice nor in the header) |
 | `dom/webchat/webchat-18-echoed-br` | spec 01 "One render path, no router" ("An echoed `<br>` is one line break": a proofreading answer echoing the selection's `<br>` and a newline, split across tokens or in one, renders ONE `<br>`; "use this answer" sends one, Copy writes one `\n`; `<BR/>`, `<br />` and a hardbreak likewise; two `<br>` written stay two; a fence untouched; a list item never welded; "In a raw HTML block, a newline between two pieces of text is a line break": `<div>Ciao\ngrazie</div>`, through an inline tag, text lines after a lone `<br>`, while formatting - after a block tag or a `<br>`, before indentation, inside a list or a `<pre>` - stays whitespace), spec 07 "Line breaks: `<br>` is a block separator" (with a change accepted, the result of the picker keeps the line break, not a paragraph break), spec 01 "Actions on an answer" ("Only the edge `<br>` are trimmed": the `<br>` of a list item, of a table cell and of a selection inside one paragraph reach the mail, the `<br>` at the edges of a selection do not; jsdom keeps no selection in a shadow root, so the page gets a `getSelection()` over a real `Range`) |
 | `dom/webchat/webchat-19-insert-at-cursor` | spec 07 "Scope" (action "3" from a compose window is not forced to a replace: `chatgpt_insertAtCaret`, never `chatgpt_replaceSelectedText`), spec 02 "Action Types Reference" (the standalone button reads "Insert at cursor"), spec 01 "Actions on an answer" (`chatgpt_insertAtCaret` carries `tabId` and `mailMessageId` -1 besides the text), "Transcript DOM contract" (an earlier answer's toolbar: Copy and Insert at cursor, inserting its own answer) |
+| `dom/webchat/webchat-20-links` | spec 01 "Links in the transcript" (a left, Ctrl/Cmd/Shift or middle click on an http(s) link cancelled and opened once in the default browser, the page staying put; a right button never opening; credentials, `mailto:`, and - added by the test, as the sanitizer never lets them through - other schemes, relative URLs, fragments, malformed or missing hrefs inert but cancelled; `HTTPS://` in capitals opening normalized; a click off a link left alone; a drag starting on a link cancelled, on text not; a failing `openDefaultBrowser()` logged with no unhandled rejection; a link in the diff picker cancelled and never opened), "Content Security Policy" (the meta CSP first in `<head>` with exactly its directives; no inline script, `<style>`, `style` attribute or handler in `index.html`; every shadow root styled by one adopted sheet, no `<style>` anywhere) |
+| `dom/webchat/webchat-21-endpoint-redirect` | spec 04 "Redirects" (an Ollama API window: the `endpoint_redirect` message of the worker saved into `_endpoint_redirects` under its host, with the origin of the destination; the same outcome again writes nothing; a failed redirect saved as failed; a success with no redirect removing the entry; nothing shown in the transcript) |
+| `dom/webchat/webchat-22-processing` | spec 09 (ThunderAI Privacy active in the API chat: the prepared prompts, the busy-message notice, the answers buffered and restored; see "Companion processing" below) |
 | `webchat/99-harness-known-issues` | the known-issue shape (level 1) |
 
 ## The fake Worker
@@ -306,7 +313,7 @@ choice made on a side now moves the `.is-current` ring and repaints the stepper,
 already in force (spec 07 "The toolbar", `webchat-15`).
 ## Companion processing
 
-`tests/dom/webchat/webchat-20-processing.dom.mjs` checks prepared prompts, the visible
+`tests/dom/webchat/webchat-22-processing.dom.mjs` checks prepared prompts, the visible
 busy-message notice and buffered/restored answers in the actual chat components.
 Its background stub implements active hooks; the real transport and validation are
 tested in `tests/background/11-ai-processing.test.mjs` and `12-processing-worker.test.mjs`.

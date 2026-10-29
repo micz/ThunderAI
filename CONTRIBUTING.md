@@ -21,6 +21,24 @@ More information: [How to translate ThunderAI](https://micz.it/thunderbird-addon
 Please **do not edit `CHANGELOG.md`**: it is generated automatically from the release notes and committed by a GitHub workflow.
 If your change needs to be mentioned in the release notes, edit only `options/mzta-release-notes.html`.
 
+## New AI providers and presets
+
+ThunderAI sends the content of your emails to the AI provider you choose, so new integrations and new ready-made configurations are added with care.
+
+**Any OpenAI-compatible service can already be used without changing the code**: choose the *custom* configuration in the OpenAI Compatible API settings and set the host of the service, turning the *"v1"* segment on or off as needed. A pull request is not needed to use a service with ThunderAI.
+
+The ready-made configurations (presets) are a short list of widely used providers and are not a directory of every compatible service. A new preset can be considered when the provider:
+
+- is widely used and well known independently of the pull request;
+- has a public privacy policy and terms of service that apply to its API;
+- exposes a stable API that follows the OpenAI Chat Completions format.
+
+Please **open an issue before writing the code** for a new preset or a new integration, so that it can be discussed first. A pull request adding a provider must be tested in Thunderbird with that provider, not only with the automated tests.
+
+If you work for, or are affiliated with, the provider you are proposing, please say so in the issue. Requests from providers to add their own service are generally not accepted, unless the provider is already widely used.
+
+A preset can be removed if the service stops working, changes its API in an incompatible way, or no longer meets these criteria.
+
 ## Branches
 
 | Branch | Purpose |

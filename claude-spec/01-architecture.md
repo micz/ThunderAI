@@ -883,7 +883,8 @@ runtime messages and the `preparePopupMenu` payload.
 The interactive chat window used by every API provider (not ChatGPT Web) lives in
 `api_webchat/`. It is a standalone extension page (`index.html`) built from two native
 Web Components with Shadow DOM and a controller that wires them to a per-provider Web
-Worker. No framework, no build step; plain ES6 modules under the strict default MV2 CSP.
+Worker. No framework, no build step; plain ES6 modules under the strict default MV2 CSP, plus
+the page's own, stricter meta CSP (see *Content Security Policy* below).
 
 ### Component structure
 
@@ -935,6 +936,28 @@ window sends the background `{command: "${llm}_ready_${call_id}", window_id}` (i
 from `windows.getCurrent()`). The background listener registered for that `call_id` answers by
 sending the window `api_send` (the prompt), or `api_error` when the configuration is unusable
 (an empty key or model). Nothing is sent to the worker before that answer.
+
+**The background's ready listener and its lifetime.** `openChatGPT()` waits for the ready message
+through `addReadyListener(command, onReady)` (`mzta-background.js`), the same for the five API
+providers and for ChatGPT Web (whose loader sends `chatgpt_web_ready_<call_id>`, see
+[04-api-integrations.md](04-api-integrations.md)):
+
+- **Registered** before the window is opened: one `runtime.onMessage` listener that calls
+  `onReady(message, sender.tab)` for exactly that command and returns `false` for any other. Then
+  `openWindow(win_options)` calls `windows.create()` and, with the id it returns, registers one
+  `windows.onRemoved` listener for that window.
+- **Removed**, both listeners together by the one `cleanup()`, on whichever end comes first:
+  1. the ready message answered with `api_send` (or `chatgpt_send`, after the script injection);
+  2. the ready message answered with `api_error` (an empty key, model, host or version): each
+     branch calls `cleanup()` before its `return`;
+  3. the window closed before any ready message was answered: the window never got ready, the user
+     closed it first, or the page refused to start (an unknown `llm`, see above).
+  `windows.create()` rejecting removes the message listener too. When the ready message is answered
+  while `windows.create()` is still pending, the `onRemoved` listener is never registered.
+
+So no listener outlives its window: before, the message listener was removed only on the
+`api_send` path, and every other opening left one behind for the rest of the session.
+`tests/background/40-chat-window-ready` checks the three ends for every provider.
 
 **Startup notice.** The first turn is an info notice (`.turn-info > .message.info`) built by
 `getAPIsInitMessageString()` (`js/mzta-utils.js`): the API, the model, the host, the version, the
@@ -1784,7 +1807,11 @@ they are the theming channel: component styles consume `var(--token)` and must n
 literal colours or their own `prefers-color-scheme` block. Rules that are not custom
 properties (focus rings, `@keyframes`, the reduced-motion opt-out, the shared button
 families) live in `api_webchat/sharedStyles.js` as CSS strings that each component
-concatenates into its own `<style>`.
+concatenates into its own stylesheet. That stylesheet is a constructable `CSSStyleSheet`
+(`buildStyleSheet()` in `sharedStyles.js`, built once per module) set as the shadow root's
+`adoptedStyleSheets`, **never a `<style>` element**: the page's CSP has `style-src 'self'`,
+which blocks every `<style>` element, including one created by script, and every `style="…"`
+attribute in markup. Setting `el.style.x` from script (CSSOM) is not affected and stays allowed.
 
 `--accent` mirrors `pages/_lib/mzta-design.css` so the whole add-on shares one blue.
 
@@ -1848,6 +1875,71 @@ waiting for it, so the promise rejects with `Actor 'Conduits' destroyed before q
 `chatgpt_replyMessage`, `chatgpt_replaceSelectedText`) is still `await`ed because its reply
 is needed before the window goes away. Same pattern in `js/mzta-chatgpt.js` (the legacy
 fixed-div buttons).
+
+### Links in the transcript
+
+Model output is untrusted: a prompt injection hidden in a mail can make the model write links,
+and the sanitizer keeps `http:`, `https:` and `mailto:` hrefs (issue #1001). No link in the
+transcript is ever left to the page's default action, which Thunderbird decides and which could
+navigate the chat window itself. `MessagesArea` listens on `#messages` (added in
+`connectedCallback()`, removed in `disconnectedCallback()`):
+
+- **`click` and `auxclick`** (`_onLinkActivate()`): when the event's `composedPath()` holds an
+  `<a>` below `#messages`, the event is **always** `preventDefault()`ed. `click` covers the left
+  button and Enter on a focused link (turned into a click by the browser), with or without
+  Ctrl/Cmd/Shift; `auxclick` the middle button, which Gecko does not report as a click. Only a
+  `click` with `button` 0 and an `auxclick` with `button` 1 open the link, so the right button
+  never does and a middle button reported as both opens it once.
+- **What opens:** the href, parsed by `new URL()` with **no base** (`openableLinkUrl()`), opened
+  with `browser.windows.openDefaultBrowser(url.href)` only when the protocol is exactly `http:` or
+  `https:` and both `username` and `password` are empty. Everything else stays inert: `mailto:`,
+  a relative URL, a fragment, any other scheme, a malformed or missing href, a link with
+  credentials (`https://user:pass@host` can disguise the real host). A rejection of
+  `openDefaultBrowser()` is logged with `console.error`. No permission is needed.
+- **The diff picker:** a link inside `<diff-picker>` (found on the composed path, the event's
+  target being retargeted to the picker) is cancelled but **never opened**: there a click chooses
+  a side (REVIEW) or places the caret (EDIT).
+- **`dragstart`** (`_onLinkDragStart()`): cancelled when it starts on a link, so a link cannot be
+  dragged to somewhere that would load it. Dragging other text is unaffected.
+
+Delegation on `#messages` covers every turn. Today only answers (and the picker) can hold an
+anchor: the user bubble is text, the startup notice holds only its own `<i>`/`<span>`/`<br>`,
+errors and the thinking block are `textContent`.
+
+The summary and translation panels of the message pane are not concerned: they live in the mail
+document, where Thunderbird's own link handling for messages applies.
+
+### Content Security Policy
+
+`api_webchat/index.html` declares, as the first element of `<head>`:
+
+```
+default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self';
+connect-src 'self' http: https:; worker-src 'self'; object-src 'none'; frame-src 'none';
+base-uri 'none'; form-action 'none'
+```
+
+It is defense in depth on top of the sanitizer, combined with (not replacing) the manifest's
+default MV2 CSP. What each directive relies on:
+
+- **`script-src 'self'`**: no inline script, inline handler, `eval` or `new Function` in the page
+  or what it loads (`markdown-it.min.js`, `diff.js`, `mzta-html-lines.js` included).
+- **`style-src 'self'`**: `styles.css` only; the components use `adoptedStyleSheets` (see
+  *Theming*) and `index.html` holds no `style` attribute (`message-input { position: relative }`
+  is in `styles.css`).
+- **`img-src 'self'`**: the page's images are the add-on's own (`images/*.svg`, `loading.gif`);
+  the icons are built with `createElementNS`. A remote `<img>` would not load even if the
+  sanitizer let one through.
+- **`connect-src 'self' http: https:`**: the page itself fetches, not only its worker:
+  `contextWindow.js` asks Ollama (`/api/ps`, `/api/show`, at the user's host, often
+  `http://localhost`), Gemini and Anthropic for the model's context window. The provider requests
+  run in the worker; allowing any http(s) host keeps them working whether or not the worker
+  inherits the page's policy, including user-defined custom and local endpoints.
+- **`worker-src 'self'`**: the module workers of `js/workers/`.
+- **`object-src`, `frame-src`, `base-uri`, `form-action` `'none'`**: nothing is embedded, no
+  `<base>`, no form.
+
+`frame-ancestors` is left out: a meta CSP ignores it.
 
 ### Actions on an answer
 
@@ -2060,8 +2152,8 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 |------|------|
 | `api_webchat/controller.js` | Wires components ↔ worker (DI); owns `promptData`, font-zoom, runtime-command handling |
 | `api_webchat/styles.css` | Design tokens (`:root` + dark override), page shell and header bar — the single source of truth for colour |
-| `api_webchat/sharedStyles.js` | CSS strings (`SHARED_BASE_CSS`, `BUTTON_CSS`) concatenated into each shadow root's `<style>`: focus rings, keyframes, reduced motion, button families |
-| `api_webchat/messagesArea.js` | `<messages-area>` custom element: turn-wrapped transcript, per-answer toolbar + newest-answer action bar, prompt-anchored scrolling + `#jumpToLatest` button, orchestrates the render helpers below |
+| `api_webchat/sharedStyles.js` | CSS strings (`SHARED_BASE_CSS`, `BUTTON_CSS`) concatenated into each shadow root's stylesheet: focus rings, keyframes, reduced motion, button families; `buildStyleSheet()`, the constructable sheet each component adopts |
+| `api_webchat/messagesArea.js` | `<messages-area>` custom element: turn-wrapped transcript, per-answer toolbar + newest-answer action bar, prompt-anchored scrolling + `#jumpToLatest` button, link handling (see *Links in the transcript*), orchestrates the render helpers below |
 | `api_webchat/messageInput.js` | `<message-input>` custom element: input field, send/stop buttons, floating status pill (waiting / streaming / done / error), custom-text flow |
 | `api_webchat/splitButton.js` | `<split-button>` custom element: the "use this answer" button + optional reply-type dropdown; owns the outside-click and Escape listener lifecycle (`connectedCallback`/`disconnectedCallback`) |
 | `api_webchat/streamingMessage.js` | `StreamingMessage` class: per-turn token/thinking accumulation, `<think>` handling, markdown-it render; `flush()` returns an immutable HTML snapshot |
@@ -2082,6 +2174,9 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 | `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders unified toolbar (spam badge, summary button, translation button, in that order) and content panels (generic error, generic info, translation, summary, in that order) in message display via `#mzta-container` — see [The message-display panels and dialogs](#the-message-display-panels-and-dialogs-jsmzta-compose-scriptjs) |
 | `js/mzta-chatgpt.js` | ChatGPT Web integration (opens browser window, reads DOM) |
 | `js/mzta-special-commands.js` | Handles special prompt actions (add_tags, calendar, task) |
+| `js/mzta-endpoint-policy.js` | The address rules of the custom endpoints (Ollama, OpenAI Compatible): http/https only, no credentials, unencrypted only to loopback or an approved origin. Pure, worker-safe: see [04 "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy) |
+| `js/mzta-endpoint-approvals.js` | The approved unencrypted origins (`storage.local` `_approved_insecure_origins`, plus the policy's hosts) and `resolveEndpointAccess()`, the check every caller runs before a request. Pages and background only |
+| `js/mzta-endpoint-redirects.js` | The redirects of the custom endpoints (`storage.local` `_endpoint_redirects`, one entry per host): `saveEndpointRedirect()` stores the outcome reported by the API classes (`redirect_info`, forwarded by the workers with `endpoint_redirect`), read by the amber note under the host fields. Pages and background only: see [04 "Redirects"](04-api-integrations.md#redirects) |
 | `js/mzta-spamreport.js` | Spam filter logic |
 | `js/mzta-i18n.js` | i18n helper (wraps `browser.i18n.getMessage`) |
 | `js/mzta-logger.js` | Debug logging (`taLogger`). `log()` gates only the `console.log`, **not its argument** — the message string is always built. On a hot path (per SSE chunk / per line in the workers) guard the call site with `if (taLog.do_debug)`, or do not log there at all. `warn()`/`error()` are never gated. |

@@ -105,9 +105,12 @@
                 <span class="conntype_openai_comp_api info_specific">__MSG_prefsInfoDesc_4__</span>
                 <span class="conntype_google_gemini_api info_specific">__MSG_prefsInfoDesc_7__</span>
                 <span class="conntype_anthropic_api info_specific">__MSG_prefsInfoDesc_8__</span>
-                <!-- Moved inline into the active provider's span by updateDescription(),
-                     which also sets the href and hides it when there is no guide. -->
-                <a id="mzta_info_guide" href="#" style="display:none;">__MSG_prefs_full_guide__ &rsaquo;</a>
+                <!-- Moved into the active provider's span by updateDescription(), which
+                     also sets each href and hides the links the provider does not have. -->
+                <span id="mzta_info_links" style="display:none;">
+                  <a id="mzta_info_guide" href="#" style="display:none;">__MSG_prefs_full_guide__ &rsaquo;</a>
+                  <a id="mzta_info_extra" href="#" style="display:none;"></a>
+                </span>
               </p>
             </div>
           </div>
@@ -304,6 +307,16 @@
               <span class="mzta_help">__MSG_prefs_OptionText_special_command_timeout_Info__</span>
             </div>
 
+            <!-- API stream idle timeout -->
+            <div class="mzta_field">
+              <span class="opt_title">__MSG_prefs_OptionText_api_stream_idle_timeout__</span>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="number" id="api_stream_idle_timeout" name="api_stream_idle_timeout" min="1000" step="1000" class="option-input" />
+                <button type="button" id="reset_api_stream_idle_timeout" class="btn_small" data-mzta-companion-of="api_stream_idle_timeout">__MSG_reset_default__</button>
+              </div>
+              <span class="mzta_help">__MSG_prefs_OptionText_api_stream_idle_timeout_Info__</span>
+            </div>
+
             <!-- Batch max concurrency -->
             <div class="mzta_field">
               <span class="opt_title">__MSG_prefs_OptionText_batch_max_concurrency__</span>
@@ -407,6 +420,15 @@
                 <input type="checkbox" id="do_debug" name="do_debug" class="option-input" />
                 <span class="track"></span>
               </label>
+            </div>
+
+            <!-- Unencrypted servers the user allowed (js/mzta-endpoint-approvals.js) -->
+            <div class="mzta_adv_row">
+              <div class="mzta_adv_info">
+                <div class="mzta_adv_name">__MSG_prefs_insecure_origins_title__</div>
+                <div class="mzta_adv_desc">__MSG_prefs_insecure_origins_info__</div>
+                <ul id="insecure_origins_list" class="mzta_insecure_origins_list"></ul>
+              </div>
             </div>
 
             <!-- Storage -->

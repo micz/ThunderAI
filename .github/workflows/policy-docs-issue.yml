@@ -39,8 +39,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # CHECK: the site repository. sync-site-languages.yml sends to micz/micz.github.io.
-  SITE_REPO: micz/micz.it
+  # The site repository, the same one sync-site-languages.yml sends to.
+  SITE_REPO: micz/micz.github.io
   ISSUE_LABEL: thunderai-policy
 
 jobs:

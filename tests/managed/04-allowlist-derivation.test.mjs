@@ -47,9 +47,9 @@ test('the generated keys are covered by the derivation', () => {
     }
 });
 
-test('the counts in the spec hold: 140 of 149, nine excluded', () => {
-    assert.equal(keys.length, 149, 'prefs_default size changed: update spec 08 "The allowlist"');
-    assert.equal(keys.filter(k => m.mztaManaged.hasManagedValue(k)).length, 140);
+test('the counts in the spec hold: 141 of 150, nine excluded', () => {
+    assert.equal(keys.length, 150, 'prefs_default size changed: update spec 08 "The allowlist"');
+    assert.equal(keys.filter(k => m.mztaManaged.hasManagedValue(k)).length, 141);
     assert.deepEqual(keys.filter(EXCLUDED).sort(), [
         'add_tags_enabled_accounts', 'api_webchat_font_scale', 'chatgpt_win_height',
         'chatgpt_win_left', 'chatgpt_win_save_position', 'chatgpt_win_top', 'chatgpt_win_width',

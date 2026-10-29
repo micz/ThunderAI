@@ -609,6 +609,87 @@ export function checkSpecialPromptText(id, text) {
     return result;
 }
 
+/**
+ * Whether the feature of special prompt `id` parses a JSON answer, so its text must carry the
+ * JSON response format: the ids with responseKeys in SPECIAL_PROMPT_TEXT_CONTRACT.
+ */
+export function specialPromptNeedsJson(id) {
+    return (SPECIAL_PROMPT_TEXT_CONTRACT[id]?.responseKeys || []).length > 0;
+}
+
+// Index of the brace closing the {...} block opened at `start`, or -1 when the text ends first.
+// Braces count outside JSON strings only; a {%placeholder%} outside a string is skipped whole,
+// its braces are not the format's.
+function findJsonBlockEnd(text, start) {
+    let depth = 0;
+    let inString = false;
+    for (let i = start; i < text.length; i++) {
+        const c = text[i];
+        if (inString) {
+            if (c === '\\') i++;
+            else if (c === '"') inString = false;
+            continue;
+        }
+        if (c === '"') {
+            inString = true;
+        } else if (c === '{') {
+            if (text[i + 1] === '%') {
+                const close = text.indexOf('%}', i + 2);
+                if (close < 0) return -1;
+                i = close + 1;
+            } else {
+                depth++;
+            }
+        } else if (c === '}') {
+            if (--depth === 0) return i;
+        }
+    }
+    return -1;
+}
+
+/**
+ * Check the JSON response format inside a special prompt text, which also holds the
+ * instructions around it (the settings pages, for the ids of specialPromptNeedsJson()).
+ *
+ * The candidates are the top-level {...} blocks of the text (findJsonBlockEnd()); a block
+ * left open runs to the end of the text, and nothing after its opening brace is a candidate of
+ * its own: an inner object must not pass for the format when the outer one lost its closing
+ * brace. The text is fine when one candidate is strict JSON (JSON.parse).
+ *
+ *   found - the text has at least one {...} block
+ *   error - '' when a candidate parses, otherwise the parser message for the longest candidate
+ *           (the likeliest to be the format), without the "JSON.parse:" prefix SpiderMonkey adds
+ */
+export function checkPromptTextJson(text) {
+    const candidates = [];
+    for (let i = 0; i < text.length; i++) {
+        if (text[i] !== '{' || text[i + 1] === '%') continue;
+        const end = findJsonBlockEnd(text, i);
+        if (end < 0) {
+            candidates.push(text.slice(i));
+            break;
+        }
+        candidates.push(text.slice(i, end + 1));
+        i = end;
+    }
+    if (candidates.length === 0) return { found: false, error: '' };
+
+    let error = '';
+    let errorLength = -1;
+    for (const candidate of candidates) {
+        try {
+            JSON.parse(candidate);
+            return { found: true, error: '' };
+        } catch (e) {
+            if (candidate.length > errorLength) {
+                errorLength = candidate.length;
+                error = String(e.message).replace(/^\s*JSON\.parse:\s*/, '');
+            }
+        }
+    }
+    return { found: true, error: error };
+}
+
 
 // The organization prompts supplied by an enterprise policy: the fourth prompt set,
 // alongside defaultPrompts, _custom_prompt and _special_prompts.
@@ -629,7 +710,52 @@ async function getOrgPrompts() {
     // selection_text and custom_text_array, buildPromptSet() sets the transient flags - would
     // otherwise change the cached prompt for the rest of the session (a custom placeholder
     // expanded once would stay frozen at that value until Thunderbird restarts).
-    return structuredClone(await loadOrgPrompts());
+    const prompts = structuredClone(await loadOrgPrompts());
+    if (prompts.length === 0) return prompts;
+    // Read on every call, not cached with the policy: the user changes them while the session
+    // runs (pages/menu_order/, pages/customprompts/).
+    const prefs = await browser.storage.local.get({_default_prompts_properties: null});
+    prompts.forEach(prompt => applyOrgPromptDisplayProperties(prompt, prefs._default_prompts_properties));
+    return prompts;
+}
+
+// The fields of a stored _default_prompts_properties entry an organization prompt takes back:
+// its menu positions, its visibility and its icon, the user's own display preferences.
+// setDefaultPromptsProperties() writes the same entry for an org prompt as for a built-in
+// (keyed by its composed id), so the entry also holds need_custom_text, api_type and the
+// ChatGPT Web fields: those stay what the policy says, as does anything else an entry holds.
+const ORG_PROMPT_DISPLAY_FIELDS = {
+    position_display: isStoredPosition,
+    position_compose: isStoredPosition,
+    position_context: isStoredPosition,
+    show_in: v => ['popup', 'context', 'both', 'none'].includes(v),
+    custom_icon: v => typeof v === 'string',
+};
+
+// A position as setDefaultPromptsProperties() writes it: a number, or a numeric string. ""
+// is what it writes for a prompt that had none, so it leaves the policy value in place.
+function isStoredPosition(v) {
+    if (typeof v === 'number') return Number.isFinite(v);
+    return typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v));
+}
+
+/**
+ * Apply the user's stored display properties to an organization prompt, in place.
+ *
+ * Only the ORG_PROMPT_DISPLAY_FIELDS, and each only when its stored value is in domain: a
+ * missing or malformed entry, or field, leaves the policy value (or the normalised default).
+ * An entry for an org prompt the policy no longer supplies (or supplies under another
+ * _org_id) is simply never looked up; the next Save of either page drops it, as it rewrites
+ * the whole store from the prompts it lists.
+ */
+function applyOrgPromptDisplayProperties(prompt, storedProps) {
+    if (!storedProps || typeof storedProps !== 'object' || Array.isArray(storedProps)) return;
+    if (!Object.prototype.hasOwnProperty.call(storedProps, prompt.id)) return;
+    const entry = storedProps[prompt.id];
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return;
+    for (const [field, isValid] of Object.entries(ORG_PROMPT_DISPLAY_FIELDS)) {
+        if (isValid(entry[field])) prompt[field] = entry[field];
+    }
 }
 
 async function loadOrgPrompts() {
@@ -1115,24 +1241,29 @@ async function getCustomPrompts() {
     }
 }
 
+// The _default_prompts_properties entry of one prompt (a built-in or an org prompt).
+function defaultPromptPropertiesEntry(prompt) {
+    return {
+        position_compose: (prompt.position_compose === undefined || prompt.position_compose === "undefined") ? "" : prompt.position_compose,
+        position_display: (prompt.position_display === undefined || prompt.position_display === "undefined") ? "" : prompt.position_display,
+        position_context: (prompt.position_context === undefined || prompt.position_context === "undefined") ? "" : prompt.position_context,
+        // Never persist an out-of-domain value: "" used to be written for a
+        // missing flag, and it reads as "on" in the editor but "off"
+        // everywhere else. Store the canonical "0"/"1" instead.
+        need_custom_text: isPromptFlagOn(prompt.need_custom_text) ? "1" : "0",
+        chatgpt_web_model: (prompt.chatgpt_web_model === undefined || prompt.chatgpt_web_model === "undefined") ? "" : prompt.chatgpt_web_model,
+        chatgpt_web_project: (prompt.chatgpt_web_project === undefined || prompt.chatgpt_web_project === "undefined") ? "" : prompt.chatgpt_web_project,
+        chatgpt_web_custom_gpt: (prompt.chatgpt_web_custom_gpt === undefined || prompt.chatgpt_web_custom_gpt === "undefined") ? "" : prompt.chatgpt_web_custom_gpt,
+        api_type: (prompt.api_type === undefined || prompt.api_type === "undefined") ? "" : prompt.api_type,
+        show_in: (prompt.show_in === undefined || prompt.show_in === "undefined") ? "popup" : prompt.show_in,
+        custom_icon: (prompt.custom_icon === undefined || prompt.custom_icon === "undefined") ? "" : prompt.custom_icon,
+    };
+}
+
 export async function setDefaultPromptsProperties(prompts) {
     let default_prompts_properties = {};
     prompts.forEach((prompt) => {
-        default_prompts_properties[prompt.id] = {
-            position_compose: (prompt.position_compose === undefined || prompt.position_compose === "undefined") ? "" : prompt.position_compose,
-            position_display: (prompt.position_display === undefined || prompt.position_display === "undefined") ? "" : prompt.position_display,
-            position_context: (prompt.position_context === undefined || prompt.position_context === "undefined") ? "" : prompt.position_context,
-            // Never persist an out-of-domain value: "" used to be written for a
-            // missing flag, and it reads as "on" in the editor but "off"
-            // everywhere else. Store the canonical "0"/"1" instead.
-            need_custom_text: isPromptFlagOn(prompt.need_custom_text) ? "1" : "0",
-            chatgpt_web_model: (prompt.chatgpt_web_model === undefined || prompt.chatgpt_web_model === "undefined") ? "" : prompt.chatgpt_web_model,
-            chatgpt_web_project: (prompt.chatgpt_web_project === undefined || prompt.chatgpt_web_project === "undefined") ? "" : prompt.chatgpt_web_project,
-            chatgpt_web_custom_gpt: (prompt.chatgpt_web_custom_gpt === undefined || prompt.chatgpt_web_custom_gpt === "undefined") ? "" : prompt.chatgpt_web_custom_gpt,
-            api_type: (prompt.api_type === undefined || prompt.api_type === "undefined") ? "" : prompt.api_type,
-            show_in: (prompt.show_in === undefined || prompt.show_in === "undefined") ? "popup" : prompt.show_in,
-            custom_icon: (prompt.custom_icon === undefined || prompt.custom_icon === "undefined") ? "" : prompt.custom_icon,
-        };
+        default_prompts_properties[prompt.id] = defaultPromptPropertiesEntry(prompt);
     });
     //console.log('>>>>>>>>>>>>>> default_prompts_properties: ' + JSON.stringify(default_prompts_properties));
     await browser.storage.local.set({_default_prompts_properties: default_prompts_properties});
@@ -1833,8 +1964,9 @@ export async function savePrompt(prompt) {
         await setSpecialPrompts(specialPrompts);
         return;
     }
-    // Custom Prompt
-    if ((prompt.is_default === "0")||(prompt.is_default === 0)) {
+    // Custom Prompt. An org prompt carries is_default "0" too, but it is never stored: it
+    // goes with the built-ins below, whose store holds its display preferences.
+    if (((prompt.is_default === "0")||(prompt.is_default === 0)) && String(prompt.is_org) !== '1') {
         let customPrompts = await getCustomPrompts();
         let index = customPrompts.findIndex(p => p.id === prompt.id);
         if (index === -1) {
@@ -1844,15 +1976,20 @@ export async function savePrompt(prompt) {
         }
         // console.log(">>>>>>>>>>>> savePrompt customPrompts: " + JSON.stringify(customPrompts));
         await setCustomPrompts(customPrompts);
-    } else {       // Default Prompt
-        let defaultPrompts = await getDefaultPrompts_withProps();
-        let index = defaultPrompts.findIndex(p => p.id === prompt.id);
-        if (index === -1) {
-            defaultPrompts.push(prompt);
-        } else {
-            defaultPrompts[index] = prompt;
-        }
-        await setDefaultPromptsProperties(defaultPrompts);
+    } else {       // Default Prompt, or Org Prompt
+        // Every built-in is rewritten as it reads now (so they keep their positions, 1..n
+        // when nothing was stored yet), then this prompt's entry. The other entries - the
+        // org prompts' display preferences - are kept: setDefaultPromptsProperties() would
+        // replace the whole store with the built-ins alone and erase them. For an org prompt
+        // only the display fields of its entry are ever read back (getOrgPrompts()), so its
+        // text, api_type and the rest stay the policy's.
+        const stored = (await browser.storage.local.get({_default_prompts_properties: null}))._default_prompts_properties;
+        const props = (stored && typeof stored === 'object' && !Array.isArray(stored)) ? stored : {};
+        (await getDefaultPrompts_withProps()).forEach(p => {
+            props[p.id] = defaultPromptPropertiesEntry(p);
+        });
+        props[prompt.id] = defaultPromptPropertiesEntry(prompt);
+        await browser.storage.local.set({_default_prompts_properties: props});
     }
 }
 

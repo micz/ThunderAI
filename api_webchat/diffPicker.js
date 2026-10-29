@@ -16,7 +16,11 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { SHARED_BASE_CSS, BUTTON_CSS } from './sharedStyles.js';
+import {
+    SHARED_BASE_CSS,
+    BUTTON_CSS,
+    buildStyleSheet
+} from './sharedStyles.js';
 // The sanitizer + tag taxonomy live in the shared rich-text layer - ONE security
 // boundary, ONE allowlist. This module used to define them; they moved so the
 // webchat renderer and the picker cannot drift apart. The segmentation machinery
@@ -1087,8 +1091,7 @@ export function sliceHtmlByText(blockHtml, start, end, fallbackText) {
 
 const pickerTemplate = document.createElement('template');
 
-const pickerStyle = document.createElement('style');
-pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
+const pickerSheet = buildStyleSheet(SHARED_BASE_CSS + BUTTON_CSS + `
     :host {
       display: block;
     }
@@ -1677,8 +1680,7 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
       font-weight: 650;
       color: var(--accent-soft-ink);
     }
-`;
-pickerTemplate.content.appendChild(pickerStyle);
+`);
 
 const pickerRoot = document.createElement('div');
 pickerRoot.className = 'picker-root';
@@ -1689,6 +1691,7 @@ class DiffPicker extends HTMLElement {
     constructor() {
         super();
         const shadowRoot = this.attachShadow({ mode: 'open' });
+        shadowRoot.adoptedStyleSheets = [pickerSheet];
         shadowRoot.appendChild(pickerTemplate.content.cloneNode(true));
 
         this._root = shadowRoot.querySelector('.picker-root');

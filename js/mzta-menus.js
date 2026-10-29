@@ -590,7 +590,7 @@ export class mzta_Menus {
                         *   "description": "Detailed event description including agenda, action items, and relevant notes from the email.",
                         *   "forceAllDay": false,
                         *   "location": "YourLocation",
-                        *   "attendees": [attendee1@example.com,attendee2@example.com,attendee3@example.com]
+                        *   "attendees": ["attendee1@example.com", "attendee2@example.com", "attendee3@example.com"]
                         *  } 
                         *  plus an optional "reminderMinutes", only with the reminder option on (see normalizeReminderMinutes()) [#887]
                         */

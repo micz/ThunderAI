@@ -19,6 +19,11 @@ import {
 } from './harness.mjs';
 import { NET } from './fetch-model.mjs';
 import {
+    IDLE,
+    idleStopCase,
+    idleTimeoutCases
+} from './idle-cases.mjs';
+import {
     assertNoBrowser,
     flush,
     initMessage,
@@ -46,7 +51,7 @@ const INTERRUPTED = 'The connection to the server was unexpectedly interrupted';
 const wire = events => events.map(e => sse(e, e.type)).join('');
 
 await w.send(initMessage({ chatgpt_api_key: 'sk-FAKE-0000', chatgpt_model: 'gpt-4.1-nano', chatgpt_store: false },
-    { chat_show_usage_data: false, i18nStrings: { chatgpt_api_request_failed: FAILED, error_connection_interrupted: INTERRUPTED } }));
+    { chat_show_usage_data: false, i18nStrings: { chatgpt_api_request_failed: FAILED, error_connection_interrupted: INTERRUPTED, error_stream_idle_timeout: IDLE } }));
 
 const errorOf = t => t.posted().filter(m => m.type === 'error');
 
@@ -91,7 +96,7 @@ k.test('after-abort', 'the next turn does not resend the aborted message; with t
     assert.equal(shape(t.posted()).at(-1)[0], 'tokensDone');
 });
 
-k.test('stop-mid-stream', 'Stop once streaming: the stream is cancelled and the turn closes with tokensDone', async () => {
+k.test('stop-mid-stream', 'Stop once streaming: the pending read ends at once, the stream is cancelled and the turn closes with tokensDone', async () => {
     const s = manualStream();
     net.expect(URL_, () => s.response);
     const t = startTurn(w, 'Long answer');
@@ -99,9 +104,9 @@ k.test('stop-mid-stream', 'Stop once streaming: the stream is cancelled and the 
     s.push(wire(ev.slice(0, 4)));
     await until(() => t.posted().some(m => m.type === 'newThinkingToken'), 'the first thinking token');
     await w.send({ type: 'stop' });
-    s.push(wire([ev[4]]));
-    await t.done;
+    await t.done;   // no further chunk: the Stop ends the pending read itself
     assert.equal(s.cancelled, true);
+    assert.equal(net.calls[0].signal.reason.name, 'StopError', 'the request was aborted with the Stop reason');
     const types = t.posted().map(m => m.type);
     assert.equal(types.filter(x => x === 'tokensDone').length, 1);
     assert.equal(types.at(-1), 'tokensDone');
@@ -212,6 +217,15 @@ k.test('stop-during-error-body', 'Stop while the body of an HTTP error is read: 
     // history-after-errors, at the end of the file, checks that 'q' left the history.
 });
 
+// Spec 04 "Stream idle timeout": the default 120 s, keep-alives, no timer left behind (idle-cases.mjs).
+idleTimeoutCases(k, {
+    w, net, match: URL_, failed: FAILED,
+    open: () => manualStream(),
+    first: wire(FX.reasoning_stream.events.slice(0, 4)),
+    rest: wire(FX.reasoning_stream.events.slice(4)),
+    keepAlive: ': keep-alive\n\n',   // an SSE comment
+});
+
 k.test('history-after-errors', 'failed turns leave nothing in the history: no failed question, no partial answer', async () => {
     net.expect(URL_, () => streamResponse([wire(FX.reasoning_item_only.events)]));
     const t = startTurn(w, 'After the errors');
@@ -222,6 +236,16 @@ k.test('history-after-errors', 'failed turns leave nothing in the history: no fa
     assert.equal(input.filter((m, i) => m.role === 'user' && texts[i] === 'q').length, 0, 'no failed question resent');
     assert.equal(texts.includes('Partial'), false, 'no partial answer (response.failed, cut stream)');
     input.forEach((m, i) => assert.equal(m.role, i % 2 === 0 ? 'user' : 'assistant', 'roles alternate at ' + i));
+});
+
+// Spec 04 "Stream idle timeout": a Stop during the stall ends the turn at once and keeps its partial
+// answer, as any Stop: declared after history-after-errors, which wants no partial answer (idle-cases.mjs).
+idleStopCase(k, {
+    w, net, match: URL_,
+    open: () => manualStream(),
+    first: wire(FX.reasoning_stream.events.slice(0, 4)),
+    rest: wire(FX.reasoning_stream.events.slice(4)),
+    history: call => call.json().input.map(m => [m.role, m.content.map(c => c.text).join('')]),
 });
 
 k.test('no-browser', 'no browser global was needed', () => {
