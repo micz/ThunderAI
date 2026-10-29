@@ -5,10 +5,13 @@ body:
     attributes:
       value: |
         This issue form is for reporting bugs only!
+        It's always better to provide also the error logs after activating the thunderAI debug log in the advanced option panel.
+        See [here a video][vd] that describes how to save the error log.
 
         If you have a feature or enhancement request, please use the [feature request][fr] form.
 
         [fr]: https://github.com/micz/ThunderAI/issues/new?assignees=&labels=&projects=&template=feature_request.yml&title=
+        [vd]: https://micz.it/thunderbird-error-console/
   - type: textarea
     validations:
       required: true
