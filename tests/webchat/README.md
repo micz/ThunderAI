@@ -97,6 +97,7 @@ one did (each file says so).
 | `dom/webchat/webchat-19-insert-at-cursor` | spec 07 "Scope" (action "3" from a compose window is not forced to a replace: `chatgpt_insertAtCaret`, never `chatgpt_replaceSelectedText`), spec 02 "Action Types Reference" (the standalone button reads "Insert at cursor"), spec 01 "Actions on an answer" (`chatgpt_insertAtCaret` carries `tabId` and `mailMessageId` -1 besides the text), "Transcript DOM contract" (an earlier answer's toolbar: Copy and Insert at cursor, inserting its own answer) |
 | `dom/webchat/webchat-20-links` | spec 01 "Links in the transcript" (a left, Ctrl/Cmd/Shift or middle click on an http(s) link cancelled and opened once in the default browser, the page staying put; a right button never opening; credentials, `mailto:`, and - added by the test, as the sanitizer never lets them through - other schemes, relative URLs, fragments, malformed or missing hrefs inert but cancelled; `HTTPS://` in capitals opening normalized; a click off a link left alone; a drag starting on a link cancelled, on text not; a failing `openDefaultBrowser()` logged with no unhandled rejection; a link in the diff picker cancelled and never opened), "Content Security Policy" (the meta CSP first in `<head>` with exactly its directives; no inline script, `<style>`, `style` attribute or handler in `index.html`; every shadow root styled by one adopted sheet, no `<style>` anywhere) |
 | `dom/webchat/webchat-21-endpoint-redirect` | spec 04 "Redirects" (an Ollama API window: the `endpoint_redirect` message of the worker saved into `_endpoint_redirects` under its host, with the origin of the destination; the same outcome again writes nothing; a failed redirect saved as failed; a success with no redirect removing the entry; nothing shown in the transcript) |
+| `dom/webchat/webchat-22-processing` | spec 09 (ThunderAI Privacy active in the API chat: the prepared prompts, the busy-message notice, the answers buffered and restored; see "Companion processing" below) |
 | `webchat/99-harness-known-issues` | the known-issue shape (level 1) |
 
 ## The fake Worker
@@ -310,3 +311,9 @@ and were fixed: the quotes a model wraps its whole answer in are now removed fro
 old patterns never matched a rendered answer; spec 01 "Actions on an answer", `webchat-11`), and a
 choice made on a side now moves the `.is-current` ring and repaints the stepper, also for the side
 already in force (spec 07 "The toolbar", `webchat-15`).
+## Companion processing
+
+`tests/dom/webchat/webchat-22-processing.dom.mjs` checks prepared prompts, the visible
+busy-message notice and buffered/restored answers in the actual chat components.
+Its background stub implements active hooks; the real transport and validation are
+tested in `tests/background/11-ai-processing.test.mjs` and `12-processing-worker.test.mjs`.

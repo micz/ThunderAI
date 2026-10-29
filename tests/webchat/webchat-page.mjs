@@ -58,7 +58,19 @@ export async function openWebchat({
         permissions,
         // The outcome of windows.openDefaultBrowser(url) (the webchat plugin).
         openDefaultBrowser,
-        commands: { [ready]: () => true, ...commands },
+        commands: {
+            [ready]: () => true,
+            // This area's remote background models an inactive processor. Active
+            // companion processing is verified separately from provider/UI behavior.
+            ai_processing: ({ operation, data }) => {
+                if (operation === 'createSession') return { active: false };
+                if (operation === 'before') return { input: data.input, context: null };
+                if (operation === 'after') return { output: data.output };
+                if (operation === 'disposeSession' || operation === 'cancel') return {};
+                throw new Error(`Unmodelled processing operation: ${operation}`);
+            },
+            ...commands
+        },
     });
     return { ctx, worker, ready };
 }
@@ -83,7 +95,8 @@ export function sentCommands(ctx, command) {
 
 /** Every background command the window sent, by name, in order (the managed handshake left out). */
 export function commandNames(ctx, since = 0) {
-    return ctx.ctl.sent.slice(since).map(m => m && m.command).filter(c => c && c !== 'get_managed_values');
+    return ctx.ctl.sent.slice(since).map(m => m && m.command)
+        .filter(c => c && c !== 'get_managed_values' && c !== 'ai_processing');
 }
 
 // ---- the transcript ------------------------------------------------------------------

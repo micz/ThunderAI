@@ -121,6 +121,38 @@ export const integration_options_config = {
     }
 };
 
+// Every string option must have an explicit privacy-boundary decision. The
+// static coverage test rejects additions that are not classified here. This is
+// metadata only: it changes no preference defaults, policy values or settings UI.
+export const integration_content_fields = {
+    chatgpt: {
+        text: ['developer_messages', 'text_format_schema_name', 'prompt_cache_key', 'safety_identifier'],
+        json: ['extra_body', 'text_format_schema'],
+        nonContent: ['api_key', 'model', 'temperature', 'reasoning_summary', 'reasoning_effort',
+            'verbosity', 'text_format', 'top_p', 'truncation', 'service_tier']
+    },
+    ollama: {
+        text: ['system_prompt'],
+        json: ['extra_options'],
+        nonContent: ['host', 'api_key', 'model', 'temperature', 'think', 'keep_alive']
+    },
+    openai_comp: {
+        text: [],
+        json: ['extra_body'],
+        nonContent: ['host', 'model', 'api_key', 'chat_name', 'temperature']
+    },
+    google_gemini: {
+        text: ['system_instruction'],
+        json: ['extra_body'],
+        nonContent: ['api_key', 'model', 'thinking_budget', 'temperature', 'top_p', 'top_k']
+    },
+    anthropic: {
+        text: ['system_prompt', 'stop_sequences'],
+        json: [],
+        nonContent: ['api_key', 'model', 'version', 'temperature', 'top_p', 'top_k', 'effort']
+    }
+};
+
 const integration_settings_template = {
     use_specific_integration: false,
     connection_type: 'chatgpt_api',
@@ -206,6 +238,13 @@ export const prefs_default = {
     // Default comparison unit of the proofreading change picker: 'words' or
     // 'sentences'. A prompt can override it; '' on a prompt means "inherit this".
     diff_granularity: 'words',
+    // Mask personal data through the ThunderAI Privacy companion. The one activation
+    // switch: the companion's settings page only mirrors it (claude-spec/09-ai-processing.md).
+    ai_processing_enabled: false,
+    // No UI, meant for a policy: when ThunderAI Privacy is installed without its model,
+    // ask it to download the model (once per start of either add-on). Off by default:
+    // the model is a large download from Hugging Face, made by every machine.
+    ai_processing_model_autodownload: false,
     max_prompt_length: 30000,   // max string length for prompt
     add_tags: false,
     add_tags_maxnum: 3,

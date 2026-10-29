@@ -41,6 +41,13 @@ js/mzta-prompts.js       (builds final prompt string)
 js/mzta-compose-script.js  (inserts text into Thunderbird compose window and display window)
 ```
 
+API chat and special-command workers use `js/mzta-processing-worker.js`:
+async companion hooks precede dispatch and UI actions, parsing and storage.
+Inactive hooks preserve content and streaming. ChatGPT Web is not covered: with the
+switch on, a prompt on that connection is blocked with an alert before any tab opens.
+See [Async content processing](04-api-integrations.md#async-content-processing)
+for boundaries and failure behavior.
+
 ### Data Flow: Inline Summary on Message Display
 
 The `summarize_display_mode` preference (`'inline'` or `'webchat'`) controls where
@@ -853,8 +860,11 @@ separate `summarize` block (before each `getFull` and before opening the webchat
 triggers are not batches and are never gated by a cancel.
 
 **Abort latency (v1):** cancellation is checked *between* messages (and between the features of a message),
-so the AI calls currently in flight — up to `batch_max_concurrency` — finish first — bounded by `special_command_timeout` (default 120s). There is no
-mid-request worker termination in v1.
+so the AI calls currently in flight — up to `batch_max_concurrency` — finish first.
+`special_command_timeout` bounds stalled local chunks and the provider phase, not
+a progressing multi-part processing operation's total duration. Batch Stop does not
+terminate an in-flight command; API chat's Stop independently cancels remaining
+preprocessing work before dispatch.
 
 **What a stop leaves behind.** The messages a Stop or a rate limit kept from starting (and the
 features an in-flight message did not reach) are **not resumed**: no queue outlives the batch, and

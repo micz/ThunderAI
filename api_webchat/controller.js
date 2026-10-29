@@ -31,9 +31,16 @@ import {
     supportsUsageData
 } from '../js/mzta-utils.js';
 import { loadPrompt } from '../js/mzta-prompts.js';
-import { buildChatBubbleIcon } from './svgIcons.js';
+import {
+    buildChatBubbleIcon,
+    buildShieldIcon
+} from './svgIcons.js';
 import { resolveContextWindow } from './contextWindow.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
+import {
+    createProviderWorker,
+    ProcessingWorker
+} from '../js/mzta-processing-worker.js';
 import { resolveEndpointAccess } from '../js/mzta-endpoint-approvals.js';
 import { saveEndpointRedirect } from '../js/mzta-endpoint-redirects.js';
 
@@ -120,7 +127,22 @@ const worker_path_map = {
 const worker_path = Object.hasOwn(worker_path_map, integration) ? worker_path_map[integration] : null;
 
 if (worker_path) {
-    worker = new Worker(worker_path, { type: 'module' });
+    let closed = false;
+    window.addEventListener('pagehide', () => {
+        closed = true;
+        worker?.terminate();
+    }, { once: true });
+    try {
+        worker = await createProviderWorker(worker_path);
+        if (closed) {
+            worker.terminate();
+            worker = null;
+        }
+    } catch (error) {
+        messagesArea.appendBotMessage(error.message, 'error');
+        messageInput.disableInput();
+        messageInput.showErrorStatus();
+    }
 } else {
     // No worker can serve this connection type, so nothing can ever be sent: say so in the
     // transcript, lock the input, and announce nothing to the background (no ready message).
@@ -230,6 +252,23 @@ if (worker) {
         // belongs to the status pill above the input, so there is only one
         // thing to keep in sync with the request lifecycle.
         document.getElementById('appHeaderLogo').appendChild(buildChatBubbleIcon());
+        // A shield on the logo while the ThunderAI Privacy switch is on (policy-resolved),
+        // kept in step with the switch for as long as the window stays open. The tooltip
+        // sits on the whole brand (logo and name), not on the small badge alone.
+        const shield = document.getElementById('appHeaderShield');
+        const brand = document.getElementById('appHeaderBrand');
+        shield.appendChild(buildShieldIcon());
+        const privacy_tooltip = browser.i18n.getMessage('apiwebchat_privacy_active');
+        const syncPrivacyShield = () => mztaPrefs.getPref('ai_processing_enabled')
+            .then(enabled => {
+                shield.hidden = enabled !== true;
+                brand.title = enabled === true ? privacy_tooltip : '';
+            })
+            .catch(e => console.error('[ThunderAI] Could not read the ThunderAI Privacy switch:', e));
+        syncPrivacyShield();
+        browser.storage.onChanged.addListener((changes, areaName) => {
+            if (areaName === 'local' && Object.hasOwn(changes, 'ai_processing_enabled')) syncPrivacyShield();
+        });
         const apiChip = document.getElementById('appHeaderApi');
         if (api_strings[integration]) {
             document.getElementById('appHeaderApiName').textContent = api_strings[integration];
@@ -388,6 +427,30 @@ if (worker) {
 //let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
 
 // Event listeners for worker messages (none without a worker: an unknown connection type)
+if (worker instanceof ProcessingWorker) {
+    worker.onprocessingstatus = ({ type, progress }) => {
+        switch (type) {
+            case 'started':
+            case 'progress':
+                messageInput.setStatusMessage(progress?.total > 1 ?
+                    browser.i18n.getMessage('ai_processing_chunks', [String(progress.current), String(progress.total)]) :
+                    browser.i18n.getMessage('ai_processing'));
+                messageInput.showStatusMessage();
+                break;
+            case 'busy':
+                messageInput.setStatusMessage(browser.i18n.getMessage('ai_processing_busy'));
+                messageInput.showStatusMessage();
+                break;
+            case 'complete':
+                messageInput.showWaitingStatus();
+                break;
+            case 'receiving':
+                messageInput.showStreamingStatus();
+                break;
+        }
+    };
+}
+
 if (worker) worker.onmessage = async function(event) {
     const { type, payload } = event.data;
     switch (type) {
@@ -405,7 +468,7 @@ if (worker) worker.onmessage = async function(event) {
             messageInput.enableInput(false);
             break;
         case 'newToken':
-            messagesArea.handleNewToken(payload.token);
+            messagesArea.handleNewToken(payload.token, payload.thinkingSeparated);
             messageInput.showStreamingStatus();
             break;
         case 'newThinkingToken':

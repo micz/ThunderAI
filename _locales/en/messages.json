@@ -1,4 +1,30 @@
 {
+  "ai_processing_unclassified_field": {
+    "message": "An unclassified provider content field blocked processing. Update ThunderAI before retrying.",
+    "description": "Fail-closed error when a provider string option lacks a content-boundary classification."
+  },
+  "ai_processing_busy": { "message": "A request is already being processed. Wait for it to finish; the additional message was not sent.", "description": "Notice when a second active-processing request is rejected." },
+  "ai_processing": { "message": "Processing content locally…", "description": "Status while the companion processes content." },
+  "ai_processing_chunks": { "message": "Processing content… part $CURRENT$ of $TOTAL$", "description": "Companion chunk progress: current part and total parts.", "placeholders": { "current": { "content": "$1" }, "total": { "content": "$2" } } },
+  "ai_processing_unavailable": { "message": "ThunderAI Privacy is switched on but unavailable. Nothing was sent by this operation. Enable or reinstall ThunderAI Privacy, or switch off \"Use ThunderAI Privacy\" in ThunderAI's advanced options if you no longer want to use it.", "description": "Blocking error and recovery instructions for an unavailable active companion. 'ThunderAI Privacy' is a product name; 'Use ThunderAI Privacy' is the label of the option, translate it as in prefs_OptionText_ai_processing_enabled." },
+  "ai_processing_incompatible": { "message": "The content processor uses an incompatible API. Update ThunderAI and its companion together. Nothing was sent by this operation.", "description": "Blocking error for incompatible processing protocol replies." },
+  "ai_processing_session_expired": { "message": "The processing session is unavailable. Close this chat and start the ThunderAI prompt again.", "description": "Recovery instructions for an expired processing session." },
+  "ai_processing_failed": { "message": "Content processing failed. The operation was blocked.", "description": "Fallback error when a companion hook fails." },
+  "ai_processing_timeout": { "message": "The content processor timed out. The operation was blocked.", "description": "Error when companion discovery or processing exceeds its deadline." },
+  "ai_processing_cancelled": { "message": "Content processing cancelled.", "description": "Notice when processing is cancelled." },
+  "ai_processing_invalid_result": { "message": "The processor returned an invalid result. The operation was blocked.", "description": "Blocking error when a companion result fails validation." },
+  "ai_processing_invalid_sender": { "message": "Content processing is restricted to trusted extension contexts.", "description": "Error rejecting an untrusted internal processing request." },
+  "ai_processing_chatgpt_web_unsupported": { "message": "ThunderAI Privacy does not work with ChatGPT Web, so this prompt was not sent. Use an API connection, or switch off \"Use ThunderAI Privacy\" in ThunderAI's advanced options.", "description": "Alert shown instead of opening ChatGPT Web while the ThunderAI Privacy switch is on: nothing is sent unprocessed. 'ThunderAI Privacy' is a product name; 'Use ThunderAI Privacy' is the label of the option, translate it as in prefs_OptionText_ai_processing_enabled." },
+  "ai_processing_setting_locked": { "message": "This setting is managed by your organization.", "description": "Error returned to the ThunderAI Privacy companion when it tries to change the ThunderAI Privacy switch while an enterprise policy locks it." },
+  "prefs_OptionText_ai_processing_enabled": { "message": "Use ThunderAI Privacy", "description": "Options page, advanced section: name of the switch that masks personal data through the ThunderAI Privacy add-on; 'ThunderAI Privacy' is a product name." },
+  "prefs_OptionText_ai_processing_enabled_info": { "message": "Personal data is masked locally by the ThunderAI Privacy add-on before it is sent to the AI provider, and restored in the answer. It can be turned on once the local model is downloaded. While this is on, AI requests are blocked if ThunderAI Privacy is not available. Changes apply to new chats and commands.", "description": "Options page, advanced section: description of the ThunderAI Privacy switch; 'ThunderAI Privacy' is a product name." },
+  "prefs_OptionText_ai_processing_Privacy_not_present": { "message": "To mask personal data before it is sent to the AI provider, install the ThunderAI Privacy add-on.", "description": "Options page, advanced section: notice shown when the ThunderAI Privacy add-on is not installed; 'ThunderAI Privacy' is a product name." },
+  "prefs_OptionText_ai_processing_Privacy_wrong_version": { "message": "The installed ThunderAI Privacy add-on is not compatible with this version of ThunderAI. Update ThunderAI Privacy.", "description": "Options page, advanced section: notice shown when the installed ThunderAI Privacy add-on does not speak the same processing protocol; 'ThunderAI Privacy' is a product name." },
+  "prefs_OptionText_ai_processing_download_now": { "message": "Download ThunderAI Privacy now!", "description": "Options page, advanced section: link to download the ThunderAI Privacy add-on, shown under the missing or incompatible add-on notice; 'ThunderAI Privacy' is a product name." },
+  "prefs_OptionText_ai_processing_model_missing": { "message": "Download the local model before turning it on.", "description": "Options page, advanced section: note under the ThunderAI Privacy switch while the companion's local model is not downloaded; the switch is disabled until then." },
+  "prefs_OptionText_ai_processing_model_downloading": { "message": "Downloading the local model… $PERCENT$%", "description": "Options page, advanced section: progress of the ThunderAI Privacy model download.", "placeholders": { "percent": { "content": "$1", "example": "42" } } },
+  "prefs_OptionText_ai_processing_download_model": { "message": "Download the model", "description": "Options page, advanced section: button that asks the ThunderAI Privacy add-on to download its local model." },
+  "prefs_OptionText_ai_processing_open_settings": { "message": "Open ThunderAI Privacy settings", "description": "Options page, advanced section: button that opens the settings page of the ThunderAI Privacy add-on; 'ThunderAI Privacy' is a product name." },
   "extensionDescription": {
     "message": "Use ChatGPT, Google Gemini, Claude or Ollama to enhance your emails!",
     "description": "Description of the extension."
@@ -2172,6 +2198,10 @@
         "example": "foo_api"
       }
     }
+  },
+  "apiwebchat_privacy_active": {
+    "message": "ThunderAI Privacy is on: personal data is masked before it is sent to the AI provider.",
+    "description": "API webchat: tooltip of the shield badge shown on the header logo while the ThunderAI Privacy switch is on; 'ThunderAI Privacy' is a product name."
   },
   "apiwebchat_request_cancelled": {
     "message": "Request cancelled.",

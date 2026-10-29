@@ -56,6 +56,7 @@ import {
   showConnTestResult
 } from '../js/mzta-connection-test.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
+import { pageProcessingClient } from '../js/mzta-ai-processing-client.js';
 import {
   applyManagedUI,
   showManagedBanner,
@@ -422,6 +423,50 @@ async function disable_GetCalendarEvent(prefs_opt){
   no_sparks_tr.style.display = ((is_spark_present == 1) || (cal_unusable && task_unusable)) ? 'none' : 'block';
   no_sparks_text.style.display = (is_spark_present == -1) ? 'inline' : 'none';
   wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
+}
+
+// The last probe of ThunderAI Privacy, kept so that its model updates (download progress)
+// can be drawn without asking again.
+let privacyCompanion = null;
+
+// The ThunderAI Privacy switch is offered only when a compatible companion answers, but it
+// stays visible while it is on: with the companion gone, every AI request is blocked and
+// switching it off here is the way out. The notice follows the companion alone.
+async function updatePrivacyCompanion(){
+  try {
+    privacyCompanion = await pageProcessingClient.probe();
+  } catch (error) {
+    privacyCompanion = null;
+  }
+  renderPrivacyCompanion();
+}
+
+// It can be turned on only once the companion's model is ready, as in the companion's own
+// settings page; it can always be turned off. Until then the row offers the download.
+function renderPrivacyCompanion(downloadError = null){
+  const companion = privacyCompanion;
+  const usable = !!(companion?.installed && companion?.compatible);
+  const missing = usable && !companion.ready;
+  const toggle = document.getElementById('ai_processing_enabled');
+  document.getElementById('ai_processing_tr').style.display = (usable || toggle.checked) ? '' : 'none';
+  setDisabledRespectingManaged(toggle, !toggle.checked && !(usable && companion.ready));
+  // Explicit 'block' because the CSS keeps the notice hidden by default, as #no_sparks.
+  document.getElementById('no_privacy').style.display = usable ? 'none' : 'block';
+  document.getElementById('no_privacy_text').style.display = companion?.installed ? 'none' : 'inline';
+  document.getElementById('wrong_privacy_text').style.display = companion?.installed ? 'inline' : 'none';
+  const downloading = missing && companion.downloading;
+  document.getElementById('ai_processing_model').style.display = missing ? '' : 'none';
+  document.getElementById('ai_processing_model_missing').style.display = downloading ? 'none' : '';
+  document.getElementById('ai_processing_model_downloading').textContent = downloading
+    ? browser.i18n.getMessage('prefs_OptionText_ai_processing_model_downloading', [String(companion.progress ?? 0)]) : '';
+  const progress = document.getElementById('ai_processing_model_progress');
+  progress.style.display = downloading ? '' : 'none';
+  progress.value = downloading ? (companion.progress ?? 0) : 0;
+  document.getElementById('ai_processing_model_error').textContent = downloadError || (missing && !downloading ? companion.error || '' : '');
+  document.getElementById('ai_processing_actions').style.display = usable ? '' : 'none';
+  const download_btn = document.getElementById('btnAiProcessingDownload');
+  download_btn.style.display = missing ? '' : 'none';
+  download_btn.disabled = downloading;
 }
 
 const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
@@ -838,10 +883,40 @@ document.addEventListener('DOMContentLoaded', async () => {
   disable_GetCalendarEvent(prefs_opt);
   disable_ChatShowUsageData(prefs_opt);
   updateSpecificApiIndicators(prefs_opt);
+  updatePrivacyCompanion();
+  // The companion may be installed, removed or updated while this page is open.
+  window.addEventListener('focus', updatePrivacyCompanion);
+  // Its model changes (download progress, completion, deletion) are relayed by the
+  // background, whoever started them.
+  browser.runtime.onMessage.addListener((message) => {
+    if (message?.command !== 'ai_processing_readiness' || !privacyCompanion?.compatible) return;
+    privacyCompanion = { ...privacyCompanion, ...message };
+    renderPrivacyCompanion();
+  });
+  document.getElementById('btnAiProcessingDownload').addEventListener('click', async () => {
+    try {
+      privacyCompanion = { ...privacyCompanion, ...await pageProcessingClient.downloadModel() };
+      renderPrivacyCompanion();
+    } catch (error) {
+      renderPrivacyCompanion(error.message);
+    }
+  });
+  document.getElementById('btnAiProcessingOpenSettings').addEventListener('click', async () => {
+    try {
+      await pageProcessingClient.openSettings();
+    } catch (error) {
+      renderPrivacyCompanion(error.message);
+    }
+  });
 
   browser.storage.onChanged.addListener(async (changes, area) => {
     // Preferences live in storage.local — see js/mzta-prefs.js.
     if (area !== 'local') return;
+    // The ThunderAI Privacy settings page writes the same switch.
+    if (Object.hasOwn(changes, 'ai_processing_enabled')) {
+      document.getElementById('ai_processing_enabled').checked = await mztaPrefs.getPref('ai_processing_enabled');
+      updatePrivacyCompanion();
+    }
     // A policy-enforced key cannot have meaningfully changed: whatever was written to
     // storage.local for it is shadowed on every read by the policy value, so reacting
     // would recompute the indicators to land on the values already displayed.

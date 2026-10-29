@@ -47,7 +47,7 @@ time: the debounce, the worker timeout and the batch yield points run on node:te
 |---|---|---|
 | `01-job-registry` | `taJobRegistry`: one entry per kind and message, synchronous registration, the job body not run inside `start()`, the promise never rejecting (thrown, rate-limited, synchronous throw, no outcome), the entry removed on every path, a retry in the same session, joiners sharing the outcome, `invalidate()` / `revive()`, the log lines | 01 "In-flight jobs" |
 | `02-batch-controller` | `taBatchController`: tokens, `endBatch()`'s snapshot and the reset on the last exit, a cancel flagging the active batches only, later batches unaffected, overlapping batches and one notice, `rate_limit` never overwritten, the longest `retryAfterMs`, `getStatus()`, independence from `WorkingLevel` | 01 "Batch cancellation", 04 "Batch cancellation" |
-| `03-working-status-exclusions` | `taWorkingStatus` (level, icons, never negative); `checkExcludedTag()` and the exclusion list preference | 01 "Working indicator", 05 `add_tags_exclusions` |
+| `03-working-status-exclusions` | `taWorkingStatus` (level, icons, the ThunderAI Privacy idle icon, never negative); `checkExcludedTag()` and the exclusion list preference | 01 "Working indicator", 09 "Activation switch", 05 `add_tags_exclusions` |
 | `04-storage` | `taStorage`: the `msg:<id>` key and schema, the three fields in one record, force / no force, deleting a field and the last field, `deleteRecord()`, `getAll*Records()`, age-based `cleanup()`, `clearAllRecords()`, the preferences never touched, the per-record write queue (concurrent fields, delete + write, two instances, order, other messages in parallel) | 01 "Per-Message Data Storage" |
 | `05-stores` | `taSummaryStore`, `taTranslationStore`, `taSpamReport`: round trips, error states, records written by older versions, removal, the 100-entry truncation (as methods: the background calls only the spam one), `saveError()` metadata, `getAllReportData()` → `{}`, clearing one field only, no `storage.session` state | 01 "Per-Message Data Storage", 02 "Missing special prompts" |
 | `10-special-command` | `mzta_specialCommand` after `initWorker()`: the prompt posted, the answer accumulated, `newRetryAttempt` / `messageSent` ignored, thinking tokens and `<think>` blocks (closed, leading whitespace, unterminated), errors with `rateLimited` / `retryAfterMs`, a worker crash, the timeout (the preference, the default, after a 429, after a 503, never after an answer), `dispose()` on every path | 04 "Worker Lifecycle & Timeout", "Thinking in special commands", #batch-stop-on-rate-limit |
@@ -278,3 +278,17 @@ says how (fixed, documented as it is, or left to a separate job).
     panel more than once - the panel buttons, Refresh, the context-menu inline Summarize, a click
     joining a running job - and that the content script draws one. `33-context-menu` asserts the
     two sends of the context-menu path.)*
+## AI processing companion hooks
+
+`11-ai-processing.test.mjs` and `12-processing-worker.test.mjs` cover the contract
+in `claude-spec/09-ai-processing.md` against `processing-companion.mjs`, a scripted
+external add-on, not a detector. They run the real broker/adapter: the activation
+switch (`ai_processing_enabled`, set by the fake's `activate()`; `getSetting` /
+`setSetting` / `settingChanged`, the policy lock), the model readiness (`readinessChanged`
+from the fake's `readinessChanged()`, `downloadModel` / `openSettings`, the
+`ai_processing_model_autodownload` policy once per instance, again after a model that was
+ready is lost), discovery and `probe`, validation,
+fail-closed blocking while switched on, progress/timeout, Stop, inactive forwarding,
+response buffering and provider/UI isolation. `bgContext`
+models Privacy absent independently of Sparks' `external` stub; use `processor`
+to opt in to a fake Privacy responder. No runtime/model dependency is needed.

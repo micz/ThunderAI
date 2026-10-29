@@ -320,6 +320,7 @@ export function installApis(browser, m) {
 
     browser.tabs = strict('browser.tabs', {
         onUpdated: makeEvent(),
+        onRemoved: makeEvent(),
         async query(q = {}) {
             rec('tabs.query', [q]);
             return m.tabs.filter(t => (q.active === undefined || t.active === q.active)

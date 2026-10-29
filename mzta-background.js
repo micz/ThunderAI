@@ -17,6 +17,8 @@
  */
 
 import { mzta_script } from './js/mzta-chatgpt.js';
+import { createAIProcessingBroker } from './js/mzta-ai-processing-broker.js';
+import { createAIProcessingClient } from './js/mzta-ai-processing-client.js';
 import {
     prefs_default,
     getDynamicSettingsDefaults,
@@ -107,6 +109,10 @@ import {
     getFeatureLabel,
     getMissingPermissionMessage
 } from './js/mzta-feature-permissions.js';
+
+const aiProcessingBroker = createAIProcessingBroker();
+const processingClient = createAIProcessingClient(aiProcessingBroker.dispatch);
+aiProcessingBroker.ready.catch(error => console.error('[ThunderAI] Content processor initialization failed:', error));
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -395,6 +401,17 @@ await (async () => {
 taWorkingStatus.taLog = taLog;
 taBatchController.taLog = taLog;
 taJobRegistry.taLog = taLog;
+// While the ThunderAI Privacy switch is on, the toolbar buttons show the companion's icon.
+// The policy-resolved value is read, at startup and on every write of the switch.
+function syncPrivacyIcon() {
+    mztaPrefs.getPref('ai_processing_enabled')
+        .then(enabled => taWorkingStatus.setPrivacy(enabled === true))
+        .catch(e => taLog.error("Could not read the ThunderAI Privacy switch: " + e));
+}
+syncPrivacyIcon();
+browser.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && Object.hasOwn(changes, 'ai_processing_enabled')) syncPrivacyIcon();
+});
 let spamReport = new taSpamReport(prefs_init.do_debug);
 let summaryStore = new taSummaryStore(prefs_init.do_debug);
 let translationStore = new taTranslationStore(prefs_init.do_debug);
@@ -1706,6 +1723,7 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
         const { promptText } = await taPromptUtils.buildSummaryPrompt([{ message, fullMessage }]);
 
         const cmd = new mzta_specialCommand({
+            processingClient,
             prompt: promptText,
             llm: connectionType,
             do_debug: prefs.do_debug,
@@ -1883,6 +1901,7 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
         const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, curr_messageId);
 
         const cmd = new mzta_specialCommand({
+            processingClient,
             prompt: promptText,
             llm: connectionType,
             do_debug: prefs.do_debug,
@@ -2198,6 +2217,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
         taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
 
         let cmd_spamfilter = new mzta_specialCommand({
+            processingClient,
             prompt: specialFullPrompt_spamfilter,
             llm: spam_conntype,
             custom_model: curr_prompt_spamfilter.model ? curr_prompt_spamfilter.model : '',
@@ -2365,6 +2385,14 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     switch(prefs.connection_type){
         case 'chatgpt_web':
         {
+            // ThunderAI Privacy does not cover ChatGPT Web: while its switch is on, the prompt
+            // is blocked here rather than sent unprocessed to the site (fail-closed, as a
+            // missing companion blocks the API workers). The policy-resolved value is read.
+            if (await mztaPrefs.getPref('ai_processing_enabled') === true) {
+                let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                sendTabMessageSafe(curr_tabId, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('ai_processing_chatgpt_web_unsupported') });
+                return;
+            }
             // We are using the ChatGPT web interface
 
             let rand_call_id = '_chatgptweb_' + generateCallID();
@@ -2884,7 +2912,7 @@ setupPermissionsRemovedListener();
 // Never fatal either, like the migration block above: on failure its flag stays unset and it
 // runs again at the next start.
 if (_prefs_migration_ok) await migrateMenuOrderAlphabetic().catch(e => console.error("[ThunderAI] migrateMenuOrderAlphabetic error: " + e));
-const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
+const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug, processingClient);
 await menus.loadMenus(await _computeActiveSpecialIds());
 
 // Context menu click handling
@@ -3533,6 +3561,7 @@ async function processEmails(args) {
             specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list, prefs_aats.add_tags_auto_force_existing, tags_full_list[0], curr_prompt_add_tags.text);
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
             let cmd_addTags = new mzta_specialCommand({
+                processingClient,
                 prompt: specialFullPrompt_add_tags,
                 llm: addtags_conntype,
                 custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
