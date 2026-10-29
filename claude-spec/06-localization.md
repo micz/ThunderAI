@@ -19,6 +19,10 @@ Each entry in `_locales/en/messages.json` follows the standard WebExtension i18n
 
 The `description` field is important — it helps Weblate translators understand the context.
 
+Each key appears once per file, and each name once inside an entry. A repeated key is still valid
+JSON for the browser, which silently keeps the last copy, so it hides one of the two texts; the
+`static` tests fail on it in every locale.
+
 ## Using Strings in Code
 
 A string reaches the UI in one of three ways: `browser.i18n.getMessage()` in JavaScript, a
