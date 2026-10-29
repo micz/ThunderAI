@@ -98,6 +98,10 @@ test('the autodownload policy asks once per companion instance, only when the mo
     await companion.readinessChanged({ ready: false, downloading: false, error: null }, 'instance-e');
     await flush(4);
     assert.equal(downloads(), 2, 'a restarted companion gets a new attempt');
+    await companion.readinessChanged({ ready: true }, 'instance-e');
+    await companion.readinessChanged({ ready: false }, 'instance-e');
+    await flush(4);
+    assert.equal(downloads(), 3, 'a model lost after it was ready (an evicted cache) gets a new attempt');
 });
 
 test('the autodownload policy also asks at ThunderAI startup, when the companion started first', async () => {

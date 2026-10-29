@@ -141,10 +141,15 @@ export function createAIProcessingBroker() {
     }
 
     // One attempt per companion instance: a failed download is not retried in a loop,
-    // only when the companion (or ThunderAI) starts again.
+    // only when the companion (or ThunderAI) starts again. A model that became ready
+    // and was then lost (an evicted cache) gets a new attempt.
     const autodownloaded = new Set();
     async function autodownload(status) {
-        if (status.ready || status.downloading || autodownloaded.has(status.instanceId) ||
+        if (status.ready) {
+            autodownloaded.delete(status.instanceId);
+            return;
+        }
+        if (status.downloading || autodownloaded.has(status.instanceId) ||
             await mztaPrefs.getPref(AUTODOWNLOAD_PREF) !== true) {
             return;
         }

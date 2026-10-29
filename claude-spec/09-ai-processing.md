@@ -49,7 +49,11 @@ While the switch is on (policy-resolved value, read at startup and on every
 
 The companion keeps a cached readiness (64-bit platform and complete model cache, no
 deletion running), checked at its startup, after a download and after a deletion, so
-discovery never starts a model worker. An evicted cache still blocks at the first mask.
+discovery never starts a model worker. An evicted cache still blocks at the first mask,
+with `MODEL_NOT_READY` and the companion's localized "download the model" message (a
+cache lost between its check and the model load included); the companion then checks
+its cache again and announces `ready: false`, so the options page and the autodownload
+policy follow.
 Status and `readinessChanged` carry `{ready, downloading, progress, error}` (`progress`
 an integer percent while downloading, `error` the companion's localized message of the
 last failed download).
@@ -68,7 +72,8 @@ is on or a download runs.
 download when it reports `ready: false` and is not downloading: at ThunderAI startup
 (one `hello`) and on every `readinessChanged`, which the companion sends at its own
 startup too. One attempt per companion `instanceId`: a failed download is retried only
-after either add-on restarts. Each machine downloads the model from Hugging Face.
+after either add-on restarts, while a `ready: true` announcement allows a new attempt, so
+a model lost after it was ready (an evicted cache) is downloaded again. Each machine downloads the model from Hugging Face.
 Combined with `ai_processing_enabled` locked on, requests block until the model is ready.
 
 ## Session facade
