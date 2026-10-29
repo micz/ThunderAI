@@ -121,7 +121,7 @@ jobs:
 
           # 5. Release body
           {
-            echo "## What's new"
+            echo " "
             echo
             cat changes.html
             echo
