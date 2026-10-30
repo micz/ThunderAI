@@ -209,6 +209,32 @@
                 </div>
             </div>
 
+            <!-- EXCLUSIONS LIST -->
+            <div class="mzta_section" id="addtags_excl_list_container">
+                <div class="mzta_prompt_title">__MSG_AddTags_excl_list_title__<span id="excl_list_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                <p class="mzta_help">
+                    __MSG_AddTags_excl_list_infoline__
+                    <br>__MSG_AddTags_excl_list_infoline2__
+                </p>
+                <div class="mzta_field">
+                    <textarea id="addtags_excl_list" rows="15" data-mzta-pref="add_tags_exclusions"></textarea>
+                    <div class="btn_div">
+                        <button id="btn_save_excl_list" class="btn_primary" disabled>__MSG_save__</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACCOUNT SELECTOR -->
+            <div class="mzta_section" id="account_selector_container">
+                <div class="mzta_prompt_title">__MSG_AccountSelector_AutoTags__</div>
+                <p class="mzta_help" id="account_selector_info">__MSG_AccountSelector_AutoTags_infoline__</p>
+                <div id="account_selector_checkboxes"></div>
+                <div class="btn_div" style="justify-content:flex-start;">
+                    <button type="button" id="accounts_select_all" class="btn_secondary btn_small">__MSG_SelectAll__</button>
+                    <button type="button" id="accounts_deselect_all" class="btn_secondary btn_small">__MSG_DeselectAll__</button>
+                </div>
+            </div>
+
             <!-- PER-ACCOUNT SETTINGS -->
             <!-- One row per override key of add_tags_account_settings: the control is
                  addtags_account_<key>, its "Use the global setting" box addtags_account_<key>_inherit.
@@ -317,32 +343,6 @@
                         <button id="btn_account_settings_copy_prompt" class="btn_secondary">__MSG_AddTags_account_settings_copy_prompt__</button>
                         <button id="btn_save_account_settings" class="btn_primary" disabled>__MSG_save__</button>
                     </div>
-                </div>
-            </div>
-
-            <!-- EXCLUSIONS LIST -->
-            <div class="mzta_section" id="addtags_excl_list_container">
-                <div class="mzta_prompt_title">__MSG_AddTags_excl_list_title__<span id="excl_list_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
-                <p class="mzta_help">
-                    __MSG_AddTags_excl_list_infoline__
-                    <br>__MSG_AddTags_excl_list_infoline2__
-                </p>
-                <div class="mzta_field">
-                    <textarea id="addtags_excl_list" rows="15" data-mzta-pref="add_tags_exclusions"></textarea>
-                    <div class="btn_div">
-                        <button id="btn_save_excl_list" class="btn_primary" disabled>__MSG_save__</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ACCOUNT SELECTOR -->
-            <div class="mzta_section" id="account_selector_container">
-                <div class="mzta_prompt_title">__MSG_AccountSelector_AutoTags__</div>
-                <p class="mzta_help" id="account_selector_info">__MSG_AccountSelector_AutoTags_infoline__</p>
-                <div id="account_selector_checkboxes"></div>
-                <div class="btn_div" style="justify-content:flex-start;">
-                    <button type="button" id="accounts_select_all" class="btn_secondary btn_small">__MSG_SelectAll__</button>
-                    <button type="button" id="accounts_deselect_all" class="btn_secondary btn_small">__MSG_DeselectAll__</button>
                 </div>
             </div>
 

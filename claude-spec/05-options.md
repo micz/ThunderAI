@@ -356,8 +356,8 @@ pages: one checkbox per account (`accounts.list()`), checked as stored (`[]` che
 
 #### Settings for single accounts (Add Tags page)
 
-The `.mzta_section` `#addtags_account_settings_container` of `pages/addtags/`, between the prompt
-section and the exclusion list, edits `add_tags_account_settings` (the override keys and their
+The `.mzta_section` `#addtags_account_settings_container` of `pages/addtags/`, the last section of
+the page (after the account selector), edits `add_tags_account_settings` (the override keys and their
 run-time meaning are in [02-prompts.md](02-prompts.md#add-tags-per-account-settings)).
 `initAccountSettings()` in `mzta-add-tags.js` builds it; none of its controls is an `.option-input`
 or carries `data-mzta-pref` (they edit an override, not the preference: the generic save and the
