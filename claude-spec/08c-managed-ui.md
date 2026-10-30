@@ -99,8 +99,9 @@ twist — the locked key (`*_enabled_accounts_match`) is not the one the checkbo
 have their own helper, `lockAccountSelector()`; see [Account lists by policy](08b-managed-connections.md#account-lists-by-policy-_enabled_accounts_match).
 
 Controls that edit an **override** of a preference rather than the preference itself - the rows
-of the Add Tags page's "Settings for single accounts" section (`#addtags_account_<key>` and its
-`#addtags_account_<key>_inherit` box, see
+of the Add Tags page's "Settings for single accounts" section (`#addtags_account_<key>`, the
+"No" radio `#addtags_account_<key>_no` of a Yes/No row, and the override toggle
+`#addtags_account_<key>_override`, see
 [05-options.md](05-options.md#settings-for-single-accounts-add-tags-page)) - are not
 `.option-input` nor `data-mzta-pref`: applyManagedUI() and the allowlist sweep would take them for
 the global control. They have their own helper, `lockOverrideControls(key, elements, anchor)`:
@@ -108,7 +109,10 @@ when `key` is locked it gives every element the companion treatment (disabled,
 `data-mzta-managed="1"`, `managed_marker_tooltip` title), the `lockControl()` inertness, and puts
 the marker next to the first element by the usual rules (before the `.mzta_switch` in a
 `.feature_row`, appended to the `.mzta_field` column for a text row), or in `anchor` when given
-(the number row passes its `.mzta_field_num_text`). An override of a locked key is ignored at run
+(every row passes its `.addtags_account_title`, so the marker lands right of the title, visible
+with the row's control hidden). The toggle is locked only when every key its row edits is (the
+"Use only these tags" row edits two): with one of them locked, the toggle stays usable and only
+that key's control is locked. An override of a locked key is ignored at run
 time (`addTags_resolveAccountPrefs()`), so the row shows the policy value; the page's handlers
 skip the key and never write it.
 

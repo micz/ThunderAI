@@ -1262,20 +1262,25 @@
     "description": "Add tags page: first help line of the 'Settings for single accounts' section."
   },
   "AddTags_account_settings_infoline2": {
-    "message": "Each option follows the global setting until you uncheck its \"Use the global setting\" box. Leave the prompt empty to use the global prompt.",
-    "description": "Add tags page: second help line of the 'Settings for single accounts' section. The quoted text must match the translation of 'Use the global setting'."
+    "message": "Each option follows the global setting, shown at its right, until you turn on the switch next to its name: then you can set a value for this account.",
+    "description": "Add tags page: second help line of the 'Settings for single accounts' section, explaining the switch next to each option and to the prompt."
   },
-  "AddTags_account_settings_inherit": {
-    "message": "Use the global setting",
-    "description": "Add tags page, settings for single accounts: checkbox under each option; when checked the account uses the value set above for all accounts, shown greyed out."
+  "AddTags_account_settings_override": {
+    "message": "Use a different value for this account",
+    "description": "Add tags page, settings for single accounts: tooltip of the switch next to each option and to the prompt; when on, the option's field is shown and its value is used for the account instead of the global one."
+  },
+  "AddTags_account_settings_global": {
+    "message": "Global: $VALUE$",
+    "description": "Add tags page, settings for single accounts: shown at the right of an option whose switch is off, with the global value the account uses (a number, Yes/No, a language or a comma-separated list). Keep it short.",
+    "placeholders": { "value": { "content": "$1", "example": "5" } }
+  },
+  "AddTags_account_settings_global_none": {
+    "message": "none",
+    "description": "Add tags page, settings for single accounts: the global value of an option when it is empty (no language, an empty list), shown in place of $VALUE$ in 'Global: $VALUE$'."
   },
   "AddTags_account_settings_uselist_info": {
     "message": "Used only by the automatic tagging, as the option above.",
     "description": "Add tags page, settings for single accounts: note under the 'Use only these tags' option, which applies only when tags are added automatically."
-  },
-  "AddTags_account_settings_uselist_list": {
-    "message": "Tags to use",
-    "description": "Add tags page, settings for single accounts: label of the list of tags used by the 'Use only these tags' option. Keep it short."
   },
   "AddTags_account_settings_prompt_title": {
     "message": "Prompt for this account",
@@ -2041,11 +2046,11 @@
   },
   "yes_string": {
     "message": "Yes",
-    "description": "Generic 'Yes' answer: button in the custom prompts export dialog and value in the 'Moved to Spam' column of the spam reports table."
+    "description": "Generic 'Yes' answer: button in the custom prompts export dialog, value in the 'Moved to Spam' column of the spam reports table and in the 'Settings for single accounts' section of the add tags page."
   },
   "no_string": {
     "message": "No",
-    "description": "Generic 'No' answer: button in the custom prompts export dialog and value in the 'Moved to Spam' column of the spam reports table."
+    "description": "Generic 'No' answer: button in the custom prompts export dialog, value in the 'Moved to Spam' column of the spam reports table and in the 'Settings for single accounts' section of the add tags page."
   },
   "btn_show_differences": {
     "message": "Show differences",

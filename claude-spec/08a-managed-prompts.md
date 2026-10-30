@@ -314,8 +314,10 @@ preference key:
 The prompt editor of the Add Tags page's per-account settings section (`addtags_account_prompt_text`,
 see [02-prompts.md](02-prompts.md#add-tags-per-account-settings)) is locked the same way when
 `prompt_add_tags` is enforced: the account prompt texts (`prompt_text` in
-`add_tags_account_settings`) are ignored at run time then, so the editor is read-only and its
-"Copy the global prompt" button (`btn_account_settings_copy_prompt`) inert. The section's Save and
+`add_tags_account_settings`) are ignored at run time then, so the editor is read-only, and its
+override toggle (`addtags_account_prompt_text_override`, which then stays off, the editor hidden)
+and its "Copy the global prompt" button (`btn_account_settings_copy_prompt`) are inert; the marker
+goes right of the prompt title. The section's Save and
 "Reset to the global settings" buttons stay available for the account's other settings, but keep the
 stored `prompt_text` as it is: the page never writes it while the text is enforced. Likewise a
 global Add Tags key the policy locks is never overridden per account:

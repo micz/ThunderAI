@@ -3,9 +3,10 @@
 // spec 02 "Add tags: per-account settings" -> "Policy" - on the addtags page.
 //
 // The policy enforces the Add Tags text (fixture dom-special-prompts-text.json); account1 stores a
-// prompt_text and a tag limit. The account prompt editor is read-only (not disabled) and marked,
-// "Copy the prompt above" inert; the other rows stay editable and savable, and Save and "Use the
-// global settings" keep the stored prompt_text exactly as stored (never write it, never drop it).
+// prompt_text and a tag limit. The prompt toggle is off and inert, the account prompt editor
+// read-only (not disabled) and marked, the marker in the prompt title, "Copy the prompt above"
+// inert; the other rows stay editable and savable, and Save and "Reset to the global settings" keep
+// the stored prompt_text exactly as stored (never write it, never drop it).
 // The scenario runs in order.
 
 import {
@@ -41,10 +42,11 @@ after(() => ctx.close());
 const $ = ctx.$;
 
 const ctl = key => $('#addtags_account_' + key);
-const box = key => $('#addtags_account_' + key + '_inherit');
+const ovr = key => $('#addtags_account_' + key + '_override');
 const select = () => $('#addtags_account_settings_account');
 const editor = () => $('#addtags_account_prompt_text');
 const copyBtn = () => $('#btn_account_settings_copy_prompt');
+const promptOvr = () => $('#addtags_account_prompt_text_override');
 const saveBtn = () => $('#btn_save_account_settings');
 const removeBtn = () => $('#btn_account_settings_remove');
 const stored = () => ctx.ctl.localData().add_tags_account_settings;
@@ -77,10 +79,28 @@ test('the account prompt editor is read-only, not disabled, marked with the prom
     assert.equal(editor().title, msg('managed_prompt_text_tooltip'));
 });
 
-test('the editor carries the managed marker in its field', () => {
+test('the prompt toggle is off, disabled and marked, the editor hidden, even with a stored prompt_text', () => {
+    assert.equal(promptOvr().checked, false);
+    assert.equal(promptOvr().disabled, true);
+    assert.equal(promptOvr().dataset.mztaManaged, '1');
+    assert.equal(editor().closest('.addtags_account_value').hidden, true);
+});
+
+test('a toggle clicked by hand, re-enabled as from the developer tools, stays off', async () => {
+    promptOvr().disabled = false;
+    await ctx.click(promptOvr());
+    promptOvr().disabled = true;
+    assert.equal(promptOvr().checked, false);
+    assert.equal(editor().closest('.addtags_account_value').hidden, true);
+    assert.equal(saveBtn().disabled, true, 'Save enabled');
+});
+
+test('the prompt title carries the managed marker, visible with the editor hidden', () => {
     const field = editor().closest('.mzta_field');
     assert.ok(field, 'the editor is in no .mzta_field');
-    assert.ok(field.querySelector('.managed_marker'), 'no .managed_marker in the editor\'s field');
+    const title = field.querySelector(':scope > .addtags_account_title');
+    assert.ok(title, 'no title in the editor\'s field');
+    assert.ok(title.querySelector('.managed_marker'), 'no .managed_marker in the prompt title');
 });
 
 test('"Copy the prompt above" is disabled and marked', () => {
@@ -97,13 +117,13 @@ test('"Copy the prompt above", re-enabled by hand and clicked, changes nothing',
     assert.equal(saveBtn().disabled, true, 'Save enabled: the copy made a change');
 });
 
-test('the other rows stay editable: the stored tag limit unchecked and enabled, the inherited boxes enabled', () => {
-    assert.equal(box('add_tags_maxnum').checked, false);
+test('the other rows stay editable: the stored tag limit toggled on and enabled, the other toggles enabled', () => {
+    assert.equal(ovr('add_tags_maxnum').checked, true);
     assert.equal(ctl('add_tags_maxnum').disabled, false);
     assert.equal(ctl('add_tags_maxnum').valueAsNumber, 2);
     for (const key of ['add_tags_force_lang', 'default_chatgpt_lang', 'add_tags_auto_force_existing', 'add_tags_auto_uselist',
-        'add_tags_auto_uselist_list', 'add_tags_exclusions', 'add_tags_exclusions_exact_match']) {
-        assert.equal(box(key).disabled, false, key);
+        'add_tags_exclusions', 'add_tags_exclusions_exact_match']) {
+        assert.equal(ovr(key).disabled, false, key);
     }
 });
 
@@ -123,7 +143,7 @@ test('Save stores the other rows and keeps the stored prompt_text exactly, even 
 test('"Reset to the global settings" removes the other rows and keeps the stored prompt_text', async () => {
     await ctx.click(removeBtn());
     assert.deepEqual(stored(), { account1: { prompt_text: ACCOUNT_TEXT } });
-    assert.equal(box('add_tags_maxnum').checked, true);
+    assert.equal(ovr('add_tags_maxnum').checked, false);
     assert.equal(optionLabel('account1'), 'Work ' + SUFFIX, 'the kept prompt_text is still an entry');
 });
 
@@ -132,8 +152,8 @@ test('an account with no entry: a text forced into the editor is never stored', 
     assert.equal(editor().readOnly, true);
     editor().value = 'Home text forced by a script';
     await ctx.fire(editor(), 'input');
-    await userSets(box('add_tags_force_lang'), false);
-    await userSets(ctl('add_tags_force_lang'), true);
+    await userSets(ovr('add_tags_force_lang'), true);
+    await ctx.click(ctl('add_tags_force_lang'));
     await ctx.click(saveBtn());
     assert.deepEqual(stored().account2, { add_tags_force_lang: true });
     assert.deepEqual(stored().account1, { prompt_text: ACCOUNT_TEXT });

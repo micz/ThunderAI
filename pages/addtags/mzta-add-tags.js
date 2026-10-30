@@ -292,17 +292,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 // Settings for single accounts (add_tags_account_settings, js/mzta-addtags-account-settings.js).
-// The account selector picks which entry the section edits. Every override key has a row: the
-// control addtags_account_<key> and its "Use the global setting" box addtags_account_<key>_inherit.
-// A checked box (the default) means the key is not in the entry: the control is disabled and
-// shows the current global value, kept in step with the global controls above. The prompt
-// editor (addtags_account_prompt_text) left empty means the prompt above. Save stores the whole
-// entry at once; "Reset to the global settings" removes it.
+// The account selector picks which entry the section edits. Every override key has a row, the
+// prompt text included: the toggle addtags_account_<key>_override left of its title. Off (the
+// default) means the key is not in the entry: the row shows only the current global value
+// (addtags_account_<key>_global, kept in step with the global controls above; nothing for the
+// prompt). On shows the control addtags_account_<key>, starting from the value the account had
+// (stored, or edited since the account was loaded) or else from the global one. A Yes/No row is
+// two radios, addtags_account_<key> ("Yes") and addtags_account_<key>_no. "Use only these tags"
+// is one row for two keys, as the global option: its toggle overrides add_tags_auto_uselist and
+// add_tags_auto_uselist_list together, and the list is disabled while "No" is chosen. Save
+// stores the whole entry at once; "Reset to the global settings" removes it.
 //
-// Policy: a row whose global key is locked is locked here too (its override would be ignored at
-// run time) and its stored value, if any, is kept as it is; the same for the prompt text when
-// the policy enforces the Add Tags text. So neither Save nor the removal ever writes a value the
-// policy owns.
+// Policy: a key whose global key is locked is locked here too (its override would be ignored at
+// run time): its control disabled, showing the policy value, and its stored value, if any, kept
+// as it is; when every key of a row is locked, its toggle too (off and disabled). The same for
+// the prompt text when the policy enforces the Add Tags text. So neither Save nor the removal
+// ever writes a value the policy owns.
 const ACCOUNT_ROW_KEYS = ADD_TAGS_ACCOUNT_KEYS.filter(key => key !== 'prompt_text');
 const ACCOUNT_BOOLEAN_KEYS = [
     'add_tags_force_lang',
@@ -310,10 +315,19 @@ const ACCOUNT_BOOLEAN_KEYS = [
     'add_tags_auto_uselist',
     'add_tags_exclusions_exact_match',
 ];
+// The keys edited in another key's row (the one whose ids it carries).
+const ACCOUNT_KEY_ROW = {
+    add_tags_auto_uselist_list: 'add_tags_auto_uselist',
+};
+const accountRowOf = (key) => ACCOUNT_KEY_ROW[key] ?? key;
+// The rows, by the key whose ids they carry.
+const ACCOUNT_ROWS = ACCOUNT_ROW_KEYS.filter(key => !ACCOUNT_KEY_ROW[key]);
 
 async function initAccountSettings(global_textarea) {
     const account_select = document.getElementById('addtags_account_settings_account');
     const account_textarea = document.getElementById('addtags_account_prompt_text');
+    const prompt_override = document.getElementById('addtags_account_prompt_text_override');
+    const prompt_value_el = account_textarea.closest('.addtags_account_value');
     const save_btn = document.getElementById('btn_save_account_settings');
     const remove_btn = document.getElementById('btn_account_settings_remove');
     const copy_btn = document.getElementById('btn_account_settings_copy_prompt');
@@ -321,13 +335,27 @@ async function initAccountSettings(global_textarea) {
     const preview_el = document.getElementById('addtags_account_info_additional_statements');
     const excl_list_textarea = document.getElementById('addtags_excl_list');
 
-    const rows = {};
+    // The controls, by override key; the rows, by the key whose ids they carry.
+    const controls = {};
     for (const key of ACCOUNT_ROW_KEYS) {
-        rows[key] = {
+        controls[key] = {
             control: document.getElementById('addtags_account_' + key),
-            inherit: document.getElementById('addtags_account_' + key + '_inherit'),
+            control_no: document.getElementById('addtags_account_' + key + '_no'),    // Yes/No only
         };
     }
+    const rows = {};
+    for (const row_key of ACCOUNT_ROWS) {
+        const override = document.getElementById('addtags_account_' + row_key + '_override');
+        const row_el = override.closest('.addtags_account_row');
+        rows[row_key] = {
+            keys: ACCOUNT_ROW_KEYS.filter(key => accountRowOf(key) === row_key),
+            override: override,
+            value_el: row_el.querySelector('.addtags_account_value'),
+            global_el: document.getElementById('addtags_account_' + row_key + '_global'),
+            title_el: row_el.querySelector('.addtags_account_title'),
+        };
+    }
+    const uselist_list = controls.add_tags_auto_uselist_list.control;
 
     const accounts = await getAccountsList();
     let entries = {};
@@ -336,6 +364,10 @@ async function initAccountSettings(global_textarea) {
     }
     let current_account_id = '';
     let baseline = '';
+    // The account's own values, by key (prompt_text included): the stored ones at load, then the
+    // last ones the user gave. Switching a toggle on starts from them, so turning it off and on
+    // again does not lose them. Reset on every account load.
+    let own_values = {};
 
     // The global values, in their stored form. The page has no control for default_chatgpt_lang
     // (it is set on the options page), and the exclusion list is the saved one, not what the
@@ -358,26 +390,52 @@ async function initAccountSettings(global_textarea) {
         }
     }
 
-    // Shows a value, in its stored form, in the row's control.
-    function showValue(key, value) {
-        const control = rows[key].control;
+    // A global value as the summaries show it: Yes/No, the lists comma-separated.
+    function valueText(key) {
+        const value = globalValue(key);
+        let text;
         if (ACCOUNT_BOOLEAN_KEYS.includes(key)) {
-            control.checked = value === true;
+            text = browser.i18n.getMessage(value ? 'yes_string' : 'no_string');
         } else if (key === 'add_tags_maxnum') {
-            control.value = Number.isFinite(value) ? String(value) : '';
-        } else if (key === 'add_tags_auto_uselist_list') {
-            control.value = normalizeStringList(value, 1);
+            text = Number.isFinite(value) ? String(value) : '';
         } else if (key === 'add_tags_exclusions') {
-            control.value = Array.isArray(value) ? value.join('\n') : '';
+            text = Array.isArray(value) ? value.join(', ') : '';
         } else {
-            control.value = String(value ?? '');
+            text = String(value ?? '').trim();
+        }
+        return text === '' ? browser.i18n.getMessage('AddTags_account_settings_global_none') : text;
+    }
+
+    // The row's summary: "Use only these tags" adds its list, in brackets, when it is on.
+    function globalText(row_key) {
+        let text = valueText(row_key);
+        if (row_key === 'add_tags_auto_uselist' && globalValue(row_key)) {
+            text += ' (' + valueText('add_tags_auto_uselist_list') + ')';
+        }
+        return browser.i18n.getMessage('AddTags_account_settings_global', [text]);
+    }
+
+    // Shows a value, in its stored form, in the key's control.
+    function showValue(key, value) {
+        const ctl = controls[key];
+        if (ACCOUNT_BOOLEAN_KEYS.includes(key)) {
+            ctl.control.checked = value === true;
+            ctl.control_no.checked = value !== true;
+        } else if (key === 'add_tags_maxnum') {
+            ctl.control.value = Number.isFinite(value) ? String(value) : '';
+        } else if (key === 'add_tags_auto_uselist_list') {
+            ctl.control.value = normalizeStringList(value, 1);
+        } else if (key === 'add_tags_exclusions') {
+            ctl.control.value = Array.isArray(value) ? value.join('\n') : '';
+        } else {
+            ctl.control.value = String(value ?? '');
         }
     }
 
-    // The row's control value, in its stored form; undefined when it holds no valid value
+    // The key's control value, in its stored form; undefined when it holds no valid value
     // (an emptied tag limit), which saves as "use the global setting".
     function readValue(key) {
-        const control = rows[key].control;
+        const control = controls[key].control;
         if (ACCOUNT_BOOLEAN_KEYS.includes(key)) return control.checked;
         switch (key) {
             case 'add_tags_maxnum': {
@@ -396,6 +454,11 @@ async function initAccountSettings(global_textarea) {
 
     const isRowLocked = (key) => isLockedKey(key);
     const isTextEnforced = () => isEnforcedPromptText('prompt_add_tags');
+    const isOverridden = (key) => !isRowLocked(key) && rows[accountRowOf(key)].override.checked;
+    // A row is locked when every key it edits is; while some is not, its toggle stays usable.
+    const isWholeRowLocked = (row_key) => rows[row_key].keys.every(key => isRowLocked(key));
+    const isRowOn = (row_key) => !isWholeRowLocked(row_key) && rows[row_key].override.checked;
+    const isPromptOverridden = () => !isTextEnforced() && prompt_override.checked;
 
     // The stored values the page must keep as they are: those of the locked keys, and the
     // prompt text when the policy enforces the Add Tags text.
@@ -417,7 +480,7 @@ async function initAccountSettings(global_textarea) {
             if (key === 'prompt_text') {
                 if (isTextEnforced()) {
                     if (preserved.prompt_text !== undefined) entry.prompt_text = preserved.prompt_text;
-                } else if (account_textarea.value.trim() !== '') {
+                } else if (prompt_override.checked && account_textarea.value.trim() !== '') {
                     entry.prompt_text = account_textarea.value;
                 }
                 continue;
@@ -426,7 +489,7 @@ async function initAccountSettings(global_textarea) {
                 if (preserved[key] !== undefined) entry[key] = preserved[key];
                 continue;
             }
-            if (rows[key].inherit.checked) continue;
+            if (!rows[accountRowOf(key)].override.checked) continue;
             const value = readValue(key);
             if (value !== undefined) entry[key] = value;
         }
@@ -434,9 +497,9 @@ async function initAccountSettings(global_textarea) {
     }
 
     // The value that applies to the selected account's messages for this key, as the run time
-    // resolves it (addTags_resolveAccountPrefs()): the global one when inherited or locked.
+    // resolves it (addTags_resolveAccountPrefs()): the global one when not overridden or locked.
     function effectiveValue(key) {
-        if (isRowLocked(key) || rows[key].inherit.checked) return globalValue(key);
+        if (!isOverridden(key)) return globalValue(key);
         const value = readValue(key);
         return value === undefined ? globalValue(key) : value;
     }
@@ -444,7 +507,7 @@ async function initAccountSettings(global_textarea) {
     function updatePreview() {
         let values = {};
         for (const key of ACCOUNT_ROW_KEYS) values[key] = effectiveValue(key);
-        const prompt_text = (!isTextEnforced() && account_textarea.value.trim() !== '')
+        const prompt_text = (isPromptOverridden() && account_textarea.value.trim() !== '')
             ? account_textarea.value : global_textarea.value;
         updateAdditionalPromptStatements(values, prompt_text, preview_el);
     }
@@ -464,18 +527,43 @@ async function initAccountSettings(global_textarea) {
         updatePreview();
     }
 
-    // An inherited (or locked) row shows the global value, disabled; an overridden one is
-    // editable. Through the managed-aware setter, so a locked row is never re-enabled.
-    function applyInherit(key) {
-        const row = rows[key];
-        const inherit = isRowLocked(key) || row.inherit.checked;
-        if (inherit) showValue(key, globalValue(key));
-        setDisabledRespectingManaged(row.control, inherit);
+    // A row with its toggle on shows its controls, each from the account's own value or else the
+    // global one (a locked key the policy value); off (or locked), only the summary of the global
+    // value. The controls are also disabled while hidden, through the managed-aware setter, so a
+    // locked key is never re-enabled.
+    function applyOverride(row_key) {
+        const row = rows[row_key];
+        const on = isRowOn(row_key);
+        for (const key of row.keys) {
+            if (on) showValue(key, isRowLocked(key) ? globalValue(key) : (own_values[key] ?? globalValue(key)));
+            for (const control of [controls[key].control, controls[key].control_no]) {
+                if (control) setDisabledRespectingManaged(control, !on);
+            }
+        }
+        if (row_key === 'add_tags_auto_uselist') applyUselistList();
+        row.value_el.hidden = !on;
+        row.global_el.textContent = globalText(row_key);
+        row.global_el.title = row.global_el.textContent;
+        row.global_el.hidden = on;
     }
 
-    function refreshInherited() {
-        for (const key of ACCOUNT_ROW_KEYS) {
-            if (isRowLocked(key) || rows[key].inherit.checked) showValue(key, globalValue(key));
+    // The list of "Use only these tags" is disabled while "No" is chosen, as the global one.
+    function applyUselistList() {
+        const on = isRowOn('add_tags_auto_uselist') && controls.add_tags_auto_uselist.control.checked;
+        setDisabledRespectingManaged(uselist_list, !on);
+    }
+
+    // The same for the prompt, which shows nothing while off (the prompt above is in sight).
+    function applyPromptOverride() {
+        const on = isPromptOverridden();
+        prompt_value_el.hidden = !on;
+        if (on) setEditorText(own_values.prompt_text ?? global_textarea.value);
+    }
+
+    function refreshGlobal() {
+        for (const row_key of ACCOUNT_ROWS) {
+            rows[row_key].global_el.textContent = globalText(row_key);
+            rows[row_key].global_el.title = rows[row_key].global_el.textContent;
         }
         updatePreview();
     }
@@ -506,32 +594,39 @@ async function initAccountSettings(global_textarea) {
     function loadAccount(accountId) {
         current_account_id = accountId;
         const entry = entries[accountId] || {};
-        for (const key of ACCOUNT_ROW_KEYS) {
-            const own = !isRowLocked(key) && Object.prototype.hasOwnProperty.call(entry, key);
-            rows[key].inherit.checked = !own;
-            if (own) showValue(key, entry[key]);
-            applyInherit(key);
+        own_values = {};
+        for (const key of ADD_TAGS_ACCOUNT_KEYS) {
+            if (Object.prototype.hasOwnProperty.call(entry, key)) own_values[key] = entry[key];
         }
-        setEditorText(typeof entry.prompt_text === 'string' ? entry.prompt_text : '');
+        for (const row_key of ACCOUNT_ROWS) {
+            rows[row_key].override.checked = rows[row_key].keys.some(key => !isRowLocked(key) && own_values[key] !== undefined);
+            applyOverride(row_key);
+        }
+        prompt_override.checked = !isTextEnforced() && typeof own_values.prompt_text === 'string';
+        applyPromptOverride();
         baseline = JSON.stringify(buildEntry());
         onFormChange();
     }
 
-    // A row whose global key the policy locks: control and box disabled, marked and inert.
+    // A key whose global key the policy locks: its controls disabled, marked and inert, the marker
+    // in the row's title; the toggle too when every key of the row is locked.
     for (const key of ACCOUNT_ROW_KEYS) {
-        const row = rows[key];
-        await lockOverrideControls(key, [row.control, row.inherit],
-            row.control.closest('.mzta_field_num')?.querySelector('.mzta_field_num_text') || null,
-            taLog.do_debug);
+        const row = rows[accountRowOf(key)];
+        const locked_toggle = row.keys.every(row_key => isLockedKey(row_key)) ? row.override : null;
+        await lockOverrideControls(key, [controls[key].control, controls[key].control_no, locked_toggle],
+            row.title_el, taLog.do_debug);
     }
 
     if (accounts.length === 0) {
         account_select.disabled = true;
-        for (const key of ACCOUNT_ROW_KEYS) {
-            showValue(key, globalValue(key));
-            rows[key].inherit.disabled = true;
-            rows[key].control.disabled = true;
+        for (const row_key of ACCOUNT_ROWS) {
+            rows[row_key].override.checked = false;
+            rows[row_key].override.disabled = true;
+            applyOverride(row_key);
         }
+        prompt_override.checked = false;
+        prompt_override.disabled = true;
+        applyPromptOverride();
         account_textarea.disabled = true;
         copy_btn.disabled = true;
         return;
@@ -540,22 +635,48 @@ async function initAccountSettings(global_textarea) {
     renderAccountOptions();
     loadAccount(account_select.value);
 
-    for (const key of ACCOUNT_ROW_KEYS) {
-        const row = rows[key];
-        row.inherit.addEventListener('change', () => {
-            if (isRowLocked(key)) return;
-            applyInherit(key);
+    for (const row_key of ACCOUNT_ROWS) {
+        const row = rows[row_key];
+        row.override.addEventListener('change', () => {
+            if (isWholeRowLocked(row_key)) {
+                row.override.checked = false;
+                return;
+            }
+            applyOverride(row_key);
             onFormChange();
         });
-        row.control.addEventListener('input', onFormChange);
-        row.control.addEventListener('change', onFormChange);
     }
-    account_textarea.addEventListener('input', onFormChange);
+    for (const key of ACCOUNT_ROW_KEYS) {
+        const onValueChange = () => {
+            const value = readValue(key);
+            if (value === undefined) delete own_values[key];
+            else own_values[key] = value;
+            if (key === 'add_tags_auto_uselist') applyUselistList();
+            onFormChange();
+        };
+        for (const control of [controls[key].control, controls[key].control_no]) {
+            if (!control) continue;
+            control.addEventListener('input', onValueChange);
+            control.addEventListener('change', onValueChange);
+        }
+    }
+    prompt_override.addEventListener('change', () => {
+        if (isTextEnforced()) {
+            prompt_override.checked = false;
+            return;
+        }
+        applyPromptOverride();
+        onFormChange();
+    });
+    account_textarea.addEventListener('input', () => {
+        if (!isTextEnforced()) own_values.prompt_text = account_textarea.value;
+        onFormChange();
+    });
 
-    // Keep the inherited rows and the preview in step with the global settings above.
+    // Keep the global values the rows show, and the preview, in step with the global settings above.
     for (const id of ['add_tags_maxnum', 'add_tags_force_lang', 'add_tags_auto_force_existing',
         'add_tags_auto_uselist', 'add_tags_auto_uselist_list', 'add_tags_exclusions_exact_match']) {
-        document.getElementById(id).addEventListener('change', refreshInherited);
+        document.getElementById(id).addEventListener('change', refreshGlobal);
     }
     global_textarea.addEventListener('input', updatePreview);
     // Registered after the global list's own Save handler, which leaves the saved list,
@@ -563,7 +684,7 @@ async function initAccountSettings(global_textarea) {
     document.getElementById('btn_save_excl_list').addEventListener('click', () => {
         if (isLockedKey('add_tags_exclusions')) return;
         global_exclusions = normalizeStringList(excl_list_textarea.value, 2);
-        refreshInherited();
+        refreshGlobal();
     });
 
     account_select.addEventListener('change', () => {
@@ -575,14 +696,16 @@ async function initAccountSettings(global_textarea) {
     });
 
     // When the policy enforces the Add Tags text the account prompt texts are ignored (they
-    // would bypass it), so the editor is read-only and "Copy the global prompt" inert. Save and
-    // the removal stay available for the other settings, and keep the stored text as it is (see
-    // preservedEntry()). The handlers still check, see the note on lockEnforcedPromptText().
-    await lockEnforcedPromptText(account_textarea, ['prompt_add_tags'], [copy_btn], taLog.do_debug);
+    // would bypass it), so the prompt toggle stays off and inert, the editor read-only and "Copy
+    // the global prompt" inert. Save and the removal stay available for the other settings, and
+    // keep the stored text as it is (see preservedEntry()). The handlers still check, see the
+    // note on lockEnforcedPromptText().
+    await lockEnforcedPromptText(account_textarea, ['prompt_add_tags'], [copy_btn, prompt_override], taLog.do_debug);
 
     copy_btn.addEventListener('click', () => {
         if (isTextEnforced()) return;
         setEditorText(global_textarea.value);
+        own_values.prompt_text = account_textarea.value;
         onFormChange();
     });
 

@@ -3,10 +3,10 @@
 // tags: per-account settings" -> "Policy" - on the addtags page.
 //
 // The policy locks add_tags_maxnum and add_tags_exclusions (with their values); account1 already
-// stores overrides of both, plus one of add_tags_force_lang. The two locked rows are locked (box
-// checked and disabled, control disabled showing the policy value, a marker in the row), the other
-// rows stay editable, the account preview uses the policy values, and neither Save nor "Use the
-// global settings" ever writes a locked key: the stored values of the locked keys are kept as
+// stores overrides of both, plus one of add_tags_force_lang. The two locked rows are locked (toggle
+// off and disabled, control disabled and hidden, the summary showing the policy value, a marker in
+// the row's title), the other rows stay editable, the account preview uses the policy values, and
+// neither Save nor "Reset to the global settings" ever writes a locked key: the stored values of the locked keys are kept as
 // stored, and none is added. The scenario runs in order.
 
 import {
@@ -47,12 +47,17 @@ const LOCKED = ['add_tags_maxnum', 'add_tags_exclusions'];
 const FREE = ['add_tags_force_lang', 'default_chatgpt_lang', 'add_tags_auto_force_existing',
     'add_tags_auto_uselist', 'add_tags_auto_uselist_list', 'add_tags_exclusions_exact_match'];
 const ctl = key => $('#addtags_account_' + key);
-const box = key => $('#addtags_account_' + key + '_inherit');
+/** The row a key is edited in: "Use only these tags" edits the switch and its list together. */
+const rowOf = key => key === 'add_tags_auto_uselist_list' ? 'add_tags_auto_uselist' : key;
+const ovr = key => $('#addtags_account_' + rowOf(key) + '_override');
+const summary = key => $('#addtags_account_' + key + '_global');
+const shown = el => !el.closest('.addtags_account_value').hidden;
+const globalText = text => msg('AddTags_account_settings_global', [text]);
 const select = () => $('#addtags_account_settings_account');
 const saveBtn = () => $('#btn_save_account_settings');
 const removeBtn = () => $('#btn_account_settings_remove');
 const stored = () => ctx.ctl.localData().add_tags_account_settings;
-const row = el => el.closest('.mzta_field, .feature_row');
+const title = el => el.closest('.addtags_account_row').querySelector('.addtags_account_title');
 const accPreview = () => {
     const el = $('#addtags_account_info_additional_statements');
     return el.style.display === 'none' ? '' : el.textContent;
@@ -79,41 +84,46 @@ test('the account with an entry is the one shown', async () => {
 });
 
 for (const key of LOCKED) {
-    test(`${key}: the row is locked - box checked and disabled, control disabled`, () => {
-        assert.equal(box(key).checked, true, 'box unchecked');
-        assert.equal(box(key).disabled, true, 'box enabled');
+    test(`${key}: the row is locked - toggle off and disabled, control disabled and hidden`, () => {
+        assert.equal(ovr(key).checked, false, 'toggle on');
+        assert.equal(ovr(key).disabled, true, 'toggle enabled');
         assert.equal(ctl(key).disabled, true, 'control enabled');
+        assert.equal(shown(ctl(key)), false, 'control shown');
         assert.equal(ctl(key).dataset.mztaManaged, '1', 'control not marked');
-        assert.equal(box(key).dataset.mztaManaged, '1', 'box not marked');
+        assert.equal(ovr(key).dataset.mztaManaged, '1', 'toggle not marked');
     });
 
-    test(`${key}: the row carries the managed marker`, () => {
-        const r = row(ctl(key));
-        assert.ok(r, 'the control is in no row');
-        assert.ok(r.querySelector('.managed_marker'), 'no .managed_marker in the row');
+    test(`${key}: the row's title carries the managed marker`, () => {
+        const t = title(ctl(key));
+        assert.ok(t, 'the control is in no row with a title');
+        assert.ok(t.querySelector('.managed_marker'), 'no .managed_marker in the title');
     });
 }
 
 test('add_tags_maxnum: the locked row shows the policy value, not the stored override', () => {
-    assert.equal(ctl('add_tags_maxnum').valueAsNumber, 9);
+    assert.equal(summary('add_tags_maxnum').hidden, false);
+    assert.equal(summary('add_tags_maxnum').textContent, globalText('9'));
 });
 
 test('add_tags_exclusions: the locked row shows the policy value, not the stored override', () => {
-    assert.deepEqual(ctl('add_tags_exclusions').value.split('\n').filter(Boolean), ['policyword']);
+    assert.equal(summary('add_tags_exclusions').hidden, false);
+    assert.equal(summary('add_tags_exclusions').textContent, globalText('policyword'));
 });
 
-test('the other rows stay editable: the stored override shown unchecked and enabled, the inherited ones with an enabled box', () => {
-    assert.equal(box('add_tags_force_lang').checked, false);
+test('the other rows stay editable: the stored override toggled on and enabled, the others with an enabled toggle', () => {
+    assert.equal(ovr('add_tags_force_lang').checked, true);
+    assert.equal(shown(ctl('add_tags_force_lang')), true);
     assert.equal(ctl('add_tags_force_lang').disabled, false);
     assert.equal(ctl('add_tags_force_lang').checked, true);
     for (const key of FREE.filter(k => k !== 'add_tags_force_lang')) {
-        assert.equal(box(key).disabled, false, key + ': box disabled');
-        assert.equal(box(key).checked, true, key + ': box unchecked');
+        assert.equal(ovr(key).disabled, false, key + ': toggle disabled');
+        assert.equal(ovr(key).checked, false, key + ': toggle on');
         assert.equal(ctl(key).dataset.mztaManaged, undefined, key + ': marked');
     }
 });
 
-test('the editor and the copy button are not locked', () => {
+test('the prompt toggle, the editor and the copy button are not locked', () => {
+    assert.equal($('#addtags_account_prompt_text_override').disabled, false);
     assert.equal($('#addtags_account_prompt_text').readOnly, false);
     assert.equal($('#addtags_account_prompt_text').disabled, false);
     assert.equal($('#btn_account_settings_copy_prompt').disabled, false);
@@ -124,21 +134,22 @@ test('the account preview uses the policy value for the locked tag limit', async
     assert.equal(accPreview().includes(MAXNUM(2)), false, accPreview());
 });
 
-test('a locked box clicked by hand, re-enabled as from the developer tools, does not unlock the control', async () => {
-    const b = box('add_tags_maxnum');
-    b.disabled = false;
-    await ctx.click(b);
+test('a locked toggle clicked by hand, re-enabled as from the developer tools, stays off and does not show the control', async () => {
+    const t = ovr('add_tags_maxnum');
+    t.disabled = false;
+    await ctx.click(t);
+    assert.equal(t.checked, false, 'the toggle was turned on');
+    assert.equal(shown(ctl('add_tags_maxnum')), false, 'the control was shown');
     assert.equal(ctl('add_tags_maxnum').disabled, true, 'the control was enabled');
-    assert.equal(ctl('add_tags_maxnum').valueAsNumber, 9);
-    if (!b.checked) await ctx.click(b);
-    b.disabled = true;
+    assert.equal(saveBtn().disabled, true, 'Save enabled');
+    t.disabled = true;
 });
 
 test('Save keeps the stored values of the locked keys as stored, even with the locked controls edited by hand', async () => {
     // A free row changed through the UI, the locked ones forced open and edited by hand.
-    await userSets(ctl('add_tags_force_lang'), false);
+    await ctx.click($('#addtags_account_add_tags_force_lang_no'));
     for (const key of LOCKED) {
-        box(key).checked = false;
+        ovr(key).checked = true;
         ctl(key).disabled = false;
     }
     await userSets(ctl('add_tags_maxnum'), '6');
@@ -150,12 +161,13 @@ test('Save keeps the stored values of the locked keys as stored, even with the l
 
 test('after the Save the locked rows are still locked with the policy values', () => {
     for (const key of LOCKED) {
-        assert.equal(box(key).checked, true, key + ': box unchecked');
-        assert.equal(box(key).disabled, true, key + ': box enabled');
+        assert.equal(ovr(key).checked, false, key + ': toggle on');
+        assert.equal(ovr(key).disabled, true, key + ': toggle enabled');
         assert.equal(ctl(key).disabled, true, key + ': control enabled');
+        assert.equal(shown(ctl(key)), false, key + ': control shown');
     }
-    assert.equal(ctl('add_tags_maxnum').valueAsNumber, 9);
-    assert.deepEqual(ctl('add_tags_exclusions').value.split('\n').filter(Boolean), ['policyword']);
+    assert.equal(summary('add_tags_maxnum').textContent, globalText('9'));
+    assert.equal(summary('add_tags_exclusions').textContent, globalText('policyword'));
 });
 
 test('"Reset to the global settings" removes the free overrides and keeps the locked ones as stored', async () => {
@@ -172,10 +184,10 @@ test('with only locked values stored there is nothing the page may remove', () =
 test('an account with no entry: Save adds no locked key', async () => {
     await selectAccount('account2');
     for (const key of LOCKED) {
-        assert.equal(box(key).checked, true, key);
+        assert.equal(ovr(key).checked, false, key);
         assert.equal(ctl(key).disabled, true, key);
     }
-    await userSets(box('default_chatgpt_lang'), false);
+    await userSets(ovr('default_chatgpt_lang'), true);
     await userSets(ctl('default_chatgpt_lang'), 'French');
     await ctx.click(saveBtn());
     assert.deepEqual(stored().account2, { default_chatgpt_lang: 'French' });

@@ -369,29 +369,54 @@ allowlist sweep must not take them for the global controls).
   (`getAccountsList()`), the name followed by `AddTags_account_settings_custom_suffix` ("(own
   settings)") when the account has a stored entry. Switching account with unsaved changes asks
   `AddTags_account_settings_discard_confirm`; cancelling puts the previous account back.
-- **One row per override key** (every key of `ADD_TAGS_ACCOUNT_KEYS` but `prompt_text`), titled with
-  the global control's own label: the control `#addtags_account_<key>` and its "Use the global
-  setting" checkbox `#addtags_account_<key>_inherit` (`AddTags_account_settings_inherit`). The
-  controls: `add_tags_maxnum` a number input (`min="0"`); `add_tags_force_lang`,
-  `add_tags_auto_force_existing`, `add_tags_auto_uselist`, `add_tags_exclusions_exact_match`
-  `.mzta_switch` toggles; `default_chatgpt_lang` a text input (the page has no global control for it:
-  its global value is read from `mztaPrefs` at load); `add_tags_auto_uselist_list` and
-  `add_tags_exclusions` textareas, one entry per line.
-- **The inherit rule.** A checked box (the default, and the state of every key missing from the
-  entry) means the account uses the global value: the control is disabled and SHOWS the current
-  global value, kept in step with the global controls above (their `change`, and the exclusion
-  list's Save, which updates the saved global list the row shows). Unchecking the box enables the
-  control, starting from the global value; checking it again puts the global value back. All the
-  enable/disable assignments go through `setDisabledRespectingManaged()`.
-- **Prompt editor** `#addtags_account_prompt_text` (headed by an `.opt_title_small`,
-  `AddTags_account_settings_prompt_title`), with placeholder highlighting, autocomplete (type 1, as
-  the global editor) and the `AddTags_account_settings_placeholder` placeholder: empty means the
-  prompt above. `#btn_account_settings_copy_prompt` copies the global editor's text into it.
+- **One row per override key** (every key of `ADD_TAGS_ACCOUNT_KEYS`, `prompt_text` last; but
+  see "Use only these tags" below, one row for two keys), a
+  `.mzta_field.addtags_account_row` laid out as a grid of direct children: the override toggle
+  `#addtags_account_<key>_override` (a small `.mzta_switch`, tooltip and `aria-label`
+  `AddTags_account_settings_override`) left of the title `.addtags_account_title` (the global
+  control's own label), the global summary `#addtags_account_<key>_global` at the right, and the
+  `.addtags_account_value` holding the control `#addtags_account_<key>` below. The controls:
+  `add_tags_maxnum` a number input (`min="0"`); `add_tags_force_lang`,
+  `add_tags_auto_force_existing`, `add_tags_auto_uselist`, `add_tags_exclusions_exact_match` a
+  segmented Yes / No pair of radios (`.addtags_yesno`, `yes_string` / `no_string`): the control is
+  the "Yes" radio, `#addtags_account_<key>_no` the "No" one, so the row's only switch is the
+  override toggle; `default_chatgpt_lang` a text input (the page has no global control for it: its
+  global value is read from `mztaPrefs` at load); `add_tags_exclusions` a textarea, one entry per
+  line; `prompt_text` the prompt editor (below).
+- **"Use only these tags" is one row for two keys**, as the global option (a switch with its list
+  under it): the row carries the ids of `add_tags_auto_uselist` (`ACCOUNT_KEY_ROW` in
+  `mzta-add-tags.js` maps `add_tags_auto_uselist_list` to it), its one toggle overrides both keys
+  together, and its `.addtags_account_value` holds the Yes / No pair, the global
+  `prefs_OptionText_add_tags_auto_uselist_list_Info` note and the list textarea
+  `#addtags_account_add_tags_auto_uselist_list` (one entry per line), disabled while "No" is chosen
+  (as the global list while its switch is off). The toggle is on when the entry holds either key;
+  Save then writes both. Its summary adds the global list in brackets when the global option is on
+  ("Global: Yes (urgent, work)"). Under the title, `AddTags_account_settings_uselist_info` says the
+  option is used only by the automatic tagging.
+- **The override rule.** A toggle off (the default, and the state of every key missing from the
+  entry) means the account uses the global value: the `.addtags_account_value` is `hidden` and the
+  summary shows `AddTags_account_settings_global` ("Global: $1") with the current global value
+  (Yes/No, the lists comma-separated, `AddTags_account_settings_global_none` when empty; also as its
+  `title`, since a long one is ellipsized), kept in step with the global controls above (their
+  `change`, and the exclusion list's Save, which updates the saved global list it shows). The prompt
+  row has no summary: off, it shows nothing (the prompt above is in sight). Turning a toggle on hides
+  the summary and shows the control, starting from the account's own value (the stored one, or the
+  last one the user gave since the account was loaded, so off and on again loses nothing) or else
+  from the global value; the prompt editor likewise from the account's text or else the global
+  editor's text. The own values are reset on every account load.
+- **Prompt editor** `#addtags_account_prompt_text` (titled by an `.addtags_account_title.opt_title_small`,
+  `AddTags_account_settings_prompt_title`, which is where the managed marker of an enforced text
+  lands), with placeholder highlighting, autocomplete (type 1, as the global editor) and the
+  `AddTags_account_settings_placeholder` placeholder: emptied with its toggle on, it still means
+  the prompt above. `#btn_account_settings_copy_prompt`, under the editor, copies the global
+  editor's text into it. The preview and Save sit after the rows, outside the prompt row, so they
+  stay visible with the prompt toggle off.
 - **Save** `#btn_save_account_settings` stores the whole entry at once through
-  `addTags_setAccountSettings()`: only the rows whose box is unchecked, `add_tags_maxnum` as a
+  `addTags_setAccountSettings()`: only the rows whose toggle is on, `add_tags_maxnum` as a
   number (an emptied field is no key), `add_tags_auto_uselist_list` through `normalizeStringList()`
   (the comma-joined string the global list stores), `add_tags_exclusions` through
-  `normalizeStringList(value, 2)` (lowercase, as the global list), the prompt text when not blank.
+  `normalizeStringList(value, 2)` (lowercase, as the global list), the prompt text when its toggle
+  is on and it is not blank.
   Saving an entry with no key removes the account. **"Reset to the global settings"**
   `#btn_account_settings_remove` (`AddTags_account_settings_remove`) removes the entry; it is enabled
   when the account has something stored the page may drop, or unsaved changes. After either the
@@ -401,17 +426,17 @@ allowlist sweep must not take them for the global controls).
   enabled `btn_save*`) guards leaving the page.
 - **Preview** `#addtags_account_info_additional_statements`: the statements
   `finalizePrompt_add_tags()` would append for the selected account, with its EFFECTIVE values (the
-  row's value when overridden, the global value when inherited or locked) and the account prompt
-  text (the global one when empty), refreshed on every change in the section and in the global
+  row's value when overridden, the global value when not overridden or locked) and the account
+  prompt text (the global one when its toggle is off or it is empty), refreshed on every change in the section and in the global
   settings. `updateAdditionalPromptStatements(values, prompt_text, target_el)` is shared with the
   global preview (`updateGlobalAdditionalStatements()`, which reads the stored values).
-- **No accounts**: the selector, every control and box, the editor and the copy button are
-  disabled (the rows show the global values).
+- **No accounts**: the selector, every toggle, the editor and the copy button are disabled, every
+  toggle off (the rows show the global values in their summaries).
 - **Policy.** A row whose global key the policy locks is locked too, through
   `lockOverrideControls()` (see [08c-managed-ui.md](08c-managed-ui.md#controls-with-their-own-loadsave-logic-data-mzta-pref)):
-  box checked and disabled, control disabled showing the policy value, marker in the row. When the
-  policy enforces the Add Tags text the editor is locked by `lockEnforcedPromptText()` (read-only,
-  copy button inert, see [08a-managed-prompts.md](08a-managed-prompts.md)). The page never writes a
+  toggle off and disabled, controls disabled, the summary showing the policy value, the marker in
+  the row's title (the `anchor`). When the policy enforces the Add Tags text the editor is locked
+  by `lockEnforcedPromptText()` (read-only, the prompt toggle off and inert with the copy button, see [08a-managed-prompts.md](08a-managed-prompts.md)). The page never writes a
   value the policy owns: Save and the removal keep, as stored, the entry's values of the locked keys
   and its `prompt_text` when the text is enforced (they are ignored at run time anyway), and the
   other settings of the account stay editable.
