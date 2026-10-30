@@ -18,6 +18,7 @@ Example in a prompt: `"Summarize this email: {%mail_text_body_or_selected%}"`
 | `type` | number | `0` = always, `1` = reading only, `2` = composing only |
 | `is_default` | string | `"1"` = built-in (not editable/deletable), `"0"` = custom |
 | `is_dynamic` | string | `"0"` = fixed value, `"1"` = dynamic (takes a parameter after `:`) |
+| `param_optional` | string | Dynamic placeholders only, absent = `"0"`. `"1"` = the parameter may be left out (`{%mail_text_body%}` and `{%mail_text_body:2000%}` are both valid), so the autocomplete offers the plain token instead of `{%id:%}` |
 | `enabled` | number | `0` = disabled, `1` = enabled |
 | `text` | string | Content for custom placeholders only |
 
@@ -25,7 +26,8 @@ Example in a prompt: `"Summarize this email: {%mail_text_body_or_selected%}"`
 
 Defined in `js/mzta-placeholders.js` as the `defaultPlaceholders` array — that
 array is the source of truth for IDs. Listed here in source order. `Dyn` marks
-placeholders with `is_dynamic: "1"` (take a parameter after `:`).
+placeholders with `is_dynamic: "1"` (take a parameter after `:`); `mail_text_body` and
+`mail_text_body_or_selected` also have `param_optional: "1"`, since their parameter may be left out.
 
 | ID | Description | Type | Dyn |
 |----|-------------|------|-----|
@@ -90,6 +92,13 @@ Why a placeholder parameter rather than a preference:
 Both are therefore `is_dynamic: "1"`. Two tokens with different limits in one prompt resolve
 independently: the value is stored under the full token key (`mail_text_body:2000`), the same way
 `mail_headers:Subject` already works.
+
+Unlike the other dynamic placeholders, the parameter is **optional**, and the plain form is the
+common one. Both carry `param_optional: "1"`, which `mapPlaceholderToSuggestion()` reads to offer
+the plain token (`{%mail_text_body%}`) in the autocomplete instead of `{%mail_text_body:%}`; a user
+who wants a limit types the colon and the number by hand. Without the flag, making them dynamic
+turned every completion of the body placeholders into a token with a dangling colon (the editor
+suggests `{%id:%}` for every `is_dynamic: "1"` placeholder, see *Placeholder Autocomplete*).
 
 ### Newline contract of the compose placeholders
 
@@ -433,7 +442,9 @@ mirror painting stale text while the caret advances over glyphs that never get r
 reason the list items handle **`mousedown` with `preventDefault()`**, not `click` — a click lets the
 textarea lose focus and collapse its selection before the insertion runs. Completing a dynamic
 placeholder leaves the caret after the colon, before the closing `%}` (`{%additional_text:|%}`), so the
-value can be typed immediately.
+value can be typed immediately. A dynamic placeholder whose parameter is optional
+(`param_optional: "1"`: the two body placeholders, see *Optional length limit on the body
+placeholders*) completes to the plain token instead, with the caret after it, like a fixed one.
 
 **Positioning.** The dropdown is `position: fixed` and placed at the caret by JS. Fixed, not absolute:
 on the two table pages an absolutely positioned list is clipped by the surrounding `<td>`. The caret

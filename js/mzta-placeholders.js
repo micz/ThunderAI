@@ -44,6 +44,10 @@ import {
     0: it's a fixed placeholder
     1: it's a dynamic placehoder (it means that it will have a : and then a value, like {%my_placeholder:test_value%})
 
+    param_optional attribute (dynamic placeholders only, absent means "0"):
+    1: the parameter may be left out ({%mail_text_body%} and {%mail_text_body:2000%} are both valid),
+       so the autocomplete completes to the plain token instead of '{%id:%}'
+
     ================ USER PROPERTIES
     enabled attribute:
     0: Disabled
@@ -71,6 +75,7 @@ const defaultPlaceholders = [
         type: 0,
         is_default: "1",
         is_dynamic: "1",
+        param_optional: "1",
         enabled: 1,
     },
     {
@@ -315,6 +320,7 @@ const defaultPlaceholders = [
         type: 0,
         is_default: "1",
         is_dynamic: "1",
+        param_optional: "1",
         enabled: 1,
     },
     {
@@ -430,8 +436,12 @@ export function mapPlaceholderToSuggestion(p) {
     // `id` and `label` are additive: existing consumers read only command/type/
     // is_dynamic, and the autocomplete falls back to the command when there is
     // no label (customdataplaceholders builds its suggestions inline).
+    // A dynamic placeholder completes to '{%id:%}' so the value can be typed
+    // straight away, unless its parameter is optional (the body placeholders,
+    // whose plain form is the common one): then the plain token is offered.
+    const needsParam = p.is_dynamic == 1 && p.param_optional != 1;
     return {
-        command: '{%' + p.id + (p.is_dynamic == 1 ? ':' : '') + '%}',
+        command: '{%' + p.id + (needsParam ? ':' : '') + '%}',
         type: p.type,
         is_dynamic: p.is_dynamic,
         id: p.id,

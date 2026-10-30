@@ -638,6 +638,15 @@ k.test('autocomplete-dynamic', S_AUTO, 'a dynamic placeholder completes to {%id:
     assert.equal(ta.selectionStart, ta.value.length - '%}'.length);
 });
 
+k.test('autocomplete-param-optional', S_AUTO, 'a dynamic placeholder with an optional parameter (the body placeholders) completes to the plain token, caret after it', async () => {
+    const ta = $('#detail_text');
+    await typeAtCaret('D {%mail_text_body');
+    assert.equal(suggestions()[0], '{%mail_text_body%}', 'no dangling colon in the suggestion');
+    await key('Enter');
+    assert.equal(ta.value, 'D {%mail_text_body%}');
+    assert.equal(ta.selectionStart, ta.value.length);
+});
+
 k.test('mirror-unterminated', S_INVALID, 'edit mode: an unterminated {% is red', async () => {
     await typeAway('Text {%mail_subj and more');
     const chip = mirrorChips().find(c => c.textContent.startsWith('{%mail_subj'));
