@@ -1,5 +1,5 @@
-// Spec 08 "The allowlist": derived from Object.keys(prefs_default) minus four exclusion
-// rules, nothing else hardcoded; "140 of 149 keys are policy-settable", the nine excluded
+// Spec 08 "The allowlist": derived from Object.keys(prefs_default) minus five exclusion
+// rules, nothing else hardcoded; "142 of 152 keys are policy-settable", the ten excluded
 // ones being window geometry, account ids, the webchat font zoom and the custom prompts view.
 //
 // If this fails only on the counts after a preference was added, the derivation is fine and
@@ -15,7 +15,8 @@ let m, con, keys;
 
 const EXCLUDED = key =>
     /^chatgpt_win_/.test(key) || /_enabled_accounts$/.test(key) ||
-    key === 'api_webchat_font_scale' || key === 'custom_prompts_view';
+    key === 'api_webchat_font_scale' || key === 'custom_prompts_view' ||
+    key === 'add_tags_account_prompts';
 
 before(async () => {
     const { prefs_default } = await import('../../options/mzta-options-default.js');
@@ -26,7 +27,7 @@ before(async () => {
     keys = Object.keys(m.prefs_default);
 });
 
-test('every key outside the four exclusion rules is accepted', () => {
+test('every key outside the five exclusion rules is accepted', () => {
     for (const key of keys.filter(k => !EXCLUDED(k))) {
         assert.equal(m.mztaManaged.hasManagedValue(key), true, key);
     }
@@ -47,11 +48,11 @@ test('the generated keys are covered by the derivation', () => {
     }
 });
 
-test('the counts in the spec hold: 141 of 150, nine excluded', () => {
-    assert.equal(keys.length, 150, 'prefs_default size changed: update spec 08 "The allowlist"');
-    assert.equal(keys.filter(k => m.mztaManaged.hasManagedValue(k)).length, 141);
+test('the counts in the spec hold: 142 of 152, ten excluded', () => {
+    assert.equal(keys.length, 152, 'prefs_default size changed: update spec 08 "The allowlist"');
+    assert.equal(keys.filter(k => m.mztaManaged.hasManagedValue(k)).length, 142);
     assert.deepEqual(keys.filter(EXCLUDED).sort(), [
-        'add_tags_enabled_accounts', 'api_webchat_font_scale', 'chatgpt_win_height',
+        'add_tags_account_prompts', 'add_tags_enabled_accounts', 'api_webchat_font_scale', 'chatgpt_win_height',
         'chatgpt_win_left', 'chatgpt_win_save_position', 'chatgpt_win_top', 'chatgpt_win_width',
         'custom_prompts_view', 'spamfilter_enabled_accounts',
     ]);

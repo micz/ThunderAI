@@ -311,6 +311,11 @@ preference key:
   textareas get. `markManaged()` takes the `.mzta_field` anchor explicitly: the textarea's
   own parent is the editor-highlight wrapper.
 
+The Add Tags page's per-account prompts section (`add_tags_account_prompt_text`, see
+[02-prompts.md](02-prompts.md#add-tags-per-account-prompts)) is locked the same way when
+`prompt_add_tags` is enforced: the account prompts are ignored at run time then, so the section
+is read-only with its Save, Remove and Copy buttons inert.
+
 The editor's Save and Reset handlers also **return early** on `isEnforcedPromptText(id)` for
 any of its prompt ids (the calendar Save on either calendar id), and its input handler sets the
 buttons through `setDisabledRespectingManaged()`, so not even a dispatched `input` re-enables
