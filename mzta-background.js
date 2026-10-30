@@ -17,6 +17,8 @@
  */
 
 import { mzta_script } from './js/mzta-chatgpt.js';
+import { createAIProcessingBroker } from './js/mzta-ai-processing-broker.js';
+import { createAIProcessingClient } from './js/mzta-ai-processing-client.js';
 import {
     prefs_default,
     getDynamicSettingsDefaults,
@@ -75,6 +77,7 @@ import {
     migrateMenuOrderAlphabetic,
     migrateEnabledToShowIn,
     migrateCalendarNoSelection,
+    migrateCustomPromptIdCollisions,
     getSpecialPrompts,
     getIgnoredProviderOverrides,
     getReplacedProviderOverrides,
@@ -106,6 +109,10 @@ import {
     getFeatureLabel,
     getMissingPermissionMessage
 } from './js/mzta-feature-permissions.js';
+
+const aiProcessingBroker = createAIProcessingBroker();
+const processingClient = createAIProcessingClient(aiProcessingBroker.dispatch);
+aiProcessingBroker.ready.catch(error => console.error('[ThunderAI] Content processor initialization failed:', error));
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -214,6 +221,10 @@ if (_prefs_migration_ok) await migrateCalendarNoSelection().catch(e => console.e
 // flag lives in storage.local, and reading it before the copy succeeded would find the
 // "not yet run" default and rewrite a value that is not there yet.
 if (_prefs_migration_ok) await migrateOllamaThinkLevel();
+// Renames a custom prompt whose id is a built-in prompt's (claude-spec/02-prompts.md "Prompt ids").
+// Not guarded and with no flag: it runs at every start, since a new version can ship an id a user
+// already has, and it reads only _custom_prompt, which the #129 pair above has already moved.
+await migrateCustomPromptIdCollisions().catch(e => console.error("[ThunderAI] migrateCustomPromptIdCollisions error: " + e));
 
 let _process_incoming = false;
 let _sparks_presence = false;
@@ -390,6 +401,17 @@ await (async () => {
 taWorkingStatus.taLog = taLog;
 taBatchController.taLog = taLog;
 taJobRegistry.taLog = taLog;
+// While the ThunderAI Privacy switch is on, the toolbar buttons show the companion's icon.
+// The policy-resolved value is read, at startup and on every write of the switch.
+function syncPrivacyIcon() {
+    mztaPrefs.getPref('ai_processing_enabled')
+        .then(enabled => taWorkingStatus.setPrivacy(enabled === true))
+        .catch(e => taLog.error("Could not read the ThunderAI Privacy switch: " + e));
+}
+syncPrivacyIcon();
+browser.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && Object.hasOwn(changes, 'ai_processing_enabled')) syncPrivacyIcon();
+});
 let spamReport = new taSpamReport(prefs_init.do_debug);
 let summaryStore = new taSummaryStore(prefs_init.do_debug);
 let translationStore = new taTranslationStore(prefs_init.do_debug);
@@ -1018,22 +1040,21 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _replaceSelectedText(tabId, text) {
                     //console.log('chatgpt_replaceSelectedText: [' + tabId +'] ' + text)
                     taLog.log("chatgpt_replaceSelectedText text: " + text);
-                    // The compose format is read from the window itself, not from a
-                    // preference: it is a per-message property, so a global setting
-                    // could never be right for a user who writes in both formats.
-                    let isPlainText = await isPlainTextCompose(tabId);
-                    if(isPlainText){
-                        text = stripHtmlKeepLines(text);
-                    }else{
-                        // The compose script inserts it with execCommand('insertHTML'): only
-                        // sanitized markup may reach it. The ChatGPT web window's HTML is not
-                        // sanitized anywhere else; the API chat's already crossed it.
-                        text = sanitizeBlockHtml(text);
-                    }
-                    await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: text, tabId: tabId, isPlainText: isPlainText });
+                    const prepared = await _prepareComposeAnswer(tabId, text);
+                    await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: prepared.text, tabId: tabId, isPlainText: prepared.isPlainText });
                     return true;
                 }
                 return _replaceSelectedText(message.tabId, message.text);
+            case 'chatgpt_insertAtCaret':
+                // Action "3": the answer goes where the cursor is, never replacing a selection
+                // and never asking for confirmation. Same conversion as the replacement.
+                async function _insertAtCaret(tabId, text) {
+                    taLog.log("chatgpt_insertAtCaret text: " + text);
+                    const prepared = await _prepareComposeAnswer(tabId, text);
+                    await browser.tabs.sendMessage(tabId, { command: "insertAtCaret", text: prepared.text, tabId: tabId, isPlainText: prepared.isPlainText });
+                    return true;
+                }
+                return _insertAtCaret(message.tabId, message.text);
             case 'chatgpt_replyMessage':
                 async function _replyMessage(message) {
                     let paragraphsHtmlString = message.text;
@@ -1702,6 +1723,7 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
         const { promptText } = await taPromptUtils.buildSummaryPrompt([{ message, fullMessage }]);
 
         const cmd = new mzta_specialCommand({
+            processingClient,
             prompt: promptText,
             llm: connectionType,
             do_debug: prefs.do_debug,
@@ -1879,6 +1901,7 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
         const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, curr_messageId);
 
         const cmd = new mzta_specialCommand({
+            processingClient,
             prompt: promptText,
             llm: connectionType,
             do_debug: prefs.do_debug,
@@ -2194,6 +2217,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
         taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
 
         let cmd_spamfilter = new mzta_specialCommand({
+            processingClient,
             prompt: specialFullPrompt_spamfilter,
             llm: spam_conntype,
             custom_model: curr_prompt_spamfilter.model ? curr_prompt_spamfilter.model : '',
@@ -2312,6 +2336,21 @@ browser.runtime.onMessageExternal.addListener((message, sender, sendResponse) =>
     }
 });
 
+// The answer as a compose window takes it, for replaceSelectedText and insertAtCaret alike.
+// The compose format is read from the window itself, not from a preference: it is a
+// per-message property, so a global setting could never be right for a user who writes in
+// both formats.
+async function _prepareComposeAnswer(tabId, text) {
+    const isPlainText = await isPlainTextCompose(tabId);
+    if(isPlainText){
+        return { text: stripHtmlKeepLines(text), isPlainText: true };
+    }
+    // The compose script inserts it with execCommand('insertHTML'): only sanitized markup
+    // may reach it. The ChatGPT web window's HTML is not sanitized anywhere else; the API
+    // chat's already crossed it.
+    return { text: sanitizeBlockHtml(text), isPlainText: false };
+}
+
 async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_custom_text = 0, prompt_info = {}) {
     let prefs = await mztaPrefs.getAllPrefs();
     taLog.changeDebug(prefs.do_debug);
@@ -2346,6 +2385,14 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     switch(prefs.connection_type){
         case 'chatgpt_web':
         {
+            // ThunderAI Privacy does not cover ChatGPT Web: while its switch is on, the prompt
+            // is blocked here rather than sent unprocessed to the site (fail-closed, as a
+            // missing companion blocks the API workers). The policy-resolved value is read.
+            if (await mztaPrefs.getPref('ai_processing_enabled') === true) {
+                let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                sendTabMessageSafe(curr_tabId, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('ai_processing_chatgpt_web_unsupported') });
+                return;
+            }
             // We are using the ChatGPT web interface
 
             let rand_call_id = '_chatgptweb_' + generateCallID();
@@ -2393,7 +2440,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             
             applyWindowPositionAndSize(win_options, prefs);
 
-            const listener = (message, sender, sendResponse) => {
+            const ready = addReadyListener("chatgpt_web_ready_" + rand_call_id, (message, createdTab) => {
                 async function handleChatGptWeb(createdTab) {
                     taLog.log("ChatGPT web interface script started...");
 
@@ -2440,18 +2487,14 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId, prompt_info: prompt_info});
                     taLog.log('[ChatGPT Web] Connection succeded!');
                     taLog.log("[ThunderAI] ChatGPT Web script injected successfully");
-                    browser.runtime.onMessage.removeListener(listener);
+                    ready.cleanup();
                 }
-            
-                if (message.command === "chatgpt_web_ready_" + rand_call_id) {
-                    taLog.log("[chatgpt_web] Page ready: reason " + message.readyReason + ", loaderStartMs " + Math.round(message.loaderStartMs) + ", readySentMs " + Math.round(message.readySentMs) + ", readyStateAtSend " + message.readyStateAtSend);
-                    return handleChatGptWeb(sender.tab)
-                }
-                return false;
-            }
 
-            browser.runtime.onMessage.addListener(listener);
-            await browser.windows.create(win_options);
+                taLog.log("[chatgpt_web] Page ready: reason " + message.readyReason + ", loaderStartMs " + Math.round(message.loaderStartMs) + ", readySentMs " + Math.round(message.readySentMs) + ", readyStateAtSend " + message.readyStateAtSend);
+                return handleChatGptWeb(createdTab)
+            });
+
+            await ready.openWindow(win_options);
         }
         break;  // chatgpt_web - END
 
@@ -2461,34 +2504,26 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             let rand_call_id2 = '_openai_' + generateCallID();
 
-            const listener2 = (message, sender, sendResponse) => {
+            const ready2 = addReadyListener("chatgpt_api_ready_"+rand_call_id2, (message, createdTab) => {
+                let mailMessageId2 = -1;
+                if(mailMessage) mailMessageId2 = mailMessage.id;
 
-                function handleChatGptApi(createdTab) {
-                    let mailMessageId2 = -1;
-                    if(mailMessage) mailMessageId2 = mailMessage.id;
-
-                    // check if the config is present, or give a message error
-                    if (prefs.chatgpt_api_key == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('chatgpt_empty_apikey')});
-                        return;
-                    }
-                    if (prefs.chatgpt_model == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('chatgpt_empty_model')});
-                        return;
-                    }
-                    //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
-                    browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text, prompt_info: prompt_info});
-                    taLog.log('[OpenAI ChatGPT] Connection succeded!');
-                    browser.runtime.onMessage.removeListener(listener2);
+                // check if the config is present, or give a message error
+                if (prefs.chatgpt_api_key == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('chatgpt_empty_apikey')});
+                    ready2.cleanup();
+                    return;
                 }
-
-                if (message.command === "chatgpt_api_ready_"+rand_call_id2) {
-                    return handleChatGptApi(sender.tab);
+                if (prefs.chatgpt_model == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('chatgpt_empty_model')});
+                    ready2.cleanup();
+                    return;
                 }
-                return false;
-            }
-
-            browser.runtime.onMessage.addListener(listener2);
+                //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
+                browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text, prompt_info: prompt_info});
+                taLog.log('[OpenAI ChatGPT] Connection succeded!');
+                ready2.cleanup();
+            });
 
             let win_options2 = {
                 url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id2+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')+'&prompt_id='+encodeURIComponent(prompt_info.id) + '&prompt_name=' + encodeURIComponent(i18nConditionalGet(prompt_info.name))),
@@ -2497,7 +2532,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             applyWindowPositionAndSize(win_options2, prefs);
 
-            await browser.windows.create(win_options2);
+            await ready2.openWindow(win_options2);
         }
         break;  // chatgpt_api - END
 
@@ -2507,34 +2542,26 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             let rand_call_id5 = '_google_gemini_' + generateCallID();
 
-            const listener5 = (message, sender, sendResponse) => {
+            const ready5 = addReadyListener("google_gemini_api_ready_"+rand_call_id5, (message, createdTab) => {
+                let mailMessageId5 = -1;
+                if(mailMessage) mailMessageId5 = mailMessage.id;
 
-                function handleChatGptApi(createdTab) {
-                    let mailMessageId5 = -1;
-                    if(mailMessage) mailMessageId5 = mailMessage.id;
-
-                    // check if the config is present, or give a message error
-                    if (prefs.google_gemini_api_key == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('google_gemini_empty_apikey')});
-                        return;
-                    }
-                    if (prefs.google_gemini_model == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('google_gemini_empty_model')});
-                        return;
-                    }
-                    //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
-                    browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId5, do_custom_text: do_custom_text, prompt_info: prompt_info});
-                    taLog.log('[Google Gemini] Connection succeded!');
-                    browser.runtime.onMessage.removeListener(listener5);
+                // check if the config is present, or give a message error
+                if (prefs.google_gemini_api_key == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('google_gemini_empty_apikey')});
+                    ready5.cleanup();
+                    return;
                 }
-
-                if (message.command === "google_gemini_api_ready_"+rand_call_id5) {
-                    return handleChatGptApi(sender.tab);
+                if (prefs.google_gemini_model == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('google_gemini_empty_model')});
+                    ready5.cleanup();
+                    return;
                 }
-                return false;
-            }
-
-            browser.runtime.onMessage.addListener(listener5);
+                //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
+                browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId5, do_custom_text: do_custom_text, prompt_info: prompt_info});
+                taLog.log('[Google Gemini] Connection succeded!');
+                ready5.cleanup();
+            });
 
             let win_options5 = {
                 url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id5+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')+'&prompt_id='+encodeURIComponent(prompt_info.id) + '&prompt_name=' + encodeURIComponent(i18nConditionalGet(prompt_info.name))),
@@ -2543,7 +2570,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             applyWindowPositionAndSize(win_options5, prefs);
 
-            await browser.windows.create(win_options5);
+            await ready5.openWindow(win_options5);
         }
         break;  // google_gemini_api - END
 
@@ -2555,39 +2582,30 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             let rand_call_id3 = '_ollama_' + generateCallID();
 
-            const listener3 = (message, sender, sendResponse) => {
+            const ready3 = addReadyListener("ollama_api_ready_"+rand_call_id3, (message, createdTab3) => {
+                taLog.log("Ollama API window ready.");
+                taLog.log("message.window_id: " + message.window_id)
+                taLog.log("createdTab3.id: " + createdTab3.id)
+                // let mailMessage3 = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
+                let mailMessageId3 = -1;
+                if(mailMessage) mailMessageId3 = mailMessage.id;
+                taLog.log("mailMessageId3: " + mailMessageId3)
 
-                function handleOllamaApi(createdTab3) {
-                    taLog.log("Ollama API window ready.");
-                    taLog.log("message.window_id: " + message.window_id)
-                    taLog.log("createdTab3.id: " + createdTab3.id)
-                    // let mailMessage3 = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
-                    let mailMessageId3 = -1;
-                    if(mailMessage) mailMessageId3 = mailMessage.id;
-                    taLog.log("mailMessageId3: " + mailMessageId3)
-            
-                    // check if the config is present, or give a message error
-                    if (prefs.ollama_host == '') {
-                        browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_host')});
-                        return;
-                    }
-                    if (prefs.ollama_model == '') {
-                        browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_model')});
-                        return;
-                    }
-                    browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text, prompt_info: prompt_info});
-                    taLog.log('[Ollama API] Connection succeded!');
-                    browser.runtime.onMessage.removeListener(listener3);
+                // check if the config is present, or give a message error
+                if (prefs.ollama_host == '') {
+                    browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_host')});
+                    ready3.cleanup();
+                    return;
                 }
-
-                if (message.command === "ollama_api_ready_"+rand_call_id3) {
-                    return handleOllamaApi(sender.tab);
-                }else{
-                    return false;
+                if (prefs.ollama_model == '') {
+                    browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_model')});
+                    ready3.cleanup();
+                    return;
                 }
-            }
-
-            browser.runtime.onMessage.addListener(listener3);
+                browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text, prompt_info: prompt_info});
+                taLog.log('[Ollama API] Connection succeded!');
+                ready3.cleanup();
+            });
 
             let win_options3 = {
                 url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id3+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')+'&prompt_id='+encodeURIComponent(prompt_info.id) + '&prompt_name=' + encodeURIComponent(i18nConditionalGet(prompt_info.name))),
@@ -2596,7 +2614,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             applyWindowPositionAndSize(win_options3, prefs);
 
-            await browser.windows.create(win_options3);
+            await ready3.openWindow(win_options3);
 
         }
         break;  // ollama_api - END
@@ -2608,34 +2626,26 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             let rand_call_id4 = '_openai_comp_api_' + generateCallID();
 
     
-            const listener4 = (message, sender, sendResponse) => {
+            const ready4 = addReadyListener("openai_comp_api_ready_"+rand_call_id4, (message, createdTab) => {
+                let mailMessageId4 = -1;
+                if(mailMessage) mailMessageId4 = mailMessage.id;
 
-                function handleOpenAICompApi(createdTab) {
-                    let mailMessageId4 = -1;
-                    if(mailMessage) mailMessageId4 = mailMessage.id;
-    
-                    // check if the config is present, or give a message error
-                    if (prefs.openai_comp_host == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('OpenAIComp_empty_host')});
-                        return;
-                    }
-                    if (prefs.openai_comp_model == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('OpenAIComp_empty_model')});
-                        return;
-                    }
-    
-                    browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId4, do_custom_text: do_custom_text, prompt_info: prompt_info});
-                    taLog.log('[OpenAI Comp API] Connection succeded!');
-                    browser.runtime.onMessage.removeListener(listener4);
+                // check if the config is present, or give a message error
+                if (prefs.openai_comp_host == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('OpenAIComp_empty_host')});
+                    ready4.cleanup();
+                    return;
+                }
+                if (prefs.openai_comp_model == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('OpenAIComp_empty_model')});
+                    ready4.cleanup();
+                    return;
                 }
 
-                if (message.command === "openai_comp_api_ready_"+rand_call_id4) {
-                    return handleOpenAICompApi(sender.tab);
-                }
-                return false;
-            }
-    
-            browser.runtime.onMessage.addListener(listener4);
+                browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId4, do_custom_text: do_custom_text, prompt_info: prompt_info});
+                taLog.log('[OpenAI Comp API] Connection succeded!');
+                ready4.cleanup();
+            });
 
             let win_options4 = {
                 url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id4+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')+'&prompt_id='+encodeURIComponent(prompt_info.id) + '&prompt_name=' + encodeURIComponent(i18nConditionalGet(prompt_info.name))),
@@ -2644,7 +2654,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             applyWindowPositionAndSize(win_options4, prefs);
 
-            await browser.windows.create(win_options4);
+            await ready4.openWindow(win_options4);
         }
         break;  // openai_comp_api - END
 
@@ -2654,38 +2664,31 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             let rand_call_id6 = '_anthropic_' + generateCallID();
 
-            const listener6 = (message, sender, sendResponse) => {
+            const ready6 = addReadyListener("anthropic_api_ready_"+rand_call_id6, (message, createdTab) => {
+                let mailMessageId6 = -1;
+                if(mailMessage) mailMessageId6 = mailMessage.id;
 
-                function handleAnthropicApi(createdTab) {
-                    let mailMessageId6 = -1;
-                    if(mailMessage) mailMessageId6 = mailMessage.id;
-
-                    // check if the config is present, or give a message error
-                    if (prefs.anthropic_api_key == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('anthropic_empty_apikey')});
-                        return;
-                    }
-                    if (prefs.anthropic_model == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('anthropic_empty_model')});
-                        return;
-                    }
-                    if (prefs.anthropic_version == '') {
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('anthropic_empty_version')});
-                        return;
-                    }
-                    //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
-                    browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId6, do_custom_text: do_custom_text, prompt_info: prompt_info});
-                    taLog.log('[OpenAI ChatGPT] Connection succeded!');
-                    browser.runtime.onMessage.removeListener(listener6);
+                // check if the config is present, or give a message error
+                if (prefs.anthropic_api_key == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('anthropic_empty_apikey')});
+                    ready6.cleanup();
+                    return;
                 }
-
-                if (message.command === "anthropic_api_ready_"+rand_call_id6) {
-                    return handleAnthropicApi(sender.tab);
+                if (prefs.anthropic_model == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('anthropic_empty_model')});
+                    ready6.cleanup();
+                    return;
                 }
-                return false;
-            }
-
-            browser.runtime.onMessage.addListener(listener6);
+                if (prefs.anthropic_version == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('anthropic_empty_version')});
+                    ready6.cleanup();
+                    return;
+                }
+                //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
+                browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId6, do_custom_text: do_custom_text, prompt_info: prompt_info});
+                taLog.log('[OpenAI ChatGPT] Connection succeded!');
+                ready6.cleanup();
+            });
 
             let win_options6 = {
                 url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id6+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')+'&prompt_id='+encodeURIComponent(prompt_info.id) + '&prompt_name=' + encodeURIComponent(i18nConditionalGet(prompt_info.name))),
@@ -2694,7 +2697,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             applyWindowPositionAndSize(win_options6, prefs);
 
-            await browser.windows.create(win_options6);
+            await ready6.openWindow(win_options6);
         }
         break;  // anthropic_api - END
 
@@ -2710,6 +2713,50 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             }
         break;
     }
+}
+
+// The background's side of the chat window's ready handshake (claude-spec/01-architecture.md,
+// "Ready handshake"): a runtime.onMessage listener waiting for `command` (`<llm>_ready_<call_id>`)
+// and calling onReady(message, senderTab) with it. Whatever onReady answers the window (api_send,
+// api_error, chatgpt_send), it calls cleanup() once done. openWindow() creates the window and
+// watches it: a window closed before its ready message arrives (or that never sends it) removes
+// the listener too. cleanup() removes both listeners, so neither is left behind.
+function addReadyListener(command, onReady) {
+    let done = false;
+    let windowId = null;
+    const listener = (message, sender, sendResponse) => {
+        if (message.command === command) {
+            return onReady(message, sender.tab);
+        }
+        return false;
+    };
+    const onWindowRemoved = (removedId) => {
+        if (removedId === windowId) cleanup();
+    };
+    function cleanup() {
+        done = true;
+        browser.runtime.onMessage.removeListener(listener);
+        browser.windows.onRemoved.removeListener(onWindowRemoved);
+    }
+    browser.runtime.onMessage.addListener(listener);
+    return {
+        cleanup,
+        async openWindow(win_options) {
+            let win;
+            try {
+                win = await browser.windows.create(win_options);
+            } catch (error) {
+                cleanup();
+                throw error;
+            }
+            // The ready message may already have been answered while the window was being created.
+            if (!done) {
+                windowId = win.id;
+                browser.windows.onRemoved.addListener(onWindowRemoved);
+            }
+            return win;
+        },
+    };
 }
 
 function checkScreenDimensions(prefs){
@@ -2865,7 +2912,7 @@ setupPermissionsRemovedListener();
 // Never fatal either, like the migration block above: on failure its flag stays unset and it
 // runs again at the next start.
 if (_prefs_migration_ok) await migrateMenuOrderAlphabetic().catch(e => console.error("[ThunderAI] migrateMenuOrderAlphabetic error: " + e));
-const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
+const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug, processingClient);
 await menus.loadMenus(await _computeActiveSpecialIds());
 
 // Context menu click handling
@@ -3514,6 +3561,7 @@ async function processEmails(args) {
             specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list, prefs_aats.add_tags_auto_force_existing, tags_full_list[0], curr_prompt_add_tags.text);
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
             let cmd_addTags = new mzta_specialCommand({
+                processingClient,
                 prompt: specialFullPrompt_add_tags,
                 llm: addtags_conntype,
                 custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',

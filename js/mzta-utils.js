@@ -23,11 +23,15 @@ import {
 
 import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js'
 import { mztaPrefs } from './mzta-prefs.js';
-import { mztaManaged, managedReady, ACCOUNT_MATCH_LOCAL } from './mzta-managed.js';
+import {
+  mztaManaged,
+  managedReady,
+  ACCOUNT_MATCH_LOCAL
+} from './mzta-managed.js';
 import { taLogger } from './mzta-logger.js';
 
 const sparks_min = '3.1.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
-const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
+const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it', 'ja'];
 
 export const getMenuContextCompose = () => 'compose_action_menu';
 export const getMenuContextDisplay = () => 'message_display_action_menu';
@@ -1084,7 +1088,12 @@ export function getAPIsInitMessageString(args = {}) {
   }
   let additional_message = '';
   if (additional_messages.length > 0) {
-    additional_message = additional_messages.map(msg => "<span class='info_obj'>" + esc(msg.label) + ":</span> " + esc(msg.value)).join("\n");
+    // A message with `items` is a section: its label on a line of its own, then one
+    // indented "label: value" line per item.
+    const line = (msg, indent = '') => indent + "<span class='info_obj'>" + esc(msg.label) + ":</span> " + esc(msg.value);
+    additional_message = additional_messages.map(msg => Array.isArray(msg.items)
+      ? ["<span class='info_obj'>" + esc(msg.label) + ":</span>", ...msg.items.map(item => line(item, '    '))].join("\n")
+      : line(msg)).join("\n");
   }
   if (additional_message !== '') {
     output += "\n" + additional_message;
@@ -1329,8 +1338,10 @@ export function normalizeReminderMinutes(data_obj, reminder_enabled, logger = nu
   logger?.log("reminderMinutes: raw = " + JSON.stringify(raw) + ", final = " + JSON.stringify(data_obj.reminderMinutes));
 }
 
+// The values never logged: the API keys, and the extra request headers, which may
+// carry one (e.g. Azure's api-key).
 export function isAPIKeyValue(id){
-  return id.endsWith('_api_key');
+  return id.endsWith('_api_key') || id.endsWith('_extra_headers');
 }
 
 export function getConnectionType(prefs, prompt, prefix = null) {

@@ -144,12 +144,18 @@ still applies.
 
   | Field | Rule |
   |---|---|
-  | `*_host` | parses as an `http:` or `https:` URL |
+  | `*_host` | parses as an `http:` or `https:` URL, with no user name or password in it (the warning masks them) |
   | `*_model` | not empty |
   | numeric default (`ollama_num_ctx`, `anthropic_max_tokens`, `anthropic_extended_thinking_budget`) | a non-negative integer; `anthropic_max_tokens` ≥ 1 |
   | `*_temperature` | `''` or a finite number ≥ 0 |
   | `google_gemini_thinking_budget` | `''` or an integer (`-1` is Gemini's "dynamic") |
   | `*_extra_body` | `''` or JSON that parses to a plain object, the `parseExtraBody()` contract |
+  | `openai_comp_extra_headers` | `''`, or a JSON object every entry of which `extraHeaderProblem()` accepts: stricter than `parseExtraHeaders()`, which drops a bad entry and keeps the rest. The warning names the header, never the value (`_logValue()` masks the whole value) |
+
+  A policy host on plain `http:` to another machine is accepted, and counts as approved: its
+  origin is in `getApprovedInsecureOrigins()`, so the user is never asked about it (see
+  [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy)).
+  The same goes for a global `*_host` and for the `*_host` of an organization prompt.
 
   The settings UI enforces none of these; it saves what is typed and the request builders
   cope. A user's typo breaks that user's feature. A policy typo breaks it for the whole fleet,

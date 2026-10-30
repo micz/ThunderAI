@@ -100,7 +100,8 @@ k.test('turn2-thoughts', 'turn 2: thought parts first, a thought and an answer p
     await t.done;
     const req = net.calls[0];
     const u = new URL(req.url);
-    assert.equal(u.searchParams.get('key'), KEY, 'google_gemini_api_key reached the client');
+    assert.equal(req.headers['x-goog-api-key'], KEY, 'google_gemini_api_key reached the client');
+    assert.equal(req.url.includes(KEY), false, 'never in the URL');
     assert.ok(u.pathname.endsWith('/models/gemini-flash-latest:streamGenerateContent'), 'google_gemini_model too, streaming on');
     const body = req.json();
     assert.deepEqual(body.generationConfig.thinkingConfig, { thinkingBudget: 1024, includeThoughts: true });

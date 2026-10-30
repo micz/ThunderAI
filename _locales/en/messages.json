@@ -1,4 +1,30 @@
 {
+  "ai_processing_unclassified_field": {
+    "message": "An unclassified provider content field blocked processing. Update ThunderAI before retrying.",
+    "description": "Fail-closed error when a provider string option lacks a content-boundary classification."
+  },
+  "ai_processing_busy": { "message": "A request is already being processed. Wait for it to finish; the additional message was not sent.", "description": "Notice when a second active-processing request is rejected." },
+  "ai_processing": { "message": "Processing content locally…", "description": "Status while the companion processes content." },
+  "ai_processing_chunks": { "message": "Processing content… part $CURRENT$ of $TOTAL$", "description": "Companion chunk progress: current part and total parts.", "placeholders": { "current": { "content": "$1" }, "total": { "content": "$2" } } },
+  "ai_processing_unavailable": { "message": "ThunderAI Privacy is switched on but unavailable. Nothing was sent by this operation. Enable or reinstall ThunderAI Privacy, or switch off \"Use ThunderAI Privacy\" in ThunderAI's advanced options if you no longer want to use it.", "description": "Blocking error and recovery instructions for an unavailable active companion. 'ThunderAI Privacy' is a product name; 'Use ThunderAI Privacy' is the label of the option, translate it as in prefs_OptionText_ai_processing_enabled." },
+  "ai_processing_incompatible": { "message": "The content processor uses an incompatible API. Update ThunderAI and its companion together. Nothing was sent by this operation.", "description": "Blocking error for incompatible processing protocol replies." },
+  "ai_processing_session_expired": { "message": "The processing session is unavailable. Close this chat and start the ThunderAI prompt again.", "description": "Recovery instructions for an expired processing session." },
+  "ai_processing_failed": { "message": "Content processing failed. The operation was blocked.", "description": "Fallback error when a companion hook fails." },
+  "ai_processing_timeout": { "message": "The content processor timed out. The operation was blocked.", "description": "Error when companion discovery or processing exceeds its deadline." },
+  "ai_processing_cancelled": { "message": "Content processing cancelled.", "description": "Notice when processing is cancelled." },
+  "ai_processing_invalid_result": { "message": "The processor returned an invalid result. The operation was blocked.", "description": "Blocking error when a companion result fails validation." },
+  "ai_processing_invalid_sender": { "message": "Content processing is restricted to trusted extension contexts.", "description": "Error rejecting an untrusted internal processing request." },
+  "ai_processing_chatgpt_web_unsupported": { "message": "ThunderAI Privacy does not work with ChatGPT Web, so this prompt was not sent. Use an API connection, or switch off \"Use ThunderAI Privacy\" in ThunderAI's advanced options.", "description": "Alert shown instead of opening ChatGPT Web while the ThunderAI Privacy switch is on: nothing is sent unprocessed. 'ThunderAI Privacy' is a product name; 'Use ThunderAI Privacy' is the label of the option, translate it as in prefs_OptionText_ai_processing_enabled." },
+  "ai_processing_setting_locked": { "message": "This setting is managed by your organization.", "description": "Error returned to the ThunderAI Privacy companion when it tries to change the ThunderAI Privacy switch while an enterprise policy locks it." },
+  "prefs_OptionText_ai_processing_enabled": { "message": "Use ThunderAI Privacy", "description": "Options page, advanced section: name of the switch that masks personal data through the ThunderAI Privacy add-on; 'ThunderAI Privacy' is a product name." },
+  "prefs_OptionText_ai_processing_enabled_info": { "message": "Personal data is masked locally by the ThunderAI Privacy add-on before it is sent to the AI provider, and restored in the answer. It can be turned on once the local model is downloaded. While this is on, AI requests are blocked if ThunderAI Privacy is not available. Changes apply to new chats and commands.", "description": "Options page, advanced section: description of the ThunderAI Privacy switch; 'ThunderAI Privacy' is a product name." },
+  "prefs_OptionText_ai_processing_Privacy_not_present": { "message": "To mask personal data before it is sent to the AI provider, install the ThunderAI Privacy add-on.", "description": "Options page, advanced section: notice shown when the ThunderAI Privacy add-on is not installed; 'ThunderAI Privacy' is a product name." },
+  "prefs_OptionText_ai_processing_Privacy_wrong_version": { "message": "The installed ThunderAI Privacy add-on is not compatible with this version of ThunderAI. Update ThunderAI Privacy.", "description": "Options page, advanced section: notice shown when the installed ThunderAI Privacy add-on does not speak the same processing protocol; 'ThunderAI Privacy' is a product name." },
+  "prefs_OptionText_ai_processing_download_now": { "message": "Download ThunderAI Privacy now!", "description": "Options page, advanced section: link to download the ThunderAI Privacy add-on, shown under the missing or incompatible add-on notice; 'ThunderAI Privacy' is a product name." },
+  "prefs_OptionText_ai_processing_model_missing": { "message": "Download the local model before turning it on.", "description": "Options page, advanced section: note under the ThunderAI Privacy switch while the companion's local model is not downloaded; the switch is disabled until then." },
+  "prefs_OptionText_ai_processing_model_downloading": { "message": "Downloading the local model… $PERCENT$%", "description": "Options page, advanced section: progress of the ThunderAI Privacy model download.", "placeholders": { "percent": { "content": "$1", "example": "42" } } },
+  "prefs_OptionText_ai_processing_download_model": { "message": "Download the model", "description": "Options page, advanced section: button that asks the ThunderAI Privacy add-on to download its local model." },
+  "prefs_OptionText_ai_processing_open_settings": { "message": "Open ThunderAI Privacy settings", "description": "Options page, advanced section: button that opens the settings page of the ThunderAI Privacy add-on; 'ThunderAI Privacy' is a product name." },
   "extensionDescription": {
     "message": "Use ChatGPT, Google Gemini, Claude or Ollama to enhance your emails!",
     "description": "Description of the extension."
@@ -107,6 +133,10 @@
     "message": "Must be unique, lowercase and without spaces",
     "description": "Custom prompts and Custom data placeholders pages: small hint under the ID field listing the rules an ID must follow."
   },
+  "customPrompts_form_label_ID_rules_prompt": {
+    "message": "Must be unique, lowercase and without spaces, and cannot start with prompt_",
+    "description": "Custom prompts page: small hint under the ID field listing the rules an ID must follow. Keep 'prompt_' untranslated: it is the literal start of the IDs of the built-in prompts."
+  },
   "customPrompts_form_label_Name": {
     "message": "Name",
     "description": "Label of the Name field and column on the Custom prompts and Custom data placeholders pages; a noun, keep it short."
@@ -203,6 +233,10 @@
     "message": "Substitute text",
     "description": "Custom prompts page: option of the Action dropdown meaning the answer replaces the selected text in the compose window; short option label."
   },
+  "customPrompts_insert_at_cursor": {
+    "message": "Insert at cursor position",
+    "description": "Custom prompts page: option of the Action dropdown meaning the answer is inserted where the cursor is in the compose window, without replacing any text; short option label."
+  },
   "chatgpt_win_working": {
     "message": "Work in progress...",
     "description": "ChatGPT Web window: status message shown while the AI is generating the answer."
@@ -218,6 +252,10 @@
   "chatgpt_win_get_answer": {
     "message": "Use the selected answer",
     "description": "ChatGPT Web window: label of the action button that uses the selected answer (for a reply or to replace text); keep it short."
+  },
+  "chatgpt_win_insert_at_cursor": {
+    "message": "Insert at cursor",
+    "description": "Label and tooltip of the button, in the ChatGPT Web window and the AI chat window, that inserts the answer where the cursor is in the email being written; keep it short."
   },
   "chatgpt_win_close": {
     "message": "Close",
@@ -281,7 +319,7 @@
   },
   "prefs_status_page": {
     "message": "service status",
-    "description": "ChatGPT Web window: lowercase link text that opens the online ChatGPT Web service status page; keep it short."
+    "description": "Lowercase link text that opens the online ChatGPT Web service status page; keep it short. Used in the ChatGPT Web window and, on the options page, as a link next to 'Full guide' in the ChatGPT Web setup callout."
   },
   "prefs_OptionText_chatgpt_win_text": {
     "message": "AI chat window dimensions",
@@ -601,6 +639,10 @@
     "message": "The ID is required, cannot contain spaces and must be unique.",
     "description": "Validation message for the prompt ID"
   },
+  "customPrompts_error_id_reserved": {
+    "message": "The ID cannot start with prompt_: it is reserved for the built-in prompts.",
+    "description": "Custom prompts page: validation message when a new or changed prompt ID starts with 'prompt_'. Keep 'prompt_' untranslated: it is the literal start of the IDs of the built-in prompts."
+  },
   "customPrompts_error_required": {
     "message": "Name and prompt text are required.",
     "description": "Validation message for the name and text fields"
@@ -728,6 +770,16 @@
   "error_connection_interrupted": {
     "message": "The connection to the server was unexpectedly interrupted",
     "description": "Error shown in the AI chat window when the streaming connection to the AI server drops unexpectedly; followed by a colon and the technical error message."
+  },
+  "error_stream_idle_timeout": {
+    "message": "The server stopped responding: no data received for $SECONDS$ seconds",
+    "description": "Error shown in the AI chat window when the AI server stops sending the answer in the middle of it and the request is given up; preceded by the 'API request failed' text of the provider and a colon. $SECONDS$ is the number of seconds waited.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1",
+        "example": "120"
+      }
+    }
   },
   "ollama_api_request_failed": {
     "message": "Ollama API request failed",
@@ -949,6 +1001,14 @@
     "message": "Time in milliseconds before a hung AI request (auto add-tags, spam filter, summarize, translate) is aborted. Increase it if you use slow local models. This applies only to API-based connections, not to the ChatGPT Web Interface.",
     "description": "Options page: help text under the special command timeout field, explaining when automatic AI requests are aborted."
   },
+  "prefs_OptionText_api_stream_idle_timeout" : {
+    "message": "API stream idle timeout (ms)",
+    "description": "Options page: label of the number field for the time, in milliseconds, an AI answer may stay silent before the request is given up. Keep '(ms)' as the milliseconds unit."
+  },
+  "prefs_OptionText_api_stream_idle_timeout_Info" : {
+    "message": "Time in milliseconds without any data, once the answer has started, before the request is given up with an error. Reasoning models and slow local models can stay silent for a long time while still working: increase it if their answers are cut off. This applies only to API-based connections, not to the ChatGPT Web Interface.",
+    "description": "Options page: help text under the API stream idle timeout field, explaining when a silent AI answer is given up."
+  },
   "prefs_OptionText_batch_max_concurrency": {
     "message": "Emails processed in parallel",
     "description": "Label of the option limiting how many emails the automatic features (add tags, spam filter, summarize, translate) process at the same time"
@@ -1001,6 +1061,14 @@
     "message": "Invalid JSON:",
     "description": "Followed by the parser error message, which states what was expected and at which position."
   },
+  "prompt_json_error_missing": {
+    "message": "The prompt must contain the JSON response format, enclosed in curly braces: this feature reads the AI answer as a JSON object.",
+    "description": "Feature settings pages (spam filter, tags, calendar event, task, translation): validation error shown under the prompt text when it no longer contains a JSON object."
+  },
+  "prompt_json_error_invalid": {
+    "message": "The JSON response format in the prompt is not valid:",
+    "description": "Feature settings pages: validation error shown under the prompt text when its JSON object is malformed. Followed by the parser error message, which states what was expected and at which position of the JSON."
+  },
   "prefs_extra_body_error_not_object": {
     "message": "The value must be a JSON object, enclosed in curly braces.",
     "description": "Connection panel: validation error shown under the extra body JSON field when the value is valid JSON but not an object."
@@ -1008,6 +1076,50 @@
   "prefs_OptionText_openai_comp_extra_body_info": {
     "message": "Additional parameters to send with every API call, as a JSON object. Useful for options this service supports but ThunderAI doesn't expose, like disabling the thinking mode: {\"chat_template_kwargs\": {\"thinking\": false}} or {\"top_p\": 0.9}. The parameters managed by ThunderAI (model, messages, streaming, temperature) can't be overridden here. An invalid value is ignored.",
     "description": "Connection panel (OpenAI Compatible API): help text under the extra body JSON field. Keep the JSON examples and parameter names unchanged."
+  },
+  "prefs_OptionText_openai_comp_extra_headers_info": {
+    "message": "Additional HTTP headers to send with every request to this service, as a JSON object of text values, like {\"x-opencode-session\": \"thunderai\"} or {\"api-key\": \"your-key\"}. Useful for services and gateways that require their own headers. The headers set by ThunderAI (Content-Type, and Authorization when an API key is set) can't be overridden here. An invalid header is ignored.",
+    "description": "Connection panel (OpenAI Compatible API): help text under the extra headers JSON field. Keep the JSON examples and the header names (x-opencode-session, api-key, Content-Type, Authorization) unchanged."
+  },
+  "prefs_extra_headers_error_name": {
+    "message": "\"$header_name$\" is not a valid header name: use only letters, digits and characters such as - or _.",
+    "description": "Connection panel: validation error shown under the extra headers JSON field when a key is not a valid HTTP header name.",
+    "placeholders": {
+        "header_name": {
+            "content": "$1",
+            "example": "my header"
+        }
+    }
+  },
+  "prefs_extra_headers_error_forbidden": {
+    "message": "The header \"$header_name$\" can't be set by an add-on: Thunderbird ignores it.",
+    "description": "Connection panel: validation error shown under the extra headers JSON field for a header the browser engine does not allow to be set, such as Host or Cookie.",
+    "placeholders": {
+        "header_name": {
+            "content": "$1",
+            "example": "Host"
+        }
+    }
+  },
+  "prefs_extra_headers_error_not_string": {
+    "message": "The value of the header \"$header_name$\" must be text, enclosed in double quotes.",
+    "description": "Connection panel: validation error shown under the extra headers JSON field when a header value is a number, boolean, object or other non-text JSON value.",
+    "placeholders": {
+        "header_name": {
+            "content": "$1",
+            "example": "x-retry-count"
+        }
+    }
+  },
+  "prefs_extra_headers_error_value": {
+    "message": "The value of the header \"$header_name$\" must not contain line breaks.",
+    "description": "Connection panel: validation error shown under the extra headers JSON field when a header value contains a line break or a NUL character.",
+    "placeholders": {
+        "header_name": {
+            "content": "$1",
+            "example": "x-session"
+        }
+    }
   },
   "prefs_OptionText_openai_comp_use_v1" : {
     "message": "Keep the \"v1\" compatibility",
@@ -1063,7 +1175,7 @@
   },
   "prompt_translate_this_full_text": {
     "message": "Translate the email below into {%thunderai_translate_lang%}.\n\nRules:\n- Translate both the subject and the body.\n- Return the result as a JSON object with three fields: \"subject\", \"body\" and \"status\".\n- If the translation has been done the status is equal to 1.\n- If the email is written in one of these languages \"{%thunderai_translate_exclude_lang%}\" or in the {%thunderai_translate_lang%} language, return an empty string for the body and the subject and set the status to -1.\n- Do not add explanations, notes, or any text outside the JSON.\n\nMail subject: {%mail_subject%}\n\nMail body: {%mail_html_body%}\n\nGenerate a response in JSON format only. The output should be only a JSON object. Here is an example of the JSON format to be used:\n{\n\"subject\": \"subject translation\",\n\"body\": \"body translation\",\n\"status\": \"status result\"\n}",
-    "description": "Instruction sent to the AI model as the prompt of the built-in 'Translate' action; keep all {%placeholder%} tokens, line breaks, the JSON field names and the JSON example structure unchanged."
+    "description": "Instruction sent to the AI model as the prompt of the built-in 'Translate' action; keep all {%placeholder%} tokens, line breaks, the JSON field names and the JSON example structure unchanged. The JSON example must stay valid JSON: straight double quotes, plain spaces around the colons."
   },
   "prompt_this_full_text": {
     "message": "Reply with only the needed text and with no extra comments or other text.",
@@ -1083,7 +1195,7 @@
   },
   "prompt_add_tags_full_text": {
     "message": "Analyze the following email text and generate a JSON array of tags that summarize its content. Use themes, key topics, and relevant descriptors as tags. Ensure the tags are concise and relevant to the email's content.\nEmail text: {%mail_text_body%}\nConsider the following details for context:\n- Sender: {%author%}\n- Recipients: {%recipients%}\n- CC list: {%cc_list%}\n- Email subject: {%mail_subject%}\nPlease base your tags on the email's text and context, ignoring unnecessary information or trivial details.\nGenerate a response in JSON format only. The output should be only a JSON array of tags without any additional comment or text. Here is an example of the JSON format to be used:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}",
-    "description": "Instruction sent to the AI model as the prompt of the built-in 'Add tags' action; keep all {%placeholder%} tokens, line breaks and the JSON example structure and field name unchanged."
+    "description": "Instruction sent to the AI model as the prompt of the built-in 'Add tags' action; keep all {%placeholder%} tokens, line breaks and the JSON example structure and field name unchanged. The JSON example must stay valid JSON: straight double quotes, plain spaces around the colons."
   },
   "prompt_proofread_this": {
     "message": "Proofread this email",
@@ -1302,8 +1414,8 @@
     "description": "Name of the built-in action, shown as a menu item, that creates a calendar event from the email with the AI; keep it short."
   },
   "prompt_get_calendar_event_full_text": {
-    "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Event Description (a concise summary of the email context, key topics/agenda, action items, and any video call links or access details)\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Location (if mentioned, specific building, room, or online with link)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf the event is a full day event, endDate must be one day after startDate with time set to \"T000000\".\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"description\": \"Detailed event description including agenda, action items and relevant notes from the email.\",\n\"forceAllDay\": false,\n\"location\": \"Location or URL here\",\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%mail_text_body_or_selected%}\"",
-    "description": "Instruction sent to the AI model as the prompt of the built-in 'Add a new calendar event' action; keep all {%placeholder%} tokens, JSON keys and the date format unchanged."
+    "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Event Description (a concise summary of the email context, key topics/agenda, action items, and any video call links or access details)\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Location (if mentioned, specific building, room, or online with link)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf the event is a full day event, endDate must be one day after startDate with time set to \"T000000\".\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"description\": \"Detailed event description including agenda, action items and relevant notes from the email.\",\n\"forceAllDay\": false,\n\"location\": \"Location or URL here\",\n\"attendees\": [\"attendee1@example.com\", \"attendee2@example.com\", \"attendee3@example.com\"]\n}\nHere's the text:\"{%mail_text_body_or_selected%}\"",
+    "description": "Instruction sent to the AI model as the prompt of the built-in 'Add a new calendar event' action; keep all {%placeholder%} tokens, JSON keys and the date format unchanged. The JSON example must stay valid JSON: straight double quotes, plain spaces around the colons."
   },
   "prompt_get_calendar_event_from_clipboard": {
     "message": "Add calendar event from clipboard",
@@ -1363,7 +1475,7 @@
   },
   "prompt_get_task_full_text": {
     "message": "Extract all relevant details required to generate a task from the following text. The extracted information should include:\n- Initial Date and Time (including timezone, if specified)\n- Due Date and Time (including timezone, if specified)\n- Task summary\n- Task Description (a concise summary of the email context, key topics and action items)\n- Location (if mentioned, specific building, room, or online with link)\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a task.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"initialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Task summary here\",\n\"description\": \"Detailed task description including action items and relevant notes from the email.\",\n\"location\": \"Location or URL here\"\n}\nIf there are no information about the dates, remove them.\nHere's the text:\"{%selected_text%}\"",
-    "description": "Instruction sent to the AI model as the prompt of the built-in 'Add a new task' action; keep all {%placeholder%} tokens, JSON keys and the date format unchanged."
+    "description": "Instruction sent to the AI model as the prompt of the built-in 'Add a new task' action; keep all {%placeholder%} tokens, JSON keys and the date format unchanged. The JSON example must stay valid JSON: straight double quotes, plain spaces around the colons."
   },
   "prefs_OptionText_get_calendar_event": {
     "message": "Add a new calendar event from selected text",
@@ -1674,8 +1786,8 @@
     "description": "Name of the built-in special prompt that analyzes an email for spam, shown in prompt lists; keep it short."
   },
   "prompt_spamfilter_full_text" : {
-    "message" : "Analyze the following email and determine if it is spam or not. Consider factors such as suspicious keywords, excessive promotional language, misleading subject lines, requests for personal information, and unusual sender addresses.\nProvide a value from 0 (not spam) to 100 (spam) and an explanation of no more than 10 words.\nIn case of missing message data, set the value to 0 (not spam), and give the reason.\nGenerate a response in JSON format only. Do not include any additional text or explanation; provide only the JSON. Here is the format to be used:\n{\n\"explanation\": \"Brief explanation of your reasoning\",\n\"spamValue\": <integer from 0 to 100>\n}\nHere there are the mail information:\nSender: \"{%author%}\"\nSubject: \"{%mail_subject%}\"\nHtml body: \"{%mail_html_body%}\"",
-    "description": "Instruction sent to the AI model as the prompt of the built-in spam filter; keep the {%placeholder%} tokens and the JSON keys \"explanation\" and \"spamValue\" unchanged."
+    "message" : "Analyze the following email and determine if it is spam or not. Consider factors such as suspicious keywords, excessive promotional language, misleading subject lines, requests for personal information, and unusual sender addresses.\nProvide a value from 0 (not spam) to 100 (spam) and an explanation of no more than 10 words.\nIn case of missing message data, set the value to 0 (not spam), and give the reason.\nGenerate a response in JSON format only. Do not include any additional text or explanation; provide only the JSON. Here is the format to be used, where spamValue is an integer from 0 to 100:\n{\n\"explanation\": \"Brief explanation of your reasoning\",\n\"spamValue\": 0\n}\nHere there are the mail information:\nSender: \"{%author%}\"\nSubject: \"{%mail_subject%}\"\nHtml body: \"{%mail_html_body%}\"",
+    "description": "Instruction sent to the AI model as the prompt of the built-in spam filter; keep the {%placeholder%} tokens and the JSON keys \"explanation\" and \"spamValue\" unchanged. The JSON example must stay valid JSON: straight double quotes, plain spaces around the colons."
   },
   "Summarize_PageTitle": {
     "message": "Manage Summarize Settings",
@@ -2131,6 +2243,10 @@
       }
     }
   },
+  "apiwebchat_privacy_active": {
+    "message": "ThunderAI Privacy is on: personal data is masked before it is sent to the AI provider.",
+    "description": "API webchat: tooltip of the shield badge shown on the header logo while the ThunderAI Privacy switch is on; 'ThunderAI Privacy' is a product name."
+  },
   "apiwebchat_request_cancelled": {
     "message": "Request cancelled.",
     "description": "API webchat notice shown when the user stops a request before any answer arrived"
@@ -2271,7 +2387,7 @@
   },
   "CORS_alternative_1": {
     "message": "Problems setting CORS?",
-    "description": "Connection panel (Ollama and OpenAI Compatible API): bold short question introducing the host-permission alternative to configuring CORS."
+    "description": "Short question about CORS problems. Used in the connection panel (Ollama and OpenAI Compatible API) in bold, introducing the host-permission alternative to configuring CORS, and on the options page as the text of the link to the Ollama CORS information page, next to 'Full guide' in the Ollama setup callout."
   },
   "CORS_alternative_2_new": {
     "message": "Press the button below to give the permission to the current host to avoid any CORS problem.",
@@ -3019,6 +3135,10 @@
   "prefs_api_extra_body": {
     "message": "Extra body data",
     "description": "Connection panel: label of the field for additional JSON parameters added to every API request body; also used as a parameter label in the AI chat window's settings summary."
+  },
+  "prefs_api_extra_headers": {
+    "message": "Extra headers",
+    "description": "Connection panel: label of the field for additional HTTP headers, as a JSON object, added to every API request; also used as a section label in the AI chat window's settings summary, followed by one line per header."
   },
   "prefs_google_gemini_max_output_tokens_Info": {
     "message": "The maximum number of tokens that can be generated in the response. Leave it empty or at 0 to let the model decide.",
@@ -3786,6 +3906,20 @@
       }
     }
   },
+  "connTest_ok_redirect": {
+    "message": "Connected — $API$ reachable, but the server redirects to $TO$: enter that address directly. Some redirects drop the content of the requests, and then the chat does not work.",
+    "description": "Connection test status strip: success through a redirect (Ollama, OpenAI Compatible), shown in amber; $API$ is the provider name, $TO$ the new address",
+    "placeholders": {
+      "api": {
+        "content": "$1",
+        "example": "Ollama API"
+      },
+      "to": {
+        "content": "$2",
+        "example": "http://localhost:11434/v2"
+      }
+    }
+  },
   "connTest_error": {
     "message": "Error — $DETAIL$",
     "description": "Connection test status strip: error state; $DETAIL$ is the error message",
@@ -4125,5 +4259,90 @@
   "editor_placeholder_unterminated": {
     "message": "Unterminated placeholder: missing the closing %}",
     "description": "Tooltip on a highlighted placeholder token in the prompt editor when the token opens with {% but never closes with %}"
+  },
+  "endpoint_error_invalid": {
+    "message": "The server address is not valid. Enter the full address, for example http://localhost:11434 or https://api.example.com.",
+    "description": "Error for a custom API server address (Ollama, OpenAI Compatible) that is not a valid URL. Shown under the address field, in the connection test, in the API chat window and for the automatic features; nothing was sent."
+  },
+  "endpoint_error_scheme": {
+    "message": "The server address must start with http:// or https://.",
+    "description": "Error for a custom API server address (Ollama, OpenAI Compatible) that uses another scheme, such as ftp:// or file://. Shown in the same places as endpoint_error_invalid; nothing was sent."
+  },
+  "endpoint_error_credentials": {
+    "message": "The server address contains a user name or password. For your security ThunderAI does not accept them in the address: remove them, and use the API key field if the server needs one.",
+    "description": "Error for a custom API server address (Ollama, OpenAI Compatible) with credentials in it, such as https://user:password@host/. Shown in the same places as endpoint_error_invalid; nothing was sent."
+  },
+  "endpoint_insecure_confirm": {
+    "message": "The server $origin$ uses an unencrypted connection (http://).\n\nThe content of your emails and your API key would travel over the network as plain text: anyone on the network between you and the server could read or change them. Use https:// whenever the server supports it.\n\nDo you want to allow the unencrypted connection to this server anyway?",
+    "description": "Confirmation dialog shown once per server, when a custom API server (Ollama, OpenAI Compatible) on another computer is reached over plain http://. $origin$ is the server, e.g. 'http://192.168.1.10:11434'. Keep the line breaks.",
+    "placeholders": {
+        "origin": {
+            "content": "$1"
+        }
+    }
+  },
+  "endpoint_insecure_not_confirmed": {
+    "message": "Nothing was sent to $origin$: this server uses an unencrypted connection (http://) that has not been allowed. To allow it, open the ThunderAI settings of this connection and click \"Test now\" or \"Update list\". Otherwise use an https:// address.",
+    "description": "Error when a request to a custom API server over plain http:// was blocked because the user has not allowed that server yet (or declined). Shown in the API chat window, for the automatic features and in the connection test. $origin$ is the server, e.g. 'http://192.168.1.10:11434'. \"Test now\" and \"Update list\" must match connTest_link_test and Models_Fetch.",
+    "placeholders": {
+        "origin": {
+            "content": "$1"
+        }
+    }
+  },
+  "endpoint_insecure_note": {
+    "message": "Unencrypted connection (http://) not allowed yet: ThunderAI sends nothing to this server until you allow it. Click \"Test now\" or \"Update list\" to allow it, or use an https:// address.",
+    "description": "Note under the server address field of a connection panel, shown while the address is a server on another computer reached over plain http:// that the user has not allowed (never asked, or declined). \"Test now\" and \"Update list\" must match connTest_link_test and Models_Fetch."
+  },
+  "api_error_redirect": {
+    "message": "The server answered with a redirect that could not be followed: enter the final address of the server directly in the settings.",
+    "description": "Error when a request to a custom AI server (Ollama, OpenAI Compatible) failed because of a redirect (HTTP 301/302/307/308): the new address could not be reached, or it answered with an error. Shown in the API chat window, for the automatic features, in the connection test and next to the Update list button."
+  },
+  "endpoint_redirect_note": {
+    "message": "This server redirects the requests to $to$. ThunderAI follows the redirect, but it is better to enter that address directly.",
+    "description": "Warning under the server address field of a connection panel (Ollama, OpenAI Compatible), after a request that sends content (a chat message) to that server was redirected and worked. $to$ is the new address, e.g. 'https://ai.example.com'.",
+    "placeholders": {
+        "to": {
+            "content": "$1"
+        }
+    }
+  },
+  "endpoint_redirect_note_unverified": {
+    "message": "This server redirects the requests to $to$. Enter that address directly: some redirects drop the content of the requests, and then the chat does not work.",
+    "description": "Warning under the server address field of a connection panel (Ollama, OpenAI Compatible), after a request that sends no content (the connection test, the model list) to that server was redirected and worked: whether a chat message survives the redirect is not known yet. $to$ is the new address, e.g. 'https://ai.example.com'.",
+    "placeholders": {
+        "to": {
+            "content": "$1"
+        }
+    }
+  },
+  "endpoint_redirect_failed_note": {
+    "message": "The server answers with a redirect that cannot be followed: the requests fail until you enter the final address of the server.",
+    "description": "Warning under the server address field of a connection panel (Ollama, OpenAI Compatible), after a request to that server failed because of a redirect whose new address is not known."
+  },
+  "endpoint_redirect_failed_note_to": {
+    "message": "This server redirects the requests to $to$, and they fail after the redirect (it may drop their content): enter that address instead.",
+    "description": "Warning under the server address field of a connection panel (Ollama, OpenAI Compatible), after a request to that server failed because of a redirect. $to$ is the new address, e.g. 'https://ai.example.com'.",
+    "placeholders": {
+        "to": {
+            "content": "$1"
+        }
+    }
+  },
+  "prefs_insecure_origins_title": {
+    "message": "Allowed unencrypted servers",
+    "description": "Options page, advanced section: title of the list of custom API servers the user allowed to reach over plain http://."
+  },
+  "prefs_insecure_origins_info": {
+    "message": "Servers you allowed to be reached over an unencrypted connection (http://). Remove one to be asked again the next time it is used.",
+    "description": "Options page, advanced section: explanation under prefs_insecure_origins_title."
+  },
+  "prefs_insecure_origins_empty": {
+    "message": "None",
+    "description": "Options page, advanced section: shown in the list of allowed unencrypted servers when it is empty."
+  },
+  "prefs_insecure_origins_remove": {
+    "message": "Remove",
+    "description": "Options page, advanced section: button next to an allowed unencrypted server, which withdraws the permission."
   }
 }

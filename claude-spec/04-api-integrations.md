@@ -210,7 +210,10 @@ its view and its focus, on success and on timeout.
 
 **Deadlines and the manual button.** A match resumes the flow at once. At either deadline the check
 stops observing and polling, closes its own menu, and shows the existing warning
-(`#mzta-model_warn`) and its **Use the current model** button (`#mzta-btn_model`). From then on no
+(`#mzta-model_warn`) and its **Use the current model** button (`#mzta-btn_model`). The warning's
+text lives in its own `#mzta-model_warn_text`, which the timeout resets to `chatgpt_win_model_warning`:
+the "no composer" error (`-2`) writes `chatgpt_textarea_not_found_error` there and hides the button,
+so a check timing out on the retry still shows its own text and button. From then on no
 change of the page can send by itself: the button's one-shot continuation
 (`continue_model_verification`) resumes the flow once, hides the warning, and is cleared; an approval
 is never reused by a later check. `pagehide` cancels the check, or the wait for the button: it
@@ -434,9 +437,10 @@ with the option off, that the prompt is sent at once on the newer UI.
 ### OpenAI-Compatible (`openai_comp_api`)
 - Module: `js/api/openai_comp.js`
 - Worker: `js/workers/model-worker-openai_comp.js`
-- Settings keys: `openai_comp_host`, `openai_comp_model`, `openai_comp_api_key`, `openai_comp_use_v1`, `openai_comp_chat_name`, `openai_comp_temperature`, `openai_comp_extra_body`
+- Settings keys: `openai_comp_host`, `openai_comp_model`, `openai_comp_api_key`, `openai_comp_use_v1`, `openai_comp_chat_name`, `openai_comp_temperature`, `openai_comp_extra_body`, `openai_comp_extra_headers`
 - Pre-configured providers: `js/api/openai_comp_configs.js` (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity — `custom` is the default/manual entry). The presets carry only `id`, `name`, `chat_name`, `host`, `use_v1` — there is deliberately no per-preset extra body data.
 - **Extra body data**: see [Extra body data](#extra-body-data).
+- **Extra headers**: see [Extra headers](#extra-headers).
 
 ### Extra body data
 
@@ -503,9 +507,61 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
   `initializeSpecificIntegrationUI()` after its restore callback, so a malformed value saved by an
   earlier session is flagged on load instead of looking fine until touched.
 
+### Extra headers
+
+The header counterpart of the extra body data [#977], for services and gateways that require
+headers of their own: OpenCode Go rejects a chat request without `x-opencode-session` (while its
+`/models` answers without it), Azure OpenAI takes the key in `api-key`, proxies want routing or
+auth headers. **OpenAI-compatible only** today (`openai_comp_extra_headers`); the helpers in
+`js/api/api-utils.js` take no provider argument, so another integration can reuse them.
+
+- **Format.** A raw JSON string holding an object of header name → **string** value, in the
+  Advanced options of the connection panel, right below the extra body data. Values are never
+  coerced: `{"x-n": 1}` is reported, not sent as `"1"`, so what the field shows is what is sent.
+- **Every request of the connection.** `OpenAIComp._headers()` builds the headers of both
+  requests, `fetchModels()` (`GET /models`, also used by the models "Update list" button and the
+  connection test, which therefore read the field from the form) and `fetchResponse()`
+  (`POST /chat/completions`, the chat worker and the special commands, which get the pref like any
+  other `openai_comp_*` field).
+- **Managed headers win.** `mergeHeaders(extra, managed)` puts the extra headers first and the ones
+  ThunderAI sets on top, comparing names **case-insensitively**: an extra `authorization` or
+  `CONTENT-TYPE` neither replaces nor duplicates `Authorization` / `Content-Type` (nor OpenRouter's
+  `HTTP-Referer` / `X-Title` on the models request). As with the extra body, "managed" means *sent
+  by ThunderAI*: with no API key there is no `Authorization`, so an extra one is sent.
+- **Unusable entries are dropped one by one, never fatal.** `parseExtraHeaders()` returns `{}` for
+  a blank string, malformed JSON or a non-object (with a `console.warn`, like `parseExtraBody()`),
+  and drops on its own each entry `extraHeaderProblem(name, value)` rejects, keeping the others:
+
+  | Problem | Rule |
+  |---|---|
+  | `invalid_name` | the name is not an HTTP token (RFC 9110 §5.1: letters, digits and ``!#$%&'*+-.^_`~`` or the vertical bar) |
+  | `forbidden` | a [forbidden request header](https://fetch.spec.whatwg.org/#forbidden-request-header) (`Host`, `Cookie`, `Content-Length`, `Origin`, `Referer`...) or a `Proxy-` / `Sec-` name: `fetch()` drops it silently, so it is filtered out and reported rather than looking accepted |
+  | `not_string` | the value is not a string |
+  | `invalid_value` | the value holds CR, LF or NUL, on which `fetch()` throws and would fail the request |
+
+- **Secrets.** A header may carry a key, so its value is never logged: the parser's warnings name
+  the header only, and every log path that masks `*_api_key` masks `*_extra_headers` too
+  (`isAPIKeyValue()`, `mztaPrefs._logValue()`, `mztaManaged._logValue()`, the prompt dump of
+  `mzta-menus.js`). It is a `nonContent` field for the privacy companion. It is **not** a managed
+  secret (only `*_api_key` is): a policy value is visible in the settings page.
+- UI: the same `check-json` textarea and `_error` div as the extra body, plus the
+  `check-json-headers` class, on which `checkJsonField()` also reports the first entry
+  `extraHeaderProblem()` rejects (`prefs_extra_headers_error_name` / `_forbidden` / `_not_string` /
+  `_value`, naming the header, never its value). Advisory only, as for the extra body.
+- The API chat window's startup notice (`additional_messages_config` in
+  `api_webchat/controller.js`, type `headers`) shows it as a section, never as the raw JSON: the
+  label on a line of its own, then one indented `name: value` line per header
+  `parseExtraHeaders()` keeps, so it lists exactly what is sent. The value of a header whose name
+  looks like a credential (`isCredentialHeader()`: `auth`, `key`, `token`, `secret`, `passw`,
+  `credential`, `signature`, `cookie`, any case) is shown as `****************`; the others are
+  shown as they are. A name-based heuristic for display only: the logs mask every
+  `*_extra_headers` value whatever its header names.
+
 ### Google Gemini (`google_gemini_api`)
 - Module: `js/api/google_gemini.js`
 - Worker: `js/workers/model-worker-google_gemini.js`
+- The API key travels in the `x-goog-api-key` header of all three requests (model list, model info,
+  chat), never in the URL.
 - Settings keys: `google_gemini_api_key`, `google_gemini_model`, `google_gemini_system_instruction`, `google_gemini_thinking_budget`, `google_gemini_temperature`, `google_gemini_max_output_tokens`, `google_gemini_top_p`, `google_gemini_top_k`, `google_gemini_extra_body`
 - `thinking_budget` is coerced with `parseInt` and sent as the integer
   `thinkingConfig.thinkingBudget`; an empty or unparsable value omits the whole
@@ -814,6 +870,42 @@ The API webchat window supports keyboard font zoom, handled in `api_webchat/cont
 - The level is clamped to **0.5–2.5** (step 0.1) and persisted in `browser.storage.local` under the global `api_webchat_font_scale` pref (default `1.0`, in `options/mzta-options-default.js`). On window open the saved value is read and re-applied, so the zoom survives closing the window and is shared across all webchat windows and providers.
 - The `keydown` listener is registered on `document`; key events from inside the components bubble up (composed), so no per-component handler is needed.
 
+## Async content processing
+
+`js/mzta-ai-processing-client.js` exposes async before-send and after-receive hooks over
+a versioned companion API. With no active processor they preserve existing content
+and streaming. An active processor's failure blocks the operation, never falls back
+to unchanged content. ThunderAI has no privacy settings, runtime or mapping store;
+activation, detection and restoration belong to ThunderAI Privacy.
+
+`js/mzta-processing-worker.js` creates raw provider workers when inactive and wraps
+them only when active, for every chat action and special command, including
+automatic/batch features. Only message text,
+provider instructions and extra-body content enter the hook envelope—not credentials
+or the entire provider configuration. Provider workers retain processed conversation
+history and raw replies; locally postprocessed answers never re-enter that history.
+
+Active processing buffers responses, separates dedicated/inline thinking, then
+awaits postprocessing before UI rendering, JSON parsing, storage or Sparks actions.
+The companion receives an output format (`text`, `html`, `json`) and returns content
+and thinking separately. Already-separated results bypass a second inline-thinking
+parse. Hook diagnostics and their consent live entirely in the companion; provider
+workers have no request-interception/logging bridge.
+Inactive processing preserves the provider's normal init-before-first-prompt
+lifecycle. Active processing defers init until content-bearing configuration is
+processed. Usage, retry and abort events retain their existing UI/batch behavior.
+
+ChatGPT Web is not covered: while the switch is on, `openChatGPT()` blocks a prompt on
+that connection with the `ai_processing_chatgpt_web_unsupported` alert instead of opening
+the site, so nothing is ever sent unprocessed (see [09 "ChatGPT Web"](09-ai-processing.md#chatgpt-web)).
+
+Sessions pin their processing mode/companion instance, so changing activation affects
+new chats/commands. Stop and timeout suppress late dispatch/results. A remembered
+active registration blocks new requests if the companion unexpectedly disappears;
+disable processing explicitly in the companion to resume unprocessed new sessions.
+See [09-ai-processing.md](09-ai-processing.md) for the authoritative API contract,
+field classification, transport, concurrency and failure policies.
+
 ## Configuration Validation
 
 For special prompts (`mzta_specialCommand`), required fields are validated in `initWorker()` (`js/mzta-special-commands.js`) **before** the worker is created. If a required field is empty, an `Error` with `isConfigError = true` is thrown. Validation covers:
@@ -827,6 +919,8 @@ For special prompts (`mzta_specialCommand`), required fields are validated in `i
 | `anthropic_api` | `anthropic_api_key`, `anthropic_model`, `anthropic_version` |
 
 Validation is skipped when `use_specific_api = true` (i.e., the prompt's own `api_type` overrides the global setting — credentials come from the prompt config, not global prefs).
+
+The host of a custom endpoint (`ollama`, `openai_comp`) is then checked in every case, global or the prompt's own, after the `{integration}_{key}` values are resolved and before the worker is created: `resolveEndpointAccess(host)` without `ask` (see [Custom endpoint policy](#custom-endpoint-policy)). Refused, it throws the same `isConfigError` error, with its localized message (`endpoint_error_*`, or `endpoint_insecure_not_confirmed` for an unencrypted server not yet allowed). Allowed, the init message carries `approved_insecure_origins`.
 
 The `isConfigError` flag on the thrown error tells callers in `mzta-background.js` to display the error in the panel **without saving it to storage** — so the user can fix settings and retry cleanly.
 
@@ -900,12 +994,14 @@ sent.
 
 `mzta_specialCommand` (`js/mzta-special-commands.js`) creates one Worker per instance, in `initWorker()`, only once the configuration has passed the [validation](#configuration-validation): the constructor merely checks the connection type and picks the worker file, so a configuration error leaves no Worker behind (`sendPrompt()`, whose `finally` disposes of it, is never reached in that case). Callers (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, auto add-tags in `mzta-background.js`) create a **fresh instance per prompt** — instances are never reused.
 
-- **Termination:** `sendPrompt()` always calls `dispose()` (via `Promise.finally`) once the prompt settles — on success, error, or timeout. `dispose()` calls `worker.terminate()` and nulls the reference. This prevents Worker leaks during batch processing, where one Worker would otherwise be created per message and never freed (a cause of out-of-memory hangs on large selections).
-- **Timeout:** `sendPrompt()` aborts the request if the worker never replies (no `tokensDone`/`error`). The duration comes from the `special_command_timeout` pref (default `120000` ms), with a hardcoded `SPECIAL_COMMAND_TIMEOUT_DEFAULT` fallback. The pref is configurable in the main options page (always shown — see `claude-spec/05-options.md`). On timeout the promise rejects with a clear error and the worker is terminated by the same `finally`.
+- **Termination:** `sendPrompt()` always calls `dispose()` (via `Promise.finally`) once the prompt settles — on success, error, or timeout. `dispose()` terminates the provider worker, disposes the command's isolated companion session and nulls the reference. Disposing during preprocessing prevents delayed provider dispatch and cancels queued work for that command.
+- **Timeout:** `special_command_timeout` (default `120000` ms, with `SPECIAL_COMMAND_TIMEOUT_DEFAULT` fallback) bounds stalled initialization/queueing and each local processing part. Hook progress renews the budget, and provider dispatch starts a fresh budget for the API response. Progressing multi-part input can exceed one interval overall, while stalled processing/provider calls still time out. Without active processing, the existing request-wide timeout applies. The same `finally` disposes the command without terminating peers' work.
 - **Strings:** `initWorker()` sends the worker the same `i18nStrings` as the chat window
-  (`<integration>_api_request_failed`, `error_connection_interrupted`, and for Claude the four
-  `anthropic_err_hint_*` with the literal `$MODEL$`): a Web Worker has no `browser.i18n`, and the
-  worker builds every error text from them.
+  (`<integration>_api_request_failed`, `error_connection_interrupted`, `error_stream_idle_timeout`
+  with the literal `$SECONDS$`, and for Claude the four `anthropic_err_hint_*` with the literal
+  `$MODEL$`): a Web Worker has no `browser.i18n`, and the worker builds every error text from them.
+  The init message also carries `api_stream_idle_timeout` (see
+  [Stream idle timeout](#stream-idle-timeout)).
 
 `processEmails()` wraps its whole body in `try/finally` so `taWorkingStatus.stopWorking()` always runs, and wraps each message in `try/catch`+`continue` so one failing message does not abort the batch. The loop itself only gates messages; the AI work runs in one pipeline per message (spam, add_tags, summary, translate in series), which catches each feature's failures (e.g. `getFull()` on a message a filter just moved) and `runWithConcurrency()` catches and logs anything left, so one failing feature does not skip the others for that message (see [01-architecture.md](01-architecture.md#per-message-pipelines-in-processemails)).
 
@@ -915,6 +1011,8 @@ The provider classes in `js/api/` return **two different shapes** on failure, an
 
 - **Network-level exception** (server unreachable, DNS failure, CORS rejection, per-attempt timeout -- once the automatic retries are used up): the `catch` block in `fetchResponse()` does **not** return a `Response`. It returns a plain object `{ok: false, is_exception: true, is_aborted, error}` with **no `status` and no `statusText`**, and `error` already includes the provider name (e.g. `"Ollama API request failed: TypeError: NetworkError…"`).
 - **User abort** (Stop pressed before any response arrived): same shape with `is_aborted: true`. Workers check it **before** the error branch and post `requestAborted` instead of `error` (see [Automatic Retry Handling](#automatic-retry-handling)).
+- **Failed redirect** (Ollama and OpenAI Comp only): same shape with `is_redirect: true` (the two classes set the flag in every such `catch`, `false` for any other exception). The two workers then post `i18nStrings.api_error_redirect` instead of `error`, and the pages show `api_error_redirect` (see [Redirects](#redirects)). The other three classes never set it.
+- **Refused endpoint** (Ollama and OpenAI Comp only): same shape with `endpoint_problem` set, returned before any `fetch()` (see [Custom endpoint policy](#custom-endpoint-policy)).
 - **HTTP error** (404, 401, 500…): a real `Response` is returned, so `status`, `statusText` and the JSON body are all available.
 
 Reading `response.status` / `response.statusText` in the exception branch yields a literal `"undefined undefined"` in the user-visible error, and re-prefixing the i18n provider string there duplicates the provider name. All five workers therefore build a single `error_text` variable:
@@ -976,9 +1074,59 @@ is never silent either: the worker cancels the reader and posts exactly one `err
 | Ollama | an NDJSON line `{"error": "<message>"}` | the server's string |
 | OpenAI Responses | `response.failed` | `response.error.message` |
 | any | the connection breaks while reading (`reader.read()` rejects) | the error's message; Firefox's `TypeError` "Error in input stream" uses `error_connection_interrupted` instead of the provider string |
+| any | no data for `api_stream_idle_timeout` ms (see [Stream idle timeout](#stream-idle-timeout)) | `error_stream_idle_timeout`, its `$SECONDS$` filled in with the timeout |
 
 The partial answer is dropped and the turn is abandoned like an HTTP error (see
 [Workers and UI](#automatic-retry-handling)).
+
+### Stream idle timeout
+
+`fetchWithRetry()` times each attempt only until the response headers arrive (a timer on the body
+would cut off any long answer), so without more a server that goes silent in the middle of the
+stream (a dropped connection no one notices, an overloaded local server, a proxy) would leave the
+worker on `reader.read()` for ever. Every worker therefore bounds the **silence** of the stream
+(#999), with the shared helper `js/api/api-idle-timer.js` (worker-safe, no import):
+
+- **Value:** the preference `api_stream_idle_timeout` (ms, default `120000`, `0` = no idle
+  timeout; a field of the advanced options, min 1000, so `0` comes only from storage or a policy,
+  see [05-options.md](05-options.md)), sent in the `init`
+  message by the chat window and by `mzta_specialCommand`. The worker reads it with
+  `resolveIdleTimeoutMs()`: anything that is not a non-negative finite number (a string holding one
+  is accepted) falls back to the default. Generous on purpose: a reasoning model, or Ollama loading
+  a model, can be silent for a long time while working.
+- **When it runs:** `createIdleTimer()` is armed once `fetchResponse()` has returned an ok response,
+  right before the stream is read, never earlier: until the headers the per-attempt timeout and the
+  retries of `fetchWithRetry()` apply (a timer there would also cut a legitimate backoff or
+  `Retry-After` wait). A stall caught by it is therefore never retried, a partial answer is never
+  re-requested.
+- **What counts as activity:** every `reader.read()` that returns, before any parsing, so
+  keep-alives (Anthropic's `ping` events, SSE comments such as OpenRouter's, empty lines) keep the
+  stream alive.
+- **When it fires:** the turn's `AbortController` (the one `requestAbort` held, kept in a local
+  `turnAbort` after `requestAbort` is cleared) is aborted with its own reason, a `DOMException`
+  named `IdleTimeoutError`. The abort errors the pending read. The worker's `catch` tells the three
+  endings apart: the abort reason `StopError` on the controller's signal is a Stop (see below,
+  `stopTurn()`, no error); otherwise the timer's `fired` flag means the idle timeout, which abandons
+  the turn and posts one `error` whose payload is
+  `i18nStrings["<provider>_api_request_failed"] + ": " + error_stream_idle_timeout`; anything else
+  is a stream error, as in the table above.
+- **Stop during a stall:** the same controller is reachable from the `stop` handler while the stream
+  is read (`streamAbort`, see [Workers and UI](#automatic-retry-handling)), so Stop does not wait for
+  the timer: it ends the turn at once, with the partial answer kept and `tokensDone`, exactly as a
+  Stop between two chunks. The two reasons are distinct, so a Stop is never reported as a stall and
+  a stall never as a Stop; the first abort wins (aborting an aborted controller keeps its reason).
+- **Always disarmed:** `stop()` runs in the `finally` of the stream loop, which also clears
+  `streamAbort`, so the end of the stream, `message_stop`, a mid-stream error event, a Stop and a
+  read error all clear it, and a later Stop or timer cannot touch a finished turn. Before the loop
+  (an HTTP error, an abort, a network error) it was never armed.
+- In a special command the overall `special_command_timeout` (same default) still bounds the whole
+  exchange; whichever fires first ends it.
+- **Testing by hand:** the automated tests (the `-errors` files of `tests/api/`) run the timer on
+  mock timers and a mock fetch. In Thunderbird the idle timeout and a Stop during a stall are tested
+  with the stall server in `tests/_stall_server/` (`stall-server.mjs`, instructions in its
+  `README.md`): a local OpenAI-compatible and Ollama server that stalls after a few tokens, with
+  optional keep-alives and resume. Use that one, not an ad hoc server, and update it (and its
+  README) when this behaviour changes.
 
 ### Batch cancellation (user-triggered stop)
 
@@ -1012,11 +1160,14 @@ automatically instead of surfacing as a hard error. This matters most for the un
 `api-utils.js` it is worker-safe (its only import is `js/mzta-logger.js`). Every provider class
 uses it for `fetchResponse()` and `fetchModels()`, which both take an optional trailing
 `retryConfig` (for Anthropic, also `_postMessages()`, so the one-shot 400 retry gets transient
-retry too). Ollama's `fetchVersion()`/`fetchModelInfo()` still use plain `fetch()`.
+retry too). The direct probes are not retried: Ollama's `fetchVersion()` / `fetchModelInfo()` /
+`fetchRunningModels()` call `fetchDirect()`, a single `fetch()` with the redirect tracking of
+[Redirects](#redirects), and the `fetchModelInfo()` of Gemini and Claude a plain `fetch()`.
 
 **`retryConfig`:** overrides for `RETRY_DEFAULTS` (`maxRetries` 5, `retryDelaysMs`
 `[5000, 10000, 20000, 30000]`, `retryAfterCapMs` 60000, `timeoutMs` 60000) plus `signal` (user
-abort), `onRetry(info)`, `logger` (a `taLogger`) and `label` (provider name for the logs, set by
+abort), `onRetry(info)`, `onRedirect(info)` (the custom endpoints only, see
+[Redirects](#redirects)), `logger` (a `taLogger`) and `label` (provider name for the logs, set by
 each class).
 
 **Behaviour:**
@@ -1101,8 +1252,8 @@ top-level `message`, otherwise the raw text (a proxy's HTML page), whitespace co
 received (not cut, not reformatted), for every provider that goes through `fetchWithRetry()`.
 Both come from the body, which is read only with debug on: with debug off neither the suffix nor
 the second line is produced, and a body that gave nothing (5 s limit, unreadable) gives neither.
-**The request URL is never logged**: Google Gemini (and some OpenAI-compatible endpoints) carry the
-API key in the query string.
+**The request URL is never logged**: some OpenAI-compatible endpoints carry the API key in the
+query string.
 
 **Workers and UI:**
 - Each worker creates an `AbortController` per `chatMessage`, kept in `requestAbort` only while
@@ -1113,9 +1264,21 @@ API key in the query string.
   read. It passes `{signal, logger: taLog, onRetry}` to `fetchResponse()`.
 - `onRetry` posts `{type: 'newRetryAttempt', payload: {attempt, maxRetries, delayMs, status, reason}}`
   (`reason`: `'http'`, `'network'` or `'timeout'`; `status` is `null` for the last two).
-- On `stop`, the worker aborts `requestAbort` if it is still set. Once streaming has started,
-  `requestAbort` is `null` and the existing `stopStreaming` loop handles Stop, so a pending
-  `reader.read()` is never rejected.
+- On `stop`, the worker sets `stopStreaming` and aborts `requestAbort` if it is still set (the
+  `is_aborted` path below). Once streaming has started `requestAbort` is `null`, and the same
+  controller is held in `streamAbort` instead, from the moment the
+  [stream idle timer](#stream-idle-timeout) is armed to the `finally` that disarms it: Stop aborts
+  it with `userStopReason()` (`js/api/api-idle-timer.js`), a `DOMException` named `StopError`. The
+  abort errors the pending `reader.read()`, so Stop acts **at once**, even while the stream is
+  silent (before #999 a Stop during a stall waited for the next chunk, or for the idle timeout).
+  The loop's `catch` recognises the reason on the controller's `signal` (checked first) and calls
+  `stopTurn()`, the same function as the loop's `if (stopStreaming)` branch (which still covers a
+  Stop seen between two chunks, after `reader.cancel()`): it logs the `[STOPPED]` accumulators,
+  pushes the partial answer into `conversationHistory`, posts the usage and `tokensDone` with the
+  thinking received so far, resets the accumulators and `stopStreaming`. No `error`: the turn ends
+  as a completed one, and the window's `tokensDone` handling (`enableInput()`) clears the
+  "Stopping..." state of the button. A chunk that had not been read yet when Stop arrived is never
+  processed.
 - An aborted request (`is_aborted`, or Stop while an HTTP error's body was read) removes the
   unanswered user message from `conversationHistory` (so the next turn does not send it twice) and
   posts `requestAborted`.
@@ -1154,6 +1317,144 @@ covers are time-dependent, not model-dependent; daily quota exhaustion is the on
 would address, and there the right answer is to tell the user. If it is ever added, it must be a
 separate opt-in preference with a user-chosen list built from `fetchModels()`, limited to 429/503,
 with the model that actually answered reported in the UI.
+
+## Redirects
+
+Every API request follows redirects (`redirect: 'follow'`, the `fetch()` default). For the two
+custom endpoints, Ollama and OpenAI Compatible, whose address the user types, ThunderAI also tells
+the user when the server redirects, so the final address can be entered directly [#1000]. OpenAI,
+Claude and Gemini get none of this: their redirects are followed silently, with no check and no flag.
+
+- **Tracking is opt-in, through `retryConfig.onRedirect(info)`.** Only `Ollama` and `OpenAIComp`
+  pass it, to `fetchWithRetry()` (chat, model list) and to `fetchDirect(url, options, {onRedirect,
+  label})` (Ollama's `/api/version`, `/api/show`, `/api/ps`: a single `fetch()` with no retry and no
+  timeout). Both live in `js/api/api-retry.js`. Without `onRedirect` neither looks at redirects.
+- **A redirect that was followed** (`response.redirected === true`) reports
+  `{redirected: true, url: response.url, from: <the requested URL>, method, failed: !response.ok}`,
+  whatever the status. `method` matters because of the fetch standard: a 301, 302 or 303 turns a
+  `POST` into a `GET` with no body, while a 307 or 308 keeps it, and a `GET` survives any of them.
+  The code itself is never visible (neither on a followed redirect nor on an `opaqueredirect`), so
+  a `GET` that went through only tells where the server redirects; only a `POST` (the chat,
+  `/api/show`) tells whether the requests that carry content survive it.
+  - `ok`: the request goes on normally and the user sees no error.
+  - not `ok`: typically a 301/302 turned the POST into a GET with no body, and the final server
+    answers 404 or 405. Its error means nothing to the user, so the response is dropped and a
+    `RedirectFailedError` is thrown at once, **with no retry**: the class result carries
+    `is_redirect: true`.
+- **A success with no redirect** reports `{redirected: false}`: the server no longer redirects. An
+  error with no redirect reports nothing, since it says nothing either way.
+- **A redirect that could not be followed** (a target that is unreachable or does not allow CORS)
+  rejects with the same `TypeError` as an unreachable server. So after the **first** network failure
+  of a call (not a per-attempt timeout, not a user abort), and only with `onRedirect`,
+  `answersWithRedirect(url, signal)` asks the URL again once, before the first retry: a `GET` with
+  `redirect: 'manual'`, `credentials: 'omit'`, no headers (no API key), no body (no email), and a 2 s
+  limit. A `3xx` answer, or an `opaqueredirect` one (what a browser returns for `manual`), means a
+  redirect: it reports `{redirected: true, url: '', failed: true}` (the destination cannot be known
+  here) and throws a `RedirectFailedError` at once, with no retry. Any other answer, a failure or
+  the limit means "not a redirect": the original error goes on as before (retried, then rethrown).
+  The check is never repeated within the same call, and logged without the URL.
+- **The outcome of the last call** is kept by the class in `redirect_info` (`null` before any
+  report; reset by every request method). Whoever made the call saves it with
+  `saveEndpointRedirect(host, info)` of `js/mzta-endpoint-redirects.js`:
+  - a worker has no `browser.storage`: after `fetchResponse()` the Ollama and OpenAI Comp workers
+    post `{type: 'endpoint_redirect', payload: {host, info}}` (never the API key) when
+    `redirect_info` is not `null`, and the owner saves it: the chat window
+    (`api_webchat/controller.js`) and the special commands (`sendPrompt()` of
+    `js/mzta-special-commands.js`, on the worker `initWorker()` created);
+  - where the class is used directly, the caller saves it after the call: the connection test
+    (`runConnectionTest()`), "Update list" and the Ollama capability probe
+    (`pages/_lib/connection-ui.js`), the context-window lookup (`api_webchat/contextWindow.js`).
+- **The stored redirects**, in `storage.local` under `_endpoint_redirects` (not a preference, see
+  [05-options.md](05-options.md)), one entry per configured host, the host normalized like the
+  classes do (trimmed, trailing slashes removed): `{to, failed, method, at}`, `method` being the
+  one of the request the entry comes from.
+  - `to` is the address to enter instead of the host (`redirectTarget(host, url, from)`):
+    - another server: the origin of the final address;
+    - the same server: the new base, i.e. the final address without the API path the class added
+      to the host (requested `http://h/api/version`, answered from `http://h/v2/api/version`:
+      `http://h/v2`). It is the same whichever endpoint was called, so the chat, the test and the
+      probes do not rewrite it in turn. A final path that does not end with that API path gives
+      the final address without its query; a final address that is the host itself gives `''`;
+    - `''` when unknown (the probe).
+
+    The user name, the password and the query are always removed, and a host that is not a usable
+    address (credentials in it, see [Custom endpoint policy](#custom-endpoint-policy)) is never
+    stored.
+  - A failure (`failed: true`, any method) and a `POST` success always store the entry. A
+    success of another method (a `GET`) stores it only when nothing is known: it **never replaces
+    a failure**, nor a `POST` success to the same destination, since it cannot tell whether the
+    chat works through the redirect.
+  - `{redirected: false}` removes the entry: the warning must not stay forever once the server
+    stops redirecting.
+  - The storage is written only when the entry changes (`to`, `failed` or `method`): every chat message
+    reports an outcome, and must not produce a write. `at` is the time of the last change.
+  - `getEndpointRedirect(host)` reads an entry, `clearEndpointRedirect(host)` removes it (the host
+    field changed, see [05-options.md](05-options.md)).
+- **What the user sees.** A failed redirect flags the class result with `is_redirect`
+  (`isRedirectFailed(error)`). The two workers post `i18nStrings.api_error_redirect` (sent by the
+  chat window and by `initWorker()`), and the pages show `api_error_redirect`: the connection test
+  (`_mapError()`) and "Update list" (`fetchModelsWithTimeout()`). The message tells the user to enter
+  the final address directly. A connection test that succeeds through a redirect is amber, not
+  green (`runConnectionTest()` returns `redirectTo`, the stored `to`). Every redirect, followed or
+  failed, also shows the amber note under the host field of the connection panels
+  ([05-options.md](05-options.md)).
+- No `webRequest`, no extra permission: everything comes from the `Response` and the probe.
+
+## Custom endpoint policy
+
+The two connections whose address the user types, Ollama and OpenAI Compatible, follow these rules
+before any request is sent to them [#1000]:
+
+| Address | Result |
+|---|---|
+| not a URL, or empty | refused (`endpoint_error_invalid`) |
+| a scheme other than `http:` / `https:` (`ftp://`, `file://`, `localhost:11434`) | refused (`endpoint_error_scheme`) |
+| a user name or a password in it (`https://user:pass@host/`, `https://user@host/`, `http://:pass@localhost/`) | refused (`endpoint_error_credentials`), on any host |
+| `https:` | allowed |
+| `http:` to a loopback host: `localhost` (any case, with or without the trailing dot), any `127.0.0.0/8` address, `[::1]` | allowed |
+| `http:` to any other host, `0.0.0.0`, the private LAN ranges and `*.local` included | allowed only once the user approved its **origin** (`URL.origin`), or the policy sets it |
+
+- **The rules**, in `js/mzta-endpoint-policy.js`: pure functions with no WebExtension or DOM
+  dependency, since the API classes run in the workers. These are `parseEndpoint()`,
+  `isLoopbackHost()`, `needsInsecureConfirmation()`, `endpointOrigin()`, `checkEndpoint(value,
+  approvedOrigins)` and `maskUrlCredentials()`. Credentials are never logged:
+  `mztaPrefs._logValue()` and `mztaManaged._logValue()` mask the user info of every `*_host` value
+  that is a string (any other value is logged as it is), and so does the options page's own
+  "Saving option" log line for a `*_host` field.
+- **The approvals**, in `js/mzta-endpoint-approvals.js`, for the pages and the background only:
+  - The user's approvals live in `storage.local` under `_approved_insecure_origins`, an array of
+    origins in the order they were approved. `getUserApprovedInsecureOrigins()`,
+    `approveInsecureOrigin()` and `revokeInsecureOrigin()` manage it.
+  - `getApprovedInsecureOrigins()` adds the `http:` origins of every host the enterprise policy
+    sets: the global `*_host`, the `_special_prompts_connection` fields and the organization
+    prompts. The administrator chose them, so the user is never asked about them.
+  - Approvals are per origin, not per provider or per field. A different host, port or scheme is
+    asked about again. Nothing is approved automatically: an existing remote `http:` setup gets the
+    question, or the message, on its first request after the update.
+- **`resolveEndpointAccess(host, {ask})`** is the one entry point. It returns
+  `{ok: true, approvedOrigins}` or `{ok: false, problem, message}`, with `message` localized. With
+  `ask` an unapproved `http:` origin gets a native `confirm()` (`endpoint_insecure_confirm`), which
+  stores the origin when accepted. Only an explicit user action asks: "Test now", "Update list" and
+  opening the API chat window. Without `ask`, the request is refused with
+  `endpoint_insecure_not_confirmed`, which tells the user where to allow the server.
+- **Where it is checked**, always before anything is sent:
+
+  | Caller | `ask` | Refused |
+  |---|---|---|
+  | API chat window (`api_webchat/controller.js`), on a non-empty host | yes | the message in the transcript, input locked; no `init` to the worker, no `_ready_` to the background, so nothing is ever sent |
+  | Background special commands (`initWorker()`, see [Configuration Validation](#configuration-validation)) | no: nobody may be looking (incoming mail) | `isConfigError` with the message |
+  | Connection test (`runConnectionTest()`), on a non-empty host: `parseEndpoint()` before the host permission, `resolveEndpointAccess()` after it (`permissions.request()` must be the click's first `await`) | yes | the test's error |
+  | "Update list" (Ollama, OpenAI Comp) | yes | the red status under the button |
+  | Host field (`checkEndpointField()`): page load, `change`, approvals changed; see [05-options.md](05-options.md) | no | the red note under the field |
+  | Ollama capability probe, context-window lookup | no | the probe fails like an unreachable server |
+
+- **The classes are the last line of defence.** `Ollama` and `OpenAIComp` take
+  `approved_insecure_origins` in their constructor, and every request method runs `checkEndpoint()`
+  before `fetch()`. A refused endpoint returns the network-failure shape with `endpoint_problem`, and
+  an English `error` from `endpointProblemText()`, since a worker has no `browser.i18n`. The workers
+  pass the init message's `approved_insecure_origins` to the class. A worker only knows what the
+  window or the background approved when it was created, so an approval revoked while a chat window
+  is open applies to the next window.
 
 ## Optional Permissions
 
@@ -1265,7 +1566,7 @@ callers receive is byte-identical to what it was before this layer existed, and 
 to the API on the next turn. That invariant is the whole contract; everything below only adds a display path.
 
 Capture is logged through `taLog` (debug-gated), carrying the **provider, model and token counts only**. Never
-log request URLs or headers: Gemini and some OpenAI-compatible endpoints carry the API key in the query string.
+log request URLs or headers: some OpenAI-compatible endpoints carry the API key in the query string, and a header map carries it outright.
 
 ### Emitting to the chat window
 
@@ -1387,7 +1688,7 @@ the `taLog` debug output.
 
 ## Adding a New Provider
 
-1. Create `js/api/<provider>.js` with the API call logic. Use `fetchWithRetry()` (`js/api/api-retry.js`) instead of `fetch()` in `fetchResponse()`/`fetchModels()`, with a trailing `retryConfig` parameter and `is_aborted` in the exception object
+1. Create `js/api/<provider>.js` with the API call logic. Use `fetchWithRetry()` (`js/api/api-retry.js`) instead of `fetch()` in `fetchResponse()`/`fetchModels()`, with a trailing `retryConfig` parameter and `is_aborted` in the exception object. A provider whose address the user types also goes through [Custom endpoint policy](#custom-endpoint-policy), and tracks its redirects like Ollama and OpenAI Comp (see [Redirects](#redirects)): `onRedirect` to `fetchWithRetry()` / `fetchDirect()`, `redirect_info` on the class, `is_redirect` in the exception object, the `endpoint_redirect` message from its worker, and its host field among the two of `ENDPOINT_INTEGRATIONS` in `pages/_lib/connection-ui.js`
 2. Create `js/workers/model-worker-<provider>.js` that imports and calls the API module
 3. Add a new `connection_type` value constant
 4. Add settings keys to `integration_options_config` in `options/mzta-options-default.js`

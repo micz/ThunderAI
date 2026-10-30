@@ -14,7 +14,8 @@ The contract is the spec, as everywhere in the suite:
   … on Message Display" flows; "Per-message pipelines in `processEmails()`", "Resolving a message",
   "Stale-result guard", "In-flight jobs (`taJobRegistry`)", "Context-menu actions", "Unreachable
   message pane", "Batch cancellation (`taBatchController`)"; "Background Preference Snapshot and
-  Menu Invalidation" (its four invariants) and "Per-Message Data Storage";
+  Menu Invalidation" (its four invariants), "Per-Message Data Storage" and, in "API WebChat", the
+  background's side of the "Ready handshake";
 - [`claude-spec/02-prompts.md`](../../claude-spec/02-prompts.md): "Menu System" ("Popup Menu",
   "Context Menu", "Special Prompt Visibility Dependencies"), "Missing special prompts", "Add tags:
   extra prompt statements" (which tags land where), "Summarize" and "Translate";
@@ -46,7 +47,7 @@ time: the debounce, the worker timeout and the batch yield points run on node:te
 |---|---|---|
 | `01-job-registry` | `taJobRegistry`: one entry per kind and message, synchronous registration, the job body not run inside `start()`, the promise never rejecting (thrown, rate-limited, synchronous throw, no outcome), the entry removed on every path, a retry in the same session, joiners sharing the outcome, `invalidate()` / `revive()`, the log lines | 01 "In-flight jobs" |
 | `02-batch-controller` | `taBatchController`: tokens, `endBatch()`'s snapshot and the reset on the last exit, a cancel flagging the active batches only, later batches unaffected, overlapping batches and one notice, `rate_limit` never overwritten, the longest `retryAfterMs`, `getStatus()`, independence from `WorkingLevel` | 01 "Batch cancellation", 04 "Batch cancellation" |
-| `03-working-status-exclusions` | `taWorkingStatus` (level, icons, never negative); `checkExcludedTag()` and the exclusion list preference | 01 "Working indicator", 05 `add_tags_exclusions` |
+| `03-working-status-exclusions` | `taWorkingStatus` (level, icons, the ThunderAI Privacy idle icon, never negative); `checkExcludedTag()` and the exclusion list preference | 01 "Working indicator", 09 "Activation switch", 05 `add_tags_exclusions` |
 | `04-storage` | `taStorage`: the `msg:<id>` key and schema, the three fields in one record, force / no force, deleting a field and the last field, `deleteRecord()`, `getAll*Records()`, age-based `cleanup()`, `clearAllRecords()`, the preferences never touched, the per-record write queue (concurrent fields, delete + write, two instances, order, other messages in parallel) | 01 "Per-Message Data Storage" |
 | `05-stores` | `taSummaryStore`, `taTranslationStore`, `taSpamReport`: round trips, error states, records written by older versions, removal, the 100-entry truncation (as methods: the background calls only the spam one), `saveError()` metadata, `getAllReportData()` → `{}`, clearing one field only, no `storage.session` state | 01 "Per-Message Data Storage", 02 "Missing special prompts" |
 | `10-special-command` | `mzta_specialCommand` after `initWorker()`: the prompt posted, the answer accumulated, `newRetryAttempt` / `messageSent` ignored, thinking tokens and `<think>` blocks (closed, leading whitespace, unterminated), errors with `rateLimited` / `retryAfterMs`, a worker crash, the timeout (the preference, the default, after a 429, after a 503, never after an answer), `dispose()` on every path | 04 "Worker Lifecycle & Timeout", "Thinking in special commands", #batch-stop-on-rate-limit |
@@ -65,10 +66,12 @@ time: the debounce, the worker timeout and the batch yield points run on node:te
 | `32-menu-coalescing` | invariant 4: three rebuilds → one plus one trailing rerun, the newest arguments, every caller waiting for the final state, one click listener, the three real triggers together | 01 "Background Preference Snapshot and Menu Invalidation" |
 | `33-context-menu` | the context-menu special actions: the selection of the clicked tab (and its fallback), the UI tab, inline / other message displayed / unreachable pane / several messages / the cap, Translate's UI tab | 01 "Context-menu actions", "Inline Summary" (context menu), "Unreachable message pane" |
 | `34-config-errors` | a missing API key on every automatic feature: no worker, nothing stored, each panel (generic for add_tags), nothing in progress, the retry once fixed | 04 "Configuration Validation"; 01 "In-flight jobs" |
-| `35-compose-commands` | `chatgpt_replaceSelectedText` / `chatgpt_replyMessage`: what the compose script is sent, HTML through `sanitizeBlockHtml` (it ends in `execCommand('insertHTML')`), plain text converted and never sanitized (`stripHtmlKeepLines` a stand-in of this file: it needs a DOMParser) | 01 "Replacing text in a compose window", "Writing a reply" |
+| `35-compose-commands` | `chatgpt_replaceSelectedText` / `chatgpt_insertAtCaret` / `chatgpt_replyMessage`: what the compose script is sent, HTML through `sanitizeBlockHtml` (it ends in `execCommand('insertHTML')`), plain text converted and never sanitized (`stripHtmlKeepLines` a stand-in of this file: it needs a DOMParser); a menu prompt with action `"3"` on a compose tab sends `saveCaret` before any read, no other prompt or tab does (the run stopped at the first read with `m.tabAnswer`) | 01 "Replacing text in a compose window", "Inserting at the cursor in a compose window", "Writing a reply" |
 | `36-special-show-in` | the shipped `show_in` of the special prompts, from a fresh profile: summarize and translate (`"both"`) handed to the popup for a message tab and in the context menu, the spam filter (`"context"`) only in the latter; the popup running summarize / translate; feature off or a non-API connection: in neither menu; a saved `"context"` kept, never migrated | 02 "User Properties", "Shipped menus of the special prompts", "Special Prompt Visibility Dependencies" |
 | `37-permission-reconcile` | the permission map; the reconciliation's permission rule for every gated preference (missing → off, granted → on, at startup and on a storage change), with a specific integration, the sub-option alone, Sparks absent, locked keys skipped (simulated by stubbing `mztaManaged`), the log line; `permissions.onRemoved` (a shared permission, `addressBooks`, `clipboardRead`, host permissions only, a locked key) | 01 "Feature permissions" |
 | `38-permission-guards` | the runtime guards: automatic and context-menu add_tags / spam filter without their permissions (one red panel per run, the other features go on), the address book rule skipped with one blue notice (batch and Refresh), `assign_tags` blocked and a tag that cannot be created, `createTag()` / `assignTagsToMessage()` rejecting, the popup Add tags and calendar-from-clipboard menu actions refused with their alert | 01 "Feature permissions" |
+| `39-context-menu-multi` | several messages in the context menu: items created enabled, only the four multi-message prompts kept enabled with two messages or a paginated MessageList (pages not fetched), all enabled again with one, update and refresh only on a change, other contexts left alone, a closed or replaced showing not refreshed, the parent disabled when no item is left enabled, a custom prompt saved with `allow_multi` still disabled | 02 "Context Menu" ("Several messages", "Built-in-only fields") |
+| `40-chat-window-ready` | the chat window's ready listener (`addReadyListener()` in `openChatGPT()`, an extra root): for each of the five API providers and ChatGPT Web, one `runtime.onMessage` and one `windows.onRemoved` listener while the window has not answered, both removed on a usable configuration (`api_send` / `chatgpt_send`), on each empty required field (`api_error`), and on the window closed first (a late ready message is then not answered); another window closing changes nothing; two windows waiting at once | 01 "Ready handshake" |
 | `99-harness-known-issues` | the shape of `helpers/known-issues/background.mjs` | harness |
 | `99-harness-scope` | the statement splitter and the cut (small cases and the real file), the fake Worker, the strict API models | harness |
 
@@ -172,9 +175,12 @@ modules, then loads the policy with no policy installed, as the background does)
   pane, "Invalid tab ID" on a missing tab), `messageDisplay.getDisplayedMessage`,
   `compose.getComposeDetails` (a `messageCompose` tab's `isPlainText`) and `compose.beginReply` (a
   loaded reply tab of the model's `replyPlainText` format, recorded in `replies`),
-  `mailTabs.getSelectedMessages`, the two action icons, `windows.create` (the chat window opening);
+  `mailTabs.getSelectedMessages`, the two action icons, `windows.create` (the chat window opening)
+  and `windows.onRemoved` (a test closes a window by calling its listeners), `tabs.executeScript`
+  (the ChatGPT Web injection: recorded in `calls`, never run);
 - **menus**: `removeAll`, `create` (with its callback; a duplicate id is recorded in `menuErrors`,
-  which is how an interleaved rebuild would show), `onClicked`;
+  which is how an interleaved rebuild would show), `update` (sets the item's props; a missing id
+  rejects and is recorded in `menuErrors`), `refresh`, `onClicked`, `onShown`, `onHidden`;
 - `permissions.contains` and `permissions.onRemoved`, `contacts.quickSearch`. The optional API
   permissions granted are `m.permissions` (default `DEFAULT_PERMISSIONS`: every one a feature
   needs); `messages.tags.create`, `messages.update`, `messages.move` and `contacts.quickSearch`
@@ -219,7 +225,9 @@ None today.
   the sanitizer and `buildSummaryPrompt()`'s own body reading need a DOM (compose area). The model's
   messages have a text/plain part only.
 - **The chat window** (`openChatGPT()` past `windows.create`, `api_webchat/`): the webchat area; here
-  only that the window opens, for which messages. The regular prompts' menu actions
+  only that the window opens, for which messages, and the lifetime of its ready listener
+  (`40-chat-window-ready`: what the background answers the ready message, not what the window does
+  with it). The regular prompts' menu actions
   (`executeMenuAction()`) and the popup's Add tags dialog path (`act()` in `js/mzta-menus.js`, the
   `getTags` confirmation) are not run.
 - **The compose-window commands** past what they send the compose tab (`35-compose-commands`):
@@ -270,3 +278,17 @@ says how (fixed, documented as it is, or left to a separate job).
     panel more than once - the panel buttons, Refresh, the context-menu inline Summarize, a click
     joining a running job - and that the content script draws one. `33-context-menu` asserts the
     two sends of the context-menu path.)*
+## AI processing companion hooks
+
+`11-ai-processing.test.mjs` and `12-processing-worker.test.mjs` cover the contract
+in `claude-spec/09-ai-processing.md` against `processing-companion.mjs`, a scripted
+external add-on, not a detector. They run the real broker/adapter: the activation
+switch (`ai_processing_enabled`, set by the fake's `activate()`; `getSetting` /
+`setSetting` / `settingChanged`, the policy lock), the model readiness (`readinessChanged`
+from the fake's `readinessChanged()`, `downloadModel` / `openSettings`, the
+`ai_processing_model_autodownload` policy once per instance, again after a model that was
+ready is lost), discovery and `probe`, validation,
+fail-closed blocking while switched on, progress/timeout, Stop, inactive forwarding,
+response buffering and provider/UI isolation. `bgContext`
+models Privacy absent independently of Sparks' `external` stub; use `processor`
+to opt in to a fake Privacy responder. No runtime/model dependency is needed.

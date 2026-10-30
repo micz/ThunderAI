@@ -1,0 +1,39 @@
+name: Tests (remove label)
+
+# SECURITY: this workflow runs on pull_request_target, in the context of the base repository,
+# with a write token. It must never check out, build or run anything from the pull request:
+# no actions/checkout, no other action at all, only the `gh api` call below.
+# pull_request_target is used only because, unlike pull_request, it gets a write token on pull
+# requests from forks too, and runs without waiting for approval. The suite itself stays in
+# tests.yml, on pull_request with a read-only token.
+#
+# The label is removed right away, not when the tests finish: the Tests run has already been
+# triggered by the same `labeled` event, and adding the label again starts a new run.
+on:
+  pull_request_target:
+    types: [labeled]
+
+permissions: {}
+
+jobs:
+  unlabel:
+    if: github.event.label.name == 'run-tests'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Remove the run-tests label
+        # The REST call needs only pull-requests: write (gh pr edit goes through GraphQL, which can
+        # ask for more). A label already gone (removed by hand meanwhile) is not an error.
+        run: |
+          if ! out=$(gh api -X DELETE "repos/${REPO}/issues/${PR}/labels/run-tests" 2>&1); then
+            case "$out" in
+              *"HTTP 404"*|*"Label does not exist"*) echo "The run-tests label is already gone." ;;
+              *) echo "$out"; exit 1 ;;
+            esac
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}

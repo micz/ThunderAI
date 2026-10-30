@@ -100,6 +100,8 @@ const WINDOW_GLOBALS = [
     'FileReader', 'DataTransfer',
     // The webchat page is built from custom elements with open shadow roots.
     'customElements', 'ShadowRoot', 'NodeFilter',
+    // Constructable stylesheets, for a shadow root's adoptedStyleSheets.
+    'CSSStyleSheet',
 ];
 
 /**
@@ -120,6 +122,12 @@ function defaultCommands(mods) {
             lastShortcutFiltering: 0,
             lastShortcutPromptsData: [],
         }),
+        // The options page's companion probe: no ThunderAI Privacy installed, like the
+        // Sparks presence check below. Any other processing operation is a page's own model.
+        ai_processing: ({ operation }) => {
+            if (operation === 'probe') return { installed: false, compatible: false };
+            throw new Error(`Unmodelled processing operation: ${operation}`);
+        },
     };
 }
 

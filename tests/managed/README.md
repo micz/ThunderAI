@@ -77,8 +77,8 @@ So the background's answers to a page are:
   instance of `mztaManaged`. It is the only channel a page gets the policy through (values,
   locks, org prompts, restrictions, banner state), so the page hydrates, and sees exactly the
   state, it would in Thunderbird;
-- `reload_menus`, `get_active_special_ids`, `popup_menu_ready`: the core's fixed minimal answer
-  (`defaultCommands()`). These are not managed-configuration code;
+- `reload_menus`, `get_active_special_ids`, `popup_menu_ready`, the `ai_processing` probe: the
+  core's fixed minimal answer (`defaultCommands()`). These are not managed-configuration code;
 - anything else: a recorded violation.
 
 The listener is located by `helpers/background-handler.mjs` (its command guard), with the core

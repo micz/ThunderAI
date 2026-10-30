@@ -52,9 +52,11 @@ import {
 import {
   isTestableConnection,
   runConnectionTest,
-  setConnTestState
+  setConnTestState,
+  showConnTestResult
 } from '../js/mzta-connection-test.js';
 import { mztaPrefs } from '../js/mzta-prefs.js';
+import { pageProcessingClient } from '../js/mzta-ai-processing-client.js';
 import {
   applyManagedUI,
   showManagedBanner,
@@ -64,10 +66,15 @@ import {
   disableForManagedRestriction
 } from '../pages/_lib/managed-ui.js';
 import { isPermissionGatedPref } from '../js/mzta-feature-permissions.js';
+import { maskUrlCredentials } from '../js/mzta-endpoint-policy.js';
 import {
   bindPermissionToggle,
   showLockedPermissionWarning
 } from '../pages/_lib/permission-toggle.js';
+import {
+  getUserApprovedInsecureOrigins,
+  revokeInsecureOrigin
+} from '../js/mzta-endpoint-approvals.js';
 
 let taLog = new taLogger("mzta-options",true);
 
@@ -90,7 +97,9 @@ function saveOptions(e) {
         break;
       case 'text':
         options[element.id] = element.value.trim();
-        taLog.log('Saving option: ' + element.id + ' = ' + element.value);
+        // A host field may hold a user name and password: never logged (spec 04 "Custom endpoint policy").
+        taLog.log('Saving option: ' + element.id + ' = ' +
+            (element.id.endsWith('_host') ? maskUrlCredentials(element.value) : element.value));
         break;
       case 'password':
         options[element.id] = element.value.trim();
@@ -135,6 +144,7 @@ async function restoreOptions() {
           if(element.id == 'chatgpt_win_height') default_number_value = prefs_default.chatgpt_win_height;
           if(element.id == 'chatgpt_win_width') default_number_value = prefs_default.chatgpt_win_width;
           if(element.id == 'special_command_timeout') default_number_value = prefs_default.special_command_timeout;
+          if(element.id == 'api_stream_idle_timeout') default_number_value = prefs_default.api_stream_idle_timeout;
           if(element.id == 'batch_max_concurrency') default_number_value = prefs_default.batch_max_concurrency;
           element.value = result[element.id] ?? default_number_value;
           break;
@@ -415,14 +425,68 @@ async function disable_GetCalendarEvent(prefs_opt){
   wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
 }
 
+// The last probe of ThunderAI Privacy, kept so that its model updates (download progress)
+// can be drawn without asking again.
+let privacyCompanion = null;
+
+// The ThunderAI Privacy switch is offered only when a compatible companion answers, but it
+// stays visible while it is on: with the companion gone, every AI request is blocked and
+// switching it off here is the way out. The notice follows the companion alone.
+async function updatePrivacyCompanion(){
+  try {
+    privacyCompanion = await pageProcessingClient.probe();
+  } catch (error) {
+    privacyCompanion = null;
+  }
+  renderPrivacyCompanion();
+}
+
+// It can be turned on only once the companion's model is ready, as in the companion's own
+// settings page; it can always be turned off. Until then the row offers the download.
+function renderPrivacyCompanion(downloadError = null){
+  const companion = privacyCompanion;
+  const usable = !!(companion?.installed && companion?.compatible);
+  const missing = usable && !companion.ready;
+  const toggle = document.getElementById('ai_processing_enabled');
+  document.getElementById('ai_processing_tr').style.display = (usable || toggle.checked) ? '' : 'none';
+  setDisabledRespectingManaged(toggle, !toggle.checked && !(usable && companion.ready));
+  // Explicit 'block' because the CSS keeps the notice hidden by default, as #no_sparks.
+  document.getElementById('no_privacy').style.display = usable ? 'none' : 'block';
+  document.getElementById('no_privacy_text').style.display = companion?.installed ? 'none' : 'inline';
+  document.getElementById('wrong_privacy_text').style.display = companion?.installed ? 'inline' : 'none';
+  const downloading = missing && companion.downloading;
+  document.getElementById('ai_processing_model').style.display = missing ? '' : 'none';
+  document.getElementById('ai_processing_model_missing').style.display = downloading ? 'none' : '';
+  document.getElementById('ai_processing_model_downloading').textContent = downloading
+    ? browser.i18n.getMessage('prefs_OptionText_ai_processing_model_downloading', [String(companion.progress ?? 0)]) : '';
+  const progress = document.getElementById('ai_processing_model_progress');
+  progress.style.display = downloading ? '' : 'none';
+  progress.value = downloading ? (companion.progress ?? 0) : 0;
+  document.getElementById('ai_processing_model_error').textContent = downloadError || (missing && !downloading ? companion.error || '' : '');
+  document.getElementById('ai_processing_actions').style.display = usable ? '' : 'none';
+  const download_btn = document.getElementById('btnAiProcessingDownload');
+  download_btn.style.display = missing ? '' : 'none';
+  download_btn.disabled = downloading;
+}
+
 const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
 
-// Documentation page behind the "Full guide" link of the provider setup callout.
-// Sparse on purpose: only these providers have a dedicated page, so the link is
-// hidden for the others rather than pointing somewhere generic.
+// Setup guide on micz.it behind the "Full guide" link of the provider setup callout.
+// Every provider has one, translated in all the micz.it languages.
 const CONN_GUIDE_PATH = {
-  chatgpt_web: 'thunderbird-addon-thunderai/status/',
-  ollama_api:  'thunderbird-addon-thunderai/ollama-cors-information/',
+  chatgpt_web:       'thunderbird-addon-thunderai/guides/chatgpt-web/',
+  chatgpt_api:       'thunderbird-addon-thunderai/guides/openai-api/',
+  ollama_api:        'thunderbird-addon-thunderai/guides/ollama/',
+  openai_comp_api:   'thunderbird-addon-thunderai/guides/openai-compatible-api/',
+  google_gemini_api: 'thunderbird-addon-thunderai/guides/google-gemini/',
+  anthropic_api:     'thunderbird-addon-thunderai/guides/claude-api/',
+};
+
+// Second link next to "Full guide", only for the providers that have one more page.
+// url is already final: the CORS page is translated on micz.it, the status page is English only.
+const CONN_EXTRA_LINK = {
+  chatgpt_web: { msg: 'prefs_status_page', url: () => 'https://micz.it/thunderbird-addon-thunderai/status/' },
+  ollama_api:  { msg: 'CORS_alternative_1', url: () => getMiczItUrl('thunderbird-addon-thunderai/ollama-cors-information/') },
 };
 
 function updateDescription(){
@@ -438,21 +502,36 @@ function updateDescription(){
   for(let t of CONN_TYPES){
     desc.classList.toggle("tint_" + t, conntype === t);
   }
-  // Point the "Full guide" link at the selected provider's page, or hide it.
-  // It is moved inside the active provider's span so it flows inline with that
-  // text (and stays within the tinted accent bar) instead of sitting below it.
+  // Point the provider's links at its pages, hiding the ones it does not have.
+  // Their row is moved inside the active provider's span, so it sits below that
+  // text and still within the tinted accent bar.
+  let links = document.getElementById("mzta_info_links");
   let guide_link = document.getElementById("mzta_info_guide");
-  if(guide_link){
+  let extra_link = document.getElementById("mzta_info_extra");
+  if(links && guide_link && extra_link){
     let guide_path = CONN_GUIDE_PATH[conntype];
+    let extra = CONN_EXTRA_LINK[conntype];
     if(guide_path){
-      let active_span = desc.querySelector(".conntype_" + conntype + ".info_specific");
-      if(active_span && guide_link.parentElement !== active_span){
-        active_span.appendChild(guide_link);
-      }
       guide_link.href = getMiczItUrl(guide_path);
       guide_link.style.display = "";
     }else{
       guide_link.style.display = "none";
+    }
+    if(extra){
+      extra_link.href = extra.url();
+      extra_link.textContent = browser.i18n.getMessage(extra.msg) + " ›";
+      extra_link.style.display = "";
+    }else{
+      extra_link.style.display = "none";
+    }
+    let active_span = desc.querySelector(".conntype_" + conntype + ".info_specific");
+    if((guide_path || extra) && active_span){
+      if(links.parentElement !== active_span){
+        active_span.appendChild(links);
+      }
+      links.style.display = "";
+    }else{
+      links.style.display = "none";
     }
   }
 }
@@ -589,10 +668,46 @@ function resetSpecialCommandTimeout(){
   mztaPrefs.setPref('special_command_timeout', prefs_default.special_command_timeout);
 }
 
+function resetApiStreamIdleTimeout(){
+  if (isLockedKey('api_stream_idle_timeout')) return;
+  let apiStreamIdleTimeout = document.getElementById('api_stream_idle_timeout');
+  apiStreamIdleTimeout.value = prefs_default.api_stream_idle_timeout;
+  mztaPrefs.setPref('api_stream_idle_timeout', prefs_default.api_stream_idle_timeout);
+}
+
 async function updateCacheSize() {
   let size = await getCacheStorageUsedSpace();
   document.getElementById('cache_storage_size').textContent = size;
-}  
+}
+
+// The unencrypted (http:) servers the user allowed [#1000], each with a button that
+// withdraws the permission: the next request to it is blocked until confirmed again.
+// Only the user's own: the servers the enterprise policy sets are never asked about.
+async function renderInsecureOrigins() {
+  const list = document.getElementById('insecure_origins_list');
+  const origins = await getUserApprovedInsecureOrigins();
+  list.replaceChildren();
+  if (origins.length === 0) {
+    const empty = document.createElement('li');
+    empty.textContent = browser.i18n.getMessage('prefs_insecure_origins_empty');
+    list.appendChild(empty);
+    return;
+  }
+  for (const origin of origins) {
+    const item = document.createElement('li');
+    const name = document.createElement('span');
+    name.textContent = origin;
+    const btn = document.createElement('button');
+    btn.className = 'btn_small';
+    btn.textContent = browser.i18n.getMessage('prefs_insecure_origins_remove');
+    btn.addEventListener('click', async () => {
+      await revokeInsecureOrigin(origin);
+      await renderInsecureOrigins();
+    });
+    item.append(name, btn);
+    list.appendChild(item);
+  }
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   await injectConnectionUI({
@@ -768,10 +883,40 @@ document.addEventListener('DOMContentLoaded', async () => {
   disable_GetCalendarEvent(prefs_opt);
   disable_ChatShowUsageData(prefs_opt);
   updateSpecificApiIndicators(prefs_opt);
+  updatePrivacyCompanion();
+  // The companion may be installed, removed or updated while this page is open.
+  window.addEventListener('focus', updatePrivacyCompanion);
+  // Its model changes (download progress, completion, deletion) are relayed by the
+  // background, whoever started them.
+  browser.runtime.onMessage.addListener((message) => {
+    if (message?.command !== 'ai_processing_readiness' || !privacyCompanion?.compatible) return;
+    privacyCompanion = { ...privacyCompanion, ...message };
+    renderPrivacyCompanion();
+  });
+  document.getElementById('btnAiProcessingDownload').addEventListener('click', async () => {
+    try {
+      privacyCompanion = { ...privacyCompanion, ...await pageProcessingClient.downloadModel() };
+      renderPrivacyCompanion();
+    } catch (error) {
+      renderPrivacyCompanion(error.message);
+    }
+  });
+  document.getElementById('btnAiProcessingOpenSettings').addEventListener('click', async () => {
+    try {
+      await pageProcessingClient.openSettings();
+    } catch (error) {
+      renderPrivacyCompanion(error.message);
+    }
+  });
 
   browser.storage.onChanged.addListener(async (changes, area) => {
     // Preferences live in storage.local — see js/mzta-prefs.js.
     if (area !== 'local') return;
+    // The ThunderAI Privacy settings page writes the same switch.
+    if (Object.hasOwn(changes, 'ai_processing_enabled')) {
+      document.getElementById('ai_processing_enabled').checked = await mztaPrefs.getPref('ai_processing_enabled');
+      updatePrivacyCompanion();
+    }
     // A policy-enforced key cannot have meaningfully changed: whatever was written to
     // storage.local for it is shadowed on every read by the policy value, so reacting
     // would recompute the indicators to land on the values already displayed.
@@ -799,6 +944,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('reset_max_prompt_length').addEventListener('click', resetMaxPromptLength);
   document.getElementById('reset_special_command_timeout').addEventListener('click', resetSpecialCommandTimeout);
+  document.getElementById('reset_api_stream_idle_timeout').addEventListener('click', resetApiStreamIdleTimeout);
 
   // App-level "Advanced options" disclosure (purely UI, no pref persisted)
   let adv_toggle = document.getElementById('mzta_adv_toggle');
@@ -843,11 +989,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(!isTestableConnection(connType)) return;
     setConnTestState('loading');
     let result = await runConnectionTest(connType);
-    if(result.status === 'ok'){
-      setConnTestState('ok', result.apiName);
-    }else{
-      setConnTestState('error', result.message);
-    }
+    showConnTestResult(result);
     // A successful test may have been the moment the host permission was granted,
     // so re-probe the model capabilities now that /api/show can actually be reached.
     if(connType === 'ollama_api' && result.status === 'ok'){
@@ -874,6 +1016,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btn_options_setup_wizard').addEventListener('click', async (e) => {
       e.preventDefault();
       await openSetupWizard();
+  });
+
+  // Unencrypted servers the user allowed: refreshed when a connection panel of this page
+  // (or any other page) adds or removes one.
+  renderInsecureOrigins();
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && Object.prototype.hasOwnProperty.call(changes, '_approved_insecure_origins')) {
+      renderInsecureOrigins();
+    }
   });
 
   // Cache management

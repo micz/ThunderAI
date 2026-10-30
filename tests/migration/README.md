@@ -24,8 +24,8 @@ The contract is the spec, as everywhere in the suite:
 The modules under test are `js/mzta-prefs-migration.js` (`migratePrefsToLocal()`, `isSyncDrained()`,
 `migrateOllamaThinkLevel()`), the two #129 migrations of `js/mzta-utils.js`
 (`migrateCustomPromptsStorage()`, `migrateDefaultPromptsPropStorage()`), and
-`migrateCalendarNoSelection()`, `migrateEnabledToShowIn()` and `migrateMenuOrderAlphabetic()` of
-`js/mzta-prompts.js`, together with **their order and guards in `mzta-background.js`**. How to run
+`migrateCalendarNoSelection()`, `migrateEnabledToShowIn()`, `migrateCustomPromptIdCollisions()` and
+`migrateMenuOrderAlphabetic()` of `js/mzta-prompts.js`, together with **their order and guards in `mzta-background.js`**. How to run
 the suite, the two levels, the mock and the known-issue mechanism are in the general
 [`tests/README.md`](../README.md). Paths below are relative to `tests/`.
 
@@ -55,6 +55,7 @@ mock's options. The run takes about 15 s, most of it spent in the interruption t
 | `11-sequence-failure` | the sequence when storage fails: the copy failing (the guarded migrations skipped), `storage.sync` unreadable at every call, every write after the copy failing. Each time the sequence completes (the add-on starts), nothing is lost, and the next starts end where clean starts end | 05 "Overview" / 02 (the one-shot flags) |
 | `12-sequence-partial` | the sequence from partial states: the oldest (pre-#129) profile over three starts, a payload in both areas, and **Thunderbird closing at each storage write of the first start in turn**, followed by normal starts | 05 "Overview", 01, 02 |
 | `13-sequence-menu-order` | the alphabetic migration as a step of the sequence: every prompt reads back as before, positions aside, a field it lacked appearing only as `''`; no stored value changes | 02 "Alphabetic-to-Position Migration" step 3 |
+| `14-sequence-prompt-ids` | the custom prompt id rename as a step of the sequence: a custom `prompt_summarize` stored as `summarize` with its fields, every other custom prompt kept, no two prompts with one id afterwards, the next start writing nothing | 02 "Prompt ids", 01 "Storage" |
 | `20-captured` | the sequence on every real `storage.sync` dump of `fixtures/migration/captured/` | as `10` |
 | `99-harness-known-issues` | the shape of `helpers/known-issues/migration.mjs` | harness |
 | `99-harness-sequence` | the statement splitter, the cut, the injected faults and the fresh contexts | harness |
@@ -92,8 +93,9 @@ that order themselves, because they would then test the copy. Instead, `sequence
    are resolved from the file's own `import` statements and imported, in the worker, from the real
    modules.
 
-Today the cut is seven statements: the migration block near the top (the copy, the
-`isSyncDrained()`-guarded #129 pair, the three `_prefs_migration_ok`-guarded migrations), the policy
+Today the cut is eight statements: the migration block near the top (the copy, the
+`isSyncDrained()`-guarded #129 pair, the three `_prefs_migration_ok`-guarded migrations, the
+unguarded `migrateCustomPromptIdCollisions()`, which has no flag and runs at every start), the policy
 load, and the guarded `migrateMenuOrderAlphabetic()` just before the menus are loaded. Each
 migration that can reject is awaited with a `.catch()` that logs (spec 05 "Overview"); the cut runs
 that too, so a failure inside one shows as a completed sequence, as in Thunderbird. A migration added, moved or re-guarded in the

@@ -1,0 +1,102 @@
+name: Check Markdown-it Latest Release
+
+on:
+  schedule:
+    - cron: '0 19 * * *' # Check every day at 19:00
+  workflow_dispatch: # Allows manual triggering for testing purposes
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get latest release from npm registry
+        id: get_release
+        run: |
+          # markdown-it does not publish GitHub releases, only npm versions
+          PACKAGE_TARGET="markdown-it"
+          LATEST_VERSION=$(curl -s https://registry.npmjs.org/$PACKAGE_TARGET/latest | jq -r .version)
+
+          if [ "$LATEST_VERSION" == "null" ] || [ -z "$LATEST_VERSION" ]; then
+            echo "Error: unable to fetch version or no release found."
+            exit 1
+          fi
+
+          echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          echo "target=$PACKAGE_TARGET" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Update VENDORS.md and library files
+        id: update
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LATEST_VERSION="${{ steps.get_release.outputs.version }}"
+          PACKAGE_TARGET="${{ steps.get_release.outputs.target }}"
+          PR_TITLE="Update markdown-it to version ${LATEST_VERSION}"
+
+          # Skip if VENDORS.md on dev already points to the latest version (with or without the "v" prefix)
+          if grep -Eq "${PACKAGE_TARGET}@v?${LATEST_VERSION//./\\.}/" VENDORS.md; then
+            echo "markdown-it is already at version ${LATEST_VERSION} on dev. No action taken."
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Search through pull requests (both open and closed for safety)
+          EXISTING=$(gh pr list --state all --search "\"${PR_TITLE}\" in:title" --json number --jq 'length')
+          if [ "$EXISTING" != "0" ]; then
+            echo "The pull request for version ${LATEST_VERSION} already exists. No action taken."
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Point the markdown-it source in VENDORS.md to the latest version
+          sed -E -i "s#${PACKAGE_TARGET}@v?[0-9][^/]*/#${PACKAGE_TARGET}@${LATEST_VERSION}/#g" VENDORS.md
+
+          node .github/scripts/libs-update.mjs "$PACKAGE_TARGET"
+
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+          echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
+
+      - name: Commit, push and create the Pull Request
+        if: steps.update.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LATEST_VERSION="${{ steps.get_release.outputs.version }}"
+          PACKAGE_TARGET="${{ steps.get_release.outputs.target }}"
+          PR_TITLE="${{ steps.update.outputs.pr_title }}"
+          PR_BRANCH="${PACKAGE_TARGET}-update-${LATEST_VERSION}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -B "$PR_BRANCH"
+          git add -A
+          git commit -m "$PR_TITLE"
+          git push origin "$PR_BRANCH" --force
+
+          gh pr create \
+            --base dev \
+            --head "$PR_BRANCH" \
+            --title "$PR_TITLE" \
+            --label enhancement \
+            --body "Update markdown-it to version **${LATEST_VERSION}**.
+
+          VENDORS.md and the library file were updated automatically from:
+
+          https://cdn.jsdelivr.net/npm/${PACKAGE_TARGET}@${LATEST_VERSION}/dist/browser/markdown-it.umd.min.js
+
+          Please review the downloaded file before merging."

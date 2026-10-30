@@ -41,6 +41,13 @@ js/mzta-prompts.js       (builds final prompt string)
 js/mzta-compose-script.js  (inserts text into Thunderbird compose window and display window)
 ```
 
+API chat and special-command workers use `js/mzta-processing-worker.js`:
+async companion hooks precede dispatch and UI actions, parsing and storage.
+Inactive hooks preserve content and streaming. ChatGPT Web is not covered: with the
+switch on, a prompt on that connection is blocked with an alert before any tab opens.
+See [Async content processing](04-api-integrations.md#async-content-processing)
+for boundaries and failure behavior.
+
 ### Data Flow: Inline Summary on Message Display
 
 The `summarize_display_mode` preference (`'inline'` or `'webchat'`) controls where
@@ -783,6 +790,8 @@ test area, `tests/compose/README.md`):
   when that command fails, the dialog logs it and opens with the defaults — no exclusion, both flags
   off, not locked.
 - **`replaceSelectedText`** (compose window): see *Replacing text in a compose window*.
+- **`saveCaret`** / **`insertAtCaret`** (compose window): see *Inserting at the cursor in a compose
+  window*.
 
 ### Batch cancellation (`taBatchController`)
 
@@ -851,8 +860,11 @@ separate `summarize` block (before each `getFull` and before opening the webchat
 triggers are not batches and are never gated by a cancel.
 
 **Abort latency (v1):** cancellation is checked *between* messages (and between the features of a message),
-so the AI calls currently in flight — up to `batch_max_concurrency` — finish first — bounded by `special_command_timeout` (default 120s). There is no
-mid-request worker termination in v1.
+so the AI calls currently in flight — up to `batch_max_concurrency` — finish first.
+`special_command_timeout` bounds stalled local chunks and the provider phase, not
+a progressing multi-part processing operation's total duration. Batch Stop does not
+terminate an in-flight command; API chat's Stop independently cancels remaining
+preprocessing work before dispatch.
 
 **What a stop leaves behind.** The messages a Stop or a rate limit kept from starting (and the
 features an in-flight message did not reach) are **not resumed**: no queue outlives the batch, and
@@ -871,7 +883,8 @@ runtime messages and the `preparePopupMenu` payload.
 The interactive chat window used by every API provider (not ChatGPT Web) lives in
 `api_webchat/`. It is a standalone extension page (`index.html`) built from two native
 Web Components with Shadow DOM and a controller that wires them to a per-provider Web
-Worker. No framework, no build step; plain ES6 modules under the strict default MV2 CSP.
+Worker. No framework, no build step; plain ES6 modules under the strict default MV2 CSP, plus
+the page's own, stricter meta CSP (see *Content Security Policy* below).
 
 ### Component structure
 
@@ -924,9 +937,33 @@ from `windows.getCurrent()`). The background listener registered for that `call_
 sending the window `api_send` (the prompt), or `api_error` when the configuration is unusable
 (an empty key or model). Nothing is sent to the worker before that answer.
 
+**The background's ready listener and its lifetime.** `openChatGPT()` waits for the ready message
+through `addReadyListener(command, onReady)` (`mzta-background.js`), the same for the five API
+providers and for ChatGPT Web (whose loader sends `chatgpt_web_ready_<call_id>`, see
+[04-api-integrations.md](04-api-integrations.md)):
+
+- **Registered** before the window is opened: one `runtime.onMessage` listener that calls
+  `onReady(message, sender.tab)` for exactly that command and returns `false` for any other. Then
+  `openWindow(win_options)` calls `windows.create()` and, with the id it returns, registers one
+  `windows.onRemoved` listener for that window.
+- **Removed**, both listeners together by the one `cleanup()`, on whichever end comes first:
+  1. the ready message answered with `api_send` (or `chatgpt_send`, after the script injection);
+  2. the ready message answered with `api_error` (an empty key, model, host or version): each
+     branch calls `cleanup()` before its `return`;
+  3. the window closed before any ready message was answered: the window never got ready, the user
+     closed it first, or the page refused to start (an unknown `llm`, see above).
+  `windows.create()` rejecting removes the message listener too. When the ready message is answered
+  while `windows.create()` is still pending, the `onRemoved` listener is never registered.
+
+So no listener outlives its window: before, the message listener was removed only on the
+`api_send` path, and every other opening left one behind for the rest of the session.
+`tests/background/40-chat-window-ready` checks the three ends for every provider.
+
 **Startup notice.** The first turn is an info notice (`.turn-info > .message.info`) built by
 `getAPIsInitMessageString()` (`js/mzta-utils.js`): the API, the model, the host, the version, the
-prompt (`[id] name`) and the provider's non-empty text settings. The window parses it as HTML (its
+prompt (`[id] name`) and the provider's non-empty text settings. A setting given as a section
+(`{label, items}`, today the OpenAI Comp extra headers) takes a line for its label and one
+indented `label: value` line per item. The window parses it as HTML (its
 own `<i>`/`<span>` labels, newlines → `<br>`), so **every value is escaped** with
 `mztaEscapeHtml()`: a prompt name, a model or a system prompt holding markup is shown as text and
 never becomes an element. The three values always there are the most exposed: the prompt name (the
@@ -1546,7 +1583,10 @@ line.
 The node-walking logic is unchanged — the `moz-cite-prefix` / `moz-forward-container` breaks, the
 `firstNode`/`lastNode` tracking and the `do_autoselect` range all behave exactly as before. In
 particular `lastNode` is still keyed off `node.textContent`, **not** the new projection, so the
-autoselect range is provably identical.
+autoselect range is provably identical. Since [#978] `getOnlyTypedText` puts that range in the live
+selection only when the user has no meaningful selection (none, collapsed or whitespace-only), and
+with `with_html: true` returns `{ text, html }`, the html read from the detached range itself (see
+[07-diff-picker.md](07-diff-picker.md) → *The `mail_typed_text` substitution must carry its twin*).
 
 **The add-on's own elements and the signature, on the live body.** The walkers cannot use
 `getCleanBodyHtml()`: it returns a detached clone, and the autoselect range needs live nodes. So they
@@ -1681,6 +1721,40 @@ editor.clearUndoRedo();` instead of `editor.rebuildDocumentFromSource(body)`, so
 The reply of `chatgpt_replyMessage` goes through the same editor path (*Writing a reply*); the only
 `setComposeDetails` left is that path's fallback, `replaceBody()`.
 
+### Inserting at the cursor in a compose window
+
+Action `"3"` (spec 02, issue #937): the answer goes **where the cursor is**, never replacing text and
+never asking. `chatgpt_insertAtCaret` (the AI chat window's "Insert at cursor", and the ChatGPT web
+window's) converts the answer exactly as `chatgpt_replaceSelectedText` does — both go through
+`_prepareComposeAnswer()` in `mzta-background.js` (the window's format, `stripHtmlKeepLines()` for
+plain text, `sanitizeBlockHtml()` for HTML) — and sends `insertAtCaret` to the compose tab. The
+insertion is `insertIntoEditor()`, the same editor path, focus handling and fallback as
+*Replacing text in a compose window*, so it is one undo step and the caret ends after the answer.
+
+- **The caret is saved when the prompt starts.** It cannot be read when the answer arrives: a prompt
+  with `{%mail_typed_text%}` autoselects the typed text when it starts (`getOnlyTypedText` with
+  `do_autoselect`), which replaces a collapsed caret with a selection. So `getMailBody()`
+  (`js/mzta-menus.js`) sends `saveCaret` to a compose tab first, before any other read, when the
+  prompt's action is `"3"`; the compose script keeps a clone of the selection's range in
+  `_mztaSavedCaret`. A clone is a live `Range`: it follows the edits made in the meantime. There is
+  one per compose window, so of two Insert prompts running at once from the same window, both
+  insert where the latest one started. A click in the compose window while the chat is open does
+  not move it: the saved caret wins.
+- **Which range** (`insertAtCaret`): the saved one if it is usable, else the current selection's
+  if usable, else the **start of the email** (`startOfBodyRange()`: before the first node that is
+  not one of ThunderAI's own elements, the same point the confirmed Replace uses) — which is above
+  any quote or signature, so the answer never lands inside or in place of them. *Usable*
+  (`usableCaret()`): both ends inside the body and neither inside one of ThunderAI's elements. The
+  saved caret is cleared on use.
+- **A selection is not replaced:** the range is collapsed to its end. A caret right before one of
+  ThunderAI's top-level elements moves after it, so `#mzta-container` stays the body's first child.
+  A caret the user put inside the signature or the quote is respected: only the no-caret case
+  avoids them.
+- The command resolves `true`.
+
+The direct-DOM fallback of `insertIntoEditor()` (shared with Replace) puts the caret after what it
+inserted, as the editor command does.
+
 ### Writing a reply
 
 `chatgpt_replyMessage` opens the reply (`compose.beginReply`, *Writing into a plain text compose
@@ -1735,7 +1809,11 @@ they are the theming channel: component styles consume `var(--token)` and must n
 literal colours or their own `prefers-color-scheme` block. Rules that are not custom
 properties (focus rings, `@keyframes`, the reduced-motion opt-out, the shared button
 families) live in `api_webchat/sharedStyles.js` as CSS strings that each component
-concatenates into its own `<style>`.
+concatenates into its own stylesheet. That stylesheet is a constructable `CSSStyleSheet`
+(`buildStyleSheet()` in `sharedStyles.js`, built once per module) set as the shadow root's
+`adoptedStyleSheets`, **never a `<style>` element**: the page's CSP has `style-src 'self'`,
+which blocks every `<style>` element, including one created by script, and every `style="…"`
+attribute in markup. Setting `el.style.x` from script (CSSOM) is not affected and stays allowed.
 
 `--accent` mirrors `pages/_lib/mzta-design.css` so the whole add-on shares one blue.
 
@@ -1800,6 +1878,71 @@ waiting for it, so the promise rejects with `Actor 'Conduits' destroyed before q
 is needed before the window goes away. Same pattern in `js/mzta-chatgpt.js` (the legacy
 fixed-div buttons).
 
+### Links in the transcript
+
+Model output is untrusted: a prompt injection hidden in a mail can make the model write links,
+and the sanitizer keeps `http:`, `https:` and `mailto:` hrefs (issue #1001). No link in the
+transcript is ever left to the page's default action, which Thunderbird decides and which could
+navigate the chat window itself. `MessagesArea` listens on `#messages` (added in
+`connectedCallback()`, removed in `disconnectedCallback()`):
+
+- **`click` and `auxclick`** (`_onLinkActivate()`): when the event's `composedPath()` holds an
+  `<a>` below `#messages`, the event is **always** `preventDefault()`ed. `click` covers the left
+  button and Enter on a focused link (turned into a click by the browser), with or without
+  Ctrl/Cmd/Shift; `auxclick` the middle button, which Gecko does not report as a click. Only a
+  `click` with `button` 0 and an `auxclick` with `button` 1 open the link, so the right button
+  never does and a middle button reported as both opens it once.
+- **What opens:** the href, parsed by `new URL()` with **no base** (`openableLinkUrl()`), opened
+  with `browser.windows.openDefaultBrowser(url.href)` only when the protocol is exactly `http:` or
+  `https:` and both `username` and `password` are empty. Everything else stays inert: `mailto:`,
+  a relative URL, a fragment, any other scheme, a malformed or missing href, a link with
+  credentials (`https://user:pass@host` can disguise the real host). A rejection of
+  `openDefaultBrowser()` is logged with `console.error`. No permission is needed.
+- **The diff picker:** a link inside `<diff-picker>` (found on the composed path, the event's
+  target being retargeted to the picker) is cancelled but **never opened**: there a click chooses
+  a side (REVIEW) or places the caret (EDIT).
+- **`dragstart`** (`_onLinkDragStart()`): cancelled when it starts on a link, so a link cannot be
+  dragged to somewhere that would load it. Dragging other text is unaffected.
+
+Delegation on `#messages` covers every turn. Today only answers (and the picker) can hold an
+anchor: the user bubble is text, the startup notice holds only its own `<i>`/`<span>`/`<br>`,
+errors and the thinking block are `textContent`.
+
+The summary and translation panels of the message pane are not concerned: they live in the mail
+document, where Thunderbird's own link handling for messages applies.
+
+### Content Security Policy
+
+`api_webchat/index.html` declares, as the first element of `<head>`:
+
+```
+default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self';
+connect-src 'self' http: https:; worker-src 'self'; object-src 'none'; frame-src 'none';
+base-uri 'none'; form-action 'none'
+```
+
+It is defense in depth on top of the sanitizer, combined with (not replacing) the manifest's
+default MV2 CSP. What each directive relies on:
+
+- **`script-src 'self'`**: no inline script, inline handler, `eval` or `new Function` in the page
+  or what it loads (`markdown-it.min.js`, `diff.js`, `mzta-html-lines.js` included).
+- **`style-src 'self'`**: `styles.css` only; the components use `adoptedStyleSheets` (see
+  *Theming*) and `index.html` holds no `style` attribute (`message-input { position: relative }`
+  is in `styles.css`).
+- **`img-src 'self'`**: the page's images are the add-on's own (`images/*.svg`, `loading.gif`);
+  the icons are built with `createElementNS`. A remote `<img>` would not load even if the
+  sanitizer let one through.
+- **`connect-src 'self' http: https:`**: the page itself fetches, not only its worker:
+  `contextWindow.js` asks Ollama (`/api/ps`, `/api/show`, at the user's host, often
+  `http://localhost`), Gemini and Anthropic for the model's context window. The provider requests
+  run in the worker; allowing any http(s) host keeps them working whether or not the worker
+  inherits the page's policy, including user-defined custom and local endpoints.
+- **`worker-src 'self'`**: the module workers of `js/workers/`.
+- **`object-src`, `frame-src`, `base-uri`, `form-action` `'none'`**: nothing is embedded, no
+  `<base>`, no form.
+
+`frame-ancestors` is left out: a meta CSP ignores it.
+
 ### Actions on an answer
 
 What the buttons under an answer send, what they act on, and which of them each kind of session
@@ -1813,7 +1956,8 @@ and nothing else:
 | Command | Sent by | Fields besides `command` and `text` | What the background uses |
 |---|---|---|---|
 | `chatgpt_replyMessage` | "use this answer", action `"1"` with a real message | `tabId`, `mailMessageId` (both from `api_send`), `replyType` (`reply_sender` / `reply_all`) | `mailMessageId`, to open the reply (`messages.get` → `compose.beginReply`); `tabId` is not read |
-| `chatgpt_replaceSelectedText` | "use this answer", action `"2"`, or action `"1"` with `mailMessageId` -1 (forced to `"2"`, [07-diff-picker.md](07-diff-picker.md#scope)) | `tabId` (the compose tab), `mailMessageId` (-1 from a compose window) | `tabId`, the compose window it writes into; `mailMessageId` is not read |
+| `chatgpt_replaceSelectedText` | "use this answer", action `"2"`, or any other action but `"3"` with `mailMessageId` -1 (forced to `"2"`, [07-diff-picker.md](07-diff-picker.md#scope)) | `tabId` (the compose tab), `mailMessageId` (-1 from a compose window) | `tabId`, the compose window it writes into; `mailMessageId` is not read |
+| `chatgpt_insertAtCaret` | "Insert at cursor", action `"3"` (never forced, *Inserting at the cursor in a compose window*) | as `chatgpt_replaceSelectedText` | as `chatgpt_replaceSelectedText` |
 | `chatgpt_saveSummary` | Save as Summary, summary sessions only | `headerMessageId` (`prompt_info.headerMessageId`), `tabId` (`prompt_info.summaryTabId`) | `headerMessageId` to store the summary; `tabId` to show it in that tab's message pane if the message is still displayed there |
 
 `chatgpt_saveSummary`'s `tabId` is `summaryTabId`, always set, since the button exists only when it
@@ -2010,8 +2154,8 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 |------|------|
 | `api_webchat/controller.js` | Wires components ↔ worker (DI); owns `promptData`, font-zoom, runtime-command handling |
 | `api_webchat/styles.css` | Design tokens (`:root` + dark override), page shell and header bar — the single source of truth for colour |
-| `api_webchat/sharedStyles.js` | CSS strings (`SHARED_BASE_CSS`, `BUTTON_CSS`) concatenated into each shadow root's `<style>`: focus rings, keyframes, reduced motion, button families |
-| `api_webchat/messagesArea.js` | `<messages-area>` custom element: turn-wrapped transcript, per-answer toolbar + newest-answer action bar, prompt-anchored scrolling + `#jumpToLatest` button, orchestrates the render helpers below |
+| `api_webchat/sharedStyles.js` | CSS strings (`SHARED_BASE_CSS`, `BUTTON_CSS`) concatenated into each shadow root's stylesheet: focus rings, keyframes, reduced motion, button families; `buildStyleSheet()`, the constructable sheet each component adopts |
+| `api_webchat/messagesArea.js` | `<messages-area>` custom element: turn-wrapped transcript, per-answer toolbar + newest-answer action bar, prompt-anchored scrolling + `#jumpToLatest` button, link handling (see *Links in the transcript*), orchestrates the render helpers below |
 | `api_webchat/messageInput.js` | `<message-input>` custom element: input field, send/stop buttons, floating status pill (waiting / streaming / done / error), custom-text flow |
 | `api_webchat/splitButton.js` | `<split-button>` custom element: the "use this answer" button + optional reply-type dropdown; owns the outside-click and Escape listener lifecycle (`connectedCallback`/`disconnectedCallback`) |
 | `api_webchat/streamingMessage.js` | `StreamingMessage` class: per-turn token/thinking accumulation, `<think>` handling, markdown-it render; `flush()` returns an immutable HTML snapshot |
@@ -2032,6 +2176,9 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 | `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders unified toolbar (spam badge, summary button, translation button, in that order) and content panels (generic error, generic info, translation, summary, in that order) in message display via `#mzta-container` — see [The message-display panels and dialogs](#the-message-display-panels-and-dialogs-jsmzta-compose-scriptjs) |
 | `js/mzta-chatgpt.js` | ChatGPT Web integration (opens browser window, reads DOM) |
 | `js/mzta-special-commands.js` | Handles special prompt actions (add_tags, calendar, task) |
+| `js/mzta-endpoint-policy.js` | The address rules of the custom endpoints (Ollama, OpenAI Compatible): http/https only, no credentials, unencrypted only to loopback or an approved origin. Pure, worker-safe: see [04 "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy) |
+| `js/mzta-endpoint-approvals.js` | The approved unencrypted origins (`storage.local` `_approved_insecure_origins`, plus the policy's hosts) and `resolveEndpointAccess()`, the check every caller runs before a request. Pages and background only |
+| `js/mzta-endpoint-redirects.js` | The redirects of the custom endpoints (`storage.local` `_endpoint_redirects`, one entry per host): `saveEndpointRedirect()` stores the outcome reported by the API classes (`redirect_info`, forwarded by the workers with `endpoint_redirect`), read by the amber note under the host fields. Pages and background only: see [04 "Redirects"](04-api-integrations.md#redirects) |
 | `js/mzta-spamreport.js` | Spam filter logic |
 | `js/mzta-i18n.js` | i18n helper (wraps `browser.i18n.getMessage`) |
 | `js/mzta-logger.js` | Debug logging (`taLogger`). `log()` gates only the `console.log`, **not its argument** — the message string is always built. On a hot path (per SSE chunk / per line in the workers) guard the call site with `if (taLog.do_debug)`, or do not log there at all. `warn()`/`error()` are never gated. |
@@ -2058,7 +2205,7 @@ Each file handles HTTP communication for one provider:
 | `openai_comp.js` | OpenAI-compatible APIs |
 | `openai_comp_configs.js` | Pre-configured providers (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity) |
 | `openai_responses.js` | OpenAI Responses API |
-| `api-utils.js` | Shared worker-safe helpers (`parseExtraBody()`) |
+| `api-utils.js` | Shared worker-safe helpers (`parseExtraBody()`, `parseExtraHeaders()`, `extraHeaderProblem()`, `mergeHeaders()`, `isCredentialHeader()`) |
 | `api-retry.js` | `fetchWithRetry()`: automatic retry with backoff, see [04-api-integrations.md](04-api-integrations.md#automatic-retry-handling) |
 
 ## Web Workers (`js/workers/`)
@@ -2096,6 +2243,8 @@ Each subdirectory is a self-contained settings/UI page for a specific feature:
 Regular preferences (feature flags, connection settings, `ollama_*`/`chatgpt_*`/etc., `reply_type`, `connection_type`, ...) live in `browser.storage.local`, keyed by `prefs_default` in `options/mzta-options-default.js`. They are read through the accessor module `js/mzta-prefs.js` (`mztaPrefs.getPref` / `getPrefs` / `getAllPrefs` / `setPref`), the single choke point for preference access — see [05-options.md](05-options.md#preference-access-jsmzta-prefsjs) for the API, the preserved missing-vs-`null` semantics and the handful of deliberate bypasses. The large-payload keys — `_custom_prompt`, `_default_prompts_properties`, `_special_prompts`, `_custom_placeholder` — live in the same area (`add_tags_exclusions`, once one of them, is now a regular declared preference), where they went first, because `storage.sync` has a narrow storage quota (the one-time migrations in `js/mzta-utils.js`, `migrateCustomPromptsStorage()` / `migrateDefaultPromptsPropStorage()`, added for [#129](https://github.com/micz/ThunderAI/issues/129)). Each copies its key to local and then removes it from sync; when local already holds the key (a move interrupted between the copy and the remove), the local copy is kept and the stale sync copy is removed all the same, so `storage.sync` always ends drained.
 
 **The preferences followed them out of `storage.sync` for the same quota reason.** The move is carried by `migratePrefsToLocal()` (`js/mzta-prefs-migration.js`), the first `await` and the first storage access of `mzta-background.js` (only synchronous listener registrations, which touch no storage, come before it): it copies every key `storage.sync` still holds, skipping any already present in local (so it never reverts a later change), and **leaves the sync copy in place** so a downgrade still finds the user's settings. It then records `_prefs_migrated_from_sync` in `storage.local` and short-circuits on that marker at every subsequent startup, rather than re-reading both areas forever. Two consequences worth knowing: preferences **no longer sync across profiles or devices**, and every `storage.onChanged` listener that watches preferences gates on `areaName === 'local'` — a gate left on `'sync'` does not error, it simply stops firing. The area itself is decided once, by `PREFS_AREA` in `js/mzta-prefs.js`.
+
+**One startup step is not a one-time migration.** `migrateCustomPromptIdCollisions()` (`js/mzta-prompts.js`) runs after the migration block, at every start, unguarded and with no flag. It renames a custom prompt whose id is a shipped prompt's (see [02-prompts.md](02-prompts.md#prompt-ids)), because a new version can ship an id a user already has. It reads only `_custom_prompt` and writes it only when it renames something, so a normal start costs one read. It runs before the menus are built, so they never see two prompts with one id.
 
 ### Background Preference Snapshot and Menu Invalidation
 

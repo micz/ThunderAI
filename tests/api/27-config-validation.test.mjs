@@ -11,7 +11,11 @@
 //    credentials come from the prompt config, not the global prefs);
 //  - one module Web Worker per provider: js/workers/model-worker-<provider>.js, created in
 //    initWorker() once the configuration has passed ("Worker Lifecycle & Timeout"), which also
-//    sends it the i18nStrings its error texts are built from ("Strings").
+//    sends it the i18nStrings its error texts are built from ("Strings", error_stream_idle_timeout
+//    with the literal $SECONDS$ included) and api_stream_idle_timeout ("Stream idle timeout");
+//  - "Custom endpoint policy": the host of a custom endpoint (global or the prompt's own) is
+//    checked before the worker exists; refused, a config error with the localized message, and
+//    no question (nobody may be looking); allowed, the init carries approved_insecure_origins.
 //
 // Reached at level 1 without touching shipped code: a background context (the module reads the
 // preferences through mztaPrefs, so the core browser mock is installed - this is not a worker
@@ -38,6 +42,9 @@ globalThis.Worker = FakeWorker;
 
 const ctx = await startBackground({ policy: null });
 const { mzta_specialCommand } = await import('../../js/mzta-special-commands.js');
+const { createAIProcessingClient } = await import('../../js/mzta-ai-processing-client.js');
+// This area's contract is configuration validation, with processing inactive.
+const processingClient = createAIProcessingClient(async operation => operation === 'createSession' ? { active: false } : {});
 const k = caseTests('27-config-validation');
 
 const REQUIRED = {
@@ -68,7 +75,7 @@ for (const [llm, fields] of Object.entries(REQUIRED)) {
     for (const field of fields) {
         k.test(`missing-${field.replace(/_/g, '-')}`, `${llm}: an empty ${field} throws isConfigError, and no init is posted`, async () => {
             await setPrefs({ [field]: '' });
-            const cmd = new mzta_specialCommand({ llm, config: {} });
+            const cmd = new mzta_specialCommand({ llm, config: {}, processingClient });
             await assert.rejects(cmd.initWorker(), e => e instanceof Error && e.isConfigError === true);
             assert.equal(cmd.worker, null, 'no worker, so nothing was posted to one');
         });
@@ -76,16 +83,17 @@ for (const [llm, fields] of Object.entries(REQUIRED)) {
 
     k.test(`valid-${llm.replace(/_/g, '-')}`, `${llm}: with every required field set, the init message carries the prefixed fields`, async () => {
         await setPrefs();
-        const cmd = new mzta_specialCommand({ llm, config: {} });
+        const cmd = new mzta_specialCommand({ llm, config: {}, processingClient });
         await cmd.initWorker();
         const init = cmd.worker.posted[0];
         assert.equal(init.type, 'init');
         for (const f of fields) assert.equal(init[f], VALUE[f] ?? 'some-model', f);
+        assert.equal(init.api_stream_idle_timeout, 120000, 'the stream idle timeout, its default');
     });
 
     k.test(`strings-${llm.replace(/_/g, '-')}`, `${llm}: the init message carries the i18n strings the worker builds its errors from`, async () => {
         await setPrefs();
-        const cmd = new mzta_specialCommand({ llm, config: {} });
+        const cmd = new mzta_specialCommand({ llm, config: {}, processingClient });
         await cmd.initWorker();
         const strings = cmd.worker.posted[0].i18nStrings;
         const integration = llm.replace('_api', '');
@@ -94,6 +102,8 @@ for (const [llm, fields] of Object.entries(REQUIRED)) {
         assert.equal(strings[key], browser.i18n.getMessage(key));
         assert.notEqual(strings[key], '');
         assert.equal(strings.error_connection_interrupted, browser.i18n.getMessage('error_connection_interrupted'));
+        assert.ok(typeof strings.error_stream_idle_timeout === 'string' && strings.error_stream_idle_timeout.includes('$SECONDS$'),
+            'error_stream_idle_timeout with the literal $SECONDS$');
         if (integration === 'anthropic') {
             for (const hint of ['anthropic_err_hint_temperature', 'anthropic_err_hint_budget_tokens', 'anthropic_err_hint_thinking_type', 'anthropic_err_hint_effort']) {
                 assert.ok(typeof strings[hint] === 'string' && strings[hint].includes('$MODEL$'), hint + ' with the literal $MODEL$');
@@ -104,7 +114,7 @@ for (const [llm, fields] of Object.entries(REQUIRED)) {
     k.test(`worker-${llm.replace(/_/g, '-')}`, `${llm}: one module worker, js/workers/${FILE[llm]}, created by initWorker()`, async () => {
         await setPrefs();
         const before = created.length;
-        const cmd = new mzta_specialCommand({ llm, config: {} });
+        const cmd = new mzta_specialCommand({ llm, config: {}, processingClient });
         assert.equal(created.length, before, 'not in the constructor');
         await cmd.initWorker();
         assert.equal(created.length, before + 1);
@@ -120,7 +130,7 @@ k.test('before-worker-created', 'the configuration is validated before the worke
     const before = created.length;
     let err = null;
     try {
-        const cmd = new mzta_specialCommand({ llm: 'chatgpt_api', config: {} });
+        const cmd = new mzta_specialCommand({ llm: 'chatgpt_api', config: {}, processingClient });
         await cmd.initWorker();
     } catch (e) {
         err = e;
@@ -132,13 +142,64 @@ k.test('before-worker-created', 'the configuration is validated before the worke
 k.test('specific-api-skips', 'use_specific_api (config.api_type set): no validation of the global prefs', async () => {
     await setPrefs({ ollama_host: '', ollama_model: '' });
     const cmd = new mzta_specialCommand({
+        processingClient,
         llm: 'ollama_api',
-        config: { api_type: 'ollama_api', ollama_host: 'http://gpu-box:11434', ollama_model: 'qwen3:8b' },
+        config: { api_type: 'ollama_api', ollama_host: 'https://gpu-box:11434', ollama_model: 'qwen3:8b' },
     });
     await cmd.initWorker();
     const init = cmd.worker.posted[0];
-    assert.equal(init.ollama_host, 'http://gpu-box:11434');
+    assert.equal(init.ollama_host, 'https://gpu-box:11434');
     assert.equal(init.ollama_model, 'qwen3:8b');
+});
+
+// ---- spec 04 "Custom endpoint policy" [#1000]: checked before the worker exists, never asked --
+
+const APPROVALS = '_approved_insecure_origins';
+
+for (const [llm, field] of [['ollama_api', 'ollama_host'], ['openai_comp_api', 'openai_comp_host']]) {
+    const slug = llm.replace(/_/g, '-');
+    k.test(`insecure-${slug}`, `${llm}: an unencrypted remote server not yet allowed is a config error, with no question and no worker`, async () => {
+        await setPrefs({ [field]: 'http://192.168.1.10:11434' });
+        await ctx.ctl.browser.storage.local.set({ [APPROVALS]: [] });
+        const before = created.length;
+        const cmd = new mzta_specialCommand({ llm, config: {}, processingClient });
+        await assert.rejects(cmd.initWorker(), e => e.isConfigError === true
+            && e.message === browser.i18n.getMessage('endpoint_insecure_not_confirmed', ['http://192.168.1.10:11434']));
+        assert.equal(created.length, before);
+    });
+
+    k.test(`approved-${slug}`, `${llm}: once allowed, the worker gets the allowed origins in its init message`, async () => {
+        await setPrefs({ [field]: 'http://192.168.1.10:11434/' });
+        await ctx.ctl.browser.storage.local.set({ [APPROVALS]: ['http://192.168.1.10:11434'] });
+        const cmd = new mzta_specialCommand({ llm, config: {}, processingClient });
+        await cmd.initWorker();
+        assert.deepEqual(cmd.worker.posted[0].approved_insecure_origins, ['http://192.168.1.10:11434']);
+        await ctx.ctl.browser.storage.local.set({ [APPROVALS]: [] });
+    });
+
+    k.test(`credentials-${slug}`, `${llm}: a user name or password in the address is a config error`, async () => {
+        await setPrefs({ [field]: 'https://user:s3cr3t@api.example.test' });
+        const cmd = new mzta_specialCommand({ llm, config: {}, processingClient });
+        await assert.rejects(cmd.initWorker(), e => e.isConfigError === true
+            && e.message === browser.i18n.getMessage('endpoint_error_credentials'));
+    });
+}
+
+k.test('insecure-specific-api', "the prompt's own host (use_specific_api) is checked too", async () => {
+    await setPrefs();
+    const cmd = new mzta_specialCommand({
+        processingClient,
+        llm: 'ollama_api',
+        config: { api_type: 'ollama_api', ollama_host: 'http://gpu-box:11434', ollama_model: 'qwen3:8b' },
+    });
+    await assert.rejects(cmd.initWorker(), e => e.isConfigError === true);
+});
+
+k.test('strings-redirect', 'the init message carries the redirect text the workers report a redirect with', async () => {
+    await setPrefs();
+    const cmd = new mzta_specialCommand({ llm: 'chatgpt_api', config: {}, processingClient });
+    await cmd.initWorker();
+    assert.equal(cmd.worker.posted[0].i18nStrings.api_error_redirect, browser.i18n.getMessage('api_error_redirect'));
 });
 
 k.coverage();

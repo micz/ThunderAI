@@ -26,12 +26,14 @@ import {
     buildCheckIcon,
     buildAlertIcon
 } from './svgIcons.js';
-import { SHARED_BASE_CSS } from './sharedStyles.js';
+import {
+    SHARED_BASE_CSS,
+    buildStyleSheet
+} from './sharedStyles.js';
 
 const messageInputTemplate = document.createElement('template');
 
-const messagesInputStyle  = document.createElement('style');
-messagesInputStyle.textContent = SHARED_BASE_CSS + `
+const messagesInputSheet = buildStyleSheet(SHARED_BASE_CSS + `
     :host {
         display: flex;
         justify-content: space-between;
@@ -261,8 +263,7 @@ messagesInputStyle.textContent = SHARED_BASE_CSS + `
         opacity: .45;
         cursor: default;
     }
-`;
-messageInputTemplate.content.appendChild(messagesInputStyle);
+`);
 
 // A textarea, not an input: the field grows from one to three lines as the text
 // wraps (see the #messageInputField rule and _autoResize below), then scrolls.
@@ -337,6 +338,7 @@ class MessageInput extends HTMLElement {
     constructor() {
         super();
         const shadowRoot = this.attachShadow({ mode: 'open' });
+        shadowRoot.adoptedStyleSheets = [messagesInputSheet];
         shadowRoot.appendChild(messageInputTemplate.content.cloneNode(true));
 
         this._messageInputField = shadowRoot.querySelector('#messageInputField');

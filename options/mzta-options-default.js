@@ -87,7 +87,9 @@ export const integration_options_config = {
         use_v1: true,
         chat_name: 'OpenAI Comp',
         temperature: '',
-        extra_body: ''
+        extra_body: '',
+        // A JSON object of request headers, sent with every request of the connection.
+        extra_headers: ''
     },
     google_gemini: {
         api_key: '',
@@ -118,6 +120,39 @@ export const integration_options_config = {
         stop_sequences: '',
         extended_thinking_budget: 0,
         effort: ''
+    }
+};
+
+// Every string option must have an explicit privacy-boundary decision. The
+// static coverage test rejects additions that are not classified here. This is
+// metadata only: it changes no preference defaults, policy values or settings UI.
+export const integration_content_fields = {
+    chatgpt: {
+        text: ['developer_messages', 'text_format_schema_name', 'prompt_cache_key', 'safety_identifier'],
+        json: ['extra_body', 'text_format_schema'],
+        nonContent: ['api_key', 'model', 'temperature', 'reasoning_summary', 'reasoning_effort',
+            'verbosity', 'text_format', 'top_p', 'truncation', 'service_tier']
+    },
+    ollama: {
+        text: ['system_prompt'],
+        json: ['extra_options'],
+        nonContent: ['host', 'api_key', 'model', 'temperature', 'think', 'keep_alive']
+    },
+    openai_comp: {
+        text: [],
+        json: ['extra_body'],
+        // Request headers carry no mail content, and may carry a secret.
+        nonContent: ['host', 'model', 'api_key', 'chat_name', 'temperature', 'extra_headers']
+    },
+    google_gemini: {
+        text: ['system_instruction'],
+        json: ['extra_body'],
+        nonContent: ['api_key', 'model', 'thinking_budget', 'temperature', 'top_p', 'top_k']
+    },
+    anthropic: {
+        text: ['system_prompt', 'stop_sequences'],
+        json: [],
+        nonContent: ['api_key', 'model', 'version', 'temperature', 'top_p', 'top_k', 'effort']
     }
 };
 
@@ -191,6 +226,9 @@ export const prefs_default = {
     chatgpt_web_custom_gpt: '',
     chatgpt_web_load_wait_time: 1000,
     special_command_timeout: 120000,   // ms before a hung special command (API worker) is aborted
+    // ms without any data before an API stream is given up (#999); 0 = no idle timeout. No UI:
+    // set it in storage or by policy. Read by the workers through resolveIdleTimeoutMs().
+    api_stream_idle_timeout: 120000,
     batch_max_concurrency: 1,   // max messages processed at once by one processEmails() batch (auto add tags / spam filter / summarize / translate, on receive or from the context menu); each message runs its features in series
     dynamic_menu_force_enter: false,
     placeholders_use_default_value: false,
@@ -203,6 +241,13 @@ export const prefs_default = {
     // Default comparison unit of the proofreading change picker: 'words' or
     // 'sentences'. A prompt can override it; '' on a prompt means "inherit this".
     diff_granularity: 'words',
+    // Mask personal data through the ThunderAI Privacy companion. The one activation
+    // switch: the companion's settings page only mirrors it (claude-spec/09-ai-processing.md).
+    ai_processing_enabled: false,
+    // No UI, meant for a policy: when ThunderAI Privacy is installed without its model,
+    // ask it to download the model (once per start of either add-on). Off by default:
+    // the model is a large download from Hugging Face, made by every machine.
+    ai_processing_model_autodownload: false,
     max_prompt_length: 30000,   // max string length for prompt
     add_tags: false,
     add_tags_maxnum: 3,

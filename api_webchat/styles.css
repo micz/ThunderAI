@@ -142,6 +142,12 @@ messages-area {
     min-height: 0;
 }
 
+/* The containing block of the component's absolutely positioned parts. Here,
+   not in a style attribute: the page's CSP has no 'unsafe-inline'. */
+message-input {
+    position: relative;
+}
+
 /* ===========================================================================
    HEADER BAR
    Light DOM, so it is styled directly from here.
@@ -175,6 +181,22 @@ messages-area {
     justify-content: center;
     flex-shrink: 0;
     color: #fff;
+    position: relative;
+}
+
+/* ThunderAI Privacy badge. The 25px SVG pads the 17px shield for its white halo
+   (about 4px above it, 5px right of it), so these offsets put the shield over the
+   logo's top-right half, about 4px past the corner. */
+#appHeaderShield {
+    position: absolute;
+    top: -8px;
+    right: -9px;
+    display: flex;
+    color: #1f7a45;
+}
+
+#appHeaderShield[hidden] {
+    display: none;
 }
 
 #appHeaderName {

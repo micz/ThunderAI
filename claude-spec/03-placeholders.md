@@ -185,7 +185,8 @@ fragment with `htmlToLines()`); a structure-less plain-text selection has its te
 unbalanced fragment that `DOMParser` auto-closes, so no half-open tag leaks into either twin. The
 autoselect fallback is preserved: with no selection and a prompt that uses `{%mail_typed_text%}`,
 `selection_text` falls back to `only_typed_text` (paragraph-preserving) and its `only_typed_html`
-twin.
+twin. The autoselect itself happens in exactly the same case (no range, collapsed, or whitespace-only):
+a real user selection is never replaced by the typed text's range [#978].
 
 **This contract does not extend to `{%mail_plain_text_part%}`**, which is a third case with the
 opposite whitespace rule — see the next section before assuming the three behave alike.

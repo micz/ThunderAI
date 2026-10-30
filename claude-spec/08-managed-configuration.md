@@ -241,7 +241,10 @@ Object.keys(prefs_default)
   minus  custom_prompts_view    custom prompts page layout, local UI
 ```
 
-**137 of 146 keys** are policy-settable. The derivation already covers the generated keys:
+The rules are applied in one place, `isPolicyExcludedKey(key)` (exported, pure): `buildAllowlist()`
+uses it, and so does the CI report of [Adding a policy-settable preference](#adding-a-policy-settable-preference).
+
+**141 of 150 keys** are policy-settable. The derivation already covers the generated keys:
 the six `{prefix}_use_specific_integration` / `{prefix}_connection_type` pairs (from
 `special_prompts_with_integration`) and the per-provider `{integration}_{key}` connection
 keys (from `integration_options_config`) are all spread into `prefs_default` in
@@ -281,7 +284,7 @@ key, with an API key masked) and not applied, exactly like a type mismatch, neve
 | `connection_type` | one of `valid_connection_types` (`''`, "no connection yet", is not a value to enforce) |
 | `{prefix}_connection_type` | one of `featureConnectionTypes()`: never `chatgpt_web`, which the feature panels do not offer |
 | `reply_type`, `diff_granularity`, `summarize_display_mode`, `summarize_auto`, `translate_auto` | one of the values its settings select offers (`PREF_ENUMS`) |
-| any other number | a non-negative integer; tighter ranges in `PREF_NUMBER_RANGES`, from the inputs' `min`/`max`: `spamfilter_threshold` 0–100, `max_prompt_length`, `batch_max_concurrency` ≥ 1 (`special_command_timeout`, `summarize_max_messages` and `add_tags_maxnum` have the general rule: 0 is accepted, and means "no limit" for the last two, as on their pages) |
+| any other number | a non-negative integer; tighter ranges in `PREF_NUMBER_RANGES`, from the inputs' `min`/`max`: `spamfilter_threshold` 0–100, `max_prompt_length`, `batch_max_concurrency` ≥ 1 (`special_command_timeout`, `api_stream_idle_timeout`, `summarize_max_messages` and `add_tags_maxnum` have the general rule: 0 is accepted, and means "no idle timeout" for `api_stream_idle_timeout`, whose input's `min` of 1000 is a UI bound, not a policy range, and "no limit" for the last two, as on their pages) |
 | `calendar_timezone` | `''` (no zone enforced, the select's empty option) or a zone of `Intl.supportedValuesOf('timeZone')`, the list the calendar pages' select is built from, so the page can always show it (a lowercased id or an alias `Intl.DateTimeFormat` would accept is refused); without `supportedValuesOf()`, any id the engine accepts |
 
 Free-text preferences (languages, sign name, prompts' extra instructions…) have no rule: any
@@ -495,8 +498,14 @@ overlays read), the page guard of [The connection panel](08b-managed-connections
 
 Either way the administrator key reference on micz.it is now out of date — it is generated
 from `prefs_default` by hand, so a new or newly excluded preference has to be reflected
-there too. So do the "137 of 146" count in [The allowlist](#the-allowlist) and the counts in
-`tests/managed/04-allowlist-derivation.test.mjs`, which fails until they are updated.
+there too. So do the "141 of 150" count in [The allowlist](#the-allowlist) and the counts in
+`tests/managed/04-allowlist-derivation.test.mjs`, which fails until they are updated. The
+`policy-docs-issue` workflow (`.github/workflows/policy-docs-issue.yml`) tracks it: on every
+push to `dev` touching `prefs_default` or `js/mzta-managed.js` it compares the policy surface
+with the previous revision (`.github/scripts/policy-keys-diff.mjs`: preferences added or
+removed, defaults changed, structural `_` keys, exclusion rules) and, if it changed, opens an
+issue on the site repository with the report, or comments on the one already open. The
+reference update itself remains manual.
 
 ## Adding a restriction
 
@@ -531,8 +540,8 @@ npm test                            # both levels
 
 Run from the repository root. CI runs level 1 **before** installing anything, then
 `npm ci && npm test`, on demand only: by hand (`workflow_dispatch`, any branch) or when the
-`run-tests` label is added to a pull request, which the run then removes
-(`.github/workflows/tests.yml`). How it
+`run-tests` label is added to a pull request, which `.github/workflows/tests-unlabel.yml`
+removes right away (`.github/workflows/tests.yml`). How it
 works: [`tests/README.md`](../tests/README.md); how to add a managed scenario or a page:
 [`tests/managed/README.md`](../tests/managed/README.md).
 
@@ -563,7 +572,7 @@ unmanaged baseline of a page, comes from a separate module instance or a worker 
 | No seeding from policy values | - | `spamfilter/05-no-seeding-from-policy` |
 | A locked per-feature connection type | - | `<feature>/02-sweep-locked`, `spamfilter/06-locked-connection-type` |
 | An automatic summary is always inline | `09` | `summarize/02-sweep-locked` (`expected`), `summarize/18`-`20` (no display mode stored from a policy `summarize_auto` on page open) |
-| Organization prompts | `06a-org-prompts`, `06b-org-prompts-*`, `12-org-prompts-never-stored` | - |
+| Organization prompts | `06a-org-prompts`, `06b-org-prompts-*`, `06j-org-prompts-display-properties`, `12-org-prompts-never-stored` | `menu_order/11-org-prompts-display` |
 | Enforced special prompt texts (and its UI) | `06c`-`06e` | `<feature>/07-special-prompts-text`, `get-calendar-event/08-…-calendar-named` |
 | Enforced per-feature connections (and its UI) | `10a`-`10i` (validation, malformed, resolution and `initWorker()`, conflicts, never persisted / export / write guard / removal, hydration, webchat, feature-page coverage, the chat window's connection and configuration checks) | `<feature>/13-connection-enforced`, `<feature>/14-connection-unlocked` (generated from `tests/helpers/feature-pages.mjs`) |
 | Restrictions | `06f`-`06i` | `customprompts/10`, `customprompts/11`, `menu_order/10`, `<page>/10-disable-setup-wizard` (popup, onboarding, options, setup-wizard) |
@@ -581,7 +590,7 @@ locks - or offers as an initial value - every allowlisted key that has an `.opti
 policy. A new preference with a control on one of those pages is covered the moment it is
 declared.
 
-`04-allowlist-derivation` also checks the **137 of 146** count in [The allowlist](#the-allowlist).
+`04-allowlist-derivation` also checks the **141 of 150** count in [The allowlist](#the-allowlist).
 When a preference is added, update that sentence and the test's expected count together.
 
 **Not covered:** the parts of `mzta-background.js` that only run inside its startup - the

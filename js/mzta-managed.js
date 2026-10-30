@@ -56,6 +56,12 @@ import {
     OLLAMA_THINK_LEVELS
 } from '../options/mzta-options-default.js';
 import { taLogger } from './mzta-logger.js';
+import {
+    ENDPOINT_PROBLEM,
+    maskUrlCredentials,
+    parseEndpoint
+} from './mzta-endpoint-policy.js';
+import { extraHeaderProblem } from './api/api-utils.js';
 
 // Policy keys starting with an underscore are structures and metadata, never preferences.
 // No key in prefs_default starts with an underscore, so the two namespaces cannot collide.
@@ -132,6 +138,16 @@ const EXCLUDED_KEYS = new Set([
     'custom_prompts_view',    // custom prompts page layout (split/table), local UI
 ]);
 
+/**
+ * True when a preference key is matched by an exclusion rule above, so a policy may never set
+ * it. The one place the rules are applied: buildAllowlist() uses it, and so does the CI script
+ * that reports a change of the policy surface (.github/scripts/policy-keys-diff.mjs), which
+ * imports this module in plain Node - keep it pure.
+ */
+export function isPolicyExcludedKey(key) {
+    return EXCLUDED_KEYS.has(key) || EXCLUDED_KEY_PATTERNS.some(re => re.test(key));
+}
+
 // {feature}_enabled_accounts_match: the fleet-wide counterpart of the excluded
 // {feature}_enabled_accounts. Its entries name accounts by what is the same on every machine
 // (an identity address, a domain, or ACCOUNT_MATCH_LOCAL for Local Folders), and the account
@@ -175,9 +191,7 @@ export function isAccountMatcherEntry(entry) {
 function buildAllowlist() {
     const allowed = new Set();
     Object.keys(prefs_default).forEach(key => {
-        if (EXCLUDED_KEYS.has(key)) return;
-        if (EXCLUDED_KEY_PATTERNS.some(re => re.test(key))) return;
-        allowed.add(key);
+        if (!isPolicyExcludedKey(key)) allowed.add(key);
     });
     return allowed;
 }
@@ -221,8 +235,12 @@ export const mztaManaged = {
 
     // Same masking rule as js/mzta-prefs.js: a policy file is world-readable, but that is
     // no reason to copy a provider key into the error console as well.
+    // A host may hold a user name and password, which are never logged either [#1000].
+    // The extra request headers may carry a key too.
     _logValue(key, value) {
-        return key.endsWith('_api_key') ? '****************' : JSON.stringify(value);
+        if (key.endsWith('_api_key') || key.endsWith('_extra_headers')) return '****************';
+        return key.endsWith('_host') && typeof value === 'string'
+            ? maskUrlCredentials(JSON.stringify(value)) : JSON.stringify(value);
     },
 
     /**
@@ -1072,13 +1090,13 @@ function integrationOfField(name) {
     return '';
 }
 
-function isHttpUrl(value) {
-    try {
-        const url = new URL(value);
-        return url.protocol === 'http:' || url.protocol === 'https:';
-    } catch (e) {
-        return false;
-    }
+// The address rules of js/mzta-endpoint-policy.js, except the unencrypted-server one: a
+// policy host counts as approved (js/mzta-endpoint-approvals.js).
+function hostProblem(value) {
+    const parsed = parseEndpoint(value);
+    if (parsed.ok) return '';
+    return parsed.problem === ENDPOINT_PROBLEM.CREDENTIALS
+        ? 'must not contain a user name or password' : 'must be an http:// or https:// URL';
 }
 
 /**
@@ -1111,7 +1129,7 @@ function connectionFieldProblem(integration, key, value, defaultValue) {
     }
     switch (key) {
         case 'host':
-            return isHttpUrl(value) ? '' : 'must be an http:// or https:// URL';
+            return hostProblem(value);
         case 'model':
             return value.trim() !== '' ? '' : 'must not be empty';
         case 'temperature': {
@@ -1147,6 +1165,10 @@ function connectionFieldProblem(integration, key, value, defaultValue) {
             // The contract of parseExtraBody() in js/api/api-utils.js, which would otherwise
             // silently send nothing.
             return jsonObjectProblem(value);
+        case 'extra_headers':
+            // parseExtraHeaders() in js/api/api-utils.js drops an unusable header on its own:
+            // a policy is held to the whole value being usable.
+            return jsonObjectProblem(value) || extraHeadersProblem(value);
         case 'text_format_schema':
             // _parseTextFormatSchema() in js/api/openai_responses.js drops a schema that is not
             // a JSON object, and with it the whole json_schema format.
@@ -1162,6 +1184,24 @@ function jsonObjectProblem(value) {
     } catch (e) {
         return 'must be a JSON object (' + e.message + ')';
     }
+}
+
+// Names the header, never its value: it may carry a secret.
+function extraHeadersProblem(value) {
+    if (value.trim() === '') return '';
+    for (const [name, headerValue] of Object.entries(JSON.parse(value))) {
+        switch (extraHeaderProblem(name, headerValue)) {
+            case 'invalid_name':
+                return 'must not hold ' + JSON.stringify(name) + ', which is not a valid header name';
+            case 'forbidden':
+                return 'must not hold ' + JSON.stringify(name) + ', a header the browser does not let an add-on set';
+            case 'not_string':
+                return 'must give the header ' + JSON.stringify(name) + ' a string value';
+            case 'invalid_value':
+                return 'must give the header ' + JSON.stringify(name) + ' a value with no line break or NUL character';
+        }
+    }
+    return '';
 }
 
 // Go's time.ParseDuration grammar, which Ollama applies to a keep_alive string.

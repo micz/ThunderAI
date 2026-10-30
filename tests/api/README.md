@@ -6,7 +6,8 @@ message protocol of the five model workers. The contract is
 [`claude-spec/04-api-integrations.md`](../../claude-spec/04-api-integrations.md), as everywhere in the
 suite: each test file names the spec 04 sections it covers in its opening comment.
 
-The modules under test are everything in `js/api/` and `js/workers/`, plus the `mzta_specialCommand`
+The modules under test are everything in `js/api/` and `js/workers/`, the address rules of
+`js/mzta-endpoint-policy.js`, the stored redirects of `js/mzta-endpoint-redirects.js`, plus the `mzta_specialCommand`
 half of "Configuration Validation" (`js/mzta-special-commands.js`) and `supportsUsageData()` of
 `js/mzta-utils.js`. How to run the suite, the two levels, the mock and the known-issue mechanism are in
 the general [`tests/README.md`](../README.md). Paths below are relative to `tests/`.
@@ -38,6 +39,7 @@ tests/
     ├── fetch-model.mjs            the scripted global fetch (see below)
     ├── worker-realm.mjs           the Web Worker realm: loadWorker(), startTurn(), shape()
     ├── wire.mjs                   responses and streams (SSE, NDJSON, manual), fixture and capture readers
+    ├── idle-cases.mjs             the stream idle timeout cases, declared by every -errors file
     └── NN-*.test.mjs              the tests (table below)
 ```
 
@@ -45,22 +47,27 @@ Helper modules have no `.test.mjs` suffix, so the level-1 glob never runs them.
 
 | File | Spec 04 section(s) |
 |---|---|
-| `01-api-utils` | "Extra body data" (`parseExtraBody()`, worker-safe) |
+| `01-api-utils` | "Extra body data" (`parseExtraBody()`, worker-safe), "Extra headers" (`parseExtraHeaders()`, `extraHeaderProblem()`, `mergeHeaders()`, `isCredentialHeader()`) |
 | `02-anthropic-capabilities` | "Anthropic / Claude": capability table, boundary-aware matching, fallback |
 | `03-openai-capabilities` | "OpenAI API": capability table, prefix matching, permissive fallback |
 | `04-openai-comp-configs` | "OpenAI-Compatible": the presets, no per-preset extra body |
 | `05-usage-data` | "Token usage data", "Per-provider support" (every `extractUsage()`) |
 | `06-usage-support-by-type` | "Per-provider support": `supportsUsageData(connection_type)` agrees with the modules |
 | `07-retry-helpers` | "Automatic Retry Handling": constants, `parseRetryAfter()`, `classifyRateLimitBody()`; "Logging": `extractErrorMessage()` |
+| `08-idle-timer` | "Stream idle timeout": `js/api/api-idle-timer.js` alone (`resolveIdleTimeoutMs()`, the timer, the idle and Stop abort reasons, the user text) |
+| `09-endpoint-policy` | "Custom endpoint policy": the pure rules of `js/mzta-endpoint-policy.js` (schemes, credentials, loopback, per-origin approval, credential masking) |
 | `10-fetch-with-retry` | "Automatic Retry Handling": `fetchWithRetry()` whole (the retried body read only with debug on, the 5 s limit of that read and of the 429 inspection, a user abort during a body read), "Logging" |
+| `11-redirects` | "Redirects": redirects followed everywhere; with `onRedirect` (Ollama, OpenAI Comp) the outcome reported, a followed redirect ending in an error failed at once, the one 2 s redirect check after a network failure (not after a timeout or an abort); `fetchDirect()`; `redirect_info` and `is_redirect` on the two classes, none of it on OpenAI, Claude and Gemini |
+| `12-endpoint-guard` | "Custom endpoint policy": the Ollama and OpenAI Comp classes refuse an unusable or unapproved endpoint before `fetch()`; the worker takes `approved_insecure_origins` from its init; "Redirects": the Ollama worker's redirect text and its `endpoint_redirect` message |
+| `13-endpoint-redirects` | "Redirects": the stored redirects of `js/mzta-endpoint-redirects.js` (destination: another server's origin, or the new base on the same server whatever the endpoint; a GET never replacing a failure nor a POST success; write only on change, removal on a direct success or a field change, no credentials) |
 | `20-anthropic-request` | "Anthropic / Claude": request body construction |
 | `21-anthropic-400-retry` | "Anthropic / Claude": one-shot retry on a 400 (its clone read within 5 s, a user abort during it), 400 error hints |
-| `22-gemini-request` | "Google Gemini", "Extra body data" (two-level merge), includeThoughts |
+| `22-gemini-request` | "Google Gemini" (the key in `x-goog-api-key`, never in the URL), "Extra body data" (two-level merge), includeThoughts |
 | `23-ollama-request` | "Ollama": think levels, keep_alive, options, Bearer on every endpoint; 300 s timeout |
-| `24-openai-comp-request` | "OpenAI-Compatible", "Extra body data", stream_options; 300 s timeout |
+| `24-openai-comp-request` | "OpenAI-Compatible", "Extra body data", "Extra headers" (models and chat requests), stream_options; 300 s timeout |
 | `25-openai-responses-request` | "OpenAI API": reasoning, text, sampling, limits, pass-through, extra-body gating |
 | `26-client-error-contract` | "Error contract between js/api/* and workers" (the classes); fetchModels through the retry; "`fetchModels()` and `fetchVersion()`" (an HTTP error with its `status` / `statusText`; a `200` with no model list or no Ollama version is an exception; OpenAI Comp's empty list, Ollama's `/api/tags` object) |
-| `27-config-validation` | "Configuration Validation", "Web Worker Pattern" (module worker per provider) |
+| `27-config-validation` | "Configuration Validation" (with the custom endpoint check, no question asked), "Web Worker Pattern" (module worker per provider) |
 | `30`/`31-worker-anthropic-*` | "Web Worker Pattern", "Thinking output…", "Per-provider support", "Wiring in the workers", "Emitting to the chat window", "Workers and UI", "Error contract…" |
 | `32`/`33-worker-gemini-*` | the same, Gemini (turn 1 replays the capture) |
 | `34`/`35-worker-ollama-*` | the same, Ollama (system prompt once; turn 1 replays the capture) |
@@ -78,6 +85,16 @@ worker posts `requestAborted` and no `newRetryAttempt`, and the next turn (`afte
 the message. It also reads an HTTP error whose body never arrives (`error-body-stalled`: the error
 after 5 s, with the `statusText` as detail) and stops a turn during that read (`stop-during-error-body`:
 `requestAborted`, no `error`).
+Every `-errors` file also declares the stream idle timeout cases of `api/idle-cases.mjs` (spec 04 "Stream
+idle timeout", the default 120 s on mock timers): `idle-timeout` (one `error` after 120 s of silence once
+streaming, the request aborted with the `IdleTimeoutError` reason, no retry), `idle-keepalive` (the
+provider's keep-alive, a ping event, an SSE comment or an empty line, keeps the stream open) and
+`idle-cleared` (a completed turn leaves no timer behind). After `history-after-errors` (which wants no
+partial answer of a failed turn), `idleStopCase()` adds `idle-stop-during-stall`: a Stop during the stall
+ends the turn at once, with no timer and no further data (`tokensDone`, no `error`, the request aborted
+with the `StopError` reason), keeps the partial answer in the history the next turn sends, leaves no timer
+behind, and does not stop the next turn. `stop-mid-stream` checks the same while tokens arrive: the
+turn closes without any chunk pushed after the Stop.
 
 ## The fetch model
 
@@ -93,7 +110,7 @@ k.test('case-id', 'what spec 04 says', async () => {
     net.expect(url, NET.networkError());   // a rejected fetch (Firefox's TypeError)
     net.expect(url, NET.hang);             // never answers; rejects with the reason once aborted
     ...
-    net.calls[0].json();                   // the recorded request: url, method, headers (lower-cased), body, signal, t
+    net.calls[0].json();                   // the recorded request: url, method, headers (lower-cased), body, redirect, credentials, signal, t
 });
 ```
 
@@ -212,7 +229,11 @@ aligned where it contradicted itself:
 - **`fetchModelInfo()` of Gemini and Claude**, and the shape of a successful `fetchModels()` result
   beyond its list: spec 04 says they go through `fetchWithRetry()` and that a success carries the list
   ("`fetchModels()` and `fetchVersion()`"), which `26` checks.
-- **Anything requiring a live provider.**
+- **Anything requiring a live provider.** For the stream idle timeout and a Stop during a stall,
+  the manual check in Thunderbird uses the stall server in
+  [`../_stall_server/`](../_stall_server/README.md), a local OpenAI-compatible and Ollama server
+  that stalls after a few tokens: the idle cases here prove the worker's logic, not that Firefox
+  fails the pending read when the request is aborted after the headers.
 
 ## Under-specified
 
@@ -237,8 +258,9 @@ are not asserted (or only the part the spec fixes is), and they are input for sp
 8. *(resolved: spec 04 "Workers and UI" now says a failed request removes the unanswered message and
    drops the partial answer, like an abort; `history-after-errors` in every `-errors` file, and `40`
    for the Responses chain.)*
-9. **Tokens after Stop**: the chunk whose read was pending when Stop arrived is still processed (its
-   tokens are posted) before the turn closes.
+9. *(resolved: spec 04 "Workers and UI" now says a Stop once streaming aborts the pending read with the
+   `StopError` reason, so a chunk not yet read is never processed (#999); `stop-mid-stream` and
+   `idle-stop-during-stall` in every `-errors` file.)*
 10. *(resolved: spec 04 "Reading the stream" now requires `decode(chunk, { stream: true })`; `utf8-split`
     in every `-stream` file.)*
 11. *(resolved: spec 04 "Worker Lifecycle & Timeout" now says what `initWorker()` sends; `27` tests it.)*

@@ -31,6 +31,7 @@
     0: close button
     1: do reply
     2: substitute text
+    3: insert at the cursor position (compose window, never replaces a selection)
 
     Only if text selected (need_selected attribute):
     0: no selection needed (use all the message body)
@@ -280,6 +281,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
+        allow_multi: true,
         show_in: "both",
     },
     {
@@ -344,6 +346,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
+        allow_multi: true,
         show_in: "context",
     },
     {
@@ -361,6 +364,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
+        allow_multi: true,
         show_in: "both",
     },
     {
@@ -412,6 +416,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
+        allow_multi: true,
         show_in: "both",
     }
 ];
@@ -419,6 +424,98 @@ const specialPrompts = [
 /** The ids of every entry in specialPrompts, menu items or not. */
 export function getSpecialPromptIds() {
     return specialPrompts.map(p => p.id);
+}
+
+/**
+ * Prompt ids: the prefix every shipped prompt id starts with, and so the one a new custom id may
+ * not take. Much of the code knows a built-in prompt by its id alone (the context menu routing, the
+ * menu listeners, loadPrompt(), isMultiMessagePrompt(), the permission gates...), so a custom
+ * prompt with a shipped id runs as the built-in one or hides it.
+ *
+ * The prefix is refused only for a NEW or CHANGED id (pages/customprompts/): a custom prompt that
+ * already has one, such as the prompt_reply_copy the Copy of a built-in used to create, keeps it.
+ * What is never kept is an EXACT shipped id: renameCollidingPromptIds() renames it at every startup
+ * (migrateCustomPromptIdCollisions()) and on import, so a built-in added in a later version takes
+ * its id back from the user's prompt on the first start of that version.
+ */
+export const RESERVED_PROMPT_ID_PREFIX = 'prompt_';
+
+/** Whether a custom prompt id is in the namespace of the shipped prompts, ignoring case. */
+export function isReservedPromptId(id) {
+    return String(id ?? '').toLowerCase().startsWith(RESERVED_PROMPT_ID_PREFIX);
+}
+
+/** Whether an id is the id of a shipped prompt, default or special, ignoring case. */
+export function isShippedPromptId(id) {
+    const lower = String(id ?? '').toLowerCase();
+    return defaultPrompts.some(p => p.id === lower) || specialPrompts.some(p => p.id === lower);
+}
+
+// `base`, or `base_2`, `base_3`, ... : the first one not in `taken` (a Set of lowercase ids).
+export function uniquePromptId(base, taken) {
+    let id = base;
+    for (let n = 2; taken.has(id); n++) id = base + '_' + n;
+    return id;
+}
+
+/**
+ * Rename, in place, every prompt of `prompts` that `isCustom(prompt)` says is the user's and whose
+ * id is a shipped id, ignoring case. The new id is the shipped one without RESERVED_PROMPT_ID_PREFIX
+ * (prompt_summarize -> summarize), made unique with _2, _3, ... against `taken` (lowercase ids),
+ * the shipped ids and the other ids of `prompts`. Returns [{from, to}], one per renamed prompt.
+ */
+export function renameCollidingPromptIds(prompts, isCustom, taken = new Set()) {
+    const used = new Set(taken);
+    defaultPrompts.concat(specialPrompts).forEach(p => used.add(p.id));
+    prompts.forEach(p => used.add(String(p.id ?? '').toLowerCase()));
+    const renamed = [];
+    prompts.forEach(prompt => {
+        if (!isCustom(prompt) || !isShippedPromptId(prompt.id)) return;
+        const from = prompt.id;
+        prompt.id = uniquePromptId(String(from).toLowerCase().slice(RESERVED_PROMPT_ID_PREFIX.length), used);
+        used.add(prompt.id);
+        renamed.push({ from, to: prompt.id });
+    });
+    return renamed;
+}
+
+// At every startup, not once: an id can become a shipped one later, when a new version adds a
+// built-in prompt. Writes only when something was renamed, so a normal start reads and writes nothing
+// else. Every entry of _custom_prompt is the user's, whatever its flags say.
+export async function migrateCustomPromptIdCollisions() {
+    const stored = await browser.storage.local.get({ _custom_prompt: null });
+    if (!Array.isArray(stored._custom_prompt)) return [];
+    const renamed = renameCollidingPromptIds(stored._custom_prompt, () => true);
+    if (renamed.length > 0) {
+        await setCustomPrompts(stored._custom_prompt);
+        console.log("[ThunderAI] Custom prompts renamed, their id is a built-in prompt's: " + JSON.stringify(renamed));
+    }
+    return renamed;
+}
+
+/**
+ * Whether a prompt can run on several messages at once (a multi-selection, a collapsed thread):
+ * the context menu disables the others in that case [#979].
+ *
+ * allow_multi is a property of the CODE, not of the prompt: these are the prompts the context
+ * menu hands to processEmails() (specialContextMenuActions in mzta-background.js), which takes a
+ * message list, while every other prompt reads the one message shown in the pane. So it is read
+ * only from the shipped definitions above, by id, and never from a prompt object: a custom,
+ * imported or policy prompt cannot claim it. BUILT_IN_ONLY_PROMPT_FIELDS keeps it out of every
+ * prompt object, storage and export anyway.
+ */
+export function isMultiMessagePrompt(promptId) {
+    return specialPrompts.some(p => p.id === promptId && p.allow_multi === true);
+}
+
+// Fields that only the shipped definitions carry, read from them by id (isMultiMessagePrompt()).
+// Removed from every prompt object built from a definition, from storage or from a file, so a
+// stored, imported or policy value never exists anywhere it could be mistaken for the real one.
+const BUILT_IN_ONLY_PROMPT_FIELDS = ['allow_multi'];
+
+function stripBuiltInOnlyFields(prompt) {
+    BUILT_IN_ONLY_PROMPT_FIELDS.forEach(field => delete prompt[field]);
+    return prompt;
 }
 
 /**
@@ -512,6 +609,87 @@ export function checkSpecialPromptText(id, text) {
     return result;
 }
 
+/**
+ * Whether the feature of special prompt `id` parses a JSON answer, so its text must carry the
+ * JSON response format: the ids with responseKeys in SPECIAL_PROMPT_TEXT_CONTRACT.
+ */
+export function specialPromptNeedsJson(id) {
+    return (SPECIAL_PROMPT_TEXT_CONTRACT[id]?.responseKeys || []).length > 0;
+}
+
+// Index of the brace closing the {...} block opened at `start`, or -1 when the text ends first.
+// Braces count outside JSON strings only; a {%placeholder%} outside a string is skipped whole,
+// its braces are not the format's.
+function findJsonBlockEnd(text, start) {
+    let depth = 0;
+    let inString = false;
+    for (let i = start; i < text.length; i++) {
+        const c = text[i];
+        if (inString) {
+            if (c === '\\') i++;
+            else if (c === '"') inString = false;
+            continue;
+        }
+        if (c === '"') {
+            inString = true;
+        } else if (c === '{') {
+            if (text[i + 1] === '%') {
+                const close = text.indexOf('%}', i + 2);
+                if (close < 0) return -1;
+                i = close + 1;
+            } else {
+                depth++;
+            }
+        } else if (c === '}') {
+            if (--depth === 0) return i;
+        }
+    }
+    return -1;
+}
+
+/**
+ * Check the JSON response format inside a special prompt text, which also holds the
+ * instructions around it (the settings pages, for the ids of specialPromptNeedsJson()).
+ *
+ * The candidates are the top-level {...} blocks of the text (findJsonBlockEnd()); a block
+ * left open runs to the end of the text, and nothing after its opening brace is a candidate of
+ * its own: an inner object must not pass for the format when the outer one lost its closing
+ * brace. The text is fine when one candidate is strict JSON (JSON.parse).
+ *
+ *   found - the text has at least one {...} block
+ *   error - '' when a candidate parses, otherwise the parser message for the longest candidate
+ *           (the likeliest to be the format), without the "JSON.parse:" prefix SpiderMonkey adds
+ */
+export function checkPromptTextJson(text) {
+    const candidates = [];
+    for (let i = 0; i < text.length; i++) {
+        if (text[i] !== '{' || text[i + 1] === '%') continue;
+        const end = findJsonBlockEnd(text, i);
+        if (end < 0) {
+            candidates.push(text.slice(i));
+            break;
+        }
+        candidates.push(text.slice(i, end + 1));
+        i = end;
+    }
+    if (candidates.length === 0) return { found: false, error: '' };
+
+    let error = '';
+    let errorLength = -1;
+    for (const candidate of candidates) {
+        try {
+            JSON.parse(candidate);
+            return { found: true, error: '' };
+        } catch (e) {
+            if (candidate.length > errorLength) {
+                errorLength = candidate.length;
+                error = String(e.message).replace(/^\s*JSON\.parse:\s*/, '');
+            }
+        }
+    }
+    return { found: true, error: error };
+}
+
 
 // The organization prompts supplied by an enterprise policy: the fourth prompt set,
 // alongside defaultPrompts, _custom_prompt and _special_prompts.
@@ -532,7 +710,52 @@ async function getOrgPrompts() {
     // selection_text and custom_text_array, buildPromptSet() sets the transient flags - would
     // otherwise change the cached prompt for the rest of the session (a custom placeholder
     // expanded once would stay frozen at that value until Thunderbird restarts).
-    return structuredClone(await loadOrgPrompts());
+    const prompts = structuredClone(await loadOrgPrompts());
+    if (prompts.length === 0) return prompts;
+    // Read on every call, not cached with the policy: the user changes them while the session
+    // runs (pages/menu_order/, pages/customprompts/).
+    const prefs = await browser.storage.local.get({_default_prompts_properties: null});
+    prompts.forEach(prompt => applyOrgPromptDisplayProperties(prompt, prefs._default_prompts_properties));
+    return prompts;
+}
+
+// The fields of a stored _default_prompts_properties entry an organization prompt takes back:
+// its menu positions, its visibility and its icon, the user's own display preferences.
+// setDefaultPromptsProperties() writes the same entry for an org prompt as for a built-in
+// (keyed by its composed id), so the entry also holds need_custom_text, api_type and the
+// ChatGPT Web fields: those stay what the policy says, as does anything else an entry holds.
+const ORG_PROMPT_DISPLAY_FIELDS = {
+    position_display: isStoredPosition,
+    position_compose: isStoredPosition,
+    position_context: isStoredPosition,
+    show_in: v => ['popup', 'context', 'both', 'none'].includes(v),
+    custom_icon: v => typeof v === 'string',
+};
+
+// A position as setDefaultPromptsProperties() writes it: a number, or a numeric string. ""
+// is what it writes for a prompt that had none, so it leaves the policy value in place.
+function isStoredPosition(v) {
+    if (typeof v === 'number') return Number.isFinite(v);
+    return typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v));
+}
+
+/**
+ * Apply the user's stored display properties to an organization prompt, in place.
+ *
+ * Only the ORG_PROMPT_DISPLAY_FIELDS, and each only when its stored value is in domain: a
+ * missing or malformed entry, or field, leaves the policy value (or the normalised default).
+ * An entry for an org prompt the policy no longer supplies (or supplies under another
+ * _org_id) is simply never looked up; the next Save of either page drops it, as it rewrites
+ * the whole store from the prompts it lists.
+ */
+function applyOrgPromptDisplayProperties(prompt, storedProps) {
+    if (!storedProps || typeof storedProps !== 'object' || Array.isArray(storedProps)) return;
+    if (!Object.prototype.hasOwnProperty.call(storedProps, prompt.id)) return;
+    const entry = storedProps[prompt.id];
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return;
+    for (const [field, isValid] of Object.entries(ORG_PROMPT_DISPLAY_FIELDS)) {
+        if (isValid(entry[field])) prompt[field] = entry[field];
+    }
 }
 
 async function loadOrgPrompts() {
@@ -799,6 +1022,7 @@ export function preparePromptsForExport(prompts, include_api_settings = false){
         // longer applies.
         // (is_default rows are already covered by the allowedKeys filter above.)
         TRANSIENT_PROMPT_FLAGS.forEach(flag => delete prompt[flag]);
+        stripBuiltInOnlyFields(prompt);
         // Same for the managed API key placeholder: it is not a key.
         stripManagedSecretMarkers(prompt);
     });
@@ -811,6 +1035,12 @@ export async function preparePromptsForImport(prompts){
     // start from the complete set: a prompt missing here is a prompt dropped on import.
     const output = await getPromptsForManagement();
     // console.log(">>>>>>>>>>> preparePromptsForImport output: " + JSON.stringify(output));
+    // A custom prompt of the file with a shipped id is renamed before the merge, as at startup
+    // (migrateCustomPromptIdCollisions()): merged, it would turn the built-in row into a custom one;
+    // appended, it would collide with a special prompt. A built-in entry of the file (its exact id,
+    // exported without is_default) or a special one is left to the merge as before.
+    renameCollidingPromptIds(prompts, isImportedCustomPrompt,
+        new Set(output.map(p => String(p.id).toLowerCase())));
     prompts.forEach(prompt => {
         if(output.some(p => p.id == prompt.id)){
             Object.keys(prompt).forEach(key => {
@@ -827,9 +1057,20 @@ export async function preparePromptsForImport(prompts){
     // used (numbers, strings, or a missing key), and the merge above copies it
     // verbatim -- so collapse the flags to the canonical "0"/"1" here too.
     output.forEach((prompt) => normalizePromptFlags(prompt));
+    // A file can carry any key, and the merge above copies them all: a built-in-only one is
+    // never the file's to set.
+    output.forEach(stripBuiltInOnlyFields);
     output.sort((a, b) => a.id.localeCompare(b.id));
     // console.log(">>>>>>>>>>> preparePromptsForImport final output: " + JSON.stringify(output));
     return output;
+}
+
+// An entry of an import file that is the user's own prompt: not a special one, and not a built-in
+// one, which is exported with its exact id and without is_default (preparePromptsForExport()).
+function isImportedCustomPrompt(prompt) {
+    if (isPromptFlagOn(prompt.is_special)) return false;
+    if (Object.hasOwn(prompt, 'is_default')) return !isPromptFlagOn(prompt.is_default);
+    return !(defaultPrompts.some(p => p.id === prompt.id) || specialPrompts.some(p => p.id === prompt.id));
 }
 
 // Backward-compat helper: the prompt `enabled` flag has been removed in favour of
@@ -949,6 +1190,7 @@ async function getDefaultPrompts_withProps() {
  */
 export function normalizePromptFields(prompt) {
     normalizePromptFlags(prompt);
+    stripBuiltInOnlyFields(prompt);
     if(prompt.chatgpt_web_model === undefined){
         prompt.chatgpt_web_model = "";
     }
@@ -999,24 +1241,29 @@ async function getCustomPrompts() {
     }
 }
 
+// The _default_prompts_properties entry of one prompt (a built-in or an org prompt).
+function defaultPromptPropertiesEntry(prompt) {
+    return {
+        position_compose: (prompt.position_compose === undefined || prompt.position_compose === "undefined") ? "" : prompt.position_compose,
+        position_display: (prompt.position_display === undefined || prompt.position_display === "undefined") ? "" : prompt.position_display,
+        position_context: (prompt.position_context === undefined || prompt.position_context === "undefined") ? "" : prompt.position_context,
+        // Never persist an out-of-domain value: "" used to be written for a
+        // missing flag, and it reads as "on" in the editor but "off"
+        // everywhere else. Store the canonical "0"/"1" instead.
+        need_custom_text: isPromptFlagOn(prompt.need_custom_text) ? "1" : "0",
+        chatgpt_web_model: (prompt.chatgpt_web_model === undefined || prompt.chatgpt_web_model === "undefined") ? "" : prompt.chatgpt_web_model,
+        chatgpt_web_project: (prompt.chatgpt_web_project === undefined || prompt.chatgpt_web_project === "undefined") ? "" : prompt.chatgpt_web_project,
+        chatgpt_web_custom_gpt: (prompt.chatgpt_web_custom_gpt === undefined || prompt.chatgpt_web_custom_gpt === "undefined") ? "" : prompt.chatgpt_web_custom_gpt,
+        api_type: (prompt.api_type === undefined || prompt.api_type === "undefined") ? "" : prompt.api_type,
+        show_in: (prompt.show_in === undefined || prompt.show_in === "undefined") ? "popup" : prompt.show_in,
+        custom_icon: (prompt.custom_icon === undefined || prompt.custom_icon === "undefined") ? "" : prompt.custom_icon,
+    };
+}
+
 export async function setDefaultPromptsProperties(prompts) {
     let default_prompts_properties = {};
     prompts.forEach((prompt) => {
-        default_prompts_properties[prompt.id] = {
-            position_compose: (prompt.position_compose === undefined || prompt.position_compose === "undefined") ? "" : prompt.position_compose,
-            position_display: (prompt.position_display === undefined || prompt.position_display === "undefined") ? "" : prompt.position_display,
-            position_context: (prompt.position_context === undefined || prompt.position_context === "undefined") ? "" : prompt.position_context,
-            // Never persist an out-of-domain value: "" used to be written for a
-            // missing flag, and it reads as "on" in the editor but "off"
-            // everywhere else. Store the canonical "0"/"1" instead.
-            need_custom_text: isPromptFlagOn(prompt.need_custom_text) ? "1" : "0",
-            chatgpt_web_model: (prompt.chatgpt_web_model === undefined || prompt.chatgpt_web_model === "undefined") ? "" : prompt.chatgpt_web_model,
-            chatgpt_web_project: (prompt.chatgpt_web_project === undefined || prompt.chatgpt_web_project === "undefined") ? "" : prompt.chatgpt_web_project,
-            chatgpt_web_custom_gpt: (prompt.chatgpt_web_custom_gpt === undefined || prompt.chatgpt_web_custom_gpt === "undefined") ? "" : prompt.chatgpt_web_custom_gpt,
-            api_type: (prompt.api_type === undefined || prompt.api_type === "undefined") ? "" : prompt.api_type,
-            show_in: (prompt.show_in === undefined || prompt.show_in === "undefined") ? "popup" : prompt.show_in,
-            custom_icon: (prompt.custom_icon === undefined || prompt.custom_icon === "undefined") ? "" : prompt.custom_icon,
-        };
+        default_prompts_properties[prompt.id] = defaultPromptPropertiesEntry(prompt);
     });
     //console.log('>>>>>>>>>>>>>> default_prompts_properties: ' + JSON.stringify(default_prompts_properties));
     await browser.storage.local.set({_default_prompts_properties: default_prompts_properties});
@@ -1046,6 +1293,7 @@ function stripTransientFlags(prompts) {
         const copy = Object.assign({}, prompt);
         TRANSIENT_PROMPT_FLAGS.forEach(flag => delete copy[flag]);
         VIEW_PROMPT_FIELDS.forEach(field => delete copy[field]);
+        stripBuiltInOnlyFields(copy);
         stripManagedSecretMarkers(copy);
         return copy;
     });
@@ -1086,6 +1334,7 @@ export async function getSpecialPrompts(){
             // hard-coded built-in icon" (see getBuiltInPromptIcon()).
             prompt.custom_icon = "";
             normalizePromptFlags(prompt);
+            stripBuiltInOnlyFields(prompt);
         })
         await applyCalendarNoSelection(def_specPrompts);
         await applyLockedOffIntegrations(def_specPrompts);
@@ -1097,7 +1346,7 @@ export async function getSpecialPrompts(){
 
         specialPrompts.forEach((defaultPrompt) => {
             if (!updatedPrompts.some((prompt) => prompt.id === defaultPrompt.id)) {
-                let newPrompt = structuredClone(defaultPrompt);
+                let newPrompt = stripBuiltInOnlyFields(structuredClone(defaultPrompt));
                 newPrompt.text = browser.i18n.getMessage(newPrompt.text);
                 updatedPrompts.push(newPrompt);
             }
@@ -1118,6 +1367,7 @@ export async function getSpecialPrompts(){
             // the shipped definition when a saved value is out of domain.
             const builtIn = specialPrompts.find((sp) => sp.id === prompt.id);
             normalizePromptFlags(prompt, builtIn || {});
+            stripBuiltInOnlyFields(prompt);
         });
 
         // console.log(">>>>>>>>>>>>> getSpecialPrompts updatedPrompts: " + JSON.stringify(updatedPrompts));
@@ -1554,7 +1804,10 @@ export async function migrateMenuOrderAlphabetic() {
     // missing from `ordered` and setCustomPrompts() would delete them for real.
     const allPrompts = await getPromptsForMenuOrder();
     const hiddenSpecialIds = getHiddenSpecialPromptIds();
-    const visiblePrompts = allPrompts.filter(p => !hiddenSpecialIds.includes(p.id));
+    // By the flag as well as the id: a custom prompt with a hidden special's id would otherwise be
+    // written into _special_prompts and dropped from _custom_prompt.
+    const isHiddenSpecial = p => String(p.is_special) === '1' && hiddenSpecialIds.includes(p.id);
+    const visiblePrompts = allPrompts.filter(p => !isHiddenSpecial(p));
 
     const resolveName = (p) => {
         const n = p.name || '';
@@ -1584,7 +1837,7 @@ export async function migrateMenuOrderAlphabetic() {
     const customPromptsToSave = ordered.filter(p =>
         String(p.is_default) === '0' && String(p.is_special) !== '1' && String(p.is_org) !== '1');
     const visibleSpecialsToSave = ordered.filter(p => String(p.is_special) === '1');
-    const hiddenSpecialsToPreserve = allPrompts.filter(p => hiddenSpecialIds.includes(p.id));
+    const hiddenSpecialsToPreserve = allPrompts.filter(isHiddenSpecial);
 
     await setDefaultPromptsProperties(defaultPromptsToSave);
     await setCustomPrompts(customPromptsToSave);
@@ -1711,8 +1964,9 @@ export async function savePrompt(prompt) {
         await setSpecialPrompts(specialPrompts);
         return;
     }
-    // Custom Prompt
-    if ((prompt.is_default === "0")||(prompt.is_default === 0)) {
+    // Custom Prompt. An org prompt carries is_default "0" too, but it is never stored: it
+    // goes with the built-ins below, whose store holds its display preferences.
+    if (((prompt.is_default === "0")||(prompt.is_default === 0)) && String(prompt.is_org) !== '1') {
         let customPrompts = await getCustomPrompts();
         let index = customPrompts.findIndex(p => p.id === prompt.id);
         if (index === -1) {
@@ -1722,15 +1976,20 @@ export async function savePrompt(prompt) {
         }
         // console.log(">>>>>>>>>>>> savePrompt customPrompts: " + JSON.stringify(customPrompts));
         await setCustomPrompts(customPrompts);
-    } else {       // Default Prompt
-        let defaultPrompts = await getDefaultPrompts_withProps();
-        let index = defaultPrompts.findIndex(p => p.id === prompt.id);
-        if (index === -1) {
-            defaultPrompts.push(prompt);
-        } else {
-            defaultPrompts[index] = prompt;
-        }
-        await setDefaultPromptsProperties(defaultPrompts);
+    } else {       // Default Prompt, or Org Prompt
+        // Every built-in is rewritten as it reads now (so they keep their positions, 1..n
+        // when nothing was stored yet), then this prompt's entry. The other entries - the
+        // org prompts' display preferences - are kept: setDefaultPromptsProperties() would
+        // replace the whole store with the built-ins alone and erase them. For an org prompt
+        // only the display fields of its entry are ever read back (getOrgPrompts()), so its
+        // text, api_type and the rest stay the policy's.
+        const stored = (await browser.storage.local.get({_default_prompts_properties: null}))._default_prompts_properties;
+        const props = (stored && typeof stored === 'object' && !Array.isArray(stored)) ? stored : {};
+        (await getDefaultPrompts_withProps()).forEach(p => {
+            props[p.id] = defaultPromptPropertiesEntry(p);
+        });
+        props[prompt.id] = defaultPromptPropertiesEntry(prompt);
+        await browser.storage.local.set({_default_prompts_properties: props});
     }
 }
 

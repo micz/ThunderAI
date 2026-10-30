@@ -260,6 +260,10 @@ format), not a subtly malformed one. Only the keys without which the result is u
 listed; the ones the shipped text itself calls optional (location, description,
 attendees…) are not. Every shipped text passes the contract.
 
+The feature pages' own JSON check (spec 02 "The text carries the response format":
+`checkPromptTextJson()`, advisory, for the user's edits) is not part of this validation, and
+skips an enforced text.
+
 ### Application: a read-time overlay, never persisted
 
 `applyEnforcedTexts()` runs at the end of `getSpecialPrompts()`, after

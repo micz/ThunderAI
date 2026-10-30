@@ -54,6 +54,26 @@ k.test('icon-follows', 'the message display and compose icons show loading while
     assert.equal(back.messageDisplayAction, back.composeAction);
 });
 
+// Spec 09 "Activation switch": while ThunderAI Privacy is on, the idle icon is the companion's;
+// the loading icon still wins while something works.
+k.test('privacy-icon', 'with ThunderAI Privacy on, the idle icon is the companion\'s, and loading still wins while working', () => {
+    ctx.m.icons.length = 0;
+    ws.setPrivacy(true);
+    const privacy = lastIcons();
+    assert.match(privacy.messageDisplayAction, /privacy/);
+    assert.equal(privacy.composeAction, privacy.messageDisplayAction);
+    ws.startWorking();
+    const loading = lastIcons().messageDisplayAction;
+    ws.setPrivacy(false);
+    assert.equal(lastIcons().messageDisplayAction, loading, 'still working: the switch does not reset the icon');
+    ws.setPrivacy(true);
+    ws.stopWorking();
+    assert.equal(lastIcons().messageDisplayAction, privacy.messageDisplayAction, 'back to the privacy icon');
+    ws.setPrivacy(false);
+    assert.doesNotMatch(lastIcons().messageDisplayAction, /privacy/);
+    assert.equal(lastIcons().composeAction, lastIcons().messageDisplayAction);
+});
+
 k.test('never-negative', 'an extra stopWorking() never takes the level below zero', () => {
     ws.stopWorking();
     ws.stopWorking();

@@ -18,8 +18,16 @@
 
 
 import { parseExtraBody } from './api-utils.js';
-import { fetchWithRetry } from './api-retry.js';
+import {
+    fetchWithRetry,
+    fetchDirect,
+    isRedirectFailed
+} from './api-retry.js';
 import { createUsageData } from './mzta-api-usage.js';
+import {
+    checkEndpoint,
+    endpointProblemText
+} from '../mzta-endpoint-policy.js';
 
 // Loading a model into memory happens before Ollama sends the response
 // headers, so the per-attempt timeout of a chat request must be long enough to
@@ -85,6 +93,12 @@ export class Ollama {
     keep_alive = '';
     system_prompt = '';
     extra_options = '';
+    approved_insecure_origins = [];
+    // The redirect outcome of the last request (see checkRedirected() in api-retry.js):
+    // null when it says nothing, {redirected: false} for a success with no redirect, or
+    // {redirected: true, url, failed}. The caller saves it (js/mzta-endpoint-redirects.js);
+    // the worker forwards it with an 'endpoint_redirect' message.
+    redirect_info = null;
 
     constructor({
       host = '',
@@ -98,6 +112,7 @@ export class Ollama {
       keep_alive = '',
       system_prompt = '',
       extra_options = '',
+      approved_insecure_origins = [],
     } = {}) {
       this.host = (host || '').trim().replace(/\/+$/, "");
       this.apiKey = (api_key || '').trim();
@@ -113,6 +128,27 @@ export class Ollama {
       // model-worker-ollama.js does not drop it.
       this.system_prompt = system_prompt;
       this.extra_options = extra_options;
+      // The unencrypted origins the caller confirmed (js/mzta-endpoint-approvals.js):
+      // the endpoint is checked against them before every request [#1000].
+      this.approved_insecure_origins = Array.isArray(approved_insecure_origins) ? approved_insecure_origins : [];
+    }
+
+    // The error result of a request that must not be sent, or null. Same contract as a
+    // network failure, so every caller already handles it; the callers that can show a
+    // localized message check the endpoint themselves before getting here.
+    _endpointRefused = () => {
+      const check = checkEndpoint(this.host, this.approved_insecure_origins);
+      if (check.ok) return null;
+      console.error("[ThunderAI] Ollama API request not sent: " + endpointProblemText(check.problem));
+      return { ok: false, is_exception: true, is_aborted: false, endpoint_problem: check.problem,
+        error: "Ollama API request not sent: " + endpointProblemText(check.problem) };
+    }
+
+    // Starts a request: forgets the previous redirect outcome and returns the onRedirect
+    // callback that records the new one.
+    _trackRedirect = () => {
+      this.redirect_info = null;
+      return (info) => { this.redirect_info = info; };
     }
 
     // Headers shared by every endpoint. The key is optional: it covers both the
@@ -138,10 +174,13 @@ export class Ollama {
      */
     fetchVersion = async () => {
       try{
-        const response = await fetch(this.host + "/api/version", {
+        const onRedirect = this._trackRedirect();
+        const refused = this._endpointRefused();
+        if (refused) return refused;
+        const response = await fetchDirect(this.host + "/api/version", {
             method: "GET",
             headers: this._headers(),
-        });
+        }, { onRedirect, label: 'Ollama' });
 
         if (!response.ok) {
             const errorDetail = await response.text();
@@ -165,6 +204,7 @@ export class Ollama {
         console.error("[ThunderAI] Ollama API request failed: " + error);
         let output = {};
         output.is_exception = true;
+        output.is_redirect = isRedirectFailed(error);
         output.ok = false;
         output.error = "Ollama API request failed: " + error;
         return output;
@@ -185,11 +225,14 @@ export class Ollama {
      */
     fetchModelInfo = async (model) => {
       try{
-        const response = await fetch(this.host + "/api/show", {
+        const onRedirect = this._trackRedirect();
+        const refused = this._endpointRefused();
+        if (refused) return refused;
+        const response = await fetchDirect(this.host + "/api/show", {
             method: "POST",
             headers: this._headers(),
             body: JSON.stringify({ model: model }),
-        });
+        }, { onRedirect, label: 'Ollama' });
 
         if (!response.ok) {
             const errorDetail = await response.text();
@@ -210,6 +253,7 @@ export class Ollama {
         console.error("[ThunderAI] Ollama API request failed: " + error);
         let output = {};
         output.is_exception = true;
+        output.is_redirect = isRedirectFailed(error);
         output.ok = false;
         output.error = "Ollama API request failed: " + error;
         return output;
@@ -225,10 +269,13 @@ export class Ollama {
      */
     fetchRunningModels = async () => {
       try{
-        const response = await fetch(this.host + "/api/ps", {
+        const onRedirect = this._trackRedirect();
+        const refused = this._endpointRefused();
+        if (refused) return refused;
+        const response = await fetchDirect(this.host + "/api/ps", {
             method: "GET",
             headers: this._headers(),
-        });
+        }, { onRedirect, label: 'Ollama' });
 
         if (!response.ok) {
             const errorDetail = await response.text();
@@ -249,6 +296,7 @@ export class Ollama {
         console.error("[ThunderAI] Ollama API request failed: " + error);
         let output = {};
         output.is_exception = true;
+        output.is_redirect = isRedirectFailed(error);
         output.ok = false;
         output.error = "Ollama API request failed: " + error;
         return output;
@@ -257,10 +305,13 @@ export class Ollama {
 
     fetchModels = async (retryConfig = {}) => {
       try{
+        const onRedirect = this._trackRedirect();
+        const refused = this._endpointRefused();
+        if (refused) return refused;
         const response = await fetchWithRetry(this.host + "/api/tags", {
             method: "GET",
             headers: this._headers(),
-        }, { label: 'Ollama', ...retryConfig });
+        }, { label: 'Ollama', ...retryConfig, onRedirect });
 
         if (!response.ok) {
             const errorDetail = await response.text();
@@ -286,6 +337,7 @@ export class Ollama {
         console.error("[ThunderAI] Ollama API request failed: " + error);
         let output = {};
         output.is_exception = true;
+        output.is_redirect = isRedirectFailed(error);
         output.ok = false;
         output.error = "Ollama API request failed: " + error;
         return output;
@@ -295,6 +347,9 @@ export class Ollama {
     
     fetchResponse = async (messages, retryConfig = {}) => {
       try {
+        const onRedirect = this._trackRedirect();
+        const refused = this._endpointRefused();
+        if (refused) return refused;
         const tempFloat = parseFloat(this.temperature);
 
         // Both num_ctx and temperature live under the same "options" key: they must be
@@ -334,12 +389,13 @@ export class Ollama {
                 ...(this.keep_alive !== '' ? { keep_alive: this.keep_alive } : {}),
                 ...(Object.keys(options_obj).length > 0 ? { options: options_obj } : {}),
             }),
-        }, { label: 'Ollama', timeoutMs: OLLAMA_CHAT_TIMEOUT_MS, ...retryConfig });
+        }, { label: 'Ollama', timeoutMs: OLLAMA_CHAT_TIMEOUT_MS, ...retryConfig, onRedirect });
         return response;
       }catch (error) {
           console.error("[ThunderAI] Ollama API request failed: " + error);
           let output = {};
           output.is_exception = true;
+          output.is_redirect = isRedirectFailed(error);
           output.is_aborted = retryConfig.signal?.aborted === true;
           output.ok = false;
           output.error = "Ollama API request failed: " + error;

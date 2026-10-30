@@ -41,6 +41,7 @@ export const COMPANIONS = {
     // "Reset to default" buttons of number inputs.
     max_prompt_length: ['reset_max_prompt_length'],
     special_command_timeout: ['reset_special_command_timeout'],
+    api_stream_idle_timeout: ['reset_api_stream_idle_timeout'],
     summarize_max_messages: ['reset_summarize_max_messages'],
 };
 
@@ -89,6 +90,7 @@ export function sweepValues(c, key = c.key) {
     }
     if (typeof d === 'string') {
         if (/_extra_body$|_extra_options$|_text_format_schema$/.test(key)) return { P: '{"policy": 1}', U: '{"user": 1}' };
+        if (/_extra_headers$/.test(key)) return { P: '{"x-policy": "1"}', U: '{"x-user": "1"}' };
         if (/_top_p$/.test(key)) return { P: '0.3', U: '0.7' };
         if (/_top_k$/.test(key)) return { P: '20', U: '40' };
         if (/_keep_alive$/.test(key)) return { P: '30m', U: '5m' };

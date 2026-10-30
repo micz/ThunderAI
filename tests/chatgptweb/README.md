@@ -62,7 +62,7 @@ through the core `dom-harness.mjs`).
 | `dom/chatgpt/chatgptweb-01-option-off` | spec 04 "Model verification", option off: the newer UI proceeds at once, unverified, no menu (gpt-6, gpt-6-thinking, a wrong effort and model, an unknown model), the effort logged; the option set to false; the older UI: a match at once, another model's warning and button at 2 s and not before, no send after it, the button resuming once; a free account; the trigger rendering late within 2 s, and after them; an empty model, a Custom GPT |
 | `dom/chatgpt/chatgptweb-02-option-on` | spec 04 "Model verification", option on: both IDs verified and sent once through the page's own send function, the menu it opened closed; the name trimmed and lower-cased; a replaced trigger read afresh, a second `chatgpt_send` ignored; a match just before 15 s; the late trigger starting the extended verification, its deadline 15 s from then; an unknown model on the newer UI: the legacy check, 2 s, no menu; the older UI; a free account; the retry after a missing composer checking again with the option |
 | `dom/chatgpt/chatgptweb-03-extended-rejections` | spec 04 "Model verification", option on: GPT-6.1, GPT-6 Pro, GPT-5.6 Sol; the efforts medium / high / unknown (no menu opened); gpt-6-thinking with Instant; an unselected row with "GPT-6 Instant" written in the page; a menu the trigger does not own; a hidden row; checked but not selected; an unexpected hidden track; a row aria-hidden; two selected rows - each refused at 15 s, not at 2 s; the menu it opened closed; no trigger but other Radix elements: not a free account, the legacy 2 s |
-| `dom/chatgpt/chatgptweb-04-timeout-cancel` | spec 04 "Model verification", extended and legacy paths: the check's observer, poll and deadline held while it runs and gone at the deadline; no send when the page matches after the timeout; repeated clicks and a second `chatgpt_send`: one send, the warning hidden; `pagehide` during the check and after the timeout; an approval not reused by the retry's check; the retry's timeout showing the warning and the button (a known issue, below) |
+| `dom/chatgpt/chatgptweb-04-timeout-cancel` | spec 04 "Model verification", extended and legacy paths: the check's observer, poll and deadline held while it runs and gone at the deadline; no send when the page matches after the timeout; repeated clicks and a second `chatgpt_send`: one send, the warning hidden; `pagehide` during the check and after the timeout; an approval not reused by the retry's check; the retry's timeout showing the warning and the button |
 | `dom/chatgpt/chatgptweb-05-menus` | spec 04 "Model verification", option on: a menu the user opened, simple or advanced, keeps its view and focus on success and on timeout (both IDs); the menu the check opened closed, the focus given back, the view never expanded; a focus the user moved kept; the manual button leaving a menu the user reopened; the model menu's stacking (1001 for the menu and its portal, 50 kept for another menu, the bar at 1000) |
 | `dom/options/chatgptweb-20-extended-check-option` | spec 04 "ChatGPT Web" (the unprefixed id, the row right after the model row, advanced, ChatGPT Web only), spec 05 "Connection Settings Panel — Advanced Options Disclosure" (the `.mzta_switch` in its flex wrapper), "UI & Feature Preferences" (the en title and help, which names both models; unchecked by default; never disabled, the model empty or not; saved true then false) |
 | `dom/options/chatgptweb-21-extended-check-stored` | spec 05 "UI & Feature Preferences": stored true shown checked, saved false |
@@ -144,14 +144,7 @@ In `tests/fixtures/chatgptweb/`:
 
 ## Known issues
 
-In `helpers/known-issues/chatgptweb.mjs`, run as TODOs while they fail:
-
-- spec 04 "Model verification", `04-retry-timeout-button`: a timeout must show the warning and the
-  **Use the current model** button on every check. When no composer was found (`-2`),
-  `proceedWithPrompt()` writes `chatgpt_textarea_not_found_error` into `#mzta-model_warn` with
-  `textContent`, which removes its child `#mzta-btn_model`. A check that times out on the retry then
-  shows the "page taking too long to load" text and no button, and the user cannot resume. The `-2`
-  path predates the model verification work; the area found it by driving the retry end to end.
+In `helpers/known-issues/chatgptweb.mjs`, run as TODOs while they fail: none today.
 
 ## What is not covered
 

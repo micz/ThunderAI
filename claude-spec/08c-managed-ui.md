@@ -82,7 +82,8 @@ on every `summarize_auto` change, uses the respecting setter too: it could previ
 re-enable a locked `summarize_auto_senders` toggle.
 
 **A plain `.option-input` can have companions too**: a number input's "Reset to default" button
-(`reset_max_prompt_length`, `reset_special_command_timeout` on the options page,
+(`reset_max_prompt_length`, `reset_special_command_timeout`, `reset_api_stream_idle_timeout` on the
+options page,
 `reset_summarize_max_messages` on the summarize page) refills the input and writes the default.
 Such a button carries `data-mzta-companion-of="<preference key>"` in the markup, and
 `applyManagedUI()` locks it together with its key, exactly as `lockCompanions()` would, with no
