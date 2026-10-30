@@ -18,13 +18,14 @@ The contract is the spec, as everywhere in the suite:
   background's side of the "Ready handshake";
 - [`claude-spec/02-prompts.md`](../../claude-spec/02-prompts.md): "Menu System" ("Popup Menu",
   "Context Menu", "Special Prompt Visibility Dependencies"), "Missing special prompts", "Add tags:
-  extra prompt statements" (which tags land where), "Summarize" and "Translate";
+  extra prompt statements" (which tags land where), "Add tags: per-account settings", "Summarize"
+  and "Translate";
 - [`claude-spec/04-api-integrations.md`](../../claude-spec/04-api-integrations.md): "Worker Lifecycle
   & Timeout", "Thinking in special commands", "Configuration Validation" (the callers' side),
   "Batch cancellation (user-triggered stop)" and its rate-limit stop;
 - [`claude-spec/05-options.md`](../../claude-spec/05-options.md): the rows of the preferences these
   flows read (`spamfilter_threshold`, `add_tags_exclusions`, `batch_max_concurrency`,
-  `summarize_max_messages`, …).
+  `summarize_max_messages`, `add_tags_account_settings`, …).
 
 How to run the suite, the two levels, the core mock and the known-issue mechanism are in the
 general [`tests/README.md`](../README.md). Paths below are relative to `tests/`. Everything runs
@@ -50,12 +51,14 @@ time: the debounce, the worker timeout and the batch yield points run on node:te
 | `03-working-status-exclusions` | `taWorkingStatus` (level, icons, the ThunderAI Privacy idle icon, never negative); `checkExcludedTag()` and the exclusion list preference | 01 "Working indicator", 09 "Activation switch", 05 `add_tags_exclusions` |
 | `04-storage` | `taStorage`: the `msg:<id>` key and schema, the three fields in one record, force / no force, deleting a field and the last field, `deleteRecord()`, `getAll*Records()`, age-based `cleanup()`, `clearAllRecords()`, the preferences never touched, the per-record write queue (concurrent fields, delete + write, two instances, order, other messages in parallel) | 01 "Per-Message Data Storage" |
 | `05-stores` | `taSummaryStore`, `taTranslationStore`, `taSpamReport`: round trips, error states, records written by older versions, removal, the 100-entry truncation (as methods: the background calls only the spam one), `saveError()` metadata, `getAllReportData()` → `{}`, clearing one field only, no `storage.session` state | 01 "Per-Message Data Storage", 02 "Missing special prompts" |
+| `06-addtags-account-settings` | `js/mzta-addtags-account-settings.js` on its own: the nine override keys, the getters on a missing or malformed value, the setter's validation key by key (unknown keys, wrong types, blank `prompt_text`, the valid edge values), an empty entry removing the account, copies (nothing shared with the caller, nothing handed out mutated), `addTags_resolveAccountPrefs()` (a fresh copy, only the keys present, `prompt_text` never, a malformed value ignored, a locked key skipped), `addTags_applyAccountPrompt()` (itself / a copy / ignored when `_text_by_policy`) | 02 "Add tags: per-account settings"; 05 `add_tags_account_settings` |
 | `10-special-command` | `mzta_specialCommand` after `initWorker()`: the prompt posted, the answer accumulated, `newRetryAttempt` / `messageSent` ignored, thinking tokens and `<think>` blocks (closed, leading whitespace, unterminated), errors with `rateLimited` / `retryAfterMs`, a worker crash, the timeout (the preference, the default, after a 429, after a 503, never after an answer), `dispose()` on every path | 04 "Worker Lifecycle & Timeout", "Thinking in special commands", #batch-stop-on-rate-limit |
 | `20-receive-summary-translation` | `summarize_auto = 3` / `translate_auto = 3`: the listener registration, what is stored on which message, the prompts, the broadcast to the displaying tabs, the ids, the sanitizer on the way out, one worker per prompt, the cache hit, the same id twice in a batch, the skipped folders and archives, several messages | 01 "Background Summary / Translation on Email Receive", "Per-message pipelines", "Shared guards", "In-flight jobs" |
 | `21-sender-list` | the sender list on reception and on open: exact, domain, subdomain, other senders, no tab, skipped folders, the cached summary, both triggers = one call, an unusable connection, a legacy `['']` list | 01 "Auto-Summarize by Sender Address List" |
 | `22-spam-rules` | the allow / block lists and the address book: every precedence case, never moving an allow-list report (threshold 0), the pipeline stopped by a block, a manual check, legacy `['']` lists | 01 "Spam filter sender rules" |
 | `23-spam-actions` | the AI verdict: moved to junk (marked, then moved), the threshold, the panels, an account with no junk folder, the account list, skipped folders, a message gone after the analysis, `getFull()` failing, a non-JSON answer, serialized moves, the manual path, `spamfilter_only_inbox`, the outcome only after the report is stored | 01 "Per-message pipelines", "Spam filter sender rules", "Shared guards" |
 | `24-add-tags` | automatic tagging and the context-menu Add tags: tags assigned (existing and new), existing tags kept, exclusions, not tagging a spam message, spam first, only-inbox and sent, one new tag from parallel pipelines, the right tags on the right message, the selection cap, force existing, include sent, an unusable connection | 01 "Per-message pipelines", "Shared guards", "Add tags selection cap"; 02 "Add tags: extra prompt statements" |
+| `24b-add-tags-accounts` | the per-account Add Tags settings at run time, an entry for one of two accounts: on the automatic path, the context menu and the popup (`act()`, driven through `executeMenuAction()` with the content script's reads answered), the account's max number, language, force language, force existing, exclusions and exact match, the use list (automatic path only, never on the popup), the prompt text (the batch's memoized prompt and the menu entry never mutated), a malformed value ignored; `assign_tags` with the account's exclusions (the header not read with no settings), `addtags_get_exclusion_prefs` with a `messageId` (effective values, `exclusions_account_id`), `addtags_set_exclusions` with and without `accountId`; a policy lock (simulated by stubbing `mztaManaged`) and an enforced Add Tags text winning over the overrides | 02 "Add tags: per-account settings", "Add tags: extra prompt statements"; 05 `add_tags_account_settings`; 08 "The allowlist" |
 | `25-inline-summary` | `initSummary` / `triggerSummaryGeneration` / `refreshSummary` / `removeSummary` / `getDisplayedMessageId`: every `summarize_auto` mode, both display modes, the cache, stale results, a deletion while generating, delete-then-generate-again, an unreachable pane | 01 "Inline Summary on Message Display", "Stale-result guard", "In-flight jobs", "Unreachable message pane" |
 | `26-inline-translation` | the same for the translation: the target language and its fallback, status `-1`, HTML / plain text through the sanitizer, no language configured | 01 "Inline Translation on Message Display", 02 "Translate" |
 | `27-dedup` | joining across callers: the batch joining a manual summary, the panel joining the batch's summary and translation, the batch joining a manual spam Refresh (moved once), `checkSpamReport` joining, the context menu and the batch sharing add_tags, overlapping batches, the working level | 01 "In-flight jobs" |
@@ -228,12 +231,14 @@ None today.
   only that the window opens, for which messages, and the lifetime of its ready listener
   (`40-chat-window-ready`: what the background answers the ready message, not what the window does
   with it). The regular prompts' menu actions
-  (`executeMenuAction()`) and the popup's Add tags dialog path (`act()` in `js/mzta-menus.js`, the
-  `getTags` confirmation) are not run.
+  (`executeMenuAction()`) are not run; of the popup's Add tags path (`act()` in `js/mzta-menus.js`)
+  only what `24b-add-tags-accounts` needs: the prompt it sends and the `getTags` it hands the dialog,
+  not the dialog itself.
 - **The compose-window commands** past what they send the compose tab (`35-compose-commands`):
   the `replaceBody()` fallback of a reply, the retry while the compose script is not loaded;
-  `chatgpt_close`, `chatgpt_saveSummary`, `assign_tags`,
-  `addtags_get_exclusion_prefs` / `addtags_set_exclusions` (compose and ui areas' callers).
+  `chatgpt_close`, `chatgpt_saveSummary`; `assign_tags`, `addtags_get_exclusion_prefs` /
+  `addtags_set_exclusions` only for their per-account behaviour (`24b-add-tags-accounts`) and the
+  permission guard (`38-permission-guards`): their callers are the compose and ui areas'.
 - What the background does at startup besides `STARTUP` (see above) and the keyboard shortcut.
 - **The real Thunderbird storage and its timing**: the core mock resolves at once; the write races of
   a slow storage are tested with direct concurrent calls (`04-storage`), not through a flow.

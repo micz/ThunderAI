@@ -310,7 +310,8 @@ once for all its features.
   promise chain, and re-reads `getTagsList()` inside it. `createTag()` gives each new tag a random
   key, so two parallel pipelines that both found the same label missing would otherwise create two
   tags with that label. The queue also covers the context-menu/popup path, which can overlap with
-  an automatic batch. The pipeline awaits `_assign_tags()`. The tag list embedded in the *prompt*
+  an automatic batch. The pipeline awaits `_assign_tags()`, passing the message's account id: the
+  exclusion list applied is that account's (02 "Add tags: per-account settings"). The tag list embedded in the *prompt*
   is still read per message, so parallel pipelines do not see each other's new tags there; only
   exact-label duplicates are prevented.
 - **Translate tab.** The manual action (`translate: true`) resolves its UI tab once, before the
@@ -786,9 +787,12 @@ test area, `tests/compose/README.md`):
   removes the dialog and its stylesheet. In any other tab it is the window's `alert()`. The message is
   always text. The command resolves `true`.
 - **`getTags`** opens the tag confirmation dialog (*Unreachable message pane*: the user's
-  confirmation step). Its exclusion list and flags come from `addtags_get_exclusion_prefs` (spec 05);
+  confirmation step). Its exclusion list and flags come from `addtags_get_exclusion_prefs` (spec 05),
+  called with the `messageId` of the command, so they are the effective ones of the message's
+  account; the exclude icon writes with `addtags_set_exclusions`, sending back the
+  `exclusions_account_id` it received (02 "Add tags: per-account settings");
   when that command fails, the dialog logs it and opens with the defaults — no exclusion, both flags
-  off, not locked.
+  off, not locked, the global list.
 - **`replaceSelectedText`** (compose window): see *Replacing text in a compose window*.
 - **`saveCaret`** / **`insertAtCaret`** (compose window): see *Inserting at the cursor in a compose
   window*.
@@ -2190,7 +2194,7 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 | `js/mzta-working-status.js` | Visual status indicator during AI processing (ref-counted toolbar loading icon) |
 | `js/mzta-batch-controller.js` | Cooperative cancellation controller + progress counter for batch email processing (`processEmails`) |
 | `js/mzta-addtags-exclusion-list.js` | Tag exclusion list management |
-| `js/mzta-addtags-account-prompts.js` | Per-account Add Tags prompt texts (`add_tags_account_prompts` preference, through `mztaPrefs`) |
+| `js/mzta-addtags-account-settings.js` | Per-account Add Tags settings and prompt texts (`add_tags_account_settings` preference, through `mztaPrefs`): validation, per-message resolution honouring the policy locks (see 02 "Add tags: per-account settings") |
 | `js/mzta-placeholders-autocomplete.js` | Caret-anchored autocomplete for placeholders in prompt editors (shared by 8 pages); styled by `pages/_lib/autocomplete.css` |
 | `js/mzta-editor-highlight.js` | Live `{%placeholder%}` highlighting for a textarea via a backdrop mirror; exports the shared `PLACEHOLDER_RE` token pattern |
 

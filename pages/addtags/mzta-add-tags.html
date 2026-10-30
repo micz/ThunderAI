@@ -209,24 +209,113 @@
                 </div>
             </div>
 
-            <!-- PER-ACCOUNT PROMPTS -->
-            <div class="mzta_section" id="addtags_account_prompt_container">
-                <div class="mzta_prompt_title">__MSG_AddTags_account_prompt_title__<span id="addtags_account_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+            <!-- PER-ACCOUNT SETTINGS -->
+            <!-- One row per override key of add_tags_account_settings: the control is
+                 addtags_account_<key>, its "Use the global setting" box addtags_account_<key>_inherit.
+                 None of them is an .option-input: the whole entry is saved by its own Save button. -->
+            <div class="mzta_section" id="addtags_account_settings_container">
+                <div class="mzta_prompt_title">__MSG_AddTags_account_settings_title__<span id="addtags_account_settings_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
                 <p class="mzta_help">
-                    __MSG_AddTags_account_prompt_infoline__
-                    <br>__MSG_AddTags_account_prompt_infoline2__
+                    __MSG_AddTags_account_settings_infoline__
+                    <br>__MSG_AddTags_account_settings_infoline2__
                 </p>
-                <div class="mzta_field">
-                    <select id="addtags_account_prompt_account"></select>
+                <div class="mzta_field addtags_account_select_row">
+                    <select id="addtags_account_settings_account"></select>
+                    <button id="btn_account_settings_remove" class="btn_secondary" disabled>__MSG_AddTags_account_settings_remove__</button>
+                </div>
+
+                <!-- max num -->
+                <div class="mzta_field mzta_field_num addtags_account_row">
+                    <div class="mzta_field_num_text">
+                        <span class="opt_title">__MSG_prefs_OptionText_add_tags_maxnum__</span>
+                        <label class="addtags_account_inherit"><input type="checkbox" id="addtags_account_add_tags_maxnum_inherit" checked /> __MSG_AddTags_account_settings_inherit__</label>
+                    </div>
+                    <div class="mzta_field_num_ctrl">
+                        <input type="number" id="addtags_account_add_tags_maxnum" min="0" disabled />
+                    </div>
+                </div>
+
+                <!-- force lang -->
+                <div class="feature_row addtags_account_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_add_tags_force_lang__</div>
+                        <div class="feature_desc"><label class="addtags_account_inherit"><input type="checkbox" id="addtags_account_add_tags_force_lang_inherit" checked /> __MSG_AddTags_account_settings_inherit__</label></div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="addtags_account_add_tags_force_lang" disabled />
+                        <span class="track"></span>
+                    </label>
+                </div>
+
+                <!-- language -->
+                <div class="mzta_field addtags_account_row">
+                    <span class="opt_title">__MSG_prefs_OptionText_default_chatgpt_lang__</span>
+                    <label class="addtags_account_inherit"><input type="checkbox" id="addtags_account_default_chatgpt_lang_inherit" checked /> __MSG_AddTags_account_settings_inherit__</label>
+                    <input type="text" id="addtags_account_default_chatgpt_lang" disabled />
+                </div>
+
+                <!-- force existing -->
+                <div class="feature_row addtags_account_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_add_tags_auto_force_existing__</div>
+                        <div class="feature_desc"><label class="addtags_account_inherit"><input type="checkbox" id="addtags_account_add_tags_auto_force_existing_inherit" checked /> __MSG_AddTags_account_settings_inherit__</label></div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="addtags_account_add_tags_auto_force_existing" disabled />
+                        <span class="track"></span>
+                    </label>
+                </div>
+
+                <!-- use list -->
+                <div class="feature_row addtags_account_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_add_tags_auto_uselist__</div>
+                        <div class="feature_desc">__MSG_AddTags_account_settings_uselist_info__<br><label class="addtags_account_inherit"><input type="checkbox" id="addtags_account_add_tags_auto_uselist_inherit" checked /> __MSG_AddTags_account_settings_inherit__</label></div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="addtags_account_add_tags_auto_uselist" disabled />
+                        <span class="track"></span>
+                    </label>
+                </div>
+
+                <!-- use list: the list -->
+                <div class="mzta_field addtags_account_row">
+                    <span class="opt_title">__MSG_AddTags_account_settings_uselist_list__</span>
+                    <label class="addtags_account_inherit"><input type="checkbox" id="addtags_account_add_tags_auto_uselist_list_inherit" checked /> __MSG_AddTags_account_settings_inherit__</label>
+                    <textarea id="addtags_account_add_tags_auto_uselist_list" rows="5" disabled></textarea>
+                </div>
+
+                <!-- exclusions -->
+                <div class="mzta_field addtags_account_row">
+                    <span class="opt_title">__MSG_AddTags_excl_list_title__</span>
+                    <label class="addtags_account_inherit"><input type="checkbox" id="addtags_account_add_tags_exclusions_inherit" checked /> __MSG_AddTags_account_settings_inherit__</label>
+                    <textarea id="addtags_account_add_tags_exclusions" rows="5" disabled></textarea>
+                </div>
+
+                <!-- exclusions exact match -->
+                <div class="feature_row addtags_account_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_add_tags_exclusions_exact_match__</div>
+                        <div class="feature_desc"><label class="addtags_account_inherit"><input type="checkbox" id="addtags_account_add_tags_exclusions_exact_match_inherit" checked /> __MSG_AddTags_account_settings_inherit__</label></div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="addtags_account_add_tags_exclusions_exact_match" disabled />
+                        <span class="track"></span>
+                    </label>
+                </div>
+
+                <!-- prompt text: empty = the prompt above -->
+                <div class="mzta_field addtags_account_row">
+                    <span class="opt_title_small">__MSG_AddTags_account_settings_prompt_title__</span>
                     <div class="autocomplete-container editor-wrap">
                         <div class="editor-backdrop" aria-hidden="true"><div class="editor-highlights"></div></div>
-                        <textarea id="addtags_account_prompt_text" rows="15" class="editor" placeholder="__MSG_AddTags_account_prompt_placeholder__"></textarea>
+                        <textarea id="addtags_account_prompt_text" rows="15" class="editor" placeholder="__MSG_AddTags_account_settings_placeholder__"></textarea>
                         <ul class="autocomplete-list hidden"></ul>
                     </div>
+                    <div id="addtags_account_info_additional_statements" class="feature_desc"></div>
                     <div class="btn_div">
-                        <button id="btn_account_prompt_copy_global" class="btn_secondary">__MSG_AddTags_account_prompt_copy_global__</button>
-                        <button id="btn_account_prompt_remove" class="btn_secondary" disabled>__MSG_AddTags_account_prompt_remove__</button>
-                        <button id="btn_save_account_prompt" class="btn_primary" disabled>__MSG_save__</button>
+                        <button id="btn_account_settings_copy_prompt" class="btn_secondary">__MSG_AddTags_account_settings_copy_prompt__</button>
+                        <button id="btn_save_account_settings" class="btn_primary" disabled>__MSG_save__</button>
                     </div>
                 </div>
             </div>

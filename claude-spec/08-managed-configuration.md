@@ -239,7 +239,7 @@ Object.keys(prefs_default)
   minus  /_enabled_accounts$/   account ids, per profile
   minus  api_webchat_font_scale local UI zoom
   minus  custom_prompts_view    custom prompts page layout, local UI
-  minus  add_tags_account_prompts  prompt texts keyed by account id, per profile
+  minus  add_tags_account_settings  Add Tags overrides keyed by account id, per profile
 ```
 
 The rules are applied in one place, `isPolicyExcludedKey(key)` (exported, pure): `buildAllowlist()`
@@ -255,6 +255,12 @@ The ten excluded keys are per-machine or per-profile state, not configuration: e
 them across a fleet would push window coordinates from another screen, a font zoom from
 another display, a page layout the user chose for themselves, or account ids that do not
 exist in this profile.
+
+**`add_tags_account_settings` is excluded, but it never bypasses the policy.** Its per-account
+overrides use the global keys' own names, and `addTags_resolveAccountPrefs()` skips every one whose
+global key the policy locks: a locked global Add Tags key is never overridden per account. The
+account prompt text is ignored when the policy enforces the Add Tags text (see
+[08a-managed-prompts.md](08a-managed-prompts.md) and 02 "Add tags: per-account settings").
 
 **`{feature}_enabled_accounts_match` is allowed while `{feature}_enabled_accounts` stays
 excluded** (`spamfilter_…`, `add_tags_…`). The anchored `/_enabled_accounts$/` does not
@@ -574,6 +580,7 @@ unmanaged baseline of a page, comes from a separate module instance or a worker 
 | Account lists by policy (and the account checkboxes) | `07a`, `07b` | `spamfilter/08`, `spamfilter/09`, `addtags/08`, `addtags/09` |
 | Interaction points: per-feature provider override | `08-provider-override-locked-off` | - |
 | Strict mode | `13a`-`13f` (all keys at default, exceptions, restore on removal, marker-free keys; explicit / initial / implied keys win; `_user_editable`; malformed keys; `false`) | `options/15-lock-unlisted`, `summarize/21-lock-unlisted` |
+| Per-account Add Tags settings never bypass the policy (locked keys, enforced text) | `background/06-addtags-account-settings`, `background/24b-add-tags-accounts` (the `background` area) | `addtags/18-account-settings-locked`, `addtags/19-account-settings-enforced-text` |
 | The connection mode | `12b-specific-integration-mode` | `<feature>/17-locked-on-switch` (generated from `tests/helpers/feature-pages.mjs`) |
 | UI: controls (a Tom Select disabled too), `data-mzta-pref`, marker placement and inertness | - | `02-sweep-locked`, `03-sweep-unlocked`, `<page>/04-respect-managed` |
 | The setup wizard | - | `setup-wizard/02`, `03`, `04-locked-provider`, `07`, `10` |

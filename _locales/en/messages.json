@@ -1253,37 +1253,53 @@
     "message": "Current prompt text",
     "description": "Add tags page: heading of the section showing the editable prompt text used to generate tags."
   },
-  "AddTags_account_prompt_title": {
-    "message": "Prompts for single accounts",
-    "description": "Title of the per-account prompts section on the Add Tags page"
+  "AddTags_account_settings_title": {
+    "message": "Settings for single accounts",
+    "description": "Add tags page: heading of the section where each account can have its own add tags settings and prompt, instead of the global ones above."
   },
-  "AddTags_account_prompt_infoline": {
-    "message": "Choose an account to give it its own tagging prompt. For the messages of that account it is used instead of the prompt above.",
-    "description": "First help line of the per-account prompts section on the Add Tags page"
+  "AddTags_account_settings_infoline": {
+    "message": "Choose an account to give it its own settings. For the messages of that account they are used instead of the global settings.",
+    "description": "Add tags page: first help line of the 'Settings for single accounts' section."
   },
-  "AddTags_account_prompt_infoline2": {
-    "message": "Accounts without their own prompt use the prompt above. The options on this page (maximum number of tags, language, tags list) apply to all the accounts.",
-    "description": "Second help line of the per-account prompts section on the Add Tags page"
+  "AddTags_account_settings_infoline2": {
+    "message": "Each option follows the global setting until you uncheck its \"Use the global setting\" box. Leave the prompt empty to use the global prompt.",
+    "description": "Add tags page: second help line of the 'Settings for single accounts' section. The quoted text must match the translation of 'Use the global setting'."
   },
-  "AddTags_account_prompt_placeholder": {
-    "message": "No prompt for this account, the prompt above will be used.",
-    "description": "Placeholder of the account prompt editor when the account has no own prompt"
+  "AddTags_account_settings_inherit": {
+    "message": "Use the global setting",
+    "description": "Add tags page, settings for single accounts: checkbox under each option; when checked the account uses the value set above for all accounts, shown greyed out."
   },
-  "AddTags_account_prompt_copy_global": {
-    "message": "Copy the prompt above",
-    "description": "Button that copies the general add tags prompt into the account prompt editor"
+  "AddTags_account_settings_uselist_info": {
+    "message": "Used only by the automatic tagging, as the option above.",
+    "description": "Add tags page, settings for single accounts: note under the 'Use only these tags' option, which applies only when tags are added automatically."
   },
-  "AddTags_account_prompt_remove": {
-    "message": "Use the prompt above",
-    "description": "Button that deletes the account prompt, so the general add tags prompt is used again"
+  "AddTags_account_settings_uselist_list": {
+    "message": "Tags to use",
+    "description": "Add tags page, settings for single accounts: label of the list of tags used by the 'Use only these tags' option. Keep it short."
   },
-  "AddTags_account_prompt_custom_suffix": {
-    "message": "(own prompt)",
-    "description": "Appended to the account name in the account selector when the account has its own add tags prompt"
+  "AddTags_account_settings_prompt_title": {
+    "message": "Prompt for this account",
+    "description": "Add tags page, settings for single accounts: label of the prompt editor of the selected account."
   },
-  "AddTags_account_prompt_discard_confirm": {
-    "message": "The prompt of the selected account has unsaved changes. Do you want to discard them?",
-    "description": "Confirmation shown when switching account while the account prompt has unsaved changes"
+  "AddTags_account_settings_placeholder": {
+    "message": "No prompt for this account, the global prompt will be used.",
+    "description": "Add tags page, settings for single accounts: placeholder of the account prompt editor when the account has no prompt of its own."
+  },
+  "AddTags_account_settings_copy_prompt": {
+    "message": "Copy the global prompt",
+    "description": "Add tags page, settings for single accounts: button that copies the general add tags prompt into the account prompt editor."
+  },
+  "AddTags_account_settings_remove": {
+    "message": "Reset to the global settings",
+    "description": "Add tags page, settings for single accounts: button that deletes all the settings of the selected account, so it uses the global settings and prompt again."
+  },
+  "AddTags_account_settings_custom_suffix": {
+    "message": "(own settings)",
+    "description": "Add tags page, settings for single accounts: appended to the account name in the account selector when the account has settings of its own."
+  },
+  "AddTags_account_settings_discard_confirm": {
+    "message": "The settings of the selected account have unsaved changes. Do you want to discard them?",
+    "description": "Add tags page, settings for single accounts: confirmation shown when switching account while the account settings have unsaved changes."
   },
   "AddTags_excl_list_title": {
     "message": "Exclusion list",

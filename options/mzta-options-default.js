@@ -257,9 +257,9 @@ export const prefs_default = {
     // Tags never assigned (substring match unless add_tags_exclusions_exact_match). Array of
     // strings; the storage key predates its declaration here, so existing lists carry over.
     add_tags_exclusions: [],
-    // Own Add Tags prompt text per Thunderbird account: { <account id>: <prompt text> }. An account
-    // without an entry uses the global Add Tags prompt. Ignored when the policy enforces that text.
-    add_tags_account_prompts: {},
+    // Per-account Add Tags overrides: { <account id>: { <global key>: value, ..., prompt_text: text } }.
+    // A key missing from an account's entry inherits the global value. See js/mzta-addtags-account-settings.js.
+    add_tags_account_settings: {},
     add_tags_first_uppercase: true,
     add_tags_force_lang: true,
     add_tags_auto: false,

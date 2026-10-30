@@ -216,6 +216,30 @@ function disableCompanions(elements) {
 }
 
 /**
+ * Lock the controls that edit an OVERRIDE of a preference rather than the preference itself
+ * (the per-account rows of the Add Tags page, add_tags_account_settings), when the policy
+ * locks that preference: an override of a locked key is ignored at run time, so its row must
+ * not look editable.
+ *
+ * Not applyManagedUI() territory: the controls are not bound to the preference (they must not
+ * be an .option-input or carry data-mzta-pref, or the generic save and the allowlist sweep
+ * would take them for the global control). Each element is disabled, marked
+ * data-mzta-managed="1" (so setDisabledRespectingManaged() keeps it disabled) and made inert
+ * like a locked control; the marker goes next to the first element, or in `anchor` when given.
+ * The page's handlers must still skip the key. Returns whether the key is locked.
+ */
+export async function lockOverrideControls(key, elements, anchor = null, do_debug = false) {
+    const state = await getManagedState(do_debug);
+    if (!isLockedKey(key)) return false;
+    const controls = elements.filter(Boolean);
+    if (controls.length === 0) return true;
+    disableCompanions(controls);
+    controls.forEach(element => lockControl(element));
+    markManaged(controls[0], state, anchor);
+    return true;
+}
+
+/**
  * True when the policy enforces the text of this special prompt (_special_prompts_text).
  *
  * Synchronous, like isLockedKey(): the values must have been hydrated first, which every

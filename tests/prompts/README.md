@@ -62,7 +62,8 @@ tests/
     │                                      task: reminder (#887)"; spec 03 the calendar address strip
     ├── 22-response-tags.test.mjs          spec 02 "The text carries the response format": getTagsFromResponse()
     ├── 23-translation-summary.test.mjs    spec 02 "Translate", "Summarize" (getSummaryLang()),
-    │                                      "Missing special prompts"; spec 03 "Who supplies the values"
+    │                                      "Missing special prompts", "Add tags: per-account settings"
+    │                                      (getDefaultLang()'s explicit language); spec 03 "Who supplies the values"
     ├── 24-response-format-json.test.mjs   spec 02 "The text carries the response format": the JSON check
     │                                      of the feature pages (specialPromptNeedsJson(), checkPromptTextJson())
     └── 99-harness-known-issues.test.mjs   the known-issue shape

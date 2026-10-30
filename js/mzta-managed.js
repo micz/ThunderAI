@@ -136,7 +136,7 @@ const EXCLUDED_KEY_PATTERNS = [
 const EXCLUDED_KEYS = new Set([
     'api_webchat_font_scale', // local UI zoom
     'custom_prompts_view',    // custom prompts page layout (split/table), local UI
-    'add_tags_account_prompts', // prompt texts keyed by account id, per profile
+    'add_tags_account_settings', // Add Tags overrides keyed by account id, per profile
 ]);
 
 /**

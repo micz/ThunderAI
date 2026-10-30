@@ -98,6 +98,20 @@ The account checkboxes of the spam filter and Add Tags pages are the same patter
 twist — the locked key (`*_enabled_accounts_match`) is not the one the checkboxes save — and
 have their own helper, `lockAccountSelector()`; see [Account lists by policy](08b-managed-connections.md#account-lists-by-policy-_enabled_accounts_match).
 
+Controls that edit an **override** of a preference rather than the preference itself - the rows
+of the Add Tags page's "Settings for single accounts" section (`#addtags_account_<key>` and its
+`#addtags_account_<key>_inherit` box, see
+[05-options.md](05-options.md#settings-for-single-accounts-add-tags-page)) - are not
+`.option-input` nor `data-mzta-pref`: applyManagedUI() and the allowlist sweep would take them for
+the global control. They have their own helper, `lockOverrideControls(key, elements, anchor)`:
+when `key` is locked it gives every element the companion treatment (disabled,
+`data-mzta-managed="1"`, `managed_marker_tooltip` title), the `lockControl()` inertness, and puts
+the marker next to the first element by the usual rules (before the `.mzta_switch` in a
+`.feature_row`, appended to the `.mzta_field` column for a text row), or in `anchor` when given
+(the number row passes its `.mzta_field_num_text`). An override of a locked key is ignored at run
+time (`addTags_resolveAccountPrefs()`), so the row shows the policy value; the page's handlers
+skip the key and never write it.
+
 `applyManagedUI()` covers locked *preferences*, plus the connection-panel fields a policy
 connection enforces, which are matched by their `${prefix}_${field}` id in the same pass (see
 [The connection panel](08b-managed-connections.md#the-connection-panel)). A restriction has no preference behind

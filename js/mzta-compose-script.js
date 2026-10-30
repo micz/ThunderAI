@@ -1029,8 +1029,11 @@ switch (message.command) {
     // import js/mzta-prefs.js (issue #163), and a direct read would ignore the enterprise
     // policy while a direct write would bypass its write guard. The background resolves them
     // through mztaPrefs, so the tag dialog sees exactly what auto-tagging uses.
-    function addTags_setExclusionList(add_tags_exclusions) {
-      browser.runtime.sendMessage({ command: "addtags_set_exclusions", list: add_tags_exclusions });
+    // The list shown is the EFFECTIVE one of the message's account (add_tags_account_settings):
+    // accountId is the exclusions_account_id the background returned with it, so the write
+    // goes to the list it came from ('' = the global list, otherwise that account's own list).
+    function addTags_setExclusionList(add_tags_exclusions, accountId = '') {
+      browser.runtime.sendMessage({ command: "addtags_set_exclusions", list: add_tags_exclusions, accountId: accountId });
     }
 
     // ===== This method is also defined in the file /js/mzta-addtags-exclusion-list.js
@@ -1177,7 +1180,7 @@ switch (message.command) {
       // what an unmanaged profile with no stored value would get anyway.
       let prefs_tags = null;
       try {
-        prefs_tags = await browser.runtime.sendMessage({ command: "addtags_get_exclusion_prefs" });
+        prefs_tags = await browser.runtime.sendMessage({ command: "addtags_get_exclusion_prefs", messageId: message.messageId });
       } catch (e) {
         console.error("[ThunderAI] Could not read the tag exclusion preferences: " + e);
       }
@@ -1189,6 +1192,9 @@ switch (message.command) {
       // per-tag "exclude" action is not offered at all (the background would refuse the
       // write anyway).
       const exclusions_locked = prefs_tags.exclusions_locked === true;
+      // Where the list comes from: '' for the global list, an account id when that account
+      // has its own list. Sent back with every write.
+      const exclusions_account_id = typeof prefs_tags.exclusions_account_id === 'string' ? prefs_tags.exclusions_account_id : '';
 
       // console.log(">>>>>>>>>>>>> add_tags_exclusions_list: " + JSON.stringify(add_tags_exclusions_list));
 
@@ -1234,14 +1240,14 @@ switch (message.command) {
             label.classList.add('tag_excluded');
             if (!add_tags_exclusions_list.some(ex => ex.toLowerCase() === tag_lc)) {
               add_tags_exclusions_list.push(tag_lc);
-              addTags_setExclusionList(add_tags_exclusions_list);
+              addTags_setExclusionList(add_tags_exclusions_list, exclusions_account_id);
             }
           } else {
             label.classList.remove('tag_excluded');
             const new_list = add_tags_exclusions_list.filter(ex => ex.toLowerCase() !== tag_lc);
             if (new_list.length !== add_tags_exclusions_list.length) {
               add_tags_exclusions_list = new_list;
-              addTags_setExclusionList(add_tags_exclusions_list);
+              addTags_setExclusionList(add_tags_exclusions_list, exclusions_account_id);
             }
           }
         });

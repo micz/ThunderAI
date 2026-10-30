@@ -225,7 +225,7 @@ ThunderAI Privacy owns model management and diagnostics. See
 | `add_tags_max_messages` | `0` | Maximum number of messages tagged at once from the **context menu**. Above this limit `processEmails()` (`mzta-background.js`) blocks the run and shows the `add_tags_too_many_messages` warning. `0` = no limit. Automatic tagging of incoming mail is never capped. Exposed in the add tags settings page as a number input (`min="0"`, no reset button: the page's restore fallback for number inputs is already `0`). Meant for providers with a daily quota (#901), where a large selection cannot fit anyway. |
 | `add_tags_hide_exclusions` | `false` | Hide excluded tags from menu |
 | `add_tags_exclusions_exact_match` | `false` | Exact match for exclusions |
-| `add_tags_account_prompts` | `{}` | Own Add Tags prompt text per account: `{ <account id>: <text> }`, edited in the "Prompts for single accounts" section of the Add Tags page. Read and written through `mztaPrefs` by `js/mzta-addtags-account-prompts.js`. An account without an entry uses the global prompt; ignored when the policy enforces the Add Tags text. **Not** policy-settable (account ids are per profile). See [02-prompts.md](02-prompts.md#add-tags-per-account-prompts). |
+| `add_tags_account_settings` | `{}` | Per-account Add Tags overrides: `{ <account id>: { <global key>: value, ..., prompt_text: <text> } }`, the override keys being `prompt_text`, `add_tags_maxnum`, `add_tags_force_lang`, `default_chatgpt_lang`, `add_tags_auto_force_existing`, `add_tags_auto_uselist`, `add_tags_auto_uselist_list`, `add_tags_exclusions`, `add_tags_exclusions_exact_match`. A key missing from an entry inherits the global value; an override replaces it for that account's messages. Edited in the per-account section of the Add Tags page, read and written through `mztaPrefs` by `js/mzta-addtags-account-settings.js` (the setter drops unknown keys and wrong-typed values and removes an empty entry). An override is ignored when the policy locks its global key, `prompt_text` when the policy enforces the Add Tags text. **Not** policy-settable (account ids are per profile). See [02-prompts.md](02-prompts.md#add-tags-per-account-settings). |
 | `add_tags_exclusions` | `[]` | Tags never assigned: array of strings, substring match unless `add_tags_exclusions_exact_match`. Read and written through `mztaPrefs` by `js/mzta-addtags-exclusion-list.js` (background and the Add Tags page) and, for the tag dialog in `js/mzta-compose-script.js`, through the `addtags_get_exclusion_prefs` / `addtags_set_exclusions` background commands. Entries are stored lowercase by both writers (the page via `normalizeStringList()`, the dialog's exclude icon by lowercasing), and the dialog adds and removes them case-insensitively. The storage key predates its declaration, so existing lists carry over with no migration. Policy-settable. |
 | `add_tags_first_uppercase` | `true` | Capitalize first letter of tags |
 | `add_tags_force_lang` | `true` | Force language for tags |
@@ -353,6 +353,68 @@ pages: one checkbox per account (`accounts.list()`), checked as stored (`[]` che
   boxes, and the selection shown was not the one stored until a box itself was clicked.
 - With a policy `*_enabled_accounts_match` the selector is read-only and nothing is stored (see
   [08b-managed-connections.md](08b-managed-connections.md#account-lists-by-policy-_enabled_accounts_match)).
+
+#### Settings for single accounts (Add Tags page)
+
+The `.mzta_section` `#addtags_account_settings_container` of `pages/addtags/`, between the prompt
+section and the exclusion list, edits `add_tags_account_settings` (the override keys and their
+run-time meaning are in [02-prompts.md](02-prompts.md#add-tags-per-account-settings)).
+`initAccountSettings()` in `mzta-add-tags.js` builds it; none of its controls is an `.option-input`
+or carries `data-mzta-pref` (they edit an override, not the preference: the generic save and the
+allowlist sweep must not take them for the global controls).
+
+- **Account selector** `#addtags_account_settings_account`, with the "Reset to the global
+  settings" button at its right (it acts on the whole entry, so it sits by the account, not by
+  the prompt editor): one option per account
+  (`getAccountsList()`), the name followed by `AddTags_account_settings_custom_suffix` ("(own
+  settings)") when the account has a stored entry. Switching account with unsaved changes asks
+  `AddTags_account_settings_discard_confirm`; cancelling puts the previous account back.
+- **One row per override key** (every key of `ADD_TAGS_ACCOUNT_KEYS` but `prompt_text`), titled with
+  the global control's own label: the control `#addtags_account_<key>` and its "Use the global
+  setting" checkbox `#addtags_account_<key>_inherit` (`AddTags_account_settings_inherit`). The
+  controls: `add_tags_maxnum` a number input (`min="0"`); `add_tags_force_lang`,
+  `add_tags_auto_force_existing`, `add_tags_auto_uselist`, `add_tags_exclusions_exact_match`
+  `.mzta_switch` toggles; `default_chatgpt_lang` a text input (the page has no global control for it:
+  its global value is read from `mztaPrefs` at load); `add_tags_auto_uselist_list` and
+  `add_tags_exclusions` textareas, one entry per line.
+- **The inherit rule.** A checked box (the default, and the state of every key missing from the
+  entry) means the account uses the global value: the control is disabled and SHOWS the current
+  global value, kept in step with the global controls above (their `change`, and the exclusion
+  list's Save, which updates the saved global list the row shows). Unchecking the box enables the
+  control, starting from the global value; checking it again puts the global value back. All the
+  enable/disable assignments go through `setDisabledRespectingManaged()`.
+- **Prompt editor** `#addtags_account_prompt_text` (headed by an `.opt_title_small`,
+  `AddTags_account_settings_prompt_title`), with placeholder highlighting, autocomplete (type 1, as
+  the global editor) and the `AddTags_account_settings_placeholder` placeholder: empty means the
+  prompt above. `#btn_account_settings_copy_prompt` copies the global editor's text into it.
+- **Save** `#btn_save_account_settings` stores the whole entry at once through
+  `addTags_setAccountSettings()`: only the rows whose box is unchecked, `add_tags_maxnum` as a
+  number (an emptied field is no key), `add_tags_auto_uselist_list` through `normalizeStringList()`
+  (the comma-joined string the global list stores), `add_tags_exclusions` through
+  `normalizeStringList(value, 2)` (lowercase, as the global list), the prompt text when not blank.
+  Saving an entry with no key removes the account. **"Reset to the global settings"**
+  `#btn_account_settings_remove` (`AddTags_account_settings_remove`) removes the entry; it is enabled
+  when the account has something stored the page may drop, or unsaved changes. After either the
+  account is reloaded from storage.
+- **Unsaved marker** `#addtags_account_settings_unsaved`: the entry the section shows differs from
+  the one it loaded. The Save button follows the same state, so `pages/_lib/unsaved-guard.js` (an
+  enabled `btn_save*`) guards leaving the page.
+- **Preview** `#addtags_account_info_additional_statements`: the statements
+  `finalizePrompt_add_tags()` would append for the selected account, with its EFFECTIVE values (the
+  row's value when overridden, the global value when inherited or locked) and the account prompt
+  text (the global one when empty), refreshed on every change in the section and in the global
+  settings. `updateAdditionalPromptStatements(values, prompt_text, target_el)` is shared with the
+  global preview (`updateGlobalAdditionalStatements()`, which reads the stored values).
+- **No accounts**: the selector, every control and box, the editor and the copy button are
+  disabled (the rows show the global values).
+- **Policy.** A row whose global key the policy locks is locked too, through
+  `lockOverrideControls()` (see [08c-managed-ui.md](08c-managed-ui.md#controls-with-their-own-loadsave-logic-data-mzta-pref)):
+  box checked and disabled, control disabled showing the policy value, marker in the row. When the
+  policy enforces the Add Tags text the editor is locked by `lockEnforcedPromptText()` (read-only,
+  copy button inert, see [08a-managed-prompts.md](08a-managed-prompts.md)). The page never writes a
+  value the policy owns: Save and the removal keep, as stored, the entry's values of the locked keys
+  and its `prompt_text` when the text is enforced (they are ignored at run time anyway), and the
+  other settings of the account stay editable.
 
 ### Timezone Select (`pages/_lib/mzta-timezones.js`)
 
@@ -1775,8 +1837,10 @@ case for nearly every user and is swallowed silently.
   module context and cannot import. It no longer reads storage at all: the tag dialog gets
   `add_tags_exclusions`, `add_tags_hide_exclusions` and `add_tags_exclusions_exact_match`
   from the `addtags_get_exclusion_prefs` background command, resolved by `mztaPrefs` (so the
-  enterprise policy applies), and writes the list with `addtags_set_exclusions` (so the write
-  guard applies). Any preference it needs in future must go the same way.
+  enterprise policy applies) and then for the message's account (`add_tags_account_settings`),
+  and writes the list with `addtags_set_exclusions` (so the write guard applies), to the
+  account's own list when the effective one came from it. Any preference it needs in future must
+  go the same way.
 - **`migrateCalendarNoSelection()`** in `js/mzta-prompts.js` reads the raw stored
   `calendar_no_selection` and `_special_prompts` on purpose: it compares the user's own
   stored values, before the policy is loaded.

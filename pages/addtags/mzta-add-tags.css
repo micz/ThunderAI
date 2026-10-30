@@ -42,7 +42,8 @@
 #add_tags_auto_only_inbox_tr,
 #add_tags_auto_include_sent_tr,
 #add_tags_auto_uselist_tr,
-#addtags_info_additional_statements {
+#addtags_info_additional_statements,
+#addtags_account_info_additional_statements {
     display: none;
 }
 
@@ -61,6 +62,39 @@
 #add_tags_auto_uselist_list:disabled {
     opacity: .5;
     cursor: not-allowed;
+}
+
+/* Settings for single accounts: a control that inherits the global setting is disabled
+   and shows the global value, dimmed like the use-list textarea above. */
+#addtags_account_settings_container .addtags_account_row input[type="number"]:disabled,
+#addtags_account_settings_container .addtags_account_row input[type="text"]:disabled,
+#addtags_account_settings_container .addtags_account_row textarea:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+/* The account selector with, at its right, the button that resets the account to the
+   global settings: it acts on the whole entry, so it sits by the account, not by the prompt. */
+.addtags_account_select_row {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+/* The "Use the global setting" box under each row title. */
+.addtags_account_inherit {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--dim);
+    cursor: pointer;
+}
+/* The account prompt title is an .opt_title_small, so the managed marker of an enforced
+   Add Tags text lands right of it (spec 08c "Group titles win over the column"); sized like
+   the row titles of the section. */
+#addtags_account_settings_container .opt_title_small {
+    font-size: 15px;
+    font-weight: 600;
 }
 
 /* Placeholder autocomplete dropdown (token-based) */

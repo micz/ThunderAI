@@ -94,7 +94,13 @@ import {
     addTags_setExclusionList,
     checkExcludedTag
 } from './js/mzta-addtags-exclusion-list.js';
-import { addTags_applyAccountPrompt } from './js/mzta-addtags-account-prompts.js';
+import {
+    addTags_applyAccountPrompt,
+    addTags_getAccountEntry,
+    addTags_getAccountSettings,
+    addTags_resolveAccountPrefs,
+    addTags_setAccountSettings
+} from './js/mzta-addtags-account-settings.js';
 import { mztaPrefs } from './js/mzta-prefs.js';
 import { sanitizeBlockHtml } from './js/mzta-richtext.js';
 import {
@@ -659,17 +665,34 @@ function _enqueueTagAssign(fn) {
 
 // Serialized through _enqueueTagAssign(): processEmails() tags several
 // messages at once, and the context menu path can overlap with an automatic batch.
-function _assign_tags(_data, create_new_tags = true, exclusions_exact_match = false) {
-    return _enqueueTagAssign(() => _assign_tags_now(_data, create_new_tags, exclusions_exact_match));
+// The account id of a message, for the per-account Add Tags settings (add_tags_account_settings)
+// of the tag dialog commands, which only have the message id. '' when no account has settings
+// (no header read at all then), when the message has no folder or cannot be read.
+async function _accountIdOfMessage(messageId) {
+    if (messageId === undefined || messageId === null || messageId === '') return '';
+    if (Object.keys(await addTags_getAccountSettings()).length === 0) return '';
+    try {
+        const header = await messenger.messages.get(messageId);
+        return header?.folder?.accountId || '';
+    } catch (e) {
+        taLog.warn("Add tags: could not read the account of message " + messageId + ": " + (e?.message || e));
+        return '';
+    }
 }
 
-async function _assign_tags_now(_data, create_new_tags, exclusions_exact_match) {
+// accountId: the account of the message, '' when unknown. Its own exclusion list
+// (add_tags_account_settings) replaces the global one, read at assignment time like it.
+function _assign_tags(_data, create_new_tags = true, exclusions_exact_match = false, accountId = '') {
+    return _enqueueTagAssign(() => _assign_tags_now(_data, create_new_tags, exclusions_exact_match, accountId));
+}
+
+async function _assign_tags_now(_data, create_new_tags, exclusions_exact_match, accountId = '') {
     let all_tags_list = await getTagsList();
     all_tags_list = all_tags_list[1];
     // console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
     taLog.log("assign_tags data: " + JSON.stringify(_data));
     let new_tags = [];
-    let add_tags_exclusions_list = await addTags_getExclusionList();
+    let add_tags_exclusions_list = (await addTags_resolveAccountPrefs({ add_tags_exclusions: await addTags_getExclusionList() }, accountId)).add_tags_exclusions;
     taLog.log("add_tags_exclusions_list: " + JSON.stringify(add_tags_exclusions_list));
     const tags_final = _data.tags.filter(tag =>
         !add_tags_exclusions_list.some(exclusion =>
@@ -1198,9 +1221,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 // was open. A failure is shown, never left to the console [#962].
                 async function _do_assign_tags(message) {
                     if (!(await _ensureFeaturePermissions('add_tags'))) return false;
-                    let prefs_assign_tags = await mztaPrefs.getPrefs(['add_tags_exclusions_exact_match']);
+                    // The exclusion settings of the message's account (add_tags_account_settings).
+                    const assign_account_id = await _accountIdOfMessage(message.messageId);
+                    let prefs_assign_tags = await addTags_resolveAccountPrefs(await mztaPrefs.getPrefs(['add_tags_exclusions_exact_match']), assign_account_id);
                     try {
-                        return await _assign_tags(message,true, prefs_assign_tags.add_tags_exclusions_exact_match);
+                        return await _assign_tags(message,true, prefs_assign_tags.add_tags_exclusions_exact_match, assign_account_id);
                     } catch (err) {
                         taLog.error("Could not assign the tags: " + (err?.message || err));
                         await showGenericError(err?.message || String(err), getFeatureLabel('add_tags'));
@@ -1213,6 +1238,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             // import js/mzta-prefs.js. These two give it the tag exclusion preferences
             // resolved against the enterprise policy, and a write that goes through the
             // write guard.
+            // With the dialog's messageId the values are the EFFECTIVE ones of the message's
+            // account (add_tags_account_settings), and exclusions_account_id says where the list
+            // comes from: the account id when that account has its own list (and the policy
+            // does not lock the global one), '' for the global list. The dialog sends it back
+            // with addtags_set_exclusions, so its "exclude" icon edits the list it shows.
             case 'addtags_get_exclusion_prefs':
                 async function _addtags_get_exclusion_prefs() {
                     let prefs_excl = await mztaPrefs.getPrefs([
@@ -1220,7 +1250,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         'add_tags_hide_exclusions',
                         'add_tags_exclusions_exact_match'
                     ]);
+                    const excl_account_id = await _accountIdOfMessage(message.messageId);
+                    prefs_excl = await addTags_resolveAccountPrefs(prefs_excl, excl_account_id);
                     prefs_excl.exclusions_locked = mztaManaged.isManagedLocked('add_tags_exclusions');
+                    const excl_entry = await addTags_getAccountEntry(excl_account_id);
+                    prefs_excl.exclusions_account_id = (!prefs_excl.exclusions_locked && Array.isArray(excl_entry.add_tags_exclusions)) ? excl_account_id : '';
                     return prefs_excl;
                 }
                 return _addtags_get_exclusion_prefs();
@@ -1229,6 +1263,15 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 if (!Array.isArray(message.list) || !message.list.every(el => typeof el === 'string')) {
                     taLog.warn('addtags_set_exclusions: the list must be an array of strings, ignored.');
                     return Promise.resolve(false);
+                }
+                if (typeof message.accountId === 'string' && message.accountId !== '') {
+                    // That account's own list; the rest of its entry is kept.
+                    async function _addtags_set_account_exclusions() {
+                        const excl_entry = await addTags_getAccountEntry(message.accountId);
+                        await addTags_setAccountSettings(message.accountId, { ...excl_entry, add_tags_exclusions: message.list });
+                        return true;
+                    }
+                    return _addtags_set_account_exclusions();
                 }
                 return addTags_setExclusionList(message.list).then(() => true);
                 break;
@@ -3548,16 +3591,23 @@ async function processEmails(args) {
         // The add_tags work itself. Resolves to the job outcome.
         const runAddTagsJob = async (msg, fullMessage, body) => {
             const { prompt: global_prompt_add_tags, conntype: addtags_conntype } = await resolveAddTagsSetup();
-            // The account of the message may have its own Add Tags prompt text. Applied here,
-            // per message, never inside resolveAddTagsSetup(): that result is memoized and
-            // shared by the whole batch. addTags_applyAccountPrompt() returns a copy.
+            // The account of the message may have its own Add Tags settings and prompt text
+            // (add_tags_account_settings). Applied here, per message, never inside
+            // resolveAddTagsSetup(): that result is memoized and shared by the whole batch.
+            // addTags_applyAccountPrompt() and addTags_resolveAccountPrefs() return copies;
+            // prefs_msg replaces prefs_aats for every Add Tags value below.
             const addtags_account_id = msg.folder?.accountId;
             const curr_prompt_add_tags = await addTags_applyAccountPrompt(global_prompt_add_tags, addtags_account_id);
             if (curr_prompt_add_tags !== global_prompt_add_tags) {
                 taLog.log("Add tags: using the custom prompt of account " + addtags_account_id + ".");
             }
+            const prefs_msg = await addTags_resolveAccountPrefs(prefs_aats, addtags_account_id);
+            const addtags_overridden = Object.keys(prefs_msg).filter(key => prefs_msg[key] !== prefs_aats[key]);
+            if (addtags_overridden.length > 0) {
+                taLog.log("Add tags: using the settings of account " + addtags_account_id + " for: " + addtags_overridden.join(', ') + ".");
+            }
             let tags_full_list = await getTagsList();
-            let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
+            let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags, prefs_msg.default_chatgpt_lang);
             let specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
                 curr_prompt: curr_prompt_add_tags,
                 curr_message: msg,
@@ -3567,7 +3617,7 @@ async function processEmails(args) {
                 msg_text: body.msg_text,
                 tags_full_list: tags_full_list
             });
-            specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list, prefs_aats.add_tags_auto_force_existing, tags_full_list[0], curr_prompt_add_tags.text);
+            specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_msg.add_tags_maxnum, prefs_msg.add_tags_force_lang, prefs_msg.default_chatgpt_lang, prefs_msg.add_tags_auto_uselist, prefs_msg.add_tags_auto_uselist_list, prefs_msg.add_tags_auto_force_existing, tags_full_list[0], curr_prompt_add_tags.text);
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
             let cmd_addTags = new mzta_specialCommand({
                 processingClient,
@@ -3593,7 +3643,7 @@ async function processEmails(args) {
                     return { status: 'error', errorMessage: err?.message || String(err) };
                 }
                 try {
-                    tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
+                    tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_msg.add_tags_auto_uselist, prefs_msg.add_tags_auto_uselist_list);
                 } catch (err) {
                     console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
                     if (err?.rateLimited) {
@@ -3610,7 +3660,7 @@ async function processEmails(args) {
             // cannot be created or assigned stops the assignment and is reported here, never
             // passed over [#962].
             try {
-                await _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
+                await _assign_tags(_data, !prefs_msg.add_tags_auto_force_existing, prefs_msg.add_tags_exclusions_exact_match, addtags_account_id || '');
             } catch (err) {
                 taLog.error("[ThunderAI | Auto add_tags] Could not assign the tags to " + msg.headerMessageId + ": " + (err?.message || err));
                 return { status: 'error', errorMessage: err?.message || String(err) };

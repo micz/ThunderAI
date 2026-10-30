@@ -472,7 +472,7 @@ Both flows read the tags with it (the automatic one passes the use list as `filt
   of the list ignoring case, and is returned **as written in the list** — the user's spelling, as
   with the force-existing statement — each once. An empty list filters nothing.
 
-The Add Tags settings page (`updateAdditionalPromptStatements()` in `pages/addtags/mzta-add-tags.js`) previews the same statements with the same rules, and must be kept in sync with `finalizePrompt_add_tags()`.
+The Add Tags settings page (`updateAdditionalPromptStatements(values, prompt_text, target_el)` in `pages/addtags/mzta-add-tags.js`) previews the same statements with the same rules, for the global settings and for the selected account of the "Settings for single accounts" section (its effective values), and must be kept in sync with `finalizePrompt_add_tags()`.
 
 ### The text carries the response format
 
@@ -521,18 +521,48 @@ or reset. Translations that do not pass are fixed through Weblate (the five
 When the policy enforces a text, the feature page shows it read-only (`lockEnforcedPromptText()`
 in `pages/_lib/managed-ui.js`) with the managed marker, and its Save/Reset buttons are inert.
 
-### Add tags: per-account prompts
+### Add tags: per-account settings
 
-Each Thunderbird account can have its own Add Tags prompt text, edited in the "Prompts for single accounts" section of `pages/addtags/`. The texts are the declared preference `add_tags_account_prompts` (`{ [accountId]: text }`, read and written through `mztaPrefs` by `js/mzta-addtags-account-prompts.js`); an account without an entry, or with a blank text, uses the global `prompt_add_tags` text. Saving an empty text deletes the entry. The key holds per-profile account ids, so it is excluded from the enterprise policy allowlist.
+Each Thunderbird account can override the global Add Tags settings and prompt text, edited in the "Settings for single accounts" section of `pages/addtags/` (see [05-options.md](05-options.md)). The overrides are the declared preference `add_tags_account_settings`, read and written through `mztaPrefs` by `js/mzta-addtags-account-settings.js`:
 
-Only the **text** is per account: connection type, model and every other property still come from the `prompt_add_tags` special prompt, and the page options (`add_tags_maxnum`, `add_tags_force_lang`, tag list, exclusions, ...) apply to all accounts. `finalizePrompt_add_tags()` takes the text actually used as its last argument (it looks for `{%tags_full_list%}` in it), so both callers pass the account text, not the global one.
+```js
+add_tags_account_settings: { "<account id>": { "<global key>": value, ..., "prompt_text": "..." } }
+```
 
-`addTags_applyAccountPrompt(curr_prompt, accountId)` returns a shallow copy of the prompt with the account text, or `curr_prompt` itself when the account has none. It must be a copy: `preparePrompt()` rewrites `prompt.text` in place, and on the menu path `curr_prompt` is the long-lived menu entry object. The account is `message.folder.accountId`:
+The override keys ARE the global preference keys (exported as `ADD_TAGS_ACCOUNT_KEYS`), so applying an entry is a plain merge over the global values; `prompt_text` is the Add Tags prompt text:
 
-- Auto/batch path (`runAddTagsJob()` in `mzta-background.js`): applied per message. `resolveAddTagsSetup()` resolves the prompt once per batch and is memoized, so the account text must never be applied inside it.
-- Menu path (`js/mzta-menus.js`, popup): applied once `curr_message` is known, into `text_prompt` (custom placeholders are expanded on that copy, as `act()` does for the entry's own text), which feeds the `{%mail_plain_text_part%}` presence check, `preparePrompt()` and `finalizePrompt_add_tags()`; `curr_prompt` itself is left untouched. A message without a folder (e.g. an opened `.eml` file) uses the global text.
+| Override key | Type | Global source |
+|---|---|---|
+| `prompt_text` | non-blank string | the `prompt_add_tags` special prompt text |
+| `add_tags_maxnum` | integer >= 0 | `add_tags_maxnum` |
+| `add_tags_force_lang` | boolean | `add_tags_force_lang` |
+| `default_chatgpt_lang` | string | `default_chatgpt_lang` |
+| `add_tags_auto_force_existing` | boolean | `add_tags_auto_force_existing` |
+| `add_tags_auto_uselist` | boolean | `add_tags_auto_uselist` |
+| `add_tags_auto_uselist_list` | string | `add_tags_auto_uselist_list` |
+| `add_tags_exclusions` | array of strings (lowercase, like the global) | `add_tags_exclusions` |
+| `add_tags_exclusions_exact_match` | boolean | `add_tags_exclusions_exact_match` |
 
-**Policy:** when `_special_prompts_text` enforces the Add Tags text (the prompt carries `_text_by_policy`, see [08a-managed-prompts.md](08a-managed-prompts.md)), `addTags_applyAccountPrompt()` returns the prompt untouched, so the account prompts cannot bypass it, and the section on the Add Tags page is locked (`lockEnforcedPromptText()`, buttons inert).
+**Semantics.** A key missing from an account's entry inherits the global value; an account without an entry uses the global settings. An override REPLACES the global value for the messages of that account, it never extends it: an account's exclusion list is the whole list for that account. A key is used only where the global one would be: the use list (`add_tags_auto_uselist` / `_list`) applies on the automatic/batch path only, and the menu path keeps passing `false, ''` to `finalizePrompt_add_tags()`. Connection type, model and the automatic tagging behaviour (`add_tags_auto`, only inbox, include sent, enabled accounts) are not per account. The key holds per-profile account ids, so it is excluded from the enterprise policy allowlist.
+
+**Module** (`js/mzta-addtags-account-settings.js`):
+
+- `addTags_getAccountSettings()`: the whole object (`{}` when missing or not a plain object).
+- `addTags_getAccountEntry(accountId)`: that account's entry, cleaned (known keys with a valid value), or `{}`.
+- `addTags_setAccountSettings(accountId, entry)`: keeps only the known keys with the right type (a blank `prompt_text` is no key, arrays must hold strings and are copied), stores a copy, deletes the account when the entry ends up empty, returns the whole updated object. It never mutates what the preference layer handed out. Saving an empty entry is how "use the global settings" is done.
+- `addTags_resolveAccountPrefs(prefs, accountId)` (async): a COPY of `prefs` with the account's overrides applied, for every override key present in `prefs` whose global key the policy does not lock; `prompt_text` is never copied into prefs. With no account id or no entry it is still a fresh copy equal to `prefs`. It logs nothing.
+- `addTags_applyAccountPrompt(curr_prompt, accountId)` (async): a shallow copy of the prompt with `text: entry.prompt_text`, or `curr_prompt` itself when the account has no prompt text. It must be a copy: `preparePrompt()` rewrites `prompt.text` in place, and on the menu path `curr_prompt` is the long-lived menu entry object.
+
+`finalizePrompt_add_tags()` and `getTagsFromResponse()` keep their signatures: the callers pass the resolved values. `finalizePrompt_add_tags()` takes the text actually used as its last argument (it looks for `{%tags_full_list%}` in it), so both callers pass the account text, not the global one. `taPromptUtils.getDefaultLang(curr_prompt, default_lang)` takes an optional language that replaces the `default_chatgpt_lang` preference (omitted = the preference is read, as before), so the response-language statement follows the account's `default_chatgpt_lang` too.
+
+**Resolution points.** The account is `message.folder.accountId`; a message without a folder (e.g. an opened `.eml` file) uses the global settings.
+
+1. Auto/batch path (`runAddTagsJob()` in `mzta-background.js`), per message: `resolveAddTagsSetup()` resolves the prompt and the connection once per batch and is memoized, so no per-account value is ever applied inside it. After it, `addTags_applyAccountPrompt()` gives the prompt and `prefs_msg = addTags_resolveAccountPrefs(prefs_aats, accountId)` the values used for `getDefaultLang()`, `finalizePrompt_add_tags()`, `getTagsFromResponse()` and `_assign_tags()`. The job logs "using the custom prompt of account" and, when some value differs from the global one, "using the settings of account ... for: <keys>".
+2. Menu path (`act()` in `js/mzta-menus.js`, popup): once `curr_message` is known the account text goes into `text_prompt` (custom placeholders are expanded on that copy, as `act()` does for the entry's own text), which feeds the `{%mail_plain_text_part%}` presence check, `preparePrompt()` and `finalizePrompt_add_tags()`; `curr_prompt` itself is left untouched. `chatgpt_lang` is recomputed with the account's `default_chatgpt_lang`, and the `prompt_add_tags` branch reads `prefs_at` through `addTags_resolveAccountPrefs()` (max number, force language, language, force existing); the use list stays `false, ''`.
+3. Tag assignment: `_assign_tags(_data, create_new_tags, exclusions_exact_match, accountId)` / `_assign_tags_now()` apply the account's exclusion list (the global one read through `addTags_getExclusionList()`, then `addTags_resolveAccountPrefs()`), with the exact-match flag the caller resolved for the same account. The batch passes `msg.folder.accountId`; the `assign_tags` command from the tag dialog has only `messageId`, so it reads the header (`messenger.messages.get()`, `''` when it has no folder or cannot be read) to get the account, and resolves `add_tags_exclusions_exact_match` for it. The header is not read at all when no account has settings.
+4. The tag dialog (`getTags`, `js/mzta-compose-script.js`, opened from the menu path with `{command: "getTags", tags, messageId}`): it shows and filters with the EFFECTIVE list of the message's account, and its "exclude this tag" icon writes to the list the effective one comes from. `addtags_get_exclusion_prefs` takes an optional `messageId`, resolves the account the same way and returns the effective `add_tags_exclusions`, `add_tags_exclusions_exact_match`, `add_tags_hide_exclusions`, plus `exclusions_locked` (the policy locks the global `add_tags_exclusions`) and `exclusions_account_id` (the account id when that account has its own `add_tags_exclusions` override and the global key is not locked, `''` when the global list is the effective one). `addtags_set_exclusions` takes `{list, accountId}`: a non-empty `accountId` writes that account's `add_tags_exclusions` through `addTags_setAccountSettings()` (the rest of its entry kept), otherwise the global list as before. The dialog passes its `messageId` and sends back the `exclusions_account_id` it received.
+
+**Policy.** The per-account settings can never bypass a policy: an override is ignored at run time when the policy locks the corresponding global key (`mztaManaged.isManagedLocked(key)`, checked by `addTags_resolveAccountPrefs()`), and `prompt_text` is ignored when `_special_prompts_text` enforces the Add Tags text (the prompt carries `_text_by_policy`, see [08a-managed-prompts.md](08a-managed-prompts.md)): `addTags_applyAccountPrompt()` returns the prompt untouched. On the Add Tags page the matching rows are locked (`lockOverrideControls()`), and the prompt editor is locked by `lockEnforcedPromptText()` (read-only, "Copy the global prompt" inert); Save and the removal keep those stored values as they are (see [05-options.md](05-options.md#settings-for-single-accounts-add-tags-page)).
 
 ### Missing special prompts
 

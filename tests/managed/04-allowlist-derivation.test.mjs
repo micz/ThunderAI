@@ -16,7 +16,7 @@ let m, con, keys;
 const EXCLUDED = key =>
     /^chatgpt_win_/.test(key) || /_enabled_accounts$/.test(key) ||
     key === 'api_webchat_font_scale' || key === 'custom_prompts_view' ||
-    key === 'add_tags_account_prompts';
+    key === 'add_tags_account_settings';
 
 before(async () => {
     const { prefs_default } = await import('../../options/mzta-options-default.js');
@@ -52,7 +52,7 @@ test('the counts in the spec hold: 142 of 152, ten excluded', () => {
     assert.equal(keys.length, 152, 'prefs_default size changed: update spec 08 "The allowlist"');
     assert.equal(keys.filter(k => m.mztaManaged.hasManagedValue(k)).length, 142);
     assert.deepEqual(keys.filter(EXCLUDED).sort(), [
-        'add_tags_account_prompts', 'add_tags_enabled_accounts', 'api_webchat_font_scale', 'chatgpt_win_height',
+        'add_tags_account_settings', 'add_tags_enabled_accounts', 'api_webchat_font_scale', 'chatgpt_win_height',
         'chatgpt_win_left', 'chatgpt_win_save_position', 'chatgpt_win_top', 'chatgpt_win_width',
         'custom_prompts_view', 'spamfilter_enabled_accounts',
     ]);

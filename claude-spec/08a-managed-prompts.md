@@ -311,10 +311,16 @@ preference key:
   textareas get. `markManaged()` takes the `.mzta_field` anchor explicitly: the textarea's
   own parent is the editor-highlight wrapper.
 
-The Add Tags page's per-account prompts section (`add_tags_account_prompt_text`, see
-[02-prompts.md](02-prompts.md#add-tags-per-account-prompts)) is locked the same way when
-`prompt_add_tags` is enforced: the account prompts are ignored at run time then, so the section
-is read-only with its Save, Remove and Copy buttons inert.
+The prompt editor of the Add Tags page's per-account settings section (`addtags_account_prompt_text`,
+see [02-prompts.md](02-prompts.md#add-tags-per-account-settings)) is locked the same way when
+`prompt_add_tags` is enforced: the account prompt texts (`prompt_text` in
+`add_tags_account_settings`) are ignored at run time then, so the editor is read-only and its
+"Copy the global prompt" button (`btn_account_settings_copy_prompt`) inert. The section's Save and
+"Reset to the global settings" buttons stay available for the account's other settings, but keep the
+stored `prompt_text` as it is: the page never writes it while the text is enforced. Likewise a
+global Add Tags key the policy locks is never overridden per account:
+`addTags_resolveAccountPrefs()` skips it at run time, and the section locks its row with
+`lockOverrideControls()` (see [08c-managed-ui.md](08c-managed-ui.md#controls-with-their-own-loadsave-logic-data-mzta-pref)).
 
 The editor's Save and Reset handlers also **return early** on `isEnforcedPromptText(id)` for
 any of its prompt ids (the calendar Save on either calendar id), and its input handler sets the

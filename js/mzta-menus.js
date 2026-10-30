@@ -58,7 +58,10 @@ import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
 import { mzta_specialCommand } from './mzta-special-commands.js';
-import { addTags_applyAccountPrompt } from './mzta-addtags-account-prompts.js';
+import {
+    addTags_applyAccountPrompt,
+    addTags_resolveAccountPrefs
+} from './mzta-addtags-account-settings.js';
 import { taWorkingStatus } from './mzta-working-status.js';
 import { taJobRegistry } from './mzta-job-registry.js';
 import { mztaPrefs } from './mzta-prefs.js';
@@ -410,6 +413,9 @@ export class mzta_Menus {
                         text_prompt.text = await placeholdersUtils.replaceCustomPlaceholders(text_prompt.text);
                     }
                 }
+                // The account may also have its own default language (add_tags_account_settings).
+                const lang_at = await addTags_resolveAccountPrefs(await mztaPrefs.getPrefs(['default_chatgpt_lang']), curr_message?.folder?.accountId);
+                chatgpt_lang = await taPromptUtils.getDefaultLang(text_prompt, lang_at.default_chatgpt_lang);
             }
 
             // {%mail_plain_text_part%} wants the ORIGINAL text/plain part, which the
@@ -479,7 +485,10 @@ export class mzta_Menus {
                     case 'prompt_add_tags': {   // Add tags to the email
                         let tags_current_email = [];
                         let tags_current_email_final = [];
-                        let prefs_at = await mztaPrefs.getPrefs([
+                        // The account of the message may have its own Add Tags settings
+                        // (add_tags_account_settings): a copy with them applied. The use list is
+                        // an automatic-tagging setting, never applied here (false, '' below).
+                        let prefs_at = await addTags_resolveAccountPrefs(await mztaPrefs.getPrefs([
                             'add_tags_maxnum',
                             'connection_type',
                             'add_tags_force_lang',
@@ -487,7 +496,7 @@ export class mzta_Menus {
                             'default_chatgpt_lang',
                             'do_debug',
                             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
-                        ]);
+                        ]), curr_message?.folder?.accountId);
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'add_tags');
                         if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + def_conntype);

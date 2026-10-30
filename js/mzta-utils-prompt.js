@@ -204,7 +204,10 @@ export const taPromptUtils = {
         return fullPrompt;
     },
 
-    async getDefaultLang(curr_prompt){
+    // default_lang: the language to use instead of the default_chatgpt_lang preference (Add
+    // Tags passes the value resolved for the message's account, add_tags_account_settings).
+    // Omitted (undefined), the preference is read, as it has always been.
+    async getDefaultLang(curr_prompt, default_lang = undefined){
         if(String(curr_prompt?.define_response_lang) != "1"){
             return '';
         }
@@ -213,8 +216,11 @@ export const taPromptUtils = {
         if(SAME_LANGUAGE_PROMPT_IDS.includes(curr_prompt.id)){
             return browser.i18n.getMessage("reply_same_lang");
         }
-        let prefs = await mztaPrefs.getPrefs(['default_chatgpt_lang']);
-        const lang = String(prefs.default_chatgpt_lang ?? '').trim();
+        if(default_lang === undefined){
+            let prefs = await mztaPrefs.getPrefs(['default_chatgpt_lang']);
+            default_lang = prefs.default_chatgpt_lang;
+        }
+        const lang = String(default_lang ?? '').trim();
         if(lang === ''){
             return browser.i18n.getMessage("reply_same_lang");
         }
