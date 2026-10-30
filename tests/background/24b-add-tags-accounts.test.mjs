@@ -21,7 +21,9 @@
 //    exclusions_locked and exclusions_account_id; addtags_set_exclusions {list, accountId?} writes the
 //    account's list (the rest of its entry kept) or, without one, the global list;
 //  - policy: an override is ignored when the policy locks its global key, prompt_text when the
-//    policy enforces the Add Tags text (_text_by_policy).
+//    policy enforces the Add Tags text (_text_by_policy); with _disable_add_tags_account_settings
+//    (spec 08a) every entry is ignored on every path, kept in storage, the tag dialog gets the
+//    global values and list (no header read) and addtags_set_exclusions ignores an accountId.
 // The `add_tags_account_settings` row of spec 05; spec 08 "The allowlist" (never bypasses a policy).
 //
 // What the prompt says is checked through the statements finalizePrompt_add_tags() appends (spec 02
@@ -513,6 +515,46 @@ k.test('policy-enforced-text', 'the policy enforcing the Add Tags text: the acc2
     assert.ok(!r.prompt.includes('ACCOUNT2 TEXT'));
     enforced.mock.restore();
     await ctx.bg._reload_menus();
+});
+
+k.test('policy-disabled', 'a policy disabling the per-account settings: the acc2 values and text are ignored on the batch and the popup, the entry kept', async (t) => {
+    const entry = { ...BASE, prompt_text: 'ACCOUNT2 TEXT. ' + GLOBAL_TEXT, add_tags_exclusions: ['promo'] };
+    await account(t, entry);
+    t.mock.method(mztaManaged, 'isAddTagsAccountSettingsDisabled', () => true);
+    const a2 = mail('acc2', ['Work', 'Weekly Newsletter', 'Promo']);
+    await receive(ctx, [a2]);
+    const p2 = promptFor(a2);
+    assert.ok(!p2.includes('ACCOUNT2 TEXT'));
+    assert.ok(p2.includes(maxnum(3)));
+    assert.ok(p2.includes(forceLang('Italian')));
+    assert.deepEqual(labelsOf(a2), ['Promo', 'Work'], 'the global exclusion list');
+    const r = await popup(t, mail('acc2', ['Work']));
+    assert.ok(!r.prompt.includes('ACCOUNT2 TEXT'));
+    assert.ok(r.prompt.includes(maxnum(3)));
+    assert.deepEqual(ctx.ctl.localData().add_tags_account_settings, { acc2: entry });
+});
+
+k.test('policy-disabled-dialog', 'a policy disabling the per-account settings: the tag dialog gets and filters with the global values, no header read, and writes the global list', async (t) => {
+    await account(t, { add_tags_exclusions: ['promo'], add_tags_exclusions_exact_match: true });
+    t.mock.method(mztaManaged, 'isAddTagsAccountSettingsDisabled', () => true);
+    const gets = () => ctx.m.calls.filter(c => c.api === 'messages.get').length;
+    const d2 = mail('acc2', []);
+    const before = gets();
+    assert.deepEqual(await fromTab(ctx, 7, { command: 'addtags_get_exclusion_prefs', messageId: d2.id }), {
+        add_tags_exclusions: ['newsletter'],
+        add_tags_exclusions_exact_match: false,
+        add_tags_hide_exclusions: false,
+        exclusions_locked: false,
+        exclusions_account_id: '',
+    });
+    assert.equal(gets(), before, 'the header was read for the account');
+    await fromTab(ctx, 7, { command: 'assign_tags', messageId: d2.id, tags: TAGS });
+    assert.deepEqual(labelsOf(d2), ['Promo', 'Promo deals']);
+    await fromTab(ctx, 7, { command: 'addtags_set_exclusions', list: ['newsletter', 'ads'], accountId: 'acc2' });
+    const data = ctx.ctl.localData();
+    assert.deepEqual(data.add_tags_exclusions, ['newsletter', 'ads']);
+    assert.deepEqual(data.add_tags_account_settings, { acc2: { add_tags_exclusions: ['promo'], add_tags_exclusions_exact_match: true } });
+    await setPrefs(t, ctx, { add_tags_exclusions: ['newsletter'] });
 });
 
 k.test('no-leak', 'no worker left alive, no unmodelled API touched, no unhandled rejection', () => {

@@ -120,7 +120,8 @@ policy-configured profile — and the write guard was inert in pages, because
 - **everywhere else** — it starts `_hydrate()` once and awaits it. `_hydrate()` sends
   `{command: 'get_managed_values'}` and fills this context's copy of the whole policy from
   `{values, lockedKeys, specialPromptsText, specialPromptsConnection, orgPrompts, orgName,
-  active, disablePromptManagement, disableDefaultPrompts, disableSetupWizard}`. What is
+  active, disablePromptManagement, disableDefaultPrompts, disableSetupWizard,
+  disableAddTagsAccountSettings}`. What is
   malformed is dropped: a locked key without a value, a non-string text, a connection entry or
   field that does not have the validated shape, an org prompt that is not an object with a
   string id; a restriction is on only for a literal `true`.
@@ -260,7 +261,9 @@ exist in this profile.
 overrides use the global keys' own names, and `addTags_resolveAccountPrefs()` skips every one whose
 global key the policy locks: a locked global Add Tags key is never overridden per account. The
 account prompt text is ignored when the policy enforces the Add Tags text (see
-[08a-managed-prompts.md](08a-managed-prompts.md) and 02 "Add tags: per-account settings").
+[08a-managed-prompts.md](08a-managed-prompts.md) and 02 "Add tags: per-account settings"). To take
+the per-account settings away altogether, the policy has a restriction,
+[`_disable_add_tags_account_settings`](08a-managed-prompts.md#_disable_add_tags_account_settings).
 
 **`{feature}_enabled_accounts_match` is allowed while `{feature}_enabled_accounts` stays
 excluded** (`spamfilter_…`, `add_tags_…`). The anchored `/_enabled_accounts$/` does not
@@ -360,6 +363,7 @@ Keys starting with `_` are structures and metadata, never preferences. **No key 
 | `_disable_prompt_management` | restriction: no prompt creation, copy, import or export; existing custom prompts read-only and inactive |
 | `_disable_default_prompts` | restriction: the built-in prompts are not available in the menus |
 | `_disable_setup_wizard` | restriction: the setup wizard cannot be opened |
+| `_disable_add_tags_account_settings` | restriction: no per-account Add Tags settings; every account uses the global ones, the stored entries ignored, never deleted |
 | `_lock_unlisted` | strict mode: every preference the policy does not set is enforced at its `prefs_default` value; on only for a literal `true`, see [Strict mode](#strict-mode-_lock_unlisted-_user_editable) |
 | `_user_editable` | strict mode: array of preference keys that stay the user's; only meaningful with `_lock_unlisted: true` |
 

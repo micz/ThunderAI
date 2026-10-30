@@ -16,6 +16,7 @@ const POLICY = {
     _disable_prompt_management: true,
     _disable_default_prompts: true,
     _disable_setup_wizard: true,
+    _disable_add_tags_account_settings: true,
 };
 const USER_PROMPT = { id: 'prompt_mine_1', name: 'Mine', text: 'mine', type: '0', action: '0',
                       is_default: '0', is_special: '0', show_in: 'popup' };
@@ -43,6 +44,7 @@ test('the hydrated module holds the org prompts, the org name and the restrictio
     assert.equal(ctx.mztaManaged.isPromptManagementDisabled(), true);
     assert.equal(ctx.mztaManaged.areDefaultPromptsDisabled(), true);
     assert.equal(ctx.mztaManaged.isSetupWizardDisabled(), true);
+    assert.equal(ctx.mztaManaged.isAddTagsAccountSettingsDisabled(), true);
 });
 
 test('the page prompt views apply the org prompts and both restrictions', async () => {

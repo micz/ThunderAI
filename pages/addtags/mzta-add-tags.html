@@ -246,6 +246,9 @@
                  The title, toggle and summary are direct children of the row, so the managed marker
                  lands in the title (lockOverrideControls() anchor, groupTitleFor() for the prompt).
                  None of them is an .option-input: the whole entry is saved by its own Save button. -->
+            <!-- Shown by JS, in place of the section, only when the policy disables the per-account
+                 settings (_disable_add_tags_account_settings): the section is hidden then. -->
+            <div id="managed_restriction_account_settings_note" class="managed_restriction_note">__MSG_managed_restriction_add_tags_account_settings__</div>
             <div class="mzta_section" id="addtags_account_settings_container">
                 <div class="mzta_prompt_title">__MSG_AddTags_account_settings_title__<span id="addtags_account_settings_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
                 <p class="mzta_help">

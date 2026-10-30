@@ -441,7 +441,11 @@ allowlist sweep must not take them for the global controls).
   by `lockEnforcedPromptText()` (read-only, the prompt toggle off and inert with the copy button, see [08a-managed-prompts.md](08a-managed-prompts.md)). The page never writes a
   value the policy owns: Save and the removal keep, as stored, the entry's values of the locked keys
   and its `prompt_text` when the text is enforced (they are ignored at run time anyway), and the
-  other settings of the account stay editable.
+  other settings of the account stay editable. With the restriction
+  `_disable_add_tags_account_settings` the section is hidden altogether and the note
+  `#managed_restriction_account_settings_note` (`managed_restriction_add_tags_account_settings`,
+  placed just before it) is shown instead; `initAccountSettings()` is not run (see
+  [08a-managed-prompts.md](08a-managed-prompts.md#_disable_add_tags_account_settings)).
 
 ### Timezone Select (`pages/_lib/mzta-timezones.js`)
 

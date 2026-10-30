@@ -127,7 +127,8 @@ a restriction covers. It marks the element with the same `data-mzta-managed` att
 `disabled` property the browser honours — it also strips the `href` and adds
 `.managed_disabled`.
 
-`isPromptManagementDisabled()` and `isSetupWizardDisabled()` are synchronous, like
+`isPromptManagementDisabled()`, `areDefaultPromptsDisabled()`, `isSetupWizardDisabled()` and
+`isAddTagsAccountSettingsDisabled()` are synchronous, like
 `isLockedKey()`: the policy must have been hydrated first (`getManagedState()`, or any awaited
 preference read). A caller that has not gets `false`, which is the safe default for a page
 that could not reach the background at all — the same fallback the rest of this module takes.

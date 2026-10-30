@@ -58,6 +58,7 @@ export async function noPolicyScenario(page, { local = {}, accounts, usesManaged
             assert.equal(ui.isPromptManagementDisabled(), false);
             assert.equal(ui.areDefaultPromptsDisabled(), false);
             assert.equal(ui.isSetupWizardDisabled(), false);
+            assert.equal(ui.isAddTagsAccountSettingsDisabled(), false);
         });
     }
 

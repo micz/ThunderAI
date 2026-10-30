@@ -63,7 +63,8 @@ import {
     lockAccountSelector,
     isEnforcedPromptText,
     lockEnforcedPromptText,
-    lockOverrideControls
+    lockOverrideControls,
+    isAddTagsAccountSettingsDisabled
 } from '../_lib/managed-ui.js';
 import {
     persistPromptConnectionToPrefs,
@@ -209,10 +210,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // After the exclusion list's Save handler: the section follows the saved global list.
-    try {
-        await initAccountSettings(addtags_textarea);
-    } catch (err) {
-        console.error("[ThunderAI] Error initializing the settings for single accounts: ", err);
+    // A policy that disables the per-account settings hides the section, with a note in its
+    // place, and the section is never set up: no handler of it can write an entry.
+    if (isAddTagsAccountSettingsDisabled()) {
+        document.getElementById('addtags_account_settings_container').style.display = 'none';
+        document.getElementById('managed_restriction_account_settings_note').classList.add('shown');
+    } else {
+        try {
+            await initAccountSettings(addtags_textarea);
+        } catch (err) {
+            console.error("[ThunderAI] Error initializing the settings for single accounts: ", err);
+        }
     }
 
     //Accounts manager

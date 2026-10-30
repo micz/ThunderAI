@@ -45,7 +45,7 @@ let _state = null;
  * cached for the lifetime of the page:
  *
  *     { active, orgName, lockedKeys, disablePromptManagement, disableDefaultPrompts,
- *       disableSetupWizard }
+ *       disableSetupWizard, disableAddTagsAccountSettings }
  *
  * Never throws and never leaves a page half-rendered: if the hydration failed the page simply
  * behaves as an unmanaged one (fail open, see managedReady()). The background still enforces
@@ -61,6 +61,7 @@ export async function getManagedState(do_debug = false) {
         disablePromptManagement: mztaManaged.isPromptManagementDisabled(),
         disableDefaultPrompts: mztaManaged.areDefaultPromptsDisabled(),
         disableSetupWizard: mztaManaged.isSetupWizardDisabled(),
+        disableAddTagsAccountSettings: mztaManaged.isAddTagsAccountSettingsDisabled(),
     };
     return _state;
 }
@@ -88,6 +89,11 @@ export function areDefaultPromptsDisabled() {
 /** True when the policy forbids opening the setup wizard. */
 export function isSetupWizardDisabled() {
     return mztaManaged.isSetupWizardDisabled();
+}
+
+/** True when the policy takes away the per-account Add Tags settings. */
+export function isAddTagsAccountSettingsDisabled() {
+    return mztaManaged.isAddTagsAccountSettingsDisabled();
 }
 
 /** The enforced preference keys on this page. Empty array when no policy is active. */

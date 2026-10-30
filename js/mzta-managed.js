@@ -85,6 +85,7 @@ const POLICY_SPECIAL_PROMPTS_CONNECTION = '_special_prompts_connection';
 const POLICY_DISABLE_PROMPT_MANAGEMENT = '_disable_prompt_management';
 const POLICY_DISABLE_DEFAULT_PROMPTS = '_disable_default_prompts';
 const POLICY_DISABLE_SETUP_WIZARD = '_disable_setup_wizard';
+const POLICY_DISABLE_ADD_TAGS_ACCOUNT_SETTINGS = '_disable_add_tags_account_settings';
 
 // Strict mode: with _lock_unlisted true, every allowlisted preference the policy does not set
 // is enforced at its prefs_default value, so an option a later version adds is locked from the
@@ -216,6 +217,7 @@ export const mztaManaged = {
     _disablePromptManagement: false,
     _disableDefaultPrompts: false,
     _disableSetupWizard: false,
+    _disableAddTagsAccountSettings: false,
     _lockUnlisted: false,
     // The keys strict mode enforced at their default, a subset of _locked. Background only:
     // a page receives them as ordinary values and locks (see isLockedByDefault()).
@@ -345,6 +347,7 @@ export const mztaManaged = {
             this._disablePromptManagement = reply.disablePromptManagement === true;
             this._disableDefaultPrompts = reply.disableDefaultPrompts === true;
             this._disableSetupWizard = reply.disableSetupWizard === true;
+            this._disableAddTagsAccountSettings = reply.disableAddTagsAccountSettings === true;
             this._active = reply.active === true;
         } catch (e) {
             this.logger.warn('Could not hydrate the managed configuration: ' + e);
@@ -413,6 +416,10 @@ export const mztaManaged = {
                         break;
                     case POLICY_DISABLE_SETUP_WIZARD:
                         this._disableSetupWizard = readRestriction(
+                            raw_key, value, this.logger);
+                        break;
+                    case POLICY_DISABLE_ADD_TAGS_ACCOUNT_SETTINGS:
+                        this._disableAddTagsAccountSettings = readRestriction(
                             raw_key, value, this.logger);
                         break;
                     case POLICY_LOCK_UNLISTED:
@@ -566,7 +573,8 @@ export const mztaManaged = {
                        (Object.keys(this._specialPromptsConnection).length > 0) ||
                        this._disablePromptManagement ||
                        this._disableDefaultPrompts ||
-                       this._disableSetupWizard;
+                       this._disableSetupWizard ||
+                       this._disableAddTagsAccountSettings;
         this._loaded = true;
 
         if (this._active) {
@@ -597,6 +605,7 @@ export const mztaManaged = {
             if (this._disablePromptManagement) restrictions.push(POLICY_DISABLE_PROMPT_MANAGEMENT);
             if (this._disableDefaultPrompts) restrictions.push(POLICY_DISABLE_DEFAULT_PROMPTS);
             if (this._disableSetupWizard) restrictions.push(POLICY_DISABLE_SETUP_WIZARD);
+            if (this._disableAddTagsAccountSettings) restrictions.push(POLICY_DISABLE_ADD_TAGS_ACCOUNT_SETTINGS);
             if (restrictions.length > 0) {
                 this.logger.log('Managed restrictions: ' + restrictions.join(', '));
             }
@@ -747,6 +756,15 @@ export const mztaManaged = {
     /** True when the policy forbids opening the setup wizard. */
     isSetupWizardDisabled() {
         return this._disableSetupWizard;
+    },
+
+    /**
+     * True when the policy takes away the per-account Add Tags settings
+     * (add_tags_account_settings): every account uses the global ones. The stored entries are
+     * kept, only ignored, and apply again once the restriction is lifted.
+     */
+    isAddTagsAccountSettingsDisabled() {
+        return this._disableAddTagsAccountSettings;
     },
 };
 

@@ -146,6 +146,7 @@ browser.runtime.onMessage.addListener((message, sender) => {
         values: {}, lockedKeys: [], specialPromptsText: {}, specialPromptsConnection: {},
         orgPrompts: [], orgName: '', active: false,
         disablePromptManagement: false, disableDefaultPrompts: false, disableSetupWizard: false,
+        disableAddTagsAccountSettings: false,
     };
     // Extension pages only. Content scripts (compose and message display) share this
     // channel but never import js/mzta-prefs.js, so they have no use for the values.
@@ -193,6 +194,7 @@ browser.runtime.onMessage.addListener((message, sender) => {
             disablePromptManagement: mztaManaged.isPromptManagementDisabled(),
             disableDefaultPrompts: mztaManaged.areDefaultPromptsDisabled(),
             disableSetupWizard: mztaManaged.isSetupWizardDisabled(),
+            disableAddTagsAccountSettings: mztaManaged.isAddTagsAccountSettingsDisabled(),
         };
     });
 });
@@ -667,10 +669,12 @@ function _enqueueTagAssign(fn) {
 // messages at once, and the context menu path can overlap with an automatic batch.
 // The account id of a message, for the per-account Add Tags settings (add_tags_account_settings)
 // of the tag dialog commands, which only have the message id. '' when no account has settings
-// (no header read at all then), when the message has no folder or cannot be read.
+// or the policy disables them (no header read at all then), when the message has no folder or
+// cannot be read.
 async function _accountIdOfMessage(messageId) {
     if (messageId === undefined || messageId === null || messageId === '') return '';
     if (Object.keys(await addTags_getAccountSettings()).length === 0) return '';
+    if (mztaManaged.isAddTagsAccountSettingsDisabled()) return '';
     try {
         const header = await messenger.messages.get(messageId);
         return header?.folder?.accountId || '';
@@ -1264,7 +1268,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     taLog.warn('addtags_set_exclusions: the list must be an array of strings, ignored.');
                     return Promise.resolve(false);
                 }
-                if (typeof message.accountId === 'string' && message.accountId !== '') {
+                // With the per-account settings disabled by the policy the dialog was told
+                // exclusions_account_id '', and an account id is ignored all the same: the list
+                // it shows is the global one.
+                if (typeof message.accountId === 'string' && message.accountId !== '' &&
+                    !mztaManaged.isAddTagsAccountSettingsDisabled()) {
                     // That account's own list; the rest of its entry is kept.
                     async function _addtags_set_account_exclusions() {
                         const excl_entry = await addTags_getAccountEntry(message.accountId);

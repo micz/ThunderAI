@@ -24,6 +24,7 @@ const EMPTY = {
     values: {}, lockedKeys: [], specialPromptsText: {}, specialPromptsConnection: {},
     orgPrompts: [], orgName: '', active: false,
     disablePromptManagement: false, disableDefaultPrompts: false, disableSetupWizard: false,
+    disableAddTagsAccountSettings: false,
 };
 
 let ctx, listener;
@@ -61,6 +62,7 @@ test('the same reply carries the page state: active, org name, org prompts, rest
     assert.equal(reply.disablePromptManagement, false);
     assert.equal(reply.disableDefaultPrompts, false);
     assert.equal(reply.disableSetupWizard, false);
+    assert.equal(reply.disableAddTagsAccountSettings, false);
 });
 
 test('the reply to any non-webchat page never contains a policy key', async () => {

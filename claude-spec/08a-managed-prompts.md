@@ -7,7 +7,7 @@ order, write guard, hydration, validation - is in
 
 ## Restrictions
 
-The last three are **restrictions**: policy-only switches that take something away rather
+The `_disable_*` keys are **restrictions**: policy-only switches that take something away rather
 than set a value. They are structural keys, not entries in `prefs_default`, because there
 is no user-facing setting behind them — nothing to show in the options page, nothing to
 store in `storage.local`, and therefore nothing for the lock convention to act on. A
@@ -22,7 +22,8 @@ A policy that only restricts — no preference, no prompt — still counts as **
 banner and the disabled controls have to be explained.
 
 They travel to pages in the `get_managed_values` reply as `disablePromptManagement`,
-`disableDefaultPrompts` and `disableSetupWizard`. They cannot ride in `lockedKeys`, which holds preference keys.
+`disableDefaultPrompts`, `disableSetupWizard` and `disableAddTagsAccountSettings`. They cannot ride
+in `lockedKeys`, which holds preference keys.
 
 ### `_disable_prompt_management`
 
@@ -152,6 +153,31 @@ user learns the connection is configured centrally rather than clicking a dead e
 
 `openSetupWizard()` in the options page also returns early — a restriction must not depend
 on a control staying disabled.
+
+### `_disable_add_tags_account_settings`
+
+The organization takes the per-account Add Tags settings away (`add_tags_account_settings`, see
+[02-prompts.md](02-prompts.md#add-tags-per-account-settings)): every account uses the global Add
+Tags settings and prompt text. It covers what locking every global Add Tags key and enforcing the
+text cannot: the global settings stay the user's, but the same for every account. The preference
+itself cannot be set by policy (it holds per-profile account ids), so a restriction is the only
+way to say "none".
+
+**The stored entries are never deleted.** They stay in `add_tags_account_settings`, are only
+ignored, and apply again exactly as they were once the policy is lifted.
+
+| Site | Treatment |
+|---|---|
+| `addTags_resolveAccountPrefs()` | no override applied: a fresh copy of the global values |
+| `addTags_applyAccountPrompt()` | the prompt untouched, as with an enforced text |
+| `_accountIdOfMessage()` (tag dialog commands) | `''`, the header not read: `assign_tags` and `addtags_get_exclusion_prefs` use the global values, `exclusions_account_id` is `''` |
+| `addtags_set_exclusions` | an `accountId` is ignored: the global list is written, never an account entry |
+| `pages/addtags/` "Settings for single accounts" | `#addtags_account_settings_container` **hidden**, `#managed_restriction_account_settings_note` (`managed_restriction_add_tags_account_settings`) shown in its place; `initAccountSettings()` is never run, so nothing on the page can write an entry |
+
+The two module functions are what every run-time path goes through (the batch, the context menu,
+the popup, the tag assignment), so the restriction holds on all of them. Fails **open**, like the
+others: the accessors answer `false` until the policy is read or hydrated, and a page that cannot
+reach the background shows the section.
 
 ## Organization prompts
 
@@ -319,7 +345,9 @@ override toggle (`addtags_account_prompt_text_override`, which then stays off, t
 and its "Copy the global prompt" button (`btn_account_settings_copy_prompt`) are inert; the marker
 goes right of the prompt title. The section's Save and
 "Reset to the global settings" buttons stay available for the account's other settings, but keep the
-stored `prompt_text` as it is: the page never writes it while the text is enforced. Likewise a
+stored `prompt_text` as it is: the page never writes it while the text is enforced. (With
+[`_disable_add_tags_account_settings`](#_disable_add_tags_account_settings) the whole section is
+hidden instead.) Likewise a
 global Add Tags key the policy locks is never overridden per account:
 `addTags_resolveAccountPrefs()` skips it at run time, and the section locks its row with
 `lockOverrideControls()` (see [08c-managed-ui.md](08c-managed-ui.md#controls-with-their-own-loadsave-logic-data-mzta-pref)).

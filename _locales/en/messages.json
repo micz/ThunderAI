@@ -3337,6 +3337,10 @@
     "message": "Setup wizard unavailable",
     "description": "Title shown in place of the setup wizard when the policy disables it"
   },
+  "managed_restriction_add_tags_account_settings": {
+    "message": "The settings for single accounts are disabled by your organization's configuration policy. Every account uses the settings above.",
+    "description": "Add tags page: note shown in place of the 'Settings for single accounts' section when the enterprise policy disables it"
+  },
   "customPrompts_org_badge": {
     "message": "Organization",
     "description": "Badge on a prompt supplied by the enterprise policy, when no organization name is configured"

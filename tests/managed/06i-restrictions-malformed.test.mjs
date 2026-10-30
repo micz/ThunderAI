@@ -20,16 +20,18 @@ before(async () => {
     });
 });
 
-test('"true" and 1 are not true: both restrictions stay off', () => {
+test('"true", 1 and "yes" are not true: the restrictions stay off', () => {
     assert.equal(ctx.mztaManaged.isPromptManagementDisabled(), false);
     assert.equal(ctx.mztaManaged.areDefaultPromptsDisabled(), false);
     assert.equal(ctx.mztaManaged.isSetupWizardDisabled(), false);
+    assert.equal(ctx.mztaManaged.isAddTagsAccountSettingsDisabled(), false);
 });
 
 test('each malformed value is warned about; an explicit false is not', () => {
     const w = ctx.con.warnings();
     assert.ok(w.some(m => m.includes('_disable_prompt_management')));
     assert.ok(w.some(m => m.includes('_disable_default_prompts')));
+    assert.ok(w.some(m => m.includes('_disable_add_tags_account_settings')));
     assert.equal(w.some(m => m.includes('_disable_setup_wizard')), false);
 });
 

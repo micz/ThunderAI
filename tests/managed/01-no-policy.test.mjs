@@ -56,6 +56,7 @@ test('the module reports "read, and there is none"', () => {
     assert.equal(mm.isPromptManagementDisabled(), false);
     assert.equal(mm.areDefaultPromptsDisabled(), false);
     assert.equal(mm.isSetupWizardDisabled(), false);
+    assert.equal(mm.isAddTagsAccountSettingsDisabled(), false);
     assert.equal(mm.hasManagedValue('connection_type'), false);
 });
 

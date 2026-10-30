@@ -14,11 +14,14 @@
 //    for every key present in prefs whose global key the policy does not lock; prompt_text never
 //    copied into prefs; with no account id or no entry still a fresh copy equal to prefs;
 //  - addTags_applyAccountPrompt(curr_prompt, accountId): a shallow copy with the account text, or
-//    curr_prompt itself; untouched when the policy enforces the text (_text_by_policy).
+//    curr_prompt itself; untouched when the policy enforces the text (_text_by_policy);
+//  - with the per-account settings disabled by the policy (_disable_add_tags_account_settings,
+//    spec 08a) both ignore every entry, which stays stored.
 //
 // The area runs with no policy (README): a locked key is simulated by stubbing the two questions
 // js/mzta-prefs.js and the module ask js/mzta-managed.js (isManagedLocked / getManagedValue), for
-// one test, as 37-permission-reconcile does.
+// one test, as 37-permission-reconcile does; the restriction likewise
+// (isAddTagsAccountSettingsDisabled).
 
 import assert from 'node:assert/strict';
 import { moduleContext } from './context.mjs';
@@ -293,6 +296,17 @@ k.test('prompt-enforced', 'the policy enforces the Add Tags text (_text_by_polic
     const enforced = { ...PROMPT, text: 'Policy text', _text_by_policy: true };
     assert.equal(await mod.addTags_applyAccountPrompt(enforced, 'acc1'), enforced);
     assert.equal(enforced.text, 'Policy text');
+    await clear();
+});
+
+k.test('disabled', 'the policy disables the per-account settings: no override, no account prompt, the entry kept as stored', async (t) => {
+    t.mock.method(mztaManaged, 'isAddTagsAccountSettingsDisabled', () => true);
+    await writeRaw({ acc1: FULL });
+    const resolved = await mod.addTags_resolveAccountPrefs(PREFS, 'acc1');
+    assert.notEqual(resolved, PREFS);
+    assert.deepEqual(resolved, PREFS);
+    assert.equal(await mod.addTags_applyAccountPrompt(PROMPT, 'acc1'), PROMPT);
+    assert.deepEqual(stored(), { acc1: FULL });
     await clear();
 });
 

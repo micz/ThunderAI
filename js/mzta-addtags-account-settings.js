@@ -29,8 +29,9 @@ import { mztaManaged } from './mzta-managed.js';
 //
 // The key is excluded from the enterprise policy (account ids are per profile), but the policy
 // still wins: an override is ignored when the policy locks the corresponding global key, and
-// prompt_text is ignored when the policy enforces the Add Tags text. See
-// addTags_resolveAccountPrefs() and addTags_applyAccountPrompt().
+// prompt_text is ignored when the policy enforces the Add Tags text. A policy can also take the
+// whole feature away (_disable_add_tags_account_settings): every entry is then ignored, never
+// deleted. See addTags_resolveAccountPrefs() and addTags_applyAccountPrompt().
 
 // The override keys, prompt_text included.
 export const ADD_TAGS_ACCOUNT_KEYS = [
@@ -129,11 +130,14 @@ export async function addTags_setAccountSettings(accountId, entry) {
 // prefs whose global key the policy does not lock (a locked key is never overridden: that
 // would bypass the policy). prompt_text is never copied into prefs, see
 // addTags_applyAccountPrompt(). With no account id or no entry it is still a fresh copy equal
-// to prefs, so callers can rely on getting a new object.
+// to prefs, so callers can rely on getting a new object. With the per-account settings disabled
+// by the policy it is the same fresh copy: no override applies.
 export async function addTags_resolveAccountPrefs(prefs, accountId) {
     let resolved = { ...prefs };
     if (!accountId) return resolved;
+    // Read before the restriction is asked: the read is what hydrates the policy in a page.
     const entry = await addTags_getAccountEntry(accountId);
+    if (mztaManaged.isAddTagsAccountSettingsDisabled()) return resolved;
     for (const key of Object.keys(entry)) {
         if (key === 'prompt_text') continue;
         if (!Object.prototype.hasOwnProperty.call(resolved, key)) continue;
@@ -150,13 +154,13 @@ export async function addTags_resolveAccountPrefs(prefs, accountId) {
 //
 // When the policy enforces the Add Tags text (_special_prompts_text, flagged on the prompt by
 // getSpecialPrompts() as _text_by_policy) the account prompt is ignored: honouring it would
-// bypass the policy.
+// bypass the policy. So is it when the policy disables the per-account settings.
 export async function addTags_applyAccountPrompt(curr_prompt, accountId) {
     if (!curr_prompt || !accountId || curr_prompt._text_by_policy) {
         return curr_prompt;
     }
     const entry = await addTags_getAccountEntry(accountId);
-    if (typeof entry.prompt_text !== 'string') {
+    if (mztaManaged.isAddTagsAccountSettingsDisabled() || typeof entry.prompt_text !== 'string') {
         return curr_prompt;
     }
     return { ...curr_prompt, text: entry.prompt_text };
