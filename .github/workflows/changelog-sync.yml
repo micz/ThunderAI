@@ -2,8 +2,10 @@ name: Sync CHANGELOG.md
 
 # CHANGELOG.md is generated from options/mzta-release-notes.html, never edited by hand: on every
 # push that touches the release notes, the changelog is regenerated and committed to the same
-# branch. Pull before pushing again. The bot's push (GITHUB_TOKEN) does not trigger workflows,
-# so this never runs on its own commit.
+# branch. Pull before pushing again. The commit is created through the GitHub API
+# (createCommitOnBranch, via ghcommit) on the current tip of the branch, so GitHub signs it and
+# it shows as Verified, and no local rebase is needed. The bot's push (GITHUB_TOKEN) does not
+# trigger workflows, so this never runs on its own commit.
 on:
   workflow_dispatch:
   push:
@@ -35,16 +37,13 @@ jobs:
       - name: Regenerate CHANGELOG.md
         run: node .github/scripts/changelog-sync.mjs
 
+      # Nothing is committed when CHANGELOG.md is unchanged.
       - name: Commit and push to the same branch
-        run: |
-          if git diff --quiet -- CHANGELOG.md; then
-            echo "CHANGELOG.md already in line, nothing to commit."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md
-          git commit -m "CHANGELOG.md synced from the release notes"
-          # A push to the branch since the checkout: replay the sync commit on top of it.
-          git pull --rebase origin "${{ github.ref_name }}"
-          git push origin "HEAD:${{ github.ref_name }}"
+        uses: planetscale/ghcommit-action@v0.2.22
+        with:
+          commit_message: "CHANGELOG.md synced from the release notes"
+          repo: ${{ github.repository }}
+          branch: ${{ github.ref_name }}
+          file_pattern: 'CHANGELOG.md'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
