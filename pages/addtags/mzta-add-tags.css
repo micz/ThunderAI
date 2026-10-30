@@ -64,6 +64,12 @@
     cursor: not-allowed;
 }
 
+/* Settings for single accounts: a card tinted with the accent, so it reads apart from the
+   global settings above. Mixed over --panel, so it follows the light and dark themes. */
+body.mzta_feature_page #addtags_account_settings_container {
+    background: color-mix(in srgb, var(--accent) 7%, var(--panel));
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+}
 /* The account selector with, at its right, the button that resets the account to the
    global settings: it acts on the whole entry, so it sits by the account, not by the prompt. */
 .addtags_account_select_row {
