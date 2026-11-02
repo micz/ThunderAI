@@ -352,7 +352,7 @@ k.test('pick-web-guide', S_NOTE, 'ChatGPT Web gets its setup guide and status li
     assert.notEqual(extra.style.display, 'none');
     assert.equal(extra.textContent, msg('prefs_status_page') + ' ›');
     // The status page exists only in English on micz.it: never a language prefix.
-    assert.equal(extra.href, 'https://micz.it/thunderbird-addon-thunderai/status/');
+    assert.equal(extra.href, 'https://micz.it/thunderbird-addon-thunderai/chatgptweb_status/');
     assert.equal($('#miczDescription').classList.contains('tint_chatgpt_web'), true);
     assert.equal($('#miczDescription').classList.contains('tint_chatgpt_api'), false);
 });

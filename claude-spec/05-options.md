@@ -1570,7 +1570,7 @@ the active span (idempotent — it only re-appends when the parent differs).
 - `#mzta_info_extra` comes from `CONN_EXTRA_LINK[conntype]` (its text from the entry's message,
   plus ` ›`), and is hidden for the providers without an entry. **ChatGPT Web** gets
   `prefs_status_page` (the same lowercase text as the link in the ChatGPT Web window; the chip
-  capitalises its first letter in CSS, `#mzta_info_links a::first-letter`) → `https://micz.it/thunderbird-addon-thunderai/status/`, always the
+  capitalises its first letter in CSS, `#mzta_info_links a::first-letter`) → `https://micz.it/thunderbird-addon-thunderai/chatgptweb_status/`, always the
   English page; **Ollama** gets `CORS_alternative_1` ("Problems setting CORS?", the same text as in the
   connection panel) → the CORS page through `getMiczItUrl()`.
 

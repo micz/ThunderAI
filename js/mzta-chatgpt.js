@@ -1453,7 +1453,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     //status page
     var status_page_div = document.createElement('div');
     status_page_div.id = 'mzta-status-page';
-    status_page_div.innerHTML = '<a href="https://micz.it/thunderbird-addon-thunderai/status/">'+ mztaStatusPageDesc +'</a>';
+    status_page_div.innerHTML = '<a href="https://micz.it/thunderbird-addon-thunderai/chatgptweb_status/">'+ mztaStatusPageDesc +'</a>';
     fixedDiv.appendChild(status_page_div);
 
     //force completion
