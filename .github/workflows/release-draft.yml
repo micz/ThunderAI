@@ -46,11 +46,14 @@ jobs:
           fi
 
           # 1. The <ul> of this version from CHANGELOG.md, as it is in the tag
-          git show "$TAG:CHANGELOG.md" | awk -v v="$VER" '
+          # Written to a file first: awk exits early, and piping git show into it
+          # kills git show with SIGPIPE (exit 141), which pipefail turns into a failure
+          git show "$TAG:CHANGELOG.md" > changelog_at_tag.md
+          awk -v v="$VER" '
             index($0, "<h2>Version " v " ") { f = 1; next }
             f && /<ul>/   { p = 1 }
             p             { print }
-            p && /<\/ul>/ { exit }' > changes.html
+            p && /<\/ul>/ { exit }' changelog_at_tag.md > changes.html
           if [ ! -s changes.html ]; then
             echo "::error::No '<h2>Version $VER - ...' section in CHANGELOG.md at $TAG"; exit 1
           fi
