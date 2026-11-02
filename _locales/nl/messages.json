@@ -485,5 +485,23 @@
     },
     "chatgpt_win_working": {
         "message": "Wordt aan gewerkt..."
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "Selecteer de tekst die je wilt gebruiken en klik de knop."
+    },
+    "chatgpt_win_insert_at_cursor": {
+        "message": "Voeg in bij cursor"
+    },
+    "webchat_save_as_summary": {
+        "message": "Sla op als samenvatting"
+    },
+    "chatgpt_win_custom_text": {
+        "message": "Voeg hier extra tekst in voor de prompt."
+    },
+    "msg_prompt_too_long": {
+        "message": "De aangeboden tekst is te lang. Je dient deze in te korten."
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "Het lijkt erop dat het te lang duurt om de ChatGPT-pagina te laden. Wanneer de pagina gereed is, klik de button rechts. Als het probleem aanhoudt, controleer dan de status van de dienst."
     }
 }
