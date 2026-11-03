@@ -442,6 +442,24 @@
     "message": "Options",
     "description": "Release notes page: link at the top that returns to the Options page; keep it short."
   },
+  "releaseNotes_one_change": {
+    "message": "1 change",
+    "description": "Release notes page: shown on the row of a version, at the right, when that version has exactly one change."
+  },
+  "releaseNotes_n_changes": {
+    "message": "$COUNT$ changes",
+    "description": "Release notes page: shown on the row of a version, at the right, with the number of changes in that version (always more than one, or zero).",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "releaseNotes_in_development": {
+    "message": "In development",
+    "description": "Release notes page: shown in place of the release date for a version not yet released."
+  },
   "customPrompts_ExportAll": {
     "message": "Export all prompts",
     "description": "Custom prompts page: label of the button that exports all prompts to a file."

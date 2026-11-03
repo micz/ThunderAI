@@ -1,36 +1,174 @@
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: rgb(35, 34, 43);
-        color: rgb(251, 251, 254);
-    }
-    
-    a:link { color: #409EFF; }   
-    a:visited { color: #409EFF; }  
-    a:hover { color: #66B1FF; }   
-    a:active { color: #66B1FF; }
-    
+/*
+ *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/* ===========================================================================
+   RELEASE NOTES PAGE — page-specific styles.
+   Font, colour tokens (light/dark) and links come from the shared design
+   system ../pages/_lib/mzta-design.css, linked before this file.
+   The collapsible versions are built by mzta-release-notes.js from the
+   <h2> + <ul> pairs of the page.
+   =========================================================================== */
+
+body {
+    background: var(--desk);
 }
 
-div#miczRelNotes{
-    padding: 10px;
+div#miczRelNotes {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 22px 28px;
+    box-sizing: border-box;
 }
 
-div#miczBackPrefs{
-    position:absolute;
-    right: 0px;
-    top: 0px;
-    padding: 2px 5px 0px 0px;
+div#miczBackPrefs {
+    position: absolute;
+    right: 0;
+    top: 0;
+    padding: 14px 22px 0 0;
+    font-size: 12.5px;
+    font-weight: 600;
 }
 
-h1{
-   font-size:16px; 
+#miczRelNotes h1 {
+    margin: 0 0 14px;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--dim);
 }
 
-h2{
+/* Before the script runs (or if it fails), the plain list stays readable. */
+#miczRelNotes > h2 {
     font-size: 14px;
-    margin-bottom: 0px;
+    margin-bottom: 0;
+}
+#miczRelNotes > ul {
+    margin-top: 0;
 }
 
-ul{
-    margin-top:0px;
+/* --- card holding the versions ------------------------------------------ */
+.mzta_notes {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    overflow: hidden;
+}
+
+.mzta_note + .mzta_note {
+    border-top: 1px solid var(--line);
+}
+
+.mzta_note h2 {
+    margin: 0;
+    font-size: inherit;
+    font-weight: inherit;
+}
+
+.mzta_note_toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+}
+.mzta_note_toggle:hover {
+    background: var(--accentLight);
+}
+.mzta_note_toggle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.mzta_note_version {
+    font-size: 14px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.mzta_note_date {
+    font-size: 12.5px;
+    color: var(--dim);
+}
+
+.mzta_note_spacer {
+    flex: 1;
+}
+
+.mzta_note_count {
+    font-size: 12px;
+    color: var(--dim);
+}
+
+.mzta_note_chevron {
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: var(--dim);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 150ms ease;
+}
+.mzta_note_toggle[aria-expanded="true"] .mzta_note_chevron {
+    transform: rotate(180deg);
+}
+
+.mzta_note_items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0 18px 16px;
+    list-style: none;
+}
+.mzta_note_items[hidden] {
+    display: none;
+}
+
+.mzta_note_items li {
+    position: relative;
+    padding-left: 15px;
+    font-size: 13px;
+    line-height: 1.5;
+    text-wrap: pretty;
+}
+.mzta_note_items li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 5px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--dim);
+}
+/* the "..." placeholder of a version still in development */
+.mzta_note_items li.mzta_note_placeholder {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mzta_note_chevron {
+        transition: none;
+    }
 }
