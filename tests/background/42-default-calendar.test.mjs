@@ -68,7 +68,7 @@ k.test('unset', 'with no stored choice the id is empty, Sparks keeps the selecte
     assert.equal(alerts(),before);
 });
 
-k.test('old-sparks-warns', 'a Sparks that cannot list calendars ignores the choice: the user is told, and the event still opens', async t => {
+k.test('unchecked-warns', 'when Sparks gives no calendar list, the user is told the choice could not be checked, and the event still opens', async t => {
     t.after(() => { calendars=listed; });
     for (calendars of [new Error('absent'),true]) {
         const before=alerts();
@@ -76,7 +76,7 @@ k.test('old-sparks-warns', 'a Sparks that cannot list calendars ignores the choi
         assert.deepEqual(result,{ok:'1'});
         assert.equal(message.preferred_calendar_id,'calendar-id');
         assert.equal(alerts(),before+1);
-        assert.equal(ctx.m.sentTo(7,'sendAlert').at(-1).message,ctx.ctl.browser.i18n.getMessage('calendar_preferred_unsupported'));
+        assert.equal(ctx.m.sentTo(7,'sendAlert').at(-1).message,ctx.ctl.browser.i18n.getMessage('calendar_preferred_unchecked'));
     }
 });
 

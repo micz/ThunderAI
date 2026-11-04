@@ -4437,11 +4437,11 @@
     "description": "Calendar Event settings page: shown under the default calendar list when the saved calendar can no longer receive events."
   },
   "calendar_preferred_load_error": {
-    "message": "Calendars could not be loaded. This option needs a matching ThunderAI Sparks version. Your saved choice has not been changed.",
+    "message": "Calendars could not be loaded from ThunderAI Sparks, which may be missing or need an update. Your saved choice has not been changed.",
     "description": "Calendar Event settings page: shown under the default calendar list when ThunderAI Sparks is missing, too old or did not answer."
   },
-  "calendar_preferred_unsupported": {
-    "message": "Your default calendar cannot be applied: this ThunderAI Sparks version does not support it. The event opens in the calendar selected in Thunderbird. Check the calendar before saving.",
-    "description": "Alert when an event is created with a default calendar set, but ThunderAI Sparks is too old to honor it."
+  "calendar_preferred_unchecked": {
+    "message": "Your default calendar could not be checked with ThunderAI Sparks, which may be missing an update. Check the calendar in the event window before saving.",
+    "description": "Alert when an event is created with a default calendar set, but ThunderAI Sparks gave no calendar list: it may be too old to honor the choice, or the request failed."
   }
 }
