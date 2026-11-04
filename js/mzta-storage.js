@@ -30,14 +30,27 @@
  *  page, the spam filter page). The message display and compose scripts never do: they go
  *  through the background.
  *
+ *  The database is a best-effort, rebuildable cache: Thunderbird may evict it without notice,
+ *  and it grants an add-on neither persistent storage nor (as an optional permission)
+ *  unlimitedStorage. So:
+ *   - a database without its three object stores is deleted and created again, empty;
+ *   - a read that cannot reach the database (it cannot be opened, a store is missing) logs and
+ *     answers as an empty cache: no record, an empty page, 0;
+ *   - a delete on a database that cannot be opened is a no-op: there is nothing to delete;
+ *   - every transaction's done promise has a handler, so an aborted transaction never surfaces
+ *     as an unhandled rejection.
+ *
  *  Two rules hold everywhere below:
  *   - nothing but IndexedDB requests is awaited inside a transaction: a transaction commits as
  *     soon as the event loop is idle, so a preference read in the middle would end it;
  *   - a write never swallows its error: it is logged, then the promise rejects, so the caller
- *     can tell the user.
+ *     can tell the user (the background still shows the result it could not save).
  */
 
-import { openDB } from './lib/idb.js';
+import {
+    deleteDB,
+    openDB
+} from './lib/idb.js';
 import { taLogger } from './mzta-logger.js';
 import { mztaPrefs } from './mzta-prefs.js';
 
@@ -107,6 +120,84 @@ function toLimit(value) {
     return Number.isInteger(value) && value > 0 ? value : 0;
 }
 
+/**
+ * Open the database once, without checking its contents. `onLost` is called when the connection
+ * stops being usable: closed for another context's upgrade or deletion (blocking), or by the
+ * browser (terminated).
+ */
+function openMessageDB(onLost) {
+    const opening = openDB(MESSAGE_DB_NAME, MESSAGE_DB_VERSION, {
+        upgrade(db, oldVersion) {
+            if (oldVersion < 1) {
+                for (const name of MESSAGE_STORES) {
+                    const store = db.createObjectStore(name, { keyPath: 'messageId' });
+                    store.createIndex(INDEX_CREATED_AT, 'createdAt');
+                    store.createIndex(INDEX_SIZE, 'size');
+                }
+            }
+        },
+        blocked(currentVersion, blockedVersion) {
+            _log.warn('The message database (version ' + currentVersion + ') is open in another context: waiting to open version ' + blockedVersion + '.');
+        },
+        blocking(currentVersion, blockedVersion) {
+            // Another context needs to upgrade or delete the database: let it. The next call
+            // opens a new connection.
+            _log.log('Closing the message database (version ' + currentVersion + ') for ' +
+                (blockedVersion ? 'an upgrade to version ' + blockedVersion : 'its deletion') + '.');
+            onLost();
+            opening.then(db => db.close()).catch(() => {});
+        },
+        terminated() {
+            _log.warn('The message database connection was closed by the browser.');
+            onLost();
+        },
+    });
+    return opening;
+}
+
+/**
+ * Open the database and check that it has its three object stores. A database at the current
+ * version without them (damaged, or partly evicted) is never upgraded, so it would stay broken:
+ * it is deleted and created again, empty - it is only a cache.
+ */
+async function openCheckedMessageDB(onLost) {
+    const db = await openMessageDB(onLost);
+    const missing = MESSAGE_STORES.filter(name => !db.objectStoreNames.contains(name));
+    if (missing.length === 0) return db;
+    _log.warn('The message database has no ' + missing.join(', ') + ' object store: creating it again, empty.');
+    db.close();
+    await deleteDB(MESSAGE_DB_NAME, {
+        blocked() {
+            _log.warn('The message database is open in another context: waiting to delete it.');
+        },
+    });
+    return await openMessageDB(onLost);
+}
+
+/**
+ * A transaction on the database of this context. When the cached connection was closed under it
+ * (InvalidStateError), a new one is opened, once. The transaction's done promise gets a handler
+ * at once: a failing request aborts the transaction, and its done would otherwise become an
+ * unhandled rejection whenever the caller stops before awaiting it. Awaiting tx.done still rejects.
+ */
+async function openTransaction(stores, mode) {
+    let opening = taStorage.openDB();
+    let db = await opening;
+    let tx;
+    try {
+        tx = db.transaction(stores, mode);
+    } catch (e) {
+        if (e?.name !== 'InvalidStateError') throw e;
+        _log.warn('The message database connection was closed: opening it again.');
+        if (_dbPromise === opening) _dbPromise = null;
+        opening = taStorage.openDB();
+        db = await opening;
+        tx = db.transaction(stores, mode);
+    }
+    tx.done.catch(() => {});
+    return tx;
+}
+
 /** Run fn() under the cleanup lock. Without the Web Locks API, fn() runs directly. */
 function withCleanupLock(fn) {
     const locks = globalThis.navigator?.locks;
@@ -167,38 +258,20 @@ export class taStorage {
     // ---- The database -------------------------------------------------------------------------
 
     /**
-     * The connection of this context, opened once. Future schema versions go in upgrade().
+     * The connection of this context, opened once, with its three object stores (see
+     * openCheckedMessageDB()). Future schema versions go in upgrade() (openMessageDB()). Rejects
+     * when the database cannot be opened; the next call tries again.
      * @returns {Promise<IDBPDatabase>}
      */
     static openDB() {
         if (_dbPromise) return _dbPromise;
-        const opening = openDB(MESSAGE_DB_NAME, MESSAGE_DB_VERSION, {
-            upgrade(db, oldVersion) {
-                if (oldVersion < 1) {
-                    for (const name of MESSAGE_STORES) {
-                        const store = db.createObjectStore(name, { keyPath: 'messageId' });
-                        store.createIndex(INDEX_CREATED_AT, 'createdAt');
-                        store.createIndex(INDEX_SIZE, 'size');
-                    }
-                }
-            },
-            blocked(currentVersion, blockedVersion) {
-                _log.warn('The message database (version ' + currentVersion + ') is open in another context: waiting to open version ' + blockedVersion + '.');
-            },
-            blocking(currentVersion, blockedVersion) {
-                // Another context needs to upgrade: let it. The next call opens a new connection.
-                _log.log('Closing the message database (version ' + currentVersion + ') for an upgrade to version ' + blockedVersion + '.');
-                if (_dbPromise === opening) _dbPromise = null;
-                opening.then(db => db.close()).catch(() => {});
-            },
-            terminated() {
-                _log.warn('The message database connection was closed by the browser.');
-                if (_dbPromise === opening) _dbPromise = null;
-            },
-        });
+        const opening = openCheckedMessageDB(() => { if (_dbPromise === opening) _dbPromise = null; });
         _dbPromise = opening;
         // A failed open is not kept: the next call tries again.
-        opening.catch(() => { if (_dbPromise === opening) _dbPromise = null; });
+        opening.catch((e) => {
+            _log.error('Could not open the message database: ' + e);
+            if (_dbPromise === opening) _dbPromise = null;
+        });
         return opening;
     }
 
@@ -260,8 +333,7 @@ export class taStorage {
         this.taLog.log('[getRecord] messageId: ' + messageId);
         if (!messageId) return null;
         try {
-            const db = await taStorage.openDB();
-            const tx = db.transaction(MESSAGE_STORES, 'readonly');
+            const tx = await openTransaction(MESSAGE_STORES, 'readonly');
             const found = await Promise.all(MESSAGE_STORES.map(name => tx.objectStore(name).get(messageId)));
             await tx.done;
             const out = {};
@@ -270,7 +342,8 @@ export class taStorage {
             this.taLog.log('[getRecord] record found: ' + (record !== null));
             return record;
         } catch (e) {
-            this.taLog.error('getRecord error: ' + e);
+            // An unreachable cache is an empty one: the caller generates the data again.
+            this.taLog.error('getRecord error (answered as no record): ' + e);
             return null;
         }
     }
@@ -289,46 +362,62 @@ export class taStorage {
      * The records of a type, newest first: a cursor on the createdAt index, in prev direction.
      * @param {string} type - one of MESSAGE_STORES
      * @param {{offset?: number, limit?: number}} [page]
-     * @returns {Promise<object[]>}
+     * @returns {Promise<object[]>} [] when the database cannot be read
      */
     static async getPage(type, { offset = 0, limit = 50 } = {}) {
-        const db = await taStorage.openDB();
-        const tx = db.transaction(type, 'readonly');
-        const out = [];
-        let cursor = await tx.store.index(INDEX_CREATED_AT).openCursor(null, 'prev');
-        // advance(0) throws.
-        if (cursor && offset > 0) cursor = await cursor.advance(offset);
-        while (cursor && out.length < limit) {
-            out.push(cursor.value);
-            cursor = await cursor.continue();
+        try {
+            const tx = await openTransaction(type, 'readonly');
+            const out = [];
+            let cursor = await tx.store.index(INDEX_CREATED_AT).openCursor(null, 'prev');
+            // advance(0) throws.
+            if (cursor && offset > 0) cursor = await cursor.advance(offset);
+            while (cursor && out.length < limit) {
+                out.push(cursor.value);
+                cursor = await cursor.continue();
+            }
+            await tx.done;
+            return out;
+        } catch (e) {
+            _log.error('getPage ' + type + ' error (answered as no record): ' + e);
+            return [];
         }
-        await tx.done;
-        return out;
     }
 
-    /** The number of records of a type. */
+    /** The number of records of a type; 0 when the database cannot be read. */
     static async count(type) {
-        const db = await taStorage.openDB();
-        return await db.count(type);
+        try {
+            const tx = await openTransaction(type, 'readonly');
+            const n = await tx.store.count();
+            await tx.done;
+            return n;
+        } catch (e) {
+            _log.error('count ' + type + ' error (answered as 0): ' + e);
+            return 0;
+        }
     }
 
     /**
      * The bytes taken by the records of the three stores: the sum of their size, read from the
-     * size index with a key cursor (the key is the size: no record is loaded).
+     * size index with a key cursor (the key is the size: no record is loaded). 0 when the
+     * database cannot be read.
      */
     static async getTotalSize() {
-        const db = await taStorage.openDB();
-        const tx = db.transaction(MESSAGE_STORES, 'readonly');
-        let total = 0;
-        for (const name of MESSAGE_STORES) {
-            let cursor = await tx.objectStore(name).index(INDEX_SIZE).openKeyCursor();
-            while (cursor) {
-                if (typeof cursor.key === 'number') total += cursor.key;
-                cursor = await cursor.continue();
+        try {
+            const tx = await openTransaction(MESSAGE_STORES, 'readonly');
+            let total = 0;
+            for (const name of MESSAGE_STORES) {
+                let cursor = await tx.objectStore(name).index(INDEX_SIZE).openKeyCursor();
+                while (cursor) {
+                    if (typeof cursor.key === 'number') total += cursor.key;
+                    cursor = await cursor.continue();
+                }
             }
+            await tx.done;
+            return total;
+        } catch (e) {
+            _log.error('getTotalSize error (answered as 0): ' + e);
+            return 0;
         }
-        await tx.done;
-        return total;
     }
 
     // ---- Writes ---------------------------------------------------------------------------------
@@ -350,8 +439,7 @@ export class taStorage {
         }
         const record = taStorage.buildRecord(type, messageId, data || {}, Date.now());
         try {
-            const db = await taStorage.openDB();
-            const tx = db.transaction(type, 'readwrite');
+            const tx = await openTransaction(type, 'readwrite');
             if (!force && (await tx.store.get(messageId))) {
                 this.taLog.log('[write ' + type + '] a record already exists, skipping (force=false)');
                 await tx.done;
@@ -366,13 +454,23 @@ export class taStorage {
         }
     }
 
-    /** Delete the record of one type. */
+    /**
+     * Delete the record of one type. A database that cannot be opened has nothing to delete (its
+     * reads answer as empty): logged, resolves. A delete failing on an open database rejects.
+     */
     async _deleteField(type, messageId) {
         this.taLog.log('[delete ' + type + '] messageId: ' + messageId);
         if (!messageId) return;
+        let tx;
         try {
-            const db = await taStorage.openDB();
-            await db.delete(type, messageId);
+            tx = await openTransaction(type, 'readwrite');
+        } catch (e) {
+            this.taLog.error('delete ' + type + ': the message database cannot be read, nothing to delete: ' + e);
+            return;
+        }
+        try {
+            await tx.store.delete(messageId);
+            await tx.done;
         } catch (e) {
             this.taLog.error('delete ' + type + ' error: ' + e);
             throw e;
@@ -419,13 +517,21 @@ export class taStorage {
         return this._deleteField(STORE_TRANSLATION, messageId);
     }
 
-    /** Delete the records of a message from the three stores, in one readwrite transaction. */
+    /**
+     * Delete the records of a message from the three stores, in one readwrite transaction. Like
+     * _deleteField(), a no-op when the database cannot be opened.
+     */
     async deleteRecord(messageId) {
         this.taLog.log('[deleteRecord] messageId: ' + messageId);
         if (!messageId) return;
+        let tx;
         try {
-            const db = await taStorage.openDB();
-            const tx = db.transaction(MESSAGE_STORES, 'readwrite');
+            tx = await openTransaction(MESSAGE_STORES, 'readwrite');
+        } catch (e) {
+            this.taLog.error('deleteRecord: the message database cannot be read, nothing to delete: ' + e);
+            return;
+        }
+        try {
             await Promise.all(MESSAGE_STORES.map(name => tx.objectStore(name).delete(messageId)));
             await tx.done;
         } catch (e) {
@@ -442,8 +548,7 @@ export class taStorage {
         if (!MESSAGE_STORES.includes(type)) return Promise.reject(new Error('Unknown message data type: ' + type));
         return withCleanupLock(async () => {
             try {
-                const db = await taStorage.openDB();
-                const tx = db.transaction(type, 'readwrite');
+                const tx = await openTransaction(type, 'readwrite');
                 const n = await tx.store.count();
                 await tx.store.clear();
                 await tx.done;
@@ -462,8 +567,7 @@ export class taStorage {
     static clearAllRecords() {
         return withCleanupLock(async () => {
             try {
-                const db = await taStorage.openDB();
-                const tx = db.transaction(MESSAGE_STORES, 'readwrite');
+                const tx = await openTransaction(MESSAGE_STORES, 'readwrite');
                 let n = 0;
                 for (const name of MESSAGE_STORES) {
                     const store = tx.objectStore(name);
@@ -507,14 +611,13 @@ export class taStorage {
     static async cleanup(limits = null, now = Date.now()) {
         const resolved = limits || await taStorage.readLimits();
         return withCleanupLock(async () => {
-            const db = await taStorage.openDB();
             const removed = {};
             for (const type of MESSAGE_STORES) {
                 const { maxEntries = 0, maxAgeDays = 0 } = resolved[type] || {};
                 removed[type] = 0;
                 const ageLimit = toLimit(maxAgeDays);
                 if (ageLimit > 0) {
-                    const tx = db.transaction(type, 'readwrite');
+                    const tx = await openTransaction(type, 'readwrite');
                     const range = IDBKeyRange.upperBound(now - ageLimit * DAY_MS, true);
                     let cursor = await tx.store.index(INDEX_CREATED_AT).openCursor(range);
                     while (cursor) {
@@ -526,7 +629,7 @@ export class taStorage {
                 }
                 const countLimit = toLimit(maxEntries);
                 if (countLimit > 0) {
-                    const tx = db.transaction(type, 'readwrite');
+                    const tx = await openTransaction(type, 'readwrite');
                     let excess = (await tx.store.count()) - countLimit;
                     if (excess > 0) {
                         let cursor = await tx.store.index(INDEX_CREATED_AT).openCursor();

@@ -92,6 +92,10 @@ export async function migrateMessageDataToIndexedDB() {
 
     const db = await taStorage.openDB();
     const tx = db.transaction(MESSAGE_STORES, 'readwrite');
+    // A failing request aborts the transaction and the loop below throws before reaching
+    // `await tx.done`: without a handler that rejection would be unhandled. The failure itself
+    // still reaches the caller through the loop (or through the awaited tx.done).
+    tx.done.catch(() => {});
     let migrated = 0;
     let skipped = 0;
     for (const { type, record } of records) {

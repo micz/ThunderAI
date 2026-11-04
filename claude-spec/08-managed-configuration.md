@@ -256,11 +256,9 @@ The per-message storage keys of [#955](https://github.com/micz/ThunderAI/issues/
 entries of the allowlist: `{feature}_storage_enabled` (boolean),
 `{feature}_storage_max_entries` and `{feature}_storage_max_age_days` (numbers, any non-negative
 integer, `0` = no limit, so no `PREF_NUMBER_RANGES` entry) for `spamfilter`, `summarize` and
-`translate`, and `storage_persistent`, a permission-gated toggle. The nine limit keys have no
+`translate`. The nine limit keys have no
 settings UI yet (#956), so today a policy is the only way to set them besides `storage.local`; the
-scheduled cleanup reads them through `mztaPrefs`, so a policy value applies at its next run. A policy
-cannot grant `unlimitedStorage`: `storage_persistent` locked on without it is the case of the
-permission-gated row of [Interaction points](#interaction-points). See
+scheduled cleanup reads them through `mztaPrefs`, so a policy value applies at its next run. See
 [01-architecture.md](01-architecture.md#per-message-data-storage).
 
 The ten excluded keys are per-machine or per-profile state, not configuration: enforcing

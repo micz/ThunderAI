@@ -2278,7 +2278,6 @@ Some features call Thunderbird APIs that need an **optional** permission (`manif
 | `spamfilter` | `messagesMove`, `messagesUpdate` | options page, setup wizard |
 | `spamfilter_skip_addressbook` | `addressBooks` | spam filter page |
 | `get_calendar_event_from_clipboard` | `clipboardRead` | calendar event page |
-| `storage_persistent` | `unlimitedStorage` | options page (advanced section) |
 
 The module also gives `hasFeaturePermissions()` (`permissions.contains`), `requestFeaturePermissions()` (`permissions.request`), `getFeaturesAffectedByRemoval()`, the feature's label (the label of its switch) and `getMissingPermissionMessage(key, managed)`. Host permissions (`origins`) are not in it: they belong to the connection and have their own flow (`pages/_lib/connection-ui.js`, `js/mzta-connection-test.js`). A new gated feature means one map entry plus its label, its permissions in `optional_permissions`, and its switch bound through `bindPermissionToggle()`. The static check `tests/static/05-feature-permissions` fails on a map entry that is not a declared boolean preference, or that names a permission missing from `optional_permissions`. It also fails on any other code that requests or checks API permissions with a hard-coded list.
 
@@ -2305,17 +2304,18 @@ The module also gives `hasFeaturePermissions()` (`permissions.contains`), `reque
 
 ### Per-Message Data Storage
 
-The per-message data - spam reports, summaries, translations - is **storage, not a cache**: what it
-holds is the user's record of what the AI said about a message, shown again every time the message
-is opened. It lives in **IndexedDB** ([#955](https://github.com/micz/ThunderAI/issues/955)), through
+The per-message data - spam reports, summaries, translations - is what the AI said about a message,
+shown again every time the message is opened. It is kept as a **best-effort, rebuildable cache**:
+Thunderbird may evict it (see "Eviction" below), and everything in it can be generated again. It
+lives in **IndexedDB** ([#955](https://github.com/micz/ThunderAI/issues/955)), through
 `js/mzta-storage.js` (`taStorage`), which opens it with the vendored `idb` 8.0.4 (`js/lib/idb.js`).
 It used to be one `msg:<headerMessageId>` record per message in `storage.local`, with a field per
 type; those records are moved at startup (below).
 
 **Schema.** Database `thunderai-message-data`, version 1; the name, the version, the store and index
 names are constants at the top of `js/mzta-storage.js` (`MESSAGE_DB_NAME`, `MESSAGE_DB_VERSION`,
-`MESSAGE_STORES`, `INDEX_CREATED_AT`, `INDEX_SIZE`). Future versions go in the `upgrade` callback of
-`openDB()`. Three object stores, `spam`, `summary`, `translation`, each with `keyPath: 'messageId'`
+`MESSAGE_STORES`, `INDEX_CREATED_AT`, `INDEX_SIZE`). Future versions go in the `upgrade` callback
+(`openMessageDB()`). Three object stores, `spam`, `summary`, `translation`, each with `keyPath: 'messageId'`
 and two indexes, `createdAt` (paging and cleanup) and `size` (the size total). The key is the header
 Message-ID **alone**: a new translation replaces the previous one even in another language.
 
@@ -2345,9 +2345,19 @@ key cursor on the `size` index, so no record is loaded), `clear(type)`, `clearAl
 - nothing but IndexedDB requests is awaited inside a transaction (it commits as soon as the event
   loop is idle): the preference reads come before it;
 - `openDB()` always passes `blocked`, `blocking` (it closes the connection, so another context can
-  upgrade) and `terminated`; the connection is shared per context and reopened after either;
+  upgrade or delete the database) and `terminated`; the connection is shared per context and
+  reopened after either. A failed open is logged and not kept: the next call tries again;
+- every transaction is opened through `openTransaction()`: a connection found closed
+  (`InvalidStateError`) is reopened once, and the transaction's `done` gets a handler at once, so
+  an aborted transaction is never an unhandled rejection (awaiting `done` still rejects);
 - **a write never swallows its error**: it logs it and rejects, so the caller can tell the user
-  (below). A read that fails logs and returns `null` / nothing;
+  (below);
+- **a read never throws**: when the database cannot be reached it logs and answers as an empty
+  cache - `getRecord()` `null`, `getPage()` `[]`, `count()` and `getTotalSize()` `0`;
+- a delete (`delete*Field()`, `deleteRecord()`) on a database that cannot be opened logs and
+  resolves: there is nothing to delete. A delete failing on an open database rejects. The jobs
+  that drop the old record before generating a new one (the summary and translation refresh,
+  the spam analysis) only log that failure and go on: the new record overwrites it;
 - an empty or missing Message-ID is never written (logged);
 - saving disabled for a type (`{feature}_storage_enabled` false) skips its writes; what is saved is
   still read and shown.
@@ -2424,11 +2434,13 @@ registers the listeners that read or write these records (the main `onMessage` l
 mail listener) and starts the cleanup only after the block, so nothing reads or writes the stores
 before the migration has finished.
 
-**Persistent storage.** `storage.local` is never evicted by Firefox (Thunderbird); the extension's
-IndexedDB is *temporary* storage, subject to a quota and, when the disk is almost full, to the
-eviction of whole databases, least recently used origins first, without notice. The optional
-`unlimitedStorage` permission removes the quota and marks the storage as persistent. It is not a
-mandatory permission (the update would ask every user for it): the `storage_persistent` advanced
-option asks for it, a permission-gated toggle (see "Feature permissions" above and
-[05-options.md](05-options.md#permission-gated-toggles)). Switched off, it gives the permission back
-(`removeFeaturePermissions()`): the data stays, no longer protected.
+**Eviction.** `storage.local` is never evicted by Firefox (Thunderbird); the extension's IndexedDB
+is *temporary* storage, subject to a quota and, when the disk is almost full, to the eviction of
+whole databases, least recently used origins first, without notice. Nothing protects it:
+`unlimitedStorage` is not accepted by Thunderbird in `optional_permissions` (the entry is dropped
+with an "Error processing optional_permissions" manifest warning), it is deliberately not a required permission (an
+update would ask every user for it), and `navigator.storage.persist()` always resolves `false` in
+Thunderbird, even from a user gesture. So the database is treated as a rebuildable cache (the rules
+of `taStorage` above): an evicted database is created again, empty, at the next open; a database
+that opens without its three object stores is deleted and created again (`openCheckedMessageDB()`);
+a missing record is generated again by the feature that needs it.

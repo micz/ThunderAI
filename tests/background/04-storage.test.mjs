@@ -15,7 +15,11 @@
 //  - saving disabled for a type: writes skipped, what is saved still read; an empty Message-ID is
 //    never saved; a failed write is logged and rejects;
 //  - the scheduled cleanup: at once when the last one is more than 24 hours old (or none), else 2
-//    hours after the start; then every 24 hours, one timer; its time stored in storage.local.
+//    hours after the start; then every 24 hours, one timer; its time stored in storage.local;
+//  - eviction (a best-effort, rebuildable cache): a deleted database answers as empty and is
+//    created again; one without its three stores is deleted and created again; a database that
+//    cannot be opened gives null / [] / 0 to the reads, a resolved delete and a rejected write;
+//    an aborted transaction leaves no unhandled rejection.
 // And spec 05: the preferences live in storage.local, which none of this touches but for the
 // time of the last cleanup.
 // The field contents of each type are the stores' business (05-stores); here the storage itself.
@@ -493,7 +497,108 @@ k.test('schedule-failure', 'a failed cleanup is logged and still sets the next o
     taStorage.stopCleanupSchedule();
 });
 
-k.test('prefs-untouched', 'the storage writes nothing to storage.local but the time of the last cleanup', () => {
+// --- Eviction: a best-effort cache -------------------------------------------------------------
+
+/** Delete the database with the raw API, as an eviction would: the module's connection closes. */
+function rawDelete() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.deleteDatabase(MESSAGE_DB_NAME);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+    });
+}
+
+/** Create the database at version 1 with only the given stores, then close it. */
+function rawCreate(stores) {
+    return new Promise((resolve, reject) => {
+        const open = indexedDB.open(MESSAGE_DB_NAME, 1);
+        open.onupgradeneeded = () => { for (const name of stores) open.result.createObjectStore(name, { keyPath: 'messageId' }); };
+        open.onsuccess = () => { open.result.close(); resolve(); };
+        open.onerror = () => reject(open.error);
+    });
+}
+
+/** The object store names of the database, read with the raw API. */
+function rawStoreNames() {
+    return new Promise((resolve, reject) => {
+        const open = indexedDB.open(MESSAGE_DB_NAME);
+        open.onsuccess = () => { const names = [...open.result.objectStoreNames].sort(); open.result.close(); resolve(names); };
+        open.onerror = () => reject(open.error);
+    });
+}
+
+k.test('evicted-recreated', 'a database deleted under the add-on (eviction): an empty cache, then created again by the next write', async () => {
+    await st.writeSummary('ev@x', { summary: 'S' });
+    await rawDelete();
+    assert.equal(await st.getRecord('ev@x'), null);
+    assert.equal(await taStorage.count('summary'), 0);
+    await st.writeSummary('ev2@x', { summary: 'S2' });
+    assert.equal((await st.getRecord('ev2@x')).summary.summary, 'S2');
+    assert.deepEqual(await rawStoreNames(), ['spam', 'summary', 'translation']);
+});
+
+k.test('missing-stores-recreated', 'a database at version 1 without its stores is deleted and created again, empty, with a warning', async () => {
+    await rawDelete();
+    await rawCreate(['spam']);
+    ctx.con.clear();
+    assert.equal(await st.getRecord('ms@x'), null);
+    assert.match(ctx.con.all().join(' | '), /no summary, translation object store/);
+    assert.deepEqual(await rawStoreNames(), ['spam', 'summary', 'translation']);
+    await st.writeTranslation('ms@x', { translated_text: 'T' });
+    assert.equal((await st.getRecord('ms@x')).translation.translated_text, 'T');
+    const db = await taStorage.openDB();
+    const tx = db.transaction('summary', 'readonly');
+    assert.deepEqual([...tx.store.indexNames].sort(), ['createdAt', 'size'], 'the indexes too');
+    await tx.done;
+});
+
+k.test('open-fails-empty', 'the database cannot be opened: reads answer as an empty cache, deletes resolve, a write rejects', async (t) => {
+    await st.writeSpam('of@x', { spamValue: 1 });
+    await rawDelete();
+    t.mock.method(indexedDB, 'open', () => { throw new DOMException('IndexedDB unavailable', 'UnknownError'); });
+    ctx.con.clear();
+    assert.equal(await st.getRecord('of@x'), null);
+    assert.deepEqual(await taStorage.getPage('spam'), []);
+    assert.equal(await taStorage.count('spam'), 0);
+    assert.equal(await taStorage.getTotalSize(), 0);
+    assert.equal(await getMessageStorageUsedSpace(), '0 Bytes');
+    await st.deleteSpamField('of@x');
+    await st.deleteSummaryField('of@x');
+    await st.deleteTranslationField('of@x');
+    await st.deleteRecord('of@x');
+    await assert.rejects(st.writeSummary('of@x', { summary: 'x' }), /IndexedDB unavailable/);
+    assert.match(ctx.con.all().join(' | '), /IndexedDB unavailable/, 'logged');
+    t.mock.restoreAll();
+    await st.writeSummary('of2@x', { summary: 'back' });
+    assert.equal((await st.getRecord('of2@x')).summary.summary, 'back', 'the next open succeeds');
+});
+
+k.test('aborted-tx-handled', 'a transaction aborted under a read: null, and no unhandled rejection of its done', async (t) => {
+    await st.writeSummary('ab@x', { summary: 'S' });
+    const unhandled = [];
+    const onUnhandled = e => unhandled.push(e);
+    process.on('unhandledRejection', onUnhandled);
+    try {
+        const { IDBObjectStore } = globalThis;
+        const realGet = IDBObjectStore.prototype.get;
+        // Aborted once the three reads are issued (the last store of MESSAGE_STORES): every request
+        // fails with an AbortError, and so does the transaction's done.
+        t.mock.method(IDBObjectStore.prototype, 'get', function (...args) {
+            const req = realGet.apply(this, args);
+            if (this.name === 'translation') this.transaction.abort();
+            return req;
+        });
+        assert.equal(await st.getRecord('ab@x'), null);
+        t.mock.restoreAll();
+        for (let i = 0; i < 20; i++) await new Promise(r => setImmediate(r));
+        assert.deepEqual(unhandled, []);
+    } finally {
+        process.off('unhandledRejection', onUnhandled);
+    }
+    assert.equal((await st.getRecord('ab@x')).summary.summary, 'S', 'the record is still there');
+});
+
+k.test('prefs-untouched','the storage writes nothing to storage.local but the time of the last cleanup', () => {
     const writes = ctx.ctl.calls.filter(c => c.area === 'local' && c.op === 'set').flatMap(c => Object.keys(c.items));
     const own = writes.filter(key => key !== LAST_CLEANUP_KEY);
     // The preference writes of this file's own setup (setPref / storage.local.set above).

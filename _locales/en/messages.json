@@ -403,14 +403,6 @@
       }
     }
   },
-  "prefs_OptionText_storage_persistent": {
-    "message": "Protect the saved data",
-    "description": "Options page, advanced section: label of the switch that protects the saved spam reports, summaries and translations from being deleted by Thunderbird when the disk is almost full."
-  },
-  "prefs_OptionText_storage_persistent_info": {
-    "message": "Without this option, Thunderbird may delete the saved spam reports, summaries and translations when the disk is almost full. Turning it on asks for the permission to store unlimited data.",
-    "description": "Options page, advanced section: help text of the switch that protects the saved data. 'Store unlimited data' is the permission Thunderbird asks the user to grant."
-  },
   "storage_migration_in_progress": {
     "message": "ThunderAI is moving the saved spam reports, summaries and translations to a new storage. Reopen this page in a few moments to see them.",
     "description": "Options page and spam filter page: notice shown while the saved data is being moved to the new storage after an update."

@@ -204,7 +204,6 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `max_prompt_length` | `30000` | Max prompt string length |
 | `special_command_timeout` | `120000` | Timeout (ms) for special commands (`js/mzta-special-commands.js`). Active companion progress renews the processing budget; provider dispatch starts a fresh response budget. Stalled initialization/queueing also times out. Without active processing, it bounds the whole request. **Always shown**, because a special prompt can use an API even when the global connection is ChatGPT Web; it does not time out ChatGPT Web automation itself. |
 | `api_stream_idle_timeout` | `120000` | Idle timeout (ms) of an API stream: with no data for this long once the answer has started, the worker gives the request up and shows `error_stream_idle_timeout` (#999). `0` = no idle timeout. Exposed in the advanced options of the main options page, right after `special_command_timeout`, as a number input (`min="1000"`, `step="1000"`) with a reset button; **always shown**, like `special_command_timeout` and for the same reason (a special prompt may use an API while the global `connection_type` is `chatgpt_web`). The field's `min` is UI only: `0` comes from storage or a policy, which accepts any non-negative integer (the general number rule, so no `PREF_NUMBER_RANGES` entry, see [08-managed-configuration.md](08-managed-configuration.md)). The workers validate it with `resolveIdleTimeoutMs()` (`js/api/api-idle-timer.js`): a value that is not a non-negative number (the `null` of an emptied field included) falls back to the default. Has no effect on ChatGPT Web connections, which stream through no API worker. Sent in the workers' `init` message by `api_webchat/controller.js` and `js/mzta-special-commands.js`. See [04-api-integrations.md](04-api-integrations.md#stream-idle-timeout). |
-| `storage_persistent` | `false` | Protects the saved per-message data (spam reports, summaries, translations, IndexedDB) from eviction: without it Thunderbird may delete them, without notice, when the disk is almost full. A permission-gated toggle (see "Permission-gated toggles" below) needing the optional `unlimitedStorage` permission, in the advanced section of the options page, right before the storage size: switched **on**, the permission is requested and `true` stored only once granted; refused, the switch goes back off with `feature_permission_denied` and nothing is stored. Switched **off**, `false` is stored and the permission is given back (`removeFeaturePermissions()`, only when it was granted): the data stays, it is just no longer protected. Policy-settable and lockable like the other gated toggles; a policy cannot grant the permission, so a key locked on without it gets the `feature_permission_missing_managed` note in its `.mzta_adv_info`. See [01-architecture.md](01-architecture.md#per-message-data-storage). |
 | `batch_max_concurrency` | `1` | Maximum messages processed at once by one `processEmails()` call (auto add tags, spam filter, summarize and translate — on receive and from the context menu). Each message runs its features in series (spam, add_tags, summary, translate), so this is also the maximum number of AI requests in flight. There are no per-feature caps. Overlapping calls (several accounts) can exceed it. A value that is not a finite number ≥ 1 (a cleared field is saved as `NaN`) falls back to the default. Number input (`min="1"`) in the advanced section of the main options page, with its default wired into `restoreOptions()`. Does not affect the context-menu summarize flow. See [01-architecture.md](01-architecture.md#per-message-pipelines-in-processemails). |
 
 ### Companion processing
@@ -280,11 +279,10 @@ ThunderAI Privacy owns model management and diagnostics. See
 
 #### Permission-gated toggles
 
-Five preferences need an optional Thunderbird API permission (`FEATURE_PERMISSIONS` in
+Four feature preferences need an optional Thunderbird API permission (`FEATURE_PERMISSIONS` in
 `js/mzta-feature-permissions.js`, see [01-architecture.md](01-architecture.md#feature-permissions-962)):
 `add_tags` and `spamfilter` (options page, setup wizard), `spamfilter_skip_addressbook` (spam
-filter page), `get_calendar_event_from_clipboard` (calendar event page), `storage_persistent`
-(options page, advanced section). Every one of their
+filter page), `get_calendar_event_from_clipboard` (calendar event page). Every one of their
 switches goes through the one shared flow, `bindPermissionToggle(element, key, {onChange,
 deniedMsgKey, errorMsgKey})` in `pages/_lib/permission-toggle.js`, so the pages cannot drift:
 
@@ -298,8 +296,7 @@ deniedMsgKey, errorMsgKey})` in `pages/_lib/permission-toggle.js`, so the pages 
   there is nothing to roll back and the stored `false` stays;
 - **unchecked**: `false` is written;
 - `onChange(checked)` runs after either outcome, for the page's side effects (the options
-  page's Manage button, the calendar page's `reload_menus`, the options page giving
-  `unlimitedStorage` back when `storage_persistent` is switched off and the permission was held);
+  page's Manage button, the calendar page's `reload_menus`);
 - a key locked by the policy is disabled by `applyManagedUI()`; if its switch still fires
   (re-enabled from the developer tools) the change is put back, with no prompt and no write.
 
@@ -1695,8 +1692,7 @@ its `#no_privacy` notice), `do_debug`, the allowed unencrypted servers and the s
   `data-mzta-companion-of` its field) put the `prefs_default` value back in the field and store it
   with `setPref()`, as a number. They fire no `change`. For a policy-locked key they do nothing
   (`isLockedKey()`), without relying on the button being disabled. `batch_max_concurrency` has none.
-- **Storage block.** The `storage_persistent` switch (see its row in "UI & Feature Preferences"),
-  then `#message_storage_size`: the space taken by the saved spam reports, summaries and
+- **Storage block.** `#message_storage_size`: the space taken by the saved spam reports, summaries and
   translations (IndexedDB, see [01-architecture.md](01-architecture.md#per-message-data-storage)), the
   sum of the `size` of every record of the three stores, as computed by
   `getMessageStorageUsedSpace()` (`js/mzta-utils.js`, over `taStorage.getTotalSize()`) and read at

@@ -42,7 +42,7 @@ const clone = v => (v === undefined ? undefined : structuredClone(v));
  * through its switch: the union of FEATURE_PERMISSIONS (js/mzta-feature-permissions.js), written
  * out because this file imports nothing (37-permission-reconcile checks they agree).
  */
-export const DEFAULT_PERMISSIONS = ['messagesTags', 'messagesUpdate', 'messagesMove', 'addressBooks', 'clipboardRead', 'unlimitedStorage'];
+export const DEFAULT_PERMISSIONS = ['messagesTags', 'messagesUpdate', 'messagesMove', 'addressBooks', 'clipboardRead'];
 
 function makeEvent() {
     const listeners = [];

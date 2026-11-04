@@ -65,11 +65,7 @@ import {
   isSetupWizardDisabled,
   disableForManagedRestriction
 } from '../pages/_lib/managed-ui.js';
-import {
-  hasFeaturePermissions,
-  isPermissionGatedPref,
-  removeFeaturePermissions
-} from '../js/mzta-feature-permissions.js';
+import { isPermissionGatedPref } from '../js/mzta-feature-permissions.js';
 import { maskUrlCredentials } from '../js/mzta-endpoint-policy.js';
 import {
   bindPermissionToggle,
@@ -790,23 +786,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   setFeatureManageVisibility(spamfilter_info_btn, spamfilter_el.checked);
   await showLockedPermissionWarning(spamfilter_el, 'spamfilter');
-
-  // Protects the saved per-message data from eviction: needs the optional unlimitedStorage
-  // permission. Switched off, the permission is given back: the data stays, it is just no longer
-  // protected. Not on a refusal: then the permission was never granted.
-  let storage_persistent_el = document.getElementById('storage_persistent');
-  bindPermissionToggle(storage_persistent_el, 'storage_persistent', {
-    taLog: taLog,
-    onChange: async (checked) => {
-      if (checked) return;
-      try {
-        if (await hasFeaturePermissions('storage_persistent')) await removeFeaturePermissions('storage_persistent');
-      } catch (e) {
-        taLog.error('Could not remove the permission of storage_persistent: ' + e);
-      }
-    },
-  });
-  await showLockedPermissionWarning(storage_persistent_el, 'storage_persistent');
 
   let summarize_el = document.getElementById('summarize');
   let summarize_info_btn = document.getElementById('btnManageSummarizeInfo');

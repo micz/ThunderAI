@@ -249,10 +249,6 @@ export const prefs_default = {
     // the model is a large download from Hugging Face, made by every machine.
     ai_processing_model_autodownload: false,
     max_prompt_length: 30000,   // max string length for prompt
-    // Protect the saved spam reports, summaries and translations (IndexedDB) from being deleted
-    // when the disk is almost full: a permission-gated toggle needing the optional
-    // unlimitedStorage permission (js/mzta-feature-permissions.js). Off, like every gated feature.
-    storage_persistent: false,
     add_tags: false,
     add_tags_maxnum: 3,
     add_tags_max_messages: 0,   // max messages tagged at once from the context menu (0 = no limit); above this the user is warned and the operation is blocked. Automatic tagging is not capped

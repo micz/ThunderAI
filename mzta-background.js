@@ -1767,7 +1767,10 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
         if (options.refresh) {
             // Inside the job, not in the refresh handler: the old summary is dropped only by
             // the caller that owns the generation, never while another job is running.
-            await summaryStore.removeSummary(headerMessageId);
+            // The stored summary is only a cache: failing to drop it must not stop the new one,
+            // which overwrites it anyway.
+            await summaryStore.removeSummary(headerMessageId)
+                .catch(e => taLog.error("[ThunderAI] Summary: could not remove the stored summary of " + headerMessageId + ": " + e));
         } else {
             let cachedSummary = await summaryStore.loadSummary(headerMessageId);
             if (cachedSummary && !cachedSummary.error) {
@@ -1947,7 +1950,8 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
 
         if (options.refresh) {
             // See _runSummaryJob().
-            await translationStore.removeTranslation(headerMessageId);
+            await translationStore.removeTranslation(headerMessageId)
+                .catch(e => taLog.error("[ThunderAI] Translation: could not remove the stored translation of " + headerMessageId + ": " + e));
         } else {
             let cachedTranslation = await translationStore.loadTranslation(headerMessageId);
             if (cachedTranslation && !cachedTranslation.error) {
@@ -2223,7 +2227,10 @@ async function _runSpamJob(entry, headerMessageId, options) {
             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
         ]);
 
-        await spamReport.removeReportData(headerMessageId);
+        // Only a cache: failing to drop the old report must not stop the analysis, whose new
+        // report overwrites it anyway.
+        await spamReport.removeReportData(headerMessageId)
+            .catch(e => taLog.error("[ThunderAI | SpamFilter] Could not remove the stored report of " + headerMessageId + ": " + e));
 
         await updateSpamPanel(headerMessageId, "showSpamCheckInProgress");
 
