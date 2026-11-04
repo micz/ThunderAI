@@ -231,7 +231,7 @@ stores `'inline'` as before.
 
 ## The allowlist
 
-Derived from `Object.keys(prefs_default)`, minus five exclusion rules. Nothing else is
+Derived from `Object.keys(prefs_default)`, minus six exclusion rules. Nothing else is
 hardcoded — a new preference becomes policy-settable the moment it is declared.
 
 ```
@@ -241,21 +241,22 @@ Object.keys(prefs_default)
   minus  api_webchat_font_scale local UI zoom
   minus  custom_prompts_view    custom prompts page layout, local UI
   minus  add_tags_account_settings  Add Tags overrides keyed by account id, per profile
+  minus  calendar_preferred_id  a calendar id, generated in each profile
 ```
 
 The rules are applied in one place, `isPolicyExcludedKey(key)` (exported, pure): `buildAllowlist()`
 uses it, and so does the CI report of [Adding a policy-settable preference](#adding-a-policy-settable-preference).
 
-**142 of 152 keys** are policy-settable. The derivation already covers the generated keys:
+**142 of 153 keys** are policy-settable. The derivation already covers the generated keys:
 the six `{prefix}_use_specific_integration` / `{prefix}_connection_type` pairs (from
 `special_prompts_with_integration`) and the per-provider `{integration}_{key}` connection
 keys (from `integration_options_config`) are all spread into `prefs_default` in
 [`options/mzta-options-default.js`](../options/mzta-options-default.js).
 
-The ten excluded keys are per-machine or per-profile state, not configuration: enforcing
+The eleven excluded keys are per-machine or per-profile state, not configuration: enforcing
 them across a fleet would push window coordinates from another screen, a font zoom from
-another display, a page layout the user chose for themselves, or account ids that do not
-exist in this profile.
+another display, a page layout the user chose for themselves, or account and calendar ids
+that do not exist in this profile.
 
 **`add_tags_account_settings` is excluded, but it never bypasses the policy.** Its per-account
 overrides use the global keys' own names, and `addTags_resolveAccountPrefs()` skips every one whose
@@ -509,7 +510,7 @@ overlays read), the page guard of [The connection panel](08b-managed-connections
 
 Either way the administrator key reference on micz.it is now out of date — it is generated
 from `prefs_default` by hand, so a new or newly excluded preference has to be reflected
-there too. So do the "142 of 152" count in [The allowlist](#the-allowlist) and the counts in
+there too. So do the "142 of 153" count in [The allowlist](#the-allowlist) and the counts in
 `tests/managed/04-allowlist-derivation.test.mjs`, which fails until they are updated.
 
 ## Adding a restriction
@@ -596,7 +597,7 @@ locks - or offers as an initial value - every allowlisted key that has an `.opti
 policy. A new preference with a control on one of those pages is covered the moment it is
 declared.
 
-`04-allowlist-derivation` also checks the **142 of 152** count in [The allowlist](#the-allowlist).
+`04-allowlist-derivation` also checks the **142 of 153** count in [The allowlist](#the-allowlist).
 When a preference is added, update that sentence and the test's expected count together.
 
 **Not covered:** the parts of `mzta-background.js` that only run inside its startup - the

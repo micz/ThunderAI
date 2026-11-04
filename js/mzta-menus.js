@@ -598,6 +598,7 @@ export class mzta_Menus {
                             'calendar_enforce_timezone',
                             'calendar_timezone',
                             'calendar_append_email_link',
+                            'calendar_preferred_id',
                             'calendar_reminder_enabled',
                             'calendar_reminder_rules',
                             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
@@ -676,7 +677,7 @@ export class mzta_Menus {
                         this.logger.log("calendar_event_data: " + calendar_event_data);
                         this.logger.log("calendar_event_data_obj: " + calendar_event_data_str);
                         try{
-                            let result_openCalendarEventDialog = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "openCalendarEventDialog", calendar_event_data: calendar_event_data_str})
+                            let result_openCalendarEventDialog = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "openCalendarEventDialog", calendar_event_data: calendar_event_data_str, preferred_calendar_id: prefs_at.calendar_preferred_id})
                             if(result_openCalendarEventDialog == 'ok'){
                                 taWorkingStatus.stopWorking();
                                 return {ok:'1'};

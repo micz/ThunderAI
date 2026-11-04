@@ -508,7 +508,7 @@ async function openContext(what, opts) {
         session: opts.session,
         accounts: opts.accounts,
         sender: { url, id: 'thunderai@micz.it' },
-        external: async () => null, // no other add-on (the Sparks presence check)
+        external: opts.external ?? (async () => null), // by default no other add-on (the Sparks presence check)
         decorate(ctl) {
             addPageApis(ctl.browser, opts);
             for (const p of pluginList) if (p.pageApis) p.pageApis(ctl.browser, opts);

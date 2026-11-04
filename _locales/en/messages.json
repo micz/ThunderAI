@@ -4419,5 +4419,25 @@
   "prefs_insecure_origins_remove": {
     "message": "Remove",
     "description": "Options page, advanced section: button next to an allowed unencrypted server, which withdraws the permission."
+  },
+  "prefs_OptionText_calendar_preferred_id": {
+    "message": "Default calendar",
+    "description": "Calendar Event settings page: label of the list choosing the calendar that receives new events."
+  },
+  "calendar_preferred_selected": {
+    "message": "Use the currently selected calendar",
+    "description": "Calendar Event settings page, default calendar list: the entry meaning no default, the calendar selected in Thunderbird is used."
+  },
+  "calendar_preferred_missing": {
+    "message": "Unavailable calendar",
+    "description": "Calendar Event settings page, default calendar list: entry for a saved calendar that can no longer receive events."
+  },
+  "calendar_preferred_missing_info": {
+    "message": "The saved calendar is unavailable. Event creation will use an available calendar and warn you. Your saved choice is kept.",
+    "description": "Calendar Event settings page: shown under the default calendar list when the saved calendar can no longer receive events."
+  },
+  "calendar_preferred_load_error": {
+    "message": "Calendars could not be loaded. This option needs a matching ThunderAI Sparks version. Your saved choice has not been changed.",
+    "description": "Calendar Event settings page: shown under the default calendar list when ThunderAI Sparks is missing, too old or did not answer."
   }
 }

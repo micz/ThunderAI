@@ -297,3 +297,7 @@ fail-closed blocking while switched on, progress/timeout, Stop, inactive forward
 response buffering and provider/UI isolation. `bgContext`
 models Privacy absent independently of Sparks' `external` stub; use `processor`
 to opt in to a fake Privacy responder. No runtime/model dependency is needed.
+
+`42-default-calendar` runs the actual email menu action to the companion message: the stored
+default calendar id travels next to the AI's JSON, never inside it. It also checks the calendar
+list the settings page asks Sparks for, and that no policy can set that id.

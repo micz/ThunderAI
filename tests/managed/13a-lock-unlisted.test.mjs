@@ -15,7 +15,7 @@ import { extractManagedValuesListener } from '../helpers/background-handler.mjs'
 const EXCLUDED = key =>
     /^chatgpt_win_/.test(key) || /_enabled_accounts$/.test(key) ||
     key === 'api_webchat_font_scale' || key === 'custom_prompts_view' ||
-    key === 'add_tags_account_settings';
+    key === 'add_tags_account_settings' || key === 'calendar_preferred_id';
 const ACCOUNT_MATCH = key => /_enabled_accounts_match$/.test(key);
 
 const STORED = {
