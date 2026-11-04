@@ -165,6 +165,10 @@ The companion sends ThunderAI, with `protocol: 1`:
 | `readinessChanged` | protocol, instanceId, ready, downloading, progress, error | `{ok, protocol}`; relayed to pages as `ai_processing_readiness` |
 | `progress` | see below | `{ok}` |
 
+A companion message with another `protocol` is refused with `{ok: false, protocol: 1}`:
+the protocol of this build goes back, so the companion's settings page can tell a
+ThunderAI newer than itself from one too old to answer at all.
+
 `settingChanged` goes the other way whenever `ai_processing_enabled` changes in
 `storage.local`, whoever wrote it (options page, companion, settings import), carrying
 the policy-resolved value. It is fire-and-forget: an absent companion is ignored.

@@ -151,9 +151,10 @@ test('the companion reads and writes the switch; every write is mirrored back wi
     await companion.activate(false); // the options page
     await flush(3);
     assert.deepEqual(settingChanges().map(m => m.enabled), [true, false]);
-    for (const bad of [{ enabled: 'yes' }, { enabled: true, protocol: 99 }]) {
-        assert.equal((await externalProcessingMessage({ action: 'aiProcessing.setSetting', protocol: 1, ...bad })).ok, false);
-    }
+    assert.equal((await externalProcessingMessage({ action: 'aiProcessing.setSetting', protocol: 1, enabled: 'yes' })).ok, false);
+    // Another protocol is refused with this build's own, so the companion can tell which side is old.
+    assert.deepEqual(await externalProcessingMessage({ action: 'aiProcessing.setSetting', protocol: 99, enabled: true }),
+        { ok: false, protocol: 1 });
     assert.equal(ctx.ctl.localData().ai_processing_enabled, false);
 });
 
