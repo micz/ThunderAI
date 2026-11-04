@@ -278,16 +278,27 @@ k.test('delete-older', 'deleteOlderThan(days): every record older than that, of 
     await assert.rejects(taStorage.deleteOlderThan(0), /Invalid number of days/);
 });
 
-k.test('bulk-under-lock', 'deleteErrors(), deleteOlderThan(), removeEntries() and fillMetadata() run under the cleanup lock', async (t) => {
+k.test('bulk-under-lock', 'deleteErrors(), deleteOlderThan(), removeEntries(), fillMetadata(), the writes and the deletes take the cleanup lock', async (t) => {
     await clearAll();
+    await seed('summary', 'one@x', DATA.summary.ok, 1);
     const names = [];
     const real = globalThis.navigator.locks.request.bind(globalThis.navigator.locks);
     t.mock.method(globalThis.navigator.locks, 'request', (name, fn) => { names.push(name); return real(name, fn); });
-    await taStorage.deleteErrors();
-    await taStorage.deleteOlderThan(3);
-    await taStorage.removeEntries([]);
-    await taStorage.fillMetadata('summary', 'none@x', 1, {});
-    assert.deepEqual(names, Array(4).fill('thunderai-storage-cleanup'));
+    const st = new taStorage(false);
+    for (const op of [
+        () => taStorage.deleteErrors(),
+        () => taStorage.deleteOlderThan(3),
+        () => taStorage.removeEntries([{ type: 'summary', messageId: 'one@x', createdAt: 1 }]),
+        () => taStorage.fillMetadata('summary', 'none@x', 1, {}),
+        () => st.writeSummary('w@x', { summary: 'S' }),
+        () => st.deleteSummaryField('w@x'),
+        () => st.deleteRecord('w@x'),
+    ]) {
+        const before = names.length;
+        await op();
+        assert.ok(names.length > before, String(op));
+    }
+    assert.ok(names.every(n => n === 'thunderai-storage-cleanup'));
 });
 
 k.test('mirror-helper-rewritten', 'a record rewritten between the cursor and the mirror removal keeps its new mirror key; the others go; never get(null)', async (t) => {
@@ -471,6 +482,146 @@ k.test('schedule-stop-during-run', 'a run in progress when the schedule is stopp
     await flush();
     assert.equal(n, 1);
     taStorage.stopCleanupSchedule();
+});
+
+// --- Lots ---------------------------------------------------------------------------------------
+
+/** Run fn() with message_storage_batch_size stored as `size` (removed after). */
+async function withBatchSize(size, fn) {
+    await ctx.ctl.browser.storage.local.set({ message_storage_batch_size: size });
+    try { return await fn(); } finally { await ctx.ctl.browser.storage.local.remove('message_storage_batch_size'); }
+}
+
+/** Count the holds of the cleanup lock during fn(). */
+async function countHolds(t, fn) {
+    let holds = 0;
+    const real = globalThis.navigator.locks.request.bind(globalThis.navigator.locks);
+    t.mock.method(globalThis.navigator.locks, 'request', (name, cb) => { holds++; return real(name, cb); });
+    await fn();
+    t.mock.restoreAll();
+    return holds;
+}
+
+k.test('lots-size', 'a bulk removal works in lots of message_storage_batch_size, one lock hold each; an invalid size is the default, 100', async (t) => {
+    const now = Date.parse('2026-06-10T12:00:00Z');
+    const old = n => Array.from({ length: n }, (_, i) => ['o' + i + '@x', 10, false]);
+    await clearAll();
+    await seedDays('summary', now, old(150));
+    // 150 summaries in lots of 50: three full lots, then one that finds nothing; the two empty
+    // types one lot each.
+    assert.equal(await withBatchSize(50, () => countHolds(t, () => taStorage.deleteOlderThan(5, now))), 4 + 1 + 1);
+    assert.equal(await taStorage.count('summary'), 0);
+    await clearAll();
+    await seedDays('summary', now, old(150));
+    // 0 is not a valid size: the default, 100 (one lot of 100, one of 50).
+    const holds = await withBatchSize(0, () => countHolds(t, () => taStorage.deleteOlderThan(5, now)));
+    assert.equal(holds, 2 + 1 + 1);
+    assert.equal(await taStorage.count('summary'), 0);
+});
+
+k.test('lots-same-result', 'in lots of 2, the cleanup removes exactly what previewCleanup() counted, for every combination of rules', async () => {
+    const now = Date.parse('2026-06-10T12:00:00Z');
+    await withBatchSize(2, async () => {
+        for (const { name, limits } of PREVIEW_CASES) {
+            await seedMixed(now);
+            const preview = await taStorage.previewCleanup(limits, now);
+            assert.deepEqual(await taStorage.cleanup(limits, now), preview, name);
+        }
+    });
+});
+
+/**
+ * Start a bulk removal and, while its first lot holds the lock (on that lot's targeted read of
+ * the mirror keys), ask for a write of the background. The write gets the lock before the second
+ * lot: it ends before the operation does. Returns the order of the two ends.
+ */
+async function writeDuringFirstLot(t, op, write) {
+    const storageLocal = ctx.ctl.browser.storage.local;
+    const realGet = storageLocal.get.bind(storageLocal);
+    const ends = [];
+    let writing = null;
+    t.mock.method(storageLocal, 'get', (keys) => {
+        if (!writing && Array.isArray(keys) && keys.length > 0) {
+            writing = write().then(() => ends.push('write'));
+        }
+        return realGet(keys);
+    });
+    await op();
+    ends.push('operation');
+    await writing;
+    t.mock.restoreAll();
+    return ends;
+}
+
+k.test('write-between-lots', 'a write asked during a bulk removal runs between two lots, not after the whole operation, and keeps its record in both places', async (t) => {
+    const now = Date.parse('2026-06-10T12:00:00Z');
+    await clearAll();
+    await seedDays('translation', now, Array.from({ length: 9 }, (_, i) => ['t' + i + '@x', 10, false]));
+    const st = new taStorage(false);
+    const ends = await withBatchSize(2, () => writeDuringFirstLot(t,
+        () => taStorage.deleteOlderThan(5, now),
+        () => st.writeTranslation('t4@x', { translated_text: 'new' })));
+    assert.deepEqual(ends, ['write', 'operation']);
+    // t4@x was rewritten now: not older than 5 days any more, kept in both places.
+    assert.deepEqual(await ids('translation'), ['t4@x']);
+    assert.equal(local()['translation:t4@x'].translated_text, 'new');
+});
+
+k.test('clear-keeps-new', 'an emptying started before a write keeps the record written while it runs, in both places', async (t) => {
+    const now = Date.parse('2026-06-10T12:00:00Z');
+    t.mock.timers.enable({ apis: ['Date'], now });
+    await clearAll();
+    for (let i = 0; i < 7; i++) await seed('spam', 'c' + i + '@x', DATA.spam.ok, now - 1000 * (i + 1));
+    const st = new taStorage(false);
+    const ends = await withBatchSize(2, () => writeDuringFirstLot(t,
+        () => taStorage.clearAllRecords(),
+        () => { t.mock.timers.setTime(now + 5000); return st.writeSpam('during@x', { spamValue: 3 }); }));
+    assert.deepEqual(ends, ['write', 'operation']);
+    assert.deepEqual(await ids('spam'), ['during@x']);
+    assert.deepEqual(Object.keys(local()).filter(key => key.startsWith('spam:')), ['spam:during@x']);
+});
+
+k.test('delete-errors-keeps-new', 'deleteErrors() leaves an error saved after it started', async (t) => {
+    const now = Date.parse('2026-06-10T12:00:00Z');
+    t.mock.timers.enable({ apis: ['Date'], now });
+    await clearAll();
+    for (let i = 0; i < 5; i++) await seed('summary', 'e' + i + '@x', DATA.summary.err, now - 1000 * (i + 1));
+    const st = new taStorage(false);
+    await withBatchSize(2, () => writeDuringFirstLot(t,
+        () => taStorage.deleteErrors(now),
+        () => { t.mock.timers.setTime(now + 5000); return st.writeSummary('late@x', { error: true, message: 'x' }); }));
+    assert.deepEqual(await ids('summary'), ['late@x']);
+});
+
+k.test('lots-partial-failure', 'a failure in a later lot leaves the lots done, and the error says what was removed before it', async (t) => {
+    const now = Date.parse('2026-06-10T12:00:00Z');
+    await clearAll();
+    await seedDays('summary', now, Array.from({ length: 5 }, (_, i) => ['f' + i + '@x', 10, false]));
+    const real = globalThis.IDBCursor.prototype.delete;
+    let calls = 0;
+    t.mock.method(globalThis.IDBCursor.prototype, 'delete', function (...a) {
+        if (++calls === 3) throw new DOMException('disk failure', 'UnknownError');
+        return real.apply(this, a);
+    });
+    const error = await withBatchSize(2, () => taStorage.deleteOlderThan(5, now).then(() => null, e => e));
+    t.mock.restoreAll();
+    assert.match(String(error), /disk failure/);
+    assert.deepEqual(error.removed, { spam: 0, summary: 2, translation: 0 });
+    assert.equal(await taStorage.count('summary'), 3);
+});
+
+k.test('reconcile-lots', 'the realignment reads in one hold, then puts and removes in lots; the counts are the totals', async (t) => {
+    await clearAll();
+    for (let i = 0; i < 5; i++) {
+        await ctx.ctl.browser.storage.local.set({ ['summary:m' + i + '@x']: taStorage.buildRecord('summary', 'm' + i + '@x', { summary: 'S' }, 100 + i) });
+    }
+    const db = await taStorage.openDB();
+    await db.put('summary', taStorage.buildRecord('summary', 'db-only@x', { summary: 'S' }, 50));
+    let result;
+    const holds = await withBatchSize(2, () => countHolds(t, async () => { result = await taStorage.reconcileWithMirror(); }));
+    assert.equal(holds, 1 + 3, 'the read, then three lots (2 + 2 + 1 puts, the removal in the first)');
+    assert.deepEqual(result.summary, { restored: 5, removed: 1 });
+    assert.deepEqual(await ids('summary'), ['m0@x', 'm1@x', 'm2@x', 'm3@x', 'm4@x']);
 });
 
 k.coverage();

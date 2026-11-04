@@ -301,14 +301,16 @@ k.test('clear-all', 'clearAllRecords() empties the three stores, returns the cou
     assert.equal(data.do_debug, false);
 });
 
-k.test('under-lock', 'clear(), clearAllRecords() and the cleanup run under the thunderai-storage-cleanup lock', async (t) => {
+k.test('under-lock', 'clear(), clearAllRecords() and the cleanup run under the thunderai-storage-cleanup lock (one hold per lot, at least one each)', async (t) => {
     const names = [];
     const real = navigator.locks.request.bind(navigator.locks);
     t.mock.method(navigator.locks, 'request', (name, ...rest) => { names.push(name); return real(name, ...rest); });
-    await taStorage.clear('spam');
-    await taStorage.clearAllRecords();
-    await taStorage.cleanup({});
-    assert.deepEqual(names, [CLEANUP_LOCK_NAME, CLEANUP_LOCK_NAME, CLEANUP_LOCK_NAME]);
+    for (const op of [() => taStorage.clear('spam'), () => taStorage.clearAllRecords(), () => taStorage.cleanup({ spam: { maxEntries: 5 } })]) {
+        const before = names.length;
+        await op();
+        assert.ok(names.length > before, 'took the lock');
+    }
+    assert.ok(names.every(n => n === CLEANUP_LOCK_NAME));
     assert.equal(CLEANUP_LOCK_NAME, 'thunderai-storage-cleanup');
 });
 

@@ -246,7 +246,7 @@ Object.keys(prefs_default)
 The rules are applied in one place, `isPolicyExcludedKey(key)` (exported, pure): `buildAllowlist()`
 uses it, and so does the CI report of [Adding a policy-settable preference](#adding-a-policy-settable-preference).
 
-**152 of 162 keys** are policy-settable. The derivation already covers the generated keys:
+**153 of 163 keys** are policy-settable. The derivation already covers the generated keys:
 the six `{prefix}_use_specific_integration` / `{prefix}_connection_type` pairs (from
 `special_prompts_with_integration`) and the per-provider `{integration}_{key}` connection
 keys (from `integration_options_config`) are all spread into `prefs_default` in
@@ -256,9 +256,10 @@ The per-message storage keys of [#955](https://github.com/micz/ThunderAI/issues/
 [#956](https://github.com/micz/ThunderAI/issues/956) are ordinary entries of the allowlist:
 `{feature}_storage_max_entries`, `{feature}_storage_max_age_days` and
 `{feature}_storage_error_max_age_days` (numbers, any non-negative integer, `0` = no limit, so no
-`PREF_NUMBER_RANGES` entry) for `spamfilter`, `summarize` and `translate`, and the boolean
-`message_storage_cleanup_auto`. There is no switch per type any more: every result is saved (the
-`{feature}_storage_enabled` keys of the development builds were removed before any release). The ten
+`PREF_NUMBER_RANGES` entry) for `spamfilter`, `summarize` and `translate`, the boolean
+`message_storage_cleanup_auto`, and `message_storage_batch_size` (the lot size of the bulk removals,
+**policy-only**: no control in any page; `PREF_NUMBER_RANGES` 1 to 10000). There is no switch per type any more: every result is saved (the
+`{feature}_storage_enabled` keys of the development builds were removed before any release). The first ten
 keys are set on the storage management page (`pages/storage/`), whose rule controls carry
 `data-mzta-pref`, so a locked key is disabled and marked there, its value is left out of the page's
 Save, and Restore defaults skips it (covered by `storage/02-sweep-locked` and `03-sweep-unlocked`).
@@ -531,7 +532,7 @@ overlays read), the page guard of [The connection panel](08b-managed-connections
 
 Either way the administrator key reference on micz.it is now out of date — it is generated
 from `prefs_default` by hand, so a new or newly excluded preference has to be reflected
-there too. So do the "152 of 162" count in [The allowlist](#the-allowlist) and the counts in
+there too. So do the "153 of 163" count in [The allowlist](#the-allowlist) and the counts in
 `tests/managed/04-allowlist-derivation.test.mjs`, which fails until they are updated.
 
 ## Adding a restriction
@@ -617,7 +618,7 @@ locks - or offers as an initial value - every allowlisted key that has an `.opti
 policy. A new preference with a control on one of those pages is covered the moment it is
 declared.
 
-`04-allowlist-derivation` also checks the **152 of 162** count in [The allowlist](#the-allowlist).
+`04-allowlist-derivation` also checks the **153 of 163** count in [The allowlist](#the-allowlist).
 When a preference is added, update that sentence and the test's expected count together.
 
 **Not covered:** the parts of `mzta-background.js` that only run inside its startup - the

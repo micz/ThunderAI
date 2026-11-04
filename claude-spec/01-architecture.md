@@ -2391,32 +2391,37 @@ methods of the storage management page:
 - `getEntryKeys(type)` → `[{ messageId, createdAt }]`, oldest first, from a **key** cursor on
   `createdAt` (its key is `createdAt`, its primary key the Message-ID): no record loaded; `[]` when
   the database cannot be read. The orphan scan walks it;
-- `deleteErrors()` → removed per type: a cursor on `failed_createdAt` over the error range, per type;
+- `deleteErrors(now)` → removed per type: a cursor on `failed_createdAt` over the errors created up
+  to `now` (the start: an error saved while it runs is kept);
 - `deleteOlderThan(days, now)` → removed per type (`days` a positive integer, else it rejects);
 - `removeEntries([{ type, messageId, createdAt }])` → removed per type: each record only while the
-  store still holds it with that `createdAt` (`putNewerRecords([], removals)`), one transaction;
+  store still holds it with that `createdAt` (`putNewerRecords([], removals)`);
 - `fillMetadata(type, messageId, createdAt, metadata)` → whether the record was rewritten: the empty
   metadata of one record (`subject`, `from`, `message_date` all empty), only if both the mirror value
   and the database record still have the `createdAt` given and empty metadata. The record is rebuilt
   with `buildRecord()` and the **same** `createdAt` (so `size` is recomputed), written to the mirror
   first, then put in the database by a readwrite transaction that checks the record again. Nothing
-  is written when the metadata given is empty too. The window left: a background write (which takes
-  no lock) landing between the mirror read and the mirror write is overwritten in the mirror.
+  is written when the metadata given is empty too. It holds the cleanup lock for the whole entry,
+  and the writes take it too, so no write lands between its reads and its writes.
 The bulk methods (`clear()`, `clearAllRecords()`, `deleteErrors()`, `deleteOlderThan()`,
-`removeEntries()`, `cleanup()`) and `fillMetadata()` run under the cleanup lock; they reject on a
-failure. The rules of every method:
+`removeEntries()`, `cleanup()`) work **in lots** and reject on a failure (see "The cleanup lock and
+the lots" below). The rules of every method:
 - nothing but IndexedDB requests is awaited inside a transaction (it commits as soon as the event
   loop is idle): the preference reads and the mirror calls come before it, or after it is done;
+- **every write and every single delete takes the cleanup lock** (`_write()`, `delete*Field()`,
+  `deleteRecord()`), see "The cleanup lock and the lots" below; `createdAt` is taken once the lock is
+  held;
 - **writes go to the mirror first, then to IndexedDB** (`_write()`): a failed mirror write rejects
   before IndexedDB is touched; a failed IndexedDB write after a successful mirror write rejects too
   and leaves the mirror key (the durable copy wins; the next rebuild restores the record). With
   `force` false, a record found in either place is kept;
 - **every delete removes the mirror keys too**: `delete*Field()` and `deleteRecord()` remove them
   first (a failure rejects); `cleanup()`, `deleteErrors()`, `deleteOlderThan()` and `removeEntries()`
-  collect `{ messageId, createdAt }` from their IndexedDB cursors (or are given them) and, after their
-  transactions have committed, remove the mirror keys through `removeMirrorKeysIfUnchanged()` (below);
-  `clear(type)` and `clearAllRecords()` remove the keys of the prefixes found with `get(null)`, then
-  empty the stores;
+  collect `{ messageId, createdAt }` from their IndexedDB cursors (or are given them) and, after the
+  transaction of each lot has committed, remove the mirror keys through
+  `removeMirrorKeysIfUnchanged()` (below); `clear(type)` and `clearAllRecords()` delete the records
+  in lots up to their start, then, in one last step, the mirror keys of their types the lots did not
+  reach (found with `get(null)`) that are not newer than their start;
 - `openDB()` always passes `blocked`, `blocking` (it closes the connection, so another context can
   upgrade or delete the database) and `terminated`; the connection is shared per context and
   reopened after either. A failed open is logged and not kept: the next call tries again;
@@ -2438,24 +2443,60 @@ failure. The rules of every method:
 Separate stores need no write queue: the per-record queue the `storage.local` layout needed
 (`_pending`) is gone.
 
-**The mirror of a bulk removal** (`removeMirrorKeysIfUnchanged(byType)`, internal). The background's
-writes (`_write()`) do not take the cleanup lock, so a bulk removal can race with a new result saved
-for the same message: the removal's cursor deletes the old record, then the background writes the
-new one, mirror first. Removing the mirror key by id alone would drop that new durable copy. So the
-removals work on `{ messageId, createdAt }` pairs taken from their cursors, and once the IndexedDB
-transaction has committed the helper reads the mirror keys with a **targeted**
-`storage.local.get(keys)` (never `get(null)`) and removes, with one `remove()` per type, only those
-whose value still has the `createdAt` seen. A key already gone is skipped. The window left: a write
-landing between that `get` and that `remove` loses its mirror key (its IndexedDB record is then
-removed by the next realignment, which treats it as deleted from the durable copy); it is one
-`storage.local` round trip wide.
+**The cleanup lock and the lots.** One Web Lock, `navigator.locks.request('thunderai-storage-cleanup', ...)`
+(`CLEANUP_LOCK_NAME`, `withCleanupLock()`), shared by the background and the pages, serializes
+every change to the per-message data: each write (`_write()`) and single delete (`delete*Field()`,
+`deleteRecord()`), each lot of a bulk removal, the two steps of the realignment and each metadata
+fill. Web Locks are not reentrant, so nothing holding it asks for it again. It closes the two races
+a write of the background used to have against the page's operations: a bulk removal's cursor
+deleting the old record, the write saving the new one, then the removal dropping the new mirror key
+by id (the new record then lost at the next realignment); and a metadata fill rewriting the mirror
+with the old record plus its metadata over a newer one. Both need a write to land inside the
+operation, which the lock now forbids.
+
+So that a long operation does not hold the writes up, **the bulk removals work in lots** of
+`message_storage_batch_size` records (default `100`, `DEFAULT_BATCH_SIZE`; a policy-only preference,
+an integer from 1 to `BATCH_SIZE_MAX` = 10000, anything else read as the default): each lot takes
+the lock, deletes its records in one transaction, removes their mirror keys and releases it.
+Web Locks grant the requests in order, so a write queued during a lot runs before the next lot: it
+waits for one lot at most. Every operation touches only what existed when it started:
+- the error and age rules of `cleanup()` and `deleteOlderThan()` have their cutoff fixed at the
+  start; the next lot starts its cursor again from the start of the range (what the lots before
+  deleted is gone);
+- the count rule computes its excess (`count − maxEntries`) again at each lot, so it ends with at
+  most `maxEntries` records;
+- `deleteErrors()` takes the errors created up to its start;
+- `clear()` and `clearAllRecords()` take the records created up to their start (or up to the newest
+  record they find, if a clock moved back), then the stale mirror keys up to the same bound; a write
+  made while they run gets a later `createdAt` (taken under the lock) and is kept in both places. A
+  write in the very millisecond the emptying starts counts as made before it;
+- `removeEntries()` splits its list into lots;
+- `reconcileWithMirror()` reads the mirror and the stores in one hold, then puts and removes in lots
+  (each `putNewerRecords()` under the lock): a write or a delete made between two lots goes through
+  the lock too, and wins (a record the store holds as new or newer is kept, one whose `createdAt`
+  changed is not removed). The rebuild (`reconcileIfNew()`) uses `DEFAULT_BATCH_SIZE` without
+  reading the preference: at startup it runs before the background has loaded the policy, and a
+  preference read there would make the background ask itself for the policy values; the manual
+  realignment reads it.
+An operation in lots is **not atomic**: on a failure the lots done stay done, and the error carries
+what was removed before it (`error.removed`, per type: the storage management page shows it,
+`storage_action_error_partial`). The preview still equals the cleanup: with no concurrent write the
+lots remove exactly what one pass would.
+
+**The mirror of a bulk removal** (`removeMirrorKeysIfUnchanged(byType)`, internal). The removals
+work on `{ messageId, createdAt }` pairs taken from their cursors; once the transaction of a lot has
+committed, in the same hold of the lock, the helper reads those mirror keys with a **targeted**
+`storage.local.get(keys)` (never `get(null)`) and removes, with one `remove()` per type, those whose
+value still has the `createdAt` seen. A key already gone is skipped. With the writes under the lock
+the check always matches; it stays as a defence for a context without the Web Locks API (where every
+operation runs unlocked, logged once).
 
 **The wrappers.** `taSummaryStore` (`js/mzta-summarystore.js`), `taTranslationStore`
 (`js/mzta-translationstore.js`) and `taSpamReport` (`js/mzta-spamreport.js`) load, save and remove
 their type and store error states; their dates (`summary_date` fallback, `translation_date`,
 `report_date`) come from `createdAt`. `saveSummary(data, id, metadata = {})`,
 `saveTranslation(data, id, metadata = {})` and the three `saveError(id, message, metadata = {})` take
-the metadata `_buildReportMetadata()` builds; `taSpamReport.buildError()` builds an error report
+the metadata `buildMessageMetadata()` builds; `taSpamReport.buildError()` builds an error report
 without saving it. The spam log reads `getReportPage(0, 20)`, the 20 newest; `countReports()` is kept.
 There is no truncation and no bulk read any more: the limits are the cleanup's.
 
@@ -2507,9 +2548,8 @@ is the one routine; for each type, in this order:
    on `failed_createdAt` over `bound([1, -Infinity], [1, cutoff], false, true)`;
 2. **the age rule**: the records older than the maximum age, with a cursor on `createdAt`;
 3. **the count rule**: the oldest records beyond the maximum count, on what the first two left.
-A limit of `0` disables its rule. Each rule is its own readwrite transaction; the mirror keys of the
-removed records go after them, through `removeMirrorKeysIfUnchanged()`. It returns the count per
-type. The storage management page's "Apply rules now" calls it directly: that run stores no last
+A limit of `0` disables its rule. Each rule runs in lots (above), the mirror keys of each lot removed
+through `removeMirrorKeysIfUnchanged()`. It returns the count per type. The storage management page's "Apply rules now" calls it directly: that run stores no last
 cleanup and moves no timer.
 
 **The dry-run** is a separate method, `taStorage.previewCleanup(limits, now)`, not an option of
@@ -2522,10 +2562,9 @@ none when the error cutoff is not newer than the age cutoff), plus
 rule applies to what the first two rules left). The storage management page passes the values of
 its form, saved or not. Answered `0` per type when the database cannot be read.
 
-Every cleanup, `clear(type)`, `clearAllRecords()`, `deleteErrors()`, `deleteOlderThan()`,
-`removeEntries()`, `fillMetadata()` and `reconcileWithMirror()` run inside
-`navigator.locks.request('thunderai-storage-cleanup', ...)`, shared by the background and the pages,
-so they never overlap.
+Every lot of a cleanup, of `clear(type)`, `clearAllRecords()`, `deleteErrors()`,
+`deleteOlderThan()`, `removeEntries()` and `reconcileWithMirror()`, every `fillMetadata()` and every
+write and single delete run under the cleanup lock (above), so they never overlap.
 
 **Scheduling**, in the background, without the `alarms` permission (`startCleanupSchedule()`, called
 once the policy is loaded). It first reads `message_storage_cleanup_auto` through `mztaPrefs` (so a
@@ -2604,9 +2643,10 @@ database is the working copy, rebuilt from it:
   rebuild it. **The reads wait for that rebuild**: from the moment the connection is lost until the
   rebuild ends, `getRecord()`, `getPage()`, `count()` and `getTotalSize()` of the background first
   await it, so a summary asked for meanwhile finds the saved one instead of being generated again
-  by the AI. The writes do not wait: they go to the mirror first, and the rebuild keeps a record the
-  store holds as new or newer. The pages never call either method, and never wait.
-- **`taStorage.reconcileWithMirror()`**, under the cleanup lock: the rebuild above and the manual
+  by the AI. The writes do not wait for the rebuild as such, only for the lock between two of its
+  steps (above): they go to the mirror first, and the rebuild keeps a record the store holds as new
+  or newer. The pages never call either method, and never wait.
+- **`taStorage.reconcileWithMirror({ batchSize })`**, under the cleanup lock, a read step then lots: the rebuild above and the manual
   realignment. It is **one way, mirror -> IndexedDB**, and never writes to `storage.local`: the
   mirror is the source of truth. It reads the mirror (`get(null)` filtered on the prefixes) and the
   three stores (`getAll()`, one readonly transaction), then for each type and Message-ID: a mirror
@@ -2615,10 +2655,11 @@ database is the working copy, rebuilt from it:
   durable copy, by a delete whose IndexedDB part did not complete, and is never copied back; equal
   `createdAt`, or an IndexedDB copy newer than the mirror one, nothing. A mirror value that is not a
   record of its key (not an object, another `messageId`) is logged and left alone, and so is the
-  IndexedDB record of that Message-ID. Puts and removals run in one transaction
-  (`putNewerRecords(records, removals)`), so nothing is half-written, and a write made since the
-  reads wins: a record the store holds as new or newer is not overwritten, and a record is removed
-  only if it still has the `createdAt` seen when it was chosen. It resolves
+  IndexedDB record of that Message-ID. Puts and removals run in lots, each one transaction
+  (`putNewerRecords(records, removals)`): a failure leaves the lots done (running it again
+  finishes the job), and a write made since the reads wins: a record the store holds as new or
+  newer is not overwritten, and a record is removed only if it still has the `createdAt` seen when
+  it was chosen. It resolves
   `{ spam: { restored, removed }, summary: {...}, translation: {...} }`, logs it, and rejects on a
   failure.
 - **The `reconcileMessageStorage` command** of the main `onMessage` listener of the background runs

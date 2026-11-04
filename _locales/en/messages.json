@@ -662,6 +662,18 @@
       }
     }
   },
+  "storage_action_error_partial": {
+    "message": "The operation stopped with an error after deleting $DETAIL$: $ERROR$",
+    "description": "Storage management page: shown when a deletion fails after having already deleted some entries (it works in small groups). $DETAIL$ is a list such as 'Summaries: 3, Translations: 0, Spam reports: 5'; $ERROR$ is the technical error message.",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      },
+      "error": {
+        "content": "$2"
+      }
+    }
+  },
   "storage_realign": {
     "message": "Realign with the durable copy",
     "description": "Storage management page: button that realigns the database with the durable copy of the saved data."

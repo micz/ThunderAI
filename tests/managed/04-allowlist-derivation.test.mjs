@@ -1,5 +1,5 @@
 // Spec 08 "The allowlist": derived from Object.keys(prefs_default) minus five exclusion
-// rules, nothing else hardcoded; "152 of 162 keys are policy-settable", the ten excluded
+// rules, nothing else hardcoded; "153 of 163 keys are policy-settable", the ten excluded
 // ones being window geometry, account ids, the webchat font zoom and the custom prompts view.
 //
 // If this fails only on the counts after a preference was added, the derivation is fine and
@@ -48,9 +48,9 @@ test('the generated keys are covered by the derivation', () => {
     }
 });
 
-test('the counts in the spec hold: 152 of 162, ten excluded', () => {
-    assert.equal(keys.length, 162, 'prefs_default size changed: update spec 08 "The allowlist"');
-    assert.equal(keys.filter(k => m.mztaManaged.hasManagedValue(k)).length, 152);
+test('the counts in the spec hold: 153 of 163, ten excluded', () => {
+    assert.equal(keys.length, 163, 'prefs_default size changed: update spec 08 "The allowlist"');
+    assert.equal(keys.filter(k => m.mztaManaged.hasManagedValue(k)).length, 153);
     assert.deepEqual(keys.filter(EXCLUDED).sort(), [
         'add_tags_account_settings', 'add_tags_enabled_accounts', 'api_webchat_font_scale', 'chatgpt_win_height',
         'chatgpt_win_left', 'chatgpt_win_save_position', 'chatgpt_win_top', 'chatgpt_win_width',

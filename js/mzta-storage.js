@@ -51,6 +51,12 @@
  *  Only clear(), clearAllRecords() and reconcileWithMirror() enumerate storage.local
  *  (get(null)): rare, user-initiated or rebuild operations. No routine path ever does.
  *
+ *  Every change to the data (each write and single delete, each lot of a bulk removal, the
+ *  realignment's steps, each metadata fill) runs under one Web Lock, CLEANUP_LOCK_NAME; the bulk
+ *  removals work in lots of message_storage_batch_size records and release it between two lots,
+ *  so a write waits for one lot at most (claude-spec/01-architecture.md, "The cleanup lock and the
+ *  lots").
+ *
  *  Two rules hold everywhere below:
  *   - nothing but IndexedDB requests is awaited inside a transaction: a transaction commits as
  *     soon as the event loop is idle, so a preference read or a storage.local call in the middle
@@ -174,6 +180,14 @@ export const STORAGE_PREFS = Object.freeze({
 
 /** The preference that turns the scheduled cleanup on and off (default true). */
 export const CLEANUP_AUTO_PREF = 'message_storage_cleanup_auto';
+
+/**
+ * The preference of the size of a lot of a bulk removal (policy-only, no control in any page),
+ * its default and its maximum (its policy range in js/mzta-managed.js, PREF_NUMBER_RANGES).
+ */
+export const BATCH_SIZE_PREF = 'message_storage_batch_size';
+export const DEFAULT_BATCH_SIZE = 100;
+export const BATCH_SIZE_MAX = 10000;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** The scheduled cleanup runs every 24 hours, and 2 hours after a start that does not need it at once. */
@@ -337,12 +351,6 @@ async function readMirror(types = MESSAGE_STORES) {
     return out;
 }
 
-/** The mirror keys of the given types (see readMirror()). */
-async function mirrorKeysOf(types) {
-    const mirror = await readMirror(types);
-    return types.flatMap(type => [...mirror[type].keys()].map(id => mirrorKey(type, id)));
-}
-
 /**
  * Put records into their stores and remove others, in one readwrite transaction. A record is put
  * only when the store does not already hold one of that Message-ID with a createdAt as new or
@@ -410,12 +418,11 @@ function cutoff(now, days) {
 
 /**
  * Remove the mirror keys of records just removed from the database, but only those whose mirror
- * value still has the createdAt the removal saw: a write made since then (the background's writes
- * do not take the cleanup lock) has a new createdAt, and its key is kept. One targeted
- * storage.local.get(keys) and one remove() per type, never get(null). Called once the
- * transaction of the removal has committed (nothing but IndexedDB requests is awaited inside
- * one). The window left: a write landing between the get and the remove of its type loses its
- * mirror key, and its database record is then removed by the next realignment.
+ * value still has the createdAt the removal saw. One targeted storage.local.get(keys) and one
+ * remove() per type, never get(null). Called once the transaction of the removal has committed
+ * (nothing but IndexedDB requests is awaited inside one), in the same hold of the cleanup lock:
+ * the writes take it too, so none lands between the cursor, the get and the remove. The createdAt
+ * check stays as a defence (a context without the Web Locks API).
  *
  * @param {object} byType { [type]: [{ messageId, createdAt }] }
  */
@@ -479,14 +486,128 @@ export function buildMessageMetadata(message, fullMessage) {
     };
 }
 
-/** Run fn() under the cleanup lock. Without the Web Locks API, fn() runs directly. */
+// Whether the missing Web Locks API was already logged (once per context, not once per lot).
+let _noLocksWarned = false;
+
+/**
+ * Run fn() under the cleanup lock: every write and delete, every lot of a bulk removal, the
+ * realignment's steps and the metadata fill. Web Locks are not reentrant: fn() never calls it
+ * again. Without the Web Locks API, fn() runs directly.
+ */
 function withCleanupLock(fn) {
     const locks = globalThis.navigator?.locks;
     if (!locks || typeof locks.request !== 'function') {
-        _log.warn('navigator.locks is not available: running without the storage cleanup lock.');
+        if (!_noLocksWarned) _log.warn('navigator.locks is not available: running without the storage cleanup lock.');
+        _noLocksWarned = true;
         return fn();
     }
     return locks.request(CLEANUP_LOCK_NAME, fn);
+}
+
+/**
+ * The size of a lot of a bulk removal: message_storage_batch_size (policy-only, no control), an
+ * integer from 1 to BATCH_SIZE_MAX; DEFAULT_BATCH_SIZE for anything else or when it cannot be read.
+ */
+async function readBatchSize() {
+    try {
+        const value = await mztaPrefs.getPref(BATCH_SIZE_PREF);
+        return Number.isInteger(value) && value >= 1 && value <= BATCH_SIZE_MAX ? value : DEFAULT_BATCH_SIZE;
+    } catch (e) {
+        _log.error('Could not read ' + BATCH_SIZE_PREF + ': ' + e);
+        return DEFAULT_BATCH_SIZE;
+    }
+}
+
+/**
+ * Delete, in lots of `batch`, the records of a type a cursor on one of its indexes reaches over a
+ * range: each lot under the cleanup lock, its records deleted in one transaction
+ * (deleteByCursor(), which starts again from the start of the range: the records of the lots
+ * before are gone) and their mirror keys removed (removeMirrorKeysIfUnchanged()), then the lock
+ * released. Adds the count to removed[type] as it goes, so a caller that catches a failure knows
+ * what was removed before it.
+ */
+async function deleteRangeInLots(type, indexName, range, batch, removed) {
+    for (;;) {
+        const n = await withCleanupLock(async () => {
+            const gone = await deleteByCursor(type, indexName, range, batch);
+            await removeMirrorKeysIfUnchanged({ [type]: gone });
+            return gone.length;
+        });
+        removed[type] = (removed[type] || 0) + n;
+        if (n < batch) return;
+    }
+}
+
+/**
+ * The count rule, in lots of `batch`: under the lock, the excess (count - maxEntries) is
+ * computed again, and the oldest records of it, up to `batch`, are deleted with their mirror
+ * keys; until there is no excess. Adds to removed[type] as it goes.
+ */
+async function deleteExcessInLots(type, maxEntries, batch, removed) {
+    for (;;) {
+        const { n, more } = await withCleanupLock(async () => {
+            const tx = await openTransaction(type, 'readwrite');
+            const excess = (await tx.store.count()) - maxEntries;
+            const take = Math.min(batch, excess);
+            const gone = [];
+            let cursor = take > 0 ? await tx.store.index(INDEX_CREATED_AT).openCursor() : null;
+            while (cursor && gone.length < take) {
+                gone.push({ messageId: cursor.primaryKey, createdAt: cursor.value.createdAt });
+                await cursor.delete();
+                cursor = await cursor.continue();
+            }
+            await tx.done;
+            await removeMirrorKeysIfUnchanged({ [type]: gone });
+            return { n: gone.length, more: excess > gone.length };
+        });
+        removed[type] = (removed[type] || 0) + n;
+        if (!more || n === 0) return;
+    }
+}
+
+/**
+ * The upper bound of createdAt an emptying (clear(), clearAllRecords()) removes: now, or the
+ * newest createdAt the stores hold if later (a clock moved back), read when it starts. A record
+ * written after that has a later createdAt (the writes take it under the lock) and is kept.
+ */
+async function clearBound(types) {
+    let bound = Date.now();
+    try {
+        const tx = await openTransaction(types, 'readonly');
+        for (const type of types) {
+            const last = await tx.objectStore(type).index(INDEX_CREATED_AT).openKeyCursor(null, 'prev');
+            if (last && typeof last.key === 'number' && last.key > bound) bound = last.key;
+        }
+        await tx.done;
+    } catch (e) {
+        // A database that cannot be read has nothing to empty: its lots will find nothing either.
+        _log.error('Could not read the newest record: ' + e);
+    }
+    return bound;
+}
+
+/**
+ * The last step of an emptying, under the lock: the mirror keys of the types the lots did not
+ * reach (a record only the mirror holds, a value that is not a record), found with one
+ * storage.local get(null), removed unless their value is a record newer than `bound`.
+ */
+async function removeMirrorKeysUpTo(types, bound) {
+    const mirror = await readMirror(types);
+    const keys = [];
+    for (const type of types) {
+        for (const [id, value] of mirror[type]) {
+            const newer = value && typeof value.createdAt === 'number' && value.createdAt > bound;
+            if (!newer) keys.push(mirrorKey(type, id));
+        }
+    }
+    if (keys.length > 0) await browser.storage.local.remove(keys);
+}
+
+/** The error of a bulk removal, with what it removed before failing: error.removed, per type. */
+function withRemoved(error, removed) {
+    const e = error instanceof Error ? error : new Error(String(error));
+    e.removed = { ...removed };
+    return e;
 }
 
 /** The fields each type stores besides the common ones, with their defaults. */
@@ -820,11 +941,15 @@ export class taStorage {
     // ---- Writes ---------------------------------------------------------------------------------
 
     /**
-     * Store the record of a type: in the mirror (storage.local) first, then in the database.
-     * Skipped (resolves null), in both, when the Message-ID is empty; with force false, also when
-     * a record already exists in either. A failed mirror write
-     * rejects before the database is touched; a failed database write after it rejects too and
-     * leaves the mirror key: the durable copy wins, and the next rebuild puts it in the database.
+     * Store the record of a type: in the mirror (storage.local) first, then in the database, under
+     * the cleanup lock, so it never lands in the middle of a lot of a bulk removal (whose mirror
+     * keys would otherwise lose it) or of a metadata fill (which would otherwise overwrite it).
+     * A bulk removal releases the lock between two lots, so a write waits for one lot at most.
+     * createdAt is taken once the lock is held. Skipped (resolves null), in both, when the
+     * Message-ID is empty; with force false, also when a record already exists in either. A failed
+     * mirror write rejects before the database is touched; a failed database write after it
+     * rejects too and leaves the mirror key: the durable copy wins, and the next rebuild puts it
+     * in the database.
      * @returns {Promise<object|null>} the stored record
      */
     async _write(type, messageId, data, force = true) {
@@ -834,22 +959,24 @@ export class taStorage {
             return null;
         }
         const key = mirrorKey(type, messageId);
-        const record = taStorage.buildRecord(type, messageId, data || {}, Date.now());
-        try {
-            if (!force && (await this._exists(type, messageId, key))) {
-                this.taLog.log('[write ' + type + '] a record already exists, skipping (force=false)');
-                return null;
+        return withCleanupLock(async () => {
+            const record = taStorage.buildRecord(type, messageId, data || {}, Date.now());
+            try {
+                if (!force && (await this._exists(type, messageId, key))) {
+                    this.taLog.log('[write ' + type + '] a record already exists, skipping (force=false)');
+                    return null;
+                }
+                // Before the transaction is opened: nothing but IndexedDB requests is awaited in it.
+                await browser.storage.local.set({ [key]: record });
+                const tx = await openTransaction(type, 'readwrite');
+                await tx.store.put(record);
+                await tx.done;
+                return record;
+            } catch (e) {
+                this.taLog.error('write ' + type + ' error: ' + e);
+                throw e;
             }
-            // Before the transaction is opened: nothing but IndexedDB requests is awaited in it.
-            await browser.storage.local.set({ [key]: record });
-            const tx = await openTransaction(type, 'readwrite');
-            await tx.store.put(record);
-            await tx.done;
-            return record;
-        } catch (e) {
-            this.taLog.error('write ' + type + ' error: ' + e);
-            throw e;
-        }
+        });
     }
 
     /** Whether the mirror or the database holds a record of the type (the force = false check). */
@@ -865,11 +992,16 @@ export class taStorage {
      * Delete the record of one type: its mirror key first, then the database record. A failed
      * mirror removal rejects before the database is touched. A database that cannot be opened has
      * nothing more to delete (its reads answer as empty): logged, resolves. A delete failing on an
-     * open database rejects.
+     * open database rejects. Under the cleanup lock, like the writes: a realignment in lots never
+     * puts back, between two lots, a record deleted after it read the mirror.
      */
-    async _deleteField(type, messageId) {
+    _deleteField(type, messageId) {
         this.taLog.log('[delete ' + type + '] messageId: ' + messageId);
-        if (!messageId) return;
+        if (!messageId) return Promise.resolve();
+        return withCleanupLock(() => this._deleteFieldLocked(type, messageId));
+    }
+
+    async _deleteFieldLocked(type, messageId) {
         try {
             await browser.storage.local.remove(mirrorKey(type, messageId));
         } catch (e) {
@@ -934,163 +1066,166 @@ export class taStorage {
 
     /**
      * Delete the records of a message: its three mirror keys, then the three stores, in one
-     * readwrite transaction. Like _deleteField(), the database part is a no-op when it cannot be
-     * opened.
+     * readwrite transaction, under the cleanup lock like every write and delete. Like
+     * _deleteField(), the database part is a no-op when it cannot be opened.
      */
-    async deleteRecord(messageId) {
+    deleteRecord(messageId) {
         this.taLog.log('[deleteRecord] messageId: ' + messageId);
-        if (!messageId) return;
-        try {
-            await browser.storage.local.remove(MESSAGE_STORES.map(type => mirrorKey(type, messageId)));
-        } catch (e) {
-            this.taLog.error('deleteRecord error (mirror): ' + e);
-            throw e;
-        }
-        let tx;
-        try {
-            tx = await openTransaction(MESSAGE_STORES, 'readwrite');
-        } catch (e) {
-            this.taLog.error('deleteRecord: the message database cannot be read, nothing to delete: ' + e);
-            return;
-        }
-        try {
-            await Promise.all(MESSAGE_STORES.map(name => tx.objectStore(name).delete(messageId)));
-            await tx.done;
-        } catch (e) {
-            this.taLog.error('deleteRecord error: ' + e);
-            throw e;
-        }
+        if (!messageId) return Promise.resolve();
+        return withCleanupLock(async () => {
+            try {
+                await browser.storage.local.remove(MESSAGE_STORES.map(type => mirrorKey(type, messageId)));
+            } catch (e) {
+                this.taLog.error('deleteRecord error (mirror): ' + e);
+                throw e;
+            }
+            let tx;
+            try {
+                tx = await openTransaction(MESSAGE_STORES, 'readwrite');
+            } catch (e) {
+                this.taLog.error('deleteRecord: the message database cannot be read, nothing to delete: ' + e);
+                return;
+            }
+            try {
+                await Promise.all(MESSAGE_STORES.map(name => tx.objectStore(name).delete(messageId)));
+                await tx.done;
+            } catch (e) {
+                this.taLog.error('deleteRecord error: ' + e);
+                throw e;
+            }
+        });
     }
 
+    // ---- Bulk removals, in lots -----------------------------------------------------------------
+    //
+    // Every bulk removal works in lots of message_storage_batch_size records (readBatchSize()):
+    // each lot takes the cleanup lock, deletes its records in one transaction, removes their
+    // mirror keys (removeMirrorKeysIfUnchanged()) and releases the lock. Web Locks grant the
+    // requests in order, so a write of the background queued during a lot runs before the next
+    // one: it waits for one lot, never for the whole operation, and never lands inside a lot. An
+    // operation touches only what existed when it started (its ranges end at a time fixed then).
+    // It is no longer atomic: on a failure the lots already done stay done, and the error carries
+    // what was removed before it (error.removed, per type).
+
     /**
-     * Empty one type, under the cleanup lock: its mirror keys (found with one storage.local
-     * get(null): a rare, user-initiated action), then its store.
+     * Empty one type, in lots: every record created up to the start (clearBound()), then, in one
+     * last step under the lock, the mirror keys of that type the lots did not reach (found with
+     * one storage.local get(null): a rare, user-initiated action) that are not newer than the
+     * start either. A record written meanwhile is kept, in both places.
      * @returns {Promise<number>} the number of records removed from the store
      */
-    static clear(type) {
-        if (!MESSAGE_STORES.includes(type)) return Promise.reject(new Error('Unknown message data type: ' + type));
-        return withCleanupLock(async () => {
-            try {
-                const keys = await mirrorKeysOf([type]);
-                if (keys.length > 0) await browser.storage.local.remove(keys);
-                const tx = await openTransaction(type, 'readwrite');
-                const n = await tx.store.count();
-                await tx.store.clear();
-                await tx.done;
-                return n;
-            } catch (e) {
-                _log.error('clear ' + type + ' error: ' + e);
-                throw e;
-            }
-        });
+    static async clear(type) {
+        if (!MESSAGE_STORES.includes(type)) throw new Error('Unknown message data type: ' + type);
+        const removed = { [type]: 0 };
+        try {
+            const batch = await readBatchSize();
+            const bound = await clearBound([type]);
+            await deleteRangeInLots(type, INDEX_CREATED_AT, IDBKeyRange.upperBound(bound), batch, removed);
+            await withCleanupLock(() => removeMirrorKeysUpTo([type], bound));
+            return removed[type];
+        } catch (e) {
+            _log.error('clear ' + type + ' error: ' + e);
+            throw withRemoved(e, removed);
+        }
     }
 
     /**
-     * Empty the three types, under the cleanup lock: every mirror key (one storage.local
-     * get(null)), then the three stores, in one transaction.
+     * Empty the three types, as clear() does for each, with one last step for the mirror keys of
+     * the three.
      * @returns {Promise<number>} the number of records removed from the stores
      */
-    static clearAllRecords() {
-        return withCleanupLock(async () => {
-            try {
-                const keys = await mirrorKeysOf(MESSAGE_STORES);
-                if (keys.length > 0) await browser.storage.local.remove(keys);
-                const tx = await openTransaction(MESSAGE_STORES, 'readwrite');
-                let n = 0;
-                for (const name of MESSAGE_STORES) {
-                    const store = tx.objectStore(name);
-                    n += await store.count();
-                    await store.clear();
-                }
-                await tx.done;
-                return n;
-            } catch (e) {
-                _log.error('clearAllRecords error: ' + e);
-                throw e;
+    static async clearAllRecords() {
+        const removed = zeroByType();
+        try {
+            const batch = await readBatchSize();
+            const bound = await clearBound(MESSAGE_STORES);
+            for (const type of MESSAGE_STORES) {
+                await deleteRangeInLots(type, INDEX_CREATED_AT, IDBKeyRange.upperBound(bound), batch, removed);
             }
-        });
+            await withCleanupLock(() => removeMirrorKeysUpTo(MESSAGE_STORES, bound));
+            return Object.values(removed).reduce((a, b) => a + b, 0);
+        } catch (e) {
+            _log.error('clearAllRecords error: ' + e);
+            throw withRemoved(e, removed);
+        }
     }
 
     /**
-     * Delete every record that holds an error (failed 1), of every type, under the cleanup lock:
-     * a cursor on the failed_createdAt index per type, then their mirror keys
-     * (removeMirrorKeysIfUnchanged()).
+     * Delete every record that holds an error (failed 1) and was created up to now, of every
+     * type, in lots: a cursor on the failed_createdAt index.
      * @returns {Promise<object>} the number of records removed, per type
      */
-    static deleteErrors() {
-        return withCleanupLock(async () => {
-            try {
-                const removed = zeroByType();
-                for (const type of MESSAGE_STORES) {
-                    const gone = await deleteByCursor(type, INDEX_FAILED_CREATED_AT, errorRange());
-                    removed[type] = gone.length;
-                    await removeMirrorKeysIfUnchanged({ [type]: gone });
-                }
-                return removed;
-            } catch (e) {
-                _log.error('deleteErrors error: ' + e);
-                throw e;
+    static async deleteErrors(now = Date.now()) {
+        const removed = zeroByType();
+        try {
+            const batch = await readBatchSize();
+            for (const type of MESSAGE_STORES) {
+                await deleteRangeInLots(type, INDEX_FAILED_CREATED_AT, errorRange(now), batch, removed);
             }
-        });
+            return removed;
+        } catch (e) {
+            _log.error('deleteErrors error: ' + e);
+            throw withRemoved(e, removed);
+        }
     }
 
     /**
-     * Delete every record older than `days` days (by createdAt), of every type, under the cleanup
-     * lock, with their mirror keys (removeMirrorKeysIfUnchanged()).
+     * Delete every record older than `days` days (by createdAt), of every type, in lots.
      * @param {number} days a positive integer
      * @returns {Promise<object>} the number of records removed, per type
      */
-    static deleteOlderThan(days, now = Date.now()) {
-        if (!Number.isInteger(days) || days <= 0) return Promise.reject(new Error('Invalid number of days: ' + days));
-        return withCleanupLock(async () => {
-            try {
-                const removed = zeroByType();
-                const range = IDBKeyRange.upperBound(cutoff(now, days), true);
-                for (const type of MESSAGE_STORES) {
-                    const gone = await deleteByCursor(type, INDEX_CREATED_AT, range);
-                    removed[type] = gone.length;
-                    await removeMirrorKeysIfUnchanged({ [type]: gone });
-                }
-                return removed;
-            } catch (e) {
-                _log.error('deleteOlderThan error: ' + e);
-                throw e;
+    static async deleteOlderThan(days, now = Date.now()) {
+        if (!Number.isInteger(days) || days <= 0) throw new Error('Invalid number of days: ' + days);
+        const removed = zeroByType();
+        try {
+            const batch = await readBatchSize();
+            const range = IDBKeyRange.upperBound(cutoff(now, days), true);
+            for (const type of MESSAGE_STORES) {
+                await deleteRangeInLots(type, INDEX_CREATED_AT, range, batch, removed);
             }
-        });
+            return removed;
+        } catch (e) {
+            _log.error('deleteOlderThan error: ' + e);
+            throw withRemoved(e, removed);
+        }
     }
 
     /**
-     * Delete the given records, under the cleanup lock: each only if the database still holds it
-     * with the createdAt given (a record written since then is kept), in one transaction
-     * (putNewerRecords()), then the mirror keys that still hold that createdAt
-     * (removeMirrorKeysIfUnchanged()). The orphans of the storage management page.
+     * Delete the given records, in lots: each only if the database still holds it with the
+     * createdAt given (a record written since then is kept; putNewerRecords()), then the mirror
+     * keys that still hold that createdAt (removeMirrorKeysIfUnchanged()). The orphans of the
+     * storage management page.
      * @param {{type: string, messageId: string, createdAt: number}[]} entries
      * @returns {Promise<object>} the number of records removed, per type
      */
-    static removeEntries(entries) {
-        return withCleanupLock(async () => {
-            try {
-                const valid = entries.filter(e => MESSAGE_STORES.includes(e?.type) && e.messageId);
-                const { removedByType } = await putNewerRecords([], valid);
-                const byType = Object.fromEntries(MESSAGE_STORES.map(type =>
-                    [type, valid.filter(e => e.type === type)]));
-                await removeMirrorKeysIfUnchanged(byType);
-                return removedByType;
-            } catch (e) {
-                _log.error('removeEntries error: ' + e);
-                throw e;
+    static async removeEntries(entries) {
+        const removed = zeroByType();
+        try {
+            const batch = await readBatchSize();
+            const valid = entries.filter(e => MESSAGE_STORES.includes(e?.type) && e.messageId);
+            for (let i = 0; i < valid.length; i += batch) {
+                const lot = valid.slice(i, i + batch);
+                await withCleanupLock(async () => {
+                    const { removedByType } = await putNewerRecords([], lot);
+                    await removeMirrorKeysIfUnchanged(Object.fromEntries(MESSAGE_STORES.map(type =>
+                        [type, lot.filter(e => e.type === type)])));
+                    for (const type of MESSAGE_STORES) removed[type] += removedByType[type];
+                });
             }
-        });
+            return removed;
+        } catch (e) {
+            _log.error('removeEntries error: ' + e);
+            throw withRemoved(e, removed);
+        }
     }
 
     /**
      * Fill the empty message metadata of one record, under the cleanup lock (so no cleanup removes
-     * it halfway): rewritten through buildRecord() with the same createdAt (size recomputed), only
-     * if both the mirror value and the database record still have the createdAt given and empty
-     * metadata. Mirror first, then the database, as every write; the database put re-checks the
-     * record in its own transaction. A write of the background (which takes no lock) landing
-     * between the mirror read and the mirror write would be overwritten in the mirror: a window of
-     * one storage.local round trip, left as it is (the realignment cannot tell).
+     * it halfway and no write of the background lands between its reads and its writes):
+     * rewritten through buildRecord() with the same createdAt (size recomputed), only if both the
+     * mirror value and the database record still have the createdAt given and empty metadata.
+     * Mirror first, then the database, as every write; the database put re-checks the record in
+     * its own transaction.
      *
      * @param {string} type
      * @param {string} messageId
@@ -1139,35 +1274,43 @@ export class taStorage {
     // ---- The mirror: rebuild and realignment --------------------------------------------------
 
     /**
-     * Align the database with the mirror, ONE WAY (the mirror is the source of truth), under the
-     * cleanup lock: the rebuild after an eviction (reconcileIfNew()) and the manual realignment
-     * of the storage management page (the background's reconcileMessageStorage command).
-     * Background only: a page asks the background. It never writes to storage.local.
+     * Align the database with the mirror, ONE WAY (the mirror is the source of truth): the rebuild
+     * after an eviction (reconcileIfNew()) and the manual realignment of the storage management
+     * page (the background's reconcileMessageStorage command). Background only: a page asks the
+     * background. It never writes to storage.local.
      *
-     * It reads the mirror (one storage.local get(null), filtered on the prefixes) and the three
-     * stores, then for each type and Message-ID:
+     * In one step under the cleanup lock it reads the mirror (one storage.local get(null),
+     * filtered on the prefixes) and the three stores, then for each type and Message-ID:
      *   - a mirror record missing from the database, or newer than its record there (createdAt),
      *     is put into its store ("restored");
      *   - a database record with no mirror key is removed from its store ("removed"): it was
      *     deleted from the durable copy (a delete whose database part did not complete).
      * A mirror value that is not a record of its key (not an object, another messageId) is logged
-     * and left alone, and so is the database record of that Message-ID. Puts and removals run in
-     * one transaction (putNewerRecords()), so on a failure nothing is half-written; a write made
-     * since the reads wins (a record the store holds as new or newer is kept, a record whose
-     * createdAt changed is not removed). Rejects on any failure.
+     * and left alone, and so is the database record of that Message-ID. The puts and removals then
+     * run in lots (message_storage_batch_size), each its own transaction under the lock
+     * (putNewerRecords()); a write or a delete made between two lots goes through the lock too,
+     * and wins: a record the store holds as new or newer is kept, a record whose createdAt changed
+     * is not removed. On a failure the lots done stay done (running it again finishes the job);
+     * it rejects.
      *
+     * @param {object} [options]
+     * @param {number} [options.batchSize] the lot size; read from message_storage_batch_size when
+     *   omitted. The rebuild (reconcileIfNew()) passes DEFAULT_BATCH_SIZE: at startup it runs
+     *   before the background has loaded the policy, when a preference read would make the
+     *   background ask itself for the policy values.
      * @returns {Promise<object>} { [type]: { restored, removed } }
      */
-    static reconcileWithMirror() {
-        return withCleanupLock(async () => {
-            try {
+    static async reconcileWithMirror({ batchSize = null } = {}) {
+        try {
+            const batch = batchSize ?? await readBatchSize();
+            const { toPut, toRemove } = await withCleanupLock(async () => {
                 const mirror = await readMirror();
                 const tx = await openTransaction(MESSAGE_STORES, 'readonly');
                 const stored = await Promise.all(MESSAGE_STORES.map(name => tx.objectStore(name).getAll()));
                 await tx.done;
 
-                const toPut = [];
-                const toRemove = [];
+                const puts = [];
+                const removals = [];
                 MESSAGE_STORES.forEach((type, i) => {
                     const inDb = new Map(stored[i].map(record => [record.messageId, record]));
                     for (const [id, value] of mirror[type]) {
@@ -1176,23 +1319,32 @@ export class taStorage {
                             continue;
                         }
                         const current = inDb.get(id);
-                        if (!current || isNewer(value, current)) toPut.push({ type, record: value });
+                        if (!current || isNewer(value, current)) puts.push({ type, record: value });
                     }
                     for (const [id, record] of inDb) {
-                        if (!mirror[type].has(id)) toRemove.push({ type, messageId: id, createdAt: record.createdAt });
+                        if (!mirror[type].has(id)) removals.push({ type, messageId: id, createdAt: record.createdAt });
                     }
                 });
+                return { toPut: puts, toRemove: removals };
+            });
 
-                const { byType, removedByType } = await putNewerRecords(toPut, toRemove);
-                const result = Object.fromEntries(MESSAGE_STORES.map(type =>
-                    [type, { restored: byType[type], removed: removedByType[type] }]));
-                _log.log('Message storage reconciled with the mirror: ' + JSON.stringify(result));
-                return result;
-            } catch (e) {
-                _log.error('reconcileWithMirror error: ' + e);
-                throw e;
+            const result = Object.fromEntries(MESSAGE_STORES.map(type => [type, { restored: 0, removed: 0 }]));
+            const lots = Math.max(Math.ceil(toPut.length / batch), Math.ceil(toRemove.length / batch));
+            for (let i = 0; i < lots; i++) {
+                const puts = toPut.slice(i * batch, (i + 1) * batch);
+                const removals = toRemove.slice(i * batch, (i + 1) * batch);
+                const { byType, removedByType } = await withCleanupLock(() => putNewerRecords(puts, removals));
+                for (const type of MESSAGE_STORES) {
+                    result[type].restored += byType[type];
+                    result[type].removed += removedByType[type];
+                }
             }
-        });
+            _log.log('Message storage reconciled with the mirror: ' + JSON.stringify(result));
+            return result;
+        } catch (e) {
+            _log.error('reconcileWithMirror error: ' + e);
+            throw e;
+        }
     }
 
     /**
@@ -1209,7 +1361,8 @@ export class taStorage {
         _dbIsNew = false;
         _log.log('The message database is new: rebuilding it from the storage.local mirror.');
         try {
-            return await taStorage.reconcileWithMirror();
+            // The default lot size: no preference read before the policy is loaded (see above).
+            return await taStorage.reconcileWithMirror({ batchSize: DEFAULT_BATCH_SIZE });
         } catch (e) {
             _dbIsNew = true;
             throw e;
@@ -1249,55 +1402,46 @@ export class taStorage {
     }
 
     /**
-     * The one cleanup routine, under the cleanup lock. For each type, in this order:
+     * The one cleanup routine. For each type, in this order:
      *   1. the records that hold an error (failed 1) older than its maximum error age (a cursor on
      *      the failed_createdAt index);
      *   2. the records older than its maximum age (a cursor on createdAt);
-     *   3. the oldest records beyond its maximum count.
-     * A limit of 0 disables its rule. Each rule is its own readwrite transaction; once they have
-     * committed, the mirror keys of the removed records go (removeMirrorKeysIfUnchanged(): a key
-     * rewritten meanwhile is kept). The manual "Apply rules now" of the storage management page
-     * calls it too: only the scheduled run stores LAST_CLEANUP_KEY.
+     *   3. the oldest records beyond its maximum count (the excess computed again at each lot).
+     * A limit of 0 disables its rule. Every rule runs in lots of message_storage_batch_size
+     * (deleteRangeInLots(), deleteExcessInLots()): each lot under the cleanup lock, its mirror
+     * keys removed in the same hold, the lock released between two lots so the writes of the
+     * background go through. The manual "Apply rules now" of the storage management page calls it
+     * too: only the scheduled run stores LAST_CLEANUP_KEY. On a failure the lots done stay done,
+     * and the error carries what was removed before it (error.removed).
      *
      * @param {object} [limits] { [type]: { maxEntries, maxAgeDays, errorMaxAgeDays } }; read from
-     *   the preferences (before the lock is taken) when omitted
+     *   the preferences when omitted
      * @param {number} [now]
      * @returns {Promise<object>} the number of records removed, per type
      */
     static async cleanup(limits = null, now = Date.now()) {
-        const resolved = limits || await taStorage.readLimits();
-        return withCleanupLock(async () => {
-            const removed = zeroByType();
+        const removed = zeroByType();
+        try {
+            const resolved = limits || await taStorage.readLimits();
+            const batch = await readBatchSize();
             for (const type of MESSAGE_STORES) {
                 const { maxEntries, maxAgeDays, errorMaxAgeDays } = normalizeLimits(resolved[type]);
-                const gone = [];
                 if (errorMaxAgeDays > 0) {
-                    gone.push(...await deleteByCursor(type, INDEX_FAILED_CREATED_AT,
-                        errorRange(cutoff(now, errorMaxAgeDays), true)));
+                    await deleteRangeInLots(type, INDEX_FAILED_CREATED_AT,
+                        errorRange(cutoff(now, errorMaxAgeDays), true), batch, removed);
                 }
                 if (maxAgeDays > 0) {
-                    gone.push(...await deleteByCursor(type, INDEX_CREATED_AT,
-                        IDBKeyRange.upperBound(cutoff(now, maxAgeDays), true)));
+                    await deleteRangeInLots(type, INDEX_CREATED_AT,
+                        IDBKeyRange.upperBound(cutoff(now, maxAgeDays), true), batch, removed);
                 }
-                if (maxEntries > 0) {
-                    const tx = await openTransaction(type, 'readwrite');
-                    let excess = (await tx.store.count()) - maxEntries;
-                    let cursor = excess > 0 ? await tx.store.index(INDEX_CREATED_AT).openCursor() : null;
-                    while (cursor && excess > 0) {
-                        gone.push({ messageId: cursor.primaryKey, createdAt: cursor.value.createdAt });
-                        await cursor.delete();
-                        excess--;
-                        cursor = await cursor.continue();
-                    }
-                    await tx.done;
-                }
-                removed[type] = gone.length;
-                // After the commits: nothing but IndexedDB requests is awaited in a transaction.
-                await removeMirrorKeysIfUnchanged({ [type]: gone });
+                if (maxEntries > 0) await deleteExcessInLots(type, maxEntries, batch, removed);
             }
-            _log.log('Storage cleanup: removed ' + JSON.stringify(removed));
-            return removed;
-        });
+        } catch (e) {
+            _log.error('Storage cleanup error: ' + e);
+            throw withRemoved(e, removed);
+        }
+        _log.log('Storage cleanup: removed ' + JSON.stringify(removed));
+        return removed;
     }
 
     /**

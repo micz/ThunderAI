@@ -95,8 +95,17 @@ function showResult(element, text, isError = false) {
     element.classList.toggle('storage_error', isError);
 }
 
+/**
+ * The text of a failed action. A bulk removal works in lots and is not atomic: when it removed
+ * something before failing, its error carries it (error.removed, per type) and the text says so.
+ */
 function errorText(e) {
-    return msg('storage_action_error', [String(e?.message || e)]);
+    const reason = String(e?.message || e);
+    const removed = e?.removed;
+    if (removed && Object.values(removed).some(n => n > 0)) {
+        return msg('storage_action_error_partial', [formatCounts(removed), reason]);
+    }
+    return msg('storage_action_error', [reason]);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

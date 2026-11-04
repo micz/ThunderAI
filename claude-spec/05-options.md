@@ -261,6 +261,7 @@ ThunderAI Privacy owns model management and diagnostics. See
 | `spamfilter_storage_max_entries` / `summarize_storage_max_entries` / `translate_storage_max_entries` | `0` | Set on the storage management page (`pages/storage/`). The cleanup removes the oldest records of that type beyond this count, after the error and age rules; `0` = no limit. Any non-negative integer, so policy-settable with no extra rule. |
 | `spamfilter_storage_max_age_days` / `summarize_storage_max_age_days` / `translate_storage_max_age_days` | `0` | Set on the storage management page. The cleanup removes the records of that type older than this many days (by `createdAt`), after the error rule and before the count rule; `0` = no limit. |
 | `spamfilter_storage_error_max_age_days` / `summarize_storage_error_max_age_days` / `translate_storage_error_max_age_days` | `90` | Set on the storage management page. The cleanup first removes the records of that type that hold an error (`failed` 1) older than this many days; `0` = keep them. Any non-negative integer. |
+| `message_storage_batch_size` | `100` | **Policy-only**, no control in any page: the records a bulk removal of the per-message data handles per lot (it releases the storage lock between two lots, so the background's writes wait for one lot at most). An integer from 1 to 10000 (`PREF_NUMBER_RANGES`), anything else read as `100`. The startup rebuild always uses `100` (it runs before the policy is loaded). See [01-architecture.md](01-architecture.md#per-message-data-storage), "The cleanup lock and the lots". |
 | `message_storage_cleanup_auto` | `true` | Set on the storage management page. The scheduled cleanup of the per-message data: at startup if the last one is more than 24 hours old, else 2 hours after startup, then every 24 hours. `false` stops it (the background reacts to the change at once); "Apply rules now" still works. See [01-architecture.md](01-architecture.md#per-message-data-storage). |
 | `summarize` | `false` | Enable email summarization |
 | `summarize_auto` | `1` | Auto-summarize mode: `0` = disabled, `1` = manual (show "click to generate" button), `2` = automatic (generate on message open), `3` = generate on email receive (background pre-cache via `onNewMailReceived`, no UI during generation) |
@@ -560,7 +561,10 @@ realigns or migrates it; it shows the migration notices of `getMigrationState()`
 rule key changes elsewhere, unless the form holds unsaved edits. The types are shown in the order
 summaries, translations, spam reports (`storage_type_*`); a count per type reads
 `storage_count_item` ("Summaries: 3"), joined with commas. Every result or error goes in the result
-line of its section (`.storage_result`, red with `.storage_error`), never swallowed.
+line of its section (`.storage_result`, red with `.storage_error`), never swallowed. The bulk
+removals work in lots and are not atomic: when one fails after removing something, the line says
+what it removed before the error (`storage_action_error_partial`, from `error.removed`), else
+`storage_action_error`.
 - **Overview** (`#stats_table`, `taStorage.getStats()`): per type entries, entries with an error,
   estimated size (`formatBytes()`, exported by `js/mzta-utils.js`), oldest and newest entry date;
   the total row; `storage_disk_note` (the disk used is about twice: the durable copy); the last

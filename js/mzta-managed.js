@@ -1270,6 +1270,7 @@ const PREF_NUMBER_RANGES = {
     spamfilter_threshold: { min: 0, max: 100 },
     max_prompt_length: { min: 1 },
     batch_max_concurrency: { min: 1 },
+    message_storage_batch_size: { min: 1, max: 10000 },
 };
 
 // A time zone the calendar pages' select offers: it is built from

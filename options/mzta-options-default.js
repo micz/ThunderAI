@@ -303,6 +303,10 @@ export const prefs_default = {
     spamfilter_storage_max_age_days: 0,
     spamfilter_storage_error_max_age_days: 90,
     message_storage_cleanup_auto: true,   // the scheduled cleanup of the per-message data (every 24 hours)
+    // Policy-only, no control in any page: the records a bulk removal of the per-message data
+    // handles per lot (it releases the storage lock between two lots, so the writes of the
+    // background are not held up for the whole operation). 1 to 10000.
+    message_storage_batch_size: 100,
     summarize: false,
     summarize_auto: 1,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
     summarize_display_mode: 'inline',    // 'inline' or 'webchat'
