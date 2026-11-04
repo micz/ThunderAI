@@ -24,6 +24,7 @@ k.test('notice-row', S_STORE, 'the log shows the migration notice in its one row
     assert.equal(rows.length, 1);
     assert.equal(rows[0].cells[0].colSpan, 8);
     assert.equal(rows[0].cells[0].textContent, msg('storage_migration_in_progress'));
+    assert.equal(ctx.$('#report_migration_failed').style.display, 'none', 'not the failure notice');
 });
 
 k.test('no-pager', S_STORE, 'no Previous / Next while the reports are being moved', () => {

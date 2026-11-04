@@ -10,7 +10,9 @@
 //    field's ts, else the record's ts, else the time of the migration; ts itself is not copied;
 //    size is computed; subject / from / message_date stay empty when the record had none;
 //  - a record IndexedDB already holds with a newer createdAt is never overwritten;
-//  - a failure keeps the legacy keys and the flag, for the next start;
+//  - a failure keeps the legacy keys, for the next start; a failure to open or write the database
+//    sets the flag to 'failed' (the pages stop announcing a move nobody is making), and the next
+//    start sets it back to true before trying again;
 //  - a field that is not an object cannot be migrated: logged and dropped with its key (decision
 //    of the maintainer for #955).
 // Each start runs in its own worker (context.mjs), IndexedDB handed from one start to the next.
@@ -158,25 +160,30 @@ const openRetry = openFails.then(r => startup({ run, local: r.local }));
 const writeFails = startup({ run, local: LEGACY_ONE, idbFault: 'write' });
 openRetry.catch(() => {});
 
-k.test('open-fails-kept', 'IndexedDB cannot be opened: the migration rejects, the legacy keys and the flag stay', async () => {
+k.test('open-fails-kept', 'IndexedDB cannot be opened: the migration rejects, the legacy keys stay, the flag says it failed', async () => {
     const r = await openFails;
     assert.match(r.error, /IndexedDB unavailable/);
     assert.deepEqual(r.local['msg:one@x'], LEGACY_ONE['msg:one@x']);
-    assert.equal(r.local[FLAG], true, 'the pages keep showing the notice');
+    assert.equal(r.local[FLAG], 'failed', 'the pages show the failure, not a move in progress');
+    assert.deepEqual(writesOf(r.calls), [
+        { area: 'local', op: 'set', items: { [FLAG]: true } },
+        { area: 'local', op: 'set', items: { [FLAG]: 'failed' } },
+    ]);
 });
 
-k.test('write-fails-kept', 'a write fails: no legacy key is removed before a committed transaction, and the flag stays', async () => {
+k.test('write-fails-kept', 'a write fails: no legacy key is removed before a committed transaction, and the flag says it failed', async () => {
     const r = await writeFails;
     assert.match(r.error, /IndexedDB write failed/);
     assert.deepEqual(r.local['msg:one@x'], LEGACY_ONE['msg:one@x']);
-    assert.equal(r.local[FLAG], true);
-    assert.deepEqual(writesOf(r.calls).map(c => c.op), ['set'], 'only the flag was written');
+    assert.equal(r.local[FLAG], 'failed');
+    assert.deepEqual(writesOf(r.calls).map(c => c.op), ['set', 'set'], 'only the flag was written, true then failed');
     assert.deepEqual(messageRecords(r.idb, 'summary'), {}, 'nothing half-written');
 });
 
-k.test('retry', 'the next start retries and completes: the record moved, key and flag gone', async () => {
+k.test('retry', 'the next start retries and completes: the flag back to true first, then the record moved, key and flag gone', async () => {
     const r = await openRetry;
     assert.equal(r.error, null);
+    assert.deepEqual(writesOf(r.calls)[0], { area: 'local', op: 'set', items: { [FLAG]: true } });
     assert.equal(messageRecords(r.idb, 'summary')['one@x'].summary, 'one');
     assert.equal('msg:one@x' in r.local, false);
     assert.equal(FLAG in r.local, false);

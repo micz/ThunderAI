@@ -68,11 +68,18 @@ export const INDEX_SIZE = 'size';
 export const CLEANUP_LOCK_NAME = 'thunderai-storage-cleanup';
 
 /**
- * storage.local key set while the background moves the legacy msg: records into the database
- * (js/mzta-storage-migration.js). The management pages show a notice instead of an empty table
- * while it is present. There is no "done" flag: with nothing to migrate, nothing is set.
+ * storage.local key of the move of the legacy msg: records into the database
+ * (js/mzta-storage-migration.js). Three states:
+ *   true      the background is moving them: the management pages show a notice instead of an
+ *             empty table;
+ *   'failed'  the last attempt failed (the database could not be opened or written): the legacy
+ *             records are kept and the next start tries again; the pages say so, and show what
+ *             the database holds;
+ *   absent    done, or nothing to move. There is no "done" value.
  */
 export const MIGRATION_FLAG_KEY = '_message_data_migrating';
+/** The MIGRATION_FLAG_KEY value of a failed migration. */
+export const MIGRATION_FAILED = 'failed';
 
 /** storage.local key holding the time (ms) of the last completed scheduled cleanup. */
 export const LAST_CLEANUP_KEY = '_message_data_last_cleanup';
@@ -310,15 +317,25 @@ export class taStorage {
         return (await mztaPrefs.getPref(key)) !== false;
     }
 
-    /** Whether the background is moving legacy records into the database (see MIGRATION_FLAG_KEY). */
-    static async isMigrating() {
+    /**
+     * The state of the move of the legacy records (see MIGRATION_FLAG_KEY): 'migrating', 'failed',
+     * or null (done, nothing to move, any other value, or the flag cannot be read).
+     */
+    static async getMigrationState() {
         try {
-            const result = await browser.storage.local.get(MIGRATION_FLAG_KEY);
-            return result[MIGRATION_FLAG_KEY] === true;
+            const value = (await browser.storage.local.get(MIGRATION_FLAG_KEY))[MIGRATION_FLAG_KEY];
+            if (value === true) return 'migrating';
+            if (value === MIGRATION_FAILED) return 'failed';
+            return null;
         } catch (e) {
             _log.error('Could not read the migration flag: ' + e);
-            return false;
+            return null;
         }
+    }
+
+    /** Whether the background is moving legacy records into the database (see MIGRATION_FLAG_KEY). */
+    static async isMigrating() {
+        return (await taStorage.getMigrationState()) === 'migrating';
     }
 
     // ---- Reads ----------------------------------------------------------------------------------

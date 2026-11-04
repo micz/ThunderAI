@@ -29,7 +29,8 @@
 import {
     taStorage,
     MESSAGE_STORES,
-    MIGRATION_FLAG_KEY
+    MIGRATION_FLAG_KEY,
+    MIGRATION_FAILED
 } from './mzta-storage.js';
 
 const LEGACY_PREFIX = 'msg:';
@@ -40,9 +41,46 @@ function validTs(value) {
 }
 
 /**
+ * Steps 3 and 4 below: open the database and write the records in one transaction. Resolves once
+ * the transaction has committed; rejects with nothing committed.
+ */
+async function writeRecords(records) {
+    const db = await taStorage.openDB();
+    const tx = db.transaction(MESSAGE_STORES, 'readwrite');
+    // A failing request aborts the transaction and the loop below throws before reaching
+    // `await tx.done`: without a handler that rejection would be unhandled. The failure itself
+    // still reaches the caller through the loop (or through the awaited tx.done).
+    tx.done.catch(() => {});
+    let migrated = 0;
+    let skipped = 0;
+    for (const { type, record } of records) {
+        const store = tx.objectStore(type);
+        const existing = await store.get(record.messageId);
+        if (existing && typeof existing.createdAt === 'number' && existing.createdAt >= record.createdAt) {
+            skipped++;
+            continue;
+        }
+        await store.put(record);
+        migrated++;
+    }
+    await tx.done;
+    return { migrated, skipped };
+}
+
+/** Set the flag to MIGRATION_FAILED. Never throws: the caller is already reporting a failure. */
+async function markFailed() {
+    try {
+        await browser.storage.local.set({ [MIGRATION_FLAG_KEY]: MIGRATION_FAILED });
+    } catch (e) {
+        console.error('[ThunderAI] migrateMessageDataToIndexedDB: could not mark the migration as failed: ' + e);
+    }
+}
+
+/**
  * Move the legacy msg: records into IndexedDB:
  *   1. read the legacy keys from storage.local;
- *   2. set the migration flag (the management pages show a notice while it is present);
+ *   2. set the migration flag to true (the management pages show a notice while it is), also
+ *      over the 'failed' of a previous attempt;
  *   3. open the database;
  *   4. write the records, in one transaction: each legacy field becomes a record of its store,
  *      createdAt = the field's ts, else the record's ts, else now (ts itself is not copied), its
@@ -51,7 +89,8 @@ function validTs(value) {
  *   5. once that transaction has committed, remove the legacy keys;
  *   6. remove the flag.
  * A field that is not an object cannot be migrated: it is logged and dropped with its key.
- * Rejects on any failure, leaving the legacy keys and the flag for the next start.
+ * Rejects on any failure, leaving the legacy keys for the next start. A failure of steps 3-4 sets
+ * the flag to 'failed' (MIGRATION_FAILED); a failure of steps 1-2, 5 or 6 leaves it as it is.
  *
  * @returns {Promise<{migrated: number, skipped: number, dropped: number}>}
  */
@@ -90,25 +129,16 @@ export async function migrateMessageDataToIndexedDB() {
         }
     }
 
-    const db = await taStorage.openDB();
-    const tx = db.transaction(MESSAGE_STORES, 'readwrite');
-    // A failing request aborts the transaction and the loop below throws before reaching
-    // `await tx.done`: without a handler that rejection would be unhandled. The failure itself
-    // still reaches the caller through the loop (or through the awaited tx.done).
-    tx.done.catch(() => {});
     let migrated = 0;
     let skipped = 0;
-    for (const { type, record } of records) {
-        const store = tx.objectStore(type);
-        const existing = await store.get(record.messageId);
-        if (existing && typeof existing.createdAt === 'number' && existing.createdAt >= record.createdAt) {
-            skipped++;
-            continue;
-        }
-        await store.put(record);
-        migrated++;
+    try {
+        ({ migrated, skipped } = await writeRecords(records));
+    } catch (e) {
+        // Nothing was committed: the legacy keys stay for the next start, and the flag says the
+        // attempt failed, so the pages stop announcing a move nobody is making.
+        await markFailed();
+        throw e;
     }
-    await tx.done;
 
     await browser.storage.local.remove(legacyKeys);
     await browser.storage.local.remove(MIGRATION_FLAG_KEY);

@@ -677,9 +677,11 @@ function resetApiStreamIdleTimeout(){
 
 // The space taken by the saved spam reports, summaries and translations (IndexedDB). While the
 // background is still moving them out of storage.local (the migration flag), a notice says so,
-// since the size does not count them yet.
+// since the size does not count them yet; another one when the last attempt failed.
 async function updateMessageStorageSize() {
-  document.getElementById('message_storage_migrating').style.display = (await taStorage.isMigrating()) ? '' : 'none';
+  const migration = await taStorage.getMigrationState();
+  document.getElementById('message_storage_migrating').style.display = migration === 'migrating' ? '' : 'none';
+  document.getElementById('message_storage_migration_failed').style.display = migration === 'failed' ? '' : 'none';
   try {
     document.getElementById('message_storage_size').textContent = await getMessageStorageUsedSpace();
   } catch (e) {

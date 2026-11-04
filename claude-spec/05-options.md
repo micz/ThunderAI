@@ -540,6 +540,8 @@ through the background.
 - **Empty.** With no report, one row spanning the 8 columns says `spamfilter_no_reports`.
 - **Migrating.** While the background is still moving the reports out of `storage.local` (the
   migration flag), the one row says `storage_migration_in_progress` instead, and the pager is hidden.
+- **Migration failed.** When the last attempt failed (the flag `'failed'`), `#report_migration_failed`
+  (`storage_migration_failed`) is shown above the log, which shows what the database holds as usual.
 
 ### Summarize Settings Page (`pages/summarize/`)
 
@@ -1701,7 +1703,9 @@ its `#no_privacy` notice), `do_debug`, the allowed unencrypted servers and the s
   the cleanup lock - never a preference or any other key - then an `alert()` reports the count
   (`prefs_storage_clear_done`, or `prefs_storage_clear_error` with the reason) and the size is read
   again. While the background is still moving the data out of `storage.local` (the migration flag),
-  `#message_storage_migrating` (`storage_migration_in_progress`) is shown under it. No settings for
+  `#message_storage_migrating` (`storage_migration_in_progress`) is shown under it; after a failed
+  attempt (the flag `'failed'`), `#message_storage_migration_failed` (`storage_migration_failed`)
+  instead. No settings for
   the limits here yet (#956).
 - **Allowed unencrypted servers.** `#insecure_origins_list` lists the user's own approvals
   (`getUserApprovedInsecureOrigins()`, see

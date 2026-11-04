@@ -245,6 +245,7 @@ k.test('storage-size', S_ADVSEC, 'the storage size is the sum of the sizes of th
 k.test('storage-not-migrating', S_ADVSEC, 'with no migration flag, the migration notice stays hidden', () => {
     // Its own display: the advanced panel around it starts collapsed.
     assert.equal($('#message_storage_migrating').style.display, 'none');
+    assert.equal($('#message_storage_migration_failed').style.display, 'none');
 });
 
 k.test('owl-hidden', S_OWL, 'with no Owl account the warning stays hidden', () => {

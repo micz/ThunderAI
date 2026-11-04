@@ -2341,7 +2341,7 @@ that type only; `deleteRecord(id)` the three, in one readwrite transaction (no c
 `getPage(type, {offset, limit})` (newest first: a cursor on `createdAt` in `prev` direction,
 `advance(offset)` only when `offset > 0`), `count(type)`, `getTotalSize()` (the sum of `size` with a
 key cursor on the `size` index, so no record is loaded), `clear(type)`, `clearAllRecords()`,
-`cleanup()`, `startCleanupSchedule()`, `isMigrating()`. The rules of every method:
+`cleanup()`, `startCleanupSchedule()`, `getMigrationState()`, `isMigrating()`. The rules of every method:
 - nothing but IndexedDB requests is awaited inside a transaction (it commits as soon as the event
   loop is idle): the preference reads come before it;
 - `openDB()` always passes `blocked`, `blocking` (it closes the connection, so another context can
@@ -2392,9 +2392,11 @@ top of the panel (`storage_save_failed`, followed by the error, `_buildStorageEr
 every read and write of the message flow. The message display and compose scripts never open it:
 they go through the background, as before. The **management pages** open it directly through
 `js/mzta-storage.js`: the options page (size, clear) and the spam filter page (the log). On open they
-check the migration flag (`taStorage.isMigrating()`); while it is set they show
-`storage_migration_in_progress` instead of an empty table (the spam log) or next to the size (the
-options page). They never migrate.
+read the migration flag (`taStorage.getMigrationState()`: `'migrating'`, `'failed'` or `null`).
+While the move is in progress they show `storage_migration_in_progress` instead of an empty table
+(the spam log) or next to the size (the options page). After a failed attempt they show
+`storage_migration_failed` (above the log, next to the size) and otherwise behave normally, showing
+what the database holds. They never migrate.
 
 **Limits and cleanup.** Per type: `{feature}_storage_enabled` (default `true`),
 `{feature}_storage_max_entries` and `{feature}_storage_max_age_days` (default `0`, no limit), with
@@ -2419,8 +2421,8 @@ runs in the startup migration block of `mzta-background.js`, after the other ste
 `.catch()` that only logs. Never from a page. With no `msg:` key it costs one read and writes nothing
 (a flag left behind by an interrupted run is removed). Otherwise:
 1. read the legacy keys;
-2. set the migration flag `_message_data_migrating` in `storage.local` ("legacy data is being
-   migrated"; there is no "done" flag);
+2. set the migration flag `_message_data_migrating` to `true` in `storage.local` ("legacy data is
+   being migrated"), also over the `'failed'` of a previous attempt; there is no "done" value;
 3. open the database;
 4. write the records in one transaction: each legacy field becomes a record of its store,
    `createdAt` = the field's `ts`, else the record's `ts`, else the time of the migration (`ts` is
@@ -2429,7 +2431,10 @@ runs in the startup migration block of `mzta-background.js`, after the other ste
    overwritten. A field that is not an object is logged and dropped with its key;
 5. remove the legacy keys, only once that transaction has committed;
 6. remove the flag.
-A failure rejects and keeps the legacy keys and the flag: the next start retries. The background
+A failure rejects and keeps the legacy keys: the next start retries. The flag has three states:
+`true` (moving), `'failed'` (`MIGRATION_FAILED`: steps 3-4 failed - the database could not be opened
+or written - so the pages stop announcing a move nobody is making), absent (done, or nothing to move).
+A failure of the other steps leaves the flag as it is; failing to write `'failed'` is only logged. The background
 registers the listeners that read or write these records (the main `onMessage` listener, the new
 mail listener) and starts the cleanup only after the block, so nothing reads or writes the stores
 before the migration has finished.

@@ -407,6 +407,10 @@
     "message": "ThunderAI is moving the saved spam reports, summaries and translations to a new storage. Reopen this page in a few moments to see them.",
     "description": "Options page and spam filter page: notice shown while the saved data is being moved to the new storage after an update."
   },
+  "storage_migration_failed": {
+    "message": "The spam reports, summaries and translations saved by the previous version could not be moved to the new storage. ThunderAI will try again at the next start.",
+    "description": "Options page and spam filter page: notice shown when moving the saved data to the new storage after an update failed; it is retried at the next start of Thunderbird."
+  },
   "storage_save_failed": {
     "message": "This result could not be saved: $ERROR$",
     "description": "Message display: red notice at the top of a summary, translation or spam report panel when the result is shown but saving it failed. $ERROR$ is the technical error message.",

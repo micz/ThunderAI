@@ -22,6 +22,7 @@ k.test('migrating-notice', S_STORE, 'the migration notice is shown in the storag
     // Its own display: the advanced panel around it starts collapsed.
     assert.notEqual(ctx.$('#message_storage_migrating').style.display, 'none');
     assert.match(ctx.$('#message_storage_migrating').textContent, /moving the saved/);
+    assert.equal(ctx.$('#message_storage_migration_failed').style.display, 'none', 'not the failure notice');
 });
 
 k.test('migrating-size', S_STORE, 'the size is still read from IndexedDB (nothing there yet)', () => {

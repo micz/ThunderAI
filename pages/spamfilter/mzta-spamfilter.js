@@ -327,10 +327,13 @@ function check_spamfilter_threshold(event) {
 // One page of the spam log, read straight from the database (js/mzta-storage.js): REPORT_PAGE_SIZE
 // reports from reportOffset, newest first, with Previous / Next and "1–50 of 1234". While the
 // background is still moving the reports out of storage.local (the migration flag), a notice
-// takes the place of the table, which would otherwise look empty.
+// takes the place of the table, which would otherwise look empty. When the last attempt failed,
+// a notice above the table says so, and the table shows what the database holds.
 async function loadSpamReport(){
     const pager = document.getElementById("report_pager");
-    if (await taStorage.isMigrating()) {
+    const migration = await taStorage.getMigrationState();
+    document.getElementById("report_migration_failed").style.display = migration === 'failed' ? '' : 'none';
+    if (migration === 'migrating') {
         pager.style.display = "none";
         populateTable([], browser.i18n.getMessage("storage_migration_in_progress"));
         return;
