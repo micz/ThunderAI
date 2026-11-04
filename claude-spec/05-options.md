@@ -1615,6 +1615,11 @@ inside space themselves with their own `margin-top`.
      at its natural shrink-to-fit width (`flex: 0 0 auto; align-self: center`) so it never
      spans the full width: a `--field` box with the `prefs_shortcut_label` label and the
      `#mzta_shortcut_keys` `<kbd>` chips.
+   - **Change-shortcut link** (`#mzta_shortcut_help`, `prefs_shortcut_change_link`)
+     centred **below** the strip (`margin-top: -6px` to sit closer to it than the stack
+     gap). Its `href` is set at init, next to the guides/tutorial links, to
+     `getMiczItUrl('thunderbird-addon-keyboard-shortcut/')`, since micz.it translates that
+     page; the English URL in the HTML is only the fallback before init.
 2. **Footer** (`#mzta_footer`) — three **plain `<a>` links** on one centered `flex-wrap`
    row (was a stacked column of `<div>`s, each with an introductory sentence before the
    link). The lead-in sentences are gone: `TranslateText` + `TranslateLink` and
@@ -1638,7 +1643,8 @@ this page.
 and `prefsDonation_2` are no longer referenced by this page but are **left in the locale
 files** — deleting them would churn all the Weblate-managed locales. New keys (English only,
 per the localization rule): `prefs_full_guide`, `prefs_shortcut_label`,
-`prefs_disclaimer_short`, `prefs_footer_translate`, `prefs_footer_donate`.
+`prefs_disclaimer_short`, `prefs_footer_translate`, `prefs_footer_donate`,
+`prefs_shortcut_change_link`.
 
 `prefs_info_pill` ("Important information") was also introduced here, but it was
 **deleted from `_locales/en/messages.json`** when the provider setup note moved into the

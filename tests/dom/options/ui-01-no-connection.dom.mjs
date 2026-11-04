@@ -246,10 +246,13 @@ k.test('shortcut-chips', S_BOTTOM, 'the shortcut chips come from browser.command
     assert.deepEqual(ctx.$$('#mzta_shortcut_keys kbd').map(k => k.textContent), ['Ctrl', 'Alt', 'A']);
 });
 
-k.test('bottom-structure', S_BOTTOM, 'the disclaimer precedes the shortcut strip; the footer holds the three plain links', () => {
+k.test('bottom-structure', S_BOTTOM, 'the disclaimer precedes the shortcut strip and its change link; the footer holds the three plain links', () => {
     const row = $('#mzta_bottom #mzta_info_row');
     assert.ok(row, '#mzta_info_row inside #mzta_bottom');
-    assert.deepEqual([...row.children].map(e => e.id), ['mzta_disclaimer', 'mzta_shortcut_strip']);
+    assert.deepEqual([...row.children].map(e => e.id), ['mzta_disclaimer', 'mzta_shortcut_strip', 'mzta_shortcut_help']);
+    assert.equal($('#mzta_shortcut_help').tagName, 'A');
+    assert.match($('#mzta_shortcut_help').getAttribute('href'), /^https:\/\/micz\.it\/([a-z]{2}\/)?thunderbird-addon-keyboard-shortcut\/$/, 'localized through getMiczItUrl()');
+    assert.equal($('#mzta_shortcut_help').textContent, msg('prefs_shortcut_change_link'));
     assert.match($('#mzta_disclaimer').textContent, new RegExp(msg('prefs_disclaimer_short').slice(0, 20).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
     assert.ok($('#mzta_disclaimer a'), 'the privacy link');
     assert.equal($('#mzta_shortcut_strip .mzta_shortcut_label').textContent, msg('prefs_shortcut_label'));

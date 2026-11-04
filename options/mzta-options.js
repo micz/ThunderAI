@@ -745,6 +745,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('link_doc_guides').href = getMiczItUrl('thunderbird-addon-thunderai/guides/');
   document.getElementById('link_doc_tutorial').href = getMiczItUrl('thunderbird-addon-thunderai/tutorial/');
+  document.getElementById('mzta_shortcut_help').href = getMiczItUrl('thunderbird-addon-keyboard-shortcut/');
 
   // After i18n and restoreOptions(): the inputs must already hold their resolved values
   // (js/mzta-prefs.js has folded in the policy) before they are disabled and marked.

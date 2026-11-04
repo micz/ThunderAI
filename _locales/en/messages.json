@@ -426,6 +426,10 @@
     "message": "Open the ThunderAI menu with",
     "description": "Label preceding the keyboard shortcut keys, at the bottom of the options page."
   },
+  "prefs_shortcut_change_link": {
+    "message": "Learn how to change the shortcut",
+    "description": "Link below the keyboard shortcut strip, at the bottom of the options page, to a web page explaining how to change Thunderbird add-on keyboard shortcuts."
+  },
   "prefs_disclaimer_short": {
     "message": "LLM models can generate incorrect information, and your data may be used by the provider to train new models.",
     "description": "Shown at the bottom of the options page body, followed by a link to the privacy information."
