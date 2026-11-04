@@ -16,12 +16,21 @@
 //    never saved; a failed write is logged and rejects;
 //  - the scheduled cleanup: at once when the last one is more than 24 hours old (or none), else 2
 //    hours after the start; then every 24 hours, one timer; its time stored in storage.local;
-//  - eviction (a best-effort, rebuildable cache): a deleted database answers as empty and is
-//    created again; one without its three stores is deleted and created again; a database that
-//    cannot be opened gives null / [] / 0 to the reads, a resolved delete and a rejected write;
-//    an aborted transaction leaves no unhandled rejection.
+//  - eviction: a deleted database answers as empty and is created again; one without its three
+//    stores is deleted and created again; a database that cannot be opened gives null / [] / 0 to
+//    the reads, a resolved delete and a rejected write; an aborted transaction leaves no unhandled
+//    rejection;
+//  - the mirror: every record also lives in storage.local under spam: / summary: / translation:
+//    <Message-ID>, the very record of the store, written first; every delete, the cleanup,
+//    clear() and clearAllRecords() remove its keys; a disabled type writes neither; a failed
+//    IndexedDB write rejects and keeps the mirror key; no routine path enumerates storage.local;
+//  - reconcileWithMirror() (under the cleanup lock), one way, mirror -> IndexedDB: a mirror-only
+//    record restored, an IndexedDB-only record removed (never copied back), a newer mirror copy
+//    put, a newer IndexedDB copy kept, storage.local never written; reconcileIfNew() rebuilds a
+//    database found new; with the background's watch on, an eviction while running is rebuilt,
+//    and the reads asked meanwhile wait for it.
 // And spec 05: the preferences live in storage.local, which none of this touches but for the
-// time of the last cleanup.
+// time of the last cleanup and the mirror keys.
 // The field contents of each type are the stores' business (05-stores); here the storage itself.
 
 import assert from 'node:assert/strict';
@@ -39,7 +48,11 @@ const {
     taStorage,
     MESSAGE_DB_NAME,
     LAST_CLEANUP_KEY,
-    CLEANUP_LOCK_NAME
+    CLEANUP_LOCK_NAME,
+    MIRROR_PREFIXES,
+    mirrorKey,
+    isMirrorKey,
+    putNewerRecords
 } = await import('../../js/mzta-storage.js');
 const { getMessageStorageUsedSpace } = await import('../../js/mzta-utils.js');
 const st = new taStorage(false);
@@ -598,12 +611,313 @@ k.test('aborted-tx-handled', 'a transaction aborted under a read: null, and no u
     assert.equal((await st.getRecord('ab@x')).summary.summary, 'S', 'the record is still there');
 });
 
-k.test('prefs-untouched','the storage writes nothing to storage.local but the time of the last cleanup', () => {
+// --- The mirror in storage.local ----------------------------------------------------------------
+
+const local = () => ctx.ctl.localData();
+const mirrorOf = type => Object.fromEntries(Object.entries(local())
+    .filter(([key]) => key.startsWith(type + ':')).map(([key, value]) => [key.slice(type.length + 1), value]));
+/** Record the storage.local.remove() calls of test t (the mock records get and set only). */
+function recordRemoves(t) {
+    const removes = [];
+    const area = ctx.ctl.browser.storage.local;
+    const real = area.remove.bind(area);
+    t.mock.method(area, 'remove', async (keys) => { removes.push(structuredClone(keys)); return real(keys); });
+    return removes;
+}
+/** A record as the store builds it, written straight to the mirror only. */
+const mirrorOnly = (type, id, data, createdAt) =>
+    ctx.ctl.browser.storage.local.set({ [mirrorKey(type, id)]: taStorage.buildRecord(type, id, data, createdAt) });
+
+k.test('mirror-prefixes', 'the mirror keys: spam:, summary:, translation: followed by the Message-ID', () => {
+    assert.deepEqual({ ...MIRROR_PREFIXES }, { spam: 'spam:', summary: 'summary:', translation: 'translation:' });
+    assert.equal(mirrorKey('summary', 'CAF1x2y3@mail.example.com'), 'summary:CAF1x2y3@mail.example.com');
+    assert.equal(isMirrorKey('translation:a@b'), true);
+    assert.equal(isMirrorKey('summarize_storage_enabled'), false);
+    assert.equal(isMirrorKey('msg:a@b'), false);
+});
+
+k.test('mirror-write', 'a write lands in storage.local under its mirror key and in IndexedDB, the very same record', async () => {
+    await clearAll();
+    await st.writeSpam('mw@x', { spamValue: 82, explanation: 'e', subject: ['Invoice'], from: ['b@x'], moved: true, SpamThreshold: 70 });
+    await st.writeSummary('mw@x', { summary: 'S' });
+    await st.writeTranslation('mw@x', { translated_text: 'T', lang: 'it' });
+    for (const store of ['spam', 'summary', 'translation']) {
+        assert.deepEqual(local()[store + ':mw@x'], await raw(store, 'mw@x'), store);
+    }
+});
+
+k.test('mirror-write-order', 'the mirror is written first, then IndexedDB', async (t) => {
+    const order = [];
+    const area = ctx.ctl.browser.storage.local;
+    const realSet = area.set.bind(area);
+    t.mock.method(area, 'set', async (items) => { order.push('mirror'); return realSet(items); });
+    const { IDBObjectStore } = globalThis;
+    const realPut = IDBObjectStore.prototype.put;
+    t.mock.method(IDBObjectStore.prototype, 'put', function (...a) { order.push('idb'); return realPut.apply(this, a); });
+    await st.writeSummary('wo@x', { summary: 'S' });
+    assert.deepEqual(order, ['mirror', 'idb']);
+});
+
+k.test('mirror-no-full-read', 'no routine path enumerates storage.local: writes, reads, deletes, pages, counts, size, cleanup', async (t) => {
+    await st.writeSummary('nf@x', { summary: 'S' });
+    const from = ctx.ctl.calls.length;
+    await st.writeSpam('nf@x', { spamValue: 1 });
+    await st.writeTranslation('nf@x', { translated_text: 'T' }, false);
+    await st.getRecord('nf@x');
+    await taStorage.getPage('summary');
+    await taStorage.count('summary');
+    await taStorage.getTotalSize();
+    await st.deleteSpamField('nf@x');
+    await st.deleteRecord('nf@x');
+    await taStorage.cleanup({ summary: { maxEntries: 1000 } });
+    const full = ctx.ctl.calls.slice(from).filter(c => c.area === 'local' && c.op === 'get' && (c.keys === null || c.keys === undefined));
+    assert.deepEqual(full, []);
+});
+
+k.test('mirror-delete', 'deleting one type removes its mirror key only; deleteRecord() removes the three', async () => {
+    await st.writeSpam('md@x', { spamValue: 1 });
+    await st.writeSummary('md@x', { summary: 'S' });
+    await st.writeTranslation('md@x', { translated_text: 'T' });
+    await st.deleteSummaryField('md@x');
+    assert.equal('summary:md@x' in local(), false);
+    assert.ok('spam:md@x' in local());
+    assert.ok('translation:md@x' in local());
+    await st.deleteRecord('md@x');
+    for (const store of ['spam', 'summary', 'translation']) assert.equal(store + ':md@x' in local(), false, store);
+});
+
+k.test('mirror-delete-unopenable', 'a delete with the database unreachable still removes the mirror key', async (t) => {
+    await st.writeSummary('du@x', { summary: 'S' });
+    await rawDelete();
+    t.mock.method(indexedDB, 'open', () => { throw new DOMException('IndexedDB unavailable', 'UnknownError'); });
+    await st.deleteSummaryField('du@x');
+    t.mock.restoreAll();
+    assert.equal('summary:du@x' in local(), false);
+    // The database back, with its stores, for the raw reads of the next tests.
+    await st.writeSummary('du2@x', { summary: 'S' });
+});
+
+k.test('mirror-disabled', 'saving disabled for a type writes neither the mirror nor IndexedDB', async () => {
+    await ctx.mztaPrefs.setPref('translate_storage_enabled', false);
+    try {
+        assert.equal(await st.writeTranslation('off@x', { translated_text: 'T' }), null);
+        assert.equal('translation:off@x' in local(), false);
+        assert.equal(await raw('translation', 'off@x'), undefined);
+    } finally {
+        await ctx.mztaPrefs.setPref('translate_storage_enabled', true);
+    }
+});
+
+k.test('mirror-idb-fails-kept', 'a failed IndexedDB write after the mirror write rejects, and keeps the mirror key', async (t) => {
+    const { IDBObjectStore } = globalThis;
+    t.mock.method(IDBObjectStore.prototype, 'put', function () { throw new DOMException('disk full', 'QuotaExceededError'); });
+    await assert.rejects(st.writeSummary('kf@x', { summary: 'durable' }), /disk full/);
+    t.mock.restoreAll();
+    assert.equal(await raw('summary', 'kf@x'), undefined);
+    assert.equal(local()['summary:kf@x'].summary, 'durable', 'the durable copy wins');
+});
+
+k.test('mirror-fails-no-idb', 'a failed mirror write rejects before IndexedDB is touched', async (t) => {
+    const area = ctx.ctl.browser.storage.local;
+    t.mock.method(area, 'set', async () => { throw new Error('storage.local unavailable'); });
+    await assert.rejects(st.writeSummary('mf@x', { summary: 'x' }), /storage\.local unavailable/);
+    t.mock.restoreAll();
+    assert.equal(await raw('summary', 'mf@x'), undefined);
+    assert.equal('summary:mf@x' in local(), false);
+});
+
+k.test('mirror-no-force', 'with force = false a record found in the mirror alone is kept too', async () => {
+    await mirrorOnly('summary', 'nfm@x', { summary: 'kept' }, 1000);
+    assert.equal(await st.writeSummary('nfm@x', { summary: 'new' }, false), null);
+    assert.equal(local()['summary:nfm@x'].summary, 'kept');
+    assert.equal(await raw('summary', 'nfm@x'), undefined);
+    await ctx.ctl.browser.storage.local.remove('summary:nfm@x');
+});
+
+k.test('mirror-cleanup', 'the cleanup removes the mirror keys of the records it deletes, once per type, and keeps the others', async (t) => {
+    await clearAll();
+    const now = Date.parse('2026-06-10T12:00:00Z');
+    t.mock.timers.enable({ apis: ['Date'], now });
+    await seedDays(t, 'spam', 4, now);
+    await seedDays(t, 'summary', 3, now);
+    const removes = recordRemoves(t);
+    const removed = await taStorage.cleanup({ spam: { maxEntries: 2 }, summary: { maxAgeDays: 1 } }, now);
+    assert.deepEqual(removed, { spam: 2, summary: 2, translation: 0 });
+    assert.deepEqual(Object.keys(mirrorOf('spam')).sort(), ['spam0@x', 'spam1@x']);
+    assert.deepEqual(Object.keys(mirrorOf('summary')), ['summary0@x']);
+    assert.deepEqual(removes.map(keys => [...keys].sort()), [['spam:spam2@x', 'spam:spam3@x'], ['summary:summary1@x', 'summary:summary2@x']]);
+});
+
+k.test('mirror-clear', 'clear(type) removes the mirror keys of that type only, also those IndexedDB lacks', async () => {
+    await st.writeTranslation('mc@x', { translated_text: 'T' });
+    await mirrorOnly('spam', 'mirror-only@x', { spamValue: 1 }, 1000);
+    assert.equal(await taStorage.clear('spam'), 2, 'the records the store held');
+    assert.deepEqual(mirrorOf('spam'), {});
+    assert.deepEqual(Object.keys(mirrorOf('summary')), ['summary0@x']);
+    assert.ok('translation:mc@x' in local());
+});
+
+k.test('mirror-clear-all', 'clearAllRecords() removes every mirror key, and nothing else', async () => {
+    await mirrorOnly('summary', 'mirror-only@x', { summary: 'S' }, 1000);
+    await taStorage.clearAllRecords();
+    assert.deepEqual(Object.keys(local()).filter(isMirrorKey), []);
+    assert.equal(local().connection_type, 'ollama_api');
+});
+
+// --- Reconcile ----------------------------------------------------------------------------------
+
+k.test('reconcile-restores', 'reconcileWithMirror() puts into IndexedDB a record only the mirror holds', async () => {
+    await clearAll();
+    await mirrorOnly('summary', 'ro@x', { summary: 'from the mirror', subject: ['S'] }, 5000);
+    const counts = await taStorage.reconcileWithMirror();
+    assert.deepEqual(counts, { spam: { restored: 0, removed: 0 }, summary: { restored: 1, removed: 0 }, translation: { restored: 0, removed: 0 } });
+    assert.deepEqual(await raw('summary', 'ro@x'), local()['summary:ro@x']);
+    assert.equal((await taStorage.getPage('summary'))[0].messageId, 'ro@x', 'in the indexes too');
+});
+
+k.test('reconcile-removes', 'one way: a record deleted from the mirror and left in IndexedDB is removed from IndexedDB, never copied back', async () => {
+    await st.writeTranslation('io@x', { translated_text: 'deleted from the mirror' });
+    await ctx.ctl.browser.storage.local.remove('translation:io@x');
+    const counts = await taStorage.reconcileWithMirror();
+    assert.deepEqual(counts.translation, { restored: 0, removed: 1 });
+    assert.equal(await raw('translation', 'io@x'), undefined);
+    assert.equal('translation:io@x' in local(), false, 'not brought back to the mirror');
+});
+
+k.test('reconcile-newer', 'a newer mirror copy replaces the IndexedDB one; a newer IndexedDB copy (a write in progress) is kept', async (t) => {
+    await clearAll();
+    t.mock.timers.enable({ apis: ['Date'], now: 1000 });
+    await st.writeSpam('nm@x', { spamValue: 1 });
+    await st.writeSpam('ni@x', { spamValue: 1 });
+    // The mirror newer for nm@x, IndexedDB newer for ni@x.
+    await mirrorOnly('spam', 'nm@x', { spamValue: 2 }, 2000);
+    const newer = taStorage.buildRecord('spam', 'ni@x', { spamValue: 3 }, 3000);
+    const db = await taStorage.openDB();
+    await db.put('spam', newer);
+    const counts = await taStorage.reconcileWithMirror();
+    assert.deepEqual(counts.spam, { restored: 1, removed: 0 });
+    assert.deepEqual(await raw('spam', 'nm@x'), local()['spam:nm@x']);
+    assert.equal((await raw('spam', 'ni@x')).spamValue, 3, 'kept in IndexedDB');
+    assert.equal(local()['spam:ni@x'].spamValue, 1, 'the mirror is never written');
+});
+
+k.test('reconcile-no-mirror-write', 'the reconcile never writes to storage.local', async (t) => {
+    await mirrorOnly('summary', 'nw@x', { summary: 'S' }, 1000);
+    await st.writeTranslation('nw@x', { translated_text: 'T' });
+    await ctx.ctl.browser.storage.local.remove('translation:nw@x');
+    const before = ctx.ctl.calls.filter(c => c.op === 'set').length;
+    const removes = recordRemoves(t);
+    await taStorage.reconcileWithMirror();
+    assert.equal(ctx.ctl.calls.filter(c => c.op === 'set').length, before);
+    assert.deepEqual(removes, []);
+});
+
+k.test('reconcile-aligned-nothing', 'with the two copies aligned it changes nothing', async () => {
+    const counts = await taStorage.reconcileWithMirror();
+    for (const type of ['spam', 'summary', 'translation']) assert.deepEqual(counts[type], { restored: 0, removed: 0 }, type);
+});
+
+k.test('reconcile-removal-unchanged-only', 'a record is removed only if it still has the createdAt seen when it was chosen: a write since then keeps it', async () => {
+    await st.writeSummary('race@x', { summary: 'rewritten since' });
+    const rec = await raw('summary', 'race@x');
+    const out = await putNewerRecords([], [{ type: 'summary', messageId: 'race@x', createdAt: rec.createdAt - 1 }]);
+    assert.equal(out.removedByType.summary, 0);
+    assert.ok(await raw('summary', 'race@x'));
+});
+
+k.test('reconcile-not-a-record', 'a mirror key whose value is not a record of its message is logged and left alone, with the IndexedDB record of that id', async () => {
+    await st.writeSummary('bad@x', { summary: 'in IndexedDB' });
+    await ctx.ctl.browser.storage.local.set({ 'summary:bad@x': 'not a record', 'summary:other@x': { messageId: 'someone-else@x', createdAt: 1 } });
+    ctx.con.clear();
+    await taStorage.reconcileWithMirror();
+    assert.equal((await raw('summary', 'bad@x'))?.summary, 'in IndexedDB', 'not removed');
+    assert.equal(await raw('summary', 'other@x'), undefined);
+    assert.equal(await raw('summary', 'someone-else@x'), undefined);
+    assert.match(ctx.con.all().join(' | '), /summary:bad@x/);
+    await st.deleteSummaryField('bad@x');
+    await ctx.ctl.browser.storage.local.remove(['summary:other@x']);
+});
+
+k.test('reconcile-under-lock', 'reconcileWithMirror() runs under the thunderai-storage-cleanup lock', async (t) => {
+    const names = [];
+    const real = navigator.locks.request.bind(navigator.locks);
+    t.mock.method(navigator.locks, 'request', (name, ...rest) => { names.push(name); return real(name, ...rest); });
+    await taStorage.reconcileWithMirror();
+    assert.deepEqual(names, [CLEANUP_LOCK_NAME]);
+});
+
+k.test('reconcile-fails', 'a failed reconcile rejects, with nothing half-written in IndexedDB', async (t) => {
+    await clearAll();
+    await mirrorOnly('summary', 'f1@x', { summary: '1' }, 1000);
+    await mirrorOnly('summary', 'f2@x', { summary: '2' }, 1000);
+    const { IDBObjectStore } = globalThis;
+    const realPut = IDBObjectStore.prototype.put;
+    let n = 0;
+    t.mock.method(IDBObjectStore.prototype, 'put', function (...a) {
+        if (++n === 2) throw new DOMException('disk full', 'QuotaExceededError');
+        return realPut.apply(this, a);
+    });
+    await assert.rejects(taStorage.reconcileWithMirror(), /disk full/);
+    t.mock.restoreAll();
+    assert.equal(await taStorage.count('summary'), 0);
+});
+
+k.test('prefs-untouched','the storage writes nothing to storage.local but the time of the last cleanup and the mirror keys', () => {
     const writes = ctx.ctl.calls.filter(c => c.area === 'local' && c.op === 'set').flatMap(c => Object.keys(c.items));
-    const own = writes.filter(key => key !== LAST_CLEANUP_KEY);
+    const own = writes.filter(key => key !== LAST_CLEANUP_KEY && !isMirrorKey(key));
     // The preference writes of this file's own setup (setPref / storage.local.set above).
     assert.deepEqual([...new Set(own)].sort(), ['spamfilter_storage_enabled', 'spamfilter_storage_max_entries', 'summarize_storage_enabled',
         'summarize_storage_max_age_days', 'translate_storage_enabled'].sort());
+});
+
+// --- The rebuild after an eviction (last: the watch cannot be turned off) ------------------------
+
+k.test('reconcile-if-new', 'reconcileIfNew(): after an eviction the next open finds the database new and rebuilds it from the mirror, once', async () => {
+    await clearAll();
+    await st.writeSummary('ev-a@x', { summary: 'A' });
+    await st.writeSpam('ev-b@x', { spamValue: 9 });
+    await taStorage.reconcileIfNew();
+    assert.equal(await taStorage.reconcileIfNew(), null, 'an open database is not new');
+    await rawDelete();
+    const counts = await taStorage.reconcileIfNew();
+    assert.equal(counts.summary.restored, 1);
+    assert.equal(counts.spam.restored, 1);
+    assert.equal((await st.getRecord('ev-a@x')).summary.summary, 'A');
+    assert.equal((await st.getRecord('ev-b@x')).spam.spamValue, 9);
+    assert.equal(await taStorage.reconcileIfNew(), null, 'done once');
+});
+
+k.test('reconcile-if-new-recreated', 'a database deleted and created again for its missing stores is rebuilt too', async () => {
+    await rawDelete();
+    await rawCreate(['spam']);
+    const counts = await taStorage.reconcileIfNew();
+    assert.equal(counts.summary.restored, 1);
+    assert.equal((await st.getRecord('ev-a@x')).summary.summary, 'A');
+});
+
+k.test('rebuild-watch', 'with the background\'s rebuild watch on, an eviction while running is rebuilt at once, with no call', async () => {
+    taStorage.startRebuildWatch();
+    await taStorage.openDB();
+    await rawDelete();
+    // No call of the module in between: the watch reopens the database and rebuilds it by itself.
+    // (A raw open here could create the database first, without its stores.)
+    for (let i = 0; i < 20; i++) await new Promise(r => setTimeout(r, 5));
+    assert.equal((await raw('summary', 'ev-a@x'))?.summary, 'A');
+    assert.equal((await raw('spam', 'ev-b@x'))?.spamValue, 9);
+});
+
+k.test('rebuild-reads-wait', 'a read asked while the watch is rebuilding waits for it: the record is found, never answered as missing', async () => {
+    await taStorage.openDB();
+    await rawDelete();
+    // At once, with the rebuild not even started: without the wait this would answer null.
+    const [rec, page, n] = await Promise.all([
+        st.getRecord('ev-a@x'),
+        taStorage.getPage('spam'),
+        taStorage.count('summary'),
+    ]);
+    assert.equal(rec?.summary?.summary, 'A');
+    assert.deepEqual(page.map(r => r.messageId), ['ev-b@x']);
+    assert.equal(n, 1);
 });
 
 k.coverage();

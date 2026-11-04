@@ -13,7 +13,10 @@ The contract is the spec, as everywhere in the suite:
   `isSyncDrained()`), the `dynamic_menu_order_alphabet` and `calendar_no_selection` rows, and
   "Preference access";
 - [`claude-spec/01-architecture.md`](../../claude-spec/01-architecture.md) "Storage", and "Per-Message
-  Data Storage" for the move of the per-message data to IndexedDB (`migrateMessageDataToIndexedDB()`);
+  Data Storage" for the move of the per-message data to its `storage.local` mirror and to IndexedDB
+  (`migrateMessageDataToIndexedDB()`, gated on the add-on version it last ran for), and the rebuild
+  of the database from the mirror after an eviction (`taStorage.reconcileIfNew()`, a step of the
+  sequence);
 - [`claude-spec/02-prompts.md`](../../claude-spec/02-prompts.md): "Alphabetic-to-Position Migration"
   and "Enabled-to-show_in Migration" (here only as steps of the sequence; see below);
 - [`claude-spec/04-api-integrations.md`](../../claude-spec/04-api-integrations.md): the Ollama `think`
@@ -53,8 +56,8 @@ mock's options. The run takes about 15 s, most of it spent in the interruption t
 | `03-ollama-think` | `migrateOllamaThinkLevel()`: boolean to level, level kept, unset kept, global only, its flag, idempotence | 04 (Ollama `think`) |
 | `04-prompts-129` | the two #129 migrations: copy then remove, a local copy kept with the stale sync copy removed, nothing to do | 01 "Storage", 05 "Preference access" |
 | `05-calendar-no-selection` | `migrateCalendarNoSelection()`: the stored `need_selected` (missing and out-of-domain values included) × the stored preference, with the behaviour read back through `getSpecialPrompts()`; its flag | 05 `calendar_no_selection` row, 08 "Interaction points" |
-| `06-message-data` | `migrateMessageDataToIndexedDB()` alone: the field mapping, `createdAt` from the field's `ts`, the record's `ts`, the time of the migration, `size`, the metadata left empty, a malformed field dropped and logged, the flag set first and removed last, the legacy keys removed after the commit, the next start writing nothing; IndexedDB unopenable or failing (keys and flag kept), the retry, Thunderbird closing at each write; after a downgrade, the keys written again migrated without overwriting a newer record; nothing to migrate, a stale flag | 01 "Per-Message Data Storage" |
-| `10-sequence-upgrade` | **the sequence** on a 5.0.x profile: the upgrade end to end (its `msg:` record moved to IndexedDB, no key or flag left), then a second and a third start (nothing written, `storage.sync` never touched, IndexedDB unchanged); and, statically, that nothing before the preference copy awaits or touches storage | all of the above, 01 "Storage", "Per-Message Data Storage" |
+| `06-message-data` | `migrateMessageDataToIndexedDB()` alone: the field mapping, each record also under its mirror key (the very record IndexedDB holds), `createdAt` from the field's `ts`, the record's `ts`, the time of the migration, `size`, the metadata left empty, a malformed field dropped and logged, the flag set first, then the mirror keys, the legacy keys removed after the commit, the flag removed, the version stored last; the next start (same version) one targeted read, never enumerating `storage.local`, writing nothing; the same version after a downgrade not scanning, a flag left behind forcing a scan; IndexedDB unopenable or failing (keys and flag kept, the mirror key written first kept, the version not stored), the retry, Thunderbird closing at each of the five writes; after a downgrade and an update, the keys written again migrated without overwriting a newer record of the mirror; nothing to migrate, a stale flag | 01 "Per-Message Data Storage" |
+| `10-sequence-upgrade` | **the sequence** on a 5.0.x profile: the upgrade end to end (its `msg:` record moved to IndexedDB and to its mirror key, no key or flag left, the version stored), then a second and a third start (nothing written, `storage.local` never enumerated, `storage.sync` never touched, IndexedDB unchanged); a start after an eviction (the IndexedDB snapshot dropped, `storage.local` kept) rebuilding the database exactly as it was from the mirror, with one enumeration and no write, and the start after it quiet; and, statically, that nothing before the preference copy awaits or touches storage | all of the above, 01 "Storage", "Per-Message Data Storage" |
 | `11-sequence-failure` | the sequence when storage fails: the copy failing (the guarded migrations skipped; the unguarded data migration still moves the `msg:` record), `storage.sync` unreadable at every call, every write after the copy failing. Each time the sequence completes (the add-on starts), nothing is lost, and the next starts end where clean starts end | 05 "Overview" / 02 (the one-shot flags), 01 "Per-Message Data Storage" |
 | `12-sequence-partial` | the sequence from partial states: the oldest (pre-#129) profile over three starts, a payload in both areas, and **Thunderbird closing at each storage write of the first start in turn**, followed by normal starts | 05 "Overview", 01, 02 |
 | `13-sequence-menu-order` | the alphabetic migration as a step of the sequence: every prompt reads back as before, positions aside, a field it lacked appearing only as `''`; no stored value changes | 02 "Alphabetic-to-Position Migration" step 3 |
@@ -121,6 +124,11 @@ and back explicitly, the way it survives a restart, and nothing is ever reset by
 
 IndexedDB (the per-message data) survives a restart the same way: a start returns its databases as
 `r.idb` (the core's `dumpIndexedDB()`), and the next start takes them as `idb` (`seedIndexedDB()`).
+A start given no `idb` while its `storage.local` holds mirror keys is a start after an eviction.
+Each start gets its own `navigator.locks` (`installLocks(navigator, {replace: true})`): Node 24's is
+shared by every worker of the process, so the starts of a file, run in parallel, would wait on each
+other's `thunderai-storage-cleanup` lock (the rebuild takes it), and a worker whose only pending
+work is a lock request exits with code 13.
 `idbFault: 'open' | 'write'` makes `indexedDB.open()` or every `put()` fail for the whole run.
 
 A start installs the core mock with the given `sync` / `local`, wraps `storage.local` /

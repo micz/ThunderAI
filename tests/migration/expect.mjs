@@ -32,12 +32,24 @@ export function keyNames(keys) {
 }
 
 /**
- * storage.local without the legacy per-message records (msg: keys), which the data migration moves
- * to IndexedDB at every start, whatever happened to the preference copy (spec 01 "Per-Message Data
- * Storage"): where a test says "nothing touched", it means everything else.
+ * The storage.local keys of the per-message data (spec 01 "Per-Message Data Storage", spec 08 "the
+ * storage.local keys that are not preferences"): the legacy records (msg:), the mirror records
+ * (spam:, summary:, translation:) and the add-on version the move of the legacy records last
+ * completed for. The move runs whatever happened to the preference copy.
  */
+export const MIRROR_PREFIXES = ['spam:', 'summary:', 'translation:'];
+export const MESSAGE_DATA_VERSION_KEY = '_message_data_migration_version';
+export const isMessageDataKey = k => k.startsWith('msg:') || MIRROR_PREFIXES.some(p => k.startsWith(p)) || k === MESSAGE_DATA_VERSION_KEY;
+
+/** storage.local without the per-message data keys: where a test says "nothing touched", it means everything else. */
 export function withoutMessageData(local) {
-    return Object.fromEntries(Object.entries(local).filter(([k]) => !k.startsWith('msg:')));
+    return Object.fromEntries(Object.entries(local).filter(([k]) => !isMessageDataKey(k)));
+}
+
+/** The mirror records of one type in a start's r.local, by messageId (spec 01 "Per-Message Data Storage"). */
+export function mirrorRecords(local, type) {
+    const prefix = type + ':';
+    return Object.fromEntries(Object.entries(local || {}).filter(([k]) => k.startsWith(prefix)).map(([k, v]) => [k.slice(prefix.length), v]));
 }
 
 /** The records of one store of the message database, in a start's r.idb, by messageId. */

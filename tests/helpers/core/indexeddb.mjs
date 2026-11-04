@@ -14,7 +14,8 @@
  *   seedIndexedDB(snapshot)    the reverse, in a fresh process: how a database survives a restart
  *                              between two worker contexts
  *   installLocks(navigator)    a navigator.locks stand-in (exclusive request() per name), when the
- *                              navigator has none (Node 22, jsdom)
+ *                              navigator has none (Node 22, jsdom); with {replace: true} also over
+ *                              Node 24's, shared by every worker of the process
  */
 
 import {
@@ -167,10 +168,13 @@ export async function seedIndexedDB(snapshot = []) {
 
 /**
  * navigator.locks with exclusive request(name, [options], callback) per name, when the navigator
- * has none: Node 22's has no Web Locks, nor has jsdom's. Node 24's real one is kept.
+ * has none: Node 22's has no Web Locks, nor has jsdom's. Node 24's real one is kept, unless
+ * `replace`: its locks are shared by every worker thread of the process (a lock one worker holds
+ * makes another wait, and a waiting request does not keep a worker alive), so a worker that stands
+ * for a separate Thunderbird start needs its own.
  */
-export function installLocks(nav) {
-    if (!nav || (nav.locks && typeof nav.locks.request === 'function')) return;
+export function installLocks(nav, { replace = false } = {}) {
+    if (!nav || (!replace && nav.locks && typeof nav.locks.request === 'function')) return;
     const tails = new Map();
     const locks = {
         request(name, a, b) {

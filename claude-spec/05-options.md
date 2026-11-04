@@ -1698,11 +1698,13 @@ its `#no_privacy` notice), `do_debug`, the allowed unencrypted servers and the s
   translations (IndexedDB, see [01-architecture.md](01-architecture.md#per-message-data-storage)), the
   sum of the `size` of every record of the three stores, as computed by
   `getMessageStorageUsedSpace()` (`js/mzta-utils.js`, over `taStorage.getTotalSize()`) and read at
-  load. `#btnClearMessageStorage` asks a native `confirm()` (`prefs_storage_clear_confirm`):
-  cancelled, nothing happens; confirmed, `taStorage.clearAllRecords()` empties the three stores, under
-  the cleanup lock - never a preference or any other key - then an `alert()` reports the count
+  load. It is the IndexedDB total only: every record is also kept in its `storage.local` mirror key,
+  so the disk actually used is roughly twice that. `#btnClearMessageStorage` asks a native `confirm()` (`prefs_storage_clear_confirm`):
+  cancelled, nothing happens; confirmed, `taStorage.clearAllRecords()` removes every mirror key and
+  empties the three stores, under the cleanup lock - never a preference or any other key - then an
+  `alert()` reports the count of records the stores held
   (`prefs_storage_clear_done`, or `prefs_storage_clear_error` with the reason) and the size is read
-  again. While the background is still moving the data out of `storage.local` (the migration flag),
+  again. While the background is still moving the legacy `msg:` records (the migration flag),
   `#message_storage_migrating` (`storage_migration_in_progress`) is shown under it; after a failed
   attempt (the flag `'failed'`), `#message_storage_migration_failed` (`storage_migration_failed`)
   instead. No settings for
@@ -1917,13 +1919,20 @@ case for nearly every user and is swallowed silently.
   a policy-supplied value: a locked one is refused by the write guard anyway, and an initial
   one must not be stored as a user choice the user never made.
 - **The record stores** are not preferences and are out of scope: the per-message data
-  (`taStorage`, `taSummaryStore`, `taTranslationStore`, `taSpamReport`) lives in IndexedDB, not in
-  `storage.local`; the custom prompt/placeholder payloads share `storage.local` with the
-  preferences, under keys with a leading `_` that no `prefs_default` key uses. So do the two keys of
-  the per-message storage that stay in `storage.local`, `_message_data_migrating` (the migration
-  flag) and `_message_data_last_cleanup`. The only enumeration of `storage.local` left, the
-  migration's `get(null)` (`js/mzta-storage-migration.js`), touches nothing but the legacy `msg:`
-  keys and that flag.
+  (`taStorage`, `taSummaryStore`, `taTranslationStore`, `taSpamReport`) is read from IndexedDB,
+  and its durable copy, the **mirror**, is in `storage.local`, one key per record under the
+  prefixes `spam:`, `summary:`, `translation:` followed by the Message-ID (`MIRROR_PREFIXES`; see
+  [01-architecture.md](01-architecture.md#per-message-data-storage)); no `prefs_default` key uses
+  those prefixes. The custom prompt/placeholder payloads share `storage.local` with the
+  preferences, under keys with a leading `_` that no `prefs_default` key uses. So do the three
+  underscore keys of the per-message storage, `_message_data_migrating` (the migration flag),
+  `_message_data_migration_version` (the version the move of the legacy records last ran for) and
+  `_message_data_last_cleanup`. Every mirror write fires `storage.onChanged` in every context with
+  the record as `newValue`: each listener filters on the exact keys it watches (the options page's
+  `_connection_type` suffix test skips `isMirrorKey()` keys explicitly). `storage.local` is
+  enumerated (`get(null)`) only by the move of the legacy records (once per add-on version), by
+  `taStorage.clear()` / `clearAllRecords()` and by `taStorage.reconcileWithMirror()`; the one-shot
+  `migratePrefsToLocal()` read runs before the marker exists and only tests key presence.
 - **The approved unencrypted servers** (`_approved_insecure_origins` in `storage.local`, see
   [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy))
   are not a preference: no `prefs_default` entry, no policy key, read and written only by

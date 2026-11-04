@@ -237,13 +237,22 @@ if (_prefs_migration_ok) await migrateOllamaThinkLevel();
 // already has, and it reads only _custom_prompt, which the #129 pair above has already moved.
 await migrateCustomPromptIdCollisions().catch(e => console.error("[ThunderAI] migrateCustomPromptIdCollisions error: " + e));
 // Moves the per-message data (spam reports, summaries, translations) from the msg: records of
-// storage.local to IndexedDB (claude-spec/01-architecture.md "Per-Message Data Storage"). Not
-// guarded and with no one-shot flag: it runs at every start, because an older version run in
-// between (a downgrade) writes msg: records again; with none it is one read. Awaited here, before
-// any listener that reads or writes those records is registered (the main onMessage listener,
-// the new mail listener) and before the scheduled cleanup starts, so nothing reads or writes the
-// stores before it has finished. A failure keeps the legacy records for the next start.
+// storage.local to their mirror keys and to IndexedDB (claude-spec/01-architecture.md "Per-Message
+// Data Storage"). Not guarded by _prefs_migration_ok: it owns its state, the add-on version it last
+// completed for, and scans storage.local only at the first start of a new version (an older
+// version run in between, a downgrade, writes msg: records again); any other start is one read.
+// Awaited here, before any listener that reads or writes those records is registered (the main
+// onMessage listener, the new mail listener) and before the scheduled cleanup starts, so nothing
+// reads or writes the stores before it has finished. A failure keeps the legacy records for the
+// next start.
 await migrateMessageDataToIndexedDB().catch(e => console.error("[ThunderAI] migrateMessageDataToIndexedDB error: " + e));
+// The database is the working copy of the per-message data, the storage.local mirror its durable
+// copy: a database this open finds new (first start, evicted by Thunderbird, or recreated because
+// its object stores were missing) is rebuilt from the mirror, before the same listeners are
+// registered. A failure is logged: the reads then answer from what the database holds.
+await taStorage.reconcileIfNew().catch(e => console.error("[ThunderAI] Message storage rebuild error: " + e));
+// From now on a lost database connection is reopened at once, and rebuilt if it is new.
+taStorage.startRebuildWatch();
 
 let _process_incoming = false;
 let _sparks_presence = false;
@@ -1357,6 +1366,17 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 _generateSpamReportForMessage(message.headerMessageId, { tabId: sender.tab.id })
                     .catch(e => taLog.error("Error in refreshSpamReport: " + (e?.message || e)));
                 break;
+            case 'reconcileMessageStorage':
+                // The manual realignment of the per-message data with its storage.local mirror
+                // (the storage management page): only the background runs it. Answers the counts
+                // per type, { ok: true, counts: { spam: { restored, removed }, ... } }, or the
+                // error message, { ok: false, error }.
+                return taStorage.reconcileWithMirror()
+                    .then(counts => ({ ok: true, counts }))
+                    .catch(e => {
+                        taLog.error("Error in reconcileMessageStorage: " + (e?.message || e));
+                        return { ok: false, error: e?.message || String(e) };
+                    });
             case 'batch_status':
                 return Promise.resolve(taBatchController.getStatus());
             case 'cancel_batch':

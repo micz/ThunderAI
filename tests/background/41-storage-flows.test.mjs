@@ -11,6 +11,9 @@
 //    (storage_error), so the panel can put a red notice above it: a summary, a translation, a
 //    manually requested spam check; an automatic run with no panel open only logs it.
 // How the panel draws the notice is the compose area's (compose/README.md).
+// Spec 01 "Per-Message Data Storage", the mirror: a saved record is also in storage.local under its
+// mirror key; the background answers reconcileMessageStorage with the counts of the realignment, or
+// the error message.
 
 import assert from 'node:assert/strict';
 import { bgContext, flush } from './context.mjs';
@@ -198,6 +201,36 @@ k.test('automatic-logged', 'an automatic run with no panel open logs the failed 
     await flush();
     assert.match(ctx.con.all().join(' | '), /Could not store the report for auto-p@x: .*disk is full/);
     assert.deepEqual(ctx.m.sentTo(7, 'showSpamReport'), []);
+});
+
+// --- The mirror and its realignment --------------------------------------------------------------
+
+const PAGE = { url: 'moz-extension://00000000-test-uuid/options/mzta-options.html', id: 'thunderai@micz.it' };
+
+k.test('summary-mirrored', 'a generated summary is saved in storage.local under its mirror key, the very record IndexedDB holds', async () => {
+    show('mirror-s@x');
+    await fromTab(ctx, 7, { command: 'triggerSummaryGeneration', headerMessageId: 'mirror-s@x' });
+    const r = (await record(ctx, 'mirror-s@x')).summary;
+    assert.ok(r);
+    assert.deepEqual(ctx.ctl.localData()['summary:mirror-s@x'], r);
+});
+
+k.test('reconcile-command', 'reconcileMessageStorage realigns IndexedDB with the mirror and answers the counts per type', async () => {
+    const rec = taStorage.buildRecord('translation', 'mirror-only@x', { translated_text: 'Restored' }, 1000);
+    await ctx.ctl.browser.storage.local.set({ 'translation:mirror-only@x': rec });
+    const answer = await ctx.ctl.dispatchMessage({ command: 'reconcileMessageStorage' }, PAGE);
+    assert.equal(answer.ok, true);
+    assert.deepEqual(answer.counts.translation, { restored: 1, removed: 0 });
+    assert.deepEqual(Object.keys(answer.counts).sort(), ['spam', 'summary', 'translation']);
+    assert.equal((await record(ctx, 'mirror-only@x')).translation.translated_text, 'Restored');
+});
+
+k.test('reconcile-command-error', 'reconcileMessageStorage answers the error message when the realignment fails', async (t) => {
+    t.mock.method(taStorage, 'reconcileWithMirror', async () => { throw new Error('IndexedDB unavailable'); });
+    ctx.con.clear();
+    const answer = await ctx.ctl.dispatchMessage({ command: 'reconcileMessageStorage' }, PAGE);
+    assert.deepEqual(answer, { ok: false, error: 'IndexedDB unavailable' });
+    assert.match(ctx.con.all().join(' | '), /reconcileMessageStorage: IndexedDB unavailable/);
 });
 
 k.test('no-leak', 'no worker left alive, no unmodelled API touched, no unhandled rejection', () => {

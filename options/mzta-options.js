@@ -35,7 +35,10 @@ import {
   getMessageStorageUsedSpace,
   supportsUsageData
 } from '../js/mzta-utils.js';
-import { taStorage } from '../js/mzta-storage.js';
+import {
+  taStorage,
+  isMirrorKey
+} from '../js/mzta-storage.js';
 import {
   injectConnectionUI,
   updateAnthropicModelCapabilityUI,
@@ -930,7 +933,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // A policy-enforced key cannot have meaningfully changed: whatever was written to
     // storage.local for it is shadowed on every read by the policy value, so reacting
     // would recompute the indicators to land on the values already displayed.
+    // A mirror record of the per-message data (spam:, summary:, translation:<Message-ID>) is
+    // written at every save, and a Message-ID may end with anything: never a preference.
     const hasRelevantChange = Object.keys(changes).some(key =>
+      !isMirrorKey(key) &&
       !isLockedKey(key) &&
       (key.endsWith('_use_specific_integration') || key.endsWith('_connection_type'))
     );

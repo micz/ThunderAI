@@ -123,7 +123,11 @@ async function main(o) {
     const imp = rel => import(new URL(rel, REPO).href);
 
     const ctl = installBrowserMock({ policy: null, local: o.local || {}, sync: o.sync || {} });
-    const { dumpIndexedDB, seedIndexedDB } = await import('../helpers/core/indexeddb.mjs');
+    const { dumpIndexedDB, seedIndexedDB, installLocks } = await import('../helpers/core/indexeddb.mjs');
+    // The storage cleanup lock (taStorage.reconcileWithMirror() takes it): one Thunderbird, one
+    // lock manager. Node 24's navigator.locks is shared by every worker of the process, so the
+    // starts of a file, run in parallel, would wait on each other's locks.
+    installLocks(globalThis.navigator, { replace: true });
     if (o.idb) await seedIndexedDB(o.idb);
     if (o.idbFault === 'open') {
         globalThis.indexedDB.open = () => { throw new DOMException('injected: IndexedDB unavailable', 'InvalidStateError'); };

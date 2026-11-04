@@ -30,19 +30,28 @@
  *  page, the spam filter page). The message display and compose scripts never do: they go
  *  through the background.
  *
- *  The database is a best-effort, rebuildable cache: Thunderbird may evict it without notice,
- *  and it grants an add-on neither persistent storage nor (as an optional permission)
- *  unlimitedStorage. So:
- *   - a database without its three object stores is deleted and created again, empty;
+ *  The durable copy is the MIRROR in storage.local: one key per record, `<prefix><messageId>`
+ *  (MIRROR_PREFIXES: spam:, summary:, translation:), whose value is the very record of the store.
+ *  storage.local is never evicted; the database is (Thunderbird may evict it without notice, and
+ *  it grants an add-on neither persistent storage nor, as an optional permission,
+ *  unlimitedStorage). So the database is the working copy every read uses (pages, counts, size,
+ *  the cleanup cursors), and the mirror is the source of truth it is rebuilt from:
+ *   - every write goes to the mirror first, then to the database; every delete removes both;
+ *   - a database that turns out to be new (created by this open, or deleted and created again
+ *     because its object stores were missing) is rebuilt from the mirror by the background
+ *     (reconcileIfNew(), reconcileWithMirror()); the pages never rebuild it;
  *   - a read that cannot reach the database (it cannot be opened, a store is missing) logs and
- *     answers as an empty cache: no record, an empty page, 0;
- *   - a delete on a database that cannot be opened is a no-op: there is nothing to delete;
+ *     answers as empty: no record, an empty page, 0;
+ *   - a delete on a database that cannot be opened still removes the mirror keys;
  *   - every transaction's done promise has a handler, so an aborted transaction never surfaces
  *     as an unhandled rejection.
+ *  Only clear(), clearAllRecords() and reconcileWithMirror() enumerate storage.local
+ *  (get(null)): rare, user-initiated or rebuild operations. No routine path ever does.
  *
  *  Two rules hold everywhere below:
  *   - nothing but IndexedDB requests is awaited inside a transaction: a transaction commits as
- *     soon as the event loop is idle, so a preference read in the middle would end it;
+ *     soon as the event loop is idle, so a preference read or a storage.local call in the middle
+ *     would end it (the mirror is written before a transaction is opened, or after it is done);
  *   - a write never swallows its error: it is logged, then the promise rejects, so the caller
  *     can tell the user (the background still shows the result it could not save).
  */
@@ -64,6 +73,39 @@ export const MESSAGE_STORES = Object.freeze([STORE_SPAM, STORE_SUMMARY, STORE_TR
 export const INDEX_CREATED_AT = 'createdAt';
 export const INDEX_SIZE = 'size';
 
+/**
+ * The storage.local key prefix of the mirror records of each type: the record of a message is
+ * kept under `<prefix><messageId>` (the Message-ID as headerMessageId gives it, without angle
+ * brackets), its value the very record of the store. One key per record: storage.local.set()
+ * rewrites a key's whole value, so every save stays a single put that reads nothing else.
+ */
+export const MIRROR_PREFIXES = Object.freeze({
+    [STORE_SPAM]: STORE_SPAM + ':',
+    [STORE_SUMMARY]: STORE_SUMMARY + ':',
+    [STORE_TRANSLATION]: STORE_TRANSLATION + ':',
+});
+
+/** The storage.local key of the mirror record of a type and a message. */
+export function mirrorKey(type, messageId) {
+    const prefix = MIRROR_PREFIXES[type];
+    if (!prefix) throw new Error('Unknown message data type: ' + type);
+    return prefix + messageId;
+}
+
+/** The type of a mirror key (one of MESSAGE_STORES), or null for any other storage.local key. */
+export function mirrorKeyType(key) {
+    if (typeof key !== 'string') return null;
+    for (const type of MESSAGE_STORES) {
+        if (key.startsWith(MIRROR_PREFIXES[type])) return type;
+    }
+    return null;
+}
+
+/** Whether a storage.local key is a mirror record (the storage.onChanged listeners skip them). */
+export function isMirrorKey(key) {
+    return mirrorKeyType(key) !== null;
+}
+
 /** The Web Lock every cleanup and every bulk removal runs under, in every context. */
 export const CLEANUP_LOCK_NAME = 'thunderai-storage-cleanup';
 
@@ -80,6 +122,13 @@ export const CLEANUP_LOCK_NAME = 'thunderai-storage-cleanup';
 export const MIGRATION_FLAG_KEY = '_message_data_migrating';
 /** The MIGRATION_FLAG_KEY value of a failed migration. */
 export const MIGRATION_FAILED = 'failed';
+
+/**
+ * storage.local key holding the add-on version (manifest.json) the move of the legacy records
+ * last completed for. The move scans storage.local only when the running version differs (an
+ * update, also after a downgrade), never at every start: a scan reads every mirror record too.
+ */
+export const MIGRATION_VERSION_KEY = '_message_data_migration_version';
 
 /** storage.local key holding the time (ms) of the last completed scheduled cleanup. */
 export const LAST_CLEANUP_KEY = '_message_data_last_cleanup';
@@ -116,6 +165,21 @@ const _log = new taLogger('mzta-storage', false);
 let _dbPromise = null;
 // The one pending timer of the scheduled cleanup (background only).
 let _cleanupTimer = null;
+// True once an open of this context found the database new (it created the object stores):
+// what reconcileIfNew() reads, and clears when it has rebuilt the database from the mirror.
+let _dbIsNew = false;
+// Background only (startRebuildWatch()): a lost connection is opened again at once, and a
+// database found new is rebuilt from the mirror.
+let _rebuildWatch = false;
+// The rebuild the watch started after a lost connection, until it ends (background only): the
+// reads wait for it, so a record the mirror holds is never answered as missing in the meantime
+// (a summary asked for then would be generated again by the AI).
+let _rebuilding = null;
+
+/** Wait for the rebuild in progress, if any (never rejects). */
+function rebuildDone() {
+    return _rebuilding || Promise.resolve();
+}
 
 /** The value as an ISO string when it is a Date, else unchanged. */
 function toIsoDate(value) {
@@ -135,6 +199,9 @@ function toLimit(value) {
 function openMessageDB(onLost) {
     const opening = openDB(MESSAGE_DB_NAME, MESSAGE_DB_VERSION, {
         upgrade(db, oldVersion) {
+            // oldVersion 0: the database did not exist (first start, evicted, or deleted by
+            // openCheckedMessageDB() below): whatever it held is only in the mirror now.
+            if (oldVersion === 0) _dbIsNew = true;
             if (oldVersion < 1) {
                 for (const name of MESSAGE_STORES) {
                     const store = db.createObjectStore(name, { keyPath: 'messageId' });
@@ -165,7 +232,8 @@ function openMessageDB(onLost) {
 /**
  * Open the database and check that it has its three object stores. A database at the current
  * version without them (damaged, or partly evicted) is never upgraded, so it would stay broken:
- * it is deleted and created again, empty - it is only a cache.
+ * it is deleted and created again, empty. Its new open runs upgrade() from version 0, which
+ * marks it new, so the background rebuilds it from the mirror.
  */
 async function openCheckedMessageDB(onLost) {
     const db = await openMessageDB(onLost);
@@ -204,6 +272,88 @@ export async function openTransaction(stores, mode) {
     }
     tx.done.catch(() => {});
     return tx;
+}
+
+/** a is newer than b: a greater createdAt (a record without a number counts as 0). */
+function isNewer(a, b) {
+    const t = r => (typeof r?.createdAt === 'number' && Number.isFinite(r.createdAt) ? r.createdAt : 0);
+    return t(a) > t(b);
+}
+
+/** A mirror value that can be put into its store: an object whose messageId is the one of its key. */
+function isStorableRecord(value, messageId) {
+    return !!value && typeof value === 'object' && !Array.isArray(value) && value.messageId === messageId;
+}
+
+/**
+ * The mirror records of the given types, read with ONE storage.local.get(null) filtered on the
+ * prefixes: { [type]: Map(messageId -> value) }. Only for the rare operations (clear, the
+ * reconcile), never on the message flow.
+ */
+async function readMirror(types = MESSAGE_STORES) {
+    const all = await browser.storage.local.get(null);
+    const out = Object.fromEntries(types.map(type => [type, new Map()]));
+    for (const [key, value] of Object.entries(all)) {
+        const type = mirrorKeyType(key);
+        if (type && out[type]) out[type].set(key.slice(MIRROR_PREFIXES[type].length), value);
+    }
+    return out;
+}
+
+/** The mirror keys of the given types (see readMirror()). */
+async function mirrorKeysOf(types) {
+    const mirror = await readMirror(types);
+    return types.flatMap(type => [...mirror[type].keys()].map(id => mirrorKey(type, id)));
+}
+
+/**
+ * Put records into their stores and remove others, in one readwrite transaction. A record is put
+ * only when the store does not already hold one of that Message-ID with a createdAt as new or
+ * newer; a removal ({type, messageId, createdAt}) deletes the stored record only when it still has
+ * the createdAt seen when it was chosen (a write since then has replaced it: it is kept). The write
+ * loop of the move of the legacy records (js/mzta-storage-migration.js) and of
+ * reconcileWithMirror(). Resolves once the transaction has committed; rejects with nothing
+ * committed.
+ *
+ * @param {{type: string, record: object}[]} records
+ * @param {{type: string, messageId: string, createdAt: *}[]} [removals]
+ * @returns {Promise<{written: number, skipped: number, byType: object, removedByType: object}>}
+ *   byType: written per type; removedByType: removed per type
+ */
+export async function putNewerRecords(records, removals = []) {
+    const byType = Object.fromEntries(MESSAGE_STORES.map(type => [type, 0]));
+    const removedByType = Object.fromEntries(MESSAGE_STORES.map(type => [type, 0]));
+    if (records.length === 0 && removals.length === 0) return { written: 0, skipped: 0, byType, removedByType };
+    const tx = await openTransaction(MESSAGE_STORES, 'readwrite');
+    let written = 0;
+    let skipped = 0;
+    try {
+        for (const { type, record } of records) {
+            const store = tx.objectStore(type);
+            const existing = await store.get(record.messageId);
+            if (existing && typeof existing.createdAt === 'number' && existing.createdAt >= record.createdAt) {
+                skipped++;
+                continue;
+            }
+            await store.put(record);
+            written++;
+            byType[type]++;
+        }
+        for (const { type, messageId, createdAt } of removals) {
+            const store = tx.objectStore(type);
+            const existing = await store.get(messageId);
+            if (!existing || existing.createdAt !== createdAt) continue;
+            await store.delete(messageId);
+            removedByType[type]++;
+        }
+    } catch (e) {
+        // A request that throws (rather than failing) does not abort the transaction: left alone,
+        // it would commit what was done before it. All or nothing.
+        try { tx.abort(); } catch { /* already finished */ }
+        throw e;
+    }
+    await tx.done;
+    return { written, skipped, byType, removedByType };
 }
 
 /** Run fn() under the cleanup lock. Without the Web Locks API, fn() runs directly. */
@@ -273,7 +423,20 @@ export class taStorage {
      */
     static openDB() {
         if (_dbPromise) return _dbPromise;
-        const opening = openCheckedMessageDB(() => { if (_dbPromise === opening) _dbPromise = null; });
+        const opening = openCheckedMessageDB(() => {
+            if (_dbPromise === opening) _dbPromise = null;
+            // The background opens it again at once, so it is the first to find it new after an
+            // eviction (a page opening it first would create it, and the background would then
+            // find it at version 1 and never rebuild it). After the close in progress: a timer.
+            // The reads wait for it from now on, not only once it has started.
+            if (_rebuildWatch) {
+                const rebuild = new Promise(resolve => setTimeout(resolve, 0))
+                    .then(() => taStorage.reconcileIfNew())
+                    .catch(e => _log.error('Could not rebuild the message database from the mirror: ' + e))
+                    .then(() => { if (_rebuilding === rebuild) _rebuilding = null; });
+                _rebuilding = rebuild;
+            }
+        });
         _dbPromise = opening;
         // A failed open is not kept: the next call tries again.
         opening.catch((e) => {
@@ -351,6 +514,7 @@ export class taStorage {
         this.taLog.log('[getRecord] messageId: ' + messageId);
         if (!messageId) return null;
         try {
+            await rebuildDone();
             const tx = await openTransaction(MESSAGE_STORES, 'readonly');
             const found = await Promise.all(MESSAGE_STORES.map(name => tx.objectStore(name).get(messageId)));
             await tx.done;
@@ -384,6 +548,7 @@ export class taStorage {
      */
     static async getPage(type, { offset = 0, limit = 50 } = {}) {
         try {
+            await rebuildDone();
             const tx = await openTransaction(type, 'readonly');
             const out = [];
             let cursor = await tx.store.index(INDEX_CREATED_AT).openCursor(null, 'prev');
@@ -404,6 +569,7 @@ export class taStorage {
     /** The number of records of a type; 0 when the database cannot be read. */
     static async count(type) {
         try {
+            await rebuildDone();
             const tx = await openTransaction(type, 'readonly');
             const n = await tx.store.count();
             await tx.done;
@@ -421,6 +587,7 @@ export class taStorage {
      */
     static async getTotalSize() {
         try {
+            await rebuildDone();
             const tx = await openTransaction(MESSAGE_STORES, 'readonly');
             let total = 0;
             for (const name of MESSAGE_STORES) {
@@ -441,8 +608,11 @@ export class taStorage {
     // ---- Writes ---------------------------------------------------------------------------------
 
     /**
-     * Store the record of a type. Skipped (resolves null) when the Message-ID is empty or saving
-     * is disabled for the type; with force false, also when a record already exists.
+     * Store the record of a type: in the mirror (storage.local) first, then in the database.
+     * Skipped (resolves null), in both, when the Message-ID is empty or saving is disabled for the
+     * type; with force false, also when a record already exists in either. A failed mirror write
+     * rejects before the database is touched; a failed database write after it rejects too and
+     * leaves the mirror key: the durable copy wins, and the next rebuild puts it in the database.
      * @returns {Promise<object|null>} the stored record
      */
     async _write(type, messageId, data, force = true) {
@@ -455,14 +625,16 @@ export class taStorage {
             this.taLog.log('[write ' + type + '] saving is disabled for this type, nothing saved.');
             return null;
         }
+        const key = mirrorKey(type, messageId);
         const record = taStorage.buildRecord(type, messageId, data || {}, Date.now());
         try {
-            const tx = await openTransaction(type, 'readwrite');
-            if (!force && (await tx.store.get(messageId))) {
+            if (!force && (await this._exists(type, messageId, key))) {
                 this.taLog.log('[write ' + type + '] a record already exists, skipping (force=false)');
-                await tx.done;
                 return null;
             }
+            // Before the transaction is opened: nothing but IndexedDB requests is awaited in it.
+            await browser.storage.local.set({ [key]: record });
+            const tx = await openTransaction(type, 'readwrite');
             await tx.store.put(record);
             await tx.done;
             return record;
@@ -472,13 +644,30 @@ export class taStorage {
         }
     }
 
+    /** Whether the mirror or the database holds a record of the type (the force = false check). */
+    async _exists(type, messageId, key) {
+        if (Object.hasOwn(await browser.storage.local.get(key), key)) return true;
+        const tx = await openTransaction(type, 'readonly');
+        const found = await tx.store.get(messageId);
+        await tx.done;
+        return found !== undefined;
+    }
+
     /**
-     * Delete the record of one type. A database that cannot be opened has nothing to delete (its
-     * reads answer as empty): logged, resolves. A delete failing on an open database rejects.
+     * Delete the record of one type: its mirror key first, then the database record. A failed
+     * mirror removal rejects before the database is touched. A database that cannot be opened has
+     * nothing more to delete (its reads answer as empty): logged, resolves. A delete failing on an
+     * open database rejects.
      */
     async _deleteField(type, messageId) {
         this.taLog.log('[delete ' + type + '] messageId: ' + messageId);
         if (!messageId) return;
+        try {
+            await browser.storage.local.remove(mirrorKey(type, messageId));
+        } catch (e) {
+            this.taLog.error('delete ' + type + ' error (mirror): ' + e);
+            throw e;
+        }
         let tx;
         try {
             tx = await openTransaction(type, 'readwrite');
@@ -536,12 +725,19 @@ export class taStorage {
     }
 
     /**
-     * Delete the records of a message from the three stores, in one readwrite transaction. Like
-     * _deleteField(), a no-op when the database cannot be opened.
+     * Delete the records of a message: its three mirror keys, then the three stores, in one
+     * readwrite transaction. Like _deleteField(), the database part is a no-op when it cannot be
+     * opened.
      */
     async deleteRecord(messageId) {
         this.taLog.log('[deleteRecord] messageId: ' + messageId);
         if (!messageId) return;
+        try {
+            await browser.storage.local.remove(MESSAGE_STORES.map(type => mirrorKey(type, messageId)));
+        } catch (e) {
+            this.taLog.error('deleteRecord error (mirror): ' + e);
+            throw e;
+        }
         let tx;
         try {
             tx = await openTransaction(MESSAGE_STORES, 'readwrite');
@@ -559,13 +755,16 @@ export class taStorage {
     }
 
     /**
-     * Empty the store of one type, under the cleanup lock.
-     * @returns {Promise<number>} the number of records removed
+     * Empty one type, under the cleanup lock: its mirror keys (found with one storage.local
+     * get(null): a rare, user-initiated action), then its store.
+     * @returns {Promise<number>} the number of records removed from the store
      */
     static clear(type) {
         if (!MESSAGE_STORES.includes(type)) return Promise.reject(new Error('Unknown message data type: ' + type));
         return withCleanupLock(async () => {
             try {
+                const keys = await mirrorKeysOf([type]);
+                if (keys.length > 0) await browser.storage.local.remove(keys);
                 const tx = await openTransaction(type, 'readwrite');
                 const n = await tx.store.count();
                 await tx.store.clear();
@@ -579,12 +778,15 @@ export class taStorage {
     }
 
     /**
-     * Empty the three stores, in one transaction, under the cleanup lock.
-     * @returns {Promise<number>} the number of records removed
+     * Empty the three types, under the cleanup lock: every mirror key (one storage.local
+     * get(null)), then the three stores, in one transaction.
+     * @returns {Promise<number>} the number of records removed from the stores
      */
     static clearAllRecords() {
         return withCleanupLock(async () => {
             try {
+                const keys = await mirrorKeysOf(MESSAGE_STORES);
+                if (keys.length > 0) await browser.storage.local.remove(keys);
                 const tx = await openTransaction(MESSAGE_STORES, 'readwrite');
                 let n = 0;
                 for (const name of MESSAGE_STORES) {
@@ -599,6 +801,98 @@ export class taStorage {
                 throw e;
             }
         });
+    }
+
+    // ---- The mirror: rebuild and realignment --------------------------------------------------
+
+    /**
+     * Align the database with the mirror, ONE WAY (the mirror is the source of truth), under the
+     * cleanup lock: the rebuild after an eviction (reconcileIfNew()) and the manual realignment
+     * of the storage management page (the background's reconcileMessageStorage command).
+     * Background only: a page asks the background. It never writes to storage.local.
+     *
+     * It reads the mirror (one storage.local get(null), filtered on the prefixes) and the three
+     * stores, then for each type and Message-ID:
+     *   - a mirror record missing from the database, or newer than its record there (createdAt),
+     *     is put into its store ("restored");
+     *   - a database record with no mirror key is removed from its store ("removed"): it was
+     *     deleted from the durable copy (a delete whose database part did not complete).
+     * A mirror value that is not a record of its key (not an object, another messageId) is logged
+     * and left alone, and so is the database record of that Message-ID. Puts and removals run in
+     * one transaction (putNewerRecords()), so on a failure nothing is half-written; a write made
+     * since the reads wins (a record the store holds as new or newer is kept, a record whose
+     * createdAt changed is not removed). Rejects on any failure.
+     *
+     * @returns {Promise<object>} { [type]: { restored, removed } }
+     */
+    static reconcileWithMirror() {
+        return withCleanupLock(async () => {
+            try {
+                const mirror = await readMirror();
+                const tx = await openTransaction(MESSAGE_STORES, 'readonly');
+                const stored = await Promise.all(MESSAGE_STORES.map(name => tx.objectStore(name).getAll()));
+                await tx.done;
+
+                const toPut = [];
+                const toRemove = [];
+                MESSAGE_STORES.forEach((type, i) => {
+                    const inDb = new Map(stored[i].map(record => [record.messageId, record]));
+                    for (const [id, value] of mirror[type]) {
+                        if (!isStorableRecord(value, id)) {
+                            _log.warn('reconcile: the mirror key ' + JSON.stringify(mirrorKey(type, id)) + ' holds no record of its message, left alone.');
+                            continue;
+                        }
+                        const current = inDb.get(id);
+                        if (!current || isNewer(value, current)) toPut.push({ type, record: value });
+                    }
+                    for (const [id, record] of inDb) {
+                        if (!mirror[type].has(id)) toRemove.push({ type, messageId: id, createdAt: record.createdAt });
+                    }
+                });
+
+                const { byType, removedByType } = await putNewerRecords(toPut, toRemove);
+                const result = Object.fromEntries(MESSAGE_STORES.map(type =>
+                    [type, { restored: byType[type], removed: removedByType[type] }]));
+                _log.log('Message storage reconciled with the mirror: ' + JSON.stringify(result));
+                return result;
+            } catch (e) {
+                _log.error('reconcileWithMirror error: ' + e);
+                throw e;
+            }
+        });
+    }
+
+    /**
+     * Rebuild the database from the mirror when an open of this context found it new (created by
+     * that open: first start, evicted, or deleted and created again by openCheckedMessageDB()).
+     * Opens the database first. Resolves the counts of reconcileWithMirror(), or null when the
+     * database was not new. A failed rebuild keeps the mark, so the next call tries again.
+     * Background only: at startup, after the move of the legacy records, and after every reopen
+     * once startRebuildWatch() has been called.
+     */
+    static async reconcileIfNew() {
+        await taStorage.openDB();
+        if (!_dbIsNew) return null;
+        _dbIsNew = false;
+        _log.log('The message database is new: rebuilding it from the storage.local mirror.');
+        try {
+            return await taStorage.reconcileWithMirror();
+        } catch (e) {
+            _dbIsNew = true;
+            throw e;
+        }
+    }
+
+    /**
+     * Background only, after the startup reconcileIfNew(): from now on a connection lost
+     * (blocking, terminated) is opened again at once, and a database found new is rebuilt from
+     * the mirror; until that rebuild ends, the reads of this context (getRecord(), getPage(),
+     * count(), getTotalSize()) wait for it. The writes do not: they go to the mirror first, and
+     * the rebuild keeps a record the store holds as new or newer. The pages never call it: they
+     * show what the database holds.
+     */
+    static startRebuildWatch() {
+        _rebuildWatch = true;
     }
 
     // ---- Cleanup --------------------------------------------------------------------------------
@@ -620,6 +914,8 @@ export class taStorage {
     /**
      * The one cleanup routine, under the cleanup lock. For each type: the records older than its
      * maximum age, then the oldest records beyond its maximum count. A limit of 0 is no limit.
+     * The records are found with the database cursors; their mirror keys are removed with one
+     * storage.local.remove() per type, once its transactions have committed.
      *
      * @param {object} [limits] { [type]: { maxEntries, maxAgeDays } }; read from the preferences
      *   (before the lock is taken) when omitted
@@ -633,12 +929,14 @@ export class taStorage {
             for (const type of MESSAGE_STORES) {
                 const { maxEntries = 0, maxAgeDays = 0 } = resolved[type] || {};
                 removed[type] = 0;
+                const ids = [];
                 const ageLimit = toLimit(maxAgeDays);
                 if (ageLimit > 0) {
                     const tx = await openTransaction(type, 'readwrite');
                     const range = IDBKeyRange.upperBound(now - ageLimit * DAY_MS, true);
                     let cursor = await tx.store.index(INDEX_CREATED_AT).openCursor(range);
                     while (cursor) {
+                        ids.push(cursor.primaryKey);
                         await cursor.delete();
                         removed[type]++;
                         cursor = await cursor.continue();
@@ -652,6 +950,7 @@ export class taStorage {
                     if (excess > 0) {
                         let cursor = await tx.store.index(INDEX_CREATED_AT).openCursor();
                         while (cursor && excess > 0) {
+                            ids.push(cursor.primaryKey);
                             await cursor.delete();
                             removed[type]++;
                             excess--;
@@ -660,6 +959,8 @@ export class taStorage {
                     }
                     await tx.done;
                 }
+                // After the commit: nothing but IndexedDB requests is awaited in a transaction.
+                if (ids.length > 0) await browser.storage.local.remove(ids.map(id => mirrorKey(type, id)));
             }
             _log.log('Storage cleanup: removed ' + JSON.stringify(removed));
             return removed;

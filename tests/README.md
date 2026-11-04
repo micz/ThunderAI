@@ -91,7 +91,7 @@ tests/
 │   │   ├── worker.mjs          a fresh extension context in a worker thread (runWorker())
 │   │   ├── indexeddb.mjs       IndexedDB (fake-indexeddb) and navigator.locks for a context:
 │   │   │                       installIndexedDB(), pendingIndexedDB(), dumpIndexedDB() / seedIndexedDB(),
-│   │   │                       installLocks()
+│   │   │                       installLocks() (with {replace: true}: one lock manager per worker)
 │   │   ├── known-issues.mjs    the known-issue mechanism: knownTest(), runKnown()
 │   │   └── dom-harness.mjs     DOM harness: openPage(), openDocument(), the strict browser proxy,
 │   │                           settle() (the only core file that imports jsdom)

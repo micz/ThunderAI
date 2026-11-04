@@ -2187,7 +2187,7 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 | `js/mzta-i18n.js` | i18n helper (wraps `browser.i18n.getMessage`) |
 | `js/mzta-logger.js` | Debug logging (`taLogger`). `log()` gates only the `console.log`, **not its argument** — the message string is always built. On a hot path (per SSE chunk / per line in the workers) guard the call site with `if (taLog.do_debug)`, or do not log there at all. `warn()`/`error()` are never gated. |
 | `js/mzta-store.js` | Storage abstraction helpers |
-| `js/mzta-storage.js` | The per-message data storage (`taStorage` class) in IndexedDB: spam reports, summaries, translations, their pages, counts and size, the cleanup and its schedule. See [Per-Message Data Storage](#per-message-data-storage) |
+| `js/mzta-storage.js` | The per-message data storage (`taStorage` class): spam reports, summaries, translations in IndexedDB (the working copy: their pages, counts and size, the cleanup and its schedule) and in their `storage.local` mirror (the durable copy), the rebuild and the realignment of the two. See [Per-Message Data Storage](#per-message-data-storage) |
 | `js/mzta-storage-migration.js` | `migrateMessageDataToIndexedDB()`: moves the legacy `msg:` records of `storage.local` into the storage, at every background start |
 | `js/mzta-summarystore.js` | Summary wrapper over `taStorage` (`taSummaryStore` class): load / save / remove, error states, the metadata |
 | `js/mzta-translationstore.js` | Translation wrapper over `taStorage` (`taTranslationStore` class): load / save / remove, error states, the metadata |
@@ -2251,7 +2251,7 @@ Regular preferences (feature flags, connection settings, `ollama_*`/`chatgpt_*`/
 
 **The preferences followed them out of `storage.sync` for the same quota reason.** The move is carried by `migratePrefsToLocal()` (`js/mzta-prefs-migration.js`), the first `await` and the first storage access of `mzta-background.js` (only synchronous listener registrations, which touch no storage, come before it): it copies every key `storage.sync` still holds, skipping any already present in local (so it never reverts a later change), and **leaves the sync copy in place** so a downgrade still finds the user's settings. It then records `_prefs_migrated_from_sync` in `storage.local` and short-circuits on that marker at every subsequent startup, rather than re-reading both areas forever. Two consequences worth knowing: preferences **no longer sync across profiles or devices**, and every `storage.onChanged` listener that watches preferences gates on `areaName === 'local'` — a gate left on `'sync'` does not error, it simply stops firing. The area itself is decided once, by `PREFS_AREA` in `js/mzta-prefs.js`.
 
-**Two startup steps are not one-time migrations.** `migrateCustomPromptIdCollisions()` (`js/mzta-prompts.js`) runs after the migration block, at every start, unguarded and with no flag. It renames a custom prompt whose id is a shipped prompt's (see [02-prompts.md](02-prompts.md#prompt-ids)), because a new version can ship an id a user already has. It reads only `_custom_prompt` and writes it only when it renames something, so a normal start costs one read. It runs before the menus are built, so they never see two prompts with one id. Right after it, `migrateMessageDataToIndexedDB()` (`js/mzta-storage-migration.js`) moves the per-message data out of `storage.local`, also at every start and unguarded: see [Per-Message Data Storage](#per-message-data-storage), "Migration from `storage.local`".
+**Two startup steps are not one-time migrations.** `migrateCustomPromptIdCollisions()` (`js/mzta-prompts.js`) runs after the migration block, at every start, unguarded and with no flag. It renames a custom prompt whose id is a shipped prompt's (see [02-prompts.md](02-prompts.md#prompt-ids)), because a new version can ship an id a user already has. It reads only `_custom_prompt` and writes it only when it renames something, so a normal start costs one read. It runs before the menus are built, so they never see two prompts with one id. Right after it, `migrateMessageDataToIndexedDB()` (`js/mzta-storage-migration.js`) moves the legacy per-message records, also called at every start and unguarded, but gated on its own stored version (it scans only at the first start of a new version), and then `taStorage.reconcileIfNew()` rebuilds the per-message database from its mirror when that database is new: see [Per-Message Data Storage](#per-message-data-storage), "Migration from the `msg:` records" and "Eviction and rebuild".
 
 ### Background Preference Snapshot and Menu Invalidation
 
@@ -2305,12 +2305,43 @@ The module also gives `hasFeaturePermissions()` (`permissions.contains`), `reque
 ### Per-Message Data Storage
 
 The per-message data - spam reports, summaries, translations - is what the AI said about a message,
-shown again every time the message is opened. It is kept as a **best-effort, rebuildable cache**:
-Thunderbird may evict it (see "Eviction" below), and everything in it can be generated again. It
-lives in **IndexedDB** ([#955](https://github.com/micz/ThunderAI/issues/955)), through
-`js/mzta-storage.js` (`taStorage`), which opens it with the vendored `idb` 8.0.4 (`js/lib/idb.js`).
+shown again every time the message is opened. It is kept in two places
+([#955](https://github.com/micz/ThunderAI/issues/955)), both through `js/mzta-storage.js`
+(`taStorage`):
+- **IndexedDB**, the *working copy*: every read (getRecord, the pages, the counts, the size, the
+  cleanup cursors) uses it, through the vendored `idb` 8.0.4 (`js/lib/idb.js`), for its indexes;
+- the **mirror** in `storage.local`, the *durable copy* and the source of truth: one key per record.
+  `storage.local` is never evicted; the add-on's IndexedDB may be (see "Eviction and rebuild"), and
+  is then rebuilt from the mirror.
 It used to be one `msg:<headerMessageId>` record per message in `storage.local`, with a field per
 type; those records are moved at startup (below).
+
+**The mirror.** One `storage.local` key per record: `spam:<messageId>`, `summary:<messageId>`,
+`translation:<messageId>` (the Message-ID as `headerMessageId` gives it, without angle brackets).
+The prefixes are `MIRROR_PREFIXES`, next to `MESSAGE_STORES` in `js/mzta-storage.js`, with
+`mirrorKey(type, id)`, `mirrorKeyType(key)` and `isMirrorKey(key)` derived from them. The value is
+the very object `taStorage.buildRecord()` builds - the record of the store, `size` included - so a
+rebuild is a direct `put`:
+
+```json
+"spam:CAF1x2y3@mail.example.com": {
+  "messageId": "CAF1x2y3@mail.example.com", "createdAt": 1762247700000,
+  "subject": ["Your invoice is ready"], "from": ["Billing <billing@example.com>"],
+  "message_date": "2026-11-04T09:15:00.000Z", "spamValue": 82,
+  "explanation": "Urgent payment request from an unknown sender, with a shortened link.",
+  "moved": true, "SpamThreshold": 70, "size": 331
+}
+```
+
+Not one "main" key: `storage.local.set()` rewrites a key's whole value, so a single key would read
+and rewrite every record at each save and bring back the concurrent-write races of the old layout.
+Per-record keys keep every routine write a single `set` that reads nothing else. **No routine path
+enumerates `storage.local`**: `get(null)` (filtered on the prefixes) is used only by `clear(type)`,
+`clearAllRecords()` (rare, user-initiated), `reconcileWithMirror()` and the move of the legacy
+records (once per version). Every mirror write fires `storage.onChanged` in every context with the
+record as `newValue`; every listener filters on the exact keys it watches (see
+[05-options.md](05-options.md), the record stores). The disk used is roughly twice the IndexedDB
+total the options page shows.
 
 **Schema.** Database `thunderai-message-data`, version 1; the name, the version, the store and index
 names are constants at the top of `js/mzta-storage.js` (`MESSAGE_DB_NAME`, `MESSAGE_DB_VERSION`,
@@ -2341,9 +2372,18 @@ that type only; `deleteRecord(id)` the three, in one readwrite transaction (no c
 `getPage(type, {offset, limit})` (newest first: a cursor on `createdAt` in `prev` direction,
 `advance(offset)` only when `offset > 0`), `count(type)`, `getTotalSize()` (the sum of `size` with a
 key cursor on the `size` index, so no record is loaded), `clear(type)`, `clearAllRecords()`,
-`cleanup()`, `startCleanupSchedule()`, `getMigrationState()`, `isMigrating()`. The rules of every method:
+`cleanup()`, `startCleanupSchedule()`, `getMigrationState()`, `isMigrating()`,
+`reconcileWithMirror()`, `reconcileIfNew()`, `startRebuildWatch()` (below). The rules of every method:
 - nothing but IndexedDB requests is awaited inside a transaction (it commits as soon as the event
-  loop is idle): the preference reads come before it;
+  loop is idle): the preference reads and the mirror calls come before it, or after it is done;
+- **writes go to the mirror first, then to IndexedDB** (`_write()`): a failed mirror write rejects
+  before IndexedDB is touched; a failed IndexedDB write after a successful mirror write rejects too
+  and leaves the mirror key (the durable copy wins; the next rebuild restores the record). With
+  `force` false, a record found in either place is kept;
+- **every delete removes the mirror keys too**: `delete*Field()` and `deleteRecord()` remove them
+  first (a failure rejects); `cleanup()` collects the ids from its IndexedDB cursors and calls one
+  `storage.local.remove([...])` per type after its transactions have committed; `clear(type)` and
+  `clearAllRecords()` remove the keys of the prefixes found with `get(null)`, then empty the stores;
 - `openDB()` always passes `blocked`, `blocking` (it closes the connection, so another context can
   upgrade or delete the database) and `terminated`; the connection is shared per context and
   reopened after either. A failed open is logged and not kept: the next call tries again;
@@ -2352,15 +2392,16 @@ key cursor on the `size` index, so no record is loaded), `clear(type)`, `clearAl
   an aborted transaction is never an unhandled rejection (awaiting `done` still rejects);
 - **a write never swallows its error**: it logs it and rejects, so the caller can tell the user
   (below);
-- **a read never throws**: when the database cannot be reached it logs and answers as an empty
-  cache - `getRecord()` `null`, `getPage()` `[]`, `count()` and `getTotalSize()` `0`;
-- a delete (`delete*Field()`, `deleteRecord()`) on a database that cannot be opened logs and
-  resolves: there is nothing to delete. A delete failing on an open database rejects. The jobs
+- **a read never throws**: when the database cannot be reached it logs and answers as empty -
+  `getRecord()` `null`, `getPage()` `[]`, `count()` and `getTotalSize()` `0` (the reads never fall
+  back to the mirror: it has no indexes);
+- a delete (`delete*Field()`, `deleteRecord()`) on a database that cannot be opened removes the
+  mirror keys, logs and resolves: there is nothing more to delete. A delete failing on an open database rejects. The jobs
   that drop the old record before generating a new one (the summary and translation refresh,
   the spam analysis) only log that failure and go on: the new record overwrites it;
 - an empty or missing Message-ID is never written (logged);
-- saving disabled for a type (`{feature}_storage_enabled` false) skips its writes; what is saved is
-  still read and shown.
+- saving disabled for a type (`{feature}_storage_enabled` false) skips its writes, to both places;
+  what is saved is still read and shown.
 Separate stores need no write queue: the per-record queue the `storage.local` layout needed
 (`_pending`) is gone.
 
@@ -2388,10 +2429,13 @@ same for the report; the webchat save too. The message-display panels then put a
 top of the panel (`storage_save_failed`, followed by the error, `_buildStorageErrorNotice()` in
 `js/mzta-compose-script.js`). An automatic run with no panel open only logs it.
 
-**Who opens the database.** The **background** owns it: the migration, the scheduled cleanup and
-every read and write of the message flow. The message display and compose scripts never open it:
-they go through the background, as before. The **management pages** open it directly through
-`js/mzta-storage.js`: the options page (size, clear) and the spam filter page (the log). On open they
+**Who opens the database.** The **background** owns it: the migration, the rebuild and the
+realignment with the mirror, the scheduled cleanup and every read and write of the message flow.
+The message display and compose scripts never open it: they go through the background, as before.
+The **management pages** open it directly through `js/mzta-storage.js`: the options page (size,
+clear) and the spam filter page (the log). They never rebuild or realign it: they show what
+IndexedDB holds, and a page that wants a realignment asks the background (`reconcileMessageStorage`,
+below). On open they
 read the migration flag (`taStorage.getMigrationState()`: `'migrating'`, `'failed'` or `null`).
 While the move is in progress they show `storage_migration_in_progress` instead of an empty table
 (the spam log) or next to the size (the options page). After a failed attempt they show
@@ -2404,9 +2448,11 @@ what the database holds. They never migrate.
 are off by default: the spam reports, once cut to the 100 newest after each incoming batch, are
 unlimited too. `taStorage.cleanup()` is the one routine: for each type it deletes the records older
 than the maximum age, then the oldest records beyond the maximum count, with a cursor on the
-`createdAt` index and `count()`; a limit of `0` is no limit for that rule. Every cleanup, `clear(type)`
-and `clearAllRecords()` run inside `navigator.locks.request('thunderai-storage-cleanup', ...)`, shared
-by the background and the pages, so they never overlap.
+`createdAt` index and `count()`; a limit of `0` is no limit for that rule; the mirror keys of the
+deleted records go with them (one `remove` per type). Every cleanup, `clear(type)`,
+`clearAllRecords()` and `reconcileWithMirror()` run inside
+`navigator.locks.request('thunderai-storage-cleanup', ...)`, shared by the background and the pages,
+so they never overlap.
 
 **Scheduling**, in the background, without the `alarms` permission (`startCleanupSchedule()`, called
 once the policy is loaded): the time of the last completed cleanup is kept in `storage.local`
@@ -2415,37 +2461,85 @@ once; otherwise it is set 2 hours after the start. After each run the time is sa
 and the next run is set 24 hours later. One timer at a time, no periodic checks. A lowered limit
 applies at the next scheduled cleanup.
 
-**Migration from `storage.local`.** `migrateMessageDataToIndexedDB()` (`js/mzta-storage-migration.js`)
-runs in the startup migration block of `mzta-background.js`, after the other steps, at **every** start
-(a downgrade writes `msg:` records again, moved at the next start of this version), awaited with a
-`.catch()` that only logs. Never from a page. With no `msg:` key it costs one read and writes nothing
-(a flag left behind by an interrupted run is removed). Otherwise:
-1. read the legacy keys;
+**Migration from the `msg:` records.** `migrateMessageDataToIndexedDB()` (`js/mzta-storage-migration.js`)
+runs in the startup migration block of `mzta-background.js`, after the other steps, awaited with a
+`.catch()` that only logs. Never from a page. It is called at every start but **scans only once per
+add-on version**: it first reads (one targeted `get`) `_message_data_migration_version`
+(`MIGRATION_VERSION_KEY`, the `manifest.json` version it last completed for) and the flag; when the
+version is the running one and no flag is left, it stops there. A scan is a `storage.local.get(null)`,
+which now also loads every mirror record, so it must not run at every start. The gate still covers a
+downgrade followed by an update: the old version writes `msg:` records again, and the next version
+differs from the one stored. It does **not** cover a downgrade followed by reinstalling the very
+version that ran before (the stored version is then the running one): those `msg:` records wait for
+the next version. A scan with no `msg:` key removes a flag left by an interrupted run and stores the
+version. Otherwise:
+1. read the legacy keys (the scan);
 2. set the migration flag `_message_data_migrating` to `true` in `storage.local` ("legacy data is
    being migrated"), also over the `'failed'` of a previous attempt; there is no "done" value;
-3. open the database;
-4. write the records in one transaction: each legacy field becomes a record of its store,
+3. write the mirror keys, in one `set()`: each legacy field becomes a record of its type,
    `createdAt` = the field's `ts`, else the record's `ts`, else the time of the migration (`ts` is
    not copied), `size` computed, the metadata empty for summaries and translations (no message is
-   queried). A record the database already holds with a `createdAt` as new or newer is never
-   overwritten. A field that is not an object is logged and dropped with its key;
+   queried). A record the mirror already holds with a `createdAt` as new or newer is never
+   overwritten (on a tie the mirror wins: it is the source of truth). A field that is not an
+   object is logged and dropped with its key;
+4. open the database and put the winners of step 3 in one transaction (`putNewerRecords()`, the
+   write loop shared with the reconcile; a record the database holds as new or newer is kept; a
+   request that throws aborts the whole transaction);
 5. remove the legacy keys, only once that transaction has committed;
-6. remove the flag.
-A failure rejects and keeps the legacy keys: the next start retries. The flag has three states:
-`true` (moving), `'failed'` (`MIGRATION_FAILED`: steps 3-4 failed - the database could not be opened
-or written - so the pages stop announcing a move nobody is making), absent (done, or nothing to move).
-A failure of the other steps leaves the flag as it is; failing to write `'failed'` is only logged. The background
-registers the listeners that read or write these records (the main `onMessage` listener, the new
-mail listener) and starts the cleanup only after the block, so nothing reads or writes the stores
-before the migration has finished.
+6. remove the flag, store the version.
+A failure rejects and keeps the legacy keys and the old version: the next start retries. The flag
+has three states: `true` (moving), `'failed'` (`MIGRATION_FAILED`: steps 3-4 failed - the mirror
+could not be written, or the database could not be opened or written - so the pages stop announcing a
+move nobody is making), absent (done, or nothing to move). A failure of the other steps leaves the
+flag as it is; failing to write `'failed'` is only logged. A flag left behind forces a scan even
+with the running version stored. The background registers the listeners that read or write these
+records (the main `onMessage` listener, the new mail listener) and starts the cleanup only after the
+block, so nothing reads or writes the stores before the migration and the rebuild have finished.
 
-**Eviction.** `storage.local` is never evicted by Firefox (Thunderbird); the extension's IndexedDB
-is *temporary* storage, subject to a quota and, when the disk is almost full, to the eviction of
-whole databases, least recently used origins first, without notice. Nothing protects it:
+**Eviction and rebuild.** `storage.local` is never evicted by Firefox (Thunderbird); the extension's
+IndexedDB is *temporary* storage, subject to a quota and, when the disk is almost full, to the
+eviction of whole databases, least recently used origins first, without notice. Nothing protects it:
 `unlimitedStorage` is not accepted by Thunderbird in `optional_permissions` (the entry is dropped
-with an "Error processing optional_permissions" manifest warning), it is deliberately not a required permission (an
-update would ask every user for it), and `navigator.storage.persist()` always resolves `false` in
-Thunderbird, even from a user gesture. So the database is treated as a rebuildable cache (the rules
-of `taStorage` above): an evicted database is created again, empty, at the next open; a database
-that opens without its three object stores is deleted and created again (`openCheckedMessageDB()`);
-a missing record is generated again by the feature that needs it.
+with an "Error processing optional_permissions" manifest warning), it is deliberately not a required
+permission (an update would ask every user for it), and `navigator.storage.persist()` always resolves
+`false` in Thunderbird, even from a user gesture. So the data is made durable by the mirror, and the
+database is the working copy, rebuilt from it:
+- **A new database.** `openMessageDB()`'s `upgrade` callback marks the database new (a module flag,
+  per context) when it runs with `oldVersion === 0`: a first start, an evicted database, or one that
+  `openCheckedMessageDB()` deleted and created again because it opened without its three object
+  stores (its second open upgrades from 0 too).
+- **`taStorage.reconcileIfNew()`** opens the database and, when the flag is set, clears it and runs
+  `reconcileWithMirror()`; it resolves its counts, or `null` when the database was not new. A failed
+  rebuild sets the flag again, so the next call retries. The background calls it at startup, right
+  after `migrateMessageDataToIndexedDB()` and before the listeners are registered (a failure is
+  logged; the reads then answer from what the database holds).
+- **`taStorage.startRebuildWatch()`**, called by the background right after: from then on, a lost
+  connection (`blocking`, `terminated`) is opened again at once (a `setTimeout(0)` after the close)
+  through `reconcileIfNew()`, so a database evicted while Thunderbird runs is rebuilt then. The
+  reopen is immediate, not lazy, on purpose: if a page opened the database first, it would create it
+  (the page never rebuilds) and the background would then find it at version 1, not new, and never
+  rebuild it. **The reads wait for that rebuild**: from the moment the connection is lost until the
+  rebuild ends, `getRecord()`, `getPage()`, `count()` and `getTotalSize()` of the background first
+  await it, so a summary asked for meanwhile finds the saved one instead of being generated again
+  by the AI. The writes do not wait: they go to the mirror first, and the rebuild keeps a record the
+  store holds as new or newer. The pages never call either method, and never wait.
+- **`taStorage.reconcileWithMirror()`**, under the cleanup lock: the rebuild above and the manual
+  realignment. It is **one way, mirror -> IndexedDB**, and never writes to `storage.local`: the
+  mirror is the source of truth. It reads the mirror (`get(null)` filtered on the prefixes) and the
+  three stores (`getAll()`, one readonly transaction), then for each type and Message-ID: a mirror
+  record missing from IndexedDB, or newer by `createdAt`, is put into its store (*restored*); an
+  IndexedDB record with no mirror key is removed from its store (*removed*): it was deleted from the
+  durable copy, by a delete whose IndexedDB part did not complete, and is never copied back; equal
+  `createdAt`, or an IndexedDB copy newer than the mirror one, nothing. A mirror value that is not a
+  record of its key (not an object, another `messageId`) is logged and left alone, and so is the
+  IndexedDB record of that Message-ID. Puts and removals run in one transaction
+  (`putNewerRecords(records, removals)`), so nothing is half-written, and a write made since the
+  reads wins: a record the store holds as new or newer is not overwritten, and a record is removed
+  only if it still has the `createdAt` seen when it was chosen. It resolves
+  `{ spam: { restored, removed }, summary: {...}, translation: {...} }`, logs it, and rejects on a
+  failure.
+- **The `reconcileMessageStorage` command** of the main `onMessage` listener of the background runs
+  `reconcileWithMirror()` for a page (the storage management page of
+  [#956](https://github.com/micz/ThunderAI/issues/956) will call it from a button): it answers
+  `{ ok: true, counts }` with the counts above, or `{ ok: false, error }` with the error message
+  (logged). `browser.runtime.sendMessage({ command: 'reconcileMessageStorage' })`.

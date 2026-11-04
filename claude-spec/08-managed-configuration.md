@@ -261,6 +261,13 @@ settings UI yet (#956), so today a policy is the only way to set them besides `s
 scheduled cleanup reads them through `mztaPrefs`, so a policy value applies at its next run. See
 [01-architecture.md](01-architecture.md#per-message-data-storage).
 
+The per-message storage also keeps `storage.local` keys that are **not preferences**, and so are
+never policy-settable nor read through `mztaPrefs`: the mirror records, one key per record under
+the prefixes `spam:`, `summary:` and `translation:` followed by the Message-ID
+(`MIRROR_PREFIXES` in `js/mzta-storage.js`), and the underscore keys `_message_data_migrating`,
+`_message_data_migration_version` and `_message_data_last_cleanup`. No `prefs_default` key starts
+with one of the three prefixes, and none may.
+
 The ten excluded keys are per-machine or per-profile state, not configuration: enforcing
 them across a fleet would push window coordinates from another screen, a font zoom from
 another display, a page layout the user chose for themselves, or account ids that do not
