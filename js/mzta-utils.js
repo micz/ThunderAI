@@ -1384,6 +1384,72 @@ export function applyPromptConnection(prefs, prompt) {
     return out;
 }
 
+// Capability discovery is independent of the legacy version-string handshake. Older
+// Sparks listeners may keep the response channel open forever for unknown actions.
+export async function getSparksCapabilities() {
+  let timer;
+  const unavailable = { calendarEventFields: [], calendarCategories: [] };
+  try {
+    const response = await Promise.race([
+      browser.runtime.sendMessage('thunderai-sparks@micz.it', {action: "getCapabilities"}),
+      new Promise(resolve => { timer = setTimeout(() => resolve(null), 2000); })
+    ]);
+    if (!response || typeof response !== "object" || Array.isArray(response) ||
+        !Array.isArray(response.calendarEventFields) || !Array.isArray(response.calendarCategories) ||
+        !response.calendarEventFields.every(value => typeof value === "string" && value.length > 0) ||
+        !response.calendarCategories.every(value => typeof value === "string" && value.length > 0)) return unavailable;
+    return {
+      calendarEventFields: [...new Set(response.calendarEventFields)],
+      calendarCategories: [...new Set(response.calendarCategories)]
+    };
+  } catch (e) {
+    return unavailable;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function normalizedCalendarLink(value) {
+  if (typeof value !== "string" || !/^https?:\/\//i.test(value) ||
+      /[\\\s\u0000-\u001f\u007f-\u009f]/u.test(value)) return null;
+  try {
+    const url = new URL(value);
+    if (!["http:", "https:"].includes(url.protocol) || !url.hostname ||
+        url.username || url.password || value.split("/")[2].includes("@")) return null;
+    return url.href;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Mutate only the two optional fields and, for valid links, the description. A
+// missing capability strips native metadata; the historical event still opens.
+export function normalizeCalendarMetadata(data, capabilities, logger) {
+  for (const field of ["categories", "links"]) {
+    if (!(field in data)) continue;
+    const original = data[field];
+    let values = [];
+    if (Array.isArray(original)) {
+      values = field === "links"
+        ? [...new Set(original.map(normalizedCalendarLink).filter(Boolean))]
+        : [...new Set(original.filter(value => typeof value === "string" &&
+            capabilities.calendarCategories.includes(value)))];
+    }
+    const ignored = Array.isArray(original) ? original.length - values.length : 1;
+    if (ignored) logger?.log("Calendar metadata ignored entries: " + field + "=" + ignored);
+    if (field === "links" && values.length) {
+      const description = typeof data.description === "string" ? data.description : "";
+      const existing = new Set((description.match(/https?:\/\/[^\s<>"\u0000-\u001f]+/gi) || [])
+        .map(normalizedCalendarLink).filter(Boolean));
+      const missing = values.filter(link => !existing.has(link));
+      if (missing.length) data.description = [description, ...missing].filter(Boolean).join("\n");
+    }
+    if (capabilities.calendarEventFields.includes(field) && Array.isArray(original)) data[field] = values;
+    else delete data[field];
+  }
+  return data;
+}
+
 export async function checkSparksPresence() {
   try {
     let sparks_current = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "checkPresence"});

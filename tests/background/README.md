@@ -297,3 +297,8 @@ fail-closed blocking while switched on, progress/timeout, Stop, inactive forward
 response buffering and provider/UI isolation. `bgContext`
 models Privacy absent independently of Sparks' `external` stub; use `processor`
 to opt in to a fake Privacy responder. No runtime/model dependency is needed.
+
+`41-calendar-metadata` runs the actual email/clipboard menu action through prompt
+preparation, the scripted worker and the companion message, including legacy
+fallback and companion errors. It is a simulated software integration test;
+native UI/provider validation remains manual.

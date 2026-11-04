@@ -51,6 +51,7 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`); `mail_text_bod
 | `current_datetime` | Current date and time | 0 | |
 | `account_email_address` | Email address of the current account/identity | 0 | |
 | `tags_current_email` | Tags currently on the email | 0 | |
+| `calendar_categories` | Native Thunderbird calendar category names as a JSON array; `[]` when unavailable | 0 | |
 | `tags_full_list` | All available tags in Thunderbird | 0 | |
 | `thunderai_def_sign` | Default signature name (`default_sign_name` pref) | 0 | |
 | `thunderai_def_lang` | Default response language (`default_chatgpt_lang` pref) | 0 | |
@@ -777,3 +778,13 @@ Three things bite when adding one:
   `/{%\s*(.*?)\s*%}/` literal and *do* accept spaces. That mismatch let a guard substitute a token
   whose value was never gathered (fixed for all four call sites: the `mail_plain_text_part` fetch
   in `js/mzta-menus.js`, `mail_typed_text` ×2, and `additional_text`).
+
+## Native calendar categories
+
+`{%calendar_categories%}` is a type-0 built-in offered by autocomplete. It lazily
+calls `getSparksCapabilities()` only when present and uses `JSON.stringify()` on
+the category array. Multiple occurrences, including spaced forms, share a single
+read per resolution. Unavailable/invalid capabilities become `[]` even when
+placeholder default substitution is off. The source is read at send time, not
+stored in a prompt or preference. No native category is created or renamed.
+See [configuration and tests](../docs/calendar-event-metadata.md).

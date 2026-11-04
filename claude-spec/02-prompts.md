@@ -863,3 +863,21 @@ action not forced to `"2"` from a compose window; the ChatGPT web window has the
 ## Custom Prompts
 
 Custom prompts are stored in `browser.storage.local` and managed via `pages/customprompts/`. They follow the same property structure as built-in prompts but are created/edited/deleted by the user through the UI. Custom placeholders can also be referenced in custom prompt text. Their id may not be a shipped one, and a new one may not start with `prompt_` (see "Prompt ids").
+
+## Calendar event: native categories and URI links
+
+The default English event prompt requests optional `categories` and `links`
+arrays and contains `{%calendar_categories%}`. Saved, custom and managed prompt
+texts are preserved; no migration rewrites them. The model must choose exact
+existing category names only when justified, otherwise `[]`. Participant rules
+are unchanged; a user's prompt may still request `attendees: []`.
+
+Both email and clipboard menu actions use `getSparksCapabilities()` (validated
+arrays, two-second timeout, independent of the unchanged presence/version check)
+and `normalizeCalendarMetadata()` after date/reminder normalization. Categories
+are restricted to the advertised list. HTTP/HTTPS URLs are parsed, normalized and
+deduplicated, rejecting credentials, controls, whitespace and backslashes. Valid
+links are retained in description. Unsupported native fields are stripped for
+older or unresponsive Sparks; timezone, reminders and the code-added `mid:` link
+keep their existing rules. The native review dialog remains mandatory.
+See [the JSON contract and native validation procedure](../docs/calendar-event-metadata.md).

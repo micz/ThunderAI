@@ -20,7 +20,8 @@ import {
     getMailHeader,
     sanitizeMailHeaders,
     joinAddressList,
-    truncateText
+    truncateText,
+    getSparksCapabilities
  } from './mzta-utils.js';
 
 /*  ================= PLACEHOLDERS PROPERTIES ========================================
@@ -244,6 +245,15 @@ const defaultPlaceholders = [
         id: 'tags_current_email',
         name: "__MSG_placeholder_tags_current_email__",
         default_value: "",
+        type: 0,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
+    },
+    {
+        id: 'calendar_categories',
+        name: "__MSG_placeholder_calendar_categories__",
+        default_value: "[]",
         type: 0,
         is_default: "1",
         is_dynamic: "0",
@@ -810,6 +820,11 @@ export const placeholdersUtils = {
                         ? await transformTagsLabels(curr_message.tags, (await tagsList())[1])
                         : [];
                     finalSubs['tags_current_email'] = placeholdersUtils.failSafePlaceholders(tags_current_email_array.join(", "));
+                    break;
+                case 'calendar_categories':
+                    if (finalSubs['calendar_categories'] === undefined) {
+                        finalSubs['calendar_categories'] = JSON.stringify((await getSparksCapabilities()).calendarCategories);
+                    }
                     break;
                 case 'tags_full_list':
                     finalSubs['tags_full_list'] = placeholdersUtils.failSafePlaceholders((await tagsList())[0]);

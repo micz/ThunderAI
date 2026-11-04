@@ -35,6 +35,8 @@ import {
     normalizeDateTimeString,
     appendMessageLinkToDescription,
     normalizeReminderMinutes,
+    getSparksCapabilities,
+    normalizeCalendarMetadata,
     normalizeHtmlSourceNewlines,
     checkIfTagLabelExists,
     getConnectionType,
@@ -656,6 +658,7 @@ export class mzta_Menus {
                         }
                         // Reminder: the checkbox is the single switch (off = field always removed) [#887]
                         normalizeReminderMinutes(calendar_event_data_obj, prefs_at.calendar_reminder_enabled, this.logger);
+                        normalizeCalendarMetadata(calendar_event_data_obj, await getSparksCapabilities(), this.logger);
                         // Timezone management
                         calendar_event_data_obj.use_timezone = false;
                         if(prefs_at.calendar_enforce_timezone){
@@ -673,8 +676,7 @@ export class mzta_Menus {
                         }
                         let calendar_event_data_str = JSON.stringify(calendar_event_data_obj);
                         // Timezone management - END
-                        this.logger.log("calendar_event_data: " + calendar_event_data);
-                        this.logger.log("calendar_event_data_obj: " + calendar_event_data_str);
+                        this.logger.log("Calendar event data prepared for Sparks");
                         try{
                             let result_openCalendarEventDialog = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "openCalendarEventDialog", calendar_event_data: calendar_event_data_str})
                             if(result_openCalendarEventDialog == 'ok'){
