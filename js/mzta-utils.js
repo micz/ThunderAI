@@ -1546,7 +1546,7 @@ export async function getMessageStorageUsedSpace(){
   return formatBytes(await taStorage.getTotalSize());
 }
 
-function formatBytes(bytes, decimals = 2) {
+export function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
   const step = 1024;
   const suffixes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];

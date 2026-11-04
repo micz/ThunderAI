@@ -2,27 +2,32 @@
 //  - the per-message data (spam reports, summaries, translations) lives in IndexedDB: database
 //    `thunderai-message-data`, version 1, one object store per type (`spam`, `summary`,
 //    `translation`), keyPath `messageId` (the header Message-ID alone: a new translation replaces
-//    the previous one whatever its language), indexes `createdAt` and `size`;
+//    the previous one whatever its language), indexes `createdAt`, `size` and `failed_createdAt`
+//    ([failed, createdAt]);
 //  - a record holds messageId, createdAt (the time of the write), size (the bytes of its JSON
-//    without size), subject / from / message_date, and the fields of its type; never `ts`;
+//    without size), subject / from / message_date, failed (1 for an error, else 0: a summary or a
+//    translation with error, a spam report with spamValue -999; a skipped translation is not an
+//    error), and the fields of its type; never `ts`;
 //  - getRecord() reads the three stores and returns { spam, summary, translation }, each key
 //    present only when that store holds a record; deleting one type deletes that record only;
 //    deleteRecord() the three;
 //  - getPage(type, {offset, limit}) newest first (offset 0 included), count(type);
-//  - clear(type), clearAllRecords(), the cleanup routine: by maximum age, then by maximum count,
-//    per type, 0 = no limit, all under the `thunderai-storage-cleanup` lock;
+//  - clear(type), clearAllRecords(), the cleanup routine: the errors older than their maximum
+//    age, then by maximum age, then by maximum count, per type, 0 = no limit, all under the
+//    `thunderai-storage-cleanup` lock;
 //  - the size total of the three stores;
-//  - saving disabled for a type: writes skipped, what is saved still read; an empty Message-ID is
-//    never saved; a failed write is logged and rejects;
+//  - every result is saved (no switch per type); an empty Message-ID is never saved; a failed
+//    write is logged and rejects;
 //  - the scheduled cleanup: at once when the last one is more than 24 hours old (or none), else 2
-//    hours after the start; then every 24 hours, one timer; its time stored in storage.local;
+//    hours after the start; then every 24 hours, one timer; { time, removed } stored in
+//    storage.local; nothing while message_storage_cleanup_auto is off;
 //  - eviction: a deleted database answers as empty and is created again; one without its three
 //    stores is deleted and created again; a database that cannot be opened gives null / [] / 0 to
 //    the reads, a resolved delete and a rejected write; an aborted transaction leaves no unhandled
 //    rejection;
 //  - the mirror: every record also lives in storage.local under spam: / summary: / translation:
 //    <Message-ID>, the very record of the store, written first; every delete, the cleanup,
-//    clear() and clearAllRecords() remove its keys; a disabled type writes neither; a failed
+//    clear() and clearAllRecords() remove its keys; a failed
 //    IndexedDB write rejects and keeps the mirror key; no routine path enumerates storage.local;
 //  - reconcileWithMirror() (under the cleanup lock), one way, mirror -> IndexedDB: a mirror-only
 //    record restored, an IndexedDB-only record removed (never copied back), a newer mirror copy
@@ -74,7 +79,7 @@ function rawAll(store) {
 const raw = async (store, id) => (await rawAll(store)).find(r => r.messageId === id);
 const clearAll = () => taStorage.clearAllRecords();
 
-k.test('schema', 'the database: its name, version 1, the three stores keyed on messageId, the createdAt and size indexes', async () => {
+k.test('schema', 'the database: its name, version 1, the three stores keyed on messageId, the createdAt, size and failed_createdAt indexes', async () => {
     await st.writeSummary('schema@x', { summary: 'S' });
     const db = await new Promise((resolve, reject) => {
         const open = indexedDB.open('thunderai-message-data');
@@ -88,9 +93,10 @@ k.test('schema', 'the database: its name, version 1, the three stores keyed on m
         for (const name of ['spam', 'summary', 'translation']) {
             const store = tx.objectStore(name);
             assert.equal(store.keyPath, 'messageId', name);
-            assert.deepEqual([...store.indexNames].sort(), ['createdAt', 'size'], name);
+            assert.deepEqual([...store.indexNames].sort(), ['createdAt', 'failed_createdAt', 'size'], name);
             assert.equal(store.index('createdAt').keyPath, 'createdAt');
             assert.equal(store.index('size').keyPath, 'size');
+            assert.deepEqual(store.index('failed_createdAt').keyPath, ['failed', 'createdAt']);
         }
     } finally {
         db.close();
@@ -206,33 +212,19 @@ k.test('empty-message-id', 'an empty or missing Message-ID is never saved, and i
     assert.match(ctx.con.all().join(' | '), /empty Message-ID/);
 });
 
-k.test('saving-disabled', 'saving disabled for a type: its writes are skipped, what it saved is still read, the other types are saved', async () => {
-    await st.writeSummary('dis@x', { summary: 'before' });
-    await ctx.mztaPrefs.setPref('summarize_storage_enabled', false);
+k.test('always-saved', 'every result is saved: no switch per type, the old *_storage_enabled preferences are ignored', async () => {
+    await ctx.ctl.browser.storage.local.set({ spamfilter_storage_enabled: false, summarize_storage_enabled: false, translate_storage_enabled: false });
     try {
-        assert.equal(await st.writeSummary('dis@x', { summary: 'after' }), null);
-        assert.equal(await st.writeSummary('dis2@x', { summary: 'new' }), null);
-        assert.equal((await st.getRecord('dis@x')).summary.summary, 'before', 'the saved summary is still read');
-        assert.equal(await st.getRecord('dis2@x'), null);
-        await st.writeTranslation('dis@x', { translated_text: 'T' });
-        assert.equal((await st.getRecord('dis@x')).translation.translated_text, 'T', 'another type is still saved');
+        assert.ok(await st.writeSpam('on-spam@x', { spamValue: 1 }));
+        assert.ok(await st.writeSummary('on-summary@x', { summary: 's' }));
+        assert.ok(await st.writeTranslation('on-translation@x', { translated_text: 't' }));
+        for (const store of ['spam', 'summary', 'translation']) {
+            assert.ok(await raw(store, 'on-' + store + '@x'), store);
+            assert.ok((store + ':on-' + store + '@x') in ctx.ctl.localData(), store + ' mirror');
+        }
+        assert.equal(typeof taStorage.isSavingEnabled, 'undefined');
     } finally {
-        await ctx.mztaPrefs.setPref('summarize_storage_enabled', true);
-    }
-});
-
-k.test('saving-disabled-each', 'each type has its own switch', async () => {
-    for (const [key, write, store] of [
-        ['spamfilter_storage_enabled', id => st.writeSpam(id, { spamValue: 1 }), 'spam'],
-        ['summarize_storage_enabled', id => st.writeSummary(id, { summary: 's' }), 'summary'],
-        ['translate_storage_enabled', id => st.writeTranslation(id, { translated_text: 't' }), 'translation'],
-    ]) {
-        await ctx.mztaPrefs.setPref(key, false);
-        await write('each-' + store + '@x');
-        assert.equal(await raw(store, 'each-' + store + '@x'), undefined, key);
-        await ctx.mztaPrefs.setPref(key, true);
-        await write('each-' + store + '@x');
-        assert.ok(await raw(store, 'each-' + store + '@x'), key + ' back on');
+        await ctx.ctl.browser.storage.local.remove(['spamfilter_storage_enabled', 'summarize_storage_enabled', 'translate_storage_enabled']);
     }
 });
 
@@ -419,7 +411,7 @@ k.test('cleanup-prefs', 'without explicit limits the cleanup reads the preferenc
     }
 });
 
-k.test('cleanup-defaults', 'with the default preferences (every limit 0) the cleanup removes nothing', async (t) => {
+k.test('cleanup-defaults', 'with the default preferences (only the error age, 90 days) the cleanup removes no valid record', async (t) => {
     await clearAll();
     const now = Date.now();
     t.mock.timers.enable({ apis: ['Date'], now });
@@ -439,7 +431,7 @@ k.test('schedule-first', 'no cleanup ever: it runs at once, its time is stored, 
     t.mock.method(taStorage, 'cleanup', async (...a) => { runs.push(Date.now()); return real.apply(taStorage, a); });
     await taStorage.startCleanupSchedule();
     assert.deepEqual(runs, [now], 'at once');
-    assert.equal(ctx.ctl.localData()[LAST_CLEANUP_KEY], now);
+    assert.deepEqual(ctx.ctl.localData()[LAST_CLEANUP_KEY], { time: now, removed: { spam: 0, summary: 0, translation: 0 } });
     t.mock.timers.tick(24 * 60 * 60 * 1000 - 1);
     assert.equal(runs.length, 1);
     t.mock.timers.tick(1);
@@ -451,9 +443,9 @@ k.test('schedule-first', 'no cleanup ever: it runs at once, its time is stored, 
 k.test('schedule-recent', 'a cleanup less than 24 hours ago: nothing at once, the next one 2 hours after the start', async (t) => {
     const now = Date.parse('2026-07-02T08:00:00Z');
     t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now });
-    await ctx.ctl.browser.storage.local.set({ [LAST_CLEANUP_KEY]: now - 3 * 60 * 60 * 1000 });
+    await ctx.ctl.browser.storage.local.set({ [LAST_CLEANUP_KEY]: { time: now - 3 * 60 * 60 * 1000, removed: {} } });
     const runs = [];
-    t.mock.method(taStorage, 'cleanup', async () => { runs.push(Date.now()); return {}; });
+    t.mock.method(taStorage, 'cleanup', async () => { runs.push(Date.now()); return { spam: 1, summary: 0, translation: 2 }; });
     await taStorage.startCleanupSchedule();
     assert.deepEqual(runs, []);
     t.mock.timers.tick(2 * 60 * 60 * 1000 - 1);
@@ -461,14 +453,15 @@ k.test('schedule-recent', 'a cleanup less than 24 hours ago: nothing at once, th
     t.mock.timers.tick(1);
     for (let i = 0; i < 20; i++) await new Promise(r => setImmediate(r));
     assert.equal(runs.length, 1, '2 hours after the start');
-    assert.equal(ctx.ctl.localData()[LAST_CLEANUP_KEY], now + 2 * 60 * 60 * 1000);
+    assert.deepEqual(ctx.ctl.localData()[LAST_CLEANUP_KEY], { time: now + 2 * 60 * 60 * 1000, removed: { spam: 1, summary: 0, translation: 2 } },
+        'its time and what it removed');
     taStorage.stopCleanupSchedule();
 });
 
 k.test('schedule-old', 'a cleanup more than 24 hours ago: it runs at once', async (t) => {
     const now = Date.parse('2026-07-03T08:00:00Z');
     t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now });
-    await ctx.ctl.browser.storage.local.set({ [LAST_CLEANUP_KEY]: now - 25 * 60 * 60 * 1000 });
+    await ctx.ctl.browser.storage.local.set({ [LAST_CLEANUP_KEY]: { time: now - 25 * 60 * 60 * 1000, removed: {} } });
     const runs = [];
     t.mock.method(taStorage, 'cleanup', async () => { runs.push(Date.now()); return {}; });
     await taStorage.startCleanupSchedule();
@@ -479,7 +472,7 @@ k.test('schedule-old', 'a cleanup more than 24 hours ago: it runs at once', asyn
 k.test('schedule-one-timer', 'only one timer at any time: starting again replaces it, and a run sets just the next one', async (t) => {
     const now = Date.parse('2026-07-04T08:00:00Z');
     t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now });
-    await ctx.ctl.browser.storage.local.set({ [LAST_CLEANUP_KEY]: now });
+    await ctx.ctl.browser.storage.local.set({ [LAST_CLEANUP_KEY]: { time: now, removed: {} } });
     const runs = [];
     t.mock.method(taStorage, 'cleanup', async () => { runs.push(Date.now()); return {}; });
     await taStorage.startCleanupSchedule();
@@ -561,7 +554,7 @@ k.test('missing-stores-recreated', 'a database at version 1 without its stores i
     assert.equal((await st.getRecord('ms@x')).translation.translated_text, 'T');
     const db = await taStorage.openDB();
     const tx = db.transaction('summary', 'readonly');
-    assert.deepEqual([...tx.store.indexNames].sort(), ['createdAt', 'size'], 'the indexes too');
+    assert.deepEqual([...tx.store.indexNames].sort(), ['createdAt', 'failed_createdAt', 'size'], 'the indexes too');
     await tx.done;
 });
 
@@ -632,7 +625,7 @@ k.test('mirror-prefixes', 'the mirror keys: spam:, summary:, translation: follow
     assert.deepEqual({ ...MIRROR_PREFIXES }, { spam: 'spam:', summary: 'summary:', translation: 'translation:' });
     assert.equal(mirrorKey('summary', 'CAF1x2y3@mail.example.com'), 'summary:CAF1x2y3@mail.example.com');
     assert.equal(isMirrorKey('translation:a@b'), true);
-    assert.equal(isMirrorKey('summarize_storage_enabled'), false);
+    assert.equal(isMirrorKey('summarize_storage_max_entries'), false);
     assert.equal(isMirrorKey('msg:a@b'), false);
 });
 
@@ -695,17 +688,6 @@ k.test('mirror-delete-unopenable', 'a delete with the database unreachable still
     assert.equal('summary:du@x' in local(), false);
     // The database back, with its stores, for the raw reads of the next tests.
     await st.writeSummary('du2@x', { summary: 'S' });
-});
-
-k.test('mirror-disabled', 'saving disabled for a type writes neither the mirror nor IndexedDB', async () => {
-    await ctx.mztaPrefs.setPref('translate_storage_enabled', false);
-    try {
-        assert.equal(await st.writeTranslation('off@x', { translated_text: 'T' }), null);
-        assert.equal('translation:off@x' in local(), false);
-        assert.equal(await raw('translation', 'off@x'), undefined);
-    } finally {
-        await ctx.mztaPrefs.setPref('translate_storage_enabled', true);
-    }
 });
 
 k.test('mirror-idb-fails-kept', 'a failed IndexedDB write after the mirror write rejects, and keeps the mirror key', async (t) => {
@@ -862,7 +844,7 @@ k.test('reconcile-fails', 'a failed reconcile rejects, with nothing half-written
     assert.equal(await taStorage.count('summary'), 0);
 });
 
-k.test('prefs-untouched','the storage writes nothing to storage.local but the time of the last cleanup and the mirror keys', () => {
+k.test('prefs-untouched','the storage writes nothing to storage.local but the last cleanup and the mirror keys', () => {
     const writes = ctx.ctl.calls.filter(c => c.area === 'local' && c.op === 'set').flatMap(c => Object.keys(c.items));
     const own = writes.filter(key => key !== LAST_CLEANUP_KEY && !isMirrorKey(key));
     // The preference writes of this file's own setup (setPref / storage.local.set above).

@@ -1,0 +1,211 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>ThunderAI - __MSG_storage_page_title__</title>
+    <link rel="stylesheet" href="../_lib/mzta-design.css" />
+    <link rel="stylesheet" href="mzta-storage-manager.css" />
+    <link rel="icon" href="../../images/icon-16px.png" />
+</head>
+<body class="mzta_feature_page">
+    <div id="mzta_card">
+
+        <!-- HEADER -->
+        <div id="mzta_top_links">
+            <div class="mzta_hdr_row1">
+                <span class="mzta_page_icon"><img src="../../images/icon-32px.png" alt="" width="28" height="28" /></span>
+                <span class="mzta_page_title">__MSG_storage_page_title__</span>
+            </div>
+            <p class="mzta_page_subtitle mzta_help">__MSG_storage_page_info__</p>
+        </div>
+
+        <div id="managed_config_banner"><span class="managed_banner_text"></span></div>
+
+        <!-- BODY -->
+        <div id="mzta_body">
+
+            <!-- The move of the legacy records (taStorage.getMigrationState()): the page still
+                 shows what the database holds. -->
+            <p class="mzta_help storage_notice" id="storage_migrating" style="display:none;">__MSG_storage_migration_in_progress__</p>
+            <p class="mzta_help storage_notice" id="storage_migration_failed" style="display:none;">__MSG_storage_migration_failed__</p>
+
+            <!-- OVERVIEW (taStorage.getStats(), getLastCleanup()) -->
+            <div class="mzta_section mzta_section_wide" id="overview_section">
+                <div class="section_hdr">
+                    <div class="mzta_prompt_title">__MSG_storage_overview_title__</div>
+                    <button type="button" id="btn_refresh" class="btn_small btn_secondary">__MSG_storage_refresh__</button>
+                </div>
+                <div class="table_scroll">
+                    <table id="stats_table" class="storage_table">
+                        <thead>
+                            <tr>
+                                <th>__MSG_storage_col_type__</th>
+                                <th>__MSG_storage_col_entries__</th>
+                                <th>__MSG_storage_col_errors__</th>
+                                <th>__MSG_storage_col_size__</th>
+                                <th>__MSG_storage_col_oldest__</th>
+                                <th>__MSG_storage_col_newest__</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stats_body"></tbody>
+                        <tfoot>
+                            <tr id="stats_total">
+                                <th>__MSG_storage_total__</th>
+                                <td id="stats_total_count"></td>
+                                <td id="stats_total_errors"></td>
+                                <td id="stats_total_size"></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <p class="mzta_help">__MSG_storage_disk_note__</p>
+                <p class="mzta_help" id="last_cleanup"></p>
+            </div>
+
+            <!-- RETENTION RULES: saved by the Save button only (btn_save_rules, which the unsaved
+                 guard watches). Every control carries data-mzta-pref, so a locked key is disabled. -->
+            <div class="mzta_section" id="rules_section">
+                <div class="mzta_prompt_title">__MSG_storage_rules_title__</div>
+                <p class="mzta_help">__MSG_storage_rules_info__</p>
+
+                <div class="rules_grid">
+                    <div class="rules_type" data-type="summary">
+                        <div class="opt_title">__MSG_storage_type_summary__</div>
+                        <label class="rule_field"><span>__MSG_storage_rule_max_age__</span>
+                            <input type="number" min="0" step="1" id="summarize_storage_max_age_days" data-mzta-pref="summarize_storage_max_age_days" class="rule_input" /></label>
+                        <label class="rule_field"><span>__MSG_storage_rule_max_entries__</span>
+                            <input type="number" min="0" step="1" id="summarize_storage_max_entries" data-mzta-pref="summarize_storage_max_entries" class="rule_input" /></label>
+                        <label class="rule_field"><span>__MSG_storage_rule_error_max_age__</span>
+                            <input type="number" min="0" step="1" id="summarize_storage_error_max_age_days" data-mzta-pref="summarize_storage_error_max_age_days" class="rule_input" /></label>
+                    </div>
+                    <div class="rules_type" data-type="translation">
+                        <div class="opt_title">__MSG_storage_type_translation__</div>
+                        <label class="rule_field"><span>__MSG_storage_rule_max_age__</span>
+                            <input type="number" min="0" step="1" id="translate_storage_max_age_days" data-mzta-pref="translate_storage_max_age_days" class="rule_input" /></label>
+                        <label class="rule_field"><span>__MSG_storage_rule_max_entries__</span>
+                            <input type="number" min="0" step="1" id="translate_storage_max_entries" data-mzta-pref="translate_storage_max_entries" class="rule_input" /></label>
+                        <label class="rule_field"><span>__MSG_storage_rule_error_max_age__</span>
+                            <input type="number" min="0" step="1" id="translate_storage_error_max_age_days" data-mzta-pref="translate_storage_error_max_age_days" class="rule_input" /></label>
+                    </div>
+                    <div class="rules_type" data-type="spam">
+                        <div class="opt_title">__MSG_storage_type_spam__</div>
+                        <label class="rule_field"><span>__MSG_storage_rule_max_age__</span>
+                            <input type="number" min="0" step="1" id="spamfilter_storage_max_age_days" data-mzta-pref="spamfilter_storage_max_age_days" class="rule_input" /></label>
+                        <label class="rule_field"><span>__MSG_storage_rule_max_entries__</span>
+                            <input type="number" min="0" step="1" id="spamfilter_storage_max_entries" data-mzta-pref="spamfilter_storage_max_entries" class="rule_input" /></label>
+                        <label class="rule_field"><span>__MSG_storage_rule_error_max_age__</span>
+                            <input type="number" min="0" step="1" id="spamfilter_storage_error_max_age_days" data-mzta-pref="spamfilter_storage_error_max_age_days" class="rule_input" /></label>
+                    </div>
+                </div>
+                <p class="mzta_help">__MSG_storage_rule_zero_hint__</p>
+
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_storage_cleanup_auto__</div>
+                        <div class="feature_desc">__MSG_storage_cleanup_auto_info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="message_storage_cleanup_auto" data-mzta-pref="message_storage_cleanup_auto" class="rule_input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+
+                <p class="mzta_help storage_error" id="rules_invalid" style="display:none;">__MSG_storage_rules_invalid__</p>
+                <div class="btn_row">
+                    <button type="button" id="btn_preview" class="btn_small btn_secondary">__MSG_storage_preview__</button>
+                    <button type="button" id="btn_apply_now" class="btn_small btn_secondary">__MSG_storage_apply_now__</button>
+                    <span class="btn_row_spacer"></span>
+                    <button type="button" id="btn_restore_rules" class="btn_small btn_secondary">__MSG_storage_restore_defaults__</button>
+                    <button type="button" id="btn_save_rules" class="btn_primary" disabled>__MSG_save__</button>
+                </div>
+                <p class="mzta_help storage_result" id="rules_result" aria-live="polite"></p>
+            </div>
+
+            <!-- MANUAL ACTIONS: every one asks for confirmation, then reports and refreshes. -->
+            <div class="mzta_section" id="actions_section">
+                <div class="mzta_prompt_title">__MSG_storage_actions_title__</div>
+                <div class="manage_row">
+                    <button type="button" id="btn_delete_summary" class="btn_small btn_secondary" data-type="summary">__MSG_storage_delete_summary__</button>
+                    <button type="button" id="btn_delete_translation" class="btn_small btn_secondary" data-type="translation">__MSG_storage_delete_translation__</button>
+                    <button type="button" id="btn_delete_spam" class="btn_small btn_secondary" data-type="spam">__MSG_storage_delete_spam__</button>
+                </div>
+                <div class="manage_row">
+                    <button type="button" id="btn_delete_errors" class="btn_small btn_secondary">__MSG_storage_delete_errors__</button>
+                    <button type="button" id="btn_delete_all" class="btn_small btn_secondary">__MSG_prefs_storage_clear_button__</button>
+                </div>
+                <div class="inline_action">
+                    <label for="delete_older_days">__MSG_storage_delete_older_label__</label>
+                    <input type="number" min="1" step="1" id="delete_older_days" value="30" />
+                    <button type="button" id="btn_delete_older" class="btn_small btn_secondary">__MSG_storage_delete_older__</button>
+                </div>
+                <div class="inline_action">
+                    <button type="button" id="btn_realign" class="btn_small btn_secondary">__MSG_storage_realign__</button>
+                    <span class="mzta_help">__MSG_storage_realign_info__</span>
+                </div>
+                <p class="mzta_help storage_result" id="actions_result" aria-live="polite"></p>
+            </div>
+
+            <!-- ENTRY LIST: one type at a time, newest first (taStorage.getPage()). The page opens
+                 on a type with a plain hash: #summary, #translation, #spam. -->
+            <div class="mzta_section mzta_section_wide" id="entries_section">
+                <div class="section_hdr">
+                    <div class="mzta_prompt_title">__MSG_storage_entries_title__</div>
+                    <select id="entries_type">
+                        <option value="summary">__MSG_storage_type_summary__</option>
+                        <option value="translation">__MSG_storage_type_translation__</option>
+                        <option value="spam">__MSG_storage_type_spam__</option>
+                    </select>
+                </div>
+                <div class="table_scroll entries_scroll">
+                    <table id="entries_table" class="storage_table">
+                        <thead id="entries_head"></thead>
+                        <tbody id="entries_body"></tbody>
+                    </table>
+                </div>
+                <div class="entries_pager" id="entries_pager" style="display:none;">
+                    <button type="button" id="entries_prev_btn" class="btn_small">__MSG_spamfilter_report_previous__</button>
+                    <span id="entries_page_label"></span>
+                    <button type="button" id="entries_next_btn" class="btn_small">__MSG_spamfilter_report_next__</button>
+                </div>
+                <p class="mzta_help storage_result" id="entries_result" aria-live="polite"></p>
+            </div>
+
+            <!-- ORPHAN SCAN: one messages.query() per Message-ID, stoppable. -->
+            <div class="mzta_section" id="orphans_section">
+                <div class="mzta_prompt_title">__MSG_storage_orphans_title__</div>
+                <p class="mzta_help">__MSG_storage_orphans_info__</p>
+                <div class="btn_row">
+                    <button type="button" id="btn_orphans_start" class="btn_small btn_secondary">__MSG_storage_orphans_start__</button>
+                    <button type="button" id="btn_orphans_stop" class="btn_small btn_secondary" disabled>__MSG_storage_orphans_stop__</button>
+                    <span id="orphans_progress" class="mzta_help" aria-live="polite"></span>
+                </div>
+                <div id="orphans_results" style="display:none;">
+                    <p class="mzta_help" id="orphans_summary"></p>
+                    <p class="mzta_help" id="orphans_note">__MSG_storage_orphans_note__</p>
+                    <div class="table_scroll orphans_scroll">
+                        <table id="orphans_table" class="storage_table">
+                            <thead>
+                                <tr>
+                                    <th>__MSG_storage_col_type__</th>
+                                    <th>Message_ID</th>
+                                    <th>__MSG_storage_col_saved__</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orphans_body"></tbody>
+                        </table>
+                    </div>
+                    <div class="btn_row">
+                        <button type="button" id="btn_orphans_delete" class="btn_small btn_secondary">__MSG_storage_orphans_delete__</button>
+                    </div>
+                </div>
+                <p class="mzta_help storage_result" id="orphans_result" aria-live="polite"></p>
+            </div>
+
+        </div>
+    </div>
+    <script src="mzta-storage-manager.js" type="module"></script>
+    <script src="../../js/mzta-i18n.js"></script>
+</body>
+</html>

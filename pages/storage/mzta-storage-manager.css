@@ -1,0 +1,188 @@
+/*
+ *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/* ===========================================================================
+   STORAGE MANAGEMENT PAGE — page-specific styles.
+   The shared design system lives in ../_lib/mzta-design.css, linked first.
+   =========================================================================== */
+
+/* Title row of a section with a control on its right (Refresh, the type selector). */
+.section_hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.section_hdr > .mzta_prompt_title { margin-bottom: 0; }
+.section_hdr select { width: auto !important; min-width: 180px; }
+
+.storage_notice { color: var(--text); }
+
+/* Result lines under the sections: outcome in the normal colour, errors in red. */
+.storage_result:empty { display: none; }
+.storage_result { margin-top: 8px; color: var(--text); }
+.storage_error { color: #d93025 !important; }
+
+/* Buttons in a row; the spacer pushes the ones after it to the right. */
+.btn_row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+.btn_row_spacer { flex: 1 1 auto; }
+
+.manage_row { margin-bottom: 10px; }
+
+.inline_action {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 12px;
+}
+#mzta_card .inline_action input[type="number"] { width: 90px; }
+
+/* Retention rules: one column per type. */
+.rules_grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin: 10px 0 6px;
+}
+.rules_type {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+.rule_field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--dim);
+}
+#mzta_card .rule_field input[type="number"] { width: 100%; }
+
+/* Tables: a self-contained scroll box, as the spam log. */
+.table_scroll {
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+.entries_scroll { max-height: 60vh; }
+.orphans_scroll { max-height: 40vh; margin: 8px 0; }
+
+table.storage_table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12.5px;
+}
+table.storage_table th,
+table.storage_table td {
+    border-bottom: 1px solid var(--line);
+    padding: 7px 8px;
+    text-align: left;
+    vertical-align: top;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+table.storage_table tbody tr:last-child td,
+table.storage_table tbody tr:last-child th { border-bottom: none; }
+table.storage_table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: var(--field);
+    font-weight: 700;
+    white-space: nowrap;
+}
+table.storage_table tfoot th,
+table.storage_table tfoot td {
+    border-top: 1px solid var(--line);
+    border-bottom: none;
+    font-weight: 700;
+}
+table.storage_table td[colspan] {
+    text-align: center;
+    color: var(--dim);
+}
+#stats_table td { white-space: nowrap; }
+
+/* The entry list: wide enough for the spam columns, scrolled sideways in its box. */
+#entries_table[data-type="spam"] { min-width: 1300px; table-layout: fixed; }
+#entries_table[data-type="spam"] td:nth-child(1) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--dim);
+    font-family: var(--font-mono);
+}
+#entries_table td.actions_cell { white-space: nowrap; }
+#entries_table td.actions_cell button + button { margin-left: 6px; }
+#entries_table td.status_error { color: #d93025; font-weight: 600; }
+
+/* The spam explanation scrolls on its own, with a drag strip at the bottom
+   (../_lib/spam-log.js), as on the spam filter page. */
+#entries_table td.expl_cell {
+    position: relative;
+    padding: 0;
+}
+#entries_table td.expl_cell .expl_box {
+    display: block;
+    max-height: 5.4em;
+    overflow-y: auto;
+    padding: 7px 8px;
+    line-height: 1.35;
+    overscroll-behavior: contain;
+}
+#entries_table td.expl_cell .row_resizer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 7px;
+    cursor: ns-resize;
+    background: transparent;
+}
+#entries_table td.expl_cell .row_resizer:hover,
+#entries_table td.expl_cell .row_resizer.dragging {
+    background: var(--accent);
+    opacity: .55;
+}
+body.mzta_row_resizing {
+    user-select: none;
+    cursor: ns-resize !important;
+}
+
+.entries_pager {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+    font-size: 12.5px;
+    color: var(--text);
+}

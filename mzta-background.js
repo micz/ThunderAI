@@ -86,7 +86,12 @@ import {
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taSummaryStore } from './js/mzta-summarystore.js';
 import { taTranslationStore } from './js/mzta-translationstore.js';
-import { taStorage } from './js/mzta-storage.js';
+import {
+    taStorage,
+    buildMessageMetadata,
+    CLEANUP_AUTO_PREF,
+    SPAM_ERROR_VALUE
+} from './js/mzta-storage.js';
 import { migrateMessageDataToIndexedDB } from './js/mzta-storage-migration.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
 import { taBatchController } from './js/mzta-batch-controller.js';
@@ -445,8 +450,19 @@ let summaryStore = new taSummaryStore(prefs_init.do_debug);
 let translationStore = new taTranslationStore(prefs_init.do_debug);
 // The scheduled cleanup of the per-message data (the limits of each type, js/mzta-storage.js):
 // at once when the last one is more than 24 hours old, else 2 hours from now, then every 24
-// hours. After the migration above, and after the policy load, since it reads the limits.
+// hours; nothing while message_storage_cleanup_auto is off. After the migration above, and after
+// the policy load, since it reads the limits and the switch.
 taStorage.startCleanupSchedule().catch(e => console.error("[ThunderAI] Storage cleanup schedule error: " + e));
+// The switch of the scheduled cleanup, turned on or off on the storage management page:
+// startCleanupSchedule() reads it again through mztaPrefs (so a policy value wins over the stored
+// one), stops the timer when it is off, and starts the schedule when it is on.
+function setupCleanupScheduleListener() {
+    browser.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName !== 'local' || !Object.hasOwn(changes, CLEANUP_AUTO_PREF)) return;
+        taStorage.startCleanupSchedule().catch(e => taLog.error("Storage cleanup schedule error: " + e));
+    });
+}
+setupCleanupScheduleListener();
 
 browser.composeScripts.register({
     // mzta-html-lines.js FIRST: it is a classic script defining the globals
@@ -938,7 +954,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         let metadata = {};
                         try {
                             const curr_message = await _resolveMessage(msg.headerMessageId, null, msg.tabId);
-                            if (curr_message) metadata = _buildReportMetadata(curr_message, null);
+                            if (curr_message) metadata = buildMessageMetadata(curr_message, null);
                         } catch (e) {
                             taLog.error("[ThunderAI] Could not resolve the message of the webchat summary: " + e);
                         }
@@ -1810,7 +1826,7 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
         if (options.messageData) {
             message = options.messageData.message;
             fullMessage = options.messageData.fullMessage;
-            if (message) metadata = _buildReportMetadata(message, fullMessage);
+            if (message) metadata = buildMessageMetadata(message, fullMessage);
             // buildSummaryPrompt() reads message.id to fetch the body, so a caller
             // passing only { fullMessage } would summarize an EMPTY body - subject
             // present, so the result looks plausible - and cache it as valid. Treated
@@ -1825,9 +1841,9 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
             if (!message) {
                 return await _endSummaryJob(entry, headerMessageId, { error: true, message: "Message not found" }, () => summaryStore.saveError(headerMessageId, "Message not found", {}));
             }
-            metadata = _buildReportMetadata(message, null);
+            metadata = buildMessageMetadata(message, null);
             fullMessage = await browser.messages.getFull(message.id);
-            metadata = _buildReportMetadata(message, fullMessage);
+            metadata = buildMessageMetadata(message, fullMessage);
         }
 
         const summarize_prompt = await getSummarizePrompt();
@@ -1994,7 +2010,7 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
             fullMessage = options.messageData.fullMessage;
             usedMessage = options.messageData.message;
             curr_messageId = options.messageData.message?.id;
-            if (usedMessage) metadata = _buildReportMetadata(usedMessage, fullMessage);
+            if (usedMessage) metadata = buildMessageMetadata(usedMessage, fullMessage);
             // The ?. above is what keeps a caller passing only { fullMessage } from
             // throwing - but an undefined id reaches getMailInlineTextParts() and comes
             // back as an empty body, so the translation would be built from the subject
@@ -2014,9 +2030,9 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
             }
             usedMessage = message;
             curr_messageId = message.id;
-            metadata = _buildReportMetadata(message, null);
+            metadata = buildMessageMetadata(message, null);
             fullMessage = await browser.messages.getFull(message.id);
-            metadata = _buildReportMetadata(message, fullMessage);
+            metadata = buildMessageMetadata(message, fullMessage);
         }
 
         const translate_prompt = await getTranslatePrompt();
@@ -2076,23 +2092,6 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
     } finally {
         if (working) taWorkingStatus.stopWorking();
     }
-}
-
-// Build a lightweight metadata snapshot (subject, from, message_date) for spam
-// report entries. Prefers the full MIME headers, but falls back to the
-// MessageHeader fields (message.subject / message.author / message.date), which
-// remain readable even when the message storage is no longer available. This
-// keeps the spam log populated when a user filter removes a message while it is
-// being analyzed, or when getFull() returns partial headers.
-// Thanks to https://github.com/racerm3 for the idea, from https://github.com/racerm3/ThunderAI/commit/5ae5e206a733b44d57ef57dcc46968ea7e686e72#diff-ee0e0f04f23f4913865479164d992ff20124eba596df1453f1cde635359fb634
-function _buildReportMetadata(message, curr_fullMessage) {
-    const headers = (curr_fullMessage && curr_fullMessage.headers) || {};
-    const isEmpty = (v) => v === undefined || v === null || (Array.isArray(v) && v.length === 0);
-    return {
-        subject: isEmpty(headers.subject) ? (message?.subject ? [message.subject] : undefined) : headers.subject,
-        from: isEmpty(headers.from) ? (message?.author ? [message.author] : undefined) : headers.from,
-        message_date: message?.date ? new Date(message.date) : undefined
-    };
 }
 
 // Tail of the junk-move queue: every move to the junk folder chains on it, so only one is
@@ -2261,7 +2260,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
             curr_fullMessage = options.messageData.fullMessage;
             msg_text = options.messageData.msg_text;
             body_text = options.messageData.body_text;
-            message_metadata = _buildReportMetadata(message, curr_fullMessage);
+            message_metadata = buildMessageMetadata(message, curr_fullMessage);
         } else {
             message = await _resolveMessage(headerMessageId, options.messageId, options.tabId);
             if (!message) {
@@ -2271,7 +2270,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
             }
             // Snapshot the MessageHeader fields first: getFull() can fail, or resolve
             // with empty headers, when a user filter removes the message mid-analysis.
-            message_metadata = _buildReportMetadata(message, null);
+            message_metadata = buildMessageMetadata(message, null);
             try {
                 curr_fullMessage = await browser.messages.getFull(message.id);
             } catch (err) {
@@ -2280,7 +2279,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
                 await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
                 return _spamOutcome(false, err_data);
             }
-            message_metadata = _buildReportMetadata(message, curr_fullMessage);
+            message_metadata = buildMessageMetadata(message, curr_fullMessage);
             msg_text = await getMailInlineTextParts(message.id);
             body_text = htmlBodyToPlainText(msg_text.html);
             if (body_text.length == 0) {
@@ -2440,7 +2439,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
         console.error("[ThunderAI] Error generating spam report:", error);
         // A config error is shown but not stored, so a later check runs again once the
         // settings are fixed. Nothing is left "in progress": the registry drops the entry.
-        let err_data = { spamValue: -999, explanation: error.message || String(error) };
+        let err_data = { spamValue: SPAM_ERROR_VALUE, explanation: error.message || String(error) };
         if (!error.isConfigError) {
             err_data = await _saveSpamError(headerMessageId, error.message || String(error), message_metadata || {});
         }
@@ -2467,7 +2466,7 @@ async function _openSummaryWebchat(headerMessageId, tabId, messageId = null) {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
             const data = { error: true, message: errorMsg };
             try {
-                await summaryStore.saveError(headerMessageId, errorMsg, _buildReportMetadata(curr_message, curr_message_full));
+                await summaryStore.saveError(headerMessageId, errorMsg, buildMessageMetadata(curr_message, curr_message_full));
             } catch (e) {
                 taLog.error("[ThunderAI] Summary: could not store the error for " + headerMessageId + ": " + e);
                 data.storage_error = _storageErrorMessage(e);
@@ -3804,7 +3803,7 @@ async function processEmails(args) {
                 if (target.spam) {
                     let spamReady = false;
                     try {
-                        // _buildReportMetadata() reads fullMessage.headers, so the spam report
+                        // buildMessageMetadata() reads fullMessage.headers, so the spam report
                         // needs the full message too, not just the body.
                         await ensureFull();
                         await ensureBody();

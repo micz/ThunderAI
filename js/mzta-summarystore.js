@@ -31,7 +31,7 @@ export class taSummaryStore {
 
     /**
      * Store a summary. metadata: { subject, from, message_date } of the message, as
-     * _buildReportMetadata() builds it in mzta-background.js ({} when the message is not
+     * buildMessageMetadata() builds it in js/mzta-storage.js ({} when the message is not
      * available). Rejects when the write fails (see js/mzta-storage.js).
      */
     async saveSummary(data, data_id, metadata = {}) {

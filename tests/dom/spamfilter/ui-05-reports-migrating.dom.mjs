@@ -27,8 +27,9 @@ k.test('notice-row', S_STORE, 'the log shows the migration notice in its one row
     assert.equal(ctx.$('#report_migration_failed').style.display, 'none', 'not the failure notice');
 });
 
-k.test('no-pager', S_STORE, 'no Previous / Next while the reports are being moved', () => {
-    assert.equal(ctx.$('#report_pager').style.display, 'none');
+k.test('no-pager', S_STORE, 'no pager (the log has none); the link to the storage page is kept while the reports are being moved', () => {
+    assert.equal(ctx.$('#report_pager'), null);
+    assert.ok(ctx.$('#report_manage_link'));
 });
 
 k.test('page-never-migrates', S_STORE, 'the page leaves the legacy records and the flag alone', () => {

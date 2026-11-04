@@ -16,7 +16,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { taStorage } from './mzta-storage.js';
+import {
+    SPAM_ERROR_VALUE,
+    taStorage
+} from './mzta-storage.js';
 import { taLogger } from './mzta-logger.js';
 
 export class taSpamReport {
@@ -47,7 +50,7 @@ export class taSpamReport {
      */
     buildError(data_id, error_message, metadata = {}) {
         return {
-            spamValue: -999,
+            spamValue: SPAM_ERROR_VALUE,
             explanation: error_message,
             report_date: new Date(),
             headerMessageId: data_id,

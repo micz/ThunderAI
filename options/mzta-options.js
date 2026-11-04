@@ -1046,18 +1046,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // The saved spam reports, summaries and translations
   updateMessageStorageSize();
 
-  document.getElementById('btnClearMessageStorage').addEventListener('click', async () => {
-    if (!confirm(browser.i18n.getMessage("prefs_storage_clear_confirm"))) {
-      return;
-    }
-    try {
-      let count = await taStorage.clearAllRecords();
-      alert(browser.i18n.getMessage("prefs_storage_clear_done", [String(count)]));
-    } catch (e) {
-      taLog.error('Could not clear the message storage: ' + e);
-      alert(browser.i18n.getMessage("prefs_storage_clear_error", [String(e?.message || e)]));
-    }
-    updateMessageStorageSize();
+  // Everything else (the overview, the retention rules, the deletions) is on the storage
+  // management page.
+  document.getElementById('btnManageMessageStorage').addEventListener('click', () => {
+    openTab('/pages/storage/mzta-storage-manager.html');
   });
 
   browser.runtime.getPlatformInfo().then(info => {

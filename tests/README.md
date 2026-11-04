@@ -96,7 +96,7 @@ tests/
 │   │   └── dom-harness.mjs     DOM harness: openPage(), openDocument(), the strict browser proxy,
 │   │                           settle() (the only core file that imports jsdom)
 │   ├── plugins/<area>.mjs      an area's hooks into the core (today: managed.mjs, chatgptweb.mjs,
-│   │                           webchat.mjs)
+│   │                           ui.mjs, webchat.mjs)
 │   ├── known-issues/<area>.mjs an area's known issues and their shape (today: managed.mjs,
 │   │                           static.mjs, prompts.mjs, api.mjs, ui.mjs, webchat.mjs, migration.mjs,
 │   │                           compose.mjs, background.mjs, chatgptweb.mjs)

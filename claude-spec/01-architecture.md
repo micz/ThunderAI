@@ -2240,10 +2240,11 @@ Each subdirectory is a self-contained settings/UI page for a specific feature:
 | `get-task/` | Task creation settings |
 | `menu_order/` | Drag-and-drop reordering and visibility control for popup and context menus |
 | `spamfilter/` | Spam filter settings |
+| `storage/` | Storage management: the saved spam reports, summaries and translations, their retention rules and cleanup ([#956](https://github.com/micz/ThunderAI/issues/956), see [Per-Message Data Storage](#per-message-data-storage) and [05-options.md](05-options.md)) |
 | `summarize/` | Email summarization settings |
 | `translate/` | Email translation settings |
 | `onboarding/` | First-run welcome page |
-| `_lib/` | Shared libraries used by pages: `connection-ui.js` (API connection UI), `feature-page.js` (what the six feature pages share: the per-feature connection kept in step with the `{prefix}_*` preferences, the connection panel tint, the special prompt text editors), `managed-ui.js` (enterprise policy presentation, see [08-managed-configuration.md](08-managed-configuration.md)), `mzta-timezones.js` (runtime-generated IANA timezone list for the calendar event / task selects, see [05-options.md](05-options.md)), `mzta-design.css` (shared design system), `autocomplete.css` (placeholder autocomplete dropdown, linked by all 8 pages that use it — written against both token systems via fallback chains), `editor-highlight.css` (backdrop-mirror structure for live `{%placeholder%}` highlighting, parameterized by `--ed-*` custom properties each page supplies), plus the vendored `tom-select.*` and `list.js` |
+| `_lib/` | Shared libraries used by pages: `connection-ui.js` (API connection UI), `feature-page.js` (what the six feature pages share: the per-feature connection kept in step with the `{prefix}_*` preferences, the connection panel tint, the special prompt text editors), `managed-ui.js` (enterprise policy presentation, see [08-managed-configuration.md](08-managed-configuration.md)), `mzta-timezones.js` (runtime-generated IANA timezone list for the calendar event / task selects, see [05-options.md](05-options.md)), `mzta-design.css` (shared design system), `spam-log.js` (the rows of a spam log table and their resize strip, shared by the spam filter page and the storage management page), `autocomplete.css` (placeholder autocomplete dropdown, linked by all 8 pages that use it — written against both token systems via fallback chains), `editor-highlight.css` (backdrop-mirror structure for live `{%placeholder%}` highlighting, parameterized by `--ed-*` custom properties each page supplies), plus the vendored `tom-select.*` and `list.js` |
 
 ## Storage
 
@@ -2338,24 +2339,32 @@ and rewrite every record at each save and bring back the concurrent-write races 
 Per-record keys keep every routine write a single `set` that reads nothing else. **No routine path
 enumerates `storage.local`**: `get(null)` (filtered on the prefixes) is used only by `clear(type)`,
 `clearAllRecords()` (rare, user-initiated), `reconcileWithMirror()` and the move of the legacy
-records (once per version). Every mirror write fires `storage.onChanged` in every context with the
+records (once per version). The other bulk removals read only the keys they remove (a targeted
+`get(keys)`, see "The mirror of a bulk removal" below). Every mirror write fires `storage.onChanged` in every context with the
 record as `newValue`; every listener filters on the exact keys it watches (see
 [05-options.md](05-options.md), the record stores). The disk used is roughly twice the IndexedDB
-total the options page shows.
+total the options page and the storage management page show.
 
 **Schema.** Database `thunderai-message-data`, version 1; the name, the version, the store and index
 names are constants at the top of `js/mzta-storage.js` (`MESSAGE_DB_NAME`, `MESSAGE_DB_VERSION`,
-`MESSAGE_STORES`, `INDEX_CREATED_AT`, `INDEX_SIZE`). Future versions go in the `upgrade` callback
-(`openMessageDB()`). Three object stores, `spam`, `summary`, `translation`, each with `keyPath: 'messageId'`
-and two indexes, `createdAt` (paging and cleanup) and `size` (the size total). The key is the header
-Message-ID **alone**: a new translation replaces the previous one even in another language.
+`MESSAGE_STORES`, `INDEX_CREATED_AT`, `INDEX_SIZE`, `INDEX_FAILED_CREATED_AT`). Future versions go in
+the `upgrade` callback (`openMessageDB()`). Three object stores, `spam`, `summary`, `translation`,
+each with `keyPath: 'messageId'` and three indexes: `createdAt` (paging, cleanup, the orphan scan's
+key list), `size` (the size total) and `failed_createdAt`, keyPath `['failed', 'createdAt']` (the
+error rule of the cleanup, the error counts, the deletion of the errors). The error queries are
+ranges on it, `IDBKeyRange.bound([1, -Infinity], [1, cutoff])`, never a scan; `failed` is a number,
+not a boolean, because a boolean cannot be an IndexedDB key. The `failed_createdAt` index was added
+inside the `oldVersion < 1` branch, with no schema migration: no database of an earlier layout was
+ever released. The key is the header Message-ID **alone**: a new translation replaces the previous
+one even in another language.
 
 | Field | |
 |---|---|
 | `messageId` | the header Message-ID |
 | `createdAt` | ms timestamp of the write, overwritten when the record is rewritten |
 | `size` | bytes: `new TextEncoder().encode(JSON.stringify(record)).byteLength` of the record **without** `size`, computed first and then added, so it does not depend on itself |
-| `subject`, `from`, `message_date` | the shape `_buildReportMetadata(message, fullMessage)` builds in `mzta-background.js`: `subject` and `from` arrays (MIME headers, else the MessageHeader field), `message_date` an ISO string; `[]`, `[]`, `''` when not known |
+| `failed` | `1` when the record holds an error, else `0`, computed by `buildRecord()` (`taStorage.isFailed(type, record)`), so the mirror value holds it and the rebuild keeps it: a summary or a translation with `error` set (a translation with `translation_status` `"-1"`, skipped, is a valid result: `0`), a spam report whose `spamValue` is `SPAM_ERROR_VALUE` (`-999`, exported by `js/mzta-storage.js`, used by `taSpamReport.buildError()` and the background's unsaved config-error report; the compose script, a classic script, keeps the literal) |
+| `subject`, `from`, `message_date` | the shape `buildMessageMetadata(message, fullMessage)` builds (`js/mzta-storage.js`, imported by the background and by the storage management page): `subject` and `from` arrays (MIME headers, else the MessageHeader field), `message_date` an ISO string; `[]`, `[]`, `''` when not known |
 | spam | `spamValue`, `explanation`, `moved`, `SpamThreshold` |
 | summary | `summary`, `summary_html`, `error`, `message`, `summary_date` (ISO) |
 | translation | `translated_text`, `translated_subject`, `translation_status` (`"1"` ok, `"-1"` skipped), `lang`, `error`, `message` |
@@ -2372,8 +2381,30 @@ that type only; `deleteRecord(id)` the three, in one readwrite transaction (no c
 `getPage(type, {offset, limit})` (newest first: a cursor on `createdAt` in `prev` direction,
 `advance(offset)` only when `offset > 0`), `count(type)`, `getTotalSize()` (the sum of `size` with a
 key cursor on the `size` index, so no record is loaded), `clear(type)`, `clearAllRecords()`,
-`cleanup()`, `startCleanupSchedule()`, `getMigrationState()`, `isMigrating()`,
-`reconcileWithMirror()`, `reconcileIfNew()`, `startRebuildWatch()` (below). The rules of every method:
+`cleanup()`, `previewCleanup()`, `startCleanupSchedule()`, `getLastCleanup()`, `getMigrationState()`,
+`isMigrating()`, `reconcileWithMirror()`, `reconcileIfNew()`, `startRebuildWatch()` (below), and the
+methods of the storage management page:
+- `getStats()` → `{ [type]: { count, errors, size, oldest, newest } }`, in one readonly transaction
+  with no record loaded: `count()`, a `count()` on `failed_createdAt` over the error range, the `size`
+  key cursor, the first `createdAt` key in each direction (`null` for an empty store); answered as
+  empty (zeros, `null` dates) when the database cannot be read;
+- `getEntryKeys(type)` → `[{ messageId, createdAt }]`, oldest first, from a **key** cursor on
+  `createdAt` (its key is `createdAt`, its primary key the Message-ID): no record loaded; `[]` when
+  the database cannot be read. The orphan scan walks it;
+- `deleteErrors()` → removed per type: a cursor on `failed_createdAt` over the error range, per type;
+- `deleteOlderThan(days, now)` → removed per type (`days` a positive integer, else it rejects);
+- `removeEntries([{ type, messageId, createdAt }])` → removed per type: each record only while the
+  store still holds it with that `createdAt` (`putNewerRecords([], removals)`), one transaction;
+- `fillMetadata(type, messageId, createdAt, metadata)` → whether the record was rewritten: the empty
+  metadata of one record (`subject`, `from`, `message_date` all empty), only if both the mirror value
+  and the database record still have the `createdAt` given and empty metadata. The record is rebuilt
+  with `buildRecord()` and the **same** `createdAt` (so `size` is recomputed), written to the mirror
+  first, then put in the database by a readwrite transaction that checks the record again. Nothing
+  is written when the metadata given is empty too. The window left: a background write (which takes
+  no lock) landing between the mirror read and the mirror write is overwritten in the mirror.
+The bulk methods (`clear()`, `clearAllRecords()`, `deleteErrors()`, `deleteOlderThan()`,
+`removeEntries()`, `cleanup()`) and `fillMetadata()` run under the cleanup lock; they reject on a
+failure. The rules of every method:
 - nothing but IndexedDB requests is awaited inside a transaction (it commits as soon as the event
   loop is idle): the preference reads and the mirror calls come before it, or after it is done;
 - **writes go to the mirror first, then to IndexedDB** (`_write()`): a failed mirror write rejects
@@ -2381,9 +2412,11 @@ key cursor on the `size` index, so no record is loaded), `clear(type)`, `clearAl
   and leaves the mirror key (the durable copy wins; the next rebuild restores the record). With
   `force` false, a record found in either place is kept;
 - **every delete removes the mirror keys too**: `delete*Field()` and `deleteRecord()` remove them
-  first (a failure rejects); `cleanup()` collects the ids from its IndexedDB cursors and calls one
-  `storage.local.remove([...])` per type after its transactions have committed; `clear(type)` and
-  `clearAllRecords()` remove the keys of the prefixes found with `get(null)`, then empty the stores;
+  first (a failure rejects); `cleanup()`, `deleteErrors()`, `deleteOlderThan()` and `removeEntries()`
+  collect `{ messageId, createdAt }` from their IndexedDB cursors (or are given them) and, after their
+  transactions have committed, remove the mirror keys through `removeMirrorKeysIfUnchanged()` (below);
+  `clear(type)` and `clearAllRecords()` remove the keys of the prefixes found with `get(null)`, then
+  empty the stores;
 - `openDB()` always passes `blocked`, `blocking` (it closes the connection, so another context can
   upgrade or delete the database) and `terminated`; the connection is shared per context and
   reopened after either. A failed open is logged and not kept: the next call tries again;
@@ -2400,10 +2433,22 @@ key cursor on the `size` index, so no record is loaded), `clear(type)`, `clearAl
   that drop the old record before generating a new one (the summary and translation refresh,
   the spam analysis) only log that failure and go on: the new record overwrites it;
 - an empty or missing Message-ID is never written (logged);
-- saving disabled for a type (`{feature}_storage_enabled` false) skips its writes, to both places;
-  what is saved is still read and shown.
+- every result is saved: there is no switch per type (the `{feature}_storage_enabled` preferences of
+  the #955 development builds were removed before any release).
 Separate stores need no write queue: the per-record queue the `storage.local` layout needed
 (`_pending`) is gone.
+
+**The mirror of a bulk removal** (`removeMirrorKeysIfUnchanged(byType)`, internal). The background's
+writes (`_write()`) do not take the cleanup lock, so a bulk removal can race with a new result saved
+for the same message: the removal's cursor deletes the old record, then the background writes the
+new one, mirror first. Removing the mirror key by id alone would drop that new durable copy. So the
+removals work on `{ messageId, createdAt }` pairs taken from their cursors, and once the IndexedDB
+transaction has committed the helper reads the mirror keys with a **targeted**
+`storage.local.get(keys)` (never `get(null)`) and removes, with one `remove()` per type, only those
+whose value still has the `createdAt` seen. A key already gone is skipped. The window left: a write
+landing between that `get` and that `remove` loses its mirror key (its IndexedDB record is then
+removed by the next realignment, which treats it as deleted from the durable copy); it is one
+`storage.local` round trip wide.
 
 **The wrappers.** `taSummaryStore` (`js/mzta-summarystore.js`), `taTranslationStore`
 (`js/mzta-translationstore.js`) and `taSpamReport` (`js/mzta-spamreport.js`) load, save and remove
@@ -2411,10 +2456,16 @@ their type and store error states; their dates (`summary_date` fallback, `transl
 `report_date`) come from `createdAt`. `saveSummary(data, id, metadata = {})`,
 `saveTranslation(data, id, metadata = {})` and the three `saveError(id, message, metadata = {})` take
 the metadata `_buildReportMetadata()` builds; `taSpamReport.buildError()` builds an error report
-without saving it. The spam log reads `getReportPage(offset, limit)` and `countReports()`. There is no
-truncation and no bulk read any more: the limits are the cleanup's.
+without saving it. The spam log reads `getReportPage(0, 20)`, the 20 newest; `countReports()` is kept.
+There is no truncation and no bulk read any more: the limits are the cleanup's.
 
-**The metadata.** The summary and translation jobs (`_runSummaryJob()`, `_runTranslationJob()`)
+**The metadata.** `buildMessageMetadata(message, fullMessage)` (`js/mzta-storage.js`) builds it: the
+full MIME headers first (`fullMessage.headers.subject` / `.from`, arrays), else the MessageHeader
+fields (`message.subject` / `message.author`, wrapped in an array), `message_date` from
+`message.date`; a field that cannot be known is `undefined` (stored empty). It used to be
+`_buildReportMetadata()` in `mzta-background.js`; it moved so the storage management page's orphan
+scan builds the very same shape (from the MessageHeader only: no `getFull()` per entry). The
+summary and translation jobs (`_runSummaryJob()`, `_runTranslationJob()`)
 build it as soon as the message is known (from `options.messageData`, else from the resolved
 message, then again from the full message once fetched) and pass it to every save, error saves
 included. The webchat save (`chatgpt_saveSummary`) has only the Message-ID and the text: it resolves
@@ -2432,34 +2483,66 @@ top of the panel (`storage_save_failed`, followed by the error, `_buildStorageEr
 **Who opens the database.** The **background** owns it: the migration, the rebuild and the
 realignment with the mirror, the scheduled cleanup and every read and write of the message flow.
 The message display and compose scripts never open it: they go through the background, as before.
-The **management pages** open it directly through `js/mzta-storage.js`: the options page (size,
-clear) and the spam filter page (the log). They never rebuild or realign it: they show what
+The **management pages** open it directly through `js/mzta-storage.js`: the options page (size),
+the spam filter page (the 20 newest reports) and the storage management page (`pages/storage/`:
+the overview, the rules, the deletions, the list, the orphan scan). They never rebuild or realign it: they show what
 IndexedDB holds, and a page that wants a realignment asks the background (`reconcileMessageStorage`,
 below). On open they
 read the migration flag (`taStorage.getMigrationState()`: `'migrating'`, `'failed'` or `null`).
 While the move is in progress they show `storage_migration_in_progress` instead of an empty table
-(the spam log) or next to the size (the options page). After a failed attempt they show
-`storage_migration_failed` (above the log, next to the size) and otherwise behave normally, showing
-what the database holds. They never migrate.
+(the spam log), next to the size (the options page) or at the top (the storage management page,
+which still shows what the database holds). After a failed attempt they show
+`storage_migration_failed` (above the log, next to the size, at the top) and otherwise behave
+normally, showing what the database holds. They never migrate.
 
-**Limits and cleanup.** Per type: `{feature}_storage_enabled` (default `true`),
-`{feature}_storage_max_entries` and `{feature}_storage_max_age_days` (default `0`, no limit), with
-`{feature}` `spamfilter`, `summarize`, `translate` (see [05-options.md](05-options.md)). The limits
-are off by default: the spam reports, once cut to the 100 newest after each incoming batch, are
-unlimited too. `taStorage.cleanup()` is the one routine: for each type it deletes the records older
-than the maximum age, then the oldest records beyond the maximum count, with a cursor on the
-`createdAt` index and `count()`; a limit of `0` is no limit for that rule; the mirror keys of the
-deleted records go with them (one `remove` per type). Every cleanup, `clear(type)`,
-`clearAllRecords()` and `reconcileWithMirror()` run inside
+**Limits and cleanup.** Per type: `{feature}_storage_max_entries` and `{feature}_storage_max_age_days`
+(default `0`, no limit) and `{feature}_storage_error_max_age_days` (default `90`), with `{feature}`
+`spamfilter`, `summarize`, `translate`; and one switch, `message_storage_cleanup_auto` (default
+`true`) (see [05-options.md](05-options.md); `STORAGE_PREFS` and `CLEANUP_AUTO_PREF` in
+`js/mzta-storage.js`; `readLimits()` returns `{ maxEntries, maxAgeDays, errorMaxAgeDays }` per type).
+The count and age limits are off by default: the spam reports, once cut to the 100 newest after each
+incoming batch, are unlimited too; only the errors go after 90 days. `taStorage.cleanup(limits, now)`
+is the one routine; for each type, in this order:
+1. **the error rule**: the records with `failed` 1 older than the maximum error age, with a cursor
+   on `failed_createdAt` over `bound([1, -Infinity], [1, cutoff], false, true)`;
+2. **the age rule**: the records older than the maximum age, with a cursor on `createdAt`;
+3. **the count rule**: the oldest records beyond the maximum count, on what the first two left.
+A limit of `0` disables its rule. Each rule is its own readwrite transaction; the mirror keys of the
+removed records go after them, through `removeMirrorKeysIfUnchanged()`. It returns the count per
+type. The storage management page's "Apply rules now" calls it directly: that run stores no last
+cleanup and moves no timer.
+
+**The dry-run** is a separate method, `taStorage.previewCleanup(limits, now)`, not an option of
+`cleanup()`: it only reads, so it takes no lock and loads no record (one readonly transaction,
+`count()` on the indexes only). For each type it gives exactly what `cleanup(limits, now)` would
+remove: the records older than the age cutoff, plus the errors the age rule does not reach (between
+the age cutoff and the error cutoff: all the errors older than the error cutoff with no age rule,
+none when the error cutoff is not newer than the age cutoff), plus
+`max(0, total − those two − maxEntries)` for the count rule (the errors removed count too: the count
+rule applies to what the first two rules left). The storage management page passes the values of
+its form, saved or not. Answered `0` per type when the database cannot be read.
+
+Every cleanup, `clear(type)`, `clearAllRecords()`, `deleteErrors()`, `deleteOlderThan()`,
+`removeEntries()`, `fillMetadata()` and `reconcileWithMirror()` run inside
 `navigator.locks.request('thunderai-storage-cleanup', ...)`, shared by the background and the pages,
 so they never overlap.
 
 **Scheduling**, in the background, without the `alarms` permission (`startCleanupSchedule()`, called
-once the policy is loaded): the time of the last completed cleanup is kept in `storage.local`
-(`_message_data_last_cleanup`). At startup, with none or one older than 24 hours, the cleanup runs at
-once; otherwise it is set 2 hours after the start. After each run the time is saved (only on success)
-and the next run is set 24 hours later. One timer at a time, no periodic checks. A lowered limit
-applies at the next scheduled cleanup.
+once the policy is loaded). It first reads `message_storage_cleanup_auto` through `mztaPrefs` (so a
+policy value counts): when it is `false` it only stops the pending timer and does nothing else. The
+last completed scheduled cleanup is kept in `storage.local` (`_message_data_last_cleanup`,
+`LAST_CLEANUP_KEY`) as `{ time, removed }`: `time` in ms, `removed` what `cleanup()` returned per
+type; there is no reading of an older numeric format (nothing was released with it).
+`taStorage.getLastCleanup()` reads it for the page (`null` when there is none, or it is not of that
+shape). At startup, with none or one older than 24 hours, the cleanup runs at once; otherwise it is
+set 2 hours after the start. After each run `{ time, removed }` is saved (only on success) and the
+next run is set 24 hours later. One timer at a time, no periodic checks; a generation counter, bumped
+by every `stopCleanupSchedule()`, makes a run in progress when the schedule is stopped or restarted
+not set its next run, and a start overtaken by a later one give up. A lowered limit applies at the
+next scheduled cleanup. **The switch**: `setupCleanupScheduleListener()` in `mzta-background.js` (a
+dedicated `storage.onChanged` listener, like the ThunderAI Privacy one) calls `startCleanupSchedule()`
+on every change of `message_storage_cleanup_auto`: turned off, it stops the timer; turned on, it
+starts the schedule again (at once when the last run is more than 24 hours old).
 
 **Migration from the `msg:` records.** `migrateMessageDataToIndexedDB()` (`js/mzta-storage-migration.js`)
 runs in the startup migration block of `mzta-background.js`, after the other steps, awaited with a
@@ -2539,7 +2622,7 @@ database is the working copy, rebuilt from it:
   `{ spam: { restored, removed }, summary: {...}, translation: {...} }`, logs it, and rejects on a
   failure.
 - **The `reconcileMessageStorage` command** of the main `onMessage` listener of the background runs
-  `reconcileWithMirror()` for a page (the storage management page of
-  [#956](https://github.com/micz/ThunderAI/issues/956) will call it from a button): it answers
+  `reconcileWithMirror()` for a page (the "Realign with the durable copy" button of the storage
+  management page, [#956](https://github.com/micz/ThunderAI/issues/956)): it answers
   `{ ok: true, counts }` with the counts above, or `{ ok: false, error }` with the error message
   (logged). `browser.runtime.sendMessage({ command: 'reconcileMessageStorage' })`.

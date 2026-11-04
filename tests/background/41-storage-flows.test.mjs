@@ -1,7 +1,7 @@
 // What the background saves of a message, and what it does when saving fails (spec 01
 // "Per-Message Data Storage"):
 //  - summaries and translations are saved with the message's subject, from and message_date, the
-//    shape _buildReportMetadata() gives the spam reports (arrays from the MIME headers, an ISO
+//    shape buildMessageMetadata() gives the spam reports (arrays from the MIME headers, an ISO
 //    date): in the jobs, built as soon as the message is known, from the full message once
 //    fetched; on incoming mail, from the message data the batch already holds; a "Message not
 //    found" error is saved with them empty;

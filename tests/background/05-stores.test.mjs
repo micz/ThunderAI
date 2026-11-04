@@ -1,7 +1,7 @@
 // Spec 01 "Per-Message Data Storage", the three stores over taStorage:
 //  - taSummaryStore (js/mzta-summarystore.js): load / save / remove summaries and error states;
 //    saveSummary(data, id, metadata = {}) and saveError(id, message, metadata = {}) save the
-//    metadata (subject / from / message_date, the shape _buildReportMetadata() gives) with it;
+//    metadata (subject / from / message_date, the shape buildMessageMetadata() gives) with it;
 //  - taTranslationStore (js/mzta-translationstore.js): the same; a translation record stores
 //    translated_text, translated_subject, translation_status, lang and optional error information;
 //  - taSpamReport (js/mzta-spamreport.js), with spec 02 "Missing special prompts":

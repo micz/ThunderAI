@@ -20,8 +20,9 @@ await ownIntegrationScenario({
             assert.equal(rows[0].cells[0].colSpan, 8);
             assert.equal(rows[0].cells[0].textContent, msg('spamfilter_no_reports'));
         });
-        k.test('log-empty-no-pager', 'spec 05 "Spam Filter page"', 'with no report there is nothing to page through: no Previous / Next', () => {
-            assert.equal(ctx.$('#report_pager').style.display, 'none');
+        k.test('log-empty-no-pager', 'spec 05 "Spam Filter page"', 'with no report: no pager (the log has none), the link to the storage page still there', () => {
+            assert.equal(ctx.$('#report_pager'), null);
+            assert.ok(ctx.$('#report_manage_link'));
         });
     },
 });

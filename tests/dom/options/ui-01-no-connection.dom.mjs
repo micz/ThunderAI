@@ -9,7 +9,7 @@
 // Section (`#mzta_adv_panel`)", "Owl for Exchange Warning (`#owl_warning`)" (no Owl account).
 //
 // Stored state: no connection_type, two feature flags left on (add_tags, spamfilter),
-// Summarize on with its own integration (OpenAI API), two saved per-message records (IndexedDB). Then the user picks providers in turn,
+// Summarize on with its own integration (OpenAI API), two saved per-message records (IndexedDB, the storage block: their size and the link to the storage management page). Then the user picks providers in turn,
 // toggles features and edits preferences on the same page.
 
 import {
@@ -547,29 +547,15 @@ k.test('reset-defaults', S_ADVSEC, 'each Reset button puts the default back in i
     }
 });
 
-k.test('storage-clear-cancelled', S_ADVSEC, 'a cancelled confirm() removes nothing', async () => {
-    const real = globalThis.confirm;
-    globalThis.confirm = (...args) => { ctx.dialogs.push({ kind: 'confirm', args }); return false; };
-    try {
-        await ctx.click($('#btnClearMessageStorage'));
-    } finally {
-        globalThis.confirm = real;
-    }
-    assert.deepEqual(ctx.dialogs.at(-1), { kind: 'confirm', args: [msg('prefs_storage_clear_confirm')] });
+k.test('storage-manage', S_ADVSEC, 'the storage block keeps the size and opens the storage management page in a tab; it deletes nothing itself', async () => {
+    assert.equal($('#btnClearMessageStorage'), null, 'no Clear button any more');
+    const created = ctx.apiCalls('browser.tabs.create').length;
+    await ctx.click($('#btnManageMessageStorage'));
+    const calls = ctx.apiCalls('browser.tabs.create').slice(created);
+    assert.equal(calls.length, 1);
+    assert.match(calls[0].args[0].url, /pages\/storage\/mzta-storage-manager\.html$/);
     assert.equal((await savedIn('summary')).length, 1);
     assert.equal((await savedIn('spam')).length, 1);
-});
-
-k.test('storage-clear', S_ADVSEC, 'confirmed, every saved record of the three stores and nothing else is removed, the count reported, the size re-read', async () => {
-    const before = ctx.ctl.localData();
-    const dialogs = ctx.dialogs.length;
-    await ctx.click($('#btnClearMessageStorage'));
-    for (const store of ['spam', 'summary', 'translation']) assert.deepEqual(await savedIn(store), [], store);
-    assert.deepEqual(ctx.ctl.localData(), before, 'storage.local untouched');
-    const shownDialogs = ctx.dialogs.slice(dialogs).map(d => d.kind);
-    assert.deepEqual(shownDialogs, ['confirm', 'alert']);
-    assert.deepEqual(ctx.dialogs.at(-1).args, [msg('prefs_storage_clear_done', ['2'])]);
-    assert.equal($('#message_storage_size').textContent, '0 Bytes');
 });
 
 k.coverage();

@@ -258,9 +258,10 @@ ThunderAI Privacy owns model management and diagnostics. See
 | `spamfilter_skip_addressbook` | `false` | Skip senders found in any address book (`browser.contacts.quickSearch`). A permission-gated toggle (see "Permission-gated toggles" below) needing `addressBooks`, so it defaults to `false` like the other gated features (it was `true` before 5.1.0, on with no permission behind it). On the settings page the switch is saved by the shared handler, not by the page's `saveOptions()`: switching it **on** first requests the optional `addressBooks` permission and stores `true` only once it is granted; refused, the switch goes back off, an `alert()` says why (`addressbook_permission_denied`, or `addressbook_permission_error` when the request throws) and nothing is stored. Switching it **off** stores `false` and requests nothing. |
 | `spamfilter_show_msg_panel` | `true` | Show info panel on spam detection |
 | `spamfilter_only_inbox` | `false` | Auto spam filter runs only on inbox messages |
-| `spamfilter_storage_enabled` / `summarize_storage_enabled` / `translate_storage_enabled` | `true` | **No UI yet (#956), meant for a policy.** Save the results of that type in the per-message storage. `false` skips the writes; what is already saved is still read and shown. See [01-architecture.md](01-architecture.md#per-message-data-storage). |
-| `spamfilter_storage_max_entries` / `summarize_storage_max_entries` / `translate_storage_max_entries` | `0` | **No UI yet (#956).** The scheduled cleanup removes the oldest records of that type beyond this count; `0` = no limit. A lowered limit applies at the next scheduled cleanup (every 24 hours). Any non-negative integer, so policy-settable with no extra rule. |
-| `spamfilter_storage_max_age_days` / `summarize_storage_max_age_days` / `translate_storage_max_age_days` | `0` | **No UI yet (#956).** The scheduled cleanup removes the records of that type older than this many days (by `createdAt`), before the count rule; `0` = no limit. |
+| `spamfilter_storage_max_entries` / `summarize_storage_max_entries` / `translate_storage_max_entries` | `0` | Set on the storage management page (`pages/storage/`). The cleanup removes the oldest records of that type beyond this count, after the error and age rules; `0` = no limit. Any non-negative integer, so policy-settable with no extra rule. |
+| `spamfilter_storage_max_age_days` / `summarize_storage_max_age_days` / `translate_storage_max_age_days` | `0` | Set on the storage management page. The cleanup removes the records of that type older than this many days (by `createdAt`), after the error rule and before the count rule; `0` = no limit. |
+| `spamfilter_storage_error_max_age_days` / `summarize_storage_error_max_age_days` / `translate_storage_error_max_age_days` | `90` | Set on the storage management page. The cleanup first removes the records of that type that hold an error (`failed` 1) older than this many days; `0` = keep them. Any non-negative integer. |
+| `message_storage_cleanup_auto` | `true` | Set on the storage management page. The scheduled cleanup of the per-message data: at startup if the last one is more than 24 hours old, else 2 hours after startup, then every 24 hours. `false` stops it (the background reacts to the change at once); "Apply rules now" still works. See [01-architecture.md](01-architecture.md#per-message-data-storage). |
 | `summarize` | `false` | Enable email summarization |
 | `summarize_auto` | `1` | Auto-summarize mode: `0` = disabled, `1` = manual (show "click to generate" button), `2` = automatic (generate on message open), `3` = generate on email receive (background pre-cache via `onNewMailReceived`, no UI during generation) |
 | `summarize_display_mode` | `'inline'` | Where to display summaries: `'inline'` = message pane banner, `'webchat'` = AI chat window. Note: `summarize_auto = 2` and `summarize_auto = 3` always use inline regardless of this setting. |
@@ -526,22 +527,96 @@ The timezone `<select>` shown on the Calendar Event (`pages/get-calendar-event/`
 The page ends with the spam log, `#report_data`: one row per saved spam report (Message-ID, message
 date, sender, subject, score, moved with the threshold, explanation, report date), read straight from
 the per-message storage ([01-architecture.md](01-architecture.md#per-message-data-storage)), not
-through the background.
-- **One page at a time.** 50 rows per page, newest first: `taSpamReport.getReportPage(offset, 50)`
-  (a cursor on the `createdAt` index) and `countReports()` for the total. Under the table,
-  `#report_pager` holds `#report_prev_btn` / `#report_next_btn` (`spamfilter_report_previous` /
-  `_next`) and `#report_page_label`, `spamfilter_report_page_label` ("1–50 of 1234"). Previous is
-  disabled on the first page, Next on the last; the pager is hidden while there is nothing to page
-  through. A page past the end (reports removed meanwhile) falls back to the last one. No search, no
-  sorting.
+through the background. The rows are built by `renderSpamReportRows()` of `pages/_lib/spam-log.js`
+(with the explanation's resize strip, `attachRowResizer()`), shared with the storage management page.
+- **The 20 newest only** ([#956](https://github.com/micz/ThunderAI/issues/956)), newest first:
+  `taSpamReport.getReportPage(0, 20)` (a cursor on the `createdAt` index). No pager (the
+  `report_pager` and its Previous / Next are gone), no search, no sorting.
+- **The link.** Under the table, `.report_more`: `spamfilter_report_newest_info` and the link
+  `#report_manage_link` (`spamfilter_report_manage_link`), which opens the storage management page on
+  its spam list, `pages/storage/mzta-storage-manager.html#spam`, in a new tab with `tabs.create()`
+  (not `openTab()`: a `tabs.query()` match pattern cannot carry the hash).
 - **Cells.** The arrays `subject` and `from` are joined; a report without them (an error saved when
   the message could not be read, or moved from an older version) shows empty cells. The report date is
   the record's `createdAt`.
 - **Empty.** With no report, one row spanning the 8 columns says `spamfilter_no_reports`.
 - **Migrating.** While the background is still moving the reports out of `storage.local` (the
-  migration flag), the one row says `storage_migration_in_progress` instead, and the pager is hidden.
+  migration flag), the one row says `storage_migration_in_progress` instead.
 - **Migration failed.** When the last attempt failed (the flag `'failed'`), `#report_migration_failed`
   (`storage_migration_failed`) is shown above the log, which shows what the database holds as usual.
+
+### Storage Management Page (`pages/storage/`)
+
+`pages/storage/mzta-storage-manager.html` / `.js` / `.css` ([#956](https://github.com/micz/ThunderAI/issues/956)):
+the saved spam reports, summaries and translations
+([01-architecture.md](01-architecture.md#per-message-data-storage)). Opened in a tab by the options
+page's `#btnManageMessageStorage` and by the spam log's link (`#spam`). Same look as the other
+settings pages (`mzta-design.css`, `body.mzta_feature_page`); the managed banner
+(`showManagedBanner()`) and `applyManagedUI()` after the rules are loaded, so a locked rule is shown
+disabled with its marker. It reads IndexedDB directly through `js/mzta-storage.js` and never rebuilds,
+realigns or migrates it; it shows the migration notices of `getMigrationState()` at the top
+(`#storage_migrating`, `#storage_migration_failed`) and still shows what the database holds. Its one
+`storage.onChanged` listener skips the mirror keys (`isMirrorKey()`) and reloads the rules form when a
+rule key changes elsewhere, unless the form holds unsaved edits. The types are shown in the order
+summaries, translations, spam reports (`storage_type_*`); a count per type reads
+`storage_count_item` ("Summaries: 3"), joined with commas. Every result or error goes in the result
+line of its section (`.storage_result`, red with `.storage_error`), never swallowed.
+- **Overview** (`#stats_table`, `taStorage.getStats()`): per type entries, entries with an error,
+  estimated size (`formatBytes()`, exported by `js/mzta-utils.js`), oldest and newest entry date;
+  the total row; `storage_disk_note` (the disk used is about twice: the durable copy); the last
+  automatic cleanup, `storage_last_cleanup` with its date and what it removed per type, or
+  `storage_last_cleanup_never` (`getLastCleanup()`). **Refresh** (`#btn_refresh`) reads the notices,
+  the overview and the list again; there is no automatic refresh.
+- **Retention rules**: per type maximum age, maximum number of entries and maximum age of the entries
+  with an error (`storage_rule_*`, number inputs with `data-mzta-pref`, class `rule_input`; hint
+  `storage_rule_zero_hint`, 0 = no limit); the switch `message_storage_cleanup_auto` with
+  `storage_cleanup_auto_info` (when it runs). **Saved by Save only** (`#btn_save_rules`, disabled until
+  an edit, so the unsaved-changes guard covers it), every rule at once with `mztaPrefs.setPrefs()`,
+  locked keys left out. A value that is not an integer ≥ 0 shows `#rules_invalid` and nothing is
+  saved. **The save warning**: when the automatic cleanup in the form is on and
+  `previewCleanup()` of the form's rules is above 0, Save first asks `storage_rules_save_confirm`
+  (the total and the count per type the next automatic cleanup would delete); refused, nothing is
+  saved and Save stays enabled. With the automatic cleanup off nothing is asked (saving deletes
+  nothing). **Restore defaults** (`#btn_restore_rules`) puts the `prefs_default` values in the form,
+  locked keys skipped, and enables Save: nothing is stored until Save. **Preview** (`#btn_preview`)
+  shows `storage_preview_result`: `previewCleanup()` with the values in the form, saved or not;
+  nothing deleted or stored. **Apply rules now** (`#btn_apply_now`, confirmed with
+  `storage_apply_confirm`) runs `taStorage.cleanup()` with the **saved** rules and shows
+  `storage_removed_result`; it is not the scheduled run (no last cleanup stored, no timer moved).
+- **Manual actions** (`#actions_section`), each confirmed first (a refusal changes nothing), then its
+  outcome shown and the overview and the list read again: delete one type (`#btn_delete_summary` /
+  `_translation` / `_spam`, `storage_delete_<type>_confirm`, `taStorage.clear(type)`); delete the
+  errors (`#btn_delete_errors`, `deleteErrors()`); delete the entries older than N days
+  (`#delete_older_days`, default 30, `#btn_delete_older`, `storage_delete_older_confirm`,
+  `deleteOlderThan(days)`; a number below 1 shows `storage_days_invalid` and asks nothing); delete
+  everything (`#btn_delete_all`, `prefs_storage_clear_button` / `_confirm` / `_done`,
+  `clearAllRecords()`); **Realign** (`#btn_realign`, `storage_realign_confirm`): the background's
+  `reconcileMessageStorage` command, answered with `storage_realign_done` (restored / removed per
+  type) or the error it returned.
+- **Entry list** (`#entries_section`): a type selector (`#entries_type`, summaries first); 50 entries
+  per page, newest first (`taStorage.getPage()`), with Previous / Next and "1–50 of 60" (it reuses
+  `spamfilter_report_previous` / `_next` / `_page_label`, whose translations already exist); a page
+  past the end falls back to the last one; no search. Summaries and translations: saved on
+  (`createdAt`), status (`storage_status_ok` / `_error`, by `taStorage.isFailed()`; an error carries
+  its message as a tooltip), subject and sender (arrays joined), message date, the language for the
+  translations. Spam reports: the eight columns of the spam log (`renderSpamReportRows()`), then
+  status and actions. Per row **Open** (`messages.query({ headerMessageId })`, then
+  `messageDisplay.open({ messageId, location: 'tab' })`; `storage_message_not_found` when no folder
+  holds it) and **Delete** (`storage_delete_entry_confirm`, then the `delete*Field()` of that type).
+  **A plain hash** selects the type when the page opens and on `hashchange`: `#summary`,
+  `#translation`, `#spam`; the list is then scrolled into view; any other hash is ignored.
+- **Orphan scan** (`#orphans_section`): started by `#btn_orphans_start` after the warning
+  `storage_orphans_confirm` (one lookup per message, it can take long). It reads every
+  `{ messageId, createdAt }` of the three types (`getEntryKeys()`), and looks each distinct
+  Message-ID up once with `messages.query({ headerMessageId })`, showing `storage_orphans_progress`;
+  `#btn_orphans_stop` stops it between two lookups (`storage_orphans_stopped`). A message not found:
+  its entries are listed (type, Message-ID, saved on) with `storage_orphans_note` (indicative:
+  folders not synchronized or not indexed may wrongly appear as missing). A message found: each of
+  its entries gets `taStorage.fillMetadata()` with `buildMessageMetadata(message, null)` (only those
+  with empty metadata and an unchanged `createdAt` are rewritten; `storage_orphans_filled` counts
+  them). A lookup that fails is logged and neither listed nor filled. **Delete these entries**
+  (`#btn_orphans_delete`, `storage_orphans_delete_confirm`) removes exactly the listed ones with
+  `taStorage.removeEntries()` (each only while it still has the `createdAt` seen).
 
 ### Summarize Settings Page (`pages/summarize/`)
 
@@ -1699,16 +1774,14 @@ its `#no_privacy` notice), `do_debug`, the allowed unencrypted servers and the s
   sum of the `size` of every record of the three stores, as computed by
   `getMessageStorageUsedSpace()` (`js/mzta-utils.js`, over `taStorage.getTotalSize()`) and read at
   load. It is the IndexedDB total only: every record is also kept in its `storage.local` mirror key,
-  so the disk actually used is roughly twice that. `#btnClearMessageStorage` asks a native `confirm()` (`prefs_storage_clear_confirm`):
-  cancelled, nothing happens; confirmed, `taStorage.clearAllRecords()` removes every mirror key and
-  empties the three stores, under the cleanup lock - never a preference or any other key - then an
-  `alert()` reports the count of records the stores held
-  (`prefs_storage_clear_done`, or `prefs_storage_clear_error` with the reason) and the size is read
-  again. While the background is still moving the legacy `msg:` records (the migration flag),
-  `#message_storage_migrating` (`storage_migration_in_progress`) is shown under it; after a failed
-  attempt (the flag `'failed'`), `#message_storage_migration_failed` (`storage_migration_failed`)
-  instead. No settings for
-  the limits here yet (#956).
+  so the disk actually used is roughly twice that. `#btnManageMessageStorage`
+  (`prefs_storage_manage_button`) opens the storage management page
+  (`pages/storage/mzta-storage-manager.html`, `openTab()`), where the rules and every deletion are
+  ("Storage Management Page" above); the options page deletes nothing itself (its Clear button moved
+  there as "Delete everything"). While the background is still moving the legacy `msg:` records (the
+  migration flag), `#message_storage_migrating` (`storage_migration_in_progress`) is shown under it;
+  after a failed attempt (the flag `'failed'`), `#message_storage_migration_failed`
+  (`storage_migration_failed`) instead.
 - **Allowed unencrypted servers.** `#insecure_origins_list` lists the user's own approvals
   (`getUserApprovedInsecureOrigins()`, see
   [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy)),
@@ -1740,7 +1813,8 @@ inline `btn.disabled = ...` toggling for these six buttons (on checkbox `click`,
 ### Unsaved-Changes Guard (`pages/_lib/unsaved-guard.js`)
 
 The six feature settings pages (Add Tags, Spam Filter, Summarize, Translate, Calendar
-Event, Task) mix two kinds of controls: plain `.option-input` fields, written to storage
+Event, Task) and the storage management page (its retention rules, saved by
+`#btn_save_rules`) mix two kinds of controls: plain `.option-input` fields, written to storage
 on `change` (never pending), and **textareas saved explicitly** by a companion Save
 button. Only the latter can hold unsaved text when the tab is closed.
 
@@ -1927,7 +2001,7 @@ case for nearly every user and is swallowed silently.
   preferences, under keys with a leading `_` that no `prefs_default` key uses. So do the three
   underscore keys of the per-message storage, `_message_data_migrating` (the migration flag),
   `_message_data_migration_version` (the version the move of the legacy records last ran for) and
-  `_message_data_last_cleanup`. Every mirror write fires `storage.onChanged` in every context with
+  `_message_data_last_cleanup` (`{ time, removed }`). Every mirror write fires `storage.onChanged` in every context with
   the record as `newValue`: each listener filters on the exact keys it watches (the options page's
   `_connection_type` suffix test skips `isMirrorKey()` keys explicitly). `storage.local` is
   enumerated (`get(null)`) only by the move of the legacy records (once per add-on version), by

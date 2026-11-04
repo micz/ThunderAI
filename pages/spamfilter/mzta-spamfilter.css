@@ -162,15 +162,10 @@ body.mzta_feature_page .mzta_section.report_fullscreen_on .report_scroll {
     margin-bottom: 0;
 }
 
-/* Previous / Next under the report table, with "1–50 of 1234" between them. */
-.report_pager {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
+/* Under the report table: "the 20 newest" and the link to the storage page. */
+.report_more {
     margin-top: 8px;
-    font-size: 12.5px;
-    color: var(--text);
+    text-align: right;
 }
 
 /* table-layout: fixed is what makes the column widths below authoritative:
@@ -260,7 +255,7 @@ body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thea
 body.mzta_feature_page .mzta_section.report_fullscreen_on table#report_data thead th:nth-child(8) { width: 11%; }
 
 /* Message id: one truncated line. The value is opaque and rarely read in
-   full, and the cell's title attribute carries it (set in populateTable). */
+   full, and the cell's title attribute carries it (set in renderSpamReportRows()). */
 table#report_data tbody td:nth-child(1) {
     white-space: nowrap;
     overflow: hidden;
@@ -279,7 +274,8 @@ table#report_data tbody td:nth-child(8) {
    scrolls on its own, so a long error message stays fully readable without
    stretching the row to match it. The scroll must happen on an inner block:
    a td is a table-cell, whose height is driven by the row, so overflow set
-   on the cell itself is ignored. .expl_box is added in populateTable().
+   on the cell itself is ignored. .expl_box is added by renderSpamReportRows()
+   (../_lib/spam-log.js).
    The full text also stays in the title attribute as a quick tooltip. */
 table#report_data tbody td:nth-child(7) {
     padding: 0;

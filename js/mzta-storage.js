@@ -27,8 +27,11 @@
  *
  *  Who opens the database: the background (every read and write of the message flow, the
  *  migration from storage.local, the scheduled cleanup) and the management pages (the options
- *  page, the spam filter page). The message display and compose scripts never do: they go
- *  through the background.
+ *  page, the spam filter page, the storage management page pages/storage/). The message display
+ *  and compose scripts never do: they go through the background.
+ *
+ *  Every record also has failed (1 when it holds an error, else 0), the first key of the
+ *  failed_createdAt index the error rules and counts use.
  *
  *  The durable copy is the MIRROR in storage.local: one key per record, `<prefix><messageId>`
  *  (MIRROR_PREFIXES: spam:, summary:, translation:), whose value is the very record of the store.
@@ -72,6 +75,15 @@ export const STORE_TRANSLATION = 'translation';
 export const MESSAGE_STORES = Object.freeze([STORE_SPAM, STORE_SUMMARY, STORE_TRANSLATION]);
 export const INDEX_CREATED_AT = 'createdAt';
 export const INDEX_SIZE = 'size';
+/**
+ * The error index of every store, keyPath [failed, createdAt]: failed is 1 for a record that holds
+ * an error, else 0 (a boolean cannot be an IndexedDB key). The error queries are ranges on it,
+ * e.g. IDBKeyRange.bound([1, -Infinity], [1, Infinity]), never a full scan.
+ */
+export const INDEX_FAILED_CREATED_AT = 'failed_createdAt';
+
+/** The spamValue of a spam report that holds an error (taSpamReport.buildError()). */
+export const SPAM_ERROR_VALUE = -999;
 
 /**
  * The storage.local key prefix of the mirror records of each type: the record of a message is
@@ -130,27 +142,38 @@ export const MIGRATION_FAILED = 'failed';
  */
 export const MIGRATION_VERSION_KEY = '_message_data_migration_version';
 
-/** storage.local key holding the time (ms) of the last completed scheduled cleanup. */
+/**
+ * storage.local key of the last completed scheduled cleanup: { time, removed }, time in ms,
+ * removed the records it removed per type (what cleanup() returns). Written by the scheduled
+ * cleanup only, on success; read by startCleanupSchedule() and by the storage management page
+ * (getLastCleanup()).
+ */
 export const LAST_CLEANUP_KEY = '_message_data_last_cleanup';
 
-/** The preferences of each type: saving enabled, maximum entries, maximum age in days. */
+/**
+ * The preferences of each type: maximum entries, maximum age in days, maximum age in days of the
+ * records that hold an error. 0 = no limit.
+ */
 export const STORAGE_PREFS = Object.freeze({
     [STORE_SPAM]: Object.freeze({
-        enabled: 'spamfilter_storage_enabled',
         maxEntries: 'spamfilter_storage_max_entries',
         maxAgeDays: 'spamfilter_storage_max_age_days',
+        errorMaxAgeDays: 'spamfilter_storage_error_max_age_days',
     }),
     [STORE_SUMMARY]: Object.freeze({
-        enabled: 'summarize_storage_enabled',
         maxEntries: 'summarize_storage_max_entries',
         maxAgeDays: 'summarize_storage_max_age_days',
+        errorMaxAgeDays: 'summarize_storage_error_max_age_days',
     }),
     [STORE_TRANSLATION]: Object.freeze({
-        enabled: 'translate_storage_enabled',
         maxEntries: 'translate_storage_max_entries',
         maxAgeDays: 'translate_storage_max_age_days',
+        errorMaxAgeDays: 'translate_storage_error_max_age_days',
     }),
 });
+
+/** The preference that turns the scheduled cleanup on and off (default true). */
+export const CLEANUP_AUTO_PREF = 'message_storage_cleanup_auto';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** The scheduled cleanup runs every 24 hours, and 2 hours after a start that does not need it at once. */
@@ -165,6 +188,10 @@ const _log = new taLogger('mzta-storage', false);
 let _dbPromise = null;
 // The one pending timer of the scheduled cleanup (background only).
 let _cleanupTimer = null;
+// Bumped by every stopCleanupSchedule() (so by every startCleanupSchedule() too): a start whose
+// reads were overtaken by a later one gives up, and a run in progress when the schedule was
+// stopped or restarted does not set its next run.
+let _scheduleGeneration = 0;
 // True once an open of this context found the database new (it created the object stores):
 // what reconcileIfNew() reads, and clears when it has rebuilt the database from the mirror.
 let _dbIsNew = false;
@@ -191,6 +218,15 @@ function toLimit(value) {
     return Number.isInteger(value) && value > 0 ? value : 0;
 }
 
+/** The limits of one type, each through toLimit() (a missing one is 0). */
+function normalizeLimits(limits) {
+    return {
+        maxEntries: toLimit(limits?.maxEntries),
+        maxAgeDays: toLimit(limits?.maxAgeDays),
+        errorMaxAgeDays: toLimit(limits?.errorMaxAgeDays),
+    };
+}
+
 /**
  * Open the database once, without checking its contents. `onLost` is called when the connection
  * stops being usable: closed for another context's upgrade or deletion (blocking), or by the
@@ -207,6 +243,7 @@ function openMessageDB(onLost) {
                     const store = db.createObjectStore(name, { keyPath: 'messageId' });
                     store.createIndex(INDEX_CREATED_AT, 'createdAt');
                     store.createIndex(INDEX_SIZE, 'size');
+                    store.createIndex(INDEX_FAILED_CREATED_AT, ['failed', 'createdAt']);
                 }
             }
         },
@@ -356,6 +393,92 @@ export async function putNewerRecords(records, removals = []) {
     return { written, skipped, byType, removedByType };
 }
 
+/** The range of the failed_createdAt index holding the errors created before `upper` (all by default). */
+function errorRange(upper = Infinity, upperOpen = false) {
+    return IDBKeyRange.bound([1, -Infinity], [1, upper], false, upperOpen);
+}
+
+/** A count of 0 for every type. */
+function zeroByType() {
+    return Object.fromEntries(MESSAGE_STORES.map(type => [type, 0]));
+}
+
+/** A day count as a cutoff time: the records created before it are older. */
+function cutoff(now, days) {
+    return now - days * DAY_MS;
+}
+
+/**
+ * Remove the mirror keys of records just removed from the database, but only those whose mirror
+ * value still has the createdAt the removal saw: a write made since then (the background's writes
+ * do not take the cleanup lock) has a new createdAt, and its key is kept. One targeted
+ * storage.local.get(keys) and one remove() per type, never get(null). Called once the
+ * transaction of the removal has committed (nothing but IndexedDB requests is awaited inside
+ * one). The window left: a write landing between the get and the remove of its type loses its
+ * mirror key, and its database record is then removed by the next realignment.
+ *
+ * @param {object} byType { [type]: [{ messageId, createdAt }] }
+ */
+async function removeMirrorKeysIfUnchanged(byType) {
+    for (const [type, entries] of Object.entries(byType)) {
+        if (!entries || entries.length === 0) continue;
+        const seen = new Map(entries.map(e => [mirrorKey(type, e.messageId), e.createdAt]));
+        const current = await browser.storage.local.get([...seen.keys()]);
+        const keys = [...seen.keys()].filter(key =>
+            Object.hasOwn(current, key) && current[key]?.createdAt === seen.get(key));
+        if (keys.length > 0) await browser.storage.local.remove(keys);
+    }
+}
+
+/**
+ * Delete, in one readwrite transaction on a type, the records a cursor on one of its indexes
+ * reaches over a range (all of them, or the first `limit`), and return their
+ * { messageId, createdAt }. Resolves once the transaction has committed.
+ */
+async function deleteByCursor(type, indexName, range, limit = Infinity) {
+    const removed = [];
+    if (limit <= 0) return removed;
+    const tx = await openTransaction(type, 'readwrite');
+    let cursor = await tx.store.index(indexName).openCursor(range);
+    while (cursor && removed.length < limit) {
+        removed.push({ messageId: cursor.primaryKey, createdAt: cursor.value.createdAt });
+        await cursor.delete();
+        cursor = await cursor.continue();
+    }
+    await tx.done;
+    return removed;
+}
+
+/** Whether a record holds no message metadata: subject, from and message_date all empty. */
+function hasEmptyMetadata(record) {
+    const empty = v => v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
+    return empty(record?.subject) && empty(record?.from) && empty(record?.message_date);
+}
+
+/**
+ * The metadata of a message as the per-message records store it: { subject, from, message_date }.
+ * Prefers the full MIME headers (fullMessage.headers, arrays), but falls back to the MessageHeader
+ * fields (message.subject / message.author / message.date), which remain readable even when the
+ * message storage is no longer available. This keeps the saved entries populated when a user
+ * filter removes a message while it is being analyzed, or when getFull() returns partial headers.
+ * A field that cannot be known is undefined (buildRecord() then stores it empty).
+ * Shared by the background (every save) and the storage management page (the orphan scan, which
+ * has the MessageHeader only).
+ * Thanks to https://github.com/racerm3 for the idea, from https://github.com/racerm3/ThunderAI/commit/5ae5e206a733b44d57ef57dcc46968ea7e686e72#diff-ee0e0f04f23f4913865479164d992ff20124eba596df1453f1cde635359fb634
+ *
+ * @param {object|null} message      a MessageHeader
+ * @param {object|null} fullMessage  a MessagePart (messages.getFull()), or null
+ */
+export function buildMessageMetadata(message, fullMessage) {
+    const headers = (fullMessage && fullMessage.headers) || {};
+    const isEmpty = (v) => v === undefined || v === null || (Array.isArray(v) && v.length === 0);
+    return {
+        subject: isEmpty(headers.subject) ? (message?.subject ? [message.subject] : undefined) : headers.subject,
+        from: isEmpty(headers.from) ? (message?.author ? [message.author] : undefined) : headers.from,
+        message_date: message?.date ? new Date(message.date) : undefined
+    };
+}
+
 /** Run fn() under the cleanup lock. Without the Web Locks API, fn() runs directly. */
 function withCleanupLock(fn) {
     const locks = globalThis.navigator?.locks;
@@ -460,13 +583,15 @@ export class taStorage {
         const record = {
             messageId: messageId,
             createdAt: createdAt,
-            // The shape _buildReportMetadata() gives (mzta-background.js): subject and from are
-            // arrays (MIME headers), message_date an ISO string. Empty when not known.
+            // The shape buildMessageMetadata() gives: subject and from are arrays (MIME
+            // headers), message_date an ISO string. Empty when not known.
             subject: data.subject ?? [],
             from: data.from ?? [],
             message_date: toIsoDate(data.message_date) ?? '',
             ...typeFields(type, data),
         };
+        // 1 / 0, not a boolean: it is the first key of the failed_createdAt index.
+        record.failed = taStorage.isFailed(type, record) ? 1 : 0;
         for (const key of Object.keys(record)) {
             if (record[key] === undefined) delete record[key];
         }
@@ -474,11 +599,21 @@ export class taStorage {
         return record;
     }
 
-    /** Whether saving is enabled for the type (preference {feature}_storage_enabled). */
-    static async isSavingEnabled(type) {
-        const key = STORAGE_PREFS[type]?.enabled;
-        if (!key) throw new Error('Unknown message data type: ' + type);
-        return (await mztaPrefs.getPref(key)) !== false;
+    /**
+     * Whether a record of the type holds an error, what buildRecord() stores as failed (1 / 0): a
+     * summary or a translation with error set (a translation_status of "-1", skipped, is a valid
+     * result), a spam report whose spamValue is SPAM_ERROR_VALUE.
+     */
+    static isFailed(type, record) {
+        switch (type) {
+            case STORE_SPAM:
+                return Number(record?.spamValue) === SPAM_ERROR_VALUE;
+            case STORE_SUMMARY:
+            case STORE_TRANSLATION:
+                return !!record?.error;
+            default:
+                throw new Error('Unknown message data type: ' + type);
+        }
     }
 
     /**
@@ -605,12 +740,89 @@ export class taStorage {
         }
     }
 
+    /**
+     * The overview of every type, for the storage management page, in one readonly transaction
+     * and without loading a record: count, errors (a count on the failed_createdAt index), size
+     * (the sum of the size index, as getTotalSize()), oldest and newest createdAt (the first key of
+     * the createdAt index in each direction, null when the store is empty). When the database
+     * cannot be read, every type is answered as empty.
+     * @returns {Promise<object>} { [type]: { count, errors, size, oldest, newest } }
+     */
+    static async getStats() {
+        const empty = () => Object.fromEntries(MESSAGE_STORES.map(type =>
+            [type, { count: 0, errors: 0, size: 0, oldest: null, newest: null }]));
+        try {
+            await rebuildDone();
+            const tx = await openTransaction(MESSAGE_STORES, 'readonly');
+            const out = empty();
+            for (const type of MESSAGE_STORES) {
+                const store = tx.objectStore(type);
+                const stats = out[type];
+                stats.count = await store.count();
+                stats.errors = await store.index(INDEX_FAILED_CREATED_AT).count(errorRange());
+                let cursor = await store.index(INDEX_SIZE).openKeyCursor();
+                while (cursor) {
+                    if (typeof cursor.key === 'number') stats.size += cursor.key;
+                    cursor = await cursor.continue();
+                }
+                const first = await store.index(INDEX_CREATED_AT).openKeyCursor();
+                stats.oldest = first ? first.key : null;
+                const last = await store.index(INDEX_CREATED_AT).openKeyCursor(null, 'prev');
+                stats.newest = last ? last.key : null;
+            }
+            await tx.done;
+            return out;
+        } catch (e) {
+            _log.error('getStats error (answered as empty): ' + e);
+            return empty();
+        }
+    }
+
+    /**
+     * Every record of a type as { messageId, createdAt }, oldest first, read with a key cursor on
+     * the createdAt index (its key is createdAt, its primary key the Message-ID): no record is
+     * loaded. The list the orphan scan walks; the createdAt is what removeEntries() checks.
+     * [] when the database cannot be read.
+     */
+    static async getEntryKeys(type) {
+        try {
+            await rebuildDone();
+            const tx = await openTransaction(type, 'readonly');
+            const out = [];
+            let cursor = await tx.store.index(INDEX_CREATED_AT).openKeyCursor();
+            while (cursor) {
+                out.push({ messageId: cursor.primaryKey, createdAt: cursor.key });
+                cursor = await cursor.continue();
+            }
+            await tx.done;
+            return out;
+        } catch (e) {
+            _log.error('getEntryKeys ' + type + ' error (answered as no record): ' + e);
+            return [];
+        }
+    }
+
+    /**
+     * The last completed scheduled cleanup (LAST_CLEANUP_KEY): { time, removed }, or null when
+     * there is none, its value is not of that shape, or it cannot be read.
+     */
+    static async getLastCleanup() {
+        try {
+            const value = (await browser.storage.local.get(LAST_CLEANUP_KEY))[LAST_CLEANUP_KEY];
+            if (!value || typeof value !== 'object' || !Number.isFinite(value.time)) return null;
+            return { time: value.time, removed: value.removed && typeof value.removed === 'object' ? value.removed : {} };
+        } catch (e) {
+            _log.error('Could not read the last storage cleanup: ' + e);
+            return null;
+        }
+    }
+
     // ---- Writes ---------------------------------------------------------------------------------
 
     /**
      * Store the record of a type: in the mirror (storage.local) first, then in the database.
-     * Skipped (resolves null), in both, when the Message-ID is empty or saving is disabled for the
-     * type; with force false, also when a record already exists in either. A failed mirror write
+     * Skipped (resolves null), in both, when the Message-ID is empty; with force false, also when
+     * a record already exists in either. A failed mirror write
      * rejects before the database is touched; a failed database write after it rejects too and
      * leaves the mirror key: the durable copy wins, and the next rebuild puts it in the database.
      * @returns {Promise<object|null>} the stored record
@@ -619,10 +831,6 @@ export class taStorage {
         this.taLog.log('[write ' + type + '] messageId: ' + messageId + ', force: ' + force);
         if (!messageId) {
             this.taLog.error('[write ' + type + '] empty Message-ID (' + JSON.stringify(messageId) + '): nothing saved.');
-            return null;
-        }
-        if (!(await taStorage.isSavingEnabled(type))) {
-            this.taLog.log('[write ' + type + '] saving is disabled for this type, nothing saved.');
             return null;
         }
         const key = mirrorKey(type, messageId);
@@ -803,6 +1011,131 @@ export class taStorage {
         });
     }
 
+    /**
+     * Delete every record that holds an error (failed 1), of every type, under the cleanup lock:
+     * a cursor on the failed_createdAt index per type, then their mirror keys
+     * (removeMirrorKeysIfUnchanged()).
+     * @returns {Promise<object>} the number of records removed, per type
+     */
+    static deleteErrors() {
+        return withCleanupLock(async () => {
+            try {
+                const removed = zeroByType();
+                for (const type of MESSAGE_STORES) {
+                    const gone = await deleteByCursor(type, INDEX_FAILED_CREATED_AT, errorRange());
+                    removed[type] = gone.length;
+                    await removeMirrorKeysIfUnchanged({ [type]: gone });
+                }
+                return removed;
+            } catch (e) {
+                _log.error('deleteErrors error: ' + e);
+                throw e;
+            }
+        });
+    }
+
+    /**
+     * Delete every record older than `days` days (by createdAt), of every type, under the cleanup
+     * lock, with their mirror keys (removeMirrorKeysIfUnchanged()).
+     * @param {number} days a positive integer
+     * @returns {Promise<object>} the number of records removed, per type
+     */
+    static deleteOlderThan(days, now = Date.now()) {
+        if (!Number.isInteger(days) || days <= 0) return Promise.reject(new Error('Invalid number of days: ' + days));
+        return withCleanupLock(async () => {
+            try {
+                const removed = zeroByType();
+                const range = IDBKeyRange.upperBound(cutoff(now, days), true);
+                for (const type of MESSAGE_STORES) {
+                    const gone = await deleteByCursor(type, INDEX_CREATED_AT, range);
+                    removed[type] = gone.length;
+                    await removeMirrorKeysIfUnchanged({ [type]: gone });
+                }
+                return removed;
+            } catch (e) {
+                _log.error('deleteOlderThan error: ' + e);
+                throw e;
+            }
+        });
+    }
+
+    /**
+     * Delete the given records, under the cleanup lock: each only if the database still holds it
+     * with the createdAt given (a record written since then is kept), in one transaction
+     * (putNewerRecords()), then the mirror keys that still hold that createdAt
+     * (removeMirrorKeysIfUnchanged()). The orphans of the storage management page.
+     * @param {{type: string, messageId: string, createdAt: number}[]} entries
+     * @returns {Promise<object>} the number of records removed, per type
+     */
+    static removeEntries(entries) {
+        return withCleanupLock(async () => {
+            try {
+                const valid = entries.filter(e => MESSAGE_STORES.includes(e?.type) && e.messageId);
+                const { removedByType } = await putNewerRecords([], valid);
+                const byType = Object.fromEntries(MESSAGE_STORES.map(type =>
+                    [type, valid.filter(e => e.type === type)]));
+                await removeMirrorKeysIfUnchanged(byType);
+                return removedByType;
+            } catch (e) {
+                _log.error('removeEntries error: ' + e);
+                throw e;
+            }
+        });
+    }
+
+    /**
+     * Fill the empty message metadata of one record, under the cleanup lock (so no cleanup removes
+     * it halfway): rewritten through buildRecord() with the same createdAt (size recomputed), only
+     * if both the mirror value and the database record still have the createdAt given and empty
+     * metadata. Mirror first, then the database, as every write; the database put re-checks the
+     * record in its own transaction. A write of the background (which takes no lock) landing
+     * between the mirror read and the mirror write would be overwritten in the mirror: a window of
+     * one storage.local round trip, left as it is (the realignment cannot tell).
+     *
+     * @param {string} type
+     * @param {string} messageId
+     * @param {number} createdAt the createdAt seen when the entry was listed
+     * @param {object} metadata  { subject, from, message_date } (buildMessageMetadata())
+     * @returns {Promise<boolean>} whether the record was rewritten
+     */
+    static fillMetadata(type, messageId, createdAt, metadata) {
+        if (!MESSAGE_STORES.includes(type)) return Promise.reject(new Error('Unknown message data type: ' + type));
+        return withCleanupLock(async () => {
+            try {
+                const key = mirrorKey(type, messageId);
+                const inMirror = (await browser.storage.local.get(key))[key];
+                if (!isStorableRecord(inMirror, messageId) || inMirror.createdAt !== createdAt || !hasEmptyMetadata(inMirror)) return false;
+                const check = await openTransaction(type, 'readonly');
+                const inDb = await check.store.get(messageId);
+                await check.done;
+                if (!inDb || inDb.createdAt !== createdAt || !hasEmptyMetadata(inDb)) return false;
+
+                const { messageId: _id, createdAt: _at, size: _size, failed: _failed, ...fields } = inDb;
+                const record = taStorage.buildRecord(type, messageId, {
+                    ...fields,
+                    subject: metadata?.subject,
+                    from: metadata?.from,
+                    message_date: metadata?.message_date,
+                }, createdAt);
+                if (hasEmptyMetadata(record)) return false;
+
+                await browser.storage.local.set({ [key]: record });
+                const tx = await openTransaction(type, 'readwrite');
+                const current = await tx.store.get(messageId);
+                let written = false;
+                if (current && current.createdAt === createdAt && hasEmptyMetadata(current)) {
+                    await tx.store.put(record);
+                    written = true;
+                }
+                await tx.done;
+                return written;
+            } catch (e) {
+                _log.error('fillMetadata ' + type + ' error: ' + e);
+                throw e;
+            }
+        });
+    }
+
     // ---- The mirror: rebuild and realignment --------------------------------------------------
 
     /**
@@ -897,70 +1230,70 @@ export class taStorage {
 
     // ---- Cleanup --------------------------------------------------------------------------------
 
-    /** The limits of every type, from the preferences: { [type]: { maxEntries, maxAgeDays } }. */
+    /**
+     * The limits of every type, from the preferences:
+     * { [type]: { maxEntries, maxAgeDays, errorMaxAgeDays } }, each a positive integer or 0 (no limit).
+     */
     static async readLimits() {
-        const keys = MESSAGE_STORES.flatMap(type => [STORAGE_PREFS[type].maxEntries, STORAGE_PREFS[type].maxAgeDays]);
+        const keys = MESSAGE_STORES.flatMap(type => Object.values(STORAGE_PREFS[type]));
         const prefs = await mztaPrefs.getPrefs(keys);
         const out = {};
         for (const type of MESSAGE_STORES) {
             out[type] = {
                 maxEntries: toLimit(prefs[STORAGE_PREFS[type].maxEntries]),
                 maxAgeDays: toLimit(prefs[STORAGE_PREFS[type].maxAgeDays]),
+                errorMaxAgeDays: toLimit(prefs[STORAGE_PREFS[type].errorMaxAgeDays]),
             };
         }
         return out;
     }
 
     /**
-     * The one cleanup routine, under the cleanup lock. For each type: the records older than its
-     * maximum age, then the oldest records beyond its maximum count. A limit of 0 is no limit.
-     * The records are found with the database cursors; their mirror keys are removed with one
-     * storage.local.remove() per type, once its transactions have committed.
+     * The one cleanup routine, under the cleanup lock. For each type, in this order:
+     *   1. the records that hold an error (failed 1) older than its maximum error age (a cursor on
+     *      the failed_createdAt index);
+     *   2. the records older than its maximum age (a cursor on createdAt);
+     *   3. the oldest records beyond its maximum count.
+     * A limit of 0 disables its rule. Each rule is its own readwrite transaction; once they have
+     * committed, the mirror keys of the removed records go (removeMirrorKeysIfUnchanged(): a key
+     * rewritten meanwhile is kept). The manual "Apply rules now" of the storage management page
+     * calls it too: only the scheduled run stores LAST_CLEANUP_KEY.
      *
-     * @param {object} [limits] { [type]: { maxEntries, maxAgeDays } }; read from the preferences
-     *   (before the lock is taken) when omitted
+     * @param {object} [limits] { [type]: { maxEntries, maxAgeDays, errorMaxAgeDays } }; read from
+     *   the preferences (before the lock is taken) when omitted
      * @param {number} [now]
      * @returns {Promise<object>} the number of records removed, per type
      */
     static async cleanup(limits = null, now = Date.now()) {
         const resolved = limits || await taStorage.readLimits();
         return withCleanupLock(async () => {
-            const removed = {};
+            const removed = zeroByType();
             for (const type of MESSAGE_STORES) {
-                const { maxEntries = 0, maxAgeDays = 0 } = resolved[type] || {};
-                removed[type] = 0;
-                const ids = [];
-                const ageLimit = toLimit(maxAgeDays);
-                if (ageLimit > 0) {
+                const { maxEntries, maxAgeDays, errorMaxAgeDays } = normalizeLimits(resolved[type]);
+                const gone = [];
+                if (errorMaxAgeDays > 0) {
+                    gone.push(...await deleteByCursor(type, INDEX_FAILED_CREATED_AT,
+                        errorRange(cutoff(now, errorMaxAgeDays), true)));
+                }
+                if (maxAgeDays > 0) {
+                    gone.push(...await deleteByCursor(type, INDEX_CREATED_AT,
+                        IDBKeyRange.upperBound(cutoff(now, maxAgeDays), true)));
+                }
+                if (maxEntries > 0) {
                     const tx = await openTransaction(type, 'readwrite');
-                    const range = IDBKeyRange.upperBound(now - ageLimit * DAY_MS, true);
-                    let cursor = await tx.store.index(INDEX_CREATED_AT).openCursor(range);
-                    while (cursor) {
-                        ids.push(cursor.primaryKey);
+                    let excess = (await tx.store.count()) - maxEntries;
+                    let cursor = excess > 0 ? await tx.store.index(INDEX_CREATED_AT).openCursor() : null;
+                    while (cursor && excess > 0) {
+                        gone.push({ messageId: cursor.primaryKey, createdAt: cursor.value.createdAt });
                         await cursor.delete();
-                        removed[type]++;
+                        excess--;
                         cursor = await cursor.continue();
                     }
                     await tx.done;
                 }
-                const countLimit = toLimit(maxEntries);
-                if (countLimit > 0) {
-                    const tx = await openTransaction(type, 'readwrite');
-                    let excess = (await tx.store.count()) - countLimit;
-                    if (excess > 0) {
-                        let cursor = await tx.store.index(INDEX_CREATED_AT).openCursor();
-                        while (cursor && excess > 0) {
-                            ids.push(cursor.primaryKey);
-                            await cursor.delete();
-                            removed[type]++;
-                            excess--;
-                            cursor = await cursor.continue();
-                        }
-                    }
-                    await tx.done;
-                }
-                // After the commit: nothing but IndexedDB requests is awaited in a transaction.
-                if (ids.length > 0) await browser.storage.local.remove(ids.map(id => mirrorKey(type, id)));
+                removed[type] = gone.length;
+                // After the commits: nothing but IndexedDB requests is awaited in a transaction.
+                await removeMirrorKeysIfUnchanged({ [type]: gone });
             }
             _log.log('Storage cleanup: removed ' + JSON.stringify(removed));
             return removed;
@@ -968,21 +1301,78 @@ export class taStorage {
     }
 
     /**
+     * What cleanup(limits, now) would remove, per type, from counts only: no record is loaded,
+     * nothing is deleted, no lock is taken (one readonly transaction). For each type:
+     *   - the records older than the age cutoff;
+     *   - plus the errors the error rule removes that the age rule does not reach: those between
+     *     the age cutoff and the error cutoff (all the errors older than the error cutoff when
+     *     there is no age rule; none when the error cutoff is not newer than the age cutoff);
+     *   - plus max(0, total - the two above - maxEntries) for the count rule.
+     * The storage management page passes the values of its form, saved or not. When the database
+     * cannot be read, every type is answered 0.
+     *
+     * @param {object} limits { [type]: { maxEntries, maxAgeDays, errorMaxAgeDays } }
+     * @param {number} [now]
+     * @returns {Promise<object>} the number of records cleanup() would remove, per type
+     */
+    static async previewCleanup(limits, now = Date.now()) {
+        try {
+            await rebuildDone();
+            const tx = await openTransaction(MESSAGE_STORES, 'readonly');
+            const out = zeroByType();
+            for (const type of MESSAGE_STORES) {
+                const { maxEntries, maxAgeDays, errorMaxAgeDays } = normalizeLimits(limits?.[type]);
+                const store = tx.objectStore(type);
+                const total = await store.count();
+                const ageCut = maxAgeDays > 0 ? cutoff(now, maxAgeDays) : -Infinity;
+                const byAge = maxAgeDays > 0
+                    ? await store.index(INDEX_CREATED_AT).count(IDBKeyRange.upperBound(ageCut, true))
+                    : 0;
+                let byError = 0;
+                if (errorMaxAgeDays > 0) {
+                    const errorCut = cutoff(now, errorMaxAgeDays);
+                    if (errorCut > ageCut) {
+                        byError = await store.index(INDEX_FAILED_CREATED_AT)
+                            .count(IDBKeyRange.bound([1, ageCut], [1, errorCut], false, true));
+                    }
+                }
+                const byCount = maxEntries > 0 ? Math.max(0, total - byAge - byError - maxEntries) : 0;
+                out[type] = byAge + byError + byCount;
+            }
+            await tx.done;
+            return out;
+        } catch (e) {
+            _log.error('previewCleanup error (answered as 0): ' + e);
+            return zeroByType();
+        }
+    }
+
+    /**
      * Start the scheduled cleanup (background only, without the alarms permission): one timer at
-     * a time, no periodic checks. At start, if the last completed cleanup is older than 24 hours
-     * (or there is none) it runs at once, else 2 hours later; after each run its time is saved
-     * in storage.local and the next run is set 24 hours later. A failed run is logged and still
-     * sets the next one. Calling it again replaces the pending timer.
+     * a time, no periodic checks. With message_storage_cleanup_auto false (read through
+     * mztaPrefs, so a policy value counts) it only stops the pending timer. Otherwise, if the last
+     * completed cleanup is older than 24 hours (or there is none) it runs at once, else 2 hours
+     * later; after each successful run { time, removed } is saved in storage.local and the next
+     * run is set 24 hours later. A failed run is logged and still sets the next one. Calling it
+     * again replaces the pending timer (the background calls it on every change of the switch).
      */
     static async startCleanupSchedule() {
         taStorage.stopCleanupSchedule();
-        let last = 0;
+        const generation = _scheduleGeneration;
+        let auto = true;
         try {
-            const stored = await browser.storage.local.get(LAST_CLEANUP_KEY);
-            last = Number(stored[LAST_CLEANUP_KEY]) || 0;
+            auto = (await mztaPrefs.getPref(CLEANUP_AUTO_PREF)) !== false;
         } catch (e) {
-            _log.error('Could not read the time of the last storage cleanup: ' + e);
+            _log.error('Could not read ' + CLEANUP_AUTO_PREF + ': ' + e);
         }
+        // A later call (the switch changed again) has taken over meanwhile.
+        if (generation !== _scheduleGeneration) return;
+        if (!auto) {
+            _log.log('The scheduled storage cleanup is off.');
+            return;
+        }
+        const last = (await taStorage.getLastCleanup())?.time || 0;
+        if (generation !== _scheduleGeneration) return;
         if (Date.now() - last >= CLEANUP_INTERVAL_MS) {
             await taStorage._runScheduledCleanup();
         } else {
@@ -994,6 +1384,8 @@ export class taStorage {
     static stopCleanupSchedule() {
         if (_cleanupTimer !== null) clearTimeout(_cleanupTimer);
         _cleanupTimer = null;
+        // A run in progress does not set its next one.
+        _scheduleGeneration++;
     }
 
     static _scheduleCleanup(delay) {
@@ -1005,12 +1397,14 @@ export class taStorage {
     }
 
     static async _runScheduledCleanup() {
+        const generation = _scheduleGeneration;
         try {
-            await taStorage.cleanup();
-            await browser.storage.local.set({ [LAST_CLEANUP_KEY]: Date.now() });
+            const removed = await taStorage.cleanup();
+            await browser.storage.local.set({ [LAST_CLEANUP_KEY]: { time: Date.now(), removed } });
         } catch (e) {
             _log.error('Storage cleanup error: ' + e);
         }
-        taStorage._scheduleCleanup(CLEANUP_INTERVAL_MS);
+        // Not when the schedule was stopped or restarted while this run was going on.
+        if (generation === _scheduleGeneration) taStorage._scheduleCleanup(CLEANUP_INTERVAL_MS);
     }
 }
