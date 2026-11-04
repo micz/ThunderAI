@@ -14,7 +14,8 @@ Sparks reads `cal.category.fromPrefs()` again when constructing the event, accep
 exact names only, removes duplicates and ignores invalid or unknown entries. The
 `capabilities.categories.maxCount` of the calendar that receives the event limits the
 result; when the selected calendar cannot receive it, that is the first eligible one in
-the calendar list's order, as Thunderbird's dialog picks it; a native warning
+the calendar list's order, as Thunderbird's dialog picks it, and with no eligible
+calendar Sparks reports an error instead of opening nothing; a native warning
 explains any resulting loss. Invalid optional metadata does not prevent the rest
 of the event from being opened for review.
 

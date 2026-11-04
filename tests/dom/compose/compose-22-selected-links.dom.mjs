@@ -8,6 +8,7 @@ import { assertHarnessClean } from '../../helpers/core/dom-harness.mjs';
 import { composeTests } from '../../helpers/known-issues/compose.mjs';
 import {
     DISPLAY_URL,
+    caretAfter,
     clearSelection,
     openMailDocument,
     select,
@@ -19,7 +20,9 @@ const ctx = await openMailDocument({
     displayedMessageId: 'selected-links@example.test',
     html: '<div class="moz-text-html"><p>Séminaire. <a href="https://example.org/visio?id=1">Rejoindre la visioconférence</a>'
         + ' — <a href="https://example.org/p.pdf">Programme</a></p><p>Fin du message, sans lien.</p>'
-        + '<p><a href="https://example.org/join"><img alt="Bouton rejoindre" src="b.png"></a></p></div>',
+        + '<p><a href="https://example.org/join"><img alt="Bouton rejoindre" src="b.png"></a></p>'
+        + '<p>Avant <a hidden href="https://example.org/h1">masqué un</a><span style="display: none"><a href="https://example.org/h2">masqué deux</a></span>'
+        + '<a style="visibility: hidden" href="https://example.org/h3">masqué trois</a> <a href="https://example.org/v">Visible<span hidden> secret</span></a> après</p></div>',
 });
 after(() => ctx.close());
 const k = composeTests('22');
@@ -42,9 +45,24 @@ k.test('no-link', S, 'a selection touching no link gives none, not the other lin
     assert.deepEqual(await links(), []);
 });
 
-k.test('no-selection', S, 'without a selection there is nothing', async () => {
+k.test('no-selection', S, 'without a selection, or with a collapsed caret, there is no selection to read (null)', async () => {
     clearSelection(ctx);
-    assert.deepEqual(await links(), []);
+    assert.equal(await links(), null);
+    caretAfter(ctx, 'Rejoindre');
+    assert.equal(await links(), null);
+});
+
+k.test('image-only', S, 'an image selected alone, with no text, still gives its link, described by its alt', async () => {
+    const range = ctx.document.createRange();
+    range.selectNode(ctx.document.querySelector('img'));
+    ctx.window.getSelection().removeAllRanges();
+    ctx.window.getSelection().addRange(range);
+    assert.deepEqual(await links(), [{ text: 'Bouton rejoindre', href: 'https://example.org/join' }]);
+});
+
+k.test('hidden', S, 'hidden links inside the selection, and the hidden part of a label, are left out', async () => {
+    select(ctx, 'Avant', 'après');
+    assert.deepEqual(await links(), [{ text: 'Visible', href: 'https://example.org/v' }]);
 });
 
 k.test('harness-clean', S, 'the content script ran on modelled APIs only', () => assertHarnessClean(ctx));

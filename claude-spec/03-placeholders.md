@@ -785,8 +785,14 @@ Three things bite when adding one:
 `{%mail_links%}` gives the AI the link targets the text extractions leave out: they keep
 what a link shows, not where it goes. With a selection, the content script's
 `getSelectedLinks` gives the anchors the selection touches, the one around it included:
-`getSelectedHtml` clones a selection made inside a link's text without its `<a>`. Without a
-selection, `getMailLinks()` reads the body HTML with the hidden-element rule of the text side.
+`getSelectedHtml` clones a selection made inside a link's text without its `<a>`, and an image
+selected alone has no text. It answers `null` without a selection (a collapsed caret included),
+and skips hidden anchors and the hidden parts of a label, by the same rule as the body
+(`mztaIsHiddenElement()`, shared with `mztaStripHidden()`). The menu action asks for it only when
+the prompt holds `{%mail_links%}`, or for the calendar event prompt with
+`calendar_metadata_enabled` on; never for clipboard text, and a failure only means the HTML in
+hand is read. Without a selection, `getMailLinks()` reads the body HTML with the hidden-element
+rule of the text side.
 Both go through `mailLinksFromAnchors()`, in document order: HTTP/HTTPS targets through the
 calendar link rules, each once, at most 30 (the first 30: a later link is left out), each text
 cut to 100 characters. A link made of an image only takes the image's `alt` as its text. The

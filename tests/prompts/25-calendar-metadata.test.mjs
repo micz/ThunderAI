@@ -211,12 +211,15 @@ k.test('links-absent', 'with the option on, a model omitting links, or giving a 
     assert.deepEqual(ctx.utils.normalizeCalendarMetadata({summary:'S'},CAPS),{summary:'S'});
 });
 
-k.test('mail-links-selection', 'a selection gives the links it touches, which its cloned HTML can lose', async () => {
+k.test('mail-links-selection', 'a selection gives the links it touches, an image without text included; no selection reads the HTML', async () => {
     const text='{%mail_links%}';
     const value=async args => ph.replacePlaceholders({text,replacements:await ph.getPlaceholdersValues({prompt_text:text,...args}),use_default_value:false});
     const selection_links=[{text:'Join  the meeting',href:' https://example.org/join '},{text:'Mail',href:'mailto:a@example.org'},{href:'https://example.org/join'}];
     assert.deepEqual(JSON.parse(await value({msg_text:{selection:'Join',selection_links},selection_html:'Join'})),[{text:'Join the meeting',url:'https://example.org/join'}]);
-    assert.deepEqual(JSON.parse(await value({msg_text:{selection:'',selection_links:[{text:'x',href:'https://example.org/x'}]}})),[]);
+    // An image selected alone has no text, and still its link.
+    assert.deepEqual(JSON.parse(await value({msg_text:{selection:'',selection_links:[{text:'Join',href:'https://example.org/join'}]}})),[{text:'Join',url:'https://example.org/join'}]);
+    // null: no selection, so the HTML in hand (none here).
+    assert.deepEqual(JSON.parse(await value({msg_text:{selection:'',selection_links:null}})),[]);
     assert.deepEqual(JSON.parse(await value({msg_text:{selection:'Join',selection_links,from_clipboard:true}})),[]);
 });
 

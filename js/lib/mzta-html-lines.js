@@ -138,12 +138,17 @@ const MZTA_HIDDEN_STYLE_RE =
 // so its rules are not even present to consult.
 function mztaStripHidden(root) {
   for (const el of root.querySelectorAll('[style], [hidden]')) {
-    if (el.hasAttribute('hidden') ||
-        MZTA_HIDDEN_STYLE_RE.test(el.getAttribute('style') || '')) {
+    if (mztaIsHiddenElement(el)) {
       el.remove();
     }
   }
   return root;
+}
+
+// The same rule for one element, without removing it: for live nodes the caller must not
+// change (the selected links of js/mzta-compose-script.js).
+function mztaIsHiddenElement(el) {
+  return el.hasAttribute('hidden') || MZTA_HIDDEN_STYLE_RE.test(el.getAttribute('style') || '');
 }
 
 // Inject the line structure into `root`, IN PLACE, then let the caller read the

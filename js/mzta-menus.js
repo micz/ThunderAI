@@ -205,9 +205,6 @@ export class mzta_Menus {
             }
             const raw_selection = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" });
             const raw_selection_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" });
-            // Only with a selection: the links it touches, for {%mail_links%}. Its cloned HTML
-            // above loses the <a> around a selection made inside a link's text.
-            const raw_selection_links = raw_selection ? await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedLinks" }) : [];
             // A message display (a mail tab or a message tab or window): read only the mail's
             // own part containers, so a banner another add-on draws in the same body is not
             // sent to the AI. A compose window reads the whole body, as before.
@@ -244,7 +241,6 @@ export class mzta_Menus {
             return {tabId: tabs[0].id,
                 selection: sel.text,
                 selection_html: sel.html,
-                selection_links: Array.isArray(raw_selection_links) ? raw_selection_links : [],
                 text: normalizePlain(raw_text),
                 html: htmlOrFromText(raw_html, raw_text),
                 only_typed_text: only_typed_text,
@@ -333,6 +329,22 @@ export class mzta_Menus {
                 sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message : browser.i18n.getMessage('prompt_selection_needed') });
                 taWorkingStatus.stopWorking();
                 return {ok:'0'};
+            }
+
+            // {%mail_links%} reads the links the selection touches (getSelectedLinks), since the
+            // selected HTML loses the <a> around a selection made inside a link's text. Asked only
+            // when the prompt needs links, never for clipboard text, and never fatal: without an
+            // answer the HTML in hand is read, as without a selection.
+            const needs_links = curr_prompt.id !== 'prompt_get_calendar_event_from_clipboard' &&
+                (placeholdersUtils.hasPlaceholder(curr_prompt.text, 'mail_links') ||
+                 (curr_prompt.id === 'prompt_get_calendar_event' && await mztaPrefs.getPref('calendar_metadata_enabled') === true));
+            if (needs_links) {
+                try {
+                    const raw_links = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedLinks" });
+                    msg_text.selection_links = Array.isArray(raw_links) ? raw_links : null;
+                } catch (err) {
+                    this.logger.log("getSelectedLinks unavailable, the HTML in hand is read instead.");
+                }
             }
     
             let body_text = '';

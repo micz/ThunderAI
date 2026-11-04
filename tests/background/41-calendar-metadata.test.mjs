@@ -37,7 +37,10 @@ ctx.m.tabAnswer=(_id,message) => {
     if (message.command==='getTextOnly') return 'Synthetic seminar, see https://example.org/programme.pdf';
     if (message.command==='getOnlyTypedText') return {text:'',html:''};
     if (message.command==='getFullHtml') return fullHtml;
-    if (message.command==='getSelectedLinks') return selectedLinks;
+    if (message.command==='getSelectedLinks') {
+        if (selectedLinks instanceof Error) throw selectedLinks;
+        return selectedLinks;
+    }
     if (['getSelectedText','getSelectedHtml','getOnlyQuotedText'].includes(message.command)) return '';
     return true;
 };
@@ -45,6 +48,8 @@ ctx.workers.respond=answering(() => JSON.stringify(modelAnswer));
 const modelEvent=() => ({startDate:'2026-11-04T14:00:00',endDate:'2026-11-04T15:00:00',summary:'Synthetic seminar',
     description:'Synthetic agenda',location:'Room',forceAllDay:false,attendees:[],reminderMinutes:20,
     categories:['Séminaire','unknown'],links:['HTTPS://EXAMPLE.ORG:443/programme.pdf','https://example.org/programme.pdf']});
+
+const linkRequests=() => ctx.m.sentTo(7,'getSelectedLinks').length;
 
 async function run(id='prompt_get_calendar_event') {
     modelAnswer=modelEvent();
@@ -81,7 +86,9 @@ k.test('clipboard-to-companion', 'clipboard uses the same metadata path and neve
     t.after(() => { if(old) Object.defineProperty(globalThis,'navigator',old); else delete globalThis.navigator; fullHtml=''; });
     mode='new';
     fullHtml='<a href="https://example.org/unrelated">The mail on screen</a>';
+    const asked=linkRequests();
     const {result,data,prompt}=await run('prompt_get_calendar_event_from_clipboard');
+    assert.equal(linkRequests(),asked,'clipboard text never uses the links of the mail on screen');
     assert.deepEqual(result,{ok:'1'});
     assert.ok(prompt.includes('Synthetic clipboard seminar'));
     assert.ok(prompt.includes(JSON.stringify(categories)));
@@ -104,10 +111,11 @@ k.test('option-off', 'with the option off nothing is asked, Sparks is not querie
     await ctx.ctl.browser.storage.local.set({calendar_metadata_enabled:false});
     t.after(() => ctx.ctl.browser.storage.local.set({calendar_metadata_enabled:true}));
     mode='new';
-    const before=capabilityRequests;
+    const before=capabilityRequests, asked=linkRequests();
     const {result,data,prompt}=await run();
     assert.deepEqual(result,{ok:'1'});
     assert.equal(capabilityRequests,before);
+    assert.equal(linkRequests(),asked,'no link is read when nothing asks for links');
     assert.equal(prompt.includes(JSON.stringify(categories)),false);
     assert.equal('categories' in data,false);
     assert.equal('links' in data,false);
@@ -154,6 +162,17 @@ k.test('categories-token-keeps-links', 'a saved prompt giving only the categorie
     assert.ok(prompt.includes('a field "links"'));
     assert.ok(prompt.includes('"url":"https://example.org/join"'));
     assert.equal(prompt.includes('a field "categories"'),false);
+});
+
+k.test('links-command-optional', 'a failing selected-links request never stops the action: the body links are used', async t => {
+    selectedLinks=new Error('Synthetic content script failure');
+    t.after(() => { selectedLinks=[]; });
+    mode='new';
+    const asked=linkRequests();
+    const {result,prompt}=await run();
+    assert.deepEqual(result,{ok:'1'});
+    assert.equal(linkRequests(),asked+1);
+    assert.ok(prompt.includes('a field "links"'));
 });
 
 k.test('dialog-error', 'a companion failure is reported without claiming the dialog opened', async () => {

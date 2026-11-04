@@ -807,8 +807,10 @@ export const placeholdersUtils = {
                     // A selection gives the links it touches (getSelectedLinks in the content
                     // script): its cloned HTML loses the <a> around a selection made in a link.
                     let mail_links = [];
+                    // selection_links: an array for a real selection (an image alone has no
+                    // text), null or absent without one.
                     if (!msg_text?.from_clipboard) {
-                        mail_links = (msg_text?.selection && Array.isArray(msg_text?.selection_links))
+                        mail_links = Array.isArray(msg_text?.selection_links)
                             ? mailLinksFromAnchors(msg_text.selection_links)
                             : getMailLinks(selection_html || msg_text?.html);
                     }
