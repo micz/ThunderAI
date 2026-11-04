@@ -1405,10 +1405,14 @@ async function askSparks(action) {
 export async function getSparksCalendars() {
   try {
     const response = await askSparks("listWritableCalendars");
-    if (!Array.isArray(response) || !response.every(calendar => calendar && typeof calendar === "object" &&
+    if (!Array.isArray(response)) return null;
+    // Array.from(): every() and map() skip the holes of a sparse array, which would then reach
+    // the page as undefined entries.
+    const list = Array.from(response);
+    if (!list.every(calendar => calendar && typeof calendar === "object" &&
         typeof calendar.id === "string" && calendar.id.length > 0 &&
         typeof calendar.name === "string" && typeof calendar.type === "string")) return null;
-    return response.map(({id, name, type}) => ({id, name, type}));
+    return list.map(({id, name, type}) => ({id, name, type}));
   } catch (e) {
     return null;
   }

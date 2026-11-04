@@ -9,13 +9,15 @@ import { caseTests } from '../helpers/known-issues/background.mjs';
 
 const k=caseTests('42-default-calendar');
 const outgoing=[];
-let calendars;
+const listed=[{id:'calendar-id',name:'One',type:'caldav'}];
+let calendars=listed, listRequests=0;
 const ctx=await bgContext({
     local:{...API,get_calendar_event:true,calendar_preferred_id:'calendar-id'},
     external:async (id,message) => {
         assert.equal(id,'thunderai-sparks@micz.it');
         if (message.action==='checkPresence') return '3.1.1';
         if (message.action==='listWritableCalendars') {
+            listRequests++;
             if (calendars instanceof Error) throw calendars;
             return calendars;
         }
@@ -45,18 +47,37 @@ async function run() {
     return {result,message:outgoing.at(-1),data:JSON.parse(outgoing.at(-1).calendar_event_data)};
 }
 
+const alerts=() => ctx.m.sentTo(7,'sendAlert').length;
+
 k.test('sent-next-to-json', 'the stored calendar id is sent next to the AI JSON, never inside it', async () => {
+    const before=alerts();
     const {result,message,data}=await run();
+    assert.equal(alerts(),before);
     assert.deepEqual(result,{ok:'1'});
     assert.equal(message.preferred_calendar_id,'calendar-id');
     assert.equal('preferred_calendar_id' in data,false);
     assert.equal(data.summary,'Synthetic seminar');
 });
 
-k.test('unset', 'with no stored choice the id is empty, and Sparks keeps the selected calendar', async t => {
+k.test('unset', 'with no stored choice the id is empty, Sparks keeps the selected calendar, and nothing is checked', async t => {
     await ctx.ctl.browser.storage.local.set({calendar_preferred_id:''});
     t.after(() => ctx.ctl.browser.storage.local.set({calendar_preferred_id:'calendar-id'}));
+    const [requests,before]=[listRequests,alerts()];
     assert.equal((await run()).message.preferred_calendar_id,'');
+    assert.equal(listRequests,requests);
+    assert.equal(alerts(),before);
+});
+
+k.test('old-sparks-warns', 'a Sparks that cannot list calendars ignores the choice: the user is told, and the event still opens', async t => {
+    t.after(() => { calendars=listed; });
+    for (calendars of [new Error('absent'),true]) {
+        const before=alerts();
+        const {result,message}=await run();
+        assert.deepEqual(result,{ok:'1'});
+        assert.equal(message.preferred_calendar_id,'calendar-id');
+        assert.equal(alerts(),before+1);
+        assert.equal(ctx.m.sentTo(7,'sendAlert').at(-1).message,ctx.ctl.browser.i18n.getMessage('calendar_preferred_unsupported'));
+    }
 });
 
 k.test('calendars', 'the calendar list is kept only when Sparks gives a valid one', async () => {
@@ -64,9 +85,12 @@ k.test('calendars', 'the calendar list is kept only when Sparks gives a valid on
     assert.deepEqual(await ctx.utils.getSparksCalendars(),[{id:'one',name:'One',type:'caldav'}]);
     calendars=[];
     assert.deepEqual(await ctx.utils.getSparksCalendars(),[]);
-    for (calendars of [new Error('absent'),true,null,{},[null],[{id:'',name:'x',type:'y'}],[{id:'a',name:3,type:'y'}],[{id:'a',name:'x'}]]) {
+    const sparse=[{id:'a',name:'x',type:'y'}];
+    sparse.length=2;
+    for (calendars of [new Error('absent'),true,null,{},[null],Array(1),sparse,[{id:'',name:'x',type:'y'}],[{id:'a',name:3,type:'y'}],[{id:'a',name:'x'}]]) {
         assert.equal(await ctx.utils.getSparksCalendars(),null);
     }
+    calendars=listed;
 });
 
 k.test('calendars-timeout', 'an older Sparks that never answers leaves no list after two seconds', async t => {
@@ -76,6 +100,7 @@ k.test('calendars-timeout', 'an older Sparks that never answers leaves no list a
     await new Promise(resolve => setImmediate(resolve));
     t.mock.timers.tick(2000);
     assert.equal(await pending,null);
+    calendars=listed;
 });
 
 k.test('policy-excluded', 'a calendar id exists in one profile only, so no policy can set it', async () => {
