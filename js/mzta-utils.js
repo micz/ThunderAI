@@ -1396,8 +1396,8 @@ export async function getSparksCapabilities() {
     ]);
     if (!response || typeof response !== "object" || Array.isArray(response) ||
         !Array.isArray(response.calendarEventFields) || !Array.isArray(response.calendarCategories) ||
-        !response.calendarEventFields.every(value => typeof value === "string" && value.length > 0) ||
-        !response.calendarCategories.every(value => typeof value === "string" && value.length > 0)) return unavailable;
+        !Array.from(response.calendarEventFields).every(value => typeof value === "string" && value.length > 0) ||
+        !Array.from(response.calendarCategories).every(value => typeof value === "string" && value.length > 0)) return unavailable;
     return {
       calendarEventFields: [...new Set(response.calendarEventFields)],
       calendarCategories: [...new Set(response.calendarCategories)]

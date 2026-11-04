@@ -47,6 +47,8 @@ k.test('unavailable', 'absent Sparks or malformed capabilities resolve to [] and
     for (response of [new Error('absent'),true,'3.1.1',null,[],{},
         {calendarEventFields:['links'],calendarCategories:[42]},
         {calendarEventFields:[null],calendarCategories:[]},
+        {calendarEventFields:Array(1),calendarCategories:[]},
+        {calendarEventFields:['links'],calendarCategories:Array(1)},
     ]) {
         assert.deepEqual(await ctx.utils.getSparksCapabilities(),{calendarEventFields:[],calendarCategories:[]});
         const text='{%calendar_categories%}';
