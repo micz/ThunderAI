@@ -503,5 +503,132 @@
     },
     "chatgpt_textarea_not_found_error": {
         "message": "Het lijkt erop dat het te lang duurt om de ChatGPT-pagina te laden. Wanneer de pagina gereed is, klik de button rechts. Als het probleem aanhoudt, controleer dan de status van de dienst."
+    },
+    "btn_show_differences": {
+        "message": "Toon verschillen"
+    },
+    "ChatGPT_Models_Error_fetching": {
+        "message": "Fout bij ophalen van ChatGPT modellen"
+    },
+    "GoogleGemini_Models": {
+        "message": "Google Gemini API modellen"
+    },
+    "get_ai_summary": {
+        "message": "AI samenvatting"
+    },
+    "apiwebchat_usage_total": {
+        "message": "Totaal"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "Ontvangen data"
+    },
+    "Anthropic_Version": {
+        "message": "Claude API versie"
+    },
+    "Anthropic_Models": {
+        "message": "Claude modellen"
+    },
+    "ai_processing_setting_locked": {
+        "message": "Deze instelling wordt door uw organisatie beheerd."
+    },
+    "prefs_OptionText_add_tags_first_uppercase": {
+        "message": "Eerste karakter hoofdletter"
+    },
+    "prefs_OptionText_add_tags_auto_include_sent": {
+        "message": "Voeg ook tags toe aan verzonden e-mails"
+    },
+    "prefs_ollama_format_json": {
+        "message": "Forceer JSON output"
+    },
+    "prefs_insecure_origins_remove": {
+        "message": "Verwijder"
+    },
+    "ai_processing": {
+        "message": "Lokaal verwerken content…"
+    },
+    "ai_processing_chunks": {
+        "message": "Verwerken content... deel $CURRENT$ van $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "add_tags_too_many_messages": {
+        "message": "Je hebt $SELECTED$ berichten geselecteerd, maar maximaal $MAX$ kunnen per keer getagd worden. Selecteer minder berichten.",
+        "placeholders": {
+            "selected": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            }
+        }
+    },
+    "specific_integration_mandatory_badge": {
+        "message": "Verplicht"
+    },
+    "SpamFilter_PageTitle": {
+        "message": "Beheer spamfilter instellingen"
+    },
+    "save": {
+        "message": "Opslaan"
+    },
+    "AddTags_account_settings_global_none": {
+        "message": "geen"
+    },
+    "AddTags_account_settings_override": {
+        "message": "Gebruik een andere waarde voor dit account"
+    },
+    "AccountSelector_AutoTags_infoline": {
+        "message": "Iedere wijziging wordt onmiddellijk opgeslagen."
+    },
+    "AddTags_account_settings_custom_suffix": {
+        "message": "(eigen instellingen)"
+    },
+    "AddTags_account_settings_remove": {
+        "message": "Terugzetten naar de standaardinstellingen"
+    },
+    "AccountSelector_Spamfilter": {
+        "message": "Selecteer de accounts waar het automatische spamfilter ingeschakeld dient te worden"
+    },
+    "addtags_excl_list_infoline2": {
+        "message": "Voeg één woord per regel toe of scheid met een komma."
+    },
+    "AddTags_account_settings_copy_prompt": {
+        "message": "Kopieer de standaardprompt"
+    },
+    "AddTags_account_settings_global": {
+        "message": "Standaard: $VALUE$",
+        "placeholders": {
+            "value": {
+                "content": "$1",
+                "example": "5"
+            }
+        }
+    },
+    "AddTags_account_settings_infoline": {
+        "message": "Selecteer een account om afzonderlijke instellingen te gebruiken. Deze worden gebruikt voor de berichten in dat account in plaats van de standaardinstellingen."
+    },
+    "AddTags_account_settings_infoline2": {
+        "message": "Elke optie volgt de standaardinstelling die rechts wordt weergegeven, totdat je de schakelaar naast de naam inschakelt. Daarna kun je voor dit account een eigen waarde instellen."
+    },
+    "AddTags_account_settings_placeholder": {
+        "message": "Geen prompt voor dit account; de standaardprompt wordt gebruikt."
+    },
+    "AddTags_account_settings_prompt_title": {
+        "message": "Prompt voor dit account"
+    },
+    "addtags_dialog_title": {
+        "message": "Voeg tags toe aan de e-mail"
+    },
+    "addtags_exclude_tag": {
+        "message": "Zonder tag uit"
+    },
+    "addtags_no_tags_received": {
+        "message": "AI heeft geen tags teruggestuurd."
     }
 }
