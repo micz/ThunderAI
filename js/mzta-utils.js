@@ -1384,28 +1384,43 @@ export function applyPromptConnection(prefs, prompt) {
     return out;
 }
 
-// Capability discovery is independent of the legacy version-string handshake. Older
-// Sparks listeners may keep the response channel open forever for unknown actions.
-export async function getSparksCapabilities() {
+const SPARKS_TIMED_OUT = Symbol("timeout");
+
+// Older Sparks listeners may keep the response channel open forever for unknown actions,
+// so every newer request is bounded to two seconds.
+async function askSparks(action) {
   let timer;
-  const unavailable = { calendarEventFields: [], calendarCategories: [] };
   try {
-    const response = await Promise.race([
-      browser.runtime.sendMessage('thunderai-sparks@micz.it', {action: "getCapabilities"}),
-      new Promise(resolve => { timer = setTimeout(() => resolve(null), 2000); })
+    return await Promise.race([
+      browser.runtime.sendMessage('thunderai-sparks@micz.it', {action}),
+      new Promise(resolve => { timer = setTimeout(() => resolve(SPARKS_TIMED_OUT), 2000); })
     ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Capability discovery is independent of the legacy version-string handshake.
+export async function getSparksCapabilities() {
+  // The reason only: a reply can hold category names, and an error anything.
+  const unavailable = reason => {
+    console.warn("[ThunderAI] Sparks calendar capabilities unavailable (" + reason + "): native categories and attachments are disabled.");
+    return { calendarEventFields: [], calendarCategories: [] };
+  };
+  try {
+    const response = await askSparks("getCapabilities");
+    if (response === SPARKS_TIMED_OUT) return unavailable("timeout");
     if (!response || typeof response !== "object" || Array.isArray(response) ||
         !Array.isArray(response.calendarEventFields) || !Array.isArray(response.calendarCategories) ||
         !Array.from(response.calendarEventFields).every(value => typeof value === "string" && value.length > 0) ||
-        !Array.from(response.calendarCategories).every(value => typeof value === "string" && value.length > 0)) return unavailable;
+        !Array.from(response.calendarCategories).every(value => typeof value === "string")) return unavailable("invalid reply");
     return {
       calendarEventFields: [...new Set(response.calendarEventFields)],
-      calendarCategories: [...new Set(response.calendarCategories)]
+      // An empty name can sit in Thunderbird's catalogue ("a,,b"): skipped, not fatal.
+      calendarCategories: [...new Set(response.calendarCategories.filter(value => value.length > 0))]
     };
   } catch (e) {
-    return unavailable;
-  } finally {
-    clearTimeout(timer);
+    return unavailable("no reply");
   }
 }
 
@@ -1415,11 +1430,72 @@ function normalizedCalendarLink(value) {
   try {
     const url = new URL(value);
     if (!["http:", "https:"].includes(url.protocol) || !url.hostname ||
-        url.username || url.password || value.split("/")[2].includes("@")) return null;
+        url.username || url.password || value.split(/[/?#]/)[2].includes("@")) return null;
     return url.href;
   } catch (e) {
     return null;
   }
+}
+
+const MAIL_LINKS_MAX = 30;
+const MAIL_LINK_TEXT_MAX = 100;
+
+// The links of a message as [{text, url}], in document order, each target once. The text
+// extractions keep what a link shows, not where it goes, so a target hidden behind "Join the
+// meeting" would never reach the AI. HTTP/HTTPS only, and the hidden-element rule of the text
+// side: hidden markup must not hand the AI a link the reader never saw.
+export function getMailLinks(htmlString) {
+  if (!/<a\s/i.test(String(htmlString ?? ''))) return [];
+  const doc = new DOMParser().parseFromString(String(htmlString), 'text/html');
+  globalThis.mztaStripHidden(doc.body);
+  const links = new Map();
+  for (const anchor of doc.body.querySelectorAll('a[href]')) {
+    const url = normalizedCalendarLink(anchor.getAttribute('href').trim());
+    if (url && !links.has(url)) links.set(url, anchor.textContent.replace(/\s+/g, ' ').trim());
+    if (links.size === MAIL_LINKS_MAX) break;
+  }
+  return [...links].map(([url, text]) => ({ text: truncateText(text, MAIL_LINK_TEXT_MAX), url }));
+}
+
+// The links a text already carries. A scan cannot tell the last character of a URL from
+// the punctuation around it ("see URL.", "[x](URL)"), so every shorter form counts too.
+function calendarLinksInText(text) {
+  const found = new Set();
+  for (const match of (text.match(/https?:\/\/[^\s<>"\u0000-\u001f]+/gi) || []).flatMap(found => found.split("]("))) {
+    let candidate = match, previous;
+    do {
+      previous = candidate;
+      const link = normalizedCalendarLink(candidate);
+      if (link) found.add(link);
+      candidate = candidate.replace(/[.,;:!?'’”»`)\]}*_]$/u, "");
+    } while (candidate !== previous);
+  }
+  return found;
+}
+
+const LINK_CLOSING_BRACKETS = { ')': '(', ']': '[', '}': '{' };
+
+// A URL found in text, without the punctuation after it. A closing bracket stays when the URL
+// opened it: https://example.org/Foo_(bar) is whole, "(https://example.org/a)" is not.
+function withoutTrailingPunctuation(found) {
+  let link = found;
+  while (link) {
+    const last = link.at(-1);
+    const opening = LINK_CLOSING_BRACKETS[last];
+    const unmatched = opening && link.split(opening).length < link.split(last).length;
+    if (!unmatched && !/[.,;:!?'’”»`*]/u.test(last)) break;
+    link = link.slice(0, -1);
+  }
+  return link;
+}
+
+// The links a description shows, in reading order: what the model chose to tell the reader,
+// used when it filled the links field with nothing usable.
+function calendarLinksShownIn(text) {
+  return [...new Set((text.match(/https?:\/\/[^\s<>"\u0000-\u001f]+/gi) || [])
+    .flatMap(found => found.split("]("))
+    .map(found => normalizedCalendarLink(withoutTrailingPunctuation(found)))
+    .filter(Boolean))];
 }
 
 // Mutate only the two optional fields and, for valid links, the description. A
@@ -1431,16 +1507,19 @@ export function normalizeCalendarMetadata(data, capabilities, logger) {
     let values = [];
     if (Array.isArray(original)) {
       values = field === "links"
-        ? [...new Set(original.map(normalizedCalendarLink).filter(Boolean))]
+        // value?.url: a model can copy the {text, url} shape of {%mail_links%}.
+        ? [...new Set(original.map(value => normalizedCalendarLink(value?.url ?? value)).filter(Boolean))]
         : [...new Set(original.filter(value => typeof value === "string" &&
             capabilities.calendarCategories.includes(value)))];
     }
     const ignored = Array.isArray(original) ? original.length - values.length : 1;
     if (ignored) logger?.log("Calendar metadata ignored entries: " + field + "=" + ignored);
+    if (field === "links" && Array.isArray(original) && !values.length && typeof data.description === "string") {
+      values = calendarLinksShownIn(data.description);
+    }
     if (field === "links" && values.length) {
       const description = typeof data.description === "string" ? data.description : "";
-      const existing = new Set((description.match(/https?:\/\/[^\s<>"\u0000-\u001f]+/gi) || [])
-        .map(normalizedCalendarLink).filter(Boolean));
+      const existing = calendarLinksInText(description);
       const missing = values.filter(link => !existing.has(link));
       if (missing.length) data.description = [description, ...missing].filter(Boolean).join("\n");
     }

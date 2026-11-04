@@ -312,6 +312,7 @@ export class mzta_Menus {
                    }
                    msg_text.selection = clipboardText;
                    msg_text.text = clipboardText;
+                   msg_text.from_clipboard = true;
                 } catch (e) {
                    console.error("Clipboard read error:", e);
                    sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('clipboard_read_error') });
@@ -600,6 +601,7 @@ export class mzta_Menus {
                             'calendar_enforce_timezone',
                             'calendar_timezone',
                             'calendar_append_email_link',
+                            'calendar_metadata_enabled',
                             'calendar_reminder_enabled',
                             'calendar_reminder_rules',
                             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
@@ -622,6 +624,7 @@ export class mzta_Menus {
                         *  plus an optional "reminderMinutes", only with the reminder option on (see normalizeReminderMinutes()) [#887]
                         */
                         fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt, curr_prompt.text, prefs_at.calendar_reminder_enabled, prefs_at.calendar_reminder_rules);
+                        fullPrompt = await taPromptUtils.appendCalendarMetadataStatement(fullPrompt, curr_prompt.text, prefs_at.calendar_metadata_enabled, { msg_text, selection_html });
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_GetCalendarEvent = new mzta_specialCommand({
                             processingClient: this.processingClient,
@@ -658,7 +661,13 @@ export class mzta_Menus {
                         }
                         // Reminder: the checkbox is the single switch (off = field always removed) [#887]
                         normalizeReminderMinutes(calendar_event_data_obj, prefs_at.calendar_reminder_enabled, this.logger);
-                        normalizeCalendarMetadata(calendar_event_data_obj, await getSparksCapabilities(), this.logger);
+                        // Categories and links: the option is the single switch, like the reminder's.
+                        if (prefs_at.calendar_metadata_enabled) {
+                            normalizeCalendarMetadata(calendar_event_data_obj, await getSparksCapabilities(), this.logger);
+                        } else {
+                            delete calendar_event_data_obj.categories;
+                            delete calendar_event_data_obj.links;
+                        }
                         // Timezone management
                         calendar_event_data_obj.use_timezone = false;
                         if(prefs_at.calendar_enforce_timezone){

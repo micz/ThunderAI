@@ -9,14 +9,15 @@ import { caseTests } from '../helpers/known-issues/background.mjs';
 const k=caseTests('41-calendar-metadata');
 const categories=['Séminaire','Name, "quoted"'];
 const outgoing=[];
-let mode='new', modelAnswer;
+let mode='new', modelAnswer, fullHtml='', capabilityRequests=0;
 const ctx=await bgContext({
     local:{...API,get_calendar_event:true,get_calendar_event_from_clipboard:true,calendar_append_email_link:true,
-        calendar_enforce_timezone:true,calendar_timezone:'Europe/Paris',calendar_reminder_enabled:true},
+        calendar_enforce_timezone:true,calendar_timezone:'Europe/Paris',calendar_reminder_enabled:true,calendar_metadata_enabled:true},
     external:async (id,message) => {
         assert.equal(id,'thunderai-sparks@micz.it');
         if (message.action==='checkPresence') return '3.1.1';
         if (message.action==='getCapabilities') {
+            capabilityRequests++;
             if (mode==='error') throw new Error('absent');
             return mode==='new' ? {calendarEventFields:['categories','links'],calendarCategories:categories} : true;
         }
@@ -35,7 +36,8 @@ ctx.m.tabAnswer=(_id,message) => {
     if (message.command==='getSelectedText') return 'Synthetic seminar, see https://example.org/programme.pdf';
     if (message.command==='getTextOnly') return 'Synthetic seminar, see https://example.org/programme.pdf';
     if (message.command==='getOnlyTypedText') return {text:'',html:''};
-    if (['getSelectedText','getSelectedHtml','getFullHtml','getOnlyQuotedText'].includes(message.command)) return '';
+    if (message.command==='getFullHtml') return fullHtml;
+    if (['getSelectedText','getSelectedHtml','getOnlyQuotedText'].includes(message.command)) return '';
     return true;
 };
 ctx.workers.respond=answering(() => JSON.stringify(modelAnswer));
@@ -75,8 +77,9 @@ k.test('email-to-companion', 'email menu expands categories before the worker an
 k.test('clipboard-to-companion', 'clipboard uses the same metadata path and never adds a source-mail URI', async t => {
     const old=Object.getOwnPropertyDescriptor(globalThis,'navigator');
     Object.defineProperty(globalThis,'navigator',{configurable:true,value:{clipboard:{readText:async () => 'Synthetic clipboard seminar'}}});
-    t.after(() => { if(old) Object.defineProperty(globalThis,'navigator',old); else delete globalThis.navigator; });
+    t.after(() => { if(old) Object.defineProperty(globalThis,'navigator',old); else delete globalThis.navigator; fullHtml=''; });
     mode='new';
+    fullHtml='<a href="https://example.org/unrelated">The mail on screen</a>';
     const {result,data,prompt}=await run('prompt_get_calendar_event_from_clipboard');
     assert.deepEqual(result,{ok:'1'});
     assert.ok(prompt.includes('Synthetic clipboard seminar'));
@@ -94,6 +97,42 @@ k.test('old-or-absent-capabilities', 'older/malformed and rejected capabilities 
         assert.ok(data.description.includes('https://example.org/programme.pdf'));
         assert.equal(prompt.includes('{%calendar_categories%}'),false);
     }
+});
+
+k.test('option-off', 'with the option off nothing is asked, Sparks is not queried and the fields of an answer are dropped', async t => {
+    await ctx.ctl.browser.storage.local.set({calendar_metadata_enabled:false});
+    t.after(() => ctx.ctl.browser.storage.local.set({calendar_metadata_enabled:true}));
+    mode='new';
+    const before=capabilityRequests;
+    const {result,data,prompt}=await run();
+    assert.deepEqual(result,{ok:'1'});
+    assert.equal(capabilityRequests,before);
+    assert.equal(prompt.includes(JSON.stringify(categories)),false);
+    assert.equal('categories' in data,false);
+    assert.equal('links' in data,false);
+    assert.equal(data.description.includes('https://example.org/programme.pdf'),false);
+    assert.equal(data.summary,'Synthetic seminar');
+});
+
+k.test('token-needs-option', 'with the option off, a saved prompt holding the category token still gets no fields', async t => {
+    const stored=(await ctx.prompts.getSpecialPrompts()).map(p => p.id==='prompt_get_calendar_event'
+        ? {...p,text:'Event JSON with categories from {%calendar_categories%} and links. {%mail_text_body_or_selected%}'} : p);
+    await ctx.ctl.browser.storage.local.set({calendar_metadata_enabled:false,_special_prompts:stored});
+    await ctx.bg._reload_menus();
+    t.after(async () => {
+        await ctx.ctl.browser.storage.local.remove('_special_prompts');
+        await ctx.ctl.browser.storage.local.set({calendar_metadata_enabled:true});
+        await ctx.bg._reload_menus();
+    });
+    mode='new';
+    const {result,data,prompt}=await run();
+    assert.deepEqual(result,{ok:'1'});
+    assert.ok(prompt.includes('Event JSON with categories from '+JSON.stringify(categories)));
+    // The reminder format starts with the same words: check a part of this statement only.
+    assert.equal(prompt.includes('add to the JSON object these two fields'),false);
+    assert.equal('categories' in data,false);
+    assert.equal('links' in data,false);
+    assert.equal(data.summary,'Synthetic seminar');
 });
 
 k.test('dialog-error', 'a companion failure is reported without claiming the dialog opened', async () => {

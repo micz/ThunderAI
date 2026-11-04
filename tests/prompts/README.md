@@ -193,4 +193,4 @@ they are input for improving spec 02/03:
 
 `25-calendar-metadata` covers lazy JSON category expansion, autocomplete,
 capability validation and timeout, URI normalization, optional-field failures,
-old-Sparks description fallback and stored prompt preservation.
+old-Sparks description fallback and stored prompt preservation. `{%mail_links%}` is covered here for its registration and the clipboard rule, and with real markup in `dom/compose/compose-21-mail-links`.

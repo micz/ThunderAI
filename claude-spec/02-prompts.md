@@ -866,18 +866,29 @@ Custom prompts are stored in `browser.storage.local` and managed via `pages/cust
 
 ## Calendar event: native categories and URI links
 
-The default English event prompt requests optional `categories` and `links`
-arrays and contains `{%calendar_categories%}`. Saved, custom and managed prompt
-texts are preserved; no migration rewrites them. The model must choose exact
-existing category names only when justified, otherwise `[]`. Participant rules
-are unchanged; a user's prompt may still request `attendees: []`.
+Built like the reminder, for the same reasons: it works with any saved prompt in any language.
+`calendar_metadata_enabled` (default off, nothing new sent anywhere) is the single switch for
+asking and for accepting, as the reminder checkbox is. On, `appendCalendarMetadataStatement()`
+appends `prompt_calendar_metadata_format`, resolved like a prompt (`{%calendar_categories%}`,
+`{%mail_links%}`), unless the saved template already holds `{%calendar_categories%}`. Off, nothing
+is appended and `categories` and `links` are deleted from the answer, whatever the prompt asks;
+`getSparksCapabilities()` is not called for the answer, though a token the user wrote is still
+resolved like any placeholder. The settings page warns when the live prompt holds
+`{%calendar_categories%}` or `{%mail_links%}` with the option off (`promptAsksCalendarMetadata()`).
+The shipped prompt texts are unchanged and no migration rewrites a saved one. The model must choose
+exact existing category names only when justified, otherwise `[]`. Participant rules are
+unchanged; a user's prompt may still request `attendees: []`.
 
 Both email and clipboard menu actions use `getSparksCapabilities()` (validated
 arrays, two-second timeout, independent of the unchanged presence/version check)
 and `normalizeCalendarMetadata()` after date/reminder normalization. Categories
 are restricted to the advertised list. HTTP/HTTPS URLs are parsed, normalized and
 deduplicated, rejecting credentials, controls, whitespace and backslashes. Valid
-links are retained in description. Unsupported native fields are stripped for
-older or unresponsive Sparks; timezone, reminders and the code-added `mid:` link
+links are retained in description, not repeated when already present there, even
+wrapped in punctuation or Markdown. An entry shaped `{text, url}`, as in `{%mail_links%}`,
+counts by its `url`. When `links` is an array with nothing usable, the links shown in the
+description are used in reading order; the description is not read when `links` is absent. Unsupported native fields are stripped for
+older or unresponsive Sparks, with a console warning giving the reason and no reply
+content; timezone, reminders and the code-added `mid:` link
 keep their existing rules. The native review dialog remains mandatory.
 See [the JSON contract and native validation procedure](../docs/calendar-event-metadata.md).

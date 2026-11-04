@@ -246,7 +246,7 @@ Object.keys(prefs_default)
 The rules are applied in one place, `isPolicyExcludedKey(key)` (exported, pure): `buildAllowlist()`
 uses it, and so does the CI report of [Adding a policy-settable preference](#adding-a-policy-settable-preference).
 
-**142 of 152 keys** are policy-settable. The derivation already covers the generated keys:
+**143 of 153 keys** are policy-settable. The derivation already covers the generated keys:
 the six `{prefix}_use_specific_integration` / `{prefix}_connection_type` pairs (from
 `special_prompts_with_integration`) and the per-provider `{integration}_{key}` connection
 keys (from `integration_options_config`) are all spread into `prefs_default` in
@@ -509,7 +509,7 @@ overlays read), the page guard of [The connection panel](08b-managed-connections
 
 Either way the administrator key reference on micz.it is now out of date — it is generated
 from `prefs_default` by hand, so a new or newly excluded preference has to be reflected
-there too. So do the "142 of 152" count in [The allowlist](#the-allowlist) and the counts in
+there too. So do the "143 of 153" count in [The allowlist](#the-allowlist) and the counts in
 `tests/managed/04-allowlist-derivation.test.mjs`, which fails until they are updated.
 
 ## Adding a restriction
@@ -596,7 +596,7 @@ locks - or offers as an initial value - every allowlisted key that has an `.opti
 policy. A new preference with a control on one of those pages is covered the moment it is
 declared.
 
-`04-allowlist-derivation` also checks the **142 of 152** count in [The allowlist](#the-allowlist).
+`04-allowlist-derivation` also checks the **143 of 153** count in [The allowlist](#the-allowlist).
 When a preference is added, update that sentence and the test's expected count together.
 
 **Not covered:** the parts of `mzta-background.js` that only run inside its startup - the

@@ -21,7 +21,8 @@ import {
     sanitizeMailHeaders,
     joinAddressList,
     truncateText,
-    getSparksCapabilities
+    getSparksCapabilities,
+    getMailLinks
  } from './mzta-utils.js';
 
 /*  ================= PLACEHOLDERS PROPERTIES ========================================
@@ -337,6 +338,15 @@ const defaultPlaceholders = [
         id: 'mail_html_body_or_selected',
         name: "__MSG_placeholder_mail_html_body_or_selected__",
         default_value: "",
+        type: 0,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
+    },
+    {
+        id: 'mail_links',
+        name: "__MSG_placeholder_mail_links__",
+        default_value: "[]",
         type: 0,
         is_default: "1",
         is_dynamic: "0",
@@ -789,6 +799,11 @@ export const placeholdersUtils = {
                     break;
                 case 'mail_html_body_or_selected':
                     finalSubs['mail_html_body_or_selected'] = placeholdersUtils.failSafePlaceholders(selection_html || msg_text?.html);
+                    break;
+                case 'mail_links':
+                    // Clipboard text carries no link targets, and the mail on screen is not its
+                    // source: its links must not be offered as if they belonged to that text.
+                    finalSubs['mail_links'] = JSON.stringify(msg_text?.from_clipboard ? [] : getMailLinks(selection_html || msg_text?.html));
                     break;
                 case 'author':
                     finalSubs['author'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(curr_message.author));

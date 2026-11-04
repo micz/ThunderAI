@@ -61,6 +61,7 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`); `mail_text_bod
 | `mail_attachments_info` | Information about the email's attachments | 1 | |
 | `mail_text_body_or_selected` | Plain text body, or selected text if any; `{%mail_text_body_or_selected:N%}` cuts it to N characters | 0 | ✓ |
 | `mail_html_body_or_selected` | HTML body, or selected HTML if any | 0 | |
+| `mail_links` | The links of the selection, else of the body, as a JSON array of `{text, url}`; `[]` for clipboard text | 0 | |
 | `mail_plain_text_part` | The original `text/plain` MIME part, verbatim (no HTML conversion) | 1 | |
 
 The newline contracts below are what the model receives: the API chat window posts the prompt to
@@ -778,6 +779,16 @@ Three things bite when adding one:
   `/{%\s*(.*?)\s*%}/` literal and *do* accept spaces. That mismatch let a guard substitute a token
   whose value was never gathered (fixed for all four call sites: the `mail_plain_text_part` fetch
   in `js/mzta-menus.js`, `mail_typed_text` ×2, and `additional_text`).
+
+## Mail links
+
+`{%mail_links%}` gives the AI the link targets the text extractions leave out: they keep
+what a link shows, not where it goes. `getMailLinks()` reads the HTML of the selection,
+else of the body, in document order: HTTP/HTTPS targets through the calendar link rules,
+each once, at most 30, each text cut to 100 characters, and the hidden-element rule of the
+text side. It runs only when the token is present. On the clipboard path the value is `[]`:
+`msg_text.from_clipboard` is set because the HTML in hand belongs to the mail on screen, not
+to the clipboard text. The targets go to the AI provider like the rest of the message.
 
 ## Native calendar categories
 
