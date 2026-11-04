@@ -205,6 +205,9 @@ export class mzta_Menus {
             }
             const raw_selection = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" });
             const raw_selection_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" });
+            // Only with a selection: the links it touches, for {%mail_links%}. Its cloned HTML
+            // above loses the <a> around a selection made inside a link's text.
+            const raw_selection_links = raw_selection ? await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedLinks" }) : [];
             // A message display (a mail tab or a message tab or window): read only the mail's
             // own part containers, so a banner another add-on draws in the same body is not
             // sent to the AI. A compose window reads the whole body, as before.
@@ -241,6 +244,7 @@ export class mzta_Menus {
             return {tabId: tabs[0].id,
                 selection: sel.text,
                 selection_html: sel.html,
+                selection_links: Array.isArray(raw_selection_links) ? raw_selection_links : [],
                 text: normalizePlain(raw_text),
                 html: htmlOrFromText(raw_html, raw_text),
                 only_typed_text: only_typed_text,

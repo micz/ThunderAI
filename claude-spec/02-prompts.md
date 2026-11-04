@@ -867,14 +867,17 @@ Custom prompts are stored in `browser.storage.local` and managed via `pages/cust
 ## Calendar event: native categories and URI links
 
 Built like the reminder, for the same reasons: it works with any saved prompt in any language.
-`calendar_metadata_enabled` (default off, nothing new sent anywhere) is the single switch for
-asking and for accepting, as the reminder checkbox is. On, `appendCalendarMetadataStatement()`
-appends `prompt_calendar_metadata_format`, resolved like a prompt (`{%calendar_categories%}`,
-`{%mail_links%}`), unless the saved template already holds `{%calendar_categories%}`. Off, nothing
-is appended and `categories` and `links` are deleted from the answer, whatever the prompt asks;
-`getSparksCapabilities()` is not called for the answer, though a token the user wrote is still
-resolved like any placeholder. The settings page warns when the live prompt holds
-`{%calendar_categories%}` or `{%mail_links%}` with the option off (`promptAsksCalendarMetadata()`).
+`calendar_metadata_enabled` (default off: the option itself sends nothing new) is the single
+switch for asking and for accepting, as the reminder checkbox is. On,
+`appendCalendarMetadataStatement()` appends two parts, each resolved like a prompt:
+`prompt_calendar_categories_format` (`{%calendar_categories%}`) unless the saved template holds
+that token, and `prompt_calendar_links_format` (`{%mail_links%}`) unless it holds that one. A
+template giving only the categories still gets the link targets. Off, nothing is appended and
+`categories` and `links` are deleted from the answer, whatever the prompt asks, and
+`getSparksCapabilities()` is not called for the answer. The option does not control tokens the
+user wrote: like any placeholder they are resolved and sent to the provider. The settings page
+warns, saying so, when the live prompt holds `{%calendar_categories%}` or `{%mail_links%}` with the
+option off (`promptAsksCalendarMetadata()`).
 The shipped prompt texts are unchanged and no migration rewrites a saved one. The model must choose
 exact existing category names only when justified, otherwise `[]`. Participant rules are
 unchanged; a user's prompt may still request `attendees: []`.
@@ -886,8 +889,9 @@ are restricted to the advertised list. HTTP/HTTPS URLs are parsed, normalized an
 deduplicated, rejecting credentials, controls, whitespace and backslashes. Valid
 links are retained in description, not repeated when already present there, even
 wrapped in punctuation or Markdown. An entry shaped `{text, url}`, as in `{%mail_links%}`,
-counts by its `url`. When `links` is an array with nothing usable, the links shown in the
-description are used in reading order; the description is not read when `links` is absent. Unsupported native fields are stripped for
+counts by its `url`. When `links` is absent, not an array or holds nothing usable, the links
+shown in the description are used in reading order: the option asked for links, and a model can
+leave an optional field out. Unsupported native fields are stripped for
 older or unresponsive Sparks, with a console warning giving the reason and no reply
 content; timezone, reminders and the code-added `mid:` link
 keep their existing rules. The native review dialog remains mandatory.

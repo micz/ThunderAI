@@ -1440,6 +1440,23 @@ function normalizedCalendarLink(value) {
 const MAIL_LINKS_MAX = 30;
 const MAIL_LINK_TEXT_MAX = 100;
 
+// Raw links [{text, href}] as [{text, url}]: HTTP/HTTPS targets through the calendar link
+// rules, each once, in order, at most MAIL_LINKS_MAX, each text cut to MAIL_LINK_TEXT_MAX.
+export function mailLinksFromAnchors(anchors) {
+  const links = new Map();
+  for (const anchor of Array.isArray(anchors) ? anchors : []) {
+    const url = normalizedCalendarLink(typeof anchor?.href === 'string' ? anchor.href.trim() : null);
+    if (url && !links.has(url)) links.set(url, String(anchor.text ?? '').replace(/\s+/g, ' ').trim());
+    if (links.size === MAIL_LINKS_MAX) break;
+  }
+  return [...links].map(([url, text]) => ({ text: truncateText(text, MAIL_LINK_TEXT_MAX), url }));
+}
+
+// A link's visible text, or for a link made of an image only, the image's description.
+export function mailLinkText(anchor) {
+  return anchor.textContent.replace(/\s+/g, ' ').trim() || anchor.querySelector('img[alt]')?.getAttribute('alt') || '';
+}
+
 // The links of a message as [{text, url}], in document order, each target once. The text
 // extractions keep what a link shows, not where it goes, so a target hidden behind "Join the
 // meeting" would never reach the AI. HTTP/HTTPS only, and the hidden-element rule of the text
@@ -1448,13 +1465,8 @@ export function getMailLinks(htmlString) {
   if (!/<a\s/i.test(String(htmlString ?? ''))) return [];
   const doc = new DOMParser().parseFromString(String(htmlString), 'text/html');
   globalThis.mztaStripHidden(doc.body);
-  const links = new Map();
-  for (const anchor of doc.body.querySelectorAll('a[href]')) {
-    const url = normalizedCalendarLink(anchor.getAttribute('href').trim());
-    if (url && !links.has(url)) links.set(url, anchor.textContent.replace(/\s+/g, ' ').trim());
-    if (links.size === MAIL_LINKS_MAX) break;
-  }
-  return [...links].map(([url, text]) => ({ text: truncateText(text, MAIL_LINK_TEXT_MAX), url }));
+  return mailLinksFromAnchors([...doc.body.querySelectorAll('a[href]')]
+    .map(anchor => ({ text: mailLinkText(anchor), href: anchor.getAttribute('href') })));
 }
 
 // The links a text already carries. A scan cannot tell the last character of a URL from
@@ -1502,7 +1514,8 @@ function calendarLinksShownIn(text) {
 // missing capability strips native metadata; the historical event still opens.
 export function normalizeCalendarMetadata(data, capabilities, logger) {
   for (const field of ["categories", "links"]) {
-    if (!(field in data)) continue;
+    const present = field in data;
+    if (!present && field !== "links") continue;
     const original = data[field];
     let values = [];
     if (Array.isArray(original)) {
@@ -1512,9 +1525,11 @@ export function normalizeCalendarMetadata(data, capabilities, logger) {
         : [...new Set(original.filter(value => typeof value === "string" &&
             capabilities.calendarCategories.includes(value)))];
     }
-    const ignored = Array.isArray(original) ? original.length - values.length : 1;
+    const ignored = Array.isArray(original) ? original.length - values.length : (present ? 1 : 0);
     if (ignored) logger?.log("Calendar metadata ignored entries: " + field + "=" + ignored);
-    if (field === "links" && Array.isArray(original) && !values.length && typeof data.description === "string") {
+    // Only called with the option on, which asks for links: a model leaving them out, or giving
+    // nothing usable, still gets the links it wrote in the description.
+    if (field === "links" && !values.length && typeof data.description === "string") {
       values = calendarLinksShownIn(data.description);
     }
     if (field === "links" && values.length) {
@@ -1523,7 +1538,7 @@ export function normalizeCalendarMetadata(data, capabilities, logger) {
       const missing = values.filter(link => !existing.has(link));
       if (missing.length) data.description = [description, ...missing].filter(Boolean).join("\n");
     }
-    if (capabilities.calendarEventFields.includes(field) && Array.isArray(original)) data[field] = values;
+    if (capabilities.calendarEventFields.includes(field) && (Array.isArray(original) || values.length)) data[field] = values;
     else delete data[field];
   }
   return data;

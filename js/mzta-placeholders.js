@@ -22,7 +22,8 @@ import {
     joinAddressList,
     truncateText,
     getSparksCapabilities,
-    getMailLinks
+    getMailLinks,
+    mailLinksFromAnchors
  } from './mzta-utils.js';
 
 /*  ================= PLACEHOLDERS PROPERTIES ========================================
@@ -800,11 +801,20 @@ export const placeholdersUtils = {
                 case 'mail_html_body_or_selected':
                     finalSubs['mail_html_body_or_selected'] = placeholdersUtils.failSafePlaceholders(selection_html || msg_text?.html);
                     break;
-                case 'mail_links':
+                case 'mail_links': {
                     // Clipboard text carries no link targets, and the mail on screen is not its
                     // source: its links must not be offered as if they belonged to that text.
-                    finalSubs['mail_links'] = JSON.stringify(msg_text?.from_clipboard ? [] : getMailLinks(selection_html || msg_text?.html));
+                    // A selection gives the links it touches (getSelectedLinks in the content
+                    // script): its cloned HTML loses the <a> around a selection made in a link.
+                    let mail_links = [];
+                    if (!msg_text?.from_clipboard) {
+                        mail_links = (msg_text?.selection && Array.isArray(msg_text?.selection_links))
+                            ? mailLinksFromAnchors(msg_text.selection_links)
+                            : getMailLinks(selection_html || msg_text?.html);
+                    }
+                    finalSubs['mail_links'] = JSON.stringify(mail_links);
                     break;
+                }
                 case 'author':
                     finalSubs['author'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(curr_message.author));
                     break;

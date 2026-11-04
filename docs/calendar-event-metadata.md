@@ -11,8 +11,10 @@ Events accept two optional JSON fields:
 
 Categories must already exist in Thunderbird. No catalogue entries are created.
 Sparks reads `cal.category.fromPrefs()` again when constructing the event, accepts
-exact names only, removes duplicates and ignores invalid or unknown entries. A
-calendar's `capabilities.categories.maxCount` limits the result; a native warning
+exact names only, removes duplicates and ignores invalid or unknown entries. The
+`capabilities.categories.maxCount` of the calendar that receives the event limits the
+result; when the selected calendar cannot receive it, that is the first eligible one in
+the calendar list's order, as Thunderbird's dialog picks it; a native warning
 explains any resulting loss. Invalid optional metadata does not prevent the rest
 of the event from being opened for review.
 
@@ -66,10 +68,11 @@ rewritten. The option is the single switch, as the reminder's: off, nothing is
 asked and the `categories` and `links` of an answer are dropped, whatever the prompt
 says.
 
-Your own prompt can ask in its own words, with the option on: a prompt holding
-`{%calendar_categories%}` then gets no added instruction. The settings page warns
-when your prompt holds `{%calendar_categories%}` or `{%mail_links%}` with the option
-off. For example:
+Your own prompt can ask in its own words, with the option on: the part about
+categories is left out when the prompt holds `{%calendar_categories%}`, the part
+about links when it holds `{%mail_links%}`. The option does not control the tokens
+you write: like any placeholder, they are filled in and sent to the AI provider. The
+settings page warns when your prompt holds one with the option off. For example:
 
 ```text
 Available categories (JSON): {%calendar_categories%}
@@ -86,13 +89,16 @@ with accents, commas and quotes. It is offered in placeholder autocomplete. If
 the catalogue is unavailable it becomes `[]`. You can keep `attendees: []` in
 your own prompt; no attendee preference or additional metadata switch is needed.
 
-`{%mail_links%}` lists the links of the selection, else of the message, as a JSON
-array of `{text, url}`: the text the AI reads keeps what a link shows, not where it
-goes. HTTP/HTTPS targets only, at most 30, hidden elements left out, and `[]` for
-clipboard text. These addresses are sent to the AI provider, like the mail text.
+`{%mail_links%}` lists the links the selection touches, else those of the message,
+as a JSON array of `{text, url}`: the text the AI reads keeps what a link shows, not
+where it goes. A selection made inside a link's text keeps that link. HTTP/HTTPS
+targets only, the first 30, hidden elements left out, an image-only link described
+by its `alt`, and `[]` for clipboard text. These addresses are sent to the AI
+provider, like the mail text.
 
-ThunderAI also accepts `links` entries shaped like that list. When the model gives
-no usable link, the links it wrote in the description are used, in reading order.
+ThunderAI also accepts `links` entries shaped like that list. When the model leaves
+`links` out or gives no usable link, the links it wrote in the description are used,
+in reading order.
 
 ## Observed on Google Calendar
 

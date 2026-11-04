@@ -143,14 +143,15 @@ k.test('mail-links-clipboard', 'clipboard text has no link targets: the mail on 
     }
 });
 
-k.test('statement-switch', 'the instruction is added with the option on, unless the prompt already asks', () => {
-    const statement=ctx.ctl.browser.i18n.getMessage('prompt_calendar_metadata_format');
-    assert.ok(statement.includes('{%calendar_categories%}') && statement.includes('{%mail_links%}'));
+k.test('statement-switch', 'each part is added with the option on, unless the prompt already gives its own data', () => {
+    const categoriesPart=ctx.ctl.browser.i18n.getMessage('prompt_calendar_categories_format');
+    const linksPart=ctx.ctl.browser.i18n.getMessage('prompt_calendar_links_format');
+    assert.ok(categoriesPart.includes('{%calendar_categories%}') && linksPart.includes('{%mail_links%}'));
     assert.equal(promptUtils.getCalendarMetadataStatement('A saved prompt',false),'');
-    assert.equal(promptUtils.getCalendarMetadataStatement('A saved prompt',true),statement);
-    for (const asked of ['Mine: {%calendar_categories%}','Mine: {% calendar_categories %}']) {
-        assert.equal(promptUtils.getCalendarMetadataStatement(asked,true),'');
-    }
+    assert.equal(promptUtils.getCalendarMetadataStatement('A saved prompt',true),categoriesPart+' \n'+linksPart);
+    assert.equal(promptUtils.getCalendarMetadataStatement('Mine: {% calendar_categories %}',true),linksPart);
+    assert.equal(promptUtils.getCalendarMetadataStatement('Mine: {%mail_links%}',true),categoriesPart);
+    assert.equal(promptUtils.getCalendarMetadataStatement('Mine: {%calendar_categories%} {%mail_links%}',true),'');
 });
 
 k.test('prompt-asks', 'a prompt asking in its own words is recognized by either token, spaced forms too', () => {
@@ -169,7 +170,13 @@ k.test('statement-resolved', 'the added instruction is resolved like a prompt, a
     assert.ok(full.startsWith('Base \n'));
     assert.ok(full.includes(JSON.stringify(CATEGORIES)));
     assert.equal(full.includes('{%'),false);
-    assert.equal(await promptUtils.appendCalendarMetadataStatement('{%calendar_categories%}','{%calendar_categories%}',true,{msg_text:{}}),'{%calendar_categories%}');
+    const both='{%calendar_categories%} {%mail_links%}';
+    assert.equal(await promptUtils.appendCalendarMetadataStatement(both,both,true,{msg_text:{}}),both);
+    // A prompt giving only the categories still gets the links part, and the hidden targets.
+    const links=await promptUtils.appendCalendarMetadataStatement('X {%calendar_categories%}','X {%calendar_categories%}',true,
+        {msg_text:{selection:'Join',selection_links:[{text:'Join',href:'https://example.org/join'}]}});
+    assert.ok(links.includes('"url":"https://example.org/join"'));
+    assert.equal(links.includes(JSON.stringify(CATEGORIES)),false);
 });
 
 k.test('shipped-prompt', 'the shipped event prompt does not ask for categories or links: the option does', () => {
@@ -195,11 +202,22 @@ k.test('links-from-description', 'a model giving no usable link falls back on th
     }
 });
 
-k.test('links-no-fallback', 'the description is not read when the prompt does not ask for links, or Sparks cannot take them', () => {
+k.test('links-absent', 'with the option on, a model omitting links, or giving a non-array, still gets the links of its description', () => {
     const description='See https://example.org/a';
-    assert.deepEqual(ctx.utils.normalizeCalendarMetadata({description},CAPS),{description});
-    assert.deepEqual(ctx.utils.normalizeCalendarMetadata({description,links:4},CAPS),{description});
-    assert.deepEqual(ctx.utils.normalizeCalendarMetadata({description,links:[]},{calendarEventFields:[],calendarCategories:[]}),{description});
+    for (const fields of [{},{links:null},{links:4}]) {
+        assert.deepEqual(ctx.utils.normalizeCalendarMetadata({description,...fields},CAPS),{description,links:['https://example.org/a']});
+    }
+    assert.deepEqual(ctx.utils.normalizeCalendarMetadata({description},{calendarEventFields:[],calendarCategories:[]}),{description});
+    assert.deepEqual(ctx.utils.normalizeCalendarMetadata({summary:'S'},CAPS),{summary:'S'});
+});
+
+k.test('mail-links-selection', 'a selection gives the links it touches, which its cloned HTML can lose', async () => {
+    const text='{%mail_links%}';
+    const value=async args => ph.replacePlaceholders({text,replacements:await ph.getPlaceholdersValues({prompt_text:text,...args}),use_default_value:false});
+    const selection_links=[{text:'Join  the meeting',href:' https://example.org/join '},{text:'Mail',href:'mailto:a@example.org'},{href:'https://example.org/join'}];
+    assert.deepEqual(JSON.parse(await value({msg_text:{selection:'Join',selection_links},selection_html:'Join'})),[{text:'Join the meeting',url:'https://example.org/join'}]);
+    assert.deepEqual(JSON.parse(await value({msg_text:{selection:'',selection_links:[{text:'x',href:'https://example.org/x'}]}})),[]);
+    assert.deepEqual(JSON.parse(await value({msg_text:{selection:'Join',selection_links,from_clipboard:true}})),[]);
 });
 
 k.test('legacy-fallback', 'old Sparks gets no new fields but keeps valid URLs in the description', () => {

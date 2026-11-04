@@ -170,10 +170,15 @@ export const taPromptUtils = {
     // Text appended to the calendar event prompt to ask for existing categories and links; ''
     // with the option off. The same option is the single switch for accepting them, in
     // js/mzta-menus.js, as the reminder's. It works with any saved prompt in any language, and
-    // the shipped text stays as it is. A prompt holding the category token gives the list itself.
+    // the shipped text stays as it is. Two parts, each left out when the prompt already gives
+    // its data: a prompt holding only {%calendar_categories%} still needs the link targets.
     getCalendarMetadataStatement(promptTemplate, enabled){
-        if(!enabled || placeholdersUtils.hasPlaceholder(String(promptTemplate ?? ''), 'calendar_categories')) return '';
-        return browser.i18n.getMessage('prompt_calendar_metadata_format');
+        if(!enabled) return '';
+        const text = String(promptTemplate ?? '');
+        const parts = [];
+        if(!placeholdersUtils.hasPlaceholder(text, 'calendar_categories')) parts.push(browser.i18n.getMessage('prompt_calendar_categories_format'));
+        if(!placeholdersUtils.hasPlaceholder(text, 'mail_links')) parts.push(browser.i18n.getMessage('prompt_calendar_links_format'));
+        return parts.join(" \n");
     },
 
     // Async, unlike the reminder's: the statement holds placeholders, which preparePrompt() never

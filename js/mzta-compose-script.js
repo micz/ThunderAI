@@ -637,6 +637,28 @@ switch (message.command) {
     return Promise.resolve(div.innerHTML);
   }
 
+  case "getSelectedLinks": {
+    // The links the selection touches, as [{text, href}], for {%mail_links%}. getSelectedHtml
+    // cannot say: a selection inside a link's text clones that text without its <a>.
+    const selection = window.getSelection();
+    const links = [];
+    for (let i = 0; selection && i < selection.rangeCount; i++) {
+      const range = selection.getRangeAt(i);
+      const node = range.commonAncestorContainer;
+      const root = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+      if (!root) continue;
+      for (const anchor of [root.closest('a[href]'), ...root.querySelectorAll('a[href]')]) {
+        if (!anchor || !range.intersectsNode(anchor)) continue;
+        if (MZTA_INJECTED_SELECTORS.some(selector => anchor.closest(selector))) continue;
+        links.push({
+          text: anchor.textContent.replace(/\s+/g, ' ').trim() || anchor.querySelector('img[alt]')?.getAttribute('alt') || '',
+          href: anchor.getAttribute('href')
+        });
+      }
+    }
+    return Promise.resolve(links);
+  }
+
   case "replaceSelectedText": {
     const selectedText = window.getSelection().toString();
     let force_insert = false;

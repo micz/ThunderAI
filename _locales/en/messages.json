@@ -4424,20 +4424,24 @@
     "message": "Existing Thunderbird calendar categories (JSON array; [] when Sparks is unavailable)",
     "description": "Name of the calendar_categories placeholder in autocomplete; its value is a JSON array of native calendar category names provided by Sparks."
   },
-  "prompt_calendar_metadata_format": {
-    "message": "In addition to the fields described above, add to the JSON object these two fields. \"categories\": an array with the names, from this exact JSON list of existing calendar categories, that the text justifies: {%calendar_categories%}. Never invent a name; use [] if none matches. \"links\": an array of URL strings with the relevant absolute HTTP or HTTPS addresses, such as video or programme links, the most useful one first, or [] if there are none. Links can hide their address behind text; these are the links of the message, with their visible text and their target (JSON): {%mail_links%}. Keep these URLs in the description too. Do not download files.",
-    "description": "Instruction appended to the calendar event prompt when the 'Let the AI fill in categories and links' option is on; keep the {%placeholder%} tokens and the JSON keys categories and links unchanged."
+  "prompt_calendar_categories_format": {
+    "message": "In addition to the fields described above, add to the JSON object a field \"categories\": an array with the names, from this exact JSON list of existing calendar categories, that the text justifies: {%calendar_categories%}. Never invent a name; use [] if none matches.",
+    "description": "Instruction appended to the calendar event prompt when 'Let the AI fill in categories and links' is on and the prompt does not give the categories itself; keep the {%calendar_categories%} token and the JSON key categories unchanged."
+  },
+  "prompt_calendar_links_format": {
+    "message": "In addition to the fields described above, add to the JSON object a field \"links\": an array of URL strings with the relevant absolute HTTP or HTTPS addresses, such as video or programme links, the most useful one first, or [] if there are none. Links can hide their address behind text; these are the links of the message, with their visible text and their target (JSON): {%mail_links%}. Keep these URLs in the description too. Do not download files.",
+    "description": "Instruction appended to the calendar event prompt when 'Let the AI fill in categories and links' is on and the prompt does not give the message links itself; keep the {%mail_links%} token and the JSON key links unchanged."
   },
   "prefs_OptionText_calendar_metadata_enabled": {
     "message": "Let the AI fill in categories and links",
     "description": "Calendar Event settings page: name of the switch asking the AI for existing calendar categories and for the useful links of the message."
   },
   "prefs_OptionText_calendar_metadata_enabled_Info": {
-    "message": "If checked, the AI chooses among your existing calendar categories and lists the useful links of the message, which become the link and the attachments of the event. It works with any saved prompt, and a prompt asking in its own words with {%calendar_categories%} or {%mail_links%} needs it too. The names of your categories and the addresses of the links are sent to the AI provider. This needs a matching ThunderAI Sparks version.",
+    "message": "If checked, the AI chooses among your existing calendar categories and lists the useful links of the message, which become the link and the attachments of the event. It works with any saved prompt, and a prompt asking in its own words with {%calendar_categories%} or {%mail_links%} needs it too. With the option on, the names of your categories and the addresses of the links are sent to the AI provider; placeholders you write in your own prompt are filled in either way, like any placeholder. This needs a matching ThunderAI Sparks version.",
     "description": "Calendar Event settings page: explanation of the 'Let the AI fill in categories and links' switch."
   },
   "calendar_metadata_prompt_warning": {
-    "message": "The main prompt asks for categories or links, but \"Let the AI fill in categories and links\" is not checked: the categories and links of the answer are ignored until the option is checked.",
+    "message": "The main prompt asks for categories or links, but \"Let the AI fill in categories and links\" is not checked: the categories and links of the answer are ignored until the option is checked. The placeholders are still filled in and sent to the AI provider.",
     "description": "Calendar Event settings page: warning under the switch when the prompt holds the calendar_categories or mail_links placeholder and the switch is off. Quotes the name of the switch."
   },
   "placeholder_mail_links": {

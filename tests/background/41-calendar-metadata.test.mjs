@@ -9,7 +9,7 @@ import { caseTests } from '../helpers/known-issues/background.mjs';
 const k=caseTests('41-calendar-metadata');
 const categories=['Séminaire','Name, "quoted"'];
 const outgoing=[];
-let mode='new', modelAnswer, fullHtml='', capabilityRequests=0;
+let mode='new', modelAnswer, fullHtml='', capabilityRequests=0, selectedLinks=[];
 const ctx=await bgContext({
     local:{...API,get_calendar_event:true,get_calendar_event_from_clipboard:true,calendar_append_email_link:true,
         calendar_enforce_timezone:true,calendar_timezone:'Europe/Paris',calendar_reminder_enabled:true,calendar_metadata_enabled:true},
@@ -37,6 +37,7 @@ ctx.m.tabAnswer=(_id,message) => {
     if (message.command==='getTextOnly') return 'Synthetic seminar, see https://example.org/programme.pdf';
     if (message.command==='getOnlyTypedText') return {text:'',html:''};
     if (message.command==='getFullHtml') return fullHtml;
+    if (message.command==='getSelectedLinks') return selectedLinks;
     if (['getSelectedText','getSelectedHtml','getOnlyQuotedText'].includes(message.command)) return '';
     return true;
 };
@@ -128,11 +129,31 @@ k.test('token-needs-option', 'with the option off, a saved prompt holding the ca
     const {result,data,prompt}=await run();
     assert.deepEqual(result,{ok:'1'});
     assert.ok(prompt.includes('Event JSON with categories from '+JSON.stringify(categories)));
-    // The reminder format starts with the same words: check a part of this statement only.
-    assert.equal(prompt.includes('add to the JSON object these two fields'),false);
+    // The reminder format starts with the same words: check a part of each statement only.
+    assert.equal(prompt.includes('a field "categories"'),false);
+    assert.equal(prompt.includes('a field "links"'),false);
     assert.equal('categories' in data,false);
     assert.equal('links' in data,false);
     assert.equal(data.summary,'Synthetic seminar');
+});
+
+k.test('categories-token-keeps-links', 'a saved prompt giving only the categories still gets the links part and the hidden targets', async t => {
+    const stored=(await ctx.prompts.getSpecialPrompts()).map(p => p.id==='prompt_get_calendar_event'
+        ? {...p,text:'Event JSON, categories from {%calendar_categories%}. {%mail_text_body_or_selected%}'} : p);
+    await ctx.ctl.browser.storage.local.set({_special_prompts:stored});
+    await ctx.bg._reload_menus();
+    selectedLinks=[{text:'Join',href:'https://example.org/join'}];
+    t.after(async () => {
+        selectedLinks=[];
+        await ctx.ctl.browser.storage.local.remove('_special_prompts');
+        await ctx.bg._reload_menus();
+    });
+    mode='new';
+    const {prompt}=await run();
+    assert.ok(prompt.includes('categories from '+JSON.stringify(categories)));
+    assert.ok(prompt.includes('a field "links"'));
+    assert.ok(prompt.includes('"url":"https://example.org/join"'));
+    assert.equal(prompt.includes('a field "categories"'),false);
 });
 
 k.test('dialog-error', 'a companion failure is reported without claiming the dialog opened', async () => {

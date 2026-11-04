@@ -44,6 +44,13 @@ k.test('bounded', S, 'the list and each text are bounded', () => {
     assert.equal(links[0].text, 'x'.repeat(100) + ' [...]');
 });
 
+k.test('image-only', S, 'a link holding only an image takes the image description as its text', () => {
+    assert.deepEqual(getMailLinks('<a href="https://example.org/join"><img alt="Join the meeting" src="b.png"></a><a href="https://example.org/x"><img src="c.png"></a>'), [
+        { text: 'Join the meeting', url: 'https://example.org/join' },
+        { text: '', url: 'https://example.org/x' },
+    ]);
+});
+
 k.test('empty', S, 'no markup gives no links', () => {
     for (const html of ['', null, undefined, '<p>Plain</p>']) assert.deepEqual(getMailLinks(html), []);
 });
