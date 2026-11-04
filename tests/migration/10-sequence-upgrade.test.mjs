@@ -7,7 +7,8 @@
 // across, so neither re-runs and the custom menu order and show_in survive), 04 (ollama_think in
 // level form, global only), 05 row calendar_no_selection (aligned once to the stored
 // need_selected), 04 "When a policy locks the override off" (the migration block runs before
-// loadManaged() and must not make the background message itself).
+// loadManaged() and must not make the background message itself), 01 "Per-Message Data Storage"
+// (the msg: records moved to IndexedDB, at every start, with nothing left behind).
 //
 // The invariant above all: the user's settings survive.
 
@@ -37,8 +38,8 @@ const DECLARED = Object.keys(EXPECTED).filter(key => key in prefs_default);
 const read = { prefs: DECLARED, specialPrompts: true };
 
 const first = startup({ run, sync: P.sync, local: P.local, read });
-const second = first.then(r => startup({ run, sync: r.sync, local: r.local }));
-const third = second.then(r => startup({ run, sync: r.sync, local: r.local }));
+const second = first.then(r => startup({ run, sync: r.sync, local: r.local, idb: r.idb }));
+const third = second.then(r => startup({ run, sync: r.sync, local: r.local, idb: r.idb }));
 second.catch(() => {});
 third.catch(() => {});
 
@@ -82,9 +83,21 @@ k.test('prefs-read-back', 'every declared preference reads back through mztaPref
     for (const key of DECLARED) assert.deepEqual(r.read.prefs[key], EXPECTED[key], key);
 });
 
-k.test('payloads-intact', 'the prompt payloads and the stored records are byte for byte what they were', async () => {
+k.test('payloads-intact', 'the prompt payloads are byte for byte what they were', async () => {
     const r = await first;
-    for (const key of [...PAYLOAD_KEYS, 'msg:42']) assert.deepEqual(r.local[key], P.local[key], key);
+    for (const key of PAYLOAD_KEYS) assert.deepEqual(r.local[key], P.local[key], key);
+});
+
+k.test('message-data-moved', 'the stored msg: record is moved to IndexedDB, its key and the migration flag gone from storage.local', async () => {
+    const r = await first;
+    assert.equal('msg:42' in r.local, false);
+    assert.equal('_message_data_migrating' in r.local, false);
+    const db = r.idb.find(d => d.name === 'thunderai-message-data');
+    const summary = db.stores.find(s => s.name === 'summary').records.map(x => x.value);
+    assert.equal(summary.length, 1);
+    assert.equal(summary[0].messageId, '42');
+    assert.equal(summary[0].summary, P.local['msg:42'].summary.summary);
+    assert.equal(summary[0].createdAt, P.local['msg:42'].summary.ts);
 });
 
 k.test('menu-order-kept', 'the custom menu order is kept: no prompt renumbered', async () => {
@@ -160,6 +173,7 @@ for (const [id, startP, prevP] of [['second', second, first], ['third', third, s
         const prev = await prevP;
         assert.deepEqual(r.local, prev.local);
         assert.deepEqual(r.sync, prev.sync);
+        assert.deepEqual(r.idb, prev.idb);
     });
 }
 

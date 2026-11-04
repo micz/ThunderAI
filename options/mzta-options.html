@@ -431,11 +431,22 @@
               </div>
             </div>
 
-            <!-- Storage -->
-            <div class="mzta_storage_row">
-              <span>ThunderAI __MSG_prefs_storage_title__ · __MSG_prefs_storage_size__: <span id="cache_storage_size"></span></span>
-              <button id="btnClearCache" class="btn_small">__MSG_prefs_storage_clear_button__</button>
+            <!-- Storage: the per-message data in IndexedDB (js/mzta-storage.js) -->
+            <div class="mzta_adv_row">
+              <div class="mzta_adv_info">
+                <div class="mzta_adv_name">__MSG_prefs_OptionText_storage_persistent__</div>
+                <div class="mzta_adv_desc">__MSG_prefs_OptionText_storage_persistent_info__</div>
+              </div>
+              <label class="mzta_switch">
+                <input type="checkbox" id="storage_persistent" name="storage_persistent" class="option-input" />
+                <span class="track"></span>
+              </label>
             </div>
+            <div class="mzta_storage_row">
+              <span>ThunderAI __MSG_prefs_storage_title__ · __MSG_prefs_storage_size__: <span id="message_storage_size"></span></span>
+              <button id="btnClearMessageStorage" class="btn_small">__MSG_prefs_storage_clear_button__</button>
+            </div>
+            <span id="message_storage_migrating" class="mzta_help" style="display:none;">__MSG_storage_migration_in_progress__</span>
             <span class="mzta_help">__MSG_prefs_storage_info__</span>
           </div>
         </div>

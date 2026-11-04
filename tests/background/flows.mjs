@@ -87,9 +87,14 @@ export async function drive(t, promise, { maxTurns = 2000 } = {}) {
     return value;
 }
 
-/** The stored record of a message (storage.local, raw). */
-export function record(ctx, headerMessageId) {
-    return ctx.ctl.localData()['msg:' + headerMessageId] ?? null;
+/**
+ * The stored data of a message: { spam, summary, translation } as the per-message storage holds
+ * them (IndexedDB, js/mzta-storage.js), each key present only when that type has a record; null
+ * when none has.
+ */
+export async function record(ctx, headerMessageId) {
+    const { taStorage } = await import('../../js/mzta-storage.js');
+    return await new taStorage().getRecord(headerMessageId);
 }
 
 /**

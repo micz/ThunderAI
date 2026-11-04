@@ -246,11 +246,22 @@ Object.keys(prefs_default)
 The rules are applied in one place, `isPolicyExcludedKey(key)` (exported, pure): `buildAllowlist()`
 uses it, and so does the CI report of [Adding a policy-settable preference](#adding-a-policy-settable-preference).
 
-**142 of 152 keys** are policy-settable. The derivation already covers the generated keys:
+**152 of 162 keys** are policy-settable. The derivation already covers the generated keys:
 the six `{prefix}_use_specific_integration` / `{prefix}_connection_type` pairs (from
 `special_prompts_with_integration`) and the per-provider `{integration}_{key}` connection
 keys (from `integration_options_config`) are all spread into `prefs_default` in
 [`options/mzta-options-default.js`](../options/mzta-options-default.js).
+
+The per-message storage keys of [#955](https://github.com/micz/ThunderAI/issues/955) are ordinary
+entries of the allowlist: `{feature}_storage_enabled` (boolean),
+`{feature}_storage_max_entries` and `{feature}_storage_max_age_days` (numbers, any non-negative
+integer, `0` = no limit, so no `PREF_NUMBER_RANGES` entry) for `spamfilter`, `summarize` and
+`translate`, and `storage_persistent`, a permission-gated toggle. The nine limit keys have no
+settings UI yet (#956), so today a policy is the only way to set them besides `storage.local`; the
+scheduled cleanup reads them through `mztaPrefs`, so a policy value applies at its next run. A policy
+cannot grant `unlimitedStorage`: `storage_persistent` locked on without it is the case of the
+permission-gated row of [Interaction points](#interaction-points). See
+[01-architecture.md](01-architecture.md#per-message-data-storage).
 
 The ten excluded keys are per-machine or per-profile state, not configuration: enforcing
 them across a fleet would push window coordinates from another screen, a font zoom from
@@ -509,7 +520,7 @@ overlays read), the page guard of [The connection panel](08b-managed-connections
 
 Either way the administrator key reference on micz.it is now out of date — it is generated
 from `prefs_default` by hand, so a new or newly excluded preference has to be reflected
-there too. So do the "142 of 152" count in [The allowlist](#the-allowlist) and the counts in
+there too. So do the "152 of 162" count in [The allowlist](#the-allowlist) and the counts in
 `tests/managed/04-allowlist-derivation.test.mjs`, which fails until they are updated.
 
 ## Adding a restriction
@@ -538,13 +549,12 @@ is genuinely no user-facing setting to lock.
 This file is the contract the automated suite in [`tests/`](../tests/) checks, at two levels:
 
 ```sh
-node --test "tests/**/*.test.mjs"   # level 1: the modules; Node 22+, nothing to install
-npm ci                              # once: installs jsdom (Node ^22.22.2 || ^24.15.0 || >=26)
+npm ci                              # once: installs jsdom and fake-indexeddb (Node ^22.22.2 || ^24.15.0 || >=26)
+node --test "tests/**/*.test.mjs"   # level 1: the modules
 npm test                            # both levels
 ```
 
-Run from the repository root. CI runs level 1 **before** installing anything, then
-`npm ci && npm test`, on demand only: by hand (`workflow_dispatch`, any branch) or when the
+Run from the repository root. CI runs `npm ci && npm test`, on demand only: by hand (`workflow_dispatch`, any branch) or when the
 `run-tests` label is added to a pull request, which `.github/workflows/tests-unlabel.yml`
 removes right away (`.github/workflows/tests.yml`). How it
 works: [`tests/README.md`](../tests/README.md); how to add a managed scenario or a page:
@@ -552,7 +562,7 @@ works: [`tests/README.md`](../tests/README.md); how to add a managed scenario or
 
 - **Level 1** (`tests/managed/*.test.mjs`) imports the shipped modules as they are.
 - **DOM** (`tests/dom/<page>/*.dom.mjs`) loads each page's real HTML file and real module
-  script in jsdom - the project's only dependency, a pinned dev dependency, never shipped and
+  script in jsdom - a pinned dev dependency, like fake-indexeddb, never shipped and
   never imported by runtime code - with the page's background answered by the real
   background code: the `get_managed_values` listener, the one channel a page gets the policy
   through, is cut out of `mzta-background.js` and run verbatim. The browser
@@ -596,7 +606,7 @@ locks - or offers as an initial value - every allowlisted key that has an `.opti
 policy. A new preference with a control on one of those pages is covered the moment it is
 declared.
 
-`04-allowlist-derivation` also checks the **142 of 152** count in [The allowlist](#the-allowlist).
+`04-allowlist-derivation` also checks the **152 of 162** count in [The allowlist](#the-allowlist).
 When a preference is added, update that sentence and the test's expected count together.
 
 **Not covered:** the parts of `mzta-background.js` that only run inside its startup - the

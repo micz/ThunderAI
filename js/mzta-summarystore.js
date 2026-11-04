@@ -21,10 +21,6 @@ import { taLogger } from './mzta-logger.js';
 
 export class taSummaryStore {
 
-    // In-flight state lives in taJobRegistry (js/mzta-job-registry.js). The prefix is kept
-    // only so clear*() still sweeps keys written to storage.session by older versions.
-    _processing_prefix = 'mzta-summary-processing-';
-    _max_summaries = 100;
     _storage = null;
     taLog = null;
 
@@ -33,17 +29,22 @@ export class taSummaryStore {
         this.taLog = new taLogger('mzta-summarystore', do_debug);
     }
 
-    async saveSummary(data, data_id) {
+    /**
+     * Store a summary. metadata: { subject, from, message_date } of the message, as
+     * _buildReportMetadata() builds it in mzta-background.js ({} when the message is not
+     * available). Rejects when the write fails (see js/mzta-storage.js).
+     */
+    async saveSummary(data, data_id, metadata = {}) {
         this.taLog.log("[saveSummary] data_id: " + data_id);
         try {
-            await this._storage.writeSummary(data_id, data, true);
+            await this._storage.writeSummary(data_id, { ...data, ...metadata }, true);
         } catch (e) {
             this.taLog.error("[saveSummary] error: " + e);
             throw e;
         }
     }
 
-    async saveError(data_id, error_message) {
+    async saveError(data_id, error_message, metadata = {}) {
         this.taLog.log("[saveError] data_id: " + data_id + ", error_message: " + error_message);
         let data = {
             error: true,
@@ -51,7 +52,7 @@ export class taSummaryStore {
             summary_date: new Date(),
             headerMessageId: data_id
         };
-        await this.saveSummary(data, data_id);
+        await this.saveSummary(data, data_id, metadata);
         return data;
     }
 
@@ -69,66 +70,12 @@ export class taSummaryStore {
             summary_html: summary.summary_html || '',
             error: summary.error || false,
             message: summary.message || '',
-            summary_date: new Date(summary.summary_date || summary.ts),
+            summary_date: new Date(summary.summary_date || summary.createdAt),
         };
     }
 
     async removeSummary(data_id) {
         this.taLog.log("[removeSummary] data_id: " + data_id);
         await this._storage.deleteSummaryField(data_id);
-    }
-
-    async getAllSummaries() {
-        this.taLog.log("[getAllSummaries] loading all summaries");
-        return await this._storage.getAllSummaryRecords();
-    }
-
-    async clearSummaries() {
-        this.taLog.log("[clearSummaries] clearing all summary data");
-        let allSummaries = await this._storage.getAllSummaryRecords();
-        let summaryKeys = Object.keys(allSummaries);
-        this.taLog.log("[clearSummaries] deleting " + summaryKeys.length + " summary records");
-        for (let messageId of summaryKeys) {
-            await this._storage.deleteSummaryField(messageId);
-        }
-        let allSession = await browser.storage.session.get(null);
-        let keysToDelete = Object.keys(allSession).filter(k => k.startsWith(this._processing_prefix));
-        this.taLog.log("[clearSummaries] deleting " + keysToDelete.length + " session keys");
-        for (let key of keysToDelete) {
-            await browser.storage.session.remove(key);
-        }
-    }
-
-    async truncSummaries() {
-        this.taLog.log("[truncSummaries] checking summary count");
-        let data = await this._storage.getAllSummaryRecords();
-        let sortedData = this.sortSummariesByDate(data);
-        let keys = Object.keys(sortedData);
-        this.taLog.log("[truncSummaries] total summaries: " + keys.length + ", max: " + this._max_summaries);
-
-        if (keys.length > this._max_summaries) {
-            let toDelete = keys.length - this._max_summaries;
-            this.taLog.log("[truncSummaries] truncating " + toDelete + " oldest summaries");
-            for (let i = this._max_summaries; i < keys.length; i++) {
-                await this._storage.deleteSummaryField(keys[i]);
-            }
-        }
-    }
-
-    sortSummariesByDate(data) {
-        if (!data) return {};
-        const summaryKeys = Object.keys(data);
-        summaryKeys.sort((a, b) => {
-            const dateA = new Date(data[a].summary_date);
-            const dateB = new Date(data[b].summary_date);
-            return dateB - dateA;
-        });
-
-        let sortedSummaries = {};
-        summaryKeys.forEach((key) => {
-            sortedSummaries[key] = data[key];
-        });
-
-        return sortedSummaries;
     }
 }

@@ -29,6 +29,7 @@ import {
   ACCOUNT_MATCH_LOCAL
 } from './mzta-managed.js';
 import { taLogger } from './mzta-logger.js';
+import { taStorage } from './mzta-storage.js';
 
 const sparks_min = '3.1.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
 const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it', 'ja'];
@@ -1538,13 +1539,11 @@ export async function getLocalStorageUsedSpace(){
   return formatBytes(customprompts_space);
 }
 
-export async function getCacheStorageUsedSpace(){
-  let all = await browser.storage.local.get(null);
-  let cacheSpace = Object.entries(all)
-    .filter(([key]) => key.startsWith('msg:'))
-    .map(([key, value]) => key.length + JSON.stringify(value).length)
-    .reduce((acc, x) => acc + x, 0);
-  return formatBytes(cacheSpace);
+// The space taken by the per-message data (spam reports, summaries, translations): the sum of
+// the size field of every record of the three IndexedDB stores, read with a key cursor on their
+// size index (taStorage.getTotalSize()), formatted.
+export async function getMessageStorageUsedSpace(){
+  return formatBytes(await taStorage.getTotalSize());
 }
 
 function formatBytes(bytes, decimals = 2) {

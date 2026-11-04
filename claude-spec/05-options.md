@@ -204,6 +204,7 @@ its panel is always visible, so it prints `prefs_Connection_type_none` instead o
 | `max_prompt_length` | `30000` | Max prompt string length |
 | `special_command_timeout` | `120000` | Timeout (ms) for special commands (`js/mzta-special-commands.js`). Active companion progress renews the processing budget; provider dispatch starts a fresh response budget. Stalled initialization/queueing also times out. Without active processing, it bounds the whole request. **Always shown**, because a special prompt can use an API even when the global connection is ChatGPT Web; it does not time out ChatGPT Web automation itself. |
 | `api_stream_idle_timeout` | `120000` | Idle timeout (ms) of an API stream: with no data for this long once the answer has started, the worker gives the request up and shows `error_stream_idle_timeout` (#999). `0` = no idle timeout. Exposed in the advanced options of the main options page, right after `special_command_timeout`, as a number input (`min="1000"`, `step="1000"`) with a reset button; **always shown**, like `special_command_timeout` and for the same reason (a special prompt may use an API while the global `connection_type` is `chatgpt_web`). The field's `min` is UI only: `0` comes from storage or a policy, which accepts any non-negative integer (the general number rule, so no `PREF_NUMBER_RANGES` entry, see [08-managed-configuration.md](08-managed-configuration.md)). The workers validate it with `resolveIdleTimeoutMs()` (`js/api/api-idle-timer.js`): a value that is not a non-negative number (the `null` of an emptied field included) falls back to the default. Has no effect on ChatGPT Web connections, which stream through no API worker. Sent in the workers' `init` message by `api_webchat/controller.js` and `js/mzta-special-commands.js`. See [04-api-integrations.md](04-api-integrations.md#stream-idle-timeout). |
+| `storage_persistent` | `false` | Protects the saved per-message data (spam reports, summaries, translations, IndexedDB) from eviction: without it Thunderbird may delete them, without notice, when the disk is almost full. A permission-gated toggle (see "Permission-gated toggles" below) needing the optional `unlimitedStorage` permission, in the advanced section of the options page, right before the storage size: switched **on**, the permission is requested and `true` stored only once granted; refused, the switch goes back off with `feature_permission_denied` and nothing is stored. Switched **off**, `false` is stored and the permission is given back (`removeFeaturePermissions()`, only when it was granted): the data stays, it is just no longer protected. Policy-settable and lockable like the other gated toggles; a policy cannot grant the permission, so a key locked on without it gets the `feature_permission_missing_managed` note in its `.mzta_adv_info`. See [01-architecture.md](01-architecture.md#per-message-data-storage). |
 | `batch_max_concurrency` | `1` | Maximum messages processed at once by one `processEmails()` call (auto add tags, spam filter, summarize and translate — on receive and from the context menu). Each message runs its features in series (spam, add_tags, summary, translate), so this is also the maximum number of AI requests in flight. There are no per-feature caps. Overlapping calls (several accounts) can exceed it. A value that is not a finite number ≥ 1 (a cleared field is saved as `NaN`) falls back to the default. Number input (`min="1"`) in the advanced section of the main options page, with its default wired into `restoreOptions()`. Does not affect the context-menu summarize flow. See [01-architecture.md](01-architecture.md#per-message-pipelines-in-processemails). |
 
 ### Companion processing
@@ -258,6 +259,9 @@ ThunderAI Privacy owns model management and diagnostics. See
 | `spamfilter_skip_addressbook` | `false` | Skip senders found in any address book (`browser.contacts.quickSearch`). A permission-gated toggle (see "Permission-gated toggles" below) needing `addressBooks`, so it defaults to `false` like the other gated features (it was `true` before 5.1.0, on with no permission behind it). On the settings page the switch is saved by the shared handler, not by the page's `saveOptions()`: switching it **on** first requests the optional `addressBooks` permission and stores `true` only once it is granted; refused, the switch goes back off, an `alert()` says why (`addressbook_permission_denied`, or `addressbook_permission_error` when the request throws) and nothing is stored. Switching it **off** stores `false` and requests nothing. |
 | `spamfilter_show_msg_panel` | `true` | Show info panel on spam detection |
 | `spamfilter_only_inbox` | `false` | Auto spam filter runs only on inbox messages |
+| `spamfilter_storage_enabled` / `summarize_storage_enabled` / `translate_storage_enabled` | `true` | **No UI yet (#956), meant for a policy.** Save the results of that type in the per-message storage. `false` skips the writes; what is already saved is still read and shown. See [01-architecture.md](01-architecture.md#per-message-data-storage). |
+| `spamfilter_storage_max_entries` / `summarize_storage_max_entries` / `translate_storage_max_entries` | `0` | **No UI yet (#956).** The scheduled cleanup removes the oldest records of that type beyond this count; `0` = no limit. A lowered limit applies at the next scheduled cleanup (every 24 hours). Any non-negative integer, so policy-settable with no extra rule. |
+| `spamfilter_storage_max_age_days` / `summarize_storage_max_age_days` / `translate_storage_max_age_days` | `0` | **No UI yet (#956).** The scheduled cleanup removes the records of that type older than this many days (by `createdAt`), before the count rule; `0` = no limit. |
 | `summarize` | `false` | Enable email summarization |
 | `summarize_auto` | `1` | Auto-summarize mode: `0` = disabled, `1` = manual (show "click to generate" button), `2` = automatic (generate on message open), `3` = generate on email receive (background pre-cache via `onNewMailReceived`, no UI during generation) |
 | `summarize_display_mode` | `'inline'` | Where to display summaries: `'inline'` = message pane banner, `'webchat'` = AI chat window. Note: `summarize_auto = 2` and `summarize_auto = 3` always use inline regardless of this setting. |
@@ -276,10 +280,11 @@ ThunderAI Privacy owns model management and diagnostics. See
 
 #### Permission-gated toggles
 
-Four feature preferences need an optional Thunderbird API permission (`FEATURE_PERMISSIONS` in
+Five preferences need an optional Thunderbird API permission (`FEATURE_PERMISSIONS` in
 `js/mzta-feature-permissions.js`, see [01-architecture.md](01-architecture.md#feature-permissions-962)):
 `add_tags` and `spamfilter` (options page, setup wizard), `spamfilter_skip_addressbook` (spam
-filter page), `get_calendar_event_from_clipboard` (calendar event page). Every one of their
+filter page), `get_calendar_event_from_clipboard` (calendar event page), `storage_persistent`
+(options page, advanced section). Every one of their
 switches goes through the one shared flow, `bindPermissionToggle(element, key, {onChange,
 deniedMsgKey, errorMsgKey})` in `pages/_lib/permission-toggle.js`, so the pages cannot drift:
 
@@ -293,7 +298,8 @@ deniedMsgKey, errorMsgKey})` in `pages/_lib/permission-toggle.js`, so the pages 
   there is nothing to roll back and the stored `false` stays;
 - **unchecked**: `false` is written;
 - `onChange(checked)` runs after either outcome, for the page's side effects (the options
-  page's Manage button, the calendar page's `reload_menus`);
+  page's Manage button, the calendar page's `reload_menus`, the options page giving
+  `unlimitedStorage` back when `storage_persistent` is switched off and the permission was held);
 - a key locked by the policy is disabled by `applyManagedUI()`; if its switch still fires
   (re-enabled from the developer tools) the change is put back, with no prompt and no write.
 
@@ -305,7 +311,8 @@ options, wizard and calendar switches stay `.option-input` (for `restoreOptions(
 `applyManagedUI()`).
 
 **Locked on without its permission**: `showLockedPermissionWarning(element, key)` adds an amber
-`.feature_locked_note` (`feature_permission_missing_managed`) to the switch's `.feature_info`
+`.feature_locked_note` (`feature_permission_missing_managed`) to the switch's `.feature_info` (the
+`.mzta_adv_info` of its `.mzta_adv_row` in the options page's advanced section)
 when the policy locks the key on and Thunderbird has not granted its permissions. Neither the
 reconciliation (which skips locked keys) nor the user can fix it; see
 [08c-managed-ui.md](08c-managed-ui.md).
@@ -516,6 +523,26 @@ The timezone `<select>` shown on the Calendar Event (`pages/get-calendar-event/`
   red "missing value" border when nothing is selected — otherwise every fresh profile would open the
   page with the field already flagged as an error. For every other Tom Select, which has no such
   attribute, an empty value keeps being highlighted in red.
+
+### Spam Filter Page — the spam log (`pages/spamfilter/`)
+
+The page ends with the spam log, `#report_data`: one row per saved spam report (Message-ID, message
+date, sender, subject, score, moved with the threshold, explanation, report date), read straight from
+the per-message storage ([01-architecture.md](01-architecture.md#per-message-data-storage)), not
+through the background.
+- **One page at a time.** 50 rows per page, newest first: `taSpamReport.getReportPage(offset, 50)`
+  (a cursor on the `createdAt` index) and `countReports()` for the total. Under the table,
+  `#report_pager` holds `#report_prev_btn` / `#report_next_btn` (`spamfilter_report_previous` /
+  `_next`) and `#report_page_label`, `spamfilter_report_page_label` ("1–50 of 1234"). Previous is
+  disabled on the first page, Next on the last; the pager is hidden while there is nothing to page
+  through. A page past the end (reports removed meanwhile) falls back to the last one. No search, no
+  sorting.
+- **Cells.** The arrays `subject` and `from` are joined; a report without them (an error saved when
+  the message could not be read, or moved from an older version) shows empty cells. The report date is
+  the record's `createdAt`.
+- **Empty.** With no report, one row spanning the 8 columns says `spamfilter_no_reports`.
+- **Migrating.** While the background is still moving the reports out of `storage.local` (the
+  migration flag), the one row says `storage_migration_in_progress` instead, and the pager is hidden.
 
 ### Summarize Settings Page (`pages/summarize/`)
 
@@ -1653,7 +1680,7 @@ The app-level "Advanced options" disclosure is the `#mzta_adv_toggle` button and
 "Connection Settings Panel — Advanced Options Disclosure"). The panel holds the chat window size and
 position, `max_prompt_length`, `special_command_timeout`, `api_stream_idle_timeout`,
 `batch_max_concurrency`, the behaviour switches, `diff_granularity`, `ai_processing_enabled` (or
-its `#no_privacy` notice), `do_debug` and the cache block below.
+its `#no_privacy` notice), `do_debug`, the allowed unencrypted servers and the storage block below.
 
 - **Collapsed on every open.** The page opens with `aria-expanded="false"` and `.hidden` on the
   panel; a click flips both. The state is purely local UI: **no preference is persisted**.
@@ -1668,13 +1695,18 @@ its `#no_privacy` notice), `do_debug` and the cache block below.
   `data-mzta-companion-of` its field) put the `prefs_default` value back in the field and store it
   with `setPref()`, as a number. They fire no `change`. For a policy-locked key they do nothing
   (`isLockedKey()`), without relying on the button being disabled. `batch_max_concurrency` has none.
-- **Cache block.** `#cache_storage_size` shows the space taken by the per-message records (the
-  `msg:` keys of `storage.local`, see [01-architecture.md](01-architecture.md#per-message-data-storage)),
-  as computed by `getCacheStorageUsedSpace()` (`js/mzta-utils.js`) and read once at load.
-  `#btnClearCache` asks a native `confirm()` (`prefs_storage_clear_confirm`): cancelled, nothing
-  happens; confirmed, `taStorage.clearAllRecords()` removes every `msg:` record - never a preference
-  or any other key - then an `alert()` reports the count (`prefs_storage_clear_done`) and the size is
-  read again.
+- **Storage block.** The `storage_persistent` switch (see its row in "UI & Feature Preferences"),
+  then `#message_storage_size`: the space taken by the saved spam reports, summaries and
+  translations (IndexedDB, see [01-architecture.md](01-architecture.md#per-message-data-storage)), the
+  sum of the `size` of every record of the three stores, as computed by
+  `getMessageStorageUsedSpace()` (`js/mzta-utils.js`, over `taStorage.getTotalSize()`) and read at
+  load. `#btnClearMessageStorage` asks a native `confirm()` (`prefs_storage_clear_confirm`):
+  cancelled, nothing happens; confirmed, `taStorage.clearAllRecords()` empties the three stores, under
+  the cleanup lock - never a preference or any other key - then an `alert()` reports the count
+  (`prefs_storage_clear_done`, or `prefs_storage_clear_error` with the reason) and the size is read
+  again. While the background is still moving the data out of `storage.local` (the migration flag),
+  `#message_storage_migrating` (`storage_migration_in_progress`) is shown under it. No settings for
+  the limits here yet (#956).
 - **Allowed unencrypted servers.** `#insecure_origins_list` lists the user's own approvals
   (`getUserApprovedInsecureOrigins()`, see
   [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy)),
@@ -1884,13 +1916,14 @@ case for nearly every user and is swallowed silently.
   that raw read cannot see the enterprise policy, the function returns early when the key has
   a policy-supplied value: a locked one is refused by the write guard anyway, and an initial
   one must not be stored as a user choice the user never made.
-- **The `storage.local` / `storage.session` record stores** (`taStorage`, `taSummaryStore`,
-  `taTranslationStore`, `taSpamReport`, the custom prompt/placeholder payloads) are not
-  preferences and are out of scope. They now share an area with the preferences, which is safe
-  by construction: every key they own is prefixed (`msg:`, or a leading `_`), no `prefs_default`
-  key uses either prefix, and each of the five `storage.local.get(null)` enumerations in
-  `js/mzta-storage.js` filters on `msg:` before touching a record — including
-  `clearAllRecords()`, which would otherwise delete every preference.
+- **The record stores** are not preferences and are out of scope: the per-message data
+  (`taStorage`, `taSummaryStore`, `taTranslationStore`, `taSpamReport`) lives in IndexedDB, not in
+  `storage.local`; the custom prompt/placeholder payloads share `storage.local` with the
+  preferences, under keys with a leading `_` that no `prefs_default` key uses. So do the two keys of
+  the per-message storage that stay in `storage.local`, `_message_data_migrating` (the migration
+  flag) and `_message_data_last_cleanup`. The only enumeration of `storage.local` left, the
+  migration's `get(null)` (`js/mzta-storage-migration.js`), touches nothing but the legacy `msg:`
+  keys and that flag.
 - **The approved unencrypted servers** (`_approved_insecure_origins` in `storage.local`, see
   [04-api-integrations.md "Custom endpoint policy"](04-api-integrations.md#custom-endpoint-policy))
   are not a preference: no `prefs_default` entry, no policy key, read and written only by

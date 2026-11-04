@@ -99,13 +99,14 @@ export function bindPermissionToggle(element, key, o = {}) {
  * Show a warning next to a gated switch the policy locks on while Thunderbird has not granted its
  * permissions: neither the reconciliation (which skips locked keys) nor the user (whose switch is
  * disabled) can fix that, so the page must at least say it. The note goes in the .feature_info of
- * the switch's .feature_row, with the same look as the other policy notes. Never throws.
+ * the switch's .feature_row (or the .mzta_adv_info of its .mzta_adv_row, in the advanced section
+ * of the options page), with the same look as the other policy notes. Never throws.
  */
 export async function showLockedPermissionWarning(element, key) {
     try {
         if (!element || !isLockedKey(key) || !element.checked) return;
         if (await hasFeaturePermissions(key)) return;
-        const info = element.closest('.feature_row')?.querySelector('.feature_info');
+        const info = element.closest('.feature_row, .mzta_adv_row')?.querySelector('.feature_info, .mzta_adv_info');
         if (!info || info.querySelector('[data-mzta-permission-warning]')) return;
         const note = document.createElement('div');
         note.className = 'feature_locked_note shown';

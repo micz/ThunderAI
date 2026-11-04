@@ -34,6 +34,7 @@ import {
   makeTokenStateResolver
 } from "../../js/mzta-editor-highlight.js";
 import { taSpamReport } from '../../js/mzta-spamreport.js';
+import { taStorage } from '../../js/mzta-storage.js';
 import {
   getAccountsList,
   isAPIKeyValue,
@@ -63,6 +64,10 @@ import {
     bindConnPanelTint,
     bindSpecialPromptEditor
 } from '../_lib/feature-page.js';
+
+// The spam log shows one page of reports at a time, newest first.
+const REPORT_PAGE_SIZE = 50;
+let reportOffset = 0;
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -287,6 +292,14 @@ document.addEventListener('DOMContentLoaded', async () => {
        saveShownAccounts();
      });
 
+    document.getElementById('report_prev_btn').addEventListener('click', () => {
+        reportOffset = Math.max(0, reportOffset - REPORT_PAGE_SIZE);
+        loadSpamReport();
+    });
+    document.getElementById('report_next_btn').addEventListener('click', () => {
+        reportOffset += REPORT_PAGE_SIZE;
+        loadSpamReport();
+    });
     loadSpamReport();
     // Delegated on the tbody, which is static markup, so it survives every
     // populateTable() rebuild and only needs registering once.
@@ -311,34 +324,59 @@ function check_spamfilter_threshold(event) {
   }
 }
 
+// One page of the spam log, read straight from the database (js/mzta-storage.js): REPORT_PAGE_SIZE
+// reports from reportOffset, newest first, with Previous / Next and "1–50 of 1234". While the
+// background is still moving the reports out of storage.local (the migration flag), a notice
+// takes the place of the table, which would otherwise look empty.
 async function loadSpamReport(){
-    let report_data = await spamReport.getAllReportData();
-    //console.log(">>>>>>>>>>>> loadSpamReport: " + JSON.stringify(report_data));
-    //document.getElementById("report_data").textContent = JSON.stringify(report_data, null, 2);
-    populateTable(report_data);
+    const pager = document.getElementById("report_pager");
+    if (await taStorage.isMigrating()) {
+        pager.style.display = "none";
+        populateTable([], browser.i18n.getMessage("storage_migration_in_progress"));
+        return;
+    }
+    let total = 0;
+    let reports = [];
+    try {
+        total = await spamReport.countReports();
+        // A page past the end (reports removed meanwhile): back to the last one.
+        if (reportOffset >= total) reportOffset = Math.max(0, Math.floor((total - 1) / REPORT_PAGE_SIZE) * REPORT_PAGE_SIZE);
+        reports = await spamReport.getReportPage(reportOffset, REPORT_PAGE_SIZE);
+    } catch (e) {
+        taLog.error("Could not read the spam reports: " + e);
+    }
+    populateTable(reports);
+    if (total === 0 || reports.length === 0) {
+        pager.style.display = "none";
+        return;
+    }
+    pager.style.display = "";
+    document.getElementById("report_page_label").textContent = browser.i18n.getMessage("spamfilter_report_page_label",
+        [String(reportOffset + 1), String(reportOffset + reports.length), String(total)]);
+    document.getElementById("report_prev_btn").disabled = reportOffset === 0;
+    document.getElementById("report_next_btn").disabled = reportOffset + reports.length >= total;
 }
 
 
- // Function to populate the table
- function populateTable(data) {
+ // Fill the table with an array of reports (taSpamReport.toReport() shape), in order.
+ // emptyText: what the single row says when there is no report (default: none saved yet).
+ function populateTable(data, emptyText = null) {
   const tableBody = document.getElementById("report_data_body");
   tableBody.innerHTML = ""; // Clear table before inserting new data
 
-  // getAllReportData() resolves to an empty object when nothing has been
-  // screened yet, so the placeholder goes in a row: replacing the table's
+  // With nothing to show, the placeholder goes in a row: replacing the table's
   // content would remove the header row and the tbody itself.
-  if(Object.keys(data).length === 0){
+  if(!Array.isArray(data) || data.length === 0){
     const emptyRow = document.createElement("tr");
     const emptyCell = document.createElement("td");
     emptyCell.colSpan = 8;
-    emptyCell.textContent = browser.i18n.getMessage("spamfilter_no_reports");
+    emptyCell.textContent = emptyText || browser.i18n.getMessage("spamfilter_no_reports");
     emptyRow.appendChild(emptyCell);
     tableBody.appendChild(emptyRow);
     return;
   }
 
-  Object.keys(data).forEach(email => {
-      const report = data[email];
+  data.forEach(report => {
 
       // Create a new row
       const row = document.createElement("tr");

@@ -2187,9 +2187,11 @@ line and `.sel_info` becomes visible), it lands after an `await` on a storage re
 | `js/mzta-i18n.js` | i18n helper (wraps `browser.i18n.getMessage`) |
 | `js/mzta-logger.js` | Debug logging (`taLogger`). `log()` gates only the `console.log`, **not its argument** — the message string is always built. On a hot path (per SSE chunk / per line in the workers) guard the call site with `if (taLog.do_debug)`, or do not log there at all. `warn()`/`error()` are never gated. |
 | `js/mzta-store.js` | Storage abstraction helpers |
-| `js/mzta-storage.js` | Unified per-message storage layer (`taStorage` class) for summary, spam, and translation data |
-| `js/mzta-summarystore.js` | Summary-specific storage wrapper (`taSummaryStore` class) with caching and truncation |
-| `js/mzta-translationstore.js` | Translation-specific storage wrapper (`taTranslationStore` class) with caching and truncation |
+| `js/mzta-storage.js` | The per-message data storage (`taStorage` class) in IndexedDB: spam reports, summaries, translations, their pages, counts and size, the cleanup and its schedule. See [Per-Message Data Storage](#per-message-data-storage) |
+| `js/mzta-storage-migration.js` | `migrateMessageDataToIndexedDB()`: moves the legacy `msg:` records of `storage.local` into the storage, at every background start |
+| `js/mzta-summarystore.js` | Summary wrapper over `taStorage` (`taSummaryStore` class): load / save / remove, error states, the metadata |
+| `js/mzta-translationstore.js` | Translation wrapper over `taStorage` (`taTranslationStore` class): load / save / remove, error states, the metadata |
+| `js/lib/idb.js` | `idb` 8.0.4 by Jake Archibald (vendored ES module, see `VENDORS.md`): the promise wrapper of IndexedDB `js/mzta-storage.js` opens the database with |
 | `js/mzta-job-registry.js` | In-flight job registry (`taJobRegistry`): one summary / translation / spam / add_tags job per message, joined by later callers |
 | `js/mzta-working-status.js` | Visual status indicator during AI processing (ref-counted toolbar loading icon) |
 | `js/mzta-batch-controller.js` | Cooperative cancellation controller + progress counter for batch email processing (`processEmails`) |
@@ -2249,7 +2251,7 @@ Regular preferences (feature flags, connection settings, `ollama_*`/`chatgpt_*`/
 
 **The preferences followed them out of `storage.sync` for the same quota reason.** The move is carried by `migratePrefsToLocal()` (`js/mzta-prefs-migration.js`), the first `await` and the first storage access of `mzta-background.js` (only synchronous listener registrations, which touch no storage, come before it): it copies every key `storage.sync` still holds, skipping any already present in local (so it never reverts a later change), and **leaves the sync copy in place** so a downgrade still finds the user's settings. It then records `_prefs_migrated_from_sync` in `storage.local` and short-circuits on that marker at every subsequent startup, rather than re-reading both areas forever. Two consequences worth knowing: preferences **no longer sync across profiles or devices**, and every `storage.onChanged` listener that watches preferences gates on `areaName === 'local'` — a gate left on `'sync'` does not error, it simply stops firing. The area itself is decided once, by `PREFS_AREA` in `js/mzta-prefs.js`.
 
-**One startup step is not a one-time migration.** `migrateCustomPromptIdCollisions()` (`js/mzta-prompts.js`) runs after the migration block, at every start, unguarded and with no flag. It renames a custom prompt whose id is a shipped prompt's (see [02-prompts.md](02-prompts.md#prompt-ids)), because a new version can ship an id a user already has. It reads only `_custom_prompt` and writes it only when it renames something, so a normal start costs one read. It runs before the menus are built, so they never see two prompts with one id.
+**Two startup steps are not one-time migrations.** `migrateCustomPromptIdCollisions()` (`js/mzta-prompts.js`) runs after the migration block, at every start, unguarded and with no flag. It renames a custom prompt whose id is a shipped prompt's (see [02-prompts.md](02-prompts.md#prompt-ids)), because a new version can ship an id a user already has. It reads only `_custom_prompt` and writes it only when it renames something, so a normal start costs one read. It runs before the menus are built, so they never see two prompts with one id. Right after it, `migrateMessageDataToIndexedDB()` (`js/mzta-storage-migration.js`) moves the per-message data out of `storage.local`, also at every start and unguarded: see [Per-Message Data Storage](#per-message-data-storage), "Migration from `storage.local`".
 
 ### Background Preference Snapshot and Menu Invalidation
 
@@ -2276,6 +2278,7 @@ Some features call Thunderbird APIs that need an **optional** permission (`manif
 | `spamfilter` | `messagesMove`, `messagesUpdate` | options page, setup wizard |
 | `spamfilter_skip_addressbook` | `addressBooks` | spam filter page |
 | `get_calendar_event_from_clipboard` | `clipboardRead` | calendar event page |
+| `storage_persistent` | `unlimitedStorage` | options page (advanced section) |
 
 The module also gives `hasFeaturePermissions()` (`permissions.contains`), `requestFeaturePermissions()` (`permissions.request`), `getFeaturesAffectedByRemoval()`, the feature's label (the label of its switch) and `getMissingPermissionMessage(key, managed)`. Host permissions (`origins`) are not in it: they belong to the connection and have their own flow (`pages/_lib/connection-ui.js`, `js/mzta-connection-test.js`). A new gated feature means one map entry plus its label, its permissions in `optional_permissions`, and its switch bound through `bindPermissionToggle()`. The static check `tests/static/05-feature-permissions` fails on a map entry that is not a declared boolean preference, or that names a permission missing from `optional_permissions`. It also fails on any other code that requests or checks API permissions with a hard-coded list.
 
@@ -2302,22 +2305,130 @@ The module also gives `hasFeaturePermissions()` (`permissions.contains`), `reque
 
 ### Per-Message Data Storage
 
-Per-message data (summaries, spam reports, translations) is stored via `js/mzta-storage.js` (`taStorage` class). Each record is keyed by `msg:<headerMessageId>` in `messenger.storage.local` and follows schema version 1. Records contain optional fields: `summary`, `spam`, `translation`, plus metadata (`v`, `ts`). The `taStorage` class provides typed read/write/delete methods per field, automatic record cleanup when all fields are removed, and age-based cleanup. Every write of a record is a read-modify-write of the whole object, so the writes of one message (`writeSpam/Summary/Translation()`, `delete*Field()`, `deleteRecord()`) are **queued per record**: each waits for the earlier ones on the same `msg:` key and reads what they wrote, so writers of different fields running together (a summary saved while the spam job removes the previous report, a translation saved during a panel Refresh) never drop each other's field. The queue is module-level, shared by the three stores, and lives in the background, the context that writes these records; writes to different messages still run in parallel, and a failed write never blocks the next one. The spam job awaits its `saveReportData()` before it returns, so its outcome means the report is stored.
+The per-message data - spam reports, summaries, translations - is **storage, not a cache**: what it
+holds is the user's record of what the AI said about a message, shown again every time the message
+is opened. It lives in **IndexedDB** ([#955](https://github.com/micz/ThunderAI/issues/955)), through
+`js/mzta-storage.js` (`taStorage`), which opens it with the vendored `idb` 8.0.4 (`js/lib/idb.js`).
+It used to be one `msg:<headerMessageId>` record per message in `storage.local`, with a field per
+type; those records are moved at startup (below).
 
-`js/mzta-summarystore.js` (`taSummaryStore` class) wraps `taStorage` for summary-specific operations: load/save/remove summaries and store error states. It also has `truncSummaries()` (keep the 100 newest summaries, oldest-first truncation), but **nothing calls it at the moment**: summaries are not truncated and accumulate in `storage.local`.
+**Schema.** Database `thunderai-message-data`, version 1; the name, the version, the store and index
+names are constants at the top of `js/mzta-storage.js` (`MESSAGE_DB_NAME`, `MESSAGE_DB_VERSION`,
+`MESSAGE_STORES`, `INDEX_CREATED_AT`, `INDEX_SIZE`). Future versions go in the `upgrade` callback of
+`openDB()`. Three object stores, `spam`, `summary`, `translation`, each with `keyPath: 'messageId'`
+and two indexes, `createdAt` (paging and cleanup) and `size` (the size total). The key is the header
+Message-ID **alone**: a new translation replaces the previous one even in another language.
 
-`js/mzta-translationstore.js` (`taTranslationStore` class) wraps `taStorage` for translation-specific operations: load/save/remove translations and store error states. Likewise it has `truncTranslations()`, which **nothing calls at the moment**: translations are not truncated either.
+| Field | |
+|---|---|
+| `messageId` | the header Message-ID |
+| `createdAt` | ms timestamp of the write, overwritten when the record is rewritten |
+| `size` | bytes: `new TextEncoder().encode(JSON.stringify(record)).byteLength` of the record **without** `size`, computed first and then added, so it does not depend on itself |
+| `subject`, `from`, `message_date` | the shape `_buildReportMetadata(message, fullMessage)` builds in `mzta-background.js`: `subject` and `from` arrays (MIME headers, else the MessageHeader field), `message_date` an ISO string; `[]`, `[]`, `''` when not known |
+| spam | `spamValue`, `explanation`, `moved`, `SpamThreshold` |
+| summary | `summary`, `summary_html`, `error`, `message`, `summary_date` (ISO) |
+| translation | `translated_text`, `translated_subject`, `translation_status` (`"1"` ok, `"-1"` skipped), `lang`, `error`, `message` |
 
-**Cleanup and truncation, as of today.** Besides the two truncations above, nothing removes old
-per-message records automatically:
-- **Age-based cleanup.** `taStorage.cleanup(maxAgeDays)` (remove the records whose `ts` is older
-  than that, every field included; `0` does nothing) exists but **nothing calls it**, and no
-  preference sets an age. The only bulk removal is `taStorage.clearAllRecords()`, from the options
-  page.
-- **Spam reports.** `js/mzta-spamreport.js` (`taSpamReport`) has `truncReportData()` (keep the 100
-  most recent reports, by their `ts`), called **only** by `newEmailListener()` after an incoming
-  batch, and only with `spamfilter` on. Reports of manual checks (context menu, panel Refresh)
-  accumulate until the next such batch; with the spam filter off they are never truncated.
+No record has a `ts`: `createdAt` replaces it. A field whose value is `undefined` is left out.
+`taStorage.buildRecord(type, messageId, data, createdAt)` builds every record, written or migrated.
 
-When to clean up, with which age and which limits is still to be decided (one job for all three
-stores). Each translation record stores `translated_text`, `lang`, and optional error information.
+**`taStorage`.** `getRecord(id)` reads the three stores in one readonly transaction and returns
+`{ spam, summary, translation }`, each key present only when that store has a record (the stored
+record itself), `null` when none has; `hasField(record, type)`. `writeSpam` / `writeSummary` /
+`writeTranslation(id, data, force = true)` store one record (with `force` false an existing one is
+kept); `deleteSpamField` / `deleteSummaryField` / `deleteTranslationField(id)` delete the record of
+that type only; `deleteRecord(id)` the three, in one readwrite transaction (no caller today). Static:
+`getPage(type, {offset, limit})` (newest first: a cursor on `createdAt` in `prev` direction,
+`advance(offset)` only when `offset > 0`), `count(type)`, `getTotalSize()` (the sum of `size` with a
+key cursor on the `size` index, so no record is loaded), `clear(type)`, `clearAllRecords()`,
+`cleanup()`, `startCleanupSchedule()`, `isMigrating()`. The rules of every method:
+- nothing but IndexedDB requests is awaited inside a transaction (it commits as soon as the event
+  loop is idle): the preference reads come before it;
+- `openDB()` always passes `blocked`, `blocking` (it closes the connection, so another context can
+  upgrade) and `terminated`; the connection is shared per context and reopened after either;
+- **a write never swallows its error**: it logs it and rejects, so the caller can tell the user
+  (below). A read that fails logs and returns `null` / nothing;
+- an empty or missing Message-ID is never written (logged);
+- saving disabled for a type (`{feature}_storage_enabled` false) skips its writes; what is saved is
+  still read and shown.
+Separate stores need no write queue: the per-record queue the `storage.local` layout needed
+(`_pending`) is gone.
+
+**The wrappers.** `taSummaryStore` (`js/mzta-summarystore.js`), `taTranslationStore`
+(`js/mzta-translationstore.js`) and `taSpamReport` (`js/mzta-spamreport.js`) load, save and remove
+their type and store error states; their dates (`summary_date` fallback, `translation_date`,
+`report_date`) come from `createdAt`. `saveSummary(data, id, metadata = {})`,
+`saveTranslation(data, id, metadata = {})` and the three `saveError(id, message, metadata = {})` take
+the metadata `_buildReportMetadata()` builds; `taSpamReport.buildError()` builds an error report
+without saving it. The spam log reads `getReportPage(offset, limit)` and `countReports()`. There is no
+truncation and no bulk read any more: the limits are the cleanup's.
+
+**The metadata.** The summary and translation jobs (`_runSummaryJob()`, `_runTranslationJob()`)
+build it as soon as the message is known (from `options.messageData`, else from the resolved
+message, then again from the full message once fetched) and pass it to every save, error saves
+included. The webchat save (`chatgpt_saveSummary`) has only the Message-ID and the text: it resolves
+the message with `_resolveMessage(headerMessageId, null, msg.tabId)` and builds it from that, or
+saves with `{}` when it cannot. "Message not found" errors are saved with `{}`, the spam report's
+included, so its row in the spam log has empty date, sender and subject.
+
+**A failed save.** A result shown in a panel whose save failed is still shown: `_endSummaryJob()` /
+`_endTranslationJob()` catch the store failure and add its message to the data they send
+(`storage_error`); the spam job saves through `_saveSpamReport()` / `_saveSpamError()`, which do the
+same for the report; the webchat save too. The message-display panels then put a red notice at the
+top of the panel (`storage_save_failed`, followed by the error, `_buildStorageErrorNotice()` in
+`js/mzta-compose-script.js`). An automatic run with no panel open only logs it.
+
+**Who opens the database.** The **background** owns it: the migration, the scheduled cleanup and
+every read and write of the message flow. The message display and compose scripts never open it:
+they go through the background, as before. The **management pages** open it directly through
+`js/mzta-storage.js`: the options page (size, clear) and the spam filter page (the log). On open they
+check the migration flag (`taStorage.isMigrating()`); while it is set they show
+`storage_migration_in_progress` instead of an empty table (the spam log) or next to the size (the
+options page). They never migrate.
+
+**Limits and cleanup.** Per type: `{feature}_storage_enabled` (default `true`),
+`{feature}_storage_max_entries` and `{feature}_storage_max_age_days` (default `0`, no limit), with
+`{feature}` `spamfilter`, `summarize`, `translate` (see [05-options.md](05-options.md)). The limits
+are off by default: the spam reports, once cut to the 100 newest after each incoming batch, are
+unlimited too. `taStorage.cleanup()` is the one routine: for each type it deletes the records older
+than the maximum age, then the oldest records beyond the maximum count, with a cursor on the
+`createdAt` index and `count()`; a limit of `0` is no limit for that rule. Every cleanup, `clear(type)`
+and `clearAllRecords()` run inside `navigator.locks.request('thunderai-storage-cleanup', ...)`, shared
+by the background and the pages, so they never overlap.
+
+**Scheduling**, in the background, without the `alarms` permission (`startCleanupSchedule()`, called
+once the policy is loaded): the time of the last completed cleanup is kept in `storage.local`
+(`_message_data_last_cleanup`). At startup, with none or one older than 24 hours, the cleanup runs at
+once; otherwise it is set 2 hours after the start. After each run the time is saved (only on success)
+and the next run is set 24 hours later. One timer at a time, no periodic checks. A lowered limit
+applies at the next scheduled cleanup.
+
+**Migration from `storage.local`.** `migrateMessageDataToIndexedDB()` (`js/mzta-storage-migration.js`)
+runs in the startup migration block of `mzta-background.js`, after the other steps, at **every** start
+(a downgrade writes `msg:` records again, moved at the next start of this version), awaited with a
+`.catch()` that only logs. Never from a page. With no `msg:` key it costs one read and writes nothing
+(a flag left behind by an interrupted run is removed). Otherwise:
+1. read the legacy keys;
+2. set the migration flag `_message_data_migrating` in `storage.local` ("legacy data is being
+   migrated"; there is no "done" flag);
+3. open the database;
+4. write the records in one transaction: each legacy field becomes a record of its store,
+   `createdAt` = the field's `ts`, else the record's `ts`, else the time of the migration (`ts` is
+   not copied), `size` computed, the metadata empty for summaries and translations (no message is
+   queried). A record the database already holds with a `createdAt` as new or newer is never
+   overwritten. A field that is not an object is logged and dropped with its key;
+5. remove the legacy keys, only once that transaction has committed;
+6. remove the flag.
+A failure rejects and keeps the legacy keys and the flag: the next start retries. The background
+registers the listeners that read or write these records (the main `onMessage` listener, the new
+mail listener) and starts the cleanup only after the block, so nothing reads or writes the stores
+before the migration has finished.
+
+**Persistent storage.** `storage.local` is never evicted by Firefox (Thunderbird); the extension's
+IndexedDB is *temporary* storage, subject to a quota and, when the disk is almost full, to the
+eviction of whole databases, least recently used origins first, without notice. The optional
+`unlimitedStorage` permission removes the quota and marks the storage as persistent. It is not a
+mandatory permission (the update would ask every user for it): the `storage_persistent` advanced
+option asks for it, a permission-gated toggle (see "Feature permissions" above and
+[05-options.md](05-options.md#permission-gated-toggles)). Switched off, it gives the permission back
+(`removeFeaturePermissions()`): the data stays, no longer protected.

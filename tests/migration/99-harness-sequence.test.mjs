@@ -119,7 +119,7 @@ test('on mzta-background.js: the cut is the migration block plus the guarded men
     const all = calls.flat().map(c => c.slice(0, -1)).sort();
     assert.deepEqual(all, ['isSyncDrained', 'loadManaged', 'migrateCalendarNoSelection', 'migrateCustomPromptIdCollisions',
         'migrateCustomPromptsStorage', 'migrateDefaultPromptsPropStorage', 'migrateEnabledToShowIn', 'migrateMenuOrderAlphabetic',
-        'migrateOllamaThinkLevel', 'migratePrefsToLocal']);
+        'migrateMessageDataToIndexedDB', 'migrateOllamaThinkLevel', 'migratePrefsToLocal']);
     assert.deepEqual(seq.declared, ['_prefs_migration_ok']);
     for (const st of seq.statements) assert.doesNotThrow(() => compileSequence({ ...seq, statements: [st] }), st.text);
 });

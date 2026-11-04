@@ -22,7 +22,7 @@ branches of "Per-feature provider override" are spec 08b, covered by the managed
 node --test "tests/api/*.test.mjs"     # this area only, from the repository root
 ```
 
-Level 1 only: nothing to install, no jsdom, **no network and no real waiting**. The area has **no
+Level 1 only (after `npm ci`, see [`../README.md`](../README.md)): no jsdom, **no network and no real waiting**. The area has **no
 plugin**: the fetch model and the worker realm live in the area (a plugin is loaded into every context,
 the managed area's DOM pages included, and would change what they detect).
 

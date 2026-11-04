@@ -16,7 +16,7 @@ How to run the suite, the two levels, the DOM harness and the known-issue mechan
 ## Running
 
 ```sh
-node --test "tests/chatgptweb/*.test.mjs"                                  # level 1: nothing to install
+node --test "tests/chatgptweb/*.test.mjs"                                  # level 1 (npm ci)
 node --test "tests/dom/chatgpt/*.dom.mjs" "tests/dom/*/chatgptweb-*.dom.mjs"   # DOM (npm ci)
 ```
 

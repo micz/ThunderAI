@@ -20,5 +20,8 @@ await ownIntegrationScenario({
             assert.equal(rows[0].cells[0].colSpan, 8);
             assert.equal(rows[0].cells[0].textContent, msg('spamfilter_no_reports'));
         });
+        k.test('log-empty-no-pager', 'spec 05 "Spam Filter page"', 'with no report there is nothing to page through: no Previous / Next', () => {
+            assert.equal(ctx.$('#report_pager').style.display, 'none');
+        });
     },
 });

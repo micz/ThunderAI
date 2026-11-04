@@ -205,6 +205,13 @@
                         </tbody>
                     </table>
                 </div>
+                <!-- One page of reports at a time, newest first (loadSpamReport()). Hidden while
+                     there is nothing to page through. -->
+                <div class="report_pager" id="report_pager" style="display:none;">
+                    <button type="button" id="report_prev_btn" class="btn_small">__MSG_spamfilter_report_previous__</button>
+                    <span id="report_page_label"></span>
+                    <button type="button" id="report_next_btn" class="btn_small">__MSG_spamfilter_report_next__</button>
+                </div>
             </div>
 
         </div>

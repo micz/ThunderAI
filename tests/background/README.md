@@ -37,7 +37,7 @@ with **no managed policy**.
 node --test "tests/background/*.test.mjs"     # this area only, from the repository root
 ```
 
-Level 1 only: nothing to install, no jsdom. The area imports only `helpers/core/` (and its own
+Level 1 only (after `npm ci`, see [`../README.md`](../README.md)): no jsdom. The area imports only `helpers/core/` (and its own
 `helpers/known-issues/background.mjs`), and has **no plugin**: the APIs the core mock lacks are added
 per context (see "The API models"). The run takes about 16 s (360 tests); nothing waits for real
 time: the debounce, the worker timeout and the batch yield points run on node:test's mock timers.
@@ -49,8 +49,8 @@ time: the debounce, the worker timeout and the batch yield points run on node:te
 | `01-job-registry` | `taJobRegistry`: one entry per kind and message, synchronous registration, the job body not run inside `start()`, the promise never rejecting (thrown, rate-limited, synchronous throw, no outcome), the entry removed on every path, a retry in the same session, joiners sharing the outcome, `invalidate()` / `revive()`, the log lines | 01 "In-flight jobs" |
 | `02-batch-controller` | `taBatchController`: tokens, `endBatch()`'s snapshot and the reset on the last exit, a cancel flagging the active batches only, later batches unaffected, overlapping batches and one notice, `rate_limit` never overwritten, the longest `retryAfterMs`, `getStatus()`, independence from `WorkingLevel` | 01 "Batch cancellation", 04 "Batch cancellation" |
 | `03-working-status-exclusions` | `taWorkingStatus` (level, icons, the ThunderAI Privacy idle icon, never negative); `checkExcludedTag()` and the exclusion list preference | 01 "Working indicator", 09 "Activation switch", 05 `add_tags_exclusions` |
-| `04-storage` | `taStorage`: the `msg:<id>` key and schema, the three fields in one record, force / no force, deleting a field and the last field, `deleteRecord()`, `getAll*Records()`, age-based `cleanup()`, `clearAllRecords()`, the preferences never touched, the per-record write queue (concurrent fields, delete + write, two instances, order, other messages in parallel) | 01 "Per-Message Data Storage" |
-| `05-stores` | `taSummaryStore`, `taTranslationStore`, `taSpamReport`: round trips, error states, records written by older versions, removal, the 100-entry truncation (as methods: the background calls only the spam one), `saveError()` metadata, `getAllReportData()` → `{}`, clearing one field only, no `storage.session` state | 01 "Per-Message Data Storage", 02 "Missing special prompts" |
+| `04-storage` | `taStorage` on IndexedDB: the database, its stores and indexes, the record fields (`createdAt`, `size` without itself, no `ts`), one store per type, `getRecord()`, the key on the Message-ID alone, force / no force, deleting one type, `deleteRecord()`, three types written together, an empty Message-ID never saved, saving disabled per type (writes skipped, reads kept), a failed write logged and rejected, `getPage()` / `count()` (order, paging, offset 0), the size total, `clear()` / `clearAllRecords()`, the cleanup lock, the cleanup by age, by count, both, per type, `0` = no limit, from the preferences, and its schedule (at once, 2 hours, 24 hours, one timer, a failed run) | 01 "Per-Message Data Storage" |
+| `05-stores` | `taSummaryStore`, `taTranslationStore`, `taSpamReport`: round trips, error states, the metadata saved with summaries and translations (and empty without it), records written by older versions (moved at the start), removal, `saveError()` metadata, the spam log pages, a failed write rejecting, no `storage.session` state | 01 "Per-Message Data Storage", 02 "Missing special prompts" |
 | `06-addtags-account-settings` | `js/mzta-addtags-account-settings.js` on its own: the nine override keys, the getters on a missing or malformed value, the setter's validation key by key (unknown keys, wrong types, blank `prompt_text`, the valid edge values), an empty entry removing the account, copies (nothing shared with the caller, nothing handed out mutated), `addTags_resolveAccountPrefs()` (a fresh copy, only the keys present, `prompt_text` never, a malformed value ignored, a locked key skipped), `addTags_applyAccountPrompt()` (itself / a copy / ignored when `_text_by_policy`), both ignoring every entry under `_disable_add_tags_account_settings` | 02 "Add tags: per-account settings"; 05 `add_tags_account_settings`; 08a "_disable_add_tags_account_settings" |
 | `10-special-command` | `mzta_specialCommand` after `initWorker()`: the prompt posted, the answer accumulated, `newRetryAttempt` / `messageSent` ignored, thinking tokens and `<think>` blocks (closed, leading whitespace, unterminated), errors with `rateLimited` / `retryAfterMs`, a worker crash, the timeout (the preference, the default, after a 429, after a 503, never after an answer), `dispose()` on every path | 04 "Worker Lifecycle & Timeout", "Thinking in special commands", #batch-stop-on-rate-limit |
 | `20-receive-summary-translation` | `summarize_auto = 3` / `translate_auto = 3`: the listener registration, what is stored on which message, the prompts, the broadcast to the displaying tabs, the ids, the sanitizer on the way out, one worker per prompt, the cache hit, the same id twice in a batch, the skipped folders and archives, several messages | 01 "Background Summary / Translation on Email Receive", "Per-message pipelines", "Shared guards", "In-flight jobs" |
@@ -75,6 +75,7 @@ time: the debounce, the worker timeout and the batch yield points run on node:te
 | `38-permission-guards` | the runtime guards: automatic and context-menu add_tags / spam filter without their permissions (one red panel per run, the other features go on), the address book rule skipped with one blue notice (batch and Refresh), `assign_tags` blocked and a tag that cannot be created, `createTag()` / `assignTagsToMessage()` rejecting, the popup Add tags and calendar-from-clipboard menu actions refused with their alert | 01 "Feature permissions" |
 | `39-context-menu-multi` | several messages in the context menu: items created enabled, only the four multi-message prompts kept enabled with two messages or a paginated MessageList (pages not fetched), all enabled again with one, update and refresh only on a change, other contexts left alone, a closed or replaced showing not refreshed, the parent disabled when no item is left enabled, a custom prompt saved with `allow_multi` still disabled | 02 "Context Menu" ("Several messages", "Built-in-only fields") |
 | `40-chat-window-ready` | the chat window's ready listener (`addReadyListener()` in `openChatGPT()`, an extra root): for each of the five API providers and ChatGPT Web, one `runtime.onMessage` and one `windows.onRemoved` listener while the window has not answered, both removed on a usable configuration (`api_send` / `chatgpt_send`), on each empty required field (`api_error`), and on the window closed first (a late ready message is then not answered); another window closing changes nothing; two windows waiting at once | 01 "Ready handshake" |
+| `41-storage-flows` | what the background saves and when saving fails: the metadata of summaries and translations (the jobs, incoming mail, the webchat save, a message not found), a result whose save failed still shown with `storage_error` (summary, translation, manual spam check, webchat save), an automatic run only logging it | 01 "Per-Message Data Storage" |
 | `99-harness-known-issues` | the shape of `helpers/known-issues/background.mjs` | harness |
 | `99-harness-scope` | the statement splitter and the cut (small cases and the real file), the fake Worker, the strict API models | harness |
 
@@ -82,10 +83,13 @@ Helpers, named without the test suffix so the level-1 glob never runs them:
 
 - `scope.mjs`: cuts and runs the background's code (see below);
 - `context.mjs`: `bgContext()` (a background started the way the background starts) and
-  `moduleContext()` (the modules alone), `ROOTS`, `STARTUP`, the stand-ins;
+  `moduleContext()` (the modules alone), `ROOTS`, `STARTUP`, the stand-ins. Both run the real
+  `migrateMessageDataToIndexedDB()` when the seeded `storage.local` holds `msg:` records, as the
+  background's start does, so a test seeds stored data the way an older version left it;
 - `apis.mjs`: the API models; `fake-worker.mjs`: the scripted Worker;
 - `flows.mjs`: what the flow files share (`receive()`, `fromTab()`, `clickContextMenu()`,
-  `setPrefs()`, `drive()`, `featureResponder()`, `assertClean()`…).
+  `setPrefs()`, `drive()`, `featureResponder()`, `assertClean()`, `record()` - async: the stored
+  data of a message, `taStorage.getRecord()`…).
 
 No fixture file: each test seeds what it needs in the context's options.
 
@@ -240,8 +244,11 @@ None today.
   `addtags_set_exclusions` only for their per-account behaviour (`24b-add-tags-accounts`) and the
   permission guard (`38-permission-guards`): their callers are the compose and ui areas'.
 - What the background does at startup besides `STARTUP` (see above) and the keyboard shortcut.
-- **The real Thunderbird storage and its timing**: the core mock resolves at once; the write races of
-  a slow storage are tested with direct concurrent calls (`04-storage`), not through a flow.
+- **The real Thunderbird storage and its timing**: the core mock resolves at once, and IndexedDB is
+  fake-indexeddb (in memory, no quota, no eviction): the write races are tested with direct
+  concurrent calls (`04-storage`), not through a flow, and a full disk only as an injected failure.
+- **The scheduled cleanup at startup**: `taStorage.startCleanupSchedule()` is not a `STARTUP`
+  statement; the schedule is tested on the module (`04-storage` `schedule-*`).
 
 ## Under-specified
 
@@ -256,9 +263,9 @@ says how (fixed, documented as it is, or left to a separate job).
    summarized. *Decided:* the target is to stop only the features that use the connection that hit
    the rate limit, in every batch; a separate job, not pinned by a test here until then.
 2. *(resolved: concurrent writes to one `msg:` record used to drop each other's field, and the spam
-   job did not await its report. `taStorage` now queues the writes of each record, and the job
-   awaits the save; spec 01 "Per-Message Data Storage" says so, `04-storage` `concurrent-*` /
-   `queue-*` and `23-spam-actions` `outcome-after-save` test it.)*
+   job did not await its report. The job awaits the save (`23-spam-actions` `outcome-after-save`);
+   since #955 each type has its own IndexedDB store, so writers of different types no longer share a
+   record (`04-storage` `concurrent-types`).)*
 3. *(resolved: the messages a Stop or a rate limit left unprocessed are not resumed, by design; spec 01
    "Batch cancellation", "What a stop leaves behind", says what stays available. `28-batch-stop`
    `not-resumed` / `button-on-open` test it.)*

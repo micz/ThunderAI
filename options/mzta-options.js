@@ -32,7 +32,7 @@ import {
   hasNoConnectionSelected,
   setTomSelectBorder,
   getMiczItUrl,
-  getCacheStorageUsedSpace,
+  getMessageStorageUsedSpace,
   supportsUsageData
 } from '../js/mzta-utils.js';
 import { taStorage } from '../js/mzta-storage.js';
@@ -65,7 +65,11 @@ import {
   isSetupWizardDisabled,
   disableForManagedRestriction
 } from '../pages/_lib/managed-ui.js';
-import { isPermissionGatedPref } from '../js/mzta-feature-permissions.js';
+import {
+  hasFeaturePermissions,
+  isPermissionGatedPref,
+  removeFeaturePermissions
+} from '../js/mzta-feature-permissions.js';
 import { maskUrlCredentials } from '../js/mzta-endpoint-policy.js';
 import {
   bindPermissionToggle,
@@ -675,9 +679,17 @@ function resetApiStreamIdleTimeout(){
   mztaPrefs.setPref('api_stream_idle_timeout', prefs_default.api_stream_idle_timeout);
 }
 
-async function updateCacheSize() {
-  let size = await getCacheStorageUsedSpace();
-  document.getElementById('cache_storage_size').textContent = size;
+// The space taken by the saved spam reports, summaries and translations (IndexedDB). While the
+// background is still moving them out of storage.local (the migration flag), a notice says so,
+// since the size does not count them yet.
+async function updateMessageStorageSize() {
+  document.getElementById('message_storage_migrating').style.display = (await taStorage.isMigrating()) ? '' : 'none';
+  try {
+    document.getElementById('message_storage_size').textContent = await getMessageStorageUsedSpace();
+  } catch (e) {
+    taLog.error('Could not read the message storage size: ' + e);
+    document.getElementById('message_storage_size').textContent = '';
+  }
 }
 
 // The unencrypted (http:) servers the user allowed [#1000], each with a button that
@@ -778,6 +790,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   setFeatureManageVisibility(spamfilter_info_btn, spamfilter_el.checked);
   await showLockedPermissionWarning(spamfilter_el, 'spamfilter');
+
+  // Protects the saved per-message data from eviction: needs the optional unlimitedStorage
+  // permission. Switched off, the permission is given back: the data stays, it is just no longer
+  // protected. Not on a refusal: then the permission was never granted.
+  let storage_persistent_el = document.getElementById('storage_persistent');
+  bindPermissionToggle(storage_persistent_el, 'storage_persistent', {
+    taLog: taLog,
+    onChange: async (checked) => {
+      if (checked) return;
+      try {
+        if (await hasFeaturePermissions('storage_persistent')) await removeFeaturePermissions('storage_persistent');
+      } catch (e) {
+        taLog.error('Could not remove the permission of storage_persistent: ' + e);
+      }
+    },
+  });
+  await showLockedPermissionWarning(storage_persistent_el, 'storage_persistent');
 
   let summarize_el = document.getElementById('summarize');
   let summarize_info_btn = document.getElementById('btnManageSummarizeInfo');
@@ -1027,16 +1056,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Cache management
-  updateCacheSize();
+  // The saved spam reports, summaries and translations
+  updateMessageStorageSize();
 
-  document.getElementById('btnClearCache').addEventListener('click', async () => {
+  document.getElementById('btnClearMessageStorage').addEventListener('click', async () => {
     if (!confirm(browser.i18n.getMessage("prefs_storage_clear_confirm"))) {
       return;
     }
-    let count = await taStorage.clearAllRecords();
-    alert(browser.i18n.getMessage("prefs_storage_clear_done", [String(count)]));
-    updateCacheSize();
+    try {
+      let count = await taStorage.clearAllRecords();
+      alert(browser.i18n.getMessage("prefs_storage_clear_done", [String(count)]));
+    } catch (e) {
+      taLog.error('Could not clear the message storage: ' + e);
+      alert(browser.i18n.getMessage("prefs_storage_clear_error", [String(e?.message || e)]));
+    }
+    updateMessageStorageSize();
   });
 
   browser.runtime.getPlatformInfo().then(info => {

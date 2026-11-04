@@ -31,6 +31,22 @@ export function keyNames(keys) {
     return Object.keys(keys);
 }
 
+/**
+ * storage.local without the legacy per-message records (msg: keys), which the data migration moves
+ * to IndexedDB at every start, whatever happened to the preference copy (spec 01 "Per-Message Data
+ * Storage"): where a test says "nothing touched", it means everything else.
+ */
+export function withoutMessageData(local) {
+    return Object.fromEntries(Object.entries(local).filter(([k]) => !k.startsWith('msg:')));
+}
+
+/** The records of one store of the message database, in a start's r.idb, by messageId. */
+export function messageRecords(idb, store) {
+    const db = (idb || []).find(d => d.name === 'thunderai-message-data');
+    const s = db ? db.stores.find(x => x.name === store) : null;
+    return Object.fromEntries((s ? s.records : []).map(r => [r.value.messageId, r.value]));
+}
+
 export const writesOf = calls => calls.filter(c => c.op === 'set' || c.op === 'remove' || c.op === 'clear');
 export const callsTo = (calls, area) => calls.filter(c => c.area === area);
 

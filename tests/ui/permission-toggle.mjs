@@ -117,7 +117,8 @@ export function permissionToggleTests(ctx, k, { key, permissions, deniedMsg, err
     });
 
     k.test(slug + '-no-warning', S_PERM, key + ': unlocked, no missing-permission note is shown', () => {
-        assert.equal(el().closest('.feature_row').querySelector('[data-mzta-permission-warning]'), null);
+        // A feature row, or a row of the options page's advanced section.
+        assert.equal(el().closest('.feature_row, .mzta_adv_row').querySelector('[data-mzta-permission-warning]'), null);
     });
 }
 

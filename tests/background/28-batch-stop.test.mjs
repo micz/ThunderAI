@@ -108,25 +108,25 @@ k.test('cancel-answer', 'cancel_batch answers {ok: true}, and batch_status then 
     assert.equal(statusAfterStop.cancelRequested, true);
 });
 
-k.test('done-before-stop', 'the message finished before the Stop keeps its summary and translation', () => {
-    const r = record(ctx, 'st1@x');
+k.test('done-before-stop', 'the message finished before the Stop keeps its summary and translation', async () => {
+    const r = (await record(ctx, 'st1@x'));
     assert.equal(r.summary.summary, 'Summary st1@x');
     assert.equal(r.translation.translated_text, 'B st1@x');
 });
 
-k.test('in-flight-finishes', 'the summary in flight at the Stop completes and is stored', () => {
-    assert.equal(record(ctx, 'st2@x').summary.summary, 'Summary st2@x');
+k.test('in-flight-finishes', 'the summary in flight at the Stop completes and is stored', async () => {
+    assert.equal((await record(ctx, 'st2@x')).summary.summary, 'Summary st2@x');
 });
 
-k.test('next-feature-not-started', 'the message in flight stops before its next feature: no translation', () => {
-    assert.equal(record(ctx, 'st2@x').translation, undefined);
+k.test('next-feature-not-started', 'the message in flight stops before its next feature: no translation', async () => {
+    assert.equal((await record(ctx, 'st2@x')).translation, undefined);
     assert.equal(sentPrompts(ctx).some(p => p.feature === 'translation' && p.message === 'st2@x'), false);
 });
 
-k.test('queued-not-started', 'the queued messages never start: no prompt, nothing stored', () => {
+k.test('queued-not-started', 'the queued messages never start: no prompt, nothing stored', async () => {
     for (const id of ids.slice(2)) {
         assert.equal(sentPrompts(ctx).some(p => p.message === id), false, id);
-        assert.equal(record(ctx, id), null, id);
+        assert.equal((await record(ctx, id)), null, id);
     }
 });
 
@@ -149,7 +149,7 @@ k.test('ended-clean', 'after the batch: no batch working, nothing in flight, the
 k.test('not-resumed', 'the messages the Stop kept from starting are not processed later: still no prompt, nothing stored', async () => {
     for (let i = 0; i < 60; i++) await new Promise(r => setImmediate(r));
     assert.deepEqual(heldOpen(), []);
-    for (const id of ids.slice(2)) assert.equal(record(ctx, id), null, id);
+    for (const id of ids.slice(2)) assert.equal((await record(ctx, id)), null, id);
 });
 
 k.test('button-on-open', 'opening a message the Stop skipped offers the summary and the translation as the manual button', async () => {
@@ -166,14 +166,14 @@ k.test('next-batch-runs', 'the next incoming mail is processed normally: the Sto
     ctx.workers.respond = (w, prompt) => w.deliver({ type: 'newToken', payload: { token: answerFor({ prompt }) } }, { type: 'tokensDone', payload: {} });
     const h = ctx.m.addMessage({ headerMessageId: 'after@x' });
     await receive(ctx, [h]);
-    assert.ok(record(ctx, 'after@x').summary && record(ctx, 'after@x').translation);
+    assert.ok((await record(ctx, 'after@x')).summary && (await record(ctx, 'after@x')).translation);
 });
 
 k.test('stop-nothing-running', 'cancel_batch with no batch running changes nothing for the next one', async () => {
     assert.deepEqual(await popup({ command: 'cancel_batch' }), { ok: true });
     const h = ctx.m.addMessage({ headerMessageId: 'after2@x' });
     await receive(ctx, [h]);
-    assert.ok(record(ctx, 'after2@x').summary);
+    assert.ok((await record(ctx, 'after2@x')).summary);
 });
 
 k.test('no-leak', 'no worker left alive, no unmodelled API touched, no unhandled rejection', () => {

@@ -394,6 +394,36 @@
       }
     }
   },
+  "prefs_storage_clear_error": {
+    "message": "The stored data could not be cleared: $ERROR$",
+    "description": "Options page, advanced section: alert shown when clearing the stored spam reports, summaries and translations fails. $ERROR$ is the technical error message.",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "prefs_OptionText_storage_persistent": {
+    "message": "Protect the saved data",
+    "description": "Options page, advanced section: label of the switch that protects the saved spam reports, summaries and translations from being deleted by Thunderbird when the disk is almost full."
+  },
+  "prefs_OptionText_storage_persistent_info": {
+    "message": "Without this option, Thunderbird may delete the saved spam reports, summaries and translations when the disk is almost full. Turning it on asks for the permission to store unlimited data.",
+    "description": "Options page, advanced section: help text of the switch that protects the saved data. 'Store unlimited data' is the permission Thunderbird asks the user to grant."
+  },
+  "storage_migration_in_progress": {
+    "message": "ThunderAI is moving the saved spam reports, summaries and translations to a new storage. Reopen this page in a few moments to see them.",
+    "description": "Options page and spam filter page: notice shown while the saved data is being moved to the new storage after an update."
+  },
+  "storage_save_failed": {
+    "message": "This result could not be saved: $ERROR$",
+    "description": "Message display: red notice at the top of a summary, translation or spam report panel when the result is shown but saving it failed. $ERROR$ is the technical error message.",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
   "prefsInfoDesc_1": {
     "message": "It could happen that the ChatGPT web interface changes in a way that breaks how the addon works. Check the \"Service Status\" page linked at the bottom of this page. Also, remember that the first time you use ThunderAI, you need to log in to ChatGPT.",
     "description": "Options page: description shown when the ChatGPT Web connection is selected; 'Service Status' refers to the link at the bottom of the page."
@@ -1912,8 +1942,31 @@
     "message": "The spam threshold is zero! You will mark all mails as spam!",
     "description": "Spam filter page: warning shown next to the spam threshold field when the value is set to 0."
   },
+  "spamfilter_report_previous": {
+    "message": "Previous",
+    "description": "Spam filter page: button showing the previous (newer) page of spam reports."
+  },
+  "spamfilter_report_next": {
+    "message": "Next",
+    "description": "Spam filter page: button showing the next (older) page of spam reports."
+  },
+  "spamfilter_report_page_label": {
+    "message": "$FROM$–$TO$ of $TOTAL$",
+    "description": "Spam filter page: which spam reports the table shows, e.g. '1–50 of 1234'.",
+    "placeholders": {
+      "from": {
+        "content": "$1"
+      },
+      "to": {
+        "content": "$2"
+      },
+      "total": {
+        "content": "$3"
+      }
+    }
+  },
   "spamfilter_no_reports": {
-    "message": "No messages have screened for spam yet. Here you'll find a list of the last 100 spam reports.",
+    "message": "No message has been screened for spam yet. Here you'll find the list of the spam reports.",
     "description": "Spam filter page: text shown in the empty spam reports table before any message has been checked."
   },
   "SpamFilter_skip_addresses_title": {

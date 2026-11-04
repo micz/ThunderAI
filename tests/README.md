@@ -14,22 +14,22 @@ There are two levels:
 
 | Level | Where | What it loads | Needs |
 |---|---|---|---|
-| **1** | `tests/<area>/*.test.mjs` (today `tests/managed/`, `tests/static/`, `tests/prompts/`, `tests/api/`, `tests/ui/`, `tests/webchat/`, `tests/migration/`, `tests/compose/`, `tests/background/`, `tests/chatgptweb/`, `tests/ci/`) | the shipped modules, imported as they are | Node 22+, **nothing to install** |
+| **1** | `tests/<area>/*.test.mjs` (today `tests/managed/`, `tests/static/`, `tests/prompts/`, `tests/api/`, `tests/ui/`, `tests/webchat/`, `tests/migration/`, `tests/compose/`, `tests/background/`, `tests/chatgptweb/`, `tests/ci/`) | the shipped modules, imported as they are | Node 22+, `npm ci` (fake-indexeddb) |
 | **DOM** | `tests/dom/<page>/*.dom.mjs` | each page's real HTML and script (or a given document with given scripts), in [jsdom](https://github.com/jsdom/jsdom) | Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`, `npm ci` |
 
-Both use only Node's built-in runner (`node:test`, `node:assert/strict`). jsdom is the
-project's **only** dependency, a dev dependency pinned to an exact version in the root
-`package.json`; no shipped code imports anything from `node_modules`. The different suffix
-(`.dom.mjs`) is what keeps the level-1 glob from ever picking up a DOM test, and no file a
-`.test.mjs` imports, directly or not, may import jsdom: level 1 must keep running with nothing
-installed.
+Both use only Node's built-in runner (`node:test`, `node:assert/strict`). The project has two
+dependencies, both dev dependencies pinned to an exact version in the root `package.json`: jsdom,
+for the DOM tests, and fake-indexeddb, the in-memory IndexedDB the core mock gives every context
+(`helpers/core/indexeddb.mjs`), so both levels need `npm ci`. No shipped code imports anything from
+`node_modules`. The different suffix (`.dom.mjs`) is what keeps the level-1 glob from ever picking up
+a DOM test, and no file a `.test.mjs` imports, directly or not, may import jsdom: level 1 never
+loads a page.
 
 ## Running
 
 ```sh
-node --test "tests/**/*.test.mjs"     # level 1 only: no install
-
-npm ci                                # once: installs jsdom from package-lock.json
+npm ci                                # once: installs jsdom and fake-indexeddb from package-lock.json
+node --test "tests/**/*.test.mjs"     # level 1 only
 npm test                              # both levels
 npm run test:dom                      # DOM tests only
 ```
@@ -54,8 +54,7 @@ CI runs on demand, never on every commit
 branch), or by adding the `run-tests` label to a pull request. The label is removed as
 soon as it is added, by [`.github/workflows/tests-unlabel.yml`](../.github/workflows/tests-unlabel.yml)
 (on `pull_request_target`, so it works on pull requests from forks too, and never checks out
-their code), so adding it again runs the suite again. Level 1 runs first, **before**
-installing anything (which proves it still needs no install), then `npm ci && npm test`.
+their code), so adding it again runs the suite again. It runs `npm ci && npm test`.
 
 Nothing waits forever: node:test has no default timeout, so `npm test`, `npm run test:dom` and
 the CI level-1 step pass `--test-timeout=120000` (per test), the CI job has `timeout-minutes: 20`,
@@ -79,7 +78,7 @@ shipped code just to make it testable: the harness adapts to the code, not the o
 ## Layout
 
 ```
-package.json, package-lock.json  development tooling only: jsdom, and the npm test scripts
+package.json, package-lock.json  development tooling only: jsdom, fake-indexeddb, and the npm test scripts
 tests/
 ├── helpers/
 │   ├── core/                   generic: never imports js/mzta-managed.js, never names an area
@@ -90,6 +89,9 @@ tests/
 │   │   ├── background-source.mjs  real background code cut out of mzta-background.js: the
 │   │   │                       tokenizer, locateListener(), evalListener()
 │   │   ├── worker.mjs          a fresh extension context in a worker thread (runWorker())
+│   │   ├── indexeddb.mjs       IndexedDB (fake-indexeddb) and navigator.locks for a context:
+│   │   │                       installIndexedDB(), pendingIndexedDB(), dumpIndexedDB() / seedIndexedDB(),
+│   │   │                       installLocks()
 │   │   ├── known-issues.mjs    the known-issue mechanism: knownTest(), runKnown()
 │   │   └── dom-harness.mjs     DOM harness: openPage(), openDocument(), the strict browser proxy,
 │   │                           settle() (the only core file that imports jsdom)
@@ -173,6 +175,13 @@ It models the WebExtension APIs the shipped modules use:
 - `i18n.getMessage`, backed by the real `_locales/en/messages.json`;
 - `accounts.list`, from the accounts you pass (`setAccounts()`, `failAccounts()`).
 
+Beside the `browser.*` APIs it gives the context the web storage an extension page has (from
+`helpers/core/indexeddb.mjs`): **IndexedDB** - `indexedDB` and the `IDB*` classes on `globalThis`,
+fake-indexeddb, one fresh set of databases per process, shared by every context of the process (a
+page and its background share their origin's databases), with `dumpIndexedDB()` / `seedIndexedDB()`
+to carry them across a restart in another worker - and **`navigator.locks`** (Node's own on Node 24,
+a stand-in with exclusive `request()` otherwise).
+
 The controller it returns records every storage call (`calls`) and every message sent
 (`sent`), and gives the raw storage content (`localData()`).
 
@@ -242,7 +251,7 @@ does, in the browser's order:
    `globalThis`, where the page's module code looks them up. The list is explicit: copying
    the whole window would shadow Node's own `URL`, timers and so on;
 3. installs the browser mock through `startPage()`, extended with the page-side APIs
-   (`permissions`, `tabs`, `windows`, `commands`, `downloads`, `runtime.getPlatformInfo` /
+   (`permissions` with `contains` / `request` / `remove`, `tabs`, `windows`, `commands`, `downloads`, `runtime.getPlatformInfo` /
    `openOptionsPage`, then the plugins' `pageApis()`) and **wrapped in a Proxy that throws on
    any API it does not model**;
 4. runs the page's **classic** scripts in document order with `vm.runInThisContext`
@@ -257,7 +266,8 @@ does, in the browser's order:
 `settle()` does not sleep for a fixed time: it turns the event loop until three consecutive
 turns pass with no browser-mock promise in flight, no pending `setTimeout` (both realms'
 timers are tracked; ones longer than 1 s are not waited for), no pending `requestAnimationFrame`
-callback and no DOM mutation. It throws
+callback, no IndexedDB open request or transaction in flight (`pendingIndexedDB()`: they run on
+`setImmediate`, which nothing else sees) and no DOM mutation. It throws
 "did not settle", naming what is pending, after 30 s (a safety net: the time includes the page's whole init, which a loaded machine stretches). `ctx.fire(el, type)` and
 `ctx.click(el)` settle after the event too.
 
@@ -326,6 +336,7 @@ else is:
 | `Element.prototype.scrollIntoView`, `window.scrollTo` | not implemented by jsdom |
 | `requestAnimationFrame` / `cancelAnimationFrame` | jsdom's own (`pretendToBeVisual`), put on `globalThis` too, where module code calls them as bare names, and **tracked**: a frame is pending from the request until its callback runs or it is cancelled, and `settle()` waits for it |
 | `ResizeObserver` | not implemented by jsdom. With no layout nothing resizes, so the stub never calls back: it records each observer (`callback`, `targets`, `disconnected`) in `ctx.resizeObservers`. On the prompt pages, `js/mzta-editor-highlight.js` now takes its `ResizeObserver` branch, as in Thunderbird |
+| `indexedDB`, `IDB*`, `navigator.locks` | not implemented by jsdom: the mock's fake-indexeddb (the same databases as `globalThis`) put on the window too, and a `navigator.locks` stand-in (`helpers/core/indexeddb.mjs`) |
 | `navigator.clipboard` | not implemented by jsdom: `writeText()` records the text in `ctx.clipboard` and resolves, `readText()` resolves to the last text written |
 | Sparks (the other add-on) | `sendMessage('thunderai-sparks@micz.it', …)` answers `null`: not installed |
 

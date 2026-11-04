@@ -86,6 +86,8 @@ import {
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taSummaryStore } from './js/mzta-summarystore.js';
 import { taTranslationStore } from './js/mzta-translationstore.js';
+import { taStorage } from './js/mzta-storage.js';
+import { migrateMessageDataToIndexedDB } from './js/mzta-storage-migration.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
 import { taBatchController } from './js/mzta-batch-controller.js';
 import { taJobRegistry } from './js/mzta-job-registry.js';
@@ -234,6 +236,14 @@ if (_prefs_migration_ok) await migrateOllamaThinkLevel();
 // Not guarded and with no flag: it runs at every start, since a new version can ship an id a user
 // already has, and it reads only _custom_prompt, which the #129 pair above has already moved.
 await migrateCustomPromptIdCollisions().catch(e => console.error("[ThunderAI] migrateCustomPromptIdCollisions error: " + e));
+// Moves the per-message data (spam reports, summaries, translations) from the msg: records of
+// storage.local to IndexedDB (claude-spec/01-architecture.md "Per-Message Data Storage"). Not
+// guarded and with no one-shot flag: it runs at every start, because an older version run in
+// between (a downgrade) writes msg: records again; with none it is one read. Awaited here, before
+// any listener that reads or writes those records is registered (the main onMessage listener,
+// the new mail listener) and before the scheduled cleanup starts, so nothing reads or writes the
+// stores before it has finished. A failure keeps the legacy records for the next start.
+await migrateMessageDataToIndexedDB().catch(e => console.error("[ThunderAI] migrateMessageDataToIndexedDB error: " + e));
 
 let _process_incoming = false;
 let _sparks_presence = false;
@@ -424,6 +434,10 @@ browser.storage.onChanged.addListener((changes, areaName) => {
 let spamReport = new taSpamReport(prefs_init.do_debug);
 let summaryStore = new taSummaryStore(prefs_init.do_debug);
 let translationStore = new taTranslationStore(prefs_init.do_debug);
+// The scheduled cleanup of the per-message data (the limits of each type, js/mzta-storage.js):
+// at once when the last one is more than 24 hours old, else 2 hours from now, then every 24
+// hours. After the migration above, and after the policy load, since it reads the limits.
+taStorage.startCleanupSchedule().catch(e => console.error("[ThunderAI] Storage cleanup schedule error: " + e));
 
 browser.composeScripts.register({
     // mzta-html-lines.js FIRST: it is a classic script defining the globals
@@ -909,14 +923,33 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             summary_date: new Date(),
                             headerMessageId: msg.headerMessageId
                         };
-                        await summaryStore.saveSummary(summaryData, msg.headerMessageId);
+                        // Only the Message-ID and the text come from the chat window: the
+                        // metadata saved with the summary comes from the message it resolves
+                        // to, and stays empty when it cannot be resolved.
+                        let metadata = {};
+                        try {
+                            const curr_message = await _resolveMessage(msg.headerMessageId, null, msg.tabId);
+                            if (curr_message) metadata = _buildReportMetadata(curr_message, null);
+                        } catch (e) {
+                            taLog.error("[ThunderAI] Could not resolve the message of the webchat summary: " + e);
+                        }
+                        // A failed write never hides the summary: see _endSummaryJob().
+                        let storage_error = null;
+                        try {
+                            await summaryStore.saveSummary(summaryData, msg.headerMessageId, metadata);
+                        } catch (e) {
+                            taLog.error("[ThunderAI] Summary: could not store the webchat summary for " + msg.headerMessageId + ": " + e);
+                            storage_error = _storageErrorMessage(e);
+                        }
                         let prefs_summary = await mztaPrefs.getPrefs([
                             'summarize_max_display_length',
                             'summarize_strip_formatting'
                         ]);
+                        const data = { ...summaryData, maxDisplayLength: prefs_summary.summarize_max_display_length, stripFormatting: prefs_summary.summarize_strip_formatting };
+                        if (storage_error) data.storage_error = storage_error;
                         await _sendIfCurrent(msg.tabId, msg.headerMessageId, {
                             command: "showSummary",
-                            data: { ...summaryData, maxDisplayLength: prefs_summary.summarize_max_display_length, stripFormatting: prefs_summary.summarize_strip_formatting }
+                            data: data
                         });
                     } catch (error) {
                         console.error("[ThunderAI] Error saving summary from webchat:", error);
@@ -1314,7 +1347,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 _checkSpamReport(sender.tab.id);
                 break;
             case 'removeSpamReport':
-                spamReport.removeReportData(message.headerMessageId);
+                spamReport.removeReportData(message.headerMessageId)
+                    .catch(e => taLog.error("Error in removeSpamReport: " + e));
                 break;
             case 'refreshSpamReport':
                 // The panel this comes from lives in the message display, so the sender tab is
@@ -1691,16 +1725,21 @@ async function _endSummaryJob(entry, headerMessageId, data, store) {
         await _restoreSummaryButton(null, headerMessageId);
         return { status: 'cancelled' };
     }
+    // A store failure never hides the result: it is logged, and its message travels with the
+    // data (storage_error), so the panel shows the result with a red notice above it.
+    let storage_error = null;
     if (store) {
         try {
             await store();
         } catch (e) {
             taLog.error("[ThunderAI] Summary: could not store the result for " + headerMessageId + ": " + e);
+            storage_error = _storageErrorMessage(e);
         }
     }
     // The banner's Refresh / Delete buttons send data.headerMessageId back: the error
     // payloads built above do not carry it.
     data = { headerMessageId: headerMessageId, ...data };
+    if (storage_error) data.storage_error = storage_error;
     await _sendToTabsDisplaying(headerMessageId, { command: "showSummary", data: data });
     return data.error
         ? { status: 'error', data: data, errorMessage: data.message }
@@ -1710,6 +1749,10 @@ async function _endSummaryJob(entry, headerMessageId, data, store) {
 async function _runSummaryJob(entry, headerMessageId, tabId, options) {
     // One startWorking()/stopWorking() pair per job that really works (past the cache).
     let working = false;
+    // Saved with the summary (subject, from, message_date), as the spam reports are: built as
+    // soon as the message is known, from the full message once fetched; empty while the message
+    // is not available. Declared outside the try so the final catch saves it too.
+    let metadata = {};
     try {
         let prefs = await mztaPrefs.getPrefs([
             'connection_type',
@@ -1744,6 +1787,7 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
         if (options.messageData) {
             message = options.messageData.message;
             fullMessage = options.messageData.fullMessage;
+            if (message) metadata = _buildReportMetadata(message, fullMessage);
             // buildSummaryPrompt() reads message.id to fetch the body, so a caller
             // passing only { fullMessage } would summarize an EMPTY body - subject
             // present, so the result looks plausible - and cache it as valid. Treated
@@ -1751,14 +1795,16 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
             if (!message?.id) {
                 taLog.error('[ThunderAI] Summary: options.messageData has no message.id - callers must pass { message, fullMessage }.');
                 const errorMsg = browser.i18n.getMessage('summarize_error_no_message_id');
-                return await _endSummaryJob(entry, headerMessageId, { error: true, message: errorMsg }, () => summaryStore.saveError(headerMessageId, errorMsg));
+                return await _endSummaryJob(entry, headerMessageId, { error: true, message: errorMsg }, () => summaryStore.saveError(headerMessageId, errorMsg, metadata));
             }
         } else {
             message = await _resolveMessage(headerMessageId, options.messageId, tabId, options.resolvedMessage);
             if (!message) {
-                return await _endSummaryJob(entry, headerMessageId, { error: true, message: "Message not found" }, () => summaryStore.saveError(headerMessageId, "Message not found"));
+                return await _endSummaryJob(entry, headerMessageId, { error: true, message: "Message not found" }, () => summaryStore.saveError(headerMessageId, "Message not found", {}));
             }
+            metadata = _buildReportMetadata(message, null);
             fullMessage = await browser.messages.getFull(message.id);
+            metadata = _buildReportMetadata(message, fullMessage);
         }
 
         const summarize_prompt = await getSummarizePrompt();
@@ -1768,7 +1814,7 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
         // through into mzta_specialCommand.
         if (!isApiUsableConnection(connectionType)) {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
-            return await _endSummaryJob(entry, headerMessageId, { error: true, message: errorMsg }, () => summaryStore.saveError(headerMessageId, errorMsg));
+            return await _endSummaryJob(entry, headerMessageId, { error: true, message: errorMsg }, () => summaryStore.saveError(headerMessageId, errorMsg, metadata));
         }
 
         taLog.log("[ThunderAI] Summary: building the prompt for " + message.headerMessageId + " (folder: " + message.folder?.path + ")");
@@ -1794,7 +1840,7 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
             summary_date: new Date(),
             headerMessageId: headerMessageId
         };
-        return await _endSummaryJob(entry, headerMessageId, { ...summaryData, ...display }, () => summaryStore.saveSummary(summaryData, headerMessageId));
+        return await _endSummaryJob(entry, headerMessageId, { ...summaryData, ...display }, () => summaryStore.saveSummary(summaryData, headerMessageId, metadata));
 
     } catch (error) {
         console.error("[ThunderAI] Error generating summary:", error);
@@ -1804,7 +1850,7 @@ async function _runSummaryJob(entry, headerMessageId, tabId, options) {
         const storedMessage = error.message || String(error);
         const outcome = await _endSummaryJob(entry, headerMessageId,
             { error: true, message: error.message || "Failed to generate summary" },
-            error.isConfigError ? null : () => summaryStore.saveError(headerMessageId, storedMessage));
+            error.isConfigError ? null : () => summaryStore.saveError(headerMessageId, storedMessage, metadata));
         // The error banner above already replaces the panel where it is delivered; this
         // covers the tabs where it is not, so no spinner outlives the failed generation.
         await _sendToTabsDisplaying(headerMessageId, { command: "hideSummaryGenerating", headerMessageId: headerMessageId });
@@ -1866,16 +1912,20 @@ async function _endTranslationJob(entry, headerMessageId, data, store) {
         await _restoreTranslationButton(null, headerMessageId);
         return { status: 'cancelled' };
     }
+    // See _endSummaryJob(): a store failure travels with the data, the result is still shown.
+    let storage_error = null;
     if (store) {
         try {
             await store();
         } catch (e) {
             taLog.error("[ThunderAI] Translation: could not store the result for " + headerMessageId + ": " + e);
+            storage_error = _storageErrorMessage(e);
         }
     }
     // The banner's Refresh / Delete buttons send data.headerMessageId back: the error
     // payloads built above do not carry it.
     data = { headerMessageId: headerMessageId, ...data };
+    if (storage_error) data.storage_error = storage_error;
     await _sendToTabsDisplaying(headerMessageId, { command: "showTranslation", data: data });
     return data.error
         ? { status: 'error', data: data, errorMessage: data.message }
@@ -1884,6 +1934,8 @@ async function _endTranslationJob(entry, headerMessageId, data, store) {
 
 async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) {
     let working = false;
+    // Saved with the translation: see _runSummaryJob().
+    let metadata = {};
     try {
         let prefs = await mztaPrefs.getPrefs([
             'connection_type',
@@ -1918,6 +1970,7 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
             fullMessage = options.messageData.fullMessage;
             usedMessage = options.messageData.message;
             curr_messageId = options.messageData.message?.id;
+            if (usedMessage) metadata = _buildReportMetadata(usedMessage, fullMessage);
             // The ?. above is what keeps a caller passing only { fullMessage } from
             // throwing - but an undefined id reaches getMailInlineTextParts() and comes
             // back as an empty body, so the translation would be built from the subject
@@ -1928,16 +1981,18 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
             if (!curr_messageId) {
                 taLog.error('[ThunderAI] Translation: options.messageData has no message.id - callers must pass { message, fullMessage }.');
                 const errorMsg = browser.i18n.getMessage('translate_error_no_message_id');
-                return await _endTranslationJob(entry, headerMessageId, { error: true, message: errorMsg }, () => translationStore.saveError(headerMessageId, errorMsg));
+                return await _endTranslationJob(entry, headerMessageId, { error: true, message: errorMsg }, () => translationStore.saveError(headerMessageId, errorMsg, metadata));
             }
         } else {
             const message = await _resolveMessage(headerMessageId, options.messageId, tabId, options.resolvedMessage);
             if (!message) {
-                return await _endTranslationJob(entry, headerMessageId, { error: true, message: "Message not found" }, () => translationStore.saveError(headerMessageId, "Message not found"));
+                return await _endTranslationJob(entry, headerMessageId, { error: true, message: "Message not found" }, () => translationStore.saveError(headerMessageId, "Message not found", {}));
             }
             usedMessage = message;
             curr_messageId = message.id;
+            metadata = _buildReportMetadata(message, null);
             fullMessage = await browser.messages.getFull(message.id);
+            metadata = _buildReportMetadata(message, fullMessage);
         }
 
         const translate_prompt = await getTranslatePrompt();
@@ -1947,7 +2002,7 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
         // through into mzta_specialCommand.
         if (!isApiUsableConnection(connectionType)) {
             const errorMsg = browser.i18n.getMessage('translate_chatgpt_web_not_supported');
-            return await _endTranslationJob(entry, headerMessageId, { error: true, message: errorMsg }, () => translationStore.saveError(headerMessageId, errorMsg));
+            return await _endTranslationJob(entry, headerMessageId, { error: true, message: errorMsg }, () => translationStore.saveError(headerMessageId, errorMsg, metadata));
         }
         taLog.log("[ThunderAI] Translation: building the prompt for " + usedMessage?.headerMessageId + " (folder: " + usedMessage?.folder?.path + ")");
         const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, curr_messageId);
@@ -1982,7 +2037,7 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
             lang: lang,
             headerMessageId: headerMessageId
         };
-        return await _endTranslationJob(entry, headerMessageId, { ...translationData, ...display }, () => translationStore.saveTranslation(translationData, headerMessageId));
+        return await _endTranslationJob(entry, headerMessageId, { ...translationData, ...display }, () => translationStore.saveTranslation(translationData, headerMessageId, metadata));
 
     } catch (error) {
         console.error("[ThunderAI] Error generating translation:", error);
@@ -1990,7 +2045,7 @@ async function _runTranslationJob(entry, headerMessageId, tabId, options, lang) 
         const storedMessage = error.message || String(error);
         const outcome = await _endTranslationJob(entry, headerMessageId,
             { error: true, message: error.message || "Failed to generate translation" },
-            error.isConfigError ? null : () => translationStore.saveError(headerMessageId, storedMessage));
+            error.isConfigError ? null : () => translationStore.saveError(headerMessageId, storedMessage, metadata));
         // Same as the summary: no spinner outlives the failed generation.
         await _sendToTabsDisplaying(headerMessageId, { command: "hideTranslationGenerating", headerMessageId: headerMessageId });
         return { ...outcome, rateLimited: !!error.rateLimited, retryAfterMs: error.retryAfterMs ?? null };
@@ -2077,6 +2132,30 @@ function _spamOutcome(success, report, extra = {}) {
     return { status: success ? 'ok' : 'error', success: success, moved: false, data: { report: report }, ...extra };
 }
 
+// The text a failed write of the per-message storage shows in a result panel.
+function _storageErrorMessage(e) {
+    return (e && e.message) || String(e);
+}
+
+// Store a spam report. A failed write never hides the report: it is logged, and its message
+// travels with the report (storage_error), so the panel shows the report with a red notice above
+// it. An automatic run with no panel open only logs it.
+async function _saveSpamReport(report_data, headerMessageId) {
+    try {
+        await spamReport.saveReportData(report_data, headerMessageId);
+        return report_data;
+    } catch (e) {
+        taLog.error("[ThunderAI | SpamFilter] Could not store the report for " + headerMessageId + ": " + e);
+        return { ...report_data, storage_error: _storageErrorMessage(e) };
+    }
+}
+
+// Store the report of a failed analysis (see _saveSpamReport()). metadata: the message's
+// subject, from and message_date when known, {} otherwise.
+async function _saveSpamError(headerMessageId, error_message, metadata = {}) {
+    return await _saveSpamReport(spamReport.buildError(headerMessageId, error_message, metadata), headerMessageId);
+}
+
 // Marks a message as junk and moves it to its account's junk folder. Returns true on success.
 // Serialized through _enqueueJunkMove(): processEmails() analyzes several messages at once,
 // and concurrent moves into the junk folder (IMAP especially) were never exercised.
@@ -2125,7 +2204,7 @@ async function _saveRuleSpamReport(entry, headerMessageId, message, message_meta
     if (verdict.isSpam && (options.autoMove || entry.wantsMove)) {
         report_data.moved = await _moveMessageToJunk(message, headerMessageId);
     }
-    await spamReport.saveReportData(report_data, headerMessageId);
+    report_data = await _saveSpamReport(report_data, headerMessageId);
     await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
     // moved: read by the processEmails() pipeline, a moved message gets no tags, summary or translation.
     return _spamOutcome(true, report_data, { moved: report_data.moved });
@@ -2159,7 +2238,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
         } else {
             message = await _resolveMessage(headerMessageId, options.messageId, options.tabId);
             if (!message) {
-                let err_data = await spamReport.saveError(headerMessageId, "Message not found");
+                let err_data = await _saveSpamError(headerMessageId, "Message not found");
                 await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
                 return _spamOutcome(false, err_data);
             }
@@ -2170,7 +2249,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
                 curr_fullMessage = await browser.messages.getFull(message.id);
             } catch (err) {
                 console.error("[ThunderAI | SpamFilter] Error getting the full message: ", err);
-                let err_data = await spamReport.saveError(headerMessageId, err.message || String(err), message_metadata || {});
+                let err_data = await _saveSpamError(headerMessageId, err.message || String(err), message_metadata || {});
                 await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
                 return _spamOutcome(false, err_data);
             }
@@ -2242,7 +2321,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
         let curr_prompt_spamfilter = await getSpamFilterPrompt();
         if (!curr_prompt_spamfilter) {
             taLog.error("Spam filter: the 'prompt_spamfilter' special prompt is missing, skipping. If you modified the special prompts, try restoring the default Spam Filter prompt.");
-            let err_data = await spamReport.saveError(headerMessageId, browser.i18n.getMessage('spamfilter_prompt_missing_explanation'), message_metadata || {});
+            let err_data = await _saveSpamError(headerMessageId, browser.i18n.getMessage('spamfilter_prompt_missing_explanation'), message_metadata || {});
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
             return _spamOutcome(false, err_data);
         }
@@ -2253,7 +2332,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
         let spam_conntype = getConnectionType(prefs, curr_prompt_spamfilter, 'spamfilter');
         if (!isApiUsableConnection(spam_conntype)) {
             console.error("[ThunderAI | SpamFilter] Invalid connection type: " + spam_conntype);
-            let err_data = await spamReport.saveError(headerMessageId, browser.i18n.getMessage('msg_no_connection_selected'), message_metadata || {});
+            let err_data = await _saveSpamError(headerMessageId, browser.i18n.getMessage('msg_no_connection_selected'), message_metadata || {});
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
             return _spamOutcome(false, err_data);
         }
@@ -2287,7 +2366,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
                 spamfilter_result = (await cmd_spamfilter.sendPrompt()).trim();
             } catch (err) {
                 console.error("[ThunderAI | SpamFilter] Error getting spamfilter: ", err);
-                let err_data = await spamReport.saveError(headerMessageId, err.message || String(err), message_metadata || {});
+                let err_data = await _saveSpamError(headerMessageId, err.message || String(err), message_metadata || {});
                 await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
                 // rateLimited: the processEmails() pipeline stops the batch on it.
                 return _spamOutcome(false, err_data, { rateLimited: !!err.rateLimited, retryAfterMs: err.retryAfterMs ?? null });
@@ -2303,7 +2382,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
             jsonObj = extractJsonObject(spamfilter_result);
         } catch (e) {
             console.error("[ThunderAI | SpamFilter] Error extracting JSON from AI response: ", e);
-            let err_data = await spamReport.saveError(headerMessageId, e.message || String(e), message_metadata || {});
+            let err_data = await _saveSpamError(headerMessageId, e.message || String(e), message_metadata || {});
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
             return _spamOutcome(false, err_data);
         }
@@ -2325,7 +2404,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
             report_data.moved = await _moveMessageToJunk(message, headerMessageId);
         }
 
-        await spamReport.saveReportData(report_data, headerMessageId);
+        report_data = await _saveSpamReport(report_data, headerMessageId);
         await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
         // moved: read by the processEmails() pipeline, a moved message gets no tags, summary or translation.
         return _spamOutcome(true, report_data, { moved: report_data.moved });
@@ -2336,11 +2415,7 @@ async function _runSpamJob(entry, headerMessageId, options) {
         // settings are fixed. Nothing is left "in progress": the registry drops the entry.
         let err_data = { spamValue: -999, explanation: error.message || String(error) };
         if (!error.isConfigError) {
-            try {
-                err_data = await spamReport.saveError(headerMessageId, error.message || String(error), message_metadata || {});
-            } catch (e) {
-                taLog.error("[ThunderAI | SpamFilter] Could not store the error for " + headerMessageId + ": " + e);
-            }
+            err_data = await _saveSpamError(headerMessageId, error.message || String(error), message_metadata || {});
         }
         await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
         return _spamOutcome(false, err_data);
@@ -2363,8 +2438,14 @@ async function _openSummaryWebchat(headerMessageId, tabId, messageId = null) {
         // Not just chatgpt_web: an empty connection is equally unusable.
         if (!isApiUsableConnection(connectionType)) {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
-            await summaryStore.saveError(headerMessageId, errorMsg);
-            await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: errorMsg } });
+            const data = { error: true, message: errorMsg };
+            try {
+                await summaryStore.saveError(headerMessageId, errorMsg, _buildReportMetadata(curr_message, curr_message_full));
+            } catch (e) {
+                taLog.error("[ThunderAI] Summary: could not store the error for " + headerMessageId + ": " + e);
+                data.storage_error = _storageErrorMessage(e);
+            }
+            await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: data });
             return;
         }
 
@@ -3082,10 +3163,6 @@ const newEmailListener = (folder, messagesList) => {
             translateOnReceive: prefs_init.translate && prefs_init.translate_auto === 3,
             isAutoMode: true,
         });
-
-        if(prefs_init.spamfilter){
-            spamReport.truncReportData();
-        }
     }
 
     return _newEmailListener();

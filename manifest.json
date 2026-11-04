@@ -38,6 +38,7 @@
         "messagesTags",
         "messagesUpdate",
         "messagesMove",
+        "unlimitedStorage",
         "https://*.chatgpt.com/*",
         "https://*.openai.com/*",
         "https://*.anthropic.com/*",

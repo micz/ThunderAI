@@ -32,7 +32,7 @@
  *  belong to the connection, not to a feature, and have their own flow.
  *
  *  No imports on purpose: the background, the menus and every settings page load it, and the
- *  level-1 tests read it with nothing installed.
+ *  level-1 tests import it directly.
  */
 
 /** Feature preference key -> the optional API permissions it needs. */
@@ -41,6 +41,7 @@ export const FEATURE_PERMISSIONS = Object.freeze({
     spamfilter: Object.freeze(['messagesMove', 'messagesUpdate']),
     spamfilter_skip_addressbook: Object.freeze(['addressBooks']),
     get_calendar_event_from_clipboard: Object.freeze(['clipboardRead']),
+    storage_persistent: Object.freeze(['unlimitedStorage']),
 });
 
 // The i18n key naming each feature in the messages about its permission: the label of its
@@ -50,6 +51,7 @@ const FEATURE_LABEL_KEYS = Object.freeze({
     spamfilter: 'prefs_OptionText_spamfilter',
     spamfilter_skip_addressbook: 'prefs_OptionText_spamfilter_skip_addressbook',
     get_calendar_event_from_clipboard: 'prefs_OptionText_get_calendar_event_from_clipboard',
+    storage_persistent: 'prefs_OptionText_storage_persistent',
 });
 
 /** True when the preference is a feature gated by optional permissions. */
@@ -82,6 +84,17 @@ export function requestFeaturePermissions(key) {
     const permissions = getFeaturePermissions(key);
     if (permissions.length === 0) return Promise.resolve(true);
     return browser.permissions.request({ permissions });
+}
+
+/**
+ * Give back the permissions a feature needs, when the user switches it off and nothing else
+ * should keep them (storage_persistent: the saved data stays, it is just no longer protected).
+ * Resolves to what permissions.remove() resolves to; rejects on an API error.
+ */
+export function removeFeaturePermissions(key) {
+    const permissions = getFeaturePermissions(key);
+    if (permissions.length === 0) return Promise.resolve(true);
+    return browser.permissions.remove({ permissions });
 }
 
 /**

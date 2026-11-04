@@ -18,7 +18,9 @@ import {
     MARKER,
     PAYLOAD_KEYS,
     profile,
-    expectedPrefs
+    expectedPrefs,
+    withoutMessageData,
+    messageRecords
 } from './expect.mjs';
 
 const k = caseTests('11-sequence-failure');
@@ -74,8 +76,11 @@ k.test('copy-fails-guarded-skipped', 'the migrations guarded by the copy do not 
 
 k.test('copy-fails-nothing-lost', 'storage.local and storage.sync are exactly as before: nothing renumbered, nothing lost', async () => {
     const r = await copyFails;
-    assert.deepEqual(r.local, P.local);
+    // The per-message records are not preferences: their migration does not depend on the copy,
+    // and moves them to IndexedDB (spec 01 "Per-Message Data Storage").
+    assert.deepEqual(withoutMessageData(r.local), withoutMessageData(P.local));
     assert.deepEqual(r.sync, P.sync);
+    assert.ok(messageRecords(r.idb, 'summary')['42'], 'the stored record is in IndexedDB, not lost');
 });
 
 k.test('copy-fails-retry', 'the next start ends exactly where a clean upgrade ends', async () => {
@@ -125,7 +130,9 @@ k.test('sync-always-starts', 'storage.sync unreadable at every call: the sequenc
 
 k.test('sync-always-nothing-lost', 'storage.sync unreadable at every call: nothing in storage.local is touched', async () => {
     const r = await syncAlways;
-    assert.deepEqual(r.local, P.local);
+    // But for the per-message records, moved to IndexedDB (see copy-fails-nothing-lost).
+    assert.deepEqual(withoutMessageData(r.local), withoutMessageData(P.local));
+    assert.ok(messageRecords(r.idb, 'summary')['42'], 'the stored record is in IndexedDB, not lost');
 });
 
 k.test('sync-always-guarded-skipped', 'storage.sync unreadable: the guarded migrations do not run', async () => {

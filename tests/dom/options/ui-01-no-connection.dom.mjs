@@ -9,7 +9,7 @@
 // Section (`#mzta_adv_panel`)", "Owl for Exchange Warning (`#owl_warning`)" (no Owl account).
 //
 // Stored state: no connection_type, two feature flags left on (add_tags, spamfilter),
-// Summarize on with its own integration (OpenAI API), two per-message cache records. Then the user picks providers in turn,
+// Summarize on with its own integration (OpenAI API), two saved per-message records (IndexedDB). Then the user picks providers in turn,
 // toggles features and edits preferences on the same page.
 
 import {
@@ -23,12 +23,15 @@ import {
     shown,
     userSets,
     writtenSince,
+    seedMessageData,
 } from '../../ui/dom-helpers.mjs';
 
-const CACHE = {
-    'msg:<a@example.com>': { v: 1, ts: 1, summary: { text: 'A summary.' } },
-    'msg:<b@example.com>': { v: 1, ts: 2, spam: { value: 80 } },
+// Two saved records, with the sizes the storage computed when it wrote them: 120 + 80 bytes.
+const SAVED = {
+    summary: [{ messageId: '<a@example.com>', createdAt: 1, subject: [], from: [], message_date: '', summary: 'A summary.', size: 120 }],
+    spam: [{ messageId: '<b@example.com>', createdAt: 2, subject: [], from: [], message_date: '', spamValue: 80, size: 80 }],
 };
+await seedMessageData(SAVED);
 const permissions = {};       // .request swapped by a test (the harness reads it per call)
 const ctx = await openPage('options', {
     local: {
@@ -37,9 +40,19 @@ const ctx = await openPage('options', {
         summarize: true,
         summarize_use_specific_integration: true,
         summarize_connection_type: 'chatgpt_api',
-        ...CACHE,
     },
     permissions,
+});
+/** The records of a store of the message database, read with the raw IndexedDB API. */
+const savedIn = store => new Promise((resolve, reject) => {
+    const open = indexedDB.open('thunderai-message-data');
+    open.onerror = () => reject(open.error);
+    open.onsuccess = () => {
+        const db = open.result;
+        const req = db.transaction(store, 'readonly').objectStore(store).getAll();
+        req.onsuccess = () => { db.close(); resolve(req.result); };
+        req.onerror = () => { db.close(); reject(req.error); };
+    };
 });
 after(() => ctx.close());
 const k = uiTests('options', '01');
@@ -225,10 +238,13 @@ k.test('adv-section-toggle', S_ADVSEC, 'a click opens it, another closes it, and
     assert.deepEqual(ctx.localWrites(since), []);
 });
 
-k.test('cache-size', S_ADVSEC, 'the cache size counts the msg: records', () => {
-    const text = $('#cache_storage_size').textContent;
-    assert.match(text, /^\d+(\.\d+)? (Bytes|KB)$/, text);
-    assert.notEqual(text, '0 Bytes');
+k.test('storage-size', S_ADVSEC, 'the storage size is the sum of the sizes of the saved records, formatted', () => {
+    assert.equal($('#message_storage_size').textContent, '200.00 Bytes');
+});
+
+k.test('storage-not-migrating', S_ADVSEC, 'with no migration flag, the migration notice stays hidden', () => {
+    // Its own display: the advanced panel around it starts collapsed.
+    assert.equal($('#message_storage_migrating').style.display, 'none');
 });
 
 k.test('owl-hidden', S_OWL, 'with no Owl account the warning stays hidden', () => {
@@ -530,29 +546,29 @@ k.test('reset-defaults', S_ADVSEC, 'each Reset button puts the default back in i
     }
 });
 
-k.test('cache-clear-cancelled', S_ADVSEC, 'a cancelled confirm() removes nothing', async () => {
+k.test('storage-clear-cancelled', S_ADVSEC, 'a cancelled confirm() removes nothing', async () => {
     const real = globalThis.confirm;
     globalThis.confirm = (...args) => { ctx.dialogs.push({ kind: 'confirm', args }); return false; };
     try {
-        await ctx.click($('#btnClearCache'));
+        await ctx.click($('#btnClearMessageStorage'));
     } finally {
         globalThis.confirm = real;
     }
     assert.deepEqual(ctx.dialogs.at(-1), { kind: 'confirm', args: [msg('prefs_storage_clear_confirm')] });
-    for (const key of Object.keys(CACHE)) assert.ok(key in ctx.ctl.localData(), key);
+    assert.equal((await savedIn('summary')).length, 1);
+    assert.equal((await savedIn('spam')).length, 1);
 });
 
-k.test('cache-clear', S_ADVSEC, 'confirmed, every msg: record and nothing else is removed, the count reported, the size re-read', async () => {
-    const before = Object.keys(ctx.ctl.localData()).filter(key => !key.startsWith('msg:'));
+k.test('storage-clear', S_ADVSEC, 'confirmed, every saved record of the three stores and nothing else is removed, the count reported, the size re-read', async () => {
+    const before = ctx.ctl.localData();
     const dialogs = ctx.dialogs.length;
-    await ctx.click($('#btnClearCache'));
-    const after = Object.keys(ctx.ctl.localData());
-    assert.deepEqual(after.filter(key => key.startsWith('msg:')), []);
-    assert.deepEqual(after.sort(), before.sort(), 'other keys were removed');
+    await ctx.click($('#btnClearMessageStorage'));
+    for (const store of ['spam', 'summary', 'translation']) assert.deepEqual(await savedIn(store), [], store);
+    assert.deepEqual(ctx.ctl.localData(), before, 'storage.local untouched');
     const shownDialogs = ctx.dialogs.slice(dialogs).map(d => d.kind);
     assert.deepEqual(shownDialogs, ['confirm', 'alert']);
-    assert.deepEqual(ctx.dialogs.at(-1).args, [msg('prefs_storage_clear_done', [String(Object.keys(CACHE).length)])]);
-    assert.equal($('#cache_storage_size').textContent, '0 Bytes');
+    assert.deepEqual(ctx.dialogs.at(-1).args, [msg('prefs_storage_clear_done', ['2'])]);
+    assert.equal($('#message_storage_size').textContent, '0 Bytes');
 });
 
 k.coverage();

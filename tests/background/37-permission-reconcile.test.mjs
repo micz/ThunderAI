@@ -4,7 +4,7 @@
 // flag repair):
 //  - FEATURE_PERMISSIONS (js/mzta-feature-permissions.js) maps each permission-gated preference to
 //    the optional API permissions it needs: add_tags, spamfilter, spamfilter_skip_addressbook,
-//    get_calendar_event_from_clipboard;
+//    get_calendar_event_from_clipboard, storage_persistent;
 //  - _reconcileFeatureFlags() turns OFF every one of them that is true while its permissions are
 //    missing (true -> false only), at startup and on every storage change that names one of
 //    them; it leaves it on when they are granted; it skips the keys the policy locks;
@@ -13,8 +13,8 @@
 //    clipboard flag is not turned off because Sparks is absent;
 //  - the sub-option (spamfilter_skip_addressbook) is turned off alone, the spam filter stays on;
 //  - permissions.onRemoved turns off exactly the preferences that need a removed permission
-//    (messagesUpdate is shared by add_tags and the spam filter), addressBooks and clipboardRead
-//    included, and skips locked keys.
+//    (messagesUpdate is shared by add_tags and the spam filter), addressBooks, clipboardRead and
+//    unlimitedStorage included, and skips locked keys.
 //
 // The area runs with no policy (README): a locked key is simulated by stubbing the two questions
 // the code asks js/mzta-managed.js (isManagedLocked / getManagedValue), for one test.
@@ -67,12 +67,13 @@ const lock = (t, locked) => {
     t.mock.method(mztaManaged, 'getManagedValue', key => (key in locked) ? locked[key] : value(key));
 };
 
-k.test('map', 'the map lists the four permission-gated preferences and their permissions', () => {
+k.test('map', 'the map lists the five permission-gated preferences and their permissions', () => {
     assert.deepEqual(FEATURE_PERMISSIONS, {
         add_tags: ['messagesTags', 'messagesUpdate'],
         spamfilter: ['messagesMove', 'messagesUpdate'],
         spamfilter_skip_addressbook: ['addressBooks'],
         get_calendar_event_from_clipboard: ['clipboardRead'],
+        storage_persistent: ['unlimitedStorage'],
     });
     assert.deepEqual([...new Set(Object.values(FEATURE_PERMISSIONS).flat())].sort(), [...DEFAULT_PERMISSIONS].sort(),
         'the default permissions of the API model are the union of the map');
@@ -104,7 +105,7 @@ k.test('logged', 'the reason is logged, apart from the connection rule', () => {
 k.test('granted-stays-on', 'with every permission granted, turning the features on keeps them on', async (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     grantAll();
-    await setPrefs(t, ctx, { add_tags: true, spamfilter: true });
+    await setPrefs(t, ctx, { add_tags: true, spamfilter: true, storage_persistent: true });
     const s = await stored();
     for (const key of GATED) assert.equal(s[key], true, key);
 });
@@ -153,7 +154,7 @@ k.test('removed-shared', 'onRemoved messagesUpdate: add_tags and the spam filter
     ctx.m.permissions.delete('messagesUpdate');
     await removedListener()({ permissions: ['messagesUpdate'], origins: [] });
     const s = await stored();
-    assert.deepEqual(s, { add_tags: false, spamfilter: false, spamfilter_skip_addressbook: true, get_calendar_event_from_clipboard: true });
+    assert.deepEqual(s, { add_tags: false, spamfilter: false, spamfilter_skip_addressbook: true, get_calendar_event_from_clipboard: true, storage_persistent: true });
 });
 
 k.test('removed-addressbooks', 'onRemoved addressBooks: only the address book sub-option is turned off', async (t) => {
@@ -163,7 +164,7 @@ k.test('removed-addressbooks', 'onRemoved addressBooks: only the address book su
     ctx.m.permissions.delete('addressBooks');
     await removedListener()({ permissions: ['addressBooks'], origins: [] });
     const s = await stored();
-    assert.deepEqual(s, { add_tags: true, spamfilter: true, spamfilter_skip_addressbook: false, get_calendar_event_from_clipboard: true });
+    assert.deepEqual(s, { add_tags: true, spamfilter: true, spamfilter_skip_addressbook: false, get_calendar_event_from_clipboard: true, storage_persistent: true });
 });
 
 k.test('removed-clipboard', 'onRemoved clipboardRead: only the calendar clipboard flag is turned off', async (t) => {
@@ -173,7 +174,17 @@ k.test('removed-clipboard', 'onRemoved clipboardRead: only the calendar clipboar
     ctx.m.permissions.delete('clipboardRead');
     await removedListener()({ permissions: ['clipboardRead'], origins: [] });
     const s = await stored();
-    assert.deepEqual(s, { add_tags: true, spamfilter: true, spamfilter_skip_addressbook: true, get_calendar_event_from_clipboard: false });
+    assert.deepEqual(s, { add_tags: true, spamfilter: true, spamfilter_skip_addressbook: true, get_calendar_event_from_clipboard: false, storage_persistent: true });
+});
+
+k.test('removed-unlimitedstorage', 'onRemoved unlimitedStorage: only the persistent storage switch is turned off', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    grantAll();
+    await setPrefs(t, ctx, Object.fromEntries(GATED.map(k2 => [k2, true])));
+    ctx.m.permissions.delete('unlimitedStorage');
+    await removedListener()({ permissions: ['unlimitedStorage'], origins: [] });
+    const s = await stored();
+    assert.deepEqual(s, { add_tags: true, spamfilter: true, spamfilter_skip_addressbook: true, get_calendar_event_from_clipboard: true, storage_persistent: false });
 });
 
 k.test('removed-origins-only', 'onRemoved of host permissions only: no feature preference is written', async (t) => {

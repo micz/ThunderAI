@@ -12,7 +12,8 @@ The contract is the spec, as everywhere in the suite:
   `storage.local`, local wins, the sync copy left in place, the `_prefs_migrated_from_sync` marker,
   `isSyncDrained()`), the `dynamic_menu_order_alphabet` and `calendar_no_selection` rows, and
   "Preference access";
-- [`claude-spec/01-architecture.md`](../../claude-spec/01-architecture.md) "Storage";
+- [`claude-spec/01-architecture.md`](../../claude-spec/01-architecture.md) "Storage", and "Per-Message
+  Data Storage" for the move of the per-message data to IndexedDB (`migrateMessageDataToIndexedDB()`);
 - [`claude-spec/02-prompts.md`](../../claude-spec/02-prompts.md): "Alphabetic-to-Position Migration"
   and "Enabled-to-show_in Migration" (here only as steps of the sequence; see below);
 - [`claude-spec/04-api-integrations.md`](../../claude-spec/04-api-integrations.md): the Ollama `think`
@@ -25,7 +26,8 @@ The modules under test are `js/mzta-prefs-migration.js` (`migratePrefsToLocal()`
 `migrateOllamaThinkLevel()`), the two #129 migrations of `js/mzta-utils.js`
 (`migrateCustomPromptsStorage()`, `migrateDefaultPromptsPropStorage()`), and
 `migrateCalendarNoSelection()`, `migrateEnabledToShowIn()`, `migrateCustomPromptIdCollisions()` and
-`migrateMenuOrderAlphabetic()` of `js/mzta-prompts.js`, together with **their order and guards in `mzta-background.js`**. How to run
+`migrateMenuOrderAlphabetic()` of `js/mzta-prompts.js`, `migrateMessageDataToIndexedDB()` of
+`js/mzta-storage-migration.js`, together with **their order and guards in `mzta-background.js`**. How to run
 the suite, the two levels, the mock and the known-issue mechanism are in the general
 [`tests/README.md`](../README.md). Paths below are relative to `tests/`.
 
@@ -37,7 +39,7 @@ Everything here runs with **no managed policy**.
 node --test "tests/migration/*.test.mjs"     # this area only, from the repository root
 ```
 
-Level 1 only: nothing to install, no jsdom. The area imports only `helpers/core/` and its own
+Level 1 only (after `npm ci`, see [`../README.md`](../README.md)): no jsdom. The area imports only `helpers/core/` and its own
 `helpers/known-issues/migration.mjs`, and has **no plugin**: storage is seeded through the core
 mock's options. The run takes about 15 s, most of it spent in the interruption tests of
 `12-sequence-partial`, which start about 70 fresh contexts.
@@ -51,8 +53,9 @@ mock's options. The run takes about 15 s, most of it spent in the interruption t
 | `03-ollama-think` | `migrateOllamaThinkLevel()`: boolean to level, level kept, unset kept, global only, its flag, idempotence | 04 (Ollama `think`) |
 | `04-prompts-129` | the two #129 migrations: copy then remove, a local copy kept with the stale sync copy removed, nothing to do | 01 "Storage", 05 "Preference access" |
 | `05-calendar-no-selection` | `migrateCalendarNoSelection()`: the stored `need_selected` (missing and out-of-domain values included) × the stored preference, with the behaviour read back through `getSpecialPrompts()`; its flag | 05 `calendar_no_selection` row, 08 "Interaction points" |
-| `10-sequence-upgrade` | **the sequence** on a 5.0.x profile: the upgrade end to end, then a second and a third start (nothing written, `storage.sync` never touched); and, statically, that nothing before the preference copy awaits or touches storage | all of the above, 01 "Storage" |
-| `11-sequence-failure` | the sequence when storage fails: the copy failing (the guarded migrations skipped), `storage.sync` unreadable at every call, every write after the copy failing. Each time the sequence completes (the add-on starts), nothing is lost, and the next starts end where clean starts end | 05 "Overview" / 02 (the one-shot flags) |
+| `06-message-data` | `migrateMessageDataToIndexedDB()` alone: the field mapping, `createdAt` from the field's `ts`, the record's `ts`, the time of the migration, `size`, the metadata left empty, a malformed field dropped and logged, the flag set first and removed last, the legacy keys removed after the commit, the next start writing nothing; IndexedDB unopenable or failing (keys and flag kept), the retry, Thunderbird closing at each write; after a downgrade, the keys written again migrated without overwriting a newer record; nothing to migrate, a stale flag | 01 "Per-Message Data Storage" |
+| `10-sequence-upgrade` | **the sequence** on a 5.0.x profile: the upgrade end to end (its `msg:` record moved to IndexedDB, no key or flag left), then a second and a third start (nothing written, `storage.sync` never touched, IndexedDB unchanged); and, statically, that nothing before the preference copy awaits or touches storage | all of the above, 01 "Storage", "Per-Message Data Storage" |
+| `11-sequence-failure` | the sequence when storage fails: the copy failing (the guarded migrations skipped; the unguarded data migration still moves the `msg:` record), `storage.sync` unreadable at every call, every write after the copy failing. Each time the sequence completes (the add-on starts), nothing is lost, and the next starts end where clean starts end | 05 "Overview" / 02 (the one-shot flags), 01 "Per-Message Data Storage" |
 | `12-sequence-partial` | the sequence from partial states: the oldest (pre-#129) profile over three starts, a payload in both areas, and **Thunderbird closing at each storage write of the first start in turn**, followed by normal starts | 05 "Overview", 01, 02 |
 | `13-sequence-menu-order` | the alphabetic migration as a step of the sequence: every prompt reads back as before, positions aside, a field it lacked appearing only as `''`; no stored value changes | 02 "Alphabetic-to-Position Migration" step 3 |
 | `14-sequence-prompt-ids` | the custom prompt id rename as a step of the sequence: a custom `prompt_summarize` stored as `summarize` with its fields, every other custom prompt kept, no two prompts with one id afterwards, the next start writing nothing | 02 "Prompt ids", 01 "Storage" |
@@ -65,12 +68,13 @@ Helpers, named without the test suffix so the level-1 glob never runs them:
 - `sequence.mjs`: cuts the sequence out of `mzta-background.js` (see below);
 - `context.mjs`: `startup()`, one Thunderbird start in a fresh context;
 - `expect.mjs`: what the spec says storage must hold afterwards (`expectedPrefs()`,
-  `PAYLOAD_KEYS`, `MARKER`, the `enabled` → `show_in` rule), and the profile fixtures;
+  `PAYLOAD_KEYS`, `MARKER`, the `enabled` → `show_in` rule, `withoutMessageData()`,
+  `messageRecords()`), and the profile fixtures;
 - `captures.mjs`: reads the captured dumps, checks that their secrets are fakes.
 
 Fixtures (`fixtures/migration/`): `profile-5.0.json` (what 5.1.0 finds on a 5.0.x profile: the
 preferences and one-shot flags in sync, the payloads with a custom menu order and custom `show_in` in
-local), `profile-pre-129.json` (everything in sync, `enabled` still on the prompts, no flag set), and
+local, and one stored summary as a `msg:` record), `profile-pre-129.json` (everything in sync, `enabled` still on the prompts, no flag set), and
 `captured/`.
 
 ## How the sequence is cut and run
@@ -93,10 +97,11 @@ that order themselves, because they would then test the copy. Instead, `sequence
    are resolved from the file's own `import` statements and imported, in the worker, from the real
    modules.
 
-Today the cut is eight statements: the migration block near the top (the copy, the
+Today the cut is nine statements: the migration block near the top (the copy, the
 `isSyncDrained()`-guarded #129 pair, the three `_prefs_migration_ok`-guarded migrations, the
-unguarded `migrateCustomPromptIdCollisions()`, which has no flag and runs at every start), the policy
-load, and the guarded `migrateMenuOrderAlphabetic()` just before the menus are loaded. Each
+unguarded `migrateCustomPromptIdCollisions()` and `migrateMessageDataToIndexedDB()`, which have no
+flag and run at every start), the policy load, and the guarded `migrateMenuOrderAlphabetic()` just
+before the menus are loaded. Each
 migration that can reject is awaited with a `.catch()` that logs (spec 05 "Overview"); the cut runs
 that too, so a failure inside one shows as a completed sequence, as in Thunderbird. A migration added, moved or re-guarded in the
 file is run as it then stands. `99-harness-sequence` pins the splitter on small cases and checks that
@@ -113,6 +118,10 @@ the sequence touches keep module-level state (`_orgPromptsCache` in `js/mzta-pro
 same process would not be a restart. `js/mzta-prefs.js` and `js/mzta-prefs-migration.js` cache
 nothing that matters here (the former only its logger's debug flag). Storage is handed to a start
 and back explicitly, the way it survives a restart, and nothing is ever reset by hand.
+
+IndexedDB (the per-message data) survives a restart the same way: a start returns its databases as
+`r.idb` (the core's `dumpIndexedDB()`), and the next start takes them as `idb` (`seedIndexedDB()`).
+`idbFault: 'open' | 'write'` makes `indexedDB.open()` or every `put()` fail for the whole run.
 
 A start installs the core mock with the given `sync` / `local`, wraps `storage.local` /
 `storage.sync` for the injected faults, loads the modules, runs the function or the sequence, takes
@@ -172,7 +181,8 @@ None today.
   prompts area's (`prompts/13a`, `13b`, `14`). Here they are only steps of the sequence: whether
   they run, and that the user's prompts survive them.
 - The real Thunderbird storage: quota errors, the real serialisation and concurrency. The core mock
-  is atomic per `set()`, as Thunderbird's storage is believed to be.
+  is atomic per `set()`, as Thunderbird's storage is believed to be. IndexedDB is fake-indexeddb, in
+  memory: a full disk or an evicted database only as an injected failure.
 - The organization prompts in `migrateMenuOrderAlphabetic()` (spec 08a, the managed area).
 
 ## Under-specified

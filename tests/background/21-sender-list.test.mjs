@@ -56,38 +56,38 @@ k.test('process-incoming', 'with summarize_auto = 0 and a sender list, incoming 
 
 k.test('receive-exact', 'on reception, a message from an exact address of the list is summarized', async () => {
     await receive(ctx, [mail('r1@x', 'The Boss <boss@corp.test>')]);
-    assert.ok(record(ctx, 'r1@x')?.summary);
-    assert.equal(record(ctx, 'r1@x').summary.error, false);
+    assert.ok((await record(ctx, 'r1@x'))?.summary);
+    assert.equal((await record(ctx, 'r1@x')).summary.error, false);
 });
 
 k.test('receive-domain', 'on reception, @domain and *@domain entries match that domain', async () => {
     await receive(ctx, [mail('r2@x', 'someone@partner.test'), mail('r3@x', 'Sales <sales@vendor.test>')]);
-    assert.ok(record(ctx, 'r2@x')?.summary);
-    assert.ok(record(ctx, 'r3@x')?.summary);
+    assert.ok((await record(ctx, 'r2@x'))?.summary);
+    assert.ok((await record(ctx, 'r3@x'))?.summary);
 });
 
 k.test('receive-subdomain', 'a domain entry does not match its subdomains', async () => {
     await receive(ctx, [mail('r4@x', 'x@eu.vendor.test')]);
-    assert.equal(record(ctx, 'r4@x'), null);
+    assert.equal((await record(ctx, 'r4@x')), null);
     assert.equal(summaryCalls().includes('r4@x'), false);
 });
 
 k.test('receive-other', 'a sender not in the list is not summarized, and nothing is stored', async () => {
     await receive(ctx, [mail('r5@x', 'stranger@else.test')]);
-    assert.equal(record(ctx, 'r5@x'), null);
+    assert.equal((await record(ctx, 'r5@x')), null);
     assert.equal(summaryCalls().includes('r5@x'), false);
 });
 
 k.test('receive-no-tab', 'the reception trigger is a silent pre-cache: nothing is sent to a tab that does not display the message', async () => {
     ctx.m.tabSends.length = 0;
     await receive(ctx, [mail('r6@x', 'boss@corp.test')]);
-    assert.ok(record(ctx, 'r6@x')?.summary);
+    assert.ok((await record(ctx, 'r6@x'))?.summary);
     assert.deepEqual(ctx.m.commandsTo(7), []);
 });
 
 k.test('receive-skipped-folder', 'on reception, a listed sender in an auto-skipped folder (junk) is not summarized', async () => {
     await receive(ctx, [mail('r7@x', 'boss@corp.test', 'f-junk')]);
-    assert.equal(record(ctx, 'r7@x'), null);
+    assert.equal((await record(ctx, 'r7@x')), null);
 });
 
 k.test('open-generates', 'on open, a listed sender not caught on reception is summarized inline, in that tab', async () => {
@@ -95,7 +95,7 @@ k.test('open-generates', 'on open, a listed sender not caught on reception is su
     display(7, h);
     ctx.m.tabSends.length = 0;
     await fromTab(ctx, 7, { command: 'initSummary' });
-    assert.ok(record(ctx, 'o1@x')?.summary);
+    assert.ok((await record(ctx, 'o1@x'))?.summary);
     assert.deepEqual(ctx.m.commandsTo(7), ['showSummaryGenerating', 'showSummary']);
     assert.equal(ctx.m.sentTo(7, 'showSummary')[0].data.headerMessageId, 'o1@x');
 });
@@ -124,7 +124,7 @@ k.test('open-skipped-folder', 'on open, a listed sender in an auto-skipped folde
     const before = ctx.workers.created.length;
     await fromTab(ctx, 7, { command: 'initSummary' });
     assert.equal(ctx.workers.created.length, before);
-    assert.equal(record(ctx, 'o3@x'), null);
+    assert.equal((await record(ctx, 'o3@x')), null);
 });
 
 k.test('both-triggers-one-call', 'a message caught by both triggers - opened while the reception job runs - costs exactly one API call', async () => {
@@ -142,7 +142,7 @@ k.test('both-triggers-one-call', 'a message caught by both triggers - opened whi
     await batch;
     await fromTab(ctx, 7, { command: 'initSummary' }, { turns: 10 });
     assert.equal(summaryCalls().filter(id => id === 'both@x').length, 1);
-    assert.equal(record(ctx, 'both@x').summary.summary, 'Joined summary');
+    assert.equal((await record(ctx, 'both@x')).summary.summary, 'Joined summary');
     assert.ok(ctx.m.sentTo(7, 'showSummary').some(c => c.data.summary === 'Joined summary'), 'the joiner\'s tab got the result');
     ctx.workers.respond = featureResponder();
 });
@@ -157,8 +157,8 @@ k.test('unusable-connection', 'with an unusable connection (ChatGPT Web) the sen
     display(7, h);
     await fromTab(ctx, 7, { command: 'initSummary' });
     assert.equal(ctx.workers.created.length, before);
-    assert.equal(record(ctx, 'w1@x'), null);
-    assert.equal(record(ctx, 'w2@x'), null);
+    assert.equal((await record(ctx, 'w1@x')), null);
+    assert.equal((await record(ctx, 'w2@x')), null);
     assert.deepEqual(ctx.m.commandsTo(7), []);
     await setPrefs(t, ctx, { connection_type: API.connection_type });
 });
@@ -171,7 +171,7 @@ k.test('legacy-empty-list', 'a legacy [\'\'] list reads as empty: incoming mail 
     const r = await receive(ctx, [mail('e1@x', 'boss@corp.test')]);
     assert.equal(r, undefined, 'the listener returns at once');
     assert.equal(ctx.workers.created.length, before);
-    assert.equal(record(ctx, 'e1@x'), null);
+    assert.equal((await record(ctx, 'e1@x')), null);
 });
 
 k.test('no-leak', 'no worker left alive, no unmodelled API touched, no unhandled rejection', () => {

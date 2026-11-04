@@ -80,6 +80,6 @@
     "_custom_placeholder": [
       { "id": "thunderai_custom_sig", "name": "Signature", "text": "Best regards", "type": "0", "is_default": "0", "is_dynamic": "0" }
     ],
-    "msg:42": { "summary": "A stored summary record, not a preference" }
+    "msg:42": { "v": 1, "ts": 1735689600000, "summary": { "summary": "A stored summary record, not a preference", "summary_html": "", "error": false, "message": "", "summary_date": "2025-01-01T00:00:00.000Z", "ts": 1735689600000 } }
   }
 }

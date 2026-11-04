@@ -249,6 +249,10 @@ export const prefs_default = {
     // the model is a large download from Hugging Face, made by every machine.
     ai_processing_model_autodownload: false,
     max_prompt_length: 30000,   // max string length for prompt
+    // Protect the saved spam reports, summaries and translations (IndexedDB) from being deleted
+    // when the disk is almost full: a permission-gated toggle needing the optional
+    // unlimitedStorage permission (js/mzta-feature-permissions.js). Off, like every gated feature.
+    storage_persistent: false,
     add_tags: false,
     add_tags_maxnum: 3,
     add_tags_max_messages: 0,   // max messages tagged at once from the context menu (0 = no limit); above this the user is warned and the operation is blocked. Automatic tagging is not capped
@@ -294,6 +298,14 @@ export const prefs_default = {
     spamfilter_skip_addressbook: false,
     spamfilter_show_msg_panel: true,
     spamfilter_only_inbox: false,   // If true, auto spam filter runs only on inbox folders
+    // Per-message data storage (js/mzta-storage.js), one set per type. No settings UI yet (#956).
+    //   *_storage_enabled: save the results of this type; false skips the writes, the data
+    //     already saved is still read and shown
+    //   *_storage_max_entries / *_storage_max_age_days: the scheduled cleanup removes the oldest
+    //     records beyond this count / older than this age; 0 = no limit
+    spamfilter_storage_enabled: true,
+    spamfilter_storage_max_entries: 0,
+    spamfilter_storage_max_age_days: 0,
     summarize: false,
     summarize_auto: 1,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
     summarize_display_mode: 'inline',    // 'inline' or 'webchat'
@@ -304,10 +316,16 @@ export const prefs_default = {
     summarize_lang: '',                  // summary language when summarize_force_lang is on, fallback on default_chatgpt_lang
     summarize_auto_senders: false,       // auto-summarize emails coming from the addresses in the list below
     summarize_auto_senders_list: [],     // sender addresses or domain patterns ("@domain.com", "*@domain.com")
+    summarize_storage_enabled: true,     // see spamfilter_storage_enabled
+    summarize_storage_max_entries: 0,
+    summarize_storage_max_age_days: 0,
     translate: true,
     translate_auto: 0,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
     translate_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
     translate_lang: '',                  // target language, fallback on default_chatgpt_lang
     translate_exclude_lang: '',          // languages to do not translate
+    translate_storage_enabled: true,     // see spamfilter_storage_enabled
+    translate_storage_max_entries: 0,
+    translate_storage_max_age_days: 0,
     ...generated_prefs
 }
