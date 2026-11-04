@@ -2347,7 +2347,7 @@ key cursor on the `size` index, so no record is loaded), `clear(type)`, `clearAl
 - `openDB()` always passes `blocked`, `blocking` (it closes the connection, so another context can
   upgrade or delete the database) and `terminated`; the connection is shared per context and
   reopened after either. A failed open is logged and not kept: the next call tries again;
-- every transaction is opened through `openTransaction()`: a connection found closed
+- every transaction is opened through `openTransaction()` (exported: the migration's write too): a connection found closed
   (`InvalidStateError`) is reopened once, and the transaction's `done` gets a handler at once, so
   an aborted transaction is never an unhandled rejection (awaiting `done` still rejects);
 - **a write never swallows its error**: it logs it and rejects, so the caller can tell the user

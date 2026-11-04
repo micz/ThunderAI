@@ -186,8 +186,9 @@ async function openCheckedMessageDB(onLost) {
  * (InvalidStateError), a new one is opened, once. The transaction's done promise gets a handler
  * at once: a failing request aborts the transaction, and its done would otherwise become an
  * unhandled rejection whenever the caller stops before awaiting it. Awaiting tx.done still rejects.
+ * Exported for the migration (js/mzta-storage-migration.js), the one transaction opened outside this file.
  */
-async function openTransaction(stores, mode) {
+export async function openTransaction(stores, mode) {
     let opening = taStorage.openDB();
     let db = await opening;
     let tx;

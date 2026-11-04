@@ -28,6 +28,7 @@
 
 import {
     taStorage,
+    openTransaction,
     MESSAGE_STORES,
     MIGRATION_FLAG_KEY,
     MIGRATION_FAILED
@@ -41,16 +42,15 @@ function validTs(value) {
 }
 
 /**
- * Steps 3 and 4 below: open the database and write the records in one transaction. Resolves once
- * the transaction has committed; rejects with nothing committed.
+ * Steps 3 and 4 below: open the database and write the records in one transaction, opened
+ * through openTransaction() like every other one (a connection found closed is reopened once,
+ * and tx.done has a handler: a failing request aborts the transaction and the loop below throws
+ * before reaching `await tx.done`, so that rejection is never unhandled; the failure itself still
+ * reaches the caller through the loop, or through the awaited tx.done). Resolves once the
+ * transaction has committed; rejects with nothing committed.
  */
 async function writeRecords(records) {
-    const db = await taStorage.openDB();
-    const tx = db.transaction(MESSAGE_STORES, 'readwrite');
-    // A failing request aborts the transaction and the loop below throws before reaching
-    // `await tx.done`: without a handler that rejection would be unhandled. The failure itself
-    // still reaches the caller through the loop (or through the awaited tx.done).
-    tx.done.catch(() => {});
+    const tx = await openTransaction(MESSAGE_STORES, 'readwrite');
     let migrated = 0;
     let skipped = 0;
     for (const { type, record } of records) {
