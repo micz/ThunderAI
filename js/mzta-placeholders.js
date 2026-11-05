@@ -20,7 +20,10 @@ import {
     getMailHeader,
     sanitizeMailHeaders,
     joinAddressList,
-    truncateText
+    truncateText,
+    getSparksCapabilities,
+    getMailLinks,
+    mailLinksFromAnchors
  } from './mzta-utils.js';
 
 /*  ================= PLACEHOLDERS PROPERTIES ========================================
@@ -250,6 +253,15 @@ const defaultPlaceholders = [
         enabled: 1,
     },
     {
+        id: 'calendar_categories',
+        name: "__MSG_placeholder_calendar_categories__",
+        default_value: "[]",
+        type: 0,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
+    },
+    {
         id: 'tags_full_list',
         name: "__MSG_placeholder_tags_full_list__",
         default_value: "",
@@ -327,6 +339,15 @@ const defaultPlaceholders = [
         id: 'mail_html_body_or_selected',
         name: "__MSG_placeholder_mail_html_body_or_selected__",
         default_value: "",
+        type: 0,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
+    },
+    {
+        id: 'mail_links',
+        name: "__MSG_placeholder_mail_links__",
+        default_value: "[]",
         type: 0,
         is_default: "1",
         is_dynamic: "0",
@@ -780,6 +801,22 @@ export const placeholdersUtils = {
                 case 'mail_html_body_or_selected':
                     finalSubs['mail_html_body_or_selected'] = placeholdersUtils.failSafePlaceholders(selection_html || msg_text?.html);
                     break;
+                case 'mail_links': {
+                    // Clipboard text carries no link targets, and the mail on screen is not its
+                    // source: its links must not be offered as if they belonged to that text.
+                    // A selection gives the links it touches (getSelectedLinks in the content
+                    // script): its cloned HTML loses the <a> around a selection made in a link.
+                    let mail_links = [];
+                    // selection_links: an array for a real selection (an image alone has no
+                    // text), null or absent without one.
+                    if (!msg_text?.from_clipboard) {
+                        mail_links = Array.isArray(msg_text?.selection_links)
+                            ? mailLinksFromAnchors(msg_text.selection_links)
+                            : getMailLinks(selection_html || msg_text?.html);
+                    }
+                    finalSubs['mail_links'] = JSON.stringify(mail_links);
+                    break;
+                }
                 case 'author':
                     finalSubs['author'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(curr_message.author));
                     break;
@@ -810,6 +847,11 @@ export const placeholdersUtils = {
                         ? await transformTagsLabels(curr_message.tags, (await tagsList())[1])
                         : [];
                     finalSubs['tags_current_email'] = placeholdersUtils.failSafePlaceholders(tags_current_email_array.join(", "));
+                    break;
+                case 'calendar_categories':
+                    if (finalSubs['calendar_categories'] === undefined) {
+                        finalSubs['calendar_categories'] = JSON.stringify((await getSparksCapabilities()).calendarCategories);
+                    }
                     break;
                 case 'tags_full_list':
                     finalSubs['tags_full_list'] = placeholdersUtils.failSafePlaceholders((await tagsList())[0]);

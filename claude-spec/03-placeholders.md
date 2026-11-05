@@ -51,6 +51,7 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`); `mail_text_bod
 | `current_datetime` | Current date and time | 0 | |
 | `account_email_address` | Email address of the current account/identity | 0 | |
 | `tags_current_email` | Tags currently on the email | 0 | |
+| `calendar_categories` | Native Thunderbird calendar category names as a JSON array; `[]` when unavailable | 0 | |
 | `tags_full_list` | All available tags in Thunderbird | 0 | |
 | `thunderai_def_sign` | Default signature name (`default_sign_name` pref) | 0 | |
 | `thunderai_def_lang` | Default response language (`default_chatgpt_lang` pref) | 0 | |
@@ -60,6 +61,7 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`); `mail_text_bod
 | `mail_attachments_info` | Information about the email's attachments | 1 | |
 | `mail_text_body_or_selected` | Plain text body, or selected text if any; `{%mail_text_body_or_selected:N%}` cuts it to N characters | 0 | ✓ |
 | `mail_html_body_or_selected` | HTML body, or selected HTML if any | 0 | |
+| `mail_links` | The links of the selection, else of the body, as a JSON array of `{text, url}`; `[]` for clipboard text | 0 | |
 | `mail_plain_text_part` | The original `text/plain` MIME part, verbatim (no HTML conversion) | 1 | |
 
 The newline contracts below are what the model receives: the API chat window posts the prompt to
@@ -777,3 +779,34 @@ Three things bite when adding one:
   `/{%\s*(.*?)\s*%}/` literal and *do* accept spaces. That mismatch let a guard substitute a token
   whose value was never gathered (fixed for all four call sites: the `mail_plain_text_part` fetch
   in `js/mzta-menus.js`, `mail_typed_text` ×2, and `additional_text`).
+
+## Mail links
+
+`{%mail_links%}` gives the AI the link targets the text extractions leave out: they keep
+what a link shows, not where it goes. With a selection, the content script's
+`getSelectedLinks` gives the anchors the selection touches, the one around it included:
+`getSelectedHtml` clones a selection made inside a link's text without its `<a>`, and an image
+selected alone has no text. It answers `null` without a selection (a collapsed caret included),
+and skips hidden anchors and the hidden parts of a label, by the same rule as the body
+(`mztaIsHiddenElement()`, shared with `mztaStripHidden()`: the `hidden` attribute and inline
+styles, not CSS class rules). The menu action asks for it only when
+the prompt holds `{%mail_links%}`, or for a calendar event prompt asking for links
+(`calendarMetadataAsked()`); never for clipboard text, and a failure only means the HTML in
+hand is read. Without a selection, `getMailLinks()` reads the body HTML with the hidden-element
+rule of the text side.
+Both go through `mailLinksFromAnchors()`, in document order: HTTP/HTTPS targets through the
+calendar link rules, each once, at most 30 (the first 30: a later link is left out), each text
+cut to 100 characters. A link made of an image only takes the image's `alt` as its text. The
+value is built only when the token is present. On the clipboard path the value is `[]`:
+`msg_text.from_clipboard` is set because the HTML in hand belongs to the mail on screen, not
+to the clipboard text. The targets go to the AI provider like the rest of the message.
+
+## Native calendar categories
+
+`{%calendar_categories%}` is a type-0 built-in offered by autocomplete. It lazily
+calls `getSparksCapabilities()` only when present and uses `JSON.stringify()` on
+the category array. Multiple occurrences, including spaced forms, share a single
+read per resolution. Unavailable/invalid capabilities become `[]` even when
+placeholder default substitution is off. The source is read at send time, not
+stored in a prompt or preference. No native category is created or renamed.
+See [configuration and tests](../docs/calendar-event-metadata.md).

@@ -637,6 +637,40 @@ switch (message.command) {
     return Promise.resolve(div.innerHTML);
   }
 
+  case "getSelectedLinks": {
+    // The links the selection touches, as [{text, href}], for {%mail_links%}; null without a
+    // selection, a collapsed caret included. getSelectedHtml cannot say: a selection inside a
+    // link's text clones that text without its <a>, and an image selected alone has no text.
+    // Hidden links, and the hidden parts of a label, are left out as on the body.
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      return Promise.resolve(null);
+    }
+    const hiddenOrInjected = element => {
+      for (let el = element; el && el !== document.documentElement; el = el.parentElement) {
+        if (mztaIsHiddenElement(el) || MZTA_INJECTED_SELECTORS.some(selector => el.matches(selector))) return true;
+      }
+      return false;
+    };
+    const links = [];
+    for (let i = 0; i < selection.rangeCount; i++) {
+      const range = selection.getRangeAt(i);
+      if (range.collapsed) continue;
+      const node = range.commonAncestorContainer;
+      const root = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+      if (!root) continue;
+      for (const anchor of [root.closest('a[href]'), ...root.querySelectorAll('a[href]')]) {
+        if (!anchor || !range.intersectsNode(anchor) || hiddenOrInjected(anchor)) continue;
+        const label = mztaStripHidden(anchor.cloneNode(true));
+        links.push({
+          text: label.textContent.replace(/\s+/g, ' ').trim() || label.querySelector('img[alt]')?.getAttribute('alt') || '',
+          href: anchor.getAttribute('href')
+        });
+      }
+    }
+    return Promise.resolve(links);
+  }
+
   case "replaceSelectedText": {
     const selectedText = window.getSelection().toString();
     let force_insert = false;

@@ -159,6 +159,48 @@ export const taPromptUtils = {
         return taPromptUtils.appendReminderStatements(fullPrompt, 'calendar', promptTemplate, reminder_enabled, reminder_rules);
     },
 
+    // Which of categories and links a calendar prompt asks for. The prompt decides, as it does for
+    // attendees: an edited prompt asks for what it names, by the JSON field or by the placeholder.
+    // The shipped text, as it is in the user's language, asks for both: it stays unchanged, so
+    // that no translation and no saved copy of it has to move.
+    // promptTemplate is the prompt as saved, NOT the resolved one: a mail mentioning "links" must
+    // not count.
+    calendarMetadataAsked(promptTemplate){
+        const text = String(promptTemplate ?? '').trim();
+        const shipped = text !== '' && text === browser.i18n.getMessage('prompt_get_calendar_event_full_text').trim();
+        return {
+            categories: shipped || text.includes('"categories"') || placeholdersUtils.hasPlaceholder(text, 'calendar_categories'),
+            links: shipped || text.includes('"links"') || placeholdersUtils.hasPlaceholder(text, 'mail_links'),
+        };
+    },
+
+    // Text appended to the calendar event prompt for what it asks: what the AI must do with each
+    // field, then its data unless the prompt already gives it. Added by code to work in any
+    // language, as the reminder's format is.
+    getCalendarMetadataStatement(promptTemplate){
+        const text = String(promptTemplate ?? '');
+        const asked = taPromptUtils.calendarMetadataAsked(text);
+        const parts = [];
+        if(asked.categories){
+            parts.push(browser.i18n.getMessage('prompt_calendar_categories_format'));
+            if(!placeholdersUtils.hasPlaceholder(text, 'calendar_categories')) parts.push(browser.i18n.getMessage('prompt_calendar_categories_list'));
+        }
+        if(asked.links){
+            parts.push(browser.i18n.getMessage('prompt_calendar_links_format'));
+            if(!placeholdersUtils.hasPlaceholder(text, 'mail_links')) parts.push(browser.i18n.getMessage('prompt_calendar_links_list'));
+        }
+        return parts.join(" \n");
+    },
+
+    // Async, unlike the reminder's: the statement holds placeholders, which preparePrompt() never
+    // saw. args: the msg_text and selection_html of the prompt being finalized.
+    async appendCalendarMetadataStatement(fullPrompt, promptTemplate, args = {}){
+        const statement = taPromptUtils.getCalendarMetadataStatement(promptTemplate);
+        if(statement === '') return fullPrompt;
+        const replacements = await placeholdersUtils.getPlaceholdersValues({ ...args, prompt_text: statement });
+        return fullPrompt + " \n" + placeholdersUtils.replacePlaceholders({ text: statement, replacements, use_default_value: true });
+    },
+
     finalizePrompt_get_task(fullPrompt, promptTemplate = '', reminder_enabled = false, reminder_rules = ''){
         return taPromptUtils.appendReminderStatements(fullPrompt, 'task', promptTemplate, reminder_enabled, reminder_rules);
     },

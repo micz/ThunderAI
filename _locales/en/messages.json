@@ -4419,5 +4419,29 @@
   "prefs_insecure_origins_remove": {
     "message": "Remove",
     "description": "Options page, advanced section: button next to an allowed unencrypted server, which withdraws the permission."
+  },
+  "placeholder_calendar_categories": {
+    "message": "Existing Thunderbird calendar categories (JSON array; [] when Sparks is unavailable)",
+    "description": "Name of the calendar_categories placeholder in autocomplete; its value is a JSON array of native calendar category names provided by Sparks."
+  },
+  "prompt_calendar_categories_format": {
+    "message": "The JSON object must have a field \"categories\": an array with the name that best fits this event, taken exactly from the list of existing calendar categories. It must hold at least one name, the closest one even if the fit is only approximate, and can hold more when they clearly apply too. Never invent a name. Use [] only if the list is empty.",
+    "description": "Instruction appended to a calendar event prompt asking for categories: the AI must choose among the existing ones."
+  },
+  "prompt_calendar_categories_list": {
+    "message": "The existing calendar categories, as a JSON list: {%calendar_categories%}.",
+    "description": "Appended to the calendar event prompt when it does not give the categories itself; keep the {%calendar_categories%} placeholder as it is."
+  },
+  "prompt_calendar_links_format": {
+    "message": "The JSON object must have a field \"links\": an array of URL strings with every relevant absolute HTTP or HTTPS address of the message, such as video call, registration or programme links, the most useful one first, and the video call link when there is one. Leave out unsubscribe and tracking links. Use [] only if the message has no relevant link. Keep these URLs in the description too. Do not download files.",
+    "description": "Instruction appended to a calendar event prompt asking for links: the AI must report the useful ones."
+  },
+  "prompt_calendar_links_list": {
+    "message": "Links can hide their address behind text. These are the links of the message, with their visible text and their target, as JSON: {%mail_links%}.",
+    "description": "Appended to the calendar event prompt when it does not give the message links itself; keep the {%mail_links%} placeholder as it is."
+  },
+  "placeholder_mail_links": {
+    "message": "Links of the message or of the selection, with their text and target (JSON array)",
+    "description": "Name of the mail_links placeholder in autocomplete; its value is a JSON array of objects with the visible text and the target address of each link."
   }
 }

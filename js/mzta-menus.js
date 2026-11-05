@@ -35,6 +35,8 @@ import {
     normalizeDateTimeString,
     appendMessageLinkToDescription,
     normalizeReminderMinutes,
+    getSparksCapabilities,
+    normalizeCalendarMetadata,
     normalizeHtmlSourceNewlines,
     checkIfTagLabelExists,
     getConnectionType,
@@ -310,6 +312,7 @@ export class mzta_Menus {
                    }
                    msg_text.selection = clipboardText;
                    msg_text.text = clipboardText;
+                   msg_text.from_clipboard = true;
                 } catch (e) {
                    console.error("Clipboard read error:", e);
                    sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('clipboard_read_error') });
@@ -326,6 +329,22 @@ export class mzta_Menus {
                 sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message : browser.i18n.getMessage('prompt_selection_needed') });
                 taWorkingStatus.stopWorking();
                 return {ok:'0'};
+            }
+
+            // {%mail_links%} reads the links the selection touches (getSelectedLinks), since the
+            // selected HTML loses the <a> around a selection made inside a link's text. Asked only
+            // when the prompt needs links, never for clipboard text, and never fatal: without an
+            // answer the HTML in hand is read, as without a selection.
+            const needs_links = curr_prompt.id !== 'prompt_get_calendar_event_from_clipboard' &&
+                (placeholdersUtils.hasPlaceholder(curr_prompt.text, 'mail_links') ||
+                 (curr_prompt.id === 'prompt_get_calendar_event' && taPromptUtils.calendarMetadataAsked(curr_prompt.text).links));
+            if (needs_links) {
+                try {
+                    const raw_links = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedLinks" });
+                    msg_text.selection_links = Array.isArray(raw_links) ? raw_links : null;
+                } catch (err) {
+                    this.logger.log("getSelectedLinks unavailable, the HTML in hand is read instead.");
+                }
             }
     
             let body_text = '';
@@ -620,6 +639,7 @@ export class mzta_Menus {
                         *  plus an optional "reminderMinutes", only with the reminder option on (see normalizeReminderMinutes()) [#887]
                         */
                         fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt, curr_prompt.text, prefs_at.calendar_reminder_enabled, prefs_at.calendar_reminder_rules);
+                        fullPrompt = await taPromptUtils.appendCalendarMetadataStatement(fullPrompt, curr_prompt.text, { msg_text, selection_html });
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_GetCalendarEvent = new mzta_specialCommand({
                             processingClient: this.processingClient,
@@ -656,6 +676,14 @@ export class mzta_Menus {
                         }
                         // Reminder: the checkbox is the single switch (off = field always removed) [#887]
                         normalizeReminderMinutes(calendar_event_data_obj, prefs_at.calendar_reminder_enabled, this.logger);
+                        // Categories and links: the prompt asks for them, as it does for attendees.
+                        const metadata_asked = taPromptUtils.calendarMetadataAsked(curr_prompt.text);
+                        if (metadata_asked.categories || metadata_asked.links) {
+                            normalizeCalendarMetadata(calendar_event_data_obj, await getSparksCapabilities(), this.logger, metadata_asked);
+                        } else {
+                            delete calendar_event_data_obj.categories;
+                            delete calendar_event_data_obj.links;
+                        }
                         // Timezone management
                         calendar_event_data_obj.use_timezone = false;
                         if(prefs_at.calendar_enforce_timezone){
@@ -673,8 +701,7 @@ export class mzta_Menus {
                         }
                         let calendar_event_data_str = JSON.stringify(calendar_event_data_obj);
                         // Timezone management - END
-                        this.logger.log("calendar_event_data: " + calendar_event_data);
-                        this.logger.log("calendar_event_data_obj: " + calendar_event_data_str);
+                        this.logger.log("Calendar event data prepared for Sparks");
                         try{
                             let result_openCalendarEventDialog = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "openCalendarEventDialog", calendar_event_data: calendar_event_data_str})
                             if(result_openCalendarEventDialog == 'ok'){

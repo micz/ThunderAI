@@ -182,3 +182,11 @@ _The language status represents the percentage of translated strings in the late
 - <a href="https://github.com/boxabirds">Julian Harris</a> for his project <a href="https://github.com/boxabirds/chatgpt-frontend-nobuild">chatgpt-frontend-nobuild</a>, that has been used as a starting point for the API Web Interface
 - <a href="https://hosted.weblate.org/engage/thunderai/">Hosted Weblate</a> for managing the localization
 - <a href="https://github.com/micz/Thunderbird-Addon-Options-Manager">Thunderbird Addon Options Manager</a> as the basis for the preference handling
+
+## Calendar categories and links (development)
+
+Calendar extraction supports existing native categories and HTTP/HTTPS URI
+attachments with matching ThunderAI and Sparks capability support. Valid links
+are also kept in the description. The calendar event prompt asks for them; see the
+[configuration, JSON contract and validation guide](docs/calendar-event-metadata.md).
+The native event window remains the confirmation step before saving.
