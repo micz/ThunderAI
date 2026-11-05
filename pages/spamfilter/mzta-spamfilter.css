@@ -80,6 +80,15 @@
 .report_hdr > .mzta_prompt_title {
     margin-bottom: 0;
 }
+/* Same accent-bar heading as the other cards' titles: the shared rule in
+   mzta-design.css only matches a title that is a direct child of the
+   section, and this one sits inside the flex row. */
+body.mzta_feature_page .report_hdr > .mzta_prompt_title {
+    border-left: 3px solid var(--accent);
+    padding-left: 9px;
+    font-size: 15px;
+    font-weight: 600;
+}
 
 /* Icon-only button. No label, so no new string to translate: the arrows say
    expand / restore, and aria-pressed carries the state for screen readers. */
