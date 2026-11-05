@@ -145,6 +145,15 @@ taSummaryStore.saveSummary()
 [meanwhile] user opens it while the job runs → initSummary joins the job → spinner → result
 ```
 
+The batch decides its targets when it starts, but a message can wait in the queue
+(`batch_max_concurrency`) long after. So in the automatic runs (`isAutoMode`) the pipeline
+re-reads the settings just before each summary and translation step (`autoSummaryStillWanted()`:
+`summarize` and `summarize_auto === 3`, or the sender list still matching;
+`autoTranslateStillWanted()`: `translate` and `translate_auto === 3`) and skips the step when the
+user has meanwhile turned the feature off or back to the manual button. A call already in flight
+finishes. A message skipped this way offers the manual button when opened. Manual actions
+(context menu) are never re-checked.
+
 ### Data Flow: Auto-Summarize by Sender Address List
 
 `summarize_auto_senders` + `summarize_auto_senders_list` summarize emails from specific senders

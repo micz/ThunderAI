@@ -3779,6 +3779,23 @@ async function processEmails(args) {
             return { status: 'ok', data: { tags: tags_current_email, assigned: true } };
         };
 
+        // Whether the automatic summary / translation of a message is still wanted, from the
+        // settings as they are now. The batch decides its targets when it starts, but a message
+        // can wait in the queue (batch_max_concurrency) long after: if the user meanwhile turns
+        // the feature off or back to the manual button, the steps not started yet must not run,
+        // or the message is summarized "on receive" with a setting that no longer says so.
+        // Only the automatic runs: a manual action (context menu) is never re-checked.
+        const autoSummaryStillWanted = async (msg) => {
+            const p = await mztaPrefs.getPrefs(['summarize', 'summarize_auto', 'summarize_auto_senders', 'summarize_auto_senders_list']);
+            if (!p.summarize) return false;
+            if (p.summarize_auto === 3) return true;
+            return !!p.summarize_auto_senders && matchAddressList(msg.author, p.summarize_auto_senders_list);
+        };
+        const autoTranslateStillWanted = async () => {
+            const p = await mztaPrefs.getPrefs(['translate', 'translate_auto']);
+            return !!p.translate && p.translate_auto === 3;
+        };
+
         // One message through its features, in series. Spam first: a spam verdict can move
         // the message to the junk folder, which makes its tags, summary and translation
         // pointless. A fetch failure is local to the feature that needed the data (the next
@@ -3872,6 +3889,8 @@ async function processEmails(args) {
                 if (target.summarize) {
                     if (isAutoMode && isMessageInAutoSkippedFolder(curr)) {
                         taLog.log("[ThunderAI] Summarize: " + curr.headerMessageId + " is now in an excluded folder, skipping.");
+                    } else if (isAutoMode && !(await autoSummaryStillWanted(curr))) {
+                        taLog.log("[ThunderAI] Summarize: the automatic summary was turned off since the batch started, skipping " + curr.headerMessageId + ".");
                     } else {
                         let summaryReady = false;
                         try {
@@ -3897,6 +3916,10 @@ async function processEmails(args) {
                 if (target.translate) {
                     if (isAutoMode && isMessageInAutoSkippedFolder(curr)) {
                         taLog.log("[ThunderAI] Translate: " + curr.headerMessageId + " is now in an excluded folder, skipping.");
+                        return;
+                    }
+                    if (isAutoMode && !(await autoTranslateStillWanted())) {
+                        taLog.log("[ThunderAI] Translate: the automatic translation was turned off since the batch started, skipping " + curr.headerMessageId + ".");
                         return;
                     }
                     try {
