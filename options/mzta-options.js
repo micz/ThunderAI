@@ -32,10 +32,13 @@ import {
   hasNoConnectionSelected,
   setTomSelectBorder,
   getMiczItUrl,
-  getCacheStorageUsedSpace,
+  getMessageStorageUsedSpace,
   supportsUsageData
 } from '../js/mzta-utils.js';
-import { taStorage } from '../js/mzta-storage.js';
+import {
+  taStorage,
+  isMirrorKey
+} from '../js/mzta-storage.js';
 import {
   injectConnectionUI,
   updateAnthropicModelCapabilityUI,
@@ -675,9 +678,19 @@ function resetApiStreamIdleTimeout(){
   mztaPrefs.setPref('api_stream_idle_timeout', prefs_default.api_stream_idle_timeout);
 }
 
-async function updateCacheSize() {
-  let size = await getCacheStorageUsedSpace();
-  document.getElementById('cache_storage_size').textContent = size;
+// The space taken by the saved spam reports, summaries and translations (IndexedDB). While the
+// background is still moving them out of storage.local (the migration flag), a notice says so,
+// since the size does not count them yet; another one when the last attempt failed.
+async function updateMessageStorageSize() {
+  const migration = await taStorage.getMigrationState();
+  document.getElementById('message_storage_migrating').style.display = migration === 'migrating' ? '' : 'none';
+  document.getElementById('message_storage_migration_failed').style.display = migration === 'failed' ? '' : 'none';
+  try {
+    document.getElementById('message_storage_size').textContent = await getMessageStorageUsedSpace();
+  } catch (e) {
+    taLog.error('Could not read the message storage size: ' + e);
+    document.getElementById('message_storage_size').textContent = '';
+  }
 }
 
 // The unencrypted (http:) servers the user allowed [#1000], each with a button that
@@ -921,7 +934,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // A policy-enforced key cannot have meaningfully changed: whatever was written to
     // storage.local for it is shadowed on every read by the policy value, so reacting
     // would recompute the indicators to land on the values already displayed.
+    // A mirror record of the per-message data (spam:, summary:, translation:<Message-ID>) is
+    // written at every save, and a Message-ID may end with anything: never a preference.
     const hasRelevantChange = Object.keys(changes).some(key =>
+      !isMirrorKey(key) &&
       !isLockedKey(key) &&
       (key.endsWith('_use_specific_integration') || key.endsWith('_connection_type'))
     );
@@ -1028,16 +1044,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Cache management
-  updateCacheSize();
+  // The saved spam reports, summaries and translations
+  updateMessageStorageSize();
 
-  document.getElementById('btnClearCache').addEventListener('click', async () => {
-    if (!confirm(browser.i18n.getMessage("prefs_storage_clear_confirm"))) {
-      return;
-    }
-    let count = await taStorage.clearAllRecords();
-    alert(browser.i18n.getMessage("prefs_storage_clear_done", [String(count)]));
-    updateCacheSize();
+  // Everything else (the overview, the retention rules, the deletions) is on the storage
+  // management page.
+  document.getElementById('btnManageMessageStorage').addEventListener('click', () => {
+    openTab('/pages/storage/mzta-storage-manager.html');
   });
 
   browser.runtime.getPlatformInfo().then(info => {

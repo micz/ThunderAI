@@ -77,16 +77,16 @@ k.test('summary-stops', 'a rate limit on the summary of message 2: message 1 com
     assert.deepEqual(prompted('su4@x'), []);
 });
 
-k.test('summary-stored', 'what is stored: message 1 everything, message 2 its spam report and an error summary, 3 and 4 nothing', () => {
-    const r1 = record(ctx, 'su1@x');
+k.test('summary-stored', 'what is stored: message 1 everything, message 2 its spam report and an error summary, 3 and 4 nothing', async () => {
+    const r1 = (await record(ctx, 'su1@x'));
     assert.ok(r1.spam && r1.summary && r1.translation);
     assert.equal(r1.summary.error, false);
-    const r2 = record(ctx, 'su2@x');
+    const r2 = (await record(ctx, 'su2@x'));
     assert.ok(r2.spam);
     assert.equal(r2.summary.error, true);
     assert.equal(r2.translation, undefined);
-    assert.equal(record(ctx, 'su3@x'), null);
-    assert.equal(record(ctx, 'su4@x'), null);
+    assert.equal((await record(ctx, 'su3@x')), null);
+    assert.equal((await record(ctx, 'su4@x')), null);
     assert.equal(labels('su2@x').length, 1, 'message 2 was tagged before its summary failed');
 });
 
@@ -111,7 +111,7 @@ k.test('spam-stops', 'a rate limit on the spam filter: the message is not moved,
     await receive(ctx, hs);
     assert.deepEqual(prompted('sp2@x'), ['spam']);
     assert.equal(ctx.m.byHeaderId('sp2@x').folder.id, 'f-inbox');
-    assert.equal(record(ctx, 'sp2@x').spam.moved, false);
+    assert.equal((await record(ctx, 'sp2@x')).spam.moved, false);
     assert.deepEqual(prompted('sp3@x'), []);
     assert.equal(lastError(7).data.message, ctx.ctl.browser.i18n.getMessage('batch_stopped_rate_limit', ['2']));
 });
@@ -123,7 +123,7 @@ k.test('tags-stop', 'a rate limit on add_tags: no tag is assigned to that messag
     await receive(ctx, hs);
     assert.deepEqual(prompted('tg2@x'), ['spam', 'add_tags']);
     assert.deepEqual(labels('tg2@x'), []);
-    assert.equal(record(ctx, 'tg2@x').summary, undefined);
+    assert.equal((await record(ctx, 'tg2@x')).summary, undefined);
     assert.deepEqual(prompted('tg3@x'), []);
 });
 
@@ -134,7 +134,7 @@ k.test('translation-stops', 'a rate limit on the translation of message 2: 3 and
     await receive(ctx, hs);
     assert.deepEqual(prompted('tr2@x'), ['spam', 'add_tags', 'summary', 'translation']);
     assert.deepEqual(prompted('tr3@x'), []);
-    assert.equal(record(ctx, 'tr2@x').translation.error, true);
+    assert.equal((await record(ctx, 'tr2@x')).translation.error, true);
 });
 
 k.test('retry-after', 'when the provider names a wait, the red panel says when to retry (batch_stopped_retry_after, formatDuration)', async () => {

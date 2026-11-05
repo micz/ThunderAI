@@ -47,9 +47,9 @@ Using an API integration, ThunderAI can work on incoming mail on its own:
 | | Feature | Description |
 |---|---|---|
 | ![](images/context_menu/autotags.png) | **Auto-tagging** | Tag incoming emails automatically, with an exclusion list and an option for sent mail |
-| ![](images/context_menu/spamfilter.png) | **Spam filter** | Move spam to the junk folder, with a per-message report and a consultable log. A skip list and a block list, of addresses or whole domains (`@domain.com`), decide some senders without asking the AI |
-| ![](images/context_menu/summarize.png) | **Auto-summarize** | Summarize on open, on receive or on demand, with caching and an optional list of senders/domains always summarized |
-| ![](images/context_menu/translate.png) | **Auto-translate** | Translate incoming emails inline, with caching |
+| ![](images/context_menu/spamfilter.png) | **Spam filter** | Move spam to the junk folder, with a per-message report and a consultable log, kept without a limit by default. A skip list and a block list, of addresses or whole domains (`@domain.com`), decide some senders without asking the AI |
+| ![](images/context_menu/summarize.png) | **Auto-summarize** | Summarize on open, on receive or on demand, with the summary saved for each email and an optional list of senders/domains always summarized |
+| ![](images/context_menu/translate.png) | **Auto-translate** | Translate incoming emails inline, with the translation saved for each email |
 
 Drafts, templates, outbox and sent messages are skipped, so a draft is never processed while you are writing it. Several emails can be processed in parallel, and the same feature never runs twice on the same email. When the AI server is temporarily unavailable a request is repeated automatically, and the automatic processing stops by itself when the provider's rate limit or quota is exceeded.
 
@@ -104,16 +104,17 @@ Before opening an issue or a pull request, please read the [contributing guideli
 The add-on itself has no build step and no dependencies: it is plain JavaScript loaded as it is by Thunderbird. ThunderAI has an automated test suite in [`tests/`](tests/), covering one area at a time — the enterprise managed configuration, the prompts and placeholders, the API integrations, the settings pages, the AI chat window, what the add-on reads from and writes into a mail, the background, ChatGPT Web and more — in two levels, both run from the repository root with Node's built-in test runner:
 
 ```sh
-# Level 1 - the modules. Node 22 or later, nothing to install
+# Once: the development tooling (jsdom, fake-indexeddb). Node 22.22+ or 24.15+
+npm ci
+
+# Level 1 - the modules
 node --test "tests/**/*.test.mjs"
 
-# Everything, including the DOM tests (the pages loaded in jsdom).
-# Node 22.22+ or 24.15+
-npm ci
+# Everything, including the DOM tests (the pages loaded in jsdom)
 npm test
 ```
 
-`npm` is used for development tooling only: [jsdom](https://github.com/jsdom/jsdom) is the one development dependency, and nothing in `package.json` or `node_modules` is part of the add-on or ends up in the XPI. The tests run in CI on demand only — manually from the Actions tab, or by adding the `run-tests` label to a pull request — not on every commit. How they work, and how to add a scenario or a page, is explained in [`tests/README.md`](tests/README.md).
+`npm` is used for development tooling only: the two development dependencies are [jsdom](https://github.com/jsdom/jsdom) and [fake-indexeddb](https://github.com/dumbmatter/fakeIndexedDB), and nothing in `package.json` or `node_modules` is part of the add-on or ends up in the XPI. The tests run in CI on demand only — manually from the Actions tab, or by adding the `run-tests` label to a pull request — not on every commit. How they work, and how to add a scenario or a page, is explained in [`tests/README.md`](tests/README.md).
 
 Some behaviours are still checked by hand in Thunderbird. For the API answers that stop arriving in the middle (the stream idle timeout and the Stop button during a stall), use the stall server in [`tests/_stall_server/`](tests/_stall_server/): a small local OpenAI-compatible and Ollama server, with no dependency, that sends a few tokens and then goes silent. How to start it, point ThunderAI at it and what to check is explained in [`tests/_stall_server/README.md`](tests/_stall_server/README.md).
 

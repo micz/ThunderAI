@@ -45,6 +45,11 @@ import {
     REPO,
 } from './load.mjs';
 import { plugins } from './plugins.mjs';
+import {
+    installIndexedDB,
+    installLocks,
+    pendingIndexedDB
+} from './indexeddb.mjs';
 
 /** The pages every branch has: name -> HTML path, relative to the repository root. */
 const CORE_PAGES = {
@@ -193,6 +198,7 @@ function addPageApis(browser, opts) {
     browser.permissions = {
         async contains(q) { return perm.contains ? perm.contains(q) : true; },
         async request(q) { return perm.request ? perm.request(q) : true; },
+        async remove(q) { return perm.remove ? perm.remove(q) : true; },
         async getAll() { return { origins: ['<all_urls>'], permissions: [] }; },
         onAdded: makeEvent(), onRemoved: makeEvent(),
     };
@@ -350,7 +356,7 @@ function stubClipboard(window, rec) {
  * @param {string} page   a PAGES key
  * @param {object} opts
  *   policy, local, session, accounts   as for startPage()
- *   permissions               {contains(q), request(q)} overrides (default: granted)
+ *   permissions               {contains(q), request(q), remove(q)} overrides (default: granted)
  *   commands                  {command: (message) => reply} overrides / additions
  *   confirm, prompt           what window.confirm / window.prompt return (default true / '')
  *   query                     search string appended to the page url (e.g. '?llm=...')
@@ -472,6 +478,10 @@ async function openContext(what, opts) {
     }
     Object.defineProperty(globalThis, 'navigator', { value: window.navigator, configurable: true, writable: true });
     globalThis.self = window;
+    // IndexedDB and the Web Locks, which jsdom does not implement: the same fake databases as the
+    // mock puts on globalThis (one set per process), on the window too, and a navigator.locks.
+    installIndexedDB(window);
+    installLocks(window.navigator);
 
     // Stubs for what jsdom does not implement (listed in tests/README.md).
     const answerConfirm = opts.confirm ?? true;
@@ -544,15 +554,17 @@ async function openContext(what, opts) {
             if (Date.now() - start > cap) {
                 throw new Error('dom-page: ' + page + ' did not settle within ' + cap + ' ms ('
                     + rec.inflight + ' browser promises, ' + rec.timers.size + ' timers, '
-                    + rec.frames.size + ' animation frames pending)');
+                    + rec.frames.size + ' animation frames, ' + pendingIndexedDB() + ' IndexedDB requests pending)');
             }
             const before = mutations;
             if (rec.inflight === 0 && (rec.timers.size > 0 || rec.frames.size > 0)) {
                 await new Promise(r => setImmediate(r));
             }
             await new Promise(r => setImmediate(r));
+            // IndexedDB runs on setImmediate, which nothing above sees: its open requests and
+            // live transactions count as pending too.
             if (rec.inflight === 0 && rec.timers.size === 0 && rec.frames.size === 0
-                && mutations === before) quiet++;
+                && pendingIndexedDB() === 0 && mutations === before) quiet++;
             else quiet = 0;
         }
     };

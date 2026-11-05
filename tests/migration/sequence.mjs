@@ -14,7 +14,10 @@
  *     statement guarded by it is picked too, to a fixed point;
  *   - the policy load, `mztaManaged.loadManaged()`: spec 08 places it after the migration block
  *     and before migrateMenuOrderAlphabetic(), and the code that runs after it (the prompt views
- *     the menu order migration reads) awaits it. With no policy installed it changes nothing.
+ *     the menu order migration reads) awaits it. With no policy installed it changes nothing;
+ *   - the rebuild of the per-message database from its storage.local mirror,
+ *     `taStorage.reconcileIfNew()`: spec 01 "Per-Message Data Storage" places it right after the
+ *     move of the legacy records, before the listeners; it is what a start does after an eviction.
  *
  *  The picked statements run verbatim, in file order, in one async function whose free names are
  *  resolved from the background's own import statements. Nothing here names a migration or its
@@ -39,6 +42,10 @@ const BLOCK_HEAD = /^(?:if|for|while|function|async\s+function|class|try|switch)
 const CONTINUATION = /^\s*(?:else|catch|finally)\b/;
 // The names that make a top-level statement part of the sequence, besides the imported ones.
 const POLICY_LOAD = 'loadManaged';
+// The rebuild of the per-message database from its storage.local mirror: spec 01 "Per-Message
+// Data Storage" places it in the startup block, right after the move of the legacy records and
+// before the listeners, and it is what a start does after an eviction.
+const STORAGE_REBUILD = 'reconcileIfNew';
 
 /**
  * Split the top level of `src` into statements {start, end, text}. Enough for a script written
@@ -170,6 +177,7 @@ export function cutSequence(src = backgroundSource()) {
         .filter(i => /migration/.test(i.module) || /^migrate[A-Z]/.test(i.local))
         .map(i => i.local));
     seeds.add(POLICY_LOAD);
+    seeds.add(STORAGE_REBUILD);
     const all = topLevelStatements(src).filter(st => !/^import\b/.test(st.text));
     const ids = new Map(all.map(st => [st, identifiers(st.text)]));
     const picked = new Set();

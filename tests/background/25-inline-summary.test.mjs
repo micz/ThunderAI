@@ -79,7 +79,7 @@ k.test('trigger', 'the button (triggerSummaryGeneration): the generating panel f
     assert.equal(cmds[0], 'showSummaryGenerating');
     assert.equal(cmds[cmds.length - 1], 'showSummary');
     assert.equal(ctx.m.sentTo(7, 'showSummary')[0].data.headerMessageId, 'b1@x');
-    assert.ok(record(ctx, 'b1@x').summary);
+    assert.ok((await record(ctx, 'b1@x')).summary);
     assert.equal(calls('b1@x'), 1);
 });
 
@@ -91,7 +91,8 @@ k.test('cached', 'opening a message with a cached summary shows it at once, with
 });
 
 k.test('cached-error-not-shown', 'a stored error is not shown as a cached summary: the button is offered again', async () => {
-    await ctx.ctl.browser.storage.local.set({ 'msg:err1@x': { v: 1, ts: Date.now(), summary: { summary: '', error: true, message: 'boom', ts: Date.now() } } });
+    const { taStorage } = await import('../../js/mzta-storage.js');
+    await new taStorage().writeSummary('err1@x', { summary: '', error: true, message: 'boom' });
     show(7, 'err1@x');
     reset();
     await fromTab(ctx, 7, { command: 'initSummary' });
@@ -110,7 +111,7 @@ k.test('stale-drop', 'the user moved on before the summary came back: the result
     await p;
     for (let i = 0; i < 30; i++) await new Promise(r => setImmediate(r));
     assert.deepEqual(ctx.m.sentTo(7, 'showSummary'), [], 'no summary of st1 drawn on the tab now showing st2');
-    assert.equal(record(ctx, 'st1@x').summary.summary, 'Late summary', 'but it is in the cache');
+    assert.equal((await record(ctx, 'st1@x')).summary.summary, 'Late summary', 'but it is in the cache');
     ctx.workers.respond = featureResponder();
 });
 
@@ -125,7 +126,7 @@ k.test('refresh', 'refreshSummary regenerates: a new API call, and the new summa
     reset();
     ctx.workers.respond = featureResponder({ summary: () => 'Fresh summary' });
     await fromTab(ctx, 7, { command: 'refreshSummary', headerMessageId: 'st1@x' });
-    assert.equal(record(ctx, 'st1@x').summary.summary, 'Fresh summary');
+    assert.equal((await record(ctx, 'st1@x')).summary.summary, 'Fresh summary');
     assert.equal(ctx.m.commandsTo(7)[0], 'showSummaryGenerating');
     assert.equal(ctx.m.sentTo(7, 'showSummary').pop().data.summary, 'Fresh summary');
     ctx.workers.respond = featureResponder();
@@ -134,7 +135,7 @@ k.test('refresh', 'refreshSummary regenerates: a new API call, and the new summa
 k.test('remove', 'removeSummary drops the stored summary and draws the manual button again', async () => {
     reset();
     await fromTab(ctx, 7, { command: 'removeSummary', headerMessageId: 'st1@x' });
-    assert.equal(record(ctx, 'st1@x')?.summary, undefined);
+    assert.equal((await record(ctx, 'st1@x'))?.summary, undefined);
     assert.deepEqual(ctx.m.sentTo(7), [{ command: 'showSummaryButton', headerMessageId: 'st1@x', webchat: false }]);
 });
 
@@ -150,7 +151,7 @@ k.test('remove-while-running', 'a summary deleted while it is generated lands wi
     hold.held[0].answer('Unwanted summary');
     await p;
     for (let i = 0; i < 40; i++) await new Promise(r => setImmediate(r));
-    assert.equal(record(ctx, 'rr1@x')?.summary, undefined, 'not saved');
+    assert.equal((await record(ctx, 'rr1@x'))?.summary, undefined, 'not saved');
     for (const tab of [7, 8]) {
         const sent = ctx.m.sentTo(tab);
         assert.equal(sent.some(c => c.command === 'showSummary'), false, 'not shown in tab ' + tab);
@@ -174,7 +175,7 @@ k.test('delete-then-again', 'deleted while generating, then asked again: the run
     hold.held[0].answer('Revived summary');
     await Promise.all([p1, p2]);
     for (let i = 0; i < 40; i++) await new Promise(r => setImmediate(r));
-    assert.equal(record(ctx, 'rv1@x').summary.summary, 'Revived summary');
+    assert.equal((await record(ctx, 'rv1@x')).summary.summary, 'Revived summary');
     assert.equal(ctx.m.sentTo(7, 'showSummary').pop().data.summary, 'Revived summary');
     assert.equal(calls('rv1@x'), 1);
     ctx.workers.respond = featureResponder();
@@ -183,7 +184,7 @@ k.test('delete-then-again', 'deleted while generating, then asked again: the run
 k.test('unreachable-pane', 'a tab with no reachable message pane: the sends are dropped quietly, and the summary is stored', async () => {
     show(9, 'up1@x');
     await fromTab(ctx, 9, { command: 'triggerSummaryGeneration', headerMessageId: 'up1@x' });
-    assert.ok(record(ctx, 'up1@x').summary);
+    assert.ok((await record(ctx, 'up1@x')).summary);
     assert.deepEqual(ctx.m.sentTo(9), []);
     assert.deepEqual(ctx.unhandled, []);
 });
@@ -221,7 +222,7 @@ k.test('auto2-generates', 'summarize_auto = 2: opening a message generates its s
     reset();
     await fromTab(ctx, 7, { command: 'initSummary' });
     assert.deepEqual(ctx.m.commandsTo(7), ['showSummaryGenerating', 'showSummary']);
-    assert.ok(record(ctx, 'a2@x').summary);
+    assert.ok((await record(ctx, 'a2@x')).summary);
 });
 
 k.test('auto2-skipped-folder', 'summarize_auto = 2: a draft opened is not summarized automatically', async () => {
@@ -229,7 +230,7 @@ k.test('auto2-skipped-folder', 'summarize_auto = 2: a draft opened is not summar
     reset();
     await fromTab(ctx, 7, { command: 'initSummary' });
     assert.equal(calls('dr1@x'), 0);
-    assert.equal(record(ctx, 'dr1@x'), null);
+    assert.equal((await record(ctx, 'dr1@x')), null);
 });
 
 k.test('no-leak', 'no worker left alive, no unmodelled API touched, no unhandled rejection', () => {

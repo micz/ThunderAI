@@ -111,15 +111,18 @@ test('compileSequence() runs the statements in order with the injected names', a
     assert.deepEqual(out, { ok: false });
 });
 
-test('on mzta-background.js: the cut is the migration block plus the guarded menu order migration', () => {
+test('on mzta-background.js: the cut is the migration block, the message storage rebuild, plus the guarded menu order migration', () => {
     const seq = cutSequence();
-    const calls = seq.statements.map(s => s.text.match(/\b(migrate\w+|isSyncDrained|loadManaged)\(/g) || []);
+    const calls = seq.statements.map(s => s.text.match(/\b(migrate\w+|isSyncDrained|loadManaged|reconcileIfNew)\(/g) || []);
     // Every picked statement calls something of the sequence; together they call each migration once.
     calls.forEach((c, i) => assert.ok(c.length > 0, 'statement at line ' + seq.statements[i].line + ' calls nothing'));
     const all = calls.flat().map(c => c.slice(0, -1)).sort();
     assert.deepEqual(all, ['isSyncDrained', 'loadManaged', 'migrateCalendarNoSelection', 'migrateCustomPromptIdCollisions',
         'migrateCustomPromptsStorage', 'migrateDefaultPromptsPropStorage', 'migrateEnabledToShowIn', 'migrateMenuOrderAlphabetic',
-        'migrateOllamaThinkLevel', 'migratePrefsToLocal']);
+        'migrateMessageDataToIndexedDB', 'migrateOllamaThinkLevel', 'migratePrefsToLocal', 'reconcileIfNew']);
+    // The rebuild comes right after the move of the legacy records (spec 01 "Per-Message Data Storage").
+    const at = name => seq.statements.findIndex(s => s.text.includes(name + '('));
+    assert.equal(at('reconcileIfNew'), at('migrateMessageDataToIndexedDB') + 1);
     assert.deepEqual(seq.declared, ['_prefs_migration_ok']);
     for (const st of seq.statements) assert.doesNotThrow(() => compileSequence({ ...seq, statements: [st] }), st.text);
 });

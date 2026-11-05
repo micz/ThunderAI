@@ -51,8 +51,8 @@ k.test('no-worker', 'no worker is created, no prompt sent', () => {
     assert.deepEqual(sentPrompts(ctx), []);
 });
 
-k.test('nothing-stored', 'nothing is stored for the message: no summary, no translation, no spam report', () => {
-    assert.equal(record(ctx, 'ce@x'), null);
+k.test('nothing-stored', 'nothing is stored for the message: no summary, no translation, no spam report', async () => {
+    assert.equal((await record(ctx, 'ce@x')), null);
 });
 
 k.test('summary-panel', 'the summary panel of the displaying tab shows the configuration error', () => {
@@ -92,7 +92,7 @@ k.test('retry-after-fix', 'once the key is set, the same message is processed: t
     t.mock.timers.enable({ apis: ['setTimeout'] });
     await setPrefs(t, ctx, { chatgpt_api_key: 'sk-FAKE' });
     await receive(ctx, [ctx.m.byHeaderId('ce@x')]);
-    const r = record(ctx, 'ce@x');
+    const r = (await record(ctx, 'ce@x'));
     assert.equal(r.summary.error, false);
     assert.equal(r.translation.error, false);
     assert.equal(r.spam.spamValue, 10);

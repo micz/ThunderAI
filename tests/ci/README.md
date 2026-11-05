@@ -11,7 +11,7 @@ when the enterprise policy surface changes
 node --test "tests/ci/*.test.mjs"     # this area only, from the repository root
 ```
 
-Nothing to install. The script is run as the workflow runs it, a child process with
+Level 1 (after `npm ci`, see [`../README.md`](../README.md)). The script is run as the workflow runs it, a child process with
 `GITHUB_OUTPUT` set, and writes only to temporary directories.
 
 | File | Covers |

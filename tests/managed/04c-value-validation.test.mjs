@@ -66,6 +66,13 @@ test('calendar_timezone: empty and a listed zone are accepted, an unlisted spell
     assert.equal(await check('europe/rome'), false, 'europe/rome accepted');
 });
 
+test('message_storage_batch_size (policy-only): an integer from 1 to 10000, anything else refused', async () => {
+    const check = async value => (await restart({ policy: { message_storage_batch_size: value } },
+        'managedKeys', ['message_storage_batch_size'])).result.message_storage_batch_size.managed;
+    for (const ok of [1, 250, 10000]) assert.equal(await check(ok), true, ok + ' refused');
+    for (const bad of [0, 10001, 2.5, -3]) assert.equal(await check(bad), false, bad + ' accepted');
+});
+
 test('a rejected API key is masked in its warning', async () => {
     // The content warning prints the rejected value; an API key must never be printed (spec 08
     // "Validation": keys are masked in all log output). A fresh context, with its own policy.

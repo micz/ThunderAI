@@ -325,6 +325,53 @@ k.test('generic-prefix', S_PANELS, 'the generic panels read "[ThunderAI | source
     assert.ok($('#mzta-generic-info').textContent.includes('[ThunderAI] Done.'));
 });
 
+// --- a result that could not be saved ----------------------------------------------------------
+
+// Spec 01 "Per-Message Data Storage": a result shown whose save failed is still shown in full, with
+// a red notice at the top of its panel saying that saving failed, followed by the error message
+// (data.storage_error); as text, like every message of the panels.
+const S_SAVE = 'spec 01 "Per-Message Data Storage"';
+const NOTICE = '.thunderai-storage-error';
+const ERR = 'QuotaExceededError: <i>disk</i> full';
+
+k.test('save-failed-summary', S_SAVE, 'a summary that could not be saved: the summary, with the red notice and the error first in its banner', async () => {
+    await summary({ summary: 'Still shown.', storage_error: ERR });
+    const banner = $('#mzta-summary-banner');
+    const notice = banner.querySelector(NOTICE);
+    assert.ok(notice, 'the notice is there');
+    assert.equal(banner.firstElementChild, notice, 'at the top of the panel');
+    assert.equal(notice.textContent, msg('storage_save_failed', [ERR]));
+    assert.equal(notice.querySelector('i'), null, 'the error is text');
+    assert.ok(banner.textContent.includes('Still shown.'), 'the result is shown');
+});
+
+k.test('save-failed-translation', S_SAVE, 'a translation that could not be saved: the translation, with the notice first in its banner', async () => {
+    await translation({ translated_text: 'Still translated.', storage_error: ERR });
+    const banner = $('#mzta-translation-banner');
+    assert.equal(banner.firstElementChild, banner.querySelector(NOTICE));
+    assert.equal(banner.querySelector(NOTICE).textContent, msg('storage_save_failed', [ERR]));
+    assert.ok(banner.textContent.includes('Still translated.'));
+});
+
+k.test('save-failed-spam', S_SAVE, 'a spam report that could not be saved: the verdict, with the notice first in the badge', async () => {
+    await send(ctx, { command: 'showSpamReport',
+        data: { spamValue: 85, SpamThreshold: 70, explanation: 'Phishing', headerMessageId: ID, storage_error: ERR } });
+    const badge = $('#mzta-toolbar-spam');
+    assert.ok(badge.querySelector(NOTICE), 'the notice is there');
+    assert.equal(badge.firstElementChild, badge.querySelector(NOTICE), 'above the score row');
+    assert.equal(badge.querySelector(NOTICE).textContent, msg('storage_save_failed', [ERR]));
+    assert.ok(badge.textContent.includes('85'));
+});
+
+k.test('saved-no-notice', S_SAVE, 'a result saved normally has no notice', async () => {
+    await summary({ summary: 'Saved.' });
+    await translation({ translated_text: 'Saved too.' });
+    await send(ctx, { command: 'showSpamReport', data: { spamValue: 5, SpamThreshold: 70, explanation: 'ok', headerMessageId: ID } });
+    for (const sel of ['#mzta-summary-banner', '#mzta-translation-banner', '#mzta-toolbar-spam']) {
+        assert.equal($(sel).querySelector(NOTICE), null, sel);
+    }
+});
+
 k.test('harness-clean', S_SUMMARY, 'the content script ran on modelled APIs only', () => {
     assertHarnessClean(ctx);
 });

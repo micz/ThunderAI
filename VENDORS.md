@@ -12,3 +12,6 @@ source: https://cdn.jsdelivr.net/npm/diff@9.0.0/dist/diff.js
 
 file: api_webchat/markdown-it.min.js
 source: https://cdn.jsdelivr.net/npm/markdown-it@15.0.3/dist/browser/markdown-it.umd.min.js
+
+file: js\lib\idb.js
+source: https://cdn.jsdelivr.net/npm/idb@8.0.4/build/index.js
