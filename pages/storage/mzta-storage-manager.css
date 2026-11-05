@@ -30,6 +30,15 @@
     margin-bottom: 10px;
 }
 .section_hdr > .mzta_prompt_title { margin-bottom: 0; }
+/* Same accent-bar heading as the other cards' titles: the shared rule in
+   mzta-design.css only matches a title that is a direct child of the
+   section, and this one sits inside the flex row. */
+body.mzta_feature_page .section_hdr > .mzta_prompt_title {
+    border-left: 3px solid var(--accent);
+    padding-left: 9px;
+    font-size: 15px;
+    font-weight: 600;
+}
 .section_hdr select { width: auto !important; min-width: 180px; }
 
 .storage_notice { color: var(--text); }
