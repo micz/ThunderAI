@@ -35,6 +35,7 @@ import {
     normalizeDateTimeString,
     appendMessageLinkToDescription,
     normalizeReminderMinutes,
+    getSparksCalendars,
     normalizeHtmlSourceNewlines,
     checkIfTagLabelExists,
     getConnectionType,
@@ -598,6 +599,7 @@ export class mzta_Menus {
                             'calendar_enforce_timezone',
                             'calendar_timezone',
                             'calendar_append_email_link',
+                            'calendar_preferred_id',
                             'calendar_reminder_enabled',
                             'calendar_reminder_rules',
                             ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
@@ -675,8 +677,15 @@ export class mzta_Menus {
                         // Timezone management - END
                         this.logger.log("calendar_event_data: " + calendar_event_data);
                         this.logger.log("calendar_event_data_obj: " + calendar_event_data_str);
+                        // No calendar list: most likely a Sparks that predates the default calendar
+                        // and ignores it without a word, possibly a failed request. Neither can be
+                        // told apart here, so the alert only says the choice was not checked. The
+                        // event still opens, and a current Sparks still applies or reports it.
+                        if (prefs_at.calendar_preferred_id && await getSparksCalendars() === null) {
+                            sendTabMessageSafe(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_preferred_unchecked") });
+                        }
                         try{
-                            let result_openCalendarEventDialog = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "openCalendarEventDialog", calendar_event_data: calendar_event_data_str})
+                            let result_openCalendarEventDialog = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "openCalendarEventDialog", calendar_event_data: calendar_event_data_str, preferred_calendar_id: prefs_at.calendar_preferred_id})
                             if(result_openCalendarEventDialog == 'ok'){
                                 taWorkingStatus.stopWorking();
                                 return {ok:'1'};
