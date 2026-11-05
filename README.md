@@ -187,6 +187,6 @@ _The language status represents the percentage of translated strings in the late
 
 Calendar extraction supports existing native categories and HTTP/HTTPS URI
 attachments with matching ThunderAI and Sparks capability support. Valid links
-are also kept in the description. Turn it on in the calendar event settings; see the
+are also kept in the description. The calendar event prompt asks for them; see the
 [configuration, JSON contract and validation guide](docs/calendar-event-metadata.md).
 The native event window remains the confirmation step before saving.

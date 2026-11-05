@@ -143,43 +143,64 @@ k.test('mail-links-clipboard', 'clipboard text has no link targets: the mail on 
     }
 });
 
-k.test('statement-switch', 'each part is added with the option on, unless the prompt already gives its own data', () => {
-    const categoriesPart=ctx.ctl.browser.i18n.getMessage('prompt_calendar_categories_format');
-    const linksPart=ctx.ctl.browser.i18n.getMessage('prompt_calendar_links_format');
-    assert.ok(categoriesPart.includes('{%calendar_categories%}') && linksPart.includes('{%mail_links%}'));
-    assert.equal(promptUtils.getCalendarMetadataStatement('A saved prompt',false),'');
-    assert.equal(promptUtils.getCalendarMetadataStatement('A saved prompt',true),categoriesPart+' \n'+linksPart);
-    assert.equal(promptUtils.getCalendarMetadataStatement('Mine: {% calendar_categories %}',true),linksPart);
-    assert.equal(promptUtils.getCalendarMetadataStatement('Mine: {%mail_links%}',true),categoriesPart);
-    assert.equal(promptUtils.getCalendarMetadataStatement('Mine: {%calendar_categories%} {%mail_links%}',true),'');
+k.test('statement-parts', 'a prompt gets the rule of what it asks for, and the data unless it gives it', () => {
+    const msg=key => ctx.ctl.browser.i18n.getMessage(key);
+    const statement=text => promptUtils.getCalendarMetadataStatement(text);
+    const categories=msg('prompt_calendar_categories_format'), categoriesList=msg('prompt_calendar_categories_list');
+    const links=msg('prompt_calendar_links_format'), linksList=msg('prompt_calendar_links_list');
+    assert.ok(categoriesList.includes('{%calendar_categories%}') && linksList.includes('{%mail_links%}'));
+    assert.equal(statement(msg('prompt_get_calendar_event_full_text')),[categories,categoriesList,links,linksList].join(' \n'));
+    assert.equal(statement('A saved prompt'),'');
+    assert.equal(statement('Mine: {% calendar_categories %}'),categories);
+    assert.equal(statement('Mine: {%mail_links%}'),links);
+    assert.equal(statement('Mine: {%calendar_categories%} {%mail_links%}'),categories+' \n'+links);
+    assert.equal(statement('JSON: "categories": []'),categories+' \n'+categoriesList);
+    assert.equal(statement('JSON: "links": []'),links+' \n'+linksList);
 });
 
-k.test('prompt-asks', 'a prompt asking in its own words is recognized by either token, spaced forms too', () => {
-    for (const asks of ['Mine: {%calendar_categories%}','Mine: {% mail_links %}']) {
-        assert.equal(promptUtils.promptAsksCalendarMetadata(asks),true);
-    }
-    for (const plain of ['A saved prompt','categories and links',undefined]) {
-        assert.equal(promptUtils.promptAsksCalendarMetadata(plain),false);
+k.test('must-fill', 'a field asked for must be filled: the AI cannot leave out a category when one exists', () => {
+    const msg=key => ctx.ctl.browser.i18n.getMessage(key);
+    const categories=msg('prompt_calendar_categories_format');
+    assert.ok(categories.includes('at least one name') && categories.includes('Use [] only if the list is empty'));
+    assert.equal(categories.includes('if none matches'),false);
+    assert.ok(msg('prompt_calendar_links_format').includes('the video call link when there is one'));
+});
+
+k.test('prompt-asks', 'the shipped text asks for both, an edited prompt for what it names', () => {
+    const asked=text => promptUtils.calendarMetadataAsked(text);
+    const shipped=ctx.ctl.browser.i18n.getMessage('prompt_get_calendar_event_full_text');
+    assert.deepEqual(asked(shipped),{categories:true,links:true});
+    assert.deepEqual(asked('  '+shipped+'\n'),{categories:true,links:true},'a saved copy of the shipped text');
+    assert.deepEqual(asked(shipped+' Be brief.'),{categories:false,links:false},'edited');
+    assert.deepEqual(asked('Mine: {%calendar_categories%}'),{categories:true,links:false});
+    assert.deepEqual(asked('Mine: {% mail_links %}'),{categories:false,links:true});
+    assert.deepEqual(asked('{"categories": [], "links": []}'),{categories:true,links:true});
+    for (const plain of ['A saved prompt','categories and links','',undefined]) {
+        assert.deepEqual(asked(plain),{categories:false,links:false});
     }
 });
 
 k.test('statement-resolved', 'the added instruction is resolved like a prompt, and leaves no token', async () => {
     response=CAPS;
-    assert.equal(await promptUtils.appendCalendarMetadataStatement('Base','Base',false,{}),'Base');
-    const full=await promptUtils.appendCalendarMetadataStatement('Base','Base',true,{msg_text:{}});
+    const shipped=ctx.ctl.browser.i18n.getMessage('prompt_get_calendar_event_full_text');
+    assert.equal(await promptUtils.appendCalendarMetadataStatement('Base','Base',{}),'Base');
+    const full=await promptUtils.appendCalendarMetadataStatement('Base',shipped,{msg_text:{}});
     assert.ok(full.startsWith('Base \n'));
     assert.ok(full.includes(JSON.stringify(CATEGORIES)));
     assert.equal(full.includes('{%'),false);
+    // A prompt giving the data still gets the rules, without the data twice.
     const both='{%calendar_categories%} {%mail_links%}';
-    assert.equal(await promptUtils.appendCalendarMetadataStatement(both,both,true,{msg_text:{}}),both);
-    // A prompt giving only the categories still gets the links part, and the hidden targets.
-    const links=await promptUtils.appendCalendarMetadataStatement('X {%calendar_categories%}','X {%calendar_categories%}',true,
+    const rules=await promptUtils.appendCalendarMetadataStatement('Resolved',both,{msg_text:{}});
+    assert.ok(rules.includes('at least one name') && rules.includes('a field "links"'));
+    assert.equal(rules.includes(JSON.stringify(CATEGORIES)),false);
+    // A prompt naming the field without its data gets the hidden targets.
+    const links=await promptUtils.appendCalendarMetadataStatement('X','X "links": []',
         {msg_text:{selection:'Join',selection_links:[{text:'Join',href:'https://example.org/join'}]}});
     assert.ok(links.includes('"url":"https://example.org/join"'));
     assert.equal(links.includes(JSON.stringify(CATEGORIES)),false);
 });
 
-k.test('shipped-prompt', 'the shipped event prompt does not ask for categories or links: the option does', () => {
+k.test('shipped-prompt', 'the shipped event prompt text stays as it is: the code asks for categories and links', () => {
     const text=ctx.ctl.browser.i18n.getMessage('prompt_get_calendar_event_full_text');
     assert.equal(text.includes('calendar_categories'),false);
     assert.equal(text.includes('mail_links'),false);

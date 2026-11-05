@@ -1512,8 +1512,12 @@ function calendarLinksShownIn(text) {
 
 // Mutate only the two optional fields and, for valid links, the description. A
 // missing capability strips native metadata; the historical event still opens.
-export function normalizeCalendarMetadata(data, capabilities, logger) {
+export function normalizeCalendarMetadata(data, capabilities, logger, asked = {categories: true, links: true}) {
   for (const field of ["categories", "links"]) {
+    if (!asked[field]) {
+      delete data[field];
+      continue;
+    }
     const present = field in data;
     if (!present && field !== "links") continue;
     const original = data[field];
@@ -1527,8 +1531,8 @@ export function normalizeCalendarMetadata(data, capabilities, logger) {
     }
     const ignored = Array.isArray(original) ? original.length - values.length : (present ? 1 : 0);
     if (ignored) logger?.log("Calendar metadata ignored entries: " + field + "=" + ignored);
-    // Only called with the option on, which asks for links: a model leaving them out, or giving
-    // nothing usable, still gets the links it wrote in the description.
+    // Links were asked for: a model leaving them out, or giving nothing usable, still gets the
+    // links it wrote in the description.
     if (field === "links" && !values.length && typeof data.description === "string") {
       values = calendarLinksShownIn(data.description);
     }

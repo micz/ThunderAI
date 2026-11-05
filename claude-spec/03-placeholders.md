@@ -790,8 +790,8 @@ selected alone has no text. It answers `null` without a selection (a collapsed c
 and skips hidden anchors and the hidden parts of a label, by the same rule as the body
 (`mztaIsHiddenElement()`, shared with `mztaStripHidden()`: the `hidden` attribute and inline
 styles, not CSS class rules). The menu action asks for it only when
-the prompt holds `{%mail_links%}`, or for the calendar event prompt with
-`calendar_metadata_enabled` on; never for clipboard text, and a failure only means the HTML in
+the prompt holds `{%mail_links%}`, or for a calendar event prompt asking for links
+(`calendarMetadataAsked()`); never for clipboard text, and a failure only means the HTML in
 hand is read. Without a selection, `getMailLinks()` reads the body HTML with the hidden-element
 rule of the text side.
 Both go through `mailLinksFromAnchors()`, in document order: HTTP/HTTPS targets through the

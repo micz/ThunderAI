@@ -12,7 +12,7 @@ const outgoing=[];
 let mode='new', modelAnswer, fullHtml='', capabilityRequests=0, selectedLinks=[];
 const ctx=await bgContext({
     local:{...API,get_calendar_event:true,get_calendar_event_from_clipboard:true,calendar_append_email_link:true,
-        calendar_enforce_timezone:true,calendar_timezone:'Europe/Paris',calendar_reminder_enabled:true,calendar_metadata_enabled:true},
+        calendar_enforce_timezone:true,calendar_timezone:'Europe/Paris',calendar_reminder_enabled:true},
     external:async (id,message) => {
         assert.equal(id,'thunderai-sparks@micz.it');
         if (message.action==='checkPresence') return '3.1.1';
@@ -56,6 +56,16 @@ async function run(id='prompt_get_calendar_event') {
     const result=await ctx.bg.$eval('menus').executeMenuAction(id);
     assert.ok(outgoing.length, JSON.stringify({result,logs:ctx.con.all(),alerts:ctx.m.sentTo(7,'sendAlert')}));
     return {result,data:JSON.parse(outgoing.at(-1).calendar_event_data),prompt:ctx.workers.prompts().at(-1)};
+}
+
+async function savePrompt(t,text) {
+    const stored=(await ctx.prompts.getSpecialPrompts()).map(p => p.id==='prompt_get_calendar_event' ? {...p,text} : p);
+    await ctx.ctl.browser.storage.local.set({_special_prompts:stored});
+    await ctx.bg._reload_menus();
+    t.after(async () => {
+        await ctx.ctl.browser.storage.local.remove('_special_prompts');
+        await ctx.bg._reload_menus();
+    });
 }
 
 k.test('email-to-companion', 'email menu expands categories before the worker and transmits validated native fields', async () => {
@@ -107,9 +117,8 @@ k.test('old-or-absent-capabilities', 'older/malformed and rejected capabilities 
     }
 });
 
-k.test('option-off', 'with the option off nothing is asked, Sparks is not queried and the fields of an answer are dropped', async t => {
-    await ctx.ctl.browser.storage.local.set({calendar_metadata_enabled:false});
-    t.after(() => ctx.ctl.browser.storage.local.set({calendar_metadata_enabled:true}));
+k.test('not-asked', 'an edited prompt naming neither field behaves as before: nothing asked, Sparks not queried, fields dropped', async t => {
+    await savePrompt(t,'Event JSON. {%mail_text_body_or_selected%}');
     mode='new';
     const before=capabilityRequests, asked=linkRequests();
     const {result,data,prompt}=await run();
@@ -117,51 +126,62 @@ k.test('option-off', 'with the option off nothing is asked, Sparks is not querie
     assert.equal(capabilityRequests,before);
     assert.equal(linkRequests(),asked,'no link is read when nothing asks for links');
     assert.equal(prompt.includes(JSON.stringify(categories)),false);
+    assert.equal(prompt.includes('a field "categories"'),false);
+    assert.equal(prompt.includes('a field "links"'),false);
     assert.equal('categories' in data,false);
     assert.equal('links' in data,false);
     assert.equal(data.description.includes('https://example.org/programme.pdf'),false);
     assert.equal(data.summary,'Synthetic seminar');
 });
 
-k.test('token-needs-option', 'with the option off, a saved prompt holding the category token still gets no fields', async t => {
-    const stored=(await ctx.prompts.getSpecialPrompts()).map(p => p.id==='prompt_get_calendar_event'
-        ? {...p,text:'Event JSON with categories from {%calendar_categories%} and links. {%mail_text_body_or_selected%}'} : p);
-    await ctx.ctl.browser.storage.local.set({calendar_metadata_enabled:false,_special_prompts:stored});
-    await ctx.bg._reload_menus();
-    t.after(async () => {
-        await ctx.ctl.browser.storage.local.remove('_special_prompts');
-        await ctx.ctl.browser.storage.local.set({calendar_metadata_enabled:true});
-        await ctx.bg._reload_menus();
-    });
+k.test('shipped-copy', 'a saved copy of the shipped text, as any save of a special prompt writes, still asks for both', async t => {
+    await savePrompt(t,ctx.ctl.browser.i18n.getMessage('prompt_get_calendar_event_full_text'));
     mode='new';
+    const {data,prompt}=await run();
+    assert.ok(prompt.includes(JSON.stringify(categories)));
+    assert.ok(prompt.includes('a field "links"'));
+    assert.deepEqual(data.categories,['Séminaire']);
+    assert.deepEqual(data.links,['https://example.org/programme.pdf']);
+});
+
+k.test('categories-only', 'a prompt giving only the categories must fill them, and is not asked for links', async t => {
+    await savePrompt(t,'Event JSON with categories from {%calendar_categories%}. {%mail_text_body_or_selected%}');
+    mode='new';
+    const asked=linkRequests();
     const {result,data,prompt}=await run();
     assert.deepEqual(result,{ok:'1'});
     assert.ok(prompt.includes('Event JSON with categories from '+JSON.stringify(categories)));
+    assert.equal(prompt.split(JSON.stringify(categories)).length,2,'the list is not given twice');
     // The reminder format starts with the same words: check a part of each statement only.
-    assert.equal(prompt.includes('a field "categories"'),false);
+    assert.ok(prompt.includes('a field "categories"') && prompt.includes('at least one name'));
     assert.equal(prompt.includes('a field "links"'),false);
-    assert.equal('categories' in data,false);
+    assert.equal(linkRequests(),asked);
+    assert.deepEqual(data.categories,['Séminaire']);
     assert.equal('links' in data,false);
-    assert.equal(data.summary,'Synthetic seminar');
+    assert.equal(data.description.includes('https://example.org/programme.pdf'),false);
 });
 
-k.test('categories-token-keeps-links', 'a saved prompt giving only the categories still gets the links part and the hidden targets', async t => {
-    const stored=(await ctx.prompts.getSpecialPrompts()).map(p => p.id==='prompt_get_calendar_event'
-        ? {...p,text:'Event JSON, categories from {%calendar_categories%}. {%mail_text_body_or_selected%}'} : p);
-    await ctx.ctl.browser.storage.local.set({_special_prompts:stored});
-    await ctx.bg._reload_menus();
+k.test('links-only', 'a prompt giving only the links gets their rule and their hidden targets, and no category', async t => {
+    await savePrompt(t,'Event JSON, links from {%mail_links%}. {%mail_text_body_or_selected%}');
     selectedLinks=[{text:'Join',href:'https://example.org/join'}];
-    t.after(async () => {
-        selectedLinks=[];
-        await ctx.ctl.browser.storage.local.remove('_special_prompts');
-        await ctx.bg._reload_menus();
-    });
+    t.after(() => { selectedLinks=[]; });
     mode='new';
-    const {prompt}=await run();
-    assert.ok(prompt.includes('categories from '+JSON.stringify(categories)));
-    assert.ok(prompt.includes('a field "links"'));
+    const {data,prompt}=await run();
     assert.ok(prompt.includes('"url":"https://example.org/join"'));
+    assert.ok(prompt.includes('a field "links"'));
     assert.equal(prompt.includes('a field "categories"'),false);
+    assert.equal(prompt.includes(JSON.stringify(categories)),false);
+    assert.deepEqual(data.links,['https://example.org/programme.pdf']);
+    assert.equal('categories' in data,false);
+});
+
+k.test('field-named', 'a prompt naming the JSON field without its placeholder still gets the data', async t => {
+    await savePrompt(t,'Answer with {"summary": "", "categories": []}. {%mail_text_body_or_selected%}');
+    mode='new';
+    const {data,prompt}=await run();
+    assert.ok(prompt.includes(JSON.stringify(categories)));
+    assert.deepEqual(data.categories,['Séminaire']);
+    assert.equal('links' in data,false);
 });
 
 k.test('links-command-optional', 'a failing selected-links request never stops the action: the body links are used', async t => {

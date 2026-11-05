@@ -171,16 +171,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     updateNoSelectionPolicyNote();
 
-    // The LIVE prompt text, like the reminder warning: with the option off, the categories and
-    // links of an answer are dropped, whatever the prompt asks.
-    const metadata_switch = document.getElementById('calendar_metadata_enabled');
-    const updateMetadataWarning = () => {
-        const asked = taPromptUtils.promptAsksCalendarMetadata(get_calendar_event_textarea.value);
-        document.getElementById('calendar_metadata_prompt_warning').classList.toggle('shown', asked && !metadata_switch.checked);
+    // The LIVE prompt text: an edited prompt only gets the categories and links it asks for, and
+    // nothing else in the page would say so.
+    const updateMetadataNote = () => {
+        const asked = taPromptUtils.calendarMetadataAsked(get_calendar_event_textarea.value);
+        document.getElementById('calendar_metadata_prompt_note').classList.toggle('shown', !(asked.categories && asked.links));
     };
-    metadata_switch.addEventListener('change', updateMetadataWarning);
-    get_calendar_event_textarea.addEventListener('input', updateMetadataWarning);
-    updateMetadataWarning();
+    get_calendar_event_textarea.addEventListener('input', updateMetadataNote);
+    updateMetadataNote();
 
     // "Let the AI set a reminder" section [#887]. After restoreOptions() (checkbox
     // state) and after the prompt text is loaded (warning and preview read it).

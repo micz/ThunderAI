@@ -58,31 +58,24 @@ any reply content. Older ThunderAI continues to use the existing message and ver
 
 ## Turning it on in ThunderAI
 
-This feature needs the matching ThunderAI change. In **Manage calendar event
-settings**, turn on **Let the AI fill in categories and links**. It is off by
-default, because the names of your categories and the addresses of the message's
-links are then sent to the AI provider.
+This feature needs the matching ThunderAI change. There is no option: the prompt
+decides, as it does for `attendees`.
 
-ThunderAI adds the instruction to whatever prompt is saved, in any language, as it
-does for the reminder: shipped prompt texts stay as they are and no saved prompt is
-rewritten. The option is the single switch, as the reminder's: off, nothing is
-asked and the `categories` and `links` of an answer are dropped, whatever the prompt
-says.
+- The shipped prompt asks for both, in any language. ThunderAI adds the instruction
+  by code, as it does for the reminder: the shipped text stays as it is, and the
+  names of your categories and the addresses of the message's links are sent to the
+  AI provider.
+- A prompt you edited asks for what it names: `{%calendar_categories%}` or a
+  `"categories"` field, `{%mail_links%}` or a `"links"` field. Leave one out and the
+  event does not get it, and its data is not sent. The settings page says so.
 
-Your own prompt can ask in its own words, with the option on: the part about
-categories is left out when the prompt holds `{%calendar_categories%}`, the part
-about links when it holds `{%mail_links%}`. The option does not control the tokens
-you write: like any placeholder, they are filled in and sent to the AI provider. The
-settings page warns when your prompt holds one with the option off. For example:
+When a field is asked, ThunderAI tells the AI that it must fill it: at least one
+existing category, the closest one even if the fit is approximate, and every
+relevant link, the video call first. It never invents a category. For example:
 
 ```text
 Available categories (JSON): {%calendar_categories%}
-Choose only exact names from that list, and only if justified by the text.
-Never invent a category. Return categories: [] if none matches.
 Links found in the message, with their text and target (JSON): {%mail_links%}
-Return links as an array of relevant absolute HTTP or HTTPS URLs, the most useful
-first, or []. Use plain URL strings.
-Keep these URLs in the description too. Do not download files.
 ```
 
 The variable is resolved at send time using `JSON.stringify()`, preserving names

@@ -159,32 +159,43 @@ export const taPromptUtils = {
         return taPromptUtils.appendReminderStatements(fullPrompt, 'calendar', promptTemplate, reminder_enabled, reminder_rules);
     },
 
-    // Whether a saved prompt asks for categories or links in its own words. Like the reminder's
-    // "reminderMinutes" check, it only drives the settings page warning: the option alone decides.
-    // promptTemplate is the prompt as saved, NOT the resolved one.
-    promptAsksCalendarMetadata(promptTemplate){
-        const text = String(promptTemplate ?? '');
-        return placeholdersUtils.hasPlaceholder(text, 'calendar_categories') || placeholdersUtils.hasPlaceholder(text, 'mail_links');
+    // Which of categories and links a calendar prompt asks for. The prompt decides, as it does for
+    // attendees: an edited prompt asks for what it names, by the JSON field or by the placeholder.
+    // The shipped text, as it is in the user's language, asks for both: it stays unchanged, so
+    // that no translation and no saved copy of it has to move.
+    // promptTemplate is the prompt as saved, NOT the resolved one: a mail mentioning "links" must
+    // not count.
+    calendarMetadataAsked(promptTemplate){
+        const text = String(promptTemplate ?? '').trim();
+        const shipped = text !== '' && text === browser.i18n.getMessage('prompt_get_calendar_event_full_text').trim();
+        return {
+            categories: shipped || text.includes('"categories"') || placeholdersUtils.hasPlaceholder(text, 'calendar_categories'),
+            links: shipped || text.includes('"links"') || placeholdersUtils.hasPlaceholder(text, 'mail_links'),
+        };
     },
 
-    // Text appended to the calendar event prompt to ask for existing categories and links; ''
-    // with the option off. The same option is the single switch for accepting them, in
-    // js/mzta-menus.js, as the reminder's. It works with any saved prompt in any language, and
-    // the shipped text stays as it is. Two parts, each left out when the prompt already gives
-    // its data: a prompt holding only {%calendar_categories%} still needs the link targets.
-    getCalendarMetadataStatement(promptTemplate, enabled){
-        if(!enabled) return '';
+    // Text appended to the calendar event prompt for what it asks: what the AI must do with each
+    // field, then its data unless the prompt already gives it. Added by code to work in any
+    // language, as the reminder's format is.
+    getCalendarMetadataStatement(promptTemplate){
         const text = String(promptTemplate ?? '');
+        const asked = taPromptUtils.calendarMetadataAsked(text);
         const parts = [];
-        if(!placeholdersUtils.hasPlaceholder(text, 'calendar_categories')) parts.push(browser.i18n.getMessage('prompt_calendar_categories_format'));
-        if(!placeholdersUtils.hasPlaceholder(text, 'mail_links')) parts.push(browser.i18n.getMessage('prompt_calendar_links_format'));
+        if(asked.categories){
+            parts.push(browser.i18n.getMessage('prompt_calendar_categories_format'));
+            if(!placeholdersUtils.hasPlaceholder(text, 'calendar_categories')) parts.push(browser.i18n.getMessage('prompt_calendar_categories_list'));
+        }
+        if(asked.links){
+            parts.push(browser.i18n.getMessage('prompt_calendar_links_format'));
+            if(!placeholdersUtils.hasPlaceholder(text, 'mail_links')) parts.push(browser.i18n.getMessage('prompt_calendar_links_list'));
+        }
         return parts.join(" \n");
     },
 
     // Async, unlike the reminder's: the statement holds placeholders, which preparePrompt() never
     // saw. args: the msg_text and selection_html of the prompt being finalized.
-    async appendCalendarMetadataStatement(fullPrompt, promptTemplate, enabled, args = {}){
-        const statement = taPromptUtils.getCalendarMetadataStatement(promptTemplate, enabled);
+    async appendCalendarMetadataStatement(fullPrompt, promptTemplate, args = {}){
+        const statement = taPromptUtils.getCalendarMetadataStatement(promptTemplate);
         if(statement === '') return fullPrompt;
         const replacements = await placeholdersUtils.getPlaceholdersValues({ ...args, prompt_text: statement });
         return fullPrompt + " \n" + placeholdersUtils.replacePlaceholders({ text: statement, replacements, use_default_value: true });

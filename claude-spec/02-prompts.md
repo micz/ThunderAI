@@ -866,21 +866,24 @@ Custom prompts are stored in `browser.storage.local` and managed via `pages/cust
 
 ## Calendar event: native categories and URI links
 
-Built like the reminder, for the same reasons: it works with any saved prompt in any language.
-`calendar_metadata_enabled` (default off: the option itself sends nothing new) is the single
-switch for asking and for accepting, as the reminder checkbox is. On,
-`appendCalendarMetadataStatement()` appends two parts, each resolved like a prompt:
-`prompt_calendar_categories_format` (`{%calendar_categories%}`) unless the saved template holds
-that token, and `prompt_calendar_links_format` (`{%mail_links%}`) unless it holds that one. A
-template giving only the categories still gets the link targets. Off, nothing is appended and
-`categories` and `links` are deleted from the answer, whatever the prompt asks, and
-`getSparksCapabilities()` is not called for the answer. The option does not control tokens the
-user wrote: like any placeholder they are resolved and sent to the provider. The settings page
-warns, saying so, when the live prompt holds `{%calendar_categories%}` or `{%mail_links%}` with the
-option off (`promptAsksCalendarMetadata()`).
-The shipped prompt texts are unchanged and no migration rewrites a saved one. The model must choose
-exact existing category names only when justified, otherwise `[]`. Participant rules are
-unchanged; a user's prompt may still request `attendees: []`.
+The prompt asks for them, as it does for attendees; there is no option. `calendarMetadataAsked()`
+reads the saved template. An edited prompt asks for a field by naming it: `"categories"` or
+`{%calendar_categories%}`, `"links"` or `{%mail_links%}`. The shipped text, compared with
+`prompt_get_calendar_event_full_text` in the current language, asks for both; so does the saved copy
+of it that any save of a special prompt writes.
+
+For each field asked, `appendCalendarMetadataStatement()` appends its rule
+(`prompt_calendar_categories_format`, `prompt_calendar_links_format`) and, unless the template holds
+the placeholder, its data (`prompt_calendar_categories_list`, `prompt_calendar_links_list`), each
+resolved like a prompt. It is added by code for the reason the reminder's format is: it works in any
+language. The shipped prompt texts stay unchanged and no migration rewrites a saved one.
+
+The rule obliges the model. For categories: at least one exact existing name, the closest one even
+if the fit is approximate, and `[]` only for an empty list. For links: every relevant address, the
+video call first. A field not asked is deleted from the answer; with neither asked,
+`getSparksCapabilities()` is not called for the answer. A prompt asking for neither behaves exactly
+as before this feature. The settings page shows `calendar_metadata_prompt_note` when the live prompt
+leaves one out. Participant rules are unchanged; a user's prompt may still request `attendees: []`.
 
 Both email and clipboard menu actions use `getSparksCapabilities()` (validated
 arrays, two-second timeout, independent of the unchanged presence/version check)
