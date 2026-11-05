@@ -630,5 +630,23 @@
     },
     "addtags_no_tags_received": {
         "message": "AI heeft geen tags teruggestuurd."
+    },
+    "AddTags_info_default": {
+        "message": "Op deze pagina kun je de standaardprompt wijzigen die gebruikt wordt om tags aan e-mails toe te voegen en de uitzonderingenlijst beheren."
+    },
+    "AddTags_prompt_text_title": {
+        "message": "Huidige prompttekst"
+    },
+    "AddTags_account_settings_title": {
+        "message": "Instellingen per account"
+    },
+    "AccountSelector_AutoTags": {
+        "message": "Selecteer de accounts om automatisch taggen in te schakelen"
+    },
+    "ai_processing_busy": {
+        "message": "Een verzoek wordt momenteel verwerkt. Wacht tot deze gereed is; het latere verzoek is niet verzonden."
+    },
+    "AddTags_excl_list_infoline": {
+        "message": "Dit is een lijst met tags die niet aan e-mails mogen worden toegevoegd."
     }
 }
