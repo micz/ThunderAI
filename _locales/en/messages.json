@@ -531,7 +531,7 @@
     "description": "Storage management page, retention rules: field label, the entries holding an error older than this are deleted by the cleanup."
   },
   "storage_rule_zero_hint": {
-    "message": "0 = no limit.",
+    "message": "0 = no limit",
     "description": "Storage management page, retention rules: hint under the fields."
   },
   "storage_cleanup_auto": {
