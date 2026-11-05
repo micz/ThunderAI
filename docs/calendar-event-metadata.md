@@ -67,7 +67,7 @@ decides, as it does for `attendees`.
   AI provider.
 - A prompt you edited asks for what it names: `{%calendar_categories%}` or a
   `"categories"` field, `{%mail_links%}` or a `"links"` field. Leave one out and the
-  event does not get it, and its data is not sent. The settings page says so.
+  event does not get it, and its data is not sent.
 
 When a field is asked, ThunderAI tells the AI that it must fill it: at least one
 existing category, the closest one even if the fit is approximate, and every

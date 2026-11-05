@@ -4440,10 +4440,6 @@
     "message": "Links can hide their address behind text. These are the links of the message, with their visible text and their target, as JSON: {%mail_links%}.",
     "description": "Appended to the calendar event prompt when it does not give the message links itself; keep the {%mail_links%} placeholder as it is."
   },
-  "calendar_metadata_prompt_note": {
-    "message": "This prompt does not ask for categories or links, or only for one of them, so the event will not get the other. To ask for them, add {%calendar_categories%} and {%mail_links%} to the prompt.",
-    "description": "Calendar Event settings page: note under the prompt when the edited prompt does not ask for categories or for links."
-  },
   "placeholder_mail_links": {
     "message": "Links of the message or of the selection, with their text and target (JSON array)",
     "description": "Name of the mail_links placeholder in autocomplete; its value is a JSON array of objects with the visible text and the target address of each link."

@@ -41,7 +41,6 @@ import {
   initializeSpecificIntegrationUI,
   isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
-import { taPromptUtils } from "../../js/mzta-utils-prompt.js";
 import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
 import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 import { initReminderUI } from "../_lib/reminder-ui.js";
@@ -171,15 +170,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     updateNoSelectionPolicyNote();
 
-    // The LIVE prompt text: an edited prompt only gets the categories and links it asks for, and
-    // nothing else in the page would say so.
-    const updateMetadataNote = () => {
-        const asked = taPromptUtils.calendarMetadataAsked(get_calendar_event_textarea.value);
-        document.getElementById('calendar_metadata_prompt_note').classList.toggle('shown', !(asked.categories && asked.links));
-    };
-    get_calendar_event_textarea.addEventListener('input', updateMetadataNote);
-    updateMetadataNote();
-
     // "Let the AI set a reminder" section [#887]. After restoreOptions() (checkbox
     // state) and after the prompt text is loaded (warning and preview read it).
     // Kept before the editor decoration below, so a failure there cannot leave it
@@ -201,7 +191,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (get_calendar_event_textarea_hl) get_calendar_event_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
         placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(get_calendar_event_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
+
 });
+
+
 
 // The calendar_no_selection option sends the whole message body, which only works if the
 // prompt reads it through one of these two placeholders.

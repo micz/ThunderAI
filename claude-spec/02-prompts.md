@@ -882,8 +882,8 @@ The rule obliges the model. For categories: at least one exact existing name, th
 if the fit is approximate, and `[]` only for an empty list. For links: every relevant address, the
 video call first. A field not asked is deleted from the answer; with neither asked,
 `getSparksCapabilities()` is not called for the answer. A prompt asking for neither behaves exactly
-as before this feature. The settings page shows `calendar_metadata_prompt_note` when the live prompt
-leaves one out. Participant rules are unchanged; a user's prompt may still request `attendees: []`.
+as before this feature. As for attendees, nothing in the settings page comments on it. Participant
+rules are unchanged; a user's prompt may still request `attendees: []`.
 
 Both email and clipboard menu actions use `getSparksCapabilities()` (validated
 arrays, two-second timeout, independent of the unchanged presence/version check)
