@@ -788,7 +788,8 @@ what a link shows, not where it goes. With a selection, the content script's
 `getSelectedHtml` clones a selection made inside a link's text without its `<a>`, and an image
 selected alone has no text. It answers `null` without a selection (a collapsed caret included),
 and skips hidden anchors and the hidden parts of a label, by the same rule as the body
-(`mztaIsHiddenElement()`, shared with `mztaStripHidden()`). The menu action asks for it only when
+(`mztaIsHiddenElement()`, shared with `mztaStripHidden()`: the `hidden` attribute and inline
+styles, not CSS class rules). The menu action asks for it only when
 the prompt holds `{%mail_links%}`, or for the calendar event prompt with
 `calendar_metadata_enabled` on; never for clipboard text, and a failure only means the HTML in
 hand is read. Without a selection, `getMailLinks()` reads the body HTML with the hidden-element

@@ -93,9 +93,10 @@ your own prompt; no attendee preference or additional metadata switch is needed.
 `{%mail_links%}` lists the links the selection touches, else those of the message,
 as a JSON array of `{text, url}`: the text the AI reads keeps what a link shows, not
 where it goes. A selection made inside a link's text keeps that link. HTTP/HTTPS
-targets only, the first 30, hidden elements left out, an image-only link described
-by its `alt`, and `[]` for clipboard text. These addresses are sent to the AI
-provider, like the mail text.
+targets only, the first 30, an image-only link described by its `alt`, and `[]` for
+clipboard text. Elements hidden by the `hidden` attribute or by inline styles are
+left out; CSS class rules are not resolved, so a link hidden that way is kept. These
+addresses are sent to the AI provider, like the mail text.
 
 ThunderAI also accepts `links` entries shaped like that list. When the model leaves
 `links` out or gives no usable link, the links it wrote in the description are used,
