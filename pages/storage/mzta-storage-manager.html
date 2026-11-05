@@ -64,6 +64,47 @@
                 <p class="mzta_help" id="last_cleanup"></p>
             </div>
 
+            <!-- ENTRY LIST: one type at a time, newest first (taStorage.getPage()). The page opens
+                 on a type with a plain hash: #summary, #translation, #spam. -->
+            <div class="mzta_section mzta_section_wide" id="entries_section">
+                <div class="section_hdr">
+                    <div class="mzta_prompt_title">__MSG_storage_entries_title__</div>
+                    <div class="section_hdr_controls">
+                        <select id="entries_type">
+                            <option value="summary">__MSG_storage_type_summary__</option>
+                            <option value="translation">__MSG_storage_type_translation__</option>
+                            <option value="spam">__MSG_storage_type_spam__</option>
+                        </select>
+                        <!-- Full-tab mode, as the spam log of the spam filter page: icon-only (no
+                             new string), the two icons swapped by CSS on [aria-pressed]. -->
+                        <button type="button" id="entries_fullscreen_btn" class="btn_icon" aria-pressed="false">
+                            <svg class="ico_expand" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                                <path d="M14 3h7v7M21 3l-8 8M10 21H3v-7M3 21l8-8"
+                                      fill="none" stroke="currentColor" stroke-width="2.2"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <svg class="ico_collapse" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                                <path d="M21 3l-8 8m0 0h7m-7 0V4M3 21l8-8m0 0H4m7 0v7"
+                                      fill="none" stroke="currentColor" stroke-width="2.2"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="table_scroll entries_scroll">
+                    <table id="entries_table" class="storage_table">
+                        <thead id="entries_head"></thead>
+                        <tbody id="entries_body"></tbody>
+                    </table>
+                </div>
+                <div class="entries_pager" id="entries_pager" style="display:none;">
+                    <button type="button" id="entries_prev_btn" class="btn_small">__MSG_spamfilter_report_previous__</button>
+                    <span id="entries_page_label"></span>
+                    <button type="button" id="entries_next_btn" class="btn_small">__MSG_spamfilter_report_next__</button>
+                </div>
+                <p class="mzta_help storage_result" id="entries_result" aria-live="polite"></p>
+            </div>
+
             <!-- RETENTION RULES: saved by the Save button only (btn_save_rules, which the unsaved
                  guard watches). Every control carries data-mzta-pref, so a locked key is disabled. -->
             <div class="mzta_section" id="rules_section">
@@ -145,31 +186,6 @@
                     <span class="mzta_help">__MSG_storage_realign_info__</span>
                 </div>
                 <p class="mzta_help storage_result" id="actions_result" aria-live="polite"></p>
-            </div>
-
-            <!-- ENTRY LIST: one type at a time, newest first (taStorage.getPage()). The page opens
-                 on a type with a plain hash: #summary, #translation, #spam. -->
-            <div class="mzta_section mzta_section_wide" id="entries_section">
-                <div class="section_hdr">
-                    <div class="mzta_prompt_title">__MSG_storage_entries_title__</div>
-                    <select id="entries_type">
-                        <option value="summary">__MSG_storage_type_summary__</option>
-                        <option value="translation">__MSG_storage_type_translation__</option>
-                        <option value="spam">__MSG_storage_type_spam__</option>
-                    </select>
-                </div>
-                <div class="table_scroll entries_scroll">
-                    <table id="entries_table" class="storage_table">
-                        <thead id="entries_head"></thead>
-                        <tbody id="entries_body"></tbody>
-                    </table>
-                </div>
-                <div class="entries_pager" id="entries_pager" style="display:none;">
-                    <button type="button" id="entries_prev_btn" class="btn_small">__MSG_spamfilter_report_previous__</button>
-                    <span id="entries_page_label"></span>
-                    <button type="button" id="entries_next_btn" class="btn_small">__MSG_spamfilter_report_next__</button>
-                </div>
-                <p class="mzta_help storage_result" id="entries_result" aria-live="polite"></p>
             </div>
 
             <!-- ORPHAN SCAN: one messages.query() per Message-ID, stoppable. -->

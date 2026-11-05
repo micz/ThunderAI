@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     bindRules();
     bindActions();
     bindEntries();
+    attachEntriesFullscreen();
     bindOrphans();
     attachRowResizer($('entries_body'));
 
@@ -392,6 +393,35 @@ function bindEntries() {
     $('entries_next_btn').addEventListener('click', () => {
         entriesOffset += PAGE_SIZE;
         loadEntries();
+    });
+}
+
+/**
+ * The full-tab button of the entry list (#entries_fullscreen_btn), the same as the spam log's on
+ * the spam filter page: the section is pinned over the whole tab and the page behind is locked.
+ * Icon-only, the state in aria-pressed (which also swaps the icons in CSS). Escape closes it.
+ */
+function attachEntriesFullscreen() {
+    const btn = $('entries_fullscreen_btn');
+    const section = $('entries_section');
+    if (!btn || !section) return;
+
+    const setState = (on) => {
+        section.classList.toggle('entries_fullscreen_on', on);
+        document.body.classList.toggle('entries_fullscreen', on);
+        btn.setAttribute('aria-pressed', String(on));
+        // Leaving full-tab mode restores the page scroll, which may be far from the list.
+        if (!on) section.scrollIntoView?.({ block: 'nearest' });
+    };
+
+    btn.addEventListener('click', () => {
+        setState(btn.getAttribute('aria-pressed') !== 'true');
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && btn.getAttribute('aria-pressed') === 'true') {
+            setState(false);
+        }
     });
 }
 

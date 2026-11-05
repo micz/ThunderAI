@@ -9,7 +9,8 @@
 // subject, sender, message date, language for the translations; the spam log's columns for the
 // spam reports, then status and actions); the subject and sender arrays joined as the spam log
 // does; per row Open (messages.query() by headerMessageId, then messageDisplay.open(), or a message
-// when it is gone) and Delete (confirmed, the record of that type only); no search.
+// when it is gone) and Delete (confirmed, the record of that type only); no search; the list right
+// after the overview, with a full-tab button closed by itself or by Escape.
 
 import { after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -141,6 +142,27 @@ k.test('spam', S_LIST, 'the spam reports: the columns of the spam log, then stat
     assert.equal(cells[6], 'no answer');
     assert.equal(cells[8], msg('storage_status_error'));
     assert.ok(rows()[0].querySelector('.entry_open') && rows()[0].querySelector('.entry_delete'));
+});
+
+k.test('after-overview', S_LIST, 'the list comes right after the overview', () => {
+    const sections = ctx.$$('#mzta_body > .mzta_section').map(s => s.id);
+    assert.equal(sections.indexOf('entries_section'), sections.indexOf('overview_section') + 1);
+});
+
+k.test('fullscreen', S_LIST, 'the full-tab button pins the list over the tab and back, Escape closes it', async () => {
+    const btn = $('#entries_fullscreen_btn');
+    const section = $('#entries_section');
+    const body = $('body');
+    const isOn = () => [btn.getAttribute('aria-pressed'),
+        section.classList.contains('entries_fullscreen_on'), body.classList.contains('entries_fullscreen')];
+    assert.deepEqual(isOn(), ['false', false, false]);
+    await ctx.click(btn);
+    assert.deepEqual(isOn(), ['true', true, true]);
+    await ctx.click(btn);
+    assert.deepEqual(isOn(), ['false', false, false]);
+    await ctx.click(btn);
+    await ctx.fire(body, 'keydown', { key: 'Escape' });
+    assert.deepEqual(isOn(), ['false', false, false]);
 });
 
 k.test('no-search', S_LIST, 'no search field', () => {

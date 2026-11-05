@@ -571,6 +571,24 @@ what it removed before the error (`storage_action_error_partial`, from `error.re
   automatic cleanup, `storage_last_cleanup` with its date and what it removed per type, or
   `storage_last_cleanup_never` (`getLastCleanup()`). **Refresh** (`#btn_refresh`) reads the notices,
   the overview and the list again; there is no automatic refresh.
+- **Entry list** (`#entries_section`, right after the overview): a type selector (`#entries_type`, summaries first); 50 entries
+  per page, newest first (`taStorage.getPage()`), with Previous / Next and "1–50 of 60" (it reuses
+  `spamfilter_report_previous` / `_next` / `_page_label`, whose translations already exist); a page
+  past the end falls back to the last one; no search. Summaries and translations: saved on
+  (`createdAt`), status (`storage_status_ok` / `_error`, by `taStorage.isFailed()`; an error carries
+  its message as a tooltip), subject and sender (arrays joined), message date, the language for the
+  translations. Spam reports: the eight columns of the spam log (`renderSpamReportRows()`), then
+  status and actions. Per row **Open** (`messages.query({ headerMessageId })`, then
+  `messageDisplay.open({ messageId, location: 'tab' })`; `storage_message_not_found` when no folder
+  holds it) and **Delete** (`storage_delete_entry_confirm`, then the `delete*Field()` of that type).
+  **A plain hash** selects the type when the page opens and on `hashchange`: `#summary`,
+  `#translation`, `#spam`; the list is then scrolled into view; any other hash is ignored.
+  **Full-tab mode**: next to the selector, the icon-only `#entries_fullscreen_btn` (no label, so no
+  string; the state in `aria-pressed`, which swaps the two icons in CSS), the same as the spam log's
+  `#report_fullscreen_btn`: the section gets `entries_fullscreen_on` (`position: fixed` over the whole
+  tab, margins zeroed, the scroll box taking the leftover height) and the body `entries_fullscreen`
+  (locked). The button again or Escape restores it and scrolls the list back into view
+  (`attachEntriesFullscreen()`).
 - **Retention rules**: per type maximum age, maximum number of entries and maximum age of the entries
   with an error (`storage_rule_*`, number inputs with `data-mzta-pref`, class `rule_input`; hint
   `storage_rule_zero_hint`, 0 = no limit); the switch `message_storage_cleanup_auto` with
@@ -597,18 +615,6 @@ what it removed before the error (`storage_action_error_partial`, from `error.re
   `clearAllRecords()`); **Realign** (`#btn_realign`, `storage_realign_confirm`): the background's
   `reconcileMessageStorage` command, answered with `storage_realign_done` (restored / removed per
   type) or the error it returned.
-- **Entry list** (`#entries_section`): a type selector (`#entries_type`, summaries first); 50 entries
-  per page, newest first (`taStorage.getPage()`), with Previous / Next and "1–50 of 60" (it reuses
-  `spamfilter_report_previous` / `_next` / `_page_label`, whose translations already exist); a page
-  past the end falls back to the last one; no search. Summaries and translations: saved on
-  (`createdAt`), status (`storage_status_ok` / `_error`, by `taStorage.isFailed()`; an error carries
-  its message as a tooltip), subject and sender (arrays joined), message date, the language for the
-  translations. Spam reports: the eight columns of the spam log (`renderSpamReportRows()`), then
-  status and actions. Per row **Open** (`messages.query({ headerMessageId })`, then
-  `messageDisplay.open({ messageId, location: 'tab' })`; `storage_message_not_found` when no folder
-  holds it) and **Delete** (`storage_delete_entry_confirm`, then the `delete*Field()` of that type).
-  **A plain hash** selects the type when the page opens and on `hashchange`: `#summary`,
-  `#translation`, `#spam`; the list is then scrolled into view; any other hash is ignored.
 - **Orphan scan** (`#orphans_section`): started by `#btn_orphans_start` after the warning
   `storage_orphans_confirm` (one lookup per message, it can take long). It reads every
   `{ messageId, createdAt }` of the three types (`getEntryKeys()`), and looks each distinct
